@@ -5,6 +5,7 @@ create extension if not exists "uuid-ossp";
 create table if not exists shipitto_projects (
   id uuid primary key default uuid_generate_v4(),
   tenant_id uuid not null, -- Supabase User ID
+  source_app text default 'shpitto', -- 'shpitto' or other app names
   name text not null,
   config jsonb not null, -- Stores ProjectBlueprint (Puck JSON)
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
@@ -26,13 +27,13 @@ alter table shipitto_projects enable row level security;
 alter table shipitto_deployments enable row level security;
 
 create policy "Users can view own projects" on shipitto_projects
-  for select using (auth.uid() = tenant_id);
+  for select using (auth.uid() = tenant_id and source_app = 'shpitto');
 
 create policy "Users can insert own projects" on shipitto_projects
-  for insert with check (auth.uid() = tenant_id);
+  for insert with check (auth.uid() = tenant_id and source_app = 'shpitto');
 
 create policy "Users can update own projects" on shipitto_projects
-  for update using (auth.uid() = tenant_id);
+  for update using (auth.uid() = tenant_id and source_app = 'shpitto');
 
 create policy "Users can view own deployments" on shipitto_deployments
   for select using (

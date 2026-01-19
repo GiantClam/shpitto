@@ -6,6 +6,7 @@ import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 export const projects = sqliteTable('shipitto_projects', {
   id: text('id').primaryKey(),
   tenantId: text('tenant_id').notNull(), // Multi-tenancy support
+  sourceApp: text('source_app').default('shpitto'), // 'shpitto' or other app names
   name: text('name').notNull(),
   config: text('config', { mode: 'json' }).notNull(), // Stores ProjectBlueprint
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),

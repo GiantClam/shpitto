@@ -34,6 +34,7 @@ export async function saveProjectState(userId: string, projectJson: any, accessT
         .from('shipitto_projects')
         .select('id')
         .eq('tenant_id', userId)
+        .eq('source_app', 'shpitto') // Filter by source app
         .eq('name', name)
         .single();
       
@@ -49,7 +50,8 @@ export async function saveProjectState(userId: string, projectJson: any, accessT
         name: name, // Update name in case it changed
         updated_at: new Date().toISOString()
       })
-      .eq('id', projectId);
+      .eq('id', projectId)
+      .eq('source_app', 'shpitto'); // Security measure
   } else {
     // Insert
     const { data: newProject, error } = await supabase
@@ -57,6 +59,7 @@ export async function saveProjectState(userId: string, projectJson: any, accessT
       .insert({
         id: crypto.randomUUID(),
         tenant_id: userId,
+        source_app: 'shpitto',
         name: name,
         config: projectJson,
         created_at: new Date().toISOString()
