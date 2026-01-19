@@ -2,9 +2,15 @@
   "name": "@industry/db",
   "version": "0.0.1",
   "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./schema": "./src/schema.ts"
+    ".": "./dist/index.js",
+    "./schema": "./dist/schema.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w"
   },
   "dependencies": {
     "drizzle-orm": "0.36.1"
