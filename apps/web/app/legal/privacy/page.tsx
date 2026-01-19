@@ -19,8 +19,8 @@ export default function PrivacyPolicy() {
           <p className="lead">Last updated: January 18, 2026</p>
           
           <p>
-            At Shipitto, accessible from https://shipitto.com, one of our main priorities is the privacy of our visitors. 
-            This Privacy Policy document contains types of information that is collected and recorded by Shipitto and how we use it.
+            At Shpitto, accessible from https://shpitto.com, one of our main priorities is the privacy of our visitors. 
+            This Privacy Policy document contains types of information that is collected and recorded by Shpitto and how we use it.
           </p>
 
           <h2>1. Information We Collect</h2>
@@ -45,14 +45,14 @@ export default function PrivacyPolicy() {
 
           <h2>3. AI Processing</h2>
           <p>
-            Shipitto uses advanced Artificial Intelligence to generate website content. 
+            Shpitto uses advanced Artificial Intelligence to generate website content. 
             Data you input into the builder (prompts, company descriptions) is processed by our AI models to generate results.
             We do not use your private proprietary data to train our public models without explicit consent.
           </p>
 
           <h2>4. Contact Us</h2>
           <p>
-            If you have additional questions or require more information about our Privacy Policy, do not hesitate to contact us at support@shipitto.com.
+            If you have additional questions or require more information about our Privacy Policy, do not hesitate to contact us at support@shpitto.com.
           </p>
         </div>
       </main>

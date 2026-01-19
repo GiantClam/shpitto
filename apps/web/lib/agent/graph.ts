@@ -188,8 +188,8 @@ const getModel = () => {
     configuration: {
       baseURL: "https://openrouter.ai/api/v1",
       defaultHeaders: {
-        "HTTP-Referer": "https://shipitto.com",
-        "X-Title": "ShipItTo",
+        "HTTP-Referer": "https://shpitto.com",
+        "X-Title": "Shpitto",
       },
     },
     temperature: 0,
