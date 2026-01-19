@@ -17,14 +17,78 @@ export const BrandingSchema = z.object({
 
 export type Branding = z.infer<typeof BrandingSchema>;
 
-// 2. Page & Component Config (Puck-Compatible)
-export const PuckComponentSchema = z.object({
-  type: z.string(), // Matches frontend atomic component name, e.g., "Hero", "SpecsTable"
-  props: z.record(z.any()), // Component text, R2 image links
-  overrides: z.object({ // Core: Allows AI to inject fine-tuned Tailwind class names
-    className: z.string().optional()
-  }).optional()
+// 2. Component Props Schemas
+const HeroPropsSchema = z.object({
+  title: z.string(),
+  subtitle: z.string().optional(),
+  description: z.string().optional(),
+  ctaText: z.string().optional(),
+  image: z.string().optional(),
+  align: z.enum(["text-left", "text-center"]).default("text-left"),
+  theme: z.enum(["dark", "light", "glass"]).default("dark"),
+  effect: z.enum(["none", "retro-grid"]).default("none")
 });
+
+const StatsPropsSchema = z.object({
+  items: z.array(z.object({
+    label: z.string(),
+    value: z.string(),
+    suffix: z.string().optional()
+  }))
+});
+
+const TestimonialsPropsSchema = z.object({
+  title: z.string().optional(),
+  items: z.array(z.object({
+    content: z.string(),
+    author: z.string(),
+    role: z.string().optional()
+  }))
+});
+
+const ValuePropositionsPropsSchema = z.object({
+  title: z.string().optional(),
+  items: z.array(z.object({
+    title: z.string(),
+    description: z.string(),
+    icon: z.string().optional()
+  }))
+});
+
+const ProductPreviewPropsSchema = z.object({
+  title: z.string().optional(),
+  items: z.array(z.object({
+    title: z.string(),
+    description: z.string(),
+    image: z.string().optional(),
+    tag: z.string().optional()
+  }))
+});
+
+// 3. Page & Component Config (Puck-Compatible)
+// We use a discriminated union to enforce type safety based on component name
+export const PuckComponentSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("Hero"),
+    props: HeroPropsSchema,
+  }),
+  z.object({
+    type: z.literal("Stats"),
+    props: StatsPropsSchema,
+  }),
+  z.object({
+    type: z.literal("Testimonials"),
+    props: TestimonialsPropsSchema,
+  }),
+  z.object({
+    type: z.literal("Value_Propositions"),
+    props: ValuePropositionsPropsSchema,
+  }),
+  z.object({
+    type: z.literal("Product_Preview"),
+    props: ProductPreviewPropsSchema,
+  })
+]);
 
 export const PuckDataSchema = z.object({
   root: z.record(z.any()).optional(), // Puck root props
@@ -34,7 +98,7 @@ export const PuckDataSchema = z.object({
 
 export type PuckData = z.infer<typeof PuckDataSchema>;
 
-// 3. Complete Project Blueprint
+// 4. Complete Project Blueprint
 export const ProjectSchema = z.object({
   projectId: z.string(),
   branding: BrandingSchema,
