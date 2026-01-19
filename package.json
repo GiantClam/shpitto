@@ -1,0 +1,26 @@
+{
+  "name": "industry-v0",
+  "private": true,
+  "scripts": {
+    "build:all": "turbo run build",
+    "dev:all": "turbo run dev",
+    "lint:all": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
+    "prettier": "^3.2.5",
+    "turbo": "latest"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "dependencies": {
+    "@langchain/core": "^1.1.8",
+    "@langchain/langgraph": "^1.0.7",
+    "@langchain/openai": "^1.2.0",
+    "zod-to-json-schema": "^3.25.1"
+  }
+}

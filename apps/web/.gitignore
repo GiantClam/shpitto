@@ -1,0 +1,6 @@
+# LangGraph API
+.langgraph_api
+
+# Env files
+.env
+.env*.local

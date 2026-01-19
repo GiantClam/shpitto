@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "default": "./lib/agent/graph.ts:graph"
+  },
+  "env": "../../.env"
+}

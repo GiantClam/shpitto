@@ -1,0 +1,56 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Next.js
+.next
+out
+
+# Production
+build
+dist
+
+# Environment Variables
+.env
+.env*.local
+.env.production
+.env.development
+.env.test
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+wrangler.log
+wrangler_debug.log
+wrangler_network.log
+stderr.log
+stdout.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/settings.json
+.idea
+
+# Turborepo
+.turbo
+
+# LangGraph
+.langgraph_api
+.agent_memory
+
+# Temp files
+captured_deployment_request.bin
+captured_headers.json
+captured_request.bin
+dummy_deploy
+temp_dist
+test-dist
