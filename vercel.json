@@ -2,6 +2,5 @@
   "buildCommand": "turbo run build --filter=web...",
   "outputDirectory": ".next",
   "installCommand": "pnpm install",
-  "framework": "nextjs",
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./"
+  "framework": "nextjs"
 }
