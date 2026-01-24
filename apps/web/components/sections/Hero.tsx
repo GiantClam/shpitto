@@ -58,7 +58,7 @@ export const Hero = ({
               {desc}
             </p>
           )}
-          <button className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold transition-all shadow-lg shadow-blue-500/25">
+          <button className="px-8 py-4 bg-[var(--accent)] text-white rounded-full font-bold transition-all shadow-lg hover:opacity-90">
             {cta}
           </button>
         </motion.div>

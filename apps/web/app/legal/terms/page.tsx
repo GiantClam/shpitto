@@ -26,7 +26,7 @@ export default function TermsOfService() {
 
           <h2>2. Use License</h2>
           <p>
-            Permission is granted to temporarily download one copy of the materials (information or software) on Shpitto's website for personal, 
+            Permission is granted to temporarily download one copy of the materials (information or software) on Shpitto&apos;s website for personal, 
             non-commercial transitory viewing only. This is the grant of a license, not a transfer of title.
           </p>
 
@@ -38,7 +38,7 @@ export default function TermsOfService() {
 
           <h2>4. Disclaimer</h2>
           <p>
-            The materials on Shpitto's website are provided on an 'as is' basis. Shpitto makes no warranties, expressed or implied, 
+            The materials on Shpitto&apos;s website are provided on an &apos;as is&apos; basis. Shpitto makes no warranties, expressed or implied, 
             and hereby disclaims and negates all other warranties including, without limitation, implied warranties or conditions of merchantability, 
             fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.
           </p>

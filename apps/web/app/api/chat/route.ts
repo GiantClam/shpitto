@@ -13,7 +13,7 @@ const serviceAdapter = new ExperimentalEmptyAdapter();
 const runtime = new CopilotRuntime({ 
   agents: {
     default: new LangGraphAgent({ 
-      description: "Shipitto project blueprinting agent.",
+      description: "Shpitto project blueprinting agent.",
       // 连接到本地启动的 langgraph dev 端口
       deploymentUrl: process.env.LANGGRAPH_DEPLOYMENT_URL || "http://localhost:8123", 
       graphId: "default", 

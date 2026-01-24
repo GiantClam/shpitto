@@ -8,6 +8,10 @@ import { Stats } from "./sections/Stats";
 import { Testimonials } from "./sections/Testimonials";
 import { ValuePropositions } from "./sections/ValuePropositions";
 import { ProductPreview } from "./sections/ProductPreview";
+import { FeatureHighlight } from "./sections/FeatureHighlight";
+import { CTASection } from "./sections/CTASection";
+import { FAQ } from "./sections/FAQ";
+import { Logos } from "./sections/Logos";
 import { RootLayout } from "./sections/RootLayout";
 
 // -----------------------------------------------------------------------------
@@ -66,7 +70,7 @@ const config: Config = {
         render: Testimonials
     },
 
-    Value_Propositions: {
+    ValuePropositions: {
         fields: {
             title: { type: "text" },
             items: { type: "array", arrayFields: { title: { type: "text" }, description: { type: "text" }, icon: { type: "text" } } }
@@ -74,7 +78,7 @@ const config: Config = {
         render: ValuePropositions
     },
 
-    Product_Preview: {
+    ProductPreview: {
       fields: {
         title: { type: "text" },
         items: {
@@ -90,6 +94,64 @@ const config: Config = {
       },
       render: ProductPreview
     },
+
+    FeatureHighlight: {
+      fields: {
+        title: { type: "text" },
+        description: { type: "textarea" },
+        image: { type: "text" },
+        align: { type: "radio", options: [{ label: "Left", value: "left" }, { label: "Right", value: "right" }] },
+        features: { type: "array", arrayFields: { feature: { type: "text" } } }
+      },
+      render: ({ features, ...props }: any) => (
+        // Map the array of objects back to array of strings if needed, or update component to handle both
+        <FeatureHighlight 
+          {...props} 
+          features={features?.map((f: any) => typeof f === 'string' ? f : f.feature)} 
+        />
+      )
+    },
+
+    CTASection: {
+      fields: {
+        title: { type: "text" },
+        description: { type: "textarea" },
+        ctaText: { type: "text" },
+        ctaLink: { type: "text" },
+        variant: { type: "select", options: [{ label: "Simple", value: "simple" }, { label: "Split", value: "split" }, { label: "Card", value: "card" }] }
+      },
+      render: CTASection
+    },
+
+    FAQ: {
+      fields: {
+        title: { type: "text" },
+        items: {
+          type: "array",
+          getItemSummary: (item: any) => item.question || "Question",
+          arrayFields: {
+            question: { type: "text" },
+            answer: { type: "textarea" }
+          }
+        }
+      },
+      render: FAQ
+    },
+
+    Logos: {
+      fields: {
+        title: { type: "text" },
+        items: {
+          type: "array",
+          getItemSummary: (item: any) => item.name || "Logo",
+          arrayFields: {
+            name: { type: "text" },
+            logo: { type: "text" }
+          }
+        }
+      },
+      render: Logos
+    }
   }
 };
 

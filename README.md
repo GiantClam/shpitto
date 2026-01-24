@@ -1,6 +1,6 @@
-# Shipitto - AI Portal Generation Platform
+# Shpitto - AI Portal Generation Platform
 
-This repository contains the source code for Phase 1 (Industry-v0) of the Shipitto platform.
+This repository contains the source code for Phase 1 (Industry-v0) of the Shpitto platform.
 
 ## Structure
 
@@ -45,4 +45,4 @@ The core protocol is defined in `packages/schema/src/project-schema.ts`. This en
 ## Infrastructure
 
 Initialize your Supabase database using the script in `packages/db/supabase_schema.sql`.
-This sets up the `shipitto_projects` and `shipitto_deployments` tables required for SaaS mode.
+This sets up the `shpitto_projects` and `shpitto_deployments` tables required for SaaS mode.

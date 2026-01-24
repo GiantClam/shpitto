@@ -25,7 +25,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
       <blockquote>"The companies that will win in the next decade are those that treat their website as a digital product, not a digital brochure."</blockquote>
 
       <h2>Conclusion</h2>
-      <p>The barrier to entry for high-quality digital experiences has lowered significantly. With tools like Shipitto, industrial companies can now launch world-class websites that rival Fortune 500 companies, without the 6-month development cycle.</p>
+      <p>The barrier to entry for high-quality digital experiences has lowered significantly. With tools like Shpitto, industrial companies can now launch world-class websites that rival Fortune 500 companies, without the 6-month development cycle.</p>
     `
   };
 

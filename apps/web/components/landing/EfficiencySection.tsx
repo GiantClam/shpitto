@@ -49,7 +49,7 @@ export function EfficiencySection() {
               <span className="text-blue-600">Smart generation at your fingertips.</span>
             </h2>
             <p className="text-lg text-slate-600 mb-8 leading-relaxed">
-              Traditional web development takes weeks. Shipitto cuts that down to minutes.
+              Traditional web development takes weeks. Shpitto cuts that down to minutes.
               Just describe your business, and our AI engine instantly generates a complete website with copy, images, and layout.
             </p>
             

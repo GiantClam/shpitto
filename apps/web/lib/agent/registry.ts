@@ -10,7 +10,7 @@ export const COMPONENT_REGISTRY = {
       title: "string (required)",
       description: "string (optional)",
       subtitle: "string (optional)",
-      cta_text: "string (optional, e.g., 'Get Started')",
+      ctaText: "string (optional, e.g., 'Get Started')",
       image: "string (URL, optional)",
       align: "'text-left' | 'text-center' (default: 'text-left')",
       theme: "'dark' | 'light' | 'glass' (default: 'dark')",
@@ -20,8 +20,8 @@ export const COMPONENT_REGISTRY = {
       type: "Hero",
       props: {
         title: "Revolutionize Your Logistics",
-        description: "Seamless global shipping with Shipitto's AI-powered platform.",
-        cta_text: "Start Shipping",
+        description: "Seamless global shipping with Shpitto's AI-powered platform.",
+        ctaText: "Start Shipping",
         align: "text-center",
         theme: "dark",
         effect: "retro-grid"
@@ -55,19 +55,19 @@ export const COMPONENT_REGISTRY = {
       props: {
         title: "What Our Clients Say",
         items: [
-          { content: "Shipitto has transformed our supply chain management.", author: "Jane Doe", role: "CEO at TechCorp" }
+          { content: "Shpitto has transformed our supply chain management.", author: "Jane Doe", role: "CEO at TechCorp" }
         ]
       }
     }
   },
-  Value_Propositions: {
+  ValuePropositions: {
     description: "Key benefits or features of the service.",
     props_schema: {
       title: "string (optional)",
       items: "Array of { title: string, description: string, icon: string (Lucide icon name) }"
     },
     example: {
-      type: "Value_Propositions",
+      type: "ValuePropositions",
       props: {
         title: "Why Choose Us",
         items: [
@@ -76,14 +76,14 @@ export const COMPONENT_REGISTRY = {
       }
     }
   },
-  Product_Preview: {
+  ProductPreview: {
     description: "Showcase products or services in a grid.",
     props_schema: {
       title: "string (optional)",
       items: "Array of { title: string, description: string, image: string, link: string, price: string (optional) }"
     },
     example: {
-      type: "Product_Preview",
+      type: "ProductPreview",
       props: {
         title: "Our Solutions",
         items: [
@@ -92,24 +92,24 @@ export const COMPONENT_REGISTRY = {
       }
     }
   },
-  Feature_Highlight: {
+  FeatureHighlight: {
     description: "Alternating image and text sections to highlight specific features or stories. Great for 'About Us' or detailed service descriptions.",
     props_schema: {
       title: "string",
       description: "string",
       image: "string (URL)",
       align: "'left' | 'right' (default: 'left' - image position)",
-      cta_text: "string (optional)",
-      cta_link: "string (optional)"
+      ctaText: "string (optional)",
+      ctaLink: "string (optional)"
     },
     example: {
-      type: "Feature_Highlight",
+      type: "FeatureHighlight",
       props: {
         title: "Sustainable Practices",
         description: "We are committed to reducing our carbon footprint through eco-friendly packaging and optimized routing algorithms.",
         image: "https://images.unsplash.com/photo-1542601906990-b4d3fb7d5fa5",
         align: "right",
-        cta_text: "Read Our Report"
+        ctaText: "Read Our Report"
       }
     }
   },
@@ -129,21 +129,21 @@ export const COMPONENT_REGISTRY = {
       }
     }
   },
-  CTA_Section: {
+  CTASection: {
     description: "A dedicated Call-to-Action section to drive conversions.",
     props_schema: {
       title: "string",
       description: "string (optional)",
-      cta_text: "string",
-      cta_link: "string (optional)",
+      ctaText: "string",
+      ctaLink: "string (optional)",
       theme: "'dark' | 'light' | 'primary' (default: 'primary')"
     },
     example: {
-      type: "CTA_Section",
+      type: "CTASection",
       props: {
         title: "Ready to Get Started?",
         description: "Join thousands of satisfied customers today.",
-        cta_text: "Create Account",
+        ctaText: "Create Account",
         theme: "primary"
       }
     }
@@ -196,7 +196,7 @@ ${JSON.stringify(info.example, null, 2)}
 
 ### GENERAL RULES:
 1. Every item in the 'content' array must have a "type" (string) and "props" (object).
-2. "type" MUST exactly match one of the registry keys above (e.g., use 'Product_Preview', not 'ProductPreview').
+2. "type" MUST exactly match one of the registry keys above (e.g., use 'ProductPreview', not 'Product_Preview').
 3. Props must contain only the fields specified in the schema.
 4. Do NOT wrap the JSON in Markdown backticks. Return ONLY the raw JSON array.
 `;

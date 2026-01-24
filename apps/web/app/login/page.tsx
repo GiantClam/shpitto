@@ -1,6 +1,6 @@
 'use client'
 
-import { createBrowserClient } from '@supabase/ssr'
+import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -13,10 +13,7 @@ export default function LoginPage() {
   const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null)
   const router = useRouter()
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = createClient()
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -71,12 +68,6 @@ export default function LoginPage() {
     setLoading(false)
   }
 
-  const handleDevLogin = () => {
-    document.cookie = "dev-auth=true; path=/; max-age=86400"; // 1 day
-    router.push('/builder');
-    router.refresh();
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
@@ -86,20 +77,11 @@ export default function LoginPage() {
                 <ArrowLeft className="w-5 h-5 text-slate-500" />
             </Link>
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">S</div>
-            <span className="font-bold text-xl text-slate-800">Shipitto</span>
+            <span className="font-bold text-xl text-slate-800">Shpitto</span>
           </div>
 
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Welcome Back</h2>
           <p className="text-slate-500 mb-8">Sign in to continue building smart.</p>
-
-          {process.env.NODE_ENV === 'development' && (
-            <button
-              onClick={handleDevLogin}
-              className="w-full mb-6 py-3 bg-amber-100 text-amber-800 font-bold rounded-xl hover:bg-amber-200 transition-all flex items-center justify-center gap-2 border border-amber-200"
-            >
-              🚧 Dev Mode: Instant Login
-            </button>
-          )}
 
           <button
             onClick={handleGoogleLogin}
@@ -165,14 +147,14 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 text-center text-sm">
-            <span className="text-slate-500">Don't have an account? </span>
+            <span className="text-slate-500">Don&apos;t have an account? </span>
             <button onClick={handleSignUp} disabled={loading} className="text-blue-600 font-bold hover:underline">
               Sign up
             </button>
           </div>
         </div>
         <div className="bg-slate-50 px-8 py-4 border-t border-slate-100 text-center text-xs text-slate-400">
-          By continuing, you agree to Shipitto's Terms of Service and Privacy Policy.
+          By continuing, you agree to Shpitto&apos;s Terms of Service and Privacy Policy.
         </div>
       </div>
     </div>

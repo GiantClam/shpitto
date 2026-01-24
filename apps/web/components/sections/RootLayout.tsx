@@ -12,20 +12,27 @@ export interface RootLayoutProps {
       primary?: string;
       accent?: string;
     };
+    style?: {
+      borderRadius?: string;
+      typography?: string;
+    };
   };
   title?: string;
   project_json?: any;
   onNavigate?: (path: string) => void;
+  seoSchema?: string;
 }
 
-export const RootLayout = ({ children, branding, title, project_json, onNavigate }: RootLayoutProps) => {
+export const RootLayout = ({ children, branding, title, project_json, onNavigate, seoSchema }: RootLayoutProps) => {
   const primaryColor = branding?.colors?.primary || "#2563eb";
+  const accentColor = branding?.colors?.accent || "#2563eb";
+  const brandFont = branding?.style?.typography;
   const siteName = branding?.name || "Vanguard Industrial";
   const pageTitle = title || siteName;
   
   const seoDescription = "Premium industrial solutions and manufacturing excellence. Factory-direct pricing and global logistics support.";
 
-  const jsonLd = {
+  const defaultJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": siteName,
@@ -36,6 +43,15 @@ export const RootLayout = ({ children, branding, title, project_json, onNavigate
       "https://twitter.com/vanguardtextile"
     ]
   };
+  
+  let jsonLd: any = defaultJsonLd;
+  if (typeof seoSchema === "string" && seoSchema.trim()) {
+    try {
+      jsonLd = JSON.parse(seoSchema);
+    } catch {
+      jsonLd = defaultJsonLd;
+    }
+  }
 
   const pages = project_json?.pages || [];
   const navLinks = pages.length > 0 
@@ -52,7 +68,14 @@ export const RootLayout = ({ children, branding, title, project_json, onNavigate
       ];
 
   return (
-    <div className="min-h-screen flex flex-col font-sans selection:bg-blue-100" style={{ "--primary": primaryColor } as any}>
+    <div
+      className="min-h-screen flex flex-col font-sans selection:bg-blue-100"
+      style={{
+        "--primary": primaryColor,
+        "--accent": accentColor,
+        fontFamily: brandFont || undefined,
+      } as any}
+    >
       <title>{pageTitle}</title>
       <meta name="description" content={seoDescription} />
       <script
@@ -89,13 +112,15 @@ export const RootLayout = ({ children, branding, title, project_json, onNavigate
                 }}
                 className={cn(
                     "px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200",
-                    link.url === "/" ? "text-blue-600 bg-blue-50/50" : "text-slate-600 hover:text-blue-600 hover:bg-slate-50"
+                    link.url === "/"
+                      ? "text-[var(--accent)] bg-[color:var(--accent)]/10"
+                      : "text-slate-600 hover:text-[var(--accent)] hover:bg-[color:var(--accent)]/10"
                 )}
               >
                 {link.label}
               </a>
             ))}
-            <button className="ml-4 bg-blue-600 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-blue-500/25 hover:bg-blue-700 hover:-translate-y-0.5 transition-all">
+            <button className="ml-4 bg-[var(--accent)] text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg hover:opacity-90 hover:-translate-y-0.5 transition-all">
                 Request Quote
             </button>
           </nav>

@@ -35,16 +35,11 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Allow dev mode bypass
-  const isDev = process.env.NODE_ENV === 'development'
-  const hasDevCookie = request.cookies.has('dev-auth')
-  const isDevAuth = isDev && hasDevCookie
-
-  if (request.nextUrl.pathname.startsWith('/builder') && !user && !isDevAuth) {
+  if (request.nextUrl.pathname.startsWith('/builder') && !user) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  if (request.nextUrl.pathname.startsWith('/login') && (user || isDevAuth)) {
+  if (request.nextUrl.pathname.startsWith('/login') && user) {
     return NextResponse.redirect(new URL('/builder', request.url))
   }
 

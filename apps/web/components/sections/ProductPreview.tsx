@@ -54,7 +54,7 @@ export const ProductPreview = ({ title, items }: ProductPreviewProps) => (
             )}
             icon={
               item.tag && (
-                <span className="inline-block rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                <span className="inline-block rounded-full bg-[color:var(--accent)]/15 px-3 py-1 text-xs font-semibold text-[var(--accent)]">
                   {item.tag}
                 </span>
               )

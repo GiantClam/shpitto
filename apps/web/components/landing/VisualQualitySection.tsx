@@ -1,69 +1,76 @@
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Palette, Layout, MousePointer2 } from "lucide-react";
 
 export function VisualQualitySection() {
-  const cases = [
+  const features = [
     {
-        title: "EcoTech Solutions",
-        category: "Renewable Energy",
-        image: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=800",
-        color: "bg-emerald-500"
+      title: "Adaptive Typography",
+      description: "Smart font pairing engine that ensures perfect readability.",
+      icon: <Layout className="w-6 h-6 text-blue-400" />,
+      colSpan: "md:col-span-2",
+      bg: "bg-gradient-to-br from-blue-900/50 to-slate-900/50"
     },
     {
-        title: "Apex Robotics",
-        category: "Industrial Automation",
-        image: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80&w=800",
-        color: "bg-blue-500"
+      title: "Micro-Interactions",
+      description: "Subtle animations that delight.",
+      icon: <MousePointer2 className="w-6 h-6 text-purple-400" />,
+      colSpan: "md:col-span-1",
+      bg: "bg-gradient-to-br from-purple-900/50 to-slate-900/50"
     },
     {
-        title: "Quantum Logistics",
-        category: "Global Supply Chain",
-        image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=800",
-        color: "bg-indigo-500"
+      title: "Color Harmony",
+      description: "AI-generated palettes that match your brand identity perfectly.",
+      icon: <Palette className="w-6 h-6 text-emerald-400" />,
+      colSpan: "md:col-span-1",
+      bg: "bg-gradient-to-br from-emerald-900/50 to-slate-900/50"
+    },
+    {
+      title: "Responsive Grids",
+      description: "Layouts that adapt fluidly to any device size.",
+      icon: <Layout className="w-6 h-6 text-orange-400" />,
+      colSpan: "md:col-span-2",
+      bg: "bg-gradient-to-br from-orange-900/50 to-slate-900/50"
     }
   ];
 
   return (
-    <section id="showcase" className="py-24 bg-slate-50">
+    <section id="showcase" className="py-32 bg-[#0A0F1C] relative">
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-blue-500/20 to-transparent"></div>
+      
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-16 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-bold uppercase tracking-wider mb-6">
+        <div className="text-center mb-20 max-w-3xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider mb-6">
              Design Excellence
           </div>
-          <h2 className="text-3xl lg:text-4xl font-bold mb-6 text-slate-900">4A Level Visual Experience</h2>
-          <p className="text-lg text-slate-600 leading-relaxed">
-            We don't just generate code; we generate design. Shipitto deep-learns from thousands of industry-leading examples
-            to ensure every generation meets top-tier design standards, balancing aesthetics with conversion rates.
+          <h2 className="text-4xl lg:text-5xl font-bold mb-6 text-white tracking-tight">Engineered for Aesthetics</h2>
+          <p className="text-lg text-slate-400 leading-relaxed">
+            Shpitto doesn't just write code; it composes experiences. Every generated site is built on a foundation of modern design principles.
           </p>
         </div>
         
-        <div className="grid md:grid-cols-3 gap-8">
-          {cases.map((item, i) => (
-            <div key={i} className="group cursor-pointer relative">
-              <div className="aspect-[3/4] rounded-2xl overflow-hidden mb-5 relative shadow-lg group-hover:shadow-2xl transition-all duration-500 group-hover:-translate-y-2">
-                <div className={`absolute inset-0 ${item.color} opacity-0 group-hover:opacity-20 transition-opacity z-10 mix-blend-multiply`}></div>
-                <img 
-                    src={item.image} 
-                    alt={item.title} 
-                    className="object-cover w-full h-full transform group-hover:scale-110 transition-transform duration-700"
-                />
-                <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black/80 to-transparent z-20 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                    <span className="text-xs font-bold text-white/80 uppercase tracking-wider mb-1 block">{item.category}</span>
-                    <div className="flex items-center justify-between">
-                        <h3 className="text-xl font-bold text-white">{item.title}</h3>
-                        <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity delay-100">
-                            <ArrowUpRight className="w-4 h-4" />
-                        </div>
+        <div className="grid md:grid-cols-3 gap-6">
+          {features.map((item, i) => (
+            <div 
+                key={i} 
+                className={`${item.colSpan} group relative rounded-3xl overflow-hidden border border-white/5 hover:border-white/10 transition-all duration-500`}
+            >
+              <div className={`absolute inset-0 ${item.bg} opacity-20 group-hover:opacity-30 transition-opacity`}></div>
+              <div className="absolute inset-0 backdrop-blur-3xl -z-10"></div>
+              
+              <div className="relative p-8 h-full flex flex-col justify-between min-h-[240px]">
+                <div className="mb-8">
+                    <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
+                        {item.icon}
                     </div>
+                    <h3 className="text-2xl font-bold text-white mb-3">{item.title}</h3>
+                    <p className="text-slate-400 text-lg leading-relaxed">{item.description}</p>
+                </div>
+                
+                <div className="flex items-center gap-2 text-sm font-bold text-white/50 group-hover:text-white transition-colors">
+                    Learn more <ArrowUpRight className="w-4 h-4" />
                 </div>
               </div>
             </div>
           ))}
-        </div>
-        
-        <div className="mt-16 text-center">
-            <button className="px-8 py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-full hover:bg-slate-50 transition-colors">
-                Explore More Examples
-            </button>
         </div>
       </div>
     </section>

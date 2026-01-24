@@ -15,7 +15,7 @@ export function BlogSection() {
     {
       title: "Case Study: How Apex Robotics Doubled Leads in 30 Days",
       slug: "apex-robotics-case-study",
-      excerpt: "A deep dive into how a robotics startup used Shipitto to rebuild their site and optimize for conversion speed.",
+      excerpt: "A deep dive into how a robotics startup used Shpitto to rebuild their site and optimize for conversion speed.",
       date: "Nov 02, 2025",
       author: "Mike Ross",
       category: "Case Study",

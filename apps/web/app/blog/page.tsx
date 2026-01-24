@@ -15,7 +15,7 @@ export default function BlogIndexPage() {
     {
       title: "Case Study: How Apex Robotics Doubled Leads in 30 Days",
       slug: "apex-robotics-case-study",
-      excerpt: "A deep dive into how a robotics startup used Shipitto to rebuild their site and optimize for conversion speed. By implementing our 'Clarity & Comparison' layout strategy, Apex was able to reduce bounce rates by 45% and increase quote requests by 120%.",
+      excerpt: "A deep dive into how a robotics startup used Shpitto to rebuild their site and optimize for conversion speed. By implementing our 'Clarity & Comparison' layout strategy, Apex was able to reduce bounce rates by 45% and increase quote requests by 120%.",
       date: "Nov 02, 2025",
       author: "Mike Ross",
       category: "Case Study",
@@ -58,7 +58,7 @@ export default function BlogIndexPage() {
             <Link href="/" className="p-2 -ml-2 hover:bg-slate-100 rounded-full transition-colors">
                 <ArrowLeft className="w-5 h-5 text-slate-500" />
             </Link>
-            <span className="font-bold text-xl tracking-tight">Shipitto Blog</span>
+            <span className="font-bold text-xl tracking-tight">Shpitto Blog</span>
           </div>
           <Link href="/login" className="px-5 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-full hover:bg-blue-700 transition-all shadow-lg shadow-blue-200">
              Start Building
@@ -116,7 +116,7 @@ export default function BlogIndexPage() {
       </main>
 
       <footer className="py-12 bg-slate-50 border-t border-slate-200 mt-20 text-center text-slate-500 text-sm">
-        <p>© 2026 Shipitto Inc. All rights reserved.</p>
+        <p>© 2026 Shpitto Inc. All rights reserved.</p>
       </footer>
     </div>
   );

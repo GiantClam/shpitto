@@ -26,7 +26,7 @@ export const TEST_PROJECT_LuxeWeave = {
             props: {
               title: "Crafting the Future of Industrial Textiles",
               description: "High-performance fabrics engineered for durability, safety, and sustainability.",
-              cta_text: "Explore Products",
+              ctaText: "Explore Products",
               theme: "dark",
               effect: "retro-grid"
             }
@@ -44,7 +44,7 @@ export const TEST_PROJECT_LuxeWeave = {
           },
           {
             id: "products-1",
-            type: "Product_Preview",
+            type: "ProductPreview",
             props: {
               title: "Our Specialized Solutions",
               items: [

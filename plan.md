@@ -1,15 +1,15 @@
 # Implementation Plan - Database Schema Rename
 
-**Objective:** Rename all database tables with `shipitto_` prefix to avoid conflicts and improve namespacing.
+**Objective:** Rename all database tables with `shpitto_` prefix to avoid conflicts and improve namespacing.
 
 ## Phase 1: Schema Refactoring
 
 - [ ] **Task 1: Rename Tables in Schema Definition**
   - **Files**: `packages/db/src/schema.ts`
   - **Steps**:
-    1. Rename table `projects` to `shipitto_projects`.
-    2. Rename table `deployments` to `shipitto_deployments`.
-    3. Update foreign key references in `shipitto_deployments` to point to `shipitto_projects`.
+    1. Rename table `projects` to `shpitto_projects`.
+    2. Rename table `deployments` to `shpitto_deployments`.
+    3. Update foreign key references in `shpitto_deployments` to point to `shpitto_projects`.
   - **Verification**: `pnpm build` in `packages/db` should pass without type errors.
 
 - [ ] **Task 2: Migration Generation (If applicable)**

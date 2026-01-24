@@ -11,6 +11,8 @@ import dotenv from "dotenv";
 import { updateTaskPlan, logLinterFinding, readFromMemory } from "./persistence";
 import { saveProjectState, recordDeployment } from "./db";
 import { COMPONENT_REGISTRY, REGISTRY_PROMPT_SNIPPET } from "./registry";
+import { applyAtomicPatch, generateSkeletonProject, injectOrganizationJsonLd, normalizeComponentType, stitchTracks } from "./engine";
+import { configureUndiciProxyFromEnv, createHttpsProxyAgentFromEnv, isRegionDeniedError } from "./network";
 import { CloudflareClient } from "../cloudflare";
 import { Bundler } from "../bundler";
 
@@ -28,6 +30,8 @@ const envPaths = [
 for (const envPath of envPaths) {
   dotenv.config({ path: envPath });
 }
+
+configureUndiciProxyFromEnv();
 
 console.log("LLM Configuration:");
 console.log("- Model:", process.env.LLM_MODEL);
@@ -113,15 +117,16 @@ const parseLLMJson = (content: string) => {
       });
   }
 
-  // D. 修复组件名称 (驼峰转下划线)
+  // D. 修复组件名称 (智能模糊匹配 + ID 生成)
     if (Array.isArray(json.pages)) {
         json.pages.forEach((page: any) => {
             if (page.puckData?.content) {
                 page.puckData.content = page.puckData.content.map((comp: any) => {
-                    if (comp.type === "ProductPreview") comp.type = "Product_Preview";
-                    if (comp.type === "ValuePropositions") comp.type = "Value_Propositions";
-                    if (comp.type === "WorkflowStepper") comp.type = "Workflow_Stepper";
-                    
+                    // Auto-fix component name using fuzzy map
+                    if (comp.type) {
+                        comp.type = normalizeComponentType(comp.type);
+                    }
+
                     // E. 确保每个组件都有唯一的 ID (Puck 渲染需要 ID 作为 Key)
                     // 修正：如果组件已经有 id (来自 LLM)，则保留；如果没有才生成。
                     // 同时确保 id 不在 props 里面，而是在顶层。
@@ -159,6 +164,12 @@ export interface AgentState {
   phase: string; 
   project_outline?: string;
   project_json?: any;   // Final Puck JSON (ProjectSchema)
+  track_results?: any[];
+  patch_request?: string;
+  sitemap?: any;
+  industry?: string;
+  theme?: { primaryColor: string; mode: "dark" | "light" } | undefined;
+  history?: string[];
   pages_to_expand?: string[]; // 待生成的页面路径队列
   current_page_index: number; // 当前正在处理第几个页面
   seo_keywords?: string[]; // 全站关键词策略
@@ -175,13 +186,14 @@ export interface AgentState {
 
 const getModel = () => {
   const apiKey = process.env.OPENROUTER_API_KEY;
-  const modelName = process.env.LLM_MODEL || "google/gemini-2.0-flash-exp:free";
+  const modelName = process.env.LLM_MODEL || "anthropic/claude-sonnet-4.5";
 
   if (!apiKey) {
     throw new Error("OPENROUTER_API_KEY is missing");
   }
 
   // 关键：强制让 LangChain 认为这是一个 OpenAI 接口，以避免 Provider 校验失败
+  const httpAgent = createHttpsProxyAgentFromEnv();
   return new ChatOpenAI({
     modelName: modelName,
     openAIApiKey: apiKey,
@@ -191,10 +203,32 @@ const getModel = () => {
         "HTTP-Referer": "https://shpitto.com",
         "X-Title": "Shpitto",
       },
+      ...(httpAgent ? { httpAgent } : {}),
     },
     temperature: 0,
   });
 };
+
+const getModelWithName = (modelName: string, temperature = 0) => {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) throw new Error("OPENROUTER_API_KEY is missing");
+  const httpAgent = createHttpsProxyAgentFromEnv();
+  return new ChatOpenAI({
+    modelName,
+    openAIApiKey: apiKey,
+    configuration: {
+      baseURL: "https://openrouter.ai/api/v1",
+      defaultHeaders: {
+        "HTTP-Referer": "https://shpitto.com",
+        "X-Title": "Shpitto",
+      },
+      ...(httpAgent ? { httpAgent } : {}),
+    },
+    temperature,
+  });
+};
+
+const getFallbackModelName = () => process.env.LLM_MODEL_FALLBACK || "anthropic/claude-sonnet-4.5";
 
 // --- Constants ---
 
@@ -210,6 +244,30 @@ const ConversationIntentSchema = z.object({
 // 1. Conversation Node: Gathers requirements and proposes Outline
 const conversationNode = async (state: AgentState): Promise<Partial<AgentState>> => {
   console.log(`--- Conversation Node Started (Phase: ${state.phase}) ---`);
+  const lastHuman = [...state.messages].reverse().find((m) => m instanceof HumanMessage) as HumanMessage | undefined;
+  const lastHumanText = lastHuman?.content?.toString?.() || "";
+  const lastHumanLower = lastHumanText.toLowerCase();
+
+  if (state.phase === "end" && state.project_json && lastHumanText) {
+    const isDeployRequest =
+      lastHumanLower.includes("deploy") ||
+      lastHumanLower.includes("publish") ||
+      lastHumanLower.includes("发布") ||
+      lastHumanLower.includes("部署");
+
+    if (!isDeployRequest) {
+      return {
+        messages: [
+          new AIMessage({
+            id: generateMsgId(),
+            content: "收到，我会基于当前站点进行增量修改并保持其他部分不变。",
+          }),
+        ],
+        phase: "patch",
+        patch_request: lastHumanText,
+      };
+    }
+  }
   const model = getModel();
   
   // 使用结构化输出以确保意图识别的准确性
@@ -319,8 +377,8 @@ const conversationNode = async (state: AgentState): Promise<Partial<AgentState>>
     let finalMessage = displayMessage;
 
     if (intent === "confirm_build") {
-        nextPhase = "architect";
-        console.log("🚀 [System] User approved plan. Transitioning to Architect phase...");
+        nextPhase = "skeleton";
+        console.log("🚀 [System] User approved plan. Transitioning to Skeleton phase...");
     } else if (intent === "deploy" && state.phase === "end" && !state.deployed_url) {
         nextPhase = "deploy";
         console.log("🚢 [System] User requested deployment. Transitioning to Deploy phase...");
@@ -336,22 +394,14 @@ const conversationNode = async (state: AgentState): Promise<Partial<AgentState>>
         if (outline && !finalMessage.includes(outline)) {
             finalMessage += `\n\n${outline}`;
         }
-        finalMessage += "\n\n如果您对当前的规划满意，请点击下方的 **Build It** 开始生成预览。";
+        finalMessage += "\n\n如果您对当前的规划满意，请告知我开始生成预览。";
     } else {
         nextPhase = "conversation";
     }
 
     let actions: any[] | undefined = undefined;
 
-    if (state.phase === "conversation" && (intent === "propose_plan" || (intent === "chat" && state.project_outline))) {
-         actions = [
-             {
-                 text: "Build It",
-                 payload: "build it",
-                 type: "button"
-             }
-         ];
-     } else if (state.phase === "end" && !state.deployed_url) {
+    if (state.phase === "end" && !state.deployed_url) {
          actions = [
              {
                  text: "Deploy to Cloudflare",
@@ -391,14 +441,81 @@ const conversationNode = async (state: AgentState): Promise<Partial<AgentState>>
       project_outline: outline
     };
   } catch (error) {
+    if (isRegionDeniedError(error)) {
+      const fallbackModelName = getFallbackModelName();
+      try {
+        const fallbackModel = getModelWithName(fallbackModelName, 0);
+        const fallbackStructured = fallbackModel.withStructuredOutput(ConversationIntentSchema as any);
+        const result = await fallbackStructured.invoke(messages);
+
+        const intent = result.intent;
+        const displayMessage = result.message;
+        const outline = result.plan_outline || state.project_outline;
+
+        let nextPhase = state.phase;
+        let finalMessage = displayMessage;
+
+        if (intent === "confirm_build") {
+          nextPhase = "skeleton";
+        } else if (intent === "deploy" && state.phase === "end" && !state.deployed_url) {
+          nextPhase = "deploy";
+        } else if (intent === "deploy" && state.phase === "end" && state.deployed_url) {
+          nextPhase = "conversation";
+          finalMessage = "✅ 网站已经部署成功！您可以通过上面的链接访问。";
+        } else if (intent === "propose_plan") {
+          nextPhase = "conversation";
+          if (outline && !finalMessage.includes(outline)) {
+            finalMessage += `\n\n${outline}`;
+          }
+          finalMessage += "\n\n如果您对当前的规划满意，请告知我开始生成预览。";
+        } else {
+          nextPhase = "conversation";
+        }
+
+        let actions: any[] | undefined = undefined;
+        if (state.phase === "end" && !state.deployed_url) {
+          actions = [{ text: "Deploy to Cloudflare", payload: "deploy", type: "button" }];
+        } else if (state.deployed_url) {
+          actions = [{ text: "View Live Site", payload: state.deployed_url, type: "url" }];
+        }
+
+        return {
+          messages: [
+            new AIMessage({
+              id: generateMsgId(),
+              content: finalMessage,
+              additional_kwargs: {
+                outline: intent === "propose_plan" ? outline : undefined,
+                actions,
+              },
+              tool_calls: actions
+                ? [
+                    {
+                      id: `call_${generateMsgId()}`,
+                      name: "presentActions",
+                      args: { actions },
+                    },
+                  ]
+                : undefined,
+            }),
+          ],
+          phase: nextPhase,
+          project_outline: outline,
+        };
+      } catch (fallbackErr) {
+        console.error("❌ Conversation Node Fallback Error:", fallbackErr);
+      }
+    }
+
     console.error("❌ Conversation Node Error:", error);
-    // Fallback to simple chat if structured output fails
     return {
-        messages: [new AIMessage({ 
-            id: generateMsgId(),
-            content: "I encountered an error processing your request. Could you please repeat that?" 
-        })],
-        phase: "conversation"
+      messages: [
+        new AIMessage({
+          id: generateMsgId(),
+          content: "我这边调用模型时遇到错误（可能是区域限制）。你可以在 .env 里设置 LLM_MODEL_FALLBACK 或配置代理后重试。",
+        }),
+      ],
+      phase: "conversation",
     };
   }
 };
@@ -489,11 +606,33 @@ const skeletonNode = async (state: AgentState): Promise<Partial<AgentState>> => 
     console.error("Skeleton JSON Parse Error", e);
     return {
       validation_error: `Skeleton parsing failed: ${e instanceof Error ? e.message : String(e)}`,
-      phase: "architect"
+      phase: "conversation"
     };
   }
 
   const pagesToExpand = skeleton?.pages?.map((p: any) => p.path) || [];
+  const safePaths = pagesToExpand.length ? pagesToExpand : ["/"];
+  const primary = skeleton?.branding?.colors?.primary || "#0052FF";
+  const accent = skeleton?.branding?.colors?.accent || "#22C55E";
+  const brandingName = skeleton?.branding?.name || "Shpitto";
+  const skeletonWithIds = generateSkeletonProject({
+    brandingName,
+    primary,
+    accent,
+    paths: safePaths,
+  });
+  const contentByPath = new Map<string, any[]>(
+    (skeletonWithIds.pages || []).map((p: any) => [p.path, p.puckData?.content || []])
+  );
+
+  skeleton.pages = (skeleton.pages || []).map((p: any) => ({
+    ...p,
+    puckData: {
+      ...(p.puckData || {}),
+      root: p.puckData?.root || { props: {} },
+      content: contentByPath.get(p.path) || p.puckData?.content || [],
+    },
+  }));
   
   // Manus-style Persistence: Store the plan on disk
   await updateTaskPlan(`
@@ -510,9 +649,249 @@ const skeletonNode = async (state: AgentState): Promise<Partial<AgentState>> => 
   return {
     messages: [new AIMessage({ id: generateMsgId(), content: "🏗️ 正在设计 SEO 优化的网站架构..." })],
     project_json: skeleton,
-    pages_to_expand: pagesToExpand,
+    pages_to_expand: [],
     current_page_index: 0,
-    phase: "expanding"
+    sitemap: pagesToExpand,
+    history: [],
+    phase: "parallel"
+  };
+};
+
+const parallelNode = async (state: AgentState): Promise<Partial<AgentState>> => {
+  console.log("--- Parallel Node Started (3-track stitching) ---");
+  const skeleton = state.project_json;
+  if (!skeleton) {
+    return { phase: "conversation" };
+  }
+
+  const architectModelName = process.env.LLM_MODEL_ARCHITECT || process.env.LLM_MODEL || "anthropic/claude-sonnet-4.5";
+  const copyModelName = process.env.LLM_MODEL_COPYWRITER || process.env.LLM_MODEL || "anthropic/claude-sonnet-4.5";
+  const styleModelName = process.env.LLM_MODEL_STYLIST || process.env.LLM_MODEL || "anthropic/claude-sonnet-4.5";
+
+  const architectModel = getModelWithName(architectModelName, 0);
+  const copyModel = getModelWithName(copyModelName, 0.2);
+  const styleModel = getModelWithName(styleModelName, 0.2);
+
+  const skeletonJson = JSON.stringify(skeleton, null, 2);
+
+  const architectPrompt = `你是 Track A: Architect。你的任务是在不改变页面 path 与组件 id 的前提下，生成 100% 合法的 ProjectSchema JSON。
+
+约束：
+- 必须保留并复用输入 skeleton 里的 projectId、branding、pages/path、以及每个组件的 id。
+- 不要新增或删除组件；保持 skeleton 中组件的数量、顺序和 type 不变。
+- 组件 type 必须严格使用以下集合：Hero, Stats, Testimonials, ValuePropositions, ProductPreview, FeatureHighlight, CTASection, FAQ, Logos
+- props 字段必须符合 schema，字段名使用 camelCase（例如 ctaText/ctaLink，不要用 cta_text/cta_link）。
+- 返回完整 JSON，不要 Markdown。
+
+ProjectSchema:
+${SCHEMA_STRING}
+
+输入 Skeleton JSON:
+${skeletonJson}`;
+
+  const copyPrompt = `你是 Track B: Copywriter。你只输出按组件 id 寻址的文案补丁，不要输出完整页面结构。
+
+输出 JSON 格式：
+{
+  "payload": {
+    "hero_01": { "title": "...", "subtitle": "...", "description": "...", "ctaText": "..." },
+    "value_propositions_01": { "title": "...", "items": [ ... ] }
+  }
+}
+
+约束：
+- 只能输出与文案相关的字段（title/subtitle/description/items[*].title/items[*].description/question/answer 等）。
+- 不要输出颜色、theme、effect、align、image、logo。
+- 返回 JSON，不要 Markdown。
+
+输入 Skeleton JSON:
+${skeletonJson}`;
+
+  const stylePrompt = `你是 Track C: Stylist。你只输出按组件 id 寻址的视觉与动效补丁，不要输出完整页面结构。
+
+输出 JSON 格式：
+{
+  "payload": {
+    "hero_01": { "theme": "dark", "effect": "retro-grid", "align": "text-center", "image": "https://..." },
+    "feature_highlight_01": { "align": "right", "image": "https://..." }
+  }
+}
+
+约束：
+- 只能输出与视觉相关字段（theme/effect/align/image/icon/logo 等）。
+- 文案字段留给 Copywriter，不要写长段落。
+- 返回 JSON，不要 Markdown。
+
+输入 Skeleton JSON:
+${skeletonJson}`;
+
+  const [architectRaw, copyRaw, styleRaw] = await Promise.all([
+    architectModel.invoke([new SystemMessage(architectPrompt)]),
+    copyModel.invoke([new SystemMessage(copyPrompt)]),
+    styleModel.invoke([new SystemMessage(stylePrompt)]),
+  ]);
+
+  let architectJson: any = skeleton;
+  let copyJson: any = { payload: {} };
+  let styleJson: any = { payload: {} };
+
+  try {
+    architectJson = parseLLMJson(architectRaw.content.toString());
+  } catch (e) {
+    console.error("Architect JSON Parse Error", e);
+  }
+
+  try {
+    copyJson = parseLLMJson(copyRaw.content.toString());
+  } catch (e) {
+    console.error("Copywriter JSON Parse Error", e);
+  }
+
+  try {
+    styleJson = parseLLMJson(styleRaw.content.toString());
+  } catch (e) {
+    console.error("Stylist JSON Parse Error", e);
+  }
+
+  return {
+    messages: [new AIMessage({ id: generateMsgId(), content: "🧵 正在进行三路协作生成与缝合..." })],
+    project_json: architectJson,
+    track_results: [copyJson, styleJson],
+    phase: "stitcher",
+  };
+};
+
+const stitcherNode = async (state: AgentState): Promise<Partial<AgentState>> => {
+  console.log("--- Stitcher Node Started ---");
+  if (!state.project_json) return { phase: "conversation" };
+  const merged = stitchTracks(state.project_json, state.track_results || []);
+  return {
+    messages: [new AIMessage({ id: generateMsgId(), content: "🧩 已完成属性缝合，正在进行语义对齐与硬修复..." })],
+    project_json: merged,
+    phase: "liner",
+  };
+};
+
+const linerNode = async (state: AgentState): Promise<Partial<AgentState>> => {
+  console.log("--- Liner Node Started ---");
+  if (!state.project_json) return { phase: "conversation" };
+
+  const project = structuredClone(state.project_json);
+
+  if (!project.branding?.style?.typography) {
+    project.branding = {
+      ...project.branding,
+      style: { ...(project.branding?.style || {}), typography: "Inter", borderRadius: project.branding?.style?.borderRadius || "sm" },
+    };
+  }
+
+  if (!project.branding?.colors?.primary || !/^#[0-9A-F]{6}$/i.test(project.branding.colors.primary)) {
+    project.branding = { ...project.branding, colors: { ...(project.branding?.colors || {}), primary: "#0052FF" } };
+  }
+  if (!project.branding?.colors?.accent || !/^#[0-9A-F]{6}$/i.test(project.branding.colors.accent)) {
+    project.branding = { ...project.branding, colors: { ...(project.branding?.colors || {}), accent: "#22C55E" } };
+  }
+
+  for (const page of project.pages || []) {
+    page.seo = page.seo || { title: `${project.branding?.name || "Website"} | ${page.path}`, description: "A professional website." };
+    page.puckData = page.puckData || { root: { props: {} }, content: [] };
+    page.puckData.root = page.puckData.root || { props: {} };
+    page.puckData.root.props = page.puckData.root.props || {};
+    const content = Array.isArray(page.puckData.content) ? page.puckData.content : [];
+
+    page.puckData.content = content.map((comp: any) => {
+      const next = { ...comp };
+      next.type = normalizeComponentType(next.type);
+      next.id = next.id || next.props?.id || generateMsgId();
+      next.props = next.props || {};
+
+      if (next.props.cta_text && !next.props.ctaText) next.props.ctaText = next.props.cta_text;
+      if (next.props.cta_link && !next.props.ctaLink) next.props.ctaLink = next.props.cta_link;
+
+      if (next.type === "Hero" && !next.props.title) next.props.title = "Welcome";
+      if (next.type === "Stats" && (!Array.isArray(next.props.items) || next.props.items.length === 0)) {
+        next.props.items = [{ label: "Metric", value: "0", suffix: "" }];
+      }
+      if (next.type === "Testimonials" && (!Array.isArray(next.props.items) || next.props.items.length === 0)) {
+        next.props.items = [{ content: "Great results.", author: "Customer", role: "" }];
+      }
+      if (next.type === "ValuePropositions" && (!Array.isArray(next.props.items) || next.props.items.length === 0)) {
+        next.props.items = [{ title: "Benefit", description: "Description", icon: "Check" }];
+      }
+      if (next.type === "ProductPreview" && (!Array.isArray(next.props.items) || next.props.items.length === 0)) {
+        next.props.items = [{ title: "Item", description: "Description", image: "", tag: "" }];
+      }
+      if (next.type === "FAQ" && (!Array.isArray(next.props.items) || next.props.items.length === 0)) {
+        next.props.items = [{ question: "Question", answer: "Answer" }];
+      }
+
+      return next;
+    });
+  }
+
+  const validation = ProjectSchema.safeParse(project);
+  const validationError = validation.success ? undefined : validation.error.message;
+
+  return {
+    project_json: project,
+    validation_error: validationError,
+    phase: "seo_optimization",
+  };
+};
+
+const patchNode = async (state: AgentState): Promise<Partial<AgentState>> => {
+  console.log("--- Patch Node Started ---");
+  if (!state.project_json || !state.patch_request) {
+    return { phase: "end" };
+  }
+
+  const model = getModel();
+  const systemPrompt = `你是 Patch Node。你的任务是把用户的修改指令转成“原子化寻址更新”。
+
+输入：
+- 当前 Project JSON（保持不变的部分不要动）
+- 用户指令
+
+输出 JSON 格式：
+{
+  "patches": [
+    { "id": "hero_01", "path": "props.title", "value": "..." }
+  ]
+}
+
+约束：
+- 只能修改已存在的组件 id。
+- path 使用点路径，默认从组件对象开始（例如 props.title / props.items.0.title）。
+- 返回 JSON，不要 Markdown。
+
+当前 Project JSON:
+${JSON.stringify(state.project_json)}
+
+用户指令:
+${state.patch_request}`;
+
+  const resp = await model.invoke([new SystemMessage(systemPrompt)]);
+  let patches: any[] = [];
+  try {
+    const parsed = parseLLMJson(resp.content.toString());
+    patches = Array.isArray(parsed.patches) ? parsed.patches : [];
+  } catch (e) {
+    console.error("Patch JSON Parse Error", e);
+  }
+
+  let nextProject = state.project_json;
+  for (const p of patches) {
+    if (p?.id && typeof p?.path === "string") {
+      nextProject = applyAtomicPatch(nextProject, p);
+    }
+  }
+
+  return {
+    messages: [new AIMessage({ id: generateMsgId(), content: "✅ 已应用增量修改，正在重新校验并更新预览..." })],
+    project_json: nextProject,
+    patch_request: undefined,
+    history: [...(state.history || []), state.patch_request],
+    phase: "liner",
   };
 };
 
@@ -545,18 +924,18 @@ const pageExpansionNode = async (state: AgentState): Promise<Partial<AgentState>
     case "LANDING":
       layoutStrategyPrompt = `
       **STRATEGY: CONVERSION & AUTHORITY**
-      - Structure: High-impact Hero -> Social Proof (Logos/Stats) -> Value Props -> Feature Highlights (Alternating) -> CTA.
+      - Structure: High-impact Hero -> Social Proof (Logos/Stats) -> Value Props -> Feature Highlights (FeatureHighlight) -> Product Preview -> Testimonials -> CTA (CTASection).
       - Goal: Convince the user to take action immediately.
-      - Components: Use 'Hero' (Recommended), 'Stats', 'Logos', 'Feature_Highlight', 'CTA_Section'.
+      - Components: Use 'Hero', 'Logos', 'Stats', 'ValuePropositions', 'FeatureHighlight', 'ProductPreview', 'Testimonials', 'CTASection'.
       `;
       relevantExampleKey = "Type A: Landing Page";
       break;
     case "ABOUT":
       layoutStrategyPrompt = `
       **STRATEGY: NARRATIVE & TRUST**
-      - Structure: Emotional Hero (Optional) or Title Section -> Mission Statement (Content_Block) -> History/Values (Feature_Highlight) -> Team/Testimonials -> CTA.
+      - Structure: Mission Statement (ValuePropositions) -> History/Values (FeatureHighlight) -> Team (ProductPreview) -> Testimonials -> CTA.
       - Goal: Build emotional connection and trust.
-      - Components: Use 'Hero' (Optional), 'Content_Block', 'Feature_Highlight', 'Testimonials', 'Logos'.
+      - Components: Use 'ValuePropositions', 'FeatureHighlight', 'ProductPreview' (for Team), 'Testimonials', 'CTASection'.
       `;
       relevantExampleKey = "Type B: About Us Page";
       break;
@@ -564,51 +943,59 @@ const pageExpansionNode = async (state: AgentState): Promise<Partial<AgentState>
     case "SERVICES":
       layoutStrategyPrompt = `
       **STRATEGY: CLARITY & COMPARISON**
-      - Structure: Descriptive Hero or Header -> Product Grid (Product_Preview) -> Detailed Features (Feature_Highlight) -> FAQ -> CTA.
+      - Structure: Descriptive Hero -> Product Grid (ProductPreview) -> Detailed Features (FeatureHighlight) -> FAQ -> CTA.
       - Goal: Help user find the right solution and answer objections.
-      - Components: Use 'Hero' (Optional), 'Product_Preview', 'Feature_Highlight', 'FAQ', 'CTA_Section'.
+      - Components: Use 'Hero', 'ProductPreview', 'FeatureHighlight', 'FAQ', 'CTASection'.
       `;
       relevantExampleKey = "Type C: Services/Product Page";
       break;
     case "PRICING":
       layoutStrategyPrompt = `
       **STRATEGY: TRANSPARENCY & VALUE**
-      - Structure: Clear Header (Hero Optional) -> Pricing Cards (via Product_Preview or specialized content) -> Comparison Table (Content_Block) -> FAQ -> CTA.
+      - Structure: Clear Header (Hero) -> Pricing Cards (ProductPreview) -> Comparison (ValuePropositions) -> FAQ -> CTA.
       - Goal: Clear value proposition and easy decision making.
-      - Components: Use 'Hero' (Optional), 'Product_Preview' (repurposed for pricing tiers), 'FAQ', 'CTA_Section'.
+      - Components: Use 'Hero', 'ProductPreview' (repurposed for pricing tiers), 'ValuePropositions', 'FAQ', 'CTASection'.
       `;
       break;
     case "TEAM":
       layoutStrategyPrompt = `
       **STRATEGY: HUMAN CONNECTION**
-      - Structure: Team Header -> Leadership Grid (Product_Preview/Feature_Highlight) -> Culture/Values (Content_Block) -> Careers CTA.
+      - Structure: Leadership Grid (ProductPreview) -> Culture/Values (FeatureHighlight) -> Careers CTA.
       - Goal: Showcase the people behind the brand.
-      - Components: Use 'Hero' (Optional), 'Product_Preview' (for team members), 'Content_Block', 'CTA_Section'.
+      - Components: Use 'ProductPreview' (for team members), 'FeatureHighlight', 'CTASection'.
       `;
       break;
     case "BLOG":
       layoutStrategyPrompt = `
       **STRATEGY: THOUGHT LEADERSHIP**
-      - Structure: Blog Header -> Featured Articles (Product_Preview) -> Newsletter Signup (CTA_Section).
+      - Structure: Featured Articles (ProductPreview) -> Newsletter CTA.
       - Goal: Share knowledge and engage users.
-      - Components: Use 'Hero' (Optional), 'Product_Preview' (for articles), 'CTA_Section'.
+      - Components: Use 'ProductPreview' (for articles), 'CTASection'.
       `;
       break;
     case "CAREERS":
       layoutStrategyPrompt = `
       **STRATEGY: ATTRACT TALENT**
-      - Structure: Culture Header -> Benefits (Value_Propositions) -> Open Roles (Product_Preview/Content_Block) -> CTA.
+      - Structure: Benefits (ValuePropositions) -> Open Roles (ProductPreview) -> CTA.
       - Goal: Attract top talent.
-      - Components: Use 'Hero' (Optional), 'Value_Propositions', 'Product_Preview', 'CTA_Section'.
+      - Components: Use 'ValuePropositions', 'ProductPreview', 'CTASection'.
+      `;
+      break;
+    case "CONTACT":
+      layoutStrategyPrompt = `
+      **STRATEGY: DIRECT RESPONSE**
+      - Structure: Contact Info (FeatureHighlight) -> FAQs (FAQ) -> CTA.
+      - Goal: Make it easy to get in touch quickly.
+      - Components: Use 'FeatureHighlight', 'FAQ', 'CTASection'.
       `;
       break;
     default:
     case "GENERAL":
       layoutStrategyPrompt = `
       **STRATEGY: INFORMATIONAL**
-      - Structure: Simple Header (NO Hero) -> Content Body (Content_Block) -> CTA.
+      - Structure: Content Body (FeatureHighlight/ValuePropositions) -> CTA.
       - Goal: Provide information clearly.
-      - Components: Use 'Content_Block', 'CTA_Section'. Do NOT use 'Hero' unless absolutely necessary.
+      - Components: Use 'FeatureHighlight', 'ValuePropositions', 'CTASection'.
       `;
       break;
   }
@@ -744,16 +1131,17 @@ const seoNode = async (state: AgentState): Promise<Partial<AgentState>> => {
         });
 
         projectJson.pages = updatedPages;
+        const injected = injectOrganizationJsonLd(projectJson);
 
         return {
             messages: [new AIMessage({ id: generateMsgId(), content: "🔍 已完成全站 SEO 深度优化与元数据精修。" })],
-            project_json: projectJson,
+            project_json: injected,
             seo_keywords: seoResult.global_keywords,
             phase: "linter"
         };
     } catch (e) {
         console.error("SEO Node Error", e);
-        return { phase: "linter" }; // 如果 SEO 优化失败，直接跳到 Linter
+        return { project_json: state.project_json ? injectOrganizationJsonLd(state.project_json) : undefined, phase: "linter" }; // 如果 SEO 优化失败，直接跳到 Linter
     }
 };
 
@@ -793,10 +1181,10 @@ const deployNode = async (state: AgentState): Promise<Partial<AgentState>> => {
         }
         
         // Ensure name isn't too long (Cloudflare limit 58 chars)
-        // Prefix "shipitto-" (9 chars) + suffix (9 chars) = 18 chars reserved.
+        // Prefix "shpitto-" (9 chars) + suffix (9 chars) = 18 chars reserved.
         // Max name length = 40.
         const safeName = sanitizedName.slice(0, 35);
-        const projectName = `shipitto-${safeName}${projectSuffix}`;
+        const projectName = `shpitto-${safeName}${projectSuffix}`;
         
         console.log(`[Deploy] Target Project: ${projectName}`);
         
@@ -901,138 +1289,48 @@ const deployNode = async (state: AgentState): Promise<Partial<AgentState>> => {
     }
 };
 
-// 5. Linter Node: Deep validation and self-correction logic
 const linterNode = async (state: AgentState): Promise<Partial<AgentState>> => {
-    console.log("--- Linter Node Started (Self-Correction) ---");
-    if (!state.project_json) {
-        return { 
-            messages: [new AIMessage({ 
-                id: generateMsgId(),
-                content: "❌ 校验失败：未生成有效的网站配置数据。" 
-            })],
-            validation_error: "No JSON generated", 
-            phase: "architect" 
-        };
-    }
-
-    const errors: string[] = [];
-
-    // 1. Zod Schema Validation
-    const validationResult = ProjectSchema.safeParse(state.project_json);
-    if (!validationResult.success) {
-        errors.push(`Schema Error: ${validationResult.error.message}`);
-    }
-
-    // 2. Logical & Rendering Validation (Headless Linter)
-    const project = state.project_json;
-    project.pages.forEach((page: any) => {
-        const content = page.puckData?.content || [];
-        if (content.length === 0) {
-            errors.push(`Page "${page.path}" is empty. Every page must have at least one component.`);
-        }
-
-        content.forEach((comp: any, idx: number) => {
-            const registryEntry = (COMPONENT_REGISTRY as any)[comp.type];
-            if (!registryEntry) {
-                errors.push(`Unknown component type "${comp.type}" at ${page.path}[${idx}]. Valid types are: ${Object.keys(COMPONENT_REGISTRY).join(", ")}`);
-                return;
-            }
-
-            // Check for required props based on registry schema
-            if (comp.type === "Hero" && !comp.props?.title) {
-                errors.push(`Hero at ${page.path}[${idx}] is missing required prop "title".`);
-            }
-            if (comp.type === "Product_Preview" && (!comp.props?.items || !Array.isArray(comp.props.items))) {
-                errors.push(`Product_Preview at ${page.path}[${idx}] must have an "items" array.`);
-            }
-            if (comp.type === "Stats" && (!comp.props?.items || !Array.isArray(comp.props.items))) {
-                errors.push(`Stats at ${page.path}[${idx}] must have an "items" array.`);
-            }
-            // Add more specific checks as needed
-        });
-    });
-
-    const actions = [
-        {
-            text: "🚀 Deploy to Cloudflare",
-            payload: "Please deploy this website to Cloudflare.",
-            type: "button"
-        }
-    ];
-
-    if (errors.length > 0) {
-        console.warn("Linter: Validation failed", errors.join(" | "));
-        
-        // Manus-style Persistence: Log findings for self-correction
-        await logLinterFinding(errors.join('\n'), state.attempt_count + 1);
-        
-        if (state.attempt_count < 3) {
-            return { 
-                validation_error: errors.join("\n"),
-                phase: "architect", // Go back to architecture to fix structure
-                attempt_count: state.attempt_count + 1
-            };
-        } else {
-            console.log("Linter Node: Final decision, showing preview. actions:", actions);
-
-            return { 
-                messages: [
-                  new AIMessage({ id: generateMsgId(), content: "⚠️ 经过多次尝试仍存在一些校验问题，但我们将继续..." }),
-                  new AIMessage({
-                    id: generateMsgId(),
-                    content: "预览已生成，您可以点击下方按钮部署。",
-                    tool_calls: [
-                      {
-                        id: `call_${generateMsgId()}`,
-                        name: "showWebsitePreview",
-                        args: { projectJson: state.project_json }
-                      },
-                      {
-                        id: `call_${generateMsgId()}`,
-                        name: "presentActions",
-                        args: { actions }
-                      }
-                    ]
-                  })
-                ],
-                phase: "end" 
-            };
-        }
-    }
-
-    console.log("Linter Node: actions to present:", actions);
-
-    console.log("Linter Node: Validation success, presenting actions.");
-
+  console.log("--- Linter Node Started ---");
+  if (!state.project_json) {
     return {
-        messages: [
-            new AIMessage({ 
-                id: generateMsgId(), 
-                content: "✅ 网站已成功生成并经过多重校验。您可以从右侧预览最终效果，或直接点击下方按钮进行部署。"
-            }),
-            new AIMessage({
-                id: generateMsgId(),
-                content: "", // Content must be empty for tool calls
-                additional_kwargs: {
-                    actions,
-                    projectJson: state.project_json
-                },
-                tool_calls: [
-                    {
-                        id: `call_preview_${generateMsgId()}`,
-                        name: "showWebsitePreview",
-                        args: { projectJson: state.project_json }
-                    },
-                    {
-                        id: `call_actions_${generateMsgId()}`,
-                        name: "presentActions",
-                        args: { actions }
-                    }
-                ]
-            })
-        ],
-        phase: "end"
+      messages: [new AIMessage({ id: generateMsgId(), content: "❌ 未找到可预览的数据，请先生成网站。" })],
+      phase: "conversation",
     };
+  }
+
+  const validation = ProjectSchema.safeParse(state.project_json);
+  const validationError = validation.success ? undefined : validation.error.message;
+
+  const actions = [
+    {
+      text: "🚀 Deploy to Cloudflare",
+      payload: "deploy",
+      type: "button",
+    },
+  ];
+
+  return {
+    messages: [
+      new AIMessage({
+        id: generateMsgId(),
+        content: validationError
+          ? "⚠️ 已生成预览，但仍存在部分 schema 校验问题；你可以先查看效果，再继续修改。"
+          : "✅ 预览已生成，你可以继续提修改意见，或直接部署。",
+        additional_kwargs: { actions },
+        tool_calls: [{ id: `call_actions_${generateMsgId()}`, name: "presentActions", args: { actions } }],
+      }),
+      new AIMessage({
+        id: generateMsgId(),
+        content: "",
+        additional_kwargs: { projectJson: state.project_json },
+        tool_calls: [
+          { id: `call_preview_${generateMsgId()}`, name: "showWebsitePreview", args: { projectJson: state.project_json } },
+        ],
+      }),
+    ],
+    validation_error: validationError,
+    phase: "end",
+  };
 };
 
 // 6. Image Update Node: Scans for image placeholders and requests updates
@@ -1129,6 +1427,30 @@ const workflow = new StateGraph<AgentState>({
         value: (x?: any, y?: any) => y ?? x,
         default: () => null,
     },
+    track_results: {
+        value: (x?: any[], y?: any[]) => y ?? x,
+        default: () => [],
+    },
+    patch_request: {
+        value: (x?: string, y?: string) => y ?? x,
+        default: () => undefined,
+    },
+    sitemap: {
+        value: (x?: any, y?: any) => y ?? x,
+        default: () => undefined,
+    },
+    industry: {
+        value: (x?: string, y?: string) => y ?? x,
+        default: () => undefined,
+    },
+    theme: {
+        value: (x?: any, y?: any) => y ?? x,
+        default: () => undefined,
+    },
+    history: {
+        value: (x?: string[], y?: string[]) => y ?? x,
+        default: () => [],
+    },
     pages_to_expand: {
         value: (x?: string[], y?: string[]) => y ?? x,
         default: () => [],
@@ -1168,11 +1490,13 @@ const workflow = new StateGraph<AgentState>({
   }
 })
   .addNode("conversation", conversationNode)
-  .addNode("architect", skeletonNode)
-  .addNode("expanding", pageExpansionNode)
+  .addNode("skeleton", skeletonNode)
+  .addNode("parallel", parallelNode)
+  .addNode("stitcher", stitcherNode)
+  .addNode("liner", linerNode)
   .addNode("seo_optimization", seoNode)
   .addNode("linter", linterNode)
-  .addNode("image_update", imageUpdateNode)
+  .addNode("patch", patchNode)
   .addNode("deploy", deployNode);
 
 workflow.addEdge(START, "conversation");
@@ -1180,27 +1504,22 @@ workflow.addEdge(START, "conversation");
 workflow.addConditionalEdges(
   "conversation",
   (state) => {
-      if (state.phase === "architect") return "architect";
+      if (state.phase === "skeleton") return "skeleton";
       if (state.phase === "deploy") return "deploy";
+      if (state.phase === "patch") return "patch";
       return END;
   }
 );
 
-workflow.addEdge("architect", "expanding");
-
-workflow.addConditionalEdges(
-  "expanding",
-  (state) => state.phase === "expanding" ? "expanding" : "seo_optimization"
-);
+workflow.addEdge("skeleton", "parallel");
+workflow.addEdge("parallel", "stitcher");
+workflow.addEdge("stitcher", "liner");
+workflow.addEdge("liner", "seo_optimization");
+workflow.addEdge("patch", "liner");
 
 workflow.addEdge("seo_optimization", "linter");
 workflow.addEdge("deploy", END);
 
-workflow.addConditionalEdges(
-  "linter",
-  (state) => state.phase === "end" ? "image_update" : "architect"
-);
-
-workflow.addEdge("image_update", END);
+workflow.addEdge("linter", END);
 
 export const graph = workflow.compile();

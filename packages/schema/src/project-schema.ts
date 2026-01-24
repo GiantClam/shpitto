@@ -65,6 +65,38 @@ const ProductPreviewPropsSchema = z.object({
   }))
 });
 
+const FeatureHighlightPropsSchema = z.object({
+  title: z.string().optional(),
+  description: z.string().optional(),
+  image: z.string().optional(),
+  align: z.enum(["left", "right"]).default("left"),
+  features: z.array(z.string()).optional()
+});
+
+const CTASectionPropsSchema = z.object({
+  title: z.string().optional(),
+  description: z.string().optional(),
+  ctaText: z.string().optional(),
+  ctaLink: z.string().optional(),
+  variant: z.enum(["simple", "split", "card"]).default("simple")
+});
+
+const FAQPropsSchema = z.object({
+  title: z.string().optional(),
+  items: z.array(z.object({
+    question: z.string(),
+    answer: z.string()
+  }))
+});
+
+const LogosPropsSchema = z.object({
+  title: z.string().optional(),
+  items: z.array(z.object({
+    name: z.string(),
+    logo: z.string() // URL
+  }))
+});
+
 // 3. Page & Component Config (Puck-Compatible)
 // We use a discriminated union to enforce type safety based on component name
 export const PuckComponentSchema = z.discriminatedUnion("type", [
@@ -81,12 +113,28 @@ export const PuckComponentSchema = z.discriminatedUnion("type", [
     props: TestimonialsPropsSchema,
   }),
   z.object({
-    type: z.literal("Value_Propositions"),
+    type: z.literal("ValuePropositions"),
     props: ValuePropositionsPropsSchema,
   }),
   z.object({
-    type: z.literal("Product_Preview"),
+    type: z.literal("ProductPreview"),
     props: ProductPreviewPropsSchema,
+  }),
+  z.object({
+    type: z.literal("FeatureHighlight"),
+    props: FeatureHighlightPropsSchema,
+  }),
+  z.object({
+    type: z.literal("CTASection"),
+    props: CTASectionPropsSchema,
+  }),
+  z.object({
+    type: z.literal("FAQ"),
+    props: FAQPropsSchema,
+  }),
+  z.object({
+    type: z.literal("Logos"),
+    props: LogosPropsSchema,
   })
 ]);
 

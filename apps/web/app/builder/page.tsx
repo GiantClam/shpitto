@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 import { Rocket, Hammer, Globe, ExternalLink } from "lucide-react";
 import { createBrowserClient } from '@supabase/ssr';
 
-function MainContent() {
+function MainContent({ session }: { session: any }) {
   const [projectJson, setProjectJson] = useState<any>(null);
   const [currentPath, setCurrentPath] = useState("/");
   const [isDeploying, setIsDeploying] = useState(false);
@@ -126,7 +126,7 @@ function MainContent() {
           <div className="h-14 border-b bg-white flex items-center justify-between px-6 shadow-sm z-20">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">S</div>
-              <span className="font-bold text-slate-800 tracking-tight text-lg">Shipitto Preview</span>
+              <span className="font-bold text-slate-800 tracking-tight text-lg">Shpitto Preview</span>
               {projectJson && (
                 <div className="ml-4 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded-full uppercase tracking-wider">
                   Draft Generated
@@ -135,7 +135,29 @@ function MainContent() {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Buttons are now dynamically rendered in the chat area */}
+              {session?.user && (
+                <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
+                  <div className="text-right hidden sm:block">
+                    <div className="text-sm font-bold text-slate-800 leading-tight">
+                      {session.user.user_metadata?.full_name || 'User'}
+                    </div>
+                    <div className="text-xs text-slate-500 font-medium">
+                      {session.user.email}
+                    </div>
+                  </div>
+                  {session.user.user_metadata?.avatar_url ? (
+                    <img 
+                      src={session.user.user_metadata.avatar_url} 
+                      alt="Profile" 
+                      className="w-9 h-9 rounded-full border-2 border-white shadow-sm" 
+                    />
+                  ) : (
+                    <div className="w-9 h-9 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold border-2 border-white shadow-sm">
+                      {(session.user.email?.[0] || 'U').toUpperCase()}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -152,9 +174,9 @@ function MainContent() {
                   <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
                     <Globe className="w-8 h-8" />
                   </div>
-                  <h2 className="text-2xl font-bold mb-3 text-slate-800">Welcome to Shipitto</h2>
+                  <h2 className="text-2xl font-bold mb-3 text-slate-800">Welcome to Shpitto</h2>
                   <p className="text-slate-500 leading-relaxed">
-                    Start a conversation with our AI assistant to build your industrial website blueprint. Once you're happy with the plan, click <strong>"Build It"</strong> to generate the preview.
+                    Start a conversation with our AI assistant to build your industrial website blueprint. Once you&apos;re happy with the plan, click <strong>&quot;Build It&quot;</strong> to generate the preview.
                   </p>
                 </div>
               </div>
@@ -166,7 +188,7 @@ function MainContent() {
           instructions="Help the user build an industrial website by generating a project blueprint."
           defaultOpen={true}
           labels={{
-            title: "Shipitto AI Assistant",
+            title: "Shpitto AI Assistant",
             initial: "Hi! I'm here to help you build your industrial website. What kind of business are you in?",
           }}
           AssistantMessage={(props: any) => {
@@ -343,7 +365,7 @@ export default function Home() {
         access_token: session?.access_token 
       }}
     >
-      <MainContent />
+      <MainContent session={session} />
     </CopilotKit>
   );
 }

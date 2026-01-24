@@ -3,7 +3,7 @@ import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 // and use `jsonb` instead of `text({ mode: 'json' })`.
 // Keeping SQLite for now to maintain local dev compatibility with D1.
 
-export const projects = sqliteTable('shipitto_projects', {
+export const projects = sqliteTable('shpitto_projects', {
   id: text('id').primaryKey(),
   tenantId: text('tenant_id').notNull(), // Multi-tenancy support
   sourceApp: text('source_app').default('shpitto'), // 'shpitto' or other app names
@@ -13,7 +13,7 @@ export const projects = sqliteTable('shipitto_projects', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }),
 });
 
-export const deployments = sqliteTable('shipitto_deployments', {
+export const deployments = sqliteTable('shpitto_deployments', {
   id: text('id').primaryKey(),
   projectId: text('project_id').references(() => projects.id),
   environment: text('environment').notNull(), // preview, production

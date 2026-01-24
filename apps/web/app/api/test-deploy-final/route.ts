@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: NextRequest) {
   try {
     const cf = new CloudflareClient();
-    const testProjectName = `shipitto-fresh-${Date.now().toString().slice(-4)}`;
+    const testProjectName = `shpitto-fresh-${Date.now().toString().slice(-4)}`;
     
     console.log(`[Test] Starting final test for project: ${testProjectName}`);
     

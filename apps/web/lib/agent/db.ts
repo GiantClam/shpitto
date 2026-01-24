@@ -31,7 +31,7 @@ export async function saveProjectState(userId: string, projectJson: any, accessT
   if (!projectId) {
       // Try to find by name if no ID provided
       const { data: existing } = await supabase
-        .from('shipitto_projects')
+        .from('shpitto_projects')
         .select('id')
         .eq('tenant_id', userId)
         .eq('source_app', 'shpitto') // Filter by source app
@@ -44,7 +44,7 @@ export async function saveProjectState(userId: string, projectJson: any, accessT
   if (projectId) {
     // Update
     await supabase
-      .from('shipitto_projects')
+      .from('shpitto_projects')
       .update({
         config: projectJson,
         name: name, // Update name in case it changed
@@ -55,7 +55,7 @@ export async function saveProjectState(userId: string, projectJson: any, accessT
   } else {
     // Insert
     const { data: newProject, error } = await supabase
-      .from('shipitto_projects')
+      .from('shpitto_projects')
       .insert({
         id: crypto.randomUUID(),
         tenant_id: userId,
@@ -81,7 +81,7 @@ export async function recordDeployment(projectId: string, url: string, environme
   const supabase = createAgentSupabaseClient(accessToken);
   
   await supabase
-    .from('shipitto_deployments')
+    .from('shpitto_deployments')
     .insert({
       id: crypto.randomUUID(),
       project_id: projectId,
