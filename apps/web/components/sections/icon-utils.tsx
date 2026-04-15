@@ -31,8 +31,10 @@ export const resolveLucideIcon = (name?: string): IconComponent => {
 
   for (const candidate of candidates) {
     if (!candidate) continue;
-    const icon = (LucideIcons as Record<string, IconComponent>)[candidate];
-    if (icon) return icon;
+    const icon = LucideIcons[candidate as keyof typeof LucideIcons];
+    if (typeof icon === "function") {
+      return icon as IconComponent;
+    }
   }
 
   return LucideIcons.Check;

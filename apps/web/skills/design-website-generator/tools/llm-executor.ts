@@ -17,12 +17,13 @@ const DEFAULT_MODEL = process.env.LLM_MODEL || 'claude-sonnet-4-20250514';
 const LLM_PROVIDER = process.env.LLM_PROVIDER || 'aiberm';
 
 let anthropicClient: any = null;
+const dynamicImport = new Function("m", "return import(m)") as (m: string) => Promise<any>;
 
 async function getAnthropicClient() {
   if (anthropicClient) return anthropicClient;
   
   try {
-    const { default: Anthropic } = await import('@anthropic-ai/sdk');
+    const { default: Anthropic } = await dynamicImport("@anthropic-ai/sdk");
     
     const apiKey = process.env.ANTHROPIC_API_KEY || 
                     process.env.ANTHROPIC_KEY ||

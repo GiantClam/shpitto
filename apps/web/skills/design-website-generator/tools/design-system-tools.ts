@@ -136,7 +136,13 @@ function parseColors(sections: string[]): DesignSystem['colors'] {
     return { primary: [], accent: [], neutral: [], semantic: [], shadows: [] };
   }
   
-  const result = { primary: [], accent: [], neutral: [], semantic: [], shadows: [] };
+  const result: DesignSystem["colors"] = {
+    primary: [],
+    accent: [],
+    neutral: [],
+    semantic: [],
+    shadows: [],
+  };
   const colorBlocks = colorSection.split(/### /).filter(Boolean);
   
   for (const block of colorBlocks) {

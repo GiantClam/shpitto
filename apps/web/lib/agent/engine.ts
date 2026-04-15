@@ -20,7 +20,10 @@ const CANONICAL_TYPES = [
   "ComparisonTable",
 ] as const;
 
-const TYPE_ALIASES = new Map<string, (typeof CANONICAL_TYPES)[number]>([
+type CanonicalType = (typeof CANONICAL_TYPES)[number];
+type AliasType = CanonicalType | "Content_Block";
+
+const TYPE_ALIASES = new Map<string, AliasType>([
   ["hero", "Hero"],
   ["stats", "Stats"],
   ["testimonials", "Testimonials"],

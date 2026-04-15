@@ -4,6 +4,7 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
+import { fileURLToPath } from "url";
 
 export interface Rule {
   name: string;
@@ -27,7 +28,7 @@ export interface Reference {
 }
 
 function getSkillRoot(): string {
-  const currentDir = path.dirname(path.fromFileURLToPath(import.meta.url));
+  const currentDir = path.dirname(fileURLToPath(import.meta.url));
   return path.resolve(currentDir, '..');
 }
 
