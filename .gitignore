@@ -55,3 +55,8 @@ captured_request.bin
 dummy_deploy
 temp_dist
 test-dist
+
+# Local agent/runtime state (non-project artifacts)
+.omx/
+.opencode/
+.tmp/

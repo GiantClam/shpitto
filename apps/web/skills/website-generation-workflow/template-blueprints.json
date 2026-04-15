@@ -1,0 +1,208 @@
+{
+  "default": {
+    "id": "default-6p-industrial",
+    "routeMode": "fixed",
+    "paths": ["/", "/company", "/products", "/news", "/cases", "/contact"],
+    "pages": {
+      "/": {
+        "seoTitleTemplate": "Home | {{brand}}",
+        "seoDescriptionTemplate": "{{brand}} provides precision CNC solutions for industrial manufacturing.",
+        "componentTypes": [
+          "Hero",
+          "Logos",
+          "Stats",
+          "ValuePropositions",
+          "FeatureHighlight",
+          "ProductPreview",
+          "Testimonials",
+          "CTASection"
+        ]
+      },
+      "/company": {
+        "seoTitleTemplate": "Company | {{brand}}",
+        "seoDescriptionTemplate": "Learn about {{brand}} capabilities, history, and quality system.",
+        "componentTypes": [
+          "Hero",
+          "Logos",
+          "ValuePropositions",
+          "FeatureHighlight",
+          "Stats",
+          "Testimonials",
+          "FAQ",
+          "CTASection"
+        ]
+      },
+      "/products": {
+        "seoTitleTemplate": "Products | {{brand}}",
+        "seoDescriptionTemplate": "Explore CNC products, specifications, and application fit by {{brand}}.",
+        "componentTypes": [
+          "Hero",
+          "ProductPreview",
+          "FeatureHighlight",
+          "ValuePropositions",
+          "Stats",
+          "FAQ",
+          "CTASection"
+        ]
+      },
+      "/news": {
+        "seoTitleTemplate": "News | {{brand}}",
+        "seoDescriptionTemplate": "Latest updates, launches, and technical insights from {{brand}}.",
+        "componentTypes": [
+          "Hero",
+          "Stats",
+          "ProductPreview",
+          "FeatureHighlight",
+          "ValuePropositions",
+          "FAQ",
+          "CTASection"
+        ]
+      },
+      "/cases": {
+        "seoTitleTemplate": "Cases | {{brand}}",
+        "seoDescriptionTemplate": "See real customer deployments and outcomes powered by {{brand}}.",
+        "componentTypes": [
+          "Hero",
+          "Stats",
+          "ProductPreview",
+          "FeatureHighlight",
+          "Testimonials",
+          "ValuePropositions",
+          "CTASection"
+        ]
+      },
+      "/contact": {
+        "seoTitleTemplate": "Contact | {{brand}}",
+        "seoDescriptionTemplate": "Contact {{brand}} for quotations, technical consulting, and support.",
+        "componentTypes": [
+          "Hero",
+          "ValuePropositions",
+          "FeatureHighlight",
+          "ContactForm",
+          "FAQ",
+          "CTASection"
+        ]
+      }
+    }
+  },
+  "bmw": {
+    "extends": "default",
+    "id": "bmw-6p-industrial",
+    "pages": {
+      "/": {
+        "componentTypes": [
+          "Hero",
+          "Logos",
+          "FeatureHighlight",
+          "ProductPreview",
+          "Stats",
+          "Testimonials",
+          "CTASection"
+        ]
+      },
+      "/company": {
+        "componentTypes": [
+          "Hero",
+          "FeatureHighlight",
+          "Stats",
+          "ValuePropositions",
+          "Testimonials",
+          "CTASection"
+        ]
+      },
+      "/products": {
+        "componentTypes": [
+          "Hero",
+          "ProductPreview",
+          "ProductPreview",
+          "FeatureHighlight",
+          "Stats",
+          "FAQ",
+          "CTASection"
+        ]
+      },
+      "/news": {
+        "componentTypes": [
+          "Hero",
+          "FeatureHighlight",
+          "ProductPreview",
+          "ValuePropositions",
+          "FAQ",
+          "CTASection"
+        ]
+      },
+      "/cases": {
+        "componentTypes": [
+          "Hero",
+          "Testimonials",
+          "FeatureHighlight",
+          "ProductPreview",
+          "Stats",
+          "CTASection"
+        ]
+      }
+    }
+  },
+  "kraken": {
+    "extends": "default",
+    "id": "kraken-6p-industrial",
+    "pages": {
+      "/": {
+        "componentTypes": [
+          "Hero",
+          "Stats",
+          "ValuePropositions",
+          "ProductPreview",
+          "Logos",
+          "CTASection"
+        ]
+      },
+      "/company": {
+        "componentTypes": [
+          "Hero",
+          "ValuePropositions",
+          "Stats",
+          "FeatureHighlight",
+          "CTASection"
+        ]
+      },
+      "/products": {
+        "componentTypes": [
+          "Hero",
+          "ProductPreview",
+          "ValuePropositions",
+          "FAQ",
+          "CTASection"
+        ]
+      },
+      "/news": {
+        "componentTypes": [
+          "Hero",
+          "ProductPreview",
+          "FAQ",
+          "ValuePropositions",
+          "CTASection"
+        ]
+      },
+      "/cases": {
+        "componentTypes": [
+          "Hero",
+          "Testimonials",
+          "ProductPreview",
+          "Stats",
+          "ValuePropositions",
+          "CTASection"
+        ]
+      },
+      "/contact": {
+        "componentTypes": [
+          "Hero",
+          "ValuePropositions",
+          "ContactForm",
+          "FAQ",
+          "CTASection"
+        ]
+      }
+    }
+  }
+}

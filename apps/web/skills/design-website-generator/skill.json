@@ -1,0 +1,173 @@
+{
+  "name": "design-website-generator",
+  "version": "2.0.0",
+  "description": "Generate websites using design systems from awesome-design-md (58+ real website designs). Uses SEQUENTIAL page generation for design and content coherence. SKILL is the source of truth, TS tools are loaders and executors.",
+  "commands": [
+    {
+      "name": "list-design-systems",
+      "description": "List all available design systems from awesome-design-md",
+      "usage": "Use this command to see what design systems are available before starting a generation task",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "description": "Filter by category (optional): ai, developer, infrastructure, fintech, enterprise, consumer, automotive",
+            "enum": ["ai", "developer", "infrastructure", "fintech", "enterprise", "consumer", "automotive"]
+          }
+        }
+      }
+    },
+    {
+      "name": "recommend-design-system",
+      "description": "Get AI recommendations for suitable design systems based on requirements",
+      "usage": "Use this command when starting a new website generation to get design system recommendations",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "requirements": {
+            "type": "string",
+            "description": "Website requirements or description"
+          },
+          "count": {
+            "type": "number",
+            "description": "Number of recommendations to return (default: 5, max: 10)",
+            "default": 5
+          }
+        },
+        "required": ["requirements"]
+      }
+    },
+    {
+      "name": "generate-website",
+      "description": "Generate a complete website using SEQUENTIAL page generation. Each page is generated based on the previous page's context to ensure design and content coherence.",
+      "usage": "Use this command to generate a website. Follows sequential workflow: Design Selection → Design Confirmation → Sequential Page Generation → Visual QA. Read prompts/sequential-workflow.md for detailed process.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "Website requirements description (e.g., 'AI startup landing page with hero, features, pricing sections')"
+          },
+          "brand": {
+            "type": "string",
+            "description": "Design system brand name (e.g., vercel, claude, stripe). Use list-design-systems to see available options"
+          },
+          "pages": {
+            "type": "array",
+            "description": "Page types to generate in order (e.g., ['homepage', 'features', 'pricing']). Generated SEQUENTIALLY for coherence.",
+            "items": { "type": "string" },
+            "default": ["homepage", "features", "cta"]
+          },
+          "outputDir": {
+            "type": "string",
+            "description": "Output directory for generated files",
+            "default": "output"
+          },
+          "options": {
+            "type": "object",
+            "description": "Generation options",
+            "properties": {
+              "skipPreview": { "type": "boolean", "default": false },
+              "skipQA": { "type": "boolean", "default": false },
+              "includeMagicUI": { "type": "boolean", "default": true, "description": "Include Magic UI animations" }
+            }
+          }
+        },
+        "required": ["prompt"]
+      }
+    },
+    {
+      "name": "generate-page-structure",
+      "description": "Plan page structure based on design system and requirements",
+      "usage": "Use this command to get recommended page structure (sections, navigation, layout) before full generation",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "brand": {
+            "type": "string",
+            "description": "Design system brand name",
+            "required": true
+          },
+          "pageType": {
+            "type": "string",
+            "description": "Page type: landing, product, pricing, about, contact",
+            "default": "landing"
+          },
+          "requirements": {
+            "type": "string",
+            "description": "Additional requirements or content for the page"
+          }
+        },
+        "required": ["brand"]
+      }
+    },
+    {
+      "name": "run-design-qa",
+      "description": "Run QA checks on generated components to verify design system compliance",
+      "usage": "Use this command after generation to check if components follow the design system correctly",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "components": {
+            "type": "array",
+            "description": "List of generated component code strings",
+            "items": { "type": "string" }
+          },
+          "designSystem": {
+            "type": "string",
+            "description": "Design system brand name to validate against"
+          }
+        },
+        "required": ["components", "designSystem"]
+      }
+    }
+  ],
+  "envVars": [
+    {
+      "name": "LLM_PROVIDER",
+      "description": "LLM provider: aiberm, openrouter, anthropic",
+      "default": "aiberm",
+      "required": false
+    },
+    {
+      "name": "LLM_MODEL",
+      "description": "LLM model to use for generation",
+      "default": "claude-sonnet-4-20250514",
+      "required": false
+    }
+  ],
+  "examples": [
+    {
+      "description": "List all available design systems",
+      "command": "list-design-systems",
+      "params": {}
+    },
+    {
+      "description": "Get design system recommendations",
+      "command": "recommend-design-system",
+      "params": { "requirements": "Modern AI startup landing page with dark theme", "count": 5 }
+    },
+    {
+      "description": "Generate website using Vercel design",
+      "command": "generate-website",
+      "params": { "prompt": "Landing page for AI coding assistant", "brand": "vercel", "sections": ["hero", "features", "pricing", "cta"] }
+    },
+    {
+      "description": "Generate with Magic UI animations",
+      "command": "generate-website",
+      "params": { "prompt": "SaaS landing page", "brand": "stripe", "options": { "includeMagicUI": true } }
+    },
+    {
+      "description": "Plan page structure",
+      "command": "generate-page-structure",
+      "params": { "brand": "claude", "pageType": "landing", "requirements": "AI assistant landing with hero, features, testimonials, pricing" }
+    }
+  ],
+  "relatedSkills": [
+    "web-artifacts-builder",
+    "frontend-design",
+    "visual-qa-mandatory",
+    "design-system-enforcement"
+  ]
+}

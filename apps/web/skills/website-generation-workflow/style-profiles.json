@@ -1,0 +1,134 @@
+{
+  "default": {
+    "mode": "light",
+    "typography": "Inter, system-ui, -apple-system, sans-serif",
+    "borderRadius": "md",
+    "navVariant": "pill",
+    "headerVariant": "glass",
+    "footerVariant": "dark",
+    "buttonVariant": "solid",
+    "heroTheme": "dark",
+    "heroEffect": "none",
+    "navLabelMaxChars": 12,
+    "colors": {
+      "primary": "#2563EB",
+      "accent": "#22C55E",
+      "background": "#FFFFFF",
+      "surface": "#F8FAFC",
+      "panel": "#FFFFFF",
+      "text": "#0F172A",
+      "muted": "#475569",
+      "border": "#E2E8F0"
+    }
+  },
+  "bmw": {
+    "mode": "light",
+    "typography": "\"Space Grotesk\", \"IBM Plex Sans\", system-ui, -apple-system, sans-serif",
+    "borderRadius": "sm",
+    "navVariant": "underline",
+    "headerVariant": "solid",
+    "footerVariant": "dark",
+    "buttonVariant": "solid",
+    "heroTheme": "light",
+    "heroEffect": "none",
+    "navLabelMaxChars": 10,
+    "colors": {
+      "primary": "#A51F3C",
+      "accent": "#20262D",
+      "background": "#E9E6E1",
+      "surface": "#F5F3EF",
+      "panel": "#FFFFFF",
+      "text": "#1F252C",
+      "muted": "#4D5560",
+      "border": "#C9C1B6"
+    }
+  },
+  "ferrari": {
+    "mode": "dark",
+    "typography": "Inter, system-ui, -apple-system, sans-serif",
+    "borderRadius": "sm",
+    "navVariant": "underline",
+    "headerVariant": "solid",
+    "footerVariant": "dark",
+    "buttonVariant": "solid",
+    "heroTheme": "dark",
+    "heroEffect": "none",
+    "navLabelMaxChars": 10,
+    "colors": {
+      "primary": "#D40000",
+      "accent": "#FBBF24",
+      "background": "#0B0B0B",
+      "surface": "#111111",
+      "panel": "#18181B",
+      "text": "#FAFAFA",
+      "muted": "#A1A1AA",
+      "border": "#27272A"
+    }
+  },
+  "kraken": {
+    "mode": "light",
+    "typography": "Inter, system-ui, -apple-system, sans-serif",
+    "borderRadius": "sm",
+    "navVariant": "underline",
+    "headerVariant": "glass",
+    "footerVariant": "light",
+    "buttonVariant": "solid",
+    "heroTheme": "light",
+    "heroEffect": "none",
+    "navLabelMaxChars": 10,
+    "colors": {
+      "primary": "#7132F5",
+      "accent": "#5741D8",
+      "background": "#FFFFFF",
+      "surface": "#F8FAFC",
+      "panel": "#FFFFFF",
+      "text": "#0F172A",
+      "muted": "#475569",
+      "border": "#E2E8F0"
+    }
+  },
+  "lamborghini": {
+    "mode": "dark",
+    "typography": "Inter, system-ui, -apple-system, sans-serif",
+    "borderRadius": "none",
+    "navVariant": "underline",
+    "headerVariant": "solid",
+    "footerVariant": "dark",
+    "buttonVariant": "solid",
+    "heroTheme": "dark",
+    "heroEffect": "none",
+    "navLabelMaxChars": 10,
+    "colors": {
+      "primary": "#EAB308",
+      "accent": "#52525B",
+      "background": "#050505",
+      "surface": "#111111",
+      "panel": "#1A1A1A",
+      "text": "#F8FAFC",
+      "muted": "#A1A1AA",
+      "border": "#3F3F46"
+    }
+  },
+  "tesla": {
+    "mode": "light",
+    "typography": "Inter, system-ui, -apple-system, sans-serif",
+    "borderRadius": "sm",
+    "navVariant": "underline",
+    "headerVariant": "glass",
+    "footerVariant": "light",
+    "buttonVariant": "outline",
+    "heroTheme": "light",
+    "heroEffect": "none",
+    "navLabelMaxChars": 11,
+    "colors": {
+      "primary": "#111827",
+      "accent": "#DC2626",
+      "background": "#F9FAFB",
+      "surface": "#FFFFFF",
+      "panel": "#FFFFFF",
+      "text": "#111827",
+      "muted": "#4B5563",
+      "border": "#D1D5DB"
+    }
+  }
+}

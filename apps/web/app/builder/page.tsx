@@ -1,128 +1,120 @@
 "use client";
 
-import { CopilotKit, useCopilotAction, useCopilotChat, useRenderToolCall } from "@copilotkit/react-core";
-import { Role, TextMessage } from "@copilotkit/runtime-client-gql";
-import { CopilotSidebar } from "@copilotkit/react-ui";
-import "@copilotkit/react-ui/styles.css";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, type UIMessage } from "ai";
 import { WebsitePreview } from "@/components/website-preview";
-import { useState, useEffect } from "react";
-import { Rocket, Hammer, Globe, ExternalLink } from "lucide-react";
-import { createBrowserClient } from '@supabase/ssr';
+import { useEffect, useMemo, useState } from "react";
+import { Rocket, Hammer, Globe, ExternalLink, Send, Sparkles } from "lucide-react";
+import { createBrowserClient } from "@supabase/ssr";
+
+type BuilderAction = {
+  text: string;
+  payload?: string;
+  type?: "button" | "url";
+};
+
+type BuilderDataParts = {
+  actions: BuilderAction[];
+  preview: any;
+};
+
+type BuilderMessage = UIMessage<unknown, BuilderDataParts>;
+
+function extractMessageText(message: BuilderMessage): string {
+  return (message.parts || [])
+    .filter((part) => part.type === "text")
+    .map((part) => ("text" in part ? part.text : ""))
+    .join("")
+    .trim();
+}
+
+function extractMessageActions(message: BuilderMessage): BuilderAction[] {
+  const actions: BuilderAction[] = [];
+  for (const part of message.parts || []) {
+    if (part.type === "data-actions" && Array.isArray(part.data)) {
+      actions.push(...part.data);
+    }
+  }
+  return actions;
+}
+
+function extractLatestPreview(messages: BuilderMessage[]): any | null {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const msg = messages[i];
+    for (const part of msg.parts || []) {
+      if (part.type === "data-preview" && part.data) {
+        return part.data;
+      }
+    }
+  }
+  return null;
+}
 
 function MainContent({ session }: { session: any }) {
   const [projectJson, setProjectJson] = useState<any>(null);
   const [currentPath, setCurrentPath] = useState("/");
-  const [isDeploying, setIsDeploying] = useState(false);
-  const { appendMessage } = useCopilotChat();
+  const [input, setInput] = useState("");
 
-  useRenderToolCall({
-    name: "presentActions",
-    description: "Present actionable buttons to the user.",
-    render: (props) => {
-      const { actions } = props.args as any;
-      console.log("🛠️ [useRenderToolCall:presentActions] Received actions:", actions);
-      
-      if (!actions || actions.length === 0) return <></>;
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport<BuilderMessage>({
+        api: "/api/chat",
+        body: {
+          user_id: session?.user?.id,
+          access_token: session?.access_token,
+        },
+      }),
+    [session?.user?.id, session?.access_token],
+  );
 
-      return (
-        <div className="flex flex-wrap gap-2 mt-2 mb-4 px-4">
-          {actions.map((action: any, i: number) => (
-            <button
-              key={i}
-              disabled={isDeploying && action.text.includes("Deploy")}
-              onClick={() => {
-                console.log(`🖱️ [Action Clicked] ${action.text}`, action);
-                if (action.type === "url") {
-                  window.open(action.payload, "_blank");
-                } else {
-                  appendMessage(new TextMessage({ 
-                    content: action.payload || action.text, 
-                    role: Role.User 
-                  }));
-                }
-              }}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md active:scale-95 ${
-                isDeploying && action.text.includes("Deploy")
-                  ? "bg-slate-300 text-slate-500 cursor-not-allowed shadow-none"
-                  : "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-100"
-              }`}
-            >
-              {action.text === "Build It" && <Hammer className="w-4 h-4" />}
-              {action.text.includes("Deploy") && (
-                isDeploying ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <Rocket className="w-4 h-4" />
-                )
-              )}
-              {action.type === "url" && <ExternalLink className="w-4 h-4" />}
-              {action.text}
-            </button>
-          ))}
-        </div>
-      );
-    }
+  const chatId = useMemo(
+    () => (session?.user?.id ? `builder-${session.user.id}` : "builder-anon"),
+    [session?.user?.id],
+  );
+
+  const { messages, sendMessage, status, error } = useChat<BuilderMessage>({
+    id: chatId,
+    transport,
   });
 
-  useRenderToolCall({
-    name: "showWebsitePreview",
-    description: "Show the generated website preview to the user.",
-    render: (props) => {
-      const { projectJson: actionProjectJson } = props.args as any;
-      console.log("🖥️ [useRenderToolCall:showWebsitePreview] Received projectJson:", actionProjectJson ? "Data present" : "Empty");
-      
-      // Update state if not already set or different
-      if (actionProjectJson && (!projectJson || JSON.stringify(actionProjectJson) !== JSON.stringify(projectJson))) {
-        console.log("🔄 [State Update] Setting projectJson from ToolCall");
-        // Use a timeout to avoid state updates during render
-        setTimeout(() => setProjectJson(actionProjectJson), 0);
-      }
-      
-      return (
-        <div className="mx-4 p-4 bg-blue-50 border border-blue-100 rounded-2xl flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white">
-            <Globe className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="font-bold text-blue-900">Website Preview Ready</div>
-            <div className="text-sm text-blue-700">Explore the generated layout and SEO optimized content.</div>
-          </div>
-        </div>
-      );
+  useEffect(() => {
+    const latestPreview = extractLatestPreview(messages);
+    if (latestPreview) {
+      setProjectJson(latestPreview);
     }
-  });
+  }, [messages]);
 
-  useCopilotAction({
-    name: "startDeployment",
-    description: "Start the deployment process.",
-    handler: () => {
-      setIsDeploying(true);
-    }
-  });
-
-  useCopilotAction({
-    name: "notifyDeploymentStatus",
-    description: "Notify the user about the deployment status.",
-    parameters: [
-      { name: "status", type: "string" },
-      { name: "url", type: "string" },
-      { name: "message", type: "string" }
-    ],
-    handler: ({ status }) => {
-      if (status === "success" || status === "error") {
-        setIsDeploying(false);
-      }
-    }
-  });
+  const isBusy = status === "submitted" || status === "streaming";
 
   const currentPage = projectJson?.pages?.find((p: any) => p.path === currentPath) || projectJson?.pages?.[0];
   const puckData = currentPage?.puckData || { content: [] };
+
+  const visibleMessages = useMemo(
+    () => messages.filter((m) => m.role === "assistant" || m.role === "user"),
+    [messages],
+  );
+
+  const submitText = async (text: string) => {
+    const value = text.trim();
+    if (!value || isBusy) return;
+    await sendMessage({ text: value });
+  };
+
+  const handleActionClick = async (action: BuilderAction) => {
+    if (action.type === "url" && action.payload) {
+      window.open(action.payload, "_blank");
+      return;
+    }
+
+    const payload = action.payload || action.text;
+    if (!payload) return;
+    await submitText(payload);
+  };
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between">
       <div className="z-10 w-full items-center justify-between font-mono text-sm flex h-screen">
         <div className="flex-1 h-full overflow-hidden flex flex-col bg-slate-50">
-          {/* Header Bar */}
           <div className="h-14 border-b bg-white flex items-center justify-between px-6 shadow-sm z-20">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">S</div>
@@ -139,21 +131,19 @@ function MainContent({ session }: { session: any }) {
                 <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
                   <div className="text-right hidden sm:block">
                     <div className="text-sm font-bold text-slate-800 leading-tight">
-                      {session.user.user_metadata?.full_name || 'User'}
+                      {session.user.user_metadata?.full_name || "User"}
                     </div>
-                    <div className="text-xs text-slate-500 font-medium">
-                      {session.user.email}
-                    </div>
+                    <div className="text-xs text-slate-500 font-medium">{session.user.email}</div>
                   </div>
                   {session.user.user_metadata?.avatar_url ? (
-                    <img 
-                      src={session.user.user_metadata.avatar_url} 
-                      alt="Profile" 
-                      className="w-9 h-9 rounded-full border-2 border-white shadow-sm" 
+                    <img
+                      src={session.user.user_metadata.avatar_url}
+                      alt="Profile"
+                      className="w-9 h-9 rounded-full border-2 border-white shadow-sm"
                     />
                   ) : (
                     <div className="w-9 h-9 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold border-2 border-white shadow-sm">
-                      {(session.user.email?.[0] || 'U').toUpperCase()}
+                      {(session.user.email?.[0] || "U").toUpperCase()}
                     </div>
                   )}
                 </div>
@@ -163,11 +153,7 @@ function MainContent({ session }: { session: any }) {
 
           <div className="flex-1 overflow-auto">
             {projectJson ? (
-              <WebsitePreview 
-                data={puckData} 
-                project_json={projectJson}
-                onNavigate={(path) => setCurrentPath(path)}
-              />
+              <WebsitePreview data={puckData} project_json={projectJson} onNavigate={(path) => setCurrentPath(path)} />
             ) : (
               <div className="flex items-center justify-center h-full text-slate-400">
                 <div className="text-center max-w-md px-6">
@@ -176,169 +162,130 @@ function MainContent({ session }: { session: any }) {
                   </div>
                   <h2 className="text-2xl font-bold mb-3 text-slate-800">Welcome to Shpitto</h2>
                   <p className="text-slate-500 leading-relaxed">
-                    Start a conversation with our AI assistant to build your industrial website blueprint. Once you&apos;re happy with the plan, click <strong>&quot;Build It&quot;</strong> to generate the preview.
+                    Start a conversation with our AI assistant to build your industrial website blueprint. Once you are happy with the plan, click <strong>Build It</strong> to generate the preview.
                   </p>
                 </div>
               </div>
             )}
           </div>
         </div>
-        
-        <CopilotSidebar
-          instructions="Help the user build an industrial website by generating a project blueprint."
-          defaultOpen={true}
-          labels={{
-            title: "Shpitto AI Assistant",
-            initial: "Hi! I'm here to help you build your industrial website. What kind of business are you in?",
-          }}
-          AssistantMessage={(props: any) => {
-            const { message } = props;
-            
-            // Extract tool calls from various possible locations
-            const toolCalls = (message as any).toolCalls || 
-                             (message as any).tool_calls || 
-                             (message as any).additional_kwargs?.tool_calls || [];
-            
-            // Log message details for debugging
-            console.log(`📩 [AssistantMessage:${message.id}] Received message:`, {
-              content: typeof message.content === 'string' ? message.content.substring(0, 50) + "..." : "Non-string content",
-              toolCallsCount: toolCalls.length,
-              toolNames: toolCalls.map((tc: any) => tc.function?.name || tc.name),
-            });
 
-            // Find specific tool calls
-            const actionsToolCall = toolCalls.find((tc: any) => 
-              (tc.function?.name === "presentActions" || tc.name === "presentActions")
-            );
+        <aside className="w-[420px] h-full border-l bg-white flex flex-col">
+          <div className="h-14 border-b px-4 flex items-center justify-between">
+            <div className="flex items-center gap-2 font-semibold text-slate-800">
+              <Sparkles className="w-4 h-4 text-blue-600" />
+              Shpitto AI Assistant
+            </div>
+            <div className="text-xs text-slate-500">
+              {isBusy ? "Generating..." : "Ready"}
+            </div>
+          </div>
 
-            // Parse actions from tool call
-            let actions = (message as any).additional_kwargs?.actions || (message as any).actions;
-            
-            if (actionsToolCall) {
-              console.log(`🛠️ [AssistantMessage] Found presentActions tool call:`, actionsToolCall);
-              
-              const rawArgs = actionsToolCall.args || actionsToolCall.function?.arguments;
-              if (rawArgs) {
-                try {
-                  const parsedArgs = typeof rawArgs === 'string' ? JSON.parse(rawArgs) : rawArgs;
-                  if (parsedArgs.actions) {
-                    actions = parsedArgs.actions;
-                  }
-                } catch (e) {
-                  console.error("❌ [AssistantMessage] Failed to parse tool call args:", e);
-                }
-              }
-            }
-            
-            if (actions) {
-              console.log(`🔘 [AssistantMessage] Final actions to render:`, actions);
-            }
-
-            const previewToolCall = toolCalls.find((tc: any) => 
-              (tc.function?.name === "showWebsitePreview" || tc.name === "showWebsitePreview")
-            );
-            
-            let previewData = (message as any).additional_kwargs?.projectJson || 
-                               (message as any).additional_kwargs?.project_json ||
-                               (message as any).projectJson ||
-                               (message as any).project_json;
-            
-            if (previewToolCall) {
-              const rawArgs = previewToolCall.args || previewToolCall.function?.arguments;
-              if (rawArgs) {
-                try {
-                  const parsedArgs = typeof rawArgs === 'string' ? JSON.parse(rawArgs) : rawArgs;
-                  if (parsedArgs.projectJson || parsedArgs.project_json) {
-                    previewData = parsedArgs.projectJson || parsedArgs.project_json;
-                  }
-                } catch (e) {
-                  console.error("❌ [AssistantMessage] Failed to parse preview tool call args:", e);
-                }
-              }
-            }
-
-            // Sync with global projectJson state if previewData is found
-            if (previewData && (!projectJson || JSON.stringify(previewData) !== JSON.stringify(projectJson))) {
-              console.log("🔄 [AssistantMessage] Syncing previewData to global state");
-              setTimeout(() => setProjectJson(previewData), 0);
-            }
-
-            if (previewData) {
-              console.log(`🌐 [AssistantMessage] Found preview data to render`);
-            }
-
-            // Ensure message content is a string before checking/rendering
-            const messageContent = typeof message.content === 'string' 
-              ? message.content 
-              : Array.isArray(message.content) 
-                ? (message.content as any[]).map(c => c.text || '').join('') // Handle structured content if any
-                : '';
-
-            // If message content is empty/null AND no actions/preview to show, don't render anything
-            if (!messageContent && !actions && !previewData) {
-              return null;
-            }
-
-            return (
-              <div className="flex flex-col gap-3 p-4 bg-white border border-slate-100 rounded-2xl shadow-sm mb-4 mx-2">
-                {messageContent && (
-                  <div className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">
-                    {messageContent}
-                  </div>
-                )}
-
-                {previewData && (
-                  <div className="p-3 bg-green-50 border border-green-100 rounded-xl flex items-center gap-3 mt-1">
-                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white">
-                      <Globe className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="font-bold text-green-800 text-sm">Preview Generated</div>
-                      <div className="text-xs text-green-600">The website blueprint is ready for review.</div>
-                    </div>
-                  </div>
-                )}
-                
-                {actions && Array.isArray(actions) && actions.length > 0 && (
-                  <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-50 mt-1">
-                    {actions.map((action: any, i: number) => (
-                      <button
-                        key={i}
-                        disabled={isDeploying && action.text.includes("Deploy")}
-                        onClick={() => {
-                          if (action.type === "url") {
-                            window.open(action.payload, "_blank");
-                          } else {
-                            appendMessage(new TextMessage({ 
-                              content: action.payload || action.text, 
-                              role: Role.User 
-                            }));
-                          }
-                        }}
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md active:scale-95 ${
-                          isDeploying && action.text.includes("Deploy")
-                            ? "bg-slate-300 text-slate-500 cursor-not-allowed shadow-none"
-                            : "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-100"
-                        }`}
-                      >
-                        {action.text === "Build It" && <Hammer className="w-4 h-4" />}
-                        {action.text.includes("Deploy") && (
-                          isDeploying ? (
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          ) : (
-                            <Rocket className="w-4 h-4" />
-                          )
-                        )}
-                        {action.type === "url" && <ExternalLink className="w-4 h-4" />}
-                        {action.text}
-                      </button>
-                    ))}
-                  </div>
-                )}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/60">
+            {visibleMessages.length === 0 && (
+              <div className="rounded-2xl border bg-white p-4 text-sm text-slate-600 leading-relaxed shadow-sm">
+                Hi, I am here to help you build an industrial website. Tell me your business type, target customers, and your key services.
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    className="px-3 py-1.5 rounded-lg border bg-slate-50 hover:bg-slate-100 text-xs font-medium"
+                    onClick={() => submitText("We are a CNC machining factory serving aerospace clients.")}
+                  >
+                    CNC Factory
+                  </button>
+                  <button
+                    className="px-3 py-1.5 rounded-lg border bg-slate-50 hover:bg-slate-100 text-xs font-medium"
+                    onClick={() => submitText("Build a modern homepage with products, certifications, and contact form.")}
+                  >
+                    Build Homepage
+                  </button>
+                </div>
               </div>
-            );
-          }}
-        />
+            )}
+
+            {visibleMessages.map((message) => {
+              const text = extractMessageText(message);
+              const actions = extractMessageActions(message);
+              const isAssistant = message.role === "assistant";
+
+              if (!text && actions.length === 0) return null;
+
+              return (
+                <div key={message.id} className={`flex ${isAssistant ? "justify-start" : "justify-end"}`}>
+                  <div
+                    className={`max-w-[92%] rounded-2xl px-4 py-3 shadow-sm border ${
+                      isAssistant
+                        ? "bg-white border-slate-200 text-slate-700"
+                        : "bg-blue-600 border-blue-600 text-white"
+                    }`}
+                  >
+                    {text && <div className="whitespace-pre-wrap text-sm leading-relaxed">{text}</div>}
+
+                    {actions.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {actions.map((action, index) => (
+                          <button
+                            key={`${message.id}-${index}-${action.text}`}
+                            disabled={isBusy}
+                            onClick={() => handleActionClick(action)}
+                            className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {action.text === "Build It" && <Hammer className="w-3.5 h-3.5" />}
+                            {action.text.toLowerCase().includes("deploy") && <Rocket className="w-3.5 h-3.5" />}
+                            {action.type === "url" && <ExternalLink className="w-3.5 h-3.5" />}
+                            {action.text}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {isBusy && (
+              <div className="flex justify-start">
+                <div className="max-w-[92%] rounded-2xl px-4 py-3 border bg-white text-slate-600 text-sm shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
+                    Working on your request...
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {error && (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                {error.message}
+              </div>
+            )}
+          </div>
+
+          <form
+            className="border-t bg-white p-3"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              await submitText(input);
+              setInput("");
+            }}
+          >
+            <div className="flex items-end gap-2">
+              <textarea
+                value={input}
+                onChange={(event) => setInput(event.target.value)}
+                placeholder="Describe your business and website goals..."
+                className="flex-1 min-h-[76px] max-h-40 resize-y rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+                disabled={isBusy}
+              />
+              <button
+                type="submit"
+                disabled={isBusy || !input.trim()}
+                className="h-10 px-3 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+          </form>
+        </aside>
       </div>
     </main>
   );
@@ -350,22 +297,13 @@ export default function Home() {
   useEffect(() => {
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     );
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
   }, []);
 
-  return (
-    <CopilotKit 
-      runtimeUrl="/api/chat" 
-      properties={{ 
-        user_id: session?.user?.id, 
-        access_token: session?.access_token 
-      }}
-    >
-      <MainContent session={session} />
-    </CopilotKit>
-  );
+  return <MainContent session={session} />;
 }

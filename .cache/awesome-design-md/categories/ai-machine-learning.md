@@ -1,0 +1,41 @@
+# AI & Machine Learning
+
+- Style count: 12
+
+- **Claude** (claude)
+  - Anthropic's AI assistant. Warm terracotta accent, clean editorial layout
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/claude/DESIGN.md
+- **Cohere** (cohere)
+  - Enterprise AI platform. Vibrant gradients, data-rich dashboard aesthetic
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/cohere/DESIGN.md
+- **ElevenLabs** (elevenlabs)
+  - AI voice platform. Dark cinematic UI, audio-waveform aesthetics
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/elevenlabs/DESIGN.md
+- **Minimax** (minimax)
+  - AI model provider. Bold dark interface with neon accents
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/minimax/DESIGN.md
+- **Mistral AI** (mistral.ai)
+  - Open-weight LLM provider. French-engineered minimalism, purple-toned
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/mistral.ai/DESIGN.md
+- **Ollama** (ollama)
+  - Run LLMs locally. Terminal-first, monochrome simplicity
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/ollama/DESIGN.md
+- **OpenCode AI** (opencode.ai)
+  - AI coding platform. Developer-centric dark theme
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/opencode.ai/DESIGN.md
+- **Replicate** (replicate)
+  - Run ML models via API. Clean white canvas, code-forward
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/replicate/DESIGN.md
+- **RunwayML** (runwayml)
+  - AI video generation. Cinematic dark UI, media-rich layout
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/runwayml/DESIGN.md
+- **Together AI** (together.ai)
+  - Open-source AI infrastructure. Technical, blueprint-style design
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/together.ai/DESIGN.md
+- **VoltAgent** (voltagent)
+  - AI agent framework. Void-black canvas, emerald accent, terminal-native
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/voltagent/DESIGN.md
+- **xAI** (x.ai)
+  - Elon Musk's AI lab. Stark monochrome, futuristic minimalism
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/x.ai/DESIGN.md
+

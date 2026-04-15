@@ -12,6 +12,12 @@ export interface HeroProps {
   ctaText?: string;
   cta_text?: string;
   image?: string;
+  backgroundImage?: string;
+  ctaButtons?: Array<{
+    text?: string;
+    href?: string;
+    variant?: "primary" | "secondary";
+  }>;
   align?: "text-left" | "text-center";
   theme?: "dark" | "light" | "glass";
   effect?: "none" | "retro-grid";
@@ -24,12 +30,19 @@ export const Hero = ({
   ctaText, 
   cta_text, 
   image, 
+  backgroundImage,
+  ctaButtons = [],
   align = "text-left", 
   theme = "dark", 
   effect = "none" 
 }: HeroProps) => {
   const cta = ctaText || cta_text || "Learn More";
   const desc = description || subtitle;
+  const bgImage = backgroundImage || image;
+  const normalizedButtons =
+    Array.isArray(ctaButtons) && ctaButtons.length > 0
+      ? ctaButtons.filter((btn) => (btn?.text || "").trim()).slice(0, 2)
+      : [];
 
   return (
     <div className={cn(
@@ -38,6 +51,12 @@ export const Hero = ({
       theme === "glass" && "bg-slate-50/50 backdrop-blur-xl",
       align === "text-center" ? "justify-center text-center" : "justify-start text-left"
     )}>
+      {bgImage ? (
+        <>
+          <img src={bgImage} alt={title || "Hero"} className="absolute inset-0 w-full h-full object-cover opacity-25" />
+          <div className="absolute inset-0 bg-black/30" />
+        </>
+      ) : null}
       {effect === "retro-grid" && <RetroGrid />}
       
       <div className="container relative z-10 mx-auto px-4">
@@ -58,9 +77,28 @@ export const Hero = ({
               {desc}
             </p>
           )}
-          <button className="px-8 py-4 bg-[var(--accent)] text-white rounded-full font-bold transition-all shadow-lg hover:opacity-90">
-            {cta}
-          </button>
+          {normalizedButtons.length > 0 ? (
+            <div className={cn("flex flex-wrap gap-3", align === "text-center" ? "justify-center" : "justify-start")}>
+              {normalizedButtons.map((btn, idx) => (
+                <a
+                  key={`${btn.href || "#"}-${idx}`}
+                  href={btn.href || "#"}
+                  className={cn(
+                    "px-8 py-4 rounded-full font-bold transition-all shadow-lg hover:opacity-90",
+                    btn.variant === "secondary"
+                      ? "bg-white/15 border border-white/40 text-white"
+                      : "bg-[var(--accent)] text-white",
+                  )}
+                >
+                  {btn.text}
+                </a>
+              ))}
+            </div>
+          ) : (
+            <button className="px-8 py-4 bg-[var(--accent)] text-white rounded-full font-bold transition-all shadow-lg hover:opacity-90">
+              {cta}
+            </button>
+          )}
         </motion.div>
       </div>
     </div>

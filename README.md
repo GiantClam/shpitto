@@ -44,5 +44,38 @@ The core protocol is defined in `packages/schema/src/project-schema.ts`. This en
 
 ## Infrastructure
 
-Initialize your Supabase database using the script in `packages/db/supabase_schema.sql`.
-This sets up the `shpitto_projects` and `shpitto_deployments` tables required for SaaS mode.
+- D1 schema: `packages/db/d1_schema.sql`
+- Runtime auto-creates required tables in D1 through `apps/web/lib/d1.ts`
+- Contact ingest endpoint: `POST /api/contact` (used by generated static sites)
+- Contact submissions query endpoint (authenticated): `GET /api/contact/submissions`
+- R2 archive support for generated site artifacts and contact payload snapshots: `apps/web/lib/r2.ts`
+- Cloudflare Worker contact ingress service: `apps/contact-worker` (`POST /api/contact`)
+
+Required environment variables for Cloudflare persistence:
+
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_D1_DATABASE_ID` (or `CLOUDFLARE_D1_DB_ID`)
+- `R2_BUCKET`
+- `R2_ACCESS_KEY_ID` (or `R2_ACCESS_KEY`)
+- `R2_SECRET_ACCESS_KEY` (or `R2_SECRET`)
+- `SHPITTO_CONTACT_API_URL` (MUST be an absolute URL reachable by generated Cloudflare Pages sites, e.g. a Worker or the app domain `/api/contact`)
+
+Optional:
+
+- `R2_ACCOUNT_ID` (defaults to `CLOUDFLARE_ACCOUNT_ID`)
+- `R2_ENDPOINT` (defaults to `<account_id>.r2.cloudflarestorage.com`)
+- `SHPITTO_APP_BASE_URL` or `NEXT_PUBLIC_APP_URL` (used when `SHPITTO_CONTACT_API_URL` is unset)
+
+Deploy worker and set contact URL:
+
+```bash
+cd apps/contact-worker
+pnpm deploy
+```
+
+After deployment, set:
+
+```env
+SHPITTO_CONTACT_API_URL=https://<worker-subdomain>.workers.dev/api/contact
+```

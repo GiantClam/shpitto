@@ -1,0 +1,1204 @@
+{
+  "sourceRepo": "local://awesome-design-md",
+  "generatedAt": "2026-04-15T05:57:49.364Z",
+  "totalStyles": 58,
+  "categories": [
+    {
+      "name": "AI & Machine Learning",
+      "styles": [
+        {
+          "name": "Claude",
+          "slug": "claude",
+          "category": "AI & Machine Learning",
+          "description": "Anthropic's AI assistant. Warm terracotta accent, clean editorial layout",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/claude/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/claude",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/claude/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/claude/DESIGN.md"
+        },
+        {
+          "name": "Cohere",
+          "slug": "cohere",
+          "category": "AI & Machine Learning",
+          "description": "Enterprise AI platform. Vibrant gradients, data-rich dashboard aesthetic",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/cohere/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/cohere",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/cohere/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/cohere/DESIGN.md"
+        },
+        {
+          "name": "ElevenLabs",
+          "slug": "elevenlabs",
+          "category": "AI & Machine Learning",
+          "description": "AI voice platform. Dark cinematic UI, audio-waveform aesthetics",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/elevenlabs/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/elevenlabs",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/elevenlabs/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/elevenlabs/DESIGN.md"
+        },
+        {
+          "name": "Minimax",
+          "slug": "minimax",
+          "category": "AI & Machine Learning",
+          "description": "AI model provider. Bold dark interface with neon accents",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/minimax/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/minimax",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/minimax/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/minimax/DESIGN.md"
+        },
+        {
+          "name": "Mistral AI",
+          "slug": "mistral.ai",
+          "category": "AI & Machine Learning",
+          "description": "Open-weight LLM provider. French-engineered minimalism, purple-toned",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/mistral.ai/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/mistral.ai",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/mistral.ai/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/mistral.ai/DESIGN.md"
+        },
+        {
+          "name": "Ollama",
+          "slug": "ollama",
+          "category": "AI & Machine Learning",
+          "description": "Run LLMs locally. Terminal-first, monochrome simplicity",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/ollama/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/ollama",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/ollama/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/ollama/DESIGN.md"
+        },
+        {
+          "name": "OpenCode AI",
+          "slug": "opencode.ai",
+          "category": "AI & Machine Learning",
+          "description": "AI coding platform. Developer-centric dark theme",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/opencode.ai/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/opencode.ai",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/opencode.ai/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/opencode.ai/DESIGN.md"
+        },
+        {
+          "name": "Replicate",
+          "slug": "replicate",
+          "category": "AI & Machine Learning",
+          "description": "Run ML models via API. Clean white canvas, code-forward",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/replicate/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/replicate",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/replicate/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/replicate/DESIGN.md"
+        },
+        {
+          "name": "RunwayML",
+          "slug": "runwayml",
+          "category": "AI & Machine Learning",
+          "description": "AI video generation. Cinematic dark UI, media-rich layout",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/runwayml/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/runwayml",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/runwayml/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/runwayml/DESIGN.md"
+        },
+        {
+          "name": "Together AI",
+          "slug": "together.ai",
+          "category": "AI & Machine Learning",
+          "description": "Open-source AI infrastructure. Technical, blueprint-style design",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/together.ai/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/together.ai",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/together.ai/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/together.ai/DESIGN.md"
+        },
+        {
+          "name": "VoltAgent",
+          "slug": "voltagent",
+          "category": "AI & Machine Learning",
+          "description": "AI agent framework. Void-black canvas, emerald accent, terminal-native",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/voltagent/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/voltagent",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/voltagent/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/voltagent/DESIGN.md"
+        },
+        {
+          "name": "xAI",
+          "slug": "x.ai",
+          "category": "AI & Machine Learning",
+          "description": "Elon Musk's AI lab. Stark monochrome, futuristic minimalism",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/x.ai/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/x.ai",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/x.ai/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/x.ai/DESIGN.md"
+        }
+      ]
+    },
+    {
+      "name": "Car Brands",
+      "styles": [
+        {
+          "name": "BMW",
+          "slug": "bmw",
+          "category": "Car Brands",
+          "description": "Luxury automotive. Dark premium surfaces, precise German engineering aesthetic",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/bmw/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/bmw",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/bmw/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/bmw/DESIGN.md"
+        },
+        {
+          "name": "Ferrari",
+          "slug": "ferrari",
+          "category": "Car Brands",
+          "description": "Luxury automotive. Chiaroscuro black-white editorial, Ferrari Red with extreme sparseness",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/ferrari/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/ferrari",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/ferrari/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/ferrari/DESIGN.md"
+        },
+        {
+          "name": "Lamborghini",
+          "slug": "lamborghini",
+          "category": "Car Brands",
+          "description": "Luxury automotive. True black cathedral, gold accent, LamboType custom Neo-Grotesk",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/lamborghini/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/lamborghini",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/lamborghini/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/lamborghini/DESIGN.md"
+        },
+        {
+          "name": "Renault",
+          "slug": "renault",
+          "category": "Car Brands",
+          "description": "French automotive. Vivid aurora gradients, NouvelR proprietary typeface, zero-radius buttons",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/renault/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/renault",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/renault/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/renault/DESIGN.md"
+        },
+        {
+          "name": "Tesla",
+          "slug": "tesla",
+          "category": "Car Brands",
+          "description": "Electric vehicles. Radical subtraction, cinematic full-viewport photography, Universal Sans",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/tesla/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/tesla",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/tesla/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/tesla/DESIGN.md"
+        }
+      ]
+    },
+    {
+      "name": "Design & Productivity",
+      "styles": [
+        {
+          "name": "Airtable",
+          "slug": "airtable",
+          "category": "Design & Productivity",
+          "description": "Spreadsheet-database hybrid. Colorful, friendly, structured data aesthetic",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/airtable/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/airtable",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/airtable/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/airtable/DESIGN.md"
+        },
+        {
+          "name": "Cal.com",
+          "slug": "cal",
+          "category": "Design & Productivity",
+          "description": "Open-source scheduling. Clean neutral UI, developer-oriented simplicity",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/cal/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/cal",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/cal/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/cal/DESIGN.md"
+        },
+        {
+          "name": "Clay",
+          "slug": "clay",
+          "category": "Design & Productivity",
+          "description": "Creative agency. Organic shapes, soft gradients, art-directed layout",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/clay/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/clay",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/clay/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/clay/DESIGN.md"
+        },
+        {
+          "name": "Figma",
+          "slug": "figma",
+          "category": "Design & Productivity",
+          "description": "Collaborative design tool. Vibrant multi-color, playful yet professional",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/figma/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/figma",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/figma/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/figma/DESIGN.md"
+        },
+        {
+          "name": "Framer",
+          "slug": "framer",
+          "category": "Design & Productivity",
+          "description": "Website builder. Bold black and blue, motion-first, design-forward",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/framer/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/framer",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/framer/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/framer/DESIGN.md"
+        },
+        {
+          "name": "Intercom",
+          "slug": "intercom",
+          "category": "Design & Productivity",
+          "description": "Customer messaging. Friendly blue palette, conversational UI patterns",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/intercom/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/intercom",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/intercom/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/intercom/DESIGN.md"
+        },
+        {
+          "name": "Miro",
+          "slug": "miro",
+          "category": "Design & Productivity",
+          "description": "Visual collaboration. Bright yellow accent, infinite canvas aesthetic",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/miro/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/miro",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/miro/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/miro/DESIGN.md"
+        },
+        {
+          "name": "Notion",
+          "slug": "notion",
+          "category": "Design & Productivity",
+          "description": "All-in-one workspace. Warm minimalism, serif headings, soft surfaces",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/notion/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/notion",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/notion/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/notion/DESIGN.md"
+        },
+        {
+          "name": "Pinterest",
+          "slug": "pinterest",
+          "category": "Design & Productivity",
+          "description": "Visual discovery platform. Red accent, masonry grid, image-first",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/pinterest/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/pinterest",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/pinterest/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/pinterest/DESIGN.md"
+        },
+        {
+          "name": "Webflow",
+          "slug": "webflow",
+          "category": "Design & Productivity",
+          "description": "Visual web builder. Blue-accented, polished marketing site aesthetic",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/webflow/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/webflow",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/webflow/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/webflow/DESIGN.md"
+        }
+      ]
+    },
+    {
+      "name": "Developer Tools & Platforms",
+      "styles": [
+        {
+          "name": "Cursor",
+          "slug": "cursor",
+          "category": "Developer Tools & Platforms",
+          "description": "AI-first code editor. Sleek dark interface, gradient accents",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/cursor/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/cursor",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/cursor/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/cursor/DESIGN.md"
+        },
+        {
+          "name": "Expo",
+          "slug": "expo",
+          "category": "Developer Tools & Platforms",
+          "description": "React Native platform. Dark theme, tight letter-spacing, code-centric",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/expo/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/expo",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/expo/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/expo/DESIGN.md"
+        },
+        {
+          "name": "Linear",
+          "slug": "linear.app",
+          "category": "Developer Tools & Platforms",
+          "description": "Project management for engineers. Ultra-minimal, precise, purple accent",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/linear.app/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/linear.app",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/linear.app/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/linear.app/DESIGN.md"
+        },
+        {
+          "name": "Lovable",
+          "slug": "lovable",
+          "category": "Developer Tools & Platforms",
+          "description": "AI full-stack builder. Playful gradients, friendly dev aesthetic",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/lovable/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/lovable",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/lovable/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/lovable/DESIGN.md"
+        },
+        {
+          "name": "Mintlify",
+          "slug": "mintlify",
+          "category": "Developer Tools & Platforms",
+          "description": "Documentation platform. Clean, green-accented, reading-optimized",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/mintlify/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/mintlify",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/mintlify/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/mintlify/DESIGN.md"
+        },
+        {
+          "name": "PostHog",
+          "slug": "posthog",
+          "category": "Developer Tools & Platforms",
+          "description": "Product analytics. Playful hedgehog branding, developer-friendly dark UI",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/posthog/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/posthog",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/posthog/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/posthog/DESIGN.md"
+        },
+        {
+          "name": "Raycast",
+          "slug": "raycast",
+          "category": "Developer Tools & Platforms",
+          "description": "Productivity launcher. Sleek dark chrome, vibrant gradient accents",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/raycast/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/raycast",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/raycast/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/raycast/DESIGN.md"
+        },
+        {
+          "name": "Resend",
+          "slug": "resend",
+          "category": "Developer Tools & Platforms",
+          "description": "Email API for developers. Minimal dark theme, monospace accents",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/resend/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/resend",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/resend/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/resend/DESIGN.md"
+        },
+        {
+          "name": "Sentry",
+          "slug": "sentry",
+          "category": "Developer Tools & Platforms",
+          "description": "Error monitoring. Dark dashboard, data-dense, pink-purple accent",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/sentry/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/sentry",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/sentry/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/sentry/DESIGN.md"
+        },
+        {
+          "name": "Supabase",
+          "slug": "supabase",
+          "category": "Developer Tools & Platforms",
+          "description": "Open-source Firebase alternative. Dark emerald theme, code-first",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/supabase/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/supabase",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/supabase/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/supabase/DESIGN.md"
+        },
+        {
+          "name": "Superhuman",
+          "slug": "superhuman",
+          "category": "Developer Tools & Platforms",
+          "description": "Fast email client. Premium dark UI, keyboard-first, purple glow",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/superhuman/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/superhuman",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/superhuman/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/superhuman/DESIGN.md"
+        },
+        {
+          "name": "Vercel",
+          "slug": "vercel",
+          "category": "Developer Tools & Platforms",
+          "description": "Frontend deployment platform. Black and white precision, Geist font",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/vercel/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/vercel",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/vercel/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/vercel/DESIGN.md"
+        },
+        {
+          "name": "Warp",
+          "slug": "warp",
+          "category": "Developer Tools & Platforms",
+          "description": "Modern terminal. Dark IDE-like interface, block-based command UI",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/warp/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/warp",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/warp/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/warp/DESIGN.md"
+        },
+        {
+          "name": "Zapier",
+          "slug": "zapier",
+          "category": "Developer Tools & Platforms",
+          "description": "Automation platform. Warm orange, friendly illustration-driven",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/zapier/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/zapier",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/zapier/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/zapier/DESIGN.md"
+        }
+      ]
+    },
+    {
+      "name": "Enterprise & Consumer",
+      "styles": [
+        {
+          "name": "Airbnb",
+          "slug": "airbnb",
+          "category": "Enterprise & Consumer",
+          "description": "Travel marketplace. Warm coral accent, photography-driven, rounded UI",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/airbnb/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/airbnb",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/airbnb/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/airbnb/DESIGN.md"
+        },
+        {
+          "name": "Apple",
+          "slug": "apple",
+          "category": "Enterprise & Consumer",
+          "description": "Consumer electronics. Premium white space, SF Pro, cinematic imagery",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/apple/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/apple",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/apple/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/apple/DESIGN.md"
+        },
+        {
+          "name": "IBM",
+          "slug": "ibm",
+          "category": "Enterprise & Consumer",
+          "description": "Enterprise technology. Carbon design system, structured blue palette",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/ibm/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/ibm",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/ibm/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/ibm/DESIGN.md"
+        },
+        {
+          "name": "NVIDIA",
+          "slug": "nvidia",
+          "category": "Enterprise & Consumer",
+          "description": "GPU computing. Green-black energy, technical power aesthetic",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/nvidia/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/nvidia",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/nvidia/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/nvidia/DESIGN.md"
+        },
+        {
+          "name": "SpaceX",
+          "slug": "spacex",
+          "category": "Enterprise & Consumer",
+          "description": "Space technology. Stark black and white, full-bleed imagery, futuristic",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/spacex/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/spacex",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/spacex/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/spacex/DESIGN.md"
+        },
+        {
+          "name": "Spotify",
+          "slug": "spotify",
+          "category": "Enterprise & Consumer",
+          "description": "Music streaming. Vibrant green on dark, bold type, album-art-driven",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/spotify/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/spotify",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/spotify/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/spotify/DESIGN.md"
+        },
+        {
+          "name": "Uber",
+          "slug": "uber",
+          "category": "Enterprise & Consumer",
+          "description": "Mobility platform. Bold black and white, tight type, urban energy",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/uber/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/uber",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/uber/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/uber/DESIGN.md"
+        }
+      ]
+    },
+    {
+      "name": "Fintech & Crypto",
+      "styles": [
+        {
+          "name": "Coinbase",
+          "slug": "coinbase",
+          "category": "Fintech & Crypto",
+          "description": "Crypto exchange. Clean blue identity, trust-focused, institutional feel",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/coinbase/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/coinbase",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/coinbase/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/coinbase/DESIGN.md"
+        },
+        {
+          "name": "Kraken",
+          "slug": "kraken",
+          "category": "Fintech & Crypto",
+          "description": "Crypto trading platform. Purple-accented dark UI, data-dense dashboards",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/kraken/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/kraken",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/kraken/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/kraken/DESIGN.md"
+        },
+        {
+          "name": "Revolut",
+          "slug": "revolut",
+          "category": "Fintech & Crypto",
+          "description": "Digital banking. Sleek dark interface, gradient cards, fintech precision",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/revolut/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/revolut",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/revolut/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/revolut/DESIGN.md"
+        },
+        {
+          "name": "Wise",
+          "slug": "wise",
+          "category": "Fintech & Crypto",
+          "description": "International money transfer. Bright green accent, friendly and clear",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/wise/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/wise",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/wise/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/wise/DESIGN.md"
+        }
+      ]
+    },
+    {
+      "name": "Infrastructure & Cloud",
+      "styles": [
+        {
+          "name": "ClickHouse",
+          "slug": "clickhouse",
+          "category": "Infrastructure & Cloud",
+          "description": "Fast analytics database. Yellow-accented, technical documentation style",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/clickhouse/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/clickhouse",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/clickhouse/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/clickhouse/DESIGN.md"
+        },
+        {
+          "name": "Composio",
+          "slug": "composio",
+          "category": "Infrastructure & Cloud",
+          "description": "Tool integration platform. Modern dark with colorful integration icons",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/composio/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/composio",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/composio/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/composio/DESIGN.md"
+        },
+        {
+          "name": "HashiCorp",
+          "slug": "hashicorp",
+          "category": "Infrastructure & Cloud",
+          "description": "Infrastructure automation. Enterprise-clean, black and white",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/hashicorp/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/hashicorp",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/hashicorp/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/hashicorp/DESIGN.md"
+        },
+        {
+          "name": "MongoDB",
+          "slug": "mongodb",
+          "category": "Infrastructure & Cloud",
+          "description": "Document database. Green leaf branding, developer documentation focus",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/mongodb/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/mongodb",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/mongodb/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/mongodb/DESIGN.md"
+        },
+        {
+          "name": "Sanity",
+          "slug": "sanity",
+          "category": "Infrastructure & Cloud",
+          "description": "Headless CMS. Red accent, content-first editorial layout",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/sanity/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/sanity",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/sanity/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/sanity/DESIGN.md"
+        },
+        {
+          "name": "Stripe",
+          "slug": "stripe",
+          "category": "Infrastructure & Cloud",
+          "description": "Payment infrastructure. Signature purple gradients, weight-300 elegance",
+          "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/stripe/",
+          "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/stripe",
+          "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/stripe/DESIGN.md",
+          "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/stripe/DESIGN.md"
+        }
+      ]
+    }
+  ],
+  "styles": [
+    {
+      "name": "Airbnb",
+      "slug": "airbnb",
+      "category": "Enterprise & Consumer",
+      "description": "Travel marketplace. Warm coral accent, photography-driven, rounded UI",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/airbnb/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/airbnb",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/airbnb/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/airbnb/DESIGN.md"
+    },
+    {
+      "name": "Airtable",
+      "slug": "airtable",
+      "category": "Design & Productivity",
+      "description": "Spreadsheet-database hybrid. Colorful, friendly, structured data aesthetic",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/airtable/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/airtable",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/airtable/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/airtable/DESIGN.md"
+    },
+    {
+      "name": "Apple",
+      "slug": "apple",
+      "category": "Enterprise & Consumer",
+      "description": "Consumer electronics. Premium white space, SF Pro, cinematic imagery",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/apple/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/apple",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/apple/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/apple/DESIGN.md"
+    },
+    {
+      "name": "BMW",
+      "slug": "bmw",
+      "category": "Car Brands",
+      "description": "Luxury automotive. Dark premium surfaces, precise German engineering aesthetic",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/bmw/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/bmw",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/bmw/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/bmw/DESIGN.md"
+    },
+    {
+      "name": "Cal.com",
+      "slug": "cal",
+      "category": "Design & Productivity",
+      "description": "Open-source scheduling. Clean neutral UI, developer-oriented simplicity",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/cal/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/cal",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/cal/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/cal/DESIGN.md"
+    },
+    {
+      "name": "Claude",
+      "slug": "claude",
+      "category": "AI & Machine Learning",
+      "description": "Anthropic's AI assistant. Warm terracotta accent, clean editorial layout",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/claude/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/claude",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/claude/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/claude/DESIGN.md"
+    },
+    {
+      "name": "Clay",
+      "slug": "clay",
+      "category": "Design & Productivity",
+      "description": "Creative agency. Organic shapes, soft gradients, art-directed layout",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/clay/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/clay",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/clay/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/clay/DESIGN.md"
+    },
+    {
+      "name": "ClickHouse",
+      "slug": "clickhouse",
+      "category": "Infrastructure & Cloud",
+      "description": "Fast analytics database. Yellow-accented, technical documentation style",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/clickhouse/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/clickhouse",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/clickhouse/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/clickhouse/DESIGN.md"
+    },
+    {
+      "name": "Cohere",
+      "slug": "cohere",
+      "category": "AI & Machine Learning",
+      "description": "Enterprise AI platform. Vibrant gradients, data-rich dashboard aesthetic",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/cohere/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/cohere",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/cohere/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/cohere/DESIGN.md"
+    },
+    {
+      "name": "Coinbase",
+      "slug": "coinbase",
+      "category": "Fintech & Crypto",
+      "description": "Crypto exchange. Clean blue identity, trust-focused, institutional feel",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/coinbase/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/coinbase",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/coinbase/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/coinbase/DESIGN.md"
+    },
+    {
+      "name": "Composio",
+      "slug": "composio",
+      "category": "Infrastructure & Cloud",
+      "description": "Tool integration platform. Modern dark with colorful integration icons",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/composio/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/composio",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/composio/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/composio/DESIGN.md"
+    },
+    {
+      "name": "Cursor",
+      "slug": "cursor",
+      "category": "Developer Tools & Platforms",
+      "description": "AI-first code editor. Sleek dark interface, gradient accents",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/cursor/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/cursor",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/cursor/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/cursor/DESIGN.md"
+    },
+    {
+      "name": "ElevenLabs",
+      "slug": "elevenlabs",
+      "category": "AI & Machine Learning",
+      "description": "AI voice platform. Dark cinematic UI, audio-waveform aesthetics",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/elevenlabs/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/elevenlabs",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/elevenlabs/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/elevenlabs/DESIGN.md"
+    },
+    {
+      "name": "Expo",
+      "slug": "expo",
+      "category": "Developer Tools & Platforms",
+      "description": "React Native platform. Dark theme, tight letter-spacing, code-centric",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/expo/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/expo",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/expo/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/expo/DESIGN.md"
+    },
+    {
+      "name": "Ferrari",
+      "slug": "ferrari",
+      "category": "Car Brands",
+      "description": "Luxury automotive. Chiaroscuro black-white editorial, Ferrari Red with extreme sparseness",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/ferrari/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/ferrari",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/ferrari/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/ferrari/DESIGN.md"
+    },
+    {
+      "name": "Figma",
+      "slug": "figma",
+      "category": "Design & Productivity",
+      "description": "Collaborative design tool. Vibrant multi-color, playful yet professional",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/figma/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/figma",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/figma/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/figma/DESIGN.md"
+    },
+    {
+      "name": "Framer",
+      "slug": "framer",
+      "category": "Design & Productivity",
+      "description": "Website builder. Bold black and blue, motion-first, design-forward",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/framer/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/framer",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/framer/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/framer/DESIGN.md"
+    },
+    {
+      "name": "HashiCorp",
+      "slug": "hashicorp",
+      "category": "Infrastructure & Cloud",
+      "description": "Infrastructure automation. Enterprise-clean, black and white",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/hashicorp/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/hashicorp",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/hashicorp/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/hashicorp/DESIGN.md"
+    },
+    {
+      "name": "IBM",
+      "slug": "ibm",
+      "category": "Enterprise & Consumer",
+      "description": "Enterprise technology. Carbon design system, structured blue palette",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/ibm/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/ibm",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/ibm/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/ibm/DESIGN.md"
+    },
+    {
+      "name": "Intercom",
+      "slug": "intercom",
+      "category": "Design & Productivity",
+      "description": "Customer messaging. Friendly blue palette, conversational UI patterns",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/intercom/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/intercom",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/intercom/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/intercom/DESIGN.md"
+    },
+    {
+      "name": "Kraken",
+      "slug": "kraken",
+      "category": "Fintech & Crypto",
+      "description": "Crypto trading platform. Purple-accented dark UI, data-dense dashboards",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/kraken/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/kraken",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/kraken/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/kraken/DESIGN.md"
+    },
+    {
+      "name": "Lamborghini",
+      "slug": "lamborghini",
+      "category": "Car Brands",
+      "description": "Luxury automotive. True black cathedral, gold accent, LamboType custom Neo-Grotesk",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/lamborghini/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/lamborghini",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/lamborghini/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/lamborghini/DESIGN.md"
+    },
+    {
+      "name": "Linear",
+      "slug": "linear.app",
+      "category": "Developer Tools & Platforms",
+      "description": "Project management for engineers. Ultra-minimal, precise, purple accent",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/linear.app/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/linear.app",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/linear.app/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/linear.app/DESIGN.md"
+    },
+    {
+      "name": "Lovable",
+      "slug": "lovable",
+      "category": "Developer Tools & Platforms",
+      "description": "AI full-stack builder. Playful gradients, friendly dev aesthetic",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/lovable/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/lovable",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/lovable/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/lovable/DESIGN.md"
+    },
+    {
+      "name": "Minimax",
+      "slug": "minimax",
+      "category": "AI & Machine Learning",
+      "description": "AI model provider. Bold dark interface with neon accents",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/minimax/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/minimax",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/minimax/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/minimax/DESIGN.md"
+    },
+    {
+      "name": "Mintlify",
+      "slug": "mintlify",
+      "category": "Developer Tools & Platforms",
+      "description": "Documentation platform. Clean, green-accented, reading-optimized",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/mintlify/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/mintlify",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/mintlify/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/mintlify/DESIGN.md"
+    },
+    {
+      "name": "Miro",
+      "slug": "miro",
+      "category": "Design & Productivity",
+      "description": "Visual collaboration. Bright yellow accent, infinite canvas aesthetic",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/miro/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/miro",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/miro/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/miro/DESIGN.md"
+    },
+    {
+      "name": "Mistral AI",
+      "slug": "mistral.ai",
+      "category": "AI & Machine Learning",
+      "description": "Open-weight LLM provider. French-engineered minimalism, purple-toned",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/mistral.ai/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/mistral.ai",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/mistral.ai/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/mistral.ai/DESIGN.md"
+    },
+    {
+      "name": "MongoDB",
+      "slug": "mongodb",
+      "category": "Infrastructure & Cloud",
+      "description": "Document database. Green leaf branding, developer documentation focus",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/mongodb/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/mongodb",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/mongodb/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/mongodb/DESIGN.md"
+    },
+    {
+      "name": "Notion",
+      "slug": "notion",
+      "category": "Design & Productivity",
+      "description": "All-in-one workspace. Warm minimalism, serif headings, soft surfaces",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/notion/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/notion",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/notion/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/notion/DESIGN.md"
+    },
+    {
+      "name": "NVIDIA",
+      "slug": "nvidia",
+      "category": "Enterprise & Consumer",
+      "description": "GPU computing. Green-black energy, technical power aesthetic",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/nvidia/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/nvidia",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/nvidia/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/nvidia/DESIGN.md"
+    },
+    {
+      "name": "Ollama",
+      "slug": "ollama",
+      "category": "AI & Machine Learning",
+      "description": "Run LLMs locally. Terminal-first, monochrome simplicity",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/ollama/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/ollama",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/ollama/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/ollama/DESIGN.md"
+    },
+    {
+      "name": "OpenCode AI",
+      "slug": "opencode.ai",
+      "category": "AI & Machine Learning",
+      "description": "AI coding platform. Developer-centric dark theme",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/opencode.ai/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/opencode.ai",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/opencode.ai/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/opencode.ai/DESIGN.md"
+    },
+    {
+      "name": "Pinterest",
+      "slug": "pinterest",
+      "category": "Design & Productivity",
+      "description": "Visual discovery platform. Red accent, masonry grid, image-first",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/pinterest/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/pinterest",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/pinterest/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/pinterest/DESIGN.md"
+    },
+    {
+      "name": "PostHog",
+      "slug": "posthog",
+      "category": "Developer Tools & Platforms",
+      "description": "Product analytics. Playful hedgehog branding, developer-friendly dark UI",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/posthog/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/posthog",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/posthog/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/posthog/DESIGN.md"
+    },
+    {
+      "name": "Raycast",
+      "slug": "raycast",
+      "category": "Developer Tools & Platforms",
+      "description": "Productivity launcher. Sleek dark chrome, vibrant gradient accents",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/raycast/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/raycast",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/raycast/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/raycast/DESIGN.md"
+    },
+    {
+      "name": "Renault",
+      "slug": "renault",
+      "category": "Car Brands",
+      "description": "French automotive. Vivid aurora gradients, NouvelR proprietary typeface, zero-radius buttons",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/renault/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/renault",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/renault/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/renault/DESIGN.md"
+    },
+    {
+      "name": "Replicate",
+      "slug": "replicate",
+      "category": "AI & Machine Learning",
+      "description": "Run ML models via API. Clean white canvas, code-forward",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/replicate/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/replicate",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/replicate/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/replicate/DESIGN.md"
+    },
+    {
+      "name": "Resend",
+      "slug": "resend",
+      "category": "Developer Tools & Platforms",
+      "description": "Email API for developers. Minimal dark theme, monospace accents",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/resend/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/resend",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/resend/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/resend/DESIGN.md"
+    },
+    {
+      "name": "Revolut",
+      "slug": "revolut",
+      "category": "Fintech & Crypto",
+      "description": "Digital banking. Sleek dark interface, gradient cards, fintech precision",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/revolut/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/revolut",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/revolut/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/revolut/DESIGN.md"
+    },
+    {
+      "name": "RunwayML",
+      "slug": "runwayml",
+      "category": "AI & Machine Learning",
+      "description": "AI video generation. Cinematic dark UI, media-rich layout",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/runwayml/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/runwayml",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/runwayml/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/runwayml/DESIGN.md"
+    },
+    {
+      "name": "Sanity",
+      "slug": "sanity",
+      "category": "Infrastructure & Cloud",
+      "description": "Headless CMS. Red accent, content-first editorial layout",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/sanity/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/sanity",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/sanity/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/sanity/DESIGN.md"
+    },
+    {
+      "name": "Sentry",
+      "slug": "sentry",
+      "category": "Developer Tools & Platforms",
+      "description": "Error monitoring. Dark dashboard, data-dense, pink-purple accent",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/sentry/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/sentry",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/sentry/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/sentry/DESIGN.md"
+    },
+    {
+      "name": "SpaceX",
+      "slug": "spacex",
+      "category": "Enterprise & Consumer",
+      "description": "Space technology. Stark black and white, full-bleed imagery, futuristic",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/spacex/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/spacex",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/spacex/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/spacex/DESIGN.md"
+    },
+    {
+      "name": "Spotify",
+      "slug": "spotify",
+      "category": "Enterprise & Consumer",
+      "description": "Music streaming. Vibrant green on dark, bold type, album-art-driven",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/spotify/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/spotify",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/spotify/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/spotify/DESIGN.md"
+    },
+    {
+      "name": "Stripe",
+      "slug": "stripe",
+      "category": "Infrastructure & Cloud",
+      "description": "Payment infrastructure. Signature purple gradients, weight-300 elegance",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/stripe/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/stripe",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/stripe/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/stripe/DESIGN.md"
+    },
+    {
+      "name": "Supabase",
+      "slug": "supabase",
+      "category": "Developer Tools & Platforms",
+      "description": "Open-source Firebase alternative. Dark emerald theme, code-first",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/supabase/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/supabase",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/supabase/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/supabase/DESIGN.md"
+    },
+    {
+      "name": "Superhuman",
+      "slug": "superhuman",
+      "category": "Developer Tools & Platforms",
+      "description": "Fast email client. Premium dark UI, keyboard-first, purple glow",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/superhuman/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/superhuman",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/superhuman/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/superhuman/DESIGN.md"
+    },
+    {
+      "name": "Tesla",
+      "slug": "tesla",
+      "category": "Car Brands",
+      "description": "Electric vehicles. Radical subtraction, cinematic full-viewport photography, Universal Sans",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/tesla/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/tesla",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/tesla/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/tesla/DESIGN.md"
+    },
+    {
+      "name": "Together AI",
+      "slug": "together.ai",
+      "category": "AI & Machine Learning",
+      "description": "Open-source AI infrastructure. Technical, blueprint-style design",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/together.ai/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/together.ai",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/together.ai/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/together.ai/DESIGN.md"
+    },
+    {
+      "name": "Uber",
+      "slug": "uber",
+      "category": "Enterprise & Consumer",
+      "description": "Mobility platform. Bold black and white, tight type, urban energy",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/uber/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/uber",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/uber/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/uber/DESIGN.md"
+    },
+    {
+      "name": "Vercel",
+      "slug": "vercel",
+      "category": "Developer Tools & Platforms",
+      "description": "Frontend deployment platform. Black and white precision, Geist font",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/vercel/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/vercel",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/vercel/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/vercel/DESIGN.md"
+    },
+    {
+      "name": "VoltAgent",
+      "slug": "voltagent",
+      "category": "AI & Machine Learning",
+      "description": "AI agent framework. Void-black canvas, emerald accent, terminal-native",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/voltagent/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/voltagent",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/voltagent/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/voltagent/DESIGN.md"
+    },
+    {
+      "name": "Warp",
+      "slug": "warp",
+      "category": "Developer Tools & Platforms",
+      "description": "Modern terminal. Dark IDE-like interface, block-based command UI",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/warp/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/warp",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/warp/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/warp/DESIGN.md"
+    },
+    {
+      "name": "Webflow",
+      "slug": "webflow",
+      "category": "Design & Productivity",
+      "description": "Visual web builder. Blue-accented, polished marketing site aesthetic",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/webflow/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/webflow",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/webflow/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/webflow/DESIGN.md"
+    },
+    {
+      "name": "Wise",
+      "slug": "wise",
+      "category": "Fintech & Crypto",
+      "description": "International money transfer. Bright green accent, friendly and clear",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/wise/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/wise",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/wise/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/wise/DESIGN.md"
+    },
+    {
+      "name": "xAI",
+      "slug": "x.ai",
+      "category": "AI & Machine Learning",
+      "description": "Elon Musk's AI lab. Stark monochrome, futuristic minimalism",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/x.ai/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/x.ai",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/x.ai/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/x.ai/DESIGN.md"
+    },
+    {
+      "name": "Zapier",
+      "slug": "zapier",
+      "category": "Developer Tools & Platforms",
+      "description": "Automation platform. Warm orange, friendly illustration-driven",
+      "sourceUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/zapier/",
+      "previewUrl": "https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/zapier",
+      "designMdUrl": "local://apps/web/skills/website-generation-workflow/awesome-design-md/design-md/zapier/DESIGN.md",
+      "designMdPath": "apps/web/skills/website-generation-workflow/awesome-design-md/design-md/zapier/DESIGN.md"
+    }
+  ]
+}

@@ -12,6 +12,7 @@ import { FeatureHighlight } from "./sections/FeatureHighlight";
 import { CTASection } from "./sections/CTASection";
 import { FAQ } from "./sections/FAQ";
 import { Logos } from "./sections/Logos";
+import { ContactForm } from "./sections/ContactForm";
 import { RootLayout } from "./sections/RootLayout";
 
 // -----------------------------------------------------------------------------
@@ -48,6 +49,22 @@ const config: Config = {
         ctaText: { type: "text" },
         cta_text: { type: "text" },
         image: { type: "text" },
+        backgroundImage: { type: "text" },
+        ctaButtons: {
+          type: "array",
+          getItemSummary: (item: any) => item?.text || "CTA",
+          arrayFields: {
+            text: { type: "text" },
+            href: { type: "text" },
+            variant: {
+              type: "select",
+              options: [
+                { label: "Primary", value: "primary" },
+                { label: "Secondary", value: "secondary" },
+              ],
+            },
+          },
+        },
         align: { type: "select", options: [{label: "Left", value: "text-left"}, {label: "Center", value: "text-center"}] },
         theme: { type: "select", options: [{label: "Dark", value: "dark"}, {label: "Light", value: "light"}, {label: "Glass", value: "glass"}] },
         effect: { type: "select", options: [{label: "None", value: "none"}, {label: "Retro Grid", value: "retro-grid"}] }
@@ -101,15 +118,18 @@ const config: Config = {
         description: { type: "textarea" },
         image: { type: "text" },
         align: { type: "radio", options: [{ label: "Left", value: "left" }, { label: "Right", value: "right" }] },
-        features: { type: "array", arrayFields: { feature: { type: "text" } } }
+        features: {
+          type: "array",
+          getItemSummary: (item: any) => item?.title || item?.feature || item || "Feature",
+          arrayFields: {
+            title: { type: "text" },
+            description: { type: "textarea" },
+            icon: { type: "text" },
+            feature: { type: "text" },
+          },
+        },
       },
-      render: ({ features, ...props }: any) => (
-        // Map the array of objects back to array of strings if needed, or update component to handle both
-        <FeatureHighlight 
-          {...props} 
-          features={features?.map((f: any) => typeof f === 'string' ? f : f.feature)} 
-        />
-      )
+      render: FeatureHighlight
     },
 
     CTASection: {
@@ -121,6 +141,44 @@ const config: Config = {
         variant: { type: "select", options: [{ label: "Simple", value: "simple" }, { label: "Split", value: "split" }, { label: "Card", value: "card" }] }
       },
       render: CTASection
+    },
+
+    ContactForm: {
+      fields: {
+        title: { type: "text" },
+        description: { type: "textarea" },
+        submitText: { type: "text" },
+        privacyNote: { type: "textarea" },
+        actionUrl: { type: "text" },
+        fields: {
+          type: "array",
+          getItemSummary: (item: any) => item?.label || item?.name || "Field",
+          arrayFields: {
+            name: { type: "text" },
+            label: { type: "text" },
+            type: {
+              type: "select",
+              options: [
+                { label: "Text", value: "text" },
+                { label: "Email", value: "email" },
+                { label: "Tel", value: "tel" },
+                { label: "Textarea", value: "textarea" },
+                { label: "Select", value: "select" },
+              ],
+            },
+            placeholder: { type: "text" },
+            required: {
+              type: "select",
+              options: [
+                { label: "False", value: "false" },
+                { label: "True", value: "true" },
+              ],
+            },
+            options: { type: "text" },
+          },
+        },
+      },
+      render: ContactForm,
     },
 
     FAQ: {

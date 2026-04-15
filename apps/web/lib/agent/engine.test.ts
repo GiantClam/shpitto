@@ -14,6 +14,12 @@ describe("normalizeComponentType", () => {
     expect(normalizeComponentType("Value_Propositions")).toBe("ValuePropositions");
     expect(normalizeComponentType("CTA_Section")).toBe("CTASection");
     expect(normalizeComponentType("Feature_Highlight")).toBe("FeatureHighlight");
+    expect(normalizeComponentType("contact_form")).toBe("ContactForm");
+    expect(normalizeComponentType("ProductGrid")).toBe("ProductPreview");
+    expect(normalizeComponentType("ArticleGrid")).toBe("ProductPreview");
+    expect(normalizeComponentType("CaseStudyGrid")).toBe("ProductPreview");
+    expect(normalizeComponentType("FeaturedArticle")).toBe("FeatureHighlight");
+    expect(normalizeComponentType("ContactInfo")).toBe("ValuePropositions");
   });
 });
 
@@ -154,10 +160,31 @@ describe("generateSkeletonProject", () => {
     });
 
     const home = project.pages.find((p: any) => p.path === "/");
+    expect(home).toBeDefined();
+    if (!home) throw new Error("Expected home page to exist");
     expect(home.puckData.content.length).toBeGreaterThan(0);
     expect(home.puckData.content[0].id).toMatch(/_0\d$/);
 
     const result = ProjectSchema.safeParse(project);
     expect(result.success).toBe(true);
+  });
+
+  it("uses explicit page component blueprint when provided", () => {
+    const project = generateSkeletonProject({
+      brandingName: "Acme",
+      primary: "#0052FF",
+      accent: "#22C55E",
+      paths: ["/contact"],
+      pageComponentTypes: {
+        "/contact": ["Hero", "FeatureHighlight", "ContactForm", "CTASection"],
+      },
+    });
+
+    const contact = project.pages.find((p: any) => p.path === "/contact");
+    expect(contact).toBeDefined();
+    if (!contact) throw new Error("Expected /contact page to exist");
+
+    const types = (contact.puckData?.content || []).map((c: any) => c.type);
+    expect(types).toEqual(["Hero", "FeatureHighlight", "ContactForm", "CTASection"]);
   });
 });

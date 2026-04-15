@@ -97,6 +97,24 @@ const LogosPropsSchema = z.object({
   }))
 });
 
+const ContactFormFieldSchema = z.object({
+  name: z.string(),
+  label: z.string(),
+  type: z.enum(["text", "email", "tel", "textarea", "select"]).default("text"),
+  placeholder: z.string().optional(),
+  required: z.boolean().optional(),
+  options: z.array(z.string()).optional(),
+});
+
+const ContactFormPropsSchema = z.object({
+  title: z.string().optional(),
+  description: z.string().optional(),
+  submitText: z.string().optional(),
+  privacyNote: z.string().optional(),
+  actionUrl: z.string().optional(),
+  fields: z.array(ContactFormFieldSchema).optional(),
+});
+
 // 3. Page & Component Config (Puck-Compatible)
 // We use a discriminated union to enforce type safety based on component name
 export const PuckComponentSchema = z.discriminatedUnion("type", [
@@ -135,6 +153,10 @@ export const PuckComponentSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("Logos"),
     props: LogosPropsSchema,
+  }),
+  z.object({
+    type: z.literal("ContactForm"),
+    props: ContactFormPropsSchema,
   })
 ]);
 
@@ -146,6 +168,54 @@ export const PuckDataSchema = z.object({
 
 export type PuckData = z.infer<typeof PuckDataSchema>;
 
+const DesignSkillHitSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  design_desc: z.string(),
+  score: z.number().optional(),
+  matched_keywords: z.array(z.string()).optional(),
+  source: z.string().optional(),
+  style_preset: z
+    .object({
+      mode: z.enum(["light", "dark"]).optional(),
+      typography: z.string().optional(),
+      borderRadius: z.enum(["none", "sm", "md", "lg"]).optional(),
+      navVariant: z.enum(["underline", "pill"]).optional(),
+      headerVariant: z.enum(["glass", "solid"]).optional(),
+      footerVariant: z.enum(["light", "dark"]).optional(),
+      buttonVariant: z.enum(["solid", "outline"]).optional(),
+      heroTheme: z.enum(["dark", "light", "glass"]).optional(),
+      heroEffect: z.enum(["none", "retro-grid"]).optional(),
+      navLabelMaxChars: z.number().int().optional(),
+      colors: z
+        .object({
+          primary: z.string().regex(/^#[0-9A-F]{6}$/i).optional(),
+          accent: z.string().regex(/^#[0-9A-F]{6}$/i).optional(),
+          background: z.string().regex(/^#[0-9A-F]{6}$/i).optional(),
+          surface: z.string().regex(/^#[0-9A-F]{6}$/i).optional(),
+          panel: z.string().regex(/^#[0-9A-F]{6}$/i).optional(),
+          text: z.string().regex(/^#[0-9A-F]{6}$/i).optional(),
+          muted: z.string().regex(/^#[0-9A-F]{6}$/i).optional(),
+          border: z.string().regex(/^#[0-9A-F]{6}$/i).optional(),
+        })
+        .optional(),
+    })
+    .optional(),
+});
+
+const StaticSiteFileSchema = z.object({
+  path: z.string(),
+  content: z.string(),
+  type: z.string().optional(),
+});
+
+const StaticSiteSchema = z.object({
+  mode: z.string().optional(),
+  generatedAt: z.string().optional(),
+  routeToFile: z.record(z.string()).optional(),
+  files: z.array(StaticSiteFileSchema),
+});
+
 // 4. Complete Project Blueprint
 export const ProjectSchema = z.object({
   projectId: z.string(),
@@ -155,6 +225,8 @@ export const ProjectSchema = z.object({
     seo: z.object({ title: z.string(), description: z.string() }),
     puckData: PuckDataSchema
   })),
+  skillHit: DesignSkillHitSchema.optional(),
+  staticSite: StaticSiteSchema.optional(),
   logicHooks: z.array(z.object({ // Interaction logic binding
     trigger: z.string(), // e.g., "onInquirySubmit"
     action: z.string()  // Corresponding Pages Functions name

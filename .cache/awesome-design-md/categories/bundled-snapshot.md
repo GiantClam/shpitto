@@ -1,0 +1,179 @@
+# bundled-snapshot
+
+- Style count: 58
+
+- **airbnb** (airbnb)
+  - Airbnb's website is a warm, photography-forward marketplace that feels like flipping through a travel magazine where every page invites you to book. The design operates on a foundation of pure white (`#ffffff`) with the iconic Rausch Red (`
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/airbnb/DESIGN.md
+- **airtable** (airtable)
+  - Airtable's website is a clean, enterprise-friendly platform that communicates "sophisticated simplicity" through a white canvas with deep navy text (`#181d26`) and Airtable Blue (`#1b61c9`) as the primary interactive accent. The Haas font f
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/airtable/DESIGN.md
+- **apple** (apple)
+  - Apple's website is a masterclass in controlled drama — vast expanses of pure black and near-white serve as cinematic backdrops for products that are photographed as if they were sculptures in a gallery. The design philosophy is reductive to
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/apple/DESIGN.md
+- **bmw** (bmw)
+  - BMW's website is automotive engineering made visual — a design system that communicates precision, performance, and German industrial confidence. The page alternates between deep dark hero sections (featuring full-bleed automotive photograp
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/bmw/DESIGN.md
+- **cal** (cal)
+  - Cal.com's website is a masterclass in monochromatic restraint — a grayscale world where boldness comes not from color but from the sheer confidence of black text on white space. Inspired by Uber's minimal aesthetic, the palette is deliberat
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/cal/DESIGN.md
+- **claude** (claude)
+  - Claude's interface is a literary salon reimagined as a product page — warm, unhurried, and quietly intellectual. The entire experience is built on a parchment-toned canvas (`#f5f4ed`) that deliberately evokes the feeling of high-quality pap
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/claude/DESIGN.md
+- **clay** (clay)
+  - Clay's website is a warm, playful celebration of color that treats B2B data enrichment like a craft rather than an enterprise chore. The design language is built on a foundation of warm cream backgrounds (`#faf9f7`) and oat-toned borders (`
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/clay/DESIGN.md
+- **clickhouse** (clickhouse)
+  - ClickHouse's interface is a high-performance cockpit rendered in acid yellow-green on obsidian black — a design that screams "speed" before you read a single word. The entire experience lives in darkness: pure black backgrounds (`#000000`)
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/clickhouse/DESIGN.md
+- **cohere** (cohere)
+  - Cohere's interface is a polished enterprise command deck — confident, clean, and designed to make AI feel like serious infrastructure rather than a consumer toy. The experience lives on a bright white canvas where content is organized into
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/cohere/DESIGN.md
+- **coinbase** (coinbase)
+  - Coinbase's website is a clean, trustworthy crypto platform that communicates financial reliability through a blue-and-white binary palette. The design uses Coinbase Blue (`#0052ff`) — a deep, saturated blue — as the singular brand accent ag
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/coinbase/DESIGN.md
+- **composio** (composio)
+  - Composio's interface is a nocturnal command center — a dense, developer-focused darkness punctuated by electric cyan and deep cobalt signals. The entire experience is built on an almost-pure-black canvas (`#0f0f0f`) where content floats wit
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/composio/DESIGN.md
+- **cursor** (cursor)
+  - Cursor's website is a study in warm minimalism meets code-editor elegance. The entire experience is built on a warm off-white canvas (`#f2f1ed`) with dark warm-brown text (`#26251e`) -- not pure black, not neutral gray, but a deeply warm ne
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/cursor/DESIGN.md
+- **elevenlabs** (elevenlabs)
+  - ElevenLabs' website is a study in restrained elegance — a near-white canvas (`#ffffff`, `#f5f5f5`) where typography and subtle shadows do all the heavy lifting. The design feels like a premium audio product brochure: clean, spacious, and co
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/elevenlabs/DESIGN.md
+- **expo** (expo)
+  - Expo's interface is a luminous, confidence-radiating developer platform built on the premise that tools for building apps should feel as polished as the apps themselves. The entire experience lives on a bright, airy canvas — a cool-tinted o
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/expo/DESIGN.md
+- **ferrari** (ferrari)
+  - Ferrari's website is a digital editorial — a curated magazine where the Prancing Horse brand is presented with the gravitas of an art institution and the precision of Italian coachwork. The page opens onto an expanse of absolute black, brok
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/ferrari/DESIGN.md
+- **figma** (figma)
+  - Figma's interface is the design tool that designed itself — a masterclass in typographic sophistication where a custom variable font (figmaSans) modulates between razor-thin (weight 320) and bold (weight 700) with stops at unusual intermedi
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/figma/DESIGN.md
+- **framer** (framer)
+  - Framer's website is a cinematic, tool-obsessed dark canvas that radiates the confidence of a design tool built by designers who worship craft. The entire experience is drenched in pure black — not a warm charcoal or a cozy dark gray, but an
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/framer/DESIGN.md
+- **hashicorp** (hashicorp)
+  - HashiCorp's website is enterprise infrastructure made tangible — a design system that must communicate the complexity of cloud infrastructure management while remaining approachable. The visual language splits between two modes: a clean whi
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/hashicorp/DESIGN.md
+- **ibm** (ibm)
+  - IBM's website is the digital embodiment of enterprise authority built on the Carbon Design System — a design language so methodically structured it reads like an engineering specification rendered as a webpage. The page operates on a stark
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/ibm/DESIGN.md
+- **intercom** (intercom)
+  - Intercom's website is a warm, confident customer service platform that communicates "AI-first helpdesk" through a clean, editorial design language. The page operates on a warm off-white canvas (`#faf9f6`) with off-black (`#111111`) text, cr
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/intercom/DESIGN.md
+- **kraken** (kraken)
+  - Kraken's website is a clean, trustworthy crypto exchange that uses purple as its commanding brand color. The design operates on white backgrounds with Kraken Purple (`#7132f5`, `#5741d8`, `#5b1ecf`) creating a distinctive, professional cryp
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/kraken/DESIGN.md
+- **lamborghini** (lamborghini)
+  - Lamborghini's website is a cathedral of darkness — a digital stage where jet-black surfaces stretch infinitely and every element emerges from the void like a machine under a spotlight. The page is almost entirely black. Not dark gray, not n
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/lamborghini/DESIGN.md
+- **linear.app** (linear.app)
+  - Linear's website is a masterclass in dark-mode-first product design — a near-black canvas (`#08090a`) where content emerges from darkness like starlight. The overall impression is one of extreme precision engineering: every element exists i
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/linear.app/DESIGN.md
+- **lovable** (lovable)
+  - Lovable's website radiates warmth through restraint. The entire page sits on a creamy, parchment-toned background (`#f7f4ed`) that immediately separates it from the cold-white conventions of most developer tool sites. This isn't minimalism
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/lovable/DESIGN.md
+- **minimax** (minimax)
+  - MiniMax's website is a clean, product-showcase platform for a Chinese AI technology company that bridges consumer-friendly appeal with technical credibility. The design language is predominantly white-space-driven with a light, airy feel —
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/minimax/DESIGN.md
+- **mintlify** (mintlify)
+  - Mintlify's website is a study in documentation-as-product design — a white, airy, information-rich surface that treats clarity as its highest aesthetic value. The page opens with a luminous white (`#ffffff`) background, near-black (`#0d0d0d
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/mintlify/DESIGN.md
+- **miro** (miro)
+  - Miro's website is a clean, collaborative-tool-forward platform that communicates "visual thinking" through generous whitespace, pastel accent colors, and a confident geometric font. The design uses a predominantly white canvas with near-bla
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/miro/DESIGN.md
+- **mistral.ai** (mistral.ai)
+  - Mistral AI's interface is a sun-drenched landscape rendered in code — a warm, bold, unapologetically European design that trades the typical blue-screen AI aesthetic for golden amber, burnt orange, and the feeling of late-afternoon light in
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/mistral.ai/DESIGN.md
+- **mongodb** (mongodb)
+  - MongoDB's website is a deep-forest-meets-terminal experience — a design system rooted in the darkest teal-black (`#001e2b`) that evokes both the density of a database and the depth of a forest canopy. Against this near-black canvas, a strik
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/mongodb/DESIGN.md
+- **notion** (notion)
+  - Notion's website embodies the philosophy of the tool itself: a blank canvas that gets out of your way. The design system is built on warm neutrals rather than cold grays, creating a distinctly approachable minimalism that feels like quality
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/notion/DESIGN.md
+- **nvidia** (nvidia)
+  - NVIDIA's website is a high-contrast, technology-forward experience that communicates raw computational power through design restraint. The page is built on a stark black (`#000000`) and white (`#ffffff`) foundation, punctuated by NVIDIA's s
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/nvidia/DESIGN.md
+- **ollama** (ollama)
+  - Ollama's interface is radical minimalism taken to its logical conclusion — a pure-white void where content floats without decoration, shadow, or color. The design philosophy mirrors the product itself: strip away everything unnecessary unti
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/ollama/DESIGN.md
+- **opencode.ai** (opencode.ai)
+  - OpenCode's website embodies a terminal-native, monospace-first aesthetic that reflects its identity as an open source AI coding agent. The entire visual system is built on a stark dark-on-light contrast using a near-black background (`#201d
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/opencode.ai/DESIGN.md
+- **pinterest** (pinterest)
+  - Pinterest's website is a warm, inspiration-driven canvas that treats visual discovery like a lifestyle magazine. The design operates on a soft, slightly warm white background with Pinterest Red (`#e60023`) as the singular, bold brand accent
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/pinterest/DESIGN.md
+- **posthog** (posthog)
+  - PostHog's website feels like a startup's internal wiki that escaped into the wild — warm, irreverent, and deliberately anti-corporate. The background isn't the expected crisp white or dark void of developer tools; it's a warm, sage-tinted c
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/posthog/DESIGN.md
+- **raycast** (raycast)
+  - Raycast's marketing site feels like the dark interior of a precision instrument — a Swiss watch case carved from obsidian. The background isn't just dark, it's an almost-black blue-tint (`#07080a`) that creates a sense of being inside a mac
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/raycast/DESIGN.md
+- **renault** (renault)
+  - Renault's website is a vibrant digital showroom that balances French automotive elegance with bold, forward-leaning energy — a departure from the monochromatic austerity of German or Italian luxury brands. The page opens with a full-screen
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/renault/DESIGN.md
+- **replicate** (replicate)
+  - Replicate's interface is a developer playground crackling with creative energy — a bold, high-contrast design that feels more like a music festival poster than a typical API platform. The hero section explodes with a vibrant orange-red-mage
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/replicate/DESIGN.md
+- **resend** (resend)
+  - Resend's website is a dark, cinematic canvas that treats email infrastructure like a luxury product. The entire page is draped in pure black (`#000000`) with text that glows in near-white (`#f0f0f0`), creating a theater-like experience wher
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/resend/DESIGN.md
+- **revolut** (revolut)
+  - Revolut's website is fintech confidence distilled into pixels — a design system that communicates "your money is in capable hands" through massive typography, generous whitespace, and a disciplined neutral palette. The visual language is bu
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/revolut/DESIGN.md
+- **runwayml** (runwayml)
+  - Runway's interface is a cinematic reel brought to life as a website — a dark, editorial, film-production-grade design where full-bleed photography and video ARE the primary UI elements. This is not a typical tech product page; it's a visual
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/runwayml/DESIGN.md
+- **sanity** (sanity)
+  - Sanity's website is a developer-content platform rendered as a nocturnal command center -- dark, precise, and deeply structured. The entire experience sits on a near-black canvas (`#0b0b0b`) that reads less like a "dark mode toggle" and mor
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/sanity/DESIGN.md
+- **sentry** (sentry)
+  - Sentry's website is a dark-mode-first developer tool interface that speaks the language of code editors and terminal windows. The entire aesthetic is rooted in deep purple-black backgrounds (`#1f1633`, `#150f23`) that evoke the late-night d
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/sentry/DESIGN.md
+- **spacex** (spacex)
+  - SpaceX's website is a full-screen cinematic experience that treats aerospace engineering like a film — every section is a scene, every photograph is a frame, and the interface disappears entirely behind the imagery. The design is pure black
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/spacex/DESIGN.md
+- **spotify** (spotify)
+  - Spotify's web interface is a dark, immersive music player that wraps listeners in a near-black cocoon (`#121212`, `#181818`, `#1f1f1f`) where album art and content become the primary source of color. The design philosophy is "content-first
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/spotify/DESIGN.md
+- **stripe** (stripe)
+  - Stripe's website is the gold standard of fintech design -- a system that manages to feel simultaneously technical and luxurious, precise and warm. The page opens on a clean white canvas (`#ffffff`) with deep navy headings (`#061b31`) and a
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/stripe/DESIGN.md
+- **supabase** (supabase)
+  - Supabase's website is a dark-mode-native developer platform that channels the aesthetic of a premium code editor — deep black backgrounds (`#0f0f0f`, `#171717`) with emerald green accents (`#3ecf8e`, `#00c573`) that reference the brand's op
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/supabase/DESIGN.md
+- **superhuman** (superhuman)
+  - Superhuman's website feels like opening a luxury envelope — predominantly white, immaculately clean, with a single dramatic gesture of color that commands attention. The hero section is a cinematic purple gradient, a deep twilight wash of `
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/superhuman/DESIGN.md
+- **tesla** (tesla)
+  - Tesla's website is an exercise in radical subtraction — a digital showroom where the product is everything and the interface is almost nothing. The page opens with a full-viewport hero that fills the entire screen with cinematic car photogr
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/tesla/DESIGN.md
+- **together.ai** (together.ai)
+  - Together AI's interface is a pastel-gradient dreamscape built for enterprise AI infrastructure — a design that somehow makes GPU clusters and model inference feel light, airy, and optimistic. The hero section blooms with soft pink-blue-lave
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/together.ai/DESIGN.md
+- **uber** (uber)
+  - Uber's design language is a masterclass in confident minimalism -- a black-and-white universe where every pixel serves a purpose and nothing decorates without earning its place. The entire experience is built on a stark duality: jet black (
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/uber/DESIGN.md
+- **vercel** (vercel)
+  - Vercel's website is the visual thesis of developer infrastructure made invisible — a design system so restrained it borders on philosophical. The page is overwhelmingly white (`#ffffff`) with near-black (`#171717`) text, creating a gallery-
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/vercel/DESIGN.md
+- **voltagent** (voltagent)
+  - VoltAgent's interface is a deep-space command terminal for the AI age — a developer-facing darkness built on near-pure-black surfaces (`#050507`) where the only interruption is the electric pulse of emerald green energy. The entire experien
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/voltagent/DESIGN.md
+- **warp** (warp)
+  - Warp's website feels like sitting at a campfire in a deep forest — warm, dark, and alive with quiet confidence. Unlike the cold, blue-tinted blacks favored by most developer tools, Warp wraps everything in a warm near-black that feels like
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/warp/DESIGN.md
+- **webflow** (webflow)
+  - Webflow's website is a visually rich, tool-forward platform that communicates "design without code" through clean white surfaces, the signature Webflow Blue (`#146ef5`), and a rich secondary color palette (purple, pink, green, orange, yello
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/webflow/DESIGN.md
+- **wise** (wise)
+  - Wise's website is a bold, confident fintech platform that communicates "money without borders" through massive typography and a distinctive lime-green accent. The design operates on a warm off-white canvas with near-black text (`#0e0f0c`) a
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/wise/DESIGN.md
+- **x.ai** (x.ai)
+  - xAI's website is a masterclass in dark-first, monospace-driven brutalist minimalism -- a design system that feels like it was built by engineers who understand that restraint is the ultimate form of sophistication. The entire experience is
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/x.ai/DESIGN.md
+- **zapier** (zapier)
+  - Zapier's website radiates warm, approachable professionalism. It rejects the cold monochrome minimalism of developer tools in favor of a cream-tinted canvas (`#fffefb`) that feels like unbleached paper -- the digital equivalent of a well-or
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/zapier/DESIGN.md
+

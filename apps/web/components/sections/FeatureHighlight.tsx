@@ -1,14 +1,21 @@
 "use client";
 
 import React from "react";
-import { Check } from "lucide-react";
+import { resolveLucideIcon } from "./icon-utils";
 
 export interface FeatureHighlightProps {
   title?: string;
   description?: string;
   image?: string;
   align?: "left" | "right";
-  features?: string[];
+  features?: Array<
+    | string
+    | {
+        title?: string;
+        description?: string;
+        icon?: string;
+      }
+  >;
 }
 
 export const FeatureHighlight = ({ 
@@ -19,6 +26,21 @@ export const FeatureHighlight = ({
   features = []
 }: FeatureHighlightProps) => {
   const isLeft = align === "left";
+  const normalizedFeatures = (features || [])
+    .map((feature) => {
+      if (typeof feature === "string") {
+        return { title: feature, description: "", icon: "" };
+      }
+      if (feature && typeof feature === "object") {
+        return {
+          title: feature.title || "",
+          description: feature.description || "",
+          icon: feature.icon || "",
+        };
+      }
+      return { title: "", description: "", icon: "" };
+    })
+    .filter((feature) => feature.title || feature.description);
 
   return (
     <div className="py-24 bg-white overflow-hidden">
@@ -49,14 +71,20 @@ export const FeatureHighlight = ({
             {title && <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-6 leading-tight">{title}</h2>}
             {description && <p className="text-lg text-slate-600 mb-8 leading-relaxed">{description}</p>}
             
-            {features && features.length > 0 && (
+            {normalizedFeatures.length > 0 && (
               <ul className="space-y-4">
-                {features.map((feature, idx) => (
+                {normalizedFeatures.map((feature, idx) => (
                   <li key={idx} className="flex items-start gap-3">
                     <div className="mt-1 w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3 h-3" strokeWidth={3} />
+                      {(() => {
+                        const Icon = resolveLucideIcon(feature.icon);
+                        return <Icon className="w-3 h-3" strokeWidth={3} aria-hidden="true" />;
+                      })()}
                     </div>
-                    <span className="text-slate-700 font-medium">{feature}</span>
+                    <div className="text-slate-700">
+                      {feature.title ? <div className="font-semibold">{feature.title}</div> : null}
+                      {feature.description ? <div className="text-sm text-slate-600 mt-1">{feature.description}</div> : null}
+                    </div>
                   </li>
                 ))}
               </ul>

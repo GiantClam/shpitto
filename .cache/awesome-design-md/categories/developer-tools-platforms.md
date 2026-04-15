@@ -1,0 +1,47 @@
+# Developer Tools & Platforms
+
+- Style count: 14
+
+- **Cursor** (cursor)
+  - AI-first code editor. Sleek dark interface, gradient accents
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/cursor/DESIGN.md
+- **Expo** (expo)
+  - React Native platform. Dark theme, tight letter-spacing, code-centric
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/expo/DESIGN.md
+- **Linear** (linear.app)
+  - Project management for engineers. Ultra-minimal, precise, purple accent
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/linear.app/DESIGN.md
+- **Lovable** (lovable)
+  - AI full-stack builder. Playful gradients, friendly dev aesthetic
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/lovable/DESIGN.md
+- **Mintlify** (mintlify)
+  - Documentation platform. Clean, green-accented, reading-optimized
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/mintlify/DESIGN.md
+- **PostHog** (posthog)
+  - Product analytics. Playful hedgehog branding, developer-friendly dark UI
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/posthog/DESIGN.md
+- **Raycast** (raycast)
+  - Productivity launcher. Sleek dark chrome, vibrant gradient accents
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/raycast/DESIGN.md
+- **Resend** (resend)
+  - Email API for developers. Minimal dark theme, monospace accents
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/resend/DESIGN.md
+- **Sentry** (sentry)
+  - Error monitoring. Dark dashboard, data-dense, pink-purple accent
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/sentry/DESIGN.md
+- **Supabase** (supabase)
+  - Open-source Firebase alternative. Dark emerald theme, code-first
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/supabase/DESIGN.md
+- **Superhuman** (superhuman)
+  - Fast email client. Premium dark UI, keyboard-first, purple glow
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/superhuman/DESIGN.md
+- **Vercel** (vercel)
+  - Frontend deployment platform. Black and white precision, Geist font
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/vercel/DESIGN.md
+- **Warp** (warp)
+  - Modern terminal. Dark IDE-like interface, block-based command UI
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/warp/DESIGN.md
+- **Zapier** (zapier)
+  - Automation platform. Warm orange, friendly illustration-driven
+  - apps/web/skills/website-generation-workflow/awesome-design-md/design-md/zapier/DESIGN.md
+

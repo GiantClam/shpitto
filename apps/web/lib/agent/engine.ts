@@ -14,6 +14,10 @@ const CANONICAL_TYPES = [
   "CTASection",
   "FAQ",
   "Logos",
+  "ContactForm",
+  "Timeline",
+  "Team",
+  "ComparisonTable",
 ] as const;
 
 const TYPE_ALIASES = new Map<string, (typeof CANONICAL_TYPES)[number]>([
@@ -34,6 +38,29 @@ const TYPE_ALIASES = new Map<string, (typeof CANONICAL_TYPES)[number]>([
   ["faq", "FAQ"],
   ["logos", "Logos"],
   ["logo", "Logos"],
+  ["contactform", "ContactForm"],
+  ["contact_form", "ContactForm"],
+  ["inquiryform", "ContactForm"],
+  ["inquiry_form", "ContactForm"],
+  ["leadform", "ContactForm"],
+  ["lead_form", "ContactForm"],
+  ["form", "ContactForm"],
+  ["timeline", "Timeline"],
+  ["timeline_section", "Timeline"],
+  ["team", "Team"],
+  ["team_grid", "Team"],
+  ["comparisontable", "ComparisonTable"],
+  ["comparison_table", "ComparisonTable"],
+  ["tablecomparison", "ComparisonTable"],
+  // Skill-originated rich block aliases.
+  ["productgrid", "ProductPreview"],
+  ["articlegrid", "ProductPreview"],
+  ["articlelist", "ProductPreview"],
+  ["casestudygrid", "ProductPreview"],
+  ["featuredarticle", "FeatureHighlight"],
+  ["contactinfo", "ValuePropositions"],
+  ["filterbar", "Content_Block"],
+  ["tabfilter", "Content_Block"],
 ]);
 
 export function normalizeComponentType(input: string): string {
@@ -159,6 +186,7 @@ type SkeletonInput = {
   primary: string;
   accent: string;
   paths: string[];
+  pageComponentTypes?: Record<string, string[]>;
 };
 
 const makeId = (base: string, n: number) => `${base}_${String(n).padStart(2, "0")}`;
@@ -183,6 +211,20 @@ const defaultPropsForType = (type: string) => {
       return { items: [{ question: "Question", answer: "Answer" }] };
     case "Logos":
       return { items: [{ name: "Partner", logo: "https://logo.clearbit.com/example.com" }] };
+    case "ContactForm":
+      return {
+        title: "Get In Touch",
+        description: "Leave your contact details and project requirements.",
+        submitText: "Submit Request",
+        privacyNote: "We only use your information to follow up on your inquiry.",
+        fields: [
+          { name: "name", label: "Name", type: "text", placeholder: "Your name", required: true },
+          { name: "email", label: "Email", type: "email", placeholder: "you@company.com", required: true },
+          { name: "phone", label: "Phone", type: "tel", placeholder: "+86 138 0000 0000" },
+          { name: "company", label: "Company", type: "text", placeholder: "Company name" },
+          { name: "message", label: "Message", type: "textarea", placeholder: "Project background and requirements", required: true },
+        ],
+      };
     default:
       return {};
   }
@@ -209,7 +251,7 @@ const componentsForPath = (path: string) => {
     return ["ProductPreview", "ValuePropositions", "FAQ", "CTASection"];
   }
   if (path.includes("contact")) {
-    return ["FeatureHighlight", "FAQ", "CTASection"];
+    return ["FeatureHighlight", "ContactForm", "FAQ", "CTASection"];
   }
   if (path.includes("blog") || path.includes("news")) {
     return ["ProductPreview", "CTASection"];
@@ -235,7 +277,11 @@ export function generateSkeletonProject(input: SkeletonInput) {
   };
 
   const pages = input.paths.map((p) => {
-    const types = componentsForPath(p);
+    const configuredTypes = input.pageComponentTypes?.[p];
+    const types =
+      Array.isArray(configuredTypes) && configuredTypes.length > 0
+        ? configuredTypes.map((item) => normalizeComponentType(String(item)))
+        : componentsForPath(p);
     const counters = new Map<string, number>();
     const content = types.map((t) => {
       const current = (counters.get(t) || 0) + 1;

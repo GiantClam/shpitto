@@ -1,0 +1,16 @@
+{
+  "name": "design-website-generator",
+  "version": "2.0.0",
+  "type": "module",
+  "description": "Skill executor for design-website-generator",
+  "main": "skill-cli.js",
+  "scripts": {
+    "start": "node skill-cli.js",
+    "list": "node skill-cli.js list-design-systems",
+    "recommend": "node skill-cli.js recommend-design-system --requirements",
+    "generate": "node skill-cli.js generate-website --prompt --brand"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0"
+  }
+}

@@ -117,7 +117,7 @@ export const COMPONENT_REGISTRY = {
     description: "A flexible text block for narratives, mission statements, or general information.",
     props_schema: {
       title: "string (optional)",
-      content: "string (supports basic markdown or long text)",
+      content: "string (plain text / multi-line text)",
       align: "'left' | 'center' (default: 'left')"
     },
     example: {
@@ -176,6 +176,86 @@ export const COMPONENT_REGISTRY = {
         title: "Trusted By",
         items: [
           { name: "Acme Corp", logo: "https://logo.clearbit.com/acme.com" }
+        ]
+      }
+    }
+  },
+  ContactForm: {
+    description: "Structured contact form section for lead capture on contact pages.",
+    props_schema: {
+      title: "string (optional)",
+      description: "string (optional)",
+      submitText: "string (optional)",
+      privacyNote: "string (optional)",
+      actionUrl: "string (optional)",
+      fields: "Array of { name: string, label: string, type: 'text'|'email'|'tel'|'textarea'|'select', placeholder?: string, required?: boolean, options?: string[] }"
+    },
+    example: {
+      type: "ContactForm",
+      props: {
+        title: "在线留言",
+        description: "请填写以下信息，我们将尽快与您联系。",
+        submitText: "提交需求",
+        fields: [
+          { name: "name", label: "姓名", type: "text", required: true },
+          { name: "phone", label: "电话", type: "tel", required: true },
+          { name: "email", label: "邮箱", type: "email" },
+          { name: "message", label: "需求说明", type: "textarea", required: true }
+        ]
+      }
+    }
+  },
+  Timeline: {
+    description: "Chronological milestones for company history, roadmap, or project delivery phases.",
+    props_schema: {
+      title: "string (optional)",
+      subtitle: "string (optional)",
+      items: "Array of { year?: string, date?: string, title: string, description?: string }"
+    },
+    example: {
+      type: "Timeline",
+      props: {
+        title: "Development Timeline",
+        items: [
+          { year: "2013", title: "Factory Founded", description: "LC-CNC established in Shenzhen." },
+          { year: "2024", title: "5-Axis Upgrade", description: "New precision production line launched." }
+        ]
+      }
+    }
+  },
+  Team: {
+    description: "Team or leadership member grid with names, roles, and short bios.",
+    props_schema: {
+      title: "string (optional)",
+      subtitle: "string (optional)",
+      items: "Array of { name: string, role?: string, description?: string, image?: string }"
+    },
+    example: {
+      type: "Team",
+      props: {
+        title: "Leadership Team",
+        items: [
+          { name: "Alex Chen", role: "CTO", description: "20+ years in CNC automation." }
+        ]
+      }
+    }
+  },
+  ComparisonTable: {
+    description: "Structured comparison matrix for model specs, plans, or feature differences.",
+    props_schema: {
+      title: "string (optional)",
+      subtitle: "string (optional)",
+      columns: "Array of string or { title: string }",
+      rows: "Array of objects keyed by column names"
+    },
+    example: {
+      type: "ComparisonTable",
+      props: {
+        title: "Machine Comparison",
+        columns: ["Model", "Precision", "Spindle Speed"],
+        rows: [
+          { Model: "LC-V850", Precision: "卤0.003mm", "Spindle Speed": "12000 rpm" },
+          { Model: "LC-5A", Precision: "卤0.001mm", "Spindle Speed": "18000 rpm" }
         ]
       }
     }

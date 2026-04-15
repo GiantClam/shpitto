@@ -1,0 +1,10 @@
+{
+  "name": "contact-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm dlx wrangler dev",
+    "deploy": "pnpm dlx wrangler deploy"
+  }
+}
+

@@ -1,0 +1,297 @@
+---
+name: "website-generation-workflow"
+description: "Defines the end-to-end website generation workflow. Invoke when generating multi-section pages or full websites."
+---
+
+# Website Generation Workflow
+
+## Scope
+
+Use this workflow for complete website generation from requirements to final delivery, including planning, design system setup, section batching, visual polish, and validation.
+
+## Style Library (Mandatory)
+
+Support and prioritize the dynamic style library at:
+
+`https://github.com/VoltAgent/awesome-design-md`
+
+### Dynamic Loading Rules
+
+1. Fetch the latest README and repository tree before each new website generation run. Do not rely only on manually copied static files.
+2. Extract: `category / styleName / slug / description / DESIGN.md URL`.
+3. Build a local style index (defined below) and use it as the basis for style selection.
+4. If network access fails, fall back to the latest cached index and mark it as `stale-cache`.
+
+### Required Local Index Structure
+
+```text
+.cache/awesome-design-md/
+  index.json
+  index.md
+  categories/
+    <category-slug>.md
+  README.source.snapshot.md
+```
+
+`index.json` must include at least:
+
+- `sourceRepo`
+- `generatedAt`
+- `totalStyles`
+- `categories[]`
+- `styles[]` (each item includes `name/slug/category/description/designMdUrl/previewUrl`)
+
+### Traceable Style Selection Rules
+
+1. Match style candidates (Top 3) using industry, audience, and conversion goals.
+2. Provide fit rationale and risk notes for each candidate.
+3. Output one recommended style and explicit exclusion reasons.
+4. Save `style-selection-record` including index version, candidates, final choice, and reasons.
+
+## Required Phases
+
+### Phase 0: Requirement Enrichment
+
+1. Extract user goals, industry, target audience, key value propositions, and page structure.
+2. Identify missing critical information and complete it.
+3. Produce a structured requirements summary.
+
+Quality gate: Critical information complete OR confidence > 0.8.
+
+### Phase 0.5: Style Library Load and Indexing
+
+1. Dynamically load awesome-design-md.
+2. Build or refresh the full local index.
+3. Produce style candidates and a style selection record.
+
+Quality gate: Index is available and style decision is traceable.
+
+### Phase 1: Planning and Design System
+
+1. Create or update planning files (`task_plan`, `findings`, `progress`).
+2. Define design system tokens: color, typography, spacing, radius, shadow, container rules.
+3. Validate implementation readiness and remove hardcoded style values.
+
+Quality gate: Design system validation passes.
+
+### Phase 1.5: Image and Icon Asset Preparation
+
+#### Image Generation (use `web-image-generator` skill)
+
+1. Analyze site structure and produce an image requirements list.
+2. Classify each required image (Hero / Background / Illustration / Screenshot / Icon-like asset).
+3. Generate optimized AI image prompts.
+4. Run image generation tools or provide prompts for generation.
+5. Save generated images under `images/`.
+
+#### Icon Integration (use `web-icon-library` skill)
+
+1. Select one primary icon library (Lucide is recommended).
+2. Map icons to functional semantics and UI intent.
+3. Enforce icon size and color via design-system tokens.
+4. Add required accessibility attributes.
+
+#### Outputs
+
+- `images/image_prompts.md` (image prompt specification)
+- `images/*.png` (generated images)
+- Icon usage manifest (icon name, purpose, location)
+
+Quality gate:
+
+- Image requirement coverage is complete.
+- Image style is consistent with the design system.
+- Icon semantics are clear and accessible.
+
+### Phase 1.6: Site-wide Bilingual Content (EN/ZH)
+
+1. Define default and fallback language (default `en`, support `zh`).
+2. Build a unified i18n key structure (page-level + section-level keys).
+3. Add language switch in the top navigation (EN / ZH).
+4. Ensure all core copy has bilingual mapping (nav, headings, CTA, form labels, footer).
+5. Preserve the current route on language switch; only content language changes.
+6. Persist language preference (recommended: `localStorage`).
+7. Keep default-language content readable without JavaScript.
+
+Outputs:
+
+- `i18n/messages.en.json`
+- `i18n/messages.zh.json`
+- `i18n/README.md` (key naming and contribution flow)
+
+Quality gate:
+
+- Bilingual coverage of critical copy = 100%.
+- Language switch causes no broken routes and no leaked placeholder keys.
+- Language switch does not reduce accessibility (`lang`, `aria-label`, readable form labels).
+
+### Phase 2: Section Batch Generation
+
+1. Generate in batches of 3-5 sections.
+2. Run design-system consistency checks immediately after each batch.
+3. Record progress and design decisions.
+4. Run visual QA every 3 sections.
+5. For contact-type pages (`/contact`, inquiry, quote), include at least one structured contact-capture form section (name + phone/email + message at minimum).
+6. For each section requiring a visual image, attempt image generation and placement:
+   - If generation succeeds: replace the target placeholder with the generated image.
+   - If generation fails: pass without blocking delivery, keep placeholder or style-only fallback.
+
+Quality gate: Design-system compliance rate > 90%, and every contact-type page includes at least one structured contact form section unless explicitly waived in the plan.
+
+### Phase 3: Visual Refinement
+
+1. Unify visual hierarchy and rhythm.
+2. Add micro-interactions and lightweight motion.
+3. Alternate backgrounds and visual cadence for pacing.
+
+Quality gate: Visual consistency > 85%.
+
+### Phase 4: Final Validation
+
+1. Breakpoint checks (320 / 768 / 1440).
+2. Accessibility checks (WCAG AA).
+3. Link and interaction usability checks.
+4. Core performance sanity checks.
+5. Verify image placement policy:
+   - Successfully generated images are correctly inserted and rendered.
+   - Failed generation tasks are marked `passed` and treated as non-blocking.
+
+Quality gate: All checks pass.
+
+## Image Generation Integration
+
+### Image Generation Utility
+
+Use the shared `image_gen.py` utility:
+
+```bash
+python3 scripts/image_gen.py "your prompt" \
+  --aspect_ratio 16:9 \
+  --image_size 2K \
+  --output project/images \
+  --filename hero-main \
+  --negative_prompt "text, watermark, low quality"
+```
+
+### Environment Configuration
+
+```env
+IMAGE_BACKEND=gemini  # or openai, qwen, zhipu, volcengine
+GEMINI_API_KEY=your-api-key
+GEMINI_MODEL=gemini-3.1-flash-image-preview
+```
+
+### Supported Backends
+
+- Core: `gemini`, `openai`, `qwen`, `zhipu`, `volcengine`
+- Extended: `stability`, `bfl`, `ideogram`
+- Experimental: `siliconflow`, `fal`, `replicate`
+
+### Image Types and Suggested Specs
+
+| Type | Suggested Size | Aspect Ratio | Usage |
+|------|----------------|--------------|-------|
+| Hero Image | 2560x1440 | 16:9 | Above-the-fold visual |
+| Section Background | 1920x1080 | 16:9 | Section background |
+| Feature Illustration | 800x600 | 4:3 | Feature cards |
+| Product Screenshot | 1440x900 | 16:10 | Product showcase |
+| Icon/Logo | 512x512 | 1:1 | Symbol assets |
+| Social Share | 1200x630 | 1.91:1 | Social sharing preview |
+
+### Prompt Optimization Principles
+
+1. Hero: prioritize visual impact and reserve safe text space.
+2. Background: keep contrast low to avoid competing with content.
+3. Illustration: keep style consistent, preferably flat and clean.
+4. Screenshot-like visuals: preserve realism and clarity.
+5. Icon-like visuals: keep simple, scalable, and limited palette.
+
+## Icon Library Integration
+
+### Recommended Library
+
+Primary recommendation: **Lucide Icons**
+
+- Large, high-quality icon set
+- Supports React, Vue, and plain HTML usage
+- Consistent baseline sizing and stroke style
+- Open-source ISC license
+
+Install:
+
+```bash
+npm install lucide-react
+```
+
+Example:
+
+```jsx
+import { Home, User, Settings, Check } from 'lucide-react';
+
+<Home />
+<User size={32} color="var(--color-primary)" />
+<Settings className="w-6 h-6 text-blue-500" />
+```
+
+### Common Icon Categories
+
+- Navigation: Home, Menu, X, ChevronDown, ArrowRight
+- Functional: Search, Settings, User, Bell, Mail, Download
+- Status: Check, X, AlertCircle, Info, Loader
+- Social: Twitter, Facebook, Instagram, Linkedin, Github
+- Business: ShoppingCart, CreditCard, TrendingUp, BarChart
+
+### Icon Usage Rules
+
+```jsx
+<Icon size={16} />  // small
+<Icon size={24} />  // default
+<Icon size={48} />  // large
+
+<Icon color="var(--color-primary)" />
+<Icon className="text-blue-500" />
+
+<Icon aria-label="Go to homepage" />  // icon-only control
+<Icon aria-hidden="true" />           // decorative icon
+```
+
+## Integrated Execution Checklist
+
+```markdown
+Phase 1.5 checklist:
+
+1. Image asset preparation
+   - [ ] Analyze page structure and list required visuals
+   - [ ] Produce optimized prompts for each visual
+   - [ ] Run image generation
+   - [ ] Save outputs to `images/`
+   - [ ] Validate style consistency
+
+2. Icon asset preparation
+   - [ ] Install/select primary icon library
+   - [ ] Map icons by function
+   - [ ] Build icon usage manifest
+   - [ ] Enforce token-based sizing/color
+   - [ ] Add accessibility attributes
+
+3. Quality checks
+   - [ ] No watermark or irrelevant artifacts
+   - [ ] Image specs match usage requirements
+   - [ ] Icon semantics are clear
+   - [ ] All images/icons include accessible labeling where needed
+
+4. Image failure policy
+   - [ ] If image generation succeeds, replace target placeholder
+   - [ ] If image generation fails, mark as `passed` and continue (non-blocking)
+```
+
+## Prohibited Practices
+
+- Skipping planning or design-system definition
+- Using hardcoded color/spacing values
+- Delivering without passing quality gates
+- Missing image alt text or equivalent accessibility labeling
+- Mixing multiple icon libraries with inconsistent style
+- Ignoring responsive image constraints
+- Partial bilingual support (must be site-wide for critical copy)
+- Hardcoding EN/ZH strings without unified i18n key management
