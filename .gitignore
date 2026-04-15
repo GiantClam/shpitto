@@ -60,3 +60,5 @@ test-dist
 .omx/
 .opencode/
 .tmp/
+
+.vercel

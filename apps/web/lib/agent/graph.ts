@@ -1,4 +1,4 @@
-import { StateGraph, END, START } from "@langchain/langgraph";
+﻿import { StateGraph, END, START } from "@langchain/langgraph";
 import { BaseMessage, HumanMessage, AIMessage, SystemMessage } from "@langchain/core/messages";
 import { ChatOpenAI } from "@langchain/openai";
 import { ProjectSchema } from "@industry/schema";
@@ -354,9 +354,9 @@ export interface AgentState {
   industry?: string;
   theme?: { primaryColor: string; mode: "dark" | "light" } | undefined;
   history?: string[];
-  pages_to_expand?: string[]; // 鐎垫澘鎳愰弫鎾诲箣閹邦喗鐣卞銈囨暬濞兼壆鎹勯姘辩獮闂傚啰鍠庨崹?
-  current_page_index: number; // 鐟滅増鎸告晶鐘差潰閿濆懏韬璺哄閹﹦绮鈧崵鎴炵▔椤忓牄鈧锟?
-  seo_keywords?: string[]; // 闁稿繈鍔庨悵顖炲礂閹惰姤鏆涢悹鍥хФ閻°儵锟?
+  pages_to_expand?: string[]; // 闂佽楠搁悘姘熆濮椻偓楠炲﹪骞囬弶鎸庣€梺瑙勫礃椤曆呯不閿濆鐓欓梺顓ㄧ畱閺嬬喖鏌ｉ敐鍛埞妞ゎ亜鍟存俊鍫曞炊閵婏附鐦撴繝鐢靛仜閸氬绔熼崱娑樼闁告洦鍨奸弫宥嗘叏濡じ鍚柣娑卞櫍濮婂宕掑顒佹闂佸摜濮撮柊锝呯暦?
+  current_page_index: number; // 闂佽崵鍠愮划搴㈡櫠濡ゅ懎绠伴柛娑橈攻濞呯娀鏌ｅΟ鐑樷枙婵為棿鍗抽弻銊モ攽閸℃ê娅ら梻濠庡墻閸撴瑩鈥︾捄銊﹀磯闁告繂瀚锋导鈧梻浣筋嚃閸犳牠鏁冮敂鎯у灊妞ゆ挶鍩勯弫鍡涙煃瑜滈崜鐔风暦閻㈢绠ｉ柣鎰暯閺嬫牕顪冮妶鍛闁绘瀚伴崺鈧い鎺嗗亾妞わ妇鏁婚弫?
+  seo_keywords?: string[]; // 闂傚倷鑳堕…鍫㈡崲閸儱绀夐幖娣妽閸嬬喐銇勯弽顐粶缂佲偓閸岀偞鐓欓柟顖涙緲琚氶梺鍝勬閻╊垶骞冭ぐ鎺戠倞鐟滃繗鍊撮梻浣割吔閺夊灝濮﹂梺?
   critique_feedback?: string;
   validation_error?: string;
   attempt_count: number;
@@ -804,7 +804,7 @@ const ConversationIntentSchema = z.object({
 });
 
 const normalizeRoutePath = (raw: string) => {
-  const trimmed = raw.trim().replace(/[，。；、\s]+$/g, "");
+  const trimmed = raw.trim().replace(/[\s,.;]+$/g, "");
   if (!trimmed) return "/";
   if (trimmed === "/") return "/";
   const noQuery = trimmed.split("?")[0].split("#")[0];
@@ -851,12 +851,12 @@ const detectPreferredLocale = (text: string): "zh-CN" | "en" => {
 
 const getRouteLabel = (routePath: string, locale: "zh-CN" | "en"): string => {
   const zhMap: Record<string, string> = {
-    "/": "首页",
-    "/company": "公司",
-    "/products": "产品",
-    "/news": "资讯",
-    "/cases": "案例",
-    "/contact": "联系",
+    "/": "\u9996\u9875",
+    "/company": "\u516c\u53f8",
+    "/products": "\u4ea7\u54c1",
+    "/news": "\u8d44\u8baf",
+    "/cases": "\u6848\u4f8b",
+    "/contact": "\u8054\u7cfb",
   };
   const enMap: Record<string, string> = {
     "/": "Home",
@@ -974,7 +974,7 @@ const extractSkillFilterOptions = (props: Record<string, unknown>): string[] => 
     if (!text) continue;
     tokens.push(
       ...text
-        .split(/[|,锛屻€?]/g)
+        .split(/[|,閵嗕緤绱?]/g)
         .map((x) => x.trim())
         .filter(Boolean),
     );
@@ -1039,7 +1039,7 @@ const normalizeAppendComponents = (raw: unknown): Array<{ id?: string; type: str
           ...(requestedId ? { id: requestedId } : {}),
           type: "ValuePropositions",
           props: {
-            title: toSafeText((entry as any).title || safeProps.title || "绛涢€夐€夐」"),
+            title: toSafeText((entry as any).title || safeProps.title || "Categories"),
             subtitle: toSafeText(safeProps.content || safeProps.description || ""),
             items: options.map((option) => ({ title: option, description: "" })),
           },
@@ -1188,8 +1188,8 @@ const conversationNode = async (state: AgentState): Promise<Partial<AgentState>>
     const isDeployRequest =
       lastHumanLower.includes("deploy") ||
       lastHumanLower.includes("publish") ||
-      lastHumanLower.includes("閮ㄧ讲") ||
-      lastHumanLower.includes("鍙戝竷");
+      lastHumanLower.includes("deploy now") ||
+      lastHumanLower.includes("publish now");
 
     if (!isDeployRequest) {
       return {
@@ -1311,18 +1311,18 @@ const conversationNode = async (state: AgentState): Promise<Partial<AgentState>>
 
     if (intent === "confirm_build") {
         nextPhase = "skeleton";
-        console.log("妫ｅ啯锟?[System] User approved plan. Transitioning to Skeleton phase...");
+        console.log("濠碘槅鍋撶徊浠嬪疮椤栫偞鏅?[System] User approved plan. Transitioning to Skeleton phase...");
     } else if (intent === "deploy" && state.phase === "end" && !state.deployed_url) {
         nextPhase = "deploy";
-        console.log("妫ｅ啯锟?[System] User requested deployment. Transitioning to Deploy phase...");
+        console.log("濠碘槅鍋撶徊浠嬪疮椤栫偞鏅?[System] User requested deployment. Transitioning to Deploy phase...");
     } else if (intent === "deploy" && state.phase === "end" && state.deployed_url) {
         // Already deployed, just show the link
         nextPhase = "conversation"; 
         finalMessage = "The website has already been deployed successfully. You can open it from the link above.";
-        console.log("妫ｅ啯锟?[System] User requested deployment but site is already live.");
+        console.log("濠碘槅鍋撶徊浠嬪疮椤栫偞鏅?[System] User requested deployment but site is already live.");
     } else if (intent === "propose_plan") {
         nextPhase = "conversation"; 
-        console.log("妫ｅ啯锟?[Planner] Plan Proposed/Updated.");
+        console.log("濠碘槅鍋撶徊浠嬪疮椤栫偞鏅?[Planner] Plan Proposed/Updated.");
         // Ensure the outline is visible in the chat if it's not already in the message
         if (outline && !finalMessage.includes(outline)) {
             finalMessage += `\n\n${outline}`;
@@ -1459,7 +1459,9 @@ const SkillDirectSiteSchema = z.object({
 
 type SkillDirectSiteOutput = z.infer<typeof SkillDirectSiteSchema>;
 
-const hasUnknownToken = (value: unknown): boolean => /<unknown>/i.test(String(value || ""));
+const UNKNOWN_TOKEN_RE = /<\s*unknown\s*>/i;
+
+const hasUnknownToken = (value: unknown): boolean => UNKNOWN_TOKEN_RE.test(String(value || ""));
 
 const toBundleRoutePath = (routePath: string) =>
   routePath === "/" ? "index.html" : `${routePath.replace(/^\//, "")}/index.html`;
@@ -1471,10 +1473,47 @@ const ensureNavLinks = (paths: string[], locale: "zh-CN" | "en") =>
     label: getRouteLabel(path, locale),
   }));
 
-const ensureBodyHtml = (value: string) => {
-  const sanitized = sanitizeGeneratedHtml(value);
-  if (sanitized) return sanitized;
-  return `<section><h1>${escapeHtmlAttr("Generated Page")}</h1><p>${escapeHtmlAttr("Content generation fallback was applied.")}</p></section>`;
+type SkillDirectValidationResult = {
+  pageByPath: Map<string, { path: string; title: string; description: string; navLabel?: string; bodyHtml: string }>;
+};
+
+const validateSkillDirectOutput = (
+  output: SkillDirectSiteOutput,
+  requiredPaths: string[],
+): SkillDirectValidationResult => {
+  const pageByPath = new Map(
+    (output.site.pages || []).map((page) => [normalizeRoutePath(String(page.path || "/")), page]),
+  );
+
+  const missing = requiredPaths
+    .map((routePath) => normalizeRoutePath(routePath))
+    .filter((routePath) => !pageByPath.has(routePath));
+  if (missing.length > 0) {
+    throw new Error(`skill-direct output missing required routes: ${missing.join(", ")}`);
+  }
+
+  for (const routePath of requiredPaths.map((x) => normalizeRoutePath(x))) {
+    const page = pageByPath.get(routePath);
+    if (!page) {
+      throw new Error(`skill-direct output missing route: ${routePath}`);
+    }
+
+    if (
+      hasUnknownToken(page.title) ||
+      hasUnknownToken(page.description) ||
+      hasUnknownToken(page.bodyHtml) ||
+      hasUnknownToken(page.navLabel)
+    ) {
+      throw new Error(`skill-direct output contains <UNKNOWN> token at route: ${routePath}`);
+    }
+
+    const safeBody = sanitizeGeneratedHtml(page.bodyHtml);
+    if (!safeBody || safeBody.length < 80) {
+      throw new Error(`skill-direct output bodyHtml is empty/thin at route: ${routePath}`);
+    }
+  }
+
+  return { pageByPath };
 };
 
 const composeSkillDirectPageHtml = (input: {
@@ -1499,7 +1538,7 @@ const composeSkillDirectPageHtml = (input: {
       ? sanitizeGeneratedHtml(input.footerHtml) || ""
       : `<div class="footer-grid">
   <div><h4>${escapeHtmlAttr(input.brandName)}</h4><p>${escapeHtmlAttr(input.description)}</p></div>
-  <div><h4>${escapeHtmlAttr(input.lang === "zh-CN" ? "导航" : "Navigation")}</h4>${input.navLinks
+  <div><h4>${escapeHtmlAttr(input.lang === "zh-CN" ? "\u5bfc\u822a" : "Navigation")}</h4>${input.navLinks
     .map((link) => `<p><a href="${escapeHtmlAttr(link.href)}">${escapeHtmlAttr(link.label)}</a></p>`)
     .join("")}</div>
 </div>`;
@@ -1524,7 +1563,7 @@ const composeSkillDirectPageHtml = (input: {
         </ul>
       </nav>
       <a class="btn btn-primary" href="/contact/index.html">${escapeHtmlAttr(
-        input.lang === "zh-CN" ? "立即咨询" : "Request Quote",
+        input.lang === "zh-CN" ? "\u7acb\u5373\u54a8\u8be2" : "Request Quote",
       )}</a>
     </div>
   </header>
@@ -1672,9 +1711,10 @@ ${clip(requirementText, 1200)}
     toNumberOrFallback(process.env.LLM_REQUEST_TIMEOUT_SKILL_DIRECT_MS, 35000),
   );
   let generated: SkillDirectSiteOutput | null = null;
+  let validatedPageByPath: SkillDirectValidationResult["pageByPath"] | null = null;
   let generationError = "";
   try {
-    generated = await invokeStructuredWithProviderFallback<SkillDirectSiteOutput>(
+    const candidate = await invokeStructuredWithProviderFallback<SkillDirectSiteOutput>(
       SkillDirectSiteSchema,
       [new SystemMessage(generationPrompt)],
       {
@@ -1683,20 +1723,16 @@ ${clip(requirementText, 1200)}
         timeoutMs: skillDirectTimeoutMs,
       },
     );
-    const outputLooksUnknown =
-      hasUnknownToken(generated?.site?.stylesCss) ||
-      hasUnknownToken(generated?.site?.scriptJs) ||
-      (generated?.site?.pages || []).some(
-        (page) =>
-          hasUnknownToken(page?.title) ||
-          hasUnknownToken(page?.description) ||
-          hasUnknownToken(page?.bodyHtml),
-      );
-    if (outputLooksUnknown) {
+    if (hasUnknownToken(candidate?.site?.stylesCss) || hasUnknownToken(candidate?.site?.scriptJs)) {
       throw new Error("skill-direct-site returned placeholder <UNKNOWN> payload");
     }
+    const validated = validateSkillDirectOutput(candidate, safePaths);
+    generated = candidate;
+    validatedPageByPath = validated.pageByPath;
   } catch (error) {
     generationError = error instanceof Error ? error.message : String(error);
+    generated = null;
+    validatedPageByPath = null;
     try {
       const retryResponse = await invokeRawWithProviderFallback(
         [
@@ -1712,27 +1748,23 @@ ${clip(requirementText, 1200)}
         },
       );
       const parsed = parseLLMJson(retryResponse.content.toString());
-      generated = SkillDirectSiteSchema.parse(parsed);
-      const retryLooksUnknown =
-        hasUnknownToken(generated?.site?.stylesCss) ||
-        hasUnknownToken(generated?.site?.scriptJs) ||
-        (generated?.site?.pages || []).some(
-          (page) =>
-            hasUnknownToken(page?.title) ||
-            hasUnknownToken(page?.description) ||
-            hasUnknownToken(page?.bodyHtml),
-        );
-      if (retryLooksUnknown) {
+      const candidate = SkillDirectSiteSchema.parse(parsed);
+      if (hasUnknownToken(candidate?.site?.stylesCss) || hasUnknownToken(candidate?.site?.scriptJs)) {
         throw new Error("skill-direct-site-retry returned placeholder <UNKNOWN> payload");
       }
+      const validated = validateSkillDirectOutput(candidate, safePaths);
+      generated = candidate;
+      validatedPageByPath = validated.pageByPath;
       generationError = "";
     } catch (retryError) {
       const reason = retryError instanceof Error ? retryError.message : String(retryError);
       generationError = `${generationError}; retry failed: ${reason}`;
+      generated = null;
+      validatedPageByPath = null;
     }
   }
 
-  if (!generated) {
+  if (!generated || !validatedPageByPath) {
     return {
       messages: [
         new AIMessage({
@@ -1744,9 +1776,7 @@ ${clip(requirementText, 1200)}
     };
   }
 
-  const pageByPath = new Map(
-    (generated.site.pages || []).map((page) => [normalizeRoutePath(String(page.path || "/")), page]),
-  );
+  const pageByPath = validatedPageByPath;
 
   const fallbackStylesCss = `
 :root {
@@ -1802,28 +1832,37 @@ body { font-family: ${stylePreset.typography || "Inter, system-ui, -apple-system
     typeof generated.site.scriptJs === "string" && generated.site.scriptJs.trim().length >= 20
       ? generated.site.scriptJs.trim()
       : fallbackScriptJs;
+  const navLabelMaxChars = Math.max(6, Number(stylePreset.navLabelMaxChars || 12));
 
   const pages = safePaths.map((routePath) => {
     const normalizedPath = normalizeRoutePath(routePath);
     const source = pageByPath.get(normalizedPath);
+    if (!source) {
+      throw new Error(`skill-direct output missing normalized route: ${normalizedPath}`);
+    }
     const routeLabel = getRouteLabel(normalizedPath, preferredLocale);
     const cfg = blueprint.pages[normalizedPath] || blueprint.pages["/"];
     const fallbackTitle = `${routeLabel} | ${brandName}`;
     const fallbackDescription =
-      preferredLocale === "zh-CN" ? `${brandName}${routeLabel}页面。` : `${brandName} ${routeLabel} page.`;
-    const title = toSafeText(source?.title || renderTemplateValue(cfg?.seoTitleTemplate, brandName, fallbackTitle)).trim();
+      preferredLocale === "zh-CN" ? `${brandName}${routeLabel}\u9875\u9762\u3002` : `${brandName} ${routeLabel} page.`;
+    const title = toSafeText(source.title || renderTemplateValue(cfg?.seoTitleTemplate, brandName, fallbackTitle)).trim();
     const description = toSafeText(
-      source?.description || renderTemplateValue(cfg?.seoDescriptionTemplate, brandName, fallbackDescription),
+      source.description || renderTemplateValue(cfg?.seoDescriptionTemplate, brandName, fallbackDescription),
     ).trim();
-    const bodyHtml = ensureBodyHtml(toSafeText(source?.bodyHtml || ""));
+    const bodyHtml = sanitizeGeneratedHtml(toSafeText(source.bodyHtml || ""));
+    if (!bodyHtml) {
+      throw new Error(`skill-direct output bodyHtml cannot be sanitized for route: ${normalizedPath}`);
+    }
+    const navLabelSeed = toSafeText(source.navLabel || routeLabel).trim() || routeLabel;
+    const navLabel = navLabelSeed.slice(0, navLabelMaxChars);
 
     return {
       path: normalizedPath,
       seo: {
         title: title || fallbackTitle,
         description: description || fallbackDescription,
-        menuLabel: toSafeText(source?.navLabel || routeLabel).trim() || routeLabel,
-        navLabel: toSafeText(source?.navLabel || routeLabel).trim() || routeLabel,
+        menuLabel: navLabel,
+        navLabel,
       },
       puckData: {
         root: {
@@ -1836,7 +1875,6 @@ body { font-family: ${stylePreset.typography || "Inter, system-ui, -apple-system
       },
     };
   });
-
   const staticFiles = [
     { path: "/styles.css", content: stylesCss, type: "text/css" },
     { path: "/script.js", content: scriptJs, type: "application/javascript" },
@@ -1938,24 +1976,24 @@ const parallelNode = async (state: AgentState): Promise<Partial<AgentState>> => 
 
   const skeletonJson = JSON.stringify(skeleton, null, 2);
 
-  const architectPrompt = `濞达絿濮靛Σ?Track A: Architect闁靛棗鍊风紞姗€鎯冮崟顏呭床闁告柡鍓濆Σ鎼佸捶閵娿倗鐟濋柡鈧悷鏉跨秮濡炪倗鏁诲?path 濞戞挸娴风划宥嗙?id 闁汇劌瀚晶鐘诲箵閹邦亞鐟撻柨娑樼灱閺佹捇锟?100% 闁告艾鐗婄涵鍫曟儍?ProjectSchema JSON锟?
+  const architectPrompt = `婵犵數鍋犻幓顏嗗緤閹稿孩鍙忛梻鍫熷厷?Track A: Architect闂傚倷绶氬褍螞濡ゅ懎纾瑰瀣捣缁€濠冩叏濡炶浜鹃梺璇″灠閸熸潙鐣烽悢纰辨晜闁告侗鍘肩花銉╂⒒娴ｅ憡鍟為柡宀嬬節瀹曟粌鈹戦崰顕嗙秮楠炴牗鎷呴崨濠傜ザ闂備線娼ч…鍫ュ磹濡ゅ懏鍋℃繝闈涱儐閻撴盯鏌嶈閸撶喖骞冮悜钘夌骇閻犳亽鍔庤ⅵ婵犵绱曢崑鎴﹀磹濡ゅ懎鏋侀悹鍥ф▕閻?path 婵犵數鍋為崹鍫曞箰缁嬫５瑙勵槹鎼粹€崇亰閻庡箍鍎卞Λ娑€?id 闂傚倷鐒﹂惇褰掑礉瀹€鈧埀顒佸嚬閸撴岸寮查崼鏇熷亹閻犲洩灏欓宀勬⒑瑜版帒浜板ù婊呭仱閹兘骞樼紒妯煎弳濠电偞鍨堕…鍥倶闁秵鐓涘ù锝堫潐瀹曞矂鏌?100% 闂傚倷绀侀幉锟犳嚌妤ｅ啯鍋嬪┑鐘插閸忔粓鏌涢锝嗙闁?ProjectSchema JSON闂?
 
-缂佹拝闄勫顐︽晬?
-- 闊洤鎳橀妴蹇旂┍濠靛牊娈屾鐐舵硾椤︽煡鎮介妸銊х炕锟?skeleton 闂佹彃鐬煎▓?projectId闁靛棔鏀籸anding闁靛棔鍨ges/path闁靛棔妞掓禍鎺楀矗婵犲啰妲ㄥ☉鎿冧簽缁秵绂掗崜浣圭暠 id锟?
-- 濞戞挸绉烽々锕傚棘閺夋鏉婚柟瀛樼墪閸ㄥ綊姊介妶鍥╃煁濞寸姾顔愮槐杈ㄧ┍濠靛洤锟?skeleton 濞戞搩鍘剧划宥嗙閸撲焦鐣遍柡浣峰嵆閸ｆ椽濡存笟鈧妴搴㈡償韫囨挻锟?type 濞戞挸绉磋ぐ澶愬Υ?
-- 缂備礁瀚▎?type 闊洤鎳橀妴蹇旂▔閵夛妇澹愬ù锝堟硶閺併倖绂掗妷銈囩憮闂傚棗妫楅幃搴ㄦ晬濞嗙暴ro, Stats, Testimonials, ValuePropositions, ProductPreview, FeatureHighlight, CTASection, FAQ, Logos
-- props 閻庢稒顨嗛宀冪疀閸涙番鈧繒绮敃鈧幃?schema闁挎稑鑻悺褍鈻撻棃娑欏€冲ù锝堟硶锟?camelCase闁挎稑鐗呯欢銉︿繆?ctaText/ctaLink闁挎稑濂旂粭澶屾啺娴ｇ儤锟?cta_text/cta_link闁挎稑顦埀?
-- 閺夆晜鏌ㄥú鏍偓鐟版湰锟?JSON闁挎稑濂旂粭澶屾啺?Markdown锟?
+缂傚倸鍊烽悞锕傚箯濠靛鈷旈柛鏇ㄥ亽閻掕姤銇勯幇鍫曟闁?
+- 闂傚倸顭崑鍕洪妶澶婄疇婵せ鍋撳┑锛勵棎缁犳盯寮崒妤佹暤婵犵數濞€濞佳囨偋婵犲倵鏋旈悘鐐佃檸濞堜粙鏌ｉ幇顖氱厫缁绢厾鍋撻妵鍕晜閻ｅ苯寮ㄩ梺璇″枙缁瑦淇婇幖浣肝╃憸蹇涙倷閺囥垺鏅?skeleton 闂傚倸鍊烽悞锕併亹閸愵喗鍎旈柣鎾崇岸閺?projectId闂傚倷绶氬褍螞閺冨牆缁╃紒顐ょ彍nding闂傚倷绶氬褍螞閺冨牆鍨傛い锝呮es/path闂傚倷绶氬褍螞閺傛娓婚柟鐑樻尵椤╂煡鏌熼悜姗嗘當闁活厽顨呴埞鎴︽偐閹绘帗娈跺┑鈥崇湴閸斿矂鍩ユ径鎰闁告剬鍛櫦缂傚倷绶￠崰鏍矓閻㈢數鐭夐柟鐑橆殔缁€鍫澝归敐鍛础闁?id闂?
+- 婵犵數鍋為崹鍫曞箰閸濄儳鐭撻柣鎴濐潟閳ь剙鎳橀弫鍐磼濮橆収妫熼梻浣告惈椤︿即顢栧▎鎾崇骇濠电姵纰嶉悡娆撴倵濞戞瑯鐒藉褜浜弻娑㈠Ω閵壯呅ㄥ┑顔硷梗缁瑦淇婇崼鏇炵倞闁冲搫鍟伴崢鎴濃攽閻愬樊鍤熷┑顕€绠栭、娆撳箛椤旂瓔娼熼柡澶婄墑閸斿酣鍩炲鍡欑瘈闂傚牊绋掗幖鎰版煥?skeleton 婵犵數鍋為崹鍫曞箹閳哄懎鍌ㄩ柛鎾楀啫鐏婇悗骞垮劚濡盯銆呴悜鑺ョ厱闁规崘灏欓崝宥夋煟閿濆鎲鹃柡灞稿墲閹峰懎鐣￠弶璺ㄣ偖闂備線娼荤徊鎯ь渻閼恒儰绻嗛悗娑欘焽閻熷綊鏌嶈閸撶喐淇婄€涙ɑ鍎熼柕蹇娾偓鍐插Τ闂傚鍋勫ú锕傚箰婵犳碍鏅?type 婵犵數鍋為崹鍫曞箰閸濄儳鐭撶痪鎯ь儍娴滅懓顭块懜闈涘鏉?
+- 缂傚倸鍊搁崐椋庣矆娴ｈ　鍋撳闂寸盎闁?type 闂傚倸顭崑鍕洪妶澶婄疇婵せ鍋撳┑锛勵棎缁犳盯寮崒妤佺亙闂備線娼ч¨鈧┑鈥虫处缁旂喖骞囬鐐茬秺閺佹劙宕奸悢鎭掆偓濠囨⒑鏉炰即妾烽柛濠冪墱缁骞掑Δ鈧敮闂侀潧鐗嗗ú銊╁箟椤曗偓濮婂宕掑顓ф濠碘槅鍋呴〃濠囩嵁閸愨晜鍎熼柕濠忛檮濞呮牕鈹戦悙鍙夘棤闁哄棛顥沷, Stats, Testimonials, ValuePropositions, ProductPreview, FeatureHighlight, CTASection, FAQ, Logos
+- props 闂備浇顕х€涒晝绮欓幒妞尖偓鍐幢濞戣鲸鏅╅悗鍏夊亾闁告劦浜為弶鎼佹⒑閸涘﹦鈯曢柣锝庝邯閸┾偓妞ゆ巻鍋撶紒缁樺笧閸掓帡顢橀姀鈩冩珖闂侀€炲苯澧存?schema闂傚倷鐒︾€笛呯矙閹达附鍤愭い鏍仦閸嬨倗鎲稿澶婄厺闁瑰墽绮ˉ鍫熺箾閹寸偟鎳冮柍褜鍓欓崯鍧楁箒闂佹寧绻傞悧濠勬兜閸洘鏅?camelCase闂傚倷鐒︾€笛呯矙閹达附鍋嬮柛娑卞灡椤愪粙鏌曟径娑氱窗缂?ctaText/ctaLink闂傚倷鐒︾€笛呯矙閹寸偟闄勯柡鍐ㄥ€荤粻鏂款熆鐠虹儤婀伴柛鐔锋惈闇夐柨婵嗘搐閸斿鏌?cta_text/cta_link闂傚倷鐒︾€笛呯矙閹次诲洭顢橀姀鐘靛姦?
+- 闂備礁鎼ˇ顐﹀疾濠婂牆钃熼柕濞垮剭濞差亜鍐€妞ゆ劗鍠庢禍楣冩煟閻斿搫顣兼繝鈧导瀛樻櫢?JSON闂傚倷鐒︾€笛呯矙閹寸偟闄勯柡鍐ㄥ€荤粻鏂款熆鐠虹儤婀伴柛?Markdown闂?
 
 ProjectSchema:
 ${SCHEMA_STRING}
 
-閺夊牊鎸搁崣?Skeleton JSON:
+闂備礁鎼ˇ顖炴偋婵犲洤绠伴柟闂寸閻?Skeleton JSON:
 ${skeletonJson}`;
 
-  const copyPrompt = `濞达絿濮靛Σ?Track B: Copywriter闁靛棗鍊风紞姗€宕ｉ鍥╃炕闁告垹鍎ょ€垫粎绱掗崟顏咁偨 id 閻庝絻顕у鍐儍閸曨剚鐎俊妤€鐗愯棢濞戞挷绶ょ槐婵囩▔瀹ュ牜娲ｉ弶鍫熸尭閸ゎ厾鈧懓鏈弳锝嗐亜閻㈠憡妗ㄧ紓浣规尰閻庮垶锟?
+  const copyPrompt = `婵犵數鍋犻幓顏嗗緤閹稿孩鍙忛梻鍫熷厷?Track B: Copywriter闂傚倷绶氬褍螞濡ゅ懎纾瑰瀣捣缁€濠冩叏濡炶浜鹃悗瑙勬穿缂嶄線銆侀弮鍫濈倞闁冲搫鍟伴崐鎶芥⒒娴ｅ憡鍟為柛銊ョ秺瀹曟洟濡堕崶锝呬壕闁割煈鍋嗛惌宀€绱掓潏銊ユ诞鐎规洜鍠栭、鏃堝椽娴ｉ晲缂?id 闂備浇顕х花鑲╁緤婵犳凹鏁嬬憸宥夆€﹂崶顒€绀冩い鏃囨閸擃參姊洪崨濠冨闁告挻宀搁幃妤咁敊閹存帞绠氬┑掳鍊愰崑鎾绘煟濡や礁濮屾俊顐犲灪缁绘盯骞嬮悙鏉戠煯缂備浇缈伴崐妤€危閹邦兘鏀介柛銉㈡杹閺嬫牠鎮楅獮鍨姎闁绘绮岀叅闁挎繂顦痪褔鏌涢銈呮瀾閻忓浚鍙冮弻娑㈠Χ鎼粹€崇闂侀€炲苯澧伴柟铏崌瀵敻顢楅崟顐ｈ緢闂佹寧绻傚Λ搴㈢濠婂牊鐓熼柕蹇曞У閸熺偞淇婂鐓庡缂佽鲸鎸婚幏鍛喆閸曨偊鐎洪梻浣筋嚙鐎垫帡宕归崼鏇熸櫢?
 
-閺夊牊鎸搁崵?JSON 闁哄秶鍘х槐锟犳晬?
+闂備礁鎼ˇ顖炴偋婵犲洤绠伴柟闂寸閸?JSON 闂傚倷绀侀幖顐ょ矓閸洖鍌ㄧ憸蹇撐ｉ幇鐗堟櫢闁绘娅曞▍?
 {
   "payload": {
     "hero_01": { "title": "...", "subtitle": "...", "description": "...", "ctaText": "..." },
@@ -1963,17 +2001,17 @@ ${skeletonJson}`;
   }
 }
 
-缂佹拝闄勫顐︽晬?
-- 闁告瑯浜ｉ崗妯绘綇閹惧啿姣夊☉鎾冲閺嬪啫顩奸崼銏＄ゲ闁稿繐纾▓鎴犫偓娑欘殕椤斿矂鏁嶉崸鐪巘le/subtitle/description/items[*].title/items[*].description/question/answer 缂佹稑顧€缁辨岸锟?
-- 濞戞挸绉烽々锔芥綇閹惧啿姣夊Λ鐗堢矎婢瑰﹪濡存稊绯積me闁靛棔韬琭fect闁靛棔宸ign闁靛棔宸﹎age闁靛棔鍕緊go锟?
-- 閺夆晜鏌ㄥú?JSON闁挎稑濂旂粭澶屾啺?Markdown锟?
+缂傚倸鍊烽悞锕傚箯濠靛鈷旈柛鏇ㄥ亽閻掕姤銇勯幇鍫曟闁?
+- 闂傚倷绀侀幉锟犳偡椤栨稓顩查柨婵嗩槸缁€鍌涗繆椤栨粎甯涚紓宥呮喘閺岀喖骞嗚閺嗚鲸鎱ㄩ敐鍜佹Ц闁宠棄顦甸獮姗€宕樺顔煎Ψ闂備礁鎼鍛村疮椤愶负鈧懏绺界粙鍧楀敹闂侀潧楠忕槐鏇㈠Χ閺屻儲鈷戠紒瀣硶缁犳壆鐥紒銏犲箹闁崇粯鎹囬獮瀣偐椤愵澀澹曞┑鐐村灦閻燁垰鈻撻弴鐔翠簻闁哄倽娉曢悞鎼佹煛娴ｅ摜效鐎规洘鎮傞幆鍥ь啅濮掝柅/subtitle/description/items[*].title/items[*].description/question/answer 缂傚倸鍊烽悞锔剧矙閹次层劑鍩€椤掑倻纾奸弶鍫涘妼閸濇椽鏌?
+- 婵犵數鍋為崹鍫曞箰閸濄儳鐭撻柣鎴濐潟閳ь剙鎳橀弫鍌炴嚍閵壯呅ら梻浣筋潐閸庢娊宕崹顔ф帗寰勬繛銏＄洴閹囧醇閵忋垻鍘斿┑鐘灮閹虫捇鏁冮鍛箚閻庢稒顭囬埢鏇犵磼椤栨粠鐓玬e闂傚倷绶氬褍螞閺冨牏鍙曢柣鐐垫尦ect闂傚倷绶氬褍螞閺傛鍟呮い褏鐏噂n闂傚倷绶氬褍螞閺傛鍟呴柨鏇炵┈ge闂傚倷绶氬褍螞閺冨牆绀嬬紒璺恒偧o闂?
+- 闂備礁鎼ˇ顐﹀疾濠婂牆钃熼柕濞垮剭?JSON闂傚倷鐒︾€笛呯矙閹寸偟闄勯柡鍐ㄥ€荤粻鏂款熆鐠虹儤婀伴柛?Markdown闂?
 
-閺夊牊鎸搁崣?Skeleton JSON:
+闂備礁鎼ˇ顖炴偋婵犲洤绠伴柟闂寸閻?Skeleton JSON:
 ${skeletonJson}`;
 
-  const stylePrompt = `濞达絿濮靛Σ?Track C: Stylist闁靛棗鍊风紞姗€宕ｉ鍥╃炕闁告垹鍎ょ€垫粎绱掗崟顏咁偨 id 閻庝絻顕у鍐儍閸曨噮娼掗悷娆忣槷缁楀矂宕濋妸锔芥珡閻炴稏鍎扮粩鐢告晬鐏炶偐鐟濋悷鏇氭祰缁额參宕欓崫鍕殮闁轰焦鎸抽妴澶愭閵忋垻娉㈤柡瀣锟?
+  const stylePrompt = `婵犵數鍋犻幓顏嗗緤閹稿孩鍙忛梻鍫熷厷?Track C: Stylist闂傚倷绶氬褍螞濡ゅ懎纾瑰瀣捣缁€濠冩叏濡炶浜鹃悗瑙勬穿缂嶄線銆侀弮鍫濈倞闁冲搫鍟伴崐鎶芥⒒娴ｅ憡鍟為柛銊ョ秺瀹曟洟濡堕崶锝呬壕闁割煈鍋嗛惌宀€绱掓潏銊ユ诞鐎规洜鍠栭、鏃堝椽娴ｉ晲缂?id 闂備浇顕х花鑲╁緤婵犳凹鏁嬬憸宥夆€﹂崶顒€绀冩い鏃囨閸擃參姊洪崨濠冨闁革綆鍠栭…鍥箳濡や礁浠┑鐐叉濞存艾危妞嬪海纾兼俊銈傚亾闁活厼鍊搁悾宄扳攽鐎ｎ€晠鏌ㄩ弮鍥撻柣婵撶節閺岋綁鎮欑€电硶妫ㄩ梺绋垮婢瑰棛鍒掗埡鍛仺闁告稑锕ュ▍鏍煟韫囨洖浠╅柛瀣姍閹嘲鈹戠€ｎ偄浠梺鍝勬处绾板秶绮婇幍顔剧＜濡増绻傚顔锯偓瑙勬礃閻熲晛鐣烽锕€绀嬫い鎾跺枑椤斿懘姊绘担鑺ャ€冮柣鎺炵畵楠炴劙骞庨挊澹┿儱顭块懜闈涘妞ゃ儱鐗撻弻鏇＄疀鐎ｎ亞浼勫┑鐐差槶閸ㄤ粙寮婚敍鍕ㄥ亾閿濆簼绨绘い蹇嬪劦閺?
 
-閺夊牊鎸搁崵?JSON 闁哄秶鍘х槐锟犳晬?
+闂備礁鎼ˇ顖炴偋婵犲洤绠伴柟闂寸閸?JSON 闂傚倷绀侀幖顐ょ矓閸洖鍌ㄧ憸蹇撐ｉ幇鐗堟櫢闁绘娅曞▍?
 {
   "payload": {
     "hero_01": { "theme": "dark", "effect": "retro-grid", "align": "text-center", "image": "https://..." },
@@ -1981,12 +2019,12 @@ ${skeletonJson}`;
   }
 }
 
-缂佹拝闄勫顐︽晬?
-- 闁告瑯浜ｉ崗妯绘綇閹惧啿姣夊☉鎾虫唉椤鎲存径灞剧ゲ闁稿繐鍟块悺褍鈻撶喊澶岀theme/effect/align/image/icon/logo 缂佹稑顧€缁辨岸锟?
-- 闁哄倸娲﹂、宥団偓娑欘殕椤斿矂鎮惧▎鎴犺埗 Copywriter闁挎稑濂旂粭澶屾啺娴ｇ鏅搁梻鈧幐搴斀闁解偓婵劏锟?
-- 閺夆晜鏌ㄥú?JSON闁挎稑濂旂粭澶屾啺?Markdown锟?
+缂傚倸鍊烽悞锕傚箯濠靛鈷旈柛鏇ㄥ亽閻掕姤銇勯幇鍫曟闁?
+- 闂傚倷绀侀幉锟犳偡椤栨稓顩查柨婵嗩槸缁€鍌涗繆椤栨粎甯涚紓宥呮喘閺岀喖骞嗚閺嗚鲸鎱ㄩ敐鍜佹Ц闁宠棄顦甸獮姗€鎼归銏℃暘婵＄偑鍊ら崑鍕敄閸ヮ剙绠熼悗娑櫭欢鐐烘倶閻愭彃鈷旈柕鍫熺叀濮婅櫣绮欑捄銊ь唶闂佸摜鍠庡锟犲箖妤︽妲婚梺宕囩帛閹搁箖宕版繝鍐ㄧ窞鐎光偓閳ь剟藝閿曟潑eme/effect/align/image/icon/logo 缂傚倸鍊烽悞锔剧矙閹次层劑鍩€椤掑倻纾奸弶鍫涘妼閸濇椽鏌?
+- 闂傚倷绀侀幖顐﹀磹缁嬫５娲晝閸屾ǚ鍋撴担鍓插悑闁搞儻绲芥禍鐐箾閹寸偟鎳愭繛鍫熸礃閵囧嫰寮捄銊у姱闂佽鍠楅崕鎶藉煝鎼淬劌绠ｉ柣妯烘惈閻?Copywriter闂傚倷鐒︾€笛呯矙閹寸偟闄勯柡鍐ㄥ€荤粻鏂款熆鐠虹儤婀伴柛鐔锋惈闇夐柨婵嗘祩閻掗箖鏌￠崨顔藉€愭慨濠傤煼閸┾偓妞ゆ帒瀚粻浼村箹閹碱厼鏋涢柡鍌楀亾闂傚倷娴囪闁稿鎸搁埞鎴︻敊閽樺顫呴梺?
+- 闂備礁鎼ˇ顐﹀疾濠婂牆钃熼柕濞垮剭?JSON闂傚倷鐒︾€笛呯矙閹寸偟闄勯柡鍐ㄥ€荤粻鏂款熆鐠虹儤婀伴柛?Markdown闂?
 
-閺夊牊鎸搁崣?Skeleton JSON:
+闂備礁鎼ˇ顖炴偋婵犲洤绠伴柟闂寸閻?Skeleton JSON:
 ${skeletonJson}`;
 
   const [architectRaw, copyRaw, styleRaw] = await Promise.all([
@@ -2030,7 +2068,7 @@ ${skeletonJson}`;
   }
 
   return {
-    messages: [new AIMessage({ id: generateMsgId(), content: "妫ｅ唭?婵繐绲藉﹢顏呮交濞戞粠鏀藉☉鎾愁槼閻箖宕¤箛搴ｇ▕闁汇垻鍠愰崹姘▔鎼达絿闂柛?.." })],
+    messages: [new AIMessage({ id: generateMsgId(), content: "濠碘槅鍋撶徊浠嬪船?濠电姵顔栭崰妤冩崲閹邦喖绶ら柦妯侯檧閼版寧銇勮箛鎾村櫤濞存嚎鍊栫换娑㈠箣閻愮數鐓犻梺琛″亾闁芥ê顦Σ鍫ユ煙閻愵剙澧俊鎻掋偢閺岋綁顢橀姀銏㈡毇閻庤姣滈妶鍥╂澑闁硅壈鎻徊鍧楀煝閺囥垺鈷戞慨鐟版搐閻忣噣鏌涢悩鍐插鐎规洜鎳撻～婵嬵敇閻橆偅鐏冮梺纭呭閹活亞寰婇崸妤佲拻妞ゆ牜鍋為悡?.." })],
     project_json: architectJson,
     track_results: [copyJson, styleJson],
     phase: "stitcher",
@@ -2042,7 +2080,7 @@ const stitcherNode = async (state: AgentState): Promise<Partial<AgentState>> => 
   if (!state.project_json) return { phase: "conversation" };
   const merged = stitchTracks(state.project_json, state.track_results || []);
   return {
-    messages: [new AIMessage({ id: generateMsgId(), content: "妫ｅ唭?鐎瑰憡褰冮悾顒勫箣閹邦剛娼ｉ柟顑懐闂柛姘墳缁辨繂顫㈤敐鍛含閺夆晜绋栭、鎴犳嫚椤撴繄鐤呴悗闈涚秺缂嶅牊绋夋惔锝傗偓鏍ㄧ┍椤旂⒈锟?.." })],
+    messages: [new AIMessage({ id: generateMsgId(), content: "濠碘槅鍋撶徊浠嬪船?闂佽娴烽幊鎾诲箟闄囬妵鎰板礃椤旇棄浠煎銈嗗笒鐎氼剛绮婚敐澶嬬厵闂侇叏绠戞晶鐗堢箾绾绉柡宀€鍠栭、鏍敆閳ь剟骞婇幇鐗堚拻妞ゆ牜鍋為悡鏇熸叏濮楀棗澧板褍纾槐鎺撴綇閵娧呯暤濡炪値鍋侀崹浠嬪极閹版澘宸濇い鏂跨仢閹牓姊洪崫鍕垫Т闁哄懏绮庣划娆撳冀椤撴壕鍋撴笟鈧獮瀣偐閸愯尙褰存俊鐐€栭幐鑽ゆ崲閸曨垱鍋柛娑樼摠閸婄敻姊婚崼鐔恒€掔紒澶庢缁辨挸顓奸崨顖氼杸缂備礁顑呴ˇ浼村箚閺冨牊鏅查柛灞绢殔娴滈箖鏌″鍐ㄥ闁崇懓绉甸妵鍕籍閸屾瀚涢梺?.." })],
     project_json: merged,
     phase: "liner",
   };
@@ -2658,7 +2696,7 @@ const deployNode = async (state: AgentState): Promise<Partial<AgentState>> => {
         // 3. Upload deployment
         await cf.uploadDeployment(projectName, bundle);
 
-        console.log(`[Deploy] 锟?Deployed to: ${url}`);
+        console.log(`[Deploy] 闂?Deployed to: ${url}`);
 
         // 4) Record deployment metadata in D1.
         await recordDeployment(dbProjectId, url, "production", state.access_token, r2BundlePrefix);
@@ -2859,7 +2897,7 @@ const imageUpdateNode = async (state: AgentState): Promise<Partial<AgentState>> 
 
     const actions = [
         {
-            text: "妫ｅ啯鐓犻柨?Update Website Images",
+            text: "濠碘槅鍋撶徊浠嬪疮椤栫偞鍋傞柣妯肩帛閻?Update Website Images",
             payload: {
                 type: "image_update",
                 slots: imageSlots
@@ -3007,5 +3045,6 @@ workflow.addConditionalEdges("linter", (state) =>
 );
 
 export const graph = workflow.compile();
+
 
 
