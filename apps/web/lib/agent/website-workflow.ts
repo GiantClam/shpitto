@@ -2,7 +2,7 @@
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { normalizeStylePreset, type DesignStylePreset } from "../design-style-preset";
+import { normalizeStylePreset, type DesignStylePreset } from "../design-style-preset.ts";
 
 const execFileAsync = promisify(execFile);
 
@@ -49,6 +49,22 @@ export type WorkflowSkillContext = {
   templateBlueprint: TemplateBlueprintResolved;
 };
 
+export type WorkflowRuntimeContext = {
+  workflowSkill: string;
+  designGeneratorSkill: string;
+  selectionCriteria: string;
+  sequentialWorkflow: string;
+  workflowGuide: string;
+  rulesSummary: string;
+  designMd: string;
+};
+
+export type WorkflowRuntimeContextField = keyof WorkflowRuntimeContext;
+
+export type WorkflowRuntimeContextLoadOptions = {
+  fields?: WorkflowRuntimeContextField[];
+};
+
 type AwesomeIndexStyle = {
   name: string;
   slug: string;
@@ -91,6 +107,12 @@ export type TemplateBlueprintResolved = {
 
 const AWESOME_INDEX_REFRESH_MS = 1000 * 60 * 60 * 6;
 const AWESOME_DESIGN_MIN_CONTENT_LENGTH = Number(process.env.AWESOME_DESIGN_MIN_CONTENT_LENGTH || 120);
+const WORKFLOW_RUNTIME_TEXT_CACHE_TTL_MS = Math.max(
+  0,
+  Number(process.env.WORKFLOW_RUNTIME_TEXT_CACHE_TTL_MS || 1000 * 60 * 5),
+);
+type CachedTextEntry = { value: string; expiresAt: number };
+const workflowRuntimeTextCache = new Map<string, CachedTextEntry>();
 
 function pathExists(p: string) {
   return fs
@@ -270,7 +292,7 @@ function tokenize(text: string): string[] {
   return Array.from(new Set(tokens));
 }
 
-type QueryIntent = "industrial" | "automotive" | "fintech" | "ai" | "developer-tools";
+type QueryIntent = "automotive" | "fintech" | "ai" | "developer-tools";
 
 function detectQueryIntents(query: string): Set<QueryIntent> {
   const text = query.toLowerCase();
@@ -284,29 +306,6 @@ function detectQueryIntents(query: string): Set<QueryIntent> {
       }
       return text.includes(term);
     });
-
-  if (
-    hasAny([
-      "industrial",
-      "manufacturing",
-      "factory",
-      "cnc",
-      "machining",
-      "precision",
-      "production",
-      "equipment",
-      "automation",
-      "数控",
-      "制造",
-      "工厂",
-      "加工",
-      "工业",
-      "设备",
-      "产线",
-    ])
-  ) {
-    intents.add("industrial");
-  }
 
   if (hasAny(["automotive", "vehicle", "car", "auto", "汽车", "车企", "新能源车"])) {
     intents.add("automotive");
@@ -332,12 +331,6 @@ function intentBoostForStyle(style: AwesomeIndexStyle, intents: Set<QueryIntent>
   const category = String(style.category || "").toLowerCase();
 
   let boost = 0;
-  if (intents.has("industrial")) {
-    if (category.includes("car brands")) boost += 8;
-    if (category.includes("enterprise")) boost += 4;
-    if (["bmw", "tesla", "renault", "ferrari", "lamborghini", "apple", "nvidia"].includes(slug)) boost += 4;
-    if (["stripe", "kraken", "revolut", "wise", "coinbase"].includes(slug)) boost -= 4;
-  }
   if (intents.has("automotive")) {
     if (category.includes("car brands")) boost += 10;
   }
@@ -435,13 +428,61 @@ async function loadDesignMdByStyle(style: AwesomeIndexStyle): Promise<string> {
   if (localResult) return localResult.content;
 
   throw new Error(
-    `DESIGN.md unavailable for style "${style.slug}". Checked local templates only (remote fetch disabled by design).`,
+    `DESIGN.md unavailable for style "${style.slug}". Checked local sources only.`,
   );
 }
 
+async function loadAnyLocalDesignMd(): Promise<string> {
+  const { localTemplateRoot } = getPaths();
+  if (!(await pathExists(localTemplateRoot))) return "";
+
+  const stack = [localTemplateRoot];
+  while (stack.length > 0) {
+    const current = stack.pop() as string;
+    let entries: any[] = [];
+    try {
+      entries = await fs.readdir(current, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      const abs = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(abs);
+        continue;
+      }
+      if (!entry.isFile()) continue;
+      const lower = entry.name.toLowerCase();
+      if (lower !== "design.md" && lower !== "readme.md") continue;
+      try {
+        const text = await fs.readFile(abs, "utf8");
+        if (isValidDesignMdText(text)) return text;
+      } catch {
+        // ignore and continue
+      }
+    }
+  }
+  return "";
+}
+
 async function loadFileText(filePath: string) {
+  if (!filePath) return "";
+  if (WORKFLOW_RUNTIME_TEXT_CACHE_TTL_MS > 0) {
+    const hit = workflowRuntimeTextCache.get(filePath);
+    if (hit && hit.expiresAt > Date.now()) return hit.value;
+  }
+
   if (!(await pathExists(filePath))) return "";
-  return fs.readFile(filePath, "utf8");
+  const content = await fs.readFile(filePath, "utf8");
+
+  if (WORKFLOW_RUNTIME_TEXT_CACHE_TTL_MS > 0) {
+    workflowRuntimeTextCache.set(filePath, {
+      value: content,
+      expiresAt: Date.now() + WORKFLOW_RUNTIME_TEXT_CACHE_TTL_MS,
+    });
+  }
+
+  return content;
 }
 
 async function loadRulesSummary(rulesDir: string): Promise<string> {
@@ -680,7 +721,7 @@ function inferTypographyFromDesignMd(designMd: string): string {
     "lato",
   ];
   const match = candidates.find((font) => text.includes(font));
-  if (!match) return "Inter, system-ui, -apple-system, sans-serif";
+  if (!match) return "\"Space Grotesk\", \"IBM Plex Sans\", system-ui, -apple-system, sans-serif";
   const normalized = match
     .split(" ")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
@@ -780,12 +821,6 @@ export async function resolveDesignSkillHit(input: string | undefined | null): P
   let best = explicit
     ? scored.find((entry) => entry.style.slug === explicit.slug) || scored[0]
     : scored[0];
-  if (!explicit && intents.has("industrial") && best && best.score <= 0) {
-    const industrialCandidate = scored.find((entry) =>
-      ["bmw", "tesla", "ferrari", "lamborghini", "renault"].includes(String(entry.style.slug || "").toLowerCase()),
-    );
-    if (industrialCandidate) best = industrialCandidate;
-  }
   const top3 = scored.slice(0, 3);
 
   return {
@@ -811,7 +846,6 @@ export async function resolveDesignSkillHit(input: string | undefined | null): P
 }
 
 export async function loadWorkflowSkillContext(input: string | undefined | null): Promise<WorkflowSkillContext> {
-  const hit = await resolveDesignSkillHit(input);
   const {
     workflowSkill,
     selectionCriteria,
@@ -819,8 +853,6 @@ export async function loadWorkflowSkillContext(input: string | undefined | null)
     sequentialWorkflow,
     workflowGuide,
     designRulesDir,
-    localTemplateRoot,
-    root,
   } = getPaths();
 
   const workflowSkillText = await loadFileText(workflowSkill);
@@ -837,36 +869,53 @@ export async function loadWorkflowSkillContext(input: string | undefined | null)
     throw new Error(`sequential-workflow prompt missing at ${sequentialWorkflow}`);
   }
 
-  const style: AwesomeIndexStyle = {
-    slug: hit.id,
-    name: hit.name,
-    category: hit.category,
-    description: hit.design_desc,
-    designMdUrl: hit.design_md_url,
-    designMdPath: hit.design_md_path || path.relative(root, path.join(localTemplateRoot, hit.id, "DESIGN.md")),
-  };
+  const hit = await resolveDesignSkillHit(input);
 
-  const designMd = await loadDesignMdByStyle(style);
-  const profiles = await loadStyleProfiles();
-  const allBlueprints = await loadTemplateBlueprints();
-  const templateBlueprint = resolveTemplateBlueprintByKey(allBlueprints, hit.id);
-  const fallbackProfile = profiles.default || {};
-  const profileBySlug = profiles[hit.id] || {};
-  const inferredProfile = Object.keys(profileBySlug).length > 0 ? {} : buildPresetFromDesignMd(designMd);
-  const presetSeed: Partial<DesignStylePreset> = {
-    ...fallbackProfile,
-    ...inferredProfile,
-    ...profileBySlug,
-    colors: {
-      ...(fallbackProfile.colors || {}),
-      ...(inferredProfile.colors || {}),
-      ...(profileBySlug.colors || {}),
-    } as DesignStylePreset["colors"],
-  };
+  let designMd = "";
+  try {
+    if (hit.id && hit.id !== "awesome-index-unavailable") {
+      designMd = await loadDesignMdByStyle({
+        name: hit.name,
+        slug: hit.id,
+        category: hit.category,
+        description: hit.design_desc,
+        designMdUrl: hit.design_md_url,
+        designMdPath: hit.design_md_path,
+      });
+    }
+  } catch {
+    // Fallback below
+  }
+  if (!designMd.trim()) {
+    designMd = await loadAnyLocalDesignMd();
+  }
+
+  const styleProfiles = await loadStyleProfiles();
+  const profilePreset = hit.id ? styleProfiles[hit.id] || {} : {};
+  const inferredPreset = designMd ? buildPresetFromDesignMd(designMd) : {};
   const stylePreset = normalizeStylePreset(
-    presetSeed,
-    { primary: profileBySlug.colors?.primary, accent: profileBySlug.colors?.accent },
+    {
+      ...(inferredPreset as Partial<DesignStylePreset>),
+      ...(profilePreset as Partial<DesignStylePreset>),
+      ...(hit.style_preset as Partial<DesignStylePreset>),
+    },
+    {},
   );
+
+  let templateBlueprint: TemplateBlueprintResolved = {
+    key: "skill-direct",
+    id: "skill-direct",
+    routeMode: "adaptive",
+    paths: [],
+    pages: {},
+  };
+  try {
+    const allBlueprints = await loadTemplateBlueprints();
+    templateBlueprint = resolveTemplateBlueprintByKey(allBlueprints, hit.id || "default");
+  } catch {
+    // Keep adaptive skill-direct default when blueprint source is missing/invalid
+  }
+
   const enrichedHit: DesignSkillHit = {
     ...hit,
     style_preset: stylePreset,
@@ -884,6 +933,88 @@ export async function loadWorkflowSkillContext(input: string | undefined | null)
     stylePreset,
     templateBlueprint,
   };
+}
+
+const WORKFLOW_RUNTIME_CONTEXT_FIELDS: WorkflowRuntimeContextField[] = [
+  "workflowSkill",
+  "designGeneratorSkill",
+  "selectionCriteria",
+  "sequentialWorkflow",
+  "workflowGuide",
+  "rulesSummary",
+  "designMd",
+];
+
+function normalizeRequestedRuntimeContextFields(
+  fields?: WorkflowRuntimeContextField[],
+): WorkflowRuntimeContextField[] {
+  if (!Array.isArray(fields) || fields.length === 0) return WORKFLOW_RUNTIME_CONTEXT_FIELDS;
+  const valid = new Set<WorkflowRuntimeContextField>(WORKFLOW_RUNTIME_CONTEXT_FIELDS);
+  const normalized = Array.from(new Set(fields.filter((field): field is WorkflowRuntimeContextField => valid.has(field))));
+  return normalized.length > 0 ? normalized : WORKFLOW_RUNTIME_CONTEXT_FIELDS;
+}
+
+export async function loadWorkflowRuntimeContext(): Promise<WorkflowRuntimeContext>;
+export async function loadWorkflowRuntimeContext(
+  options: WorkflowRuntimeContextLoadOptions,
+): Promise<Partial<WorkflowRuntimeContext>>;
+export async function loadWorkflowRuntimeContext(
+  options?: WorkflowRuntimeContextLoadOptions,
+): Promise<WorkflowRuntimeContext | Partial<WorkflowRuntimeContext>> {
+  const {
+    workflowSkill,
+    selectionCriteria,
+    designGeneratorSkill,
+    sequentialWorkflow,
+    workflowGuide,
+    designRulesDir,
+  } = getPaths();
+
+  const requestedFields = normalizeRequestedRuntimeContextFields(options?.fields);
+  const requested = new Set<WorkflowRuntimeContextField>(requestedFields);
+  const context: Partial<WorkflowRuntimeContext> = {};
+
+  if (requested.has("workflowSkill")) {
+    const workflowSkillText = await loadFileText(workflowSkill);
+    if (!workflowSkillText.trim()) {
+      throw new Error(`website-generation-workflow SKILL missing at ${workflowSkill}`);
+    }
+    context.workflowSkill = workflowSkillText;
+  }
+
+  if (requested.has("designGeneratorSkill")) {
+    const designGeneratorSkillText = await loadFileText(designGeneratorSkill);
+    if (!designGeneratorSkillText.trim()) {
+      throw new Error(`design-website-generator SKILL missing at ${designGeneratorSkill}`);
+    }
+    context.designGeneratorSkill = designGeneratorSkillText;
+  }
+
+  if (requested.has("selectionCriteria")) {
+    context.selectionCriteria = await loadFileText(selectionCriteria);
+  }
+
+  if (requested.has("sequentialWorkflow")) {
+    const sequentialWorkflowText = await loadFileText(sequentialWorkflow);
+    if (!sequentialWorkflowText.trim()) {
+      throw new Error(`sequential-workflow prompt missing at ${sequentialWorkflow}`);
+    }
+    context.sequentialWorkflow = sequentialWorkflowText;
+  }
+
+  if (requested.has("workflowGuide")) {
+    context.workflowGuide = await loadFileText(workflowGuide);
+  }
+
+  if (requested.has("rulesSummary")) {
+    context.rulesSummary = await loadRulesSummary(designRulesDir);
+  }
+
+  if (requested.has("designMd")) {
+    context.designMd = await loadAnyLocalDesignMd();
+  }
+
+  return context;
 }
 
 

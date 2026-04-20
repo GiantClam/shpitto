@@ -47,6 +47,7 @@ interface TypographyContext {
 
 interface TypographyScale {
   role: string;
+  font: string;
   size: string;
   weight: number;
   lineHeight: string;
@@ -93,24 +94,65 @@ interface InputStyle {
 }
 
 interface ContentSummary {
-  headings: string[];
-  keyTerms: string[];
+  headings: HeadingRecord[];
+  keyTerms: TermRecord[];
   featureList: string[];
   pricingTiers?: string[];
   toneAndManner: string;
 }
 
-interface DesignUsage {
-  colorsUsed: string[];
-  typographyUsed: string[];
+export interface HeadingRecord {
+  text: string;
+  level: number;
+  usedTerms: string[];
+}
+
+export interface TermRecord {
+  term: string;
+  definition: string;
+  usageCount: number;
+}
+
+export interface ColorUsage {
+  token: string;
+  value: string;
+  usage: string;
+}
+
+export interface TypoUsage {
+  role: string;
+  font: string;
+  size: string;
+  usage: string;
+}
+
+export interface DesignUsage {
+  colorsUsed: ColorUsage[];
+  typographyUsed: TypoUsage[];
   componentsUsed: string[];
 }
 
-interface StructureInfo {
+export interface LinkRecord {
+  target: string;
+  anchor: string;
+  type: string;
+}
+
+export interface StructureInfo {
   sections: string[];
-  links: { target: string; anchor: string; type: string }[];
+  links: LinkRecord[];
   navigationItems: string[];
 }
+
+export interface ContextBudgetOptions {
+  maxChars?: number;
+  maxPages?: number;
+  maxTerms?: number;
+}
+
+const DEFAULT_CONTEXT_MAX_CHARS = Number(process.env.PAGE_CONTEXT_MAX_CHARS || 6000);
+const DEFAULT_CONTEXT_MAX_PAGES = Number(process.env.PAGE_CONTEXT_MAX_PAGES || 4);
+const DEFAULT_CONTEXT_MAX_TERMS = Number(process.env.PAGE_CONTEXT_MAX_TERMS || 24);
 
 /**
  * Build design context from design spec
@@ -189,31 +231,47 @@ export function buildPageContext(
  * Merge multiple page contexts for sequential generation
  */
 export function mergePageContexts(previousContexts: PageContext[]): {
-  mergedTerms: { term: string; definition: string }[];
+  mergedTerms: TermRecord[];
   mergedDesignUsage: { token: string; usage: string }[];
   mergedStructure: { pageName: string; sections: string[] }[];
 } {
-  const termMap = new Map<string, string>();
+  const termMap = new Map<string, TermRecord>();
   const designUsageMap = new Map<string, string>();
   const structureList: { pageName: string; sections: string[] }[] = [];
 
   for (const ctx of previousContexts) {
     for (const heading of ctx.content.headings) {
-      if (!termMap.has(heading.toLowerCase())) {
-        termMap.set(heading.toLowerCase(), heading);
+      const key = heading.text.toLowerCase();
+      const existing = termMap.get(key);
+      if (!existing) {
+        termMap.set(key, {
+          term: heading.text,
+          definition: '',
+          usageCount: 1,
+        });
+      } else {
+        existing.usageCount += 1;
       }
     }
+
     for (const term of ctx.content.keyTerms) {
-      if (!termMap.has(term.toLowerCase())) {
-        termMap.set(term.toLowerCase(), term);
+      const key = term.term.toLowerCase();
+      const existing = termMap.get(key);
+      if (!existing) {
+        termMap.set(key, { ...term });
+      } else {
+        existing.usageCount += term.usageCount;
+        if (!existing.definition && term.definition) {
+          existing.definition = term.definition;
+        }
       }
     }
 
     for (const color of ctx.design.colorsUsed) {
-      designUsageMap.set(color, 'used in previous pages');
+      designUsageMap.set(`color:${color.token}`, color.usage || 'used in previous pages');
     }
-    for (const typo of ctx.design.typographyUsed) {
-      designUsageMap.set(typo, 'used in previous pages');
+    for (const typography of ctx.design.typographyUsed) {
+      designUsageMap.set(`typography:${typography.role}`, typography.usage || 'used in previous pages');
     }
 
     structureList.push({
@@ -223,17 +281,77 @@ export function mergePageContexts(previousContexts: PageContext[]): {
   }
 
   return {
-    mergedTerms: Array.from(termMap.entries()).map(([_, term]) => ({ term, definition: '' })),
+    mergedTerms: Array.from(termMap.values()),
     mergedDesignUsage: Array.from(designUsageMap.entries()).map(([token, usage]) => ({ token, usage })),
     mergedStructure: structureList,
   };
 }
 
 /**
+ * Build bounded context string for page N generation.
+ * Uses all previous pages but enforces a token/size budget to avoid prompt blow-up.
+ */
+export function buildContextForPageN(
+  pageN: number,
+  allContexts: PageContext[],
+  options: ContextBudgetOptions = {}
+): string {
+  const maxChars = Math.max(1000, options.maxChars ?? DEFAULT_CONTEXT_MAX_CHARS);
+  const maxPages = Math.max(1, options.maxPages ?? DEFAULT_CONTEXT_MAX_PAGES);
+  const maxTerms = Math.max(5, options.maxTerms ?? DEFAULT_CONTEXT_MAX_TERMS);
+  const previousContexts = allContexts.slice(0, Math.max(0, pageN - 1));
+  if (previousContexts.length === 0) return '';
+
+  const merged = mergePageContexts(previousContexts);
+  const termSummary = merged.mergedTerms
+    .sort((a, b) => b.usageCount - a.usageCount)
+    .slice(0, maxTerms)
+    .map((term) => `- ${term.term}: ${term.definition || 'shared term'} (usage: ${term.usageCount})`)
+    .join('\n');
+  const usageSummary = merged.mergedDesignUsage
+    .slice(0, maxTerms)
+    .map((usage) => `- ${usage.token}: ${usage.usage}`)
+    .join('\n');
+
+  const sortedRecentPages = [...previousContexts]
+    .sort((a, b) => b.pageOrder - a.pageOrder)
+    .slice(0, maxPages);
+  const pageSummaries = sortedRecentPages
+    .map((ctx) => {
+      const headings = ctx.content.headings.slice(0, 6).map((heading) => heading.text).join(', ');
+      const terms = ctx.content.keyTerms.slice(0, 6).map((term) => term.term).join(', ');
+      return [
+        `### ${ctx.pageName} (#${ctx.pageOrder})`,
+        `- Sections: ${ctx.structure.sections.join(', ') || 'N/A'}`,
+        `- Headings: ${headings || 'N/A'}`,
+        `- Terms: ${terms || 'N/A'}`,
+      ].join('\n');
+    })
+    .join('\n');
+
+  const contextText = [
+    '## Previous Page Context Summary',
+    '',
+    '### Terminology (reuse these terms)',
+    termSummary || '- N/A',
+    '',
+    '### Design Token Usage Patterns',
+    usageSummary || '- N/A',
+    '',
+    '### Recent Page Snapshots',
+    pageSummaries || '- N/A',
+  ].join('\n');
+
+  if (contextText.length <= maxChars) return contextText;
+
+  return `${contextText.slice(0, maxChars - 32)}\n\n[Context truncated to fit budget]`;
+}
+
+/**
  * Format context for LLM prompt
  */
 export function formatContextForPrompt(context: DesignContext | PageContext): string {
-  if ('appliedDesignSystem' in context) {
+  if ('designSpec' in context) {
     const dc = context as DesignContext;
     return `
 ## Design Context
@@ -259,17 +377,46 @@ ${Object.entries(dc.shadows.tokens).map(([k, v]) => `- ${k}: ${v}`).join('\n')}
 `;
   } else {
     const pc = context as PageContext;
+    const headings = pc.content.headings
+      .map((heading) => `- H${heading.level}: ${heading.text}`)
+      .join('\n') || '- N/A';
+    const terms = pc.content.keyTerms
+      .map((term) => `- ${term.term}: ${term.definition || 'N/A'} (usage: ${term.usageCount})`)
+      .join('\n') || '- N/A';
+    const colors = pc.design.colorsUsed
+      .map((color) => `- ${color.token} (${color.value}): ${color.usage}`)
+      .join('\n') || '- N/A';
+    const typography = pc.design.typographyUsed
+      .map((record) => `- ${record.role}: ${record.font} ${record.size} (${record.usage})`)
+      .join('\n') || '- N/A';
+    const links = pc.structure.links
+      .map((link) => `- ${link.anchor} -> ${link.target} (${link.type})`)
+      .join('\n') || '- N/A';
+
     return `
 ## Page Context
 
 **Page**: ${pc.pageName} (Order: ${pc.pageOrder})
 
-**Headings**: ${pc.content.headings.join(', ') || 'N/A'}
-**Key Terms**: ${pc.content.keyTerms.join(', ') || 'N/A'}
-**Tone**: ${pc.content.toneAndManner}
+**Headings**:
+${headings}
 
-**Design Usage**: ${pc.design.componentsUsed.join(', ') || 'N/A'}
+**Key Terms**:
+${terms}
+
+**Tone & Manner**: ${pc.content.toneAndManner || 'N/A'}
+
+**Color Usage**:
+${colors}
+
+**Typography Usage**:
+${typography}
+
+**Components Used**: ${pc.design.componentsUsed.join(', ') || 'N/A'}
 **Sections**: ${pc.structure.sections.join(', ') || 'N/A'}
+
+**Internal Links**:
+${links}
 `;
   }
 }

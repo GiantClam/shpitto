@@ -32,7 +32,7 @@ export type DesignStylePreset = {
 
 export const DEFAULT_STYLE_PRESET: DesignStylePreset = {
   mode: "light",
-  typography: "Inter, system-ui, -apple-system, sans-serif",
+  typography: "\"Space Grotesk\", \"IBM Plex Sans\", system-ui, -apple-system, sans-serif",
   borderRadius: "md",
   navVariant: "pill",
   headerVariant: "glass",

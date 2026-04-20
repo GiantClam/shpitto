@@ -349,6 +349,7 @@ export interface AgentState {
   phase: string; 
   project_outline?: string;
   project_json?: any;   // Final Puck JSON (ProjectSchema)
+  site_artifacts?: any; // Skill-native static site artifacts
   track_results?: any[];
   sitemap?: any;
   industry?: string;
@@ -372,7 +373,18 @@ export interface AgentState {
     rulesSummary?: string;
     designMd?: string;
     preferredLocale?: "zh-CN" | "en";
-    generationMode?: "legacy" | "skill-direct";
+    generationMode?: "legacy" | "skill-direct" | "skill-native";
+    runMode?: "sync" | "async-task";
+    genMode?: "skill_native" | "legacy";
+    sourceRequirement?: string;
+    skillId?: string;
+    skillDirective?: string;
+    skillMdPath?: string;
+    chatTaskId?: string;
+    chatId?: string;
+    workerId?: string;
+    lockedProvider?: string;
+    lockedModel?: string;
   };
 }
 
@@ -1310,8 +1322,10 @@ const conversationNode = async (state: AgentState): Promise<Partial<AgentState>>
     let finalMessage = displayMessage;
 
     if (intent === "confirm_build") {
-        nextPhase = "skeleton";
-        console.log("濠碘槅鍋撶徊浠嬪疮椤栫偞鏅?[System] User approved plan. Transitioning to Skeleton phase...");
+        nextPhase = "conversation";
+        finalMessage =
+          "Plan confirmed. Generation is handled by async task runtime (worker), not graph inline execution.";
+        console.log("濠碘槅鍋撶徊浠嬪疮椤栫偞鏅?[System] User approved plan. Graph stays orchestration-only.");
     } else if (intent === "deploy" && state.phase === "end" && !state.deployed_url) {
         nextPhase = "deploy";
         console.log("濠碘槅鍋撶徊浠嬪疮椤栫偞鏅?[System] User requested deployment. Transitioning to Deploy phase...");
@@ -1580,838 +1594,7 @@ const composeSkillDirectPageHtml = (input: {
 </html>`;
 };
 
-// 2. Skeleton Node: skill-direct static-site generation (opencode-aligned)
-const skeletonNode = async (state: AgentState): Promise<Partial<AgentState>> => {
-  console.log("--- Skeleton Node Started (skill-direct static site mode) ---");
-
-  const requirementParts: string[] = [];
-  if (state.project_outline) requirementParts.push(state.project_outline);
-  for (const msg of state.messages || []) {
-    if (msg instanceof HumanMessage) {
-      const text = msg.content?.toString?.().trim();
-      if (text) requirementParts.push(text);
-    }
-  }
-  const requirementText = requirementParts.join("\n\n");
-  const requestedPaths = extractRequestedPaths(requirementText);
-  const brandHint = extractBrandHint(requirementText);
-  const preferredLocale = detectPreferredLocale(requirementText);
-
-  let workflowContext;
-  try {
-    workflowContext = await loadWorkflowSkillContext(requirementText);
-  } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
-    return {
-      messages: [
-        new AIMessage({
-          id: generateMsgId(),
-          content: `website-generation-workflow assets unavailable: ${reason}. Generation blocked until skill assets are fixed.`,
-        }),
-      ],
-      phase: "conversation",
-    };
-  }
-
-  const designHit = workflowContext.hit;
-  const stylePreset = workflowContext.stylePreset;
-  const blueprint = workflowContext.templateBlueprint;
-
-  if (designHit.id === "awesome-index-unavailable") {
-    return {
-      messages: [
-        new AIMessage({
-          id: generateMsgId(),
-          content:
-            "awesome-design index is unavailable, so style selection cannot continue. Ensure local skill assets exist before retry.",
-        }),
-      ],
-      phase: "conversation",
-    };
-  }
-
-  const routePaths =
-    blueprint.routeMode === "fixed"
-      ? blueprint.paths
-      : requestedPaths.length > 0
-        ? requestedPaths
-        : blueprint.paths;
-  const safePaths = routePaths.length > 0 ? routePaths : ["/"];
-  const brandName = brandHint || state.project_json?.branding?.name || "Shpitto";
-  const navLinks = ensureNavLinks(safePaths, preferredLocale);
-
-  const clip = (text: string | undefined, max = 3200) => {
-    const raw = (text || "").trim();
-    if (!raw) return "(none)";
-    return raw.length <= max ? raw : `${raw.slice(0, max)}\n...[truncated]`;
-  };
-
-  const generationPrompt = `You are the website-generation-workflow execution engine.
-Generate a complete static website in opencode-skill style: shared styles.css + shared script.js + route-specific page body HTML.
-
-Output must satisfy the provided JSON schema exactly.
-Do not include markdown fences.
-
-Hard requirements:
-1) Build pages for EXACT routes: ${safePaths.join(", ")}
-2) Return unified design language across all pages (single visual system).
-3) Use shared CSS classes from stylesCss; avoid per-page inline style blocks.
-4) Each page bodyHtml must be rich, route-specific, and non-repetitive.
-5) Contact page must contain a real <form> with at least name/email(or phone)/message/submit.
-6) News page categories must be semantic list/tags, never plain pipe text.
-7) Main copy language: ${preferredLocale}.
-8) Navigation labels should be short and clean.
-9) Do not output placeholders.
-
-Brand:
-${JSON.stringify(
-  {
-    name: brandName,
-    colors: {
-      primary: stylePreset.colors?.primary || "#0052FF",
-      accent: stylePreset.colors?.accent || "#22C55E",
-    },
-    typography: stylePreset.typography,
-  },
-  null,
-  2,
-)}
-
-Route map:
-${JSON.stringify(navLinks, null, 2)}
-
-Selected style:
-${JSON.stringify(
-  {
-    id: designHit.id,
-    name: designHit.name,
-    design_desc: designHit.design_desc,
-  },
-  null,
-  2,
-)}
-
-Workflow guide:
-${clip(workflowContext.workflowGuide, 1000)}
-
-Sequential workflow:
-${clip(workflowContext.sequentialWorkflow, 1000)}
-
-Design rules summary:
-${clip(workflowContext.rulesSummary, 1000)}
-
-Selected DESIGN.md:
-${clip(workflowContext.designMd, 1800)}
-
-Original requirement:
-${clip(requirementText, 1200)}
-`;
-
-  const skillDirectTimeoutMs = resolvePerRequestTimeoutMs(
-    toNumberOrFallback(process.env.LLM_REQUEST_TIMEOUT_SKILL_DIRECT_MS, 35000),
-  );
-  let generated: SkillDirectSiteOutput | null = null;
-  let validatedPageByPath: SkillDirectValidationResult["pageByPath"] | null = null;
-  let generationError = "";
-  try {
-    const candidate = await invokeStructuredWithProviderFallback<SkillDirectSiteOutput>(
-      SkillDirectSiteSchema,
-      [new SystemMessage(generationPrompt)],
-      {
-        operation: "skill-direct-site",
-        temperature: 0.2,
-        timeoutMs: skillDirectTimeoutMs,
-      },
-    );
-    if (hasUnknownToken(candidate?.site?.stylesCss) || hasUnknownToken(candidate?.site?.scriptJs)) {
-      throw new Error("skill-direct-site returned placeholder <UNKNOWN> payload");
-    }
-    const validated = validateSkillDirectOutput(candidate, safePaths);
-    generated = candidate;
-    validatedPageByPath = validated.pageByPath;
-  } catch (error) {
-    generationError = error instanceof Error ? error.message : String(error);
-    generated = null;
-    validatedPageByPath = null;
-    try {
-      const retryResponse = await invokeRawWithProviderFallback(
-        [
-          new SystemMessage(generationPrompt),
-          new HumanMessage(
-            "Previous output was invalid or contained <UNKNOWN>. Regenerate complete real content for all required routes with real CSS/JS/bodyHtml.",
-          ),
-        ],
-        {
-          operation: "skill-direct-site-retry",
-          temperature: 0,
-          timeoutMs: skillDirectTimeoutMs,
-        },
-      );
-      const parsed = parseLLMJson(retryResponse.content.toString());
-      const candidate = SkillDirectSiteSchema.parse(parsed);
-      if (hasUnknownToken(candidate?.site?.stylesCss) || hasUnknownToken(candidate?.site?.scriptJs)) {
-        throw new Error("skill-direct-site-retry returned placeholder <UNKNOWN> payload");
-      }
-      const validated = validateSkillDirectOutput(candidate, safePaths);
-      generated = candidate;
-      validatedPageByPath = validated.pageByPath;
-      generationError = "";
-    } catch (retryError) {
-      const reason = retryError instanceof Error ? retryError.message : String(retryError);
-      generationError = `${generationError}; retry failed: ${reason}`;
-      generated = null;
-      validatedPageByPath = null;
-    }
-  }
-
-  if (!generated || !validatedPageByPath) {
-    return {
-      messages: [
-        new AIMessage({
-          id: generateMsgId(),
-          content: `Skill-direct generation failed: ${generationError || "unknown error"}.`,
-        }),
-      ],
-      phase: "conversation",
-    };
-  }
-
-  const pageByPath = validatedPageByPath;
-
-  const fallbackStylesCss = `
-:root {
-  --bg: #f8fafc;
-  --surface: #ffffff;
-  --ink: #0f172a;
-  --muted: #475569;
-  --brand: ${stylePreset.colors?.primary || "#0052FF"};
-  --accent: ${stylePreset.colors?.accent || "#22C55E"};
-  --line: #e2e8f0;
-  --container: 1160px;
-}
-* { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; }
-body { font-family: ${stylePreset.typography || "Inter, system-ui, -apple-system, sans-serif"}; background: var(--bg); color: var(--ink); line-height: 1.6; }
-.container { width: min(var(--container), calc(100% - 2rem)); margin: 0 auto; }
-.topbar { position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,.94); border-bottom: 1px solid var(--line); backdrop-filter: blur(8px); }
-.topbar-inner { min-height: 70px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-.brand { font-weight: 700; text-decoration: none; color: var(--ink); }
-.nav-toggle { display: none; }
-.nav-list { display: flex; list-style: none; margin: 0; padding: 0; gap: 1rem; }
-.nav-list a { text-decoration: none; color: var(--muted); font-weight: 600; }
-.nav-list a.is-active, .nav-list a:hover { color: var(--brand); }
-.btn { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: .65rem 1.15rem; text-decoration: none; font-weight: 700; }
-.btn-primary { background: var(--brand); color: #fff; }
-.footer { border-top: 1px solid var(--line); background: #fff; padding: 2rem 0; margin-top: 4rem; color: var(--muted); }
-.footer-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-@media (max-width: 880px) {
-  .nav-toggle { display: inline-flex; border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: .45rem .7rem; }
-  .nav-list { display: none; position: absolute; top: 100%; left: 0; right: 0; background: #fff; border-bottom: 1px solid var(--line); padding: .8rem 1rem; flex-direction: column; }
-  .nav-list.is-open { display: flex; }
-}
-`.trim();
-
-  const fallbackScriptJs = `
-(() => {
-  const toggle = document.querySelector("[data-menu-toggle]");
-  const list = document.querySelector("[data-nav-list]");
-  if (toggle && list) {
-    toggle.addEventListener("click", () => {
-      const open = list.classList.toggle("is-open");
-      toggle.setAttribute("aria-expanded", open ? "true" : "false");
-    });
-  }
-})();
-`.trim();
-
-  const stylesCss =
-    typeof generated.site.stylesCss === "string" && generated.site.stylesCss.trim().length >= 200
-      ? generated.site.stylesCss.trim()
-      : fallbackStylesCss;
-  const scriptJs =
-    typeof generated.site.scriptJs === "string" && generated.site.scriptJs.trim().length >= 20
-      ? generated.site.scriptJs.trim()
-      : fallbackScriptJs;
-  const navLabelMaxChars = Math.max(6, Number(stylePreset.navLabelMaxChars || 12));
-
-  const pages = safePaths.map((routePath) => {
-    const normalizedPath = normalizeRoutePath(routePath);
-    const source = pageByPath.get(normalizedPath);
-    if (!source) {
-      throw new Error(`skill-direct output missing normalized route: ${normalizedPath}`);
-    }
-    const routeLabel = getRouteLabel(normalizedPath, preferredLocale);
-    const cfg = blueprint.pages[normalizedPath] || blueprint.pages["/"];
-    const fallbackTitle = `${routeLabel} | ${brandName}`;
-    const fallbackDescription =
-      preferredLocale === "zh-CN" ? `${brandName}${routeLabel}\u9875\u9762\u3002` : `${brandName} ${routeLabel} page.`;
-    const title = toSafeText(source.title || renderTemplateValue(cfg?.seoTitleTemplate, brandName, fallbackTitle)).trim();
-    const description = toSafeText(
-      source.description || renderTemplateValue(cfg?.seoDescriptionTemplate, brandName, fallbackDescription),
-    ).trim();
-    const bodyHtml = sanitizeGeneratedHtml(toSafeText(source.bodyHtml || ""));
-    if (!bodyHtml) {
-      throw new Error(`skill-direct output bodyHtml cannot be sanitized for route: ${normalizedPath}`);
-    }
-    const navLabelSeed = toSafeText(source.navLabel || routeLabel).trim() || routeLabel;
-    const navLabel = navLabelSeed.slice(0, navLabelMaxChars);
-
-    return {
-      path: normalizedPath,
-      seo: {
-        title: title || fallbackTitle,
-        description: description || fallbackDescription,
-        menuLabel: navLabel,
-        navLabel,
-      },
-      puckData: {
-        root: {
-          props: {
-            stylePreset,
-            rawHtml: bodyHtml,
-          },
-        },
-        content: [],
-      },
-    };
-  });
-  const staticFiles = [
-    { path: "/styles.css", content: stylesCss, type: "text/css" },
-    { path: "/script.js", content: scriptJs, type: "application/javascript" },
-    ...pages.map((page) => {
-      const fullHtml = composeSkillDirectPageHtml({
-        lang: preferredLocale,
-        title: page.seo.title,
-        description: page.seo.description,
-        pagePath: page.path,
-        brandName,
-        bodyHtml: String(page.puckData?.root?.props?.rawHtml || ""),
-        footerHtml: generated?.site?.footerHtml,
-        navLinks,
-      });
-      return { path: `/${toBundleRoutePath(page.path)}`, content: fullHtml, type: "text/html" };
-    }),
-  ];
-
-  const projectJson = {
-    projectId: toProjectIdSlug(brandName),
-    branding: {
-      name: brandName,
-      colors: {
-        primary: stylePreset.colors?.primary || "#0052FF",
-        accent: stylePreset.colors?.accent || "#22C55E",
-      },
-      style: {
-        borderRadius: stylePreset.borderRadius || "sm",
-        typography: stylePreset.typography || "Inter, system-ui, -apple-system, sans-serif",
-      },
-    },
-    pages,
-    skillHit: {
-      id: designHit.id,
-      name: designHit.name,
-      design_desc: designHit.design_desc,
-      score: designHit.score,
-      matched_keywords: designHit.matched_keywords,
-      source: designHit.source,
-      category: designHit.category,
-      design_md_url: designHit.design_md_url,
-      index_generated_at: designHit.index_generated_at,
-      selection_candidates: designHit.selection_candidates,
-      style_preset: stylePreset,
-    },
-    staticSite: {
-      mode: "skill-direct",
-      generatedAt: new Date().toISOString(),
-      routeToFile: Object.fromEntries(safePaths.map((route) => [route, `/${toBundleRoutePath(route)}`])),
-      files: staticFiles,
-    },
-  };
-
-  await updateTaskPlan(`
-## Skill-Direct Static Site
-- Workflow Skill: website-generation-workflow
-- Mode: skill-direct (opencode-aligned)
-- Selected Style: ${designHit.id} (${designHit.name})
-- Paths: ${safePaths.join(", ")}
-- Shared Assets: /styles.css, /script.js
-- File Count: ${staticFiles.length}
-`);
-
-  return {
-    messages: [
-      new AIMessage({
-        id: generateMsgId(),
-        content: "Skill-direct static site generated with shared CSS/JS and route-specific HTML pages.",
-      }),
-    ],
-    project_json: projectJson,
-    pages_to_expand: [],
-    current_page_index: 0,
-    sitemap: safePaths,
-    design_hit: designHit,
-    workflow_context: {
-      selectionCriteria: workflowContext.selectionCriteria,
-      sequentialWorkflow: workflowContext.sequentialWorkflow,
-      workflowGuide: workflowContext.workflowGuide,
-      rulesSummary: workflowContext.rulesSummary,
-      designMd: workflowContext.designMd,
-      preferredLocale,
-      generationMode: "skill-direct",
-    },
-    history: [],
-    phase: "linter",
-  };
-};
-const parallelNode = async (state: AgentState): Promise<Partial<AgentState>> => {
-  console.log("--- Parallel Node Started (3-track stitching) ---");
-  const skeleton = state.project_json;
-  if (!skeleton) {
-    return { phase: "conversation" };
-  }
-
-  const architectModelName = process.env.LLM_MODEL_ARCHITECT || process.env.LLM_MODEL || "anthropic/claude-sonnet-4.5";
-  const copyModelName = process.env.LLM_MODEL_COPYWRITER || process.env.LLM_MODEL || "anthropic/claude-sonnet-4.5";
-  const styleModelName = process.env.LLM_MODEL_STYLIST || process.env.LLM_MODEL || "anthropic/claude-sonnet-4.5";
-
-  const skeletonJson = JSON.stringify(skeleton, null, 2);
-
-  const architectPrompt = `婵犵數鍋犻幓顏嗗緤閹稿孩鍙忛梻鍫熷厷?Track A: Architect闂傚倷绶氬褍螞濡ゅ懎纾瑰瀣捣缁€濠冩叏濡炶浜鹃梺璇″灠閸熸潙鐣烽悢纰辨晜闁告侗鍘肩花銉╂⒒娴ｅ憡鍟為柡宀嬬節瀹曟粌鈹戦崰顕嗙秮楠炴牗鎷呴崨濠傜ザ闂備線娼ч…鍫ュ磹濡ゅ懏鍋℃繝闈涱儐閻撴盯鏌嶈閸撶喖骞冮悜钘夌骇閻犳亽鍔庤ⅵ婵犵绱曢崑鎴﹀磹濡ゅ懎鏋侀悹鍥ф▕閻?path 婵犵數鍋為崹鍫曞箰缁嬫５瑙勵槹鎼粹€崇亰閻庡箍鍎卞Λ娑€?id 闂傚倷鐒﹂惇褰掑礉瀹€鈧埀顒佸嚬閸撴岸寮查崼鏇熷亹閻犲洩灏欓宀勬⒑瑜版帒浜板ù婊呭仱閹兘骞樼紒妯煎弳濠电偞鍨堕…鍥倶闁秵鐓涘ù锝堫潐瀹曞矂鏌?100% 闂傚倷绀侀幉锟犳嚌妤ｅ啯鍋嬪┑鐘插閸忔粓鏌涢锝嗙闁?ProjectSchema JSON闂?
-
-缂傚倸鍊烽悞锕傚箯濠靛鈷旈柛鏇ㄥ亽閻掕姤銇勯幇鍫曟闁?
-- 闂傚倸顭崑鍕洪妶澶婄疇婵せ鍋撳┑锛勵棎缁犳盯寮崒妤佹暤婵犵數濞€濞佳囨偋婵犲倵鏋旈悘鐐佃檸濞堜粙鏌ｉ幇顖氱厫缁绢厾鍋撻妵鍕晜閻ｅ苯寮ㄩ梺璇″枙缁瑦淇婇幖浣肝╃憸蹇涙倷閺囥垺鏅?skeleton 闂傚倸鍊烽悞锕併亹閸愵喗鍎旈柣鎾崇岸閺?projectId闂傚倷绶氬褍螞閺冨牆缁╃紒顐ょ彍nding闂傚倷绶氬褍螞閺冨牆鍨傛い锝呮es/path闂傚倷绶氬褍螞閺傛娓婚柟鐑樻尵椤╂煡鏌熼悜姗嗘當闁活厽顨呴埞鎴︽偐閹绘帗娈跺┑鈥崇湴閸斿矂鍩ユ径鎰闁告剬鍛櫦缂傚倷绶￠崰鏍矓閻㈢數鐭夐柟鐑橆殔缁€鍫澝归敐鍛础闁?id闂?
-- 婵犵數鍋為崹鍫曞箰閸濄儳鐭撻柣鎴濐潟閳ь剙鎳橀弫鍐磼濮橆収妫熼梻浣告惈椤︿即顢栧▎鎾崇骇濠电姵纰嶉悡娆撴倵濞戞瑯鐒藉褜浜弻娑㈠Ω閵壯呅ㄥ┑顔硷梗缁瑦淇婇崼鏇炵倞闁冲搫鍟伴崢鎴濃攽閻愬樊鍤熷┑顕€绠栭、娆撳箛椤旂瓔娼熼柡澶婄墑閸斿酣鍩炲鍡欑瘈闂傚牊绋掗幖鎰版煥?skeleton 婵犵數鍋為崹鍫曞箹閳哄懎鍌ㄩ柛鎾楀啫鐏婇悗骞垮劚濡盯銆呴悜鑺ョ厱闁规崘灏欓崝宥夋煟閿濆鎲鹃柡灞稿墲閹峰懎鐣￠弶璺ㄣ偖闂備線娼荤徊鎯ь渻閼恒儰绻嗛悗娑欘焽閻熷綊鏌嶈閸撶喐淇婄€涙ɑ鍎熼柕蹇娾偓鍐插Τ闂傚鍋勫ú锕傚箰婵犳碍鏅?type 婵犵數鍋為崹鍫曞箰閸濄儳鐭撶痪鎯ь儍娴滅懓顭块懜闈涘鏉?
-- 缂傚倸鍊搁崐椋庣矆娴ｈ　鍋撳闂寸盎闁?type 闂傚倸顭崑鍕洪妶澶婄疇婵せ鍋撳┑锛勵棎缁犳盯寮崒妤佺亙闂備線娼ч¨鈧┑鈥虫处缁旂喖骞囬鐐茬秺閺佹劙宕奸悢鎭掆偓濠囨⒑鏉炰即妾烽柛濠冪墱缁骞掑Δ鈧敮闂侀潧鐗嗗ú銊╁箟椤曗偓濮婂宕掑顓ф濠碘槅鍋呴〃濠囩嵁閸愨晜鍎熼柕濠忛檮濞呮牕鈹戦悙鍙夘棤闁哄棛顥沷, Stats, Testimonials, ValuePropositions, ProductPreview, FeatureHighlight, CTASection, FAQ, Logos
-- props 闂備浇顕х€涒晝绮欓幒妞尖偓鍐幢濞戣鲸鏅╅悗鍏夊亾闁告劦浜為弶鎼佹⒑閸涘﹦鈯曢柣锝庝邯閸┾偓妞ゆ巻鍋撶紒缁樺笧閸掓帡顢橀姀鈩冩珖闂侀€炲苯澧存?schema闂傚倷鐒︾€笛呯矙閹达附鍤愭い鏍仦閸嬨倗鎲稿澶婄厺闁瑰墽绮ˉ鍫熺箾閹寸偟鎳冮柍褜鍓欓崯鍧楁箒闂佹寧绻傞悧濠勬兜閸洘鏅?camelCase闂傚倷鐒︾€笛呯矙閹达附鍋嬮柛娑卞灡椤愪粙鏌曟径娑氱窗缂?ctaText/ctaLink闂傚倷鐒︾€笛呯矙閹寸偟闄勯柡鍐ㄥ€荤粻鏂款熆鐠虹儤婀伴柛鐔锋惈闇夐柨婵嗘搐閸斿鏌?cta_text/cta_link闂傚倷鐒︾€笛呯矙閹次诲洭顢橀姀鐘靛姦?
-- 闂備礁鎼ˇ顐﹀疾濠婂牆钃熼柕濞垮剭濞差亜鍐€妞ゆ劗鍠庢禍楣冩煟閻斿搫顣兼繝鈧导瀛樻櫢?JSON闂傚倷鐒︾€笛呯矙閹寸偟闄勯柡鍐ㄥ€荤粻鏂款熆鐠虹儤婀伴柛?Markdown闂?
-
-ProjectSchema:
-${SCHEMA_STRING}
-
-闂備礁鎼ˇ顖炴偋婵犲洤绠伴柟闂寸閻?Skeleton JSON:
-${skeletonJson}`;
-
-  const copyPrompt = `婵犵數鍋犻幓顏嗗緤閹稿孩鍙忛梻鍫熷厷?Track B: Copywriter闂傚倷绶氬褍螞濡ゅ懎纾瑰瀣捣缁€濠冩叏濡炶浜鹃悗瑙勬穿缂嶄線銆侀弮鍫濈倞闁冲搫鍟伴崐鎶芥⒒娴ｅ憡鍟為柛銊ョ秺瀹曟洟濡堕崶锝呬壕闁割煈鍋嗛惌宀€绱掓潏銊ユ诞鐎规洜鍠栭、鏃堝椽娴ｉ晲缂?id 闂備浇顕х花鑲╁緤婵犳凹鏁嬬憸宥夆€﹂崶顒€绀冩い鏃囨閸擃參姊洪崨濠冨闁告挻宀搁幃妤咁敊閹存帞绠氬┑掳鍊愰崑鎾绘煟濡や礁濮屾俊顐犲灪缁绘盯骞嬮悙鏉戠煯缂備浇缈伴崐妤€危閹邦兘鏀介柛銉㈡杹閺嬫牠鎮楅獮鍨姎闁绘绮岀叅闁挎繂顦痪褔鏌涢銈呮瀾閻忓浚鍙冮弻娑㈠Χ鎼粹€崇闂侀€炲苯澧伴柟铏崌瀵敻顢楅崟顐ｈ緢闂佹寧绻傚Λ搴㈢濠婂牊鐓熼柕蹇曞У閸熺偞淇婂鐓庡缂佽鲸鎸婚幏鍛喆閸曨偊鐎洪梻浣筋嚙鐎垫帡宕归崼鏇熸櫢?
-
-闂備礁鎼ˇ顖炴偋婵犲洤绠伴柟闂寸閸?JSON 闂傚倷绀侀幖顐ょ矓閸洖鍌ㄧ憸蹇撐ｉ幇鐗堟櫢闁绘娅曞▍?
-{
-  "payload": {
-    "hero_01": { "title": "...", "subtitle": "...", "description": "...", "ctaText": "..." },
-    "value_propositions_01": { "title": "...", "items": [ ... ] }
-  }
-}
-
-缂傚倸鍊烽悞锕傚箯濠靛鈷旈柛鏇ㄥ亽閻掕姤銇勯幇鍫曟闁?
-- 闂傚倷绀侀幉锟犳偡椤栨稓顩查柨婵嗩槸缁€鍌涗繆椤栨粎甯涚紓宥呮喘閺岀喖骞嗚閺嗚鲸鎱ㄩ敐鍜佹Ц闁宠棄顦甸獮姗€宕樺顔煎Ψ闂備礁鎼鍛村疮椤愶负鈧懏绺界粙鍧楀敹闂侀潧楠忕槐鏇㈠Χ閺屻儲鈷戠紒瀣硶缁犳壆鐥紒銏犲箹闁崇粯鎹囬獮瀣偐椤愵澀澹曞┑鐐村灦閻燁垰鈻撻弴鐔翠簻闁哄倽娉曢悞鎼佹煛娴ｅ摜效鐎规洘鎮傞幆鍥ь啅濮掝柅/subtitle/description/items[*].title/items[*].description/question/answer 缂傚倸鍊烽悞锔剧矙閹次层劑鍩€椤掑倻纾奸弶鍫涘妼閸濇椽鏌?
-- 婵犵數鍋為崹鍫曞箰閸濄儳鐭撻柣鎴濐潟閳ь剙鎳橀弫鍌炴嚍閵壯呅ら梻浣筋潐閸庢娊宕崹顔ф帗寰勬繛銏＄洴閹囧醇閵忋垻鍘斿┑鐘灮閹虫捇鏁冮鍛箚閻庢稒顭囬埢鏇犵磼椤栨粠鐓玬e闂傚倷绶氬褍螞閺冨牏鍙曢柣鐐垫尦ect闂傚倷绶氬褍螞閺傛鍟呮い褏鐏噂n闂傚倷绶氬褍螞閺傛鍟呴柨鏇炵┈ge闂傚倷绶氬褍螞閺冨牆绀嬬紒璺恒偧o闂?
-- 闂備礁鎼ˇ顐﹀疾濠婂牆钃熼柕濞垮剭?JSON闂傚倷鐒︾€笛呯矙閹寸偟闄勯柡鍐ㄥ€荤粻鏂款熆鐠虹儤婀伴柛?Markdown闂?
-
-闂備礁鎼ˇ顖炴偋婵犲洤绠伴柟闂寸閻?Skeleton JSON:
-${skeletonJson}`;
-
-  const stylePrompt = `婵犵數鍋犻幓顏嗗緤閹稿孩鍙忛梻鍫熷厷?Track C: Stylist闂傚倷绶氬褍螞濡ゅ懎纾瑰瀣捣缁€濠冩叏濡炶浜鹃悗瑙勬穿缂嶄線銆侀弮鍫濈倞闁冲搫鍟伴崐鎶芥⒒娴ｅ憡鍟為柛銊ョ秺瀹曟洟濡堕崶锝呬壕闁割煈鍋嗛惌宀€绱掓潏銊ユ诞鐎规洜鍠栭、鏃堝椽娴ｉ晲缂?id 闂備浇顕х花鑲╁緤婵犳凹鏁嬬憸宥夆€﹂崶顒€绀冩い鏃囨閸擃參姊洪崨濠冨闁革綆鍠栭…鍥箳濡や礁浠┑鐐叉濞存艾危妞嬪海纾兼俊銈傚亾闁活厼鍊搁悾宄扳攽鐎ｎ€晠鏌ㄩ弮鍥撻柣婵撶節閺岋綁鎮欑€电硶妫ㄩ梺绋垮婢瑰棛鍒掗埡鍛仺闁告稑锕ュ▍鏍煟韫囨洖浠╅柛瀣姍閹嘲鈹戠€ｎ偄浠梺鍝勬处绾板秶绮婇幍顔剧＜濡増绻傚顔锯偓瑙勬礃閻熲晛鐣烽锕€绀嬫い鎾跺枑椤斿懘姊绘担鑺ャ€冮柣鎺炵畵楠炴劙骞庨挊澹┿儱顭块懜闈涘妞ゃ儱鐗撻弻鏇＄疀鐎ｎ亞浼勫┑鐐差槶閸ㄤ粙寮婚敍鍕ㄥ亾閿濆簼绨绘い蹇嬪劦閺?
-
-闂備礁鎼ˇ顖炴偋婵犲洤绠伴柟闂寸閸?JSON 闂傚倷绀侀幖顐ょ矓閸洖鍌ㄧ憸蹇撐ｉ幇鐗堟櫢闁绘娅曞▍?
-{
-  "payload": {
-    "hero_01": { "theme": "dark", "effect": "retro-grid", "align": "text-center", "image": "https://..." },
-    "feature_highlight_01": { "align": "right", "image": "https://..." }
-  }
-}
-
-缂傚倸鍊烽悞锕傚箯濠靛鈷旈柛鏇ㄥ亽閻掕姤銇勯幇鍫曟闁?
-- 闂傚倷绀侀幉锟犳偡椤栨稓顩查柨婵嗩槸缁€鍌涗繆椤栨粎甯涚紓宥呮喘閺岀喖骞嗚閺嗚鲸鎱ㄩ敐鍜佹Ц闁宠棄顦甸獮姗€鎼归銏℃暘婵＄偑鍊ら崑鍕敄閸ヮ剙绠熼悗娑櫭欢鐐烘倶閻愭彃鈷旈柕鍫熺叀濮婅櫣绮欑捄銊ь唶闂佸摜鍠庡锟犲箖妤︽妲婚梺宕囩帛閹搁箖宕版繝鍐ㄧ窞鐎光偓閳ь剟藝閿曟潑eme/effect/align/image/icon/logo 缂傚倸鍊烽悞锔剧矙閹次层劑鍩€椤掑倻纾奸弶鍫涘妼閸濇椽鏌?
-- 闂傚倷绀侀幖顐﹀磹缁嬫５娲晝閸屾ǚ鍋撴担鍓插悑闁搞儻绲芥禍鐐箾閹寸偟鎳愭繛鍫熸礃閵囧嫰寮捄銊у姱闂佽鍠楅崕鎶藉煝鎼淬劌绠ｉ柣妯烘惈閻?Copywriter闂傚倷鐒︾€笛呯矙閹寸偟闄勯柡鍐ㄥ€荤粻鏂款熆鐠虹儤婀伴柛鐔锋惈闇夐柨婵嗘祩閻掗箖鏌￠崨顔藉€愭慨濠傤煼閸┾偓妞ゆ帒瀚粻浼村箹閹碱厼鏋涢柡鍌楀亾闂傚倷娴囪闁稿鎸搁埞鎴︻敊閽樺顫呴梺?
-- 闂備礁鎼ˇ顐﹀疾濠婂牆钃熼柕濞垮剭?JSON闂傚倷鐒︾€笛呯矙閹寸偟闄勯柡鍐ㄥ€荤粻鏂款熆鐠虹儤婀伴柛?Markdown闂?
-
-闂備礁鎼ˇ顖炴偋婵犲洤绠伴柟闂寸閻?Skeleton JSON:
-${skeletonJson}`;
-
-  const [architectRaw, copyRaw, styleRaw] = await Promise.all([
-    invokeRawWithProviderFallback([new SystemMessage(architectPrompt)], {
-      operation: "parallel-architect",
-      modelName: architectModelName,
-      temperature: 0,
-    }),
-    invokeRawWithProviderFallback([new SystemMessage(copyPrompt)], {
-      operation: "parallel-copywriter",
-      modelName: copyModelName,
-      temperature: 0.2,
-    }),
-    invokeRawWithProviderFallback([new SystemMessage(stylePrompt)], {
-      operation: "parallel-stylist",
-      modelName: styleModelName,
-      temperature: 0.2,
-    }),
-  ]);
-
-  let architectJson: any = skeleton;
-  let copyJson: any = { payload: {} };
-  let styleJson: any = { payload: {} };
-
-  try {
-    architectJson = parseLLMJson(architectRaw.content.toString());
-  } catch (e) {
-    console.error("Architect JSON Parse Error", e);
-  }
-
-  try {
-    copyJson = parseLLMJson(copyRaw.content.toString());
-  } catch (e) {
-    console.error("Copywriter JSON Parse Error", e);
-  }
-
-  try {
-    styleJson = parseLLMJson(styleRaw.content.toString());
-  } catch (e) {
-    console.error("Stylist JSON Parse Error", e);
-  }
-
-  return {
-    messages: [new AIMessage({ id: generateMsgId(), content: "濠碘槅鍋撶徊浠嬪船?濠电姵顔栭崰妤冩崲閹邦喖绶ら柦妯侯檧閼版寧銇勮箛鎾村櫤濞存嚎鍊栫换娑㈠箣閻愮數鐓犻梺琛″亾闁芥ê顦Σ鍫ユ煙閻愵剙澧俊鎻掋偢閺岋綁顢橀姀銏㈡毇閻庤姣滈妶鍥╂澑闁硅壈鎻徊鍧楀煝閺囥垺鈷戞慨鐟版搐閻忣噣鏌涢悩鍐插鐎规洜鎳撻～婵嬵敇閻橆偅鐏冮梺纭呭閹活亞寰婇崸妤佲拻妞ゆ牜鍋為悡?.." })],
-    project_json: architectJson,
-    track_results: [copyJson, styleJson],
-    phase: "stitcher",
-  };
-};
-
-const stitcherNode = async (state: AgentState): Promise<Partial<AgentState>> => {
-  console.log("--- Stitcher Node Started ---");
-  if (!state.project_json) return { phase: "conversation" };
-  const merged = stitchTracks(state.project_json, state.track_results || []);
-  return {
-    messages: [new AIMessage({ id: generateMsgId(), content: "濠碘槅鍋撶徊浠嬪船?闂佽娴烽幊鎾诲箟闄囬妵鎰板礃椤旇棄浠煎銈嗗笒鐎氼剛绮婚敐澶嬬厵闂侇叏绠戞晶鐗堢箾绾绉柡宀€鍠栭、鏍敆閳ь剟骞婇幇鐗堚拻妞ゆ牜鍋為悡鏇熸叏濮楀棗澧板褍纾槐鎺撴綇閵娧呯暤濡炪値鍋侀崹浠嬪极閹版澘宸濇い鏂跨仢閹牓姊洪崫鍕垫Т闁哄懏绮庣划娆撳冀椤撴壕鍋撴笟鈧獮瀣偐閸愯尙褰存俊鐐€栭幐鑽ゆ崲閸曨垱鍋柛娑樼摠閸婄敻姊婚崼鐔恒€掔紒澶庢缁辨挸顓奸崨顖氼杸缂備礁顑呴ˇ浼村箚閺冨牊鏅查柛灞绢殔娴滈箖鏌″鍐ㄥ闁崇懓绉甸妵鍕籍閸屾瀚涢梺?.." })],
-    project_json: merged,
-    phase: "liner",
-  };
-};
-
-const linerNode = async (state: AgentState): Promise<Partial<AgentState>> => {
-  console.log("--- Liner Node Started ---");
-  if (!state.project_json) return { phase: "conversation" };
-
-  const project = structuredClone(state.project_json);
-
-  if (!project.branding?.style?.typography) {
-    project.branding = {
-      ...project.branding,
-      style: { ...(project.branding?.style || {}), typography: "Inter", borderRadius: project.branding?.style?.borderRadius || "sm" },
-    };
-  }
-
-  if (!project.branding?.colors?.primary || !/^#[0-9A-F]{6}$/i.test(project.branding.colors.primary)) {
-    project.branding = { ...project.branding, colors: { ...(project.branding?.colors || {}), primary: "#0052FF" } };
-  }
-  if (!project.branding?.colors?.accent || !/^#[0-9A-F]{6}$/i.test(project.branding.colors.accent)) {
-    project.branding = { ...project.branding, colors: { ...(project.branding?.colors || {}), accent: "#22C55E" } };
-  }
-
-  for (const page of project.pages || []) {
-    page.seo = page.seo || { title: `${project.branding?.name || "Website"} | ${page.path}`, description: "A professional website." };
-    page.puckData = page.puckData || { root: { props: {} }, content: [] };
-    page.puckData.root = page.puckData.root || { props: {} };
-    page.puckData.root.props = page.puckData.root.props || {};
-    const content = Array.isArray(page.puckData.content) ? page.puckData.content : [];
-
-    page.puckData.content = content.map((comp: any) => {
-      const next = { ...comp };
-      next.type = normalizeComponentType(next.type);
-      next.id = next.id || next.props?.id || generateMsgId();
-      next.props = next.props || {};
-
-      if (next.props.cta_text && !next.props.ctaText) next.props.ctaText = next.props.cta_text;
-      if (next.props.cta_link && !next.props.ctaLink) next.props.ctaLink = next.props.cta_link;
-
-      if (next.type === "Hero" && !next.props.title) next.props.title = "Welcome";
-      if (next.type === "Stats" && (!Array.isArray(next.props.items) || next.props.items.length === 0)) {
-        next.props.items = [{ label: "Metric", value: "0", suffix: "" }];
-      }
-      if (next.type === "Testimonials" && (!Array.isArray(next.props.items) || next.props.items.length === 0)) {
-        next.props.items = [{ content: "Great results.", author: "Customer", role: "" }];
-      }
-      if (next.type === "ValuePropositions" && (!Array.isArray(next.props.items) || next.props.items.length === 0)) {
-        next.props.items = [{ title: "Benefit", description: "Description", icon: "Check" }];
-      }
-      if (next.type === "ProductPreview" && (!Array.isArray(next.props.items) || next.props.items.length === 0)) {
-        next.props.items = [{ title: "Item", description: "Description", image: "", tag: "" }];
-      }
-      if (next.type === "FAQ" && (!Array.isArray(next.props.items) || next.props.items.length === 0)) {
-        next.props.items = [{ question: "Question", answer: "Answer" }];
-      }
-
-      return next;
-    });
-  }
-
-  const validation = ProjectSchema.safeParse(project);
-  const validationError = validation.success ? undefined : validation.error.message;
-  const shouldExpand =
-    Array.isArray(state.pages_to_expand) &&
-    state.pages_to_expand.length > 0 &&
-    state.current_page_index < state.pages_to_expand.length;
-
-  return {
-    project_json: project,
-    validation_error: validationError,
-    phase: shouldExpand ? "expanding" : "seo_optimization",
-  };
-};
-
-// 3. Page Expansion Node: skill-first page expansion (HTML-first, no JSON section tree)
-const pageExpansionNode = async (state: AgentState): Promise<Partial<AgentState>> => {
-  if (!state.project_json || !Array.isArray(state.pages_to_expand) || state.pages_to_expand.length === 0) {
-    return { phase: "seo_optimization" };
-  }
-
-  const currentIndex = state.current_page_index;
-  if (currentIndex >= state.pages_to_expand.length) {
-    return { phase: "seo_optimization" };
-  }
-
-  const routePath = state.pages_to_expand[currentIndex];
-  console.log(`--- Page Expansion Node: ${routePath} (${currentIndex + 1}/${state.pages_to_expand.length}) ---`);
-
-  const pageIdx = state.project_json.pages.findIndex((page: any) => page.path === routePath);
-  if (pageIdx < 0) {
-    return {
-      current_page_index: currentIndex + 1,
-      phase: currentIndex + 1 >= state.pages_to_expand.length ? "seo_optimization" : "expanding",
-    };
-  }
-
-  const currentPage = state.project_json.pages[pageIdx];
-  const currentContent = Array.isArray(currentPage?.puckData?.content) ? currentPage.puckData.content : [];
-  const previousPageSummaries = (state.project_json.pages || [])
-    .slice(0, currentIndex)
-    .map((page: any) => {
-      const hero = (page?.puckData?.content || []).find((item: any) => item?.type === "Hero")?.props || {};
-      const valueTitles = ((page?.puckData?.content || []).find((item: any) => item?.type === "ValuePropositions")?.props?.items || [])
-        .slice(0, 3)
-        .map((item: any) => item?.title)
-        .filter(Boolean)
-        .join(", ");
-      return `${page.path}: ${page?.seo?.title || ""} | Hero=${hero?.title || ""} | Terms=${valueTitles || "(none)"}`;
-    })
-    .join("\n");
-  const stylePreset = currentPage?.puckData?.root?.props?.stylePreset || state.design_hit?.style_preset || {};
-  const workflowContext = state.workflow_context || {};
-  const preferredLocale: "zh-CN" | "en" = workflowContext.preferredLocale || "en";
-  const routeSpecificRule =
-    routePath === "/contact"
-      ? `- This is the contact page. You MUST include one real <form> element with fields for name, email, message, and a submit button.
-- The form must be normal HTML form markup (no pseudo-code).`
-      : routePath === "/news"
-        ? `- This is the news page. Categories/tags MUST be rendered as semantic HTML list/tags (<ul>/<li> or styled tag container), not plain text separated by pipes.`
-        : "- Use route-specific structure and avoid repeating the same section order as other pages.";
-  const clip = (text: string | undefined, max = 2400) => {
-    const raw = (text || "").trim();
-    if (!raw) return "(none)";
-    return raw.length <= max ? raw : `${raw.slice(0, max)}\n...[truncated]`;
-  };
-  const systemPrompt = `You are the page expansion executor in website-generation-workflow.
-Task: generate a high-quality page for ONE route by following SKILL instructions as the source of truth.
-
-Output contract (strict):
-- Return ONLY HTML fragment for the page body (section/article/div blocks).
-- Do NOT output JSON.
-- Do NOT output Markdown fences.
-- Do NOT output Markdown syntax like **bold**, # headings, or pipe-separated pseudo tables.
-- Do NOT explain your answer.
-
-Generation policy:
-- Trust SKILL workflow and design rules first; avoid generic boilerplate.
-- Return a complete page body that reflects the selected style and route intent.
-- Keep this page distinct from previous pages while preserving brand/terminology continuity.
-- Never output placeholder text like "Rich page narrative..." or "Next step for...".
-- Primary language must be ${preferredLocale}. Do not mix Chinese and English in body copy except unavoidable technical terms (e.g., CNC, ISO, CE).
-- Replace any seed placeholders with concrete, route-specific copy. Never return generic placeholders.
-- Use semantic HTML only (section/article/div/h1-h4/p/ul/li/form/input/textarea/button etc.), no markdown text formatting.
-${routeSpecificRule}
-
-Branding:
-${JSON.stringify(state.project_json.branding || {}, null, 2)}
-
-Preferred locale:
-${preferredLocale}
-
-Style preset:
-${JSON.stringify(stylePreset, null, 2)}
-
-Route:
-${routePath}
-
-SEO target:
-${JSON.stringify(currentPage?.seo || {}, null, 2)}
-
-Approved outline:
-${state.project_outline || "(none)"}
-
-Design workflow rules (from skill):
-${clip(workflowContext.sequentialWorkflow)}
-
-Workflow guide (from skill):
-${clip(workflowContext.workflowGuide, 1800)}
-
-Design rule summary (from skill):
-${clip(workflowContext.rulesSummary, 1800)}
-
-Selection criteria (from skill):
-${clip(workflowContext.selectionCriteria, 1200)}
-
-Selected style DESIGN.md (from skill, authoritative visual semantics):
-${clip(workflowContext.designMd, 2800)}
-
-Previous page summaries:
-${previousPageSummaries || "(none)"}
-
-Current page seed blocks (for context only; you may redesign structure freely):
-${JSON.stringify(currentContent.slice(0, 8), null, 2)}
-`;
-
-  let rawHtmlPatch: string | undefined;
-  let errorMsg: string | undefined;
-
-  try {
-    const response = await invokeRawWithProviderFallback([new SystemMessage(systemPrompt)], {
-      operation: `page-expansion-html:${routePath}`,
-      temperature: 0.2,
-    });
-    rawHtmlPatch = sanitizeGeneratedHtml(extractHtmlFromModelResponse(response.content.toString()));
-  } catch (error) {
-    console.error(`Page Expansion Error (${routePath})`, error);
-    errorMsg = `Failed to generate HTML for ${routePath}: ${error instanceof Error ? error.message : String(error)}; retrying once.`;
-  }
-
-  const needsRetry = !rawHtmlPatch;
-  if (needsRetry) {
-    const retryPrompt = `Your previous output for route ${routePath} was invalid.
-Return ONLY HTML fragment for this route body.
-No JSON. No Markdown. No explanations.
-`;
-    try {
-      const retryResp = await invokeRawWithProviderFallback(
-        [new SystemMessage(systemPrompt), new HumanMessage(retryPrompt)],
-        {
-          operation: `page-expansion-html-retry:${routePath}`,
-          temperature: 0,
-        },
-      );
-      rawHtmlPatch = sanitizeGeneratedHtml(extractHtmlFromModelResponse(retryResp.content.toString()));
-      if (!rawHtmlPatch) {
-        errorMsg = `${errorMsg || ""} Retry returned empty HTML.`.trim();
-      } else {
-        errorMsg = undefined;
-      }
-    } catch (retryError) {
-      const retryReason = retryError instanceof Error ? retryError.message : String(retryError);
-      errorMsg = `${errorMsg || ""} Retry failed: ${retryReason}`.trim();
-    }
-  }
-  const nextPageContent = rawHtmlPatch ? [] : currentContent;
-  const navLabel = getRouteLabel(routePath, preferredLocale);
-
-  const nextProject = { ...state.project_json };
-  nextProject.pages = [...nextProject.pages];
-  nextProject.pages[pageIdx] = {
-    ...currentPage,
-    seo: {
-      ...(currentPage.seo || {}),
-      navLabel,
-      menuLabel: navLabel,
-    },
-    puckData: {
-      ...(currentPage.puckData || {}),
-      root: {
-        ...(currentPage.puckData?.root || {}),
-        props: {
-          ...(currentPage.puckData?.root?.props || {}),
-          ...(rawHtmlPatch ? { rawHtml: rawHtmlPatch } : {}),
-        },
-      },
-      content: nextPageContent,
-    },
-  };
-
-  const isLastPage = currentIndex === state.pages_to_expand.length - 1;
-  return {
-    messages: [
-      new AIMessage({
-        id: generateMsgId(),
-        content: errorMsg
-          ? `Expansion for ${routePath} failed to return usable HTML. Kept previous content. ${errorMsg}`
-          : rawHtmlPatch
-            ? `Expanded ${routePath} with skill code-first HTML (${currentIndex + 1}/${state.pages_to_expand.length}).`
-            : `Expanded ${routePath} without changes (empty output returned).`,
-      }),
-    ],
-    project_json: nextProject,
-    current_page_index: currentIndex + 1,
-    phase: isLastPage ? "seo_optimization" : "expanding",
-    validation_error: errorMsg,
-  };
-};
-
-// 4. SEO Node: deterministic metadata fill (no second-pass LLM rewrite)
-const seoNode = async (state: AgentState): Promise<Partial<AgentState>> => {
-  console.log("--- SEO Node Started ---");
-  if (!state.project_json) return { phase: "linter" };
-
-  const projectJson = structuredClone(state.project_json);
-  const brandName = toSafeText(projectJson.branding?.name || "Website").trim() || "Website";
-  const preferredLocale: "zh-CN" | "en" = state.workflow_context?.preferredLocale || "en";
-
-  const keywords = new Set<string>();
-  const updatedPages = (projectJson.pages || []).map((page: any) => {
-    const routePath = normalizeRoutePath(String(page?.path || "/"));
-    const routeTitle = getRouteLabel(routePath, preferredLocale);
-    const existingTitle = toSafeText(page?.seo?.title).trim();
-    const existingDescription = toSafeText(page?.seo?.description).trim();
-    const navLabelRaw = toSafeText(page?.seo?.navLabel || page?.seo?.menuLabel).trim();
-    const navLabel =
-      preferredLocale === "zh-CN" ? getRouteLabel(routePath, "zh-CN") : navLabelRaw || routeTitle;
-
-    const content = Array.isArray(page?.puckData?.content) ? page.puckData.content : [];
-    const hero = content.find((item: any) => normalizeComponentType(item?.type) === "Hero");
-    const heroTitle = toSafeText(hero?.props?.title).trim();
-    const heroDescription = toSafeText(hero?.props?.description || hero?.props?.subtitle).trim();
-
-    const title = existingTitle || `${routeTitle} | ${brandName}`;
-    const description =
-      existingDescription ||
-      (heroDescription ? `${heroDescription}`.slice(0, 155) : `${brandName} ${routeTitle} page.`.slice(0, 155));
-
-    if (routeTitle) keywords.add(routeTitle.toLowerCase());
-    if (heroTitle) {
-      heroTitle
-        .split(/[^a-zA-Z0-9\u4e00-\u9fff]+/)
-        .map((token) => token.trim().toLowerCase())
-        .filter((token) => token.length >= 3)
-        .slice(0, 8)
-        .forEach((token) => keywords.add(token));
-    }
-
-    return {
-      ...page,
-      path: routePath,
-      seo: {
-        ...(page?.seo || {}),
-        title,
-        description,
-        navLabel,
-        menuLabel: navLabel,
-      },
-    };
-  });
-
-  projectJson.pages = updatedPages;
-  const injected = injectOrganizationJsonLd(projectJson);
-  return {
-    messages: [new AIMessage({ id: generateMsgId(), content: "Applied deterministic SEO metadata normalization." })],
-    project_json: injected,
-    seo_keywords: Array.from(keywords).slice(0, 16),
-    phase: "linter",
-  };
-};
+// Legacy expansion/SEO/skeleton generation nodes were removed from the default graph runtime path.
 const injectContactFormDeploymentProps = (projectJson: any, actionUrl: string, siteKey: string) => {
   if (!projectJson?.pages || !Array.isArray(projectJson.pages)) return projectJson;
 
@@ -2553,8 +1736,9 @@ const getProjectContentQualityIssues = (projectJson: any) => {
 
 const deployNode = async (state: AgentState): Promise<Partial<AgentState>> => {
     console.log("--- Deploy Node Started ---");
+    const sourceProject = (state.project_json || (state as any).site_artifacts) as any;
     
-    if (!state.project_json) {
+    if (!sourceProject) {
         return {
             messages: [new AIMessage({ 
                 id: generateMsgId(),
@@ -2564,8 +1748,8 @@ const deployNode = async (state: AgentState): Promise<Partial<AgentState>> => {
         };
     }
 
-    const qualityIssues = getProjectContentQualityIssues(state.project_json);
-    if (hasPlaceholderCopy(state.project_json) || qualityIssues.length > 0) {
+    const qualityIssues = getProjectContentQualityIssues(sourceProject);
+    if (hasPlaceholderCopy(sourceProject) || qualityIssues.length > 0) {
         return {
             messages: [new AIMessage({
                 id: generateMsgId(),
@@ -2610,7 +1794,7 @@ const deployNode = async (state: AgentState): Promise<Partial<AgentState>> => {
 
     try {
         // Normalize project name
-        const rawName = state.project_json.branding?.name?.toLowerCase() || 'site';
+        const rawName = sourceProject.branding?.name?.toLowerCase() || 'site';
         const sanitizedName = rawName
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '');
@@ -2641,20 +1825,20 @@ const deployNode = async (state: AgentState): Promise<Partial<AgentState>> => {
         // 1) Persist project in D1 first so we have a stable project_id.
         let dbProjectId: string | undefined = state.db_project_id;
         console.log(`[Deploy] Saving project state to D1 (User: ${state.user_id})...`);
-        dbProjectId = await saveProjectState(state.user_id, state.project_json, state.access_token, state.db_project_id);
+        dbProjectId = await saveProjectState(state.user_id, sourceProject, state.access_token, state.db_project_id);
         console.log(`[Deploy] Project saved. ID: ${dbProjectId}`);
         if (!dbProjectId) {
             throw new Error("Failed to persist project into D1.");
         }
 
         const url = `https://${projectName}.pages.dev`;
-        let deployProjectJson = state.project_json;
+        let deployProjectJson = sourceProject;
         let siteKey: string | undefined;
 
         // 2) Bind generated site to current account/user (one account -> many sites).
         siteKey = await upsertProjectSiteBinding(dbProjectId, state.user_id, url);
         const contactActionUrl = buildContactActionUrl(siteKey);
-        deployProjectJson = injectContactFormDeploymentProps(state.project_json, contactActionUrl, siteKey);
+        deployProjectJson = injectContactFormDeploymentProps(sourceProject, contactActionUrl, siteKey);
         dbProjectId = await saveProjectState(state.user_id, deployProjectJson, state.access_token, dbProjectId);
 
         // Notify frontend
@@ -2746,7 +1930,8 @@ const deployNode = async (state: AgentState): Promise<Partial<AgentState>> => {
             deployed_url: url,
             phase: "end",
             db_project_id: dbProjectId,
-            project_json: deployProjectJson
+            project_json: deployProjectJson,
+            site_artifacts: deployProjectJson,
         };
     } catch (error: any) {
         console.error("Deploy Node Error:", error);
@@ -2758,170 +1943,6 @@ const deployNode = async (state: AgentState): Promise<Partial<AgentState>> => {
             phase: "end"
         };
     }
-};
-
-const linterNode = async (state: AgentState): Promise<Partial<AgentState>> => {
-  console.log("--- Linter Node Started ---");
-  if (!state.project_json) {
-    return {
-      messages: [new AIMessage({ id: generateMsgId(), content: "No preview data found. Please generate the website first." })],
-      phase: "conversation",
-    };
-  }
-
-  const projectWithSkillHit =
-    state.design_hit && !state.project_json?.skillHit
-      ? { ...state.project_json, skillHit: state.design_hit }
-      : state.project_json;
-
-  const validation = ProjectSchema.safeParse(projectWithSkillHit);
-  const validationError = validation.success ? undefined : validation.error.message;
-  const qualityIssues = getProjectContentQualityIssues(projectWithSkillHit);
-  const hasQualityIssues = qualityIssues.length > 0;
-  const designHit = state.design_hit || projectWithSkillHit?.skillHit;
-  const designHitText = designHit
-    ? `\n\nDesign Skill Hit\n- ID: ${designHit.id}\n- Name: ${designHit.name}\n- Design_Desc: ${designHit.design_desc}`
-    : "";
-  const projectForOutput = validation.success ? validation.data : projectWithSkillHit;
-  const currentAttempt = Number(state.attempt_count || 0);
-  const maxAutoReexpandPasses = Number(process.env.LLM_AUTO_REEXPAND_MAX_PASSES || 1);
-  const isSkillDirect = state.workflow_context?.generationMode === "skill-direct";
-  const canAutoReexpand =
-    !isSkillDirect && hasQualityIssues && currentAttempt < Math.max(0, maxAutoReexpandPasses);
-
-  if (canAutoReexpand) {
-    const issueRoutes = Array.from(
-      new Set(
-        qualityIssues
-          .map((issue) => issue.split(":")[0]?.trim())
-          .filter((route) => typeof route === "string" && route.length > 0),
-      ),
-    );
-    if (issueRoutes.length > 0) {
-      return {
-        messages: [
-          new AIMessage({
-            id: generateMsgId(),
-            content: `Detected low-quality generated pages (${qualityIssues.join(", ")}). Running one additional expansion pass for affected routes.`,
-          }),
-        ],
-        project_json: projectForOutput,
-        pages_to_expand: issueRoutes,
-        current_page_index: 0,
-        attempt_count: currentAttempt + 1,
-        validation_error: validationError || qualityIssues.join("; "),
-        phase: "expanding",
-      };
-    }
-  }
-
-  const actions = [
-    {
-      text: "Deploy to Cloudflare",
-      payload: "deploy",
-      type: "button",
-    },
-  ];
-
-  return {
-    messages: [
-      new AIMessage({
-        id: generateMsgId(),
-        content: validationError
-          ? `Preview generated, but schema validation still reports issues. You can review the result and continue refining.${designHitText}`
-          : hasQualityIssues
-            ? `Preview generated, but content quality checks found issues (${qualityIssues.join(", ")}). Please regenerate or refine before deployment.${designHitText}`
-            : `Preview generated successfully. You can request edits or deploy directly.${designHitText}`
-          ,
-        additional_kwargs: { actions },
-        tool_calls: [{ id: `call_actions_${generateMsgId()}`, name: "presentActions", args: { actions } }],
-      }),
-      new AIMessage({
-        id: generateMsgId(),
-        content: "",
-        additional_kwargs: { projectJson: projectForOutput },
-        tool_calls: [
-          { id: `call_preview_${generateMsgId()}`, name: "showWebsitePreview", args: { projectJson: projectForOutput } },
-        ],
-      }),
-    ],
-    project_json: projectForOutput,
-    validation_error: validationError || (hasQualityIssues ? qualityIssues.join("; ") : undefined),
-    phase: "end",
-  };
-};
-// 6. Image Update Node: Scans for image placeholders and requests updates
-const imageUpdateNode = async (state: AgentState): Promise<Partial<AgentState>> => {
-    console.log("--- Image Update Node Started ---");
-    if (!state.project_json) return { phase: "end" };
-
-    // Scan all pages for components with image props
-    const imageSlots: any[] = [];
-    state.project_json.pages.forEach((page: any) => {
-        page.puckData?.content?.forEach((comp: any) => {
-            if (comp.props?.image) {
-                imageSlots.push({
-                    id: comp.id || `${comp.type}-${Math.random().toString(36).substr(2, 9)}`,
-                    page: page.path,
-                    section: comp.props.title || comp.type,
-                    currentUrl: comp.props.image,
-                    type: "single"
-                });
-            }
-            if (comp.props?.items) {
-                comp.props.items.forEach((item: any, idx: number) => {
-                    if (item.image) {
-                        imageSlots.push({
-                            id: `${comp.id}-item-${idx}`,
-                            page: page.path,
-                            section: `${comp.props.title || comp.type} - Item ${idx + 1}`,
-                            currentUrl: item.image,
-                            type: "item"
-                        });
-                    }
-                    if (item.logo) {
-                        imageSlots.push({
-                            id: `${comp.id}-logo-${idx}`,
-                            page: page.path,
-                            section: `${comp.props.title || comp.type} - Logo ${idx + 1}`,
-                            currentUrl: item.logo,
-                            type: "logo"
-                        });
-                    }
-                });
-            }
-        });
-    });
-
-    if (imageSlots.length === 0) return { phase: "end" };
-
-    const actions = [
-        {
-            text: "濠碘槅鍋撶徊浠嬪疮椤栫偞鍋傞柣妯肩帛閻?Update Website Images",
-            payload: {
-                type: "image_update",
-                slots: imageSlots
-            },
-            type: "form"
-        }
-    ];
-
-    console.log(`[Image Update] Found ${imageSlots.length} image slots.`);
-
-    return {
-        messages: [
-            new AIMessage({
-                id: generateMsgId(),
-                content: `Website content is ready. I found ${imageSlots.length} image slots that can be replaced with your assets.`,
-                tool_calls: [{
-                    id: `call_${generateMsgId()}`,
-                    name: "presentActions",
-                    args: { actions }
-                }]
-            })
-        ],
-        phase: "end"
-    };
 };
 
 // --- Graph Construction ---
@@ -2941,6 +1962,10 @@ const workflow = new StateGraph<AgentState>({
         default: () => "",
     },
     project_json: {
+        value: (x?: any, y?: any) => y ?? x,
+        default: () => null,
+    },
+    site_artifacts: {
         value: (x?: any, y?: any) => y ?? x,
         default: () => null,
     },
@@ -3011,10 +2036,6 @@ const workflow = new StateGraph<AgentState>({
   }
 })
   .addNode("conversation", conversationNode)
-  .addNode("skeleton", skeletonNode)
-  .addNode("expanding", pageExpansionNode)
-  .addNode("seo_optimization", seoNode)
-  .addNode("linter", linterNode)
   .addNode("deploy", deployNode);
 
 workflow.addEdge(START, "conversation");
@@ -3022,29 +2043,15 @@ workflow.addEdge(START, "conversation");
 workflow.addConditionalEdges(
   "conversation",
   (state) => {
-      if (state.phase === "skeleton") return "skeleton";
       if (state.phase === "deploy") return "deploy";
       return END;
   }
 );
-
-workflow.addConditionalEdges("skeleton", (state) => {
-  if (!state.project_json || state.phase === "conversation") return "conversation";
-  if (state.phase === "expanding") return "expanding";
-  if (state.phase === "seo_optimization") return "seo_optimization";
-  return "linter";
-});
-workflow.addConditionalEdges("expanding", (state) =>
-  state.phase === "expanding" ? "expanding" : "seo_optimization"
-);
-
-workflow.addEdge("seo_optimization", "linter");
 workflow.addEdge("deploy", END);
-workflow.addConditionalEdges("linter", (state) =>
-  state.phase === "expanding" ? "expanding" : END
-);
 
 export const graph = workflow.compile();
+
+
 
 
 

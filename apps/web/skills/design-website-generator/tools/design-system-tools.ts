@@ -2,7 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 function getSkillRoot(): string {
-  return path.resolve(__dirname, '..', '..', '..', '..', 'builder', 'design-systems', 'design-md');
+  return path.resolve(__dirname, '..', '..', '..', '..', '..', 'builder', 'design-systems', 'design-md');
 }
 
 const DESIGN_SYSTEMS_PATH = getSkillRoot();
@@ -52,14 +52,14 @@ const BRAND_CATEGORIES: Record<string, string[]> = {
   fintech: ['coinbase', 'kraken', 'revolut', 'wise'],
   enterprise: ['airbnb', 'apple', 'ibm', 'nvidia', 'spacex', 'spotify', 'uber'],
   automotive: ['bmw', 'ferrari', 'lamborghini', 'renault', 'tesla'],
-  design: ['airtable', 'cal.com', 'clay', 'figma', 'framer', 'intercom', 'miro', 'notion', 'pinterest', 'webflow'],
+  design: ['airtable', 'cal', 'clay', 'figma', 'framer', 'intercom', 'miro', 'notion', 'pinterest', 'webflow'],
 };
 
 export async function listDesignSystems(category?: string): Promise<BrandInfo[]> {
   const brands: BrandInfo[] = [];
   
   try {
-    const dir = path.join(process.cwd(), DESIGN_SYSTEMS_PATH);
+    const dir = DESIGN_SYSTEMS_PATH;
     const entries = await fs.readdir(dir);
     
     for (const entry of entries) {
@@ -101,7 +101,7 @@ export async function listDesignSystems(category?: string): Promise<BrandInfo[]>
 }
 
 export async function loadDesignSystem(brand: string): Promise<DesignSystem | null> {
-  const filePath = path.join(process.cwd(), DESIGN_SYSTEMS_PATH, brand, 'DESIGN.md');
+  const filePath = path.join(DESIGN_SYSTEMS_PATH, brand, 'DESIGN.md');
   
   try {
     const content = await fs.readFile(filePath, 'utf-8');
@@ -136,13 +136,7 @@ function parseColors(sections: string[]): DesignSystem['colors'] {
     return { primary: [], accent: [], neutral: [], semantic: [], shadows: [] };
   }
   
-  const result: DesignSystem["colors"] = {
-    primary: [],
-    accent: [],
-    neutral: [],
-    semantic: [],
-    shadows: [],
-  };
+  const result: DesignSystem['colors'] = { primary: [], accent: [], neutral: [], semantic: [], shadows: [] };
   const colorBlocks = colorSection.split(/### /).filter(Boolean);
   
   for (const block of colorBlocks) {

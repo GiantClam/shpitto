@@ -13,11 +13,11 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { loadDesignSystem, listDesignSystems, designSystemToSummary, DesignSystem, BrandInfo } from './design-system-tools';
-import { executeLLM, generateComponent } from './llm-executor';
+import { loadDesignSystem, listDesignSystems, BrandInfo } from './design-system-tools';
+import { executeLLMJSON, generateComponent } from './llm-executor';
 import { validateComponent, DesignSpec } from './component-validator';
-import { buildDesignContext, buildPageContext, formatContextForPrompt, PageContext } from './context-builder';
-import { loadPrompt, loadAllRules, getRulesSummary, fillTemplate } from './resource-loader';
+import { buildContextForPageN, buildDesignContext, buildPageContext, formatContextForPrompt, PageContext } from './context-builder';
+import { loadPrompt, getRulesSummary } from './resource-loader';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,6 +25,8 @@ const __dirname = path.dirname(__filename);
 function getSkillRoot(): string {
   return path.resolve(__dirname, '..');
 }
+
+const QA_MAX_RETRIES = 2;
 
 export interface GenerationRequest {
   prompt: string;
@@ -87,7 +89,7 @@ export async function executeSkill(request: GenerationRequest): Promise<Generati
     const designContext = buildDesignContext(spec);
     const rulesSummary = await getRulesSummary();
 
-    let previousPageContext: PageContext | undefined;
+    const allPageContexts: PageContext[] = [];
 
     for (let i = 0; i < pages.length; i++) {
       const pageName = pages[i];
@@ -99,13 +101,13 @@ export async function executeSkill(request: GenerationRequest): Promise<Generati
         prompt,
         designContext,
         rulesSummary,
-        previousPageContext,
+        allPageContexts,
         outputDir,
         options
       );
 
       pageResults.push(pageContext);
-      previousPageContext = pageContext.pageContext;
+      allPageContexts.push(pageContext.pageContext);
 
       if (pageContext.qaPassed === false && !options.skipQA) {
         warnings.push(`QA check failed for ${pageName} (score: ${pageContext.qaScore}%)`);
@@ -137,7 +139,7 @@ async function generatePage(
   globalPrompt: string,
   designContext: any,
   rulesSummary: string,
-  previousPageContext: PageContext | undefined,
+  allPreviousPageContexts: PageContext[],
   outputDir: string,
   options: any
 ): Promise<PageResult> {
@@ -159,14 +161,46 @@ Your output must be production-ready React/Next.js code.`;
   if (pageOrder === 1) {
     userPrompt = buildFirstPagePrompt(pageName, globalPrompt, designContext, sequentialPrompt?.content);
   } else {
-    userPrompt = buildSequentialPagePrompt(pageName, globalPrompt, designContext, sequentialPrompt?.content, previousPageContext);
+    userPrompt = buildSequentialPagePrompt(
+      pageName,
+      globalPrompt,
+      designContext,
+      sequentialPrompt?.content,
+      allPreviousPageContexts
+    );
   }
 
-  const componentCode = await generateComponent(
-    userPrompt,
-    systemPrompt,
-    'website page'
-  );
+  let componentCode = '';
+  let validationResult: Awaited<ReturnType<typeof validateComponent>> = {
+    passed: true,
+    score: 100,
+    errors: [] as string[],
+    warnings: [] as string[],
+    checks: [],
+  };
+  let qaAttempt = 0;
+  let lastQAIssues: string[] = [];
+
+  do {
+    const attemptPrompt =
+      qaAttempt === 0 || options?.skipQA
+        ? userPrompt
+        : `${userPrompt}
+
+## QA Retry Instructions
+The previous attempt failed QA. Fix the following issues and regenerate from scratch:
+${lastQAIssues.map((item) => `- ${item}`).join('\n')}`;
+
+    componentCode = await generateComponent(
+      attemptPrompt,
+      systemPrompt,
+      'website page'
+    );
+
+    validationResult = await validateComponent(componentCode, designContext.designSpec, designContext);
+    lastQAIssues = [...validationResult.errors, ...validationResult.warnings];
+    qaAttempt += 1;
+  } while (!options?.skipQA && !validationResult.passed && qaAttempt <= QA_MAX_RETRIES);
 
   const filePath = path.join(outputDir, `${pageName}.tsx`);
   await fs.mkdir(path.dirname(filePath), { recursive: true });
@@ -178,14 +212,34 @@ Your output must be production-ready React/Next.js code.`;
     filePath,
   });
 
-  const validationResult = await validateComponent(componentCode, designContext.designSpec, designContext);
-
   const pageContext = buildPageContext(
     pageName,
     pageOrder,
-    { headings: [], keyTerms: [], featureList: [], toneAndManner: 'professional' },
-    { colorsUsed: [], typographyUsed: [], componentsUsed: [pageName] },
-    { sections: [], links: [], navigationItems: [] }
+    {
+      headings: [{ text: pageName, level: 1, usedTerms: [pageName] }],
+      keyTerms: [{ term: pageName, definition: `Primary concept for ${pageName}`, usageCount: 1 }],
+      featureList: [],
+      toneAndManner: 'professional',
+    },
+    {
+      colorsUsed: designContext.colors.primary.slice(0, 2).map((token: { name: string; value: string }) => ({
+        token: token.name,
+        value: token.value,
+        usage: `applied in ${pageName}`,
+      })),
+      typographyUsed: designContext.typography.scale.slice(0, 3).map((scale: { role: string; font: string; size: string }) => ({
+        role: scale.role,
+        font: scale.font,
+        size: scale.size,
+        usage: `used in ${pageName}`,
+      })),
+      componentsUsed: [pageName],
+    },
+    {
+      sections: [pageName],
+      links: [],
+      navigationItems: [],
+    }
   );
 
   return {
@@ -223,19 +277,18 @@ function buildSequentialPagePrompt(
   globalPrompt: string,
   designContext: any,
   templateContent?: string,
-  previousPageContext?: PageContext
+  allPreviousPageContexts: PageContext[] = []
 ): string {
-  let coherenceContext = '';
-  
-  if (previousPageContext) {
-    coherenceContext = `
-## Previous Page Context (MUST FOLLOW)
-- Page: ${previousPageContext.pageName}
-- Use the SAME terminology as the previous page
-- Use the SAME design token application patterns
-- Maintain visual consistency with ${previousPageContext.pageName}
-`;
-  }
+  const previousPageContext = allPreviousPageContexts[allPreviousPageContexts.length - 1];
+  const coherenceContext = buildContextForPageN(
+    allPreviousPageContexts.length + 1,
+    allPreviousPageContexts
+  );
+  const latestContext = previousPageContext
+    ? `
+## Latest Previous Page (MUST FOLLOW)
+${formatContextForPrompt(previousPageContext)}`
+    : '';
 
   return `Generate a ${pageName} page for the website.
 
@@ -245,7 +298,8 @@ ${globalPrompt}
 ## Design System (${designContext.brand})
 ${formatContextForPrompt(designContext)}
 
-${coherenceContext}
+${coherenceContext || ''}
+${latestContext}
 
 ## Sequential Generation Rules
 1. Inherit terminology from previous pages (do NOT introduce new synonyms)
@@ -295,14 +349,11 @@ Return a JSON object with:
 }`;
 
   try {
-    const response = await executeLLM(userPrompt, systemPrompt, { maxTokens: 2048 });
-    
-    let parsed: any;
-    try {
-      parsed = JSON.parse(response.content);
-    } catch {
-      parsed = { recommendations: brands.slice(0, count).map(b => ({ name: b.name, reason: b.description })) };
-    }
+    const parsed = await executeLLMJSON<{ recommendations?: Array<{ name: string; reason?: string }> }>(
+      userPrompt,
+      systemPrompt,
+      { maxTokens: 2048, jsonRetries: 1 }
+    );
 
     const recommendedBrands = (parsed.recommendations || [])
       .slice(0, count)

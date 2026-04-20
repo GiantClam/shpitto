@@ -1,7 +1,7 @@
 {
   "name": "design-website-generator",
   "version": "2.0.0",
-  "description": "Generate websites using design systems from awesome-design-md (58+ real website designs). Uses SEQUENTIAL page generation for design and content coherence. SKILL is the source of truth, TS tools are loaders and executors.",
+  "description": "Executor skill for website generation using awesome-design-md design systems. It executes generation, context carry-over, and QA checks, while website-generation-workflow owns top-level orchestration.",
   "commands": [
     {
       "name": "list-design-systems",

@@ -5,6 +5,12 @@ description: "Defines the end-to-end website generation workflow. Invoke when ge
 
 # Website Generation Workflow
 
+## Skill Relationship (Authoritative)
+
+- This skill is the **orchestrator** for end-to-end website generation.
+- `design-website-generator` is the **executor** skill/tooling surface for concrete generation, context building, and QA execution.
+- When both are available, this workflow decides phases and delegates implementation slices to `design-website-generator`.
+
 ## Scope
 
 Use this workflow for complete website generation from requirements to final delivery, including planning, design system setup, section batching, visual polish, and validation.
@@ -76,7 +82,7 @@ Quality gate: Design system validation passes.
 
 ### Phase 1.5: Image and Icon Asset Preparation
 
-#### Image Generation (use `web-image-generator` skill)
+#### Image Generation (prefer local `web-image-generator` skill, fallback to shared image tooling)
 
 1. Analyze site structure and produce an image requirements list.
 2. Classify each required image (Hero / Background / Illustration / Screenshot / Icon-like asset).
@@ -84,7 +90,7 @@ Quality gate: Design system validation passes.
 4. Run image generation tools or provide prompts for generation.
 5. Save generated images under `images/`.
 
-#### Icon Integration (use `web-icon-library` skill)
+#### Icon Integration (prefer local `web-icon-library` skill, fallback to Lucide conventions)
 
 1. Select one primary icon library (Lucide is recommended).
 2. Map icons to functional semantics and UI intent.
@@ -131,12 +137,11 @@ Quality gate:
 2. Run design-system consistency checks immediately after each batch.
 3. Record progress and design decisions.
 4. Run visual QA every 3 sections.
-5. For contact-type pages (`/contact`, inquiry, quote), include at least one structured contact-capture form section (name + phone/email + message at minimum).
-6. For each section requiring a visual image, attempt image generation and placement:
+5. For each section requiring a visual image, attempt image generation and placement:
    - If generation succeeds: replace the target placeholder with the generated image.
    - If generation fails: pass without blocking delivery, keep placeholder or style-only fallback.
 
-Quality gate: Design-system compliance rate > 90%, and every contact-type page includes at least one structured contact form section unless explicitly waived in the plan.
+Quality gate: Design-system compliance rate > 90%.
 
 ### Phase 3: Visual Refinement
 

@@ -115,6 +115,7 @@ describe("buildProjectFromExtractedSite", () => {
     expect(project.branding.logo).toBe("http://example.com/static/logo.png");
 
     const homeHero = project.pages[0].puckData.content.find((c: any) => c.type === "Hero");
+    if (!homeHero) throw new Error("home hero missing");
     expect(homeHero.props.image).toBe("http://example.com/a.jpg");
   });
 
@@ -149,6 +150,7 @@ describe("buildProjectFromExtractedSite", () => {
     const project = buildProjectFromExtractedSite(extracted);
     const hero1 = project.pages[0].puckData.content.find((c: any) => c.type === "Hero");
     const hero2 = project.pages[1].puckData.content.find((c: any) => c.type === "Hero");
+    if (!hero1 || !hero2) throw new Error("hero block missing");
 
     expect(hero1.props.subtitle).toContain("公司概况页面信息");
     expect(hero2.props.subtitle).toContain("产品展示页面信息");
@@ -189,6 +191,7 @@ describe("buildProjectFromExtractedSite", () => {
     const project = buildProjectFromExtractedSite(extracted);
     const homeHero = project.pages[0].puckData.content.find((c: any) => c.type === "Hero");
     const contactHero = project.pages[1].puckData.content.find((c: any) => c.type === "Hero");
+    if (!homeHero || !contactHero) throw new Error("hero block missing");
 
     expect(homeHero.props.image).toBe("http://example.com/upload/file/contents/home.jpg");
     expect(contactHero.props.image).toBe("http://example.com/upload/file/contents/home.jpg");

@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
-import { getD1Client } from "../d1";
-import { getR2Client } from "../r2";
+import { getD1Client } from "../d1.ts";
+import { getR2Client } from "../r2.ts";
 
 const SOURCE_APP = "shpitto";
 const ACCOUNT_KEY = (process.env.SHPITTO_ACCOUNT_KEY || SOURCE_APP).trim();

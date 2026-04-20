@@ -1,20 +1,24 @@
 import { createUIMessageStream, createUIMessageStreamResponse, type UIMessage } from "ai";
-import { AIMessage, HumanMessage } from "@langchain/core/messages";
-import { graph, type AgentState } from "@/lib/agent/graph";
+import { HumanMessage } from "@langchain/core/messages";
+import crypto from "node:crypto";
+import {
+  createChatTask,
+  getActiveChatTask,
+  type ChatTaskResult,
+} from "../../../lib/agent/chat-task-store";
+import { type BuilderAction } from "../../../lib/agent/chat-ui-payload";
+import { type AgentState } from "../../../lib/agent/graph";
+import { loadProjectSkill } from "../../../lib/skill-runtime/project-skill-loader";
 
 export const runtime = "nodejs";
-
-type BuilderAction = {
-  text: string;
-  payload?: string;
-  type?: "button" | "url";
-};
 
 type ChatRequestBody = {
   id?: string;
   messages?: UIMessage[];
   user_id?: string;
   access_token?: string;
+  async?: boolean;
+  skill_id?: string;
 };
 
 type SessionRecord = {
@@ -54,10 +58,6 @@ function getSession(chatId: string): AgentState {
   return createInitialState();
 }
 
-function setSession(chatId: string, state: AgentState) {
-  sessions.set(chatId, { state, updatedAt: now() });
-}
-
 function extractLastUserText(messages: UIMessage[] = []): string | undefined {
   for (let i = messages.length - 1; i >= 0; i -= 1) {
     const message = messages[i];
@@ -75,56 +75,6 @@ function extractLastUserText(messages: UIMessage[] = []): string | undefined {
   return undefined;
 }
 
-function parseToolCallArgs(toolCall: any): Record<string, any> {
-  const raw = toolCall?.args ?? toolCall?.function?.arguments;
-  if (!raw) return {};
-
-  if (typeof raw === "string") {
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return {};
-    }
-  }
-
-  if (typeof raw === "object") return raw;
-  return {};
-}
-
-function extractUiPayload(state: AgentState) {
-  const lastAiMessage = [...(state.messages || [])]
-    .reverse()
-    .find((msg) => msg instanceof AIMessage) as AIMessage | undefined;
-
-  const assistantText = lastAiMessage?.content?.toString?.() || "";
-  const toolCalls =
-    (lastAiMessage as any)?.tool_calls ||
-    (lastAiMessage as any)?.additional_kwargs?.tool_calls ||
-    [];
-
-  let actions: BuilderAction[] | undefined;
-  let projectJson: any | undefined;
-
-  for (const call of toolCalls) {
-    const name = call?.name || call?.function?.name;
-    const args = parseToolCallArgs(call);
-
-    if (name === "presentActions" && Array.isArray(args.actions)) {
-      actions = args.actions;
-    }
-
-    if (name === "showWebsitePreview") {
-      projectJson = args.projectJson ?? args.project_json;
-    }
-  }
-
-  if (!projectJson && state.project_json) {
-    projectJson = state.project_json;
-  }
-
-  return { assistantText, actions, projectJson };
-}
-
 function errorStreamResponse(message: string, status = 500) {
   const stream = createUIMessageStream({
     execute: ({ writer }) => {
@@ -135,6 +85,55 @@ function errorStreamResponse(message: string, status = 500) {
   });
 
   return createUIMessageStreamResponse({ status, stream });
+}
+
+function createTaskStreamResponse(params: {
+  assistantText: string;
+  taskId: string;
+  chatId: string;
+  status: "queued" | "running";
+  actions?: BuilderAction[];
+  statusCode?: number;
+}) {
+  const { assistantText, taskId, chatId, status, actions, statusCode = 200 } = params;
+  const statusPath = `/api/chat/tasks/${taskId}`;
+  const stream = createUIMessageStream({
+    execute: ({ writer }) => {
+      writer.write({ type: "start" });
+      const textId = crypto.randomUUID();
+      writer.write({ type: "text-start", id: textId });
+      writer.write({ type: "text-delta", id: textId, delta: assistantText });
+      writer.write({ type: "text-end", id: textId });
+      writer.write({
+        type: "data-task",
+        data: {
+          taskId,
+          chatId,
+          status,
+          statusPath,
+        },
+      });
+      const nextActions = [
+        ...(actions || []),
+        { text: "Check Task Status", payload: statusPath, type: "url" as const },
+      ];
+      writer.write({ type: "data-actions", data: nextActions });
+      writer.write({ type: "finish", finishReason: "stop" });
+    },
+  });
+  return createUIMessageStreamResponse({ status: statusCode, stream });
+}
+
+function shouldUseAsyncTaskMode(body: ChatRequestBody): boolean {
+  if (body.async === false) return false;
+  if (body.async === true) return true;
+  const envDefault = String(process.env.CHAT_ASYNC_DEFAULT || "0").trim() === "1";
+  // Pure async by default: Vercel request path should not execute long-running generation.
+  return envDefault || true;
+}
+
+function resolveAsyncRoundBudget(): number {
+  return Math.max(1, Number(process.env.CHAT_ASYNC_MAX_ROUNDS_SKILL_NATIVE || 1));
 }
 
 export async function POST(req: Request) {
@@ -154,48 +153,75 @@ export async function POST(req: Request) {
   }
 
   const previousState = getSession(chatId);
+  const activeTask = await getActiveChatTask(chatId);
+  if (activeTask && (activeTask.status === "queued" || activeTask.status === "running")) {
+    return createTaskStreamResponse({
+      assistantText: "A generation task is already running for this chat. Please wait for completion or check task status.",
+      taskId: activeTask.id,
+      chatId,
+      status: activeTask.status,
+      statusCode: 202,
+    });
+  }
+
+  const useAsyncTaskMode = shouldUseAsyncTaskMode(body);
+  const requestedSkillId = String(
+    body.skill_id || (previousState.workflow_context as any)?.skillId || "website-generation-workflow",
+  )
+    .trim()
+    .toLowerCase();
+
+  try {
+    await loadProjectSkill(requestedSkillId);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return errorStreamResponse(`Invalid skill_id: ${message}`, 400);
+  }
+
   const inputState: AgentState = {
     ...previousState,
     user_id: body.user_id || previousState.user_id,
     access_token: body.access_token || previousState.access_token,
+    workflow_context: {
+      ...(previousState.workflow_context || {}),
+      runMode: useAsyncTaskMode ? "async-task" : "sync",
+      genMode: "skill_native",
+      skillId: requestedSkillId,
+    },
     messages: [...(previousState.messages || []), new HumanMessage({ content: userText })],
   };
 
-  let nextState: AgentState;
-
-  try {
-    nextState = (await graph.invoke(inputState)) as AgentState;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Generation failed.";
-    return errorStreamResponse(message, 500);
+  if (!useAsyncTaskMode) {
+    return errorStreamResponse("Synchronous generation path is disabled. Use async task mode.", 409);
   }
 
-  setSession(chatId, nextState);
-
-  const { assistantText, actions, projectJson } = extractUiPayload(nextState);
-
-  const stream = createUIMessageStream({
-    execute: ({ writer }) => {
-      writer.write({ type: "start" });
-
-      if (assistantText) {
-        const textId = crypto.randomUUID();
-        writer.write({ type: "text-start", id: textId });
-        writer.write({ type: "text-delta", id: textId, delta: assistantText });
-        writer.write({ type: "text-end", id: textId });
-      }
-
-      if (actions && actions.length > 0) {
-        writer.write({ type: "data-actions", data: actions });
-      }
-
-      if (projectJson) {
-        writer.write({ type: "data-preview", data: projectJson });
-      }
-
-      writer.write({ type: "finish", finishReason: "stop" });
+  const initialResult: ChatTaskResult = {
+    assistantText: "Task accepted. Waiting for worker to claim execution.",
+    phase: "queued",
+    internal: {
+      inputState,
+      queuedAt: new Date().toISOString(),
+      skillId: requestedSkillId,
     },
-  });
+    progress: {
+      stage: "queued",
+      skillId: requestedSkillId,
+      provider: String(process.env.LLM_PROVIDER || "aiberm"),
+      model: String(process.env.LLM_MODEL || process.env.LLM_MODEL_AIBERM || "openai/gpt-5.3-codex"),
+      attempt: 1,
+      startedAt: new Date().toISOString(),
+      round: 0,
+      maxRounds: resolveAsyncRoundBudget(),
+      checkpointSaved: false,
+    } as any,
+  };
+  const task = await createChatTask(chatId, body.user_id || previousState.user_id, initialResult);
 
-  return createUIMessageStreamResponse({ stream });
+  return createTaskStreamResponse({
+    assistantText: "Task accepted. Queued for background worker execution.",
+    taskId: task.id,
+    chatId,
+    status: "queued",
+    statusCode: 202,
+  });
 }

@@ -11,30 +11,78 @@ export interface ExecuteLLMOptions {
   model?: string;
   maxTokens?: number;
   temperature?: number;
+  jsonRetries?: number;
 }
 
 const DEFAULT_MODEL = process.env.LLM_MODEL || 'claude-sonnet-4-20250514';
 const LLM_PROVIDER = process.env.LLM_PROVIDER || 'aiberm';
 
 let anthropicClient: any = null;
-const dynamicImport = new Function("m", "return import(m)") as (m: string) => Promise<any>;
+let anthropicClientKey = '';
+
+type ProviderConfig = {
+  provider: string;
+  apiKey: string;
+  baseURL?: string;
+};
+
+function resolveProviderConfig(): ProviderConfig {
+  const provider = (LLM_PROVIDER || 'aiberm').toLowerCase();
+  const fallbackApiKey =
+    process.env.ANTHROPIC_API_KEY ||
+    process.env.ANTHROPIC_KEY ||
+    process.env.AIBERM_API_KEY ||
+    process.env.OPENROUTER_API_KEY ||
+    process.env.OPENAI_API_KEY;
+
+  if (provider === 'anthropic') {
+    return {
+      provider,
+      apiKey: process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_KEY || fallbackApiKey || '',
+      baseURL: process.env.ANTHROPIC_BASE_URL || process.env.LLM_BASE_URL,
+    };
+  }
+
+  if (provider === 'openrouter') {
+    return {
+      provider,
+      apiKey: process.env.OPENROUTER_API_KEY || fallbackApiKey || '',
+      baseURL: process.env.OPENROUTER_BASE_URL || process.env.LLM_BASE_URL || 'https://openrouter.ai/api/v1',
+    };
+  }
+
+  if (provider === 'aiberm') {
+    return {
+      provider,
+      apiKey: process.env.AIBERM_API_KEY || fallbackApiKey || '',
+      baseURL: process.env.AIBERM_BASE_URL || process.env.LLM_BASE_URL || 'https://aiberm.com/v1',
+    };
+  }
+
+  return {
+    provider,
+    apiKey: fallbackApiKey || '',
+    baseURL: process.env.LLM_BASE_URL,
+  };
+}
 
 async function getAnthropicClient() {
-  if (anthropicClient) return anthropicClient;
-  
+  const config = resolveProviderConfig();
+  const cacheKey = `${config.provider}|${config.baseURL || ''}|${config.apiKey}`;
+  if (anthropicClient && anthropicClientKey === cacheKey) return anthropicClient;
+
   try {
-    const { default: Anthropic } = await dynamicImport("@anthropic-ai/sdk");
-    
-    const apiKey = process.env.ANTHROPIC_API_KEY || 
-                    process.env.ANTHROPIC_KEY ||
-                    process.env.AIBERM_API_KEY ||
-                    process.env.OPENAI_API_KEY;
-    
-    if (!apiKey) {
-      throw new Error('No API key found. Set ANTHROPIC_API_KEY or AIBERM_API_KEY');
+    const { default: Anthropic } = await import('@anthropic-ai/sdk');
+
+    if (!config.apiKey) {
+      throw new Error('No API key found. Set ANTHROPIC_API_KEY, AIBERM_API_KEY, or OPENROUTER_API_KEY');
     }
-    
-    anthropicClient = new Anthropic({ apiKey });
+
+    anthropicClient = new Anthropic({
+      apiKey: config.apiKey,
+      ...(config.baseURL ? { baseURL: config.baseURL } : {}),
+    });
+    anthropicClientKey = cacheKey;
     return anthropicClient;
   } catch (error) {
     throw new Error(`Failed to initialize LLM client: ${error}`);
@@ -52,20 +100,15 @@ export async function executeLLM(
   const { model = DEFAULT_MODEL, maxTokens = 4096, temperature = 0.7 } = options;
 
   const client = await getAnthropicClient();
-
-  const messages: any[] = [];
-  
-  if (systemContext) {
-    messages.push({ role: 'system', content: systemContext });
-  }
-  
-  messages.push({ role: 'user', content: prompt });
+  const system = systemContext.trim();
+  const messages = [{ role: 'user' as const, content: prompt }];
 
   try {
     const response = await client.messages.create({
       model,
       max_tokens: maxTokens,
       temperature,
+      ...(system ? { system } : {}),
       messages,
     });
 
@@ -76,8 +119,106 @@ export async function executeLLM(
       raw: response,
     };
   } catch (error: any) {
-    throw new Error(`LLM call failed: ${error.message}`);
+    const provider = resolveProviderConfig().provider;
+    throw new Error(`LLM call failed (${provider}): ${error.message}`);
   }
+}
+
+function parseFirstValidJson(content: string): any {
+  const text = content.trim();
+  if (!text) {
+    throw new Error('Empty response');
+  }
+
+  const direct = tryParseJson(text);
+  if (direct.ok) {
+    return direct.value;
+  }
+
+  for (const candidate of extractFencedCodeBlocks(text)) {
+    const parsed = tryParseJson(candidate);
+    if (parsed.ok) return parsed.value;
+  }
+
+  for (const candidate of extractBalancedJsonBlocks(text)) {
+    const parsed = tryParseJson(candidate);
+    if (parsed.ok) return parsed.value;
+  }
+
+  throw new Error('No valid JSON object/array found in response');
+}
+
+function tryParseJson(input: string): { ok: true; value: any } | { ok: false } {
+  try {
+    return { ok: true, value: JSON.parse(input) };
+  } catch {
+    return { ok: false };
+  }
+}
+
+function extractFencedCodeBlocks(input: string): string[] {
+  const blocks: string[] = [];
+  const regex = /```(?:json)?\s*([\s\S]*?)```/gi;
+  let match: RegExpExecArray | null = regex.exec(input);
+  while (match) {
+    const candidate = match[1]?.trim();
+    if (candidate) blocks.push(candidate);
+    match = regex.exec(input);
+  }
+  return blocks;
+}
+
+function extractBalancedJsonBlocks(input: string): string[] {
+  const candidates: string[] = [];
+  const stack: string[] = [];
+  let start = -1;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = 0; i < input.length; i += 1) {
+    const ch = input[i];
+
+    if (inString) {
+      if (!escaped && ch === '\\') {
+        escaped = true;
+        continue;
+      }
+      if (!escaped && ch === '"') {
+        inString = false;
+      }
+      escaped = false;
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+      escaped = false;
+      continue;
+    }
+
+    if (ch === '{' || ch === '[') {
+      if (stack.length === 0) start = i;
+      stack.push(ch);
+      continue;
+    }
+
+    if (ch === '}' || ch === ']') {
+      const last = stack[stack.length - 1];
+      if ((ch === '}' && last !== '{') || (ch === ']' && last !== '[')) {
+        stack.length = 0;
+        start = -1;
+        continue;
+      }
+      stack.pop();
+      if (stack.length === 0 && start >= 0) {
+        const candidate = input.slice(start, i + 1).trim();
+        if (candidate) candidates.push(candidate);
+        start = -1;
+      }
+    }
+  }
+
+  return candidates;
 }
 
 /**
@@ -88,22 +229,27 @@ export async function executeLLMJSON<T = any>(
   systemContext: string = '',
   options: ExecuteLLMOptions = {}
 ): Promise<T> {
-  const enhancedSystemContext = `${systemContext}\n\nIMPORTANT: Respond with valid JSON only. No markdown, no explanation.`;
-  
-  const response = await executeLLM(prompt, enhancedSystemContext, {
-    ...options,
-    maxTokens: options.maxTokens || 2048,
-  });
+  const jsonRetries = Math.max(0, options.jsonRetries ?? 1);
+  const enhancedSystemContext = `${systemContext}\n\nIMPORTANT: Respond with valid JSON only. No markdown fences and no explanation text.`;
 
-  try {
-    const jsonMatch = response.content.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= jsonRetries; attempt += 1) {
+    const response = await executeLLM(prompt, enhancedSystemContext, {
+      ...options,
+      maxTokens: options.maxTokens || 2048,
+      temperature: attempt > 0 ? 0 : options.temperature,
+    });
+
+    try {
+      return parseFirstValidJson(response.content) as T;
+    } catch (error) {
+      lastError = error;
     }
-    return JSON.parse(response.content);
-  } catch (e) {
-    throw new Error(`Failed to parse JSON response: ${response.content}`);
   }
+
+  throw new Error(
+    `Failed to parse JSON response after ${jsonRetries + 1} attempt(s): ${String(lastError)}`
+  );
 }
 
 /**

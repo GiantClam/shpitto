@@ -1,7 +1,7 @@
 {
   "default": {
     "mode": "light",
-    "typography": "Inter, system-ui, -apple-system, sans-serif",
+    "typography": "\"Space Grotesk\", \"IBM Plex Sans\", system-ui, -apple-system, sans-serif",
     "borderRadius": "md",
     "navVariant": "pill",
     "headerVariant": "glass",
@@ -45,7 +45,7 @@
   },
   "ferrari": {
     "mode": "dark",
-    "typography": "Inter, system-ui, -apple-system, sans-serif",
+    "typography": "\"Rajdhani\", \"Space Grotesk\", system-ui, -apple-system, sans-serif",
     "borderRadius": "sm",
     "navVariant": "underline",
     "headerVariant": "solid",
@@ -67,7 +67,7 @@
   },
   "kraken": {
     "mode": "light",
-    "typography": "Inter, system-ui, -apple-system, sans-serif",
+    "typography": "\"Space Grotesk\", \"IBM Plex Sans\", system-ui, -apple-system, sans-serif",
     "borderRadius": "sm",
     "navVariant": "underline",
     "headerVariant": "glass",
@@ -89,7 +89,7 @@
   },
   "lamborghini": {
     "mode": "dark",
-    "typography": "Inter, system-ui, -apple-system, sans-serif",
+    "typography": "\"Rajdhani\", \"Space Grotesk\", system-ui, -apple-system, sans-serif",
     "borderRadius": "none",
     "navVariant": "underline",
     "headerVariant": "solid",
@@ -111,7 +111,7 @@
   },
   "tesla": {
     "mode": "light",
-    "typography": "Inter, system-ui, -apple-system, sans-serif",
+    "typography": "\"IBM Plex Sans\", \"Space Grotesk\", system-ui, -apple-system, sans-serif",
     "borderRadius": "sm",
     "navVariant": "underline",
     "headerVariant": "glass",

@@ -19,6 +19,13 @@ description: |
 
 # Design Website Generator Skill
 
+## Responsibility Boundary (Authoritative)
+
+- This skill is the **execution skill** for website generation (design loading, context building, prompt execution, QA checks).
+- It **must not** act as top-level workflow orchestrator when `website-generation-workflow` is active.
+- `website-generation-workflow` owns phase orchestration, enrichment, and cross-phase quality gates.
+- This skill receives already-scoped tasks and executes them with deterministic tooling.
+
 ## Core Philosophy
 
 **SKILL 是定义者，TS 是工具**

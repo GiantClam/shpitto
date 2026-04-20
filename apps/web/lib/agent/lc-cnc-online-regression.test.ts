@@ -1,19 +1,19 @@
-﻿import fs from "node:fs/promises";
+import fs from "node:fs/promises";
 import path from "node:path";
 import dotenv from "dotenv";
+import { HumanMessage } from "@langchain/core/messages";
 import { describe, expect, it } from "vitest";
 import { Bundler } from "../bundler";
 import { CloudflareClient } from "../cloudflare";
-import { TEST_PROJECT_LC_CNC } from "./test_cases";
+import { runSkillRuntimeExecutor } from "../skill-runtime/executor";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-dotenv.config({ path: path.resolve(process.cwd(), "../../.env") });
-dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+dotenv.config({ path: path.resolve(process.cwd(), "../../.env"), override: false });
 
 describe("lc-cnc online regression", () => {
   it(
-    "deploys complete LC-CNC site and verifies all page routes",
+    "runs skill-runtime, deploys generated site, and verifies all routes",
     async () => {
       const outRoot = path.resolve(process.cwd(), ".tmp", "lc-cnc-online-regression");
       await fs.mkdir(outRoot, { recursive: true });
@@ -23,10 +23,41 @@ describe("lc-cnc online regression", () => {
       expect(Boolean(accountId)).toBe(true);
       expect(Boolean(apiToken)).toBe(true);
 
-      const project = structuredClone(TEST_PROJECT_LC_CNC) as any;
+      const prompt = `Generate a complete 6-page LC-CNC static website in English.
+Routes: /, /3c-machines, /custom-solutions, /cases, /about, /contact.
+Industrial style with clear navigation, shared /styles.css and /script.js.
+Contact page must include a quote form with fields: Name, Company, Email, WhatsApp, Machine Model, Quantity, Deadline.`;
+
+      const generated = await runSkillRuntimeExecutor({
+        state: {
+          messages: [new HumanMessage(prompt)],
+          phase: "conversation",
+          sitemap: ["/", "/3c-machines", "/custom-solutions", "/cases", "/about", "/contact"],
+          workflow_context: { genMode: "skill_native", preferredLocale: "en" },
+        } as any,
+        timeoutMs: 600000,
+      });
+
+      const project = generated.state.site_artifacts as any;
+      expect(project).toBeTruthy();
+      expect(project?.staticSite?.mode).toBe("skill-direct");
+      const staticFiles: any[] = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
+      expect(staticFiles.some((f) => String(f?.path || "").toLowerCase() === "/styles.css")).toBe(true);
+      expect(staticFiles.some((f) => String(f?.path || "").toLowerCase() === "/script.js")).toBe(true);
+
+      const pageRoutes: string[] = (project.pages || []).map((p: any) => p.path || "/");
+      expect(pageRoutes).toEqual(
+        expect.arrayContaining(["/", "/3c-machines", "/custom-solutions", "/cases", "/about", "/contact"]),
+      );
+
+      for (const page of project.pages || []) {
+        const html = String(page?.html || "").toLowerCase();
+        expect(html.includes("/styles.css")).toBe(true);
+        expect(html.includes("/script.js")).toBe(true);
+      }
+
       const projectName = `lc-cnc-reg-${Date.now().toString().slice(-8)}`;
       const cf = new CloudflareClient();
-
       await cf.createProject(projectName);
       await sleep(3000);
 
@@ -34,10 +65,7 @@ describe("lc-cnc online regression", () => {
       const deployment = await cf.uploadDeployment(projectName, bundle);
       const baseUrl = `https://${projectName}.pages.dev`;
 
-      const pageRoutes: string[] = (project.pages || []).map((p: any) => p.path || "/");
       const routeChecks: Array<{ path: string; ok: boolean; status: number | null; error: string | null }> = [];
-
-      // Wait root ready
       let rootReady = false;
       for (let i = 0; i < 12; i += 1) {
         try {
@@ -56,7 +84,6 @@ describe("lc-cnc online regression", () => {
         let ok = false;
         let status: number | null = null;
         let error: string | null = null;
-
         try {
           const r = await fetch(url, { method: "GET" });
           status = r.status;
@@ -64,7 +91,6 @@ describe("lc-cnc online regression", () => {
         } catch (e) {
           error = e instanceof Error ? e.message : String(e);
         }
-
         routeChecks.push({ path: route, ok, status, error });
       }
 
@@ -76,7 +102,6 @@ describe("lc-cnc online regression", () => {
         deploymentId: deployment?.result?.id || deployment?.id || null,
         routeChecks,
       };
-
       await fs.writeFile(path.join(outRoot, "report.json"), JSON.stringify(report, null, 2), "utf8");
       console.log("LC_CNC_ONLINE_REGRESSION_REPORT=" + JSON.stringify(report));
 
@@ -86,3 +111,4 @@ describe("lc-cnc online regression", () => {
     900000,
   );
 });
+

@@ -1,9 +1,48 @@
-import { llm } from './graph';
-import { loadDesignSystem, DesignSystem, designSystemToSummary } from './design-system-tools';
-import { generatePage, ComponentCode, PageGenerationResult } from './design-executor';
-import { runDesignQA, QAReport } from './design-qa-gate';
-import { planPageStructure, PageStructure } from './page-structure-planner';
-import { buildDesignContext, DesignContext } from './design-context-loader';
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
+
+import { designSystemToSummary, listDesignSystems, loadDesignSystem } from './design-system-tools';
+import { validateComponent, type DesignSpec } from './component-validator';
+import {
+  buildContextForPageN,
+  buildDesignContext,
+  buildPageContext,
+  formatContextForPrompt,
+  type DesignContext,
+  type PageContext,
+} from './context-builder';
+import { executeLLMJSON, generateComponent } from './llm-executor';
+
+const QA_MAX_RETRIES = 2;
+
+export interface ComponentCode {
+  name: string;
+  filePath: string;
+  code: string;
+}
+
+export interface PageGenerationResult {
+  pageName: string;
+  components: ComponentCode[];
+  pageContext: PageContext;
+  qa: QAReport;
+  errors: string[];
+  warnings: string[];
+}
+
+export interface PageStructure {
+  pageName: string;
+  pagePath: string;
+  sections: string[];
+  navigation: {
+    type: 'horizontal' | 'vertical';
+    items: string[];
+  };
+  footer: {
+    type: 'simple' | 'multi-column';
+    columns: string[];
+  };
+}
 
 export interface GenerationRequest {
   prompt: string;
@@ -23,23 +62,32 @@ export interface GenerationResult {
   warnings: string[];
 }
 
+export interface QAReport {
+  passed: boolean;
+  score: number;
+  retries: number;
+  checks: Array<{
+    category: string;
+    passed: boolean;
+    message: string;
+    severity: string;
+  }>;
+  errors: string[];
+  warnings: string[];
+  recommendations: string[];
+}
+
 export async function generateWebsite(
   request: GenerationRequest
 ): Promise<GenerationResult> {
-  const { prompt, brand, sections = ['hero', 'features', 'cta'], outputDir = 'output', includeMagicUI = true } = request;
+  const {
+    prompt,
+    brand,
+    sections = ['hero', 'features', 'cta'],
+    outputDir = 'output',
+  } = request;
   const errors: string[] = [];
   const warnings: string[] = [];
-
-  if (!llm) {
-    return {
-      success: false,
-      brand,
-      components: [],
-      pageStructure: { pageName: '', pagePath: '', sections: [], navigation: { type: 'horizontal', items: [] }, footer: { type: 'simple', columns: [] } },
-      errors: ['LLM client not initialized'],
-      warnings,
-    };
-  }
 
   const designSystem = await loadDesignSystem(brand);
   if (!designSystem) {
@@ -47,13 +95,13 @@ export async function generateWebsite(
       success: false,
       brand,
       components: [],
-      pageStructure: { pageName: '', pagePath: '', sections: [], navigation: { type: 'horizontal', items: [] }, footer: { type: 'simple', columns: [] } },
+      pageStructure: emptyPageStructure(outputDir),
       errors: [`Design system '${brand}' not found`],
       warnings,
     };
   }
 
-  const spec = {
+  const spec: DesignSpec = {
     version: '1.0',
     sourceDesignSystems: [brand],
     appliedDesignSystem: designSystem,
@@ -63,43 +111,50 @@ export async function generateWebsite(
   };
 
   const designContext = buildDesignContext(spec);
+  const pageStructure = await planPageStructure('Generated Page', outputDir, spec, prompt, sections);
 
-  const pageStructure = await planPageStructure(
-    'Generated Page',
-    outputDir,
-    spec,
-    prompt
-  );
+  const allComponents: ComponentCode[] = [];
+  const pageContexts: PageContext[] = [];
+  let totalQARetries = 0;
 
-  const generationResults: PageGenerationResult[] = [];
-
-  for (const section of sections) {
-    try {
-      const sectionUpper = section.charAt(0).toUpperCase() + section.slice(1);
-      const result = await generatePage({
-        pageName: sectionUpper,
+  for (let index = 0; index < sections.length; index += 1) {
+    const sectionName = sections[index];
+    const pageName = toPageName(sectionName);
+    const pageResult = await generatePageWithQARetry(
+      {
+        pageName,
+        pageOrder: index + 1,
         pagePath: outputDir,
-        sections: [sectionUpper],
-        designSpec: spec,
-        content: { prompt, section },
-      });
-      generationResults.push(result);
-    } catch (error) {
-      errors.push(`Failed to generate ${section}: ${error}`);
-    }
-  }
+        prompt,
+        sectionName,
+        spec,
+        designContext,
+      },
+      pageContexts
+    );
 
-  const allComponents = generationResults.flatMap(r => r.components);
+    allComponents.push(...pageResult.components);
+    pageContexts.push(pageResult.pageContext);
+    totalQARetries += pageResult.qa.retries;
+    errors.push(...pageResult.errors);
+    warnings.push(...pageResult.warnings);
+  }
 
   let qaReport: QAReport | undefined;
   if (allComponents.length > 0) {
-    const combinedResult: PageGenerationResult = {
-      pageName: 'Combined',
-      components: allComponents,
-      errors: [],
-      warnings: [],
-    };
-    qaReport = await runDesignQA(combinedResult, spec, designContext);
+    qaReport = await runDesignQA(
+      {
+        pageName: 'Combined',
+        components: allComponents,
+        pageContext: pageContexts[pageContexts.length - 1],
+        qa: emptyQAReport(),
+        errors: [],
+        warnings: [],
+      },
+      spec,
+      designContext
+    );
+    qaReport.retries += totalQARetries;
   }
 
   return {
@@ -110,6 +165,242 @@ export async function generateWebsite(
     qaReport,
     errors,
     warnings,
+  };
+}
+
+type GeneratePageInput = {
+  pageName: string;
+  pageOrder: number;
+  pagePath: string;
+  prompt: string;
+  sectionName: string;
+  spec: DesignSpec;
+  designContext: DesignContext;
+};
+
+async function generatePageWithQARetry(
+  input: GeneratePageInput,
+  allPreviousPageContexts: PageContext[]
+): Promise<PageGenerationResult> {
+  const { pageName, pageOrder, pagePath, prompt, sectionName, spec, designContext } = input;
+  const components: ComponentCode[] = [];
+  const warnings: string[] = [];
+  const errors: string[] = [];
+  const contextSummary = buildContextForPageN(pageOrder, allPreviousPageContexts);
+
+  let qaReport = emptyQAReport();
+  let finalCode = '';
+
+  for (let attempt = 0; attempt <= QA_MAX_RETRIES; attempt += 1) {
+    const fixInstructions =
+      attempt === 0
+        ? ''
+        : `\n\n## QA Fix Instructions\nResolve these QA issues and regenerate:\n${qaReport.errors
+            .concat(qaReport.warnings)
+            .map((item) => `- ${item}`)
+            .join('\n')}`;
+
+    finalCode = await generateComponent(
+      `Generate page "${pageName}" for section "${sectionName}".
+
+## User Requirements
+${prompt}
+
+## Design System (${designContext.brand})
+${formatContextForPrompt(designContext)}
+
+${contextSummary}
+${fixInstructions}
+
+Output complete TSX code only.`,
+      'You are an expert React/Next.js page generator. Follow design tokens and accessibility rules strictly.',
+      'website page'
+    );
+
+    const validation = await validateComponent(finalCode, spec, designContext);
+    qaReport = {
+      passed: validation.passed,
+      score: validation.score,
+      retries: attempt,
+      checks: validation.checks.map((check) => ({
+        category: check.category,
+        passed: check.passed,
+        message: check.message,
+        severity: check.severity,
+      })),
+      errors: validation.errors,
+      warnings: validation.warnings,
+      recommendations: validation.warnings,
+    };
+
+    if (qaReport.passed) {
+      break;
+    }
+  }
+
+  const filePath = path.join(pagePath, `${pageName}.tsx`);
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.writeFile(filePath, finalCode, 'utf-8');
+
+  components.push({
+    name: pageName,
+    filePath,
+    code: finalCode,
+  });
+
+  if (!qaReport.passed) {
+    warnings.push(`QA failed for ${pageName} after ${QA_MAX_RETRIES + 1} attempts`);
+  }
+
+  const pageContext = buildPageContext(
+    pageName,
+    pageOrder,
+    {
+      headings: [{ text: pageName, level: 1, usedTerms: [sectionName] }],
+      keyTerms: [{ term: sectionName, definition: `${sectionName} section`, usageCount: 1 }],
+      featureList: [],
+      toneAndManner: 'professional',
+    },
+    {
+      colorsUsed: designContext.colors.primary.slice(0, 2).map((token) => ({
+        token: token.name,
+        value: token.value,
+        usage: `used in ${pageName}`,
+      })),
+      typographyUsed: designContext.typography.scale.slice(0, 3).map((token) => ({
+        role: token.role,
+        font: token.font,
+        size: token.size,
+        usage: `used in ${pageName}`,
+      })),
+      componentsUsed: [pageName],
+    },
+    {
+      sections: [sectionName],
+      links: [],
+      navigationItems: [],
+    }
+  );
+
+  return {
+    pageName,
+    components,
+    pageContext,
+    qa: qaReport,
+    errors,
+    warnings,
+  };
+}
+
+function toPageName(sectionName: string): string {
+  return sectionName.charAt(0).toUpperCase() + sectionName.slice(1);
+}
+
+function emptyPageStructure(pagePath: string): PageStructure {
+  return {
+    pageName: '',
+    pagePath,
+    sections: [],
+    navigation: { type: 'horizontal', items: [] },
+    footer: { type: 'simple', columns: [] },
+  };
+}
+
+function emptyQAReport(): QAReport {
+  return {
+    passed: true,
+    score: 100,
+    retries: 0,
+    checks: [],
+    errors: [],
+    warnings: [],
+    recommendations: [],
+  };
+}
+
+async function planPageStructure(
+  pageName: string,
+  pagePath: string,
+  spec: DesignSpec,
+  requirements?: string,
+  sections: string[] = []
+): Promise<PageStructure> {
+  const fallback = {
+    pageName,
+    pagePath,
+    sections: sections.length > 0 ? sections : ['hero', 'features', 'cta'],
+    navigation: {
+      type: 'horizontal' as const,
+      items: ['Home', 'Features', 'Pricing', 'Contact'],
+    },
+    footer: {
+      type: 'simple' as const,
+      columns: ['Company', 'Resources', 'Legal'],
+    },
+  };
+
+  try {
+    const generated = await executeLLMJSON<Partial<PageStructure>>(
+      `Plan a page structure for:
+- Page name: ${pageName}
+- Requirements: ${requirements || 'N/A'}
+- Design system: ${spec.appliedDesignSystem.name}
+
+Return JSON with keys:
+{
+  "sections": string[],
+  "navigation": {"type":"horizontal|vertical","items": string[]},
+  "footer": {"type":"simple|multi-column","columns": string[]}
+}`,
+      'You are an information architect. Return concise valid JSON only.',
+      { maxTokens: 1200, temperature: 0.2, jsonRetries: 1 }
+    );
+
+    return {
+      pageName,
+      pagePath,
+      sections: generated.sections?.length ? generated.sections : fallback.sections,
+      navigation: {
+        type:
+          generated.navigation?.type === 'vertical' || generated.navigation?.type === 'horizontal'
+            ? generated.navigation.type
+            : fallback.navigation.type,
+        items: generated.navigation?.items?.length ? generated.navigation.items : fallback.navigation.items,
+      },
+      footer: {
+        type:
+          generated.footer?.type === 'multi-column' || generated.footer?.type === 'simple'
+            ? generated.footer.type
+            : fallback.footer.type,
+        columns: generated.footer?.columns?.length ? generated.footer.columns : fallback.footer.columns,
+      },
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+async function runDesignQA(
+  result: PageGenerationResult,
+  spec: DesignSpec,
+  designContext: DesignContext
+): Promise<QAReport> {
+  const mergedCode = result.components.map((component) => component.code).join('\n\n');
+  const validation = await validateComponent(mergedCode, spec, designContext);
+
+  return {
+    passed: validation.passed,
+    score: validation.score,
+    retries: result.qa.retries,
+    checks: validation.checks.map((check) => ({
+      category: check.category,
+      passed: check.passed,
+      message: check.message,
+      severity: check.severity,
+    })),
+    errors: validation.errors,
+    warnings: validation.warnings,
+    recommendations: validation.warnings,
   };
 }
 
@@ -127,55 +418,37 @@ export async function recommendDesignSystem(
   requirements: string,
   count: number = 5
 ): Promise<RecommendationResult> {
-  const { listDesignSystems } = await import('./design-system-tools');
   const brands = await listDesignSystems();
-  const allBrandNames = brands.map(b => b.name);
-
-  if (!llm) {
-    return {
-      recommendations: [],
-      allBrands: allBrandNames,
-    };
-  }
-
-  const prompt = `Based on the following requirements, recommend the most suitable design systems.
-
-Requirements: ${requirements}
-
-Available design systems: ${allBrandNames.join(', ')}
-
-Recommend the top ${count} design systems. For each, provide:
-1. name (exact brand name from available list)
-2. description (brief)
-3. category
-4. suitableFor (why it's good for these requirements)
-
-Return JSON with "recommendations" array.`;
+  const allBrandNames = brands.map((brand) => brand.name);
 
   try {
-    const response = await llm.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 2048,
-      messages: [{ role: 'user', content: prompt }],
-    });
+    const response = await executeLLMJSON<{
+      recommendations?: Array<{ name: string; description?: string; category?: string; suitableFor?: string }>;
+    }>(
+      `Based on requirements below, recommend top ${count} design systems.
 
-    const textContent = response.content.find(c => c.type === 'text');
-    if (!textContent || textContent.type !== 'text') {
-      return { recommendations: [], allBrands: allBrandNames };
-    }
+Requirements: ${requirements}
+Available design systems: ${allBrandNames.join(', ')}
 
-    const parsed = JSON.parse(textContent.text);
+Return JSON { "recommendations": [...] } with brand names exactly from available list.`,
+      'You are a design-system recommender. Return JSON only.',
+      { maxTokens: 2048, temperature: 0.2, jsonRetries: 1 }
+    );
+
     return {
-      recommendations: (parsed.recommendations || []).map((r: any) => ({
-        name: r.name,
-        description: r.description || '',
-        category: r.category || 'other',
-        suitableFor: r.suitableFor || '',
+      recommendations: (response.recommendations || []).slice(0, count).map((item) => ({
+        name: item.name,
+        description: item.description || '',
+        category: item.category || 'other',
+        suitableFor: item.suitableFor || '',
       })),
       allBrands: allBrandNames,
     };
   } catch {
-    return { recommendations: [], allBrands: allBrandNames };
+    return {
+      recommendations: [],
+      allBrands: allBrandNames,
+    };
   }
 }
 
@@ -194,7 +467,7 @@ export async function generatePageStructure(
   const designSystem = await loadDesignSystem(brand);
   if (!designSystem) return null;
 
-  const spec = {
+  const spec: DesignSpec = {
     version: '1.0',
     sourceDesignSystems: [brand],
     appliedDesignSystem: designSystem,
@@ -203,13 +476,7 @@ export async function generatePageStructure(
     confirmedItems: [],
   };
 
-  const structure = await planPageStructure(
-    pageType,
-    pageType,
-    spec,
-    requirements
-  );
-
+  const structure = await planPageStructure(pageType, pageType, spec, requirements);
   return {
     brand,
     pageType,
@@ -237,7 +504,7 @@ export async function runDesignQAForComponents(
   const designSystem = await loadDesignSystem(designSystemBrand);
   if (!designSystem) return null;
 
-  const spec = {
+  const spec: DesignSpec = {
     version: '1.0',
     sourceDesignSystems: [designSystemBrand],
     appliedDesignSystem: designSystem,
@@ -245,33 +512,18 @@ export async function runDesignQAForComponents(
     generatedAt: new Date().toISOString(),
     confirmedItems: [],
   };
-
   const designContext = buildDesignContext(spec);
-
-  const componentCodes: ComponentCode[] = components.map((code, i) => ({
-    name: `Component${i + 1}`,
-    filePath: `Component${i + 1}.tsx`,
-    code,
-  }));
-
-  const combinedResult: PageGenerationResult = {
-    pageName: 'QA Check',
-    components: componentCodes,
-    errors: [],
-    warnings: [],
-  };
-
-  const report = await runDesignQA(combinedResult, spec, designContext);
+  const validation = await validateComponent(components.join('\n\n'), spec, designContext);
 
   return {
-    passed: report.passed,
-    score: report.score,
-    checks: report.checks.map(c => ({
-      category: c.category,
-      passed: c.passed,
-      message: c.message,
-      severity: c.severity,
+    passed: validation.passed,
+    score: validation.score,
+    checks: validation.checks.map((check) => ({
+      category: check.category,
+      passed: check.passed,
+      message: check.message,
+      severity: check.severity,
     })),
-    recommendations: report.recommendations,
+    recommendations: validation.warnings,
   };
 }

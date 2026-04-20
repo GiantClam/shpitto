@@ -22,6 +22,10 @@ export async function GET(_req: NextRequest) {
       extracted = await extractWebsiteMainPages(sourceUrl);
       config = buildProjectFromExtractedSite(extracted);
     }
+    const staticFiles = Array.isArray(config?.staticSite?.files) ? config.staticSite.files : [];
+    if (config?.staticSite?.mode !== "skill-direct" || staticFiles.length === 0) {
+      throw new Error("test-deploy-final only supports skill-direct staticSite.files input");
+    }
 
     await cf.createProject(testProjectName);
 
@@ -32,15 +36,12 @@ export async function GET(_req: NextRequest) {
     const deployment = await cf.uploadDeployment(testProjectName, bundle);
     const url = `https://${testProjectName}.pages.dev`;
 
-    const pageDebug = config.pages.map((p: any) => {
-      const hero = (p?.puckData?.content || []).find((c: any) => c.type === "Hero");
-      return {
-        path: p.path,
-        seoTitle: p?.seo?.title,
-        heroTitle: hero?.props?.title,
-        heroImage: hero?.props?.image,
-      };
-    });
+    const pageDebug = staticFiles
+      .filter((file: any) => String(file?.path || "").toLowerCase().endsWith(".html"))
+      .map((file: any) => ({
+        filePath: file.path,
+        bytes: String(file?.content || "").length,
+      }));
 
     // Verify the website is reachable after deployment.
     let reachability: { ok: boolean; status?: number; error?: string } = { ok: false };
@@ -55,8 +56,8 @@ export async function GET(_req: NextRequest) {
       success: true,
       projectName: testProjectName,
       sourceUrl: sourceUrl || null,
-      pageCount: config.pages.length,
-      expectedRoutes: config.pages.map((p: any) => p.path),
+      pageCount: pageDebug.length,
+      expectedRoutes: pageDebug.map((p: any) => p.filePath),
       url,
       reachability,
       extractedSummary: extracted

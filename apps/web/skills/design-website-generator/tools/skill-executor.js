@@ -17,7 +17,7 @@ function getSkillRoot() {
 }
 
 function getDesignSystemsPath() {
-  return path.resolve(getSkillRoot(), '..', '..', '..', 'builder', 'design-systems', 'design-md');
+  return path.resolve(getSkillRoot(), '..', '..', '..', '..', 'builder', 'design-systems', 'design-md');
 }
 
 function getRulesPath() {
@@ -375,18 +375,23 @@ async function executeLLM(prompt, systemContext = '') {
   
   try {
     const { default: Anthropic } = await import('@anthropic-ai/sdk');
-    const client = new Anthropic({ apiKey });
+    const provider = String(process.env.LLM_PROVIDER || 'aiberm').toLowerCase();
+    const baseURL =
+      provider === 'aiberm'
+        ? process.env.AIBERM_BASE_URL || 'https://aiberm.com/v1'
+        : process.env.LLM_BASE_URL;
+    const client = new Anthropic({
+      apiKey,
+      ...(baseURL ? { baseURL } : {}),
+    });
     
-    const messages = [];
-    if (systemContext) {
-      messages.push({ role: 'system', content: systemContext });
-    }
-    messages.push({ role: 'user', content: prompt });
+    const messages = [{ role: 'user', content: prompt }];
     
     const response = await client.messages.create({
       model: process.env.LLM_MODEL || 'claude-sonnet-4-20250514',
       max_tokens: 8192,
       temperature: 0.5,
+      ...(systemContext ? { system: systemContext } : {}),
       messages,
     });
     

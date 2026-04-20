@@ -29,7 +29,7 @@ export default function LoginPage() {
       setMessage({ type: 'error', text: error.message })
       setLoading(false)
     } else {
-      router.push('/builder')
+      router.push('/')
       router.refresh()
     }
   }
