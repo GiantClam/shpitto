@@ -148,6 +148,71 @@ function errorStreamResponse(message: string, status = 500) {
   return createUIMessageStreamResponse({ status, stream });
 }
 
+function formatUnknownError(error: unknown): string {
+  if (error instanceof Error) {
+    const text = String(error.message || "").trim();
+    if (text) return text;
+  }
+  if (error && typeof error === "object") {
+    const anyErr = error as Record<string, unknown>;
+    const code = String(anyErr.code || "").trim();
+    const message = String(anyErr.message || "").trim();
+    const details = String(anyErr.details || "").trim();
+    const hint = String(anyErr.hint || "").trim();
+    if (message) {
+      const parts = [code ? `[${code}] ${message}` : message];
+      if (details && details !== "null" && details !== "undefined") {
+        parts.push(`details: ${details}`);
+      }
+      if (hint && hint !== "null" && hint !== "undefined") {
+        parts.push(`hint: ${hint}`);
+      }
+      return parts.join(" | ");
+    }
+    try {
+      return JSON.stringify(error);
+    } catch {
+      // ignore JSON stringify failures and fall back below
+    }
+  }
+  return String(error);
+}
+
+function isTransientStorageConnectivityError(error: unknown): boolean {
+  const anyError = (error || {}) as {
+    code?: string;
+    cause?: { code?: string; message?: string };
+    message?: string;
+  };
+  const code = String(anyError.code || anyError.cause?.code || "").toUpperCase();
+  if (
+    [
+      "UND_ERR_CONNECT_TIMEOUT",
+      "UND_ERR_HEADERS_TIMEOUT",
+      "ETIMEDOUT",
+      "ECONNRESET",
+      "ECONNREFUSED",
+      "ENOTFOUND",
+      "EAI_AGAIN",
+    ].includes(code)
+  ) {
+    return true;
+  }
+
+  const normalized = formatUnknownError(error).toLowerCase();
+  return [
+    "fetch failed",
+    "connect timeout",
+    "timed out",
+    "timeout",
+    "network",
+    "socket",
+    "connection reset",
+    "service unavailable",
+    "temporarily unavailable",
+  ].some((token) => normalized.includes(token));
+}
+
 function createTaskStreamResponse(params: {
   assistantText: string;
   taskId: string;
@@ -253,6 +318,7 @@ export async function POST(req: Request) {
     return errorStreamResponse("No user message found in request.", 400);
   }
 
+  try {
   const previousState = await getSession(chatId);
   const activeTask = await getActiveChatTask(chatId);
   if (activeTask && (activeTask.status === "queued" || activeTask.status === "running")) {
@@ -525,4 +591,11 @@ export async function POST(req: Request) {
     status: "queued",
     statusCode: 202,
   });
+  } catch (error) {
+    if (isTransientStorageConnectivityError(error)) {
+      return errorStreamResponse("Chat storage is temporarily unavailable. Please retry in a few seconds.", 503);
+    }
+    const message = formatUnknownError(error);
+    return errorStreamResponse(message || "Failed to process chat request.", 500);
+  }
 }
