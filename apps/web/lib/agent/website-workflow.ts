@@ -2,6 +2,8 @@
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import { ChatOpenAI } from "@langchain/openai";
 import { normalizeStylePreset, type DesignStylePreset } from "../design-style-preset.ts";
 
 const execFileAsync = promisify(execFile);
@@ -32,6 +34,8 @@ export type DesignSkillHit = {
     category?: string;
     design_md_url?: string;
     design_md_path?: string;
+    reason?: string;
+    excluded_reason?: string;
   }>;
   style_preset?: DesignStylePreset;
 };
@@ -113,6 +117,26 @@ const WORKFLOW_RUNTIME_TEXT_CACHE_TTL_MS = Math.max(
 );
 type CachedTextEntry = { value: string; expiresAt: number };
 const workflowRuntimeTextCache = new Map<string, CachedTextEntry>();
+
+type WorkflowLlmStyleSelection = {
+  recommended_id?: string;
+  top_candidates?: Array<{
+    id?: string;
+    reason?: string;
+  }>;
+  excluded?: Array<{
+    id?: string;
+    reason?: string;
+  }>;
+};
+
+type WorkflowProviderConfig = {
+  provider: "aiberm" | "crazyroute" | "openrouter";
+  apiKey?: string;
+  baseURL: string;
+  modelName: string;
+  defaultHeaders?: Record<string, string>;
+};
 
 function pathExists(p: string) {
   return fs
@@ -519,6 +543,178 @@ async function loadRulesSummary(rulesDir: string): Promise<string> {
   }
 }
 
+function normalizeWorkflowStyleId(raw: unknown): string {
+  return String(raw || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function resolveWorkflowProviderConfig(): WorkflowProviderConfig {
+  const providerRaw = String(process.env.LLM_PROVIDER || "").trim().toLowerCase();
+  if (providerRaw === "crazyroute" || providerRaw === "crazyrouter" || providerRaw === "crazyreoute") {
+    return {
+      provider: "crazyroute",
+      apiKey:
+        process.env.CRAZYROUTE_API_KEY ||
+        process.env.CRAZYROUTER_API_KEY ||
+        process.env.CRAZYREOUTE_API_KEY,
+      baseURL:
+        process.env.CRAZYROUTE_BASE_URL ||
+        process.env.CRAZYROUTER_BASE_URL ||
+        process.env.CRAZYREOUTE_BASE_URL ||
+        "https://crazyrouter.com/v1",
+      modelName:
+        process.env.LLM_MODEL_CRAZYROUTE ||
+        process.env.LLM_MODEL_CRAZYROUTER ||
+        process.env.LLM_MODEL_CRAZYREOUTE ||
+        process.env.LLM_MODEL ||
+        "openai/gpt-5.3-codex",
+    };
+  }
+  if (providerRaw === "openrouter") {
+    return {
+      provider: "openrouter",
+      apiKey: process.env.OPENROUTER_API_KEY,
+      baseURL: process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1",
+      modelName: process.env.LLM_MODEL || "anthropic/claude-sonnet-4.5",
+      defaultHeaders: {
+        "HTTP-Referer": "https://shpitto.com",
+        "X-Title": "Shpitto",
+      },
+    };
+  }
+  return {
+    provider: "aiberm",
+    apiKey: process.env.AIBERM_API_KEY || process.env.ANTHROPIC_API_KEY || process.env.OPENROUTER_API_KEY,
+    baseURL: process.env.AIBERM_BASE_URL || "https://aiberm.com/v1",
+    modelName:
+      process.env.LLM_MODEL_AIBERM ||
+      process.env.AIBERM_MODEL ||
+      process.env.LLM_MODEL ||
+      "openai/gpt-5.3-codex",
+  };
+}
+
+function parseJsonFromLlmText(raw: string): any | null {
+  const text = String(raw || "").trim();
+  if (!text) return null;
+
+  const tryParse = (candidate: string) => {
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      return null;
+    }
+  };
+
+  const direct = tryParse(text);
+  if (direct !== null) return direct;
+
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced?.[1]) {
+    const parsed = tryParse(fenced[1].trim());
+    if (parsed !== null) return parsed;
+  }
+
+  const startObj = text.indexOf("{");
+  const endObj = text.lastIndexOf("}");
+  if (startObj >= 0 && endObj > startObj) {
+    const parsed = tryParse(text.slice(startObj, endObj + 1).trim());
+    if (parsed !== null) return parsed;
+  }
+
+  const startArr = text.indexOf("[");
+  const endArr = text.lastIndexOf("]");
+  if (startArr >= 0 && endArr > startArr) {
+    const parsed = tryParse(text.slice(startArr, endArr + 1).trim());
+    if (parsed !== null) return parsed;
+  }
+
+  return null;
+}
+
+async function selectStylesWithLlm(params: {
+  query: string;
+  styles: AwesomeIndexStyle[];
+  selectionCriteria: string;
+}): Promise<WorkflowLlmStyleSelection | null> {
+  if (process.env.NODE_ENV === "test") return null;
+  if (String(process.env.WORKFLOW_STYLE_SELECT_USE_LLM || "1").trim() === "0") return null;
+
+  const config = resolveWorkflowProviderConfig();
+  if (!config.apiKey) return null;
+
+  const styleCatalog = params.styles
+    .map((style, index) => {
+      const description = String(style.description || "").replace(/\s+/g, " ").trim().slice(0, 140);
+      return `${index + 1}. id=${style.slug}; name=${style.name}; category=${style.category || "unknown"}; desc=${description}`;
+    })
+    .join("\n");
+
+  const model = new ChatOpenAI({
+    modelName: config.modelName,
+    openAIApiKey: config.apiKey,
+    configuration: {
+      baseURL: config.baseURL,
+      defaultHeaders: config.defaultHeaders,
+    },
+    timeout: Math.max(12_000, Number(process.env.WORKFLOW_STYLE_SELECT_TIMEOUT_MS || 45_000)),
+    temperature: 0,
+    maxRetries: 0,
+    maxTokens: Math.max(1200, Number(process.env.WORKFLOW_STYLE_SELECT_MAX_TOKENS || 2400)),
+  });
+  if (config.provider === "aiberm") {
+    (model as any).topP = undefined;
+  }
+
+  const systemPrompt = [
+    "You are a design-system selector for website generation.",
+    "Select styles semantically using user intent, industry, tone, and conversion goals.",
+    "Return strict JSON only.",
+    "JSON schema:",
+    "{",
+    '  "recommended_id": "style-id",',
+    '  "top_candidates": [',
+    '    { "id": "style-id", "reason": "why this fits" }',
+    "  ],",
+    '  "excluded": [',
+    '    { "id": "style-id", "reason": "why excluded despite being close" }',
+    "  ]",
+    "}",
+    "Constraints:",
+    "- recommended_id must come from provided catalog.",
+    "- top_candidates length must be exactly 3.",
+    "- reasons should be concise and specific.",
+  ].join("\n");
+
+  const userPrompt = [
+    "Selection criteria:",
+    params.selectionCriteria.trim() || "(missing criteria)",
+    "",
+    "User requirement:",
+    params.query.trim() || "(empty requirement)",
+    "",
+    "Style catalog:",
+    styleCatalog,
+  ].join("\n");
+
+  try {
+    const response = await model.invoke([new SystemMessage(systemPrompt), new HumanMessage(userPrompt)]);
+    const content = Array.isArray((response as any)?.content)
+      ? (response as any).content
+          .map((item: any) => (typeof item === "string" ? item : String(item?.text || "")))
+          .join("\n")
+      : String((response as any)?.content || "");
+    const parsed = parseJsonFromLlmText(content);
+    if (!parsed || typeof parsed !== "object") return null;
+    return parsed as WorkflowLlmStyleSelection;
+  } catch {
+    return null;
+  }
+}
+
 async function loadStyleProfiles(): Promise<StyleProfileMap> {
   const { styleProfiles } = getPaths();
   if (!(await pathExists(styleProfiles))) return {};
@@ -766,6 +962,8 @@ export async function resolveDesignSkillHit(input: string | undefined | null): P
   const queryLower = query.toLowerCase();
   const queryTokens = new Set(tokenize(queryLower));
   const intents = detectQueryIntents(query);
+  const { selectionCriteria } = getPaths();
+  const selectionCriteriaText = await loadFileText(selectionCriteria);
   const index = await loadAwesomeIndex();
   const styles = index?.styles || [];
 
@@ -821,7 +1019,60 @@ export async function resolveDesignSkillHit(input: string | undefined | null): P
   let best = explicit
     ? scored.find((entry) => entry.style.slug === explicit.slug) || scored[0]
     : scored[0];
-  const top3 = scored.slice(0, 3);
+  let top3 = scored.slice(0, 3);
+
+  const llmSelection = await selectStylesWithLlm({
+    query,
+    styles,
+    selectionCriteria: selectionCriteriaText,
+  });
+
+  const styleById = new Map(styles.map((style) => [normalizeWorkflowStyleId(style.slug), style]));
+  const scoreById = new Map(scored.map((entry) => [normalizeWorkflowStyleId(entry.style.slug), entry]));
+  const llmReasons = new Map<string, string>();
+  const llmExclusions = new Map<string, string>();
+
+  if (llmSelection?.top_candidates?.length) {
+    for (const item of llmSelection.top_candidates) {
+      const id = normalizeWorkflowStyleId(item.id);
+      if (!id) continue;
+      if (item.reason) llmReasons.set(id, item.reason.trim());
+    }
+  }
+  if (llmSelection?.excluded?.length) {
+    for (const item of llmSelection.excluded) {
+      const id = normalizeWorkflowStyleId(item.id);
+      if (!id) continue;
+      if (item.reason) llmExclusions.set(id, item.reason.trim());
+    }
+  }
+
+  const llmTopSlugs: string[] = [];
+  if (Array.isArray(llmSelection?.top_candidates)) {
+    for (const item of llmSelection.top_candidates) {
+      const id = normalizeWorkflowStyleId(item.id);
+      if (!id || !styleById.has(id) || llmTopSlugs.includes(id)) continue;
+      llmTopSlugs.push(id);
+    }
+  }
+  while (llmTopSlugs.length < 3) {
+    const fallback = scored.find((entry) => !llmTopSlugs.includes(normalizeWorkflowStyleId(entry.style.slug)));
+    if (!fallback) break;
+    llmTopSlugs.push(normalizeWorkflowStyleId(fallback.style.slug));
+  }
+
+  if (llmTopSlugs.length > 0) {
+    const mappedTop = llmTopSlugs
+      .map((slug) => scoreById.get(slug))
+      .filter((entry): entry is NonNullable<typeof entry> => !!entry)
+      .slice(0, 3);
+    if (mappedTop.length > 0) {
+      top3 = mappedTop;
+      const recommendedId = normalizeWorkflowStyleId(llmSelection?.recommended_id);
+      const recommended = recommendedId ? scoreById.get(recommendedId) : undefined;
+      best = recommended || mappedTop[0] || best;
+    }
+  }
 
   return {
     id: best.style.slug,
@@ -841,6 +1092,8 @@ export async function resolveDesignSkillHit(input: string | undefined | null): P
       category: entry.style.category,
       design_md_url: entry.style.designMdUrl,
       design_md_path: entry.style.designMdPath,
+      reason: llmReasons.get(normalizeWorkflowStyleId(entry.style.slug)),
+      excluded_reason: llmExclusions.get(normalizeWorkflowStyleId(entry.style.slug)),
     })),
   };
 }
@@ -1016,6 +1269,9 @@ export async function loadWorkflowRuntimeContext(
 
   return context;
 }
+
+
+
 
 
 

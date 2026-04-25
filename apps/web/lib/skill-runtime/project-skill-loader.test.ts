@@ -10,6 +10,7 @@ describe("project-skill-loader", () => {
   it("resolves aliases for brainstorming and writing-plans", () => {
     expect(resolveProjectSkillAlias("brainstorming")).toBe("superpowers-brainstorming");
     expect(resolveProjectSkillAlias("writing-plans")).toBe("superpowers-writing-plans");
+    expect(resolveProjectSkillAlias("static-site-css-styles")).toBe("website-generation-workflow");
   });
 
   it("loads main website-generation-workflow skill from apps/web/skills", async () => {
@@ -29,4 +30,3 @@ describe("project-skill-loader", () => {
     expect(bundle.resolvedIds).toContain("web-icon-library");
   });
 });
-

@@ -14,6 +14,7 @@ import {
   buildContactActionUrl,
   recordDeployment,
   saveProjectState,
+  syncProjectCustomDomainOrigin,
   upsertProjectSiteBinding,
 } from "./db";
 import { getD1Client } from "../d1";
@@ -378,6 +379,7 @@ export interface AgentState {
     genMode?: "skill_native" | "legacy";
     sourceRequirement?: string;
     skillId?: string;
+    refineSkillId?: string;
     skillDirective?: string;
     skillMdPath?: string;
     chatTaskId?: string;
@@ -385,6 +387,33 @@ export interface AgentState {
     workerId?: string;
     lockedProvider?: string;
     lockedModel?: string;
+    stylePreset?: any;
+    designSystemId?: string;
+    designSystemName?: string;
+    designSelectionReason?: string;
+    designOverrides?: Record<string, unknown>;
+    designConfirmed?: boolean;
+    conversationStage?: "drafting" | "previewing" | "deployed" | "deploying";
+    executionMode?: "generate" | "refine" | "deploy";
+    intent?: string;
+    intentConfidence?: number;
+    intentReason?: string;
+    refineRequested?: boolean;
+    refineSourceProjectPath?: string;
+    refineSourceTaskId?: string;
+    requirementCompletionPercent?: number;
+    requirementSlots?: Array<{ key: string; label: string; filled: boolean; evidence?: string }>;
+    requirementDraft?: string;
+    requirementAggregatedText?: string;
+    latestUserText?: string;
+    latestUserTextRaw?: string;
+    referencedAssets?: string[];
+    assumedDefaults?: string[];
+    deployRequested?: boolean;
+    deploySourceProjectPath?: string;
+    deploySourceTaskId?: string;
+    checkpointProjectPath?: string;
+    publishedAssetVersion?: string;
   };
 }
 
@@ -1883,6 +1912,7 @@ const deployNode = async (state: AgentState): Promise<Partial<AgentState>> => {
         console.log(`[Deploy] 闂?Deployed to: ${url}`);
 
         // 4) Record deployment metadata in D1.
+        await syncProjectCustomDomainOrigin(dbProjectId, state.user_id, `${projectName}.pages.dev`);
         await recordDeployment(dbProjectId, url, "production", state.access_token, r2BundlePrefix);
 
         const actions = [

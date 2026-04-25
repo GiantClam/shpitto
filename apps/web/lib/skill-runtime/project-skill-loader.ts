@@ -20,6 +20,11 @@ export type ProjectSkillBundleDescriptor = {
 const SKILL_ALIAS_MAP: Record<string, string> = {
   brainstorming: "superpowers-brainstorming",
   "writing-plans": "superpowers-writing-plans",
+  "static-site-html-page": "website-generation-workflow",
+  "static-site-css": "website-generation-workflow",
+  "static-site-js": "website-generation-workflow",
+  "static-site-script": "website-generation-workflow",
+  "static-site-shared-assets": "website-generation-workflow",
 };
 
 export const WEBSITE_GENERATION_SKILL_BUNDLE: string[] = [
@@ -69,6 +74,7 @@ function toSkillId(name: string): string {
 export function resolveProjectSkillAlias(skillId: string): string {
   const normalized = toSkillId(skillId);
   if (!normalized) return normalized;
+  if (normalized.startsWith("static-site-")) return "website-generation-workflow";
   return SKILL_ALIAS_MAP[normalized] || normalized;
 }
 

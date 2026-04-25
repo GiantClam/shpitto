@@ -1,0 +1,255 @@
+import { NextResponse } from "next/server";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { getChatTask } from "../../../../../../../lib/agent/chat-task-store";
+
+export const runtime = "nodejs";
+
+function renderPendingPreviewHtml(params: { taskId: string; stage?: string; status?: string }): string {
+  const stage = String(params.stage || "").trim() || "preparing";
+  const status = String(params.status || "").trim() || "running";
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Preview is generating...</title>
+    <style>
+      :root { --bg:#0b1226; --surface:#162345; --text:#edf3ff; --muted:#9ab0d8; --primary:#5a78ff; }
+      * { box-sizing: border-box; }
+      body { margin:0; min-height:100svh; display:grid; place-items:center; background:linear-gradient(180deg,var(--bg),#101a34); color:var(--text); font-family:Inter,system-ui,-apple-system,sans-serif; }
+      .card { width:min(640px,92vw); padding:28px; border-radius:16px; background:color-mix(in oklab, var(--surface) 82%, transparent); border:1px solid color-mix(in oklab, var(--primary) 26%, transparent); }
+      .badge { display:inline-flex; padding:4px 10px; border-radius:999px; font-size:12px; color:#cfe0ff; background:color-mix(in oklab, var(--primary) 20%, transparent); border:1px solid color-mix(in oklab, var(--primary) 35%, transparent); }
+      h1 { margin:12px 0 8px; font-size:24px; line-height:1.25; }
+      p { margin:0; color:var(--muted); line-height:1.6; }
+      code { color:#e9f1ff; font-size:12px; }
+    </style>
+  </head>
+  <body>
+    <section class="card">
+      <span class="badge">Task ${params.taskId}</span>
+      <h1>Preview is still generating...</h1>
+      <p>Status: <code>${status}</code> · Stage: <code>${stage}</code></p>
+      <p style="margin-top:10px;">The website files are not ready yet. This preview will be available automatically after the first HTML file is generated.</p>
+    </section>
+  </body>
+</html>`;
+}
+
+function detectMime(filePath: string): string {
+  const ext = path.extname(filePath).toLowerCase();
+  if (ext === ".html") return "text/html; charset=utf-8";
+  if (ext === ".css") return "text/css; charset=utf-8";
+  if (ext === ".js") return "application/javascript; charset=utf-8";
+  if (ext === ".json") return "application/json; charset=utf-8";
+  if (ext === ".svg") return "image/svg+xml";
+  if (ext === ".png") return "image/png";
+  if (ext === ".jpg" || ext === ".jpeg") return "image/jpeg";
+  if (ext === ".webp") return "image/webp";
+  if (ext === ".gif") return "image/gif";
+  if (ext === ".ico") return "image/x-icon";
+  return "application/octet-stream";
+}
+
+function rewriteHtmlForPreview(html: string, previewBase: string): string {
+  // Rewrite root-absolute href/src paths to task preview base to keep links and assets working.
+  const attrRewritten = html.replace(
+    /\b(href|src)=["']\/(?!\/|api\/|_next\/)([^"']*)["']/gi,
+    (_m, attr: string, target: string) => `${attr}="${previewBase}/${target}"`,
+  );
+
+  const withRootHref = attrRewritten.replace(/\bhref=["']\/["']/gi, `href="${previewBase}/"`);
+  if (/<head[\s>]/i.test(withRootHref)) {
+    return withRootHref.replace(/<head([^>]*)>/i, `<head$1><base href="${previewBase}/">`);
+  }
+  return withRootHref;
+}
+
+async function resolveTargetFile(siteDir: string, parts: string[]): Promise<string> {
+  const safeParts = parts.filter(Boolean);
+  let candidate = path.resolve(siteDir, ...safeParts);
+  const siteRoot = path.resolve(siteDir);
+  if (!candidate.startsWith(siteRoot)) {
+    throw new Error("Invalid preview path.");
+  }
+
+  let stat;
+  try {
+    stat = await fs.stat(candidate);
+  } catch {
+    stat = null;
+  }
+
+  if (!stat) {
+    const maybeIndex = path.resolve(siteRoot, ...safeParts, "index.html");
+    if (maybeIndex.startsWith(siteRoot)) {
+      try {
+        const indexStat = await fs.stat(maybeIndex);
+        if (indexStat.isFile()) return maybeIndex;
+      } catch {
+        // ignore
+      }
+    }
+    throw new Error("Preview file not found.");
+  }
+
+  if (stat.isDirectory()) {
+    const indexFile = path.resolve(candidate, "index.html");
+    if (!indexFile.startsWith(siteRoot)) throw new Error("Invalid preview path.");
+    const indexStat = await fs.stat(indexFile);
+    if (!indexStat.isFile()) throw new Error("Preview file not found.");
+    return indexFile;
+  }
+
+  return candidate;
+}
+
+async function hasIndexHtml(siteDir: string): Promise<boolean> {
+  const normalized = String(siteDir || "").trim();
+  if (!normalized) return false;
+  try {
+    const stat = await fs.stat(normalized);
+    if (!stat.isDirectory()) return false;
+  } catch {
+    return false;
+  }
+  try {
+    const indexStat = await fs.stat(path.join(normalized, "index.html"));
+    return indexStat.isFile();
+  } catch {
+    return false;
+  }
+}
+
+async function resolveSiteDirFromTask(task: any): Promise<string> {
+  const progress = task?.result?.progress || {};
+  const explicit = String(progress?.checkpointSiteDir || "").trim();
+  if (await hasIndexHtml(explicit)) return explicit;
+
+  const candidates: string[] = [];
+  const checkpointDir = String(progress?.checkpointDir || "").trim();
+  if (checkpointDir) {
+    candidates.push(path.join(checkpointDir, "site"), checkpointDir);
+  }
+
+  const checkpointProjectPath = String(progress?.checkpointProjectPath || "").trim();
+  if (checkpointProjectPath) {
+    const checkpointRoot = path.dirname(checkpointProjectPath);
+    candidates.push(path.join(checkpointRoot, "site"));
+    const stepsRoot = path.join(checkpointRoot, "steps");
+    try {
+      const entries = await fs.readdir(stepsRoot, { withFileTypes: true });
+      const stepDirs = entries
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => entry.name)
+        .sort((a, b) => b.localeCompare(a));
+      for (const stepDir of stepDirs) {
+        candidates.push(path.join(stepsRoot, stepDir, "site"), path.join(stepsRoot, stepDir));
+      }
+    } catch {
+      // ignore missing steps directory
+    }
+  }
+
+  const seen = new Set<string>();
+  for (const rawCandidate of candidates) {
+    const candidate = String(rawCandidate || "").trim();
+    if (!candidate) continue;
+    const resolved = path.resolve(candidate);
+    if (seen.has(resolved)) continue;
+    seen.add(resolved);
+    if (await hasIndexHtml(resolved)) return resolved;
+  }
+
+  return "";
+}
+
+export async function GET(
+  _req: Request,
+  ctx: { params: Promise<{ taskId: string; path?: string[] }> },
+) {
+  const params = await ctx.params;
+  const taskId = String(params?.taskId || "").trim();
+  const parts = Array.isArray(params?.path) ? params.path : [];
+  if (!taskId) {
+    return NextResponse.json({ ok: false, error: "Missing taskId." }, { status: 400 });
+  }
+
+  const task = await getChatTask(taskId);
+  const siteDir = await resolveSiteDirFromTask(task);
+  if (!siteDir) {
+    const status = String(task?.status || "").trim();
+    if (status === "queued" || status === "running") {
+      return new NextResponse(
+        renderPendingPreviewHtml({
+          taskId,
+          status,
+          stage: String(task?.result?.progress?.stage || ""),
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "text/html; charset=utf-8",
+            "Cache-Control": "no-store, max-age=0",
+          },
+        },
+      );
+    }
+    return NextResponse.json({ ok: false, error: "No preview directory for this task yet." }, { status: 404 });
+  }
+
+  let filePath = "";
+  try {
+    filePath = await resolveTargetFile(siteDir, parts);
+  } catch (error) {
+    const status = String(task?.status || "").trim();
+    if (status === "queued" || status === "running") {
+      return new NextResponse(
+        renderPendingPreviewHtml({
+          taskId,
+          status,
+          stage: String(task?.result?.progress?.stage || ""),
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "text/html; charset=utf-8",
+            "Cache-Control": "no-store, max-age=0",
+          },
+        },
+      );
+    }
+    return NextResponse.json(
+      { ok: false, error: error instanceof Error ? error.message : "Invalid preview path." },
+      { status: 404 },
+    );
+  }
+
+  let content: Buffer;
+  try {
+    content = await fs.readFile(filePath);
+  } catch {
+    return NextResponse.json({ ok: false, error: "Preview file read failed." }, { status: 404 });
+  }
+
+  const mime = detectMime(filePath);
+  if (mime.startsWith("text/html")) {
+    const previewBase = `/api/chat/tasks/${encodeURIComponent(taskId)}/preview`;
+    const rewritten = rewriteHtmlForPreview(content.toString("utf-8"), previewBase);
+    return new NextResponse(rewritten, {
+      status: 200,
+      headers: {
+        "Content-Type": mime,
+        "Cache-Control": "no-store, max-age=0",
+      },
+    });
+  }
+
+  return new NextResponse(new Uint8Array(content), {
+    status: 200,
+    headers: {
+      "Content-Type": mime,
+      "Cache-Control": "no-store, max-age=0",
+    },
+  });
+}

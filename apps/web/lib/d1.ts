@@ -98,6 +98,25 @@ export class CloudflareD1Client {
     return this.request(sql, params);
   }
 
+  private async ensureTableColumns(
+    tableName: string,
+    columns: Array<{ name: string; definition: string }>,
+  ) {
+    const tableInfo = await this.query<Record<string, unknown>>(
+      `PRAGMA table_info(${tableName});`,
+    );
+    const existingColumns = new Set(
+      (tableInfo || []).map((row) => String((row as any)?.name || "").trim().toLowerCase()).filter(Boolean),
+    );
+    for (const column of columns) {
+      const columnName = String(column?.name || "").trim();
+      if (!columnName) continue;
+      if (existingColumns.has(columnName.toLowerCase())) continue;
+      await this.execute(`ALTER TABLE ${tableName} ADD COLUMN ${column.definition};`);
+      existingColumns.add(columnName.toLowerCase());
+    }
+  }
+
   async ensureShpittoSchema() {
     if (!this.isConfigured()) return;
     if (this.schemaReady) return;
@@ -157,6 +176,30 @@ export class CloudflareD1Client {
             source_app TEXT NOT NULL DEFAULT '${SOURCE_APP}',
             site_key TEXT NOT NULL UNIQUE,
             deployment_host TEXT UNIQUE,
+            analytics_provider TEXT NOT NULL DEFAULT 'cloudflare_web_analytics',
+            analytics_status TEXT NOT NULL DEFAULT 'pending',
+            analytics_last_sync_at TEXT,
+            cf_wa_site_id TEXT,
+            cf_wa_site_tag TEXT,
+            cf_wa_site_token TEXT,
+            cf_wa_host TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+          );
+          `,
+          `
+          CREATE TABLE IF NOT EXISTS shpitto_project_domains (
+            id TEXT PRIMARY KEY,
+            project_id TEXT NOT NULL REFERENCES shpitto_projects(id) ON DELETE CASCADE,
+            account_id TEXT NOT NULL REFERENCES shpitto_accounts(id) ON DELETE CASCADE,
+            owner_user_id TEXT NOT NULL REFERENCES shpitto_users(id) ON DELETE CASCADE,
+            source_app TEXT NOT NULL DEFAULT '${SOURCE_APP}',
+            hostname TEXT NOT NULL UNIQUE,
+            status TEXT NOT NULL DEFAULT 'pending',
+            custom_hostname_id TEXT,
+            ssl_status TEXT,
+            verification_errors_json TEXT,
+            origin_host TEXT,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
           );
@@ -181,6 +224,8 @@ export class CloudflareD1Client {
           "CREATE INDEX IF NOT EXISTS idx_shpitto_projects_owner ON shpitto_projects(owner_user_id, updated_at DESC);",
           "CREATE INDEX IF NOT EXISTS idx_shpitto_deployments_project ON shpitto_deployments(project_id, created_at DESC);",
           "CREATE INDEX IF NOT EXISTS idx_shpitto_project_sites_owner ON shpitto_project_sites(owner_user_id, updated_at DESC);",
+          "CREATE INDEX IF NOT EXISTS idx_shpitto_project_domains_project ON shpitto_project_domains(project_id, updated_at DESC);",
+          "CREATE INDEX IF NOT EXISTS idx_shpitto_project_domains_owner ON shpitto_project_domains(owner_user_id, updated_at DESC);",
           "CREATE INDEX IF NOT EXISTS idx_shpitto_contact_submissions_owner ON shpitto_contact_submissions(owner_user_id, created_at DESC);",
           "CREATE INDEX IF NOT EXISTS idx_shpitto_contact_submissions_site ON shpitto_contact_submissions(site_key, created_at DESC);",
         ];
@@ -188,6 +233,23 @@ export class CloudflareD1Client {
         for (const statement of statements) {
           await this.execute(statement);
         }
+
+        await this.ensureTableColumns("shpitto_project_sites", [
+          { name: "analytics_provider", definition: "analytics_provider TEXT NOT NULL DEFAULT 'cloudflare_web_analytics'" },
+          { name: "analytics_status", definition: "analytics_status TEXT NOT NULL DEFAULT 'pending'" },
+          { name: "analytics_last_sync_at", definition: "analytics_last_sync_at TEXT" },
+          { name: "cf_wa_site_id", definition: "cf_wa_site_id TEXT" },
+          { name: "cf_wa_site_tag", definition: "cf_wa_site_tag TEXT" },
+          { name: "cf_wa_site_token", definition: "cf_wa_site_token TEXT" },
+          { name: "cf_wa_host", definition: "cf_wa_host TEXT" },
+        ]);
+        await this.ensureTableColumns("shpitto_project_domains", [
+          { name: "status", definition: "status TEXT NOT NULL DEFAULT 'pending'" },
+          { name: "custom_hostname_id", definition: "custom_hostname_id TEXT" },
+          { name: "ssl_status", definition: "ssl_status TEXT" },
+          { name: "verification_errors_json", definition: "verification_errors_json TEXT" },
+          { name: "origin_host", definition: "origin_host TEXT" },
+        ]);
 
         const accountKey = process.env.SHPITTO_ACCOUNT_KEY || SOURCE_APP;
         const timestamp = nowIso();
@@ -213,4 +275,3 @@ const d1Client = new CloudflareD1Client();
 export function getD1Client() {
   return d1Client;
 }
-

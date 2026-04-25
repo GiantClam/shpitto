@@ -1,7 +1,7 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Loader2 } from 'lucide-react'
@@ -11,9 +11,16 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null)
+  const [nextPath, setNextPath] = useState('/chat')
   const router = useRouter()
 
   const supabase = createClient()
+
+  useEffect(() => {
+    const nextParam = String(new URLSearchParams(window.location.search).get('next') || '/chat')
+    const safeNext = nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/chat'
+    setNextPath(safeNext)
+  }, [])
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,22 +36,39 @@ export default function LoginPage() {
       setMessage({ type: 'error', text: error.message })
       setLoading(false)
     } else {
-      router.push('/')
+      router.push(nextPath)
       router.refresh()
     }
   }
 
   const handleGoogleLogin = async () => {
     setLoading(true)
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${location.origin}/auth/callback`,
-      },
-    })
+    setMessage(null)
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+          // Ensure SDK prepares PKCE verifier, then we perform explicit navigation.
+          skipBrowserRedirect: true,
+        },
+      })
 
-    if (error) {
-      setMessage({ type: 'error', text: error.message })
+      if (error) {
+        setMessage({ type: 'error', text: error.message })
+        setLoading(false)
+        return
+      }
+
+      if (!data?.url) {
+        setMessage({ type: 'error', text: 'Google OAuth URL not returned by Supabase SDK.' })
+        setLoading(false)
+        return
+      }
+
+      window.location.assign(data.url)
+    } catch (error: any) {
+      setMessage({ type: 'error', text: String(error?.message || error || 'Failed to open Google OAuth') })
       setLoading(false)
     }
   }
@@ -56,7 +80,7 @@ export default function LoginPage() {
       email,
       password,
       options: {
-        emailRedirectTo: `${location.origin}/auth/callback`,
+        emailRedirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
       },
     })
 

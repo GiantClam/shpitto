@@ -1,0 +1,161 @@
+import Link from "next/link";
+import { Clock3, FolderKanban, LayoutTemplate, MessageCircle, Sparkles } from "lucide-react";
+import { SiteHeader } from "@/components/layout/SiteHeader";
+import { getLaunchCenterData } from "@/lib/launch-center/data";
+import { createClient } from "@/lib/supabase/server";
+import { LaunchCenterComposer } from "@/components/launch-center/LaunchCenterComposer";
+
+export default async function LaunchCenterPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const userId = String(user?.id || "").trim();
+  const userEmail = String(user?.email || "").trim();
+  const draftHref = userEmail ? "/chat" : "/login";
+  const { recentProjects, templateCards } = await getLaunchCenterData(userId);
+
+  return (
+    <div className="min-h-screen font-sans">
+      <SiteHeader userEmail={userEmail} getStartedHref={draftHref} />
+
+      <main className="mx-auto max-w-7xl px-6 pb-24 pt-32">
+        <section className="relative overflow-hidden rounded-3xl border border-[color-mix(in_oklab,var(--shp-border)_82%,transparent)] bg-[linear-gradient(160deg,color-mix(in_oklab,var(--shp-bg-soft)_92%,black_8%),color-mix(in_oklab,var(--shp-surface)_82%,black_18%))] p-8 shadow-[var(--shp-shadow)] lg:p-12">
+          <div className="pointer-events-none absolute -top-28 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,color-mix(in_oklab,var(--shp-primary)_34%,transparent),transparent_70%)] blur-2xl"></div>
+          <div className="pointer-events-none absolute bottom-0 right-0 h-48 w-48 rounded-full bg-[radial-gradient(circle,color-mix(in_oklab,var(--shp-warm)_24%,transparent),transparent_72%)] blur-3xl"></div>
+
+          <div className="relative z-10 space-y-8">
+            <div className="space-y-4 text-center">
+              <p className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--shp-primary)_35%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_12%,transparent)] px-4 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--shp-primary-soft)]">
+                <Sparkles className="h-3.5 w-3.5" />
+                Launch Center
+              </p>
+              <h1 className="text-4xl font-black tracking-tight text-[var(--shp-text)] lg:text-6xl">What do you want to build next?</h1>
+              <p className="mx-auto max-w-3xl text-base leading-relaxed text-[var(--shp-muted)] lg:text-lg">
+                Start with a conversation, continue from your recent projects, or bootstrap with a ready template.
+              </p>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+              <LaunchCenterComposer isAuthenticated={Boolean(userId)} />
+
+              <div className="space-y-3">
+                {[
+                  {
+                    title: "Conversation-first",
+                    desc: "Describe goals and constraints in plain words.",
+                    icon: MessageCircle,
+                  },
+                  {
+                    title: "Project memory",
+                    desc: "Continue existing sessions with stored context.",
+                    icon: FolderKanban,
+                  },
+                  {
+                    title: "Template boost",
+                    desc: "Start with battle-tested industrial structures.",
+                    icon: LayoutTemplate,
+                  },
+                ].map((item) => (
+                  <div key={item.title} className="rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_78%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_48%,black_52%)] p-4">
+                    <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--shp-primary)_18%,transparent)] text-[var(--shp-primary)]">
+                      <item.icon className="h-4 w-4" />
+                    </div>
+                    <p className="text-sm font-semibold text-[var(--shp-text)]">{item.title}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-[var(--shp-muted)]">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-14">
+          <div className="mb-6 flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-[var(--shp-text)]">Recent Projects</h2>
+            <span className="text-xs uppercase tracking-[0.2em] text-[var(--shp-muted)]">Active Drafts</span>
+          </div>
+          {recentProjects.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {recentProjects.map((project) => (
+                <article
+                  key={project.id}
+                  className="group rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_78%,transparent)] bg-[linear-gradient(160deg,color-mix(in_oklab,var(--shp-surface)_62%,black_38%),color-mix(in_oklab,var(--shp-bg-soft)_86%,black_14%))] p-5 shadow-[var(--shp-shadow-soft)]"
+                >
+                  <div className="mb-4 h-36 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[radial-gradient(circle_at_15%_20%,color-mix(in_oklab,var(--shp-primary)_16%,transparent),transparent_52%),linear-gradient(150deg,color-mix(in_oklab,var(--shp-surface-alt)_72%,black_28%),color-mix(in_oklab,var(--shp-bg)_90%,black_10%))]"></div>
+                  <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-[var(--shp-muted)]">
+                    <Clock3 className="h-3.5 w-3.5" />
+                    {project.ageLabel}
+                  </div>
+                  <h3 className="text-lg font-semibold text-[var(--shp-text)] group-hover:text-[var(--shp-primary-soft)]">{project.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-[var(--shp-muted)]">{project.summary}</p>
+                  <div className="mt-4">
+                    <Link
+                      href={userId ? `/projects/${encodeURIComponent(project.id)}/chat` : draftHref}
+                      className="inline-flex items-center text-xs font-semibold uppercase tracking-[0.18em] text-[var(--shp-primary-soft)] hover:text-[var(--shp-primary)]"
+                    >
+                      Open in Studio
+                    </Link>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_78%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_50%,black_50%)] p-6 text-sm text-[var(--shp-muted)]">
+              No recent projects yet. Start a conversation to create your first draft.
+            </div>
+          )}
+        </section>
+
+        <section className="mt-14">
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-bold text-[var(--shp-text)]">Recommended Templates</h2>
+              <span className="text-xs uppercase tracking-[0.2em] text-[var(--shp-muted)]">Curated Styles</span>
+            </div>
+            <Link href={draftHref} className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--shp-primary-soft)] hover:text-[var(--shp-primary)]">
+              Browse all
+            </Link>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {templateCards.map((template, index) => (
+              <article
+                key={template.name}
+                className="rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_78%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_58%,black_42%)] p-4"
+              >
+                <div
+                  className={[
+                    "mb-4 h-48 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)]",
+                    index % 4 === 0 &&
+                      "bg-[linear-gradient(145deg,color-mix(in_oklab,var(--shp-primary)_20%,black_80%),color-mix(in_oklab,var(--shp-bg-soft)_90%,black_10%))]",
+                    index % 4 === 1 &&
+                      "bg-[linear-gradient(145deg,color-mix(in_oklab,var(--shp-secondary)_16%,black_84%),color-mix(in_oklab,var(--shp-bg)_92%,black_8%))]",
+                    index % 4 === 2 &&
+                      "bg-[linear-gradient(145deg,color-mix(in_oklab,var(--shp-warm)_26%,black_74%),color-mix(in_oklab,var(--shp-surface)_92%,black_8%))]",
+                    index % 4 === 3 &&
+                      "bg-[linear-gradient(145deg,color-mix(in_oklab,var(--shp-primary-soft)_12%,black_88%),color-mix(in_oklab,var(--shp-bg-soft)_88%,black_12%))]",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                />
+                <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--shp-muted)]">{template.tag}</p>
+                <h3 className="mt-1 text-base font-semibold text-[var(--shp-text)]">{template.name}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--shp-muted)]">{template.tone}</p>
+                <div className="mt-4">
+                  <a
+                    href={template.sourceUrl || draftHref}
+                    target={template.sourceUrl ? "_blank" : undefined}
+                    rel={template.sourceUrl ? "noreferrer" : undefined}
+                    className="inline-flex items-center text-xs font-semibold uppercase tracking-[0.18em] text-[var(--shp-primary-soft)] hover:text-[var(--shp-primary)]"
+                  >
+                    Use template
+                  </a>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}

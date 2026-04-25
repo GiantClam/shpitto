@@ -1,6 +1,21 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+const PUBLIC_EXACT_PATHS = new Set<string>([
+  '/',
+  '/login',
+  '/auth/callback',
+  '/auth/auth-code-error',
+  '/legal/privacy',
+  '/legal/terms',
+])
+const PUBLIC_PREFIXES = ['/blog/']
+
+function isPublicPath(pathname: string): boolean {
+  if (PUBLIC_EXACT_PATHS.has(pathname)) return true
+  return PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+}
+
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({
     request: {
@@ -8,35 +23,62 @@ export async function updateSession(request: NextRequest) {
     },
   })
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet: { name: string; value: string; options: any }[]) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          )
-        },
+  const pathname = request.nextUrl?.pathname || '/'
+  const isPublic = isPublicPath(pathname)
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!supabaseUrl || !supabaseAnonKey) {
+    if (isPublic) return response
+    const loginUrl = request.nextUrl.clone()
+    loginUrl.pathname = '/login'
+    loginUrl.searchParams.set('next', pathname + (request.nextUrl.search || ''))
+    loginUrl.searchParams.set('reason', 'supabase_env_missing')
+    return NextResponse.redirect(loginUrl)
+  }
+
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll()
       },
+      setAll(cookiesToSet: { name: string; value: string; options: any }[]) {
+        cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+        response = NextResponse.next({
+          request: {
+            headers: request.headers,
+          },
+        })
+        cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
+      },
+    },
+  })
+
+  let user: any = null
+  try {
+    const {
+      data: { user: currentUser },
+      error,
+    } = await supabase.auth.getUser()
+    if (error) throw error
+    user = currentUser
+  } catch (error) {
+    if (isPublic) {
+      console.warn('[supabase-middleware] getUser failed on public path, bypassing:', error)
+      return response
     }
-  )
+    const loginUrl = request.nextUrl.clone()
+    loginUrl.pathname = '/login'
+    loginUrl.searchParams.set('next', pathname + (request.nextUrl.search || ''))
+    loginUrl.searchParams.set('reason', 'auth_check_failed')
+    return NextResponse.redirect(loginUrl)
+  }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (request.nextUrl.pathname.startsWith('/login') && user) {
-    return NextResponse.redirect(new URL('/', request.url))
+  if (!isPublic && !user) {
+    const loginUrl = request.nextUrl.clone()
+    loginUrl.pathname = '/login'
+    loginUrl.searchParams.set('next', pathname + (request.nextUrl.search || ''))
+    return NextResponse.redirect(loginUrl)
   }
 
   return response

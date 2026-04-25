@@ -12,31 +12,113 @@
 }
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+  --shp-bg: #000000;
+  --shp-bg-soft: #0a0a0a;
+  --shp-surface: #121212;
+  --shp-surface-alt: #1a1a1a;
+  --shp-text: #ffffff;
+  --shp-muted: #b3b3b3;
+  --shp-border: #282828;
+  --shp-primary: #1ed760;
+  --shp-primary-soft: #6ff09c;
+  --shp-primary-pressed: #1aae4f;
+  --shp-secondary: #8cfbb5;
+  --shp-warm: #ffa500;
+  --shp-hot: #1aae4f;
+  --shp-shadow: 0 16px 32px rgba(0, 0, 0, 0.5);
+  --shp-shadow-soft: 0 10px 20px rgba(0, 0, 0, 0.42);
+  --shp-glow: 0 0 24px rgba(30, 215, 96, 0.36);
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  color: var(--shp-text);
+  background:
+    radial-gradient(980px 460px at 12% -4%, color-mix(in oklab, var(--shp-primary) 22%, transparent), transparent 62%),
+    radial-gradient(720px 360px at 88% -10%, color-mix(in oklab, var(--shp-warm) 18%, transparent), transparent 70%),
+    linear-gradient(180deg, var(--shp-bg), #060606);
+}
+
+a {
+  transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
+}
+
+@layer components {
+  .shp-shell {
+    background: color-mix(in oklab, var(--shp-bg-soft) 92%, #040404 8%);
+    border: 1px solid color-mix(in oklab, var(--shp-border) 85%, transparent);
+    box-shadow: var(--shp-shadow);
+  }
+
+  .shp-glass {
+    background: color-mix(in oklab, var(--shp-surface) 78%, transparent);
+    backdrop-filter: blur(14px);
+    border: 1px solid color-mix(in oklab, var(--shp-border) 84%, transparent);
+  }
+
+  .shp-card {
+    background: linear-gradient(160deg, color-mix(in oklab, var(--shp-surface-alt) 96%, transparent), color-mix(in oklab, var(--shp-surface) 90%, transparent));
+    border: 1px solid color-mix(in oklab, var(--shp-border) 86%, transparent);
+    box-shadow: var(--shp-shadow-soft);
+  }
+
+  .shp-btn-primary {
+    background: var(--shp-primary);
+    color: #000000;
+    border: 1px solid color-mix(in oklab, var(--shp-primary) 85%, white 15%);
+    border-radius: 9999px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    box-shadow: var(--shp-glow);
+  }
+
+  .shp-btn-primary:hover {
+    background: color-mix(in oklab, var(--shp-primary) 92%, white 8%);
+    transform: scale(1.04);
+    box-shadow: 0 0 30px color-mix(in oklab, var(--shp-primary) 46%, transparent);
+  }
+
+  .shp-btn-secondary {
+    background: transparent;
+    color: var(--shp-text);
+    border: 2px solid color-mix(in oklab, var(--shp-border) 84%, white 16%);
+    border-radius: 9999px;
+  }
+
+  .shp-btn-secondary:hover {
+    background: color-mix(in oklab, var(--shp-primary) 10%, transparent);
+    border-color: var(--shp-primary);
+    color: var(--shp-primary);
+  }
+
+  .chat-ui .shp-shell {
+    background: color-mix(in oklab, var(--shp-bg-soft) 92%, #040404 8%);
+    border: 1px solid color-mix(in oklab, var(--shp-border) 78%, transparent);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+  }
+
+  .chat-ui .shp-btn-primary {
+    background: var(--shp-primary);
+    border-color: color-mix(in oklab, var(--shp-primary) 80%, #ffffff 20%);
+    box-shadow: 0 8px 18px color-mix(in oklab, var(--shp-primary) 26%, transparent);
+  }
+
+  .chat-ui .shp-btn-primary:hover {
+    transform: scale(1.02);
+    box-shadow: 0 10px 22px color-mix(in oklab, var(--shp-primary) 32%, transparent);
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 }

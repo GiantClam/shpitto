@@ -5,10 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "npm run dev:next",
-    "dev:next": "NODE_OPTIONS='--max-old-space-size=4096' next dev --turbopack",
+    "dev:all": "concurrently -k -n web,worker \"pnpm dev:next\" \"pnpm worker:chat\"",
+    "dev:next": "node --max-old-space-size=4096 ./node_modules/next/dist/bin/next dev --turbopack",
     "dev:agent": "npx @langchain/langgraph-cli dev --port 8123 --host 127.0.0.1",
     "worker:chat": "node --experimental-strip-types scripts/chat-task-worker.ts",
     "worker:chat:once": "node --experimental-strip-types scripts/chat-task-worker.ts --once",
+    "ops:wa:cleanup": "node --experimental-strip-types scripts/wa-site-cleanup.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

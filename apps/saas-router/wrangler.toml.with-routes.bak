@@ -1,0 +1,19 @@
+﻿name = "shpitto-saas-router"
+main = "src/index.ts"
+compatibility_date = "2026-04-23"
+workers_dev = false
+
+[vars]
+SHPITTO_PRIMARY_HOSTS = "shpitto.com,www.shpitto.com,app.shpitto.com"
+SHPITTO_ROUTER_DEBUG = "0"
+
+[[routes]]
+pattern = "*/*"
+zone_name = "shpitto.com"
+
+[[d1_databases]]
+binding = "DOMAIN_DB"
+database_name = "shpitto-prod"
+database_id = "73af9ace-6d29-42f2-a109-dd65cf473cc7"
+
+

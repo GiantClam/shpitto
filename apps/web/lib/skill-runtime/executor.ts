@@ -1,25 +1,49 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { AIMessage, BaseMessage, HumanMessage } from "@langchain/core/messages";
+import { AIMessage, BaseMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { ChatOpenAI } from "@langchain/openai";
 import { getR2Client } from "../r2.ts";
+import { buildCloudflareBeaconSnippet, CloudflareClient, type CloudflareWebAnalyticsSite } from "../cloudflare.ts";
+import { Bundler } from "../bundler.ts";
+import { publishCurrentProjectAssets, syncGeneratedProjectAssetsFromSite } from "../project-assets.ts";
 import type { ChatTaskResult } from "../agent/chat-task-store.ts";
 import { completeChatTask, failChatTask, touchChatTaskHeartbeat, updateChatTaskProgress } from "../agent/chat-task-store.ts";
 import { extractUiPayload } from "../agent/chat-ui-payload.ts";
 import type { AgentState } from "../agent/graph.ts";
+import {
+  archiveSiteArtifactsToR2,
+  recordDeployment,
+  saveProjectState,
+  syncProjectCustomDomainOrigin,
+  upsertProjectSiteBinding,
+} from "../agent/db.ts";
+import { loadWorkflowSkillContext, type DesignSkillHit } from "../agent/website-workflow.ts";
+import { DEFAULT_STYLE_PRESET, normalizeStylePreset, type DesignStylePreset } from "../design-style-preset.ts";
 import { artifactCounts, collectCompletedPhases, getGeneratedFilePaths, getPages, getStaticArtifactFiles, mergeAgentState } from "./artifacts.ts";
 import { invokeModelWithIdleTimeout } from "./llm-stream.ts";
 import { bindRunProviderLockToState, resolveRunProviderRunnerLock, type RunProviderLock } from "./provider-runner.ts";
 import { buildLocalDecisionPlan, type ComponentMix, type LocalDecisionPlan, type PageBlueprint } from "./decision-layer.ts";
-import { resolveNextRuntimePhase } from "./stages/index.ts";
-import { SKILL_RUNTIME_FIXED_PHASES, type SkillRuntimePhase } from "./stages/types.ts";
+import { SKILL_RUNTIME_FIXED_PHASES, type SkillRuntimePhase } from "./phase-types.ts";
 import {
   loadProjectSkill,
   resolveProjectSkillAlias,
   WEBSITE_GENERATION_SKILL_BUNDLE,
   type ProjectSkillDescriptor,
 } from "./project-skill-loader.ts";
+import { runSkillToolExecutor } from "./skill-tool-executor.ts";
+import { validateComponent, type DesignSpec, type ValidationResult } from "../../skills/design-website-generator/tools/component-validator.ts";
+import {
+  buildContextForPageN,
+  buildDesignContext,
+  buildPageContext,
+  type ColorUsage,
+  type DesignContext,
+  type HeadingRecord,
+  type PageContext,
+  type TermRecord,
+  type TypoUsage,
+} from "../../skills/design-website-generator/tools/context-builder.ts";
 
 type LlmProvider = "aiberm" | "crazyroute";
 
@@ -91,6 +115,40 @@ const STAGE_SKILL_SCOPES = {
 } as const;
 type StageSkillScope = keyof typeof STAGE_SKILL_SCOPES;
 
+type WorkflowGuidancePack = {
+  selectionCriteria: string;
+  sequentialWorkflow: string;
+  workflowGuide: string;
+  rulesSummary: string;
+  designMd: string;
+};
+
+type DesignConfirmSnapshot = {
+  selectedStyleId: string;
+  selectedStyleName: string;
+  reason: string;
+  colors: Record<string, string>;
+  typography: string;
+  borderRadius: string;
+  overrides: Record<string, unknown>;
+};
+
+type PageQaRecord = {
+  route: string;
+  passed: boolean;
+  score: number;
+  retries: number;
+  errors: string[];
+  warnings: string[];
+};
+
+const QA_MAX_RETRIES = Math.max(0, Number(process.env.SKILL_QA_MAX_RETRIES || 2));
+const QA_MIN_SCORE = Math.max(1, Number(process.env.SKILL_QA_MIN_SCORE || 90));
+const PAGE_CONTEXT_MAX_CHARS = Math.max(1200, Number(process.env.SKILL_PAGE_CONTEXT_MAX_CHARS || 6500));
+const PAGE_CONTEXT_MAX_PAGES = Math.max(1, Number(process.env.SKILL_PAGE_CONTEXT_MAX_PAGES || 4));
+const PAGE_CONTEXT_MAX_TERMS = Math.max(6, Number(process.env.SKILL_PAGE_CONTEXT_MAX_TERMS || 24));
+const USE_SKILL_TOOL_MODE = String(process.env.SKILL_TOOL_MODE || "1").trim() !== "0";
+
 function nowIso(): string {
   return new Date().toISOString();
 }
@@ -148,16 +206,679 @@ function classifyErrorCode(message: string): string {
   return "unknown";
 }
 
+function extractMessageContent(raw: any): string {
+  const direct = String(raw?.content || "").trim();
+  if (direct) return direct;
+
+  const kwargsContent = raw?.kwargs?.content;
+  if (typeof kwargsContent === "string" && kwargsContent.trim()) {
+    return kwargsContent.trim();
+  }
+  if (Array.isArray(kwargsContent)) {
+    const parts = kwargsContent
+      .map((part: any) => String(part?.text || part?.content || "").trim())
+      .filter(Boolean);
+    if (parts.length > 0) return parts.join("\n").trim();
+  }
+  return "";
+}
+
+function isHumanLikeMessage(raw: any): boolean {
+  const ctorName = String(raw?.constructor?.name || "").toLowerCase();
+  if (ctorName === "humanmessage") return true;
+
+  const role = String(raw?.role || "").toLowerCase();
+  if (role === "user" || role === "human") return true;
+
+  const type = String(raw?.type || raw?._getType?.() || "").toLowerCase();
+  if (type === "human" || type === "humanmessage") return true;
+
+  const idPath = Array.isArray(raw?.id) ? raw.id.join("/") : String(raw?.id || "");
+  return /humanmessage/i.test(idPath);
+}
+
 function extractRequirementText(state: AgentState): string {
   const messages = Array.isArray(state.messages) ? state.messages : [];
   for (let i = messages.length - 1; i >= 0; i -= 1) {
     const msg: any = messages[i];
-    if (msg instanceof HumanMessage || String(msg?.constructor?.name || "") === "HumanMessage") {
-      const content = String(msg?.content || "").trim();
+    if (msg instanceof HumanMessage || isHumanLikeMessage(msg)) {
+      const content = extractMessageContent(msg);
       if (content) return content;
     }
   }
+  const workflow = toRecord((state as any)?.workflow_context);
+  const fallbackCandidates = [
+    String(workflow.latestUserText || "").trim(),
+    String(workflow.requirementAggregatedText || "").trim(),
+    String(workflow.requirementDraft || "").trim(),
+    String(workflow.sourceRequirement || "").trim(),
+  ];
+  for (const candidate of fallbackCandidates) {
+    if (candidate) return candidate;
+  }
   return "";
+}
+
+function isDeployConfirmationIntent(text: string): boolean {
+  const normalized = String(text || "").trim().toLowerCase();
+  if (!normalized) return false;
+  if (/^deploy(?:\s+now|\s+site)?$/.test(normalized)) return true;
+  if (/^(?:部署|发布|上线|确认部署|部署到cloudflare)$/.test(normalized)) return true;
+  if (normalized.includes("deploy to cloudflare")) return true;
+  if (normalized.includes("deploy cloudflare")) return true;
+  if (normalized.includes("部署到cloudflare")) return true;
+  if (normalized.includes("部署到 cloudflare")) return true;
+  if (normalized.includes("发布到cloudflare")) return true;
+  return false;
+}
+
+function isProjectLikeArtifact(value: unknown): value is { pages: any[] } {
+  return !!value && typeof value === "object" && Array.isArray((value as any).pages);
+}
+
+async function readProjectJsonFromPath(filePath: string): Promise<any | undefined> {
+  const absPath = path.resolve(String(filePath || ""));
+  if (!absPath.toLowerCase().endsWith(".json")) return undefined;
+  try {
+    const raw = await fs.readFile(absPath, "utf8");
+    const parsed = JSON.parse(raw);
+    if (isProjectLikeArtifact(parsed)) return parsed;
+  } catch {
+    // ignore and let caller fallback to other sources
+  }
+  return undefined;
+}
+
+async function resolveDeploySourceProject(state: AgentState): Promise<any | undefined> {
+  if (isProjectLikeArtifact((state as any)?.site_artifacts)) return (state as any).site_artifacts;
+  if (isProjectLikeArtifact((state as any)?.project_json)) return (state as any).project_json;
+
+  const workflow = toRecord((state as any)?.workflow_context);
+  const sourcePathCandidates = [
+    String(workflow.deploySourceProjectPath || ""),
+    String(workflow.checkpointProjectPath || ""),
+    String(workflow.lastCheckpointProjectPath || ""),
+  ].filter(Boolean);
+
+  for (const candidate of sourcePathCandidates) {
+    const project = await readProjectJsonFromPath(candidate);
+    if (project) return project;
+  }
+
+  return undefined;
+}
+
+function cloneJson<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function routePathToHtml(route: string): string {
+  const normalized = normalizePath(route);
+  if (normalized === "/") return "/index.html";
+  return `${normalized}/index.html`;
+}
+
+function ensureSkillDirectStaticProject(project: any): any {
+  const next = cloneJson(project || {});
+  const files = dedupeFiles((next?.staticSite?.files || []) as any[]);
+  if (String(next?.staticSite?.mode || "") === "skill-direct" && files.length > 0) {
+    next.staticSite = {
+      ...(next.staticSite || {}),
+      mode: "skill-direct",
+      files,
+    };
+    return next;
+  }
+
+  const pages = Array.isArray(next?.pages) ? next.pages : [];
+  const fromPages = pages
+    .map((page: any) => ({
+      path: routePathToHtml(String(page?.path || "/")),
+      content: String(page?.html || ""),
+      type: "text/html",
+    }))
+    .filter((entry: any) => String(entry.path || "").trim() && String(entry.content || "").trim());
+
+  const mergedFiles = dedupeFiles([...files, ...fromPages]);
+  if (mergedFiles.length === 0) {
+    throw new Error("Refine source project has no static files to patch.");
+  }
+
+  next.staticSite = {
+    ...(next.staticSite || {}),
+    mode: "skill-direct",
+    files: mergedFiles,
+  };
+  return next;
+}
+
+function detectAccentColor(instruction: string): { name: string; hex: string } | undefined {
+  const text = String(instruction || "").toLowerCase();
+  const hexMatch = text.match(/#([0-9a-f]{3,8})\b/i);
+  if (hexMatch?.[0]) {
+    return { name: "custom", hex: hexMatch[0] };
+  }
+  const candidates: Array<{ name: string; hex: string; patterns: RegExp[] }> = [
+    { name: "blue", hex: "#2563eb", patterns: [/蓝|blue|indigo|azure/] },
+    { name: "green", hex: "#16a34a", patterns: [/绿|green|emerald|mint/] },
+    { name: "red", hex: "#dc2626", patterns: [/红|red|crimson/] },
+    { name: "orange", hex: "#ea580c", patterns: [/橙|orange|amber/] },
+    { name: "purple", hex: "#7c3aed", patterns: [/紫|purple|violet/] },
+    { name: "black", hex: "#111827", patterns: [/黑|black|dark/] },
+  ];
+  for (const candidate of candidates) {
+    if (candidate.patterns.some((re) => re.test(text))) {
+      return { name: candidate.name, hex: candidate.hex };
+    }
+  }
+  return undefined;
+}
+
+function detectTitleOverride(instruction: string): string | undefined {
+  const text = String(instruction || "").trim();
+  const patterns = [
+    /(?:标题|title)\s*(?:改成|为|:|：)\s*[“"']?([^"”'。！？\n\r]+)[”"']?/i,
+    /(?:叫做|命名为)\s*[“"']?([^"”'。！？\n\r]+)[”"']?/i,
+  ];
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    const candidate = String(match?.[1] || "").trim();
+    if (candidate) return candidate.slice(0, 120);
+  }
+  return undefined;
+}
+
+function detectTextReplacement(instruction: string): { from: string; to: string } | undefined {
+  const text = String(instruction || "").trim();
+  const cn = text.match(/把\s*[“"']?([^"”'，。；;]+)[”"']?\s*改成\s*[“"']?([^"”'，。；;\n\r]+)[”"']?/i);
+  if (cn?.[1] && cn?.[2]) {
+    const from = String(cn[1]).trim();
+    const to = String(cn[2]).trim();
+    if (from && to && from !== to) return { from, to };
+  }
+  const en = text.match(/replace\s+[“"']?([^"”']+)[”"']?\s+with\s+[“"']?([^"”'\n\r]+)[”"']?/i);
+  if (en?.[1] && en?.[2]) {
+    const from = String(en[1]).trim();
+    const to = String(en[2]).trim();
+    if (from && to && from !== to) return { from, to };
+  }
+  return undefined;
+}
+
+function syncPagesFromStaticFiles(project: any): any {
+  const next = cloneJson(project || {});
+  const staticFiles = dedupeFiles((next?.staticSite?.files || []) as any[]);
+  const pagesByRoute = new Map<string, { path: string; html: string }>();
+  const existingPages = Array.isArray(next?.pages) ? next.pages : [];
+  for (const page of existingPages) {
+    const route = normalizePath(String(page?.path || "/"));
+    pagesByRoute.set(route, {
+      path: route,
+      html: String(page?.html || ""),
+    });
+  }
+
+  for (const file of staticFiles) {
+    const filePath = normalizePath(String(file.path || ""));
+    if (!filePath.toLowerCase().endsWith(".html")) continue;
+    const route = filePath === "/index.html" ? "/" : normalizePath(filePath.replace(/\/index\.html$/i, ""));
+    pagesByRoute.set(route, {
+      path: route,
+      html: String(file.content || ""),
+    });
+  }
+
+  next.pages = Array.from(pagesByRoute.values()).sort((a, b) => {
+    if (a.path === "/") return -1;
+    if (b.path === "/") return 1;
+    return a.path.localeCompare(b.path);
+  });
+  return next;
+}
+
+function injectCloudflareAnalyticsBeacon(project: any, siteTag: string): any {
+  const normalizedTag = String(siteTag || "").trim();
+  if (!normalizedTag) return project;
+
+  const next = ensureSkillDirectStaticProject(project);
+  const files = dedupeFiles((next?.staticSite?.files || []) as any[]);
+  const snippet = buildCloudflareBeaconSnippet(normalizedTag);
+
+  const injectedFiles = files.map((file) => {
+    const mime = String(file.type || "").toLowerCase();
+    const filePath = String(file.path || "").toLowerCase();
+    if (!(mime.includes("html") || filePath.endsWith(".html") || filePath.endsWith(".htm"))) {
+      return file;
+    }
+
+    const original = String(file.content || "");
+    const normalized = original.replace(
+      /<script[^>]*static\.cloudflareinsights\.com\/beacon\.min\.js[^>]*>[\s\S]*?<\/script>/i,
+      snippet,
+    );
+    if (normalized !== original) {
+      return {
+        ...file,
+        content: normalized,
+      };
+    }
+
+    if (/<\/body>/i.test(original)) {
+      return {
+        ...file,
+        content: original.replace(/<\/body>/i, `${snippet}\n</body>`),
+      };
+    }
+
+    return {
+      ...file,
+      content: `${original}\n${snippet}\n`,
+    };
+  });
+
+  const withStatic = {
+    ...next,
+    staticSite: {
+      ...(next?.staticSite || {}),
+      mode: "skill-direct",
+      files: injectedFiles,
+    },
+  };
+  return syncPagesFromStaticFiles(withStatic);
+}
+
+function applyRefineInstructionToProject(project: any, instruction: string): { project: any; changedFiles: string[] } {
+  const next = ensureSkillDirectStaticProject(project);
+  const files = dedupeFiles((next?.staticSite?.files || []) as any[]);
+  const changed = new Set<string>();
+  const accent = detectAccentColor(instruction);
+  const titleOverride = detectTitleOverride(instruction);
+  const textReplacement = detectTextReplacement(instruction);
+
+  const updatedFiles = files.map((file) => {
+    const nextFile = { ...file };
+    const lowerPath = String(nextFile.path || "").toLowerCase();
+    if (lowerPath.endsWith(".css") && accent) {
+      const refineCss = [
+        "",
+        `/* refine-runtime-accent: ${accent.name} */`,
+        `:root { --refine-accent: ${accent.hex}; --shp-primary: var(--refine-accent); }`,
+        "a, .btn, button, .cta, .primary { color: var(--refine-accent); border-color: color-mix(in oklab, var(--refine-accent) 45%, transparent); }",
+        ".btn-primary, .cta-primary, button.primary { background: var(--refine-accent); color: #fff; }",
+      ].join("\n");
+      nextFile.content = `${String(nextFile.content || "").trimEnd()}\n${refineCss}\n`;
+      changed.add(nextFile.path);
+    }
+
+    if (lowerPath.endsWith(".html")) {
+      const before = String(nextFile.content || "");
+      let after = before;
+      if (titleOverride) {
+        const withTitleTag = after.replace(/<title>[\s\S]*?<\/title>/i, `<title>${titleOverride}</title>`);
+        after = withTitleTag;
+        if (withTitleTag === before) {
+          const withH1 = after.replace(/<h1([^>]*)>[\s\S]*?<\/h1>/i, `<h1$1>${titleOverride}</h1>`);
+          after = withH1;
+        }
+      }
+      if (textReplacement && textReplacement.from) {
+        const escaped = textReplacement.from.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const replacementPattern = new RegExp(escaped, "g");
+        after = after.replace(replacementPattern, textReplacement.to);
+      }
+      if (after !== before) {
+        nextFile.content = after;
+        changed.add(nextFile.path);
+      }
+    }
+
+    return nextFile;
+  });
+
+  const withStatic = {
+    ...next,
+    staticSite: {
+      ...(next.staticSite || {}),
+      mode: "skill-direct",
+      files: updatedFiles,
+      generation: {
+        ...((next.staticSite || {}).generation || {}),
+        refinedAt: nowIso(),
+        refineInstruction: String(instruction || "").slice(0, 400),
+      },
+    },
+  };
+  const withSyncedPages = syncPagesFromStaticFiles(withStatic);
+  withSyncedPages.staticSite = {
+    ...(next.staticSite || {}),
+    mode: "skill-direct",
+    files: updatedFiles,
+    generation: {
+      ...((next.staticSite || {}).generation || {}),
+      refinedAt: nowIso(),
+      refineInstruction: String(instruction || "").slice(0, 400),
+    },
+  };
+
+  return {
+    project: withSyncedPages,
+    changedFiles: Array.from(changed).sort((a, b) => a.localeCompare(b)),
+  };
+}
+
+function applyDeterministicRefineFixups(
+  project: any,
+  instruction: string,
+): { project: any; changedFiles: string[] } {
+  const normalizedInstruction = String(instruction || "").trim();
+  if (!normalizedInstruction) {
+    return { project, changedFiles: [] };
+  }
+
+  const hasDeleteIntent = /(删除|移除|去掉|remove|delete)/i.test(normalizedInstruction);
+  const removeMenuButton =
+    hasDeleteIntent &&
+    /(menu|菜单|导航栏)/i.test(normalizedInstruction);
+
+  const literalTargets = new Set<string>();
+  if (/for enterprise and saas teams/i.test(normalizedInstruction)) {
+    literalTargets.add("For enterprise and SaaS teams");
+  }
+  const quotedPatterns = [
+    /[“"']([^“”"'\n\r]{2,120})[”"']/g,
+    /删除\s*([A-Za-z][A-Za-z0-9 .&/+-]{3,120})/gi,
+  ];
+  for (const pattern of quotedPatterns) {
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(normalizedInstruction))) {
+      const candidate = String(match[1] || "").trim();
+      if (!candidate) continue;
+      if (/^(menu|菜单)$/i.test(candidate)) continue;
+      literalTargets.add(candidate);
+    }
+  }
+
+  if (!removeMenuButton && literalTargets.size === 0) {
+    return { project, changedFiles: [] };
+  }
+
+  const next = ensureSkillDirectStaticProject(project);
+  const files = dedupeFiles((next?.staticSite?.files || []) as any[]);
+  const changed = new Set<string>();
+
+  const updatedFiles = files.map((file) => {
+    const lowerPath = String(file.path || "").toLowerCase();
+    if (!lowerPath.endsWith(".html")) return file;
+
+    const before = String(file.content || "");
+    let after = before;
+
+    if (removeMenuButton) {
+      after = after.replace(/<button[\s\S]*?data-nav-toggle[\s\S]*?<\/button>\s*/gi, "");
+      after = after.replace(/<button[\s\S]*?>\s*Menu\s*<\/button>\s*/gi, "");
+    }
+
+    for (const target of literalTargets) {
+      if (!target) continue;
+      after = after.split(target).join("");
+    }
+    after = after.replace(/<span class="eyebrow">\s*<\/span>\s*/gi, "");
+    after = after.replace(/\n{3,}/g, "\n\n");
+
+    if (after !== before) {
+      changed.add(file.path);
+      return { ...file, content: after };
+    }
+    return file;
+  });
+
+  if (changed.size === 0) {
+    return { project, changedFiles: [] };
+  }
+
+  const withStatic = {
+    ...next,
+    staticSite: {
+      ...(next.staticSite || {}),
+      mode: "skill-direct",
+      files: updatedFiles,
+      generation: {
+        ...((next.staticSite || {}).generation || {}),
+        refinedAt: nowIso(),
+        refineInstruction: normalizedInstruction.slice(0, 400),
+        refineMode: "visual-skill+deterministic-fixup",
+      },
+    },
+  };
+  const withSyncedPages = syncPagesFromStaticFiles(withStatic);
+  return {
+    project: withSyncedPages,
+    changedFiles: Array.from(changed).sort((a, b) => a.localeCompare(b)),
+  };
+}
+
+type RefineSkillEdit = {
+  path: string;
+  content: string;
+  reason?: string;
+};
+
+function parseJsonFromLlmText(raw: string): any | undefined {
+  const text = String(raw || "").trim();
+  if (!text) return undefined;
+  try {
+    return JSON.parse(text);
+  } catch {
+    const start = text.indexOf("{");
+    const end = text.lastIndexOf("}");
+    if (start < 0 || end <= start) return undefined;
+    try {
+      return JSON.parse(text.slice(start, end + 1));
+    } catch {
+      return undefined;
+    }
+  }
+}
+
+function normalizeRefineSkillEdits(rawEdits: unknown, allowedPaths: Set<string>): RefineSkillEdit[] {
+  if (!Array.isArray(rawEdits)) return [];
+  const edits: RefineSkillEdit[] = [];
+  const seen = new Set<string>();
+  for (const row of rawEdits) {
+    const normalizedPath = normalizePath(String((row as any)?.path || ""));
+    const content = String((row as any)?.content || "");
+    const reason = String((row as any)?.reason || "").trim();
+    if (!normalizedPath || !allowedPaths.has(normalizedPath)) continue;
+    if (!content.trim()) continue;
+    if (seen.has(normalizedPath)) continue;
+    seen.add(normalizedPath);
+    edits.push({
+      path: normalizedPath,
+      content,
+      ...(reason ? { reason } : {}),
+    });
+  }
+  return edits;
+}
+
+async function applyRefineInstructionWithSkill(params: {
+  project: any;
+  instruction: string;
+  skillDirective: string;
+  providerConfig: ProviderConfig;
+  timeoutMs: number;
+}): Promise<{ project: any; changedFiles: string[]; summary?: string }> {
+  const normalizedInstruction = String(params.instruction || "").trim();
+  if (!normalizedInstruction) {
+    return { project: params.project, changedFiles: [] };
+  }
+
+  const next = ensureSkillDirectStaticProject(params.project);
+  const files = dedupeFiles((next?.staticSite?.files || []) as any[]);
+  if (files.length === 0) {
+    return { project: next, changedFiles: [] };
+  }
+
+  const fileContext = files
+    .map((file) => ({
+      path: normalizePath(String(file.path || "")),
+      type: String(file.type || guessMimeByPath(String(file.path || ""))),
+      content: String(file.content || ""),
+    }))
+    .filter((file) => !!file.path)
+    .slice(0, 12)
+    .map((file) => ({
+      ...file,
+      content: file.content.slice(0, 24_000),
+    }));
+
+  const allowedPaths = new Set(fileContext.map((file) => file.path));
+  const model = createModelForProvider(
+    params.providerConfig,
+    Math.max(25_000, Number(params.timeoutMs || 90_000)),
+    Math.max(1200, Number(process.env.CHAT_REFINE_MAX_TOKENS || 6000)),
+    0.15,
+  );
+
+  const systemPrompt = [
+    "You are a senior frontend refinement engineer.",
+    "Apply visual/code refinements to an existing static website project.",
+    "Return strict JSON only.",
+    "Never output markdown fences.",
+  ].join(" ");
+
+  const userPrompt = [
+    "Task: apply the user refine request to existing files.",
+    "",
+    "User refine request:",
+    normalizedInstruction,
+    "",
+    "Skill directive (must follow):",
+    params.skillDirective || "(none)",
+    "",
+    "Current files (path + full content):",
+    JSON.stringify(fileContext, null, 2),
+    "",
+    "Output JSON schema:",
+    "{",
+    '  "summary": "short string",',
+    '  "edits": [',
+    '    { "path": "/index.html", "content": "<full updated file content>", "reason": "what changed" }',
+    "  ]",
+    "}",
+    "",
+    "Rules:",
+    "- Output full file content for each edited file (not patch).",
+    "- Only edit files that are truly needed.",
+    "- Keep HTML/CSS/JS valid and production-safe.",
+    "- For deletion requests, remove the exact target text/element instead of adding comments.",
+    "- If request says remove menu button, remove the corresponding button/trigger from nav markup and related JS hooks when needed.",
+  ].join("\n");
+
+  const ai = await invokeModelWithIdleTimeout({
+    model,
+    messages: [new SystemMessage(systemPrompt), new HumanMessage(userPrompt)],
+    timeoutMs: Math.max(25_000, Number(params.timeoutMs || 90_000)),
+    operation: "refine-skill",
+  });
+  const raw = String(ai?.content || "").trim();
+  const parsed = parseJsonFromLlmText(raw);
+  const edits = normalizeRefineSkillEdits(parsed?.edits, allowedPaths);
+  if (edits.length === 0) {
+    return {
+      project: next,
+      changedFiles: [],
+      summary: String(parsed?.summary || "").trim(),
+    };
+  }
+
+  const fileMap = new Map(
+    files.map((file) => [normalizePath(String(file.path || "")), { ...file }]),
+  );
+  const changed = new Set<string>();
+  for (const edit of edits) {
+    const existing = fileMap.get(edit.path);
+    if (!existing) continue;
+    const before = String(existing.content || "");
+    const after = String(edit.content || "");
+    if (!after.trim() || before === after) continue;
+    fileMap.set(edit.path, {
+      ...existing,
+      content: after,
+      type: String(existing.type || guessMimeByPath(edit.path)),
+    });
+    changed.add(edit.path);
+  }
+
+  const updatedFiles = Array.from(fileMap.values());
+  const withStatic = {
+    ...next,
+    staticSite: {
+      ...(next.staticSite || {}),
+      mode: "skill-direct",
+      files: updatedFiles,
+      generation: {
+        ...((next.staticSite || {}).generation || {}),
+        refinedAt: nowIso(),
+        refineInstruction: normalizedInstruction.slice(0, 400),
+        refineMode: "visual-skill",
+      },
+    },
+  };
+  const withSyncedPages = syncPagesFromStaticFiles(withStatic);
+
+  return {
+    project: withSyncedPages,
+    changedFiles: Array.from(changed).sort((a, b) => a.localeCompare(b)),
+    summary: String(parsed?.summary || "").trim() || undefined,
+  };
+}
+
+async function materializeSiteDirectoryFromProject(project: any, siteDir: string): Promise<{
+  fileCount: number;
+  generatedFiles: string[];
+}> {
+  const bundle = await Bundler.createBundle(project);
+  await fs.mkdir(siteDir, { recursive: true });
+  for (const entry of bundle.fileEntries) {
+    const normalizedPath = normalizePath(String(entry.path || ""));
+    const relative = normalizedPath.replace(/^\/+/, "");
+    const targetPath = path.resolve(siteDir, relative);
+    const root = path.resolve(siteDir);
+    if (!targetPath.startsWith(root)) {
+      throw new Error(`Invalid refine output file path: ${normalizedPath}`);
+    }
+    await fs.mkdir(path.dirname(targetPath), { recursive: true });
+    await fs.writeFile(targetPath, entry.content, "utf8");
+  }
+  return {
+    fileCount: bundle.fileEntries.length,
+    generatedFiles: bundle.fileEntries.map((entry) => normalizePath(entry.path)),
+  };
+}
+
+function toSafeProjectNameToken(value: string, fallback: string): string {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return (normalized || fallback).slice(0, 28);
+}
+
+function resolveDeployProjectName(project: any, state: AgentState, chatId: string): string {
+  const prefix = toSafeProjectNameToken(String(process.env.CLOUDFLARE_PAGES_PROJECT_PREFIX || "shpitto"), "shpitto");
+  const brandToken = toSafeProjectNameToken(
+    String(project?.branding?.name || project?.projectId || "site"),
+    "site",
+  );
+  const suffixSource = String((state as any)?.user_id || chatId || crypto.randomUUID());
+  const suffixToken = toSafeProjectNameToken(sanitizePathToken(suffixSource), "deploy").slice(0, 10);
+  const merged = `${prefix}-${brandToken}-${suffixToken}`
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return merged.slice(0, 58);
 }
 
 function detectLocale(text: string, preferred?: string): "zh-CN" | "en" {
@@ -178,12 +899,57 @@ function stripMarkdownCodeFences(raw: string): string {
   return text;
 }
 
-function extractSkillDirectiveSnippet(skill: ProjectSkillDescriptor, maxLen = 2400): string {
+function normalizeGeneratedCss(rawCss: string): string {
+  const css = stripMarkdownCodeFences(rawCss).trim();
+  if (!css) return "";
+  if (!/mobile-nav-toggle/i.test(css)) return css;
+  if (/runtime-nav-toggle-fix/i.test(css)) return css;
+  return [
+    css,
+    "",
+    "/* runtime-nav-toggle-fix */",
+    ".mobile-nav-toggle,",
+    ".mobile-nav-toggle.btn {",
+    "  display: none;",
+    "}",
+    "",
+    "@media (max-width: 48rem) {",
+    "  .mobile-nav-toggle,",
+    "  .mobile-nav-toggle.btn {",
+    "    display: inline-flex;",
+    "    align-items: center;",
+    "  }",
+    "",
+    "  .site-nav {",
+    "    display: none;",
+    "    width: 100%;",
+    "    flex-direction: column;",
+    "    align-items: flex-start;",
+    "    gap: var(--space-02, 0.5rem);",
+    "  }",
+    "",
+    "  .site-nav.is-open {",
+    "    display: flex;",
+    "  }",
+    "}",
+  ].join("\n");
+}
+
+function extractSkillDirectiveSnippet(skill: ProjectSkillDescriptor, maxLen = 12000): string {
   const raw = String(skill?.content || "");
   const noFrontmatter = raw.replace(/^---[\s\S]*?---\s*/m, "");
   const compact = noFrontmatter.replace(/\r\n/g, "\n").trim();
   if (!compact) return "";
+  if (!Number.isFinite(maxLen) || maxLen <= 0) return compact;
   return compact.slice(0, Math.max(300, maxLen));
+}
+
+function clipTextWithBudget(input: string, maxChars: number): string {
+  const text = String(input || "").trim();
+  if (!text) return "";
+  if (!Number.isFinite(maxChars) || maxChars <= 0) return text;
+  if (text.length <= maxChars) return text;
+  return `${text.slice(0, Math.max(200, maxChars - 64)).trim()}\n\n[Truncated due to prompt budget]`;
 }
 
 async function resolveWebsiteRuntimeSkill(params: {
@@ -206,14 +972,54 @@ async function resolveWebsiteRuntimeSkill(params: {
   }
   const loadedSkillIds = Array.from(new Set(WEBSITE_GENERATION_SKILL_BUNDLE.map((id) => resolveProjectSkillAlias(id))));
   const skillDirective = extractSkillDirectiveSnippet(loadedSkill);
+  const existingWorkflow = ((params.state as any)?.workflow_context || {}) as Record<string, unknown>;
+  const hasExistingGuidance =
+    String(existingWorkflow.selectionCriteria || "").trim().length > 0 &&
+    String(existingWorkflow.sequentialWorkflow || "").trim().length > 0 &&
+    String(existingWorkflow.designMd || "").trim().length > 0;
+
+  let styleHit = ((params.state as any)?.design_hit || undefined) as DesignSkillHit | undefined;
+  let stylePreset = normalizeStylePreset(existingWorkflow.stylePreset as Partial<DesignStylePreset>, {});
+  let guidance = {
+    selectionCriteria: String(existingWorkflow.selectionCriteria || ""),
+    sequentialWorkflow: String(existingWorkflow.sequentialWorkflow || ""),
+    workflowGuide: String(existingWorkflow.workflowGuide || ""),
+    rulesSummary: String(existingWorkflow.rulesSummary || ""),
+    designMd: String(existingWorkflow.designMd || ""),
+  };
+  if (!hasExistingGuidance || !styleHit) {
+    const requirementText = extractRequirementText(params.state);
+    const workflowContext = await loadWorkflowSkillContext(requirementText);
+    stylePreset = normalizeStylePreset(workflowContext.stylePreset, {});
+    styleHit = workflowContext.hit;
+    guidance = {
+      selectionCriteria: workflowContext.selectionCriteria,
+      sequentialWorkflow: workflowContext.sequentialWorkflow,
+      workflowGuide: workflowContext.workflowGuide,
+      rulesSummary: workflowContext.rulesSummary,
+      designMd: workflowContext.designMd,
+    };
+  }
+
   const stateWithSkill: AgentState = {
     ...params.state,
+    design_hit: styleHit,
     workflow_context: {
       ...(params.state.workflow_context || {}),
       skillId: loadedSkill.id,
       skillDirective,
       loadedSkillIds,
       skillMdPath: loadedSkill.skillMdPath,
+      selectionCriteria: guidance.selectionCriteria,
+      sequentialWorkflow: guidance.sequentialWorkflow,
+      workflowGuide: guidance.workflowGuide,
+      rulesSummary: guidance.rulesSummary,
+      designMd: guidance.designMd,
+      stylePreset,
+      designSystemId: styleHit?.id,
+      designSystemName: styleHit?.name,
+      designSelectionReason:
+        (styleHit?.selection_candidates || []).find((item) => item.id === styleHit?.id)?.reason || styleHit?.design_desc,
     } as any,
   };
   return {
@@ -251,12 +1057,12 @@ function ensureHtmlDocument(rawHtml: string): string {
   }
   if (!/<\/body>/i.test(html)) html = `${html}\n</body>`;
   if (!/<\/html>/i.test(html)) html = `${html}\n</html>`;
-  if (!/href=["']\/styles\.css["']/i.test(html)) {
+  if (!/<link\b[^>]*href=["'][^"']*styles\.css(?:[?#][^"']*)?["'][^>]*>/i.test(html)) {
     if (/<\/head>/i.test(html)) {
       html = html.replace(/<\/head>/i, `  <link rel="stylesheet" href="/styles.css" />\n</head>`);
     }
   }
-  if (!/src=["']\/script\.js["']/i.test(html)) {
+  if (!/<script\b[^>]*src=["'][^"']*script\.js(?:[?#][^"']*)?["'][^>]*>/i.test(html)) {
     if (/<\/body>/i.test(html)) {
       html = html.replace(/<\/body>/i, `  <script src="/script.js"></script>\n</body>`);
     }
@@ -409,7 +1215,12 @@ function renderLocalFindings(requirementText: string, decision: LocalDecisionPla
   );
 }
 
-function renderLocalDesign(requirementText: string, locale: "zh-CN" | "en", decision: LocalDecisionPlan): string {
+function renderLocalDesign(
+  requirementText: string,
+  locale: "zh-CN" | "en",
+  decision: LocalDecisionPlan,
+  stylePreset: DesignStylePreset = DEFAULT_STYLE_PRESET,
+): string {
   const langLine = locale === "zh-CN" ? "中文为主，工业风，高对比。" : "Primary language: English. Industrial, high-contrast visual system.";
   return [
     "# DESIGN",
@@ -417,10 +1228,12 @@ function renderLocalDesign(requirementText: string, locale: "zh-CN" | "en", deci
     langLine,
     "",
     "## Tokens",
-    "- Primary: #1F2937",
-    "- Accent: #F59E0B",
-    "- Background: #F3F4F6",
-    "- Font stack: Inter, Segoe UI, system-ui, sans-serif",
+    `- Primary: ${stylePreset.colors.primary}`,
+    `- Accent: ${stylePreset.colors.accent}`,
+    `- Background: ${stylePreset.colors.background}`,
+    `- Surface: ${stylePreset.colors.surface}`,
+    `- Text: ${stylePreset.colors.text}`,
+    `- Font stack: ${stylePreset.typography}`,
     "",
     "## Prompt Excerpt",
     String(requirementText || "").trim().slice(0, 1600) || "(empty)",
@@ -430,17 +1243,19 @@ function renderLocalDesign(requirementText: string, locale: "zh-CN" | "en", deci
   ].join("\n");
 }
 
-function renderLocalStyles(): string {
+function renderLocalStyles(stylePreset: DesignStylePreset = DEFAULT_STYLE_PRESET): string {
   return [
     ":root {",
-    "  --bg: #f3f4f6;",
-    "  --fg: #111827;",
-    "  --muted: #6b7280;",
-    "  --primary: #1f2937;",
-    "  --accent: #f59e0b;",
+    `  --bg: ${stylePreset.colors.background.toLowerCase()};`,
+    `  --fg: ${stylePreset.colors.text.toLowerCase()};`,
+    `  --muted: ${stylePreset.colors.muted.toLowerCase()};`,
+    `  --primary: ${stylePreset.colors.primary.toLowerCase()};`,
+    `  --accent: ${stylePreset.colors.accent.toLowerCase()};`,
+    `  --surface: ${stylePreset.colors.surface.toLowerCase()};`,
+    `  --border: ${stylePreset.colors.border.toLowerCase()};`,
     "}",
     "* { box-sizing: border-box; }",
-    "body { margin: 0; font-family: Inter, 'Segoe UI', system-ui, sans-serif; color: var(--fg); background: var(--bg); }",
+    `body { margin: 0; font-family: ${stylePreset.typography}; color: var(--fg); background: var(--bg); }`,
     "a { color: inherit; text-decoration: none; }",
     ".container { width: min(1200px, 92vw); margin: 0 auto; }",
     "header { background: var(--primary); color: #fff; position: sticky; top: 0; z-index: 10; }",
@@ -452,7 +1267,7 @@ function renderLocalStyles(): string {
     ".btn { display: inline-block; border: 0; border-radius: 10px; padding: 12px 16px; font-weight: 700; cursor: pointer; }",
     ".btn-primary { background: var(--accent); color: #111827; }",
     ".grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }",
-    ".card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px; box-shadow: 0 6px 22px rgba(17,24,39,.06); }",
+    ".card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; box-shadow: 0 6px 22px rgba(17,24,39,.06); }",
     "footer { margin-top: 50px; background: #111827; color: #fff; padding: 26px 0; }",
     "form { display: grid; gap: 10px; }",
     "input, textarea, select { width: 100%; border: 1px solid #d1d5db; border-radius: 10px; padding: 10px 12px; }",
@@ -627,7 +1442,95 @@ type RuntimeContext = {
   providerConfig: ProviderConfig;
   skillId: string;
   enabledSkillIds: string[];
+  stylePreset: DesignStylePreset;
+  designHit?: DesignSkillHit;
+  guidance: WorkflowGuidancePack;
+  designConfirm: DesignConfirmSnapshot;
+  designSpec: DesignSpec;
+  designContext: DesignContext;
 };
+
+function toRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value as Record<string, unknown>;
+}
+
+function extractPrimaryFontFamily(fontStack: string): string {
+  const raw = String(fontStack || "").trim();
+  if (!raw) return "Space Grotesk";
+  const first = raw.split(",")[0]?.trim() || "Space Grotesk";
+  return first.replace(/^["']|["']$/g, "");
+}
+
+function buildRuntimeDesignSpec(params: {
+  stylePreset: DesignStylePreset;
+  designHit?: DesignSkillHit;
+  overrides?: Record<string, unknown>;
+}): DesignSpec {
+  const { stylePreset, designHit, overrides } = params;
+  const primaryFont = extractPrimaryFontFamily(stylePreset.typography);
+  const appliedDesignSystem = {
+    name: designHit?.id || "runtime-selected-style",
+    visualTheme: designHit?.design_desc || "Skill runtime style preset",
+    colors: {
+      primary: [{ name: "primary", value: stylePreset.colors.primary }],
+      accent: [{ name: "accent", value: stylePreset.colors.accent }],
+      neutral: [
+        { name: "background", value: stylePreset.colors.background },
+        { name: "surface", value: stylePreset.colors.surface },
+        { name: "border", value: stylePreset.colors.border },
+      ],
+      semantic: [],
+      shadows: [{ name: "card-shadow", value: "0 6px 22px rgba(17,24,39,.06)" }],
+    },
+    typography: [
+      {
+        role: "Heading",
+        font: primaryFont,
+        size: "48px",
+        weight: 700,
+        lineHeight: "1.15",
+        letterSpacing: "-0.02em",
+      },
+      {
+        role: "Body",
+        font: primaryFont,
+        size: "16px",
+        weight: 400,
+        lineHeight: "1.6",
+        letterSpacing: "0",
+      },
+    ],
+    shadows: {
+      card: "0 6px 22px rgba(17,24,39,.06)",
+    },
+    layout: {
+      spacing: [4, 8, 12, 16, 24, 32],
+      maxWidth: "1200px",
+      grid: "12-col",
+      borderRadius: {
+        card: stylePreset.borderRadius,
+      },
+    },
+    dosAndDonts: { dos: [], donts: [] },
+  };
+
+  return {
+    version: "1.0",
+    sourceDesignSystems: [designHit?.id || "runtime-selected-style"],
+    appliedDesignSystem: appliedDesignSystem as any,
+    customOverrides: overrides || {},
+    generatedAt: nowIso(),
+    confirmedItems: [
+      "primary-color",
+      "accent-color",
+      "typography",
+      "spacing",
+      "border-radius",
+      "component-style",
+    ],
+  };
+}
 
 class NativeSkillRuntime {
   private readonly context: RuntimeContext;
@@ -638,6 +1541,8 @@ class NativeSkillRuntime {
   private files: StaticArtifactFile[];
   private workflowFiles: WorkflowArtifactFile[];
   private pages: Array<{ path: string; html: string }>;
+  private pageContexts: PageContext[];
+  private qaRecords: PageQaRecord[];
   private readonly requirementText: string;
   private readonly skillDirectiveCache = new Map<string, string>();
 
@@ -663,6 +1568,42 @@ class NativeSkillRuntime {
     const enabledSkillIds = Array.isArray((params.state as any)?.workflow_context?.loadedSkillIds)
       ? ((params.state as any)?.workflow_context?.loadedSkillIds || []).map((id: string) => String(id).trim()).filter(Boolean)
       : [skillId];
+    const workflowContext = toRecord((params.state as any)?.workflow_context);
+    const stylePreset = normalizeStylePreset(
+      (workflowContext.stylePreset as Partial<DesignStylePreset>) || (params.state as any)?.design_hit?.style_preset,
+      {},
+    );
+    const designHit = ((params.state as any)?.design_hit || undefined) as DesignSkillHit | undefined;
+    const designOverrides = toRecord(workflowContext.designOverrides);
+    const guidance: WorkflowGuidancePack = {
+      selectionCriteria: String(workflowContext.selectionCriteria || ""),
+      sequentialWorkflow: String(workflowContext.sequentialWorkflow || ""),
+      workflowGuide: String(workflowContext.workflowGuide || ""),
+      rulesSummary: String(workflowContext.rulesSummary || ""),
+      designMd: String(workflowContext.designMd || ""),
+    };
+    const designConfirm: DesignConfirmSnapshot = {
+      selectedStyleId: String(workflowContext.designSystemId || designHit?.id || "runtime-selected-style"),
+      selectedStyleName: String(workflowContext.designSystemName || designHit?.name || "Runtime Selected Style"),
+      reason: String(workflowContext.designSelectionReason || designHit?.design_desc || "auto-selected"),
+      colors: {
+        primary: stylePreset.colors.primary,
+        accent: stylePreset.colors.accent,
+        background: stylePreset.colors.background,
+        surface: stylePreset.colors.surface,
+        text: stylePreset.colors.text,
+        border: stylePreset.colors.border,
+      },
+      typography: stylePreset.typography,
+      borderRadius: stylePreset.borderRadius,
+      overrides: designOverrides,
+    };
+    const designSpec = buildRuntimeDesignSpec({
+      stylePreset,
+      designHit,
+      overrides: designOverrides,
+    });
+    const designContext = buildDesignContext(designSpec);
     const existingStatic = dedupeFiles((params.state as any)?.site_artifacts?.staticSite?.files || []);
     const existingWorkflow = dedupeFiles((params.state as any)?.site_artifacts?.workflowArtifacts?.files || []);
     const existingPages = Array.isArray((params.state as any)?.site_artifacts?.pages)
@@ -680,14 +1621,24 @@ class NativeSkillRuntime {
       providerConfig,
       skillId,
       enabledSkillIds,
+      stylePreset,
+      designHit,
+      guidance,
+      designConfirm,
+      designSpec,
+      designContext,
     };
     this.requirementText = requirementText;
     this.files = existingStatic;
     this.workflowFiles = existingWorkflow;
     this.pages = existingPages;
+    this.pageContexts = existingPages.map((page: { path: string; html: string }, index: number) =>
+      this.buildPageContextFromHtml(page.path, page.html, index + 1),
+    );
+    this.qaRecords = [];
     this.onStep = params.onStep;
     this.timeoutMs = Math.max(30_000, Number(params.timeoutMs || 90_000));
-    this.totalSteps = 6 + routes.length;
+    this.totalSteps = 8 + routes.length;
   }
 
   private getFile(pathName: string): StaticArtifactFile | undefined {
@@ -740,22 +1691,31 @@ class NativeSkillRuntime {
     await this.emit(pathName, `generating:${stageLabel}`);
   }
 
-  private async invokeLlm(prompt: string, opts?: { maxTokens?: number; timeoutMs?: number; temperature?: number }): Promise<string> {
+  private async invokeLlm(
+    prompt: string,
+    opts?: { maxTokens?: number; timeoutMs?: number; temperature?: number; systemPrompt?: string },
+  ): Promise<string> {
     const isTestMode = process.env.NODE_ENV === "test";
     if (isTestMode) return "";
     const timeoutMs = Math.max(20_000, Number(opts?.timeoutMs || this.timeoutMs));
     const maxTokens = Math.max(256, Number(opts?.maxTokens || 8192));
     const model = createModelForProvider(this.context.providerConfig, timeoutMs, maxTokens, opts?.temperature ?? 0.2);
+    const messages: BaseMessage[] = [];
+    const systemPrompt = String(opts?.systemPrompt || "").trim();
+    if (systemPrompt) {
+      messages.push(new SystemMessage(systemPrompt));
+    }
+    messages.push(new HumanMessage(prompt));
     const ai = await invokeModelWithIdleTimeout({
       model,
-      messages: [new HumanMessage(prompt)],
+      messages,
       timeoutMs,
       operation: "skill-native-stage",
     });
     return String(ai?.content || "").trim();
   }
 
-  private async loadSkillDirective(skillId: string, maxLen = 900): Promise<string> {
+  private async loadSkillDirective(skillId: string, maxLen = 6000): Promise<string> {
     const resolved = resolveProjectSkillAlias(skillId);
     if (!resolved) return "";
     const cacheKey = `${resolved}:${maxLen}`;
@@ -779,10 +1739,10 @@ class NativeSkillRuntime {
       new Set(stageIds.map((id) => resolveProjectSkillAlias(id)).filter((id) => !!id && allowSet.has(id))),
     );
     const blocks: string[] = [];
-    const maxDirectiveChars = Math.max(800, Number(process.env.SKILL_DYNAMIC_DIRECTIVE_MAX_CHARS || 3600));
+    const maxDirectiveChars = Math.max(1200, Number(process.env.SKILL_DYNAMIC_DIRECTIVE_MAX_CHARS || 24000));
     let used = 0;
     for (const id of selectedIds) {
-      const snippet = await this.loadSkillDirective(id, 900);
+      const snippet = await this.loadSkillDirective(id, 6000);
       if (!snippet) continue;
       const block = `### ${id}\n${snippet}`;
       if (used > 0 && used + block.length > maxDirectiveChars) break;
@@ -790,6 +1750,243 @@ class NativeSkillRuntime {
       used += block.length;
     }
     return { ids: selectedIds, text: blocks.join("\n\n") };
+  }
+
+  private buildStageGuidance(stage: "styles" | "page" | "script"): string {
+    const baseBudget = Math.max(10_000, Number(process.env.SKILL_RUNTIME_GUIDANCE_MAX_CHARS || 72_000));
+    const stageBudget = stage === "page" ? baseBudget : Math.round(baseBudget * 0.7);
+    const sequentialBudget = Math.max(4000, Number(process.env.SKILL_RUNTIME_SEQUENTIAL_MAX_CHARS || 26_000));
+    const designBudget = Math.max(4000, Number(process.env.SKILL_RUNTIME_DESIGN_MD_MAX_CHARS || 30_000));
+    const rulesBudget = Math.max(2500, Number(process.env.SKILL_RUNTIME_RULES_MAX_CHARS || 10_000));
+    const workflowBudget = Math.max(1000, Number(process.env.SKILL_RUNTIME_WORKFLOW_GUIDE_MAX_CHARS || 4000));
+
+    const entries: Array<{ title: string; content: string }> = [
+      {
+        title: "sequential-workflow",
+        content: clipTextWithBudget(this.context.guidance.sequentialWorkflow, sequentialBudget),
+      },
+      {
+        title: "design-md",
+        content: clipTextWithBudget(this.context.guidance.designMd, designBudget),
+      },
+      {
+        title: "rules-summary",
+        content: clipTextWithBudget(this.context.guidance.rulesSummary, rulesBudget),
+      },
+      {
+        title: "workflow-guide",
+        content: clipTextWithBudget(this.context.guidance.workflowGuide, workflowBudget),
+      },
+    ];
+
+    const blocks: string[] = [];
+    let used = 0;
+    for (const entry of entries) {
+      const text = String(entry.content || "").trim();
+      if (!text) continue;
+      const block = `## ${entry.title}\n${text}`;
+      if (used > 0 && used + block.length > stageBudget) continue;
+      blocks.push(block);
+      used += block.length;
+    }
+    return blocks.join("\n\n");
+  }
+
+  private extractHeadingRecords(html: string): HeadingRecord[] {
+    const records: HeadingRecord[] = [];
+    const matches = String(html || "").matchAll(/<h([1-6])[^>]*>([\s\S]*?)<\/h\1>/gi);
+    for (const match of matches) {
+      const level = Number(match[1]);
+      const text = String(match[2] || "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (!text) continue;
+      const usedTerms = text
+        .toLowerCase()
+        .split(/[^a-z0-9\u4e00-\u9fff]+/g)
+        .filter((token) => token.length >= 2)
+        .slice(0, 8);
+      records.push({ text, level, usedTerms });
+      if (records.length >= 18) break;
+    }
+    return records;
+  }
+
+  private extractTermRecords(headings: HeadingRecord[]): TermRecord[] {
+    const counter = new Map<string, number>();
+    for (const heading of headings) {
+      for (const token of heading.usedTerms || []) {
+        counter.set(token, Number(counter.get(token) || 0) + 1);
+      }
+    }
+    return Array.from(counter.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 24)
+      .map(([term, usageCount]) => ({
+        term,
+        definition: `Recurring term in generated headings`,
+        usageCount,
+      }));
+  }
+
+  private extractLinks(html: string): Array<{ target: string; anchor: string; type: string }> {
+    const links: Array<{ target: string; anchor: string; type: string }> = [];
+    const matches = String(html || "").matchAll(/<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi);
+    for (const match of matches) {
+      const target = normalizePath(String(match[1] || ""));
+      const anchor = String(match[2] || "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (!target || !anchor) continue;
+      links.push({
+        target,
+        anchor,
+        type: target.startsWith("/") ? "internal" : "external",
+      });
+      if (links.length >= 24) break;
+    }
+    return links;
+  }
+
+  private buildPageContextFromHtml(route: string, html: string, pageOrder: number): PageContext {
+    const normalizedRoute = normalizePath(route);
+    const blueprint = findPageBlueprint(this.context.decision, normalizedRoute);
+    const headings = this.extractHeadingRecords(html);
+    const terms = this.extractTermRecords(headings);
+    const colorsUsed: ColorUsage[] = [
+      { token: "primary", value: this.context.stylePreset.colors.primary, usage: "buttons, nav, highlights" },
+      { token: "accent", value: this.context.stylePreset.colors.accent, usage: "cta, emphasis" },
+      { token: "surface", value: this.context.stylePreset.colors.surface, usage: "cards, sections" },
+    ];
+    const typographyUsed: TypoUsage[] = [
+      {
+        role: "Body",
+        font: extractPrimaryFontFamily(this.context.stylePreset.typography),
+        size: "16px",
+        usage: "body copy",
+      },
+      {
+        role: "Heading",
+        font: extractPrimaryFontFamily(this.context.stylePreset.typography),
+        size: "clamp(28px, 4vw, 48px)",
+        usage: "hero headings",
+      },
+    ];
+
+    return buildPageContext(
+      normalizedRoute,
+      pageOrder,
+      {
+        headings,
+        keyTerms: terms,
+        featureList: blueprint.contentSkeleton.slice(0, 8),
+        toneAndManner: this.context.locale === "zh-CN" ? "专业、可信、工业化" : "professional, credible, industrial",
+      },
+      {
+        colorsUsed,
+        typographyUsed,
+        componentsUsed: blueprint.contentSkeleton.slice(0, 10),
+      },
+      {
+        sections: blueprint.contentSkeleton.slice(0, 10),
+        links: this.extractLinks(html),
+        navigationItems: buildNavFromDecision(this.context.decision).map((item) => item.label),
+      },
+    );
+  }
+
+  private upsertPageContext(pageContext: PageContext) {
+    this.pageContexts = [
+      ...this.pageContexts.filter((item) => normalizePath(item.pageName) !== normalizePath(pageContext.pageName)),
+      pageContext,
+    ].sort((a, b) => a.pageOrder - b.pageOrder);
+  }
+
+  private upsertQaRecord(record: PageQaRecord) {
+    this.qaRecords = [...this.qaRecords.filter((item) => normalizePath(item.route) !== normalizePath(record.route)), record];
+  }
+
+  private buildSequentialPageContext(pageOrder: number): string {
+    return buildContextForPageN(pageOrder, this.pageContexts, {
+      maxChars: PAGE_CONTEXT_MAX_CHARS,
+      maxPages: PAGE_CONTEXT_MAX_PAGES,
+      maxTerms: PAGE_CONTEXT_MAX_TERMS,
+    });
+  }
+
+  private async ensureDesignConfirm() {
+    const existing = this.workflowFiles.find((f) => normalizePath(f.path).toLowerCase() === "/design-confirmation.json");
+    if (existing?.content?.trim()) return;
+    await this.writeWorkflow(
+      "/design-confirmation.json",
+      JSON.stringify(
+        {
+          generatedAt: nowIso(),
+          selected: this.context.designConfirm,
+          sourceSkill: this.context.skillId,
+          recommendationCandidates: (this.context.designHit?.selection_candidates || []).slice(0, 3),
+        },
+        null,
+        2,
+      ),
+      "design_confirm",
+    );
+  }
+
+  private async validatePageWithRetry(params: {
+    route: string;
+    promptBuilder: (qaFeedback: string, attempt: number) => string;
+    systemPrompt: string;
+    maxTokens: number;
+    timeoutMs: number;
+    fallbackHtml: string;
+  }): Promise<string> {
+    let attempt = 0;
+    let qaFeedback = "";
+    let finalHtml = "";
+    let finalQa: ValidationResult | null = null;
+
+    while (attempt <= QA_MAX_RETRIES) {
+      const prompt = params.promptBuilder(qaFeedback, attempt);
+      const modelHtml = await this.invokeLlm(prompt, {
+        maxTokens: params.maxTokens,
+        timeoutMs: params.timeoutMs,
+        systemPrompt: params.systemPrompt,
+      });
+      finalHtml = ensureHtmlDocument(modelHtml);
+      if (!finalHtml.trim()) finalHtml = params.fallbackHtml;
+
+      finalQa = await validateComponent(finalHtml, this.context.designSpec, this.context.designContext);
+      const pass = finalQa.passed && Number(finalQa.score || 0) >= QA_MIN_SCORE;
+      if (pass) break;
+
+      const hints = [
+        ...((finalQa.errors || []).slice(0, 6)),
+        ...((finalQa.warnings || []).slice(0, 4)),
+      ];
+      qaFeedback = hints.length > 0 ? hints.map((item) => `- ${item}`).join("\n") : "- Improve design compliance and accessibility.";
+      attempt += 1;
+      if (attempt > QA_MAX_RETRIES) break;
+    }
+
+    const qa = finalQa || {
+      passed: true,
+      score: 100,
+      checks: [],
+      errors: [],
+      warnings: [],
+    };
+    this.upsertQaRecord({
+      route: params.route,
+      passed: qa.passed && Number(qa.score || 0) >= QA_MIN_SCORE,
+      score: Number(qa.score || 0),
+      retries: Math.min(attempt, QA_MAX_RETRIES),
+      errors: qa.errors || [],
+      warnings: qa.warnings || [],
+    });
+    return finalHtml || params.fallbackHtml;
   }
 
   private async ensureTaskPlan() {
@@ -815,7 +2012,7 @@ class NativeSkillRuntime {
     if (existing?.content?.trim()) return;
     await this.writeWorkflow(
       "/DESIGN.md",
-      renderLocalDesign(this.requirementText, this.context.locale, this.context.decision),
+      renderLocalDesign(this.requirementText, this.context.locale, this.context.decision, this.context.stylePreset),
       "design",
     );
   }
@@ -825,24 +2022,40 @@ class NativeSkillRuntime {
     let css = "";
     if (process.env.NODE_ENV !== "test") {
       const stageSkill = await this.buildStageSkillDirective("styles");
+      const stageGuidance = this.buildStageGuidance("styles");
+      const systemPrompt = `You are a senior frontend design-system engineer.
+Generate only raw CSS for styles.css.
+Keep the output production-safe, responsive, and semantically consistent.
+Never include markdown fences or explanation text.
+Follow skill directives and design guidance strictly.`;
       const prompt = `Generate a single styles.css for a multi-page industrial website.
 Output raw CSS only. No markdown fences.
 Skill ID: ${this.context.skillId}
 Loaded Skills: ${stageSkill.ids.join(", ")}
 Skill directives:
 ${stageSkill.text}
+Guidance bundle:
+${stageGuidance}
 Locale: ${this.context.locale}
+Selected style: ${this.context.designConfirm.selectedStyleName} (${this.context.designConfirm.selectedStyleId})
+Style selection reason: ${this.context.designConfirm.reason}
+Design tokens:
+- colors: ${JSON.stringify(this.context.designConfirm.colors)}
+- typography: ${this.context.designConfirm.typography}
+- borderRadius: ${this.context.designConfirm.borderRadius}
 Routes: ${this.context.routes.join(", ")}
 Page blueprints:
 ${blueprintDigest(this.context.decision)}
 Requirements:
 ${this.requirementText.slice(0, 1800)}`;
-      css = stripMarkdownCodeFences(await this.invokeLlm(prompt, {
+      css = normalizeGeneratedCss(stripMarkdownCodeFences(await this.invokeLlm(prompt, {
         maxTokens: Number(process.env.LLM_MAX_TOKENS_SKILL_DIRECT_SHARED_ASSET || 12000),
         timeoutMs: Number(process.env.LLM_REQUEST_TIMEOUT_SKILL_DIRECT_SHARED_ASSET_MS || 120000),
-      }));
+        systemPrompt,
+      })));
     }
-    if (!css.trim()) css = renderLocalStyles();
+    if (!css.trim()) css = renderLocalStyles(this.context.stylePreset);
+    css = normalizeGeneratedCss(css);
     await this.writeSite("/styles.css", css, "styles");
   }
 
@@ -851,6 +2064,11 @@ ${this.requirementText.slice(0, 1800)}`;
     let js = "";
     if (process.env.NODE_ENV !== "test") {
       const stageSkill = await this.buildStageSkillDirective("script");
+      const stageGuidance = this.buildStageGuidance("script");
+      const systemPrompt = `You are a frontend JavaScript engineer.
+Generate only raw JavaScript for script.js.
+Keep behavior minimal, deterministic, and accessibility-friendly.
+No markdown fences and no explanatory text.`;
       const prompt = `Generate a single script.js for a multi-page static website.
 Output raw JavaScript only. No markdown fences.
 Include only small UI helpers.
@@ -858,6 +2076,8 @@ Skill ID: ${this.context.skillId}
 Loaded Skills: ${stageSkill.ids.join(", ")}
 Skill directives:
 ${stageSkill.text}
+Guidance bundle:
+${stageGuidance}
 Locale: ${this.context.locale}
 Routes: ${this.context.routes.join(", ")}
 Page blueprints:
@@ -865,6 +2085,7 @@ ${blueprintDigest(this.context.decision)}`;
       js = stripMarkdownCodeFences(await this.invokeLlm(prompt, {
         maxTokens: Number(process.env.LLM_MAX_TOKENS_SKILL_DIRECT_SHARED_ASSET || 8000),
         timeoutMs: Number(process.env.LLM_REQUEST_TIMEOUT_SKILL_DIRECT_SHARED_ASSET_MS || 120000),
+        systemPrompt,
       }));
     }
     if (!js.trim()) js = renderLocalScript();
@@ -876,50 +2097,72 @@ ${blueprintDigest(this.context.decision)}`;
     if (this.pages.some((p) => normalizePath(p.path) === normalizedRoute && String(p.html || "").trim())) return;
     const targetPath = routeToHtmlPath(normalizedRoute);
     const blueprint = findPageBlueprint(this.context.decision, normalizedRoute);
-    let html = "";
+    const pageOrder = this.pageContexts.length + 1;
+    const fallbackHtml = renderLocalPage({
+      route: normalizedRoute,
+      decision: this.context.decision,
+      requirementText: this.requirementText,
+    });
+    let html = fallbackHtml;
+
     if (process.env.NODE_ENV !== "test") {
       const stageSkill = await this.buildStageSkillDirective("page");
+      const stageGuidance = this.buildStageGuidance("page");
       const navLinks = buildNavFromDecision(this.context.decision)
         .map((item) => `${item.label}:${item.href}`)
         .join(", ");
-      const prompt = `Generate one complete HTML document for route ${normalizedRoute}.
-Output raw HTML only. No markdown.
+      const sequentialContext = this.buildSequentialPageContext(pageOrder);
+      const systemPrompt = [
+        "You are a staff frontend engineer generating complete static HTML pages.",
+        "Only output raw HTML. No markdown, no commentary.",
+        "Always include <!doctype html>, <html>, <head>, <body>.",
+        "Always include <link rel=\"stylesheet\" href=\"/styles.css\"> and <script src=\"/script.js\"></script>.",
+        "Follow design-system tokens, accessibility, and the provided skill guidance strictly.",
+      ].join("\n");
+      const promptBuilder = (qaFeedback: string, attempt: number) => `Generate one complete HTML document for route ${normalizedRoute}.
 Skill ID: ${this.context.skillId}
 Loaded Skills: ${stageSkill.ids.join(", ")}
 Skill directives:
 ${stageSkill.text}
-Must include:
-- <!doctype html>, <html>, <head>, <body>
-- <link rel="stylesheet" href="/styles.css">
-- <script src="/script.js"></script>
-- navigation links for routes (${navLinks})
+Guidance bundle:
+${stageGuidance}
+Selected style: ${this.context.designConfirm.selectedStyleName} (${this.context.designConfirm.selectedStyleId})
+Design rationale: ${this.context.designConfirm.reason}
+Design tokens:
+- colors: ${JSON.stringify(this.context.designConfirm.colors)}
+- typography: ${this.context.designConfirm.typography}
+- borderRadius: ${this.context.designConfirm.borderRadius}
+- overrides: ${JSON.stringify(this.context.designConfirm.overrides)}
+Locale: ${this.context.locale}
+Navigation links: ${navLinks}
 Page responsibility: ${blueprint.responsibility}
 Page skeleton: ${blueprint.contentSkeleton.join(" -> ")}
 Component mix: ${formatComponentMix(blueprint.componentMix)}
 Requirement:
-${this.requirementText.slice(0, 2600)}`;
-      const modelHtml = await this.invokeLlm(prompt, {
+${this.requirementText.slice(0, 2600)}
+${sequentialContext ? `\n${sequentialContext}` : ""}
+${qaFeedback ? `\nQA fix instructions (attempt ${attempt}):\n${qaFeedback}` : ""}`;
+
+      html = await this.validatePageWithRetry({
+        route: normalizedRoute,
+        promptBuilder,
+        systemPrompt,
         maxTokens: Number(process.env.LLM_MAX_TOKENS_SKILL_DIRECT_PAGE || 16000),
         timeoutMs:
           normalizedRoute === "/"
             ? Number(process.env.LLM_REQUEST_TIMEOUT_SKILL_DIRECT_ROOT_MS || 180000)
             : Number(process.env.LLM_REQUEST_TIMEOUT_SKILL_DIRECT_PAGE_MS || 150000),
-      });
-      console.log(`[ensurePage] route=${normalizedRoute} llm_output_len=${modelHtml.length} first200=${modelHtml.slice(0, 200).replace(/\n/g, "\\n")}`);
-      html = ensureHtmlDocument(modelHtml);
-      console.log(`[ensurePage] route=${normalizedRoute} ensureHtmlDocument_len=${html.length}`);
-    }
-    if (!html.trim()) {
-      console.log(`[ensurePage] route=${normalizedRoute} FALLBACK to renderLocalPage`);
-      html = renderLocalPage({
-        route: normalizedRoute,
-        decision: this.context.decision,
-        requirementText: this.requirementText,
+        fallbackHtml,
       });
     }
+
     this.setPage(normalizedRoute, html);
+    const pageContext = this.buildPageContextFromHtml(normalizedRoute, html, pageOrder);
+    this.upsertPageContext(pageContext);
+    const qa = this.qaRecords.find((item) => normalizePath(item.route) === normalizedRoute);
     this.stepIndex += 1;
-    await this.emit(targetPath, `generating:${normalizedRoute === "/" ? "index" : "pages"}`);
+    const qaSuffix = qa ? `:qa-${qa.score}` : "";
+    await this.emit(targetPath, `generating:${normalizedRoute === "/" ? "index" : "pages"}${qaSuffix}`);
   }
 
   private async repairAllPages() {
@@ -928,6 +2171,30 @@ ${this.requirementText.slice(0, 2600)}`;
     }
     this.stepIndex += 1;
     await this.emit("repair", "generating:repair");
+  }
+
+  private async ensureQaReport() {
+    const existing = this.workflowFiles.find((f) => normalizePath(f.path).toLowerCase() === "/qa-report.json");
+    if (existing?.content?.trim()) return;
+    const averageScore =
+      this.qaRecords.length > 0
+        ? Math.round(this.qaRecords.reduce((sum, item) => sum + Number(item.score || 0), 0) / this.qaRecords.length)
+        : 100;
+    await this.writeWorkflow(
+      "/qa-report.json",
+      JSON.stringify(
+        {
+          generatedAt: nowIso(),
+          minPassingScore: QA_MIN_SCORE,
+          retriesAllowed: QA_MAX_RETRIES,
+          averageScore,
+          records: this.qaRecords,
+        },
+        null,
+        2,
+      ),
+      "qa_report",
+    );
   }
 
   private buildSiteArtifacts(baseState: AgentState) {
@@ -973,14 +2240,15 @@ ${this.requirementText.slice(0, 2600)}`;
       branding: {
         name: brandName,
         colors: {
-          primary: "#1F2937",
-          accent: "#F59E0B",
+          primary: this.context.stylePreset.colors.primary,
+          accent: this.context.stylePreset.colors.accent,
         },
         style: {
-          borderRadius: "sm",
-          typography: "Inter, Segoe UI, system-ui, sans-serif",
+          borderRadius: this.context.stylePreset.borderRadius,
+          typography: this.context.stylePreset.typography,
         },
       },
+      skillHit: this.context.designHit,
       pages,
       staticSite: {
         mode: "skill-direct",
@@ -1002,6 +2270,7 @@ ${this.requirementText.slice(0, 2600)}`;
   async run(baseState: AgentState): Promise<AgentState> {
     await this.ensureTaskPlan();
     await this.ensureFindings();
+    await this.ensureDesignConfirm();
     await this.ensureDesign();
     await this.ensureStyles();
     await this.ensureScript();
@@ -1010,6 +2279,7 @@ ${this.requirementText.slice(0, 2600)}`;
       if (normalizePath(route) === "/") continue;
       await this.ensurePage(route);
     }
+    await this.ensureQaReport();
     await this.repairAllPages();
 
     const siteArtifacts = this.buildSiteArtifacts(baseState);
@@ -1040,7 +2310,7 @@ ${this.requirementText.slice(0, 2600)}`;
   }
 }
 
-export async function runSkillRuntimeExecutor(params: RunSkillRuntimeExecutorParams): Promise<SkillRuntimeExecutionSummary> {
+async function runLegacySkillRuntimeExecutor(params: RunSkillRuntimeExecutorParams): Promise<SkillRuntimeExecutionSummary> {
   const resolvedSkill = await resolveWebsiteRuntimeSkill({ state: params.state });
   const runtime = new NativeSkillRuntime({
     state: resolvedSkill.state,
@@ -1056,7 +2326,8 @@ export async function runSkillRuntimeExecutor(params: RunSkillRuntimeExecutorPar
   const pages = getPages(nextState);
   const generatedFiles = getGeneratedFilePaths(nextState);
   const completedPhases = collectCompletedPhases(nextState);
-  if (completedPhases.length === 0 || resolveNextRuntimePhase(nextState)) {
+  const missingPhases = SKILL_RUNTIME_FIXED_PHASES.filter((phase) => !completedPhases.includes(phase));
+  if (completedPhases.length === 0 || missingPhases.length > 0) {
     throw new Error("skill-runtime failed to complete all stages");
   }
   const finalText = String(assistantText || "").trim() || `Skill-native completed in ${elapsedMs}ms.`;
@@ -1074,34 +2345,627 @@ export async function runSkillRuntimeExecutor(params: RunSkillRuntimeExecutorPar
   };
 }
 
+export async function runSkillRuntimeExecutor(params: RunSkillRuntimeExecutorParams): Promise<SkillRuntimeExecutionSummary> {
+  if (USE_SKILL_TOOL_MODE) {
+    const summary = await runSkillToolExecutor(params as any);
+    return {
+      state: summary.state,
+      assistantText: summary.assistantText,
+      actions: summary.actions || [],
+      pageCount: summary.pageCount,
+      fileCount: summary.fileCount,
+      generatedFiles: summary.generatedFiles,
+      phase: String(summary.phase || summary.state.phase || "end"),
+      completedPhases: SKILL_RUNTIME_FIXED_PHASES.filter((phase) => summary.completedPhases.includes(phase)),
+      deployedUrl: summary.deployedUrl,
+    };
+  }
+  return await runLegacySkillRuntimeExecutor(params);
+}
+
+function toProgressStageMessage(stage: string, stepIndex?: number, totalSteps?: number): string {
+  const normalized = String(stage || "").trim();
+  const progress = Number.isFinite(Number(stepIndex)) && Number.isFinite(Number(totalSteps))
+    ? ` (${stepIndex}/${totalSteps})`
+    : "";
+  if (!normalized) return `Generation in progress${progress}`;
+  if (normalized.includes("design_confirm")) return `Design confirmation prepared${progress}`;
+  if (normalized.includes("task_plan")) return `Planning generation steps${progress}`;
+  if (normalized.includes("findings")) return `Analyzing requirements${progress}`;
+  if (normalized.includes("design")) return `Finalizing design tokens${progress}`;
+  if (normalized.includes("styles")) return `Generating shared styles.css${progress}`;
+  if (normalized.includes("script")) return `Generating shared script.js${progress}`;
+  if (normalized.includes("index")) return `Generating homepage${progress}`;
+  if (normalized.includes("pages")) return `Generating internal pages${progress}`;
+  if (normalized.includes("qa_report")) return `Running design QA summary${progress}`;
+  if (normalized.includes("repair")) return `Repairing and validating final output${progress}`;
+  if (normalized.includes("/")) return `Generating ${normalized}${progress}`;
+  return `Generation stage: ${normalized}${progress}`;
+}
+
+function compactMessageForSession(message: any): { role: string; content: string } {
+  const ctorName = String(message?.constructor?.name || "").toLowerCase();
+  let role = "assistant";
+  if (ctorName.includes("human")) role = "user";
+  else if (ctorName.includes("ai")) role = "assistant";
+  else if (String(message?.role || "").toLowerCase() === "user") role = "user";
+  else if (String(message?.role || "").toLowerCase() === "assistant") role = "assistant";
+  const content = String(message?.content || "").slice(0, 8000);
+  return { role, content };
+}
+
+function buildSessionSnapshot(state: AgentState): Partial<AgentState> {
+  const workflow = toRecord((state as any)?.workflow_context);
+  return {
+    phase: String(state.phase || "conversation"),
+    current_page_index: Number(state.current_page_index || 0),
+    attempt_count: Number(state.attempt_count || 0),
+    sitemap: Array.isArray(state.sitemap) ? state.sitemap : undefined,
+    industry: state.industry,
+    theme: state.theme,
+    design_hit: (state as any)?.design_hit,
+    user_id: state.user_id,
+    deployed_url: (state as any)?.deployed_url,
+    messages: (Array.isArray(state.messages) ? state.messages : []).slice(-20).map((msg: any) => compactMessageForSession(msg) as any),
+    workflow_context: {
+      runMode: workflow.runMode,
+      genMode: workflow.genMode,
+      generationMode: workflow.generationMode,
+      preferredLocale: workflow.preferredLocale,
+      sourceRequirement: workflow.sourceRequirement,
+      skillId: workflow.skillId,
+      refineSkillId: workflow.refineSkillId,
+      lockedProvider: workflow.lockedProvider,
+      lockedModel: workflow.lockedModel,
+      designSystemId: workflow.designSystemId,
+      designSystemName: workflow.designSystemName,
+      designSelectionReason: workflow.designSelectionReason,
+      stylePreset: workflow.stylePreset,
+      designOverrides: workflow.designOverrides,
+      conversationStage: workflow.conversationStage,
+      executionMode: workflow.executionMode,
+      intent: workflow.intent,
+      intentConfidence: workflow.intentConfidence,
+      intentReason: workflow.intentReason,
+      refineRequested: workflow.refineRequested,
+      refineSourceProjectPath: workflow.refineSourceProjectPath,
+      refineSourceTaskId: workflow.refineSourceTaskId,
+      requirementCompletionPercent: workflow.requirementCompletionPercent,
+      requirementDraft: workflow.requirementDraft,
+      requirementAggregatedText: workflow.requirementAggregatedText,
+      latestUserText: workflow.latestUserText,
+      latestUserTextRaw: workflow.latestUserTextRaw,
+      referencedAssets: workflow.referencedAssets,
+      assumedDefaults: workflow.assumedDefaults,
+      deploySourceProjectPath: workflow.deploySourceProjectPath,
+      deploySourceTaskId: workflow.deploySourceTaskId,
+      checkpointProjectPath: workflow.checkpointProjectPath,
+      deployRequested: workflow.deployRequested,
+    } as any,
+  };
+}
+
+async function runDeployOnlyTask(params: {
+  taskId: string;
+  chatId: string;
+  workerId: string;
+  inputState: AgentState;
+  setSessionState?: (state: AgentState) => void;
+}): Promise<void> {
+  const { taskId, chatId, workerId, inputState, setSessionState } = params;
+  const startedAt = Date.now();
+
+  await touchChatTaskHeartbeat(taskId, workerId);
+  await updateChatTaskProgress(taskId, {
+    assistantText: "Deploy request confirmed. Preparing Cloudflare deployment.",
+    phase: "deploy",
+    progress: {
+      stage: "deploying:prepare",
+      stageMessage: "Loading latest generated site artifacts...",
+      startedAt: new Date(startedAt).toISOString(),
+      lastTokenAt: nowIso(),
+      elapsedMs: 0,
+      attempt: 1,
+      checkpointSaved: false,
+    } as any,
+  });
+
+  const sourceProject = await resolveDeploySourceProject(inputState);
+  if (!sourceProject) {
+    await failChatTask(
+      taskId,
+      "No generated site artifacts found for deployment. Please generate a site first, then confirm deploy.",
+    );
+    return;
+  }
+  const projectName = resolveDeployProjectName(sourceProject, inputState, chatId);
+  const deploymentHost = `${projectName}.pages.dev`;
+  const cf = new CloudflareClient();
+  const ownerUserId = String(inputState.user_id || "").trim();
+  let dbProjectId = chatId;
+  let deployProject = sourceProject;
+  let analyticsSite: CloudflareWebAnalyticsSite | null = null;
+  let analyticsStatus = "pending";
+  let analyticsWarning = "";
+
+  try {
+    if (ownerUserId) {
+      try {
+        dbProjectId = await saveProjectState(ownerUserId, sourceProject, inputState.access_token, chatId);
+      } catch (error) {
+        console.warn(
+          `[SkillRuntimeExecutor] saveProjectState before deploy failed: ${String((error as any)?.message || error || "unknown")}`,
+        );
+      }
+    }
+
+    await updateChatTaskProgress(taskId, {
+      assistantText: `Provisioning analytics for ${deploymentHost}...`,
+      phase: "deploy",
+      progress: {
+        stage: "deploying:analytics",
+        stageMessage: "Preparing Cloudflare Web Analytics site token...",
+        startedAt: new Date(startedAt).toISOString(),
+        lastTokenAt: nowIso(),
+        elapsedMs: Date.now() - startedAt,
+        attempt: 1,
+      } as any,
+    });
+
+    try {
+      analyticsSite = await cf.ensureWebAnalyticsSite(deploymentHost);
+      deployProject = injectCloudflareAnalyticsBeacon(sourceProject, analyticsSite.siteTag);
+      analyticsStatus = "active";
+    } catch (error) {
+      analyticsStatus = "degraded";
+      analyticsWarning = String((error as any)?.message || error || "Cloudflare analytics provisioning failed");
+      console.warn(`[SkillRuntimeExecutor] analytics provisioning warning: ${analyticsWarning}`);
+    }
+
+    await updateChatTaskProgress(taskId, {
+      assistantText: `Deploying to Cloudflare project ${projectName}...`,
+      phase: "deploy",
+      progress: {
+        stage: "deploying:upload",
+        stageMessage: "Uploading static bundle to Cloudflare Pages...",
+        startedAt: new Date(startedAt).toISOString(),
+        lastTokenAt: nowIso(),
+        elapsedMs: Date.now() - startedAt,
+        attempt: 1,
+        analyticsStatus,
+      } as any,
+    });
+
+    const bundle = await Bundler.createBundle(deployProject);
+
+    let r2BundlePrefix = "";
+    if (ownerUserId) {
+      try {
+        const archived = await archiveSiteArtifactsToR2({
+          projectId: dbProjectId || chatId,
+          ownerUserId,
+          projectJson: deployProject,
+          bundle: {
+            manifest: bundle.manifest,
+            fileEntries: bundle.fileEntries.map((entry) => ({
+              path: entry.path,
+              content: entry.content,
+              type: entry.type,
+            })),
+          },
+        });
+        r2BundlePrefix = String(archived?.prefix || "");
+      } catch (error) {
+        console.warn(
+          `[SkillRuntimeExecutor] archiveSiteArtifactsToR2 failed: ${String((error as any)?.message || error || "unknown")}`,
+        );
+      }
+    }
+
+    await cf.createProject(projectName);
+    const deployment = await cf.uploadDeployment(projectName, bundle);
+    const deployedUrl = String((deployment as any)?.result?.url || `https://${projectName}.pages.dev`);
+
+    if (ownerUserId) {
+      try {
+        dbProjectId = await saveProjectState(ownerUserId, deployProject, inputState.access_token, dbProjectId || chatId);
+        await upsertProjectSiteBinding(dbProjectId || chatId, ownerUserId, deployedUrl, {
+          analyticsProvider: "cloudflare_web_analytics",
+          analyticsStatus,
+          analyticsLastSyncAt: analyticsSite ? nowIso() : null,
+          cfWaSiteId: analyticsSite?.siteId || null,
+          cfWaSiteTag: analyticsSite?.siteTag || null,
+          cfWaSiteToken: analyticsSite?.siteToken || null,
+          cfWaHost: analyticsSite?.host || deploymentHost,
+        });
+        await syncProjectCustomDomainOrigin(
+          dbProjectId || chatId,
+          ownerUserId,
+          analyticsSite?.host || deploymentHost,
+        );
+        await recordDeployment(
+          dbProjectId || chatId,
+          deployedUrl,
+          "production",
+          inputState.access_token,
+          r2BundlePrefix || undefined,
+        );
+      } catch (error) {
+        console.warn(
+          `[SkillRuntimeExecutor] post-deploy D1 sync warning: ${String((error as any)?.message || error || "unknown")}`,
+        );
+      }
+    }
+
+    let publishedAssetVersion = "";
+    try {
+      if (ownerUserId) {
+        const published = await publishCurrentProjectAssets({
+          ownerUserId,
+          projectId: chatId,
+        });
+        publishedAssetVersion = String(published.publishedVersion || "").trim();
+      }
+    } catch (error) {
+      console.warn(
+        `[SkillRuntimeExecutor] publishCurrentProjectAssets failed after deploy: ${String((error as any)?.message || error || "unknown")}`,
+      );
+    }
+
+    const deploymentMessageParts = [
+      `Deployment successful: ${deployedUrl}`,
+      publishedAssetVersion ? `(Published assets ${publishedAssetVersion})` : "",
+      analyticsStatus === "active"
+        ? "(Cloudflare analytics enabled)"
+        : analyticsWarning
+          ? `(Analytics pending: ${analyticsWarning})`
+          : "(Analytics pending)",
+    ].filter(Boolean);
+    const deploymentMessage = deploymentMessageParts.join(" ");
+
+    const nextState: AgentState = {
+      ...inputState,
+      phase: "end",
+      site_artifacts: deployProject,
+      project_json: deployProject,
+      deployed_url: deployedUrl,
+      db_project_id: dbProjectId || chatId,
+      workflow_context: {
+        ...(inputState.workflow_context || {}),
+        deployRequested: false,
+        deploySourceProjectPath: String((inputState.workflow_context as any)?.deploySourceProjectPath || ""),
+        deploySourceTaskId: String((inputState.workflow_context as any)?.deploySourceTaskId || ""),
+        analyticsStatus,
+        analyticsSiteTag: analyticsSite?.siteTag || "",
+        ...(publishedAssetVersion ? { publishedAssetVersion } : {}),
+      } as any,
+      messages: [
+        ...(inputState.messages || []),
+        new AIMessage({
+          id: crypto.randomUUID(),
+          content: deploymentMessage,
+          additional_kwargs: {
+            actions: [{ text: "View Live Site", payload: deployedUrl, type: "url" }],
+          },
+        }),
+      ],
+    };
+
+    if (setSessionState) setSessionState(nextState);
+
+    const elapsedMs = Date.now() - startedAt;
+    const mergedResult: ChatTaskResult = {
+      assistantText: deploymentMessage,
+      actions: [{ text: "View Live Site", payload: deployedUrl, type: "url" }],
+      phase: "end",
+      deployedUrl,
+      internal: {
+        workerId,
+        inputState: buildSessionSnapshot(nextState),
+        sessionState: buildSessionSnapshot(nextState),
+      } as any,
+      progress: {
+        stage: "deployed",
+        stageMessage: "Cloudflare deployment completed.",
+        startedAt: new Date(startedAt).toISOString(),
+        lastTokenAt: nowIso(),
+        elapsedMs,
+        attempt: 1,
+        fileCount: bundle.fileEntries.length,
+        generatedFiles: bundle.fileEntries.map((entry) => normalizePath(String(entry.path || ""))),
+        checkpointSaved: false,
+        analyticsStatus,
+        analyticsSiteTag: analyticsSite?.siteTag || "",
+        ...(publishedAssetVersion ? { publishedAssetVersion } : {}),
+      } as any,
+    };
+
+    await completeChatTask(taskId, mergedResult);
+  } catch (error) {
+    const message = String((error as any)?.message || error || "Deploy failed.");
+    await failChatTask(taskId, message);
+  }
+}
+
+async function runRefineTask(params: {
+  taskId: string;
+  chatId: string;
+  workerId: string;
+  inputState: AgentState;
+  setSessionState?: (state: AgentState) => void;
+}): Promise<void> {
+  const { taskId, chatId, workerId, inputState, setSessionState } = params;
+  const startedAt = Date.now();
+  const checkpointRoot = path.resolve(
+    process.cwd(),
+    ".tmp",
+    "chat-tasks",
+    sanitizePathToken(chatId),
+    sanitizePathToken(taskId),
+  );
+  const checkpointProjectPath = path.join(checkpointRoot, "project.json");
+  const checkpointStatePath = path.join(checkpointRoot, "state.json");
+  const checkpointWorkflowDir = path.join(checkpointRoot, "workflow");
+  const checkpointSiteDir = path.join(checkpointRoot, "site");
+
+  await touchChatTaskHeartbeat(taskId, workerId);
+  await updateChatTaskProgress(taskId, {
+    assistantText: "Refine request accepted. Preparing base project and patch plan.",
+    phase: "refine",
+    progress: {
+      stage: "refining:prepare",
+      stageMessage: "Loading latest project baseline...",
+      startedAt: new Date(startedAt).toISOString(),
+      lastTokenAt: nowIso(),
+      elapsedMs: 0,
+      attempt: 1,
+      checkpointSaved: false,
+    } as any,
+  });
+
+  const sourceProject = await resolveDeploySourceProject(inputState);
+  if (!sourceProject) {
+    await failChatTask(
+      taskId,
+      "No preview/deployed baseline found for refine. Please generate a site first, then request refinement.",
+    );
+    return;
+  }
+
+  const requirementText = extractRequirementText(inputState);
+  const refineSkillEnabledRaw = String(
+    process.env.CHAT_REFINE_ENABLE_SKILL ||
+      (process.env.NODE_ENV === "test" ? "0" : "1"),
+  )
+    .trim()
+    .toLowerCase();
+  const refineSkillEnabled = !["0", "false", "off", "no"].includes(refineSkillEnabledRaw);
+  const refineSkillId = resolveProjectSkillAlias(
+    String(
+      (inputState.workflow_context as any)?.refineSkillId ||
+        process.env.CHAT_REFINE_SKILL_ID ||
+        "website-refinement-workflow",
+    ).trim(),
+  );
+  let refineSkillDirective = "";
+  let effectiveRefineSkillId = refineSkillId;
+  let refineSkillError = "";
+  let refined: { project: any; changedFiles: string[]; summary?: string } = {
+    project: sourceProject,
+    changedFiles: [],
+  };
+  if (refineSkillEnabled) {
+    try {
+      const refineSkill = await loadProjectSkill(refineSkillId);
+      refineSkillDirective = extractSkillDirectiveSnippet(refineSkill, 10_000);
+      effectiveRefineSkillId = refineSkill.id;
+    } catch {
+      // Keep skill id as-is and fall back to heuristic refine when skill loading fails.
+      effectiveRefineSkillId = refineSkillId;
+    }
+    const providerLock = resolveRunProviderRunnerLock({
+      provider: (inputState.workflow_context as any)?.lockedProvider,
+      model: (inputState.workflow_context as any)?.lockedModel,
+    });
+    const providerConfig = resolveProviderConfig(providerLock);
+    try {
+      refined = await applyRefineInstructionWithSkill({
+        project: sourceProject,
+        instruction: requirementText,
+        skillDirective: refineSkillDirective,
+        providerConfig,
+        timeoutMs: Math.max(30_000, Number(process.env.CHAT_REFINE_TIMEOUT_MS || 120_000)),
+      });
+    } catch (error) {
+      refineSkillError = String((error as any)?.message || "unknown skill refine failure");
+    }
+  } else {
+    effectiveRefineSkillId = `${refineSkillId} (disabled)`;
+  }
+  if (refined.changedFiles.length === 0) {
+    refined = applyRefineInstructionToProject(sourceProject, requirementText);
+  }
+  const deterministicFixup = applyDeterministicRefineFixups(refined.project, requirementText);
+  if (deterministicFixup.changedFiles.length > 0) {
+    const mergedChanged = new Set<string>([
+      ...refined.changedFiles,
+      ...deterministicFixup.changedFiles,
+    ]);
+    refined = {
+      ...refined,
+      project: deterministicFixup.project,
+      changedFiles: Array.from(mergedChanged).sort((a, b) => a.localeCompare(b)),
+    };
+  }
+  if (refined.changedFiles.length === 0) {
+    await failChatTask(
+      taskId,
+      "Refine request did not match existing site content. Please provide exact target text/selector or a clearer visual change description.",
+    );
+    return;
+  }
+
+  await updateChatTaskProgress(taskId, {
+    assistantText: "Applying refinement changes and validating output files.",
+    phase: "refine",
+    progress: {
+      stage: "refining:apply",
+      stageMessage: "Applying targeted file patches...",
+      startedAt: new Date(startedAt).toISOString(),
+      lastTokenAt: nowIso(),
+      elapsedMs: Date.now() - startedAt,
+      attempt: 1,
+      checkpointSaved: false,
+    } as any,
+  });
+
+  await fs.mkdir(checkpointRoot, { recursive: true });
+  await fs.mkdir(checkpointWorkflowDir, { recursive: true });
+  const materialized = await materializeSiteDirectoryFromProject(refined.project, checkpointSiteDir);
+  await fs.writeFile(checkpointProjectPath, JSON.stringify(refined.project, null, 2), "utf8");
+  await fs.writeFile(
+    path.join(checkpointWorkflowDir, "refine_report.md"),
+    [
+      "# Refine Report",
+      "",
+      `- generatedAt: ${nowIso()}`,
+      `- refineSkillId: ${effectiveRefineSkillId}`,
+      `- refineSkillEnabled: ${refineSkillEnabled ? "true" : "false"}`,
+      ...(refineSkillError ? [`- refineSkillError: ${refineSkillError}`] : []),
+      `- changedFiles: ${refined.changedFiles.join(", ") || "(none)"}`,
+      ...(refined.summary ? [`- summary: ${refined.summary}`] : []),
+      "",
+      "## Instruction",
+      "",
+      requirementText || "(empty)",
+    ].join("\n"),
+    "utf8",
+  );
+  await fs.writeFile(
+    checkpointStatePath,
+    JSON.stringify(
+      {
+        savedAt: nowIso(),
+        phase: "refine",
+        stage: "refined",
+        fileCount: materialized.fileCount,
+        changedFiles: refined.changedFiles,
+      },
+      null,
+      2,
+    ),
+    "utf8",
+  );
+
+  const nextState: AgentState = {
+    ...inputState,
+    phase: "end",
+    project_json: refined.project,
+    site_artifacts: refined.project,
+    workflow_context: {
+      ...(inputState.workflow_context || {}),
+      executionMode: "generate",
+      refineRequested: false,
+      deployRequested: false,
+      checkpointProjectPath,
+      deploySourceProjectPath: checkpointProjectPath,
+      deploySourceTaskId: taskId,
+    } as any,
+    messages: [
+      ...(inputState.messages || []),
+      new AIMessage({
+        id: crypto.randomUUID(),
+        content: `Refinement completed. Updated ${refined.changedFiles.length} files with your latest changes.`,
+      }),
+    ],
+  };
+  if (setSessionState) setSessionState(nextState);
+
+  const elapsedMs = Date.now() - startedAt;
+  await syncGeneratedProjectAssetsFromSite({
+    ownerUserId: String(inputState.user_id || "").trim() || undefined,
+    projectId: chatId,
+    taskId,
+    siteDir: checkpointSiteDir,
+    generatedFiles: materialized.generatedFiles,
+  }).catch(() => {
+    // Best-effort asset sync should not block task completion.
+  });
+  await completeChatTask(taskId, {
+    assistantText: `Refinement completed. Updated ${refined.changedFiles.length} files.`,
+    phase: "end",
+    internal: {
+      workerId,
+      inputState: buildSessionSnapshot(nextState),
+      sessionState: buildSessionSnapshot(nextState),
+    } as any,
+    progress: {
+      stage: "refined",
+      stageMessage: "Refine patch completed successfully.",
+      startedAt: new Date(startedAt).toISOString(),
+      lastTokenAt: nowIso(),
+      elapsedMs,
+      attempt: 1,
+      fileCount: materialized.fileCount,
+      generatedFiles: materialized.generatedFiles,
+      checkpointSaved: true,
+      checkpointDir: checkpointRoot,
+      checkpointStatePath,
+      checkpointProjectPath,
+      checkpointSiteDir,
+      checkpointWorkflowDir,
+      nextStep: "preview",
+    } as any,
+  });
+}
+
 export class SkillRuntimeExecutor {
   static async runTask(params: SkillRuntimeTaskParams): Promise<void> {
     const { taskId, chatId, inputState, workerId = "worker", setSessionState } = params;
+    const executionMode = String((inputState.workflow_context as any)?.executionMode || "").trim().toLowerCase();
+    const refineRequested =
+      executionMode === "refine" ||
+      Boolean((inputState.workflow_context as any)?.refineRequested);
+    const deployRequested =
+      Boolean((inputState.workflow_context as any)?.deployRequested) ||
+      isDeployConfirmationIntent(extractRequirementText(inputState));
+    if (refineRequested && !deployRequested) {
+      await runRefineTask({ taskId, chatId, workerId, inputState, setSessionState });
+      return;
+    }
+    if (deployRequested) {
+      await runDeployOnlyTask({ taskId, chatId, workerId, inputState, setSessionState });
+      return;
+    }
+
     const startedAt = Date.now();
     const resolvedSkill = await resolveWebsiteRuntimeSkill({
       state: inputState,
       explicitSkillId: params.skillId,
     });
+    const preparedState = resolvedSkill.state;
     const { loadedSkill, skillDirective } = resolvedSkill;
-    const decision = buildLocalDecisionPlan(inputState);
+    const decision = buildLocalDecisionPlan(preparedState);
     const lock = resolveRunProviderRunnerLock({
-      provider: (inputState as any)?.workflow_context?.lockedProvider,
-      model: (inputState as any)?.workflow_context?.lockedModel,
+      provider: (preparedState as any)?.workflow_context?.lockedProvider,
+      model: (preparedState as any)?.workflow_context?.lockedModel,
     });
     const taskTimeoutMs = Math.max(60_000, Number(process.env.CHAT_ASYNC_TASK_TIMEOUT_MS || 900_000));
     let stepCount = 0;
+    let latestCheckpointSiteDir = "";
+    let latestCheckpointWorkflowDir = "";
 
     const stateWithLock = bindRunProviderLockToState(
       {
-        ...inputState,
+        ...preparedState,
         phase: "skeleton",
         sitemap: decision.routes,
         workflow_context: {
-          ...(inputState.workflow_context || {}),
+          ...(preparedState.workflow_context || {}),
           runMode: "async-task",
           genMode: "skill_native",
           generationMode: "skill-native",
-          sourceRequirement: decision.requirementText || (inputState.workflow_context as any)?.sourceRequirement,
+          sourceRequirement: decision.requirementText || (preparedState.workflow_context as any)?.sourceRequirement,
           preferredLocale: decision.locale,
           skillId: loadedSkill.id,
           skillDirective,
@@ -1125,10 +2989,11 @@ export class SkillRuntimeExecutor {
     try {
       await touchChatTaskHeartbeat(taskId, workerId);
       await updateChatTaskProgress(taskId, {
-        assistantText: "Worker started skill-native runtime.",
+        assistantText: "Worker started skill-native runtime. Selecting design system and confirming tokens.",
         phase: "skeleton",
         progress: {
-          stage: "generating:task_plan",
+          stage: "generating:design_confirm",
+          stageMessage: "Selecting design system and preparing confirmation...",
           skillId: loadedSkill.id,
           provider: lock.provider,
           model: lock.model,
@@ -1147,12 +3012,16 @@ export class SkillRuntimeExecutor {
         onStep: async (snapshot) => {
           stepCount += 1;
           const persisted = await persistStepArtifacts({ chatId, taskId, snapshot });
+          latestCheckpointSiteDir = path.join(persisted.localDir, "site");
+          latestCheckpointWorkflowDir = path.join(persisted.localDir, "workflow");
+          const stageMessage = toProgressStageMessage(snapshot.status, snapshot.stepIndex, snapshot.totalSteps);
           await touchChatTaskHeartbeat(taskId, workerId);
           await updateChatTaskProgress(taskId, {
-            assistantText: `Skill-native ${snapshot.status}`,
+            assistantText: stageMessage,
             phase: "skeleton",
             progress: {
               stage: snapshot.status,
+              stageMessage,
               skillId: loadedSkill.id,
               filePath: normalizePath(snapshot.stepKey),
               provider: lock.provider,
@@ -1167,6 +3036,8 @@ export class SkillRuntimeExecutor {
               generatedFiles: snapshot.files.map((file) => normalizePath(file.path)),
               checkpointSaved: true,
               checkpointDir: persisted.localDir,
+              checkpointSiteDir: latestCheckpointSiteDir,
+              checkpointWorkflowDir: latestCheckpointWorkflowDir,
               r2UploadedCount: persisted.r2UploadedCount,
               r2UploadError: persisted.r2Error || null,
             } as any,
@@ -1174,7 +3045,19 @@ export class SkillRuntimeExecutor {
         },
       });
 
-      if (setSessionState) setSessionState(summary.state);
+      const checkpointProjectPath = path.join(checkpointRoot, "project.json");
+      const sessionStateForNext: AgentState = {
+        ...(summary.state as any),
+        workflow_context: {
+          ...((summary.state as any)?.workflow_context || {}),
+          deploySourceProjectPath: checkpointProjectPath,
+          deploySourceTaskId: taskId,
+          checkpointProjectPath,
+          deployRequested: false,
+        },
+      };
+
+      if (setSessionState) setSessionState(sessionStateForNext);
       await fs.mkdir(checkpointRoot, { recursive: true });
       await fs.writeFile(path.join(checkpointRoot, "state.json"), JSON.stringify({
         savedAt: nowIso(),
@@ -1183,7 +3066,7 @@ export class SkillRuntimeExecutor {
         fileCount: summary.fileCount,
         completedPhases: summary.completedPhases,
       }, null, 2), "utf8");
-      await fs.writeFile(path.join(checkpointRoot, "project.json"), JSON.stringify((summary.state as any)?.site_artifacts || null, null, 2), "utf8");
+      await fs.writeFile(checkpointProjectPath, JSON.stringify((summary.state as any)?.site_artifacts || null, null, 2), "utf8");
 
       const elapsedMs = Date.now() - startedAt;
       const mergedResult: ChatTaskResult = {
@@ -1191,8 +3074,15 @@ export class SkillRuntimeExecutor {
         actions: summary.actions,
         phase: summary.phase,
         deployedUrl: summary.deployedUrl,
+        internal: {
+          skillId: loadedSkill.id,
+          workerId,
+          inputState: buildSessionSnapshot(sessionStateForNext),
+          sessionState: buildSessionSnapshot(sessionStateForNext),
+        } as any,
         progress: {
           stage: "done",
+          stageMessage: "Generation completed successfully.",
           skillId: loadedSkill.id,
           provider: lock.provider,
           model: lock.model,
@@ -1208,7 +3098,9 @@ export class SkillRuntimeExecutor {
           checkpointSaved: true,
           checkpointDir: checkpointRoot,
           checkpointStatePath: path.join(checkpointRoot, "state.json"),
-          checkpointProjectPath: path.join(checkpointRoot, "project.json"),
+          checkpointProjectPath,
+          checkpointSiteDir: latestCheckpointSiteDir,
+          checkpointWorkflowDir: latestCheckpointWorkflowDir,
           round: stepCount,
           maxRounds: stepCount,
         } as any,
@@ -1219,6 +3111,16 @@ export class SkillRuntimeExecutor {
         return;
       }
 
+      await syncGeneratedProjectAssetsFromSite({
+        ownerUserId: String(inputState.user_id || "").trim() || undefined,
+        projectId: chatId,
+        taskId,
+        siteDir: latestCheckpointSiteDir,
+        generatedFiles: summary.generatedFiles,
+      }).catch(() => {
+        // Best-effort asset sync should not block task completion.
+      });
+
       await completeChatTask(taskId, mergedResult);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -1226,6 +3128,7 @@ export class SkillRuntimeExecutor {
         assistantText: message,
         progress: {
           stage: "failed",
+          stageMessage: "Generation failed.",
           skillId: loadedSkill.id,
           provider: lock.provider,
           model: lock.model,

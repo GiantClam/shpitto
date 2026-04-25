@@ -1,5 +1,5 @@
 import type { AgentState } from "../agent/graph.ts";
-import { SKILL_RUNTIME_FIXED_PHASES, type SkillRuntimePhase } from "./stages/types.ts";
+import { SKILL_RUNTIME_FIXED_PHASES, type SkillRuntimePhase } from "./phase-types.ts";
 
 type GenericFile = {
   path?: string;
@@ -86,4 +86,3 @@ export function artifactCounts(state: AgentState): { workflow: number; static: n
     pages: getPages(state).length,
   };
 }
-

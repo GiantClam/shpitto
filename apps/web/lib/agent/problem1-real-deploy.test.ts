@@ -8,6 +8,7 @@ import { Bundler } from "../bundler";
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 dotenv.config({ path: path.resolve(process.cwd(), "../../.env"), override: false });
+process.env.CLOUDFLARE_REQUIRE_REAL = "1";
 
 type SourceResolution = {
   sourceProjectPath: string;

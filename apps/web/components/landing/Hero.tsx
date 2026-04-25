@@ -1,90 +1,103 @@
 import Link from "next/link";
-import { ArrowRight, Sparkles, Code2, Rocket, PlayCircle } from "lucide-react";
+import { ArrowRight, PlayCircle } from "lucide-react";
 
-export function Hero() {
+type HeroProps = {
+  ctaHref?: string;
+};
+
+export function Hero({ ctaHref = "/login" }: HeroProps) {
   return (
-    <section className="pt-32 pb-20 lg:pt-48 lg:pb-40 px-6 relative overflow-hidden bg-[#0A0F1C] text-white">
-      {/* Dynamic Background Grid */}
-      <div className="absolute inset-0 z-0 opacity-20">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
+    <section className="relative overflow-hidden px-6 pb-24 pt-32 text-[var(--shp-text)] lg:pb-40 lg:pt-48">
+      <div className="absolute inset-0 z-0 opacity-25">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1ed76026_1px,transparent_1px),linear-gradient(to_bottom,#1ed76026_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_62%_52%_at_50%_0%,#000_70%,transparent_100%)]"></div>
       </div>
-      
-      {/* Glowing Gradient Orb */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-blue-600/20 rounded-full blur-[120px] -z-10 pointer-events-none mix-blend-screen"></div>
-      
-      <div className="max-w-7xl mx-auto text-center relative z-10">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-medium mb-8 backdrop-blur-sm animate-fade-in-up">
+
+      <div className="pointer-events-none absolute left-1/2 top-0 -z-10 h-[620px] w-[1040px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,color-mix(in_oklab,var(--shp-primary)_30%,transparent),transparent_62%)] blur-[110px]"></div>
+      <div className="pointer-events-none absolute right-[-180px] top-20 -z-10 h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,color-mix(in_oklab,var(--shp-warm)_18%,transparent),transparent_70%)] blur-[90px]"></div>
+
+      <div className="relative z-10 mx-auto max-w-7xl text-center">
+        <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--shp-primary)_35%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,transparent)] px-3 py-1 text-xs font-semibold text-[var(--shp-primary-soft)] backdrop-blur-sm">
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--shp-secondary)] opacity-75"></span>
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--shp-secondary)]"></span>
           </span>
-          v2.0 Now Available
+          12-Second Generation Engine
         </div>
-        
-        <h1 className="text-5xl lg:text-8xl font-bold tracking-tight mb-8 leading-[1.1] animate-fade-in-up [animation-delay:100ms]">
-          Build Industrial Sites <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-200 to-white drop-shadow-sm">
-            With Just a Chat.
+
+        <h1 className="mb-8 text-5xl font-black leading-[0.95] tracking-tight lg:text-8xl">
+          Build websites
+          <br />
+          <span className="text-[var(--shp-primary)]">
+            at the speed of thought.
           </span>
         </h1>
-        
-        <p className="text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed animate-fade-in-up [animation-delay:200ms]">
-          Shpitto turns your natural language into production-grade industrial websites. 
-          No drag-and-drop fatigue. Just describe, review, and ship.
+
+        <p className="mx-auto mb-12 max-w-3xl text-xl leading-relaxed text-[var(--shp-muted)]">
+          Shpitto turns natural language into production-grade industrial websites with clean structure, conversion-focused copy,
+          and deploy-ready pages.
         </p>
-        
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up [animation-delay:300ms]">
-          <Link href="/login" className="w-full sm:w-auto px-8 py-4 bg-blue-600 text-white font-bold rounded-xl text-lg hover:bg-blue-500 transition-all shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)] hover:shadow-[0_0_60px_-10px_rgba(37,99,235,0.6)] hover:-translate-y-1 flex items-center justify-center gap-2 group">
+
+        <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <Link href={ctaHref} className="shp-btn-primary group flex w-full items-center justify-center gap-2 px-8 py-4 text-lg font-black sm:w-auto">
             Start Building Free
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
           </Link>
-          <button className="w-full sm:w-auto px-8 py-4 bg-white/5 text-white font-medium rounded-xl text-lg border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-center gap-2 backdrop-blur-sm">
-            <PlayCircle className="w-5 h-5" />
+          <button className="shp-btn-secondary flex w-full items-center justify-center gap-2 px-8 py-4 text-lg font-medium sm:w-auto">
+            <PlayCircle className="h-5 w-5" />
             Watch Demo
           </button>
         </div>
 
-        {/* Mock Interface / Floating Preview */}
-        <div className="mt-20 relative mx-auto max-w-5xl animate-fade-in-up [animation-delay:500ms]">
-          <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-          <div className="relative rounded-xl bg-[#0F1623] border border-slate-800 shadow-2xl overflow-hidden aspect-[16/9] flex flex-col">
-            {/* Window Controls */}
-            <div className="h-10 border-b border-slate-800 bg-[#0A0F1C] flex items-center px-4 gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50"></div>
-              <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50"></div>
-              <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50"></div>
-              <div className="ml-4 px-3 py-1 rounded-md bg-slate-800/50 text-[10px] text-slate-500 font-mono">shpitto-builder-v1</div>
+        <div className="mx-auto mt-10 flex max-w-3xl flex-wrap items-center justify-center gap-8">
+          {[
+            { value: "10,000+", label: "Sites generated" },
+            { value: "12s", label: "Avg build time" },
+            { value: "4.9/5", label: "User rating" },
+          ].map((item) => (
+            <div key={item.label} className="text-center">
+              <div className="text-2xl font-black text-[var(--shp-primary)]">{item.value}</div>
+              <div className="text-sm text-[var(--shp-muted)]">{item.label}</div>
             </div>
-            
-            {/* Content Area */}
-            <div className="flex-1 flex relative">
-              {/* Sidebar */}
-              <div className="w-64 border-r border-slate-800 bg-[#0A0F1C] p-4 hidden md:block">
-                <div className="h-8 w-24 bg-slate-800/50 rounded mb-6 animate-pulse"></div>
+          ))}
+        </div>
+
+        <div className="relative mx-auto mt-20 max-w-5xl">
+          <div className="absolute -inset-1 rounded-2xl bg-[radial-gradient(circle_at_center,color-mix(in_oklab,var(--shp-primary)_40%,transparent),transparent_70%)] opacity-50 blur-md"></div>
+          <div className="relative aspect-[16/9] overflow-hidden rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_76%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg-soft)_86%,black_14%)] shadow-[var(--shp-shadow)]">
+            <div className="flex h-10 items-center gap-2 border-b border-[color-mix(in_oklab,var(--shp-border)_74%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_72%,transparent)] px-4">
+              <div className="h-3 w-3 rounded-full bg-rose-400/70"></div>
+              <div className="h-3 w-3 rounded-full bg-amber-300/70"></div>
+              <div className="h-3 w-3 rounded-full bg-emerald-300/70"></div>
+              <div className="ml-4 rounded-md border border-[color-mix(in_oklab,var(--shp-border)_75%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_64%,transparent)] px-3 py-1 font-mono text-[10px] text-[var(--shp-muted)]">
+                shpitto-runtime-v3
+              </div>
+            </div>
+
+            <div className="relative flex h-[calc(100%-2.5rem)]">
+              <div className="hidden w-64 border-r border-[color-mix(in_oklab,var(--shp-border)_74%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_75%,transparent)] p-4 md:block">
+                <div className="mb-6 h-8 w-24 animate-pulse rounded bg-[color-mix(in_oklab,var(--shp-surface)_70%,transparent)]"></div>
                 <div className="space-y-3">
-                    <div className="h-4 w-full bg-slate-800/30 rounded"></div>
-                    <div className="h-4 w-3/4 bg-slate-800/30 rounded"></div>
-                    <div className="h-4 w-5/6 bg-slate-800/30 rounded"></div>
+                  <div className="h-4 w-full rounded bg-[color-mix(in_oklab,var(--shp-surface)_68%,transparent)]"></div>
+                  <div className="h-4 w-3/4 rounded bg-[color-mix(in_oklab,var(--shp-surface)_68%,transparent)]"></div>
+                  <div className="h-4 w-5/6 rounded bg-[color-mix(in_oklab,var(--shp-surface)_68%,transparent)]"></div>
                 </div>
               </div>
-              
-              {/* Main Canvas */}
-              <div className="flex-1 bg-[#0F1623] p-8 flex items-center justify-center relative overflow-hidden">
-                 {/* Abstract UI Elements */}
-                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent_50%)]"></div>
-                 
-                 <div className="w-full max-w-2xl space-y-6 relative z-10">
-                    <div className="h-12 w-3/4 bg-slate-800/50 rounded-lg mx-auto backdrop-blur-md border border-slate-700/50 flex items-center px-4 text-slate-500 font-mono text-sm">
-                        <span className="text-blue-400 mr-2">➜</span> Describe your industrial website...
-                        <span className="ml-auto w-2 h-4 bg-blue-500 animate-blink"></span>
-                    </div>
-                    
-                    <div className="grid grid-cols-3 gap-4 mt-8 opacity-50">
-                        <div className="h-32 bg-slate-800/30 rounded-lg border border-slate-700/30"></div>
-                        <div className="h-32 bg-slate-800/30 rounded-lg border border-slate-700/30"></div>
-                        <div className="h-32 bg-slate-800/30 rounded-lg border border-slate-700/30"></div>
-                    </div>
-                 </div>
+
+              <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-[color-mix(in_oklab,var(--shp-bg-soft)_92%,#050505_8%)] p-8">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,color-mix(in_oklab,var(--shp-primary)_18%,transparent),transparent_55%)]"></div>
+
+                <div className="relative z-10 w-full max-w-2xl space-y-6">
+                  <div className="flex h-12 items-center rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_75%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_68%,transparent)] px-4 font-mono text-sm text-[var(--shp-muted)]">
+                    <span className="mr-2 text-[var(--shp-secondary)]">&gt;</span> Describe your industrial website...
+                    <span className="ml-auto h-4 w-2 animate-pulse bg-[var(--shp-primary)]"></span>
+                  </div>
+
+                  <div className="mt-8 grid grid-cols-3 gap-4 opacity-70">
+                    <div className="h-32 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_75%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_62%,transparent)]"></div>
+                    <div className="h-32 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_75%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_10%,var(--shp-surface)_90%)]"></div>
+                    <div className="h-32 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_75%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_62%,transparent)]"></div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

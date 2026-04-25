@@ -9,7 +9,28 @@ import { runSkillRuntimeExecutor } from "../skill-runtime/executor";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+async function fetchWithRetry(url: string, maxAttempts = 6): Promise<{ ok: boolean; status: number | null; error: string | null }> {
+  let lastStatus: number | null = null;
+  let lastError: string | null = null;
+  for (let i = 0; i < maxAttempts; i += 1) {
+    try {
+      const res = await fetch(url, { method: "GET", signal: AbortSignal.timeout(10_000) });
+      lastStatus = res.status;
+      lastError = null;
+      if (res.ok) return { ok: true, status: res.status, error: null };
+      if (![408, 429, 500, 502, 503, 504, 522, 524].includes(res.status)) {
+        break;
+      }
+    } catch (e) {
+      lastError = e instanceof Error ? e.message : String(e);
+    }
+    await sleep(4000);
+  }
+  return { ok: false, status: lastStatus, error: lastError };
+}
+
 dotenv.config({ path: path.resolve(process.cwd(), "../../.env"), override: false });
+process.env.CLOUDFLARE_REQUIRE_REAL = "1";
 
 describe("lc-cnc online regression", () => {
   it(
@@ -81,17 +102,8 @@ Contact page must include a quote form with fields: Name, Company, Email, WhatsA
 
       for (const route of pageRoutes) {
         const url = route === "/" ? `${baseUrl}/` : `${baseUrl}${route.endsWith("/") ? route : `${route}/`}`;
-        let ok = false;
-        let status: number | null = null;
-        let error: string | null = null;
-        try {
-          const r = await fetch(url, { method: "GET" });
-          status = r.status;
-          ok = r.ok;
-        } catch (e) {
-          error = e instanceof Error ? e.message : String(e);
-        }
-        routeChecks.push({ path: route, ok, status, error });
+        const check = await fetchWithRetry(url, 6);
+        routeChecks.push({ path: route, ok: check.ok, status: check.status, error: check.error });
       }
 
       const report = {
@@ -111,4 +123,3 @@ Contact page must include a quote form with fields: Name, Company, Email, WhatsA
     900000,
   );
 });
-

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Website Refinement Workflow"
+  short_description: "Refine existing websites from visual requests"
+  default_prompt: "Use $website-refinement-workflow to refine an existing website with a concrete visual change request."

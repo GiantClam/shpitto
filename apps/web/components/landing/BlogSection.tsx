@@ -6,11 +6,12 @@ export function BlogSection() {
     {
       title: "The Future of Industrial Web Design: AI-Driven & Data-First",
       slug: "future-of-industrial-web-design",
-      excerpt: "How AI is transforming the way manufacturing companies build their digital presence, moving from static brochures to dynamic lead generation engines.",
+      excerpt:
+        "How AI is transforming the way manufacturing companies build their digital presence, moving from static brochures to dynamic lead generation engines.",
       date: "Oct 24, 2025",
       author: "Sarah Chen",
       category: "Industry Trends",
-      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800"
+      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800",
     },
     {
       title: "Case Study: How Apex Robotics Doubled Leads in 30 Days",
@@ -19,7 +20,7 @@ export function BlogSection() {
       date: "Nov 02, 2025",
       author: "Mike Ross",
       category: "Case Study",
-      image: "https://images.unsplash.com/photo-1565514020176-dbf227780065?auto=format&fit=crop&q=80&w=800"
+      image: "https://images.unsplash.com/photo-1565514020176-dbf227780065?auto=format&fit=crop&q=80&w=800",
     },
     {
       title: "SEO for Manufacturers: 5 Key Strategies for 2026",
@@ -28,67 +29,64 @@ export function BlogSection() {
       date: "Nov 15, 2025",
       author: "Alex V.",
       category: "Growth Strategy",
-      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800"
-    }
+      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800",
+    },
   ];
 
   return (
-    <section id="blog" className="py-24 bg-white border-t border-slate-100">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="flex items-end justify-between mb-12">
+    <section id="blog" className="border-t border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg-soft)_88%,#060606_12%)] py-24">
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="mb-12 flex items-end justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider mb-4">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--shp-primary)_35%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_15%,transparent)] px-3 py-1 text-xs font-bold uppercase tracking-wider text-[var(--shp-primary)]">
               Latest Insights
             </div>
-            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900">Industry Insights & Stories</h2>
+            <h2 className="text-3xl font-bold text-[var(--shp-text)] lg:text-4xl">Industry Insights & Stories</h2>
           </div>
-          <Link href="/blog" className="hidden md:flex items-center gap-2 text-blue-600 font-bold hover:gap-3 transition-all">
-            View All Articles <ArrowRight className="w-4 h-4" />
+          <Link href="/blog" className="hidden items-center gap-2 font-bold text-[var(--shp-primary)] transition-all hover:gap-3 md:flex">
+            View All Articles <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid gap-8 md:grid-cols-3">
           {posts.map((post, i) => (
-            <Link key={i} href={`/blog/${post.slug}`} className="group cursor-pointer flex flex-col h-full">
-              <div className="aspect-video bg-slate-100 rounded-xl overflow-hidden mb-6 relative">
-                <img 
-                  src={post.image} 
-                  alt={post.title} 
-                  className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700"
-                />
-                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-slate-700 uppercase tracking-wide">
+            <Link key={i} href={`/blog/${post.slug}`} className="group flex h-full cursor-pointer flex-col">
+              <div className="relative mb-6 aspect-video overflow-hidden rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_76%,transparent)]">
+                <img src={post.image} alt={post.title} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <div className="absolute left-4 top-4 rounded-full border border-[color-mix(in_oklab,var(--shp-border)_65%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_76%,transparent)] px-3 py-1 text-xs font-bold uppercase tracking-wide text-[var(--shp-primary)] backdrop-blur-sm">
                   {post.category}
                 </div>
               </div>
-              
-              <div className="flex items-center gap-4 text-xs text-slate-500 mb-3">
+
+              <div className="mb-3 flex items-center gap-4 text-xs text-[var(--shp-muted)]">
                 <div className="flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5" />
+                  <Calendar className="h-3.5 w-3.5" />
                   {post.date}
                 </div>
                 <div className="flex items-center gap-1">
-                  <User className="w-3.5 h-3.5" />
+                  <User className="h-3.5 w-3.5" />
                   {post.author}
                 </div>
               </div>
-              
-              <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
+
+              <h3 className="mb-3 line-clamp-2 text-xl font-bold text-[var(--shp-text)] transition-colors group-hover:text-[var(--shp-primary)]">
                 {post.title}
               </h3>
-              
-              <p className="text-slate-600 text-sm leading-relaxed mb-4 line-clamp-3 flex-grow">
-                {post.excerpt}
-              </p>
-              
-              <div className="flex items-center gap-2 text-blue-600 font-bold text-sm group-hover:gap-3 transition-all mt-auto">
-                Read Article <ArrowRight className="w-4 h-4" />
+
+              <p className="mb-4 line-clamp-3 flex-grow text-sm leading-relaxed text-[var(--shp-muted)]">{post.excerpt}</p>
+
+              <div className="mt-auto flex items-center gap-2 text-sm font-bold text-[var(--shp-primary)] transition-all group-hover:gap-3">
+                Read Article <ArrowRight className="h-4 w-4" />
               </div>
             </Link>
           ))}
         </div>
-        
-        <div className="mt-12 md:hidden text-center">
-           <Link href="/blog" className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-full hover:bg-slate-50 transition-colors">
+
+        <div className="mt-12 text-center md:hidden">
+          <Link
+            href="/blog"
+            className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_72%,transparent)] px-6 py-3 font-bold text-[var(--shp-text)]"
+          >
             View All Articles
           </Link>
         </div>

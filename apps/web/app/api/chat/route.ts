@@ -1,14 +1,32 @@
 import { createUIMessageStream, createUIMessageStreamResponse, type UIMessage } from "ai";
-import { HumanMessage } from "@langchain/core/messages";
+import { AIMessage, HumanMessage, type BaseMessage } from "@langchain/core/messages";
 import crypto from "node:crypto";
 import {
+  appendChatTimelineMessage,
   createChatTask,
   getActiveChatTask,
+  getLatestChatTaskForChat,
+  listChatTimelineMessages,
   type ChatTaskResult,
 } from "../../../lib/agent/chat-task-store";
 import { type BuilderAction } from "../../../lib/agent/chat-ui-payload";
 import { type AgentState } from "../../../lib/agent/graph";
+import {
+  aggregateRequirementFromHistory,
+  buildClarificationQuestion,
+  buildRequirementSlots,
+  decideChatIntent,
+  deriveConversationStage,
+  isDeployIntent,
+} from "../../../lib/agent/chat-orchestrator";
+import { buildPromptDraftWithResearch } from "../../../lib/agent/prompt-draft-research";
+import {
+  appendReferencedAssetsBlock,
+  collectReferencedAssetsFromTexts,
+  parseReferencedAssetsFromText,
+} from "../../../lib/agent/referenced-assets";
 import { loadProjectSkill } from "../../../lib/skill-runtime/project-skill-loader";
+import { invalidateLaunchCenterRecentProjectsCache } from "../../../lib/launch-center/cache";
 
 export const runtime = "nodejs";
 
@@ -19,19 +37,11 @@ type ChatRequestBody = {
   access_token?: string;
   async?: boolean;
   skill_id?: string;
+  design_overrides?: Record<string, unknown>;
+  confirm_design?: boolean;
 };
 
-type SessionRecord = {
-  state: AgentState;
-  updatedAt: number;
-};
-
-const SESSION_TTL_MS = 1000 * 60 * 60 * 6;
-const sessions = new Map<string, SessionRecord>();
-
-function now() {
-  return Date.now();
-}
+const CONFIRM_GENERATE_PREFIX = "__SHP_CONFIRM_GENERATE__";
 
 function createInitialState(): AgentState {
   return {
@@ -42,19 +52,70 @@ function createInitialState(): AgentState {
   };
 }
 
-function cleanupSessions() {
-  const threshold = now() - SESSION_TTL_MS;
-  for (const [key, value] of sessions.entries()) {
-    if (value.updatedAt < threshold) {
-      sessions.delete(key);
-    }
-  }
+function reviveMessage(raw: any): BaseMessage | undefined {
+  if (!raw) return undefined;
+  const role = String(raw.role || raw.type || "").toLowerCase();
+  const content = String(raw.content || "").trim();
+  if (!content) return undefined;
+  if (role === "user" || role === "human") return new HumanMessage({ content });
+  if (role === "assistant" || role === "ai") return new AIMessage({ content });
+  return undefined;
 }
 
-function getSession(chatId: string): AgentState {
-  cleanupSessions();
-  const existing = sessions.get(chatId);
-  if (existing) return existing.state;
+function reviveSessionState(raw: any): AgentState | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const source = raw as AgentState;
+  const restoredMessages = Array.isArray((source as any).messages)
+    ? ((source as any).messages as any[]).map((message) => reviveMessage(message)).filter(Boolean)
+    : [];
+  return {
+    messages: restoredMessages as BaseMessage[],
+    phase: String(source.phase || "conversation"),
+    current_page_index: Number(source.current_page_index || 0),
+    attempt_count: Number(source.attempt_count || 0),
+    sitemap: Array.isArray(source.sitemap) ? source.sitemap : undefined,
+    workflow_context: source.workflow_context,
+    design_hit: (source as any).design_hit,
+    user_id: source.user_id,
+    access_token: source.access_token,
+  };
+}
+
+async function getSession(chatId: string): Promise<AgentState> {
+  const latestTask = await getLatestChatTaskForChat(chatId);
+  const internal = (latestTask?.result?.internal || {}) as Record<string, unknown>;
+  const fromSessionState = reviveSessionState(internal.sessionState);
+  const checkpointProjectPath = String(latestTask?.result?.progress?.checkpointProjectPath || "").trim();
+  const deployedUrl = String(latestTask?.result?.deployedUrl || "").trim();
+  if (fromSessionState) {
+    return {
+      ...fromSessionState,
+      deployed_url: deployedUrl || fromSessionState.deployed_url,
+      workflow_context: {
+        ...(fromSessionState.workflow_context || {}),
+        deploySourceProjectPath:
+          checkpointProjectPath || (fromSessionState.workflow_context as any)?.deploySourceProjectPath,
+        deploySourceTaskId: latestTask?.id || (fromSessionState.workflow_context as any)?.deploySourceTaskId,
+        checkpointProjectPath:
+          checkpointProjectPath || (fromSessionState.workflow_context as any)?.checkpointProjectPath,
+      } as any,
+    };
+  }
+  const fromInputState = reviveSessionState(internal.inputState);
+  if (fromInputState) {
+    return {
+      ...fromInputState,
+      deployed_url: deployedUrl || fromInputState.deployed_url,
+      workflow_context: {
+        ...(fromInputState.workflow_context || {}),
+        deploySourceProjectPath:
+          checkpointProjectPath || (fromInputState.workflow_context as any)?.deploySourceProjectPath,
+        deploySourceTaskId: latestTask?.id || (fromInputState.workflow_context as any)?.deploySourceTaskId,
+        checkpointProjectPath:
+          checkpointProjectPath || (fromInputState.workflow_context as any)?.checkpointProjectPath,
+      } as any,
+    };
+  }
   return createInitialState();
 }
 
@@ -136,6 +197,46 @@ function resolveAsyncRoundBudget(): number {
   return Math.max(1, Number(process.env.CHAT_ASYNC_MAX_ROUNDS_SKILL_NATIVE || 1));
 }
 
+function extractConfirmedPrompt(raw: string): string | null {
+  const text = String(raw || "").trim();
+  if (!text.startsWith(CONFIRM_GENERATE_PREFIX)) return null;
+  const payload = text.slice(CONFIRM_GENERATE_PREFIX.length).trim();
+  return payload || null;
+}
+
+function isWebsiteSkill(skillId: string): boolean {
+  return String(skillId || "").trim().toLowerCase() === "website-generation-workflow";
+}
+
+function createInfoStreamResponse(message: string, status = 200) {
+  const stream = createUIMessageStream({
+    execute: ({ writer }) => {
+      writer.write({ type: "start" });
+      const textId = crypto.randomUUID();
+      writer.write({ type: "text-start", id: textId });
+      writer.write({ type: "text-delta", id: textId, delta: message });
+      writer.write({ type: "text-end", id: textId });
+      writer.write({ type: "finish", finishReason: "stop" });
+    },
+  });
+  return createUIMessageStreamResponse({ status, stream });
+}
+
+async function appendTimelineMessageBestEffort(input: {
+  chatId: string;
+  role: "user" | "assistant" | "system";
+  text: string;
+  taskId?: string;
+  ownerUserId?: string;
+  metadata?: Record<string, unknown>;
+}) {
+  try {
+    await appendChatTimelineMessage(input);
+  } catch {
+    // Best-effort timeline persistence; do not block request.
+  }
+}
+
 export async function POST(req: Request) {
   let body: ChatRequestBody;
 
@@ -152,9 +253,24 @@ export async function POST(req: Request) {
     return errorStreamResponse("No user message found in request.", 400);
   }
 
-  const previousState = getSession(chatId);
+  const previousState = await getSession(chatId);
   const activeTask = await getActiveChatTask(chatId);
   if (activeTask && (activeTask.status === "queued" || activeTask.status === "running")) {
+    await appendTimelineMessageBestEffort({
+      chatId,
+      role: "user",
+      text: userText,
+      ownerUserId: body.user_id || previousState.user_id,
+      taskId: activeTask.id,
+    });
+    await appendTimelineMessageBestEffort({
+      chatId,
+      role: "assistant",
+      text: "A generation task is already running for this chat. Please wait for completion or check task status.",
+      ownerUserId: body.user_id || previousState.user_id,
+      taskId: activeTask.id,
+    });
+    await invalidateLaunchCenterRecentProjectsCache();
     return createTaskStreamResponse({
       assistantText: "A generation task is already running for this chat. Please wait for completion or check task status.",
       taskId: activeTask.id,
@@ -165,6 +281,10 @@ export async function POST(req: Request) {
   }
 
   const useAsyncTaskMode = shouldUseAsyncTaskMode(body);
+  const confirmedPrompt = extractConfirmedPrompt(userText);
+  const normalizedUserText = confirmedPrompt || userText;
+  const parsedCurrentInput = parseReferencedAssetsFromText(normalizedUserText);
+  const currentUserRequirementText = parsedCurrentInput.cleanText || normalizedUserText;
   const requestedSkillId = String(
     body.skill_id || (previousState.workflow_context as any)?.skillId || "website-generation-workflow",
   )
@@ -178,6 +298,132 @@ export async function POST(req: Request) {
     return errorStreamResponse(`Invalid skill_id: ${message}`, 400);
   }
 
+  const latestTask = await getLatestChatTaskForChat(chatId);
+  const checkpointProjectPath = String(
+    latestTask?.result?.progress?.checkpointProjectPath ||
+      (previousState.workflow_context as any)?.checkpointProjectPath ||
+      (previousState.workflow_context as any)?.deploySourceProjectPath ||
+      "",
+  ).trim();
+  const timelineMessages = await listChatTimelineMessages(chatId, 120);
+  const historyUserMessagesRaw = timelineMessages
+    .filter((item) => item.role === "user")
+    .map((item) => String(item.text || ""));
+  const historyUserMessages = historyUserMessagesRaw
+    .map((text) => parseReferencedAssetsFromText(text).cleanText || text)
+    .filter(Boolean);
+  const referencedAssets = collectReferencedAssetsFromTexts([...historyUserMessagesRaw, normalizedUserText]);
+  const aggregated = aggregateRequirementFromHistory({
+    historyUserMessages,
+    currentUserText: currentUserRequirementText,
+  });
+  const slots = buildRequirementSlots(aggregated.requirementText);
+  const promptDraftResult = await buildPromptDraftWithResearch({
+    requirementText: aggregated.requirementText,
+    slots,
+  });
+  const promptDraft = appendReferencedAssetsBlock(String(promptDraftResult.promptDraft || "").trim(), referencedAssets);
+  const stage = deriveConversationStage({
+    latestTaskStatus: latestTask?.status,
+    latestProgressStage: String(latestTask?.result?.progress?.stage || ""),
+    latestDeployedUrl: String(latestTask?.result?.deployedUrl || ""),
+    checkpointProjectPath,
+    workflowContext: (previousState.workflow_context || {}) as Record<string, unknown>,
+  });
+  const decision = decideChatIntent({
+    userText: currentUserRequirementText,
+    stage,
+    slots,
+    isWebsiteSkill: isWebsiteSkill(requestedSkillId),
+    forceGenerate: Boolean(confirmedPrompt),
+  });
+  const filled = slots.filter((slot) => slot.filled).length;
+  const question = buildClarificationQuestion({
+    slots,
+    stage,
+    decision,
+  });
+
+  if (decision.intent === "clarify") {
+    await appendTimelineMessageBestEffort({
+      chatId,
+      role: "user",
+      text: normalizedUserText,
+      ownerUserId: body.user_id || previousState.user_id,
+    });
+    await appendTimelineMessageBestEffort({
+      chatId,
+      role: "system",
+      text: `需求进度：${filled}/${slots.length} (${decision.completionPercent}%)`,
+      ownerUserId: body.user_id || previousState.user_id,
+      metadata: {
+        cardType: "requirement_progress",
+        progress: {
+          completed: filled,
+          total: slots.length,
+          percent: decision.completionPercent,
+        },
+        slots,
+      },
+    });
+    await appendTimelineMessageBestEffort({
+      chatId,
+      role: "assistant",
+      text:
+        promptDraftResult.draftMode === "llm_web_search"
+          ? "已基于 LLM + Web Search 生成 Prompt 草稿，可继续补充，或直接发送“开始生成”。"
+          : promptDraftResult.draftMode === "llm"
+            ? "已基于 LLM 生成 Prompt 草稿，可继续补充，或直接发送“开始生成”。"
+            : "已更新需求草稿，可继续补充，或直接发送“开始生成”。",
+      ownerUserId: body.user_id || previousState.user_id,
+      metadata: {
+        cardType: "prompt_draft",
+        draftMode: promptDraftResult.draftMode || null,
+        title: "网站生成 Prompt 草稿",
+        promptDraft,
+        usedWebSearch: promptDraftResult.usedWebSearch,
+        missingSlots: decision.missingSlots,
+        researchSummary: promptDraftResult.researchSummary,
+        researchSources: promptDraftResult.sources,
+        draftProvider: promptDraftResult.provider || null,
+        draftModel: promptDraftResult.model || null,
+        draftFallbackReason: promptDraftResult.fallbackReason || null,
+      },
+    });
+    await appendTimelineMessageBestEffort({
+      chatId,
+      role: "assistant",
+      text: question,
+      ownerUserId: body.user_id || previousState.user_id,
+      metadata: {
+        cardType: "intent_decision",
+        intent: decision.intent,
+        confidence: decision.confidence,
+        reason: decision.reason,
+        stage,
+        assumedDefaults: decision.assumedDefaults,
+      },
+    });
+    await invalidateLaunchCenterRecentProjectsCache();
+
+    return createInfoStreamResponse(
+      "已进入需求梳理阶段。请继续补充需求，或直接输入“开始生成”触发任务。",
+      200,
+    );
+  }
+
+  const deployRequested = decision.intent === "deploy" || isDeployIntent(normalizedUserText);
+  const refineRequested = decision.intent === "refine_preview" || decision.intent === "refine_deployed";
+  const executionMode: "generate" | "refine" | "deploy" = deployRequested
+    ? "deploy"
+    : refineRequested
+      ? "refine"
+      : "generate";
+  const runtimeUserText =
+    executionMode === "generate" && isWebsiteSkill(requestedSkillId)
+      ? promptDraft
+      : appendReferencedAssetsBlock(currentUserRequirementText, referencedAssets);
+
   const inputState: AgentState = {
     ...previousState,
     user_id: body.user_id || previousState.user_id,
@@ -187,24 +433,62 @@ export async function POST(req: Request) {
       runMode: useAsyncTaskMode ? "async-task" : "sync",
       genMode: "skill_native",
       skillId: requestedSkillId,
+      sourceRequirement: runtimeUserText,
+      refineSkillId: String(process.env.CHAT_REFINE_SKILL_ID || "website-refinement-workflow"),
+      executionMode,
+      conversationStage: stage,
+      intent: decision.intent,
+      intentConfidence: decision.confidence,
+      intentReason: decision.reason,
+      deployRequested,
+      refineRequested,
+      designOverrides:
+        body.design_overrides && typeof body.design_overrides === "object"
+          ? body.design_overrides
+          : (previousState.workflow_context as any)?.designOverrides,
+      designConfirmed:
+        body.confirm_design === true ||
+        Boolean((previousState.workflow_context as any)?.designConfirmed),
+      deploySourceProjectPath: checkpointProjectPath || String((previousState.workflow_context as any)?.deploySourceProjectPath || ""),
+      deploySourceTaskId: String(latestTask?.id || (previousState.workflow_context as any)?.deploySourceTaskId || ""),
+      refineSourceProjectPath: checkpointProjectPath || String((previousState.workflow_context as any)?.deploySourceProjectPath || ""),
+      refineSourceTaskId: String(latestTask?.id || (previousState.workflow_context as any)?.deploySourceTaskId || ""),
+      checkpointProjectPath,
+      requirementCompletionPercent: decision.completionPercent,
+      requirementSlots: slots,
+      requirementDraft: promptDraft,
+      requirementAggregatedText: aggregated.requirementText,
+      latestUserText: currentUserRequirementText,
+      latestUserTextRaw: normalizedUserText,
+      referencedAssets,
+      assumedDefaults: decision.assumedDefaults,
     },
-    messages: [...(previousState.messages || []), new HumanMessage({ content: userText })],
+    messages: [...(previousState.messages || []), new HumanMessage({ content: runtimeUserText })],
   };
 
   if (!useAsyncTaskMode) {
     return errorStreamResponse("Synchronous generation path is disabled. Use async task mode.", 409);
   }
 
+  const acceptedMessageByMode: Record<"generate" | "refine" | "deploy", string> = {
+    generate: "Generation task accepted. Queued for background worker execution.",
+    refine: "Refine task accepted. Will adjust the latest version in background.",
+    deploy: "Deploy task accepted. Queued for background deployment.",
+  };
+  const acceptedMessage = acceptedMessageByMode[executionMode];
+
   const initialResult: ChatTaskResult = {
-    assistantText: "Task accepted. Waiting for worker to claim execution.",
+    assistantText: acceptedMessage,
     phase: "queued",
     internal: {
       inputState,
+      sessionState: inputState,
       queuedAt: new Date().toISOString(),
       skillId: requestedSkillId,
     },
     progress: {
       stage: "queued",
+      stageMessage: `${executionMode} task queued. Waiting for background worker...`,
       skillId: requestedSkillId,
       provider: String(process.env.LLM_PROVIDER || "aiberm"),
       model: String(process.env.LLM_MODEL || process.env.LLM_MODEL_AIBERM || "openai/gpt-5.3-codex"),
@@ -213,12 +497,29 @@ export async function POST(req: Request) {
       round: 0,
       maxRounds: resolveAsyncRoundBudget(),
       checkpointSaved: false,
+      nextStep: executionMode,
     } as any,
   };
   const task = await createChatTask(chatId, body.user_id || previousState.user_id, initialResult);
+  await appendTimelineMessageBestEffort({
+    chatId,
+    role: "user",
+    text: normalizedUserText,
+    ownerUserId: body.user_id || previousState.user_id,
+    taskId: task.id,
+  });
+  await appendTimelineMessageBestEffort({
+    chatId,
+    role: "assistant",
+    text: acceptedMessage,
+    ownerUserId: body.user_id || previousState.user_id,
+    taskId: task.id,
+    metadata: { status: "queued", executionMode, intent: decision.intent, stage },
+  });
+  await invalidateLaunchCenterRecentProjectsCache();
 
   return createTaskStreamResponse({
-    assistantText: "Task accepted. Queued for background worker execution.",
+    assistantText: acceptedMessage,
     taskId: task.id,
     chatId,
     status: "queued",
