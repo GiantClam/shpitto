@@ -9,9 +9,57 @@ export type RequirementSlot = {
   evidence?: string;
 };
 
+export type RequirementSpec = {
+  revision: number;
+  brand?: string;
+  businessContext?: string;
+  targetAudience?: string[];
+  pages?: string[];
+  visualStyle?: string[];
+  contentModules?: string[];
+  ctas?: string[];
+  locale?: "zh-CN" | "en";
+  tone?: string;
+  deployment?: {
+    provider?: string;
+    domain?: string;
+    requested: boolean;
+  };
+  explicitConstraints: string[];
+  source: "structured-parser";
+  fields: Record<string, { value: unknown; sourceIndex: number; sourceText: string }>;
+};
+
+export type RequirementPatchOperation = {
+  op: "set" | "remove" | "append";
+  target:
+    | "brand"
+    | "businessContext"
+    | "targetAudience"
+    | "pages"
+    | "visualStyle"
+    | "contentModules"
+    | "ctas"
+    | "locale"
+    | "tone"
+    | "deployment"
+    | "text";
+  value?: string | string[] | RequirementSpec["deployment"];
+  sourceText: string;
+};
+
+export type RequirementPatchPlan = {
+  revision: number;
+  operations: RequirementPatchOperation[];
+  instructionText: string;
+};
+
 export type AggregatedRequirement = {
   requirementText: string;
   sourceMessages: string[];
+  revision: number;
+  supersededMessages: string[];
+  correctionSummary: string[];
 };
 
 export type IntentDecision = {
@@ -38,6 +86,305 @@ function containsAny(text: string, patterns: RegExp[]): string | undefined {
 
 function toLower(value: string): string {
   return normalizeText(value).toLowerCase();
+}
+
+function unique(values: string[], limit = 12): string[] {
+  const seen = new Set<string>();
+  const output: string[] = [];
+  for (const value of values) {
+    const normalized = normalizeText(value).replace(/\s+/g, " ");
+    if (!normalized) continue;
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    output.push(normalized);
+    if (output.length >= limit) break;
+  }
+  return output;
+}
+
+function splitList(raw: string): string[] {
+  return String(raw || "")
+    .split(/[|,，、;；\n]+/g)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function extractLabelValue(text: string, labels: string[]): string | undefined {
+  for (const label of labels) {
+    const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const match = text.match(new RegExp(`(?:^|\\n)\\s*(?:${escaped})\\s*[:：]\\s*([^\\n]+)`, "i"));
+    if (match?.[1]) return normalizeText(match[1]);
+  }
+  return undefined;
+}
+
+function extractDelimitedList(text: string, labels: string[]): string[] {
+  const value = extractLabelValue(text, labels);
+  if (value) return splitList(value);
+  return [];
+}
+
+function hasCorrectionIntent(text: string): boolean {
+  return /(?:改成|换成|不要|不用|取消|删除|移除|去掉|instead|replace|change|remove|delete|no longer|not\s+english|not\s+chinese)/i.test(
+    text,
+  );
+}
+
+function categorizeRequirementMessage(text: string): Set<RequirementPatchOperation["target"]> {
+  const raw = normalizeText(text);
+  const categories = new Set<RequirementPatchOperation["target"]>();
+  if (/中文|英文|english|chinese|zh-cn|\ben\b|语言|locale/i.test(raw)) categories.add("locale");
+  if (/风格|style|配色|color|颜色|主色|蓝|绿|红|橙|紫|黑|typography|字体/i.test(raw)) categories.add("visualStyle");
+  if (/页面|导航|pages?|routes?|sitemap|首页|关于|产品|服务|案例|联系|blog|pricing/i.test(raw)) categories.add("pages");
+  if (/cta|按钮|联系|询价|下载|预约|contact|quote|whatsapp/i.test(raw)) categories.add("ctas");
+  if (/客户|受众|audience|用户|采购|工程师|buyers?|engineers?/i.test(raw)) categories.add("targetAudience");
+  if (/模块|sections?|hero|案例|新闻|表单|faq|认证|下载/i.test(raw)) categories.add("contentModules");
+  if (/品牌|公司|业务|定位|brand|company|business/i.test(raw)) categories.add("brand");
+  if (/部署|上线|发布|cloudflare|vercel|domain|域名/i.test(raw)) categories.add("deployment");
+  return categories;
+}
+
+function filterSupersededMessages(messages: string[]): { activeMessages: string[]; supersededMessages: string[]; correctionSummary: string[] } {
+  const lockedCategories = new Set<RequirementPatchOperation["target"]>();
+  const activeReversed: string[] = [];
+  const supersededMessages: string[] = [];
+  const correctionSummary: string[] = [];
+
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const message = messages[i];
+    const categories = categorizeRequirementMessage(message);
+    const intersectsLocked = Array.from(categories).some((category) => lockedCategories.has(category));
+    const allCategoriesLocked = categories.size > 0 && Array.from(categories).every((category) => lockedCategories.has(category));
+    if (intersectsLocked) {
+      supersededMessages.push(message);
+    }
+    if (allCategoriesLocked) {
+      continue;
+    }
+    activeReversed.push(message);
+    if (hasCorrectionIntent(message) && categories.size > 0) {
+      for (const category of categories) lockedCategories.add(category);
+      correctionSummary.push(`修正覆盖：${Array.from(categories).join(", ")}`);
+    }
+  }
+
+  return {
+    activeMessages: activeReversed.reverse(),
+    supersededMessages: supersededMessages.reverse(),
+    correctionSummary: correctionSummary.reverse(),
+  };
+}
+
+type ExtractedRequirementFields = {
+  brand?: string;
+  businessContext?: string;
+  targetAudience?: string[];
+  pages?: string[];
+  visualStyle?: string[];
+  contentModules?: string[];
+  ctas?: string[];
+  locale?: "zh-CN" | "en";
+  tone?: string;
+  deployment?: RequirementSpec["deployment"];
+};
+
+function extractRequirementFieldsFromText(text: string): ExtractedRequirementFields {
+  const raw = normalizeText(text);
+  const startsWithNonBrandLabel = /^\s*(?:pages?|page list|routes?|sitemap|页面|导航|audience|target audience|客户|目标受众|用户|style|visual|视觉|风格|配色|cta|actions|按钮|转化动作|language|语言|tone|语气|modules?|sections?|内容模块|模块)\s*[:：]/i.test(
+    raw,
+  );
+  const brand =
+    extractLabelValue(raw, ["brand", "品牌", "公司", "company", "name", "名称"]) ||
+    raw.match(/(?:for|给|为)\s*([A-Za-z][A-Za-z0-9 _-]{1,48})\s*(?:build|create|generate|做|生成|官网|网站)/i)?.[1]?.trim() ||
+    (!startsWithNonBrandLabel
+      ? raw.match(/\b([A-Z][A-Z0-9-]{2,32})\b(?:\s+(?:website|site|官网|网站))?/i)?.[1]?.trim()
+      : undefined);
+  const pages = unique([
+    ...extractDelimitedList(raw, ["pages", "page list", "routes", "sitemap", "页面", "导航", "页面结构"]),
+    ...Array.from(raw.matchAll(/\/[a-zA-Z0-9][a-zA-Z0-9/_-]{0,60}/g)).map((match) => match[0]),
+    ...Array.from(
+      raw.matchAll(
+        /\b(home|about|products?|services?|solutions?|cases?|contact|news|blog|downloads?|pricing)\b/gi,
+      ),
+    ).map((match) => match[1]),
+    ...Array.from(raw.matchAll(/(首页|关于|产品|服务|方案|案例|联系|新闻|博客|下载|价格)/g)).map((match) => match[1]),
+  ]);
+  const visualStyle = unique([
+    ...extractDelimitedList(raw, ["style", "visual", "视觉", "风格", "配色"]),
+    ...Array.from(raw.matchAll(/(工业风|科技感|温暖|活泼|高级|极简|专业|可信|蓝色|绿色|黑金|高对比)/g)).map(
+      (match) => match[1],
+    ),
+  ]);
+  const targetAudience = unique([
+    ...extractDelimitedList(raw, ["audience", "target audience", "客户", "目标受众", "用户"]),
+    ...Array.from(raw.matchAll(/(采购|工程师|设计师|政府|研究者|manufacturer|buyers?|engineers?|customers?)/gi)).map(
+      (match) => match[1],
+    ),
+  ]);
+  const contentModules = unique([
+    ...extractDelimitedList(raw, ["modules", "sections", "内容模块", "模块"]),
+    ...Array.from(raw.matchAll(/(hero|案例|新闻|表单|认证|查询|下载|数据|图表|合作伙伴|faq|FAQ)/gi)).map(
+      (match) => match[1],
+    ),
+  ]);
+  const ctas = unique([
+    ...extractDelimitedList(raw, ["cta", "actions", "按钮", "转化动作"]),
+    ...Array.from(raw.matchAll(/(联系|询价|quote|whatsapp|catalog|订阅|下载|查询|预约|contact)/gi)).map(
+      (match) => match[1],
+    ),
+  ]);
+  const locale = /中文|chinese|zh-cn/i.test(raw) ? "zh-CN" : /英文|english|en\b/i.test(raw) ? "en" : undefined;
+  const deploymentProvider = /cloudflare/i.test(raw) ? "cloudflare" : /vercel/i.test(raw) ? "vercel" : undefined;
+  const domain = raw.match(/\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b/i)?.[0];
+  const deployment = {
+    provider: deploymentProvider,
+    domain,
+    requested: /cloudflare|vercel|deploy|部署|发布|上线|pages\.dev/i.test(raw),
+  };
+
+  return {
+    brand,
+    businessContext: extractLabelValue(raw, ["business", "业务", "定位", "背景"]),
+    targetAudience,
+    pages,
+    visualStyle,
+    contentModules,
+    ctas,
+    locale,
+    tone: extractLabelValue(raw, ["tone", "语气", "口吻"]),
+    deployment: deployment.requested || deployment.provider || deployment.domain ? deployment : undefined,
+  };
+}
+
+function hasValue(value: unknown): boolean {
+  return !(
+    value === undefined ||
+    value === null ||
+    (Array.isArray(value) && value.length === 0) ||
+    (typeof value === "object" && !Array.isArray(value) && Object.keys(value as Record<string, unknown>).length === 0)
+  );
+}
+
+function mergeRequirementFieldsFromSources(sourceMessages: string[]): {
+  values: ExtractedRequirementFields;
+  fields: RequirementSpec["fields"];
+} {
+  const values: ExtractedRequirementFields = {};
+  const fields: RequirementSpec["fields"] = {};
+  const setField = (key: keyof ExtractedRequirementFields, value: unknown, sourceIndex: number, sourceText: string) => {
+    if (!hasValue(value)) return;
+    (values as Record<string, unknown>)[key] = value;
+    fields[key] = { value, sourceIndex, sourceText };
+  };
+  const appendField = (key: keyof ExtractedRequirementFields, value: unknown, sourceIndex: number, sourceText: string) => {
+    if (!hasValue(value)) return;
+    if (Array.isArray(value)) {
+      const merged = unique([...(Array.isArray((values as any)[key]) ? (values as any)[key] : []), ...value]);
+      (values as Record<string, unknown>)[key] = merged;
+      fields[key] = { value: merged, sourceIndex, sourceText };
+      return;
+    }
+    setField(key, value, sourceIndex, sourceText);
+  };
+
+  sourceMessages.forEach((message, sourceIndex) => {
+    const extracted = extractRequirementFieldsFromText(message);
+    const categories = categorizeRequirementMessage(message);
+    const correction = hasCorrectionIntent(message);
+    const apply = (key: keyof ExtractedRequirementFields, target: RequirementPatchOperation["target"]) => {
+      const value = extracted[key];
+      if (!hasValue(value)) return;
+      if (correction && categories.has(target)) {
+        setField(key, value, sourceIndex, message);
+      } else {
+        appendField(key, value, sourceIndex, message);
+      }
+    };
+
+    apply("brand", "brand");
+    apply("businessContext", "businessContext");
+    apply("targetAudience", "targetAudience");
+    apply("pages", "pages");
+    apply("visualStyle", "visualStyle");
+    apply("contentModules", "contentModules");
+    apply("ctas", "ctas");
+    apply("locale", "locale");
+    apply("tone", "tone");
+    apply("deployment", "deployment");
+  });
+
+  return { values, fields };
+}
+
+export function buildRequirementSpec(text: string, sourceMessages?: string[]): RequirementSpec {
+  const raw = normalizeText(text);
+  const sources = (sourceMessages && sourceMessages.length > 0 ? sourceMessages : raw.split(/\n+/g))
+    .map((message) => normalizeText(message))
+    .filter(Boolean);
+  const merged = mergeRequirementFieldsFromSources(sources);
+  const explicitConstraints = unique(
+    raw
+      .split(/\n|。|；|;/g)
+      .filter((line) => /必须|不要|不能|must|should|avoid|required/i.test(line)),
+    20,
+  );
+
+  return {
+    revision: sources.length,
+    brand: merged.values.brand,
+    businessContext: merged.values.businessContext,
+    targetAudience: merged.values.targetAudience || [],
+    pages: merged.values.pages || [],
+    visualStyle: merged.values.visualStyle || [],
+    contentModules: merged.values.contentModules || [],
+    ctas: merged.values.ctas || [],
+    locale: merged.values.locale,
+    tone: merged.values.tone,
+    deployment: merged.values.deployment || { requested: false },
+    explicitConstraints,
+    source: "structured-parser",
+    fields: merged.fields,
+  };
+}
+
+export function buildRequirementPatchPlan(text: string, revision = 1): RequirementPatchPlan {
+  const raw = normalizeText(text);
+  const spec = buildRequirementSpec(raw, [raw]);
+  const operations: RequirementPatchOperation[] = [];
+  const correction = hasCorrectionIntent(raw);
+  const removeLocale =
+    /不要英文|不用英文|not\s+english|no\s+english/i.test(raw)
+      ? "en"
+      : /不要中文|不用中文|not\s+chinese|no\s+chinese/i.test(raw)
+        ? "zh-CN"
+        : undefined;
+
+  if (removeLocale) operations.push({ op: "remove", target: "locale", value: removeLocale, sourceText: raw });
+  if (spec.locale) operations.push({ op: correction ? "set" : "append", target: "locale", value: spec.locale, sourceText: raw });
+  if (spec.visualStyle?.length) {
+    operations.push({ op: correction ? "set" : "append", target: "visualStyle", value: spec.visualStyle, sourceText: raw });
+  }
+  if (spec.pages?.length) operations.push({ op: correction ? "set" : "append", target: "pages", value: spec.pages, sourceText: raw });
+  if (spec.ctas?.length) operations.push({ op: correction ? "set" : "append", target: "ctas", value: spec.ctas, sourceText: raw });
+  if (spec.targetAudience?.length) {
+    operations.push({ op: correction ? "set" : "append", target: "targetAudience", value: spec.targetAudience, sourceText: raw });
+  }
+  if (spec.contentModules?.length) {
+    operations.push({ op: correction ? "set" : "append", target: "contentModules", value: spec.contentModules, sourceText: raw });
+  }
+  if (spec.deployment?.requested || spec.deployment?.provider || spec.deployment?.domain) {
+    operations.push({ op: correction ? "set" : "append", target: "deployment", value: spec.deployment, sourceText: raw });
+  }
+  if (operations.length === 0 && raw) {
+    operations.push({ op: correction ? "set" : "append", target: "text", value: raw, sourceText: raw });
+  }
+
+  return {
+    revision,
+    operations,
+    instructionText: raw,
+  };
 }
 
 export function isDeployIntent(text: string): boolean {
@@ -118,8 +465,19 @@ const SLOT_DEFINITIONS: Array<{ key: string; label: string; patterns: RegExp[] }
 
 export function buildRequirementSlots(text: string): RequirementSlot[] {
   const normalized = toLower(text);
+  const spec = buildRequirementSpec(text);
+  const structuredEvidence: Record<string, string | undefined> = {
+    "brand-positioning": spec.brand || spec.businessContext,
+    "target-audience": spec.targetAudience?.join(", "),
+    "sitemap-pages": spec.pages?.join(", "),
+    "visual-system": spec.visualStyle?.join(", "),
+    "content-modules": spec.contentModules?.join(", "),
+    "interaction-cta": spec.ctas?.join(", "),
+    "language-and-tone": spec.locale || spec.tone,
+    "deployment-and-domain": spec.deployment?.provider || spec.deployment?.domain || (spec.deployment?.requested ? "deployment requested" : undefined),
+  };
   return SLOT_DEFINITIONS.map((slot) => {
-    const evidence = containsAny(normalized, slot.patterns);
+    const evidence = structuredEvidence[slot.key] || containsAny(normalized, slot.patterns);
     return {
       key: slot.key,
       label: slot.label,
@@ -154,9 +512,13 @@ export function aggregateRequirementFromHistory(params: {
     deduped.push(text);
   }
 
-  const sourceMessages = deduped.slice(-maxMessages);
+  const { activeMessages, supersededMessages, correctionSummary } = filterSupersededMessages(deduped);
+  const sourceMessages = activeMessages.slice(-maxMessages);
   return {
     sourceMessages,
+    revision: deduped.length,
+    supersededMessages,
+    correctionSummary,
     requirementText: sourceMessages.join("\n"),
   };
 }

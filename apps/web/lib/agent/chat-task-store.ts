@@ -21,6 +21,7 @@ export type ChatTaskResult = {
     requeuedAt?: string;
     requeueReason?: string;
     skillId?: string;
+    pendingEdits?: ChatTaskPendingEdit[];
   };
   progress?: {
     stage?: string;
@@ -51,6 +52,14 @@ export type ChatTaskResult = {
     checkpointError?: string;
     nextStep?: string;
   };
+};
+
+export type ChatTaskPendingEdit = {
+  id: string;
+  text: string;
+  createdAt: string;
+  ownerUserId?: string;
+  patchPlan?: unknown;
 };
 
 export type ChatTaskRecord = {
@@ -1154,6 +1163,55 @@ export async function getChatTask(taskId: string): Promise<ChatTaskRecord | unde
     if (error) throw error;
     if (!data) return undefined;
     return fromRow(data as SupabaseTaskRow);
+  } catch (error) {
+    throw withTaskStoreErrorContext(error);
+  }
+}
+
+export async function appendPendingEditToChatTask(
+  taskId: string,
+  input: {
+    text: string;
+    ownerUserId?: string;
+    patchPlan?: unknown;
+  },
+): Promise<ChatTaskRecord | undefined> {
+  const task = await getChatTask(taskId);
+  if (!task) return undefined;
+  const text = String(input.text || "").trim();
+  if (!text) return task;
+
+  const existing = Array.isArray(task.result?.internal?.pendingEdits)
+    ? task.result?.internal?.pendingEdits || []
+    : [];
+  const pendingEdit: ChatTaskPendingEdit = {
+    id: crypto.randomUUID(),
+    text,
+    createdAt: asIso(now()),
+    ownerUserId: input.ownerUserId,
+    patchPlan: input.patchPlan,
+  };
+  const result: ChatTaskResult = {
+    ...(task.result || {}),
+    internal: {
+      ...(task.result?.internal || {}),
+      pendingEdits: [...existing, pendingEdit].slice(-20),
+    },
+    progress: {
+      ...(task.result?.progress || {}),
+      pendingEditsCount: Math.min(existing.length + 1, 20),
+    } as any,
+  };
+
+  if (!isSupabaseTaskStoreEnabled()) {
+    return updateMemoryTask(taskId, {
+      status: task.status,
+      result,
+    });
+  }
+
+  try {
+    return await updateSupabaseTask(taskId, { status: task.status, result });
   } catch (error) {
     throw withTaskStoreErrorContext(error);
   }

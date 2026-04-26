@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { HumanMessage } from "@langchain/core/messages";
-import { createChatTask, getChatTask } from "./chat-task-store";
+import { createChatTask, getChatTask, getLatestChatTaskForChat } from "./chat-task-store";
 
 describe("chat refine worker", () => {
   it("executes refine tasks and writes new checkpoint artifacts", async () => {
@@ -122,6 +122,88 @@ describe("chat refine worker", () => {
     const refinedProjectRaw = await fs.readFile(refinedProjectPath, "utf8");
     expect(refinedProjectRaw).toContain("#ff5500");
     expect(refinedProjectRaw).toContain("New Brand");
+  });
+
+  it("creates a follow-up refine task from pending edits captured while active", async () => {
+    const chatId = `chat-refine-worker-pending-${Date.now()}`;
+    const sourceProjectPath = path.resolve(process.cwd(), ".tmp", "chat-tests", `${chatId}-source.json`);
+    await fs.mkdir(path.dirname(sourceProjectPath), { recursive: true });
+    await fs.writeFile(
+      sourceProjectPath,
+      JSON.stringify(
+        {
+          projectId: "refine-worker-pending",
+          pages: [{ path: "/", html: "<!doctype html><html><head><title>Old</title></head><body><h1>Old</h1></body></html>" }],
+          staticSite: {
+            mode: "skill-direct",
+            files: [
+              { path: "/index.html", type: "text/html", content: "<!doctype html><html><head><title>Old</title></head><body><h1>Old</h1></body></html>" },
+              { path: "/styles.css", type: "text/css", content: "body{color:#111}" },
+              { path: "/script.js", type: "text/javascript", content: "console.log('ok');" },
+            ],
+          },
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
+
+    const inputState: any = {
+      messages: [new HumanMessage({ content: "把 Old 改成 First Pass" })],
+      phase: "end",
+      current_page_index: 0,
+      attempt_count: 0,
+      workflow_context: {
+        executionMode: "refine",
+        refineRequested: true,
+        checkpointProjectPath: sourceProjectPath,
+        deploySourceProjectPath: sourceProjectPath,
+        skillId: "website-generation-workflow",
+      },
+    };
+
+    const task = await createChatTask(chatId, undefined, {
+      assistantText: "queued refine",
+      phase: "queued",
+      internal: {
+        inputState,
+        skillId: "website-generation-workflow",
+        pendingEdits: [
+          {
+            id: "pending-1",
+            text: "主色换成绿色",
+            createdAt: new Date().toISOString(),
+            patchPlan: {
+              revision: 1,
+              instructionText: "主色换成绿色",
+              operations: [{ op: "set", target: "visualStyle", value: ["绿色"], sourceText: "主色换成绿色" }],
+            },
+          },
+        ],
+      },
+      progress: { stage: "queued" } as any,
+    });
+
+    const { runChatTaskWorkerOnce } = await import("../../scripts/chat-task-worker");
+    const processed = await runChatTaskWorkerOnce();
+    expect(processed).toBe(true);
+
+    const completed = await getChatTask(task.id);
+    expect(completed?.status).toBe("succeeded");
+    const latest = await getLatestChatTaskForChat(chatId);
+    expect(latest?.id).not.toBe(task.id);
+    expect(latest?.status).toBe("queued");
+    const workflow = (latest?.result?.internal?.inputState as any)?.workflow_context || {};
+    expect(workflow.executionMode).toBe("refine");
+    expect(workflow.latestUserText).toContain("绿色");
+    expect(workflow.refineSourceProjectPath).toBe(completed?.result?.progress?.checkpointProjectPath);
+    expect((workflow.requirementPatchPlan?.operations || []).some((op: any) => op.target === "visualStyle")).toBe(true);
+
+    const followUpProcessed = await runChatTaskWorkerOnce();
+    expect(followUpProcessed).toBe(true);
+    const followUp = await getChatTask(latest!.id);
+    expect(followUp?.status).toBe("succeeded");
   });
 
   it("handles serialized user messages and removes explicit deletion targets", async () => {

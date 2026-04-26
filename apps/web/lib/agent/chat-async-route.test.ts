@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getLatestChatTaskForChat } from "./chat-task-store";
+import { getActiveChatTask, getLatestChatTaskForChat, listChatTimelineMessages } from "./chat-task-store";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -50,6 +50,89 @@ describe("chat api async mode", () => {
     const task = await getLatestChatTaskForChat(chatId);
     expect(task).toBeTruthy();
     expect(task?.status === "queued" || task?.status === "running").toBe(true);
+  });
+
+  it("queues pending edits on active generation tasks", async () => {
+    const chatId = `chat-pending-edit-${Date.now()}`;
+    const { createChatTask } = await import("./chat-task-store");
+    const active = await createChatTask(chatId, undefined, {
+      assistantText: "queued generation",
+      phase: "queued",
+      internal: {
+        inputState: {
+          messages: [],
+          phase: "conversation",
+          current_page_index: 0,
+          attempt_count: 0,
+          workflow_context: {
+            executionMode: "generate",
+            skillId: "website-generation-workflow",
+          },
+        },
+      },
+      progress: { stage: "queued" } as any,
+    });
+
+    const { POST } = await import("../../app/api/chat/route");
+    const req = new Request("http://localhost/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: chatId,
+        messages: [{ role: "user", parts: [{ type: "text", text: "不要英文，改成中文，主色换成绿色" }] }],
+      }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(202);
+
+    const task = await getActiveChatTask(chatId);
+    expect(task?.id).toBe(active.id);
+    const pendingEdits = task?.result?.internal?.pendingEdits || [];
+    expect(pendingEdits).toHaveLength(1);
+    expect(pendingEdits[0]?.text).toContain("改成中文");
+    expect((pendingEdits[0]?.patchPlan as any)?.operations?.some((op: any) => op.target === "locale")).toBe(true);
+  });
+
+  it("locks user input while deploy task is active", async () => {
+    const chatId = `chat-deploy-lock-${Date.now()}`;
+    const { createChatTask } = await import("./chat-task-store");
+    const active = await createChatTask(chatId, undefined, {
+      assistantText: "queued deploy",
+      phase: "queued",
+      internal: {
+        inputState: {
+          messages: [],
+          phase: "conversation",
+          current_page_index: 0,
+          attempt_count: 0,
+          workflow_context: {
+            executionMode: "deploy",
+            skillId: "website-generation-workflow",
+          },
+        },
+      },
+      progress: { stage: "deploying", nextStep: "deploy" } as any,
+    });
+
+    const { POST } = await import("../../app/api/chat/route");
+    const req = new Request("http://localhost/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: chatId,
+        messages: [{ role: "user", parts: [{ type: "text", text: "把主色改成绿色" }] }],
+      }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(423);
+
+    const task = await getActiveChatTask(chatId);
+    expect(task?.id).toBe(active.id);
+    expect(task?.result?.internal?.pendingEdits || []).toHaveLength(0);
+    const timeline = await listChatTimelineMessages(chatId, 20);
+    expect(timeline.some((message) => String(message.text || "").includes("主色改成绿色"))).toBe(false);
   });
 
   it("returns requirement-clarification response before confirmed generation", async () => {
@@ -157,9 +240,11 @@ describe("chat api async mode", () => {
     const res = await POST(req);
     expect(res.status).toBe(202);
 
-    const latest = await getLatestChatTaskForChat(chatId);
+    const latest = await getActiveChatTask(chatId);
     const workflow = (latest?.result?.internal?.inputState as any)?.workflow_context || {};
     expect(workflow.deployRequested).toBe(true);
     expect(workflow.deploySourceProjectPath).toBe(projectPath);
+    expect(workflow.requirementSpec?.deployment?.provider).toBe("cloudflare");
+    expect(workflow.requirementDraft).toBe("deploy to cloudflare");
   });
 });

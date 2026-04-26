@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { SkillRuntimeExecutor } from "./executor";
 
 function buildStaticSiteProject() {
@@ -46,7 +48,48 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
     });
 
     expect(String(nextState?.deployed_url || "")).toContain(".pages.dev");
-    expect(Boolean(nextState?.workflow_context?.deployRequested)).toBe(false);
+    expect(nextState?.workflow_context?.deployRequested).toBe(false);
+    expect(nextState?.workflow_context?.smoke?.preDeploy?.status).toBe("passed");
+    expect(nextState?.workflow_context?.smoke?.postDeploy?.status).toBe("skipped");
+  });
+
+  it("writes latest checkpoint plus incremental step deltas during generation", async () => {
+    process.env.CHAT_TASKS_USE_SUPABASE = "0";
+    const prevForceLocal = process.env.SKILL_TOOL_FORCE_LOCAL;
+    process.env.SKILL_TOOL_FORCE_LOCAL = "1";
+    const chatId = `checkpoint-chat-${Date.now()}`;
+    const taskId = `checkpoint-task-${Date.now()}`;
+
+    try {
+      await SkillRuntimeExecutor.runTask({
+        taskId,
+        chatId,
+        workerId: "test-worker",
+        inputState: {
+          messages: [{ role: "user", content: "Generate a website for Northstar Robotics with Home and Contact pages" }] as any,
+          phase: "conversation",
+          current_page_index: 0,
+          attempt_count: 0,
+          workflow_context: {
+            skillId: "website-generation-workflow",
+          } as any,
+        } as any,
+      });
+
+      const taskRoot = path.resolve(process.cwd(), ".tmp", "chat-tasks", chatId, taskId);
+      const latestIndex = path.join(taskRoot, "latest", "site", "index.html");
+      const latestStat = await fs.stat(latestIndex);
+      expect(latestStat.isFile()).toBe(true);
+
+      const stepRoot = path.join(taskRoot, "steps");
+      const stepNames = (await fs.readdir(stepRoot)).sort();
+      const lastStep = path.join(stepRoot, stepNames[stepNames.length - 1]);
+      const delta = JSON.parse(await fs.readFile(path.join(lastStep, "delta.json"), "utf8"));
+      expect(Array.isArray(delta.changedFiles)).toBe(true);
+      expect(delta.latestSiteDir).toContain(path.join(taskRoot, "latest", "site"));
+    } finally {
+      if (prevForceLocal === undefined) delete process.env.SKILL_TOOL_FORCE_LOCAL;
+      else process.env.SKILL_TOOL_FORCE_LOCAL = prevForceLocal;
+    }
   });
 });
-

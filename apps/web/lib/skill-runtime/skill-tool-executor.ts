@@ -591,7 +591,7 @@ function buildFallbackPage(params: {
     <section class="hero">
       <h1>${title}</h1>
       <p>${page.responsibility}</p>
-      <a class="cta" href="/contact/">${params.decision.locale === "zh-CN" ? "缁斿宓嗛崪銊嚄" : "Contact Us"}</a>
+      <a class="cta" href="/contact/">${params.decision.locale === "zh-CN" ? "联系我们" : "Contact Us"}</a>
     </section>
     <section class="cards">${cardList}</section>
     <section>
@@ -599,7 +599,7 @@ function buildFallbackPage(params: {
     </section>
   </main>
   <footer>
-    <div class="container">${params.brandName} 璺?<span data-year></span></div>
+    <div class="container">${params.brandName} © <span data-year></span></div>
   </footer>
   <script src="/script.js"></script>
 </body>
@@ -1760,4 +1760,3 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     deployedUrl: finalState.deployed_url,
   };
 }
-

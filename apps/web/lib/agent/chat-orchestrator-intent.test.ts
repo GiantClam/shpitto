@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildRequirementSlots, decideChatIntent, type ConversationStage } from "./chat-orchestrator";
+import { buildRequirementSlots, buildRequirementSpec, decideChatIntent, type ConversationStage } from "./chat-orchestrator";
 
 function decide(text: string, stage: ConversationStage) {
   const slots = buildRequirementSlots(
@@ -43,5 +43,23 @@ describe("chat orchestrator intent", () => {
     expect(decision.intent).toBe("clarify");
     expect(decision.shouldCreateTask).toBe(false);
   });
-});
 
+  it("extracts structured requirements to fill slots beyond simple keyword checks", () => {
+    const text = [
+      "Brand: Northstar Robotics",
+      "Pages: Home | Products | Case Studies | Contact",
+      "Audience: procurement teams, engineers",
+      "Style: professional, high contrast",
+      "CTA: request a quote",
+      "Language: English",
+    ].join("\n");
+    const spec = buildRequirementSpec(text);
+    const slots = buildRequirementSlots(text);
+
+    expect(spec.brand).toBe("Northstar Robotics");
+    expect(spec.pages).toContain("Case Studies");
+    expect(spec.targetAudience).toContain("procurement teams");
+    expect(slots.find((slot) => slot.key === "sitemap-pages")?.filled).toBe(true);
+    expect(slots.find((slot) => slot.key === "target-audience")?.filled).toBe(true);
+  });
+});

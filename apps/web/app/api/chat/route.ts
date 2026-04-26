@@ -2,6 +2,7 @@ import { createUIMessageStream, createUIMessageStreamResponse, type UIMessage } 
 import { AIMessage, HumanMessage, type BaseMessage } from "@langchain/core/messages";
 import crypto from "node:crypto";
 import {
+  appendPendingEditToChatTask,
   appendChatTimelineMessage,
   createChatTask,
   getActiveChatTask,
@@ -13,7 +14,9 @@ import { type BuilderAction } from "../../../lib/agent/chat-ui-payload";
 import { type AgentState } from "../../../lib/agent/graph";
 import {
   aggregateRequirementFromHistory,
+  buildRequirementPatchPlan,
   buildClarificationQuestion,
+  buildRequirementSpec,
   buildRequirementSlots,
   decideChatIntent,
   deriveConversationStage,
@@ -322,23 +325,53 @@ export async function POST(req: Request) {
   const previousState = await getSession(chatId);
   const activeTask = await getActiveChatTask(chatId);
   if (activeTask && (activeTask.status === "queued" || activeTask.status === "running")) {
+    const activeWorkflow = (activeTask.result?.internal?.inputState as any)?.workflow_context || {};
+    const activeExecutionMode = String(activeWorkflow.executionMode || "").trim().toLowerCase();
+    const activeProgressStage = String(activeTask.result?.progress?.stage || "").trim().toLowerCase();
+    const activeNextStep = String(activeTask.result?.progress?.nextStep || "").trim().toLowerCase();
+    const deployLocked =
+      activeExecutionMode === "deploy" ||
+      activeProgressStage.includes("deploy") ||
+      activeNextStep === "deploy";
+    if (deployLocked) {
+      return createTaskStreamResponse({
+        assistantText: "部署正在进行中，当前阶段已锁定输入。请等待部署完成后再继续修改或发布。",
+        taskId: activeTask.id,
+        chatId,
+        status: activeTask.status,
+        statusCode: 423,
+      });
+    }
+    const shouldQueuePendingEdit = activeExecutionMode !== "deploy" && !isDeployIntent(userText);
+    if (shouldQueuePendingEdit) {
+      await appendPendingEditToChatTask(activeTask.id, {
+        text: userText,
+        ownerUserId: body.user_id || previousState.user_id,
+        patchPlan: buildRequirementPatchPlan(userText),
+      });
+    }
     await appendTimelineMessageBestEffort({
       chatId,
       role: "user",
       text: userText,
       ownerUserId: body.user_id || previousState.user_id,
       taskId: activeTask.id,
+      metadata: shouldQueuePendingEdit ? { cardType: "pending_edit", queuedForTaskId: activeTask.id } : undefined,
     });
+    const assistantText = shouldQueuePendingEdit
+      ? "当前任务仍在运行。本条修改已加入待处理队列，当前任务完成后会自动基于最新预览继续修正。"
+      : "A generation task is already running for this chat. Please wait for completion or check task status.";
     await appendTimelineMessageBestEffort({
       chatId,
       role: "assistant",
-      text: "A generation task is already running for this chat. Please wait for completion or check task status.",
+      text: assistantText,
       ownerUserId: body.user_id || previousState.user_id,
       taskId: activeTask.id,
+      metadata: shouldQueuePendingEdit ? { cardType: "pending_edit_queued", queuedForTaskId: activeTask.id } : undefined,
     });
     await invalidateLaunchCenterRecentProjectsCache();
     return createTaskStreamResponse({
-      assistantText: "A generation task is already running for this chat. Please wait for completion or check task status.",
+      assistantText,
       taskId: activeTask.id,
       chatId,
       status: activeTask.status,
@@ -384,11 +417,8 @@ export async function POST(req: Request) {
     currentUserText: currentUserRequirementText,
   });
   const slots = buildRequirementSlots(aggregated.requirementText);
-  const promptDraftResult = await buildPromptDraftWithResearch({
-    requirementText: aggregated.requirementText,
-    slots,
-  });
-  const promptDraft = appendReferencedAssetsBlock(String(promptDraftResult.promptDraft || "").trim(), referencedAssets);
+  const requirementSpec = buildRequirementSpec(aggregated.requirementText, aggregated.sourceMessages);
+  const requirementPatchPlan = buildRequirementPatchPlan(currentUserRequirementText, aggregated.revision);
   const stage = deriveConversationStage({
     latestTaskStatus: latestTask?.status,
     latestProgressStage: String(latestTask?.result?.progress?.stage || ""),
@@ -409,6 +439,25 @@ export async function POST(req: Request) {
     stage,
     decision,
   });
+  const shouldBuildPromptDraft =
+    isWebsiteSkill(requestedSkillId) &&
+    (decision.intent === "clarify" || decision.intent === "generate");
+  const promptDraftResult = shouldBuildPromptDraft
+    ? await buildPromptDraftWithResearch({
+        requirementText: aggregated.requirementText,
+        slots,
+      })
+    : {
+        promptDraft: aggregated.requirementText,
+        usedWebSearch: false,
+        sources: [],
+        researchSummary: "",
+        draftMode: "template" as const,
+        fallbackReason: `skipped_for_intent:${decision.intent}`,
+        provider: undefined,
+        model: undefined,
+      };
+  const promptDraft = appendReferencedAssetsBlock(String(promptDraftResult.promptDraft || "").trim(), referencedAssets);
 
   if (decision.intent === "clarify") {
     await appendTimelineMessageBestEffort({
@@ -451,6 +500,10 @@ export async function POST(req: Request) {
         missingSlots: decision.missingSlots,
         researchSummary: promptDraftResult.researchSummary,
         researchSources: promptDraftResult.sources,
+        requirementSpec,
+        requirementRevision: aggregated.revision,
+        supersededMessages: aggregated.supersededMessages,
+        correctionSummary: aggregated.correctionSummary,
         draftProvider: promptDraftResult.provider || null,
         draftModel: promptDraftResult.model || null,
         draftFallbackReason: promptDraftResult.fallbackReason || null,
@@ -522,6 +575,11 @@ export async function POST(req: Request) {
       checkpointProjectPath,
       requirementCompletionPercent: decision.completionPercent,
       requirementSlots: slots,
+      requirementSpec,
+      requirementPatchPlan,
+      requirementRevision: aggregated.revision,
+      supersededMessages: aggregated.supersededMessages,
+      correctionSummary: aggregated.correctionSummary,
       requirementDraft: promptDraft,
       requirementAggregatedText: aggregated.requirementText,
       latestUserText: currentUserRequirementText,

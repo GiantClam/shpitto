@@ -7,8 +7,15 @@ import { getR2Client } from "../r2.ts";
 import { buildCloudflareBeaconSnippet, CloudflareClient, type CloudflareWebAnalyticsSite } from "../cloudflare.ts";
 import { Bundler } from "../bundler.ts";
 import { publishCurrentProjectAssets, syncGeneratedProjectAssetsFromSite } from "../project-assets.ts";
-import type { ChatTaskResult } from "../agent/chat-task-store.ts";
-import { completeChatTask, failChatTask, touchChatTaskHeartbeat, updateChatTaskProgress } from "../agent/chat-task-store.ts";
+import type { ChatTaskPendingEdit, ChatTaskResult } from "../agent/chat-task-store.ts";
+import {
+  completeChatTask,
+  createChatTask,
+  failChatTask,
+  getChatTask,
+  touchChatTaskHeartbeat,
+  updateChatTaskProgress,
+} from "../agent/chat-task-store.ts";
 import { extractUiPayload } from "../agent/chat-ui-payload.ts";
 import type { AgentState } from "../agent/graph.ts";
 import {
@@ -881,6 +888,107 @@ function resolveDeployProjectName(project: any, state: AgentState, chatId: strin
   return merged.slice(0, 58);
 }
 
+type DeploySmokeResult = {
+  status: "passed" | "failed" | "skipped";
+  checks: Array<{ name: string; passed: boolean; message?: string }>;
+};
+
+function isRemoteDeploySmokeEnabled(): boolean {
+  if (String(process.env.DEPLOY_SMOKE_DISABLE || "").trim() === "1") return false;
+  return Boolean(String(process.env.CLOUDFLARE_ACCOUNT_ID || "").trim() && String(process.env.CLOUDFLARE_API_TOKEN || "").trim());
+}
+
+function evaluateDeploySmoke(checks: DeploySmokeResult["checks"]): DeploySmokeResult {
+  return {
+    status: checks.every((check) => check.passed) ? "passed" : "failed",
+    checks,
+  };
+}
+
+function runPreDeploySmoke(bundle: { manifest: Record<string, string>; fileEntries: Array<{ path?: string; content?: string; type?: string }> }): DeploySmokeResult {
+  const entries = Array.isArray(bundle.fileEntries) ? bundle.fileEntries : [];
+  const byPath = new Map(entries.map((entry) => [normalizePath(String(entry.path || "")), entry]));
+  const htmlEntries = entries.filter((entry) => normalizePath(String(entry.path || "")).endsWith(".html"));
+  const checks: DeploySmokeResult["checks"] = [
+    {
+      name: "bundle_has_files",
+      passed: entries.length > 0,
+      message: `${entries.length} file(s) in bundle`,
+    },
+    {
+      name: "index_html_exists",
+      passed: byPath.has("/index.html"),
+      message: "Root index.html must exist",
+    },
+    {
+      name: "html_documents_valid",
+      passed:
+        htmlEntries.length > 0 &&
+        htmlEntries.every((entry) => {
+          const html = String(entry.content || "");
+          return /<!doctype html>|<html[\s>]/i.test(html) && /<body[\s>]/i.test(html);
+        }),
+      message: `${htmlEntries.length} HTML file(s) checked`,
+    },
+    {
+      name: "local_assets_present",
+      passed: htmlEntries.every((entry) => {
+        const html = String(entry.content || "");
+        const refs = Array.from(html.matchAll(/\b(?:href|src)=["']\/(styles\.css|script\.js)["']/gi)).map((match) =>
+          normalizePath(match[1] || ""),
+        );
+        return refs.every((ref) => byPath.has(ref));
+      }),
+      message: "Root CSS/JS references resolve inside bundle",
+    },
+  ];
+  return evaluateDeploySmoke(checks);
+}
+
+async function runPostDeploySmoke(url: string): Promise<DeploySmokeResult> {
+  const target = String(url || "").trim();
+  if (!target) {
+    return { status: "failed", checks: [{ name: "url_present", passed: false, message: "Deployment URL is empty" }] };
+  }
+  if (!isRemoteDeploySmokeEnabled()) {
+    return {
+      status: "skipped",
+      checks: [{ name: "remote_fetch", passed: true, message: "Skipped because Cloudflare credentials are not configured" }],
+    };
+  }
+  const controller = new AbortController();
+  const timeoutMs = Math.max(2_000, Number(process.env.DEPLOY_SMOKE_TIMEOUT_MS || 15_000));
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(target, {
+      method: "GET",
+      redirect: "follow",
+      signal: controller.signal,
+      headers: { "user-agent": "shpitto-deploy-smoke/1.0" },
+    });
+    const text = await res.text().catch(() => "");
+    return evaluateDeploySmoke([
+      {
+        name: "http_status",
+        passed: res.status >= 200 && res.status < 400,
+        message: `HTTP ${res.status}`,
+      },
+      {
+        name: "html_body",
+        passed: /<body[\s>]/i.test(text),
+        message: "Response should contain an HTML body",
+      },
+    ]);
+  } catch (error) {
+    return {
+      status: "failed",
+      checks: [{ name: "remote_fetch", passed: false, message: String((error as any)?.message || error || "fetch failed") }],
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function detectLocale(text: string, preferred?: string): "zh-CN" | "en" {
   const override = String(preferred || "").trim().toLowerCase();
   if (override.startsWith("zh")) return "zh-CN";
@@ -1335,23 +1443,64 @@ function isAssistantFailureSemantic(text: string): boolean {
   return normalized.startsWith("skill-runtime failed") || normalized.includes("generation failed");
 }
 
+async function readTextIfExists(filePath: string): Promise<string | undefined> {
+  try {
+    return await fs.readFile(filePath, "utf8");
+  } catch {
+    return undefined;
+  }
+}
+
+async function writeCheckpointFile(rootDir: string, filePath: string, content: string): Promise<string> {
+  const rel = String(filePath || "").replace(/^\/+/, "");
+  if (!rel) return "";
+  const abs = path.resolve(rootDir, rel);
+  const root = path.resolve(rootDir);
+  if (!abs.startsWith(root)) {
+    throw new Error(`Invalid checkpoint output file path: ${filePath}`);
+  }
+  await fs.mkdir(path.dirname(abs), { recursive: true });
+  await fs.writeFile(abs, content, "utf8");
+  return rel;
+}
+
 async function persistStepArtifacts(params: {
   chatId: string;
   taskId: string;
   snapshot: SkillRuntimeStepSnapshot;
-}): Promise<{ localDir: string; r2Prefix?: string; r2UploadedCount: number; r2Error?: string }> {
+}): Promise<{
+  localDir: string;
+  latestDir: string;
+  latestSiteDir: string;
+  latestWorkflowDir: string;
+  changedFiles: string[];
+  changedWorkflowFiles: string[];
+  r2Prefix?: string;
+  r2UploadedCount: number;
+  r2Error?: string;
+}> {
   const { chatId, taskId, snapshot } = params;
   const stepSlug = `${String(snapshot.stepIndex).padStart(3, "0")}-${sanitizePathToken(snapshot.stepKey)}`;
-  const baseDir = path.resolve(
+  const taskRoot = path.resolve(
     process.cwd(),
     ".tmp",
     "chat-tasks",
     sanitizePathToken(chatId),
     sanitizePathToken(taskId),
+  );
+  const baseDir = path.join(
+    taskRoot,
     "steps",
     stepSlug,
   );
+  const latestDir = path.join(taskRoot, "latest");
+  const latestSiteDir = path.join(latestDir, "site");
+  const latestWorkflowDir = path.join(latestDir, "workflow");
   await fs.mkdir(baseDir, { recursive: true });
+  await fs.mkdir(latestSiteDir, { recursive: true });
+  await fs.mkdir(latestWorkflowDir, { recursive: true });
+  const changedFiles: StaticArtifactFile[] = [];
+  const changedWorkflowFiles: WorkflowArtifactFile[] = [];
   const manifest = {
     savedAt: nowIso(),
     stepKey: snapshot.stepKey,
@@ -1362,6 +1511,7 @@ async function persistStepArtifacts(params: {
     fileCount: snapshot.files.length,
     workflowFileCount: snapshot.workflowArtifacts.length,
     pageCount: snapshot.pages.length,
+    checkpointMode: "incremental",
   };
   await fs.writeFile(path.join(baseDir, "manifest.json"), JSON.stringify(manifest, null, 2), "utf8");
   await fs.mkdir(path.join(baseDir, "site"), { recursive: true });
@@ -1369,17 +1519,58 @@ async function persistStepArtifacts(params: {
   for (const file of snapshot.files) {
     const rel = String(file.path || "").replace(/^\/+/, "");
     if (!rel) continue;
-    const abs = path.join(baseDir, "site", rel);
-    await fs.mkdir(path.dirname(abs), { recursive: true });
-    await fs.writeFile(abs, String(file.content || ""), "utf8");
+    const content = String(file.content || "");
+    const latestAbs = path.resolve(latestSiteDir, rel);
+    const previous = await readTextIfExists(latestAbs);
+    if (previous !== content) {
+      changedFiles.push(file);
+      await writeCheckpointFile(path.join(baseDir, "site"), file.path, content);
+    }
+    await writeCheckpointFile(latestSiteDir, file.path, content);
   }
   for (const file of snapshot.workflowArtifacts) {
     const rel = String(file.path || "").replace(/^\/+/, "");
     if (!rel) continue;
-    const abs = path.join(baseDir, "workflow", rel);
-    await fs.mkdir(path.dirname(abs), { recursive: true });
-    await fs.writeFile(abs, String(file.content || ""), "utf8");
+    const content = String(file.content || "");
+    const latestAbs = path.resolve(latestWorkflowDir, rel);
+    const previous = await readTextIfExists(latestAbs);
+    if (previous !== content) {
+      changedWorkflowFiles.push(file);
+      await writeCheckpointFile(path.join(baseDir, "workflow"), file.path, content);
+    }
+    await writeCheckpointFile(latestWorkflowDir, file.path, content);
   }
+  await fs.writeFile(
+    path.join(baseDir, "delta.json"),
+    JSON.stringify(
+      {
+        savedAt: manifest.savedAt,
+        changedFiles: changedFiles.map((file) => file.path),
+        changedWorkflowFiles: changedWorkflowFiles.map((file) => file.path),
+        latestDir,
+        latestSiteDir,
+        latestWorkflowDir,
+      },
+      null,
+      2,
+    ),
+    "utf8",
+  );
+  await fs.writeFile(
+    path.join(latestDir, "manifest.json"),
+    JSON.stringify(
+      {
+        ...manifest,
+        latestUpdatedAt: manifest.savedAt,
+        latestDir,
+        latestSiteDir,
+        latestWorkflowDir,
+      },
+      null,
+      2,
+    ),
+    "utf8",
+  );
 
   let r2Prefix: string | undefined;
   let r2UploadedCount = 0;
@@ -1396,11 +1587,13 @@ async function persistStepArtifacts(params: {
           files: snapshot.files.map((file) => file.path),
           workflowFiles: snapshot.workflowArtifacts.map((file) => file.path),
           pages: snapshot.pages.map((page) => page.path),
+          changedFiles: changedFiles.map((file) => file.path),
+          changedWorkflowFiles: changedWorkflowFiles.map((file) => file.path),
         },
       );
       r2UploadedCount += 1;
 
-      for (const file of snapshot.files) {
+      for (const file of changedFiles) {
         const rel = String(file.path || "").replace(/^\/+/, "");
         if (!rel) continue;
         await r2.putObject(`${r2Prefix}/site/${rel}`, String(file.content || ""), {
@@ -1409,7 +1602,7 @@ async function persistStepArtifacts(params: {
         r2UploadedCount += 1;
       }
 
-      for (const file of snapshot.workflowArtifacts) {
+      for (const file of changedWorkflowFiles) {
         const rel = String(file.path || "").replace(/^\/+/, "");
         if (!rel) continue;
         await r2.putObject(`${r2Prefix}/workflow/${rel}`, String(file.content || ""), {
@@ -1417,20 +1610,21 @@ async function persistStepArtifacts(params: {
         });
         r2UploadedCount += 1;
       }
-
-      for (const page of snapshot.pages) {
-        const pageKey = routeToHtmlPath(page.path).replace(/^\/+/, "");
-        if (!pageKey) continue;
-        await r2.putObject(`${r2Prefix}/pages/${pageKey}`, String(page.html || ""), {
-          contentType: "text/html",
-        });
-        r2UploadedCount += 1;
-      }
     }
   } catch (error: any) {
     r2Error = String(error?.message || error || "r2-upload-failed");
   }
-  return { localDir: baseDir, r2Prefix, r2UploadedCount, r2Error };
+  return {
+    localDir: baseDir,
+    latestDir,
+    latestSiteDir,
+    latestWorkflowDir,
+    changedFiles: changedFiles.map((file) => file.path),
+    changedWorkflowFiles: changedWorkflowFiles.map((file) => file.path),
+    r2Prefix,
+    r2UploadedCount,
+    r2Error,
+  };
 }
 
 type RuntimeContext = {
@@ -2431,6 +2625,11 @@ function buildSessionSnapshot(state: AgentState): Partial<AgentState> {
       refineSourceProjectPath: workflow.refineSourceProjectPath,
       refineSourceTaskId: workflow.refineSourceTaskId,
       requirementCompletionPercent: workflow.requirementCompletionPercent,
+      requirementSpec: workflow.requirementSpec,
+      requirementPatchPlan: workflow.requirementPatchPlan,
+      requirementRevision: workflow.requirementRevision,
+      supersededMessages: workflow.supersededMessages,
+      correctionSummary: workflow.correctionSummary,
       requirementDraft: workflow.requirementDraft,
       requirementAggregatedText: workflow.requirementAggregatedText,
       latestUserText: workflow.latestUserText,
@@ -2443,6 +2642,99 @@ function buildSessionSnapshot(state: AgentState): Partial<AgentState> {
       deployRequested: workflow.deployRequested,
     } as any,
   };
+}
+
+function collectPendingEditOperations(pendingEdits: ChatTaskPendingEdit[]): unknown[] {
+  const operations: unknown[] = [];
+  for (const edit of pendingEdits) {
+    const patchPlan = edit.patchPlan as { operations?: unknown[] } | undefined;
+    if (Array.isArray(patchPlan?.operations)) {
+      operations.push(...patchPlan.operations);
+    }
+  }
+  return operations;
+}
+
+async function readPendingEditsForTask(taskId: string): Promise<ChatTaskPendingEdit[]> {
+  const current = await getChatTask(taskId);
+  const pending = current?.result?.internal?.pendingEdits;
+  if (!Array.isArray(pending)) return [];
+  return pending
+    .map((edit) => ({
+      id: String((edit as any)?.id || crypto.randomUUID()),
+      text: String((edit as any)?.text || "").trim(),
+      createdAt: String((edit as any)?.createdAt || nowIso()),
+      ownerUserId: String((edit as any)?.ownerUserId || "").trim() || undefined,
+      patchPlan: (edit as any)?.patchPlan,
+    }))
+    .filter((edit) => edit.text);
+}
+
+async function queuePendingRefineTask(params: {
+  taskId: string;
+  chatId: string;
+  ownerUserId?: string;
+  baseState: AgentState;
+  checkpointProjectPath: string;
+  pendingEdits: ChatTaskPendingEdit[];
+}) {
+  const pendingText = params.pendingEdits.map((edit) => edit.text).filter(Boolean).join("\n");
+  if (!pendingText.trim() || !params.checkpointProjectPath.trim()) return undefined;
+
+  const pendingState: AgentState = {
+    ...params.baseState,
+    workflow_context: {
+      ...(params.baseState.workflow_context || {}),
+      runMode: "async-task",
+      genMode: "skill_native",
+      executionMode: "refine",
+      conversationStage: "previewing",
+      intent: "refine_preview",
+      intentReason: "pending-edits-after-active-task",
+      refineRequested: true,
+      deployRequested: false,
+      sourceRequirement: pendingText,
+      latestUserText: pendingText,
+      latestUserTextRaw: pendingText,
+      refineSourceProjectPath: params.checkpointProjectPath,
+      refineSourceTaskId: params.taskId,
+      deploySourceProjectPath: params.checkpointProjectPath,
+      deploySourceTaskId: params.taskId,
+      checkpointProjectPath: params.checkpointProjectPath,
+      requirementPatchPlan: {
+        revision: params.pendingEdits.length,
+        instructionText: pendingText,
+        operations: collectPendingEditOperations(params.pendingEdits),
+      },
+      pendingEditsConsumedFromTaskId: params.taskId,
+    } as any,
+    messages: [...(params.baseState.messages || []), new HumanMessage({ content: pendingText })],
+  };
+
+  return createChatTask(params.chatId, params.ownerUserId, {
+    assistantText: "Pending edits accepted. Queued a follow-up refinement from the latest preview.",
+    phase: "queued",
+    internal: {
+      inputState: pendingState,
+      sessionState: pendingState,
+      queuedAt: nowIso(),
+      skillId: String((params.baseState.workflow_context as any)?.skillId || WEBSITE_MAIN_SKILL_ID),
+      consumedPendingEditsFromTaskId: params.taskId,
+      consumedPendingEditIds: params.pendingEdits.map((edit) => edit.id),
+    } as any,
+    progress: {
+      stage: "queued",
+      stageMessage: "Follow-up refine task queued from pending edits.",
+      skillId: String((params.baseState.workflow_context as any)?.skillId || WEBSITE_MAIN_SKILL_ID),
+      attempt: 1,
+      startedAt: nowIso(),
+      round: 0,
+      maxRounds: 1,
+      checkpointSaved: false,
+      nextStep: "refine",
+      pendingEditsCount: params.pendingEdits.length,
+    } as any,
+  });
 }
 
 async function runDeployOnlyTask(params: {
@@ -2537,6 +2829,17 @@ async function runDeployOnlyTask(params: {
     });
 
     const bundle = await Bundler.createBundle(deployProject);
+    const preDeploySmoke = runPreDeploySmoke(bundle);
+    if (preDeploySmoke.status === "failed") {
+      await failChatTask(
+        taskId,
+        `Pre-deploy smoke gate failed: ${preDeploySmoke.checks
+          .filter((check) => !check.passed)
+          .map((check) => `${check.name}${check.message ? ` (${check.message})` : ""}`)
+          .join(", ")}`,
+      );
+      return;
+    }
 
     let r2BundlePrefix = "";
     if (ownerUserId) {
@@ -2565,6 +2868,17 @@ async function runDeployOnlyTask(params: {
     await cf.createProject(projectName);
     const deployment = await cf.uploadDeployment(projectName, bundle);
     const deployedUrl = String((deployment as any)?.result?.url || `https://${projectName}.pages.dev`);
+    const postDeploySmoke = await runPostDeploySmoke(deployedUrl);
+    if (postDeploySmoke.status === "failed") {
+      await failChatTask(
+        taskId,
+        `Post-deploy smoke gate failed: ${postDeploySmoke.checks
+          .filter((check) => !check.passed)
+          .map((check) => `${check.name}${check.message ? ` (${check.message})` : ""}`)
+          .join(", ")}`,
+      );
+      return;
+    }
 
     if (ownerUserId) {
       try {
@@ -2620,6 +2934,7 @@ async function runDeployOnlyTask(params: {
         : analyticsWarning
           ? `(Analytics pending: ${analyticsWarning})`
           : "(Analytics pending)",
+      `(Smoke: pre=${preDeploySmoke.status}, post=${postDeploySmoke.status})`,
     ].filter(Boolean);
     const deploymentMessage = deploymentMessageParts.join(" ");
 
@@ -2637,6 +2952,10 @@ async function runDeployOnlyTask(params: {
         deploySourceTaskId: String((inputState.workflow_context as any)?.deploySourceTaskId || ""),
         analyticsStatus,
         analyticsSiteTag: analyticsSite?.siteTag || "",
+        smoke: {
+          preDeploy: preDeploySmoke,
+          postDeploy: postDeploySmoke,
+        },
         ...(publishedAssetVersion ? { publishedAssetVersion } : {}),
       } as any,
       messages: [
@@ -2676,6 +2995,10 @@ async function runDeployOnlyTask(params: {
         checkpointSaved: false,
         analyticsStatus,
         analyticsSiteTag: analyticsSite?.siteTag || "",
+        smoke: {
+          preDeploy: preDeploySmoke,
+          postDeploy: postDeploySmoke,
+        },
         ...(publishedAssetVersion ? { publishedAssetVersion } : {}),
       } as any,
     };
@@ -2891,6 +3214,7 @@ async function runRefineTask(params: {
   }).catch(() => {
     // Best-effort asset sync should not block task completion.
   });
+  const pendingEdits = await readPendingEditsForTask(taskId);
   await completeChatTask(taskId, {
     assistantText: `Refinement completed. Updated ${refined.changedFiles.length} files.`,
     phase: "end",
@@ -2898,6 +3222,7 @@ async function runRefineTask(params: {
       workerId,
       inputState: buildSessionSnapshot(nextState),
       sessionState: buildSessionSnapshot(nextState),
+      pendingEdits,
     } as any,
     progress: {
       stage: "refined",
@@ -2915,8 +3240,19 @@ async function runRefineTask(params: {
       checkpointSiteDir,
       checkpointWorkflowDir,
       nextStep: "preview",
+      pendingEditsCount: pendingEdits.length,
     } as any,
   });
+  if (pendingEdits.length > 0) {
+    await queuePendingRefineTask({
+      taskId,
+      chatId,
+      ownerUserId: String(inputState.user_id || pendingEdits[pendingEdits.length - 1]?.ownerUserId || "").trim() || undefined,
+      baseState: nextState,
+      checkpointProjectPath,
+      pendingEdits,
+    });
+  }
 }
 
 export class SkillRuntimeExecutor {
@@ -3012,8 +3348,8 @@ export class SkillRuntimeExecutor {
         onStep: async (snapshot) => {
           stepCount += 1;
           const persisted = await persistStepArtifacts({ chatId, taskId, snapshot });
-          latestCheckpointSiteDir = path.join(persisted.localDir, "site");
-          latestCheckpointWorkflowDir = path.join(persisted.localDir, "workflow");
+          latestCheckpointSiteDir = persisted.latestSiteDir;
+          latestCheckpointWorkflowDir = persisted.latestWorkflowDir;
           const stageMessage = toProgressStageMessage(snapshot.status, snapshot.stepIndex, snapshot.totalSteps);
           await touchChatTaskHeartbeat(taskId, workerId);
           await updateChatTaskProgress(taskId, {
@@ -3034,8 +3370,11 @@ export class SkillRuntimeExecutor {
               pageCount: snapshot.pages.length,
               fileCount: snapshot.files.length,
               generatedFiles: snapshot.files.map((file) => normalizePath(file.path)),
+              changedFiles: persisted.changedFiles.map((file) => normalizePath(file)),
+              changedWorkflowFiles: persisted.changedWorkflowFiles.map((file) => normalizePath(file)),
               checkpointSaved: true,
-              checkpointDir: persisted.localDir,
+              checkpointDir: persisted.latestDir,
+              checkpointStepDir: persisted.localDir,
               checkpointSiteDir: latestCheckpointSiteDir,
               checkpointWorkflowDir: latestCheckpointWorkflowDir,
               r2UploadedCount: persisted.r2UploadedCount,
@@ -3069,6 +3408,7 @@ export class SkillRuntimeExecutor {
       await fs.writeFile(checkpointProjectPath, JSON.stringify((summary.state as any)?.site_artifacts || null, null, 2), "utf8");
 
       const elapsedMs = Date.now() - startedAt;
+      const pendingEdits = await readPendingEditsForTask(taskId);
       const mergedResult: ChatTaskResult = {
         assistantText: summary.assistantText,
         actions: summary.actions,
@@ -3079,6 +3419,7 @@ export class SkillRuntimeExecutor {
           workerId,
           inputState: buildSessionSnapshot(sessionStateForNext),
           sessionState: buildSessionSnapshot(sessionStateForNext),
+          pendingEdits,
         } as any,
         progress: {
           stage: "done",
@@ -3103,6 +3444,7 @@ export class SkillRuntimeExecutor {
           checkpointWorkflowDir: latestCheckpointWorkflowDir,
           round: stepCount,
           maxRounds: stepCount,
+          pendingEditsCount: pendingEdits.length,
         } as any,
       };
 
@@ -3122,6 +3464,16 @@ export class SkillRuntimeExecutor {
       });
 
       await completeChatTask(taskId, mergedResult);
+      if (pendingEdits.length > 0) {
+        await queuePendingRefineTask({
+          taskId,
+          chatId,
+          ownerUserId: String(inputState.user_id || pendingEdits[pendingEdits.length - 1]?.ownerUserId || "").trim() || undefined,
+          baseState: sessionStateForNext,
+          checkpointProjectPath,
+          pendingEdits,
+        });
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       await updateChatTaskProgress(taskId, {

@@ -21,6 +21,7 @@ import { getD1Client } from "../d1";
 import { getR2Client } from "../r2";
 import { injectOrganizationJsonLd, normalizeComponentType, stitchTracks } from "./engine";
 import { loadWorkflowSkillContext, type DesignSkillHit } from "./website-workflow";
+import type { RequirementSpec } from "./chat-orchestrator";
 import { configureUndiciProxyFromEnv, createHttpsProxyAgentFromEnv, isRegionDeniedError } from "./network";
 import { CloudflareClient } from "../cloudflare";
 import { Bundler } from "../bundler";
@@ -403,6 +404,11 @@ export interface AgentState {
     refineSourceTaskId?: string;
     requirementCompletionPercent?: number;
     requirementSlots?: Array<{ key: string; label: string; filled: boolean; evidence?: string }>;
+    requirementSpec?: RequirementSpec;
+    requirementPatchPlan?: unknown;
+    requirementRevision?: number;
+    supersededMessages?: string[];
+    correctionSummary?: string[];
     requirementDraft?: string;
     requirementAggregatedText?: string;
     latestUserText?: string;
@@ -413,6 +419,7 @@ export interface AgentState {
     deploySourceProjectPath?: string;
     deploySourceTaskId?: string;
     checkpointProjectPath?: string;
+    smoke?: unknown;
     publishedAssetVersion?: string;
   };
 }
@@ -2080,8 +2087,6 @@ workflow.addConditionalEdges(
 workflow.addEdge("deploy", END);
 
 export const graph = workflow.compile();
-
-
 
 
 

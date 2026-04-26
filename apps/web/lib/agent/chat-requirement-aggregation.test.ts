@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { aggregateRequirementFromHistory, buildRequirementSlots, getRequirementCompletionPercent } from "./chat-orchestrator";
+import {
+  aggregateRequirementFromHistory,
+  buildRequirementPatchPlan,
+  buildRequirementSlots,
+  buildRequirementSpec,
+  getRequirementCompletionPercent,
+} from "./chat-orchestrator";
 
 describe("chat requirement aggregation", () => {
   it("aggregates recent user messages and deduplicates repeated inputs", () => {
@@ -32,5 +38,22 @@ describe("chat requirement aggregation", () => {
     const percent = getRequirementCompletionPercent(slots);
     expect(percent).toBeGreaterThanOrEqual(70);
   });
-});
 
+  it("lets later correction turns supersede conflicting earlier requirements", () => {
+    const aggregated = aggregateRequirementFromHistory({
+      historyUserMessages: ["生成英文站点", "风格蓝色，面向海外采购"],
+      currentUserText: "不要英文，改成中文，主色换成绿色",
+    });
+    const spec = buildRequirementSpec(aggregated.requirementText, aggregated.sourceMessages);
+    const patchPlan = buildRequirementPatchPlan("不要英文，改成中文，主色换成绿色", aggregated.revision);
+
+    expect(aggregated.supersededMessages.join("\n")).toContain("英文");
+    expect(spec.locale).toBe("zh-CN");
+    expect(spec.visualStyle).toContain("绿色");
+    expect(spec.visualStyle).not.toContain("蓝色");
+    expect(spec.targetAudience).toContain("采购");
+    expect(spec.fields.locale?.sourceText).toContain("中文");
+    expect(patchPlan.operations.some((op) => op.op === "remove" && op.target === "locale")).toBe(true);
+    expect(patchPlan.operations.some((op) => op.op === "set" && op.target === "visualStyle")).toBe(true);
+  });
+});
