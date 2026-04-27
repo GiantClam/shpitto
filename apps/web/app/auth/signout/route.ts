@@ -11,5 +11,7 @@ export async function POST(request: Request) {
   await supabase.auth.signOut();
 
   const origin = new URL(request.url).origin;
-  return NextResponse.redirect(`${origin}/`);
+  const response = NextResponse.redirect(`${origin}/`);
+  response.headers.set("Cache-Control", "no-store");
+  return response;
 }

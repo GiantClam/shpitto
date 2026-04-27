@@ -43,6 +43,21 @@ describe("project-skill-loader", () => {
     expect(skill.config?.fixture).toBe(true);
   });
 
+  it("loads project skills from monorepo root when start is apps/web", async () => {
+    const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "shpitto-monorepo-skill-root-"));
+    await fs.writeFile(path.join(tmpRoot, "pnpm-workspace.yaml"), "packages:\n  - apps/*\n", "utf8");
+    const appRoot = path.join(tmpRoot, "apps", "web");
+    const skillRoot = path.join(appRoot, "skills", "website-generation-workflow");
+    await fs.mkdir(skillRoot, { recursive: true });
+    await fs.writeFile(path.join(skillRoot, "SKILL.md"), "# Website Generation\n\nMonorepo-root skill fixture.", "utf8");
+
+    const skill = await loadProjectSkill("website-generation-workflow", appRoot);
+
+    expect(skill.id).toBe("website-generation-workflow");
+    expect(skill.skillMdPath.replace(/\\/g, "/")).toContain("/apps/web/skills/website-generation-workflow/SKILL.md");
+    expect(skill.content).toContain("Monorepo-root skill fixture");
+  });
+
   it("loads website generation skill bundle with aliases", async () => {
     const bundle = await loadProjectSkillBundle(WEBSITE_GENERATION_SKILL_BUNDLE);
     expect(bundle.skills.length).toBeGreaterThanOrEqual(8);

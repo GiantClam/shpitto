@@ -15,7 +15,7 @@ export function SignOutButton({ children, className = "", title = "Sign out" }: 
     if (signingOut) return;
     setSigningOut(true);
     try {
-      await fetch("/auth/signout", { method: "POST", cache: "no-store" });
+      await fetch("/auth/signout", { method: "POST", cache: "no-store", redirect: "manual" });
     } finally {
       window.location.assign("/");
     }

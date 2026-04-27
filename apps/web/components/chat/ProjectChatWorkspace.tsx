@@ -1925,7 +1925,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
         setSubmitting(false);
       }
     },
-    [appendMessage, chatId, clearPollTimer, fetchHistoryByChatId, fetchProjectMeta, fetchTask, pendingAssetRefs, userId],
+    [appendMessage, chatId, clearPollTimer, fetchHistoryByChatId, fetchProjectMeta, fetchTask, pendingAssetRefs, toTimelineMessage, userId],
   );
 
   useEffect(() => {

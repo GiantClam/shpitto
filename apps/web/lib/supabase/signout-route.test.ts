@@ -31,6 +31,7 @@ describe("signout route", () => {
 
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe("http://localhost/");
+    expect(response.headers.get("cache-control")).toBe("no-store");
     expect(mocks.createClient).toHaveBeenCalledOnce();
     expect(mocks.signOut).toHaveBeenCalledOnce();
   });
