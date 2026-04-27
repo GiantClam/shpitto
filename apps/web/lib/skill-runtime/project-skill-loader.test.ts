@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import os from "node:os";
+import { promises as fs } from "node:fs";
+import path from "node:path";
 import {
   loadProjectSkill,
   loadProjectSkillBundle,
@@ -23,6 +26,21 @@ describe("project-skill-loader", () => {
     expect(skill.content).toContain("Shared Shell/Footer Contract");
     expect(skill.content).toContain("Generation must not start from the raw user request alone");
     expect(skill.config?.routePlanningPolicy).toBeTruthy();
+  });
+
+  it("loads project skills when the deployment root is apps/web", async () => {
+    const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "shpitto-skill-root-"));
+    const skillRoot = path.join(tmpRoot, "skills", "website-generation-workflow");
+    await fs.mkdir(skillRoot, { recursive: true });
+    await fs.writeFile(path.join(skillRoot, "SKILL.md"), "# Website Generation\n\nDeployment-root skill fixture.", "utf8");
+    await fs.writeFile(path.join(skillRoot, "skill.json"), JSON.stringify({ fixture: true }), "utf8");
+
+    const skill = await loadProjectSkill("website-generation-workflow", tmpRoot);
+
+    expect(skill.id).toBe("website-generation-workflow");
+    expect(skill.skillMdPath.replace(/\\/g, "/")).toContain("/skills/website-generation-workflow/SKILL.md");
+    expect(skill.content).toContain("Deployment-root skill fixture");
+    expect(skill.config?.fixture).toBe(true);
   });
 
   it("loads website generation skill bundle with aliases", async () => {

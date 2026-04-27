@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { SignOutButton } from "@/components/auth/SignOutButton";
 import {
   Activity,
   ArrowLeft,
@@ -397,8 +398,7 @@ export function ProjectAnalyticsWorkspace({ projectId }: { projectId: string }) 
                 ) : null}
               </div>
               {userEmail ? (
-                <Link
-                  href="/auth/signout"
+                <SignOutButton
                   className={[
                     "mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_74%,transparent)] px-3 py-2 text-sm text-[var(--shp-muted)] hover:border-[var(--shp-primary)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_10%,transparent)] hover:text-[var(--shp-primary)]",
                     sidebarCollapsed ? "px-2" : "",
@@ -407,7 +407,7 @@ export function ProjectAnalyticsWorkspace({ projectId }: { projectId: string }) 
                 >
                   <LogOut className="h-4 w-4" />
                   {!sidebarCollapsed ? <span>Sign out</span> : null}
-                </Link>
+                </SignOutButton>
               ) : null}
             </div>
           </aside>

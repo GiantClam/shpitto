@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SignOutButton } from "@/components/auth/SignOutButton";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { getLandingCopy, type Locale } from "@/lib/i18n";
 
@@ -42,12 +43,11 @@ export function SiteHeader({ userEmail = "", getStartedHref = "/chat", locale = 
               <span className="hidden max-w-[260px] truncate text-sm font-medium text-[var(--shp-muted)] sm:block" title={userEmail}>
                 {userEmail}
               </span>
-              <Link
-                href="/auth/signout"
+              <SignOutButton
                 className="rounded-full border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_78%,transparent)] px-6 py-2.5 text-sm font-bold text-[var(--shp-text)] hover:border-[var(--shp-primary)] hover:text-[var(--shp-primary)]"
               >
                 {copy.signOut}
-              </Link>
+              </SignOutButton>
             </>
           ) : (
             <>

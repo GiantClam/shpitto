@@ -60,7 +60,13 @@ function findRepoRoot(start = process.cwd()): string {
 }
 
 function getProjectSkillsRoot(start = process.cwd()): string {
-  return path.join(findRepoRoot(start), "apps", "web", "skills");
+  const repoRoot = findRepoRoot(start);
+  const candidates = [
+    path.join(repoRoot, "apps", "web", "skills"),
+    path.join(repoRoot, "skills"),
+    path.join(path.resolve(start), "skills"),
+  ];
+  return candidates.find((candidate) => existsSync(candidate)) || candidates[0];
 }
 
 function toSkillId(name: string): string {
