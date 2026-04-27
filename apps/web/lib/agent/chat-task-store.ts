@@ -1,5 +1,6 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import crypto from "node:crypto";
+import { Agent } from "undici";
 import { invalidateLaunchCenterRecentProjectsCache } from "../launch-center/cache.ts";
 
 export type ChatTaskStatus = "queued" | "running" | "succeeded" | "failed";
@@ -127,6 +128,15 @@ type SupabaseTaskEventRow = {
   created_at: string;
 };
 
+type SupabaseTaskFetchOptions = {
+  fetchImpl?: typeof fetch;
+  timeoutMs?: number;
+  connectTimeoutMs?: number;
+  retries?: number;
+  retryBaseMs?: number;
+  dispatcher?: Agent | null;
+};
+
 type SupabaseChatMessageRow = {
   id: string;
   chat_id: string;
@@ -181,6 +191,158 @@ async function invalidateLaunchCenterRecentProjectsCacheBestEffort() {
   }
 }
 
+function readNumberEnv(name: string, fallback: number): number {
+  const value = Number(process.env[name]);
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function resolveSupabaseTaskFetchTimeoutMs(): number {
+  return clampNumber(readNumberEnv("SUPABASE_TASK_FETCH_TIMEOUT_MS", 30_000), 5_000, 120_000);
+}
+
+function resolveSupabaseTaskConnectTimeoutMs(timeoutMs: number): number {
+  return clampNumber(readNumberEnv("SUPABASE_TASK_CONNECT_TIMEOUT_MS", Math.min(timeoutMs, 30_000)), 5_000, timeoutMs);
+}
+
+function resolveSupabaseTaskFetchRetries(): number {
+  return clampNumber(readNumberEnv("SUPABASE_TASK_FETCH_RETRIES", 2), 0, 4);
+}
+
+function resolveSupabaseTaskRetryBaseMs(): number {
+  return clampNumber(readNumberEnv("SUPABASE_TASK_RETRY_BASE_MS", 250), 0, 5_000);
+}
+
+function getRequestMethod(input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): string {
+  const initMethod = String(init?.method || "").trim();
+  if (initMethod) return initMethod.toUpperCase();
+  if (typeof Request !== "undefined" && input instanceof Request) {
+    return String(input.method || "GET").toUpperCase();
+  }
+  return "GET";
+}
+
+function isRetryableSupabaseTaskMethod(method: string): boolean {
+  return ["GET", "HEAD", "OPTIONS"].includes(method.toUpperCase());
+}
+
+function isRetryableSupabaseTaskResponse(response: Response): boolean {
+  return [408, 409, 425, 429, 500, 502, 503, 504].includes(Number(response.status));
+}
+
+function isTransientSupabaseTaskFetchError(error: unknown): boolean {
+  const anyError = (error || {}) as {
+    code?: string;
+    cause?: { code?: string; message?: string };
+    message?: string;
+    name?: string;
+  };
+  const code = String(anyError.code || anyError.cause?.code || "").toUpperCase();
+  if (
+    [
+      "UND_ERR_CONNECT_TIMEOUT",
+      "UND_ERR_HEADERS_TIMEOUT",
+      "ETIMEDOUT",
+      "ECONNRESET",
+      "ECONNREFUSED",
+      "ENOTFOUND",
+      "EAI_AGAIN",
+    ].includes(code)
+  ) {
+    return true;
+  }
+  const text = `${anyError.name || ""} ${anyError.message || ""} ${anyError.cause?.message || ""}`.toLowerCase();
+  return [
+    "aborterror",
+    "fetch failed",
+    "connect timeout",
+    "timeout",
+    "timed out",
+    "network",
+    "socket",
+    "connection reset",
+    "temporarily unavailable",
+    "service unavailable",
+  ].some((token) => text.includes(token));
+}
+
+function sleepMs(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, Math.max(0, ms)));
+}
+
+let supabaseTaskDispatcher: Agent | undefined;
+let supabaseTaskDispatcherKey = "";
+let supabaseTaskClient: any;
+let supabaseTaskClientKey = "";
+
+function getSupabaseTaskDispatcher(params: { timeoutMs: number; connectTimeoutMs: number }): Agent {
+  const key = `${params.timeoutMs}:${params.connectTimeoutMs}`;
+  if (!supabaseTaskDispatcher || supabaseTaskDispatcherKey !== key) {
+    supabaseTaskDispatcher = new Agent({
+      connect: { timeout: params.connectTimeoutMs },
+      headersTimeout: params.timeoutMs,
+      bodyTimeout: params.timeoutMs,
+    });
+    supabaseTaskDispatcherKey = key;
+  }
+  return supabaseTaskDispatcher;
+}
+
+export function createSupabaseTaskFetch(options: SupabaseTaskFetchOptions = {}): typeof fetch {
+  const timeoutMs = Math.max(1, Number(options.timeoutMs || resolveSupabaseTaskFetchTimeoutMs()));
+  const connectTimeoutMs = Math.max(
+    1,
+    Number(options.connectTimeoutMs || resolveSupabaseTaskConnectTimeoutMs(timeoutMs)),
+  );
+  const retries = Math.max(0, Number(options.retries ?? resolveSupabaseTaskFetchRetries()));
+  const retryBaseMs = Math.max(0, Number(options.retryBaseMs ?? resolveSupabaseTaskRetryBaseMs()));
+  const fetchImpl = options.fetchImpl || fetch;
+  const dispatcher =
+    options.dispatcher === null ? undefined : options.dispatcher || getSupabaseTaskDispatcher({ timeoutMs, connectTimeoutMs });
+
+  return (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
+    const method = getRequestMethod(input, init);
+    const maxAttempts = isRetryableSupabaseTaskMethod(method) ? retries + 1 : 1;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => {
+        controller.abort(new Error(`Supabase task fetch timeout after ${timeoutMs}ms`));
+      }, timeoutMs);
+      const upstreamSignal = init?.signal;
+      const abortFromUpstream = () => controller.abort((upstreamSignal as any)?.reason);
+      if (upstreamSignal?.aborted) abortFromUpstream();
+      upstreamSignal?.addEventListener("abort", abortFromUpstream, { once: true });
+
+      try {
+        const response = await fetchImpl(input, {
+          ...init,
+          signal: controller.signal,
+          ...(dispatcher ? { dispatcher } : {}),
+        } as RequestInit);
+        if (attempt < maxAttempts - 1 && isRetryableSupabaseTaskResponse(response)) {
+          await sleepMs(Math.min(5_000, retryBaseMs * (attempt + 1)));
+          continue;
+        }
+        return response;
+      } catch (error) {
+        if (attempt >= maxAttempts - 1 || !isTransientSupabaseTaskFetchError(error)) {
+          throw error;
+        }
+        await sleepMs(Math.min(5_000, retryBaseMs * (attempt + 1)));
+      } finally {
+        clearTimeout(timeout);
+        upstreamSignal?.removeEventListener("abort", abortFromUpstream);
+      }
+    }
+
+    throw new Error("Supabase task fetch failed without response.");
+  }) as typeof fetch;
+}
+
 function isSupabaseTaskStoreEnabled() {
   if (process.env.NODE_ENV === "test") {
     return String(process.env.CHAT_TASKS_USE_SUPABASE || "0").trim() === "1";
@@ -204,13 +366,88 @@ function mustGetSupabaseClient() {
   if (!url || !serviceKey) {
     throw new Error("Supabase is not configured for chat tasks.");
   }
-  return createSupabaseClient(url, serviceKey, {
+  const timeoutMs = resolveSupabaseTaskFetchTimeoutMs();
+  const connectTimeoutMs = resolveSupabaseTaskConnectTimeoutMs(timeoutMs);
+  const retries = resolveSupabaseTaskFetchRetries();
+  const retryBaseMs = resolveSupabaseTaskRetryBaseMs();
+  const serviceKeyHash = crypto.createHash("sha256").update(serviceKey).digest("hex").slice(0, 16);
+  const clientKey = [url, serviceKeyHash, timeoutMs, connectTimeoutMs, retries, retryBaseMs].join("|");
+  if (supabaseTaskClient && supabaseTaskClientKey === clientKey) {
+    return supabaseTaskClient;
+  }
+
+  supabaseTaskClient = createSupabaseClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
+    global: {
+      fetch: createSupabaseTaskFetch({
+        timeoutMs,
+        connectTimeoutMs,
+        retries,
+        retryBaseMs,
+      }),
+    },
   });
+  supabaseTaskClientKey = clientKey;
+  return supabaseTaskClient;
 }
 
 function asIso(ts: number) {
   return new Date(ts).toISOString();
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
+
+function normalizeWorkflowContextCanonicalFields(input: unknown): Record<string, unknown> | undefined {
+  if (!isRecord(input)) return undefined;
+  const next: Record<string, unknown> = { ...input };
+  const canonicalPrompt = String(next.canonicalPrompt || "").trim();
+  if (canonicalPrompt) next.canonicalPrompt = canonicalPrompt;
+  const promptControlManifest = isRecord(next.promptControlManifest) ? next.promptControlManifest : undefined;
+  if (promptControlManifest) next.promptControlManifest = promptControlManifest;
+  delete next.requirementDraft;
+  delete next.generationRoutingContract;
+  return next;
+}
+
+function normalizeAgentStateCanonicalFields(input: unknown): unknown {
+  if (!isRecord(input)) return input;
+  const workflow = normalizeWorkflowContextCanonicalFields(input.workflow_context);
+  if (!workflow) return input;
+  return {
+    ...input,
+    workflow_context: workflow,
+  };
+}
+
+function normalizeTaskResultCanonicalFields(result?: ChatTaskResult | null): ChatTaskResult | undefined {
+  if (!result) return undefined;
+  const internal = isRecord(result.internal)
+    ? {
+        ...result.internal,
+        inputState: normalizeAgentStateCanonicalFields((result.internal as any).inputState),
+        sessionState: normalizeAgentStateCanonicalFields((result.internal as any).sessionState),
+      }
+    : result.internal;
+  return {
+    ...result,
+    ...(internal ? { internal: internal as ChatTaskResult["internal"] } : {}),
+  };
+}
+
+function normalizePromptDraftMetadataCanonicalFields(
+  metadata?: Record<string, unknown> | null,
+): Record<string, unknown> | undefined {
+  if (!metadata) return undefined;
+  const next: Record<string, unknown> = { ...metadata };
+  const canonicalPrompt = String(next.canonicalPrompt || "").trim();
+  if (canonicalPrompt) next.canonicalPrompt = canonicalPrompt;
+  const promptControlManifest = isRecord(next.promptControlManifest) ? next.promptControlManifest : undefined;
+  if (promptControlManifest) next.promptControlManifest = promptControlManifest;
+  delete next.promptDraft;
+  delete next.generationRoutingContract;
+  return next;
 }
 
 function fromRow(row: SupabaseTaskRow): ChatTaskRecord {
@@ -219,7 +456,7 @@ function fromRow(row: SupabaseTaskRow): ChatTaskRecord {
     chatId: row.chat_id,
     ownerUserId: row.owner_user_id || undefined,
     status: row.status,
-    result: row.result || undefined,
+    result: normalizeTaskResultCanonicalFields(row.result),
     createdAt: Date.parse(row.created_at),
     updatedAt: Date.parse(row.updated_at),
   };
@@ -233,7 +470,7 @@ function fromMessageRow(row: SupabaseChatMessageRow): ChatTimelineMessage {
     ownerUserId: row.owner_user_id || undefined,
     role: row.role,
     text: row.text,
-    metadata: row.metadata || undefined,
+    metadata: normalizePromptDraftMetadataCanonicalFields(row.metadata),
     createdAt: Date.parse(row.created_at),
   };
 }
@@ -598,7 +835,7 @@ function createMemoryTask(chatId: string, ownerUserId?: string, initialResult?: 
     status: "queued",
     createdAt: now(),
     updatedAt: now(),
-    result: initialResult,
+    result: normalizeTaskResultCanonicalFields(initialResult),
   };
   store.tasks.set(task.id, task);
   store.activeTaskByChat.set(chatId, task.id);
@@ -614,7 +851,12 @@ function updateMemoryTask(taskId: string, patch: Partial<ChatTaskRecord>): ChatT
   const store = getStore();
   const existing = store.tasks.get(taskId);
   if (!existing) return undefined;
-  const updated: ChatTaskRecord = { ...existing, ...patch, updatedAt: now() };
+  const updated: ChatTaskRecord = {
+    ...existing,
+    ...patch,
+    ...(patch.result !== undefined ? { result: normalizeTaskResultCanonicalFields(patch.result) } : {}),
+    updatedAt: now(),
+  };
   store.tasks.set(taskId, updated);
   if (updated.status === "succeeded" || updated.status === "failed") {
     if (store.activeTaskByChat.get(existing.chatId) === taskId) {
@@ -645,7 +887,7 @@ export async function createChatTask(
         chat_id: chatId,
         owner_user_id: ownerUserId || null,
         status: "queued",
-        result: initialResult || null,
+        result: normalizeTaskResultCanonicalFields(initialResult) || null,
         created_at: asIso(ts),
         updated_at: asIso(ts),
         expires_at: expiresAt,
@@ -953,9 +1195,15 @@ export async function runChatTaskConsistencySweep(options: {
 
 async function updateSupabaseTask(taskId: string, values: Record<string, unknown>): Promise<ChatTaskRecord | undefined> {
   const supabase = mustGetSupabaseClient();
+  const normalizedValues = {
+    ...values,
+    ...(values.result !== undefined
+      ? { result: normalizeTaskResultCanonicalFields(values.result as ChatTaskResult) || null }
+      : {}),
+  };
   const { data, error } = await supabase
     .from(TASK_TABLE)
-    .update({ ...values, updated_at: asIso(now()) })
+    .update({ ...normalizedValues, updated_at: asIso(now()) })
     .eq("id", taskId)
     .select("*")
     .single();
@@ -1297,6 +1545,7 @@ export async function appendChatTimelineMessage(input: {
   const chatId = String(input.chatId || "").trim();
   const text = String(input.text || "").trim();
   if (!chatId || !text) return undefined;
+  const metadata = normalizePromptDraftMetadataCanonicalFields(input.metadata);
 
   const createdAt = now();
   if (!isSupabaseTaskStoreEnabled()) {
@@ -1310,7 +1559,7 @@ export async function appendChatTimelineMessage(input: {
       ownerUserId: input.ownerUserId,
       role: input.role,
       text,
-      metadata: input.metadata,
+      metadata,
       createdAt,
     };
     store.messagesByChat.set(chatId, [...existing, message]);
@@ -1334,7 +1583,7 @@ export async function appendChatTimelineMessage(input: {
         owner_user_id: input.ownerUserId || null,
         role: input.role,
         text,
-        metadata: input.metadata || null,
+        metadata: metadata || null,
         created_at: asIso(createdAt),
       })
       .select("*")

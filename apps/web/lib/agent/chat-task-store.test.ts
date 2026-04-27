@@ -15,9 +15,47 @@ import {
   runChatTaskConsistencySweep,
   sanitizeTaskResultForClient,
   updateChatSessionForOwner,
+  createSupabaseTaskFetch,
 } from "./chat-task-store";
 
 describe("chat-task-store", () => {
+  it("keeps only canonical prompt fields in task and timeline storage", async () => {
+    const chatId = `chat-canonical-only-${Date.now()}`;
+    const task = await createChatTask(chatId, undefined, {
+      internal: {
+        inputState: {
+          workflow_context: {
+            canonicalPrompt: "canonical prompt",
+            promptControlManifest: { routes: ["/"], files: ["/index.html"] },
+          },
+        },
+      },
+    });
+    const { appendChatTimelineMessage } = await import("./chat-task-store");
+    await appendChatTimelineMessage({
+      chatId,
+      role: "assistant",
+      text: "Canonical prompt generated",
+      metadata: {
+        cardType: "prompt_draft",
+        canonicalPrompt: "canonical prompt",
+        promptControlManifest: { routes: ["/"], files: ["/index.html"] },
+      },
+    });
+
+    const messages = await listChatTimelineMessages(chatId, 10);
+    const metadata = messages[0]?.metadata || {};
+    expect(metadata.canonicalPrompt).toBe("canonical prompt");
+    expect(metadata.promptControlManifest).toEqual({ routes: ["/"], files: ["/index.html"] });
+    expect((metadata as any).promptDraft).toBeUndefined();
+    const workflow = ((await getChatTask(task.id))?.result?.internal?.inputState as any)?.workflow_context || {};
+    expect(workflow.canonicalPrompt).toBe("canonical prompt");
+    expect(workflow.promptControlManifest).toEqual({ routes: ["/"], files: ["/index.html"] });
+    expect(workflow.requirementDraft).toBeUndefined();
+    expect(workflow.generationRoutingContract).toBeUndefined();
+    await completeChatTask(task.id, { assistantText: "done" });
+  });
+
   it("tracks async task lifecycle per chat", async () => {
     const chatId = `chat-${Date.now()}`;
     const task = await createChatTask(chatId);
@@ -52,6 +90,75 @@ describe("chat-task-store", () => {
     });
     expect(redacted?.assistantText).toBe("ok");
     expect((redacted as any)?.internal).toBeUndefined();
+  });
+
+  it("retries transient Supabase task read failures", async () => {
+    let calls = 0;
+    const fetchWithOneTimeout = async () => {
+      calls += 1;
+      if (calls === 1) {
+        const error = new Error("TypeError: fetch failed");
+        (error as any).cause = { code: "UND_ERR_CONNECT_TIMEOUT", message: "Connect Timeout Error" };
+        throw error;
+      }
+      return new Response("ok", { status: 200 });
+    };
+    const taskFetch = createSupabaseTaskFetch({
+      fetchImpl: fetchWithOneTimeout as any,
+      timeoutMs: 1_000,
+      retries: 1,
+      retryBaseMs: 0,
+      dispatcher: null,
+    });
+
+    const response = await taskFetch("https://example.supabase.co/rest/v1/shpitto_chat_tasks", { method: "GET" });
+
+    expect(response.status).toBe(200);
+    expect(calls).toBe(2);
+  });
+
+  it("retries transient Supabase task read responses", async () => {
+    let calls = 0;
+    const fetchWithOneServiceUnavailable = async () => {
+      calls += 1;
+      if (calls === 1) return new Response("unavailable", { status: 503 });
+      return new Response("ok", { status: 200 });
+    };
+    const taskFetch = createSupabaseTaskFetch({
+      fetchImpl: fetchWithOneServiceUnavailable as any,
+      timeoutMs: 1_000,
+      retries: 1,
+      retryBaseMs: 0,
+      dispatcher: null,
+    });
+
+    const response = await taskFetch("https://example.supabase.co/rest/v1/shpitto_chat_tasks", { method: "GET" });
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe("ok");
+    expect(calls).toBe(2);
+  });
+
+  it("does not retry Supabase task writes by default", async () => {
+    let calls = 0;
+    const alwaysTimeout = async () => {
+      calls += 1;
+      const error = new Error("TypeError: fetch failed");
+      (error as any).cause = { code: "UND_ERR_CONNECT_TIMEOUT", message: "Connect Timeout Error" };
+      throw error;
+    };
+    const taskFetch = createSupabaseTaskFetch({
+      fetchImpl: alwaysTimeout as any,
+      timeoutMs: 1_000,
+      retries: 3,
+      retryBaseMs: 0,
+      dispatcher: null,
+    });
+
+    await expect(
+      taskFetch("https://example.supabase.co/rest/v1/shpitto_chat_tasks", { method: "POST" }),
+    ).rejects.toThrow("fetch failed");
+    expect(calls).toBe(1);
   });
 
   it("requeues stale running task for worker recovery", async () => {

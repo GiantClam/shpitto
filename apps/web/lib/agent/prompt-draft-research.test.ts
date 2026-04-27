@@ -1,6 +1,12 @@
 ﻿import { describe, expect, it } from "vitest";
 import { buildRequirementSlots } from "./chat-orchestrator";
-import { buildPromptDraftWithResearch } from "./prompt-draft-research";
+import {
+  buildPromptControlManifestFromKnowledgeProfileForTesting,
+  buildPromptControlManifestForTesting,
+  buildPromptDraftWithResearch,
+  buildSerperQueriesForTesting,
+  enrichCanonicalPromptWithControlManifestForTesting,
+} from "./prompt-draft-research";
 
 describe("prompt draft research", () => {
   it("falls back in test env and still keeps user constraints in draft", async () => {
@@ -14,11 +20,223 @@ describe("prompt draft research", () => {
 
     expect(result.usedWebSearch).toBe(false);
     expect(String(result.fallbackReason || "")).toContain("test_environment_skip_network");
-    expect(result.promptDraft).toContain("用户显式约束");
+    expect(result.canonicalPrompt).toContain("Explicit User Constraints");
     expect(result.draftMode).toBe("template");
-    expect(result.promptDraft).toContain("LC-CNC");
-    expect(result.promptDraft).toContain("#22c55e");
-    expect(result.promptDraft).toContain("cloudflare");
+    expect(result.canonicalPrompt).toContain("LC-CNC");
+    expect(result.canonicalPrompt).toContain("#22c55e");
+    expect(result.canonicalPrompt).toContain("cloudflare");
+  });
+
+  it("adds a thin generation contract before generation", async () => {
+    const requirement =
+      "Build a 6-page industrial-style English website for LC-CNC: Home, 3C Machines, Custom Solutions, Cases, About, Contact. Keep shared styles and script across all pages, and ensure navigation links work.";
+
+    const result = await buildPromptDraftWithResearch({
+      requirementText: requirement,
+      slots: buildRequirementSlots(requirement),
+    });
+
+    expect(result.canonicalPrompt).toContain("Prompt Control Manifest");
+    expect(result.canonicalPrompt).toContain("Prompt Control Manifest (Machine Readable)");
+    expect(result.canonicalPrompt).toContain('"routeSource": "prompt_draft_page_plan"');
+    expect(result.canonicalPrompt).toContain('"pageIntents":');
+    expect(result.canonicalPrompt).toContain('"routes":');
+    expect(result.promptControlManifest.routes).toEqual([
+      "/",
+      "/3c-machines",
+      "/custom-solutions",
+      "/cases",
+      "/contact",
+      "/about",
+    ]);
+    expect(result.promptControlManifest.files).toEqual(
+      expect.arrayContaining(["/styles.css", "/script.js", "/3c-machines/index.html", "/contact/index.html"]),
+    );
+    expect(result.canonicalPrompt).toContain("/styles.css");
+    expect(result.canonicalPrompt).toContain("/script.js");
+    expect(result.canonicalPrompt).toContain("/3c-machines/index.html");
+    expect(result.canonicalPrompt).toContain("Page-Level Intent Contract");
+    expect(result.canonicalPrompt).not.toContain("product-grid -> spec-cards");
+    expect(result.canonicalPrompt).toContain("/contact/index.html");
+    expect(result.canonicalPrompt).not.toContain("quote-form");
+    expect(result.canonicalPrompt).toContain("Do not add unlisted pages");
+    expect(result.canonicalPrompt).toContain("Workflow Skill Contract");
+    expect(result.canonicalPrompt).toContain("Shared Shell/Footer Contract");
+    expect(result.canonicalPrompt).toContain("Do not reduce inner-page footers to a single copyright line");
+    expect(result.canonicalPrompt).toContain("overflow-wrap: anywhere");
+    expect(result.canonicalPrompt).not.toContain("/downloads/index.html");
+  });
+
+  it("builds a structured routing contract separately from the markdown draft", () => {
+    const contract = buildPromptControlManifestForTesting(
+      "Build a site. Pages: Home, Products, Cases, Contact. Contact form fields include Email and Phone.",
+    );
+
+    expect(contract.routes).toEqual(["/", "/products", "/cases", "/contact"]);
+    expect(contract.files).toEqual(
+      expect.arrayContaining(["/index.html", "/products/index.html", "/cases/index.html", "/contact/index.html"]),
+    );
+    expect(contract.routes).not.toEqual(expect.arrayContaining(["/email", "/phone"]));
+  });
+
+  it("replaces legacy page module blueprints with thin generation contracts", () => {
+    const legacyDraft = [
+      "# Complete Website Generation Prompt",
+      "## 1. Overview",
+      "Build a personal AI practice blog.",
+      "## 3.5 Page Differentiation Blueprint",
+      "### Prompt Control Manifest (Machine Readable)",
+      "```json",
+      JSON.stringify({
+        schemaVersion: 1,
+        routeSource: "prompt_draft_page_plan",
+        routes: ["/", "/blog"],
+        navLabels: ["Home", "Blog"],
+        files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html"],
+      }),
+      "```",
+      "### Page-Level Module Blueprint",
+      "- Products page must include product-grid, spec-cards, quote-form.",
+      "## 4. Design Direction",
+      "Minimal writing-focused blog.",
+    ].join("\n");
+
+    const enriched = enrichCanonicalPromptWithControlManifestForTesting(
+      legacyDraft,
+      "Build a personal AI practice blog. Pages: Home, Blog.",
+    );
+
+    expect(enriched).toContain("## 3.5 Prompt Control Manifest");
+    expect(enriched).toContain("Page-Level Intent Contract");
+    expect(enriched).not.toContain("Page-Level Module Blueprint");
+    expect(enriched).not.toContain("product-grid");
+    expect(enriched).not.toContain("quote-form");
+  });
+
+  it("replaces localized legacy 3.5 blueprint sections during replay", () => {
+    const legacyDraft = [
+      "# 完整网站生成提示词",
+      "## 1. 原始需求",
+      "个人 AI 实践 blog。",
+      "## 3.5 页面差异化蓝图（必填）",
+      "### 生成路由契约（机器可读）",
+      "```json",
+      JSON.stringify({
+        schemaVersion: 1,
+        routeSource: "prompt_draft_page_plan",
+        routes: ["/", "/blog"],
+        navLabels: ["首页", "Blog"],
+        files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html"],
+      }),
+      "```",
+      "- 首页必须包含 product-grid。",
+      "- Blog 页必须包含 quote-form。",
+      "## 4. 设计方向",
+      "科技感与极简现代。",
+    ].join("\n");
+
+    const enriched = enrichCanonicalPromptWithControlManifestForTesting(
+      legacyDraft,
+      "我想做个人 blog，主要介绍 AI 实践经验。页面：Home, Blog。",
+    );
+
+    expect(enriched).toContain("## 3.5 Prompt Control Manifest");
+    expect(enriched).toContain("Page-Level Intent Contract");
+    expect(enriched).not.toContain("页面差异化蓝图");
+    expect(enriched).not.toContain("product-grid");
+    expect(enriched).not.toContain("quote-form");
+  });
+
+  it("uses uploaded source suggested pages as the generation routing contract", () => {
+    const contract = buildPromptControlManifestFromKnowledgeProfileForTesting("根据上传 PDF 生成 CASUX 官网。", {
+      sourceMode: "uploaded_files",
+      domains: [],
+      sources: [],
+      brand: { name: "CASUX" },
+      audience: [],
+      offerings: [],
+      differentiators: [],
+      proofPoints: [],
+      suggestedPages: [
+        { route: "/", title: "首页", purpose: "首页", contentInputs: [] },
+        { route: "/casux-creation", title: "CASUX创设", purpose: "创设", contentInputs: [] },
+        { route: "/casux-construction", title: "CASUX建设", purpose: "建设", contentInputs: [] },
+        { route: "/casux-certification", title: "CASUX优标", purpose: "优标", contentInputs: [] },
+        { route: "/casux-advocacy", title: "CASUX倡导", purpose: "倡导", contentInputs: [] },
+        { route: "/casux-research-center", title: "CASUX研究中心", purpose: "研究中心", contentInputs: [] },
+        { route: "/casux-information-platform", title: "CASUX信息平台", purpose: "信息平台", contentInputs: [] },
+        { route: "/downloads", title: "资料下载", purpose: "资料下载", contentInputs: [] },
+      ],
+      contentGaps: [],
+      summary: "",
+    });
+
+    expect(contract.routeSource).toBe("uploaded_source_page_plan");
+    expect(contract.routes).toEqual([
+      "/",
+      "/casux-creation",
+      "/casux-construction",
+      "/casux-certification",
+      "/casux-advocacy",
+      "/casux-research-center",
+      "/casux-information-platform",
+      "/downloads",
+    ]);
+    expect(contract.routes).not.toContain("/custom-solutions");
+  });
+
+  it("includes confirmed functional requirements in the prompt draft", async () => {
+    const requirement = [
+      "需求表单已提交：",
+      "",
+      "[Requirement Form]",
+      "```json",
+      JSON.stringify(
+        {
+          siteType: "company",
+          targetAudience: ["enterprise_buyers"],
+          designTheme: ["professional"],
+          pageStructure: { mode: "multi", pages: ["home", "contact"] },
+          functionalRequirements: ["customer_inquiry_form", "multilingual_switch"],
+          primaryGoal: ["lead_generation"],
+          language: "zh-CN",
+          brandLogo: { mode: "text_mark" },
+        },
+        null,
+        2,
+      ),
+      "```",
+    ].join("\n");
+
+    const result = await buildPromptDraftWithResearch({
+      requirementText: requirement,
+      slots: buildRequirementSlots(requirement),
+    });
+
+    expect(result.canonicalPrompt).toContain("Functional requirements");
+    expect(result.canonicalPrompt).toContain("Customer inquiry form");
+    expect(result.canonicalPrompt).toContain("Language switch");
+  });
+
+  it("prioritizes explicit domains over long requirement-form search text", () => {
+    const requirement = [
+      "我要做个育儿环境研究中心的网站，域名是casux.org.cn",
+      "需求表单已提交：",
+      "- 网站类型：企业官网",
+      "- 目标受众：面向0到12岁孩子的家长",
+      "- 设计主题：温暖亲和",
+      "- 页面结构：多页网站：Home / 首页、About / 关于、Products / 产品、Cases / 案例、Services / 服务、Blog / 博客、Contact / 联系",
+      "- 功能需求：联系表单、资料下载、多语言切换",
+      "",
+      "[Requirement Form]",
+      "```json",
+      JSON.stringify({ pageStructure: { mode: "multi", pages: ["home", "about", "products"] } }),
+      "```",
+    ].join("\n");
+
+    const queries = buildSerperQueriesForTesting(requirement, buildRequirementSlots(requirement), 2);
+
+    expect(queries).toEqual(["site:casux.org.cn", "casux.org.cn"]);
   });
 
   it("uses provider-gated fallback reason instead of openai-only key check", async () => {

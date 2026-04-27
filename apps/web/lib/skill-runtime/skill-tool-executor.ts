@@ -11,7 +11,7 @@ import { loadWorkflowSkillContext } from "../agent/website-workflow.ts";
 import { DEFAULT_STYLE_PRESET, normalizeStylePreset, type DesignStylePreset } from "../design-style-preset.ts";
 import {
   buildLocalDecisionPlan,
-  type ComponentMix,
+  extractRouteSourceBrief,
   type LocalDecisionPlan,
   type PageBlueprint,
 } from "./decision-layer.ts";
@@ -111,8 +111,12 @@ const SKILL_TOOL_PROVIDER_RETRY_MAX_MS = Math.max(
   Number(process.env.SKILL_TOOL_PROVIDER_RETRY_MAX_MS || 10_000),
 );
 const SKILL_TOOL_PROVIDER_RETRY_JITTER_MS = Math.max(0, Number(process.env.SKILL_TOOL_PROVIDER_RETRY_JITTER_MS || 350));
-const DEFAULT_INITIAL_REQUIREMENT_CHARS = Math.max(400, Number(process.env.SKILL_TOOL_INITIAL_REQUIREMENT_CHARS || 1400));
+const DEFAULT_INITIAL_REQUIREMENT_CHARS = Math.max(4_000, Number(process.env.SKILL_TOOL_INITIAL_REQUIREMENT_CHARS || 48_000));
 const DEFAULT_INITIAL_DESIGN_CHARS = Math.max(800, Number(process.env.SKILL_TOOL_INITIAL_DESIGN_CHARS || 1800));
+const DEFAULT_INITIAL_WORKFLOW_SKILL_CHARS = Math.max(
+  1200,
+  Number(process.env.SKILL_TOOL_INITIAL_WORKFLOW_SKILL_CHARS || 7000),
+);
 const ENABLE_STAGED_OBJECTIVE = String(process.env.SKILL_TOOL_ENABLE_STAGED_OBJECTIVE || "1").trim() !== "0";
 const SKILL_TOOL_TOOL_CHOICE = String(process.env.SKILL_TOOL_TOOL_CHOICE || "required").trim().toLowerCase();
 
@@ -140,6 +144,13 @@ function routeToHtmlPath(route: string): string {
   const normalized = normalizePath(route);
   if (normalized === "/") return "/index.html";
   return `${normalized}/index.html`;
+}
+
+export function htmlPathToRoute(filePath: string): string {
+  const normalized = normalizePath(filePath);
+  if (normalized === "/index.html") return "/";
+  if (!normalized.endsWith("/index.html")) return "";
+  return normalizePath(normalized.slice(0, -("/index.html".length)) || "/");
 }
 
 function rewriteAbsoluteSiteLinksToRelative(html: string, currentHtmlPath: string): string {
@@ -300,12 +311,6 @@ function ensureHtmlDocument(rawHtml: string): string {
   if (!/<body[\s>]/i.test(html)) html = html.replace(/<\/head>/i, "</head>\n<body>") + "\n</body>";
   if (!/<\/body>/i.test(html)) html = `${html}\n</body>`;
   if (!/<\/html>/i.test(html)) html = `${html}\n</html>`;
-  if (!hasStylesheetRef(html) && /<\/head>/i.test(html)) {
-    html = html.replace(/<\/head>/i, `  <link rel="stylesheet" href="/styles.css" />\n</head>`);
-  }
-  if (!hasSharedScriptRef(html) && /<\/body>/i.test(html)) {
-    html = html.replace(/<\/body>/i, `  <script src="/script.js"></script>\n</body>`);
-  }
   return html;
 }
 
@@ -347,13 +352,13 @@ function extractRequirementText(state: AgentState): string {
     if (isHumanLike) return content;
   }
   const workflow = (state as any)?.workflow_context || {};
-  const fallbackCandidates = [
+  const requirementSources = [
+    String(workflow.canonicalPrompt || "").trim(),
     String(workflow.latestUserText || "").trim(),
     String(workflow.requirementAggregatedText || "").trim(),
-    String(workflow.requirementDraft || "").trim(),
     String(workflow.sourceRequirement || "").trim(),
   ];
-  for (const candidate of fallbackCandidates) {
+  for (const candidate of requirementSources) {
     if (candidate) return candidate;
   }
   return "";
@@ -361,34 +366,104 @@ function extractRequirementText(state: AgentState): string {
 
 function extractPageTitleForRoute(route: string, locale: "zh-CN" | "en"): string {
   const normalized = normalizePath(route);
-  if (normalized === "/") return locale === "zh-CN" ? "首页" : "Home";
+  if (normalized === "/") return locale === "zh-CN" ? "\u9996\u9875" : "Home";
   const token = normalized.split("/").filter(Boolean).join(" ");
   const title = token
     .split(/[-_]/g)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
-  return title || (locale === "zh-CN" ? "页面" : "Page");
+  return title || (locale === "zh-CN" ? "\u9875\u9762" : "Page");
 }
 
-function formatComponentMix(mix: ComponentMix): string {
-  return [
-    `hero:${mix.hero}%`,
-    `feature:${mix.feature}%`,
-    `grid:${mix.grid}%`,
-    `proof:${mix.proof}%`,
-    `form:${mix.form}%`,
-    `cta:${mix.cta}%`,
-  ].join(", ");
+function resolveBrandName(decision: LocalDecisionPlan): string {
+  const explicit = String(decision.brandHint || "").trim();
+  if (explicit) return explicit;
+  return decision.locale === "zh-CN" ? "\u7f51\u7ad9" : "Website";
 }
 
-function blueprintDigest(plan: LocalDecisionPlan): string {
+function contractDigest(plan: LocalDecisionPlan): string {
   return plan.pageBlueprints
     .map(
       (page) =>
-        `- ${page.route} (${page.pageKind})\n  responsibility: ${page.responsibility}\n  skeleton: ${page.contentSkeleton.join(
-          " -> ",
-        )}\n  mix: ${formatComponentMix(page.componentMix)}`,
+        `- ${page.route}\n  navLabel: ${page.navLabel}\n  source: ${page.source}\n  intent: ${page.purpose}`,
     )
+    .join("\n");
+}
+
+function stripLegacyGenerationBlueprintSections(text: string): string {
+  const source = String(text || "");
+  const headingMatch = source.match(/^##\s*3\.5\b.*$/im);
+  if (!headingMatch || headingMatch.index === undefined) return source;
+  const heading = headingMatch[0] || "";
+  if (/Prompt Control Manifest/i.test(heading)) return source;
+
+  const start = headingMatch.index;
+  const before = source.slice(0, start).trimEnd();
+  const afterStart = start + heading.length;
+  const nextTopLevelHeading = source.slice(afterStart).search(/\n##\s+(?!3\.5\b)/);
+  const after = nextTopLevelHeading >= 0 ? source.slice(afterStart + nextTopLevelHeading).trimStart() : "";
+  return [before, after].filter(Boolean).join("\n\n").trim();
+}
+
+export function sanitizeRequirementForGenerationForTesting(text: string): string {
+  return stripLegacyGenerationBlueprintSections(text);
+}
+
+function clipRuntimeRequirement(input: string, maxChars: number): string {
+  const text = String(input || "").trim();
+  if (!Number.isFinite(maxChars) || maxChars <= 0 || text.length <= maxChars) return text;
+  const markerIndex = text.search(/\n##\s+(?:7\.\s+External Research Addendum|Website Knowledge Profile)\b/i);
+  if (markerIndex > 0 && markerIndex < text.length - 200) {
+    const headBudget = Math.max(6_000, Math.floor(maxChars * 0.42));
+    const sourceBudget = Math.max(2_000, maxChars - headBudget - 96);
+    return [
+      text.slice(0, headBudget).trim(),
+      "",
+      "[Middle omitted due to prompt budget; source addendum preserved below]",
+      "",
+      text.slice(markerIndex, markerIndex + sourceBudget).trim(),
+    ].join("\n");
+  }
+  const headBudget = Math.max(2_000, Math.floor(maxChars * 0.58));
+  const tailBudget = Math.max(1_000, maxChars - headBudget - 80);
+  return [
+    text.slice(0, headBudget).trim(),
+    "",
+    "[Middle omitted due to prompt budget]",
+    "",
+    text.slice(-tailBudget).trim(),
+  ].join("\n");
+}
+
+export function formatTargetPageContract(plan: LocalDecisionPlan, targetFile: string, requirementText = ""): string {
+  const route = htmlPathToRoute(targetFile);
+  if (!route) return "";
+  const page = findPageBlueprint(plan, route);
+  const sourceBrief = extractRouteSourceBrief(requirementText, page.route, page.navLabel, 4200);
+  const siblingIntents = plan.pageBlueprints
+    .filter((item) => normalizePath(item.route) !== normalizePath(route))
+    .slice(0, 6)
+    .map((item) => `${item.route}: ${item.purpose}`)
+    .join("\n");
+
+  return [
+    "Target page contract:",
+    `- File: ${targetFile}`,
+    `- Route: ${page.route}`,
+    `- Nav label: ${page.navLabel}`,
+    `- Page intent: ${page.purpose}`,
+    `- Intent source: ${page.source}`,
+    "- The confirmed Canonical Website Prompt is authoritative for page structure, content depth, audience, and design direction.",
+    sourceBrief
+      ? `Page-specific source brief excerpt (authoritative for this file):\n${sourceBrief}`
+      : "- No route-specific source excerpt was found; derive a unique page architecture from the complete Canonical Website Prompt.",
+    "- Derive route-specific sections, headings, card types, and interactions from the Canonical Website Prompt and source content.",
+    "- Use a page-specific body architecture. Shared header/footer/design tokens are allowed; the main content section order, visual modules, and primary components must differ from sibling routes.",
+    "- Do not apply a hardcoded industry skeleton or copy the previous page layout and only swap text.",
+    "- Follow the workflow skill's Shared Shell/Footer Contract for header, main, and footer requirements.",
+    siblingIntents ? `Sibling page intents to stay visually distinct from:\n${siblingIntents}` : "",
+  ]
+    .filter(Boolean)
     .join("\n");
 }
 
@@ -398,10 +473,17 @@ function findPageBlueprint(plan: LocalDecisionPlan, route: string): PageBlueprin
     plan.pageBlueprints.find((page) => normalizePath(page.route) === normalized) || {
       route: normalized,
       navLabel: extractPageTitleForRoute(normalized, plan.locale),
-      pageKind: "generic",
-      responsibility: "Provide route-specific information with clear navigation and conversion endpoint.",
-      contentSkeleton: ["hero", "content-sections", "proof", "cta"],
-      componentMix: { hero: 20, feature: 20, grid: 20, proof: 20, form: 10, cta: 10 },
+      purpose: "Dedicated page derived from the confirmed Canonical Website Prompt and source content.",
+      source: "default",
+      constraints: [
+        "Canonical Website Prompt is authoritative.",
+        "Do not use preset industry content.",
+        "Stay distinct from sibling pages.",
+      ],
+      pageKind: "intent",
+      responsibility: "Dedicated page derived from the confirmed Canonical Website Prompt and source content.",
+      contentSkeleton: [],
+      componentMix: { hero: 0, feature: 0, grid: 0, proof: 0, form: 0, cta: 0 },
     }
   );
 }
@@ -417,9 +499,9 @@ function applyStateSitemapToDecision(base: LocalDecisionPlan, sitemap: unknown):
   const pageBlueprints = routes.map((route) => {
     const existing = base.pageBlueprints.find((page) => normalizePath(page.route) === normalizePath(route));
     if (existing) return existing;
-    const fallback = findPageBlueprint(base, route);
+    const existingOrGeneric = findPageBlueprint(base, route);
     return {
-      ...fallback,
+      ...existingOrGeneric,
       route: normalizePath(route),
       navLabel: extractPageTitleForRoute(route, base.locale),
     };
@@ -428,6 +510,7 @@ function applyStateSitemapToDecision(base: LocalDecisionPlan, sitemap: unknown):
     ...base,
     routes,
     navLabels: pageBlueprints.map((page) => page.navLabel),
+    pageIntents: pageBlueprints,
     pageBlueprints,
   };
 }
@@ -448,18 +531,18 @@ function buildWorkflowFiles(params: {
     `- Model: ${params.model}`,
     `- Routes: ${params.decision.routes.join(", ")}`,
     "",
-    "## Local Blueprint",
-    blueprintDigest(params.decision),
+    "## Local Route Plan",
+    contractDigest(params.decision),
   ].join("\n");
 
   const findings = [
     "# Findings",
     "",
     "## Input Prompt",
-    String(params.requirementText || "").trim().slice(0, 2600) || "(empty)",
+    clipRuntimeRequirement(params.requirementText, Number(process.env.SKILL_TOOL_FINDINGS_REQUIREMENT_CHARS || 48_000)) || "(empty)",
     "",
-    "## Derived Blueprint",
-    blueprintDigest(params.decision),
+    "## Derived Route Plan",
+    contractDigest(params.decision),
   ].join("\n");
 
   const design = [
@@ -475,137 +558,6 @@ function buildWorkflowFiles(params: {
   ];
 }
 
-function buildFallbackStyles(stylePreset: DesignStylePreset): string {
-  return [
-    ":root {",
-    `  --primary: ${stylePreset.colors.primary};`,
-    `  --accent: ${stylePreset.colors.accent};`,
-    `  --background: ${stylePreset.colors.background};`,
-    `  --surface: ${stylePreset.colors.surface};`,
-    `  --panel: ${stylePreset.colors.panel};`,
-    `  --text: ${stylePreset.colors.text};`,
-    `  --muted: ${stylePreset.colors.muted};`,
-    `  --border: ${stylePreset.colors.border};`,
-    "  --radius: 16px;",
-    "  --radius-pill: 999px;",
-    "  --shadow-sm: 0 6px 20px rgba(15, 23, 42, 0.08);",
-    "  --shadow-lg: 0 18px 40px rgba(15, 23, 42, 0.14);",
-    "}",
-    "* { box-sizing: border-box; }",
-    "body {",
-    "  margin: 0;",
-    `  font-family: ${stylePreset.typography};`,
-    "  color: var(--text);",
-    "  background: var(--background);",
-    "}",
-    ".container { width: min(1120px, 92vw); margin: 0 auto; }",
-    "header { position: sticky; top: 0; z-index: 60; background: var(--surface); border-bottom: 1px solid var(--border); }",
-    "nav { display: flex; gap: 14px; flex-wrap: wrap; padding: 14px 0; align-items: center; }",
-    "nav a {",
-    "  color: var(--text);",
-    "  text-decoration: none;",
-    "  padding: 8px 12px;",
-    "  border-radius: var(--radius-pill);",
-    "  font-weight: 600;",
-    "  transition: background-color .22s ease, transform .22s ease, color .22s ease;",
-    "}",
-    "nav a:hover {",
-    "  color: var(--primary);",
-    "  background: color-mix(in oklab, var(--primary) 14%, transparent);",
-    "  transform: translateY(-1px);",
-    "}",
-    ".hero { padding: 72px 0 36px; }",
-    ".hero h1 { margin: 0 0 14px; font-size: clamp(2rem, 6vw, 3.3rem); line-height: 1.08; letter-spacing: -0.02em; }",
-    ".hero p { max-width: 72ch; line-height: 1.72; color: color-mix(in oklab, var(--text) 70%, #1e293b 30%); }",
-    ".cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin: 18px 0 28px; }",
-    ".card {",
-    "  background: color-mix(in oklab, var(--surface) 95%, #ffffff 5%);",
-    "  border-radius: var(--radius);",
-    "  padding: 18px;",
-    "  border: 1px solid var(--border);",
-    "  box-shadow: var(--shadow-sm);",
-    "  transition: transform .22s ease, box-shadow .22s ease;",
-    "}",
-    ".card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }",
-    ".cta { display: inline-flex; align-items: center; gap: 8px; background: var(--accent); color: #fff; text-decoration: none; border-radius: var(--radius-pill); padding: 11px 20px; font-weight: 700; }",
-    ".cta:hover { transform: translateY(-1px); }",
-    "footer {",
-    "  margin-top: 48px;",
-    "  padding: 26px 0 40px;",
-    "  color: color-mix(in oklab, var(--text) 72%, transparent);",
-    "}",
-    "@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }",
-  ].join("\n");
-}
-
-function buildFallbackScript(): string {
-  return [
-    "(() => {",
-    "  const yearNodes = document.querySelectorAll('[data-year]');",
-    "  const year = String(new Date().getFullYear());",
-    "  yearNodes.forEach((node) => {",
-    "    node.textContent = year;",
-    "  });",
-    "})();",
-  ].join("\n");
-}
-
-function buildFallbackPage(params: {
-  route: string;
-  decision: LocalDecisionPlan;
-  requirementText: string;
-  brandName: string;
-}): string {
-  const route = normalizePath(params.route);
-  const page = findPageBlueprint(params.decision, route);
-  const title = extractPageTitleForRoute(route, params.decision.locale);
-  const nav = params.decision.routes
-    .map((item) => {
-      const navPage = findPageBlueprint(params.decision, item);
-      const normalized = normalizePath(item);
-      const href = normalized === "/" ? "/" : `${normalized}/`;
-      return `<a href="${href}">${navPage.navLabel}</a>`;
-    })
-    .join("");
-  const cardList = page.contentSkeleton
-    .slice(0, 6)
-    .map((section) => `<article class="card"><h3>${section}</h3><p>${page.responsibility}</p></article>`)
-    .join("");
-
-  return `<!doctype html>
-<html lang="${params.decision.locale === "zh-CN" ? "zh-CN" : "en"}">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${title} | ${params.brandName}</title>
-  <meta name="description" content="${params.brandName} ${title} page" />
-  <link rel="stylesheet" href="/styles.css" />
-</head>
-<body>
-  <header>
-    <div class="container">
-      <nav>${nav}</nav>
-    </div>
-  </header>
-  <main class="container">
-    <section class="hero">
-      <h1>${title}</h1>
-      <p>${page.responsibility}</p>
-      <a class="cta" href="/contact/">${params.decision.locale === "zh-CN" ? "联系我们" : "Contact Us"}</a>
-    </section>
-    <section class="cards">${cardList}</section>
-    <section>
-      <p>${String(params.requirementText || "").trim().slice(0, 480)}</p>
-    </section>
-  </main>
-  <footer>
-    <div class="container">${params.brandName} © <span data-year></span></div>
-  </footer>
-  <script src="/script.js"></script>
-</body>
-</html>`;
-}
-
 function resolveProviderConfig(lock: RunProviderLock): ProviderConfig {
   if (lock.provider === "aiberm") {
     return {
@@ -613,7 +565,7 @@ function resolveProviderConfig(lock: RunProviderLock): ProviderConfig {
       apiKey: process.env.AIBERM_API_KEY,
       baseURL: process.env.AIBERM_BASE_URL || "https://aiberm.com/v1",
       defaultHeaders: {},
-      modelName: String(lock.model || process.env.LLM_MODEL_AIBERM || process.env.AIBERM_MODEL || "openai/gpt-5.3-codex"),
+      modelName: String(lock.model || process.env.LLM_MODEL_AIBERM || process.env.AIBERM_MODEL || "openai/gpt-5.4-mini"),
     };
   }
   return {
@@ -630,13 +582,16 @@ function resolveProviderConfig(lock: RunProviderLock): ProviderConfig {
         process.env.LLM_MODEL_CRAZYROUTE ||
         process.env.LLM_MODEL_CRAZYROUTER ||
         process.env.LLM_MODEL_CRAZYREOUTE ||
-        "openai/gpt-5.3-codex",
+        "openai/gpt-5.4-mini",
     ),
   };
 }
 
-function toOpenAiToolDefinitions() {
-  return SKILL_TOOL_DEFINITIONS.map((tool) => ({
+function toOpenAiToolDefinitions(onlyToolName?: ToolRoundCall["name"]) {
+  const selectedTools = onlyToolName
+    ? SKILL_TOOL_DEFINITIONS.filter((tool) => tool.name === onlyToolName)
+    : SKILL_TOOL_DEFINITIONS;
+  return selectedTools.map((tool) => ({
     type: "function",
     function: {
       name: tool.name,
@@ -644,6 +599,47 @@ function toOpenAiToolDefinitions() {
       parameters: tool.parameters,
     },
   })) as any[];
+}
+
+export function normalizeToolChoiceForProvider(config: Pick<ProviderConfig, "provider">, toolChoice: any): any {
+  if (!toolChoice || typeof toolChoice !== "object") return toolChoice;
+  if (toolChoice.type !== "function") return toolChoice;
+
+  const namedToolChoiceMode = String(process.env.SKILL_TOOL_NAMED_TOOL_CHOICE || "").trim().toLowerCase();
+  if (namedToolChoiceMode === "1" || namedToolChoiceMode === "true") return toolChoice;
+  if (namedToolChoiceMode === "0" || namedToolChoiceMode === "false") return "required";
+
+  // Aiberm's OpenAI-compatible endpoint rejects OpenAI's named tool_choice shape
+  // with `Unknown parameter: tool_choice.function`. It still accepts tools with
+  // the generic required mode, and the prompt constrains the desired tool.
+  if (config.provider === "aiberm") return "required";
+
+  return toolChoice;
+}
+
+function getNamedToolChoiceName(toolChoice: any): ToolRoundCall["name"] | undefined {
+  if (!toolChoice || typeof toolChoice !== "object") return undefined;
+  if (String(toolChoice.type || "").trim() !== "function") return undefined;
+  return normalizeToolCallName(toolChoice.function?.name);
+}
+
+export function resolveToolProtocolForProvider(config: Pick<ProviderConfig, "provider">, toolChoice: any): {
+  toolChoice: any;
+  toolNames: string[];
+} {
+  const requestedToolName = getNamedToolChoiceName(toolChoice);
+  const normalizedToolChoice = normalizeToolChoiceForProvider(config, toolChoice);
+  const restrictToRequestedTool = requestedToolName && normalizedToolChoice === "required";
+  const toolNames = (
+    restrictToRequestedTool
+      ? [requestedToolName]
+      : SKILL_TOOL_DEFINITIONS.map((tool) => tool.name)
+  ) as string[];
+
+  return {
+    toolChoice: normalizedToolChoice,
+    toolNames,
+  };
 }
 
 function stringifyToolArgs(raw: unknown): string {
@@ -730,7 +726,10 @@ function createToolProtocolModel(params: {
     baseURL: params.config.baseURL,
     defaultHeaders: params.config.defaultHeaders,
   });
-  const tools = toOpenAiToolDefinitions();
+  const protocol = resolveToolProtocolForProvider(params.config, params.toolChoice);
+  const onlyToolName =
+    protocol.toolNames.length === 1 ? (protocol.toolNames[0] as ToolRoundCall["name"]) : undefined;
+  const tools = toOpenAiToolDefinitions(onlyToolName);
   const maxTokens = Math.max(256, Number(process.env.LLM_MAX_TOKENS_SKILL_TOOL || 12_000));
 
   return {
@@ -747,7 +746,7 @@ function createToolProtocolModel(params: {
             model: params.config.modelName,
             messages: baseMessagesToOpenAiMessages(messages),
             tools,
-            tool_choice: params.toolChoice,
+            tool_choice: protocol.toolChoice,
             temperature: 0.2,
             max_tokens: maxTokens,
           } as any,
@@ -882,16 +881,45 @@ function resolveStageBudgetMs(taskTimeoutMs: number, plannedFileCount: number): 
   return clampTimeout(taskTimeoutMs, computedBudget, STAGE_BUDGET_PER_FILE_MS);
 }
 
-function errorText(error: unknown): string {
-  return String((error as any)?.message || error || "unknown error");
+function collectErrorTextParts(error: unknown, seen = new Set<unknown>()): string[] {
+  if (!error || seen.has(error)) return [];
+  seen.add(error);
+
+  if (typeof error === "string") return [error];
+  if (typeof error !== "object") return [String(error)];
+
+  const raw = error as Record<string, unknown>;
+  const parts = [
+    raw.name,
+    raw.code,
+    raw.status,
+    raw.statusCode,
+    raw.type,
+    raw.message,
+    raw.stack,
+  ]
+    .map((item) => String(item || "").trim())
+    .filter(Boolean);
+
+  return [
+    ...parts,
+    ...collectErrorTextParts(raw.cause, seen),
+    ...collectErrorTextParts(raw.error, seen),
+    ...collectErrorTextParts(raw.details, seen),
+  ];
 }
 
-function isRetryableProviderError(error: unknown): boolean {
+function errorText(error: unknown): string {
+  const parts = collectErrorTextParts(error);
+  return parts.length > 0 ? parts.join(" | ") : "unknown error";
+}
+
+export function isRetryableProviderError(error: unknown): boolean {
   const text = errorText(error).toLowerCase();
   if (!text) return false;
   if (/(401|403|forbidden|unauthorized|invalid api key|authentication failed)/i.test(text)) return false;
   if (/(404|model not found|unsupported model|not supported|bad request|invalid_request_error)/i.test(text)) return false;
-  if (/(timeout|timed out|429|rate limit|503|502|504|service unavailable|connection error|network|socket hang up|econnreset|etimedout|eai_again|enotfound|temporarily unavailable|overloaded|upstream)/i.test(text)) {
+  if (/(timeout|timed out|bodytimeouterror|body timeout|und_err_body_timeout|terminated|429|rate limit|503|502|504|service unavailable|connection error|network|socket hang up|econnreset|econnaborted|etimedout|eai_again|enotfound|fetch failed|temporarily unavailable|overloaded|upstream)/i.test(text)) {
     return true;
   }
   return false;
@@ -938,7 +966,7 @@ async function invokeModelTextWithTimeout(params: {
   });
 }
 
-async function invokeModelWithRetry(params: {
+export async function invokeModelWithRetry(params: {
   model: { invoke: (messages: BaseMessage[]) => Promise<any>; stream?: (messages: BaseMessage[], options?: { signal?: AbortSignal }) => Promise<AsyncIterable<any>> };
   messages: BaseMessage[];
   idleTimeoutMs: number;
@@ -1059,48 +1087,43 @@ async function invokeRoundWithTimeout(params: {
   return { assistant, tool_calls, rawMessage: message };
 }
 
-function ensureRequiredFiles(params: {
+export function validateAndNormalizeRequiredFiles(params: {
   decision: LocalDecisionPlan;
   files: RuntimeWorkflowFile[];
-  requirementText: string;
-  brandName: string;
-  stylePreset: DesignStylePreset;
 }): RuntimeWorkflowFile[] {
-  const output = [...params.files];
-  const byPath = new Map(dedupeFiles(output).map((file) => [normalizePath(file.path), file]));
-  const existingStyles = byPath.get("/styles.css");
-  if (!existingStyles || !isLikelyValidCss(existingStyles.content)) {
-    output.push({
-      path: "/styles.css",
-      content: buildFallbackStyles(params.stylePreset),
-      type: "text/css",
-    });
+  const files = dedupeFiles(params.files);
+  const byPath = new Map(files.map((file) => [normalizePath(file.path), file]));
+  const missing = requiredFileChecklist(params.decision).filter((filePath) => !byPath.has(normalizePath(filePath)));
+  if (missing.length > 0) {
+    throw new Error(`skill_tool_missing_required_files: ${missing.join(", ")}`);
   }
-  const existingScript = byPath.get("/script.js");
-  if (!existingScript || !isLikelyValidJs(existingScript.content)) {
-    output.push({
-      path: "/script.js",
-      content: buildFallbackScript(),
-      type: "text/javascript",
-    });
+
+  const styles = byPath.get("/styles.css");
+  if (!styles || !isLikelyValidCss(styles.content)) {
+    throw new Error("skill_tool_invalid_required_file: /styles.css is missing or invalid CSS");
   }
+
+  const script = byPath.get("/script.js");
+  if (!script || !isLikelyValidJs(script.content)) {
+    throw new Error("skill_tool_invalid_required_file: /script.js is missing or invalid JavaScript");
+  }
+
   for (const route of params.decision.routes) {
     const pagePath = routeToHtmlPath(route);
-    const existingPage = byPath.get(pagePath);
-    const existingPageHtml = ensureHtmlDocument(String(existingPage?.content || ""));
-    if (existingPage && existingPageHtml && !containsToolTranscriptNoise(existingPageHtml)) continue;
-    output.push({
-      path: pagePath,
-      content: buildFallbackPage({
-        route,
-        decision: params.decision,
-        requirementText: params.requirementText,
-        brandName: params.brandName,
-      }),
-      type: "text/html",
-    });
+    const page = byPath.get(pagePath);
+    const html = ensureHtmlDocument(String(page?.content || ""));
+    if (!page || !html || containsToolTranscriptNoise(html)) {
+      throw new Error(`skill_tool_invalid_required_file: ${pagePath} is missing or invalid HTML`);
+    }
+    if (!hasStylesheetRef(html)) {
+      throw new Error(`skill_tool_invalid_required_file: ${pagePath} does not reference /styles.css`);
+    }
+    if (!hasSharedScriptRef(html)) {
+      throw new Error(`skill_tool_invalid_required_file: ${pagePath} does not reference /script.js`);
+    }
   }
-  return dedupeFiles(output).map((file) => {
+
+  return files.map((file) => {
     if (file.path === "/styles.css") {
       return {
         ...file,
@@ -1108,16 +1131,80 @@ function ensureRequiredFiles(params: {
       };
     }
     if (file.path.endsWith(".html")) {
+      const htmlDocument = ensureHtmlDocument(file.content);
+      if (!htmlDocument || containsToolTranscriptNoise(htmlDocument)) {
+        throw new Error(`skill_tool_invalid_generated_html: ${file.path}`);
+      }
+      const html = enforceNavigationOrder(
+        rewriteAbsoluteSiteLinksToRelative(
+          htmlDocument,
+          normalizePath(file.path),
+        ),
+        params.decision,
+      );
       return {
         ...file,
-        content:
-          rewriteAbsoluteSiteLinksToRelative(
-            ensureHtmlDocument(file.content) || file.content,
-            normalizePath(file.path),
-          ) || file.content,
+        content: html,
       };
     }
     return file;
+  });
+}
+
+function normalizeHrefRoute(href: string): string {
+  const raw = String(href || "").trim();
+  if (!raw || raw.startsWith("#") || /^mailto:|^tel:|^javascript:/i.test(raw)) return "";
+  let value = raw;
+  try {
+    if (/^https?:\/\//i.test(value)) {
+      value = new URL(value).pathname;
+    }
+  } catch {
+    return "";
+  }
+  value = value.split("#")[0]?.split("?")[0] || "";
+  value = value.replace(/\/index\.html$/i, "/").replace(/\.html$/i, "");
+  return normalizePath(value || "/");
+}
+
+export function enforceNavigationOrder(html: string, decision: LocalDecisionPlan): string {
+  const routeOrder = new Map(
+    decision.routes.map((route, index) => [normalizePath(route), index]),
+  );
+  const routeLabel = new Map(
+    decision.routes.map((route, index) => [normalizePath(route), String(decision.navLabels[index] || "").trim()]),
+  );
+  if (routeOrder.size <= 1) return html;
+
+  return String(html || "").replace(/<nav\b([^>]*)>([\s\S]*?)<\/nav>/gi, (full, attrs, inner) => {
+    const anchors = Array.from(String(inner || "").matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>[\s\S]*?<\/a>/gi));
+    const known = anchors
+      .map((match, originalIndex) => ({
+        tag: String(match[0] || "").replace(/(<a\b[^>]*>)([\s\S]*?)(<\/a>)/i, (anchorFull, open, label, close) => {
+          const normalizedRoute = normalizeHrefRoute(match[1]);
+          const canonicalLabel = routeLabel.get(normalizedRoute);
+          return canonicalLabel ? `${open}${canonicalLabel}${close}` : anchorFull;
+        }),
+        route: normalizeHrefRoute(match[1]),
+        originalIndex,
+      }))
+      .filter((item) => routeOrder.has(item.route));
+    if (known.length < 2) return full;
+
+    const sortedKnown = [...known].sort((left, right) => {
+      const leftOrder = routeOrder.get(left.route) ?? Number.MAX_SAFE_INTEGER;
+      const rightOrder = routeOrder.get(right.route) ?? Number.MAX_SAFE_INTEGER;
+      return leftOrder - rightOrder || left.originalIndex - right.originalIndex;
+    });
+    const unknown = anchors
+      .map((match, originalIndex) => ({
+        tag: match[0],
+        route: normalizeHrefRoute(match[1]),
+        originalIndex,
+      }))
+      .filter((item) => !routeOrder.has(item.route));
+    const reordered = [...sortedKnown, ...unknown].map((item) => item.tag).join("\n          ");
+    return `<nav${attrs}>${reordered}</nav>`;
   });
 }
 
@@ -1201,7 +1288,7 @@ function planRoundObjective(round: number, missingFiles: string[]): RoundObjecti
     return {
       targetFiles: [firstTarget],
       instruction:
-        "This round only emit /styles.css with complete base tokens/layout styles. Do not emit other files in this round.",
+        "This round only emit /styles.css with complete design tokens and reusable styles that support the route intents in the generation contract. Do not emit other files in this round.",
       strictSingleTarget: true,
     };
   }
@@ -1209,7 +1296,7 @@ function planRoundObjective(round: number, missingFiles: string[]): RoundObjecti
     return {
       targetFiles: [firstTarget],
       instruction:
-        "This round only emit /script.js with lightweight interactions/utilities and no framework dependency.",
+        "This round only emit /script.js with lightweight interactions/utilities for the generated route-specific pages and no framework dependency.",
       strictSingleTarget: true,
     };
   }
@@ -1264,11 +1351,21 @@ function buildToolRoundPrompt(params: {
   emittedFiles: RuntimeWorkflowFile[];
   requiredMissing: string[];
   objective: RoundObjective;
+  requirementText: string;
 }): string {
   const currentFiles = params.emittedFiles
     .map((file) => `- ${file.path} (${file.type}, ${String(file.content || "").length} chars)`)
     .join("\n");
-  const includeFullBlueprint = params.round >= 3 || !params.objective.strictSingleTarget;
+  const firstTarget = params.objective.targetFiles[0] ? normalizePath(params.objective.targetFiles[0]) : "";
+  const targetPageContract = firstTarget.endsWith(".html")
+    ? formatTargetPageContract(params.decision, firstTarget, params.requirementText)
+    : "";
+  const includeFullContract =
+    firstTarget === "/styles.css" ||
+    firstTarget === "/script.js" ||
+    firstTarget.endsWith(".html") ||
+    params.round >= 3 ||
+    !params.objective.strictSingleTarget;
   return [
     `Round: ${params.round + 1}/${MAX_TOOL_ROUNDS}`,
     `Routes: ${params.decision.routes.join(", ")}`,
@@ -1278,10 +1375,11 @@ function buildToolRoundPrompt(params: {
     "Round objective:",
     `- Target files: ${params.objective.targetFiles.join(", ") || "(none)"}`,
     `- Instruction: ${params.objective.instruction}`,
-    includeFullBlueprint ? "Blueprint:" : "Blueprint summary:",
-    includeFullBlueprint
-      ? blueprintDigest(params.decision)
+    includeFullContract ? "Generation contract:" : "Generation contract summary:",
+    includeFullContract
+      ? contractDigest(params.decision)
       : `- Route count: ${params.decision.routes.length}\n- Primary routes: ${params.decision.routes.slice(0, 3).join(", ")}`,
+    targetPageContract ? ["", targetPageContract].join("\n") : "",
     "",
     `Loaded skills: ${params.loadedSkillIds.join(", ") || "(none)"}`,
     `Missing required files: ${params.requiredMissing.join(", ") || "(none)"}`,
@@ -1293,42 +1391,13 @@ function buildToolRoundPrompt(params: {
     "- Use native tool calls (load_skill, emit_file, finish); do not fake tool calls in plain text.",
     "- Every round must include at least one tool call until all required files are emitted.",
     "- Emit_file content must be raw file content (no markdown fences, no tool transcript wrappers).",
+    "- Follow the website-generation-workflow skill contract for Canonical Website Prompt adherence, page differentiation, and shared shell/footer rules.",
+    "- Avoid repeated generic section names like only surface/section/cards across every page; use route-specific module classes where useful.",
     params.objective.strictSingleTarget
       ? "- This round must focus on the objective target file only."
       : "- You may emit multiple missing files when needed.",
     "- Call finish only after all required files exist and are complete.",
   ].join("\n");
-}
-
-function shouldUseLocalFallback(config: ProviderConfig): boolean {
-  if (String(process.env.SKILL_TOOL_FORCE_LOCAL || "").trim() === "1") return true;
-  if (process.env.NODE_ENV === "test") return true;
-  return !config.apiKey;
-}
-
-function buildLocalExecutionFiles(params: {
-  decision: LocalDecisionPlan;
-  requirementText: string;
-  stylePreset: DesignStylePreset;
-  brandName: string;
-}): RuntimeWorkflowFile[] {
-  const files: RuntimeWorkflowFile[] = [
-    { path: "/styles.css", content: buildFallbackStyles(params.stylePreset), type: "text/css" },
-    { path: "/script.js", content: buildFallbackScript(), type: "text/javascript" },
-  ];
-  for (const route of params.decision.routes) {
-    files.push({
-      path: routeToHtmlPath(route),
-      content: buildFallbackPage({
-        route,
-        decision: params.decision,
-        requirementText: params.requirementText,
-        brandName: params.brandName,
-      }),
-      type: "text/html",
-    });
-  }
-  return files;
 }
 
 export async function runSkillToolExecutor(params: SkillToolExecutorParams): Promise<SkillToolExecutorSummary> {
@@ -1339,18 +1408,21 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     parsedRequirement.cleanText || requirementText,
     referencedAssets,
   );
+  const sanitizedRequirementWithReferences = stripLegacyGenerationBlueprintSections(requirementWithReferences);
   const decision = applyStateSitemapToDecision(buildLocalDecisionPlan(params.state), params.state.sitemap);
-  const workflow = await loadWorkflowSkillContext(requirementWithReferences);
+  const workflow = await loadWorkflowSkillContext(sanitizedRequirementWithReferences);
   const stylePreset = normalizeStylePreset(workflow.stylePreset, {});
   const lock = resolveRunProviderRunnerLock({
     provider: (params.state as any)?.workflow_context?.lockedProvider,
     model: (params.state as any)?.workflow_context?.lockedModel,
   });
   const providerConfig = resolveProviderConfig(lock);
-  const brandName = String(decision.brandHint || (params.state as any)?.site_artifacts?.branding?.name || "LC-CNC").trim() || "LC-CNC";
+  const brandName =
+    String(decision.brandHint || (params.state as any)?.site_artifacts?.branding?.name || "").trim() ||
+    resolveBrandName(decision);
 
   const workflowFiles = buildWorkflowFiles({
-    requirementText: requirementWithReferences,
+    requirementText: sanitizedRequirementWithReferences,
     decision,
     designMd: workflow.designMd,
     locale: decision.locale,
@@ -1376,7 +1448,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     new HumanMessage(
       [
         "Initial context:",
-        `- User requirement: ${String(requirementWithReferences || "").slice(0, DEFAULT_INITIAL_REQUIREMENT_CHARS) || "(empty)"}`,
+        `- User requirement:\n${clipRuntimeRequirement(sanitizedRequirementWithReferences, DEFAULT_INITIAL_REQUIREMENT_CHARS) || "(empty)"}`,
         referencedAssets.length > 0 ? "- Referenced assets (must use when relevant):" : "- Referenced assets: none",
         ...(referencedAssets.length > 0
           ? referencedAssets.map((line) => `  - ${line}`)
@@ -1392,39 +1464,19 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
         "Design excerpt:",
         String(workflow.designMd || "").slice(0, DEFAULT_INITIAL_DESIGN_CHARS) || "(no design.md)",
         "",
+        "Workflow skill contract:",
+        String(workflow.workflowSkill || "").slice(0, DEFAULT_INITIAL_WORKFLOW_SKILL_CHARS) || "(no workflow skill)",
+        "",
         "Required files:",
         requiredFileChecklist(decision).join(", "),
       ].join("\n"),
     ),
   ];
 
-  if (shouldUseLocalFallback(providerConfig)) {
-    emittedFiles.push(
-      ...buildLocalExecutionFiles({
-        decision,
-        requirementText: requirementWithReferences,
-        stylePreset,
-        brandName,
-      }),
-    );
-    await emitSnapshot({
-      stepKey: "/index.html",
-      stepIndex: 1,
-      totalSteps: 1,
-      status: "generating:local-fallback",
-      locale: decision.locale,
-      files: dedupeFiles(emittedFiles),
-      workflowArtifacts: workflowFiles,
-      pages: decision.routes.map((route) => ({
-        path: normalizePath(route),
-        html: String(
-          dedupeFiles(emittedFiles).find((file) => normalizePath(file.path) === routeToHtmlPath(route))?.content || "",
-        ),
-      })),
-      onStep: params.onStep,
-    });
-    assistantNotes.push("Skill-native tool executor used local fallback mode.");
-  } else {
+  if (!providerConfig.apiKey) {
+    throw new Error(`skill_tool_provider_api_key_missing: provider=${providerConfig.provider}`);
+  }
+
     const stageBudgetMs = resolveStageBudgetMs(params.timeoutMs, requiredFileChecklist(decision).length);
     const stageStartedAt = Date.now();
     const timeoutConfig = resolveRoundTimeouts(params.timeoutMs);
@@ -1501,16 +1553,28 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
         emittedFiles,
         requiredMissing: missing,
         objective,
+        requirementText: sanitizedRequirementWithReferences,
       });
       toolHistoryMessages.push(new HumanMessage(prompt));
       const modelForRound = noProgressRounds > 0 ? modelWithEmitFile : modelWithTools;
-      const roundOutput = await invokeRoundWithTimeout({
-        model: modelForRound,
-        messages: toolHistoryMessages,
-        idleTimeoutMs: timeoutConfig.idleTimeoutMs,
-        absoluteTimeoutMs: timeoutConfig.absoluteTimeoutMs,
-        operation: `skill-tool-round-${round + 1}`,
-      });
+      let roundOutput: ToolRoundOutput;
+      try {
+        roundOutput = await invokeRoundWithTimeout({
+          model: modelForRound,
+          messages: toolHistoryMessages,
+          idleTimeoutMs: timeoutConfig.idleTimeoutMs,
+          absoluteTimeoutMs: timeoutConfig.absoluteTimeoutMs,
+          operation: `skill-tool-round-${round + 1}`,
+        });
+      } catch (error) {
+        if (!isRetryableProviderError(error)) {
+          throw error;
+        }
+        const stillMissingAfterRetry = missingRequiredFiles(decision, emittedFiles);
+        throw new Error(
+          `skill_tool_provider_retry_exhausted: ${errorText(error)}; missing=${stillMissingAfterRetry.join(", ") || "(none)"}`,
+        );
+      }
       if (roundOutput.assistant) {
         assistantNotes.push(String(roundOutput.assistant).trim());
       }
@@ -1644,14 +1708,10 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
       if (roundCalls.length === 0 && stillMissing.length === 0) break;
       if (stillMissing.length === 0 && progressed) break;
     }
-  }
 
-  const completedStaticFiles = ensureRequiredFiles({
+  const completedStaticFiles = validateAndNormalizeRequiredFiles({
     decision,
     files: emittedFiles,
-    requirementText: requirementWithReferences,
-    brandName,
-    stylePreset,
   });
   const mergedWorkflowFiles = dedupeFiles([...workflowFiles, ...completedStaticFiles.filter((file) => file.path.endsWith(".md"))]);
   const { staticFiles } = splitStaticAndWorkflow(completedStaticFiles);
@@ -1711,7 +1771,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
       genMode: "skill_native",
       generationMode: "skill-native",
       preferredLocale: decision.locale,
-      sourceRequirement: requirementWithReferences,
+      sourceRequirement: sanitizedRequirementWithReferences,
       skillId: String((params.state.workflow_context as any)?.skillId || "website-generation-workflow"),
       lockedProvider: lock.provider,
       lockedModel: lock.model,
@@ -1737,10 +1797,10 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
   const finalPages = getPages(finalState);
 
   await emitSnapshot({
-    stepKey: "repair",
+    stepKey: "validation",
     stepIndex: MAX_TOOL_ROUNDS,
     totalSteps: MAX_TOOL_ROUNDS,
-    status: "generating:repair",
+    status: "generating:validation",
     locale: decision.locale,
     files: finalFiles as RuntimeWorkflowFile[],
     workflowArtifacts: mergedWorkflowFiles,

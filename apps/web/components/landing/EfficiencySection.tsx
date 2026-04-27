@@ -1,6 +1,8 @@
 import { Zap, MessageSquare, LayoutTemplate } from "lucide-react";
+import { getLandingCopy, type Locale } from "@/lib/i18n";
 
-export function EfficiencySection() {
+export function EfficiencySection({ locale = "en" }: { locale?: Locale }) {
+  const copy = getLandingCopy(locale).efficiency;
   return (
     <section id="features" className="overflow-hidden bg-[linear-gradient(180deg,color-mix(in_oklab,var(--shp-bg)_88%,#070707_12%),color-mix(in_oklab,var(--shp-bg-soft)_86%,#030303_14%))] py-24">
       <div className="mx-auto max-w-7xl px-6">
@@ -29,8 +31,8 @@ export function EfficiencySection() {
                     <Zap className="h-5 w-5" />
                   </div>
                   <div>
-                    <div className="text-xs font-semibold uppercase text-[var(--shp-muted)]">Generation Time</div>
-                    <div className="text-lg font-bold text-[var(--shp-text)]">12 Seconds</div>
+                    <div className="text-xs font-semibold uppercase text-[var(--shp-muted)]">{copy.metricLabel}</div>
+                    <div className="text-lg font-bold text-[var(--shp-text)]">{copy.metricValue}</div>
                   </div>
                 </div>
               </div>
@@ -39,16 +41,15 @@ export function EfficiencySection() {
 
           <div className="order-1 lg:order-2">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--shp-primary)_35%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,transparent)] px-3 py-1 text-xs font-bold uppercase tracking-wider text-[var(--shp-primary)]">
-              Efficiency First
+              {copy.badge}
             </div>
             <h2 className="mb-6 text-3xl font-bold text-[var(--shp-text)] lg:text-4xl">
-              No more blank pages.
+              {copy.title}
               <br />
-              <span className="text-[var(--shp-primary)]">Smart generation at your fingertips.</span>
+              <span className="text-[var(--shp-primary)]">{copy.highlight}</span>
             </h2>
             <p className="mb-8 text-lg leading-relaxed text-[var(--shp-muted)]">
-              Traditional web development takes weeks. Shpitto cuts that down to minutes. Describe your business and get
-              ready-to-ship structure, copy, imagery guidance, and deployment path.
+              {copy.body}
             </p>
 
             <div className="space-y-6">
@@ -57,10 +58,9 @@ export function EfficiencySection() {
                   <MessageSquare className="h-6 w-6" />
                 </div>
                 <div>
-                  <h3 className="mb-1 text-lg font-bold text-[var(--shp-text)]">Understands Your Business Logic</h3>
+                  <h3 className="mb-1 text-lg font-bold text-[var(--shp-text)]">{copy.features[0].title}</h3>
                   <p className="text-[var(--shp-muted)]">
-                    Not just generating text, but capturing industry terminology and business process context for precise,
-                    trustworthy output.
+                    {copy.features[0].description}
                   </p>
                 </div>
               </div>
@@ -70,9 +70,9 @@ export function EfficiencySection() {
                   <LayoutTemplate className="h-6 w-6" />
                 </div>
                 <div>
-                  <h3 className="mb-1 text-lg font-bold text-[var(--shp-text)]">Automated Content Architecture</h3>
+                  <h3 className="mb-1 text-lg font-bold text-[var(--shp-text)]">{copy.features[1].title}</h3>
                   <p className="text-[var(--shp-muted)]">
-                    Automatically composes Hero, product modules, proof blocks, and contact capture structure using practical SEO conventions.
+                    {copy.features[1].description}
                   </p>
                 </div>
               </div>

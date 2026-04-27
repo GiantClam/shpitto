@@ -25,7 +25,7 @@ function resolveProviderModel(provider: ProviderName): string {
       process.env.LLM_MODEL_AIBERM ||
       process.env.AIBERM_MODEL ||
       process.env.LLM_MODEL ||
-      "openai/gpt-5.3-codex"
+      "openai/gpt-5.4-mini"
     );
   }
   return (
@@ -36,7 +36,7 @@ function resolveProviderModel(provider: ProviderName): string {
     process.env.CRAZYROUTER_MODEL ||
     process.env.CRAZYREOUTE_MODEL ||
     process.env.LLM_MODEL ||
-    "openai/gpt-5.3-codex"
+    "openai/gpt-5.4-mini"
   );
 }
 
@@ -77,4 +77,3 @@ export function resolveRunProviderLock(preferred?: { provider?: string; model?: 
     reason: "fallback_without_key",
   };
 }
-

@@ -1,23 +1,16 @@
 ﻿import type { AgentState } from "../agent/graph.ts";
 import { parseReferencedAssetsFromText } from "../agent/referenced-assets.ts";
+import { routePlanningPolicy } from "./route-planning-policy.ts";
 
-export type PageKind =
-  | "home"
-  | "products"
-  | "creation"
-  | "construction"
-  | "certification"
-  | "advocacy"
-  | "research"
-  | "platform"
-  | "downloads"
-  | "auth"
-  | "solutions"
-  | "cases"
-  | "about"
-  | "contact"
-  | "news"
-  | "generic";
+export type PageIntentSource =
+  | "workflow_contract"
+  | "prompt_contract"
+  | "requirement_spec"
+  | "explicit_route"
+  | "nav_label"
+  | "state_sitemap"
+  | "auto_plan"
+  | "default";
 
 export type ComponentMix = {
   hero: number;
@@ -31,7 +24,11 @@ export type ComponentMix = {
 export type PageBlueprint = {
   route: string;
   navLabel: string;
-  pageKind: PageKind;
+  purpose: string;
+  source: PageIntentSource;
+  evidence?: string;
+  constraints: string[];
+  pageKind: "intent";
   responsibility: string;
   contentSkeleton: string[];
   componentMix: ComponentMix;
@@ -42,6 +39,7 @@ export type LocalDecisionPlan = {
   locale: "zh-CN" | "en";
   routes: string[];
   navLabels: string[];
+  pageIntents: PageBlueprint[];
   pageBlueprints: PageBlueprint[];
   brandHint?: string;
 };
@@ -53,6 +51,7 @@ const ROUTE_ALIASES: Array<{ keys: string[]; route: string }> = [
   { keys: ["cases", "case", "\u6848\u4f8b"], route: "/cases" },
   { keys: ["about", "company", "\u5173\u4e8e"], route: "/about" },
   { keys: ["contact", "contacts", "\u8054\u7cfb", "\u54a8\u8be2"], route: "/contact" },
+  { keys: ["blog", "blogs", "\u535a\u5ba2", "\u6587\u7ae0"], route: "/blog" },
   { keys: ["news", "updates", "\u8d44\u8baf", "\u65b0\u95fb"], route: "/news" },
   { keys: ["casuxcreation", "creation", "\u521b\u8bbe"], route: "/casux-creation" },
   { keys: ["casuxconstruction", "construction", "\u5efa\u8bbe"], route: "/casux-construction" },
@@ -141,9 +140,9 @@ function extractRequirementText(state: AgentState): string {
   }
   const workflow = (state as any)?.workflow_context || {};
   const fallbackCandidates = [
+    String(workflow.canonicalPrompt || "").trim(),
     String(workflow.latestUserText || "").trim(),
     String(workflow.requirementAggregatedText || "").trim(),
-    String(workflow.requirementDraft || "").trim(),
     String(workflow.sourceRequirement || "").trim(),
   ];
   for (const candidate of fallbackCandidates) {
@@ -188,7 +187,7 @@ function splitCommaLabels(raw: string): string[] {
   const content = source.includes(":") || source.includes("：") ? source.split(/[:：]/).slice(1).join(":") : source;
   const labels = content
     .split(/[,\uFF0C\u3001]/)
-    .map((item) => cleanLabel(item))
+    .map((item) => cleanLabel(String(item || "").replace(/[.!?。！？;；]\s+[\s\S]*$/u, "")))
     .filter(Boolean)
     .filter((label) => isLikelyPageLabel(label))
     .filter((label) => !/^https?:\/\//i.test(label))
@@ -197,11 +196,53 @@ function splitCommaLabels(raw: string): string[] {
   return labels.length >= 2 ? labels : [];
 }
 
+const PROMPT_PLANNING_ARTIFACT_LABELS = new Set(
+  routePlanningPolicy.blockedLabels.map((label) => normalizeLabelForMatching(label)).filter(Boolean),
+);
+
+const AUTO_PAGE_PLANNING_PATTERNS = routePlanningPolicy.autoPlanningIntentPatterns
+  .map((pattern) => {
+    try {
+      return new RegExp(pattern, "iu");
+    } catch {
+      return undefined;
+    }
+  })
+  .filter((pattern): pattern is RegExp => Boolean(pattern));
+
+function isPromptPlanningArtifactLabel(label: string): boolean {
+  const normalized = normalizeLabelForMatching(cleanLabel(label));
+  if (!normalized) return false;
+  return PROMPT_PLANNING_ARTIFACT_LABELS.has(normalized);
+}
+
+function isPromptPlanningArtifactRoute(route: string): boolean {
+  const normalized = normalizeRoute(route);
+  if (!normalized || normalized === "/") return false;
+  return isPromptPlanningArtifactLabel(normalized.replace(/^\//, "").replace(/[-_/]+/g, " "));
+}
+
+function isRoutePlanningArtifact(route: string): boolean {
+  const normalized = normalizeRoute(route);
+  if (!normalized || normalized === "/") return false;
+  if (/^\/\d+$/.test(normalized)) return true;
+  if (isPromptPlanningArtifactRoute(normalized)) return true;
+
+  const segments = normalized
+    .replace(/^\//, "")
+    .split("/")
+    .map((segment) => segment.replace(/[-_]+/g, " "))
+    .filter(Boolean);
+
+  return segments.some((segment) => isPromptPlanningArtifactLabel(segment));
+}
+
 function isLikelyPageLabel(label: string): boolean {
   const text = String(label || "").trim();
   if (!text) return false;
   if (text.length > 48) return false;
   if (/[.!?。！？;；]/.test(text)) return false;
+  if (isPromptPlanningArtifactLabel(text)) return false;
 
   const words = text.split(/\s+/).filter(Boolean);
   if (words.length > 5) return false;
@@ -211,7 +252,7 @@ function isLikelyPageLabel(label: string): boolean {
   if (blockedHint.test(text)) return false;
 
   const pageHint =
-    /(home|products?|3c\s*machines|solutions?|cases?|about|contact|news|downloads?|login|register|creation|construction|certification|advocacy|research|platform|\u9996\u9875|\u4ea7\u54c1|\u65b9\u6848|\u6848\u4f8b|\u5173\u4e8e|\u8054\u7cfb|\u4e0b\u8f7d|\u767b\u5f55|\u6ce8\u518c|\u521b\u8bbe|\u5efa\u8bbe|\u4f18\u6807|\u5021\u5bfc|\u7814\u7a76|\u5e73\u53f0)/iu;
+    /(home|products?|3c\s*machines|solutions?|cases?|about|contact|blogs?|news|downloads?|login|register|creation|construction|certification|advocacy|research|platform|\u9996\u9875|\u4ea7\u54c1|\u65b9\u6848|\u6848\u4f8b|\u5173\u4e8e|\u8054\u7cfb|\u535a\u5ba2|\u6587\u7ae0|\u4e0b\u8f7d|\u767b\u5f55|\u6ce8\u518c|\u521b\u8bbe|\u5efa\u8bbe|\u4f18\u6807|\u5021\u5bfc|\u7814\u7a76|\u5e73\u53f0)/iu;
   if (pageHint.test(text)) return true;
 
   return /^[A-Za-z0-9][A-Za-z0-9 _-]{0,32}$/.test(text) && words.length <= 3;
@@ -291,7 +332,7 @@ function extractPageHeadingLabels(requirementText: string): string[] {
 function extractNumberedPageLabels(requirementText: string): string[] {
   const labels: string[] = [];
   const pageHint =
-    /(home|products?|3c\s*machines|solutions?|cases?|about|contact|news|downloads?|login|register|creation|construction|certification|advocacy|research|platform|\u9996\u9875|\u4ea7\u54c1|\u65b9\u6848|\u6848\u4f8b|\u5173\u4e8e|\u8054\u7cfb|\u4e0b\u8f7d|\u767b\u5f55|\u6ce8\u518c)/iu;
+    /(home|products?|3c\s*machines|solutions?|cases?|about|contact|blogs?|news|downloads?|login|register|creation|construction|certification|advocacy|research|platform|\u9996\u9875|\u4ea7\u54c1|\u65b9\u6848|\u6848\u4f8b|\u5173\u4e8e|\u8054\u7cfb|\u535a\u5ba2|\u6587\u7ae0|\u4e0b\u8f7d|\u767b\u5f55|\u6ce8\u518c)/iu;
   const blockedHint =
     /(color|typography|spacing|style\s+guide|seo|meta|cta|guideline|\u989c\u8272|\u5b57\u4f53|\u95f4\u8ddd|\u89c4\u8303|\u63d0\u793a\u8bcd)/iu;
   const lineRegex = /^\s*(?:[-*]\s*)?(?:\d{1,2}[\).])\s*([^\n]{1,120})$/gmu;
@@ -313,7 +354,8 @@ function extractExplicitRoutes(requirementText: string): string[] {
   const routes: string[] = [];
   const lines = requirementText.split(/\r?\n/).map((line) => String(line || ""));
   const lineHint = /(route|path|url|href|sitemap|nav|navigation|\u9875\u9762|\u8def\u5f84|\u94fe\u63a5|\u5bfc\u822a)/iu;
-  const blockedLine = /(tag|tags|label|filters?|\u6807\u7b7e|header\/nav\/main\/footer|nav\/main\/footer|styles?\.css|script\.js)/iu;
+  const blockedLine =
+    /(tag|tags|label|filters?|\u6807\u7b7e|header\/nav\/main\/footer|nav\/main\/footer|styles?\.css|script\.js|css\s*\/\s*js|open\s+graph|seo\s+meta|html5)/iu;
   const routeRegex = /\/[a-zA-Z0-9][a-zA-Z0-9/_-]{0,80}/g;
 
   for (const line of lines) {
@@ -328,12 +370,153 @@ function extractExplicitRoutes(requirementText: string): string[] {
       if (/\.(css|js|json|png|jpg|jpeg|svg|webp|ico|map)$/i.test(route)) continue;
       if (route.length > 48) continue;
       if (/^\/\d+$/.test(route)) continue;
+      if (/^\/(?:css|js|asset|assets|static|src|dist)$/i.test(route)) continue;
       if (/(prompt|draft|generate|assumption|shp|script|styles?)/i.test(route)) continue;
       if (/(^|\/)(nav|main|footer|header|body|head)(\/|$)/i.test(route)) continue;
+      if (isPromptPlanningArtifactRoute(route)) continue;
       routes.push(route);
     }
   }
   return routes;
+}
+
+function hasAutoPagePlanningIntent(requirementText: string): boolean {
+  return AUTO_PAGE_PLANNING_PATTERNS.some((pattern) => pattern.test(requirementText));
+}
+
+function inferDefaultAutoRoutes(requirementText: string): string[] {
+  const routes =
+    routePlanningPolicy.defaultAutoRoutes.length > 0
+      ? routePlanningPolicy.defaultAutoRoutes.map((route) => normalizeRoute(route))
+      : ["/", "/about", "/custom-solutions", "/cases", "/contact"];
+
+  for (const rule of routePlanningPolicy.conditionalAutoRoutes) {
+    const matched = rule.matchPatterns.some((pattern) => {
+      try {
+        return new RegExp(pattern, "iu").test(requirementText);
+      } catch {
+        return false;
+      }
+    });
+    const route = normalizeRoute(rule.route);
+    if (!matched || !route || routes.includes(route)) continue;
+
+    const insertBefore = rule.insertBefore ? normalizeRoute(rule.insertBefore) : "";
+    const insertAt = insertBefore ? routes.indexOf(insertBefore) : -1;
+    if (insertAt >= 0) {
+      routes.splice(insertAt, 0, route);
+    } else {
+      routes.push(route);
+    }
+  }
+
+  return routes;
+}
+
+function normalizeStructuredRoutes(routes: unknown[]): string[] {
+  return uniqueRoutes(
+    routes
+      .map((route) => normalizeRoute(String(route || "")))
+      .filter((route) => route && !isRoutePlanningArtifact(route)),
+  );
+}
+
+function normalizeStructuredNavLabels(labels: unknown[], routes: string[], locale: "zh-CN" | "en"): string[] {
+  return routes.map((route, index) => {
+    const raw = cleanLabel(String(labels[index] || ""));
+    if (!raw || raw.length > 32 || /[.!?。！？;；]/.test(raw) || isPromptPlanningArtifactLabel(raw)) {
+      return routeToNavLabel(route, locale);
+    }
+    return raw;
+  });
+}
+
+type PromptControlManifestRoutePlan = {
+  routes: string[];
+  navLabels: string[];
+};
+
+function filePathToRoute(filePath: string): string {
+  const normalized = normalizeRoute(String(filePath || "").replace(/\.(html?)$/i, ""));
+  if (!normalized || normalized === "/index") return "/";
+  if (normalized.endsWith("/index")) return normalizeRoute(normalized.slice(0, -("/index".length)) || "/");
+  return "";
+}
+
+function extractPromptControlManifestRoutePlan(
+  requirementText: string,
+  locale: "zh-CN" | "en",
+): PromptControlManifestRoutePlan {
+  const source = String(requirementText || "");
+  if (!source.includes("Prompt Control Manifest")) return { routes: [], navLabels: [] };
+
+  const contractBlock = source.match(/Prompt Control Manifest[^\n]*[\s\S]*?```(?:json)?\s*([\s\S]*?)```/i);
+  const rawJson = String(contractBlock?.[1] || "").trim();
+  if (!rawJson) return { routes: [], navLabels: [] };
+
+  let parsed: any;
+  try {
+    parsed = JSON.parse(rawJson);
+  } catch {
+    return { routes: [], navLabels: [] };
+  }
+
+  const routes = Array.isArray(parsed?.routes) ? normalizeStructuredRoutes(parsed.routes) : [];
+  if (routes.length > 0) {
+    return {
+      routes,
+      navLabels: Array.isArray(parsed?.navLabels) ? normalizeStructuredNavLabels(parsed.navLabels, routes, locale) : [],
+    };
+  }
+
+  const files = Array.isArray(parsed?.files)
+    ? parsed.files.map((file: unknown) => filePathToRoute(String(file || ""))).filter(Boolean)
+    : [];
+  const fileRoutes = normalizeStructuredRoutes(files);
+  return { routes: fileRoutes, navLabels: [] };
+}
+
+function extractWorkflowPromptControlManifestRoutePlan(
+  state: AgentState,
+  locale: "zh-CN" | "en",
+): PromptControlManifestRoutePlan {
+  const workflow = ((state as any)?.workflow_context || {}) as Record<string, any>;
+  const contract =
+    workflow.promptControlManifest && typeof workflow.promptControlManifest === "object"
+      ? workflow.promptControlManifest
+      : undefined;
+  if (!contract) return { routes: [], navLabels: [] };
+
+  const routes = Array.isArray(contract.routes) ? normalizeStructuredRoutes(contract.routes) : [];
+  if (routes.length > 0) {
+    return {
+      routes,
+      navLabels: Array.isArray(contract.navLabels) ? normalizeStructuredNavLabels(contract.navLabels, routes, locale) : [],
+    };
+  }
+
+  const files = Array.isArray(contract.files)
+    ? contract.files.map((file: unknown) => filePathToRoute(String(file || ""))).filter(Boolean)
+    : [];
+  const fileRoutes = normalizeStructuredRoutes(files);
+  return { routes: fileRoutes, navLabels: [] };
+}
+
+function extractRequirementSpecRoutes(state: AgentState, requirementText: string): string[] {
+  const workflow = ((state as any)?.workflow_context || {}) as Record<string, any>;
+  const spec = workflow.requirementSpec && typeof workflow.requirementSpec === "object" ? workflow.requirementSpec : undefined;
+  const pageStructure = spec?.pageStructure && typeof spec.pageStructure === "object" ? spec.pageStructure : undefined;
+  if (!pageStructure) return [];
+
+  const mode = String(pageStructure.mode || "").toLowerCase();
+  const planning = String(pageStructure.planning || "").toLowerCase();
+  if (mode === "single") return ["/"];
+
+  const pages = Array.isArray(pageStructure.pages) ? pageStructure.pages : Array.isArray(spec?.pages) ? spec.pages : [];
+  if (pages.length > 0) return normalizeStructuredRoutes(labelsToRoutes(pages.map((page: unknown) => String(page || ""))));
+
+  if (mode === "multi" && planning === "auto") return inferDefaultAutoRoutes(requirementText);
+  return [];
 }
 
 function labelToRoute(label: string, index: number): string {
@@ -362,6 +545,7 @@ function uniqueRoutes(routes: string[]): string[] {
   for (const route of routes) {
     const normalized = normalizeRoute(route);
     if (!normalized) continue;
+    if (isRoutePlanningArtifact(normalized)) continue;
 
     if (normalized === "/") {
       if (!seen.has("/")) {
@@ -383,6 +567,13 @@ function routeToNavLabel(route: string, locale: "zh-CN" | "en" = "en"): string {
   const normalized = normalizeRoute(route);
   const knownLabels: Record<string, { zh: string; en: string }> = {
     "/": { zh: "\u9996\u9875", en: "Home" },
+    "/products": { zh: "\u4ea7\u54c1", en: "Products" },
+    "/custom-solutions": { zh: "\u65b9\u6848", en: "Solutions" },
+    "/cases": { zh: "\u6848\u4f8b", en: "Cases" },
+    "/blog": { zh: "\u535a\u5ba2", en: "Blog" },
+    "/news": { zh: "\u65b0\u95fb", en: "News" },
+    "/contact": { zh: "\u8054\u7cfb", en: "Contact" },
+    "/about": { zh: "\u5173\u4e8e", en: "About" },
     "/casux-creation": { zh: "CASUX\u521b\u8bbe", en: "CASUX Creation" },
     "/casux-construction": { zh: "CASUX\u5efa\u8bbe", en: "CASUX Construction" },
     "/casux-certification": { zh: "CASUX\u4f18\u6807", en: "CASUX Certification" },
@@ -406,189 +597,207 @@ function routeToNavLabel(route: string, locale: "zh-CN" | "en" = "en"): string {
     .join(" ");
 }
 
-function inferPageKind(route: string): PageKind {
-  const normalized = normalizeRoute(route);
-  if (normalized === "/") return "home";
-  if (/\/casux-creation|\/creation/.test(normalized)) return "creation";
-  if (/\/casux-construction|\/construction/.test(normalized)) return "construction";
-  if (/\/casux-certification|\/certification|\/quality-mark|\/query/.test(normalized)) return "certification";
-  if (/\/casux-advocacy|\/advocacy|\/alliance/.test(normalized)) return "advocacy";
-  if (/\/casux-research-center|\/research/.test(normalized)) return "research";
-  if (/\/casux-information-platform|\/platform/.test(normalized)) return "platform";
-  if (/\/downloads?/.test(normalized)) return "downloads";
-  if (/\/(login|register|auth|signin|signup)/.test(normalized)) return "auth";
-  if (/\/(3c-machines|products?)/.test(normalized)) return "products";
-  if (/\/(custom-solutions?|solutions?)/.test(normalized)) return "solutions";
-  if (/\/cases?/.test(normalized)) return "cases";
-  if (/\/about/.test(normalized)) return "about";
-  if (/\/contact/.test(normalized)) return "contact";
-  if (/\/news/.test(normalized)) return "news";
-  return "generic";
+function orderNavigationRoutes(routes: string[]): string[] {
+  const normalizedRoutes = uniqueRoutes(routes);
+  const homeRoutes = normalizedRoutes.filter((route) => normalizeRoute(route) === "/");
+  const aboutRoutes = normalizedRoutes.filter((route) => /^\/about(?:\/|$)/.test(normalizeRoute(route)));
+  const contactRoutes = normalizedRoutes.filter((route) => /^\/contact(?:\/|$)/.test(normalizeRoute(route)));
+  const middleRoutes = normalizedRoutes.filter((route) => {
+    const normalized = normalizeRoute(route);
+    return normalized !== "/" && !/^\/about(?:\/|$)/.test(normalized) && !/^\/contact(?:\/|$)/.test(normalized);
+  });
+
+  return [...homeRoutes, ...middleRoutes, ...contactRoutes, ...aboutRoutes];
 }
 
-function normalizeComponentMix(mix: ComponentMix): ComponentMix {
-  const safe = {
-    hero: Math.max(0, Number(mix.hero) || 0),
-    feature: Math.max(0, Number(mix.feature) || 0),
-    grid: Math.max(0, Number(mix.grid) || 0),
-    proof: Math.max(0, Number(mix.proof) || 0),
-    form: Math.max(0, Number(mix.form) || 0),
-    cta: Math.max(0, Number(mix.cta) || 0),
-  };
+const EMPTY_COMPONENT_MIX: ComponentMix = { hero: 0, feature: 0, grid: 0, proof: 0, form: 0, cta: 0 };
 
-  const total = safe.hero + safe.feature + safe.grid + safe.proof + safe.form + safe.cta;
-  if (total <= 0) {
-    return { hero: 20, feature: 20, grid: 20, proof: 15, form: 10, cta: 15 };
+function allIndexesOf(input: string, needle: string): number[] {
+  const text = String(input || "");
+  const term = String(needle || "").trim();
+  if (!term) return [];
+  const indexes: number[] = [];
+  let cursor = 0;
+  while (cursor < text.length) {
+    const index = text.indexOf(term, cursor);
+    if (index < 0) break;
+    indexes.push(index);
+    cursor = index + Math.max(1, term.length);
   }
-
-  const scale = 100 / total;
-  return {
-    hero: Math.round(safe.hero * scale),
-    feature: Math.round(safe.feature * scale),
-    grid: Math.round(safe.grid * scale),
-    proof: Math.round(safe.proof * scale),
-    form: Math.round(safe.form * scale),
-    cta: Math.round(safe.cta * scale),
-  };
+  return indexes;
 }
 
-function blueprintByKind(kind: PageKind): Omit<PageBlueprint, "route" | "navLabel"> {
-  switch (kind) {
-    case "home":
-      return {
-        pageKind: kind,
-        responsibility: "Explain value proposition quickly and route users to product, case, and contact flows.",
-        contentSkeleton: [
-          "hero",
-          "value-strip",
-          "featured-products",
-          "feature-pillars",
-          "case-highlights",
-          "certification-row",
-          "contact-cta",
-        ],
-        componentMix: normalizeComponentMix({ hero: 22, feature: 18, grid: 22, proof: 18, form: 4, cta: 16 }),
-      };
-    case "products":
-      return {
-        pageKind: kind,
-        responsibility: "Present product families with specs and strong conversion paths.",
-        contentSkeleton: ["hero", "product-grid", "spec-cards", "comparison-strip", "faq", "quote-cta"],
-        componentMix: normalizeComponentMix({ hero: 16, feature: 14, grid: 34, proof: 14, form: 6, cta: 16 }),
-      };
-    case "creation":
-      return {
-        pageKind: kind,
-        responsibility: "Explain how to create compliant child-friendly spaces from scratch with actionable standards.",
-        contentSkeleton: ["hero", "definition", "five-dimensions", "space-types", "creation-flow", "case-list"],
-        componentMix: normalizeComponentMix({ hero: 16, feature: 28, grid: 22, proof: 14, form: 6, cta: 14 }),
-      };
-    case "construction":
-      return {
-        pageKind: kind,
-        responsibility: "Provide build guidelines, standard hierarchy, and practical implementation references.",
-        contentSkeleton: ["hero", "guides-download", "standard-system", "six-key-elements", "technical-articles", "cta"],
-        componentMix: normalizeComponentMix({ hero: 14, feature: 24, grid: 20, proof: 18, form: 6, cta: 18 }),
-      };
-    case "certification":
-      return {
-        pageKind: kind,
-        responsibility: "Offer transparent certification search and clear application pathways for products and spaces.",
-        contentSkeleton: ["hero", "search-panel", "filters", "rating-system", "application-entry", "certified-showcase"],
-        componentMix: normalizeComponentMix({ hero: 14, feature: 18, grid: 20, proof: 16, form: 20, cta: 12 }),
-      };
-    case "advocacy":
-      return {
-        pageKind: kind,
-        responsibility: "Show alliance impact, campaigns, and a clear onboarding path for new members.",
-        contentSkeleton: ["hero", "alliance-overview", "member-wall", "events", "city-progress-map", "join-cta"],
-        componentMix: normalizeComponentMix({ hero: 14, feature: 20, grid: 20, proof: 18, form: 10, cta: 18 }),
-      };
-    case "research":
-      return {
-        pageKind: kind,
-        responsibility: "Present research capability, experts, outputs, and international collaborations.",
-        contentSkeleton: ["hero", "lab-intro", "research-domains", "expert-team", "publications-reports", "global-partners"],
-        componentMix: normalizeComponentMix({ hero: 14, feature: 24, grid: 16, proof: 20, form: 8, cta: 18 }),
-      };
-    case "platform":
-      return {
-        pageKind: kind,
-        responsibility: "Surface key data, policy intelligence, and subscription updates through interactive modules.",
-        contentSkeleton: ["hero", "dashboard-metrics", "tab-navigation", "distribution-map", "data-feed", "subscription-cta"],
-        componentMix: normalizeComponentMix({ hero: 14, feature: 20, grid: 26, proof: 16, form: 8, cta: 16 }),
-      };
-    case "downloads":
-      return {
-        pageKind: kind,
-        responsibility: "Enable efficient discovery and retrieval of standard documents and reports.",
-        contentSkeleton: ["hero", "filters", "document-list", "preview-entry", "hot-downloads", "login-hint"],
-        componentMix: normalizeComponentMix({ hero: 12, feature: 16, grid: 30, proof: 18, form: 8, cta: 16 }),
-      };
-    case "auth":
-      return {
-        pageKind: kind,
-        responsibility: "Provide secure login or registration with clear value communication.",
-        contentSkeleton: ["hero", "auth-form", "user-types", "benefits", "agreement-consent", "help-links"],
-        componentMix: normalizeComponentMix({ hero: 12, feature: 14, grid: 10, proof: 14, form: 36, cta: 14 }),
-      };
-    case "solutions":
-      return {
-        pageKind: kind,
-        responsibility: "Show customization capability, process, lead-time, and engagement model.",
-        contentSkeleton: ["hero", "solution-scenarios", "process-steps", "delivery-assurance", "support-model", "consult-cta"],
-        componentMix: normalizeComponentMix({ hero: 16, feature: 26, grid: 20, proof: 16, form: 6, cta: 16 }),
-      };
-    case "cases":
-      return {
-        pageKind: kind,
-        responsibility: "Build trust with real case outcomes and manufacturing credibility.",
-        contentSkeleton: ["hero", "case-gallery", "result-metrics", "client-proof", "timeline", "contact-cta"],
-        componentMix: normalizeComponentMix({ hero: 14, feature: 16, grid: 30, proof: 22, form: 4, cta: 14 }),
-      };
-    case "about":
-      return {
-        pageKind: kind,
-        responsibility: "Communicate company story, capability depth, and compliance.",
-        contentSkeleton: ["hero", "company-story", "milestones", "rd-and-factory", "certification-row", "contact-cta"],
-        componentMix: normalizeComponentMix({ hero: 14, feature: 26, grid: 14, proof: 24, form: 6, cta: 16 }),
-      };
-    case "contact":
-      return {
-        pageKind: kind,
-        responsibility: "Capture leads through multi-channel contact and quote form.",
-        contentSkeleton: ["hero", "contact-channels", "quote-form", "service-commitment", "privacy-consent", "faq"],
-        componentMix: normalizeComponentMix({ hero: 12, feature: 16, grid: 8, proof: 14, form: 36, cta: 14 }),
-      };
-    case "news":
-      return {
-        pageKind: kind,
-        responsibility: "Publish updates with readable category-based news listing and subscriptions.",
-        contentSkeleton: ["hero", "category-tabs", "news-grid", "feature-article", "subscribe-cta"],
-        componentMix: normalizeComponentMix({ hero: 12, feature: 18, grid: 30, proof: 20, form: 6, cta: 14 }),
-      };
-    default:
-      return {
-        pageKind: "generic",
-        responsibility: "Provide route-specific information with clear navigation and conversion endpoint.",
-        contentSkeleton: ["hero", "content-sections", "proof", "cta"],
-        componentMix: normalizeComponentMix({ hero: 18, feature: 22, grid: 20, proof: 18, form: 8, cta: 14 }),
-      };
-  }
+function compactExcerpt(input: string, maxChars: number): string {
+  const text = String(input || "").replace(/\r\n/g, "\n").replace(/[ \t]+\n/g, "\n").trim();
+  if (!Number.isFinite(maxChars) || maxChars <= 0 || text.length <= maxChars) return text;
+  return `${text.slice(0, Math.max(0, maxChars)).trim()}\n[excerpt truncated]`;
 }
 
-function buildPageBlueprint(route: string, locale: "zh-CN" | "en", navLabel?: string): PageBlueprint {
+function escapeRegExp(input: string): string {
+  return String(input || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function sourceTailStartIndex(text: string): number {
+  const markers = [
+    "External Research Addendum",
+    "Website Knowledge Profile",
+    "Uploaded materials",
+    "\u4e0a\u4f20\u6587\u6863",
+    "\u5404\u9875\u9762\u8be6\u7ec6",
+  ];
+  const indexes = markers.map((marker) => text.indexOf(marker)).filter((index) => index >= 0);
+  return indexes.length ? Math.min(...indexes) : 0;
+}
+
+const PAGE_MARKER_PATTERN = "(?:page|route|home|channel|\\u9875\\u9762|\\u9801\\u9762|\\u7f51\\u9875|\\u7db2\\u9801|\\u9891\\u9053|\\u2eda\\u2faf|\\u9996\\u9875|\\u4e3b\\u9875)";
+
+function routeSearchTerms(route: string, navLabel: string): string[] {
   const normalizedRoute = normalizeRoute(route);
-  const kind = inferPageKind(normalizedRoute);
-  const template = blueprintByKind(kind);
+  const routeLeaf = normalizedRoute.split("/").filter(Boolean).join(" ");
+  const routeLabel = routeLeaf
+    .split(/[-_ ]+/g)
+    .map((part) => (part ? `${part.charAt(0).toUpperCase()}${part.slice(1)}` : ""))
+    .filter(Boolean)
+    .join(" ");
+  return Array.from(
+    new Set([navLabel, normalizedRoute, routeLeaf, routeLabel].map((item) => String(item || "").trim()).filter(Boolean)),
+  );
+}
+
+function scorePageBriefCandidate(text: string, index: number, sourceStart: number, terms: string[], route: string, term: string): number {
+  const before = text.slice(Math.max(0, index - 160), index);
+  const after = text.slice(index, Math.min(text.length, index + 420));
+  const near = before + after;
+  const pageMarkerRegex = new RegExp(PAGE_MARKER_PATTERN, "iu");
+  let score = 0;
+  if (index >= sourceStart) score += 20;
+  if (/(?:^|\n)\s*(?:#{1,5}\s*)?(?:[-*\d.()]+|--\s*\d+\s+of\s+\d+\s*--)?/i.test(before)) score += 4;
+  if (/--\s*\d+\s+of\s+\d+\s*--/i.test(near)) score += 18;
+  if (pageMarkerRegex.test(near)) score += 10;
+  if (term && new RegExp(`${escapeRegExp(term)}.{0,40}${PAGE_MARKER_PATTERN}`, "iu").test(after)) {
+    score += 30;
+  }
+  if (/(?:\u751f\u6210|generate|build)[^\n]{0,60}$/iu.test(before)) {
+    score += 55;
+  }
+  if (/[\u3010\[]/.test(after) || /(?:section|module|\u533a\u5757|\u6a21\u5757|\u5305\u542b|\u751f\u6210)/iu.test(after)) score += 10;
+  if (new RegExp(`(?:\\u751f\\u6210|generate|build).{0,140}${PAGE_MARKER_PATTERN}`, "iu").test(near)) score += 30;
+  if (term && new RegExp(`^\\s*\\d+[\\).]\\s*${escapeRegExp(term)}\\s*[\\u2014\\-]`, "iu").test(after)) {
+    score -= 45;
+  }
+  if (/(?:\u6838\u5fc3\u677f\u5757\u5165\u53e3|\u67e5\u770b\u8be6\u60c5|quick entry)/iu.test(near)) {
+    score -= 25;
+  }
+  if (/Build the .{0,80} uploaded source document/i.test(after) || /preserving its source-defined role/i.test(after)) {
+    score -= 80;
+  }
+  if (/Page intent: Dedicated page/i.test(after) || /Derive its content depth/i.test(after)) {
+    score -= 35;
+  }
+  if (route === "/" && /(?:home|\u9996\u9875|\u4e3b\u9875|\u2eda\u2faf)/iu.test(near)) score += 12;
+  for (const term of terms) {
+    if (after.includes(term)) score += 2;
+  }
+  return score;
+}
+
+function findNextPageBoundary(text: string, from: number, terms: string[]): number {
+  const boundaries: number[] = [];
+  const tail = text.slice(from);
+  const headingMatch = tail.search(/\n#{1,5}\s+/);
+  if (headingMatch > 0) boundaries.push(from + headingMatch);
+  const numberedPageMatch = tail.search(/\n\s*(?:--\s*\d+\s+of\s+\d+\s*--|(?:\d+[\).]|[-*])\s+)/i);
+  if (numberedPageMatch > 20) boundaries.push(from + numberedPageMatch);
+  for (const term of terms) {
+    if (!term) continue;
+    const index = text.indexOf(term, from + 120);
+    if (index > from + 240) {
+      const nearby = text.slice(Math.max(from, index - 100), Math.min(text.length, index + 160));
+      if (new RegExp(`${PAGE_MARKER_PATTERN}|--\\s*\\d+\\s+of\\s+\\d+\\s*--`, "iu").test(nearby)) boundaries.push(index);
+    }
+  }
+  return boundaries.length ? Math.min(...boundaries) : -1;
+}
+
+function findPageBriefStart(text: string, index: number, sourceStart: number): number {
+  const prefix = text.slice(Math.max(0, sourceStart), index);
+  const markerMatches = [...prefix.matchAll(/\n\s*(?:--\s*\d+\s+of\s+\d+\s*--|#{1,5}\s+|(?:\d+[\).]|[-*])\s+)/gi)];
+  const marker = markerMatches.length ? markerMatches[markerMatches.length - 1] : undefined;
+  const markerStart = marker && marker.index !== undefined ? Math.max(0, sourceStart + marker.index + 1) : undefined;
+  const localBase = Math.max(markerStart ?? sourceStart, index - 260);
+  const localBefore = text.slice(localBase, index);
+  const generatedStart = Math.max(
+    localBefore.lastIndexOf("\u751f\u6210"),
+    localBefore.toLowerCase().lastIndexOf("generate"),
+    localBefore.toLowerCase().lastIndexOf("build"),
+  );
+  if (generatedStart >= 0) return localBase + generatedStart;
+  if (markerStart !== undefined) return markerStart;
+  return Math.max(sourceStart, Math.max(0, index - 120));
+}
+
+export function extractRouteSourceBrief(
+  requirementText: string,
+  route: string,
+  navLabel: string,
+  maxChars = 3600,
+): string {
+  const text = String(requirementText || "").trim();
+  if (!text) return "";
+  const terms = routeSearchTerms(route, navLabel);
+  if (route === "/") {
+    terms.push("Home", "\u9996\u9875", "\u4e3b\u9875");
+  }
+  const uniqueTerms = Array.from(new Set(terms.filter(Boolean)));
+  if (uniqueTerms.length === 0) return "";
+  const sourceStart = sourceTailStartIndex(text);
+  const candidates = uniqueTerms.flatMap((term) => allIndexesOf(text, term).map((index) => ({ term, index })));
+  if (candidates.length === 0) return "";
+  const best = candidates
+    .map((candidate) => ({
+      ...candidate,
+      score: scorePageBriefCandidate(text, candidate.index, sourceStart, uniqueTerms, route, candidate.term),
+    }))
+    .sort((a, b) => b.score - a.score || b.index - a.index)[0];
+  if (!best || best.score < 8) return "";
+
+  const start = findPageBriefStart(text, best.index, sourceStart);
+  const boundary = findNextPageBoundary(text, start + 1, uniqueTerms.filter((term) => term !== best.term));
+  const end = boundary > start ? boundary : Math.min(text.length, best.index + maxChars + 600);
+  return compactExcerpt(text.slice(start, end), maxChars);
+}
+
+function buildPageBlueprint(
+  route: string,
+  locale: "zh-CN" | "en",
+  navLabel?: string,
+  source: PageIntentSource = "default",
+  evidence?: string,
+): PageBlueprint {
+  const normalizedRoute = normalizeRoute(route);
+  const resolvedLabel = String(navLabel || routeToNavLabel(normalizedRoute, locale) || (locale === "zh-CN" ? "\u9875\u9762" : "Page")).trim();
+  const purpose =
+    normalizedRoute === "/"
+      ? "Primary landing page. Derive the hero, section order, and conversion path from the confirmed Canonical Website Prompt and source content."
+      : `Dedicated page for "${resolvedLabel}". Derive its content depth, section structure, and interactions from the confirmed Canonical Website Prompt, source content, and route intent.`;
+  const constraints = [
+    "Canonical Website Prompt is the authoritative source for website type, audience, content scope, page structure, and design direction.",
+    "Do not use hardcoded industry templates, product assumptions, or generic replacement text when the Canonical Website Prompt provides source content.",
+    "The page must be meaningfully distinct from sibling pages in section purpose, headings, content, and layout.",
+    "Navigation links must stay within the fixed route list and preserve the configured navigation order.",
+  ];
 
   return {
     route: normalizedRoute,
-    navLabel: String(navLabel || routeToNavLabel(normalizedRoute, locale) || (locale === "zh-CN" ? "\u9875\u9762" : "Page")).trim(),
-    pageKind: template.pageKind,
-    responsibility: template.responsibility,
-    contentSkeleton: [...template.contentSkeleton],
-    componentMix: { ...template.componentMix },
+    navLabel: resolvedLabel,
+    purpose,
+    source,
+    evidence,
+    constraints,
+    pageKind: "intent",
+    responsibility: purpose,
+    contentSkeleton: [],
+    componentMix: { ...EMPTY_COMPONENT_MIX },
   };
 }
 
@@ -597,6 +806,12 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
   const parsedRequirement = parseReferencedAssetsFromText(rawRequirementText);
   const requirementText = parsedRequirement.cleanText || rawRequirementText;
   const locale = detectLocale(requirementText);
+  const workflowContractPlan = extractWorkflowPromptControlManifestRoutePlan(state, locale);
+  const promptContractPlan =
+    workflowContractPlan.routes.length > 0 ? { routes: [], navLabels: [] } : extractPromptControlManifestRoutePlan(requirementText, locale);
+  const workflowContractRoutes = workflowContractPlan.routes;
+  const contractRoutes = workflowContractRoutes.length > 0 ? workflowContractRoutes : promptContractPlan.routes;
+  const specRoutes = contractRoutes.length > 0 ? [] : extractRequirementSpecRoutes(state, requirementText);
   const navLabels = extractNavLabels(requirementText);
   const commaLabels = extractCommaPageLabels(requirementText);
   const numberedLabels = extractNumberedPageLabels(requirementText);
@@ -605,17 +820,40 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
     (label) => isLikelyPageLabel(label),
   );
 
-  const labelRoutes = labelsToRoutes(mergedLabels);
-  const explicitRoutes = extractExplicitRoutes(requirementText);
+  const labelRoutes = labelsToRoutes(mergedLabels).filter((route) => !isRoutePlanningArtifact(route));
+  const explicitRoutes = extractExplicitRoutes(requirementText).filter((route) => !isRoutePlanningArtifact(route));
   const stateRoutes = Array.isArray(state.sitemap)
-    ? state.sitemap.map((item) => normalizeRoute(String(item || "")))
+    ? state.sitemap.map((item) => normalizeRoute(String(item || ""))).filter((route) => !isRoutePlanningArtifact(route))
     : [];
 
   const candidates = [...stateRoutes, ...labelRoutes, ...explicitRoutes];
-  const withHome = candidates.some((route) => normalizeRoute(route) === "/") ? candidates : ["/", ...candidates];
-  const routes = uniqueRoutes(withHome.length > 0 ? withHome : ["/"]).slice(0, 16);
+  const plannedFallback = candidates.length === 0 && hasAutoPagePlanningIntent(requirementText) ? inferDefaultAutoRoutes(requirementText) : [];
+  const baseRoutes =
+    contractRoutes.length > 0
+      ? contractRoutes
+      : specRoutes.length > 0
+        ? specRoutes
+        : candidates.length > 0
+          ? candidates
+          : plannedFallback;
+  const withHome = baseRoutes.some((route) => normalizeRoute(route) === "/") ? baseRoutes : ["/", ...baseRoutes];
+  const routes = orderNavigationRoutes(withHome.length > 0 ? withHome : ["/"]).slice(0, 16);
 
   const labelMap = new Map<string, string>();
+  const structuredNavLabels =
+    workflowContractPlan.navLabels.length > 0
+      ? workflowContractPlan.navLabels
+      : promptContractPlan.navLabels.length > 0
+        ? promptContractPlan.navLabels
+        : [];
+  const structuredRoutes = workflowContractRoutes.length > 0 ? workflowContractRoutes : promptContractPlan.routes;
+  for (let i = 0; i < structuredRoutes.length; i += 1) {
+    const route = normalizeRoute(structuredRoutes[i]);
+    const label = String(structuredNavLabels[i] || "").trim();
+    if (route && label && !labelMap.has(route)) {
+      labelMap.set(route, label);
+    }
+  }
   for (let i = 0; i < mergedLabels.length; i += 1) {
     const label = String(mergedLabels[i] || "").trim();
     const mappedRoute = normalizeRoute(labelToRoute(label, i + 1));
@@ -625,13 +863,32 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
   }
 
   const normalizedNavLabels = routes.map((route) => labelMap.get(route) || routeToNavLabel(route, locale));
-  const pageBlueprints = routes.map((route, index) => buildPageBlueprint(route, locale, normalizedNavLabels[index]));
+  const pageIntentSource: PageIntentSource =
+    workflowContractRoutes.length > 0
+      ? "workflow_contract"
+      : contractRoutes.length > 0
+        ? "prompt_contract"
+        : specRoutes.length > 0
+          ? "requirement_spec"
+          : stateRoutes.length > 0
+            ? "state_sitemap"
+            : labelRoutes.length > 0
+              ? "nav_label"
+              : explicitRoutes.length > 0
+                ? "explicit_route"
+                : plannedFallback.length > 0
+                  ? "auto_plan"
+                  : "default";
+  const pageBlueprints = routes.map((route, index) =>
+    buildPageBlueprint(route, locale, normalizedNavLabels[index], pageIntentSource, requirementText.slice(0, 800)),
+  );
 
   return {
     requirementText,
     locale,
     navLabels: normalizedNavLabels,
     routes,
+    pageIntents: pageBlueprints,
     pageBlueprints,
     brandHint: extractBrandHint(requirementText),
   };

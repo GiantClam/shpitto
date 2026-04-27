@@ -160,12 +160,12 @@ const getProviderConfig = (providerOverride?: LlmProvider): ProviderConfig => {
         process.env.LLM_MODEL_AIBERM ||
         process.env.AIBERM_MODEL ||
         process.env.LLM_MODEL ||
-        "claude-sonnet-4-5-20250929",
+        "openai/gpt-5.4-mini",
       fallbackModelName:
         process.env.LLM_MODEL_FALLBACK_AIBERM ||
         process.env.AIBERM_MODEL_FALLBACK ||
         process.env.LLM_MODEL_FALLBACK ||
-        "claude-opus-4-5-20251101",
+        "openai/gpt-5.4",
     };
   }
 
@@ -409,7 +409,8 @@ export interface AgentState {
     requirementRevision?: number;
     supersededMessages?: string[];
     correctionSummary?: string[];
-    requirementDraft?: string;
+    canonicalPrompt?: string;
+    promptControlManifest?: unknown;
     requirementAggregatedText?: string;
     latestUserText?: string;
     latestUserTextRaw?: string;

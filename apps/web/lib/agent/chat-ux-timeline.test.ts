@@ -21,8 +21,7 @@ describe("chat ux timeline cards", () => {
       .map((item) => String((item.metadata || {}).cardType || "").trim())
       .filter(Boolean);
     expect(cardTypes).toContain("requirement_progress");
-    expect(cardTypes).toContain("prompt_draft");
+    expect(cardTypes).toContain("requirement_form");
     expect(cardTypes).toContain("intent_decision");
   });
 });
-

@@ -1,34 +1,29 @@
 import Link from "next/link";
 import { ArrowRight, Calendar, User } from "lucide-react";
+import { getLandingCopy, type Locale } from "@/lib/i18n";
 
-export function BlogSection() {
+export function BlogSection({ locale = "en" }: { locale?: Locale }) {
+  const copy = getLandingCopy(locale).blog;
   const posts = [
     {
-      title: "The Future of Industrial Web Design: AI-Driven & Data-First",
+      ...copy.posts[0],
       slug: "future-of-industrial-web-design",
-      excerpt:
-        "How AI is transforming the way manufacturing companies build their digital presence, moving from static brochures to dynamic lead generation engines.",
       date: "Oct 24, 2025",
       author: "Sarah Chen",
-      category: "Industry Trends",
       image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800",
     },
     {
-      title: "Case Study: How Apex Robotics Doubled Leads in 30 Days",
+      ...copy.posts[1],
       slug: "apex-robotics-case-study",
-      excerpt: "A deep dive into how a robotics startup used Shpitto to rebuild their site and optimize for conversion speed.",
       date: "Nov 02, 2025",
       author: "Mike Ross",
-      category: "Case Study",
       image: "https://images.unsplash.com/photo-1565514020176-dbf227780065?auto=format&fit=crop&q=80&w=800",
     },
     {
-      title: "SEO for Manufacturers: 5 Key Strategies for 2026",
+      ...copy.posts[2],
       slug: "seo-for-manufacturers-2026",
-      excerpt: "Why traditional B2B SEO is dead, and how to structure your product catalog for the semantic search era.",
       date: "Nov 15, 2025",
       author: "Alex V.",
-      category: "Growth Strategy",
       image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800",
     },
   ];
@@ -39,12 +34,12 @@ export function BlogSection() {
         <div className="mb-12 flex items-end justify-between">
           <div>
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--shp-primary)_35%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_15%,transparent)] px-3 py-1 text-xs font-bold uppercase tracking-wider text-[var(--shp-primary)]">
-              Latest Insights
+              {copy.badge}
             </div>
-            <h2 className="text-3xl font-bold text-[var(--shp-text)] lg:text-4xl">Industry Insights & Stories</h2>
+            <h2 className="text-3xl font-bold text-[var(--shp-text)] lg:text-4xl">{copy.title}</h2>
           </div>
           <Link href="/blog" className="hidden items-center gap-2 font-bold text-[var(--shp-primary)] transition-all hover:gap-3 md:flex">
-            View All Articles <ArrowRight className="h-4 w-4" />
+            {copy.viewAll} <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
 
@@ -76,7 +71,7 @@ export function BlogSection() {
               <p className="mb-4 line-clamp-3 flex-grow text-sm leading-relaxed text-[var(--shp-muted)]">{post.excerpt}</p>
 
               <div className="mt-auto flex items-center gap-2 text-sm font-bold text-[var(--shp-primary)] transition-all group-hover:gap-3">
-                Read Article <ArrowRight className="h-4 w-4" />
+                {copy.readArticle} <ArrowRight className="h-4 w-4" />
               </div>
             </Link>
           ))}
@@ -87,7 +82,7 @@ export function BlogSection() {
             href="/blog"
             className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_72%,transparent)] px-6 py-3 font-bold text-[var(--shp-text)]"
           >
-            View All Articles
+            {copy.viewAll}
           </Link>
         </div>
       </div>

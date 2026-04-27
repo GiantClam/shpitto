@@ -4,8 +4,12 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { getLaunchCenterData } from "@/lib/launch-center/data";
 import { createClient } from "@/lib/supabase/server";
 import { LaunchCenterComposer } from "@/components/launch-center/LaunchCenterComposer";
+import { getLandingCopy } from "@/lib/i18n";
+import { getServerLocale } from "@/lib/i18n-server";
 
 export default async function LaunchCenterPage() {
+  const locale = await getServerLocale();
+  const copy = getLandingCopy(locale).launch;
   const supabase = await createClient();
   const {
     data: { user },
@@ -17,7 +21,7 @@ export default async function LaunchCenterPage() {
 
   return (
     <div className="min-h-screen font-sans">
-      <SiteHeader userEmail={userEmail} getStartedHref={draftHref} />
+      <SiteHeader userEmail={userEmail} getStartedHref={draftHref} locale={locale} />
 
       <main className="mx-auto max-w-7xl px-6 pb-24 pt-32">
         <section className="relative overflow-hidden rounded-3xl border border-[color-mix(in_oklab,var(--shp-border)_82%,transparent)] bg-[linear-gradient(160deg,color-mix(in_oklab,var(--shp-bg-soft)_92%,black_8%),color-mix(in_oklab,var(--shp-surface)_82%,black_18%))] p-8 shadow-[var(--shp-shadow)] lg:p-12">
@@ -28,32 +32,29 @@ export default async function LaunchCenterPage() {
             <div className="space-y-4 text-center">
               <p className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--shp-primary)_35%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_12%,transparent)] px-4 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--shp-primary-soft)]">
                 <Sparkles className="h-3.5 w-3.5" />
-                Launch Center
+                {copy.badge}
               </p>
-              <h1 className="text-4xl font-black tracking-tight text-[var(--shp-text)] lg:text-6xl">What do you want to build next?</h1>
+              <h1 className="text-4xl font-black tracking-tight text-[var(--shp-text)] lg:text-6xl">{copy.title}</h1>
               <p className="mx-auto max-w-3xl text-base leading-relaxed text-[var(--shp-muted)] lg:text-lg">
-                Start with a conversation, continue from your recent projects, or bootstrap with a ready template.
+                {copy.body}
               </p>
             </div>
 
             <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-              <LaunchCenterComposer isAuthenticated={Boolean(userId)} />
+              <LaunchCenterComposer isAuthenticated={Boolean(userId)} userId={userId} locale={locale} />
 
               <div className="space-y-3">
                 {[
                   {
-                    title: "Conversation-first",
-                    desc: "Describe goals and constraints in plain words.",
+                    ...copy.pillars[0],
                     icon: MessageCircle,
                   },
                   {
-                    title: "Project memory",
-                    desc: "Continue existing sessions with stored context.",
+                    ...copy.pillars[1],
                     icon: FolderKanban,
                   },
                   {
-                    title: "Template boost",
-                    desc: "Start with battle-tested industrial structures.",
+                    ...copy.pillars[2],
                     icon: LayoutTemplate,
                   },
                 ].map((item) => (
@@ -72,8 +73,8 @@ export default async function LaunchCenterPage() {
 
         <section className="mt-14">
           <div className="mb-6 flex items-center gap-2">
-            <h2 className="text-2xl font-bold text-[var(--shp-text)]">Recent Projects</h2>
-            <span className="text-xs uppercase tracking-[0.2em] text-[var(--shp-muted)]">Active Drafts</span>
+            <h2 className="text-2xl font-bold text-[var(--shp-text)]">{copy.recentProjects}</h2>
+            <span className="text-xs uppercase tracking-[0.2em] text-[var(--shp-muted)]">{copy.activeDrafts}</span>
           </div>
           {recentProjects.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -94,7 +95,7 @@ export default async function LaunchCenterPage() {
                       href={userId ? `/projects/${encodeURIComponent(project.id)}/chat` : draftHref}
                       className="inline-flex items-center text-xs font-semibold uppercase tracking-[0.18em] text-[var(--shp-primary-soft)] hover:text-[var(--shp-primary)]"
                     >
-                      Open in Studio
+                      {copy.openInStudio}
                     </Link>
                   </div>
                 </article>
@@ -102,7 +103,7 @@ export default async function LaunchCenterPage() {
             </div>
           ) : (
             <div className="rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_78%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_50%,black_50%)] p-6 text-sm text-[var(--shp-muted)]">
-              No recent projects yet. Start a conversation to create your first draft.
+              {copy.emptyRecent}
             </div>
           )}
         </section>
@@ -110,11 +111,11 @@ export default async function LaunchCenterPage() {
         <section className="mt-14">
           <div className="mb-6 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-bold text-[var(--shp-text)]">Recommended Templates</h2>
-              <span className="text-xs uppercase tracking-[0.2em] text-[var(--shp-muted)]">Curated Styles</span>
+              <h2 className="text-2xl font-bold text-[var(--shp-text)]">{copy.recommendedTemplates}</h2>
+              <span className="text-xs uppercase tracking-[0.2em] text-[var(--shp-muted)]">{copy.curatedStyles}</span>
             </div>
             <Link href={draftHref} className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--shp-primary-soft)] hover:text-[var(--shp-primary)]">
-              Browse all
+              {copy.browseAll}
             </Link>
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -148,7 +149,7 @@ export default async function LaunchCenterPage() {
                     rel={template.sourceUrl ? "noreferrer" : undefined}
                     className="inline-flex items-center text-xs font-semibold uppercase tracking-[0.18em] text-[var(--shp-primary-soft)] hover:text-[var(--shp-primary)]"
                   >
-                    Use template
+                    {copy.useTemplate}
                   </a>
                 </div>
               </article>

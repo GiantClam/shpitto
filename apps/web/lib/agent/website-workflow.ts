@@ -26,11 +26,25 @@ export type DesignSkillHit = {
   category?: string;
   design_md_url?: string;
   design_md_path?: string;
+  design_md_inline?: string;
   index_generated_at?: string;
+  selection_mode?: "local_score" | "explicit_match" | "prompt_adaptive" | "llm_semantic_rerank" | "llm_semantic_override";
+  local_top_candidate?: {
+    id: string;
+    name: string;
+    score: number;
+    category?: string;
+    matched_keywords?: string[];
+  };
+  llm_recommended_id?: string;
+  llm_override_reason?: string;
+  llm_candidate_limit?: number;
   selection_candidates?: Array<{
     id: string;
     name: string;
     score: number;
+    local_rank?: number;
+    base_score?: number;
     category?: string;
     design_md_url?: string;
     design_md_path?: string;
@@ -111,6 +125,10 @@ export type TemplateBlueprintResolved = {
 
 const AWESOME_INDEX_REFRESH_MS = 1000 * 60 * 60 * 6;
 const AWESOME_DESIGN_MIN_CONTENT_LENGTH = Number(process.env.AWESOME_DESIGN_MIN_CONTENT_LENGTH || 120);
+const WORKFLOW_STYLE_LLM_CANDIDATE_LIMIT = Math.max(
+  3,
+  Math.min(20, Number(process.env.WORKFLOW_STYLE_LLM_CANDIDATE_LIMIT || 8)),
+);
 const WORKFLOW_RUNTIME_TEXT_CACHE_TTL_MS = Math.max(
   0,
   Number(process.env.WORKFLOW_RUNTIME_TEXT_CACHE_TTL_MS || 1000 * 60 * 5),
@@ -136,6 +154,53 @@ type WorkflowProviderConfig = {
   baseURL: string;
   modelName: string;
   defaultHeaders?: Record<string, string>;
+};
+
+type PromptVisualIntent = {
+  active: boolean;
+  score: number;
+  matchedKeywords: string[];
+  designMd: string;
+  stylePreset: Partial<DesignStylePreset>;
+  reason: string;
+};
+
+type PromptAdaptiveSignal = {
+  key?: string;
+  pattern?: string;
+  core?: boolean;
+  mood?: string;
+  primaryDefault?: string;
+  accentDefault?: string;
+  surfaceDefault?: string;
+};
+
+type PromptAdaptiveDesignPolicy = {
+  id?: string;
+  name?: string;
+  category?: string;
+  reason?: string;
+  activation?: {
+    hexColors?: boolean;
+    minCoreSignals?: number;
+    minCoreSignalsWithExplicitLanguage?: number;
+  };
+  explicitVisualLanguagePatterns?: string[];
+  signals?: PromptAdaptiveSignal[];
+  darkModePatterns?: string[];
+  defaults?: Record<string, string>;
+  typography?: string;
+  designMd?: {
+    title?: string;
+    intro?: string;
+    typographyRules?: string[];
+    layoutRules?: string[];
+  };
+};
+
+type StyleSelectionPolicy = {
+  explicitStyleReferenceIgnoredTokens?: string[];
+  promptAdaptiveDesign?: PromptAdaptiveDesignPolicy;
 };
 
 function pathExists(p: string) {
@@ -225,6 +290,11 @@ function getPaths() {
     "website-generation-workflow",
     "template-blueprints.json",
   );
+  const workflowSkillJson = path.join(
+    skillRoot,
+    "website-generation-workflow",
+    "skill.json",
+  );
 
   return {
     root,
@@ -242,7 +312,20 @@ function getPaths() {
     designRulesDir,
     styleProfiles,
     templateBlueprints,
+    workflowSkillJson,
   };
+}
+
+async function loadStyleSelectionPolicy(): Promise<StyleSelectionPolicy> {
+  const { workflowSkillJson } = getPaths();
+  try {
+    const raw = await fs.readFile(workflowSkillJson, "utf8");
+    const parsed = JSON.parse(raw);
+    const policy = parsed?.styleSelectionPolicy;
+    return policy && typeof policy === "object" ? (policy as StyleSelectionPolicy) : {};
+  } catch {
+    return {};
+  }
 }
 
 async function ensureAwesomeIndex() {
@@ -300,7 +383,7 @@ async function loadAwesomeIndex(): Promise<AwesomeIndex | null> {
   return loadIndexFile(bundledIndexJson);
 }
 
-function tokenize(text: string): string[] {
+function tokenize(text: string, ignoredTokens: Set<string> = new Set()): string[] {
   const lowered = text.toLowerCase();
   const tokens = lowered
     .split(/[^a-z0-9\u4e00-\u9fff]+/)
@@ -308,6 +391,7 @@ function tokenize(text: string): string[] {
     .filter(Boolean)
     .filter((token) => {
       if (/^\d+$/.test(token)) return false;
+      if (ignoredTokens.has(token)) return false;
       const hasCjk = /[\u4e00-\u9fff]/.test(token);
       if (hasCjk) return token.length >= 2;
       return token.length >= 3;
@@ -316,68 +400,12 @@ function tokenize(text: string): string[] {
   return Array.from(new Set(tokens));
 }
 
-type QueryIntent = "automotive" | "fintech" | "ai" | "developer-tools";
-
-function detectQueryIntents(query: string): Set<QueryIntent> {
-  const text = query.toLowerCase();
-  const intents = new Set<QueryIntent>();
-
-  const hasAny = (terms: string[]) =>
-    terms.some((term) => {
-      if (/^[a-z]{1,3}$/.test(term)) {
-        const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        return new RegExp(`\\b${escaped}\\b`, "i").test(text);
-      }
-      return text.includes(term);
-    });
-
-  if (hasAny(["automotive", "vehicle", "car", "auto", "汽车", "车企", "新能源车"])) {
-    intents.add("automotive");
-  }
-
-  if (hasAny(["fintech", "finance", "payment", "billing", "crypto", "banking", "支付", "金融", "交易"])) {
-    intents.add("fintech");
-  }
-
-  if (hasAny(["llm", "model", "agent", "人工智能", "大模型", "机器学习"])) {
-    intents.add("ai");
-  }
-
-  if (hasAny(["developer", "devtool", "sdk", "api", "code", "programming", "开发", "工程", "编码", "工具链"])) {
-    intents.add("developer-tools");
-  }
-
-  return intents;
-}
-function intentBoostForStyle(style: AwesomeIndexStyle, intents: Set<QueryIntent>) {
-  if (intents.size === 0) return 0;
-  const slug = String(style.slug || "").toLowerCase();
-  const category = String(style.category || "").toLowerCase();
-
-  let boost = 0;
-  if (intents.has("automotive")) {
-    if (category.includes("car brands")) boost += 10;
-  }
-  if (intents.has("fintech")) {
-    if (category.includes("fintech")) boost += 10;
-    if (["stripe", "kraken", "revolut", "wise", "coinbase"].includes(slug)) boost += 4;
-  }
-  if (intents.has("ai")) {
-    if (category.includes("ai")) boost += 8;
-  }
-  if (intents.has("developer-tools")) {
-    if (category.includes("developer tools")) boost += 8;
-  }
-
-  return boost;
-}
-
-function scoreStyle(style: AwesomeIndexStyle, query: string) {
-  const tokens = tokenize(query);
+function scoreStyle(style: AwesomeIndexStyle, query: string, ignoredTokens: Set<string>) {
+  const tokens = tokenize(query, ignoredTokens);
   const haystacks = [style.slug, style.name, style.category || "", style.description || ""]
     .join(" ")
     .toLowerCase();
-  const hayTokens = new Set(tokenize(haystacks));
+  const hayTokens = new Set(tokenize(haystacks, ignoredTokens));
 
   const matched: string[] = [];
   let score = 0;
@@ -398,6 +426,231 @@ function scoreStyle(style: AwesomeIndexStyle, query: string) {
   if (query.toLowerCase().includes(style.slug.toLowerCase())) score += 4;
 
   return { score, matched_keywords: Array.from(new Set(matched)) };
+}
+
+function hasExplicitStyleReference(
+  style: AwesomeIndexStyle,
+  queryLower: string,
+  queryTokens: Set<string>,
+  ignoredTokens: Set<string>,
+): boolean {
+  const slug = String(style.slug || "").toLowerCase();
+  const name = String(style.name || "").toLowerCase();
+  if (!slug && !name) return false;
+
+  const escapedSlug = slug.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const boundarySlug =
+    slug.length >= 4 ? new RegExp(`(?:^|[^a-z0-9])${escapedSlug}(?:$|[^a-z0-9])`, "i").test(queryLower) : false;
+  const boundaryName =
+    name.length >= 4 ? new RegExp(`(?:^|[^a-z0-9])${escapedName}(?:$|[^a-z0-9])`, "i").test(queryLower) : false;
+  if (boundarySlug || boundaryName) return true;
+
+  const slugTokens = tokenize(slug, ignoredTokens);
+  const nameTokens = tokenize(name, ignoredTokens);
+  const tokenGroups = [slugTokens, nameTokens].filter((tokens) => tokens.length > 0);
+
+  return tokenGroups.some((tokens) => {
+    if (tokens.length !== 1) return false;
+    const [token] = tokens;
+    return token.length >= 4 && queryTokens.has(token);
+  });
+}
+
+function extractHexColors(text: string): string[] {
+  return Array.from(new Set((String(text || "").match(/#[0-9a-fA-F]{6}\b/g) || []).map((item) => item.toUpperCase())));
+}
+
+function parseHexRgb(hex: string): { r: number; g: number; b: number } | undefined {
+  const normalized = String(hex || "").replace(/^#/, "");
+  if (!/^[0-9a-fA-F]{6}$/.test(normalized)) return undefined;
+  return {
+    r: Number.parseInt(normalized.slice(0, 2), 16),
+    g: Number.parseInt(normalized.slice(2, 4), 16),
+    b: Number.parseInt(normalized.slice(4, 6), 16),
+  };
+}
+
+function isWarmAccentLikeHex(hex: string): boolean {
+  const rgb = parseHexRgb(hex);
+  if (!rgb) return false;
+  return rgb.r >= 180 && rgb.g >= 80 && rgb.g <= 190 && rgb.b <= 90;
+}
+
+function compileConfiguredPattern(pattern: string): RegExp | undefined {
+  const raw = String(pattern || "").trim();
+  if (!raw) return undefined;
+  try {
+    return new RegExp(raw, "i");
+  } catch {
+    return undefined;
+  }
+}
+
+function hasConfiguredPatternMatch(source: string, patterns: string[] | undefined): boolean {
+  return (patterns || []).some((pattern) => {
+    const regex = compileConfiguredPattern(pattern);
+    return regex ? regex.test(source) : source.toLowerCase().includes(String(pattern || "").toLowerCase());
+  });
+}
+
+function configuredColor(defaults: Record<string, string> | undefined, key: string, fallback: string): string {
+  const value = String(defaults?.[key] || "").trim();
+  return /^#[0-9a-fA-F]{6}$/.test(value) ? value.toUpperCase() : fallback;
+}
+
+function configuredSignalColor(
+  signals: PromptAdaptiveSignal[],
+  matchedKeys: string[],
+  defaults: Record<string, string> | undefined,
+  field: "primaryDefault" | "accentDefault" | "surfaceDefault",
+  fallbackKey: string,
+  fallback: string,
+  options: { preferLast?: boolean } = {},
+): string {
+  const orderedSignals = options.preferLast ? [...signals].reverse() : signals;
+  for (const signal of orderedSignals) {
+    const key = String(signal.key || "").trim();
+    if (!key || !matchedKeys.includes(key)) continue;
+    const configuredKey = String(signal[field] || "").trim();
+    if (!configuredKey) continue;
+    const color = configuredColor(defaults, configuredKey, "");
+    if (color) return color;
+  }
+  return configuredColor(defaults, fallbackKey, fallback);
+}
+
+function extractPromptVisualIntent(query: string, policy?: PromptAdaptiveDesignPolicy): PromptVisualIntent {
+  const source = String(query || "");
+  const configuredSignals = (policy?.signals || []).filter((signal) => signal?.key && signal?.pattern);
+  if (configuredSignals.length === 0) {
+    return {
+      active: false,
+      score: 0,
+      matchedKeywords: [],
+      designMd: "",
+      stylePreset: {},
+      reason: "No prompt-adaptive design policy is configured.",
+    };
+  }
+
+  const hexColors = extractHexColors(source);
+  const matchedSignals = configuredSignals.filter((signal) => {
+    const regex = compileConfiguredPattern(String(signal.pattern || ""));
+    return regex ? regex.test(source) : false;
+  });
+  const matchedKeywords = matchedSignals.map((signal) => String(signal.key));
+  const visualCoreCount = matchedSignals.filter((signal) => signal.core === true).length;
+  const explicitVisualLanguage = hasConfiguredPatternMatch(source, policy?.explicitVisualLanguagePatterns);
+  const activation = policy?.activation || {};
+  const active =
+    (activation.hexColors !== false && hexColors.length > 0) ||
+    (explicitVisualLanguage && visualCoreCount >= Math.max(1, Number(activation.minCoreSignalsWithExplicitLanguage || 2))) ||
+    visualCoreCount >= Math.max(1, Number(activation.minCoreSignals || 3));
+
+  if (!active) {
+    return {
+      active: false,
+      score: 0,
+      matchedKeywords,
+      designMd: "",
+      stylePreset: {},
+      reason: "No explicit visual system was detected in the prompt.",
+    };
+  }
+
+  const defaults = policy?.defaults || {};
+  const coreMatched = matchedSignals.some((signal) => signal.core === true);
+  const shapeIsSoft = matchedSignals.some((signal) => signal.core === true);
+  const wantsDark = hasConfiguredPatternMatch(source, policy?.darkModePatterns);
+  const wantsLight = coreMatched || !wantsDark;
+  const primary =
+    hexColors[0] ||
+    configuredSignalColor(configuredSignals, matchedKeywords, defaults, "primaryDefault", "primary", "#2563EB");
+  const explicitWarmAccent = hexColors.find((hex) => hex !== primary && isWarmAccentLikeHex(hex));
+  const accent =
+    explicitWarmAccent ||
+    hexColors.find((hex) => hex !== primary) ||
+    configuredSignalColor(configuredSignals, matchedKeywords, defaults, "accentDefault", "accent", "#22C55E", { preferLast: true });
+  const background = wantsLight
+    ? configuredColor(defaults, "lightBackground", "#FFFFFF")
+    : configuredColor(defaults, "darkBackground", "#07120E");
+  const surface = wantsLight
+    ? configuredSignalColor(configuredSignals, matchedKeywords, defaults, "surfaceDefault", "lightSurface", "#F8FAFC")
+    : configuredColor(defaults, "darkSurface", "#102019");
+  const panel = wantsLight ? configuredColor(defaults, "lightPanel", "#FFFFFF") : configuredColor(defaults, "darkPanel", "#14281F");
+  const text = wantsLight ? configuredColor(defaults, "lightText", "#12312A") : configuredColor(defaults, "darkText", "#F3F8F4");
+  const muted = wantsLight ? configuredColor(defaults, "lightMuted", "#51635C") : configuredColor(defaults, "darkMuted", "#B8C8BF");
+  const border = wantsLight ? configuredColor(defaults, "lightBorder", "#D7E7DD") : configuredColor(defaults, "darkBorder", "#274237");
+  const mode = wantsLight ? "light" : "dark";
+  const mood = matchedSignals.map((signal) => String(signal.mood || "").trim()).filter(Boolean);
+  const designMdConfig = policy?.designMd || {};
+  const typography = String(policy?.typography || "").trim() || "Inter, system-ui, -apple-system, sans-serif";
+
+  const designMd = [
+    "# DESIGN",
+    "",
+    `# ${designMdConfig.title || policy?.name || "Prompt-Adaptive Design System"}`,
+    "",
+    designMdConfig.intro ||
+      "This design system is derived from the confirmed Canonical Website Prompt and overrides generic template aesthetics when explicit visual requirements are present.",
+    "",
+    "## 1. Extracted Visual Requirements",
+    `- Extracted visual signals: ${matchedKeywords.join(", ") || "explicit visual direction"}.`,
+    hexColors.length ? `- Explicit palette from prompt: ${hexColors.join(", ")}.` : `- Inferred palette from prompt signals: primary ${primary}, accent ${accent}.`,
+    `- Required mood: ${mood.join(", ") || "source-led"}.`,
+    "",
+    "## 2. Color Palette",
+    `- Primary: ${primary}`,
+    `- Accent: ${accent}`,
+    `- Background: ${background}`,
+    `- Surface: ${surface}`,
+    `- Panel: ${panel}`,
+    `- Text: ${text}`,
+    `- Muted text: ${muted}`,
+    `- Border: ${border}`,
+    "",
+    "## 3. Typography",
+    ...(designMdConfig.typographyRules || [`Use ${typography} for readable content.`]),
+    "",
+    "## 4. Layout And Shape",
+    `- Mode: ${mode}.`,
+    `- Shape language: ${shapeIsSoft ? "soft, rounded, approachable cards and controls" : "clean, restrained, professional containers"}.`,
+    ...(designMdConfig.layoutRules || [
+      "Use clear section rhythm and source-specific content modules.",
+      "Prompt-defined colors, mood, audience, and brand semantics remain authoritative.",
+    ]),
+  ].join("\n");
+
+  return {
+    active: true,
+    score: 100 + matchedKeywords.length * 5 + hexColors.length * 10,
+    matchedKeywords,
+    designMd,
+    stylePreset: {
+      mode,
+      typography,
+      borderRadius: shapeIsSoft ? "md" : "sm",
+      navVariant: "pill",
+      headerVariant: "solid",
+      footerVariant: wantsLight ? "light" : "dark",
+      buttonVariant: "solid",
+      heroTheme: wantsLight ? "light" : "dark",
+      heroEffect: "none",
+      navLabelMaxChars: 12,
+      colors: {
+        primary,
+        accent,
+        background,
+        surface,
+        panel,
+        text,
+        muted,
+        border,
+      },
+    },
+    reason: policy?.reason || "Canonical prompt contains explicit visual requirements; using prompt-adaptive design context.",
+  };
 }
 
 function isValidDesignMdText(raw: string): boolean {
@@ -570,7 +823,7 @@ function resolveWorkflowProviderConfig(): WorkflowProviderConfig {
         process.env.LLM_MODEL_CRAZYROUTER ||
         process.env.LLM_MODEL_CRAZYREOUTE ||
         process.env.LLM_MODEL ||
-        "openai/gpt-5.3-codex",
+        "openai/gpt-5.4-mini",
     };
   }
   if (providerRaw === "openrouter") {
@@ -593,7 +846,7 @@ function resolveWorkflowProviderConfig(): WorkflowProviderConfig {
       process.env.LLM_MODEL_AIBERM ||
       process.env.AIBERM_MODEL ||
       process.env.LLM_MODEL ||
-      "openai/gpt-5.3-codex",
+      "openai/gpt-5.4-mini",
   };
 }
 
@@ -959,9 +1212,10 @@ export async function resolveDesignSkillHit(input: string | undefined | null): P
   await ensureAwesomeIndex();
 
   const query = (input || "").trim();
+  const stylePolicy = await loadStyleSelectionPolicy();
+  const ignoredStyleTokens = new Set((stylePolicy.explicitStyleReferenceIgnoredTokens || []).map((token) => String(token).toLowerCase()));
   const queryLower = query.toLowerCase();
-  const queryTokens = new Set(tokenize(queryLower));
-  const intents = detectQueryIntents(query);
+  const queryTokens = new Set(tokenize(queryLower, ignoredStyleTokens));
   const { selectionCriteria } = getPaths();
   const selectionCriteriaText = await loadFileText(selectionCriteria);
   const index = await loadAwesomeIndex();
@@ -981,54 +1235,82 @@ export async function resolveDesignSkillHit(input: string | undefined | null): P
 
   const scored = styles
     .map((style) => {
-      const base = scoreStyle(style, query);
-      const boost = intentBoostForStyle(style, intents);
+      const base = scoreStyle(style, query, ignoredStyleTokens);
       return {
         style,
         matched_keywords: base.matched_keywords,
         base_score: base.score,
-        boost_score: boost,
-        score: base.score + boost,
+        score: base.score,
       };
     })
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
-      if (b.boost_score !== a.boost_score) return b.boost_score - a.boost_score;
       if (b.base_score !== a.base_score) return b.base_score - a.base_score;
       return String(a.style.slug || "").localeCompare(String(b.style.slug || ""));
     });
-  const explicit = styles.find((style) => {
-    const slug = String(style.slug || "").toLowerCase();
-    const name = String(style.name || "").toLowerCase();
-    if (!slug && !name) return false;
-
-    const slugTokens = tokenize(slug);
-    const nameTokens = tokenize(name);
-    const tokenHit =
-      slugTokens.some((token) => queryTokens.has(token)) || nameTokens.some((token) => queryTokens.has(token));
-
-    const escapedSlug = slug.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const boundarySlug =
-      slug.length >= 4 ? new RegExp(`(?:^|[^a-z0-9])${escapedSlug}(?:$|[^a-z0-9])`, "i").test(queryLower) : false;
-    const boundaryName =
-      name.length >= 4 ? new RegExp(`(?:^|[^a-z0-9])${escapedName}(?:$|[^a-z0-9])`, "i").test(queryLower) : false;
-
-    return tokenHit || boundarySlug || boundaryName;
-  });
+  const explicit = styles.find((style) => hasExplicitStyleReference(style, queryLower, queryTokens, ignoredStyleTokens));
   let best = explicit
     ? scored.find((entry) => entry.style.slug === explicit.slug) || scored[0]
     : scored[0];
   let top3 = scored.slice(0, 3);
+  const localBest = scored[0];
+  let selectionMode: NonNullable<DesignSkillHit["selection_mode"]> = explicit ? "explicit_match" : "local_score";
+  let llmRecommendedId: string | undefined;
+  let llmOverrideReason: string | undefined;
+  const promptVisualIntent = extractPromptVisualIntent(query, stylePolicy.promptAdaptiveDesign);
+
+  if (!explicit && promptVisualIntent.active) {
+    return {
+      id: stylePolicy.promptAdaptiveDesign?.id || "prompt-adaptive",
+      name: stylePolicy.promptAdaptiveDesign?.name || "Prompt-Adaptive",
+      design_desc: promptVisualIntent.reason,
+      score: promptVisualIntent.score,
+      matched_keywords: promptVisualIntent.matchedKeywords,
+      source: "website-generation-workflow",
+      category: stylePolicy.promptAdaptiveDesign?.category || "Prompt Derived",
+      design_md_inline: promptVisualIntent.designMd,
+      index_generated_at: index?.generatedAt,
+      selection_mode: "prompt_adaptive",
+      local_top_candidate: localBest
+        ? {
+            id: localBest.style.slug,
+            name: localBest.style.name,
+            score: localBest.score,
+            category: localBest.style.category,
+            matched_keywords: localBest.matched_keywords,
+          }
+        : undefined,
+      llm_candidate_limit: WORKFLOW_STYLE_LLM_CANDIDATE_LIMIT,
+      selection_candidates: top3.map((entry, index) => ({
+        id: entry.style.slug,
+        name: entry.style.name,
+        score: entry.score,
+        local_rank: index + 1,
+        base_score: entry.base_score,
+        category: entry.style.category,
+        design_md_url: entry.style.designMdUrl,
+        design_md_path: entry.style.designMdPath,
+        excluded_reason: "Prompt-defined visual requirements are more specific than this generic template match.",
+      })),
+      style_preset: normalizeStylePreset(promptVisualIntent.stylePreset, {}),
+    };
+  }
+
+  const llmPool = scored.slice(0, WORKFLOW_STYLE_LLM_CANDIDATE_LIMIT);
+  const explicitEntry = explicit ? scored.find((entry) => entry.style.slug === explicit.slug) : undefined;
+  if (explicitEntry && !llmPool.some((entry) => entry.style.slug === explicitEntry.style.slug)) {
+    llmPool.push(explicitEntry);
+  }
 
   const llmSelection = await selectStylesWithLlm({
     query,
-    styles,
+    styles: llmPool.map((entry) => entry.style),
     selectionCriteria: selectionCriteriaText,
   });
 
-  const styleById = new Map(styles.map((style) => [normalizeWorkflowStyleId(style.slug), style]));
-  const scoreById = new Map(scored.map((entry) => [normalizeWorkflowStyleId(entry.style.slug), entry]));
+  const styleById = new Map(llmPool.map((entry) => [normalizeWorkflowStyleId(entry.style.slug), entry.style]));
+  const scoreById = new Map(llmPool.map((entry) => [normalizeWorkflowStyleId(entry.style.slug), entry]));
+  const localRankById = new Map(scored.map((entry, index) => [normalizeWorkflowStyleId(entry.style.slug), index + 1]));
   const llmReasons = new Map<string, string>();
   const llmExclusions = new Map<string, string>();
 
@@ -1048,20 +1330,21 @@ export async function resolveDesignSkillHit(input: string | undefined | null): P
   }
 
   const llmTopSlugs: string[] = [];
-  if (Array.isArray(llmSelection?.top_candidates)) {
-    for (const item of llmSelection.top_candidates) {
+  const llmTopCandidates = Array.isArray(llmSelection?.top_candidates) ? llmSelection.top_candidates : [];
+  if (llmTopCandidates.length > 0) {
+    for (const item of llmTopCandidates) {
       const id = normalizeWorkflowStyleId(item.id);
       if (!id || !styleById.has(id) || llmTopSlugs.includes(id)) continue;
       llmTopSlugs.push(id);
     }
   }
-  while (llmTopSlugs.length < 3) {
-    const fallback = scored.find((entry) => !llmTopSlugs.includes(normalizeWorkflowStyleId(entry.style.slug)));
-    if (!fallback) break;
-    llmTopSlugs.push(normalizeWorkflowStyleId(fallback.style.slug));
-  }
 
-  if (llmTopSlugs.length > 0) {
+  if (llmTopCandidates.length > 0) {
+    while (llmTopSlugs.length < 3) {
+      const fallback = llmPool.find((entry) => !llmTopSlugs.includes(normalizeWorkflowStyleId(entry.style.slug)));
+      if (!fallback) break;
+      llmTopSlugs.push(normalizeWorkflowStyleId(fallback.style.slug));
+    }
     const mappedTop = llmTopSlugs
       .map((slug) => scoreById.get(slug))
       .filter((entry): entry is NonNullable<typeof entry> => !!entry)
@@ -1070,7 +1353,15 @@ export async function resolveDesignSkillHit(input: string | undefined | null): P
       top3 = mappedTop;
       const recommendedId = normalizeWorkflowStyleId(llmSelection?.recommended_id);
       const recommended = recommendedId ? scoreById.get(recommendedId) : undefined;
-      best = recommended || mappedTop[0] || best;
+      const llmBest = recommended || mappedTop[0] || undefined;
+      if (llmBest) {
+        const previousBestId = normalizeWorkflowStyleId(best.style.slug);
+        const nextBestId = normalizeWorkflowStyleId(llmBest.style.slug);
+        llmRecommendedId = recommended ? recommendedId : nextBestId;
+        llmOverrideReason = llmReasons.get(nextBestId) || undefined;
+        selectionMode = nextBestId === previousBestId ? "llm_semantic_rerank" : "llm_semantic_override";
+        best = llmBest;
+      }
     }
   }
 
@@ -1085,10 +1376,28 @@ export async function resolveDesignSkillHit(input: string | undefined | null): P
     design_md_url: best.style.designMdUrl,
     design_md_path: best.style.designMdPath,
     index_generated_at: index?.generatedAt,
+    selection_mode: selectionMode,
+    local_top_candidate: localBest
+      ? {
+          id: localBest.style.slug,
+          name: localBest.style.name,
+          score: localBest.score,
+          category: localBest.style.category,
+          matched_keywords: localBest.matched_keywords,
+        }
+      : undefined,
+    llm_recommended_id: llmRecommendedId,
+    llm_override_reason:
+      selectionMode === "llm_semantic_override"
+        ? llmOverrideReason || "LLM semantic selector preferred this candidate over the local top score."
+        : undefined,
+    llm_candidate_limit: WORKFLOW_STYLE_LLM_CANDIDATE_LIMIT,
     selection_candidates: top3.map((entry) => ({
       id: entry.style.slug,
       name: entry.style.name,
       score: entry.score,
+      local_rank: localRankById.get(normalizeWorkflowStyleId(entry.style.slug)),
+      base_score: entry.base_score,
       category: entry.style.category,
       design_md_url: entry.style.designMdUrl,
       design_md_path: entry.style.designMdPath,
@@ -1125,19 +1434,23 @@ export async function loadWorkflowSkillContext(input: string | undefined | null)
   const hit = await resolveDesignSkillHit(input);
 
   let designMd = "";
-  try {
-    if (hit.id && hit.id !== "awesome-index-unavailable") {
-      designMd = await loadDesignMdByStyle({
-        name: hit.name,
-        slug: hit.id,
-        category: hit.category,
-        description: hit.design_desc,
-        designMdUrl: hit.design_md_url,
-        designMdPath: hit.design_md_path,
-      });
+  if (hit.design_md_inline?.trim()) {
+    designMd = hit.design_md_inline;
+  } else {
+    try {
+      if (hit.id && hit.id !== "awesome-index-unavailable") {
+        designMd = await loadDesignMdByStyle({
+          name: hit.name,
+          slug: hit.id,
+          category: hit.category,
+          description: hit.design_desc,
+          designMdUrl: hit.design_md_url,
+          designMdPath: hit.design_md_path,
+        });
+      }
+    } catch {
+      // Fallback below
     }
-  } catch {
-    // Fallback below
   }
   if (!designMd.trim()) {
     designMd = await loadAnyLocalDesignMd();

@@ -11,9 +11,29 @@ const PUBLIC_EXACT_PATHS = new Set<string>([
 ])
 const PUBLIC_PREFIXES = ['/blog/']
 
-function isPublicPath(pathname: string): boolean {
+export function isPublicPath(pathname: string): boolean {
   if (PUBLIC_EXACT_PATHS.has(pathname)) return true
   return PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+}
+
+export function hasSupabaseAuthCookie(request: Pick<NextRequest, 'cookies'>): boolean {
+  return request.cookies.getAll().some((cookie) => {
+    const name = cookie.name
+    return (
+      /^sb-.+-auth-token(?:\.\d+)?$/.test(name) ||
+      name === 'sb-access-token' ||
+      name === 'sb-refresh-token' ||
+      name === 'supabase-auth-token'
+    )
+  })
+}
+
+function isAuthSessionMissingError(error: unknown): boolean {
+  const anyError = error as { name?: unknown; message?: unknown }
+  return (
+    String(anyError?.name || '') === 'AuthSessionMissingError' ||
+    String(anyError?.message || '').toLowerCase().includes('auth session missing')
+  )
 }
 
 export async function updateSession(request: NextRequest) {
@@ -25,6 +45,10 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl?.pathname || '/'
   const isPublic = isPublicPath(pathname)
+
+  if (isPublic && !hasSupabaseAuthCookie(request)) {
+    return response
+  }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -64,7 +88,9 @@ export async function updateSession(request: NextRequest) {
     user = currentUser
   } catch (error) {
     if (isPublic) {
-      console.warn('[supabase-middleware] getUser failed on public path, bypassing:', error)
+      if (!isAuthSessionMissingError(error)) {
+        console.warn('[supabase-middleware] getUser failed on public path, bypassing:', error)
+      }
       return response
     }
     const loginUrl = request.nextUrl.clone()

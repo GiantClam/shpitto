@@ -30,7 +30,13 @@ import { DEFAULT_STYLE_PRESET, normalizeStylePreset, type DesignStylePreset } fr
 import { artifactCounts, collectCompletedPhases, getGeneratedFilePaths, getPages, getStaticArtifactFiles, mergeAgentState } from "./artifacts.ts";
 import { invokeModelWithIdleTimeout } from "./llm-stream.ts";
 import { bindRunProviderLockToState, resolveRunProviderRunnerLock, type RunProviderLock } from "./provider-runner.ts";
-import { buildLocalDecisionPlan, type ComponentMix, type LocalDecisionPlan, type PageBlueprint } from "./decision-layer.ts";
+import {
+  buildLocalDecisionPlan,
+  extractRouteSourceBrief,
+  type ComponentMix,
+  type LocalDecisionPlan,
+  type PageBlueprint,
+} from "./decision-layer.ts";
 import { SKILL_RUNTIME_FIXED_PHASES, type SkillRuntimePhase } from "./phase-types.ts";
 import {
   loadProjectSkill,
@@ -205,7 +211,14 @@ function dedupeFiles<T extends { path?: string; content?: string; type?: string 
 
 function classifyErrorCode(message: string): string {
   const normalized = String(message || "").toLowerCase();
-  if (normalized.includes("timeout")) return "timeout";
+  if (
+    normalized.includes("timeout") ||
+    normalized.includes("timed out") ||
+    normalized.includes("bodytimeouterror") ||
+    normalized.includes("body timeout") ||
+    normalized.includes("und_err_body_timeout") ||
+    normalized.includes("terminated")
+  ) return "timeout";
   if (normalized.includes("rate")) return "rate_limit";
   if (normalized.includes("auth") || normalized.includes("unauthorized") || normalized.includes("forbidden")) return "auth";
   if (normalized.includes("network") || normalized.includes("socket") || normalized.includes("econn")) return "network";
@@ -255,9 +268,9 @@ function extractRequirementText(state: AgentState): string {
   }
   const workflow = toRecord((state as any)?.workflow_context);
   const fallbackCandidates = [
+    String(workflow.canonicalPrompt || "").trim(),
     String(workflow.latestUserText || "").trim(),
     String(workflow.requirementAggregatedText || "").trim(),
-    String(workflow.requirementDraft || "").trim(),
     String(workflow.sourceRequirement || "").trim(),
   ];
   for (const candidate of fallbackCandidates) {
@@ -1057,7 +1070,27 @@ function clipTextWithBudget(input: string, maxChars: number): string {
   if (!text) return "";
   if (!Number.isFinite(maxChars) || maxChars <= 0) return text;
   if (text.length <= maxChars) return text;
-  return `${text.slice(0, Math.max(200, maxChars - 64)).trim()}\n\n[Truncated due to prompt budget]`;
+  const markerIndex = text.search(/\n##\s+(?:7\.\s+External Research Addendum|Website Knowledge Profile)\b/i);
+  if (markerIndex > 0 && markerIndex < text.length - 200) {
+    const headBudget = Math.max(1_000, Math.floor(maxChars * 0.42));
+    const sourceBudget = Math.max(600, maxChars - headBudget - 96);
+    return [
+      text.slice(0, headBudget).trim(),
+      "",
+      "[Middle omitted due to prompt budget; source addendum preserved below]",
+      "",
+      text.slice(markerIndex, markerIndex + sourceBudget).trim(),
+    ].join("\n");
+  }
+  const headBudget = Math.max(800, Math.floor(maxChars * 0.58));
+  const tailBudget = Math.max(500, maxChars - headBudget - 80);
+  return [
+    text.slice(0, headBudget).trim(),
+    "",
+    "[Middle omitted due to prompt budget]",
+    "",
+    text.slice(-tailBudget).trim(),
+  ].join("\n");
 }
 
 async function resolveWebsiteRuntimeSkill(params: {
@@ -1204,7 +1237,7 @@ function resolveProviderConfig(lock: RunProviderLock): ProviderConfig {
       apiKey: process.env.AIBERM_API_KEY,
       baseURL: process.env.AIBERM_BASE_URL || "https://aiberm.com/v1",
       defaultHeaders: {},
-      modelName: String(lock.model || process.env.LLM_MODEL_AIBERM || process.env.AIBERM_MODEL || process.env.LLM_MODEL || "openai/gpt-5.3-codex"),
+      modelName: String(lock.model || process.env.LLM_MODEL_AIBERM || process.env.AIBERM_MODEL || process.env.LLM_MODEL || "openai/gpt-5.4-mini"),
     };
   }
   return {
@@ -1222,7 +1255,7 @@ function resolveProviderConfig(lock: RunProviderLock): ProviderConfig {
         process.env.LLM_MODEL_CRAZYROUTER ||
         process.env.LLM_MODEL_CRAZYREOUTE ||
         process.env.LLM_MODEL ||
-        "openai/gpt-5.3-codex",
+        "openai/gpt-5.4-mini",
     ),
   };
 }
@@ -1257,9 +1290,7 @@ function blueprintDigest(plan: LocalDecisionPlan): string {
   return plan.pageBlueprints
     .map(
       (page) =>
-        `- ${page.route} (${page.pageKind})\n  responsibility: ${page.responsibility}\n  skeleton: ${page.contentSkeleton.join(
-          " -> ",
-        )}\n  mix: ${formatComponentMix(page.componentMix)}`,
+        `- ${page.route}\n  navLabel: ${page.navLabel}\n  source: ${page.source}\n  intent: ${page.purpose}`,
     )
     .join("\n");
 }
@@ -1270,10 +1301,17 @@ function findPageBlueprint(plan: LocalDecisionPlan, route: string): PageBlueprin
     plan.pageBlueprints.find((page) => normalizePath(page.route) === normalized) || {
       route: normalized,
       navLabel: extractPageTitleForRoute(normalized, plan.locale),
-      pageKind: "generic",
-      responsibility: "Provide route-specific information with clear navigation and conversion endpoint.",
-      contentSkeleton: ["hero", "content-sections", "proof", "cta"],
-      componentMix: { hero: 20, feature: 20, grid: 20, proof: 20, form: 10, cta: 10 },
+      purpose: "Dedicated page derived from the confirmed Canonical Website Prompt and source content.",
+      source: "default",
+      constraints: [
+        "Canonical Website Prompt is authoritative.",
+        "Do not use preset industry content.",
+        "Stay distinct from sibling pages.",
+      ],
+      pageKind: "intent",
+      responsibility: "Dedicated page derived from the confirmed Canonical Website Prompt and source content.",
+      contentSkeleton: [],
+      componentMix: { hero: 0, feature: 0, grid: 0, proof: 0, form: 0, cta: 0 },
     }
   );
 }
@@ -1317,7 +1355,7 @@ function renderLocalTaskPlan(params: {
 }
 
 function renderLocalFindings(requirementText: string, decision: LocalDecisionPlan): string {
-  const summary = String(requirementText || "").trim().slice(0, 2000);
+  const summary = clipTextWithBudget(requirementText, Number(process.env.SKILL_DIRECT_FINDINGS_REQUIREMENT_CHARS || 48_000));
   return ["# Findings", "", "## Input Prompt", summary || "(empty)", "", "## Phase A Decisions", blueprintDigest(decision)].join(
     "\n",
   );
@@ -2306,6 +2344,12 @@ ${blueprintDigest(this.context.decision)}`;
         .map((item) => `${item.label}:${item.href}`)
         .join(", ");
       const sequentialContext = this.buildSequentialPageContext(pageOrder);
+      const pageSourceBrief = extractRouteSourceBrief(
+        this.requirementText,
+        normalizedRoute,
+        blueprint.navLabel,
+        4200,
+      );
       const systemPrompt = [
         "You are a staff frontend engineer generating complete static HTML pages.",
         "Only output raw HTML. No markdown, no commentary.",
@@ -2332,8 +2376,10 @@ Navigation links: ${navLinks}
 Page responsibility: ${blueprint.responsibility}
 Page skeleton: ${blueprint.contentSkeleton.join(" -> ")}
 Component mix: ${formatComponentMix(blueprint.componentMix)}
+Page-specific source brief excerpt (authoritative for this file):
+${pageSourceBrief || "No route-specific source excerpt found. Derive a unique page architecture from the complete requirement below."}
 Requirement:
-${this.requirementText.slice(0, 2600)}
+${clipTextWithBudget(this.requirementText, Number(process.env.SKILL_DIRECT_PAGE_REQUIREMENT_CHARS || 12_000))}
 ${sequentialContext ? `\n${sequentialContext}` : ""}
 ${qaFeedback ? `\nQA fix instructions (attempt ${attempt}):\n${qaFeedback}` : ""}`;
 
@@ -2630,7 +2676,8 @@ function buildSessionSnapshot(state: AgentState): Partial<AgentState> {
       requirementRevision: workflow.requirementRevision,
       supersededMessages: workflow.supersededMessages,
       correctionSummary: workflow.correctionSummary,
-      requirementDraft: workflow.requirementDraft,
+      canonicalPrompt: workflow.canonicalPrompt,
+      promptControlManifest: workflow.promptControlManifest,
       requirementAggregatedText: workflow.requirementAggregatedText,
       latestUserText: workflow.latestUserText,
       latestUserTextRaw: workflow.latestUserTextRaw,
@@ -3351,36 +3398,40 @@ export class SkillRuntimeExecutor {
           latestCheckpointSiteDir = persisted.latestSiteDir;
           latestCheckpointWorkflowDir = persisted.latestWorkflowDir;
           const stageMessage = toProgressStageMessage(snapshot.status, snapshot.stepIndex, snapshot.totalSteps);
-          await touchChatTaskHeartbeat(taskId, workerId);
-          await updateChatTaskProgress(taskId, {
-            assistantText: stageMessage,
-            phase: "skeleton",
-            progress: {
-              stage: snapshot.status,
-              stageMessage,
-              skillId: loadedSkill.id,
-              filePath: normalizePath(snapshot.stepKey),
-              provider: lock.provider,
-              model: lock.model,
-              attempt: 1,
-              startedAt: new Date(startedAt).toISOString(),
-              lastTokenAt: nowIso(),
-              elapsedMs: Date.now() - startedAt,
-              artifactKey: persisted.r2Prefix || persisted.localDir,
-              pageCount: snapshot.pages.length,
-              fileCount: snapshot.files.length,
-              generatedFiles: snapshot.files.map((file) => normalizePath(file.path)),
-              changedFiles: persisted.changedFiles.map((file) => normalizePath(file)),
-              changedWorkflowFiles: persisted.changedWorkflowFiles.map((file) => normalizePath(file)),
-              checkpointSaved: true,
-              checkpointDir: persisted.latestDir,
-              checkpointStepDir: persisted.localDir,
-              checkpointSiteDir: latestCheckpointSiteDir,
-              checkpointWorkflowDir: latestCheckpointWorkflowDir,
-              r2UploadedCount: persisted.r2UploadedCount,
-              r2UploadError: persisted.r2Error || null,
-            } as any,
-          });
+          try {
+            await touchChatTaskHeartbeat(taskId, workerId);
+            await updateChatTaskProgress(taskId, {
+              assistantText: stageMessage,
+              phase: "skeleton",
+              progress: {
+                stage: snapshot.status,
+                stageMessage,
+                skillId: loadedSkill.id,
+                filePath: normalizePath(snapshot.stepKey),
+                provider: lock.provider,
+                model: lock.model,
+                attempt: 1,
+                startedAt: new Date(startedAt).toISOString(),
+                lastTokenAt: nowIso(),
+                elapsedMs: Date.now() - startedAt,
+                artifactKey: persisted.r2Prefix || persisted.localDir,
+                pageCount: snapshot.pages.length,
+                fileCount: snapshot.files.length,
+                generatedFiles: snapshot.files.map((file) => normalizePath(file.path)),
+                changedFiles: persisted.changedFiles.map((file) => normalizePath(file)),
+                changedWorkflowFiles: persisted.changedWorkflowFiles.map((file) => normalizePath(file)),
+                checkpointSaved: true,
+                checkpointDir: persisted.latestDir,
+                checkpointStepDir: persisted.localDir,
+                checkpointSiteDir: latestCheckpointSiteDir,
+                checkpointWorkflowDir: latestCheckpointWorkflowDir,
+                r2UploadedCount: persisted.r2UploadedCount,
+                r2UploadError: persisted.r2Error || null,
+              } as any,
+            });
+          } catch (progressError) {
+            console.warn("[SkillRuntimeExecutor] continuing after non-fatal step progress update failure:", progressError);
+          }
         },
       });
 

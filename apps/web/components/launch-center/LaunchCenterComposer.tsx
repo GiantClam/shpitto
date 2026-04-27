@@ -1,8 +1,9 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, type ChangeEvent, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUpRight, Loader2, MessageCircle } from "lucide-react";
+import { ArrowUpRight, Loader2, MessageCircle, Paperclip, Upload, X } from "lucide-react";
+import { getLandingCopy, type Locale } from "@/lib/i18n";
 
 type SessionPayload = {
   id: string;
@@ -15,31 +16,145 @@ type SessionsResponse = {
   error?: string;
 };
 
-type LaunchCenterComposerProps = {
-  isAuthenticated: boolean;
+type ProjectAsset = {
+  id: string;
+  key: string;
+  name: string;
+  source: "upload" | "chat_upload" | "generated";
+  category: "image" | "code" | "document" | "other";
+  contentType: string;
+  size: number;
+  updatedAt: number;
+  url: string;
+  referenceText: string;
 };
 
-function normalizeProjectTitle(input: string): string {
+type AssetUploadResponse = {
+  ok: boolean;
+  uploaded?: ProjectAsset[];
+  error?: string;
+};
+
+type LaunchCenterComposerProps = {
+  isAuthenticated: boolean;
+  userId?: string;
+  locale?: Locale;
+};
+
+const COMPOSER_FILE_COPY: Record<
+  Locale,
+  {
+    attach: string;
+    uploadLocal: string;
+    selectedFiles: string;
+    removeFile: string;
+    uploadFailed: string;
+    startFailed: string;
+  }
+> = {
+  en: {
+    attach: "Attach files",
+    uploadLocal: "Upload local files",
+    selectedFiles: "Selected files",
+    removeFile: "Remove file",
+    uploadFailed: "File upload failed",
+    startFailed: "Failed to start generation.",
+  },
+  zh: {
+    attach: "\u6dfb\u52a0\u6587\u4ef6",
+    uploadLocal: "\u4e0a\u4f20\u672c\u5730\u6587\u4ef6",
+    selectedFiles: "\u5df2\u9009\u6587\u4ef6",
+    removeFile: "\u79fb\u9664\u6587\u4ef6",
+    uploadFailed: "\u6587\u4ef6\u4e0a\u4f20\u5931\u8d25",
+    startFailed: "\u542f\u52a8\u751f\u6210\u5931\u8d25\u3002",
+  },
+};
+
+function normalizeProjectTitle(input: string, fallback: string): string {
   const compact = String(input || "").trim().replace(/\s+/g, " ");
-  if (!compact) return "New Project";
+  if (!compact) return fallback;
   const plain = compact
     .replace(/[^\p{L}\p{N}\s\-_,.]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
-  if (!plain) return "New Project";
+  if (!plain) return fallback;
   const words = plain.split(" ").slice(0, 8).join(" ");
   return words.length > 64 ? `${words.slice(0, 64).trim()}...` : words;
 }
 
-export function LaunchCenterComposer({ isAuthenticated }: LaunchCenterComposerProps) {
+function formatFileSize(size: number): string {
+  if (!Number.isFinite(size) || size <= 0) return "0 B";
+  if (size < 1024) return `${Math.round(size)} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function createUserMessage(prompt: string) {
+  return {
+    id: crypto.randomUUID(),
+    role: "user" as const,
+    parts: [{ type: "text" as const, text: prompt }],
+  };
+}
+
+function buildReferencedAssetsBlock(assets: ProjectAsset[]): string {
+  const lines = assets
+    .map((asset) => {
+      const base = String(asset.referenceText || `Asset "${asset.name}"`).trim();
+      return `- ${base}${base.includes(" key: ") ? "" : ` key: ${asset.key}`}`;
+    })
+    .filter(Boolean);
+  if (lines.length === 0) return "";
+  return ["", "[Referenced Assets]", ...lines].join("\n");
+}
+
+export function LaunchCenterComposer({ isAuthenticated, userId = "", locale = "en" }: LaunchCenterComposerProps) {
+  const copy = getLandingCopy(locale).launch.composer;
+  const fileCopy = COMPOSER_FILE_COPY[locale] || COMPOSER_FILE_COPY.en;
   const router = useRouter();
-  const [prompt, setPrompt] = useState(
-    "Build a clean, conversion-focused site for our precision components business. Keep technical proof above the fold, then route visitors by industry use case.",
-  );
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [prompt, setPrompt] = useState(copy.defaultPrompt);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
 
   const disabled = useMemo(() => loading || !String(prompt || "").trim(), [loading, prompt]);
+
+  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const selected = Array.from(event.target.files || []).filter(Boolean);
+    if (selected.length > 0) {
+      setPendingFiles((prev) => {
+        const seen = new Set(prev.map((file) => `${file.name}:${file.size}:${file.lastModified}`));
+        const next = [...prev];
+        for (const file of selected) {
+          const key = `${file.name}:${file.size}:${file.lastModified}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          next.push(file);
+        }
+        return next;
+      });
+    }
+    event.target.value = "";
+  }
+
+  async function uploadPendingFiles(projectId: string, files: File[]): Promise<ProjectAsset[]> {
+    if (files.length === 0) return [];
+    const form = new FormData();
+    form.append("source", "chat_upload");
+    for (const file of files) {
+      form.append("files", file, file.name);
+    }
+    const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/assets`, {
+      method: "POST",
+      body: form,
+    });
+    const data = (await res.json()) as AssetUploadResponse;
+    if (!res.ok || !data.ok || !Array.isArray(data.uploaded)) {
+      throw new Error(data.error || fileCopy.uploadFailed);
+    }
+    return data.uploaded;
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -57,16 +172,35 @@ export function LaunchCenterComposer({ isAuthenticated }: LaunchCenterComposerPr
       const res = await fetch("/api/chat/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: normalizeProjectTitle(finalPrompt) }),
+        body: JSON.stringify({ title: normalizeProjectTitle(finalPrompt, copy.newProject) }),
       });
       const data = (await res.json()) as SessionsResponse;
       if (!res.ok || !data.ok || !data.session?.id) {
-        throw new Error(data.error || "Failed to create project.");
+        throw new Error(data.error || copy.createFailed);
       }
-      router.push(`/projects/${encodeURIComponent(data.session.id)}/chat?prompt=${encodeURIComponent(finalPrompt)}`);
+      const uploadedAssets = await uploadPendingFiles(data.session.id, pendingFiles);
+      const assetReferenceBlock = buildReferencedAssetsBlock(uploadedAssets);
+      const runtimePrompt = `${finalPrompt}${assetReferenceBlock}`.trim();
+      const chatRes = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: data.session.id,
+          user_id: userId || undefined,
+          async: true,
+          skill_id: "website-generation-workflow",
+          messages: [createUserMessage(runtimePrompt)],
+        }),
+      });
+      await chatRes.text();
+      if (!chatRes.ok && chatRes.status !== 202 && chatRes.status !== 200) {
+        throw new Error(`${fileCopy.startFailed} (${chatRes.status})`);
+      }
+      setPendingFiles([]);
+      router.push(`/projects/${encodeURIComponent(data.session.id)}/chat`);
     } catch (err: any) {
       setLoading(false);
-      setError(String(err?.message || err || "Failed to create project."));
+      setError(String(err?.message || err || copy.createFailed));
     }
   }
 
@@ -75,9 +209,10 @@ export function LaunchCenterComposer({ isAuthenticated }: LaunchCenterComposerPr
       onSubmit={handleSubmit}
       className="rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_80%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_52%,black_48%)] p-4 md:p-6"
     >
+      <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileChange} />
       <label htmlFor="launch-prompt" className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-[var(--shp-text)]">
         <MessageCircle className="h-4 w-4 text-[var(--shp-primary)]" />
-        Conversation
+        {copy.label}
       </label>
       <textarea
         id="launch-prompt"
@@ -85,22 +220,70 @@ export function LaunchCenterComposer({ isAuthenticated }: LaunchCenterComposerPr
         onChange={(e) => setPrompt(e.target.value)}
         rows={5}
         className="w-full resize-none rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_76%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_36%,black_64%)] px-4 py-3 text-sm leading-relaxed text-[var(--shp-text)] outline-none focus:border-[color-mix(in_oklab,var(--shp-primary)_50%,transparent)]"
-        placeholder="Describe the project you want to build..."
+        placeholder={copy.placeholder}
       />
+      {pendingFiles.length > 0 ? (
+        <div className="mt-3 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_34%,transparent)] p-3">
+          <div className="mb-2 flex items-center gap-2 text-xs font-medium text-[var(--shp-text)]">
+            <Paperclip className="h-3.5 w-3.5 text-[var(--shp-primary)]" />
+            {fileCopy.selectedFiles}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {pendingFiles.map((file) => {
+              const key = `${file.name}:${file.size}:${file.lastModified}`;
+              return (
+                <span
+                  key={key}
+                  className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-[color-mix(in_oklab,var(--shp-primary)_38%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_12%,transparent)] px-2 py-1 text-[11px] text-[var(--shp-text)]"
+                  title={`${file.name} · ${formatFileSize(file.size)}`}
+                >
+                  <span className="max-w-[190px] truncate">{file.name}</span>
+                  <span className="shrink-0 text-[color-mix(in_oklab,var(--shp-muted)_86%,transparent)]">
+                    {formatFileSize(file.size)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPendingFiles((prev) => prev.filter((item) => item !== file))}
+                    className="shrink-0 rounded-sm p-0.5 text-[var(--shp-muted)] hover:text-[var(--shp-text)]"
+                    aria-label={`${fileCopy.removeFile}: ${file.name}`}
+                    disabled={loading}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs text-[var(--shp-muted)]">
-          <span className="rounded-full border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] px-2 py-1">Reference</span>
-          <span className="rounded-full border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] px-2 py-1">Project</span>
-          <span className="rounded-full border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] px-2 py-1">Template</span>
+          {copy.chips.map((chip) => (
+            <span key={chip} className="rounded-full border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] px-2 py-1">
+              {chip}
+            </span>
+          ))}
         </div>
-        <button
-          type="submit"
-          disabled={disabled}
-          className="shp-btn-primary inline-flex items-center justify-center gap-2 rounded-full px-6 py-2.5 text-xs font-black sm:text-sm disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUpRight className="h-4 w-4" />}
-          Send
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] px-4 py-2.5 text-xs font-semibold text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_58%,transparent)] disabled:cursor-not-allowed disabled:opacity-60"
+            title={fileCopy.attach}
+          >
+            <Upload className="h-4 w-4" />
+            <span className="hidden sm:inline">{fileCopy.uploadLocal}</span>
+          </button>
+          <button
+            type="submit"
+            disabled={disabled}
+            className="shp-btn-primary inline-flex items-center justify-center gap-2 rounded-full px-6 py-2.5 text-xs font-black sm:text-sm disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUpRight className="h-4 w-4" />}
+            {copy.send}
+          </button>
+        </div>
       </div>
       {error ? <p className="mt-3 text-xs text-rose-300">{error}</p> : null}
     </form>

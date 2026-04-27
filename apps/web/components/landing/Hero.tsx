@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { ArrowRight, PlayCircle } from "lucide-react";
+import { getLandingCopy, type Locale } from "@/lib/i18n";
 
 type HeroProps = {
   ctaHref?: string;
+  locale?: Locale;
 };
 
-export function Hero({ ctaHref = "/login" }: HeroProps) {
+export function Hero({ ctaHref = "/login", locale = "en" }: HeroProps) {
+  const copy = getLandingCopy(locale).hero;
   return (
     <section className="relative overflow-hidden px-6 pb-24 pt-32 text-[var(--shp-text)] lg:pb-40 lg:pt-48">
       <div className="absolute inset-0 z-0 opacity-25">
@@ -21,39 +24,34 @@ export function Hero({ ctaHref = "/login" }: HeroProps) {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--shp-secondary)] opacity-75"></span>
             <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--shp-secondary)]"></span>
           </span>
-          12-Second Generation Engine
+          {copy.badge}
         </div>
 
         <h1 className="mb-8 text-5xl font-black leading-[0.95] tracking-tight lg:text-8xl">
-          Build websites
+          {copy.headline}
           <br />
           <span className="text-[var(--shp-primary)]">
-            at the speed of thought.
+            {copy.highlight}
           </span>
         </h1>
 
         <p className="mx-auto mb-12 max-w-3xl text-xl leading-relaxed text-[var(--shp-muted)]">
-          Shpitto turns natural language into production-grade industrial websites with clean structure, conversion-focused copy,
-          and deploy-ready pages.
+          {copy.body}
         </p>
 
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Link href={ctaHref} className="shp-btn-primary group flex w-full items-center justify-center gap-2 px-8 py-4 text-lg font-black sm:w-auto">
-            Start Building Free
+            {copy.cta}
             <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
           </Link>
           <button className="shp-btn-secondary flex w-full items-center justify-center gap-2 px-8 py-4 text-lg font-medium sm:w-auto">
             <PlayCircle className="h-5 w-5" />
-            Watch Demo
+            {copy.demo}
           </button>
         </div>
 
         <div className="mx-auto mt-10 flex max-w-3xl flex-wrap items-center justify-center gap-8">
-          {[
-            { value: "10,000+", label: "Sites generated" },
-            { value: "12s", label: "Avg build time" },
-            { value: "4.9/5", label: "User rating" },
-          ].map((item) => (
+          {copy.stats.map((item) => (
             <div key={item.label} className="text-center">
               <div className="text-2xl font-black text-[var(--shp-primary)]">{item.value}</div>
               <div className="text-sm text-[var(--shp-muted)]">{item.label}</div>
@@ -88,7 +86,7 @@ export function Hero({ ctaHref = "/login" }: HeroProps) {
 
                 <div className="relative z-10 w-full max-w-2xl space-y-6">
                   <div className="flex h-12 items-center rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_75%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_68%,transparent)] px-4 font-mono text-sm text-[var(--shp-muted)]">
-                    <span className="mr-2 text-[var(--shp-secondary)]">&gt;</span> Describe your industrial website...
+                    <span className="mr-2 text-[var(--shp-secondary)]">&gt;</span> {copy.promptPlaceholder}
                     <span className="ml-auto h-4 w-2 animate-pulse bg-[var(--shp-primary)]"></span>
                   </div>
 

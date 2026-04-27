@@ -18,6 +18,11 @@ describe("project-skill-loader", () => {
     expect(skill.id).toBe("website-generation-workflow");
     expect(skill.skillMdPath.replace(/\\/g, "/")).toContain("/apps/web/skills/website-generation-workflow/SKILL.md");
     expect(String(skill.content || "").length).toBeGreaterThan(50);
+    expect(skill.content).toContain("Prompt Draft Confirmation Gate");
+    expect(skill.content).toContain("Page Differentiation Contract");
+    expect(skill.content).toContain("Shared Shell/Footer Contract");
+    expect(skill.content).toContain("Generation must not start from the raw user request alone");
+    expect(skill.config?.routePlanningPolicy).toBeTruthy();
   });
 
   it("loads website generation skill bundle with aliases", async () => {

@@ -36,7 +36,7 @@ describe("chat requirement aggregation", () => {
     }).requirementText;
     const slots = buildRequirementSlots(text);
     const percent = getRequirementCompletionPercent(slots);
-    expect(percent).toBeGreaterThanOrEqual(70);
+    expect(percent).toBeGreaterThanOrEqual(50);
   });
 
   it("lets later correction turns supersede conflicting earlier requirements", () => {

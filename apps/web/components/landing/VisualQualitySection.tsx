@@ -1,31 +1,29 @@
 import { ArrowUpRight, Palette, Layout, MousePointer2 } from "lucide-react";
+import { getLandingCopy, type Locale } from "@/lib/i18n";
 
-export function VisualQualitySection() {
+export function VisualQualitySection({ locale = "en" }: { locale?: Locale }) {
+  const copy = getLandingCopy(locale).quality;
   const features = [
     {
-      title: "Adaptive Typography",
-      description: "Smart font pairing and hierarchy tuned for readability in long B2B pages.",
+      ...copy.features[0],
       icon: <Layout className="h-6 w-6 text-[var(--shp-primary)]" />,
       colSpan: "md:col-span-2",
       bg: "from-[color-mix(in_oklab,var(--shp-primary)_24%,transparent)] to-[color-mix(in_oklab,var(--shp-surface)_82%,transparent)]",
     },
     {
-      title: "Micro-Interactions",
-      description: "Subtle motion that adds confidence and speed cues without noise.",
+      ...copy.features[1],
       icon: <MousePointer2 className="h-6 w-6 text-[var(--shp-primary)]" />,
       colSpan: "md:col-span-1",
       bg: "from-[color-mix(in_oklab,var(--shp-primary)_20%,transparent)] to-[color-mix(in_oklab,var(--shp-surface)_82%,transparent)]",
     },
     {
-      title: "Color Harmony",
-      description: "Balanced palettes that keep industrial trust while adding warmth.",
+      ...copy.features[2],
       icon: <Palette className="h-6 w-6 text-[var(--shp-warm)]" />,
       colSpan: "md:col-span-1",
       bg: "from-[color-mix(in_oklab,var(--shp-warm)_20%,transparent)] to-[color-mix(in_oklab,var(--shp-surface)_82%,transparent)]",
     },
     {
-      title: "Responsive Grids",
-      description: "Layouts that adapt smoothly from mobile to large desktop previews.",
+      ...copy.features[3],
       icon: <Layout className="h-6 w-6 text-[var(--shp-secondary)]" />,
       colSpan: "md:col-span-2",
       bg: "from-[color-mix(in_oklab,var(--shp-secondary)_24%,transparent)] to-[color-mix(in_oklab,var(--shp-surface)_82%,transparent)]",
@@ -39,12 +37,11 @@ export function VisualQualitySection() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="mx-auto mb-20 max-w-3xl text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--shp-primary)_35%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,transparent)] px-3 py-1 text-xs font-bold uppercase tracking-wider text-[var(--shp-primary-soft)]">
-            Design Excellence
+            {copy.badge}
           </div>
-          <h2 className="mb-6 text-4xl font-bold tracking-tight text-[var(--shp-text)] lg:text-5xl">Engineered for Aesthetics</h2>
+          <h2 className="mb-6 text-4xl font-bold tracking-tight text-[var(--shp-text)] lg:text-5xl">{copy.title}</h2>
           <p className="text-lg leading-relaxed text-[var(--shp-muted)]">
-            Shpitto doesn't just write code. It composes experiences with coherent spacing, visual hierarchy, and
-            conversion-ready interaction patterns.
+            {copy.body}
           </p>
         </div>
 
@@ -67,7 +64,7 @@ export function VisualQualitySection() {
                 </div>
 
                 <div className="flex items-center gap-2 text-sm font-bold text-[color-mix(in_oklab,var(--shp-text)_56%,transparent)] transition-colors group-hover:text-[var(--shp-text)]">
-                  Learn more <ArrowUpRight className="h-4 w-4" />
+                  {copy.learnMore} <ArrowUpRight className="h-4 w-4" />
                 </div>
               </div>
             </div>

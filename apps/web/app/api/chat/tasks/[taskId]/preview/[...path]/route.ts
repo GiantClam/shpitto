@@ -5,6 +5,25 @@ import { getChatTask } from "../../../../../../../lib/agent/chat-task-store";
 
 export const runtime = "nodejs";
 
+type PreviewSiteDirCacheEntry = {
+  siteDir: string;
+  expiresAt: number;
+};
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __shpittoPreviewSiteDirCache: Map<string, PreviewSiteDirCacheEntry> | undefined;
+}
+
+const PREVIEW_SITE_DIR_CACHE_TTL_MS = 60_000;
+
+function getPreviewSiteDirCache(): Map<string, PreviewSiteDirCacheEntry> {
+  if (!globalThis.__shpittoPreviewSiteDirCache) {
+    globalThis.__shpittoPreviewSiteDirCache = new Map();
+  }
+  return globalThis.__shpittoPreviewSiteDirCache;
+}
+
 function renderPendingPreviewHtml(params: { taskId: string; stage?: string; status?: string }): string {
   const stage = String(params.stage || "").trim() || "preparing";
   const status = String(params.status || "").trim() || "running";
@@ -58,11 +77,12 @@ function rewriteHtmlForPreview(html: string, previewBase: string): string {
     (_m, attr: string, target: string) => `${attr}="${previewBase}/${target}"`,
   );
 
-  const withRootHref = attrRewritten.replace(/\bhref=["']\/["']/gi, `href="${previewBase}/"`);
-  if (/<head[\s>]/i.test(withRootHref)) {
-    return withRootHref.replace(/<head([^>]*)>/i, `<head$1><base href="${previewBase}/">`);
-  }
-  return withRootHref;
+  const sharedAssetRewritten = attrRewritten.replace(
+    /\b(href|src)=["'](?:(?:\.\.?\/)+)?(styles\.css|script\.js)([?#][^"']*)?["']/gi,
+    (_m, attr: string, target: string, suffix = "") => `${attr}="${previewBase}/${target}${suffix}"`,
+  );
+
+  return sharedAssetRewritten.replace(/\bhref=["']\/["']/gi, `href="${previewBase}/"`);
 }
 
 async function resolveTargetFile(siteDir: string, parts: string[]): Promise<string> {
@@ -121,6 +141,95 @@ async function hasIndexHtml(siteDir: string): Promise<boolean> {
   }
 }
 
+function rememberPreviewSiteDir(taskId: string, siteDir: string) {
+  const normalizedTaskId = String(taskId || "").trim();
+  const normalizedSiteDir = String(siteDir || "").trim();
+  if (!normalizedTaskId || !normalizedSiteDir) return;
+  getPreviewSiteDirCache().set(normalizedTaskId, {
+    siteDir: normalizedSiteDir,
+    expiresAt: Date.now() + PREVIEW_SITE_DIR_CACHE_TTL_MS,
+  });
+}
+
+async function getCachedPreviewSiteDir(taskId: string): Promise<string> {
+  const cache = getPreviewSiteDirCache();
+  const entry = cache.get(taskId);
+  if (!entry) return "";
+  if (entry.expiresAt < Date.now()) {
+    cache.delete(taskId);
+    return "";
+  }
+  if (await hasIndexHtml(entry.siteDir)) return entry.siteDir;
+  cache.delete(taskId);
+  return "";
+}
+
+function isSafeTaskIdForLocalLookup(taskId: string): boolean {
+  return /^[a-zA-Z0-9_-]{8,128}$/.test(taskId);
+}
+
+function getLocalTaskRoots(): string[] {
+  const candidates = [
+    path.resolve(process.cwd(), ".tmp", "chat-tasks"),
+    path.resolve(process.cwd(), "apps", "web", ".tmp", "chat-tasks"),
+  ];
+  return Array.from(new Set(candidates));
+}
+
+async function resolveSiteDirFromLocalTaskRoot(taskRoot: string): Promise<string> {
+  const candidates = [path.join(taskRoot, "latest", "site"), path.join(taskRoot, "site"), path.join(taskRoot, "latest")];
+  const stepsRoot = path.join(taskRoot, "steps");
+  try {
+    const entries = await fs.readdir(stepsRoot, { withFileTypes: true });
+    const stepDirs = entries
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort((a, b) => b.localeCompare(a));
+    for (const stepDir of stepDirs) {
+      candidates.push(path.join(stepsRoot, stepDir, "site"), path.join(stepsRoot, stepDir));
+    }
+  } catch {
+    // ignore missing steps directory
+  }
+
+  for (const candidate of candidates) {
+    if (await hasIndexHtml(candidate)) return candidate;
+  }
+  return "";
+}
+
+async function findLocalPreviewSiteDirByTaskId(taskId: string): Promise<string> {
+  if (!isSafeTaskIdForLocalLookup(taskId)) return "";
+  const cached = await getCachedPreviewSiteDir(taskId);
+  if (cached) return cached;
+
+  for (const root of getLocalTaskRoots()) {
+    try {
+      const directTaskRoot = path.join(root, taskId);
+      const directSiteDir = await resolveSiteDirFromLocalTaskRoot(directTaskRoot);
+      if (directSiteDir) {
+        rememberPreviewSiteDir(taskId, directSiteDir);
+        return directSiteDir;
+      }
+
+      const chatDirs = await fs.readdir(root, { withFileTypes: true });
+      for (const chatDir of chatDirs) {
+        if (!chatDir.isDirectory()) continue;
+        const taskRoot = path.join(root, chatDir.name, taskId);
+        const siteDir = await resolveSiteDirFromLocalTaskRoot(taskRoot);
+        if (siteDir) {
+          rememberPreviewSiteDir(taskId, siteDir);
+          return siteDir;
+        }
+      }
+    } catch {
+      // ignore missing or unreadable local task roots
+    }
+  }
+
+  return "";
+}
+
 async function resolveSiteDirFromTask(task: any): Promise<string> {
   const progress = task?.result?.progress || {};
   const explicit = String(progress?.checkpointSiteDir || "").trim();
@@ -175,9 +284,37 @@ export async function GET(
     return NextResponse.json({ ok: false, error: "Missing taskId." }, { status: 400 });
   }
 
-  const task = await getChatTask(taskId);
-  const siteDir = await resolveSiteDirFromTask(task);
+  let task: any;
+  let taskLookupError: unknown;
+  try {
+    task = await getChatTask(taskId);
+  } catch (error) {
+    taskLookupError = error;
+  }
+
+  let siteDir = await resolveSiteDirFromTask(task);
+  if (siteDir) {
+    rememberPreviewSiteDir(taskId, siteDir);
+  } else {
+    siteDir = await findLocalPreviewSiteDirByTaskId(taskId);
+  }
+
   if (!siteDir) {
+    if (taskLookupError) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Task store unavailable and no local preview checkpoint was found.",
+          details:
+            process.env.NODE_ENV === "development"
+              ? taskLookupError instanceof Error
+                ? taskLookupError.message
+                : String(taskLookupError)
+              : undefined,
+        },
+        { status: 503 },
+      );
+    }
     const status = String(task?.status || "").trim();
     if (status === "queued" || status === "running") {
       return new NextResponse(

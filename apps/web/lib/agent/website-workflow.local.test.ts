@@ -10,11 +10,13 @@ describe("website-workflow local awesome-design templates", () => {
     process.env.AWESOME_DESIGN_REFRESH = "1";
 
     try {
-      const hit = await resolveDesignSkillHit("LC-CNC industrial precision manufacturing");
+      const hit = await resolveDesignSkillHit("A professional website with clear navigation and strong content hierarchy");
       expect(hit.id).toBeTruthy();
       expect(hit.id).not.toBe("awesome-index-unavailable");
 
-      const context = await loadWorkflowSkillContext("LC-CNC industrial precision manufacturing");
+      const context = await loadWorkflowSkillContext(
+        "A professional website with clear navigation and strong content hierarchy",
+      );
       expect(context.hit.id).toBe(hit.id);
       expect(context.designMd.length).toBeGreaterThan(0);
       expect(context.stylePreset.mode === "light" || context.stylePreset.mode === "dark").toBe(true);
@@ -30,19 +32,94 @@ describe("website-workflow local awesome-design templates", () => {
     }
   });
 
-  it("returns stable top candidates for LC-CNC prompts without forced industrial fallback", async () => {
-    const prompt = [
-      "为 LC-CNC 生成完整 6 页面静态站点。",
-      "行业：CNC 数控设备制造。",
-      "目标用户：工厂采购、设备工程师、工艺负责人。",
-      "视觉风格：工业科技、专业可信、深色+橙色点缀。",
-      "必须包含页面：/ /company /products /news /cases /contact。",
-    ].join("\n");
+  it("records transparent local selection metadata and filters stopword matches", async () => {
+    const prevUseLlm = process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
+    process.env.WORKFLOW_STYLE_SELECT_USE_LLM = "0";
 
-    const hit = await resolveDesignSkillHit(prompt);
-    expect(hit.id).toBeTruthy();
-    const top = hit.selection_candidates || [];
-    expect(top.length).toBeGreaterThan(0);
-    expect(top[0]?.id).toBe(hit.id);
+    try {
+      const hit = await resolveDesignSkillHit("Professional editorial website with modern typography and precise layout");
+
+      expect(hit.selection_mode).toBe("local_score");
+      expect(hit.local_top_candidate?.id).toBe(hit.id);
+      expect(hit.llm_candidate_limit).toBeGreaterThanOrEqual(3);
+      expect(hit.matched_keywords).not.toContain("and");
+      expect(hit.matched_keywords).not.toContain("website");
+      expect(hit.selection_candidates?.[0]?.local_rank).toBe(1);
+      expect(hit.selection_candidates?.[0]?.base_score).toBeTypeOf("number");
+    } finally {
+      if (prevUseLlm === undefined) delete process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
+      else process.env.WORKFLOW_STYLE_SELECT_USE_LLM = prevUseLlm;
+    }
+  });
+
+  it("honors explicit style names without domain-specific guards", async () => {
+    const prevUseLlm = process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
+    process.env.WORKFLOW_STYLE_SELECT_USE_LLM = "0";
+
+    try {
+      const hit = await resolveDesignSkillHit("Use the Claude design language for this website.");
+
+      expect(hit.selection_mode).toBe("explicit_match");
+      expect(hit.id.toLowerCase()).toContain("claude");
+      expect(hit.selection_candidates?.some((candidate) => candidate.id === hit.id)).toBe(true);
+    } finally {
+      if (prevUseLlm === undefined) delete process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
+      else process.env.WORKFLOW_STYLE_SELECT_USE_LLM = prevUseLlm;
+    }
+  });
+
+  it("uses prompt-adaptive design when the canonical prompt contains explicit visual requirements", async () => {
+    const prevUseLlm = process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
+    process.env.WORKFLOW_STYLE_SELECT_USE_LLM = "0";
+
+    try {
+      const prompt = [
+        "Canonical Website Generation Prompt for CASUX.",
+        "Visual style: fresh green #2E8B57 and white as the main palette, warm orange accents.",
+        "The mood must feel natural, safe, warm, child-friendly, and professionally institutional.",
+        "Avoid cold developer-tool or generic SaaS aesthetics.",
+      ].join("\n");
+      const hit = await resolveDesignSkillHit(prompt);
+
+      expect(hit.selection_mode).toBe("prompt_adaptive");
+      expect(hit.id).toBe("prompt-adaptive");
+      expect(hit.local_top_candidate?.id).toBeTruthy();
+      expect(hit.local_top_candidate?.id).not.toBe("prompt-adaptive");
+      expect(hit.design_md_inline).toContain("Prompt-Adaptive Design System");
+
+      const context = await loadWorkflowSkillContext(prompt);
+      expect(context.hit.id).toBe("prompt-adaptive");
+      expect(context.designMd).toContain("Prompt-Adaptive Design System");
+      expect(context.stylePreset.colors.primary).toBe("#2E8B57");
+      expect(context.stylePreset.colors.accent).toBe("#F59E0B");
+      expect(context.stylePreset.mode).toBe("light");
+    } finally {
+      if (prevUseLlm === undefined) delete process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
+      else process.env.WORKFLOW_STYLE_SELECT_USE_LLM = prevUseLlm;
+    }
+  });
+
+  it("does not treat generic domain tokens as explicit awesome-design template names", async () => {
+    const prevUseLlm = process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
+    process.env.WORKFLOW_STYLE_SELECT_USE_LLM = "0";
+
+    try {
+      const prompt = [
+        "# Canonical Website Generation Prompt",
+        "Source: uploaded-file:CASUX_.md.pdf from casux.org.cn.",
+        "Website positioning: CASUX is a child-friendly space standard system and research platform.",
+        "Visual style: use fresh green #2E8B57 and white as the primary palette with warm orange accents.",
+        "The design must feel natural, safe, warm, child-friendly, and institutionally professional.",
+      ].join("\n");
+      const hit = await resolveDesignSkillHit(prompt);
+
+      expect(hit.id).toBe("prompt-adaptive");
+      expect(hit.selection_mode).toBe("prompt_adaptive");
+      expect(hit.id).not.toBe("cal");
+      expect(hit.style_preset?.colors?.primary).toBe("#2E8B57");
+    } finally {
+      if (prevUseLlm === undefined) delete process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
+      else process.env.WORKFLOW_STYLE_SELECT_USE_LLM = prevUseLlm;
+    }
   });
 });

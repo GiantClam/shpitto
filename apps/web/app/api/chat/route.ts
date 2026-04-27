@@ -21,6 +21,8 @@ import {
   decideChatIntent,
   deriveConversationStage,
   isDeployIntent,
+  parseRequirementFormFromText,
+  validateRequiredRequirementSlots,
 } from "../../../lib/agent/chat-orchestrator";
 import { buildPromptDraftWithResearch } from "../../../lib/agent/prompt-draft-research";
 import {
@@ -45,6 +47,102 @@ type ChatRequestBody = {
 };
 
 const CONFIRM_GENERATE_PREFIX = "__SHP_CONFIRM_GENERATE__";
+type ChatDisplayLocale = "zh" | "en";
+
+const CHAT_COPY: Record<ChatDisplayLocale, Record<string, string>> = {
+  en: {
+    checkTaskStatus: "Check Task Status",
+    deployLocked: "Deployment is in progress. Input is locked until deployment finishes.",
+    pendingEditQueued:
+      "A task is still running. This edit has been queued and will be applied against the latest preview after the current task completes.",
+    activeTaskRunning: "A generation task is already running for this chat. Please wait for completion or check task status.",
+    requirementFormTitle: "Required Information Before Generation",
+    requirementFormInfo: "Complete the required information before generating the Prompt Draft.",
+    promptDraftWeb: "Prompt Draft generated with LLM + Web Search. You can add details or confirm generation.",
+    promptDraftLlm: "Prompt Draft generated with LLM. You can add details or confirm generation.",
+    promptDraftTemplate: "Requirement draft updated. You can add details or confirm generation.",
+    promptDraftTitle: "Website Generation Prompt Draft",
+    confirmPromptText:
+      "Confirm the Prompt Draft before generation. After confirmation, a background generation task will be created from this prompt.",
+    confirmPromptLabel: "Confirm Prompt And Generate",
+    promptDraftReady:
+      "Prompt Draft generated. Expand it to review page structure, content modules, and design requirements, then click Confirm Prompt And Generate.",
+    promptDraftWaiting: "Prompt Draft generated. Waiting for confirmation before generation starts.",
+    clarificationInfo: "Requirement clarification is in progress. Add more details or confirm generation to start a task.",
+    acceptedGenerate: "Generation task accepted. Queued for background worker execution.",
+    acceptedRefine: "Refine task accepted. Will adjust the latest version in background.",
+    acceptedDeploy: "Deploy task accepted. Queued for background deployment.",
+    queuedStageSuffix: "task queued. Waiting for background worker...",
+    syncDisabled: "Synchronous generation path is disabled. Use async task mode.",
+    storageUnavailable: "Chat storage is temporarily unavailable. Please retry in a few seconds.",
+    requestFailed: "Failed to process chat request.",
+  },
+  zh: {
+    checkTaskStatus: "\u67e5\u770b\u4efb\u52a1\u72b6\u6001",
+    deployLocked: "\u90e8\u7f72\u6b63\u5728\u8fdb\u884c\uff0c\u5f53\u524d\u9636\u6bb5\u5df2\u9501\u5b9a\u8f93\u5165\u3002\u8bf7\u7b49\u5f85\u90e8\u7f72\u5b8c\u6210\u540e\u518d\u7ee7\u7eed\u4fee\u6539\u6216\u53d1\u5e03\u3002",
+    pendingEditQueued:
+      "\u5f53\u524d\u4efb\u52a1\u4ecd\u5728\u8fd0\u884c\u3002\u672c\u6761\u4fee\u6539\u5df2\u52a0\u5165\u5f85\u5904\u7406\u961f\u5217\uff0c\u5f53\u524d\u4efb\u52a1\u5b8c\u6210\u540e\u4f1a\u81ea\u52a8\u57fa\u4e8e\u6700\u65b0\u9884\u89c8\u7ee7\u7eed\u4fee\u6b63\u3002",
+    activeTaskRunning: "\u5f53\u524d\u4f1a\u8bdd\u5df2\u6709\u751f\u6210\u4efb\u52a1\u5728\u8fd0\u884c\u3002\u8bf7\u7b49\u5f85\u5b8c\u6210\uff0c\u6216\u67e5\u770b\u4efb\u52a1\u72b6\u6001\u3002",
+    requirementFormTitle: "\u751f\u6210\u524d\u5fc5\u586b\u4fe1\u606f",
+    requirementFormInfo: "\u8bf7\u5148\u5b8c\u6210\u751f\u6210\u524d\u5fc5\u586b\u4fe1\u606f\uff0c\u7136\u540e\u518d\u751f\u6210 Prompt Draft\u3002",
+    promptDraftWeb: "\u5df2\u57fa\u4e8e LLM + Web Search \u751f\u6210 Prompt Draft\uff0c\u4f60\u53ef\u4ee5\u7ee7\u7eed\u8865\u5145\uff0c\u6216\u786e\u8ba4\u540e\u5f00\u59cb\u751f\u6210\u3002",
+    promptDraftLlm: "\u5df2\u57fa\u4e8e LLM \u751f\u6210 Prompt Draft\uff0c\u4f60\u53ef\u4ee5\u7ee7\u7eed\u8865\u5145\uff0c\u6216\u786e\u8ba4\u540e\u5f00\u59cb\u751f\u6210\u3002",
+    promptDraftTemplate: "\u5df2\u66f4\u65b0\u9700\u6c42\u8349\u7a3f\uff0c\u4f60\u53ef\u4ee5\u7ee7\u7eed\u8865\u5145\uff0c\u6216\u786e\u8ba4\u540e\u5f00\u59cb\u751f\u6210\u3002",
+    promptDraftTitle: "\u7f51\u7ad9\u751f\u6210 Prompt Draft",
+    confirmPromptText:
+      "\u751f\u6210\u524d\u8bf7\u5148\u786e\u8ba4 Prompt Draft\u3002\u786e\u8ba4\u540e\uff0c\u7cfb\u7edf\u4f1a\u57fa\u4e8e\u8be5\u8349\u7a3f\u521b\u5efa\u540e\u53f0\u751f\u6210\u4efb\u52a1\u3002",
+    confirmPromptLabel: "\u786e\u8ba4 Prompt Draft \u5e76\u5f00\u59cb\u751f\u6210",
+    promptDraftReady:
+      "Prompt Draft \u5df2\u751f\u6210\u3002\u5c55\u5f00\u540e\u68c0\u67e5\u9875\u9762\u7ed3\u6784\u3001\u5185\u5bb9\u6a21\u5757\u548c\u8bbe\u8ba1\u8981\u6c42\uff0c\u7136\u540e\u70b9\u51fb\u786e\u8ba4\u751f\u6210\u3002",
+    promptDraftWaiting: "Prompt Draft \u5df2\u751f\u6210\uff0c\u7b49\u5f85\u786e\u8ba4\u540e\u518d\u5f00\u59cb\u751f\u6210\u3002",
+    clarificationInfo: "\u5df2\u8fdb\u5165\u9700\u6c42\u68b3\u7406\u9636\u6bb5\u3002\u4f60\u53ef\u4ee5\u7ee7\u7eed\u8865\u5145\u9700\u6c42\uff0c\u6216\u786e\u8ba4\u540e\u5f00\u59cb\u751f\u6210\u3002",
+    acceptedGenerate: "\u751f\u6210\u4efb\u52a1\u5df2\u63a5\u6536\uff0c\u6b63\u5728\u6392\u961f\u7b49\u5f85\u540e\u53f0\u6267\u884c\u3002",
+    acceptedRefine: "\u4fee\u6539\u4efb\u52a1\u5df2\u63a5\u6536\uff0c\u5c06\u5728\u540e\u53f0\u57fa\u4e8e\u6700\u65b0\u7248\u672c\u8fdb\u884c\u8c03\u6574\u3002",
+    acceptedDeploy: "\u90e8\u7f72\u4efb\u52a1\u5df2\u63a5\u6536\uff0c\u6b63\u5728\u6392\u961f\u7b49\u5f85\u53d1\u5e03\u3002",
+    queuedStageSuffix: "\u4efb\u52a1\u5df2\u6392\u961f\uff0c\u7b49\u5f85\u540e\u53f0\u6267\u884c\u5668\u3002",
+    syncDisabled: "\u540c\u6b65\u751f\u6210\u8def\u5f84\u5df2\u7981\u7528\uff0c\u8bf7\u4f7f\u7528\u5f02\u6b65\u4efb\u52a1\u6a21\u5f0f\u3002",
+    storageUnavailable: "\u804a\u5929\u5b58\u50a8\u6682\u65f6\u4e0d\u53ef\u7528\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5\u3002",
+    requestFailed: "\u5904\u7406\u804a\u5929\u8bf7\u6c42\u5931\u8d25\u3002",
+  },
+};
+
+function detectChatDisplayLocale(text: string): ChatDisplayLocale {
+  return /[\u4e00-\u9fff]/.test(String(text || "")) ? "zh" : "en";
+}
+
+function chatCopy(locale: ChatDisplayLocale, key: keyof (typeof CHAT_COPY)["en"]): string {
+  return CHAT_COPY[locale]?.[key] || CHAT_COPY.en[key] || key;
+}
+
+function requirementProgressText(locale: ChatDisplayLocale, filled: number, total: number, percent: number): string {
+  if (locale === "zh") return `\u9700\u6c42\u5b8c\u6210\u5ea6\uff1a${filled}/${total} (${percent}%)`;
+  return `Requirement progress: ${filled}/${total} (${percent}%)`;
+}
+
+function localizedClarificationQuestion(params: {
+  locale: ChatDisplayLocale;
+  requiresRequirementForm?: boolean;
+  question: string;
+}): string {
+  if (params.locale !== "zh") return params.question;
+  if (params.requiresRequirementForm) {
+    return "\u8bf7\u5148\u5b8c\u6210\u4e0b\u65b9\u7684\u751f\u6210\u524d\u5fc5\u586b\u4fe1\u606f\u3002\u5b8c\u6210\u540e\u6211\u4f1a\u751f\u6210\u53ef\u786e\u8ba4\u7684 Prompt Draft\u3002";
+  }
+  return "\u9700\u6c42\u4ecd\u9700\u8981\u8865\u5145\u3002\u4f60\u53ef\u4ee5\u7ee7\u7eed\u63d0\u4f9b\u7ec6\u8282\uff0c\u6216\u57fa\u4e8e\u5f53\u524d\u4fe1\u606f\u786e\u8ba4\u751f\u6210\u3002";
+}
+
+function localizedQueuedStageMessage(locale: ChatDisplayLocale, mode: "generate" | "refine" | "deploy"): string {
+  if (locale === "zh") {
+    const modeLabel =
+      mode === "generate"
+        ? "\u751f\u6210"
+        : mode === "refine"
+          ? "\u4fee\u6539"
+          : "\u90e8\u7f72";
+    return `${modeLabel}${chatCopy(locale, "queuedStageSuffix")}`;
+  }
+  return `${mode} ${chatCopy(locale, "queuedStageSuffix")}`;
+}
 
 function createInitialState(): AgentState {
   return {
@@ -223,8 +321,9 @@ function createTaskStreamResponse(params: {
   status: "queued" | "running";
   actions?: BuilderAction[];
   statusCode?: number;
+  displayLocale?: ChatDisplayLocale;
 }) {
-  const { assistantText, taskId, chatId, status, actions, statusCode = 200 } = params;
+  const { assistantText, taskId, chatId, status, actions, statusCode = 200, displayLocale = "en" } = params;
   const statusPath = `/api/chat/tasks/${taskId}`;
   const stream = createUIMessageStream({
     execute: ({ writer }) => {
@@ -240,11 +339,12 @@ function createTaskStreamResponse(params: {
           chatId,
           status,
           statusPath,
+          locale: displayLocale,
         },
       });
       const nextActions = [
         ...(actions || []),
-        { text: "Check Task Status", payload: statusPath, type: "url" as const },
+        { text: chatCopy(displayLocale, "checkTaskStatus"), payload: statusPath, type: "url" as const },
       ];
       writer.write({ type: "data-actions", data: nextActions });
       writer.write({ type: "finish", finishReason: "stop" });
@@ -259,6 +359,45 @@ function shouldUseAsyncTaskMode(body: ChatRequestBody): boolean {
   const envDefault = String(process.env.CHAT_ASYNC_DEFAULT || "0").trim() === "1";
   // Pure async by default: Vercel request path should not execute long-running generation.
   return envDefault || true;
+}
+
+function shouldAutoUseUploadedMaterials(params: { text: string; referencedAssets: string[] }): boolean {
+  if (!params.referencedAssets.length) return false;
+  const haystack = `${params.text}\n${params.referencedAssets.join("\n")}`;
+  if (
+    /[\u9644\u4ef6\u4e0a\u4f20\u6587\u6863\u6587\u4ef6\u8d44\u6599]/.test(haystack) &&
+    /(\u9644\u4ef6|\u4e0a\u4f20|\u6587\u6863|\u6587\u4ef6|\u8d44\u6599|\u6839\u636e)/.test(haystack)
+  ) {
+    return true;
+  }
+  return /attachment|attached|uploaded|upload|document|pdf|file|materials?|according to|based on|附件|附加|上传|文档|文件|资料|根据附件|根据文档/i.test(
+    haystack,
+  );
+}
+
+function buildUploadedMaterialsRequirementHint(params: { text: string }): string {
+  const locale = /[\u4e00-\u9fff]/.test(params.text) ? "zh-CN" : "en";
+  const form = {
+    siteType: "company",
+    contentSources: ["uploaded_files"],
+    targetAudience: ["infer_from_uploaded_materials"],
+    designTheme: ["professional"],
+    pageStructure: { mode: "multi", planning: "auto" },
+    functionalRequirements: ["contact_form"],
+    primaryGoal: ["brand_trust", "lead_generation"],
+    language: locale,
+    brandLogo: { mode: "text_mark" },
+    customNotes:
+      "The user uploaded detailed project materials. Treat the uploaded documents as the primary source of truth, infer audience, pages, content modules, conversion goals, and copy details from those materials, and only mark unresolved facts as content gaps.",
+  };
+  return [
+    "Auto-ingested uploaded materials requirement defaults:",
+    "",
+    "[Requirement Form]",
+    "```json",
+    JSON.stringify(form, null, 2),
+    "```",
+  ].join("\n");
 }
 
 function resolveAsyncRoundBudget(): number {
@@ -305,6 +444,22 @@ async function appendTimelineMessageBestEffort(input: {
   }
 }
 
+function findConfirmedPromptDraftMetadata(
+  timelineMessages: Awaited<ReturnType<typeof listChatTimelineMessages>>,
+  confirmedPrompt?: string | null,
+): Record<string, unknown> | undefined {
+  const normalizedPrompt = String(confirmedPrompt || "").trim();
+  for (let index = timelineMessages.length - 1; index >= 0; index -= 1) {
+    const item = timelineMessages[index];
+    const metadata = item.metadata && typeof item.metadata === "object" ? item.metadata : undefined;
+    if (!metadata || String(metadata.cardType || "") !== "prompt_draft") continue;
+    const storedPrompt = String((metadata as any).canonicalPrompt || "").trim();
+    if (normalizedPrompt && storedPrompt && storedPrompt !== normalizedPrompt) continue;
+    return metadata;
+  }
+  return undefined;
+}
+
 export async function POST(req: Request) {
   let body: ChatRequestBody;
 
@@ -320,6 +475,7 @@ export async function POST(req: Request) {
   if (!userText) {
     return errorStreamResponse("No user message found in request.", 400);
   }
+  const displayLocale = detectChatDisplayLocale(userText);
 
   try {
   const previousState = await getSession(chatId);
@@ -335,11 +491,12 @@ export async function POST(req: Request) {
       activeNextStep === "deploy";
     if (deployLocked) {
       return createTaskStreamResponse({
-        assistantText: "部署正在进行中，当前阶段已锁定输入。请等待部署完成后再继续修改或发布。",
+        assistantText: chatCopy(displayLocale, "deployLocked"),
         taskId: activeTask.id,
         chatId,
         status: activeTask.status,
         statusCode: 423,
+        displayLocale,
       });
     }
     const shouldQueuePendingEdit = activeExecutionMode !== "deploy" && !isDeployIntent(userText);
@@ -356,18 +513,22 @@ export async function POST(req: Request) {
       text: userText,
       ownerUserId: body.user_id || previousState.user_id,
       taskId: activeTask.id,
-      metadata: shouldQueuePendingEdit ? { cardType: "pending_edit", queuedForTaskId: activeTask.id } : undefined,
+      metadata: shouldQueuePendingEdit
+        ? { cardType: "pending_edit", queuedForTaskId: activeTask.id, locale: displayLocale }
+        : undefined,
     });
     const assistantText = shouldQueuePendingEdit
-      ? "当前任务仍在运行。本条修改已加入待处理队列，当前任务完成后会自动基于最新预览继续修正。"
-      : "A generation task is already running for this chat. Please wait for completion or check task status.";
+      ? chatCopy(displayLocale, "pendingEditQueued")
+      : chatCopy(displayLocale, "activeTaskRunning");
     await appendTimelineMessageBestEffort({
       chatId,
       role: "assistant",
       text: assistantText,
       ownerUserId: body.user_id || previousState.user_id,
       taskId: activeTask.id,
-      metadata: shouldQueuePendingEdit ? { cardType: "pending_edit_queued", queuedForTaskId: activeTask.id } : undefined,
+      metadata: shouldQueuePendingEdit
+        ? { cardType: "pending_edit_queued", queuedForTaskId: activeTask.id, locale: displayLocale }
+        : { locale: displayLocale },
     });
     await invalidateLaunchCenterRecentProjectsCache();
     return createTaskStreamResponse({
@@ -376,6 +537,7 @@ export async function POST(req: Request) {
       chatId,
       status: activeTask.status,
       statusCode: 202,
+      displayLocale,
     });
   }
 
@@ -383,6 +545,7 @@ export async function POST(req: Request) {
   const confirmedPrompt = extractConfirmedPrompt(userText);
   const normalizedUserText = confirmedPrompt || userText;
   const parsedCurrentInput = parseReferencedAssetsFromText(normalizedUserText);
+  const parsedRequirementForm = parseRequirementFormFromText(parsedCurrentInput.cleanText || normalizedUserText);
   const currentUserRequirementText = parsedCurrentInput.cleanText || normalizedUserText;
   const requestedSkillId = String(
     body.skill_id || (previousState.workflow_context as any)?.skillId || "website-generation-workflow",
@@ -405,6 +568,18 @@ export async function POST(req: Request) {
       "",
   ).trim();
   const timelineMessages = await listChatTimelineMessages(chatId, 120);
+  const confirmedPromptDraftMetadata = confirmedPrompt
+    ? findConfirmedPromptDraftMetadata(timelineMessages, confirmedPrompt)
+    : undefined;
+  const confirmedPromptControlManifest =
+    (confirmedPromptDraftMetadata?.promptControlManifest &&
+    typeof confirmedPromptDraftMetadata.promptControlManifest === "object"
+      ? confirmedPromptDraftMetadata.promptControlManifest
+      : undefined) || (previousState.workflow_context as any)?.promptControlManifest;
+  const confirmedPromptDraftText =
+    confirmedPrompt && typeof (confirmedPromptDraftMetadata as any)?.canonicalPrompt === "string"
+      ? String((confirmedPromptDraftMetadata as any)?.canonicalPrompt || "").trim()
+      : String(confirmedPrompt || "").trim();
   const historyUserMessagesRaw = timelineMessages
     .filter((item) => item.role === "user")
     .map((item) => String(item.text || ""));
@@ -416,8 +591,21 @@ export async function POST(req: Request) {
     historyUserMessages,
     currentUserText: currentUserRequirementText,
   });
-  const slots = buildRequirementSlots(aggregated.requirementText);
-  const requirementSpec = buildRequirementSpec(aggregated.requirementText, aggregated.sourceMessages);
+  const uploadedMaterialsRequirementHint = shouldAutoUseUploadedMaterials({
+    text: aggregated.requirementText,
+    referencedAssets,
+  })
+    ? buildUploadedMaterialsRequirementHint({ text: aggregated.requirementText })
+    : "";
+  const effectiveRequirementText = uploadedMaterialsRequirementHint
+    ? `${aggregated.requirementText}\n\n${uploadedMaterialsRequirementHint}`.trim()
+    : aggregated.requirementText;
+  const effectiveRequirementSourceMessages = uploadedMaterialsRequirementHint
+    ? [...aggregated.sourceMessages, uploadedMaterialsRequirementHint]
+    : aggregated.sourceMessages;
+  const slots = buildRequirementSlots(effectiveRequirementText);
+  const requirementSpec = buildRequirementSpec(effectiveRequirementText, effectiveRequirementSourceMessages);
+  const requiredSlotValidation = validateRequiredRequirementSlots(slots);
   const requirementPatchPlan = buildRequirementPatchPlan(currentUserRequirementText, aggregated.revision);
   const stage = deriveConversationStage({
     latestTaskStatus: latestTask?.status,
@@ -439,27 +627,56 @@ export async function POST(req: Request) {
     stage,
     decision,
   });
+  const requiresRequirementForm =
+    isWebsiteSkill(requestedSkillId) &&
+    stage === "drafting" &&
+    !confirmedPrompt &&
+    !requiredSlotValidation.passed;
+  const displayQuestion = localizedClarificationQuestion({
+    locale: displayLocale,
+    requiresRequirementForm,
+    question,
+  });
   const shouldBuildPromptDraft =
     isWebsiteSkill(requestedSkillId) &&
+    !confirmedPrompt &&
+    !requiresRequirementForm &&
     (decision.intent === "clarify" || decision.intent === "generate");
   const promptDraftResult = shouldBuildPromptDraft
     ? await buildPromptDraftWithResearch({
-        requirementText: aggregated.requirementText,
+        requirementText: effectiveRequirementText,
         slots,
+        referencedAssets,
+        ownerUserId: body.user_id || previousState.user_id,
+        projectId: chatId,
+        displayLocale,
       })
     : {
-        promptDraft: aggregated.requirementText,
+        canonicalPrompt: confirmedPrompt ? confirmedPromptDraftText || String(confirmedPrompt || "") : effectiveRequirementText,
         usedWebSearch: false,
         sources: [],
         researchSummary: "",
+        knowledgeProfile: undefined,
+        promptControlManifest: confirmedPromptControlManifest,
         draftMode: "template" as const,
         fallbackReason: `skipped_for_intent:${decision.intent}`,
         provider: undefined,
         model: undefined,
       };
-  const promptDraft = appendReferencedAssetsBlock(String(promptDraftResult.promptDraft || "").trim(), referencedAssets);
+  const canonicalPromptBase = String(promptDraftResult.canonicalPrompt || "").trim();
+  const canonicalPrompt = confirmedPrompt ? canonicalPromptBase : appendReferencedAssetsBlock(canonicalPromptBase, referencedAssets);
+  const promptControlManifest =
+    promptDraftResult.promptControlManifest ||
+    confirmedPromptControlManifest ||
+    (previousState.workflow_context as any)?.promptControlManifest;
+  const requiresPromptDraftConfirmation =
+    isWebsiteSkill(requestedSkillId) &&
+    stage === "drafting" &&
+    !confirmedPrompt &&
+    !requiresRequirementForm &&
+    (decision.intent === "clarify" || decision.intent === "generate");
 
-  if (decision.intent === "clarify") {
+  if (requiresRequirementForm) {
     await appendTimelineMessageBestEffort({
       chatId,
       role: "user",
@@ -469,10 +686,72 @@ export async function POST(req: Request) {
     await appendTimelineMessageBestEffort({
       chatId,
       role: "system",
-      text: `需求进度：${filled}/${slots.length} (${decision.completionPercent}%)`,
+      text: requirementProgressText(displayLocale, filled, slots.length, decision.completionPercent),
       ownerUserId: body.user_id || previousState.user_id,
       metadata: {
         cardType: "requirement_progress",
+        locale: displayLocale,
+        progress: {
+          completed: filled,
+          total: slots.length,
+          percent: decision.completionPercent,
+        },
+        slots,
+        required: requiredSlotValidation,
+      },
+    });
+    await appendTimelineMessageBestEffort({
+      chatId,
+      role: "assistant",
+      text: displayQuestion,
+      ownerUserId: body.user_id || previousState.user_id,
+      metadata: {
+        cardType: "requirement_form",
+        locale: displayLocale,
+        title: chatCopy(displayLocale, "requirementFormTitle"),
+        slots,
+        missingRequiredSlots: requiredSlotValidation.missingRequiredSlots,
+        nextSlot: requiredSlotValidation.nextSlot,
+        requirementSpec,
+        requirementRevision: aggregated.revision,
+        currentValues: requirementSpec,
+        parsedCurrentForm: parsedRequirementForm.formValues || null,
+      },
+    });
+    await appendTimelineMessageBestEffort({
+      chatId,
+      role: "assistant",
+      text: displayQuestion,
+      ownerUserId: body.user_id || previousState.user_id,
+      metadata: {
+        cardType: "intent_decision",
+        locale: displayLocale,
+        intent: "clarify",
+        confidence: decision.confidence,
+        reason: "required-slots-incomplete",
+        stage,
+        missingRequiredSlots: requiredSlotValidation.missingRequiredSlots,
+      },
+    });
+    await invalidateLaunchCenterRecentProjectsCache();
+    return createInfoStreamResponse(chatCopy(displayLocale, "requirementFormInfo"), 200);
+  }
+
+  if (decision.intent === "clarify" || requiresPromptDraftConfirmation) {
+    await appendTimelineMessageBestEffort({
+      chatId,
+      role: "user",
+      text: normalizedUserText,
+      ownerUserId: body.user_id || previousState.user_id,
+    });
+    await appendTimelineMessageBestEffort({
+      chatId,
+      role: "system",
+      text: requirementProgressText(displayLocale, filled, slots.length, decision.completionPercent),
+      ownerUserId: body.user_id || previousState.user_id,
+      metadata: {
+        cardType: "requirement_progress",
+        locale: displayLocale,
         progress: {
           completed: filled,
           total: slots.length,
@@ -486,20 +765,23 @@ export async function POST(req: Request) {
       role: "assistant",
       text:
         promptDraftResult.draftMode === "llm_web_search"
-          ? "已基于 LLM + Web Search 生成 Prompt 草稿，可继续补充，或直接发送“开始生成”。"
+          ? chatCopy(displayLocale, "promptDraftWeb")
           : promptDraftResult.draftMode === "llm"
-            ? "已基于 LLM 生成 Prompt 草稿，可继续补充，或直接发送“开始生成”。"
-            : "已更新需求草稿，可继续补充，或直接发送“开始生成”。",
+            ? chatCopy(displayLocale, "promptDraftLlm")
+            : chatCopy(displayLocale, "promptDraftTemplate"),
       ownerUserId: body.user_id || previousState.user_id,
       metadata: {
         cardType: "prompt_draft",
+        locale: displayLocale,
         draftMode: promptDraftResult.draftMode || null,
-        title: "网站生成 Prompt 草稿",
-        promptDraft,
+        title: chatCopy(displayLocale, "promptDraftTitle"),
+        canonicalPrompt,
         usedWebSearch: promptDraftResult.usedWebSearch,
         missingSlots: decision.missingSlots,
         researchSummary: promptDraftResult.researchSummary,
         researchSources: promptDraftResult.sources,
+        websiteKnowledgeProfile: promptDraftResult.knowledgeProfile || null,
+        promptControlManifest: promptControlManifest || null,
         requirementSpec,
         requirementRevision: aggregated.revision,
         supersededMessages: aggregated.supersededMessages,
@@ -507,28 +789,47 @@ export async function POST(req: Request) {
         draftProvider: promptDraftResult.provider || null,
         draftModel: promptDraftResult.model || null,
         draftFallbackReason: promptDraftResult.fallbackReason || null,
+        requiresConfirmation: true,
       },
     });
+    if (canonicalPrompt) {
+      await appendTimelineMessageBestEffort({
+        chatId,
+        role: "assistant",
+        text: chatCopy(displayLocale, "confirmPromptText"),
+        ownerUserId: body.user_id || previousState.user_id,
+        metadata: {
+          cardType: "confirm_generate",
+          locale: displayLocale,
+          label: chatCopy(displayLocale, "confirmPromptLabel"),
+          payload: `${CONFIRM_GENERATE_PREFIX}\n${canonicalPrompt}`,
+        },
+      });
+    }
     await appendTimelineMessageBestEffort({
       chatId,
       role: "assistant",
-      text: question,
+      text: requiresPromptDraftConfirmation
+        ? chatCopy(displayLocale, "promptDraftReady")
+        : displayQuestion,
       ownerUserId: body.user_id || previousState.user_id,
       metadata: {
         cardType: "intent_decision",
+        locale: displayLocale,
         intent: decision.intent,
         confidence: decision.confidence,
         reason: decision.reason,
         stage,
         assumedDefaults: decision.assumedDefaults,
+        requiresPromptDraftConfirmation,
       },
     });
     await invalidateLaunchCenterRecentProjectsCache();
+    if (requiresPromptDraftConfirmation) {
+      return createInfoStreamResponse(chatCopy(displayLocale, "promptDraftWaiting"), 200);
+    }
 
-    return createInfoStreamResponse(
-      "已进入需求梳理阶段。请继续补充需求，或直接输入“开始生成”触发任务。",
-      200,
-    );
+    return createInfoStreamResponse(chatCopy(displayLocale, "clarificationInfo"), 200);
   }
 
   const deployRequested = decision.intent === "deploy" || isDeployIntent(normalizedUserText);
@@ -540,7 +841,7 @@ export async function POST(req: Request) {
       : "generate";
   const runtimeUserText =
     executionMode === "generate" && isWebsiteSkill(requestedSkillId)
-      ? promptDraft
+      ? canonicalPrompt
       : appendReferencedAssetsBlock(currentUserRequirementText, referencedAssets);
 
   const inputState: AgentState = {
@@ -580,24 +881,26 @@ export async function POST(req: Request) {
       requirementRevision: aggregated.revision,
       supersededMessages: aggregated.supersededMessages,
       correctionSummary: aggregated.correctionSummary,
-      requirementDraft: promptDraft,
-      requirementAggregatedText: aggregated.requirementText,
+      canonicalPrompt,
+      requirementAggregatedText: effectiveRequirementText,
+      promptControlManifest,
       latestUserText: currentUserRequirementText,
       latestUserTextRaw: normalizedUserText,
       referencedAssets,
       assumedDefaults: decision.assumedDefaults,
-    },
+      displayLocale,
+    } as any,
     messages: [...(previousState.messages || []), new HumanMessage({ content: runtimeUserText })],
   };
 
   if (!useAsyncTaskMode) {
-    return errorStreamResponse("Synchronous generation path is disabled. Use async task mode.", 409);
+    return errorStreamResponse(chatCopy(displayLocale, "syncDisabled"), 409);
   }
 
   const acceptedMessageByMode: Record<"generate" | "refine" | "deploy", string> = {
-    generate: "Generation task accepted. Queued for background worker execution.",
-    refine: "Refine task accepted. Will adjust the latest version in background.",
-    deploy: "Deploy task accepted. Queued for background deployment.",
+    generate: chatCopy(displayLocale, "acceptedGenerate"),
+    refine: chatCopy(displayLocale, "acceptedRefine"),
+    deploy: chatCopy(displayLocale, "acceptedDeploy"),
   };
   const acceptedMessage = acceptedMessageByMode[executionMode];
 
@@ -612,10 +915,10 @@ export async function POST(req: Request) {
     },
     progress: {
       stage: "queued",
-      stageMessage: `${executionMode} task queued. Waiting for background worker...`,
+      stageMessage: localizedQueuedStageMessage(displayLocale, executionMode),
       skillId: requestedSkillId,
       provider: String(process.env.LLM_PROVIDER || "aiberm"),
-      model: String(process.env.LLM_MODEL || process.env.LLM_MODEL_AIBERM || "openai/gpt-5.3-codex"),
+      model: String(process.env.LLM_MODEL || process.env.LLM_MODEL_AIBERM || "openai/gpt-5.4-mini"),
       attempt: 1,
       startedAt: new Date().toISOString(),
       round: 0,
@@ -638,7 +941,7 @@ export async function POST(req: Request) {
     text: acceptedMessage,
     ownerUserId: body.user_id || previousState.user_id,
     taskId: task.id,
-    metadata: { status: "queued", executionMode, intent: decision.intent, stage },
+    metadata: { status: "queued", executionMode, intent: decision.intent, stage, locale: displayLocale },
   });
   await invalidateLaunchCenterRecentProjectsCache();
 
@@ -648,12 +951,13 @@ export async function POST(req: Request) {
     chatId,
     status: "queued",
     statusCode: 202,
+    displayLocale,
   });
   } catch (error) {
     if (isTransientStorageConnectivityError(error)) {
-      return errorStreamResponse("Chat storage is temporarily unavailable. Please retry in a few seconds.", 503);
+      return errorStreamResponse(chatCopy(displayLocale, "storageUnavailable"), 503);
     }
     const message = formatUnknownError(error);
-    return errorStreamResponse(message || "Failed to process chat request.", 500);
+    return errorStreamResponse(message || chatCopy(displayLocale, "requestFailed"), 500);
   }
 }

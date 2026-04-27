@@ -64,6 +64,43 @@ Support and prioritize the dynamic style library at:
 
 Quality gate: Critical information complete OR confidence > 0.8.
 
+### Phase 0.25: Canonical Prompt Confirmation Gate (Mandatory)
+
+Before creating or running any website generation task, produce a complete Canonical Website Prompt from the enriched requirements and wait for user confirmation.
+
+The Canonical Website Prompt must be a rich markdown generation brief, similar to a senior strategist's page-by-page website prompt. It must include:
+
+1. The user's explicit constraints, source evidence, and marked assumptions.
+2. Overall website positioning, target audience, information architecture, and conversion goals.
+3. Detailed page-by-page prompts with route-specific purpose, source facts, section order, copy direction, components, interactions, and mobile/accessibility notes.
+4. General design rules: color, typography, spacing, layout, responsive behavior, states, and motion.
+5. Special components and functional requirements that are supported by the runtime.
+6. Fixed output files and routes in a thin machine-readable Prompt Control Manifest.
+   - Include a `Prompt Control Manifest (Machine Readable)` JSON block with `routes`, `navLabels`, and `files`.
+   - Treat this JSON block as the authoritative route/file handoff only.
+   - Do not compress page content, copy, or design semantics into a structured generation spec.
+7. The page differentiation contract and shared shell/footer contract from this workflow.
+
+Generation must not start from the raw user request alone. Generation may start only after the user has confirmed the Canonical Website Prompt or provided an equivalent confirmed prompt payload. The confirmed Canonical Website Prompt becomes the source of truth for downstream planning and implementation. The Prompt Control Manifest is only used to split files and validate route completeness.
+
+Quality gate: A confirmed Canonical Website Prompt exists before task creation or any file generation.
+
+### Phase 0.3: Route Planning Policy (Mandatory)
+
+Treat the route plan as a workflow artifact, not as free-form prose extraction.
+
+1. Derive routes first from the confirmed Canonical Website Prompt's `Prompt Control Manifest (Machine Readable)` JSON block.
+2. If the JSON block is unavailable, derive routes from structured requirement state (`requirementSpec.pageStructure`) before any prose parsing.
+3. Derive routes from prose only as a fallback, and only from explicit user navigation, confirmed sitemap, uploaded/source material structure, or the workflow's automatic planning output.
+4. Do not convert prompt requirement slots, form fields, page modules, shell regions, or implementation notes into routes. These are metadata or components, not pages.
+5. When the user selects multi-page automatic planning but cannot provide a structure, create a compact default sitemap first: `/`, `/custom-solutions`, `/cases`, `/contact`, `/about`.
+6. Add `/products`, `/news`, or `/downloads` only when the requirement, uploaded files, domain crawl, or confirmed content clearly supports those content families.
+7. Keep route count bounded. Prefer a complete 5-7 page site with deep content over many thin pages.
+8. Keep `skill.json` route filters as defensive fallback only. Do not depend on enumerating every invalid label as the primary route planning mechanism.
+9. Navigation order is constrained: keep `/` first, preserve the relative order of business/content pages, place the contact page second-to-last, and place the about page last.
+
+Quality gate: The fixed route list contains user-facing website pages only. It must not include prompt-field routes such as `/target-audience`, `/primary-goal`, `/content-modules`, `/conversion-goals`, `/navigation`, `/hero`, or `/core-module-entries`.
+
 ### Phase 0.5: Style Library Load and Indexing
 
 1. Dynamically load awesome-design-md.
@@ -143,6 +180,33 @@ Quality gate:
 
 Quality gate: Design-system compliance rate > 90%.
 
+#### Page Differentiation Contract (Mandatory)
+
+For multi-page websites, every route must be generated from the confirmed Canonical Website Prompt and its own route-specific intent. Shared design tokens, header, footer, navigation, and global CSS/JS are allowed, but the body composition cannot be copied from another page with only text replaced.
+
+Requirements:
+
+1. Generate only the fixed output files declared in the confirmed Canonical Website Prompt.
+2. Each HTML page must derive its section sequence, content depth, and interactions from the Canonical Website Prompt, uploaded/source content, and route intent.
+3. Any two inner pages must not have the same section class sequence, card type sequence, or primary body layout.
+4. Section class names, headings, card types, and interactions must reflect the actual page purpose. Do not force preset industry modules when the source content defines a different site.
+5. Navigation links must target only declared routes, and the current page should expose an active state.
+
+If a page cannot be differentiated from another route, stop and revise the route intent or Canonical Website Prompt content before emitting the file.
+
+#### Shared Shell/Footer Contract (Mandatory)
+
+Every HTML page must contain a complete `header`, `main`, and `footer` structure. The footer is part of the shared site shell and must not appear only on the home page.
+
+Footer requirements:
+
+1. Do not reduce inner-page footers to a single copyright line.
+2. Include brand summary, primary navigation links, product or solution links, a contact CTA or contact channel, and copyright.
+3. Keep footer structure consistent across pages while allowing page-local active states and copy localization.
+4. Ensure footer copy participates in bilingual content when EN/ZH support is enabled.
+
+Missing or degenerate footers are generation failures, not polish issues.
+
 ### Phase 3: Visual Refinement
 
 1. Unify visual hierarchy and rhythm.
@@ -160,6 +224,11 @@ Quality gate: Visual consistency > 85%.
 5. Verify image placement policy:
    - Successfully generated images are correctly inserted and rendered.
    - Failed generation tasks are marked `passed` and treated as non-blocking.
+6. Verify Canonical Website Prompt adherence:
+   - All fixed output files exist.
+   - Every route follows its page-specific intent and confirmed Canonical Website Prompt content.
+   - Inner pages are not repeated templates with swapped text.
+   - Every HTML page includes the complete shared shell/footer contract.
 
 Quality gate: All checks pass.
 
@@ -300,3 +369,6 @@ Phase 1.5 checklist:
 - Ignoring responsive image constraints
 - Partial bilingual support (must be site-wide for critical copy)
 - Hardcoding EN/ZH strings without unified i18n key management
+- Starting website generation before Canonical Website Prompt confirmation
+- Reusing the same inner-page body template across routes
+- Omitting a complete footer on any HTML page
