@@ -11,7 +11,7 @@ export default function AuthCodeError() {
         </div>
         <h2 className="text-2xl font-bold text-slate-900 mb-2">Authentication Error</h2>
         <p className="text-slate-500 mb-8">
-          We couldn't sign you in. This usually happens if the login link expired or was opened in a different browser.
+          We couldn&apos;t sign you in. This usually happens if the login link expired or was opened in a different browser.
         </p>
         <Link 
           href="/login" 

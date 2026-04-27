@@ -160,7 +160,10 @@ const QA_MIN_SCORE = Math.max(1, Number(process.env.SKILL_QA_MIN_SCORE || 90));
 const PAGE_CONTEXT_MAX_CHARS = Math.max(1200, Number(process.env.SKILL_PAGE_CONTEXT_MAX_CHARS || 6500));
 const PAGE_CONTEXT_MAX_PAGES = Math.max(1, Number(process.env.SKILL_PAGE_CONTEXT_MAX_PAGES || 4));
 const PAGE_CONTEXT_MAX_TERMS = Math.max(6, Number(process.env.SKILL_PAGE_CONTEXT_MAX_TERMS || 24));
-const USE_SKILL_TOOL_MODE = String(process.env.SKILL_TOOL_MODE || "1").trim() !== "0";
+function shouldUseSkillToolMode() {
+  if (String(process.env.SKILL_TOOL_FORCE_LOCAL || "").trim() === "1") return false;
+  return String(process.env.SKILL_TOOL_MODE || "1").trim() !== "0";
+}
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -901,9 +904,10 @@ function resolveDeployProjectName(project: any, state: AgentState, chatId: strin
   return merged.slice(0, 58);
 }
 
-type DeploySmokeResult = {
+export type DeploySmokeResult = {
   status: "passed" | "failed" | "skipped";
   checks: Array<{ name: string; passed: boolean; message?: string }>;
+  url?: string;
 };
 
 function isRemoteDeploySmokeEnabled(): boolean {
@@ -916,6 +920,19 @@ function evaluateDeploySmoke(checks: DeploySmokeResult["checks"]): DeploySmokeRe
     status: checks.every((check) => check.passed) ? "passed" : "failed",
     checks,
   };
+}
+
+function uniqueDeploySmokeUrls(urls: string[]): string[] {
+  const seen = new Set<string>();
+  return urls
+    .map((url) => String(url || "").trim())
+    .filter(Boolean)
+    .filter((url) => {
+      const key = url.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
 
 function runPreDeploySmoke(bundle: { manifest: Record<string, string>; fileEntries: Array<{ path?: string; content?: string; type?: string }> }): DeploySmokeResult {
@@ -958,7 +975,51 @@ function runPreDeploySmoke(bundle: { manifest: Record<string, string>; fileEntri
   return evaluateDeploySmoke(checks);
 }
 
-async function runPostDeploySmoke(url: string): Promise<DeploySmokeResult> {
+async function fetchPostDeploySmokeCandidate(url: string, timeoutMs: number): Promise<DeploySmokeResult> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      signal: controller.signal,
+      headers: { "user-agent": "shpitto-deploy-smoke/1.0" },
+    });
+    const text = await res.text().catch(() => "");
+    const result = evaluateDeploySmoke([
+      {
+        name: "http_status",
+        passed: res.status >= 200 && res.status < 400,
+        message: `HTTP ${res.status} at ${url}`,
+      },
+      {
+        name: "html_body",
+        passed: /<body[\s>]/i.test(text),
+        message: `Response should contain an HTML body at ${url}`,
+      },
+    ]);
+    return { ...result, url };
+  } catch (error) {
+    return {
+      status: "failed",
+      url,
+      checks: [
+        {
+          name: "remote_fetch",
+          passed: false,
+          message: `${url}: ${String((error as any)?.message || error || "fetch failed")}`,
+        },
+      ],
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function runPostDeploySmoke(
+  url: string,
+  options: { fallbackUrls?: string[]; maxAttempts?: number; retryMs?: number } = {},
+): Promise<DeploySmokeResult> {
   const target = String(url || "").trim();
   if (!target) {
     return { status: "failed", checks: [{ name: "url_present", passed: false, message: "Deployment URL is empty" }] };
@@ -967,39 +1028,40 @@ async function runPostDeploySmoke(url: string): Promise<DeploySmokeResult> {
     return {
       status: "skipped",
       checks: [{ name: "remote_fetch", passed: true, message: "Skipped because Cloudflare credentials are not configured" }],
+      url: target,
     };
   }
-  const controller = new AbortController();
+  const candidates = uniqueDeploySmokeUrls([target, ...(options.fallbackUrls || [])]);
+  const maxAttempts = Math.max(1, Number(options.maxAttempts || process.env.DEPLOY_SMOKE_MAX_ATTEMPTS || 8));
+  const retryMs = Math.max(0, Number(options.retryMs ?? process.env.DEPLOY_SMOKE_RETRY_MS ?? 5_000));
   const timeoutMs = Math.max(2_000, Number(process.env.DEPLOY_SMOKE_TIMEOUT_MS || 15_000));
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(target, {
-      method: "GET",
-      redirect: "follow",
-      signal: controller.signal,
-      headers: { "user-agent": "shpitto-deploy-smoke/1.0" },
-    });
-    const text = await res.text().catch(() => "");
-    return evaluateDeploySmoke([
-      {
-        name: "http_status",
-        passed: res.status >= 200 && res.status < 400,
-        message: `HTTP ${res.status}`,
-      },
-      {
-        name: "html_body",
-        passed: /<body[\s>]/i.test(text),
-        message: "Response should contain an HTML body",
-      },
-    ]);
-  } catch (error) {
-    return {
-      status: "failed",
-      checks: [{ name: "remote_fetch", passed: false, message: String((error as any)?.message || error || "fetch failed") }],
-    };
-  } finally {
-    clearTimeout(timer);
+
+  let lastResult: DeploySmokeResult | null = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    for (const candidate of candidates) {
+      const result = await fetchPostDeploySmokeCandidate(candidate, timeoutMs);
+      if (result.status === "passed") {
+        return result;
+      }
+      lastResult = {
+        ...result,
+        checks: result.checks.map((check) => ({
+          ...check,
+          message: `${check.message || "failed"} (attempt ${attempt}/${maxAttempts})`,
+        })),
+      };
+    }
+    if (attempt < maxAttempts && retryMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, retryMs));
+    }
   }
+
+  return (
+    lastResult || {
+      status: "failed",
+      checks: [{ name: "remote_fetch", passed: false, message: "No deployment URL candidates were available" }],
+    }
+  );
 }
 
 function detectLocale(text: string, preferred?: string): "zh-CN" | "en" {
@@ -1007,6 +1069,60 @@ function detectLocale(text: string, preferred?: string): "zh-CN" | "en" {
   if (override.startsWith("zh")) return "zh-CN";
   if (override.startsWith("en")) return "en";
   return /[\u4e00-\u9fff]/.test(text) ? "zh-CN" : "en";
+}
+
+function extractStateMessageText(messages: unknown): string {
+  if (!Array.isArray(messages)) return "";
+  return messages
+    .map((message: any) => {
+      const content = message?.content;
+      if (typeof content === "string") return content;
+      if (Array.isArray(content)) {
+        return content
+          .map((part) => {
+            if (typeof part === "string") return part;
+            return String(part?.text || part?.content || "");
+          })
+          .join(" ");
+      }
+      return String(content || "");
+    })
+    .join("\n");
+}
+
+function buildDomainConfigurationGuidance(params: {
+  liveUrl: string;
+  deploymentHost: string;
+  locale: "zh-CN" | "en";
+}): string {
+  const liveHost = (() => {
+    try {
+      return new URL(params.liveUrl).host;
+    } catch {
+      return "";
+    }
+  })();
+  const cnameTarget = params.deploymentHost || liveHost || "your-project.pages.dev";
+  if (params.locale === "zh-CN") {
+    return [
+      "## 域名配置指导",
+      "",
+      "1. 在当前项目的部署预览区点击域名配置入口，或进入 Cloudflare Pages 对应项目的 Custom domains。",
+      "2. 添加你的自定义域名，例如 `www.example.com` 或根域名 `example.com`。",
+      `3. 如果 DNS 不在 Cloudflare，为 \`www\` 或子域名添加 CNAME，目标填写 \`${cnameTarget}\`。`,
+      "4. 如果配置根域名，按 Cloudflare Pages 提示使用 CNAME Flattening，或将 DNS 托管迁移到 Cloudflare。",
+      "5. 等待域名状态和 SSL 证书变为 Active 后，打开自定义域名验证站点是否可访问。",
+    ].join("\n");
+  }
+  return [
+    "## Domain Configuration Guide",
+    "",
+    "1. Use the domain configuration entry in the deployment preview area, or open the Cloudflare Pages project and go to Custom domains.",
+    "2. Add your custom domain, for example `www.example.com` or the apex domain `example.com`.",
+    `3. If DNS is hosted outside Cloudflare, create a CNAME for \`www\` or the subdomain pointing to \`${cnameTarget}\`.`,
+    "4. For an apex/root domain, follow Cloudflare Pages guidance for CNAME Flattening or move DNS hosting to Cloudflare.",
+    "5. Wait until the domain and SSL certificate are Active, then open the custom domain to verify the site.",
+  ].join("\n");
 }
 
 function stripMarkdownCodeFences(raw: string): string {
@@ -2586,7 +2702,7 @@ async function runLegacySkillRuntimeExecutor(params: RunSkillRuntimeExecutorPara
 }
 
 export async function runSkillRuntimeExecutor(params: RunSkillRuntimeExecutorParams): Promise<SkillRuntimeExecutionSummary> {
-  if (USE_SKILL_TOOL_MODE) {
+  if (shouldUseSkillToolMode()) {
     const summary = await runSkillToolExecutor(params as any);
     return {
       state: summary.state,
@@ -2915,7 +3031,8 @@ async function runDeployOnlyTask(params: {
     await cf.createProject(projectName);
     const deployment = await cf.uploadDeployment(projectName, bundle);
     const deployedUrl = String((deployment as any)?.result?.url || `https://${projectName}.pages.dev`);
-    const postDeploySmoke = await runPostDeploySmoke(deployedUrl);
+    const productionUrl = `https://${projectName}.pages.dev`;
+    const postDeploySmoke = await runPostDeploySmoke(deployedUrl, { fallbackUrls: [productionUrl] });
     if (postDeploySmoke.status === "failed") {
       await failChatTask(
         taskId,
@@ -2926,11 +3043,12 @@ async function runDeployOnlyTask(params: {
       );
       return;
     }
+    const liveUrl = postDeploySmoke.url || deployedUrl;
 
     if (ownerUserId) {
       try {
         dbProjectId = await saveProjectState(ownerUserId, deployProject, inputState.access_token, dbProjectId || chatId);
-        await upsertProjectSiteBinding(dbProjectId || chatId, ownerUserId, deployedUrl, {
+        await upsertProjectSiteBinding(dbProjectId || chatId, ownerUserId, liveUrl, {
           analyticsProvider: "cloudflare_web_analytics",
           analyticsStatus,
           analyticsLastSyncAt: analyticsSite ? nowIso() : null,
@@ -2946,7 +3064,7 @@ async function runDeployOnlyTask(params: {
         );
         await recordDeployment(
           dbProjectId || chatId,
-          deployedUrl,
+          liveUrl,
           "production",
           inputState.access_token,
           r2BundlePrefix || undefined,
@@ -2973,8 +3091,17 @@ async function runDeployOnlyTask(params: {
       );
     }
 
+    const deployLocale = detectLocale(
+      extractStateMessageText(inputState.messages),
+      (inputState.workflow_context as any)?.preferredLocale,
+    );
+    const domainGuidance = buildDomainConfigurationGuidance({
+      liveUrl,
+      deploymentHost,
+      locale: deployLocale,
+    });
     const deploymentMessageParts = [
-      `Deployment successful: ${deployedUrl}`,
+      deployLocale === "zh-CN" ? `部署成功：${liveUrl}` : `Deployment successful: ${liveUrl}`,
       publishedAssetVersion ? `(Published assets ${publishedAssetVersion})` : "",
       analyticsStatus === "active"
         ? "(Cloudflare analytics enabled)"
@@ -2982,15 +3109,17 @@ async function runDeployOnlyTask(params: {
           ? `(Analytics pending: ${analyticsWarning})`
           : "(Analytics pending)",
       `(Smoke: pre=${preDeploySmoke.status}, post=${postDeploySmoke.status})`,
+      "",
+      domainGuidance,
     ].filter(Boolean);
-    const deploymentMessage = deploymentMessageParts.join(" ");
+    const deploymentMessage = deploymentMessageParts.join("\n");
 
     const nextState: AgentState = {
       ...inputState,
       phase: "end",
       site_artifacts: deployProject,
       project_json: deployProject,
-      deployed_url: deployedUrl,
+      deployed_url: liveUrl,
       db_project_id: dbProjectId || chatId,
       workflow_context: {
         ...(inputState.workflow_context || {}),
@@ -3011,7 +3140,7 @@ async function runDeployOnlyTask(params: {
           id: crypto.randomUUID(),
           content: deploymentMessage,
           additional_kwargs: {
-            actions: [{ text: "View Live Site", payload: deployedUrl, type: "url" }],
+            actions: [{ text: "View Live Site", payload: liveUrl, type: "url" }],
           },
         }),
       ],
@@ -3022,9 +3151,9 @@ async function runDeployOnlyTask(params: {
     const elapsedMs = Date.now() - startedAt;
     const mergedResult: ChatTaskResult = {
       assistantText: deploymentMessage,
-      actions: [{ text: "View Live Site", payload: deployedUrl, type: "url" }],
+      actions: [{ text: "View Live Site", payload: liveUrl, type: "url" }],
       phase: "end",
-      deployedUrl,
+      deployedUrl: liveUrl,
       internal: {
         workerId,
         inputState: buildSessionSnapshot(nextState),

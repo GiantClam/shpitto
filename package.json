@@ -23,5 +23,23 @@
     "@langchain/langgraph": "^1.0.7",
     "@langchain/openai": "^1.2.0",
     "zod-to-json-schema": "^3.25.1"
-  }
+  },
+  "version": "1.0.0",
+  "description": "This repository contains the source code for Phase 1 (Industry-v0) of the Shpitto platform.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GiantClam/shpitto.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/GiantClam/shpitto/issues"
+  },
+  "homepage": "https://github.com/GiantClam/shpitto#readme"
 }

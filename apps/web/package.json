@@ -13,7 +13,7 @@
     "ops:wa:cleanup": "node --experimental-strip-types scripts/wa-site-cleanup.ts",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint . --ext .ts,.tsx --ignore-pattern .next --ignore-pattern .tmp --ignore-pattern node_modules",
     "test": "vitest run",
     "test:watch": "vitest"
   },

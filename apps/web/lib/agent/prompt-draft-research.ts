@@ -820,7 +820,7 @@ export async function buildPromptDraftWithResearch(params: {
   let researchSummary = "";
   let webSearchFailureReason = "";
   let knowledgeProfile: WebsiteKnowledgeProfile | undefined;
-  const useKnowledgeProfile = (profile: WebsiteKnowledgeProfile) => {
+  const applyResolvedKnowledgeProfile = (profile: WebsiteKnowledgeProfile) => {
     knowledgeProfile = profile;
     sources = mapKnowledgeSourcesToPromptSources(profile);
     researchSummary = profile.summary;
@@ -864,7 +864,7 @@ export async function buildPromptDraftWithResearch(params: {
           ownerUserId: params.ownerUserId,
           projectId: params.projectId,
         });
-        useKnowledgeProfile(knowledgeProfile);
+        applyResolvedKnowledgeProfile(knowledgeProfile);
         if (
           !hasWebEvidence(knowledgeProfile) &&
           !knowledgeProfile.sources.some((source) => source.type === "uploaded_file")
@@ -876,7 +876,7 @@ export async function buildPromptDraftWithResearch(params: {
         try {
           const uploadedOnlyProfile = await buildUploadedOnlyKnowledgeProfile();
           if (uploadedOnlyProfile) {
-            useKnowledgeProfile(uploadedOnlyProfile);
+            applyResolvedKnowledgeProfile(uploadedOnlyProfile);
             webSearchFailureReason = `web_search_failed:${searchFailureReason};uploaded_sources_used`;
           } else {
             webSearchFailureReason = searchFailureReason;
@@ -891,7 +891,7 @@ export async function buildPromptDraftWithResearch(params: {
     webSearchFailureReason = "chat_draft_web_search_disabled";
     if (params.referencedAssets?.length) {
       const uploadedOnlyProfile = await buildUploadedOnlyKnowledgeProfile();
-      if (uploadedOnlyProfile) useKnowledgeProfile(uploadedOnlyProfile);
+      if (uploadedOnlyProfile) applyResolvedKnowledgeProfile(uploadedOnlyProfile);
     }
   }
 

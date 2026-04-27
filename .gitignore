@@ -62,3 +62,4 @@ test-dist
 .tmp/
 
 .vercel
+.gstack/
