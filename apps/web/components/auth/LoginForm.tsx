@@ -31,14 +31,18 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
     setLoading(true);
     setMessage(null);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const response = await fetch("/auth/password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = (await response.json().catch(() => ({}))) as { error?: string };
 
-    if (error) {
-      setMessage({ type: "error", text: error.message });
+    if (!response.ok) {
+      setMessage({ type: "error", text: data.error || "Invalid login credentials" });
       setLoading(false);
     } else {
-      router.push(nextPath);
-      router.refresh();
+      window.location.assign(nextPath);
     }
   };
 

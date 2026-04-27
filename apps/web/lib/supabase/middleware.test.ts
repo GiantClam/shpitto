@@ -42,6 +42,15 @@ describe('supabase middleware', () => {
     expect(mocks.createServerClient).not.toHaveBeenCalled()
   })
 
+  it('allows public auth and blog entry routes without an existing session cookie', async () => {
+    const authResponse = await updateSession(new NextRequest('http://localhost/auth/password'))
+    const blogResponse = await updateSession(new NextRequest('http://localhost/blog'))
+
+    expect(authResponse.status).toBe(200)
+    expect(blogResponse.status).toBe(200)
+    expect(mocks.createServerClient).not.toHaveBeenCalled()
+  })
+
   it('does not warn for missing sessions on public paths with stale auth cookies', async () => {
     const sessionError = new Error('Auth session missing!')
     sessionError.name = 'AuthSessionMissingError'
