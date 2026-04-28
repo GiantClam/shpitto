@@ -17,7 +17,7 @@ export function BlogSection({ locale = "en" }: { locale?: Locale }) {
       slug: "apex-robotics-case-study",
       date: "Nov 02, 2025",
       author: "Mike Ross",
-      image: "https://images.unsplash.com/photo-1565514020176-dbf227780065?auto=format&fit=crop&q=80&w=800",
+      image: "https://images.unsplash.com/photo-1582719188393-bb71ca45dbb9?auto=format&fit=crop&q=80&w=800",
     },
     {
       ...copy.posts[2],

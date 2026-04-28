@@ -19,7 +19,7 @@ export default function BlogIndexPage() {
       date: "Nov 02, 2025",
       author: "Mike Ross",
       category: "Case Study",
-      image: "https://images.unsplash.com/photo-1565514020176-dbf227780065?auto=format&fit=crop&q=80&w=800"
+      image: "https://images.unsplash.com/photo-1582719188393-bb71ca45dbb9?auto=format&fit=crop&q=80&w=800"
     },
     {
       title: "SEO for Manufacturers: 5 Key Strategies for 2026",
@@ -37,7 +37,7 @@ export default function BlogIndexPage() {
         date: "Nov 20, 2025",
         author: "David Kim",
         category: "Design",
-        image: "https://images.unsplash.com/photo-1537462713205-e512d5b4d849?auto=format&fit=crop&q=80&w=800"
+        image: "https://images.unsplash.com/photo-1497215842964-222b430dc094?w=900&h=600&fit=crop"
     },
     {
         title: "The ROI of Speed: Why Site Performance Matters in B2B",
