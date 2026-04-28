@@ -9,13 +9,15 @@ import { BrandLogo } from "@/components/brand/BrandLogo";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { getLandingCopy, type Locale } from "@/lib/i18n";
 
+const POST_LOGIN_PATH = "/launch-center";
+
 export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
   const [locale, setLocale] = useState<Locale>(initialLocale);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
-  const [nextPath, setNextPath] = useState("/chat");
+  const [nextPath, setNextPath] = useState(POST_LOGIN_PATH);
   const [mode, setMode] = useState<"signin" | "forgot">("signin");
   const router = useRouter();
 
@@ -23,9 +25,7 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
   const copy = getLandingCopy(locale).login;
 
   useEffect(() => {
-    const nextParam = String(new URLSearchParams(window.location.search).get("next") || "/chat");
-    const safeNext = nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/chat";
-    setNextPath(safeNext);
+    setNextPath(POST_LOGIN_PATH);
   }, []);
 
   const handleEmailLogin = async (event: React.FormEvent) => {
@@ -44,7 +44,7 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
       setMessage({ type: "error", text: data.error || "Invalid login credentials" });
       setLoading(false);
     } else {
-      window.location.assign(nextPath);
+      window.location.assign(POST_LOGIN_PATH);
     }
   };
 
@@ -55,7 +55,7 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+          redirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(POST_LOGIN_PATH)}`,
           skipBrowserRedirect: true,
         },
       });
