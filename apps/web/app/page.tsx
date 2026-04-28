@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Zap } from "lucide-react";
 import { Hero } from "@/components/landing/Hero";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { EfficiencySection } from "@/components/landing/EfficiencySection";
 import { VisualQualitySection } from "@/components/landing/VisualQualitySection";
 import { BlogSection } from "@/components/landing/BlogSection";
@@ -28,10 +29,10 @@ export default async function LandingPage() {
         <VisualQualitySection locale={locale} />
         <BlogSection locale={locale} />
 
-        <section className="relative overflow-hidden border-y border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[var(--shp-bg)] py-32">
-          <div className="absolute inset-0 bg-[radial-gradient(680px_320px_at_50%_20%,color-mix(in_oklab,var(--shp-primary)_20%,transparent),transparent_70%)]"></div>
+        <section className="relative overflow-hidden border-y border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg-soft)_90%,white_10%)] py-32">
+          <div className="absolute inset-0 bg-[radial-gradient(680px_320px_at_50%_20%,color-mix(in_oklab,var(--shp-primary)_16%,transparent),transparent_70%)]"></div>
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-[color-mix(in_oklab,var(--shp-bg)_96%,black_4%)] via-transparent to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-[color-mix(in_oklab,var(--shp-bg-soft)_96%,white_4%)] via-transparent to-transparent"></div>
 
           <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
             <h2 className="mb-8 text-4xl font-bold tracking-tight text-[var(--shp-text)] lg:text-6xl">{copy.finalCta.title}</h2>
@@ -46,23 +47,18 @@ export default async function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_82%,black_18%)] py-16 text-sm text-[var(--shp-muted)]">
+      <footer className="border-t border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg-soft)_92%,white_8%)] py-16 text-sm text-[var(--shp-muted)]">
         <div className="mx-auto mb-12 grid max-w-7xl gap-12 px-6 md:grid-cols-4">
           <div className="col-span-1">
-            <div className="mb-6 flex items-center gap-2 text-[var(--shp-text)]">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--shp-primary)] text-lg font-black text-black">
-                S
-              </div>
-              <span className="text-xl font-bold">Shpitto</span>
-            </div>
+            <BrandLogo variant="full" className="mb-6 shrink-0" />
             <p className="mb-6 leading-relaxed">
               {copy.footer.description}
             </p>
             <div className="flex gap-4">
-              <div className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--shp-surface)_78%,transparent)] hover:bg-[var(--shp-primary)] hover:text-black">
+              <div className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--shp-surface)_86%,transparent)] hover:bg-[var(--shp-primary)] hover:text-white">
                 X
               </div>
-              <div className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--shp-surface)_78%,transparent)] hover:bg-[var(--shp-primary)] hover:text-black">
+              <div className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--shp-surface)_86%,transparent)] hover:bg-[var(--shp-primary)] hover:text-white">
                 In
               </div>
             </div>

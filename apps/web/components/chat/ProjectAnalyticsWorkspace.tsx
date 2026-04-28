@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SignOutButton } from "@/components/auth/SignOutButton";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import {
   Activity,
   ArrowLeft,
@@ -119,10 +120,10 @@ function rangeToWindow(range: "7d" | "30d") {
 }
 
 function statusTone(status: AnalyticsPayload["status"]): string {
-  if (status === "active") return "text-emerald-200 bg-emerald-500/14 border-emerald-400/40";
-  if (status === "degraded") return "text-amber-200 bg-amber-500/14 border-amber-400/40";
-  if (status === "not_configured") return "text-rose-200 bg-rose-500/14 border-rose-400/40";
-  return "text-sky-200 bg-sky-500/14 border-sky-400/40";
+  if (status === "active") return "text-[var(--shp-primary-pressed)] bg-[color-mix(in_oklab,var(--shp-primary)_10%,var(--shp-surface)_90%)] border-[color-mix(in_oklab,var(--shp-primary)_34%,transparent)]";
+  if (status === "degraded") return "text-amber-700 bg-amber-500/12 border-amber-400/35";
+  if (status === "not_configured") return "text-rose-700 bg-rose-500/12 border-rose-400/30";
+  return "text-[var(--shp-warm)] bg-[color-mix(in_oklab,var(--shp-secondary)_16%,var(--shp-surface)_84%)] border-[color-mix(in_oklab,var(--shp-secondary)_30%,transparent)]";
 }
 
 export function ProjectAnalyticsWorkspace({ projectId }: { projectId: string }) {
@@ -284,11 +285,11 @@ export function ProjectAnalyticsWorkspace({ projectId }: { projectId: string }) 
       <div className="mx-auto max-w-[1920px] px-5 py-5 sm:px-6 sm:py-6">
         <header className="mb-4 flex items-center gap-3">
           <div className="flex shrink-0 cursor-default items-center gap-2 rounded-md px-1 py-1">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--shp-primary)] text-sm font-black text-black">S</div>
+            <BrandLogo variant="mark" className="shrink-0" />
             <h1 className="text-lg font-semibold tracking-tight text-[var(--shp-text)]">Shpitto Studio</h1>
           </div>
 
-          <nav className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_42%,transparent)] px-2 py-2">
+          <nav className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] px-2 py-2">
             <button
               type="button"
               onClick={handleBackToPreviousPage}
@@ -305,7 +306,7 @@ export function ProjectAnalyticsWorkspace({ projectId }: { projectId: string }) 
                   <select
                     value={chatId}
                     onChange={(event) => handleProjectSelect(event.target.value)}
-                    className="h-9 w-[220px] max-w-[42vw] appearance-none rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_54%,black_46%)] px-3 pr-8 text-xs font-medium text-[var(--shp-text)] outline-none transition-colors focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] focus:bg-[color-mix(in_oklab,var(--shp-surface)_62%,black_38%)]"
+                    className="h-9 w-[220px] max-w-[42vw] appearance-none rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] px-3 pr-8 text-xs font-medium text-[var(--shp-text)] outline-none transition-colors focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] focus:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)]"
                     aria-label="Select project"
                   >
                     {projects.map((project) => (
@@ -323,9 +324,9 @@ export function ProjectAnalyticsWorkspace({ projectId }: { projectId: string }) 
 
         <section className={`grid gap-4 ${sidebarCollapsed ? "xl:grid-cols-[88px_minmax(0,1fr)]" : "xl:grid-cols-[260px_minmax(0,1fr)]"}`}>
           <aside className="shp-shell flex h-[calc(100vh-120px)] min-h-[700px] flex-col rounded-xl p-4">
-            <div className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_48%,transparent)] p-3.5">
+            <div className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-3.5">
               <div className="flex items-center gap-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color-mix(in_oklab,var(--shp-primary)_20%,transparent)] text-[var(--shp-primary)]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color-mix(in_oklab,var(--shp-primary)_16%,var(--shp-surface)_84%)] text-[var(--shp-primary)]">
                   <Sparkles className="h-5 w-5" />
                 </div>
                 {!sidebarCollapsed ? (
@@ -337,7 +338,7 @@ export function ProjectAnalyticsWorkspace({ projectId }: { projectId: string }) 
                 <button
                   type="button"
                   onClick={() => setSidebarCollapsed((prev) => !prev)}
-                  className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] p-1.5 text-[var(--shp-muted)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_60%,transparent)] hover:text-[var(--shp-text)]"
+                  className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] p-1.5 text-[var(--shp-muted)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_88%,var(--shp-bg)_12%)] hover:text-[var(--shp-text)]"
                   title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                   aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                 >
@@ -351,8 +352,8 @@ export function ProjectAnalyticsWorkspace({ projectId }: { projectId: string }) 
                   "flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left text-base",
                   sidebarCollapsed ? "justify-center px-2" : "",
                   item.active
-                    ? "border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_18%,transparent)] text-[var(--shp-text)]"
-                    : "border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_40%,transparent)] text-[var(--shp-muted)]",
+                    ? "border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,var(--shp-surface)_86%)] text-[var(--shp-text)]"
+                    : "border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] text-[var(--shp-muted)]",
                 ].join(" ");
                 if (item.href) {
                   return (
@@ -377,7 +378,7 @@ export function ProjectAnalyticsWorkspace({ projectId }: { projectId: string }) 
                 onClick={() => void handleCreateProject()}
                 disabled={creatingProject}
                 className={[
-                  "inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_16%,transparent)] px-3 py-2 text-sm font-semibold text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_24%,transparent)] disabled:cursor-not-allowed disabled:opacity-60",
+                  "inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,var(--shp-surface)_86%)] px-3 py-2 text-sm font-semibold text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_22%,var(--shp-surface)_78%)] disabled:cursor-not-allowed disabled:opacity-60",
                   sidebarCollapsed ? "px-2" : "",
                 ].join(" ")}
                 title="New project"
@@ -387,7 +388,7 @@ export function ProjectAnalyticsWorkspace({ projectId }: { projectId: string }) 
               </button>
               <div
                 className={[
-                  "mt-2 flex items-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_35%,transparent)] px-3 py-2",
+                  "mt-2 flex items-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] px-3 py-2",
                   sidebarCollapsed ? "justify-center px-2" : "",
                 ].join(" ")}
                 title={userEmail || "Guest"}
@@ -400,7 +401,7 @@ export function ProjectAnalyticsWorkspace({ projectId }: { projectId: string }) 
               {userEmail ? (
                 <SignOutButton
                   className={[
-                    "mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_74%,transparent)] px-3 py-2 text-sm text-[var(--shp-muted)] hover:border-[var(--shp-primary)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_10%,transparent)] hover:text-[var(--shp-primary)]",
+                    "mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_74%,transparent)] px-3 py-2 text-sm text-[var(--shp-muted)] hover:border-[var(--shp-primary)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_8%,var(--shp-surface)_92%)] hover:text-[var(--shp-primary)]",
                     sidebarCollapsed ? "px-2" : "",
                   ].join(" ")}
                   title="Sign out"
@@ -481,44 +482,44 @@ export function ProjectAnalyticsWorkspace({ projectId }: { projectId: string }) 
             ) : null}
 
             {warning ? (
-              <div className="mt-4 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+              <div className="mt-4 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-700">
                 {warning}
               </div>
             ) : null}
             {error ? (
-              <div className="mt-4 rounded-xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+              <div className="mt-4 rounded-xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-700">
                 {error}
               </div>
             ) : null}
 
             {loading ? (
-              <div className="mt-6 flex items-center gap-2 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_60%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_36%,transparent)] px-4 py-3 text-sm text-[var(--shp-muted)]">
+              <div className="mt-6 flex items-center gap-2 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_60%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] px-4 py-3 text-sm text-[var(--shp-muted)]">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Loading analytics data...
               </div>
             ) : null}
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <article className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_34%,transparent)] p-4">
+              <article className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-4">
                 <p className="text-xs uppercase tracking-[0.2em] text-[var(--shp-muted)]">Visits</p>
                 <p className="mt-2 text-3xl font-semibold text-[var(--shp-text)]">{numberText(totals.visits)}</p>
               </article>
-              <article className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_34%,transparent)] p-4">
+              <article className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-4">
                 <p className="text-xs uppercase tracking-[0.2em] text-[var(--shp-muted)]">Page Views</p>
                 <p className="mt-2 text-3xl font-semibold text-[var(--shp-text)]">{numberText(totals.pageViews)}</p>
               </article>
-              <article className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_34%,transparent)] p-4">
+              <article className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-4">
                 <p className="text-xs uppercase tracking-[0.2em] text-[var(--shp-muted)]">Bounce Rate</p>
                 <p className="mt-2 text-3xl font-semibold text-[var(--shp-text)]">{percentText(totals.bounceRate)}</p>
               </article>
-              <article className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_34%,transparent)] p-4">
+              <article className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-4">
                 <p className="text-xs uppercase tracking-[0.2em] text-[var(--shp-muted)]">Avg Duration</p>
                 <p className="mt-2 text-3xl font-semibold text-[var(--shp-text)]">{durationText(totals.avgVisitDurationSeconds)}</p>
               </article>
             </div>
 
             <div className="mt-6 grid gap-4 xl:grid-cols-[1.2fr_1fr]">
-              <article className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_30%,transparent)] p-4">
+              <article className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-4">
                 <h3 className="text-base font-semibold text-[var(--shp-text)]">Top Pages</h3>
                 <div className="mt-3 overflow-x-auto">
                   <table className="w-full min-w-[520px] text-left text-sm">
@@ -550,7 +551,7 @@ export function ProjectAnalyticsWorkspace({ projectId }: { projectId: string }) 
                 </div>
               </article>
 
-              <article className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_30%,transparent)] p-4">
+              <article className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-4">
                 <h3 className="text-base font-semibold text-[var(--shp-text)]">Traffic Channels</h3>
                 <div className="mt-3 space-y-2">
                   {(analytics?.channels || []).map((row) => {
@@ -562,7 +563,7 @@ export function ProjectAnalyticsWorkspace({ projectId }: { projectId: string }) 
                           <span className="capitalize text-[var(--shp-text)]">{row.channel}</span>
                           <span className="text-[var(--shp-muted)]">{numberText(row.visits)} visits</span>
                         </div>
-                        <div className="h-2 rounded-full bg-[color-mix(in_oklab,var(--shp-surface)_76%,transparent)]">
+                        <div className="h-2 rounded-full bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)]">
                           <div
                             className="h-2 rounded-full bg-[color-mix(in_oklab,var(--shp-primary)_72%,transparent)]"
                             style={{ width: `${width}%` }}
@@ -575,7 +576,7 @@ export function ProjectAnalyticsWorkspace({ projectId }: { projectId: string }) 
               </article>
             </div>
 
-            <article className="mt-6 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_30%,transparent)] p-4">
+            <article className="mt-6 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-4">
               <h3 className="text-base font-semibold text-[var(--shp-text)]">Top Referrers</h3>
               <div className="mt-3 overflow-x-auto">
                 <table className="w-full min-w-[700px] text-left text-sm">

@@ -29,7 +29,7 @@ export function BlogSection({ locale = "en" }: { locale?: Locale }) {
   ];
 
   return (
-    <section id="blog" className="border-t border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg-soft)_88%,#060606_12%)] py-24">
+    <section id="blog" className="border-t border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg-soft)_95%,white_5%)] py-24">
       <div className="mx-auto max-w-7xl px-6">
         <div className="mb-12 flex items-end justify-between">
           <div>
@@ -46,9 +46,9 @@ export function BlogSection({ locale = "en" }: { locale?: Locale }) {
         <div className="grid gap-8 md:grid-cols-3">
           {posts.map((post, i) => (
             <Link key={i} href={`/blog/${post.slug}`} className="group flex h-full cursor-pointer flex-col">
-              <div className="relative mb-6 aspect-video overflow-hidden rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_76%,transparent)]">
+              <div className="relative mb-6 aspect-video overflow-hidden rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_88%,transparent)]">
                 <img src={post.image} alt={post.title} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                <div className="absolute left-4 top-4 rounded-full border border-[color-mix(in_oklab,var(--shp-border)_65%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_76%,transparent)] px-3 py-1 text-xs font-bold uppercase tracking-wide text-[var(--shp-primary)] backdrop-blur-sm">
+                <div className="absolute left-4 top-4 rounded-full border border-[color-mix(in_oklab,var(--shp-border)_65%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_86%,white_14%)] px-3 py-1 text-xs font-bold uppercase tracking-wide text-[var(--shp-primary)] backdrop-blur-sm">
                   {post.category}
                 </div>
               </div>
@@ -80,7 +80,7 @@ export function BlogSection({ locale = "en" }: { locale?: Locale }) {
         <div className="mt-12 text-center md:hidden">
           <Link
             href="/blog"
-            className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_72%,transparent)] px-6 py-3 font-bold text-[var(--shp-text)]"
+            className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_88%,transparent)] px-6 py-3 font-bold text-[var(--shp-text)]"
           >
             {copy.viewAll}
           </Link>

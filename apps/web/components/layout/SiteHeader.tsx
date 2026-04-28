@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SignOutButton } from "@/components/auth/SignOutButton";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { getLandingCopy, type Locale } from "@/lib/i18n";
 
@@ -14,10 +15,8 @@ export function SiteHeader({ userEmail = "", getStartedHref = "/chat", locale = 
   return (
     <header className="fixed top-0 z-50 w-full border-b border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_76%,transparent)] backdrop-blur-md transition-all duration-300">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
-        <div className="flex items-center gap-2">
-          <Link href="/" className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--shp-primary)] text-lg font-black text-black shadow-[var(--shp-glow)]">
-            S
-          </Link>
+        <div className="flex items-center gap-3">
+          <BrandLogo variant="mark" className="shrink-0" />
           <Link href="/" className="text-xl font-bold tracking-tight text-[var(--shp-text)]">
             Shpitto
           </Link>

@@ -12,7 +12,7 @@ export function Hero({ ctaHref = "/login", locale = "en" }: HeroProps) {
   return (
     <section className="relative overflow-hidden px-6 pb-24 pt-32 text-[var(--shp-text)] lg:pb-40 lg:pt-48">
       <div className="absolute inset-0 z-0 opacity-25">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1ed76026_1px,transparent_1px),linear-gradient(to_bottom,#1ed76026_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_62%_52%_at_50%_0%,#000_70%,transparent_100%)]"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#fc59531f_1px,transparent_1px),linear-gradient(to_bottom,#fc59531f_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_62%_52%_at_50%_0%,#000_70%,transparent_100%)]"></div>
       </div>
 
       <div className="pointer-events-none absolute left-1/2 top-0 -z-10 h-[620px] w-[1040px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,color-mix(in_oklab,var(--shp-primary)_30%,transparent),transparent_62%)] blur-[110px]"></div>
@@ -60,40 +60,40 @@ export function Hero({ ctaHref = "/login", locale = "en" }: HeroProps) {
         </div>
 
         <div className="relative mx-auto mt-20 max-w-5xl">
-          <div className="absolute -inset-1 rounded-2xl bg-[radial-gradient(circle_at_center,color-mix(in_oklab,var(--shp-primary)_40%,transparent),transparent_70%)] opacity-50 blur-md"></div>
-          <div className="relative aspect-[16/9] overflow-hidden rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_76%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg-soft)_86%,black_14%)] shadow-[var(--shp-shadow)]">
-            <div className="flex h-10 items-center gap-2 border-b border-[color-mix(in_oklab,var(--shp-border)_74%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_72%,transparent)] px-4">
+          <div className="absolute -inset-1 rounded-2xl bg-[radial-gradient(circle_at_center,color-mix(in_oklab,var(--shp-primary)_34%,transparent),transparent_72%)] opacity-45 blur-md"></div>
+          <div className="relative aspect-[16/9] overflow-hidden rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_76%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] shadow-[var(--shp-shadow)]">
+            <div className="flex h-10 items-center gap-2 border-b border-[color-mix(in_oklab,var(--shp-border)_74%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_74%,white_26%)] px-4">
               <div className="h-3 w-3 rounded-full bg-rose-400/70"></div>
               <div className="h-3 w-3 rounded-full bg-amber-300/70"></div>
               <div className="h-3 w-3 rounded-full bg-emerald-300/70"></div>
-              <div className="ml-4 rounded-md border border-[color-mix(in_oklab,var(--shp-border)_75%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_64%,transparent)] px-3 py-1 font-mono text-[10px] text-[var(--shp-muted)]">
+              <div className="ml-4 rounded-md border border-[color-mix(in_oklab,var(--shp-border)_75%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_82%,transparent)] px-3 py-1 font-mono text-[10px] text-[var(--shp-muted)]">
                 shpitto-runtime-v3
               </div>
             </div>
 
             <div className="relative flex h-[calc(100%-2.5rem)]">
-              <div className="hidden w-64 border-r border-[color-mix(in_oklab,var(--shp-border)_74%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_75%,transparent)] p-4 md:block">
-                <div className="mb-6 h-8 w-24 animate-pulse rounded bg-[color-mix(in_oklab,var(--shp-surface)_70%,transparent)]"></div>
+              <div className="hidden w-64 border-r border-[color-mix(in_oklab,var(--shp-border)_74%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_88%,white_12%)] p-4 md:block">
+                <div className="mb-6 h-8 w-24 animate-pulse rounded bg-[color-mix(in_oklab,var(--shp-surface)_74%,transparent)]"></div>
                 <div className="space-y-3">
-                  <div className="h-4 w-full rounded bg-[color-mix(in_oklab,var(--shp-surface)_68%,transparent)]"></div>
-                  <div className="h-4 w-3/4 rounded bg-[color-mix(in_oklab,var(--shp-surface)_68%,transparent)]"></div>
-                  <div className="h-4 w-5/6 rounded bg-[color-mix(in_oklab,var(--shp-surface)_68%,transparent)]"></div>
+                  <div className="h-4 w-full rounded bg-[color-mix(in_oklab,var(--shp-surface)_76%,transparent)]"></div>
+                  <div className="h-4 w-3/4 rounded bg-[color-mix(in_oklab,var(--shp-surface)_76%,transparent)]"></div>
+                  <div className="h-4 w-5/6 rounded bg-[color-mix(in_oklab,var(--shp-surface)_76%,transparent)]"></div>
                 </div>
               </div>
 
-              <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-[color-mix(in_oklab,var(--shp-bg-soft)_92%,#050505_8%)] p-8">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,color-mix(in_oklab,var(--shp-primary)_18%,transparent),transparent_55%)]"></div>
+              <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-[color-mix(in_oklab,var(--shp-bg-soft)_90%,white_10%)] p-8">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,color-mix(in_oklab,var(--shp-primary)_14%,transparent),transparent_58%)]"></div>
 
                 <div className="relative z-10 w-full max-w-2xl space-y-6">
-                  <div className="flex h-12 items-center rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_75%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_68%,transparent)] px-4 font-mono text-sm text-[var(--shp-muted)]">
+                  <div className="flex h-12 items-center rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_75%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_78%,transparent)] px-4 font-mono text-sm text-[var(--shp-muted)]">
                     <span className="mr-2 text-[var(--shp-secondary)]">&gt;</span> {copy.promptPlaceholder}
                     <span className="ml-auto h-4 w-2 animate-pulse bg-[var(--shp-primary)]"></span>
                   </div>
 
                   <div className="mt-8 grid grid-cols-3 gap-4 opacity-70">
-                    <div className="h-32 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_75%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_62%,transparent)]"></div>
+                    <div className="h-32 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_75%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_74%,transparent)]"></div>
                     <div className="h-32 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_75%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_10%,var(--shp-surface)_90%)]"></div>
-                    <div className="h-32 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_75%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_62%,transparent)]"></div>
+                    <div className="h-32 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_75%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_74%,transparent)]"></div>
                   </div>
                 </div>
               </div>

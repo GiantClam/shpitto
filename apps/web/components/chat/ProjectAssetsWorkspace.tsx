@@ -4,6 +4,7 @@ import { DragEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useState
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SignOutButton } from "@/components/auth/SignOutButton";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import {
   ArrowLeft,
   BarChart3,
@@ -110,12 +111,12 @@ function assetStatusLabel(status?: ProjectAsset["status"]) {
 
 function assetStatusTone(status?: ProjectAsset["status"]) {
   if (status === "published") {
-    return "border-emerald-400/45 bg-emerald-500/14 text-emerald-200";
+    return "border-[color-mix(in_oklab,var(--shp-primary)_34%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_10%,var(--shp-surface)_90%)] text-[var(--shp-primary-pressed)]";
   }
   if (status === "modified") {
-    return "border-amber-400/45 bg-amber-500/14 text-amber-200";
+    return "border-amber-400/40 bg-amber-500/12 text-amber-700";
   }
-  return "border-sky-400/45 bg-sky-500/14 text-sky-200";
+  return "border-[color-mix(in_oklab,var(--shp-secondary)_34%,transparent)] bg-[color-mix(in_oklab,var(--shp-secondary)_14%,var(--shp-surface)_86%)] text-[var(--shp-hot)]";
 }
 
 export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
@@ -373,11 +374,11 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
       <div className="mx-auto max-w-[1920px] px-5 py-5 sm:px-6 sm:py-6">
         <header className="mb-4 flex items-center gap-3">
           <div className="flex shrink-0 cursor-default items-center gap-2 rounded-md px-1 py-1">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--shp-primary)] text-sm font-black text-black">S</div>
+            <BrandLogo variant="mark" className="shrink-0" />
             <h1 className="text-lg font-semibold tracking-tight text-[var(--shp-text)]">Shpitto Studio</h1>
           </div>
 
-          <nav className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_42%,transparent)] px-2 py-2">
+          <nav className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] px-2 py-2">
             <button
               type="button"
               onClick={handleBackToPreviousPage}
@@ -394,7 +395,7 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
                   <select
                     value={chatId}
                     onChange={(event) => handleProjectSelect(event.target.value)}
-                    className="h-9 w-[220px] max-w-[42vw] appearance-none rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_54%,black_46%)] px-3 pr-8 text-xs font-medium text-[var(--shp-text)] outline-none transition-colors focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] focus:bg-[color-mix(in_oklab,var(--shp-surface)_62%,black_38%)]"
+                    className="h-9 w-[220px] max-w-[42vw] appearance-none rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] px-3 pr-8 text-xs font-medium text-[var(--shp-text)] outline-none transition-colors focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] focus:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)]"
                     aria-label="Select project"
                   >
                     {projects.map((project) => (
@@ -412,7 +413,7 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
 
         <section className={`grid gap-4 ${sidebarCollapsed ? "xl:grid-cols-[88px_minmax(0,1fr)]" : "xl:grid-cols-[260px_minmax(0,1fr)]"}`}>
           <aside className="shp-shell flex h-[calc(100vh-120px)] min-h-[700px] flex-col rounded-xl p-4">
-            <div className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_48%,transparent)] p-3.5">
+            <div className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-3.5">
               <div className="flex items-center gap-2">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color-mix(in_oklab,var(--shp-primary)_20%,transparent)] text-[var(--shp-primary)]">
                   <Sparkles className="h-5 w-5" />
@@ -426,7 +427,7 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
                 <button
                   type="button"
                   onClick={() => setSidebarCollapsed((prev) => !prev)}
-                  className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] p-1.5 text-[var(--shp-muted)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_60%,transparent)] hover:text-[var(--shp-text)]"
+                  className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] p-1.5 text-[var(--shp-muted)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_88%,var(--shp-bg)_12%)] hover:text-[var(--shp-text)]"
                   title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                   aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                 >
@@ -518,7 +519,7 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
             </div>
 
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-              <div className="inline-flex items-center gap-2 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_42%,transparent)] p-1.5">
+              <div className="inline-flex items-center gap-2 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] p-1.5">
                 {(["all", "image", "code", "document"] as const).map((tab) => (
                   <button
                     key={tab}
@@ -527,7 +528,7 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
                     className={[
                       "rounded-lg px-3 py-1.5 text-sm capitalize",
                       category === tab
-                        ? "bg-[color-mix(in_oklab,var(--shp-primary)_24%,transparent)] text-[var(--shp-text)]"
+                        ? "bg-[color-mix(in_oklab,var(--shp-primary)_16%,var(--shp-surface)_84%)] text-[var(--shp-text)]"
                         : "text-[var(--shp-muted)] hover:text-[var(--shp-text)]",
                     ].join(" ")}
                   >
@@ -541,23 +542,23 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Search assets..."
-                  className="h-10 w-full rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_38%,transparent)] pl-9 pr-3 text-sm text-[var(--shp-text)] outline-none focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)]"
+                  className="h-10 w-full rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] pl-9 pr-3 text-sm text-[var(--shp-text)] outline-none focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)]"
                 />
               </form>
             </div>
 
             {!r2Configured ? (
-              <div className="mt-5 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+              <div className="mt-5 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-700">
                 Cloudflare R2 is not configured. Set `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` before using assets.
               </div>
             ) : null}
             {error ? (
-              <div className="mt-5 rounded-xl border border-rose-400/35 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{error}</div>
+              <div className="mt-5 rounded-xl border border-rose-400/35 bg-rose-500/10 px-4 py-3 text-sm text-rose-700">{error}</div>
             ) : null}
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {loadingAssets ? (
-                <div className="col-span-full flex items-center gap-2 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_60%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_34%,transparent)] px-4 py-3 text-sm text-[var(--shp-muted)]">
+                <div className="col-span-full flex items-center gap-2 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_60%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] px-4 py-3 text-sm text-[var(--shp-muted)]">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Loading assets...
                 </div>
@@ -569,7 +570,7 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
                 assets.map((asset) => (
                   <article
                     key={asset.id}
-                    className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_34%,transparent)] p-3"
+                    className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-3"
                   >
                     <div className="mb-2 flex items-start justify-between gap-2">
                       <div className="flex items-center gap-1.5">
@@ -584,7 +585,7 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
                         type="button"
                         onClick={() => void handleDeleteAsset(asset.key)}
                         disabled={deletingKey === asset.key}
-                        className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] p-1 text-[var(--shp-muted)] hover:border-rose-400/50 hover:text-rose-300 disabled:opacity-60"
+                        className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] p-1 text-[var(--shp-muted)] hover:border-rose-400/50 hover:text-rose-600 disabled:opacity-60"
                         title="Delete asset"
                       >
                         {deletingKey === asset.key ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
@@ -605,7 +606,7 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
                         href={asset.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex rounded-md border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-2 py-1 text-[11px] text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_60%,transparent)]"
+                        className="inline-flex rounded-md border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] px-2 py-1 text-[11px] text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)]"
                       >
                         Open
                       </a>

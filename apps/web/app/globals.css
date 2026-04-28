@@ -12,30 +12,31 @@
 }
 
 :root {
-  --shp-bg: #000000;
-  --shp-bg-soft: #0a0a0a;
-  --shp-surface: #121212;
-  --shp-surface-alt: #1a1a1a;
-  --shp-text: #ffffff;
-  --shp-muted: #b3b3b3;
-  --shp-border: #282828;
-  --shp-primary: #1ed760;
-  --shp-primary-soft: #6ff09c;
-  --shp-primary-pressed: #1aae4f;
-  --shp-secondary: #8cfbb5;
-  --shp-warm: #ffa500;
-  --shp-hot: #1aae4f;
-  --shp-shadow: 0 16px 32px rgba(0, 0, 0, 0.5);
-  --shp-shadow-soft: 0 10px 20px rgba(0, 0, 0, 0.42);
-  --shp-glow: 0 0 24px rgba(30, 215, 96, 0.36);
+  --shp-bg: #f7f3ee;
+  --shp-bg-soft: #fffaf5;
+  --shp-surface: #ffffff;
+  --shp-surface-alt: #f3ebe1;
+  --shp-text: #171717;
+  --shp-muted: #6d6761;
+  --shp-border: #e4d9cf;
+  --shp-primary: #fc5953;
+  --shp-primary-soft: #ff7c77;
+  --shp-primary-pressed: #d94842;
+  --shp-secondary: #ffd8d5;
+  --shp-warm: #d97757;
+  --shp-hot: #a63c38;
+  --shp-shadow: 0 18px 40px rgba(66, 39, 28, 0.1);
+  --shp-shadow-soft: 0 12px 26px rgba(66, 39, 28, 0.08);
+  --shp-glow: 0 0 24px rgba(252, 89, 83, 0.22);
 }
 
 body {
+  color-scheme: light;
   color: var(--shp-text);
   background:
-    radial-gradient(980px 460px at 12% -4%, color-mix(in oklab, var(--shp-primary) 22%, transparent), transparent 62%),
-    radial-gradient(720px 360px at 88% -10%, color-mix(in oklab, var(--shp-warm) 18%, transparent), transparent 70%),
-    linear-gradient(180deg, var(--shp-bg), #060606);
+    radial-gradient(980px 460px at 12% -4%, color-mix(in oklab, var(--shp-primary) 14%, transparent), transparent 62%),
+    radial-gradient(720px 360px at 88% -10%, color-mix(in oklab, var(--shp-warm) 12%, transparent), transparent 70%),
+    linear-gradient(180deg, var(--shp-bg), #f1e8df);
 }
 
 a {
@@ -44,27 +45,27 @@ a {
 
 @layer components {
   .shp-shell {
-    background: color-mix(in oklab, var(--shp-bg-soft) 92%, #040404 8%);
-    border: 1px solid color-mix(in oklab, var(--shp-border) 85%, transparent);
+    background: color-mix(in oklab, var(--shp-surface) 94%, var(--shp-bg) 6%);
+    border: 1px solid color-mix(in oklab, var(--shp-border) 84%, transparent);
     box-shadow: var(--shp-shadow);
   }
 
   .shp-glass {
-    background: color-mix(in oklab, var(--shp-surface) 78%, transparent);
+    background: color-mix(in oklab, var(--shp-surface) 86%, transparent);
     backdrop-filter: blur(14px);
     border: 1px solid color-mix(in oklab, var(--shp-border) 84%, transparent);
   }
 
   .shp-card {
-    background: linear-gradient(160deg, color-mix(in oklab, var(--shp-surface-alt) 96%, transparent), color-mix(in oklab, var(--shp-surface) 90%, transparent));
+    background: linear-gradient(160deg, color-mix(in oklab, var(--shp-surface-alt) 92%, transparent), color-mix(in oklab, var(--shp-surface) 96%, transparent));
     border: 1px solid color-mix(in oklab, var(--shp-border) 86%, transparent);
     box-shadow: var(--shp-shadow-soft);
   }
 
   .shp-btn-primary {
     background: var(--shp-primary);
-    color: #000000;
-    border: 1px solid color-mix(in oklab, var(--shp-primary) 85%, white 15%);
+    color: #ffffff;
+    border: 1px solid color-mix(in oklab, var(--shp-primary) 82%, white 18%);
     border-radius: 9999px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -72,39 +73,39 @@ a {
   }
 
   .shp-btn-primary:hover {
-    background: color-mix(in oklab, var(--shp-primary) 92%, white 8%);
+    background: color-mix(in oklab, var(--shp-primary) 88%, white 12%);
     transform: scale(1.04);
-    box-shadow: 0 0 30px color-mix(in oklab, var(--shp-primary) 46%, transparent);
+    box-shadow: 0 0 30px color-mix(in oklab, var(--shp-primary) 38%, transparent);
   }
 
   .shp-btn-secondary {
     background: transparent;
     color: var(--shp-text);
-    border: 2px solid color-mix(in oklab, var(--shp-border) 84%, white 16%);
+    border: 2px solid color-mix(in oklab, var(--shp-border) 82%, white 18%);
     border-radius: 9999px;
   }
 
   .shp-btn-secondary:hover {
-    background: color-mix(in oklab, var(--shp-primary) 10%, transparent);
+    background: color-mix(in oklab, var(--shp-primary) 8%, transparent);
     border-color: var(--shp-primary);
     color: var(--shp-primary);
   }
 
   .chat-ui .shp-shell {
-    background: color-mix(in oklab, var(--shp-bg-soft) 92%, #040404 8%);
-    border: 1px solid color-mix(in oklab, var(--shp-border) 78%, transparent);
-    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+    background: color-mix(in oklab, var(--shp-surface) 95%, var(--shp-bg) 5%);
+    border: 1px solid color-mix(in oklab, var(--shp-border) 76%, transparent);
+    box-shadow: 0 8px 18px rgba(66, 39, 28, 0.08);
   }
 
   .chat-ui .shp-btn-primary {
     background: var(--shp-primary);
-    border-color: color-mix(in oklab, var(--shp-primary) 80%, #ffffff 20%);
-    box-shadow: 0 8px 18px color-mix(in oklab, var(--shp-primary) 26%, transparent);
+    border-color: color-mix(in oklab, var(--shp-primary) 78%, #ffffff 22%);
+    box-shadow: 0 8px 18px color-mix(in oklab, var(--shp-primary) 20%, transparent);
   }
 
   .chat-ui .shp-btn-primary:hover {
     transform: scale(1.02);
-    box-shadow: 0 10px 22px color-mix(in oklab, var(--shp-primary) 32%, transparent);
+    box-shadow: 0 10px 22px color-mix(in oklab, var(--shp-primary) 26%, transparent);
   }
 }
 

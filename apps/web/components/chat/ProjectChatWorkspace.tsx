@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SignOutButton } from "@/components/auth/SignOutButton";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import {
   ArrowLeft,
   BarChart3,
@@ -677,11 +678,11 @@ function toReadableStage(stage?: string, locale: RequirementFormLocale = "en") {
 
 function statusTone(status?: TaskStatus | null): string {
   if (status === "succeeded")
-    return "text-[var(--shp-primary)] bg-[color-mix(in_oklab,var(--shp-primary)_16%,transparent)] border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)]";
-  if (status === "failed") return "text-rose-300 bg-rose-500/15 border-rose-400/35";
+    return "text-[var(--shp-primary-pressed)] bg-[color-mix(in_oklab,var(--shp-primary)_10%,var(--shp-surface)_90%)] border-[color-mix(in_oklab,var(--shp-primary)_34%,transparent)]";
+  if (status === "failed") return "text-rose-700 bg-rose-500/12 border-rose-400/30";
   if (status === "running")
-    return "text-[var(--shp-secondary)] bg-[color-mix(in_oklab,var(--shp-secondary)_14%,transparent)] border-[color-mix(in_oklab,var(--shp-secondary)_40%,transparent)]";
-  return "text-amber-300 bg-amber-500/15 border-amber-400/35";
+    return "text-[var(--shp-warm)] bg-[color-mix(in_oklab,var(--shp-secondary)_16%,var(--shp-surface)_84%)] border-[color-mix(in_oklab,var(--shp-secondary)_30%,transparent)]";
+  return "text-[var(--shp-warm)] bg-[color-mix(in_oklab,var(--shp-secondary)_14%,var(--shp-surface)_86%)] border-[color-mix(in_oklab,var(--shp-secondary)_28%,transparent)]";
 }
 
 function formatVersionLabel(updatedAt?: number): string {
@@ -1199,14 +1200,14 @@ function RequirementFormCard({
   );
 
   return (
-    <div lang={formLocale === "zh" ? "zh-CN" : "en"} className="mt-3 rounded-xl border border-[color-mix(in_oklab,var(--shp-primary)_35%,var(--shp-border)_65%)] bg-[color-mix(in_oklab,var(--shp-surface)_62%,transparent)] p-3">
+    <div lang={formLocale === "zh" ? "zh-CN" : "en"} className="mt-3 rounded-xl border border-[color-mix(in_oklab,var(--shp-primary)_35%,var(--shp-border)_65%)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-3">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-[var(--shp-text)]">{t.title}</p>
           <p className="mt-1 text-xs text-[var(--shp-muted)]">{t.description}</p>
         </div>
         <div className="flex flex-col items-end gap-2">
-          <span className="rounded-md border border-amber-400/35 bg-amber-500/15 px-2 py-1 text-[10px] text-amber-200">{t.required}</span>
+          <span className="rounded-md border border-amber-400/35 bg-amber-500/15 px-2 py-1 text-[10px] text-amber-700">{t.required}</span>
           <div className="inline-flex items-center rounded-md border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] p-0.5" aria-label={t.uiLanguage}>
             {(["zh", "en"] as const).map((locale) => (
               <button
@@ -1332,7 +1333,7 @@ function RequirementFormCard({
                   {uploadingLogo ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
                   {t.uploadLogo}
                 </button>
-                {values.brandLogo.assetName ? <span className="text-xs text-[var(--shp-muted)]">{values.brandLogo.assetName}</span> : <span className="text-xs text-amber-200">{t.logoRequired}</span>}
+                {values.brandLogo.assetName ? <span className="text-xs text-[var(--shp-muted)]">{values.brandLogo.assetName}</span> : <span className="text-xs text-amber-700">{t.logoRequired}</span>}
               </div>
               {imageAssets.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
@@ -1348,7 +1349,7 @@ function RequirementFormCard({
         </section>
       </div>
 
-      {formError ? <p className="mt-3 text-xs text-rose-300">{formError}</p> : null}
+      {formError ? <p className="mt-3 text-xs text-rose-700">{formError}</p> : null}
       <button
         type="button"
         onClick={() => void handleSubmitForm()}
@@ -2076,7 +2077,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
   ];
 
   return (
-    <main className="chat-ui min-h-screen bg-[radial-gradient(720px_360px_at_10%_-5%,color-mix(in_oklab,var(--shp-primary)_14%,transparent),transparent_70%),radial-gradient(760px_340px_at_90%_-15%,color-mix(in_oklab,var(--shp-warm)_14%,transparent),transparent_75%),linear-gradient(180deg,var(--shp-bg),#050505)] text-[var(--shp-text)]">
+    <main className="chat-ui min-h-screen bg-[radial-gradient(720px_360px_at_10%_-5%,color-mix(in_oklab,var(--shp-primary)_12%,transparent),transparent_72%),radial-gradient(760px_340px_at_90%_-15%,color-mix(in_oklab,var(--shp-warm)_12%,transparent),transparent_76%),linear-gradient(180deg,var(--shp-bg),var(--shp-bg-soft))] text-[var(--shp-text)]">
       <input
         ref={attachmentInputRef}
         type="file"
@@ -2090,13 +2091,11 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
       <div className="mx-auto max-w-[1920px] px-5 py-5 sm:px-6 sm:py-6">
         <header className="mb-4 flex items-center gap-3">
           <div className="flex shrink-0 cursor-default items-center gap-2 rounded-md px-1 py-1">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--shp-primary)] text-sm font-black text-black">
-              S
-            </div>
+            <BrandLogo variant="mark" className="shrink-0" />
             <h1 className="text-lg font-semibold tracking-tight text-[var(--shp-text)]">Shpitto Studio</h1>
           </div>
 
-          <nav className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_42%,transparent)] px-2 py-2">
+          <nav className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] px-2 py-2">
             <button
               type="button"
               onClick={handleBackToPreviousPage}
@@ -2113,7 +2112,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                   <select
                     value={chatId}
                     onChange={(event) => handleProjectSelect(event.target.value)}
-                    className="h-9 w-[220px] max-w-[42vw] appearance-none rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_54%,black_46%)] px-3 pr-8 text-xs font-medium text-[var(--shp-text)] outline-none transition-colors focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] focus:bg-[color-mix(in_oklab,var(--shp-surface)_62%,black_38%)]"
+                    className="h-9 w-[220px] max-w-[42vw] appearance-none rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] px-3 pr-8 text-xs font-medium text-[var(--shp-text)] outline-none transition-colors focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] focus:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)]"
                     aria-label="Select project"
                   >
                     {projects.map((project) => (
@@ -2136,11 +2135,11 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
           <aside className="shp-shell flex h-[calc(100vh-120px)] min-h-[700px] flex-col rounded-xl p-4">
             <div
               className={[
-                "rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_48%,transparent)] p-3.5",
+                "rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-3.5",
               ].join(" ")}
             >
               <div className="flex items-center gap-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color-mix(in_oklab,var(--shp-primary)_20%,transparent)] text-[var(--shp-primary)]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color-mix(in_oklab,var(--shp-primary)_16%,var(--shp-surface)_84%)] text-[var(--shp-primary)]">
                   <Sparkles className="h-5 w-5" />
                 </div>
                 {!sidebarCollapsed ? (
@@ -2152,7 +2151,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                 <button
                   type="button"
                   onClick={() => setSidebarCollapsed((prev) => !prev)}
-                  className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] p-1.5 text-[var(--shp-muted)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_60%,transparent)] hover:text-[var(--shp-text)]"
+                  className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] p-1.5 text-[var(--shp-muted)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_88%,var(--shp-bg)_12%)] hover:text-[var(--shp-text)]"
                   title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                   aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                 >
@@ -2166,8 +2165,8 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                   "flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left text-base",
                   sidebarCollapsed ? "justify-center px-2" : "",
                   item.active
-                    ? "border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_18%,transparent)] text-[var(--shp-text)]"
-                    : "border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_40%,transparent)] text-[var(--shp-muted)]",
+                    ? "border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,var(--shp-surface)_86%)] text-[var(--shp-text)]"
+                    : "border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] text-[var(--shp-muted)]",
                 ].join(" ");
                 if (item.href) {
                   return (
@@ -2272,8 +2271,8 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                         isUser
                           ? "border-[color-mix(in_oklab,var(--shp-primary)_42%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_18%,var(--shp-surface)_82%)] text-[color-mix(in_oklab,var(--shp-text)_95%,white_5%)]"
                           : isSystem
-                            ? "border-[color-mix(in_oklab,var(--shp-border)_60%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_42%,transparent)] text-[var(--shp-muted)]"
-                        : "border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_56%,transparent)] text-[var(--shp-text)]",
+                          ? "border-[color-mix(in_oklab,var(--shp-border)_60%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] text-[var(--shp-muted)]"
+                        : "border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] text-[var(--shp-text)]",
                       ].join(" ")}
                     >
                       {showMessageText ? <p>{message.text}</p> : null}
@@ -2294,7 +2293,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                             setDraftPreviewText(previewText);
                             setDraftPreviewOpen(true);
                           }}
-                          className="mt-3 w-full rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_76%,black_24%)] px-3 py-2 text-left text-xs text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_72%,transparent)]"
+                          className="mt-3 w-full rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] px-3 py-2 text-left text-xs text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)]"
                         >
                           <p className="font-medium">{CHAT_CARD_COPY[messageLocale].promptDraftExpand}</p>
                           <div className="mt-2 max-h-40 overflow-hidden">
@@ -2307,7 +2306,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                           type="button"
                           onClick={() => void handleTimelineAction(confirmPayload)}
                           disabled={submitting || loadingTask}
-                          className="mt-3 rounded-lg border border-[color-mix(in_oklab,var(--shp-primary)_55%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_20%,transparent)] px-3 py-2 text-xs font-semibold text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_30%,transparent)] disabled:cursor-not-allowed disabled:opacity-60"
+                          className="mt-3 rounded-lg border border-[color-mix(in_oklab,var(--shp-primary)_55%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,var(--shp-surface)_86%)] px-3 py-2 text-xs font-semibold text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_22%,var(--shp-surface)_78%)] disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {String(metadata.label || CHAT_CARD_COPY[messageLocale].confirmAndGenerate)}
                         </button>
@@ -2321,7 +2320,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
               })}
               {showProgressCard ? (
                 <div className="flex justify-start">
-                  <div className="max-w-[92%] rounded-xl border border-[color-mix(in_oklab,var(--shp-secondary)_38%,var(--shp-border)_62%)] bg-[color-mix(in_oklab,var(--shp-surface)_58%,transparent)] px-3 py-3 text-sm text-[var(--shp-text)]">
+                  <div className="max-w-[92%] rounded-xl border border-[color-mix(in_oklab,var(--shp-secondary)_38%,var(--shp-border)_62%)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] px-3 py-3 text-sm text-[var(--shp-text)]">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="font-semibold">{CHAT_CARD_COPY[conversationLocale].progressTitle}</p>
@@ -2374,7 +2373,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                   {pendingAssetRefs.map((asset) => (
                     <span
                       key={asset.key}
-                      className="inline-flex items-center gap-1 rounded-md border border-[color-mix(in_oklab,var(--shp-primary)_42%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,transparent)] px-2 py-1 text-[11px] text-[var(--shp-text)]"
+                      className="inline-flex items-center gap-1 rounded-md border border-[color-mix(in_oklab,var(--shp-primary)_42%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_10%,var(--shp-surface)_90%)] px-2 py-1 text-[11px] text-[var(--shp-text)]"
                       title={asset.referenceText}
                     >
                       {asset.name}
@@ -2391,7 +2390,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                 </div>
               ) : null}
               {assetPickerOpen ? (
-                <div className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_42%,transparent)] p-3">
+                <div className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-3">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-xs font-medium text-[var(--shp-text)]">Add Files To Chat</p>
                     <div className="flex items-center gap-2">
@@ -2438,7 +2437,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                       filteredAvailableAssets.map((asset) => (
                         <div
                           key={asset.key}
-                          className="flex items-center justify-between gap-2 rounded-md border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_38%,transparent)] px-2 py-1.5"
+                          className="flex items-center justify-between gap-2 rounded-md border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] px-2 py-1.5"
                         >
                           <div className="min-w-0">
                             <p className="truncate text-xs text-[var(--shp-text)]">{asset.name}</p>
@@ -2450,7 +2449,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                             type="button"
                             onClick={() => addPendingAssetRef(asset)}
                             disabled={asset.alreadySelected}
-                            className="shrink-0 rounded-md border border-[color-mix(in_oklab,var(--shp-primary)_45%,transparent)] px-2 py-1 text-[10px] text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_18%,transparent)] disabled:cursor-not-allowed disabled:opacity-60"
+                            className="shrink-0 rounded-md border border-[color-mix(in_oklab,var(--shp-primary)_45%,transparent)] px-2 py-1 text-[10px] text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_12%,var(--shp-surface)_88%)] disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             {asset.alreadySelected ? "Added" : "Add"}
                           </button>
@@ -2465,7 +2464,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                   type="button"
                   onClick={toggleAssetPicker}
                   disabled={submitting}
-                  className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] p-2 text-[var(--shp-muted)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_60%,transparent)] hover:text-[var(--shp-text)]"
+                  className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] p-2 text-[var(--shp-muted)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_88%,var(--shp-bg)_12%)] hover:text-[var(--shp-text)]"
                   title="Attach"
                 >
                   <Paperclip className="h-4 w-4" />
@@ -2476,7 +2475,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                   onChange={(e) => setPrompt(e.target.value)}
                   onKeyDown={(e) => void handlePromptKeyDown(e)}
                   rows={1}
-                  className="no-scrollbar w-full resize-none overflow-y-auto rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_60%,black_40%)] px-3 py-2.5 text-sm leading-6 text-[var(--shp-text)] outline-none focus:border-[color-mix(in_oklab,var(--shp-primary)_40%,var(--shp-border)_60%)]"
+                  className="no-scrollbar w-full resize-none overflow-y-auto rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] px-3 py-2.5 text-sm leading-6 text-[var(--shp-text)] outline-none focus:border-[color-mix(in_oklab,var(--shp-primary)_40%,var(--shp-border)_60%)]"
                   placeholder={`Describe changes for ${projectTitle}...`}
                 />
                 <button
@@ -2490,7 +2489,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
               </div>
               <p className="text-[11px] text-[var(--shp-muted)]">Press Enter to send, Shift+Enter for new line.</p>
               {loadingTask ? <p className="text-xs text-[var(--shp-primary)]">Syncing task progress...</p> : null}
-              {error ? <p className="text-xs text-rose-300">{error}</p> : null}
+              {error ? <p className="text-xs text-rose-700">{error}</p> : null}
             </form>
           </aside>
 
@@ -2499,7 +2498,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
               <div className="flex min-w-0 items-center gap-1.5">
                 <button
                   type="button"
-                  className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] p-1.5 text-[var(--shp-muted)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_60%,transparent)] hover:text-[var(--shp-text)]"
+                  className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] p-1.5 text-[var(--shp-muted)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_88%,var(--shp-bg)_12%)] hover:text-[var(--shp-text)]"
                   title="Preview"
                 >
                   <MessageSquare className="h-4 w-4" />
@@ -2521,7 +2520,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                     "inline-flex items-center gap-1 rounded-md border px-2 py-1 font-medium",
                     deployDisabled
                       ? "cursor-not-allowed border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] text-[color-mix(in_oklab,var(--shp-muted)_64%,transparent)] opacity-70"
-                      : "border-[color-mix(in_oklab,var(--shp-primary)_56%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_18%,transparent)] text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_28%,transparent)]",
+                    : "border-[color-mix(in_oklab,var(--shp-primary)_56%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,var(--shp-surface)_86%)] text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_22%,var(--shp-surface)_78%)]",
                   ].join(" ")}
                   title={deployedUrl ? "Redeploy latest site to Cloudflare Pages" : "Deploy latest preview to Cloudflare Pages"}
                 >
@@ -2532,7 +2531,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                   <button
                     type="button"
                     onClick={() => setPreviewRefreshNonce(Date.now())}
-                    className="inline-flex items-center gap-1 rounded-md border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] px-2 py-1 text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_70%,transparent)]"
+                    className="inline-flex items-center gap-1 rounded-md border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] px-2 py-1 text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)]"
                     title="Refresh preview"
                     aria-label="Refresh preview"
                   >
@@ -2545,7 +2544,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                     href={previewUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] px-2 py-1 text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_70%,transparent)]"
+                    className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] px-2 py-1 text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)]"
                   >
                     Open
                   </a>
@@ -2565,7 +2564,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                         href={toLocalPreviewHref(filePath)}
                         target="_blank"
                         rel="noreferrer"
-                        className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] px-2 py-1 text-xs text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_58%,transparent)]"
+                    className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] px-2 py-1 text-xs text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)]"
                       >
                         {filePath}
                       </a>
@@ -2594,22 +2593,22 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                       href="https://developers.cloudflare.com/pages/configuration/custom-domains/"
                       target="_blank"
                       rel="noreferrer"
-                      className="shrink-0 rounded-md border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] px-2 py-1 text-xs text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_70%,transparent)]"
+                      className="shrink-0 rounded-md border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] px-2 py-1 text-xs text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)]"
                     >
                       Cloudflare Docs
                     </a>
                   </div>
                   <ol className="mt-3 grid gap-2 text-xs leading-relaxed text-[var(--shp-muted)] md:grid-cols-2">
-                    <li className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_36%,transparent)] px-3 py-2">
+                    <li className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] px-3 py-2">
                       1. 在 Cloudflare Pages 项目中进入 Custom domains，添加你的域名或 www 子域名。
                     </li>
-                    <li className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_36%,transparent)] px-3 py-2">
+                    <li className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] px-3 py-2">
                       2. 如域名 DNS 托管在 Cloudflare，按提示让 Pages 自动创建记录并签发证书。
                     </li>
-                    <li className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_36%,transparent)] px-3 py-2">
+                    <li className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] px-3 py-2">
                       3. 如使用外部 DNS，为 www 或子域名创建 CNAME，目标填写 {deployedHost || "your-project.pages.dev"}。
                     </li>
-                    <li className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_36%,transparent)] px-3 py-2">
+                    <li className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] px-3 py-2">
                       4. 根域名使用 Cloudflare nameservers 的 CNAME flattening，或使用 DNS 服务商支持的 ALIAS/ANAME。
                     </li>
                   </ol>
@@ -2636,14 +2635,14 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
       </div>
 
       {draftPreviewOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[color-mix(in_oklab,var(--shp-text)_58%,transparent)] p-4 backdrop-blur-sm">
           <div className="shp-shell relative flex h-[min(86vh,980px)] w-[min(92vw,980px)] flex-col rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)]">
             <div className="flex items-center justify-between border-b border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] px-4 py-3">
               <p className="text-sm font-semibold text-[var(--shp-text)]">Prompt Draft</p>
               <button
                 type="button"
                 onClick={() => setDraftPreviewOpen(false)}
-                className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] p-1.5 text-[var(--shp-muted)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_58%,transparent)] hover:text-[var(--shp-text)]"
+                className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] p-1.5 text-[var(--shp-muted)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_88%,var(--shp-bg)_12%)] hover:text-[var(--shp-text)]"
                 aria-label="Close prompt preview"
               >
                 <X className="h-4 w-4" />

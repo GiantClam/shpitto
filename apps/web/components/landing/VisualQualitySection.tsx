@@ -31,8 +31,8 @@ export function VisualQualitySection({ locale = "en" }: { locale?: Locale }) {
   ];
 
   return (
-    <section id="showcase" className="relative bg-[color-mix(in_oklab,var(--shp-bg)_86%,#080808_14%)] py-32">
-      <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-[color-mix(in_oklab,var(--shp-primary)_35%,transparent)] to-transparent"></div>
+    <section id="showcase" className="relative bg-[color-mix(in_oklab,var(--shp-bg)_95%,white_5%)] py-32">
+      <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-[color-mix(in_oklab,var(--shp-primary)_28%,transparent)] to-transparent"></div>
 
       <div className="mx-auto max-w-7xl px-6">
         <div className="mx-auto mb-20 max-w-3xl text-center">
@@ -49,14 +49,14 @@ export function VisualQualitySection({ locale = "en" }: { locale?: Locale }) {
           {features.map((item, i) => (
             <div
               key={i}
-              className={`${item.colSpan} group relative overflow-hidden rounded-3xl border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_70%,transparent)] transition-all duration-500 hover:border-[color-mix(in_oklab,var(--shp-primary)_45%,transparent)]`}
+              className={`${item.colSpan} group relative overflow-hidden rounded-3xl border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_90%,var(--shp-bg)_10%)] transition-all duration-500 hover:border-[color-mix(in_oklab,var(--shp-primary)_45%,transparent)]`}
             >
-              <div className={`absolute inset-0 bg-gradient-to-br ${item.bg} opacity-30 transition-opacity group-hover:opacity-45`}></div>
+              <div className={`absolute inset-0 bg-gradient-to-br ${item.bg} opacity-24 transition-opacity group-hover:opacity-38`}></div>
               <div className="absolute inset-0 -z-10 backdrop-blur-3xl"></div>
 
               <div className="relative flex min-h-[240px] h-full flex-col justify-between p-8">
                 <div className="mb-8">
-                  <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_72%,transparent)] transition-transform duration-500 group-hover:scale-110">
+                  <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_84%,transparent)] transition-transform duration-500 group-hover:scale-110">
                     {item.icon}
                   </div>
                   <h3 className="mb-3 text-2xl font-bold text-[var(--shp-text)]">{item.title}</h3>
