@@ -10,6 +10,12 @@ type PreviewSiteDirCacheEntry = {
   expiresAt: number;
 };
 
+type VirtualPreviewFile = {
+  path: string;
+  content: string;
+  type?: string;
+};
+
 declare global {
   // eslint-disable-next-line no-var
   var __shpittoPreviewSiteDirCache: Map<string, PreviewSiteDirCacheEntry> | undefined;
@@ -83,6 +89,55 @@ function rewriteHtmlForPreview(html: string, previewBase: string): string {
   );
 
   return sharedAssetRewritten.replace(/\bhref=["']\/["']/gi, `href="${previewBase}/"`);
+}
+
+function normalizePreviewFilePath(value: string): string {
+  return String(value || "").trim().replace(/\\/g, "/").replace(/^\/+/, "");
+}
+
+function getArtifactFilesFromTask(task: any): VirtualPreviewFile[] {
+  const candidates = [
+    task?.result?.internal?.artifactSnapshot,
+    task?.result?.internal?.sessionState?.site_artifacts,
+    task?.result?.internal?.inputState?.site_artifacts,
+    task?.result?.site_artifacts,
+  ];
+  const byPath = new Map<string, VirtualPreviewFile>();
+
+  for (const candidate of candidates) {
+    const files = candidate?.staticSite?.files;
+    if (!Array.isArray(files)) continue;
+    for (const file of files) {
+      const filePath = normalizePreviewFilePath(String(file?.path || ""));
+      if (!filePath || typeof file?.content !== "string") continue;
+      byPath.set(filePath, {
+        path: filePath,
+        content: file.content,
+        type: typeof file.type === "string" ? file.type : undefined,
+      });
+    }
+  }
+
+  return [...byPath.values()];
+}
+
+function resolveVirtualPreviewFile(task: any, parts: string[]): VirtualPreviewFile | undefined {
+  const files = getArtifactFilesFromTask(task);
+  if (files.length === 0) return undefined;
+
+  const byPath = new Map(files.map((file) => [file.path, file]));
+  const safeParts = parts.map(normalizePreviewFilePath).filter(Boolean);
+  const target = normalizePreviewFilePath(safeParts.join("/"));
+  const candidates = target
+    ? [target, `${target}/index.html`]
+    : ["index.html"];
+
+  for (const candidate of candidates) {
+    const file = byPath.get(candidate);
+    if (file) return file;
+  }
+
+  return undefined;
 }
 
 async function resolveTargetFile(siteDir: string, parts: string[]): Promise<string> {
@@ -300,6 +355,29 @@ export async function GET(
   }
 
   if (!siteDir) {
+    const virtualFile = resolveVirtualPreviewFile(task, parts);
+    if (virtualFile) {
+      const mime = virtualFile.type || detectMime(virtualFile.path);
+      if (mime.startsWith("text/html")) {
+        const previewBase = `/api/chat/tasks/${encodeURIComponent(taskId)}/preview`;
+        return new NextResponse(rewriteHtmlForPreview(virtualFile.content, previewBase), {
+          status: 200,
+          headers: {
+            "Content-Type": mime,
+            "Cache-Control": "no-store, max-age=0",
+          },
+        });
+      }
+
+      return new NextResponse(virtualFile.content, {
+        status: 200,
+        headers: {
+          "Content-Type": mime,
+          "Cache-Control": "no-store, max-age=0",
+        },
+      });
+    }
+
     if (taskLookupError) {
       return NextResponse.json(
         {

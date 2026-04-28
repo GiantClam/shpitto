@@ -12,11 +12,7 @@ build
 dist
 
 # Environment Variables
-.env
-.env*.local
-.env.production
-.env.development
-.env.test
+.env*
 
 # Logs
 npm-debug.log*

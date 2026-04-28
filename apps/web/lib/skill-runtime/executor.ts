@@ -3398,6 +3398,7 @@ async function runRefineTask(params: {
       workerId,
       inputState: buildSessionSnapshot(nextState),
       sessionState: buildSessionSnapshot(nextState),
+      artifactSnapshot: nextState.site_artifacts || null,
       pendingEdits,
     } as any,
     progress: {
@@ -3599,6 +3600,7 @@ export class SkillRuntimeExecutor {
           workerId,
           inputState: buildSessionSnapshot(sessionStateForNext),
           sessionState: buildSessionSnapshot(sessionStateForNext),
+          artifactSnapshot: (summary.state as any)?.site_artifacts || null,
           pendingEdits,
         } as any,
         progress: {

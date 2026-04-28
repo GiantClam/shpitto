@@ -20,14 +20,16 @@ function loadWorkerEnv() {
   const repoRoot = path.resolve(webRoot, "..", "..");
 
   const envFiles = [
-    path.resolve(repoRoot, ".env"),
-    path.resolve(webRoot, ".env"),
-    path.resolve(webRoot, ".env.local"),
+    { path: path.resolve(repoRoot, ".env"), override: false },
+    { path: path.resolve(webRoot, ".env"), override: false },
+    { path: path.resolve(webRoot, ".env.local"), override: false },
+    { path: path.resolve(scriptDir, ".env"), override: true },
+    { path: path.resolve(scriptDir, ".env.local"), override: true },
   ];
 
-  for (const envPath of envFiles) {
+  for (const { path: envPath, override } of envFiles) {
     if (!fs.existsSync(envPath)) continue;
-    dotenv.config({ path: envPath, override: false });
+    dotenv.config({ path: envPath, override });
   }
 }
 
