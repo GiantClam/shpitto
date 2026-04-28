@@ -16,6 +16,7 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
   const [nextPath, setNextPath] = useState("/chat");
+  const [mode, setMode] = useState<"signin" | "forgot">("signin");
   const router = useRouter();
 
   const supabase = createClient();
@@ -81,18 +82,38 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
   const handleSignUp = async () => {
     setLoading(true);
     setMessage(null);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
-      },
+    const response = await fetch("/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, next: nextPath }),
     });
+    const data = (await response.json().catch(() => ({}))) as { error?: string; message?: string };
 
-    if (error) {
-      setMessage({ type: "error", text: error.message });
+    if (!response.ok) {
+      setMessage({ type: "error", text: data.error || "Failed to create account." });
     } else {
-      setMessage({ type: "success", text: copy.emailConfirmation });
+      const params = new URLSearchParams({ email, next: nextPath });
+      router.push(`/verify-email?${params.toString()}`);
+    }
+    setLoading(false);
+  };
+
+  const handleForgotPassword = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setLoading(true);
+    setMessage(null);
+
+    const response = await fetch("/auth/password/forgot", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    const data = (await response.json().catch(() => ({}))) as { error?: string; message?: string };
+
+    if (!response.ok) {
+      setMessage({ type: "error", text: data.error || "Failed to send password reset link." });
+    } else {
+      setMessage({ type: "success", text: data.message || copy.resetLinkSent });
     }
     setLoading(false);
   };
@@ -137,7 +158,7 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
             </div>
           </div>
 
-          <form onSubmit={handleEmailLogin} className="space-y-4">
+          <form onSubmit={mode === "forgot" ? handleForgotPassword : handleEmailLogin} className="space-y-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-[var(--shp-text)]">{copy.email}</label>
               <input
@@ -149,17 +170,31 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
                 placeholder="name@company.com"
               />
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-[var(--shp-text)]">{copy.password}</label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className="w-full rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] px-4 py-3 text-[var(--shp-text)] outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[var(--shp-primary)]"
-                placeholder={copy.passwordPlaceholder}
-              />
-            </div>
+            {mode === "signin" ? (
+              <div>
+                <label className="mb-1 block text-sm font-medium text-[var(--shp-text)]">{copy.password}</label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  className="w-full rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] px-4 py-3 text-[var(--shp-text)] outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-[var(--shp-primary)]"
+                  placeholder={copy.passwordPlaceholder}
+                />
+                <div className="mt-2 text-right">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("forgot");
+                      setMessage(null);
+                    }}
+                    className="text-sm font-semibold text-[var(--shp-primary)] hover:underline"
+                  >
+                    {copy.forgotPassword}
+                  </button>
+                </div>
+              </div>
+            ) : null}
 
             {message ? (
               <div className={`rounded-lg p-3 text-sm ${message.type === "error" ? "bg-[color-mix(in_oklab,var(--shp-primary)_10%,white_90%)] text-[var(--shp-primary-pressed)]" : "bg-[color-mix(in_oklab,var(--shp-primary)_10%,white_90%)] text-[var(--shp-primary-pressed)]"}`}>
@@ -173,15 +208,30 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--shp-primary)] py-3 font-bold text-white transition-all hover:bg-[var(--shp-primary-pressed)]"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {copy.signIn}
+              {mode === "forgot" ? copy.sendResetLink : copy.signIn}
             </button>
           </form>
 
           <div className="mt-6 text-center text-sm">
-            <span className="text-[var(--shp-muted)]">{copy.noAccount}</span>
-            <button onClick={handleSignUp} disabled={loading} className="font-bold text-[var(--shp-primary)] hover:underline">
-              {copy.signUp}
-            </button>
+            {mode === "forgot" ? (
+              <button
+                onClick={() => {
+                  setMode("signin");
+                  setMessage(null);
+                }}
+                disabled={loading}
+                className="font-bold text-[var(--shp-primary)] hover:underline"
+              >
+                {copy.backToSignIn}
+              </button>
+            ) : (
+              <>
+                <span className="text-[var(--shp-muted)]">{copy.noAccount}</span>
+                <button onClick={handleSignUp} disabled={loading} className="font-bold text-[var(--shp-primary)] hover:underline">
+                  {copy.signUp}
+                </button>
+              </>
+            )}
           </div>
         </div>
         <div className="border-t border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_88%,white_12%)] px-8 py-4 text-center text-xs text-[var(--shp-muted)]">

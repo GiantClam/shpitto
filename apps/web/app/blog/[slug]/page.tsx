@@ -17,7 +17,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
       <p>Search engines are no longer just matching keywords; they are understanding intent. For industrial companies, this means your website needs to structure technical data in a way that AI and search engines can parse. It's not enough to list "CNC Machining"; you need to detail tolerances, material capabilities, and capacity in structured formats.</p>
 
       <h2>Automated Content Generation</h2>
-      <p>Writing technical documentation is time-consuming. AI is revolutionizing this by allowing engineers to input raw specs and getting polished, SEO-optimized product pages in seconds. This isn't just about speed; it's about consistency and accuracy across thousands of SKUs.</p>
+      <p>Writing technical documentation is time-consuming. AI is revolutionizing this by allowing engineers to input raw specs and get polished, SEO-optimized product pages in minutes. This isn't just about speed; it's about consistency and accuracy across thousands of SKUs.</p>
 
       <h2>Data-First Design</h2>
       <p>Modern industrial buyers are data-driven. They want to see CAD files, performance charts, and real-time inventory. Your website needs to be more than a marketing tool; it needs to be a functional tool for engineers and procurement officers.</p>

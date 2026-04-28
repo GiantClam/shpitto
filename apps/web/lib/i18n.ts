@@ -17,6 +17,7 @@ export type LandingCopy = {
     blog: string;
     login: string;
     getStarted: string;
+    accountPassword: string;
     signOut: string;
   };
   hero: {
@@ -97,6 +98,10 @@ export type LandingCopy = {
     password: string;
     passwordPlaceholder: string;
     signIn: string;
+    forgotPassword: string;
+    sendResetLink: string;
+    backToSignIn: string;
+    resetLinkSent: string;
     noAccount: string;
     signUp: string;
     emailConfirmation: string;
@@ -115,10 +120,11 @@ export const landingCopy: Record<Locale, LandingCopy> = {
       blog: "Blog",
       login: "Log in",
       getStarted: "Get Started",
+      accountPassword: "Password",
       signOut: "Sign out",
     },
     hero: {
-      badge: "12-Second Generation Engine",
+      badge: "Minute-Level Generation Engine",
       headline: "Build websites",
       highlight: "at the speed of thought.",
       body: "Shpitto turns natural language into production-grade industrial websites with clean structure, conversion-focused copy, and deploy-ready pages.",
@@ -126,14 +132,14 @@ export const landingCopy: Record<Locale, LandingCopy> = {
       demo: "Watch Demo",
       stats: [
         { value: "10,000+", label: "Sites generated" },
-        { value: "12s", label: "Avg build time" },
+        { value: "Minutes", label: "Avg build time" },
         { value: "4.9/5", label: "User rating" },
       ],
       promptPlaceholder: "Describe your industrial website...",
     },
     efficiency: {
       metricLabel: "Generation Time",
-      metricValue: "12 Seconds",
+      metricValue: "Minutes",
       badge: "Efficiency First",
       title: "No more blank pages.",
       highlight: "Smart generation at your fingertips.",
@@ -248,6 +254,10 @@ export const landingCopy: Record<Locale, LandingCopy> = {
       password: "Password",
       passwordPlaceholder: "••••••••",
       signIn: "Sign In",
+      forgotPassword: "Forgot password?",
+      sendResetLink: "Send reset link",
+      backToSignIn: "Back to sign in",
+      resetLinkSent: "If an account exists for this email, a password reset link has been sent.",
       noAccount: "Don't have an account? ",
       signUp: "Sign up",
       emailConfirmation: "Check your email for the confirmation link.",
@@ -264,10 +274,11 @@ export const landingCopy: Record<Locale, LandingCopy> = {
       blog: "博客",
       login: "登录",
       getStarted: "开始使用",
+      accountPassword: "修改密码",
       signOut: "退出登录",
     },
     hero: {
-      badge: "12 秒网站生成引擎",
+      badge: "分钟级网站生成引擎",
       headline: "用自然语言生成网站",
       highlight: "把想法快速变成上线页面。",
       body: "Shpitto 将自然语言转化为可交付的工业网站，自动整理清晰结构、转化文案和可部署页面。",
@@ -275,14 +286,14 @@ export const landingCopy: Record<Locale, LandingCopy> = {
       demo: "观看演示",
       stats: [
         { value: "10,000+", label: "已生成网站" },
-        { value: "12s", label: "平均生成时间" },
+        { value: "分钟级", label: "平均生成时间" },
         { value: "4.9/5", label: "用户评分" },
       ],
       promptPlaceholder: "描述你的工业网站需求...",
     },
     efficiency: {
       metricLabel: "生成时间",
-      metricValue: "12 秒",
+      metricValue: "分钟级",
       badge: "效率优先",
       title: "不再从空白页开始。",
       highlight: "用对话完成网站规划和生成。",
@@ -397,6 +408,10 @@ export const landingCopy: Record<Locale, LandingCopy> = {
       password: "密码",
       passwordPlaceholder: "••••••••",
       signIn: "登录",
+      forgotPassword: "忘记密码？",
+      sendResetLink: "发送重置链接",
+      backToSignIn: "返回登录",
+      resetLinkSent: "如果该邮箱存在账号，密码重置链接将发送到邮箱。",
       noAccount: "还没有账号？",
       signUp: "注册",
       emailConfirmation: "请查看邮箱中的确认链接。",

@@ -61,11 +61,22 @@ Required environment variables for Cloudflare persistence:
 - `R2_SECRET_ACCESS_KEY` (or `R2_SECRET`)
 - `SHPITTO_CONTACT_API_URL` (MUST be an absolute URL reachable by generated Cloudflare Pages sites, e.g. a Worker or the app domain `/api/contact`)
 
+Required environment variables for email auth:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `CLOUDFLARE_EMAIL_ACCOUNT_ID` (or `EMAIL_PROVIDER_ACCOUNT_ID`)
+- `CLOUDFLARE_EMAIL_API_TOKEN` (or `EMAIL_PROVIDER_API_TOKEN`)
+- `CLOUDFLARE_EMAIL_FROM` (or `EMAIL_FROM`, e.g. `Shpitto <noreply@shpitto.com>`)
+- `APP_URL` or `NEXT_PUBLIC_APP_URL` (used to build verification and password reset links)
+
 Optional:
 
 - `R2_ACCOUNT_ID` (defaults to `CLOUDFLARE_ACCOUNT_ID`)
 - `R2_ENDPOINT` (defaults to `<account_id>.r2.cloudflarestorage.com`)
 - `SHPITTO_APP_BASE_URL` or `NEXT_PUBLIC_APP_URL` (used when `SHPITTO_CONTACT_API_URL` is unset)
+- `NEXT_PUBLIC_GA_MEASUREMENT_ID` (GA4 measurement ID for Shpitto app page views, Web Vitals, and client exception monitoring)
 
 Deploy worker and set contact URL:
 

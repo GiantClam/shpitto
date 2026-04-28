@@ -44,10 +44,18 @@ describe('supabase middleware', () => {
 
   it('allows public auth and blog entry routes without an existing session cookie', async () => {
     const authResponse = await updateSession(new NextRequest('http://localhost/auth/password'))
+    const signupResponse = await updateSession(new NextRequest('http://localhost/auth/signup'))
+    const forgotResponse = await updateSession(new NextRequest('http://localhost/auth/password/forgot'))
+    const resetPageResponse = await updateSession(new NextRequest('http://localhost/reset-password'))
+    const verifyEmailResponse = await updateSession(new NextRequest('http://localhost/verify-email'))
     const blogResponse = await updateSession(new NextRequest('http://localhost/blog'))
     const launchResponse = await updateSession(new NextRequest('http://localhost/launch-center'))
 
     expect(authResponse.status).toBe(200)
+    expect(signupResponse.status).toBe(200)
+    expect(forgotResponse.status).toBe(200)
+    expect(resetPageResponse.status).toBe(200)
+    expect(verifyEmailResponse.status).toBe(200)
     expect(blogResponse.status).toBe(200)
     expect(launchResponse.status).toBe(200)
     expect(mocks.createServerClient).not.toHaveBeenCalled()

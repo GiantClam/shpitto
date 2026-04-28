@@ -52,6 +52,41 @@ create table if not exists shpitto_contact_submissions (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- Auth email mirror and one-time token tables.
+-- These tables are service-role only. They let Shpitto send verification/reset
+-- emails through Cloudflare Email Service instead of Supabase managed email.
+create table if not exists shpitto_auth_users (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  email text not null unique,
+  email_verified boolean not null default false,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+create table if not exists shpitto_email_verification_tokens (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  email text not null,
+  token_hash text not null unique,
+  expires_at timestamp with time zone not null,
+  used_at timestamp with time zone,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+create table if not exists shpitto_password_reset_tokens (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  email text not null,
+  token_hash text not null unique,
+  expires_at timestamp with time zone not null,
+  used_at timestamp with time zone,
+  requested_ip text,
+  user_agent text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now())
+);
+
 create index if not exists idx_shpitto_projects_tenant_source
   on shpitto_projects(tenant_id, source_app);
 create index if not exists idx_shpitto_deployments_project
@@ -62,12 +97,19 @@ create index if not exists idx_shpitto_contact_submissions_tenant_created
   on shpitto_contact_submissions(tenant_id, created_at desc);
 create index if not exists idx_shpitto_contact_submissions_project_created
   on shpitto_contact_submissions(project_id, created_at desc);
+create index if not exists idx_shpitto_email_verification_tokens_user
+  on shpitto_email_verification_tokens(user_id);
+create index if not exists idx_shpitto_password_reset_tokens_user
+  on shpitto_password_reset_tokens(user_id);
 
 -- RLS Policies
 alter table shpitto_projects enable row level security;
 alter table shpitto_deployments enable row level security;
 alter table shpitto_project_sites enable row level security;
 alter table shpitto_contact_submissions enable row level security;
+alter table shpitto_auth_users enable row level security;
+alter table shpitto_email_verification_tokens enable row level security;
+alter table shpitto_password_reset_tokens enable row level security;
 
 drop policy if exists "Users can view own projects" on shpitto_projects;
 drop policy if exists "Users can insert own projects" on shpitto_projects;
