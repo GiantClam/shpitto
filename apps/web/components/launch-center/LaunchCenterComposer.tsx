@@ -219,11 +219,11 @@ export function LaunchCenterComposer({ isAuthenticated, userId = "", locale = "e
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
         rows={5}
-        className="w-full resize-none rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_76%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg-soft)_4%)] px-4 py-3 text-sm leading-relaxed text-[var(--shp-text)] outline-none focus:border-[color-mix(in_oklab,var(--shp-primary)_50%,transparent)]"
+        className="w-full resize-none rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_98%,var(--shp-bg-soft)_2%)] px-4 py-3 text-sm leading-relaxed text-[var(--shp-text)] outline-none focus:border-[color-mix(in_oklab,var(--shp-primary)_50%,transparent)]"
         placeholder={copy.placeholder}
       />
       {pendingFiles.length > 0 ? (
-        <div className="mt-3 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_90%,var(--shp-bg)_10%)] p-3">
+        <div className="mt-3 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] p-3">
           <div className="mb-2 flex items-center gap-2 text-xs font-medium text-[var(--shp-text)]">
             <Paperclip className="h-3.5 w-3.5 text-[var(--shp-primary)]" />
             {fileCopy.selectedFiles}
@@ -234,7 +234,7 @@ export function LaunchCenterComposer({ isAuthenticated, userId = "", locale = "e
               return (
                 <span
                   key={key}
-                className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-[color-mix(in_oklab,var(--shp-primary)_38%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_10%,var(--shp-surface)_90%)] px-2 py-1 text-[11px] text-[var(--shp-text)]"
+                className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-[color-mix(in_oklab,var(--shp-primary)_30%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_8%,var(--shp-surface)_92%)] px-2 py-1 text-[11px] text-[var(--shp-text)]"
                   title={`${file.name} · ${formatFileSize(file.size)}`}
                 >
                   <span className="max-w-[190px] truncate">{file.name}</span>
@@ -269,7 +269,7 @@ export function LaunchCenterComposer({ isAuthenticated, userId = "", locale = "e
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={loading}
-            className="inline-flex items-center justify-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_88%,var(--shp-bg)_12%)] px-4 py-2.5 text-xs font-semibold text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] px-4 py-2.5 text-xs font-semibold text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)] disabled:cursor-not-allowed disabled:opacity-60"
             title={fileCopy.attach}
           >
             <Upload className="h-4 w-4" />
@@ -285,7 +285,7 @@ export function LaunchCenterComposer({ isAuthenticated, userId = "", locale = "e
           </button>
         </div>
       </div>
-      {error ? <p className="mt-3 text-xs text-rose-700">{error}</p> : null}
+      {error ? <p className="mt-3 text-xs text-rose-600">{error}</p> : null}
     </form>
   );
 }

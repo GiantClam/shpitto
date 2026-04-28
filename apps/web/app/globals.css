@@ -45,8 +45,8 @@ a {
 
 @layer components {
   .shp-shell {
-    background: color-mix(in oklab, var(--shp-surface) 94%, var(--shp-bg) 6%);
-    border: 1px solid color-mix(in oklab, var(--shp-border) 84%, transparent);
+    background: color-mix(in oklab, var(--shp-surface) 97%, var(--shp-bg) 3%);
+    border: 1px solid color-mix(in oklab, var(--shp-border) 78%, transparent);
     box-shadow: var(--shp-shadow);
   }
 
@@ -92,9 +92,9 @@ a {
   }
 
   .chat-ui .shp-shell {
-    background: color-mix(in oklab, var(--shp-surface) 95%, var(--shp-bg) 5%);
-    border: 1px solid color-mix(in oklab, var(--shp-border) 76%, transparent);
-    box-shadow: 0 8px 18px rgba(66, 39, 28, 0.08);
+    background: color-mix(in oklab, var(--shp-surface) 98%, var(--shp-bg) 2%);
+    border: 1px solid color-mix(in oklab, var(--shp-border) 70%, transparent);
+    box-shadow: 0 8px 18px rgba(66, 39, 28, 0.05);
   }
 
   .chat-ui .shp-btn-primary {

@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 const PUBLIC_EXACT_PATHS = new Set<string>([
   '/',
   '/login',
+  '/launch-center',
   '/auth/callback',
   '/auth/password',
   '/auth/auth-code-error',
@@ -93,6 +94,9 @@ export async function updateSession(request: NextRequest) {
       if (!isAuthSessionMissingError(error)) {
         console.warn('[supabase-middleware] getUser failed on public path, bypassing:', error)
       }
+      return response
+    }
+    if (hasSupabaseAuthCookie(request) && isAuthSessionMissingError(error)) {
       return response
     }
     const loginUrl = request.nextUrl.clone()

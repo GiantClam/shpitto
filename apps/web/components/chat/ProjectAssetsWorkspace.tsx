@@ -138,6 +138,7 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
   const [uploading, setUploading] = useState(false);
   const [r2Configured, setR2Configured] = useState(true);
   const [error, setError] = useState("");
+  const isUnauthorized = error === "Unauthorized";
   const [stats, setStats] = useState<{ totalFiles: number; totalBytes: number }>({ totalFiles: 0, totalBytes: 0 });
   const [versionInfo, setVersionInfo] = useState<AssetVersionInfo>({});
   const [deletingKey, setDeletingKey] = useState("");
@@ -347,7 +348,7 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
   ];
 
   return (
-    <main className="chat-ui min-h-screen bg-[radial-gradient(720px_360px_at_10%_-5%,color-mix(in_oklab,var(--shp-primary)_14%,transparent),transparent_70%),radial-gradient(760px_340px_at_90%_-15%,color-mix(in_oklab,var(--shp-warm)_14%,transparent),transparent_75%),linear-gradient(180deg,var(--shp-bg),#050505)] text-[var(--shp-text)]">
+    <main className="chat-ui min-h-screen bg-[radial-gradient(720px_360px_at_10%_-5%,color-mix(in_oklab,var(--shp-primary)_14%,transparent),transparent_70%),radial-gradient(760px_340px_at_90%_-15%,color-mix(in_oklab,var(--shp-warm)_14%,transparent),transparent_75%),linear-gradient(180deg,var(--shp-bg),var(--shp-bg-soft))] text-[var(--shp-text)]">
       <input
         ref={fileInputRef}
         type="file"
@@ -553,7 +554,16 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
               </div>
             ) : null}
             {error ? (
-              <div className="mt-5 rounded-xl border border-rose-400/35 bg-rose-500/10 px-4 py-3 text-sm text-rose-700">{error}</div>
+              <div
+                className={[
+                  "mt-5 rounded-xl px-4 py-3 text-sm",
+                  isUnauthorized
+                    ? "border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] text-[var(--shp-muted)]"
+                    : "border border-rose-400/35 bg-rose-500/10 text-rose-700",
+                ].join(" ")}
+              >
+                {isUnauthorized ? "Sign in to view and manage assets." : error}
+              </div>
             ) : null}
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

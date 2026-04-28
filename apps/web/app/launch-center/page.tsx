@@ -24,7 +24,7 @@ export default async function LaunchCenterPage() {
       <SiteHeader userEmail={userEmail} getStartedHref={draftHref} locale={locale} />
 
       <main className="mx-auto max-w-7xl px-6 pb-24 pt-32">
-        <section className="relative overflow-hidden rounded-3xl border border-[color-mix(in_oklab,var(--shp-border)_82%,transparent)] bg-[linear-gradient(160deg,color-mix(in_oklab,var(--shp-bg-soft)_92%,black_8%),color-mix(in_oklab,var(--shp-surface)_82%,black_18%))] p-8 shadow-[var(--shp-shadow)] lg:p-12">
+        <section className="relative overflow-hidden rounded-3xl border border-[color-mix(in_oklab,var(--shp-border)_82%,transparent)] bg-[linear-gradient(160deg,color-mix(in_oklab,var(--shp-bg-soft)_96%,var(--shp-primary)_4%),color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-border)_8%))] p-8 shadow-[var(--shp-shadow)] lg:p-12">
           <div className="pointer-events-none absolute -top-28 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,color-mix(in_oklab,var(--shp-primary)_34%,transparent),transparent_70%)] blur-2xl"></div>
           <div className="pointer-events-none absolute bottom-0 right-0 h-48 w-48 rounded-full bg-[radial-gradient(circle,color-mix(in_oklab,var(--shp-warm)_24%,transparent),transparent_72%)] blur-3xl"></div>
 
@@ -58,7 +58,7 @@ export default async function LaunchCenterPage() {
                     icon: LayoutTemplate,
                   },
                 ].map((item) => (
-                  <div key={item.title} className="rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_78%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_48%,black_52%)] p-4">
+                  <div key={item.title} className="rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-border)_6%)] p-4">
                     <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--shp-primary)_18%,transparent)] text-[var(--shp-primary)]">
                       <item.icon className="h-4 w-4" />
                     </div>
@@ -81,9 +81,9 @@ export default async function LaunchCenterPage() {
               {recentProjects.map((project) => (
                 <article
                   key={project.id}
-                  className="group rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_78%,transparent)] bg-[linear-gradient(160deg,color-mix(in_oklab,var(--shp-surface)_62%,black_38%),color-mix(in_oklab,var(--shp-bg-soft)_86%,black_14%))] p-5 shadow-[var(--shp-shadow-soft)]"
+                  className="group rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_74%,transparent)] bg-[linear-gradient(160deg,color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-border)_6%),color-mix(in_oklab,var(--shp-bg-soft)_96%,var(--shp-primary)_4%))] p-5 shadow-[var(--shp-shadow-soft)]"
                 >
-                  <div className="mb-4 h-36 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[radial-gradient(circle_at_15%_20%,color-mix(in_oklab,var(--shp-primary)_16%,transparent),transparent_52%),linear-gradient(150deg,color-mix(in_oklab,var(--shp-surface-alt)_72%,black_28%),color-mix(in_oklab,var(--shp-bg)_90%,black_10%))]"></div>
+                  <div className="mb-4 h-36 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[radial-gradient(circle_at_15%_20%,color-mix(in_oklab,var(--shp-primary)_16%,transparent),transparent_52%),linear-gradient(150deg,color-mix(in_oklab,var(--shp-surface-alt)_88%,var(--shp-border)_12%),color-mix(in_oklab,var(--shp-bg)_96%,var(--shp-primary)_4%))]"></div>
                   <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-[var(--shp-muted)]">
                     <Clock3 className="h-3.5 w-3.5" />
                     {project.ageLabel}
@@ -102,7 +102,7 @@ export default async function LaunchCenterPage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_78%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_50%,black_50%)] p-6 text-sm text-[var(--shp-muted)]">
+            <div className="rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_74%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-border)_4%)] p-6 text-sm text-[var(--shp-muted)]">
               {copy.emptyRecent}
             </div>
           )}
@@ -122,19 +122,19 @@ export default async function LaunchCenterPage() {
             {templateCards.map((template, index) => (
               <article
                 key={template.name}
-                className="rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_78%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_58%,black_42%)] p-4"
+                className="rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_74%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_95%,var(--shp-border)_5%)] p-4"
               >
                 <div
                   className={[
                     "mb-4 h-48 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)]",
                     index % 4 === 0 &&
-                      "bg-[linear-gradient(145deg,color-mix(in_oklab,var(--shp-primary)_20%,black_80%),color-mix(in_oklab,var(--shp-bg-soft)_90%,black_10%))]",
+                      "bg-[linear-gradient(145deg,color-mix(in_oklab,var(--shp-primary)_22%,var(--shp-text)_28%),color-mix(in_oklab,var(--shp-bg-soft)_94%,var(--shp-border)_6%))]",
                     index % 4 === 1 &&
-                      "bg-[linear-gradient(145deg,color-mix(in_oklab,var(--shp-secondary)_16%,black_84%),color-mix(in_oklab,var(--shp-bg)_92%,black_8%))]",
+                      "bg-[linear-gradient(145deg,color-mix(in_oklab,var(--shp-secondary)_24%,var(--shp-text)_24%),color-mix(in_oklab,var(--shp-bg)_96%,var(--shp-border)_4%))]",
                     index % 4 === 2 &&
-                      "bg-[linear-gradient(145deg,color-mix(in_oklab,var(--shp-warm)_26%,black_74%),color-mix(in_oklab,var(--shp-surface)_92%,black_8%))]",
+                      "bg-[linear-gradient(145deg,color-mix(in_oklab,var(--shp-warm)_24%,var(--shp-text)_24%),color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-border)_4%))]",
                     index % 4 === 3 &&
-                      "bg-[linear-gradient(145deg,color-mix(in_oklab,var(--shp-primary-soft)_12%,black_88%),color-mix(in_oklab,var(--shp-bg-soft)_88%,black_12%))]",
+                      "bg-[linear-gradient(145deg,color-mix(in_oklab,var(--shp-primary-soft)_18%,var(--shp-text)_28%),color-mix(in_oklab,var(--shp-bg-soft)_94%,var(--shp-border)_6%))]",
                   ]
                     .filter(Boolean)
                     .join(" ")}

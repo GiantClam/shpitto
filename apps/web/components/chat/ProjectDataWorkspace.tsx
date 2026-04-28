@@ -612,7 +612,7 @@ export function ProjectDataWorkspace({ projectId }: { projectId: string }) {
   ];
 
   return (
-    <main className="chat-ui min-h-screen bg-[radial-gradient(720px_360px_at_10%_-5%,color-mix(in_oklab,var(--shp-primary)_14%,transparent),transparent_70%),radial-gradient(760px_340px_at_90%_-15%,color-mix(in_oklab,var(--shp-warm)_14%,transparent),transparent_75%),linear-gradient(180deg,var(--shp-bg),#050505)] text-[var(--shp-text)]">
+    <main className="chat-ui min-h-screen bg-[radial-gradient(720px_360px_at_10%_-5%,color-mix(in_oklab,var(--shp-primary)_14%,transparent),transparent_70%),radial-gradient(760px_340px_at_90%_-15%,color-mix(in_oklab,var(--shp-warm)_14%,transparent),transparent_75%),linear-gradient(180deg,var(--shp-bg),var(--shp-bg-soft))] text-[var(--shp-text)]">
       <div className="mx-auto max-w-[1920px] px-5 py-5 sm:px-6 sm:py-6">
         <header className="mb-4 flex items-center gap-3">
           <div className="flex shrink-0 cursor-default items-center gap-2 rounded-md px-1 py-1">
