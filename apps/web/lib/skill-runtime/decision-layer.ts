@@ -384,6 +384,22 @@ function hasAutoPagePlanningIntent(requirementText: string): boolean {
   return AUTO_PAGE_PLANNING_PATTERNS.some((pattern) => pattern.test(requirementText));
 }
 
+function hasExplicitSinglePageIntent(requirementText: string): boolean {
+  const text = String(requirementText || "").toLowerCase();
+  if (!text.trim()) return false;
+  const singlePagePatterns = [
+    /\b(?:single|one)[-\s]?page(?:\s+(?:website|site|landing page|homepage|public website))?\b/i,
+    /\b(?:one|1)\s+(?:homepage|home page)\s+only\b/i,
+    /\b(?:homepage|home page)\s+only\b/i,
+    /\bone\s+page\s+only\b/i,
+    /(?:单页网站|单页面网站|单页站点|仅首页|只生成首页|只要首页|一个首页)/iu,
+  ];
+  const multiPageOverride =
+    /\b(?:multi|multiple)[-\s]?page\b/i.test(text) ||
+    /(?:多页网站|多页面网站|多页站点|多个页面)/iu.test(text);
+  return !multiPageOverride && singlePagePatterns.some((pattern) => pattern.test(text));
+}
+
 function inferDefaultAutoRoutes(requirementText: string): string[] {
   const routes =
     routePlanningPolicy.defaultAutoRoutes.length > 0
@@ -811,7 +827,8 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
     workflowContractPlan.routes.length > 0 ? { routes: [], navLabels: [] } : extractPromptControlManifestRoutePlan(requirementText, locale);
   const workflowContractRoutes = workflowContractPlan.routes;
   const contractRoutes = workflowContractRoutes.length > 0 ? workflowContractRoutes : promptContractPlan.routes;
-  const specRoutes = contractRoutes.length > 0 ? [] : extractRequirementSpecRoutes(state, requirementText);
+  const singlePageRoutes = contractRoutes.length > 0 ? [] : hasExplicitSinglePageIntent(requirementText) ? ["/"] : [];
+  const specRoutes = contractRoutes.length > 0 || singlePageRoutes.length > 0 ? [] : extractRequirementSpecRoutes(state, requirementText);
   const navLabels = extractNavLabels(requirementText);
   const commaLabels = extractCommaPageLabels(requirementText);
   const numberedLabels = extractNumberedPageLabels(requirementText);
@@ -831,11 +848,13 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
   const baseRoutes =
     contractRoutes.length > 0
       ? contractRoutes
-      : specRoutes.length > 0
-        ? specRoutes
-        : candidates.length > 0
-          ? candidates
-          : plannedFallback;
+      : singlePageRoutes.length > 0
+        ? singlePageRoutes
+        : specRoutes.length > 0
+          ? specRoutes
+          : candidates.length > 0
+            ? candidates
+            : plannedFallback;
   const withHome = baseRoutes.some((route) => normalizeRoute(route) === "/") ? baseRoutes : ["/", ...baseRoutes];
   const routes = orderNavigationRoutes(withHome.length > 0 ? withHome : ["/"]).slice(0, 16);
 
@@ -868,17 +887,19 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
       ? "workflow_contract"
       : contractRoutes.length > 0
         ? "prompt_contract"
-        : specRoutes.length > 0
+        : singlePageRoutes.length > 0
           ? "requirement_spec"
-          : stateRoutes.length > 0
-            ? "state_sitemap"
-            : labelRoutes.length > 0
-              ? "nav_label"
-              : explicitRoutes.length > 0
-                ? "explicit_route"
-                : plannedFallback.length > 0
-                  ? "auto_plan"
-                  : "default";
+          : specRoutes.length > 0
+            ? "requirement_spec"
+            : stateRoutes.length > 0
+              ? "state_sitemap"
+              : labelRoutes.length > 0
+                ? "nav_label"
+                : explicitRoutes.length > 0
+                  ? "explicit_route"
+                  : plannedFallback.length > 0
+                    ? "auto_plan"
+                    : "default";
   const pageBlueprints = routes.map((route, index) =>
     buildPageBlueprint(route, locale, normalizedNavLabels[index], pageIntentSource, requirementText.slice(0, 800)),
   );

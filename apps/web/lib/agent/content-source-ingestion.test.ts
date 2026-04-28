@@ -38,17 +38,46 @@ describe("content source ingestion", () => {
   });
 
   it("extracts XLSX workbook text locally", async () => {
-    const xlsx = await import("xlsx");
-    const workbook = xlsx.utils.book_new();
-    const worksheet = xlsx.utils.aoa_to_sheet([
-      ["Product", "Audience"],
-      ["Smart desk", "International schools"],
-    ]);
-    xlsx.utils.book_append_sheet(workbook, worksheet, "Offerings");
-    const body = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
+    const jszipModule = await import("jszip");
+    const JSZip = (jszipModule as any).default || jszipModule;
+    const zip = new JSZip();
+    zip.file(
+      "xl/workbook.xml",
+      [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<workbook xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">',
+        '<sheets><sheet name="Offerings" sheetId="1" r:id="rId1"/></sheets>',
+        "</workbook>",
+      ].join(""),
+    );
+    zip.file(
+      "xl/_rels/workbook.xml.rels",
+      '<Relationships><Relationship Id="rId1" Target="worksheets/sheet1.xml"/></Relationships>',
+    );
+    zip.file(
+      "xl/sharedStrings.xml",
+      [
+        "<sst>",
+        "<si><t>Product</t></si>",
+        "<si><t>Audience</t></si>",
+        "<si><t>Smart desk</t></si>",
+        "<si><t>International schools</t></si>",
+        "</sst>",
+      ].join(""),
+    );
+    zip.file(
+      "xl/worksheets/sheet1.xml",
+      [
+        "<worksheet><sheetData>",
+        '<row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c></row>',
+        '<row r="2"><c r="A2" t="s"><v>2</v></c><c r="B2" t="s"><v>3</v></c></row>',
+        "</sheetData></worksheet>",
+      ].join(""),
+    );
+    const body = await zip.generateAsync({ type: "uint8array" });
 
     const extracted = await extractDocumentContentFromBytes({
-      body: new Uint8Array(body),
+      body,
       contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       fileName: "catalog.xlsx",
     });

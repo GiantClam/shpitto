@@ -1,5 +1,3 @@
-import fs from "node:fs/promises";
-import path from "node:path";
 import { getR2Client, type R2ListedObject } from "./r2.ts";
 
 export type ProjectAssetSource = "upload" | "chat_upload" | "generated";
@@ -758,6 +756,10 @@ export async function syncGeneratedProjectAssetsFromSite(params: {
     return { uploaded: 0, failed: 0 };
   }
 
+  const [{ default: fs }, { default: path }] = await Promise.all([
+    import("node:fs/promises"),
+    import("node:path"),
+  ]);
   const state = await prepareProjectState({ ownerUserId, projectId });
   const siteRoot = path.resolve(siteDir);
   const nextVersion = resolveNextVersion(state.manifest.currentVersion, state.manifest.versions.length);

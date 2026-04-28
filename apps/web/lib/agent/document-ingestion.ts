@@ -57,6 +57,22 @@ function decodeXmlEntities(text: string): string {
   );
 }
 
+function decodeXmlEntitiesPreserveCellText(text: string): string {
+  return String(text || "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, "\"")
+    .replace(/&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, value) => String.fromCodePoint(Number(value)))
+    .replace(/&#x([a-f0-9]+);/gi, (_, value) => String.fromCodePoint(Number.parseInt(value, 16)));
+}
+
+function stripXmlTags(value: string): string {
+  return decodeXmlEntitiesPreserveCellText(String(value || "").replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
+}
+
 function extensionOf(fileName: string): string {
   return String(fileName || "").toLowerCase().match(/\.([a-z0-9]+)$/)?.[1] || "";
 }
@@ -232,14 +248,77 @@ async function extractDocxLocally(params: ExtractParams): Promise<DocumentExtrac
 }
 
 async function extractXlsxLocally(params: ExtractParams): Promise<DocumentExtractionResult> {
-  const xlsx = await import("xlsx");
-  const workbook = xlsx.read(Buffer.from(params.body), { type: "buffer", cellText: true, cellDates: true });
+  const jszipModule = await import("jszip");
+  const JSZip = (jszipModule as any).default || jszipModule;
+  const zip = await JSZip.loadAsync(Buffer.from(params.body));
+
+  const sharedStringsXml = zip.file("xl/sharedStrings.xml")
+    ? String(await zip.file("xl/sharedStrings.xml")?.async("string"))
+    : "";
+  const sharedStrings = Array.from(sharedStringsXml.matchAll(/<si\b[^>]*>([\s\S]*?)<\/si>/gi)).map((match) =>
+    stripXmlTags(match[1]),
+  );
+
+  const workbookXml = zip.file("xl/workbook.xml")
+    ? String(await zip.file("xl/workbook.xml")?.async("string"))
+    : "";
+  const relationshipXml = zip.file("xl/_rels/workbook.xml.rels")
+    ? String(await zip.file("xl/_rels/workbook.xml.rels")?.async("string"))
+    : "";
+  const relationTargets = new Map<string, string>();
+  for (const match of relationshipXml.matchAll(/<Relationship\b([^>]*?)\/?>/gi)) {
+    const attrs = match[1] || "";
+    const id = attrs.match(/\bId=["']([^"']+)["']/i)?.[1];
+    const target = attrs.match(/\bTarget=["']([^"']+)["']/i)?.[1];
+    if (id && target) relationTargets.set(id, target.replace(/^\/+/, ""));
+  }
+
+  const workbookSheets = Array.from(workbookXml.matchAll(/<sheet\b([^>]*?)\/?>/gi)).map((match, index) => {
+    const attrs = match[1] || "";
+    const name = decodeXmlEntitiesPreserveCellText(attrs.match(/\bname=["']([^"']+)["']/i)?.[1] || `Sheet ${index + 1}`).trim();
+    const relationshipId = attrs.match(/\br:id=["']([^"']+)["']/i)?.[1] || "";
+    const target = relationshipId ? relationTargets.get(relationshipId) : "";
+    const normalizedTarget = target
+      ? target.startsWith("xl/") ? target : `xl/${target}`
+      : `xl/worksheets/sheet${index + 1}.xml`;
+    return { name, path: normalizedTarget.replace(/\\/g, "/") };
+  });
+
+  const sheetEntries = workbookSheets.length > 0
+    ? workbookSheets
+    : Object.keys(zip.files)
+        .filter((name) => /^xl\/worksheets\/sheet\d+\.xml$/i.test(name))
+        .sort((left, right) => Number(left.match(/sheet(\d+)/i)?.[1] || 0) - Number(right.match(/sheet(\d+)/i)?.[1] || 0))
+        .map((path, index) => ({ name: `Sheet ${index + 1}`, path }));
+
   const sheetTexts: string[] = [];
-  for (const sheetName of workbook.SheetNames.slice(0, 8)) {
-    const sheet = workbook.Sheets[sheetName];
-    if (!sheet) continue;
-    const csv = xlsx.utils.sheet_to_csv(sheet, { blankrows: false }).trim();
-    if (csv) sheetTexts.push(`# ${sheetName}\n${csv}`);
+  for (const sheetEntry of sheetEntries.slice(0, 8)) {
+    const sheetFile = zip.file(sheetEntry.path);
+    if (!sheetFile) continue;
+    const sheetXml = String(await sheetFile.async("string"));
+    const rows: string[] = [];
+    for (const rowMatch of sheetXml.matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/gi)) {
+      const cells = Array.from(rowMatch[1].matchAll(/<c\b([^>]*?)>([\s\S]*?)<\/c>/gi))
+        .map((cellMatch) => {
+          const attrs = cellMatch[1] || "";
+          const body = cellMatch[2] || "";
+          const cellType = attrs.match(/\bt=["']([^"']+)["']/i)?.[1] || "";
+          if (cellType === "inlineStr") {
+            return stripXmlTags(body);
+          }
+          const rawValue = body.match(/<v[^>]*>([\s\S]*?)<\/v>/i)?.[1] || "";
+          if (!rawValue) return "";
+          if (cellType === "s") {
+            const index = Number(rawValue);
+            return Number.isInteger(index) ? sharedStrings[index] || "" : "";
+          }
+          return decodeXmlEntitiesPreserveCellText(rawValue).trim();
+        })
+        .map((cell) => String(cell || "").trim())
+        .filter(Boolean);
+      if (cells.length > 0) rows.push(cells.join(","));
+    }
+    if (rows.length > 0) sheetTexts.push(`# ${sheetEntry.name}\n${rows.join("\n")}`);
   }
   return successResult({ text: sheetTexts.join("\n\n"), parser: "local_xlsx", confidence: 0.86 });
 }

@@ -1,6 +1,5 @@
-import { existsSync } from "node:fs";
-import { promises as fs } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 export type ProjectSkillDescriptor = {
   id: string;
@@ -40,7 +39,21 @@ export const WEBSITE_GENERATION_SKILL_BUNDLE: string[] = [
   "section-quality-checklist",
 ];
 
-function findRepoRoot(start = process.cwd()): string {
+const CURRENT_DIR = path.dirname(fileURLToPath(import.meta.url));
+const WEB_ROOT = path.resolve(CURRENT_DIR, "..", "..");
+const DEFAULT_SKILLS_ROOT = path.join(WEB_ROOT, "skills");
+
+async function pathExists(filePath: string): Promise<boolean> {
+  try {
+    const fs = await import("node:fs/promises");
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function findRepoRoot(start: string): Promise<string> {
   const candidates: string[] = [];
   let current = path.resolve(start);
   for (let i = 0; i < 6; i += 1) {
@@ -51,7 +64,7 @@ function findRepoRoot(start = process.cwd()): string {
   }
 
   for (const candidate of candidates) {
-    if (existsSync(path.join(candidate, "pnpm-workspace.yaml")) || existsSync(path.join(candidate, ".git"))) {
+    if ((await pathExists(path.join(candidate, "pnpm-workspace.yaml"))) || (await pathExists(path.join(candidate, ".git")))) {
       return candidate;
     }
   }
@@ -59,14 +72,18 @@ function findRepoRoot(start = process.cwd()): string {
   return path.resolve(start);
 }
 
-function getProjectSkillsRoot(start = process.cwd()): string {
-  const repoRoot = findRepoRoot(start);
+async function getProjectSkillsRoot(start?: string): Promise<string> {
+  if (!start) return DEFAULT_SKILLS_ROOT;
+  const repoRoot = await findRepoRoot(start);
   const candidates = [
     path.join(repoRoot, "apps", "web", "skills"),
     path.join(repoRoot, "skills"),
     path.join(path.resolve(start), "skills"),
   ];
-  return candidates.find((candidate) => existsSync(candidate)) || candidates[0];
+  for (const candidate of candidates) {
+    if (await pathExists(candidate)) return candidate;
+  }
+  return candidates[0];
 }
 
 function toSkillId(name: string): string {
@@ -86,6 +103,7 @@ export function resolveProjectSkillAlias(skillId: string): string {
 
 async function readJsonIfExists(filePath: string): Promise<Record<string, unknown> | undefined> {
   try {
+    const fs = await import("node:fs/promises");
     const raw = await fs.readFile(filePath, "utf8");
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed === "object") return parsed as Record<string, unknown>;
@@ -95,8 +113,9 @@ async function readJsonIfExists(filePath: string): Promise<Record<string, unknow
   return undefined;
 }
 
-export async function listProjectSkills(start = process.cwd()): Promise<string[]> {
-  const skillsRoot = getProjectSkillsRoot(start);
+export async function listProjectSkills(start?: string): Promise<string[]> {
+  const fs = await import("node:fs/promises");
+  const skillsRoot = await getProjectSkillsRoot(start);
   let entries: Array<{ name: string; isDirectory: () => boolean }> = [];
   try {
     entries = await fs.readdir(skillsRoot, { withFileTypes: true });
@@ -110,24 +129,25 @@ export async function listProjectSkills(start = process.cwd()): Promise<string[]
     const id = toSkillId(entry.name);
     if (!id) continue;
     const skillMdPath = path.join(skillsRoot, entry.name, "SKILL.md");
-    if (!existsSync(skillMdPath)) continue;
+    if (!(await pathExists(skillMdPath))) continue;
     ids.push(id);
   }
   return ids.sort();
 }
 
-export async function loadProjectSkill(skillId: string, start = process.cwd()): Promise<ProjectSkillDescriptor> {
+export async function loadProjectSkill(skillId: string, start?: string): Promise<ProjectSkillDescriptor> {
   const normalized = resolveProjectSkillAlias(skillId);
   if (!normalized) {
     throw new Error("skill_id is required");
   }
 
-  const skillsRoot = getProjectSkillsRoot(start);
+  const fs = await import("node:fs/promises");
+  const skillsRoot = await getProjectSkillsRoot(start);
   const targetRoot = path.join(skillsRoot, normalized);
   const skillMdPath = path.join(targetRoot, "SKILL.md");
   const skillJsonPath = path.join(targetRoot, "skill.json");
 
-  if (!existsSync(skillMdPath)) {
+  if (!(await pathExists(skillMdPath))) {
     const available = await listProjectSkills(start);
     throw new Error(
       available.length > 0
@@ -143,7 +163,7 @@ export async function loadProjectSkill(skillId: string, start = process.cwd()): 
     id: normalized,
     rootDir: targetRoot,
     skillMdPath,
-    skillJsonPath: existsSync(skillJsonPath) ? skillJsonPath : undefined,
+    skillJsonPath: (await pathExists(skillJsonPath)) ? skillJsonPath : undefined,
     content,
     config,
   };

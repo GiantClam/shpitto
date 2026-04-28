@@ -483,6 +483,27 @@ describe("decision-layer", () => {
     expect(plan.routes).not.toEqual(expect.arrayContaining(["/email", "/phone", "/spec-cards", "/quote-form"]));
   });
 
+  it("honors explicit one-page prompts instead of extracting service or asset terms as routes", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          [
+            "Create a small one-page public website for a Railway worker regression test.",
+            'Requirements: one homepage only, title "Railway Worker Regression", include a short hero, three status cards, and a footer.',
+            "Use lightweight HTML/CSS/JS only. No external services, no login, no forms, no ecommerce.",
+            "Design should be clean, light, and simple.",
+          ].join("\n"),
+        ),
+      ],
+      phase: "conversation",
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+
+    expect(plan.routes).toEqual(["/"]);
+    expect(plan.routes).not.toEqual(expect.arrayContaining(["/services", "/css-js", "/login"]));
+  });
+
   it("preserves manifest nav labels when canonical prompt contains page intent prose", () => {
     const state: any = {
       messages: [

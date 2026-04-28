@@ -24,6 +24,16 @@
     "@langchain/openai": "^1.2.0",
     "zod-to-json-schema": "^3.25.1"
   },
+  "pnpm": {
+    "overrides": {
+      "axios": "1.15.0",
+      "follow-redirects": "1.16.0",
+      "langsmith": "0.5.19",
+      "postcss": "8.5.10",
+      "protobufjs": "7.5.5",
+      "uuid": "14.0.0"
+    }
+  },
   "version": "1.0.0",
   "description": "This repository contains the source code for Phase 1 (Industry-v0) of the Shpitto platform.",
   "main": "index.js",
