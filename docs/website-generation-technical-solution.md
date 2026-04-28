@@ -31,7 +31,7 @@
 
 3. 执行层（Worker + Skill Runtime）
 - 职责：按固定阶段调用 LLM 生成文件并实时落盘。
-- Worker：`apps/web/scripts/chat-task-worker.ts`
+- Worker：`apps/web/scripts/chat-task-worker.mts`
 - Runtime：`apps/web/lib/skill-runtime/executor.ts`
 
 4. 产物层（本地 checkpoint + R2）

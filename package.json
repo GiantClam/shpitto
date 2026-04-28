@@ -28,9 +28,21 @@
     "overrides": {
       "axios": "1.15.0",
       "follow-redirects": "1.16.0",
+      "hono": "4.12.15",
+      "@hono/node-server": "1.19.13",
+      "ajv@<6.14.0": "6.14.0",
+      "brace-expansion@<1.1.13": "1.1.13",
+      "esbuild": "0.25.12",
+      "flatted": "3.4.2",
       "langsmith": "0.5.19",
+      "minimatch@<3.1.4": "3.1.4",
+      "minimatch@>=9.0.0 <9.0.6": "9.0.6",
+      "picomatch@<2.3.2": "2.3.2",
+      "picomatch@>=4.0.0 <4.0.4": "4.0.4",
       "postcss": "8.5.10",
       "protobufjs": "7.5.5",
+      "rollup": "4.60.2",
+      "tar": "7.5.13",
       "uuid": "14.0.0"
     }
   },

@@ -1,5 +1,4 @@
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 export type ProjectSkillDescriptor = {
   id: string;
@@ -39,9 +38,7 @@ export const WEBSITE_GENERATION_SKILL_BUNDLE: string[] = [
   "section-quality-checklist",
 ];
 
-const CURRENT_DIR = path.dirname(fileURLToPath(import.meta.url));
-const WEB_ROOT = path.resolve(CURRENT_DIR, "..", "..");
-const DEFAULT_SKILLS_ROOT = path.join(WEB_ROOT, "skills");
+const DEFAULT_SKILLS_ROOT = path.join(/* turbopackIgnore: true */ process.cwd(), "skills");
 
 async function pathExists(filePath: string): Promise<boolean> {
   try {
@@ -53,33 +50,9 @@ async function pathExists(filePath: string): Promise<boolean> {
   }
 }
 
-async function findRepoRoot(start: string): Promise<string> {
-  const candidates: string[] = [];
-  let current = path.resolve(start);
-  for (let i = 0; i < 6; i += 1) {
-    candidates.push(current);
-    const parent = path.dirname(current);
-    if (parent === current) break;
-    current = parent;
-  }
-
-  for (const candidate of candidates) {
-    if ((await pathExists(path.join(candidate, "pnpm-workspace.yaml"))) || (await pathExists(path.join(candidate, ".git")))) {
-      return candidate;
-    }
-  }
-
-  return path.resolve(start);
-}
-
 async function getProjectSkillsRoot(start?: string): Promise<string> {
   if (!start) return DEFAULT_SKILLS_ROOT;
-  const repoRoot = await findRepoRoot(start);
-  const candidates = [
-    path.join(repoRoot, "apps", "web", "skills"),
-    path.join(repoRoot, "skills"),
-    path.join(path.resolve(start), "skills"),
-  ];
+  const candidates = [path.join(path.resolve(/* turbopackIgnore: true */ start), "skills"), DEFAULT_SKILLS_ROOT];
   for (const candidate of candidates) {
     if (await pathExists(candidate)) return candidate;
   }

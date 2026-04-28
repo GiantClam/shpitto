@@ -266,7 +266,7 @@
 1. `apps/web/app/api/chat/route.ts`：实现状态机读取、意图判定路由、多轮需求聚合入口。  
 2. `apps/web/lib/agent/chat-task-store.ts`：补齐 `workflow_context` / revision 指针读写与查询接口。  
 3. `apps/web/lib/skill-runtime/executor.ts`：新增 refine 执行入口（不改现有 full-generate/deploy 语义）。  
-4. `apps/web/scripts/chat-task-worker.ts`：接入 refine 任务类型执行与失败回滚处理。  
+4. `apps/web/scripts/chat-task-worker.mts`：接入 refine 任务类型执行与失败回滚处理。  
 5. `apps/web/app/api/chat/tasks/[taskId]/preview/[...path]/route.ts`：确保 refine 后 preview fallback 与 root/index 一致。  
 6. `apps/web/app/chat/page.tsx`：发送语义、时间线状态文案、任务阶段提示联动。  
 7. `apps/web/lib/agent/chat-*.test.ts`：按本方案新增/扩展各环节单元与集成测试。  
