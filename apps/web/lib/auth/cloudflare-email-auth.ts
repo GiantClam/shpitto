@@ -229,11 +229,18 @@ export async function createAuthUserWithVerification(params: {
     emailVerified: false,
   });
 
-  await sendEmailVerification({
-    userId: data.user.id,
-    email,
-    request: params.request,
-  });
+  try {
+    await sendEmailVerification({
+      userId: data.user.id,
+      email,
+      request: params.request,
+    });
+  } catch (error) {
+    await supabase.from(EMAIL_VERIFICATION_TOKENS_TABLE).delete().eq("user_id", data.user.id);
+    await supabase.from(AUTH_USERS_TABLE).delete().eq("user_id", data.user.id);
+    await supabase.auth.admin.deleteUser(data.user.id).catch(() => undefined);
+    throw error;
+  }
 
   return { userId: data.user.id, email };
 }
@@ -342,10 +349,15 @@ export async function sendPasswordReset(params: {
 
   const resetUrl = buildActionUrl("/reset-password", token, params.request);
   const content = buildPasswordResetEmailContent(resetUrl);
-  await sendCloudflareEmail({
-    to: normalizeAuthEmail(params.email),
-    ...content,
-  });
+  try {
+    await sendCloudflareEmail({
+      to: normalizeAuthEmail(params.email),
+      ...content,
+    });
+  } catch (error) {
+    await supabase.from(PASSWORD_RESET_TOKENS_TABLE).delete().eq("user_id", params.userId);
+    throw error;
+  }
 
   return { resetUrl, expiresAt };
 }
