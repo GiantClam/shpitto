@@ -261,17 +261,22 @@ export function rewriteProjectAssetLogicalUrlsWithAssetMap(
   options: { prefer?: "preview" | "release" } = {},
 ): string {
   const normalizedPrefix = String(cdnPrefix || "").trim().replace(/\/+$/, "");
+  const assetEntries = (assets || [])
+    .filter((asset) => String(asset.path || "").trim())
+    .map((asset) => {
+      const preferredUrl = String(
+        options.prefer === "release"
+          ? asset.releaseUrl || asset.previewUrl || asset.url || ""
+          : asset.previewUrl || asset.url || asset.releaseUrl || "",
+      ).trim();
+      return {
+        asset,
+        normalizedPath: normalizeRelativePath(asset.path),
+        preferredUrl,
+      };
+    });
   const byPath = new Map(
-    (assets || [])
-      .filter((asset) => String(asset.path || "").trim())
-      .map((asset) => [
-        normalizeRelativePath(asset.path),
-        String(
-          options.prefer === "release"
-            ? asset.releaseUrl || asset.previewUrl || asset.url || ""
-            : asset.previewUrl || asset.url || asset.releaseUrl || "",
-        ).trim(),
-      ]),
+    assetEntries.map((entry) => [entry.normalizedPath, entry.preferredUrl]),
   );
   if (!normalizedPrefix && byPath.size === 0) return String(content || "");
 
@@ -283,9 +288,28 @@ export function rewriteProjectAssetLogicalUrlsWithAssetMap(
   };
   const pattern = new RegExp(`${escapeRegExp(logicalRoot)}([^"'\\s),>]+)`, "g");
   const encodedPattern = new RegExp(`${escapeRegExp(encodedRoot)}([^"'\\s),>]+)`, "g");
-  return String(content || "")
+  let rewritten = String(content || "")
     .replace(pattern, (_match, assetPath: string) => resolveUrl(assetPath))
     .replace(encodedPattern, (_match, assetPath: string) => resolveUrl(assetPath).replace(/\//g, "\\/"));
+
+  for (const entry of assetEntries) {
+    const target = entry.preferredUrl;
+    if (!target) continue;
+    const sourceCandidates = [
+      entry.asset.previewUrl,
+      entry.asset.url,
+      entry.asset.releaseUrl,
+    ]
+      .map((value) => String(value || "").trim())
+      .filter((value) => value && value !== target && value.includes("/project-assets/"));
+    for (const source of new Set(sourceCandidates)) {
+      rewritten = rewritten
+        .replace(new RegExp(escapeRegExp(source), "g"), target)
+        .replace(new RegExp(escapeRegExp(source.replace(/\//g, "\\/")), "g"), target.replace(/\//g, "\\/"));
+    }
+  }
+
+  return rewritten;
 }
 
 function rewriteProjectAssetReferenceValue(

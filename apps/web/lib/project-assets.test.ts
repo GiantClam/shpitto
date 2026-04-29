@@ -170,6 +170,45 @@ describe("project-assets URL rewriting", () => {
     expect(rewritten.site_config.branding.logo).toBe(releaseUrl);
   });
 
+  it("rewrites direct preview asset URLs to release URLs during publish", () => {
+    const previewUrl = "https://s.example.com/project-assets/u/p/preview/1.0.2/files/uploads/logo.png";
+    const releaseUrl = "https://s.example.com/project-assets/u/p/release/current/files/uploads/logo.png";
+    const project = {
+      staticSite: {
+        files: [
+          {
+            path: "/index.html",
+            content: `<img class="brand__logo" src="${previewUrl}" alt="Logo">`,
+          },
+          {
+            path: "/data.json",
+            content: `{"logo":"${previewUrl.replace(/\//g, "\\/")}"}`,
+          },
+        ],
+      },
+    };
+
+    const rewritten = rewriteProjectAssetLogicalUrlsForRelease(
+      project,
+      { ownerUserId: "u", projectId: "p" },
+      [
+        {
+          path: "uploads/logo.png",
+          releaseUrl,
+          previewUrl,
+          url: previewUrl,
+          category: "image",
+          updatedAt: 20,
+          name: "logo.png",
+        },
+      ],
+    );
+
+    expect(rewritten.staticSite.files[0].content).toContain(`src="${releaseUrl}"`);
+    expect(rewritten.staticSite.files[1].content).toContain(releaseUrl.replace(/\//g, "\\/"));
+    expect(rewritten.staticSite.files[0].content).not.toContain("/preview/");
+  });
+
   it("extracts project asset preview scope from rendered content", () => {
     const scope = extractProjectAssetPreviewScopeFromContent(
       '<img src="https://s.example.com/project-assets/user-1/chat-1/preview/1.0.2/files/uploads/">',
