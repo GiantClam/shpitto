@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { __contentSourceIngestionForTesting } from "./content-source-ingestion";
-import { extractDocumentContentFromBytes } from "./document-ingestion";
+import { __documentIngestionForTesting, extractDocumentContentFromBytes } from "./document-ingestion";
 
 describe("content source ingestion", () => {
+  it("loads the Node PDF parser build without relying on browser canvas globals", () => {
+    expect("DOMMatrix" in globalThis).toBe(false);
+
+    const pdfParseModule = __documentIngestionForTesting.loadPdfParseModule();
+
+    expect(typeof pdfParseModule.PDFParse).toBe("function");
+  });
+
   it("does not accept raw PDF internals as extracted document text", () => {
     const pdfDump = Buffer.from(
       "%PDF-1.4 1 0 obj <</Type /Page /Filter /FlateDecode>> stream xœ binary compressed bytes endstream endobj xref trailer",

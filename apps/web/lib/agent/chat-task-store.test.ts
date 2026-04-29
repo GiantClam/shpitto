@@ -254,6 +254,49 @@ describe("chat-task-store", () => {
     expect(secondStatusMessages.length).toBe(1);
   });
 
+  it("includes completed tasks in consistency sweep and avoids duplicate terminal messages", async () => {
+    const chatId = `chat-sweep-complete-${Date.now()}`;
+    const task = await createChatTask(chatId, undefined, {
+      phase: "queued",
+      progress: { stage: "queued" } as any,
+    });
+    await completeChatTask(task.id, { assistantText: "Refinement completed. Updated 9 files.", phase: "end" });
+
+    const before = await listChatTimelineMessages(chatId, 50);
+    const completionMessagesBefore = before.filter((message) => {
+      const metadata = (message.metadata || {}) as Record<string, unknown>;
+      return message.taskId === task.id && metadata.status === "succeeded" && message.role === "assistant";
+    });
+    expect(completionMessagesBefore.length).toBe(1);
+
+    const { appendChatTimelineMessage } = await import("./chat-task-store");
+    await appendChatTimelineMessage({
+      chatId,
+      taskId: task.id,
+      role: "assistant",
+      text: "running update",
+      metadata: { status: "running" },
+    });
+
+    const firstSweep = await runChatTaskConsistencySweep({ limit: 50, maxTaskAgeMs: 1000 * 60 * 10 });
+    expect(firstSweep.scanned).toBeGreaterThan(0);
+
+    const afterFirst = await listChatTimelineMessages(chatId, 50);
+    const completionMessagesAfterFirst = afterFirst.filter((message) => {
+      const metadata = (message.metadata || {}) as Record<string, unknown>;
+      return message.taskId === task.id && metadata.status === "succeeded" && message.role === "assistant";
+    });
+    expect(completionMessagesAfterFirst.length).toBe(1);
+
+    await runChatTaskConsistencySweep({ limit: 50, maxTaskAgeMs: 1000 * 60 * 10 });
+    const afterSecond = await listChatTimelineMessages(chatId, 50);
+    const completionMessagesAfterSecond = afterSecond.filter((message) => {
+      const metadata = (message.metadata || {}) as Record<string, unknown>;
+      return message.taskId === task.id && metadata.status === "succeeded" && message.role === "assistant";
+    });
+    expect(completionMessagesAfterSecond.length).toBe(1);
+  });
+
   it("formats task events into user-readable timeline text", () => {
     const createdText = formatTaskEventSnapshot({
       eventType: "task_created",

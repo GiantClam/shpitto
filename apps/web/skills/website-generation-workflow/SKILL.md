@@ -243,6 +243,39 @@ Quality gate:
 - Language switch causes no broken routes and no leaked placeholder keys.
 - Language switch does not reduce accessibility (`lang`, `aria-label`, readable form labels).
 
+#### Interactive Shell Implementation Contract (Mandatory)
+
+Shared header, navigation, language controls, reusable list modules, and responsive behavior must be implemented as working UI, not visual placeholders.
+
+Navigation requirements:
+
+1. If a mobile menu button toggles a class such as `.is-open`, CSS must include the matching visible state for the controlled nav, for example `.nav.is-open { display: flex; }` or an equivalent layout rule inside the same breakpoint.
+2. Menu state must update both DOM visibility and accessibility state: `aria-expanded`, focusability, Escape-to-close, click-outside close, and close-on-link-click on mobile.
+3. Desktop navigation must not wrap into unstable multi-line headers at intermediate widths. If the declared routes do not fit, switch to the mobile/disclosure navigation at a higher breakpoint, reduce link density, or use a compact overflow strategy.
+4. Header height must remain predictable across supported desktop/tablet widths; avoid layouts where nav wrapping unexpectedly increases sticky header height.
+5. Active route styling must work after preview URL rewriting and must not rely on raw `/` path matching only.
+
+i18n requirements:
+
+1. An EN/ZH language switch is valid only if it changes visible core copy, not merely `document.documentElement.lang` or button state.
+2. Every translatable text node in nav, heroes, CTAs, form labels, footer, and major section headings must have a stable i18n key or explicit bilingual data mapping.
+3. The default language must render without JavaScript. JavaScript may enhance switching by replacing text from an in-page dictionary or generated i18n files.
+4. Switching language must preserve the current route, active nav state, form accessibility labels, and persisted language preference.
+5. If full bilingual content cannot be implemented for the generated site, do not render an EN/ZH switch. Prefer a single-language site over a fake language toggle.
+
+Component spacing requirements:
+
+1. Reusable row/list components such as news, article, download, result, and case rows must define horizontal padding or an equivalent card/list gutter. Avoid `padding: 16px 0` when the row sits inside a bordered panel.
+2. Row layouts must have mobile-specific rules that preserve readable gutters, touch target spacing, and non-overlapping media/meta columns.
+3. Shared row classes must be visually tested in at least one dense-content module; if a row appears flush against a panel edge, revise the component before emitting final files.
+
+Quality gate:
+
+- Mobile menu: button click makes the controlled nav visibly open and closable.
+- Language switch: clicking EN/ZH changes representative visible copy and keeps the route intact.
+- Header: navigation remains one line or intentionally switches to a disclosure menu at 320 / 768 / 1024 / 1280 / 1440 widths.
+- List rows: representative dense-list rows have readable left/right gutters on desktop and mobile.
+
 ### Phase 2: Section Batch Generation
 
 1. Generate in batches of 3-5 sections.

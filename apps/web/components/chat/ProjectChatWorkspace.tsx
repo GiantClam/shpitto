@@ -64,6 +64,7 @@ type TaskResult = {
     fileCount?: number;
     pageCount?: number;
     generatedFiles?: string[];
+    checkpointProjectPath?: string;
   };
 };
 
@@ -113,9 +114,22 @@ type HistoryResponse = {
   ok: boolean;
   messages?: HistoryMessage[];
   task?: TaskPayload | null;
+  previewTask?: TaskPayload | null;
   events?: TaskEvent[];
   error?: string;
 };
+
+function taskHasGeneratedHtml(task?: TaskPayload | null): boolean {
+  const generatedFiles = task?.result?.progress?.generatedFiles || [];
+  return generatedFiles.some((filePath) => /(^|\/)index\.html$/i.test(String(filePath || "").trim()));
+}
+
+function taskHasPreviewBaseline(task?: TaskPayload | null): boolean {
+  if (!task) return false;
+  if (String(task.result?.deployedUrl || "").trim()) return true;
+  if (taskHasGeneratedHtml(task)) return true;
+  return Boolean(String(task.result?.progress?.checkpointProjectPath || "").trim());
+}
 
 function isTaskEventTimelineMessage(message: HistoryMessage): boolean {
   const metadata = (message.metadata || {}) as Record<string, unknown>;
@@ -452,6 +466,8 @@ const CHAT_PANEL_WIDTH_STORAGE_KEY = "shpitto.chatPanelWidth";
 const CHAT_PANEL_DEFAULT_WIDTH = 460;
 const CHAT_PANEL_MIN_WIDTH = 360;
 const CHAT_PANEL_MAX_WIDTH = 720;
+const TASK_STATUS_POLL_INTERVAL_MS = 5000;
+const TASK_STATUS_RETRY_INTERVAL_MS = 5000;
 
 function clampChatPanelWidth(value: number): number {
   const normalized = Number.isFinite(value) ? value : CHAT_PANEL_DEFAULT_WIDTH;
@@ -1640,6 +1656,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
   const [loadingTask, setLoadingTask] = useState(false);
   const [error, setError] = useState("");
   const [task, setTask] = useState<TaskPayload | null>(null);
+  const [previewTask, setPreviewTask] = useState<TaskPayload | null>(null);
   const [taskEvents, setTaskEvents] = useState<TaskEvent[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draftPreviewOpen, setDraftPreviewOpen] = useState(false);
@@ -1885,20 +1902,26 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
         }
 
         setTask(data.task);
+        if (taskHasPreviewBaseline(data.task)) {
+          setPreviewTask(data.task);
+        }
         setTaskEvents(Array.isArray(data.events) ? data.events : []);
-        try {
-          const history = await fetchHistoryByChatId(data.task.chatId);
-          setTaskEvents(Array.isArray(history.events) ? history.events : Array.isArray(data.events) ? data.events : []);
-          const historyMessages = Array.isArray(history.messages) ? history.messages : [];
-          const normalizedMessages = historyMessages
-            .filter((item) => !isTaskEventTimelineMessage(item))
-            .map((item) => toTimelineMessage(item))
-            .filter((item) => item.text);
-          if (normalizedMessages.length > 0) {
-            setMessages(normalizedMessages);
+        if (data.task.status === "succeeded" || data.task.status === "failed") {
+          try {
+            const history = await fetchHistoryByChatId(data.task.chatId);
+            setPreviewTask(history.previewTask || (taskHasPreviewBaseline(data.task) ? data.task : null));
+            setTaskEvents(Array.isArray(history.events) ? history.events : Array.isArray(data.events) ? data.events : []);
+            const historyMessages = Array.isArray(history.messages) ? history.messages : [];
+            const normalizedMessages = historyMessages
+              .filter((item) => !isTaskEventTimelineMessage(item))
+              .map((item) => toTimelineMessage(item))
+              .filter((item) => item.text);
+            if (normalizedMessages.length > 0) {
+              setMessages(normalizedMessages);
+            }
+          } catch {
+            // best-effort terminal history refresh
           }
-        } catch {
-          // best-effort history refresh
         }
         setLoadingTask(false);
 
@@ -1906,13 +1929,13 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
         if (data.task.status === "queued" || data.task.status === "running") {
           pollTimerRef.current = window.setTimeout(() => {
             void fetchTask(taskId).catch((err) => setError(String(err?.message || err)));
-          }, 2500);
+          }, TASK_STATUS_POLL_INTERVAL_MS);
         }
       } catch (err: any) {
         if (retryCount < 3) {
           pollTimerRef.current = window.setTimeout(() => {
             void fetchTask(taskId, retryCount + 1).catch((innerErr) => setError(String(innerErr?.message || innerErr)));
-          }, 1200);
+          }, TASK_STATUS_RETRY_INTERVAL_MS);
           return;
         }
         setLoadingTask(false);
@@ -1928,6 +1951,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
     setLoadingTask(true);
     setError("");
     setTask(null);
+    setPreviewTask(null);
     setTaskEvents([]);
     setHistoryReady(false);
 
@@ -1936,6 +1960,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
         const history = await fetchHistoryByChatId(chatId);
         if (cancelled) return;
         setTaskEvents(Array.isArray(history.events) ? history.events : []);
+        setPreviewTask(history.previewTask || (taskHasPreviewBaseline(history.task) ? history.task! : null));
         const historyMessages = Array.isArray(history.messages) ? history.messages : [];
         const normalizedMessages = historyMessages
           .filter((item) => !isTaskEventTimelineMessage(item))
@@ -1989,27 +2014,27 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
   }, [chatId, fetchHistoryByChatId, fetchTask, toTimelineMessage]);
 
   const generatedFiles = useMemo(() => {
-    return task?.result?.progress?.generatedFiles || [];
-  }, [task]);
+    return previewTask?.result?.progress?.generatedFiles || [];
+  }, [previewTask]);
 
   const hasGeneratedHtml = useMemo(() => {
-    return generatedFiles.some((filePath) => /(^|\/)index\.html$/i.test(String(filePath || "").trim()));
-  }, [generatedFiles]);
+    return taskHasGeneratedHtml(previewTask);
+  }, [previewTask]);
 
   const localPreviewUrl = useMemo(() => {
-    if (!task?.id) return "";
+    if (!previewTask?.id) return "";
     if (!hasGeneratedHtml) return "";
-    return `/api/chat/tasks/${encodeURIComponent(task.id)}/preview/index.html`;
-  }, [task, hasGeneratedHtml]);
+    return `/api/chat/tasks/${encodeURIComponent(previewTask.id)}/preview/index.html`;
+  }, [previewTask, hasGeneratedHtml]);
 
-  const deployedUrl = useMemo(() => String(task?.result?.deployedUrl || "").trim(), [task]);
+  const deployedUrl = useMemo(() => String(previewTask?.result?.deployedUrl || task?.result?.deployedUrl || "").trim(), [previewTask, task]);
   const previewUrl = useMemo(() => localPreviewUrl || deployedUrl, [deployedUrl, localPreviewUrl]);
   const deployedHost = useMemo(() => hostFromUrl(deployedUrl), [deployedUrl]);
   const isDeploying = useMemo(() => {
     const stage = String(task?.result?.progress?.stage || "").toLowerCase();
     return Boolean(task && (task.status === "queued" || task.status === "running") && stage.includes("deploy"));
   }, [task]);
-  const deployDisabled = submitting || loadingTask || !previewUrl || isDeploying || (task?.status !== "succeeded" && !deployedUrl);
+  const deployDisabled = submitting || loadingTask || !previewUrl || isDeploying;
 
   const previewFrameUrl = useMemo(() => {
     return appendPreviewRefreshParam(previewUrl, previewRefreshNonce);
@@ -2023,25 +2048,25 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
   }, [deployedHost, previewDevice, previewFrameUrl]);
 
   useEffect(() => {
-    if (!previewUrl || !task?.id) {
+    if (!previewUrl || !previewTask?.id) {
       previewAutoRefreshSignatureRef.current = "";
       return;
     }
 
     const previewSignature = [
-      task.id,
-      task.status,
-      task.updatedAt || "",
+      previewTask.id,
+      previewTask.status,
+      previewTask.updatedAt || "",
       generatedFiles.join("|"),
     ].join("::");
     const previousSignature = previewAutoRefreshSignatureRef.current;
     previewAutoRefreshSignatureRef.current = previewSignature;
 
     if (!previousSignature || previousSignature === previewSignature) return;
-    if (task.status === "succeeded" || hasGeneratedHtml) {
+    if (previewTask.status === "succeeded" || hasGeneratedHtml) {
       setPreviewRefreshNonce(Date.now());
     }
-  }, [generatedFiles, hasGeneratedHtml, previewUrl, task?.id, task?.status, task?.updatedAt]);
+  }, [generatedFiles, hasGeneratedHtml, previewTask?.id, previewTask?.status, previewTask?.updatedAt, previewUrl]);
 
   const stageText = useMemo(() => {
     return task?.result?.progress?.stageMessage || toReadableStage(task?.result?.progress?.stage, conversationLocale) || task?.status || "-";
@@ -2170,6 +2195,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
 
         const latestHistory = await fetchHistoryByChatId(chatId);
         setTaskEvents(Array.isArray(latestHistory.events) ? latestHistory.events : []);
+        setPreviewTask(latestHistory.previewTask || (taskHasPreviewBaseline(latestHistory.task) ? latestHistory.task! : null));
         const historyMessages = Array.isArray(latestHistory.messages) ? latestHistory.messages : [];
         const normalizedMessages = historyMessages.map((item) => toTimelineMessage(item)).filter((item) => item.text);
         if (normalizedMessages.length > 0) {

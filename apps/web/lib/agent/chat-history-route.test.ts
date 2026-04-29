@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { appendChatTimelineMessage } from "./chat-task-store";
+import { appendChatTimelineMessage, completeChatTask, createChatTask, failChatTask } from "./chat-task-store";
 
 describe("chat history route", () => {
   it("repairs legacy deployment messages that were persisted with question-mark mojibake", async () => {
@@ -59,6 +59,44 @@ describe("chat history route", () => {
       expect(json?.ok).toBe(true);
       expect(Array.isArray(json?.messages)).toBe(true);
       expect((json?.messages || []).length).toBe(0);
+    } finally {
+      if (prevUseSupabase === undefined) delete process.env.CHAT_TASKS_USE_SUPABASE;
+      else process.env.CHAT_TASKS_USE_SUPABASE = prevUseSupabase;
+    }
+  });
+
+  it("keeps the latest deployable task available after a newer deploy task fails", async () => {
+    const prevUseSupabase = process.env.CHAT_TASKS_USE_SUPABASE;
+    process.env.CHAT_TASKS_USE_SUPABASE = "0";
+
+    try {
+      const chatId = `chat-history-preview-baseline-${Date.now()}`;
+      const generatedTask = await createChatTask(chatId);
+      await completeChatTask(generatedTask.id, {
+        assistantText: "Site refined.",
+        progress: {
+          stage: "refined",
+          generatedFiles: ["/index.html", "/styles.css"],
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 2));
+
+      const deployTask = await createChatTask(chatId, undefined, {
+        phase: "deploy",
+        progress: { stage: "deploying:analytics" },
+      });
+      await failChatTask(deployTask.id, "Body Timeout Error");
+
+      const { GET } = await import("../../app/api/chat/history/route");
+      const res = await GET(new Request(`http://localhost/api/chat/history?chatId=${encodeURIComponent(chatId)}`));
+      const json = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(json?.task?.id).toBe(deployTask.id);
+      expect(json?.task?.status).toBe("failed");
+      expect(json?.previewTask?.id).toBe(generatedTask.id);
+      expect(json?.previewTask?.result?.progress?.generatedFiles).toEqual(["/index.html", "/styles.css"]);
     } finally {
       if (prevUseSupabase === undefined) delete process.env.CHAT_TASKS_USE_SUPABASE;
       else process.env.CHAT_TASKS_USE_SUPABASE = prevUseSupabase;

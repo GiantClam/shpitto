@@ -925,9 +925,12 @@ function taskHasDeployableBaseline(task: ChatTaskRecord | undefined): boolean {
   );
 }
 
-function getRememberedLatestBaselineTask(chatId: string): ChatTaskRecord | undefined {
+function getRememberedLatestBaselineTask(chatId: string, statuses?: ChatTaskStatus[]): ChatTaskRecord | undefined {
   cleanupTasks();
-  const records = [...getStore().tasks.values()].filter((item) => item.chatId === chatId && taskHasDeployableBaseline(item));
+  const allowedStatuses = statuses?.length ? new Set(statuses) : undefined;
+  const records = [...getStore().tasks.values()].filter(
+    (item) => item.chatId === chatId && (!allowedStatuses || allowedStatuses.has(item.status)) && taskHasDeployableBaseline(item),
+  );
   records.sort((a, b) => b.createdAt - a.createdAt);
   return records[0];
 }
@@ -1189,23 +1192,23 @@ function hasTaskStatusMessage(messages: ChatTimelineMessage[], task: ChatTaskRec
   });
 }
 
-async function listPendingTasksForConsistency(limit: number, maxTaskAgeMs: number): Promise<ChatTaskRecord[]> {
+async function listTasksForConsistency(limit: number, maxTaskAgeMs: number): Promise<ChatTaskRecord[]> {
   const safeLimit = Math.max(1, Math.min(300, Number(limit || 60)));
   const cutoffTs = now() - Math.max(60_000, Number(maxTaskAgeMs || 1000 * 60 * 60 * 6));
 
   if (!isSupabaseTaskStoreEnabled()) {
     cleanupTasks();
-    const pending = [...getStore().tasks.values()]
-      .filter((task) => (task.status === "queued" || task.status === "running") && task.createdAt >= cutoffTs)
+    const tasks = [...getStore().tasks.values()]
+      .filter((task) => ["queued", "running", "succeeded", "failed"].includes(task.status) && task.createdAt >= cutoffTs)
       .sort((a, b) => b.updatedAt - a.updatedAt);
-    return pending.slice(0, safeLimit);
+    return tasks.slice(0, safeLimit);
   }
 
   const supabase = mustGetSupabaseClient();
   const { data, error } = await supabase
     .from(TASK_TABLE)
     .select("*")
-    .in("status", ["queued", "running"])
+    .in("status", ["queued", "running", "succeeded", "failed"])
     .gte("created_at", asIso(cutoffTs))
     .order("updated_at", { ascending: false })
     .limit(safeLimit);
@@ -1218,7 +1221,7 @@ export async function runChatTaskConsistencySweep(options: {
   limit?: number;
   maxTaskAgeMs?: number;
 } = {}): Promise<ChatTaskConsistencySweepResult> {
-  const pending = await listPendingTasksForConsistency(
+  const tasks = await listTasksForConsistency(
     Number(options.limit || 60),
     Number(options.maxTaskAgeMs || 1000 * 60 * 60 * 6),
   );
@@ -1227,7 +1230,7 @@ export async function runChatTaskConsistencySweep(options: {
   let sessionTouched = 0;
   let timelineRepaired = 0;
 
-  for (const task of pending) {
+  for (const task of tasks) {
     await upsertChatSessionBestEffort({
       chatId: task.chatId,
       ownerUserId: task.ownerUserId,
@@ -1262,7 +1265,7 @@ export async function runChatTaskConsistencySweep(options: {
   }
 
   return {
-    scanned: pending.length,
+    scanned: tasks.length,
     sessionTouched,
     timelineRepaired,
   };
@@ -1666,25 +1669,31 @@ export async function getLatestChatTaskForChat(chatId: string): Promise<ChatTask
   }
 }
 
-export async function getLatestDeployableChatTaskForChat(chatId: string): Promise<ChatTaskRecord | undefined> {
+export async function getLatestDeployableChatTaskForChat(
+  chatId: string,
+  options?: { statuses?: ChatTaskStatus[] },
+): Promise<ChatTaskRecord | undefined> {
+  const statuses = options?.statuses?.filter(Boolean);
   if (!isSupabaseTaskStoreEnabled()) {
-    return getRememberedLatestBaselineTask(chatId);
+    return getRememberedLatestBaselineTask(chatId, statuses);
   }
 
   try {
     const supabase = mustGetSupabaseClient();
-    const { data, error } = await supabase
+    let query = supabase
       .from(TASK_TABLE)
       .select("*")
-      .eq("chat_id", chatId)
-      .order("created_at", { ascending: false })
-      .limit(20);
+      .eq("chat_id", chatId);
+    if (statuses?.length) {
+      query = query.in("status", statuses);
+    }
+    const { data, error } = await query.order("created_at", { ascending: false }).limit(20);
     if (error) throw error;
     const rows = Array.isArray(data) ? data : [];
     const tasks = rows.map((row) => rememberSupabaseTask(fromRow(row as SupabaseTaskRow))!);
     return tasks.find((task) => taskHasDeployableBaseline(task));
   } catch (error) {
-    const remembered = getRememberedLatestBaselineTask(chatId);
+    const remembered = getRememberedLatestBaselineTask(chatId, statuses);
     if (remembered && isTransientTaskStoreError(error)) {
       warnTaskStoreFallback(`getLatestDeployableChatTaskForChat(${chatId})`, error);
       return remembered;

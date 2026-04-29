@@ -38,6 +38,8 @@ export type ProjectWorkspaceCopy = {
   assets: {
     title: string;
     uploadFiles: string;
+    downloadAll: string;
+    downloading: string;
     all: string;
     images: string;
     code: string;
@@ -137,6 +139,8 @@ const copy: Record<Locale, ProjectWorkspaceCopy> = {
     assets: {
       title: "Project Assets",
       uploadFiles: "Upload Files",
+      downloadAll: "Download All",
+      downloading: "Downloading...",
       all: "All",
       images: "Images",
       code: "Code",
@@ -234,6 +238,8 @@ const copy: Record<Locale, ProjectWorkspaceCopy> = {
     assets: {
       title: "项目资源",
       uploadFiles: "上传文件",
+      downloadAll: "一键下载",
+      downloading: "正在下载...",
       all: "全部",
       images: "图片",
       code: "代码",

@@ -3,6 +3,7 @@ import {
   formatTaskEventSnapshot,
   getChatTaskEvents,
   getLatestChatTaskForChat,
+  getLatestDeployableChatTaskForChat,
   listChatTimelineMessages,
   sanitizeTaskResultForClient,
 } from "../../../../lib/agent/chat-task-store";
@@ -44,6 +45,32 @@ function isTaskEventTimelineMessage(item: { role: string; text: string; metadata
   return String(legacy.eventType || "").trim().toLowerCase().startsWith("task_");
 }
 
+function hasVisibleTaskStatusMessage(
+  messages: Array<{ taskId?: string | null; role: string; metadata?: Record<string, unknown> | null }>,
+  task: { id: string; status: string },
+): boolean {
+  const expectedStatus = String(task.status || "").trim();
+  if (!expectedStatus) return true;
+  return messages.some((message) => {
+    if (message.taskId !== task.id) return false;
+    if (message.role !== "assistant" && message.role !== "system") return false;
+    const metadataStatus = String((message.metadata || {}).status || "").trim();
+    return metadataStatus === expectedStatus;
+  });
+}
+
+function serializeTaskForClient(task: Awaited<ReturnType<typeof getLatestChatTaskForChat>>) {
+  if (!task) return null;
+  return {
+    id: task.id,
+    chatId: task.chatId,
+    status: task.status,
+    createdAt: task.createdAt,
+    updatedAt: task.updatedAt,
+    result: sanitizeTaskResultForClient(task.result),
+  };
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const chatId = String(searchParams.get("chatId") || "").trim();
@@ -52,9 +79,10 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false, error: "Missing chatId." }, { status: 400 });
   }
 
-  const [messages, task] = await Promise.all([
+  const [messages, task, previewTask] = await Promise.all([
     listChatTimelineMessages(chatId, 500),
     getLatestChatTaskForChat(chatId),
+    getLatestDeployableChatTaskForChat(chatId, { statuses: ["succeeded"] }),
   ]);
   const events = task?.id ? await getChatTaskEvents(task.id, 500) : [];
 
@@ -78,11 +106,36 @@ export async function GET(req: Request) {
   };
 
   const visibleMessages = messages.filter((item) => !isTaskEventTimelineMessage(item));
+  const taskAssistantText = String(task?.result?.assistantText || "").trim();
+  const shouldIncludeTaskResultMessage =
+    Boolean(task?.id && taskAssistantText) &&
+    (task?.status === "succeeded" || task?.status === "failed") &&
+    !hasVisibleTaskStatusMessage(visibleMessages, { id: task!.id, status: task!.status });
+  const visibleMessagesWithTaskResult = shouldIncludeTaskResultMessage
+    ? [
+        ...visibleMessages,
+        {
+          id: `${task!.id}:result:${task!.status}`,
+          chatId: task!.chatId,
+          taskId: task!.id,
+          ownerUserId: task!.ownerUserId,
+          role: "assistant" as const,
+          text: taskAssistantText,
+          metadata: {
+            status: task!.status,
+            source: "task_result",
+            stage: task!.result?.progress?.stage || null,
+            synthetic: true,
+          },
+          createdAt: task!.updatedAt,
+        },
+      ]
+    : visibleMessages;
 
   return NextResponse.json(
     {
       ok: true,
-      messages: visibleMessages.map((item) => ({
+      messages: visibleMessagesWithTaskResult.map((item) => ({
         id: item.id,
         chatId: item.chatId,
         taskId: item.taskId || null,
@@ -91,16 +144,8 @@ export async function GET(req: Request) {
         metadata: item.metadata || null,
         createdAt: item.createdAt,
       })),
-      task: task
-        ? {
-            id: task.id,
-            chatId: task.chatId,
-            status: task.status,
-            createdAt: task.createdAt,
-            updatedAt: task.updatedAt,
-            result: sanitizeTaskResultForClient(task.result),
-          }
-        : null,
+      task: serializeTaskForClient(task),
+      previewTask: serializeTaskForClient(previewTask),
       events: events.map((event) => ({
         id: event.id,
         eventType: event.event_type,

@@ -322,6 +322,20 @@ export class CloudflareClient {
           await this.sleep(waitMs);
           continue;
         }
+        try {
+          await res.clone().arrayBuffer();
+        } catch (error) {
+          lastError = error;
+          if (attempt >= this.fetchRetries || !this.isRetriableError(error)) {
+            throw error;
+          }
+          const waitMs = Math.min(8_000, this.retryBaseMs * (attempt + 1));
+          console.warn(
+            `[Cloudflare] ${operation} retry ${attempt + 1}/${this.fetchRetries} due to response body read failure: ${String((error as any)?.message || error)}, waiting ${waitMs}ms`,
+          );
+          await this.sleep(waitMs);
+          continue;
+        }
         return res;
       } catch (error) {
         lastError = error;

@@ -1,3 +1,7 @@
+import { createRequire } from "node:module";
+
+const requireFromCurrentModule = createRequire(import.meta.url);
+
 export type DocumentExtractionStatus = "ready" | "unsupported" | "failed";
 
 export type DocumentExtractionResult = {
@@ -22,6 +26,12 @@ type ExtractParams = {
   fileName: string;
   timeoutMs?: number;
 };
+
+type PdfParseModule = typeof import("pdf-parse");
+
+function loadPdfParseModule(): PdfParseModule {
+  return requireFromCurrentModule("pdf-parse") as PdfParseModule;
+}
 
 function normalizeText(value: unknown): string {
   return String(value || "").replace(/\s+/g, " ").trim();
@@ -230,7 +240,7 @@ export function extractDeterministicTextFromDocumentBytes(params: ExtractParams)
 }
 
 async function extractPdfLocally(params: ExtractParams): Promise<DocumentExtractionResult> {
-  const { PDFParse } = await import("pdf-parse");
+  const { PDFParse } = loadPdfParseModule();
   const parser = new PDFParse({ data: Buffer.from(params.body) });
   try {
     const result = await parser.getText();
@@ -239,6 +249,10 @@ async function extractPdfLocally(params: ExtractParams): Promise<DocumentExtract
     await parser.destroy();
   }
 }
+
+export const __documentIngestionForTesting = {
+  loadPdfParseModule,
+};
 
 async function extractDocxLocally(params: ExtractParams): Promise<DocumentExtractionResult> {
   const mammothModule = await import("mammoth");

@@ -13,6 +13,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Database,
+  Download,
   FolderOpen,
   Loader2,
   LogOut,
@@ -144,6 +145,7 @@ export function ProjectAssetsWorkspace({ projectId, locale = "en" }: { projectId
   const [stats, setStats] = useState<{ totalFiles: number; totalBytes: number }>({ totalFiles: 0, totalBytes: 0 });
   const [versionInfo, setVersionInfo] = useState<AssetVersionInfo>({});
   const [deletingKey, setDeletingKey] = useState("");
+  const [downloadingAll, setDownloadingAll] = useState(false);
   const [dragActive, setDragActive] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -303,6 +305,41 @@ export function ProjectAssetsWorkspace({ projectId, locale = "en" }: { projectId
       setError(String(err?.message || err || "Delete failed."));
     } finally {
       setDeletingKey("");
+    }
+  }
+
+  async function handleDownloadAllAssets() {
+    if (!chatId.trim() || downloadingAll || assets.length === 0) return;
+    setDownloadingAll(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/projects/${encodeURIComponent(chatId)}/assets/download`, {
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(data.error || "Download failed.");
+      }
+
+      const blob = await res.blob();
+      const disposition = String(res.headers.get("content-disposition") || "");
+      const encodedName = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+      const quotedName = disposition.match(/filename="([^"]+)"/i)?.[1];
+      const fileName = encodedName
+        ? decodeURIComponent(encodedName)
+        : quotedName || `${chatId}.zip`;
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (err: any) {
+      setError(String(err?.message || err || "Download failed."));
+    } finally {
+      setDownloadingAll(false);
     }
   }
 
@@ -507,15 +544,26 @@ export function ProjectAssetsWorkspace({ projectId, locale = "en" }: { projectId
               <div>
                 <h2 className="text-4xl font-semibold tracking-tight text-[var(--shp-text)]">{workspaceCopy.assets.title}</h2>
               </div>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading || !r2Configured}
-                className="shp-btn-primary inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-black disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                {workspaceCopy.assets.uploadFiles}
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void handleDownloadAllAssets()}
+                  disabled={downloadingAll || loadingAssets || assets.length === 0 || !r2Configured}
+                  className="inline-flex items-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] px-4 py-2.5 text-sm font-semibold text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {downloadingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                  {downloadingAll ? workspaceCopy.assets.downloading : workspaceCopy.assets.downloadAll}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading || !r2Configured}
+                  className="shp-btn-primary inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-black disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  {workspaceCopy.assets.uploadFiles}
+                </button>
+              </div>
             </div>
 
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
