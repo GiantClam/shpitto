@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { getChatTask } from "../../../../../../../lib/agent/chat-task-store";
+import { getChatTask, getRememberedChatTask } from "../../../../../../../lib/agent/chat-task-store";
 import {
+  extractProjectAssetPreviewScopeFromContent,
+  listProjectAssets,
+  repairBrokenProjectAssetDirectoryUrls,
   resolveProjectAssetPreviewCdnPrefix,
   rewriteProjectAssetLogicalUrls,
+  rewriteProjectAssetLogicalUrlsWithAssetMap,
 } from "../../../../../../../lib/project-assets";
 
 export const runtime = "nodejs";
@@ -20,17 +24,97 @@ type VirtualPreviewFile = {
   type?: string;
 };
 
+type ProjectAssetRewriteContext = {
+  assetCdnPrefix: string;
+  projectAssets: Awaited<ReturnType<typeof listProjectAssets>>;
+};
+
 declare global {
   var __shpittoPreviewSiteDirCache: Map<string, PreviewSiteDirCacheEntry> | undefined;
+  var __shpittoPreviewResponseCache: Map<string, PreviewResponseCacheEntry> | undefined;
 }
 
 const PREVIEW_SITE_DIR_CACHE_TTL_MS = 60_000;
+const PREVIEW_RESPONSE_CACHE_TTL_MS = 10 * 60_000;
+const PREVIEW_TASK_STORE_LOOKUP_TIMEOUT_MS = Math.max(
+  1_000,
+  Number(process.env.CHAT_PREVIEW_TASK_STORE_TIMEOUT_MS || 20_000),
+);
+
+type PreviewResponseCacheEntry = {
+  body: string | Uint8Array;
+  contentType: string;
+  expiresAt: number;
+};
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 
 function getPreviewSiteDirCache(): Map<string, PreviewSiteDirCacheEntry> {
   if (!globalThis.__shpittoPreviewSiteDirCache) {
     globalThis.__shpittoPreviewSiteDirCache = new Map();
   }
   return globalThis.__shpittoPreviewSiteDirCache;
+}
+
+function getPreviewResponseCache(): Map<string, PreviewResponseCacheEntry> {
+  if (!globalThis.__shpittoPreviewResponseCache) {
+    globalThis.__shpittoPreviewResponseCache = new Map();
+  }
+  return globalThis.__shpittoPreviewResponseCache;
+}
+
+function previewResponseCacheKey(taskId: string, parts: string[]): string {
+  return `${taskId}:${parts.map(normalizePreviewFilePath).filter(Boolean).join("/") || "index.html"}`;
+}
+
+function rememberPreviewResponse(taskId: string, parts: string[], body: string | Uint8Array, contentType: string) {
+  if (!taskId || !contentType) return;
+  getPreviewResponseCache().set(previewResponseCacheKey(taskId, parts), {
+    body,
+    contentType,
+    expiresAt: Date.now() + PREVIEW_RESPONSE_CACHE_TTL_MS,
+  });
+}
+
+function getRememberedPreviewResponse(taskId: string, parts: string[]): PreviewResponseCacheEntry | undefined {
+  const key = previewResponseCacheKey(taskId, parts);
+  const entry = getPreviewResponseCache().get(key);
+  if (!entry) return undefined;
+  if (entry.expiresAt < Date.now()) {
+    getPreviewResponseCache().delete(key);
+    return undefined;
+  }
+  return entry;
+}
+
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const copy = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(copy).set(bytes);
+  return copy;
+}
+
+function cachedPreviewResponse(entry: PreviewResponseCacheEntry): NextResponse {
+  const body = typeof entry.body === "string" ? entry.body : new Blob([toArrayBuffer(entry.body)]);
+  return new NextResponse(body, {
+    status: 200,
+    headers: {
+      "Content-Type": entry.contentType,
+      "Cache-Control": "no-store, max-age=0",
+      "X-Shpitto-Preview-Cache": "memory",
+    },
+  });
 }
 
 function renderPendingPreviewHtml(params: { taskId: string; stage?: string; status?: string }): string {
@@ -352,14 +436,41 @@ export async function GET(
   let task: any;
   let taskLookupError: unknown;
   try {
-    task = await getChatTask(taskId);
+    task = await withTimeout(getChatTask(taskId), PREVIEW_TASK_STORE_LOOKUP_TIMEOUT_MS, "Task store lookup");
   } catch (error) {
     taskLookupError = error;
+    task = getRememberedChatTask(taskId);
   }
   const assetCdnPrefix = await resolveProjectAssetPreviewCdnPrefix({
     ownerUserId: task?.ownerUserId,
     projectId: task?.chatId,
   }).catch(() => "");
+  const projectAssets = assetCdnPrefix
+    ? await listProjectAssets({
+        ownerUserId: task?.ownerUserId,
+        projectId: task?.chatId,
+      }).catch(() => [])
+    : [];
+  const assetRewriteContext: ProjectAssetRewriteContext = {
+    assetCdnPrefix,
+    projectAssets,
+  };
+  const ensureAssetRewriteContextForContent = async (content: string) => {
+    const extracted = extractProjectAssetPreviewScopeFromContent(content);
+    if (!extracted?.cdnPrefix || !extracted.ownerUserId || !extracted.projectId) {
+      return assetRewriteContext;
+    }
+    if (assetRewriteContext.projectAssets.length === 0) {
+      assetRewriteContext.projectAssets = await listProjectAssets({
+        ownerUserId: extracted.ownerUserId,
+        projectId: extracted.projectId,
+      }).catch(() => []);
+    }
+    return {
+      assetCdnPrefix: extracted.cdnPrefix,
+      projectAssets: assetRewriteContext.projectAssets,
+    };
+  };
 
   let siteDir = await resolveSiteDirFromTask(task);
   if (siteDir) {
@@ -373,8 +484,24 @@ export async function GET(
     if (virtualFile) {
       const mime = virtualFile.type || detectMime(virtualFile.path);
       if (mime.startsWith("text/html")) {
+        const assetContext = await ensureAssetRewriteContextForContent(virtualFile.content);
         const previewBase = `/api/chat/tasks/${encodeURIComponent(taskId)}/preview`;
-        return new NextResponse(rewriteHtmlForPreview(virtualFile.content, previewBase, assetCdnPrefix), {
+        const html = rewriteHtmlForPreview(
+          rewriteProjectAssetLogicalUrlsWithAssetMap(
+            virtualFile.content,
+            assetContext.assetCdnPrefix,
+            assetContext.projectAssets,
+          ),
+          previewBase,
+          "",
+        );
+        const rewritten = repairBrokenProjectAssetDirectoryUrls(
+          html,
+          assetContext.assetCdnPrefix,
+          assetContext.projectAssets,
+        );
+        rememberPreviewResponse(taskId, parts, rewritten, mime);
+        return new NextResponse(rewritten, {
           status: 200,
           headers: {
             "Content-Type": mime,
@@ -383,9 +510,21 @@ export async function GET(
         });
       }
 
+      const assetContext = shouldRewriteAssetLogicalUrls(mime)
+        ? await ensureAssetRewriteContextForContent(virtualFile.content)
+        : assetRewriteContext;
       const body = shouldRewriteAssetLogicalUrls(mime)
-        ? rewriteProjectAssetLogicalUrls(virtualFile.content, assetCdnPrefix)
+        ? repairBrokenProjectAssetDirectoryUrls(
+            rewriteProjectAssetLogicalUrlsWithAssetMap(
+              virtualFile.content,
+              assetContext.assetCdnPrefix,
+              assetContext.projectAssets,
+            ),
+            assetContext.assetCdnPrefix,
+            assetContext.projectAssets,
+          )
         : virtualFile.content;
+      rememberPreviewResponse(taskId, parts, body, mime);
       return new NextResponse(body, {
         status: 200,
         headers: {
@@ -396,6 +535,8 @@ export async function GET(
     }
 
     if (taskLookupError) {
+      const rememberedPreview = getRememberedPreviewResponse(taskId, parts);
+      if (rememberedPreview) return cachedPreviewResponse(rememberedPreview);
       return NextResponse.json(
         {
           ok: false,
@@ -466,8 +607,24 @@ export async function GET(
 
   const mime = detectMime(filePath);
   if (mime.startsWith("text/html")) {
+    const rawContent = content.toString("utf-8");
+    const assetContext = await ensureAssetRewriteContextForContent(rawContent);
     const previewBase = `/api/chat/tasks/${encodeURIComponent(taskId)}/preview`;
-    const rewritten = rewriteHtmlForPreview(content.toString("utf-8"), previewBase, assetCdnPrefix);
+    const html = rewriteHtmlForPreview(
+      rewriteProjectAssetLogicalUrlsWithAssetMap(
+        rawContent,
+        assetContext.assetCdnPrefix,
+        assetContext.projectAssets,
+      ),
+      previewBase,
+      "",
+    );
+    const rewritten = repairBrokenProjectAssetDirectoryUrls(
+      html,
+      assetContext.assetCdnPrefix,
+      assetContext.projectAssets,
+    );
+    rememberPreviewResponse(taskId, parts, rewritten, mime);
     return new NextResponse(rewritten, {
       status: 200,
       headers: {
@@ -478,7 +635,19 @@ export async function GET(
   }
 
   if (shouldRewriteAssetLogicalUrls(mime)) {
-    return new NextResponse(rewriteProjectAssetLogicalUrls(content.toString("utf-8"), assetCdnPrefix), {
+    const rawContent = content.toString("utf-8");
+    const assetContext = await ensureAssetRewriteContextForContent(rawContent);
+    const rewritten = repairBrokenProjectAssetDirectoryUrls(
+      rewriteProjectAssetLogicalUrlsWithAssetMap(
+        rawContent,
+        assetContext.assetCdnPrefix,
+        assetContext.projectAssets,
+      ),
+      assetContext.assetCdnPrefix,
+      assetContext.projectAssets,
+    );
+    rememberPreviewResponse(taskId, parts, rewritten, mime);
+    return new NextResponse(rewritten, {
       status: 200,
       headers: {
         "Content-Type": mime,
@@ -487,7 +656,9 @@ export async function GET(
     });
   }
 
-  return new NextResponse(new Uint8Array(content), {
+  const binaryBody = new Uint8Array(content);
+  rememberPreviewResponse(taskId, parts, binaryBody, mime);
+  return new NextResponse(binaryBody, {
     status: 200,
     headers: {
       "Content-Type": mime,

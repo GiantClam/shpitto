@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
+import { setAuthCacheCookie } from "@/lib/supabase/auth-cache";
 
 export const runtime = "nodejs";
 
@@ -52,9 +53,16 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
     return jsonResponse({ ok: false, error: error.message }, { status: 400 });
+  }
+
+  if (data.user?.id) {
+    setAuthCacheCookie(response, {
+      id: data.user.id,
+      email: data.user.email || email,
+    });
   }
 
   return response;

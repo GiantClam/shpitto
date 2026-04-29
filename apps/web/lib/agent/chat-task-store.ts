@@ -11,6 +11,7 @@ export type ChatTaskResult = {
   phase?: string;
   deployedUrl?: string;
   error?: string;
+  timelineMetadata?: Record<string, unknown>;
   internal?: {
     inputState?: any;
     sessionState?: any;
@@ -175,7 +176,6 @@ type TaskStore = {
 };
 
 declare global {
-  // eslint-disable-next-line no-var
   var __shpittoChatTaskStore: TaskStore | undefined;
 }
 
@@ -866,6 +866,81 @@ function updateMemoryTask(taskId: string, patch: Partial<ChatTaskRecord>): ChatT
   return updated;
 }
 
+function rememberSupabaseTask(task: ChatTaskRecord | undefined): ChatTaskRecord | undefined {
+  if (!task) return undefined;
+  const store = getStore();
+  store.tasks.set(task.id, task);
+  if (task.status === "queued" || task.status === "running") {
+    store.activeTaskByChat.set(task.chatId, task.id);
+  } else if (store.activeTaskByChat.get(task.chatId) === task.id) {
+    store.activeTaskByChat.delete(task.chatId);
+  }
+  upsertMemorySession({
+    chatId: task.chatId,
+    ownerUserId: task.ownerUserId,
+    lastTaskId: task.id,
+    lastMessage: task.result?.assistantText,
+    lastMessageAt: task.updatedAt,
+  });
+  return task;
+}
+
+function getRememberedTask(taskId: string): ChatTaskRecord | undefined {
+  cleanupTasks();
+  return getStore().tasks.get(taskId);
+}
+
+export function getRememberedChatTask(taskId: string): ChatTaskRecord | undefined {
+  return getRememberedTask(taskId);
+}
+
+function getRememberedActiveTask(chatId: string): ChatTaskRecord | undefined {
+  cleanupTasks();
+  const taskId = getStore().activeTaskByChat.get(chatId);
+  return taskId ? getStore().tasks.get(taskId) : undefined;
+}
+
+function getRememberedLatestTask(chatId: string): ChatTaskRecord | undefined {
+  cleanupTasks();
+  const records = [...getStore().tasks.values()].filter((item) => item.chatId === chatId);
+  records.sort((a, b) => b.createdAt - a.createdAt);
+  return records[0];
+}
+
+function taskHasDeployableBaseline(task: ChatTaskRecord | undefined): boolean {
+  if (!task) return false;
+  const result = task.result || {};
+  const progress = result.progress || {};
+  const internal = result.internal || {};
+  return Boolean(
+    String(progress.checkpointProjectPath || progress.checkpointSiteDir || progress.checkpointDir || "").trim() ||
+      (Array.isArray(progress.generatedFiles) && progress.generatedFiles.length > 0) ||
+      (internal.sessionState as any)?.site_artifacts ||
+      (internal.sessionState as any)?.project_json ||
+      (internal.inputState as any)?.site_artifacts ||
+      (internal.inputState as any)?.project_json ||
+      (internal as any).artifactSnapshot ||
+      (result as any).site_artifacts ||
+      String(result.deployedUrl || "").trim(),
+  );
+}
+
+function getRememberedLatestBaselineTask(chatId: string): ChatTaskRecord | undefined {
+  cleanupTasks();
+  const records = [...getStore().tasks.values()].filter((item) => item.chatId === chatId && taskHasDeployableBaseline(item));
+  records.sort((a, b) => b.createdAt - a.createdAt);
+  return records[0];
+}
+
+function isTransientTaskStoreError(error: unknown): boolean {
+  return isTransientSupabaseTaskFetchError(error);
+}
+
+function warnTaskStoreFallback(scope: string, error: unknown): void {
+  const message = formatUnknownError(error);
+  console.warn(`[chat-task-store] ${scope} using local shadow cache after Supabase failure: ${message}`);
+}
+
 export async function createChatTask(
   chatId: string,
   ownerUserId?: string,
@@ -896,7 +971,7 @@ export async function createChatTask(
       .single();
 
     if (error || !data) throw error || new Error("Failed to create chat task.");
-    const task = fromRow(data as SupabaseTaskRow);
+    const task = rememberSupabaseTask(fromRow(data as SupabaseTaskRow))!;
     await upsertChatSessionBestEffort({
       chatId: task.chatId,
       ownerUserId: ownerUserId || undefined,
@@ -954,7 +1029,7 @@ export async function claimNextQueuedChatTask(workerId: string): Promise<ChatTas
     if (!rpcError && claimedByRpc) {
       const row = (Array.isArray(claimedByRpc) ? claimedByRpc[0] : claimedByRpc) as SupabaseTaskRow;
       if (row?.id) {
-        const task = fromRow(row);
+        const task = rememberSupabaseTask(fromRow(row))!;
         await writeTaskEventBestEffort({
           taskId: task.id,
           chatId: task.chatId,
@@ -1003,7 +1078,7 @@ export async function claimNextQueuedChatTask(workerId: string): Promise<ChatTas
       .maybeSingle();
     if (updateError) throw withTaskStoreErrorContext(updateError);
     if (updated) {
-      const task = fromRow(updated as SupabaseTaskRow);
+      const task = rememberSupabaseTask(fromRow(updated as SupabaseTaskRow))!;
       await writeTaskEventBestEffort({
         taskId: task.id,
         chatId: task.chatId,
@@ -1214,7 +1289,7 @@ async function updateSupabaseTask(taskId: string, values: Record<string, unknown
     throw error;
   }
   if (!data) return undefined;
-  return fromRow(data as SupabaseTaskRow);
+  return rememberSupabaseTask(fromRow(data as SupabaseTaskRow));
 }
 
 export async function markChatTaskRunning(taskId: string): Promise<ChatTaskRecord | undefined> {
@@ -1230,6 +1305,10 @@ export async function markChatTaskRunning(taskId: string): Promise<ChatTaskRecor
 }
 
 export async function completeChatTask(taskId: string, result: ChatTaskResult): Promise<ChatTaskRecord | undefined> {
+  const timelineMetadata =
+    result.timelineMetadata && typeof result.timelineMetadata === "object" && !Array.isArray(result.timelineMetadata)
+      ? result.timelineMetadata
+      : undefined;
   if (!isSupabaseTaskStoreEnabled()) {
     const updated = updateMemoryTask(taskId, { status: "succeeded", result });
     if (updated && result.assistantText) {
@@ -1239,7 +1318,7 @@ export async function completeChatTask(taskId: string, result: ChatTaskResult): 
         ownerUserId: updated.ownerUserId,
         role: "assistant",
         text: result.assistantText,
-        metadata: { status: "succeeded" },
+        metadata: { status: "succeeded", ...(timelineMetadata || {}) },
       });
     }
     return updated;
@@ -1268,12 +1347,24 @@ export async function completeChatTask(taskId: string, result: ChatTaskResult): 
           ownerUserId: updated.ownerUserId,
           role: "assistant",
           text: result.assistantText,
-          metadata: { status: "succeeded" },
+          metadata: { status: "succeeded", ...(timelineMetadata || {}) },
         });
       }
     }
     return updated;
   } catch (error) {
+    if (isTransientTaskStoreError(error)) {
+      const existing = getRememberedTask(taskId);
+      if (existing) {
+        warnTaskStoreFallback(`completeChatTask(${taskId})`, error);
+        return rememberSupabaseTask({
+          ...existing,
+          status: "succeeded",
+          result,
+          updatedAt: now(),
+        });
+      }
+    }
     throw withTaskStoreErrorContext(error);
   }
 }
@@ -1312,6 +1403,18 @@ export async function updateChatTaskProgress(
     }
     return updated;
   } catch (error) {
+    if (isTransientTaskStoreError(error)) {
+      const existing = getRememberedTask(taskId);
+      if (existing) {
+        warnTaskStoreFallback(`updateChatTaskProgress(${taskId})`, error);
+        return rememberSupabaseTask({
+          ...existing,
+          status: "running",
+          result: { ...(existing.result || {}), ...patch },
+          updatedAt: now(),
+        });
+      }
+    }
     throw withTaskStoreErrorContext(error);
   }
 }
@@ -1348,6 +1451,25 @@ export async function touchChatTaskHeartbeat(
     };
     return await updateSupabaseTask(taskId, { status: "running", result: merged });
   } catch (error) {
+    if (isTransientTaskStoreError(error)) {
+      const existing = getRememberedTask(taskId);
+      if (existing) {
+        warnTaskStoreFallback(`touchChatTaskHeartbeat(${taskId})`, error);
+        return rememberSupabaseTask({
+          ...existing,
+          status: "running",
+          result: {
+            ...(existing.result || {}),
+            internal: {
+              ...(existing.result?.internal || {}),
+              workerId: workerId || existing.result?.internal?.workerId,
+              heartbeatAt,
+            },
+          },
+          updatedAt: now(),
+        });
+      }
+    }
     throw withTaskStoreErrorContext(error);
   }
 }
@@ -1395,6 +1517,18 @@ export async function failChatTask(taskId: string, error: string): Promise<ChatT
     }
     return updated;
   } catch (err) {
+    if (isTransientTaskStoreError(err)) {
+      const existing = getRememberedTask(taskId);
+      if (existing) {
+        warnTaskStoreFallback(`failChatTask(${taskId})`, err);
+        return rememberSupabaseTask({
+          ...existing,
+          status: "failed",
+          result: { ...(existing.result || {}), error },
+          updatedAt: now(),
+        });
+      }
+    }
     throw withTaskStoreErrorContext(err);
   }
 }
@@ -1410,8 +1544,13 @@ export async function getChatTask(taskId: string): Promise<ChatTaskRecord | unde
     const { data, error } = await supabase.from(TASK_TABLE).select("*").eq("id", taskId).maybeSingle();
     if (error) throw error;
     if (!data) return undefined;
-    return fromRow(data as SupabaseTaskRow);
+    return rememberSupabaseTask(fromRow(data as SupabaseTaskRow));
   } catch (error) {
+    const remembered = getRememberedTask(taskId);
+    if (remembered && isTransientTaskStoreError(error)) {
+      warnTaskStoreFallback(`getChatTask(${taskId})`, error);
+      return remembered;
+    }
     throw withTaskStoreErrorContext(error);
   }
 }
@@ -1485,8 +1624,13 @@ export async function getActiveChatTask(chatId: string): Promise<ChatTaskRecord 
       .maybeSingle();
     if (error) throw error;
     if (!data) return undefined;
-    return fromRow(data as SupabaseTaskRow);
+    return rememberSupabaseTask(fromRow(data as SupabaseTaskRow));
   } catch (error) {
+    const remembered = getRememberedActiveTask(chatId);
+    if (remembered && isTransientTaskStoreError(error)) {
+      warnTaskStoreFallback(`getActiveChatTask(${chatId})`, error);
+      return remembered;
+    }
     throw withTaskStoreErrorContext(error);
   }
 }
@@ -1511,8 +1655,40 @@ export async function getLatestChatTaskForChat(chatId: string): Promise<ChatTask
       .maybeSingle();
     if (error) throw error;
     if (!data) return undefined;
-    return fromRow(data as SupabaseTaskRow);
+    return rememberSupabaseTask(fromRow(data as SupabaseTaskRow));
   } catch (error) {
+    const remembered = getRememberedLatestTask(chatId);
+    if (remembered && isTransientTaskStoreError(error)) {
+      warnTaskStoreFallback(`getLatestChatTaskForChat(${chatId})`, error);
+      return remembered;
+    }
+    throw withTaskStoreErrorContext(error);
+  }
+}
+
+export async function getLatestDeployableChatTaskForChat(chatId: string): Promise<ChatTaskRecord | undefined> {
+  if (!isSupabaseTaskStoreEnabled()) {
+    return getRememberedLatestBaselineTask(chatId);
+  }
+
+  try {
+    const supabase = mustGetSupabaseClient();
+    const { data, error } = await supabase
+      .from(TASK_TABLE)
+      .select("*")
+      .eq("chat_id", chatId)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (error) throw error;
+    const rows = Array.isArray(data) ? data : [];
+    const tasks = rows.map((row) => rememberSupabaseTask(fromRow(row as SupabaseTaskRow))!);
+    return tasks.find((task) => taskHasDeployableBaseline(task));
+  } catch (error) {
+    const remembered = getRememberedLatestBaselineTask(chatId);
+    if (remembered && isTransientTaskStoreError(error)) {
+      warnTaskStoreFallback(`getLatestDeployableChatTaskForChat(${chatId})`, error);
+      return remembered;
+    }
     throw withTaskStoreErrorContext(error);
   }
 }

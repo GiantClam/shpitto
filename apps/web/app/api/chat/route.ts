@@ -1,11 +1,14 @@
 import { createUIMessageStream, createUIMessageStreamResponse, type UIMessage } from "ai";
 import { AIMessage, HumanMessage, type BaseMessage } from "@langchain/core/messages";
 import crypto from "node:crypto";
+import fs from "node:fs/promises";
+import path from "node:path";
 import {
   appendPendingEditToChatTask,
   appendChatTimelineMessage,
   createChatTask,
   getActiveChatTask,
+  getLatestDeployableChatTaskForChat,
   getLatestChatTaskForChat,
   listChatTimelineMessages,
   type ChatTaskResult,
@@ -47,6 +50,11 @@ type ChatRequestBody = {
 };
 
 const CONFIRM_GENERATE_PREFIX = "__SHP_CONFIRM_GENERATE__";
+const CONTINUE_STALE_RUNNING_TASK_MS = Math.max(
+  30_000,
+  Number(process.env.CHAT_CONTINUE_STALE_RUNNING_TASK_MS || 120_000),
+);
+const CHAT_ROUTE_STORE_TIMEOUT_MS = Math.max(1_000, Number(process.env.CHAT_ROUTE_STORE_TIMEOUT_MS || 8_000));
 type ChatDisplayLocale = "zh" | "en";
 
 const CHAT_COPY: Record<ChatDisplayLocale, Record<string, string>> = {
@@ -179,15 +187,23 @@ function reviveSessionState(raw: any): AgentState | undefined {
     design_hit: (source as any).design_hit,
     user_id: source.user_id,
     access_token: source.access_token,
+    db_project_id: (source as any).db_project_id,
+    deployed_url: (source as any).deployed_url,
+    project_json: (source as any).project_json,
+    site_artifacts: (source as any).site_artifacts,
   };
 }
 
 async function getSession(chatId: string): Promise<AgentState> {
   const latestTask = await getLatestChatTaskForChat(chatId);
-  const internal = (latestTask?.result?.internal || {}) as Record<string, unknown>;
+  const baselineTask = taskHasRouteBaseline(latestTask)
+    ? latestTask
+    : await getLatestDeployableChatTaskForChat(chatId).catch(() => undefined);
+  const sessionTask = baselineTask || latestTask;
+  const internal = (sessionTask?.result?.internal || {}) as Record<string, unknown>;
   const fromSessionState = reviveSessionState(internal.sessionState);
-  const checkpointProjectPath = String(latestTask?.result?.progress?.checkpointProjectPath || "").trim();
-  const deployedUrl = String(latestTask?.result?.deployedUrl || "").trim();
+  const checkpointProjectPath = String(sessionTask?.result?.progress?.checkpointProjectPath || "").trim();
+  const deployedUrl = String(sessionTask?.result?.deployedUrl || "").trim();
   if (fromSessionState) {
     return {
       ...fromSessionState,
@@ -196,7 +212,7 @@ async function getSession(chatId: string): Promise<AgentState> {
         ...(fromSessionState.workflow_context || {}),
         deploySourceProjectPath:
           checkpointProjectPath || (fromSessionState.workflow_context as any)?.deploySourceProjectPath,
-        deploySourceTaskId: latestTask?.id || (fromSessionState.workflow_context as any)?.deploySourceTaskId,
+        deploySourceTaskId: sessionTask?.id || (fromSessionState.workflow_context as any)?.deploySourceTaskId,
         checkpointProjectPath:
           checkpointProjectPath || (fromSessionState.workflow_context as any)?.checkpointProjectPath,
       } as any,
@@ -211,7 +227,7 @@ async function getSession(chatId: string): Promise<AgentState> {
         ...(fromInputState.workflow_context || {}),
         deploySourceProjectPath:
           checkpointProjectPath || (fromInputState.workflow_context as any)?.deploySourceProjectPath,
-        deploySourceTaskId: latestTask?.id || (fromInputState.workflow_context as any)?.deploySourceTaskId,
+        deploySourceTaskId: sessionTask?.id || (fromInputState.workflow_context as any)?.deploySourceTaskId,
         checkpointProjectPath:
           checkpointProjectPath || (fromInputState.workflow_context as any)?.checkpointProjectPath,
       } as any,
@@ -361,6 +377,20 @@ function shouldUseAsyncTaskMode(body: ChatRequestBody): boolean {
   return envDefault || true;
 }
 
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 function shouldAutoUseUploadedMaterials(params: { text: string; referencedAssets: string[] }): boolean {
   if (!params.referencedAssets.length) return false;
   const haystack = `${params.text}\n${params.referencedAssets.join("\n")}`;
@@ -411,6 +441,54 @@ function extractConfirmedPrompt(raw: string): string | null {
   return payload || null;
 }
 
+function isContinueGenerationIntent(raw: string): boolean {
+  const text = String(raw || "").trim().toLowerCase();
+  if (!text) return false;
+  if (/^(?:continue|resume)(?:\s+(?:generation|generating|build|task))?$/.test(text)) return true;
+  return /(?:\u7ee7\u7eed\s*\u751f\u6210|\u7eed\s*\u751f\u6210|\u6062\u590d\s*\u751f\u6210)/.test(text);
+}
+
+function isStaleRunningTaskForContinuation(task: { status?: string; updatedAt?: number }): boolean {
+  if (String(task.status || "") !== "running") return false;
+  const updatedAt = Number(task.updatedAt || 0);
+  if (!Number.isFinite(updatedAt) || updatedAt <= 0) return false;
+  return Date.now() - updatedAt > CONTINUE_STALE_RUNNING_TASK_MS;
+}
+
+function findLatestConfirmedGenerationPrompt(
+  timelineMessages: Awaited<ReturnType<typeof listChatTimelineMessages>>,
+): string {
+  for (let index = timelineMessages.length - 1; index >= 0; index -= 1) {
+    const item = timelineMessages[index];
+    if (item.role === "user") {
+      const userPrompt = String(item.text || "").trim();
+      if (userPrompt.startsWith("# Canonical Website Generation Prompt")) return userPrompt;
+      const extracted = extractConfirmedPrompt(userPrompt);
+      if (extracted) return extracted;
+    }
+
+    const metadata = item.metadata && typeof item.metadata === "object" ? item.metadata : undefined;
+    if (!metadata || String(metadata.cardType || "") !== "prompt_draft") continue;
+    const storedPrompt = String((metadata as any).canonicalPrompt || "").trim();
+    if (storedPrompt) return storedPrompt;
+  }
+  return "";
+}
+
+function findTaskGenerationPrompt(task: Awaited<ReturnType<typeof getLatestChatTaskForChat>> | undefined): string {
+  const contexts = [
+    (task?.result?.internal as any)?.inputState?.workflow_context,
+    (task?.result?.internal as any)?.sessionState?.workflow_context,
+  ];
+  for (const context of contexts) {
+    const sourceRequirement = String(context?.sourceRequirement || "").trim();
+    if (sourceRequirement) return sourceRequirement;
+    const canonicalPrompt = String(context?.canonicalPrompt || "").trim();
+    if (canonicalPrompt) return canonicalPrompt;
+  }
+  return "";
+}
+
 function isWebsiteSkill(skillId: string): boolean {
   return String(skillId || "").trim().toLowerCase() === "website-generation-workflow";
 }
@@ -444,6 +522,50 @@ async function appendTimelineMessageBestEffort(input: {
   }
 }
 
+function localTaskRootsForChat(chatId: string): string[] {
+  const safeChatId = String(chatId || "").replace(/[^a-zA-Z0-9_-]/g, "_");
+  return Array.from(
+    new Set([
+      path.resolve(process.cwd(), ".tmp", "chat-tasks", safeChatId),
+      path.resolve(process.cwd(), "apps", "web", ".tmp", "chat-tasks", safeChatId),
+    ]),
+  );
+}
+
+async function findLatestLocalContinuationPrompt(chatId: string): Promise<string> {
+  const candidates: Array<{ filePath: string; mtimeMs: number }> = [];
+  for (const root of localTaskRootsForChat(chatId)) {
+    try {
+      const taskDirs = await fs.readdir(root, { withFileTypes: true });
+      for (const taskDir of taskDirs) {
+        if (!taskDir.isDirectory()) continue;
+        const findingsPath = path.join(root, taskDir.name, "latest", "workflow", "findings.md");
+        try {
+          const stat = await fs.stat(findingsPath);
+          if (stat.isFile()) candidates.push({ filePath: findingsPath, mtimeMs: stat.mtimeMs });
+        } catch {
+          // Ignore incomplete local checkpoints.
+        }
+      }
+    } catch {
+      // Ignore missing local checkpoint roots.
+    }
+  }
+  candidates.sort((a, b) => b.mtimeMs - a.mtimeMs);
+  for (const candidate of candidates) {
+    try {
+      const findings = await fs.readFile(candidate.filePath, "utf8");
+      const start = findings.indexOf("# Canonical Website Generation Prompt");
+      if (start < 0) continue;
+      const derivedPlan = findings.indexOf("\n## Derived Route Plan", start);
+      return findings.slice(start, derivedPlan > start ? derivedPlan : undefined).trim();
+    } catch {
+      // Try the next checkpoint.
+    }
+  }
+  return "";
+}
+
 function findConfirmedPromptDraftMetadata(
   timelineMessages: Awaited<ReturnType<typeof listChatTimelineMessages>>,
   confirmedPrompt?: string | null,
@@ -458,6 +580,123 @@ function findConfirmedPromptDraftMetadata(
     return metadata;
   }
   return undefined;
+}
+
+function isStaticSiteProjectLike(value: unknown): boolean {
+  const project = value as any;
+  return Boolean(project && typeof project === "object" && Array.isArray(project?.staticSite?.files));
+}
+
+function taskHasRouteBaseline(task: Awaited<ReturnType<typeof getLatestChatTaskForChat>>): boolean {
+  const progress = task?.result?.progress || {};
+  const internal = task?.result?.internal || {};
+  return Boolean(
+    String(progress.checkpointProjectPath || progress.checkpointSiteDir || progress.checkpointDir || "").trim() ||
+      (Array.isArray(progress.generatedFiles) && progress.generatedFiles.length > 0) ||
+      (internal.sessionState as any)?.site_artifacts ||
+      (internal.sessionState as any)?.project_json ||
+      (internal.inputState as any)?.site_artifacts ||
+      (internal.inputState as any)?.project_json,
+  );
+}
+
+function normalizeGeneratedFilePath(value: string): string {
+  const raw = String(value || "").trim().replace(/\\/g, "/");
+  if (!raw) return "";
+  const withSlash = raw.startsWith("/") ? raw : `/${raw}`;
+  return withSlash.replace(/\/{2,}/g, "/");
+}
+
+function routePathFromHtmlFile(filePath: string): string {
+  const normalized = normalizeGeneratedFilePath(filePath);
+  if (!normalized || normalized === "/index.html") return "/";
+  return normalized.replace(/\/index\.html$/i, "") || "/";
+}
+
+function inferStaticFileType(filePath: string, contentType: string): string {
+  const header = String(contentType || "").split(";")[0]?.trim();
+  if (header) return header;
+  const lower = filePath.toLowerCase();
+  if (lower.endsWith(".html") || lower.endsWith(".htm")) return "text/html";
+  if (lower.endsWith(".css")) return "text/css";
+  if (lower.endsWith(".js")) return "application/javascript";
+  if (lower.endsWith(".svg")) return "image/svg+xml";
+  return "text/plain";
+}
+
+function escapeRegExp(value: string): string {
+  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function rewritePreviewHtmlForDeployment(html: string, taskId: string): string {
+  const escapedTaskId = escapeRegExp(encodeURIComponent(taskId));
+  if (!escapedTaskId) return html;
+  const previewAssetPattern = new RegExp(
+    `\\b(href|src)=["'](?:https?:\\/\\/[^"']+)?\\/api\\/chat\\/tasks\\/${escapedTaskId}\\/preview\\/?([^"'?#]*)([?#][^"']*)?["']`,
+    "gi",
+  );
+  return String(html || "").replace(previewAssetPattern, (_match, attr: string, target: string, suffix = "") => {
+    const normalizedTarget = String(target || "index.html").replace(/^\/+/, "");
+    return `${attr}="/${normalizedTarget}${suffix || ""}"`;
+  });
+}
+
+async function fetchPreviewFileForDeploy(origin: string, taskId: string, filePath: string) {
+  const normalized = normalizeGeneratedFilePath(filePath);
+  if (!origin || !taskId || !normalized) return undefined;
+  const previewPath = normalized.replace(/^\/+/, "");
+  const url = `${origin.replace(/\/+$/, "")}/api/chat/tasks/${encodeURIComponent(taskId)}/preview/${previewPath}`;
+  const res = await fetch(url, { signal: AbortSignal.timeout(15_000) });
+  if (!res.ok) return undefined;
+  const contentType = res.headers.get("content-type") || "";
+  const inferredType = inferStaticFileType(normalized, contentType);
+  const rawContent = await res.text();
+  const content = inferredType.startsWith("text/html")
+    ? rewritePreviewHtmlForDeployment(rawContent, taskId)
+    : rawContent;
+  if (!content.trim()) return undefined;
+  return {
+    path: normalized,
+    type: inferredType,
+    content,
+  };
+}
+
+async function buildDeployStaticSiteFromPreview(task: Awaited<ReturnType<typeof getLatestChatTaskForChat>>, origin: string) {
+  const taskId = String(task?.id || "").trim();
+  const generatedFilesRaw = Array.isArray(task?.result?.progress?.generatedFiles)
+    ? task?.result?.progress?.generatedFiles
+    : [];
+  const generatedFiles = Array.from(
+    new Set(
+      generatedFilesRaw
+        .map((file) => normalizeGeneratedFilePath(String(file || "")))
+        .filter((file) => /\.(?:html|css|js|svg|json|txt)$/i.test(file)),
+    ),
+  );
+  if (!taskId || generatedFiles.length === 0) return undefined;
+
+  const files = (
+    await Promise.all(generatedFiles.map((file) => fetchPreviewFileForDeploy(origin, taskId, file).catch(() => undefined)))
+  ).filter((file): file is { path: string; type: string; content: string } => Boolean(file));
+  if (!files.some((file) => file.path === "/index.html")) return undefined;
+
+  return {
+    projectId: String(task?.chatId || taskId),
+    branding: { name: String(task?.chatId || "Shpitto Site") },
+    pages: files
+      .filter((file) => file.path.toLowerCase().endsWith(".html"))
+      .map((file) => ({ path: routePathFromHtmlFile(file.path), html: file.content })),
+    staticSite: {
+      mode: "skill-direct",
+      files,
+      generation: {
+        source: "preview-recovery",
+        sourceTaskId: taskId,
+        recoveredAt: new Date().toISOString(),
+      },
+    },
+  };
 }
 
 export async function POST(req: Request) {
@@ -476,10 +715,15 @@ export async function POST(req: Request) {
     return errorStreamResponse("No user message found in request.", 400);
   }
   const displayLocale = detectChatDisplayLocale(userText);
+  const continueGenerationRequested = isContinueGenerationIntent(userText);
 
   try {
-  const previousState = await getSession(chatId);
-  const activeTask = await getActiveChatTask(chatId);
+  const previousState = await withTimeout(getSession(chatId), CHAT_ROUTE_STORE_TIMEOUT_MS, "Chat session lookup").catch(() =>
+    createInitialState(),
+  );
+  const activeTask = await withTimeout(getActiveChatTask(chatId), CHAT_ROUTE_STORE_TIMEOUT_MS, "Active task lookup").catch(
+    () => undefined,
+  );
   if (activeTask && (activeTask.status === "queued" || activeTask.status === "running")) {
     const activeWorkflow = (activeTask.result?.internal?.inputState as any)?.workflow_context || {};
     const activeExecutionMode = String(activeWorkflow.executionMode || "").trim().toLowerCase();
@@ -489,6 +733,21 @@ export async function POST(req: Request) {
       activeExecutionMode === "deploy" ||
       activeProgressStage.includes("deploy") ||
       activeNextStep === "deploy";
+    const shouldBypassActiveTaskForContinuation =
+      continueGenerationRequested &&
+      !deployLocked &&
+      activeTask.status === "running" &&
+      isStaleRunningTaskForContinuation(activeTask);
+    if (shouldBypassActiveTaskForContinuation) {
+      await appendTimelineMessageBestEffort({
+        chatId,
+        role: "user",
+        text: userText,
+        ownerUserId: body.user_id || previousState.user_id,
+        taskId: activeTask.id,
+        metadata: { cardType: "continue_generation", staleTaskId: activeTask.id, locale: displayLocale },
+      });
+    } else {
     if (deployLocked) {
       return createTaskStreamResponse({
         assistantText: chatCopy(displayLocale, "deployLocked"),
@@ -499,7 +758,8 @@ export async function POST(req: Request) {
         displayLocale,
       });
     }
-    const shouldQueuePendingEdit = activeExecutionMode !== "deploy" && !isDeployIntent(userText);
+    const shouldQueuePendingEdit =
+      activeExecutionMode !== "deploy" && !isDeployIntent(userText) && !continueGenerationRequested;
     if (shouldQueuePendingEdit) {
       await appendPendingEditToChatTask(activeTask.id, {
         text: userText,
@@ -539,14 +799,13 @@ export async function POST(req: Request) {
       statusCode: 202,
       displayLocale,
     });
+    }
   }
 
   const useAsyncTaskMode = shouldUseAsyncTaskMode(body);
-  const confirmedPrompt = extractConfirmedPrompt(userText);
-  const normalizedUserText = confirmedPrompt || userText;
-  const parsedCurrentInput = parseReferencedAssetsFromText(normalizedUserText);
-  const parsedRequirementForm = parseRequirementFormFromText(parsedCurrentInput.cleanText || normalizedUserText);
-  const currentUserRequirementText = parsedCurrentInput.cleanText || normalizedUserText;
+  const explicitConfirmedPrompt = extractConfirmedPrompt(userText);
+  let confirmedPrompt = explicitConfirmedPrompt;
+  let normalizedUserText = explicitConfirmedPrompt || userText;
   const requestedSkillId = String(
     body.skill_id || (previousState.workflow_context as any)?.skillId || "website-generation-workflow",
   )
@@ -560,14 +819,46 @@ export async function POST(req: Request) {
     return errorStreamResponse(`Invalid skill_id: ${message}`, 400);
   }
 
-  const latestTask = await getLatestChatTaskForChat(chatId);
+  let latestTask: Awaited<ReturnType<typeof getLatestChatTaskForChat>> | undefined;
+  try {
+    latestTask = await withTimeout(getLatestChatTaskForChat(chatId), CHAT_ROUTE_STORE_TIMEOUT_MS, "Latest task lookup");
+  } catch (error) {
+    if (!continueGenerationRequested && isTransientStorageConnectivityError(error)) {
+      return errorStreamResponse(chatCopy(displayLocale, "storageUnavailable"), 503);
+    }
+    latestTask = undefined;
+  }
+  const deployableTask = taskHasRouteBaseline(latestTask)
+    ? latestTask
+    : await withTimeout(
+        getLatestDeployableChatTaskForChat(chatId),
+        CHAT_ROUTE_STORE_TIMEOUT_MS,
+        "Deployable task lookup",
+      ).catch(() => undefined);
   const checkpointProjectPath = String(
-    latestTask?.result?.progress?.checkpointProjectPath ||
+    deployableTask?.result?.progress?.checkpointProjectPath ||
+      latestTask?.result?.progress?.checkpointProjectPath ||
       (previousState.workflow_context as any)?.checkpointProjectPath ||
       (previousState.workflow_context as any)?.deploySourceProjectPath ||
       "",
   ).trim();
-  const timelineMessages = await listChatTimelineMessages(chatId, 120);
+  const timelineMessages = await withTimeout(
+    listChatTimelineMessages(chatId, 120),
+    CHAT_ROUTE_STORE_TIMEOUT_MS,
+    "Chat timeline lookup",
+  ).catch(() => []);
+  if (!confirmedPrompt && continueGenerationRequested) {
+    confirmedPrompt =
+      findLatestConfirmedGenerationPrompt(timelineMessages) ||
+      findTaskGenerationPrompt(latestTask) ||
+      String((previousState.workflow_context as any)?.sourceRequirement || (previousState.workflow_context as any)?.canonicalPrompt || "").trim() ||
+      (await findLatestLocalContinuationPrompt(chatId)) ||
+      null;
+    normalizedUserText = confirmedPrompt || userText;
+  }
+  const parsedCurrentInput = parseReferencedAssetsFromText(normalizedUserText);
+  const parsedRequirementForm = parseRequirementFormFromText(parsedCurrentInput.cleanText || normalizedUserText);
+  const currentUserRequirementText = parsedCurrentInput.cleanText || normalizedUserText;
   const confirmedPromptDraftMetadata = confirmedPrompt
     ? findConfirmedPromptDraftMetadata(timelineMessages, confirmedPrompt)
     : undefined;
@@ -843,11 +1134,19 @@ export async function POST(req: Request) {
     executionMode === "generate" && isWebsiteSkill(requestedSkillId)
       ? canonicalPrompt
       : appendReferencedAssetsBlock(currentUserRequirementText, referencedAssets);
+  const previousDeployArtifact =
+    (previousState as any).site_artifacts || (previousState as any).project_json;
+  const recoveredDeployArtifact =
+    deployRequested && !isStaticSiteProjectLike(previousDeployArtifact)
+      ? await buildDeployStaticSiteFromPreview(deployableTask || latestTask, new URL(req.url).origin).catch(() => undefined)
+      : undefined;
 
   const inputState: AgentState = {
     ...previousState,
     user_id: body.user_id || previousState.user_id,
     access_token: body.access_token || previousState.access_token,
+    project_json: (previousState as any).project_json || recoveredDeployArtifact,
+    site_artifacts: (previousState as any).site_artifacts || recoveredDeployArtifact,
     workflow_context: {
       ...(previousState.workflow_context || {}),
       runMode: useAsyncTaskMode ? "async-task" : "sync",
@@ -870,9 +1169,9 @@ export async function POST(req: Request) {
         body.confirm_design === true ||
         Boolean((previousState.workflow_context as any)?.designConfirmed),
       deploySourceProjectPath: checkpointProjectPath || String((previousState.workflow_context as any)?.deploySourceProjectPath || ""),
-      deploySourceTaskId: String(latestTask?.id || (previousState.workflow_context as any)?.deploySourceTaskId || ""),
+      deploySourceTaskId: String(deployableTask?.id || latestTask?.id || (previousState.workflow_context as any)?.deploySourceTaskId || ""),
       refineSourceProjectPath: checkpointProjectPath || String((previousState.workflow_context as any)?.deploySourceProjectPath || ""),
-      refineSourceTaskId: String(latestTask?.id || (previousState.workflow_context as any)?.deploySourceTaskId || ""),
+      refineSourceTaskId: String(deployableTask?.id || latestTask?.id || (previousState.workflow_context as any)?.deploySourceTaskId || ""),
       checkpointProjectPath,
       requirementCompletionPercent: decision.completionPercent,
       requirementSlots: slots,

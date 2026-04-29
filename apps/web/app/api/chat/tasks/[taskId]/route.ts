@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { getChatTask, getChatTaskEvents, sanitizeTaskResultForClient } from "../../../../../lib/agent/chat-task-store";
+import {
+  getChatTask,
+  getChatTaskEvents,
+  getRememberedChatTask,
+  sanitizeTaskResultForClient,
+} from "../../../../../lib/agent/chat-task-store";
 
 export const runtime = "nodejs";
+
+const TASK_STORE_LOOKUP_TIMEOUT_MS = Math.max(1_000, Number(process.env.CHAT_TASK_ROUTE_STORE_TIMEOUT_MS || 20_000));
 
 type LocalTaskCheckpoint = {
   chatId: string;
@@ -12,6 +19,8 @@ type LocalTaskCheckpoint = {
   siteDir: string;
   manifest?: Record<string, any>;
   files: string[];
+  requiredFiles: string[];
+  missingFiles: string[];
 };
 
 function isSafeTaskIdForLocalLookup(taskId: string): boolean {
@@ -66,6 +75,64 @@ async function readJsonFile(filePath: string): Promise<Record<string, any> | und
   }
 }
 
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+async function readTextFile(filePath: string): Promise<string> {
+  try {
+    return await fs.readFile(filePath, "utf8");
+  } catch {
+    return "";
+  }
+}
+
+function normalizeRoutePath(route: string): string {
+  const raw = String(route || "").trim();
+  if (!raw) return "";
+  const withoutQuery = raw.split(/[?#]/)[0] || "";
+  const withSlash = withoutQuery.startsWith("/") ? withoutQuery : `/${withoutQuery}`;
+  const compact = withSlash.replace(/\/+/g, "/").replace(/\/$/, "") || "/";
+  return compact === "/index" ? "/" : compact;
+}
+
+function routeToHtmlFile(route: string): string {
+  const normalized = normalizeRoutePath(route);
+  if (!normalized || normalized === "/") return "index.html";
+  return `${normalized.replace(/^\//, "")}/index.html`;
+}
+
+function parseRequiredRoutesFromTaskPlan(taskPlan: string): string[] {
+  const routeLine = String(taskPlan || "").match(/^\s*-\s*Routes:\s*(.+)$/im)?.[1] || "";
+  if (!routeLine.trim()) return [];
+  return Array.from(
+    new Set(
+      routeLine
+        .split(",")
+        .map((item) => normalizeRoutePath(item))
+        .filter(Boolean),
+    ),
+  );
+}
+
+async function resolveRequiredFiles(latestDir: string): Promise<string[]> {
+  const taskPlan = await readTextFile(path.join(latestDir, "workflow", "task_plan.md"));
+  const routes = parseRequiredRoutesFromTaskPlan(taskPlan);
+  const required = new Set(["index.html", "styles.css", "script.js"]);
+  for (const route of routes) required.add(routeToHtmlFile(route));
+  return Array.from(required).sort();
+}
+
 async function resolveLocalTaskCheckpointFromRoot(params: {
   chatId: string;
   taskId: string;
@@ -75,13 +142,18 @@ async function resolveLocalTaskCheckpointFromRoot(params: {
   const candidates = [path.join(latestDir, "site"), path.join(params.taskRoot, "site")];
   for (const siteDir of candidates) {
     if (!(await hasIndexHtml(siteDir))) continue;
+    const files = await listSiteFiles(siteDir);
+    const requiredFiles = await resolveRequiredFiles(latestDir);
+    const fileSet = new Set(files);
     return {
       chatId: params.chatId,
       taskId: params.taskId,
       taskRoot: params.taskRoot,
       siteDir,
       manifest: await readJsonFile(path.join(latestDir, "manifest.json")),
-      files: await listSiteFiles(siteDir),
+      files,
+      requiredFiles,
+      missingFiles: requiredFiles.filter((file) => !fileSet.has(file)),
     };
   }
   return undefined;
@@ -110,7 +182,7 @@ async function findLocalTaskCheckpoint(taskId: string): Promise<LocalTaskCheckpo
         if (checkpoint) return checkpoint;
       }
     } catch {
-      // ignore missing or unreadable local task roots
+      // Ignore missing or unreadable local task roots.
     }
   }
 
@@ -118,14 +190,23 @@ async function findLocalTaskCheckpoint(taskId: string): Promise<LocalTaskCheckpo
 }
 
 function localCheckpointLooksComplete(checkpoint: LocalTaskCheckpoint): boolean {
-  const files = new Set(checkpoint.files);
-  return files.has("index.html") && files.has("styles.css") && files.has("script.js");
+  if (checkpoint.missingFiles.length > 0) return false;
+  const status = String(checkpoint.manifest?.status || "").trim().toLowerCase();
+  if (!status) return true;
+  if (status === "done" || status === "completed" || status === "succeeded") return true;
+  if (status.includes("validation")) return true;
+  return !status.startsWith("generating:");
 }
 
 function buildLocalFallbackTaskResponse(checkpoint: LocalTaskCheckpoint) {
   const now = Date.now();
   const status = localCheckpointLooksComplete(checkpoint) ? "succeeded" : "running";
   const manifest = checkpoint.manifest || {};
+  const missingFiles = checkpoint.missingFiles.map((file) => `/${file}`);
+  const generatedFiles = checkpoint.files.map((file) => `/${file}`);
+  const stage = status === "succeeded" ? "done" : String(manifest.status || "running");
+  const timestamp = Date.parse(String(manifest.latestUpdatedAt || manifest.savedAt || "")) || now;
+
   return {
     ok: true,
     task: {
@@ -133,7 +214,7 @@ function buildLocalFallbackTaskResponse(checkpoint: LocalTaskCheckpoint) {
       chatId: checkpoint.chatId,
       status,
       createdAt: Date.parse(String(manifest.savedAt || "")) || now,
-      updatedAt: Date.parse(String(manifest.latestUpdatedAt || manifest.savedAt || "")) || now,
+      updatedAt: timestamp,
       result: {
         assistantText:
           status === "succeeded"
@@ -141,17 +222,20 @@ function buildLocalFallbackTaskResponse(checkpoint: LocalTaskCheckpoint) {
             : "Recovered partial generated preview from local checkpoint.",
         phase: status === "succeeded" ? "end" : "running",
         progress: {
-          stage: status === "succeeded" ? "done" : String(manifest.status || "running"),
+          stage,
           stageMessage:
             status === "succeeded"
-              ? "本地生成结果已恢复，可预览。"
-              : "本地生成结果部分恢复，仍显示为生成中。",
+              ? "Recovered generated preview from local checkpoint."
+              : "Recovered partial local checkpoint; generation is still incomplete.",
           checkpointSaved: true,
           checkpointDir: checkpoint.taskRoot,
           checkpointSiteDir: checkpoint.siteDir,
           checkpointWorkflowDir: path.join(checkpoint.taskRoot, "latest", "workflow"),
           fileCount: checkpoint.files.length,
-          generatedFiles: checkpoint.files.map((file) => `/${file}`),
+          requiredFileCount: checkpoint.requiredFiles.length,
+          missingFileCount: checkpoint.missingFiles.length,
+          missingFiles,
+          generatedFiles,
           nativeStatus: String(manifest.status || ""),
         },
       },
@@ -160,13 +244,15 @@ function buildLocalFallbackTaskResponse(checkpoint: LocalTaskCheckpoint) {
       {
         id: `local-${checkpoint.taskId}`,
         eventType: "task_local_checkpoint_recovered",
-        stage: status === "succeeded" ? "done" : String(manifest.status || "running"),
+        stage,
         payload: {
           checkpointSiteDir: checkpoint.siteDir,
           fileCount: checkpoint.files.length,
+          requiredFileCount: checkpoint.requiredFiles.length,
+          missingFiles,
           source: "local_checkpoint_fallback",
         },
-        createdAt: new Date(Date.parse(String(manifest.latestUpdatedAt || manifest.savedAt || "")) || now).toISOString(),
+        createdAt: new Date(timestamp).toISOString(),
       },
     ],
     recoveredFromLocalCheckpoint: true,
@@ -186,9 +272,10 @@ export async function GET(
   let task;
   let taskLookupError: unknown;
   try {
-    task = await getChatTask(taskId);
+    task = await withTimeout(getChatTask(taskId), TASK_STORE_LOOKUP_TIMEOUT_MS, "Task store lookup");
   } catch (error) {
     taskLookupError = error;
+    task = getRememberedChatTask(taskId);
   }
 
   if (!task) {

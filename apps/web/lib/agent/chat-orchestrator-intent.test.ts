@@ -44,6 +44,18 @@ describe("chat orchestrator intent", () => {
     expect(decision.shouldCreateTask).toBe(true);
   });
 
+  it("routes real Chinese Cloudflare deploy intent to deploy when baseline exists", () => {
+    const decision = decide("\u90e8\u7f72\u5230 Cloudflare", "previewing");
+    expect(decision.intent).toBe("deploy");
+    expect(decision.shouldCreateTask).toBe(true);
+  });
+
+  it("routes Chinese Cloudflare deploy intent to deploy when baseline exists", () => {
+    const decision = decide("部署到 Cloudflare", "previewing");
+    expect(decision.intent).toBe("deploy");
+    expect(decision.shouldCreateTask).toBe(true);
+  });
+
   it("routes concrete English multi-page website requests to generate", () => {
     const userText =
       "Build a 6-page industrial-style English website for LC-CNC: Home, 3C Machines, Custom Solutions, Cases, About, Contact. Keep shared styles and script across all pages, and ensure navigation links work.";

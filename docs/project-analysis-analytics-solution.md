@@ -713,3 +713,50 @@ Next improvements:
 - Improve uploaded-document parsing so page briefs are captured before the LLM draft step, reducing reliance on later free-text extraction.
 - Add a golden replay fixture for CASUX that compares section variety and page content against the source document, not only route/file success.
 - Remove compatibility fields after all runtime paths consume only route/file/page-brief contracts.
+
+---
+
+## 19. Web Analytics Capacity Policy Update (2026-04-29)
+
+Cloudflare Web Analytics has a hard product distinction:
+
+- Not proxied through Cloudflare: 10 sites.
+- Proxied through Cloudflare: no site count limit.
+
+Reference: https://developers.cloudflare.com/web-analytics/limits/
+
+### 19.1 Decision
+
+Shpitto must not create a Cloudflare Web Analytics site for every temporary `*.pages.dev` deployment.
+
+The deployment contract is:
+
+1. Cloudflare Pages deployment must succeed even when Web Analytics capacity is exhausted.
+2. `*.pages.dev` preview deployments skip Web Analytics by default.
+3. Web Analytics provisioning is allowed only when:
+   - the deployment host is not `*.pages.dev`, usually a custom domain, or
+   - the operator explicitly sets `CLOUDFLARE_WA_ENABLE_PAGES_DEV=1`.
+4. If Web Analytics is skipped or unavailable, record a non-blocking `analyticsStatus` and warning.
+5. The Analysis page must not auto-create Web Analytics sites for `*.pages.dev`; otherwise simply opening the page can consume the 10-site quota again.
+
+### 19.2 Runtime Environment
+
+```env
+# Default: 1. Set 0 to disable all automatic Web Analytics provisioning.
+CLOUDFLARE_WA_AUTO_PROVISION=1
+
+# Default: unset/0. Keep pages.dev preview deployments from consuming not-proxied quota.
+CLOUDFLARE_WA_ENABLE_PAGES_DEV=0
+```
+
+### 19.3 Operational Cleanup
+
+Use `docs/cloudflare-wa-capacity-ops.md` to clear old not-proxied Web Analytics sites.
+Cleanup should be scoped by explicit host patterns and run as dry-run first.
+
+Recommended sequence:
+
+1. Deploy code that skips `*.pages.dev` Web Analytics.
+2. Dry-run cleanup for known generated preview host patterns.
+3. Apply cleanup only to confirmed disposable hosts.
+4. Keep custom-domain analytics enabled for production sites.

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedRouteUserId } from "@/lib/supabase/route-user";
 import { CloudflareClient } from "@/lib/cloudflare";
 import {
   getOwnedProjectSummary,
@@ -27,16 +27,6 @@ function isValidHostname(host: string): boolean {
   return /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/.test(host);
 }
 
-async function mustGetUserId() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) return undefined;
-  return user.id;
-}
-
 const DEFAULT_CNAME_TARGET = String(process.env.CLOUDFLARE_SAAS_CNAME_TARGET || "customers.shpitto.com").trim();
 const DEFAULT_DNS_HOST = String(process.env.CLOUDFLARE_SAAS_DNS_HOST || "@").trim() || "@";
 
@@ -45,7 +35,7 @@ export async function GET(
   ctx: { params: Promise<{ projectId: string }> },
 ) {
   try {
-    const userId = await mustGetUserId();
+    const userId = await getAuthenticatedRouteUserId();
     if (!userId) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
     const { projectId: rawProjectId } = await ctx.params;
@@ -77,7 +67,7 @@ export async function POST(
   ctx: { params: Promise<{ projectId: string }> },
 ) {
   try {
-    const userId = await mustGetUserId();
+    const userId = await getAuthenticatedRouteUserId();
     if (!userId) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
     const { projectId: rawProjectId } = await ctx.params;

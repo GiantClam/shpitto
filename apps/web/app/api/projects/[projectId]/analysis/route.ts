@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedRouteUserId } from "@/lib/supabase/route-user";
 import { CloudflareClient } from "@/lib/cloudflare";
 import { getD1Client } from "@/lib/d1";
 import { getProjectAnalyticsBinding, upsertProjectSiteBinding } from "@/lib/agent/db";
@@ -7,6 +7,29 @@ import { getProjectAnalyticsBinding, upsertProjectSiteBinding } from "@/lib/agen
 export const runtime = "nodejs";
 
 type AnalyticsStatus = "pending" | "active" | "degraded" | "not_configured";
+
+function normalizeDeployHost(value: string): string {
+  const raw = String(value || "").trim().toLowerCase();
+  if (!raw) return "";
+  try {
+    return new URL(raw.startsWith("http") ? raw : `https://${raw}`).host.toLowerCase();
+  } catch {
+    return raw.replace(/^\/+|\/+$/g, "");
+  }
+}
+
+function isPagesDevHost(host: string): boolean {
+  const normalized = normalizeDeployHost(host);
+  return normalized === "pages.dev" || normalized.endsWith(".pages.dev");
+}
+
+function shouldProvisionWebAnalytics(host: string): boolean {
+  if (String(process.env.CLOUDFLARE_WA_AUTO_PROVISION || "1").trim() === "0") return false;
+  if (isPagesDevHost(host)) {
+    return String(process.env.CLOUDFLARE_WA_ENABLE_PAGES_DEV || "").trim() === "1";
+  }
+  return true;
+}
 
 function defaultWindow() {
   const now = new Date();
@@ -70,22 +93,12 @@ function emptyAnalytics(window: { startAt: string; endAt: string }, status: Anal
   };
 }
 
-async function mustGetUserId() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) return undefined;
-  return user.id;
-}
-
 export async function GET(
   request: NextRequest,
   ctx: { params: Promise<{ projectId: string }> },
 ) {
   try {
-    const userId = await mustGetUserId();
+    const userId = await getAuthenticatedRouteUserId();
     if (!userId) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
     const { projectId: rawProjectId } = await ctx.params;
@@ -131,7 +144,7 @@ export async function GET(
     let analyticsStatus: AnalyticsStatus = (String(binding.analyticsStatus || "pending").trim() as AnalyticsStatus) || "pending";
     let warning = "";
 
-    if (!siteTag && deploymentHost) {
+    if (!siteTag && deploymentHost && shouldProvisionWebAnalytics(deploymentHost)) {
       try {
         const ensured = await cf.ensureWebAnalyticsSite(deploymentHost);
         siteTag = ensured.siteTag;
@@ -151,6 +164,10 @@ export async function GET(
         analyticsStatus = "degraded";
         warning = String((error as any)?.message || error || "Failed to provision analytics site token.");
       }
+    } else if (!siteTag && deploymentHost) {
+      analyticsStatus = "pending";
+      warning =
+        "Cloudflare Web Analytics is skipped for pages.dev preview deployments. Bind a custom domain or enable CLOUDFLARE_WA_ENABLE_PAGES_DEV=1 to collect Web Analytics.";
     }
 
     if (!siteTag) {

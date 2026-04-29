@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { HumanMessage } from "@langchain/core/messages";
@@ -31,7 +31,7 @@ describe("chat refine worker", () => {
     );
 
     const inputState: any = {
-      messages: [new HumanMessage({ content: "把标题改成 New Demo 并把主色改成蓝色" })],
+      messages: [new HumanMessage({ content: "\u628a\u6807\u9898\u6539\u6210 New Demo \u5e76\u628a\u4e3b\u8272\u6539\u6210\u84dd\u8272" })],
       phase: "end",
       current_page_index: 0,
       attempt_count: 0,
@@ -93,7 +93,7 @@ describe("chat refine worker", () => {
     );
 
     const inputState: any = {
-      messages: [new HumanMessage({ content: "把 Old 改成 New Brand，主色改成 #ff5500" })],
+      messages: [new HumanMessage({ content: "\u628a Old \u6539\u6210 New Brand\uff0c\u4e3b\u8272\u6539\u6210 #ff5500" })],
       phase: "end",
       current_page_index: 0,
       attempt_count: 0,
@@ -150,7 +150,7 @@ describe("chat refine worker", () => {
     );
 
     const inputState: any = {
-      messages: [new HumanMessage({ content: "把 Old 改成 First Pass" })],
+      messages: [new HumanMessage({ content: "\u628a Old \u6539\u6210 First Pass" })],
       phase: "end",
       current_page_index: 0,
       attempt_count: 0,
@@ -172,12 +172,12 @@ describe("chat refine worker", () => {
         pendingEdits: [
           {
             id: "pending-1",
-            text: "主色换成绿色",
+            text: "\u4e3b\u8272\u6362\u6210\u7eff\u8272",
             createdAt: new Date().toISOString(),
             patchPlan: {
               revision: 1,
-              instructionText: "主色换成绿色",
-              operations: [{ op: "set", target: "visualStyle", value: ["绿色"], sourceText: "主色换成绿色" }],
+              instructionText: "\u4e3b\u8272\u6362\u6210\u7eff\u8272",
+              operations: [{ op: "set", target: "visualStyle", value: ["\u7eff\u8272"], sourceText: "\u4e3b\u8272\u6362\u6210\u7eff\u8272" }],
             },
           },
         ],
@@ -196,7 +196,7 @@ describe("chat refine worker", () => {
     expect(latest?.status).toBe("queued");
     const workflow = (latest?.result?.internal?.inputState as any)?.workflow_context || {};
     expect(workflow.executionMode).toBe("refine");
-    expect(workflow.latestUserText).toContain("绿色");
+    expect(workflow.latestUserText).toContain("\u7eff\u8272");
     expect(workflow.refineSourceProjectPath).toBe(completed?.result?.progress?.checkpointProjectPath);
     expect((workflow.requirementPatchPlan?.operations || []).some((op: any) => op.target === "visualStyle")).toBe(true);
 
@@ -244,7 +244,7 @@ describe("chat refine worker", () => {
     const serializedHumanMessage = {
       id: ["langchain_core", "messages", "HumanMessage"],
       kwargs: {
-        content: "删除For enterprise and SaaS teams和导航栏中的menu按钮",
+        content: "\u5220\u9664 For enterprise and SaaS teams \u548c\u5bfc\u822a\u680f\u4e2d\u7684 menu \u6309\u94ae",
       },
       type: "constructor",
     };
@@ -258,7 +258,7 @@ describe("chat refine worker", () => {
         refineRequested: true,
         checkpointProjectPath: sourceProjectPath,
         deploySourceProjectPath: sourceProjectPath,
-        latestUserText: "删除For enterprise and SaaS teams和导航栏中的menu按钮",
+        latestUserText: "\u5220\u9664 For enterprise and SaaS teams \u548c\u5bfc\u822a\u680f\u4e2d\u7684 menu \u6309\u94ae",
       },
     };
 
@@ -290,7 +290,7 @@ describe("chat refine worker", () => {
   it("fails refine tasks when baseline is missing", async () => {
     const chatId = `chat-refine-worker-missing-${Date.now()}`;
     const inputState: any = {
-      messages: [new HumanMessage({ content: "把主色改成蓝色" })],
+      messages: [new HumanMessage({ content: "\u628a\u4e3b\u8272\u6539\u6210\u84dd\u8272" })],
       phase: "end",
       current_page_index: 0,
       attempt_count: 0,

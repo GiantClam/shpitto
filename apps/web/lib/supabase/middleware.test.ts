@@ -1,109 +1,89 @@
-import { describe, expect, it, beforeEach, vi } from 'vitest'
-import { NextRequest } from 'next/server'
-import { hasSupabaseAuthCookie, updateSession } from './middleware'
+import { describe, expect, it } from "vitest";
+import { NextRequest } from "next/server";
+import { hasAuthCacheCookie, hasSupabaseAuthCookie, updateSession } from "./middleware";
 
-const mocks = vi.hoisted(() => ({
-  createServerClient: vi.fn(),
-}))
-
-vi.mock('@supabase/ssr', () => ({
-  createServerClient: mocks.createServerClient,
-}))
-
-describe('supabase middleware', () => {
-  beforeEach(() => {
-    mocks.createServerClient.mockReset()
-    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co'
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'anon-key'
-  })
-
-  it('detects Supabase auth cookies', () => {
-    expect(hasSupabaseAuthCookie(new NextRequest('http://localhost/'))).toBe(false)
+describe("supabase middleware", () => {
+  it("detects Supabase auth cookies for stale-session diagnostics", () => {
+    expect(hasSupabaseAuthCookie(new NextRequest("http://localhost/"))).toBe(false);
     expect(
       hasSupabaseAuthCookie(
-        new NextRequest('http://localhost/', {
-          headers: { cookie: 'sb-example-auth-token=value' },
+        new NextRequest("http://localhost/", {
+          headers: { cookie: "sb-example-auth-token=value" },
         }),
       ),
-    ).toBe(true)
+    ).toBe(true);
     expect(
       hasSupabaseAuthCookie(
-        new NextRequest('http://localhost/', {
-          headers: { cookie: 'sb-example-auth-token.0=value; sb-example-auth-token.1=value' },
+        new NextRequest("http://localhost/", {
+          headers: { cookie: "sb-example-auth-token.0=value; sb-example-auth-token.1=value" },
         }),
       ),
-    ).toBe(true)
-  })
+    ).toBe(true);
+  });
 
-  it('bypasses public paths without creating a Supabase client when no auth cookie exists', async () => {
-    const response = await updateSession(new NextRequest('http://localhost/'))
-
-    expect(response.status).toBe(200)
-    expect(mocks.createServerClient).not.toHaveBeenCalled()
-  })
-
-  it('allows public auth and blog entry routes without an existing session cookie', async () => {
-    const authResponse = await updateSession(new NextRequest('http://localhost/auth/password'))
-    const signupResponse = await updateSession(new NextRequest('http://localhost/auth/signup'))
-    const registerResponse = await updateSession(new NextRequest('http://localhost/register'))
-    const forgotResponse = await updateSession(new NextRequest('http://localhost/auth/password/forgot'))
-    const resetPageResponse = await updateSession(new NextRequest('http://localhost/reset-password'))
-    const verifyEmailResponse = await updateSession(new NextRequest('http://localhost/verify-email'))
-    const blogResponse = await updateSession(new NextRequest('http://localhost/blog'))
-    const launchResponse = await updateSession(new NextRequest('http://localhost/launch-center'))
-
-    expect(authResponse.status).toBe(200)
-    expect(signupResponse.status).toBe(200)
-    expect(registerResponse.status).toBe(200)
-    expect(forgotResponse.status).toBe(200)
-    expect(resetPageResponse.status).toBe(200)
-    expect(verifyEmailResponse.status).toBe(200)
-    expect(blogResponse.status).toBe(200)
-    expect(launchResponse.status).toBe(200)
-    expect(mocks.createServerClient).not.toHaveBeenCalled()
-  })
-
-  it('keeps private workspace routes rendering when the cookie exists but the session is missing', async () => {
-    const sessionError = new Error('Auth session missing!')
-    sessionError.name = 'AuthSessionMissingError'
-    mocks.createServerClient.mockReturnValue({
-      auth: {
-        getUser: vi.fn(async () => {
-          throw sessionError
+  it("detects the local auth cache cookie", () => {
+    expect(hasAuthCacheCookie(new NextRequest("http://localhost/"))).toBe(false);
+    expect(
+      hasAuthCacheCookie(
+        new NextRequest("http://localhost/", {
+          headers: { cookie: "shpitto_auth_cache=value" },
         }),
-      },
-    })
+      ),
+    ).toBe(true);
+  });
 
+  it("allows public paths without an auth cache", async () => {
+    const rootResponse = await updateSession(new NextRequest("http://localhost/"));
+    const authResponse = await updateSession(new NextRequest("http://localhost/auth/password"));
+    const signupResponse = await updateSession(new NextRequest("http://localhost/auth/signup"));
+    const registerResponse = await updateSession(new NextRequest("http://localhost/register"));
+    const forgotResponse = await updateSession(new NextRequest("http://localhost/auth/password/forgot"));
+    const resetPageResponse = await updateSession(new NextRequest("http://localhost/reset-password"));
+    const verifyEmailResponse = await updateSession(new NextRequest("http://localhost/verify-email"));
+    const blogResponse = await updateSession(new NextRequest("http://localhost/blog"));
+    const launchResponse = await updateSession(new NextRequest("http://localhost/launch-center"));
+
+    expect(rootResponse.status).toBe(200);
+    expect(authResponse.status).toBe(200);
+    expect(signupResponse.status).toBe(200);
+    expect(registerResponse.status).toBe(200);
+    expect(forgotResponse.status).toBe(200);
+    expect(resetPageResponse.status).toBe(200);
+    expect(verifyEmailResponse.status).toBe(200);
+    expect(blogResponse.status).toBe(200);
+    expect(launchResponse.status).toBe(200);
+  });
+
+  it("redirects private workspace routes when the local auth cache is missing", async () => {
+    const response = await updateSession(new NextRequest("http://localhost/projects/demo/analysis"));
+    const location = response.headers.get("location");
+
+    expect(response.status).toBe(307);
+    expect(location).toBe("http://localhost/login?next=%2Fprojects%2Fdemo%2Fanalysis");
+  });
+
+  it("allows private workspace routes when the local auth cache exists", async () => {
     const response = await updateSession(
-      new NextRequest('http://localhost/projects/demo/analysis', {
-        headers: { cookie: 'sb-example-auth-token=value' },
+      new NextRequest("http://localhost/projects/demo/analysis", {
+        headers: { cookie: "shpitto_auth_cache=value" },
       }),
-    )
+    );
 
-    expect(response.status).toBe(200)
-    expect(response.headers.get('location')).toBeNull()
-  })
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+  });
 
-  it('does not warn for missing sessions on public paths with stale auth cookies', async () => {
-    const sessionError = new Error('Auth session missing!')
-    sessionError.name = 'AuthSessionMissingError'
-    mocks.createServerClient.mockReturnValue({
-      auth: {
-        getUser: vi.fn(async () => {
-          throw sessionError
-        }),
-      },
-    })
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
-
+  it("sends stale Supabase cookies through a one-time local auth cache repair", async () => {
     const response = await updateSession(
-      new NextRequest('http://localhost/', {
-        headers: { cookie: 'sb-example-auth-token=value' },
+      new NextRequest("http://localhost/projects/demo/analysis", {
+        headers: { cookie: "sb-example-auth-token=value" },
       }),
-    )
+    );
+    const location = response.headers.get("location");
 
-    expect(response.status).toBe(200)
-    expect(warn).not.toHaveBeenCalled()
-    warn.mockRestore()
-  })
-})
+    expect(response.status).toBe(307);
+    expect(location).toBe(
+      "http://localhost/auth/session/repair?next=%2Fprojects%2Fdemo%2Fanalysis",
+    );
+  });
+});

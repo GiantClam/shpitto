@@ -357,9 +357,9 @@ export interface AgentState {
   industry?: string;
   theme?: { primaryColor: string; mode: "dark" | "light" } | undefined;
   history?: string[];
-  pages_to_expand?: string[]; // 闂佽楠搁悘姘熆濮椻偓楠炲﹪骞囬弶鎸庣€梺瑙勫礃椤曆呯不閿濆鐓欓梺顓ㄧ畱閺嬬喖鏌ｉ敐鍛埞妞ゎ亜鍟存俊鍫曞炊閵婏附鐦撴繝鐢靛仜閸氬绔熼崱娑樼闁告洦鍨奸弫宥嗘叏濡じ鍚柣娑卞櫍濮婂宕掑顒佹闂佸摜濮撮柊锝呯暦?
-  current_page_index: number; // 闂佽崵鍠愮划搴㈡櫠濡ゅ懎绠伴柛娑橈攻濞呯娀鏌ｅΟ鐑樷枙婵為棿鍗抽弻銊モ攽閸℃ê娅ら梻濠庡墻閸撴瑩鈥︾捄銊﹀磯闁告繂瀚锋导鈧梻浣筋嚃閸犳牠鏁冮敂鎯у灊妞ゆ挶鍩勯弫鍡涙煃瑜滈崜鐔风暦閻㈢绠ｉ柣鎰暯閺嬫牕顪冮妶鍛闁绘瀚伴崺鈧い鎺嗗亾妞わ妇鏁婚弫?
-  seo_keywords?: string[]; // 闂傚倷鑳堕…鍫㈡崲閸儱绀夐幖娣妽閸嬬喐銇勯弽顐粶缂佲偓閸岀偞鐓欓柟顖涙緲琚氶梺鍝勬閻╊垶骞冭ぐ鎺戠倞鐟滃繗鍊撮梻浣割吔閺夊灝濮﹂梺?
+  pages_to_expand?: string[];
+  current_page_index: number;
+  seo_keywords?: string[];
   critique_feedback?: string;
   validation_error?: string;
   attempt_count: number;
@@ -1362,18 +1362,18 @@ const conversationNode = async (state: AgentState): Promise<Partial<AgentState>>
         nextPhase = "conversation";
         finalMessage =
           "Plan confirmed. Generation is handled by async task runtime (worker), not graph inline execution.";
-        console.log("濠碘槅鍋撶徊浠嬪疮椤栫偞鏅?[System] User approved plan. Graph stays orchestration-only.");
+        console.log("[System] User approved plan. Graph stays orchestration-only.");
     } else if (intent === "deploy" && state.phase === "end" && !state.deployed_url) {
         nextPhase = "deploy";
-        console.log("濠碘槅鍋撶徊浠嬪疮椤栫偞鏅?[System] User requested deployment. Transitioning to Deploy phase...");
+        console.log("[System] User requested deployment. Transitioning to Deploy phase...");
     } else if (intent === "deploy" && state.phase === "end" && state.deployed_url) {
         // Already deployed, just show the link
         nextPhase = "conversation"; 
         finalMessage = "The website has already been deployed successfully. You can open it from the link above.";
-        console.log("濠碘槅鍋撶徊浠嬪疮椤栫偞鏅?[System] User requested deployment but site is already live.");
+        console.log("[System] User requested deployment but site is already live.");
     } else if (intent === "propose_plan") {
         nextPhase = "conversation"; 
-        console.log("濠碘槅鍋撶徊浠嬪疮椤栫偞鏅?[Planner] Plan Proposed/Updated.");
+        console.log("[Planner] Plan Proposed/Updated.");
         // Ensure the outline is visible in the chat if it's not already in the message
         if (outline && !finalMessage.includes(outline)) {
             finalMessage += `\n\n${outline}`;

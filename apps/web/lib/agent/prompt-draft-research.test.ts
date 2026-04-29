@@ -232,6 +232,50 @@ describe("prompt draft research", () => {
     expect(prompt).toContain("## Website Knowledge Profile");
   });
 
+  it("keeps high-confidence uploaded source excerpts as an internal appendix", () => {
+    const sourceExcerpt = [
+      "CASUX 网站完整页面生成提示词",
+      "生成标准文件展示卡片组件：左侧 PDF 图标，中间标准名称、标准编号、发布机构、发布日期，右侧下载按钮。",
+      "生成适儿空间CASUX评分可视化组件：总分、圆形进度条、五维度雷达图、认证等级徽章。",
+    ].join("\n");
+    const prompt = mergeTemplateWithKnowledgeProfileForTesting("# Canonical Website Generation Prompt", {
+      sourceMode: "uploaded_files",
+      domains: [],
+      sources: [
+        {
+          type: "uploaded_file",
+          title: "CASUX_.md.pdf",
+          fileName: "CASUX_.md.pdf",
+          snippet: sourceExcerpt,
+          confidence: 0.9,
+        },
+      ],
+      brand: { name: "CASUX" },
+      audience: [],
+      offerings: [],
+      differentiators: [],
+      proofPoints: [],
+      suggestedPages: [
+        {
+          route: "/downloads",
+          title: "资料下载",
+          purpose: "Present source-defined downloads.",
+          contentInputs: ["资料下载"],
+        },
+      ],
+      contentGaps: [],
+      summary: sourceExcerpt,
+    });
+
+    expect(prompt).toContain("## 7.25 Source Material Appendix");
+    expect(prompt).toContain("Internal Generation Input");
+    expect(prompt).toContain("生成标准文件展示卡片组件");
+    expect(prompt).toContain("生成适儿空间CASUX评分可视化组件");
+    expect(prompt.indexOf("## 7.25 Source Material Appendix")).toBeLessThan(
+      prompt.indexOf("## 7.5 External Research Addendum"),
+    );
+  });
+
   it("includes confirmed functional requirements in the prompt draft", async () => {
     const requirement = [
       "需求表单已提交：",

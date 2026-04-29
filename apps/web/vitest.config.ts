@@ -26,6 +26,7 @@ const runExternalIntegrationTests = process.env.RUN_EXTERNAL_INTEGRATION_TESTS =
 export default defineConfig({
   resolve: {
     alias: {
+      "@": path.resolve(__dirname),
       "@industry/schema": path.resolve(__dirname, "../../packages/schema/src/index.ts"),
     },
   },

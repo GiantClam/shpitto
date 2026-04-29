@@ -94,11 +94,46 @@ Evidence Brief responsibilities:
 1. Preserve `Priority Facts` in the Canonical Website Prompt. These facts define brand semantics, audience, offerings, differentiators, and proof points.
 2. Use `Source Priorities` to decide which facts are reliable. Uploaded files, same-domain pages, and explicit user input outrank generic web search. Generic industry research may shape structure and UX, but it must not become brand-owned claims.
 3. Use `Page Briefs` to write route-specific page prompts. Each page prompt must include page goal, audience intent, source-backed content inputs, section order, and next action.
-4. Use `Gaps And Assumptions` to keep unsupported details honest. Mark assumptions explicitly and do not invent metrics, awards, client names, certifications, testimonials, or product claims.
+4. Use `Gaps And Assumptions` only as internal planning context. Keep unsupported details honest by omitting them from visitor-facing pages or replacing them with neutral contact/download actions. Do not render assumption labels, content-gap labels, source-analysis rationale, missing-content notices, or "待补充" copy in generated HTML.
 5. The Evidence Brief is a content strategy artifact, not a route/file manifest. The Prompt Control Manifest remains the only machine-readable route/file handoff.
 6. If Evidence Brief content conflicts with generic template defaults, Evidence Brief content wins.
 
-Quality gate: A Canonical Website Prompt generated from researched material must visibly preserve priority facts, page briefs, content gaps, and assumption rules.
+Quality gate: A Canonical Website Prompt generated from researched material must preserve priority facts, page briefs, content gaps, and assumption rules as planning context, while generated website pages must expose only finished visitor-facing copy.
+
+#### Visitor-Facing Copy Contract (Mandatory)
+
+1. Evidence Brief, Page Briefs, source priorities, gaps, assumptions, and prompt control metadata are internal strategy inputs.
+2. Generated HTML must never include process phrases such as `内容缺口`, `待补充`, `材料明确`, `材料仅`, `权限说明`, `数据说明`, `合作说明`, `分类导航要帮助用户`, `[Assumption]`, `Content gap`, or `Assumption rule`.
+3. If source material lacks a detail, do not explain the gap to visitors. Omit the detail, use a conservative generic CTA, or route the user to contact/download/consultation.
+4. Transform source-backed facts into concrete headings, value propositions, cards, comparison rows, process steps, and CTAs. Do not copy analysis notes verbatim.
+5. Each route must use a distinct hero composition and section rhythm. Shared header, footer, tokens, and navigation are allowed; repeated hero/body skeletons with swapped text are not.
+6. If the Canonical Website Prompt includes a `Source Material Appendix`, treat it as internal generation input for preserving page content depth, not as a visitor-facing section to render.
+
+#### Verified Specifics Guard (Mandatory)
+
+Do not manufacture brand-owned specifics just to make a page look complete.
+
+1. Never invent names of experts, staff, partners, clients, government agencies, institutions, awards, certifications, papers, reports, events, cities, cases, products, or spaces unless they appear in the user request, uploaded source text, Evidence Brief, same-domain crawl, or credible searched source.
+2. Never invent certification numbers, standard numbers, publication dates, file sizes, download counts, participant counts, coverage counts, city counts, member counts, prices, addresses, phone numbers, email addresses, or validity periods unless source-backed.
+3. If the source asks for a list module but does not provide concrete list items, render the module as a taxonomy, search/filter interface, process, CTA, or source-backed category list. Do not fill it with fictional examples.
+4. For certification/search/download/data modules, prefer neutral CTAs like “进入查询系统”, “查看资料库”, “登录后下载”, or “提交申请” over fake rows with made-up identifiers.
+5. For research-team or case-study modules without named source facts, describe roles, research directions, or evaluation dimensions instead of creating person names or client/case identities.
+6. Before finalizing each page, scan for unsupported numerals and proper nouns. Remove or generalize any value that is not traceable to the source material.
+
+#### Gap-Driven Research Policy (Mandatory)
+
+`Gaps And Assumptions` are not only warning labels. Treat each gap as a decision point before generating affected pages.
+
+1. If a gap can be answered by public sources, call `web_search` before generating the page or section that depends on it.
+2. Searchable gaps include public terminology, service/category definitions, industry context, audience expectations, public standards, common page modules, same-domain facts, and source-derived brand/domain hints.
+3. Unsafe-to-infer gaps include private metrics, awards, client names, testimonials, certifications, prices, addresses, legal claims, contact details, or organization-owned promises unless a source explicitly proves them.
+4. Search priority is: same-domain/domain-specific sources first; uploaded-file names, brand names, and gap terms second; reputable public or industry sources third for context and structure only.
+5. Summarize useful search results into the Evidence Brief's `Source Priorities` or an `External Research Addendum` with title, URL, and concise reason for use. Do not paste raw search snippets into visitor-facing copy.
+6. Generic industry research may improve content depth, taxonomy, page structure, and UX decisions, but it must not become brand-owned proof points.
+7. If no credible source answers the gap, keep the gap internal and omit the unsupported detail from generated visitor pages.
+8. Prefer fewer, targeted searches over broad template searches. Query the exact missing concept, audience, offering, or public standard that affects the page.
+
+Quality gate: Before file generation, every high-impact gap is classified as source-backed, searched-but-unconfirmed, or unsafe-to-infer; generated pages only use source-backed facts or conservative generic framing.
 
 ### Phase 0.3: Route Planning Policy (Mandatory)
 
@@ -146,6 +181,18 @@ When the confirmed prompt or runtime context includes a `[Referenced Assets]` bl
 6. If multiple assets are listed, match by asset name/path and use the corresponding logical path. Do not replace unrelated internal site files.
 7. Do not manually construct or edit `preview/{version}` or `release/current` URL segments. The platform rewrites logical paths to stage-specific CDN URLs.
 8. During QA, inspect generated HTML/CSS/JS/JSON and verify that every used referenced asset points to the provided logical path, not a local workspace path or a CDN URL.
+
+#### Uploaded Document Source Skills
+
+When the confirmed prompt, Evidence Brief, or `[Referenced Assets]` block includes PDF, DOCX, or PPTX source files:
+
+1. Load the matching local document skill before interpreting that source type:
+   - `pdf` for `.pdf` files, scanned PDFs, OCR needs, or PDF downloads.
+   - `docx` for Word documents, `.docx`, or `.doc` source material.
+   - `pptx` for PowerPoint files, slide decks, presentations, or `.pptx` source material.
+2. Treat Shpitto's extracted document text and Evidence Brief as the primary content source for website copy; use the document skill to guide how to interpret structure, tables, slides, and downloadable document references.
+3. Preserve downloadable document assets with their exact logical paths when linking to them from the generated site.
+4. Do not invent document contents that were not present in extracted text, user requirements, or credible external research.
 
 #### Image Generation (prefer local `web-image-generator` skill, fallback to shared image tooling)
 

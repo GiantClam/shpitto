@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { BrandLogo } from "@/components/brand/BrandLogo";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import {
   ArrowLeft,
   BarChart3,
@@ -24,7 +25,8 @@ import {
   Upload,
   User2,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import type { Locale } from "@/lib/i18n";
+import { getProjectWorkspaceCopy, type ProjectWorkspaceCopy } from "./project-workspace-copy";
 
 type SessionPayload = {
   id: string;
@@ -90,23 +92,23 @@ function formatBytes(value: number): string {
   return `${(size / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
 
-function sourceLabel(source: ProjectAsset["source"]) {
-  if (source === "generated") return "Generated";
-  if (source === "chat_upload") return "Chat Upload";
-  return "Upload";
+function sourceLabel(source: ProjectAsset["source"], copy: ProjectWorkspaceCopy) {
+  if (source === "generated") return copy.assets.sourceGenerated;
+  if (source === "chat_upload") return copy.assets.sourceChatUpload;
+  return copy.assets.sourceUpload;
 }
 
-function categoryLabel(category: ProjectAsset["category"]) {
-  if (category === "image") return "Image";
-  if (category === "code") return "Code";
-  if (category === "document") return "Document";
-  return "Other";
+function categoryLabel(category: ProjectAsset["category"], copy: ProjectWorkspaceCopy) {
+  if (category === "image") return copy.assets.categoryImage;
+  if (category === "code") return copy.assets.categoryCode;
+  if (category === "document") return copy.assets.categoryDocument;
+  return copy.assets.categoryOther;
 }
 
-function assetStatusLabel(status?: ProjectAsset["status"]) {
-  if (status === "published") return "Published";
-  if (status === "modified") return "Updated";
-  return "New";
+function assetStatusLabel(status: ProjectAsset["status"] | undefined, copy: ProjectWorkspaceCopy) {
+  if (status === "published") return copy.assets.statusPublished;
+  if (status === "modified") return copy.assets.statusUpdated;
+  return copy.assets.statusNew;
 }
 
 function assetStatusTone(status?: ProjectAsset["status"]) {
@@ -119,13 +121,13 @@ function assetStatusTone(status?: ProjectAsset["status"]) {
   return "border-[color-mix(in_oklab,var(--shp-secondary)_34%,transparent)] bg-[color-mix(in_oklab,var(--shp-secondary)_14%,var(--shp-surface)_86%)] text-[var(--shp-hot)]";
 }
 
-export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
+export function ProjectAssetsWorkspace({ projectId, locale = "en" }: { projectId: string; locale?: Locale }) {
   const router = useRouter();
-  const supabase = useMemo(() => createClient(), []);
+  const workspaceCopy = getProjectWorkspaceCopy(locale);
 
   const [userEmail, setUserEmail] = useState("");
   const [userId, setUserId] = useState("");
-  const [projectTitle, setProjectTitle] = useState("Current Project");
+  const [projectTitle, setProjectTitle] = useState(workspaceCopy.currentProject);
   const [projectUpdatedAt, setProjectUpdatedAt] = useState<number | undefined>(undefined);
   const [projects, setProjects] = useState<SessionPayload[]>([]);
   const [creatingProject, setCreatingProject] = useState(false);
@@ -158,12 +160,12 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
       setProjects(data.sessions.filter((session) => !session.archived));
       const hit = data.sessions.find((session) => session.id === chatId);
       if (!hit) return;
-      setProjectTitle(String(hit.title || "Current Project"));
+      setProjectTitle(String(hit.title || workspaceCopy.currentProject));
       setProjectUpdatedAt(Number(hit.updatedAt || Date.now()));
     } catch {
       // best-effort metadata
     }
-  }, [chatId, userId]);
+  }, [chatId, userId, workspaceCopy.currentProject]);
 
   const fetchAssets = useCallback(async () => {
     if (!chatId.trim()) return;
@@ -194,21 +196,17 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
   useEffect(() => {
     let mounted = true;
     void (async () => {
-      const { data } = await supabase.auth.getUser();
+      const res = await fetch("/api/auth/session", { cache: "no-store" }).catch(() => null);
+      const data = res ? ((await res.json().catch(() => ({}))) as any) : {};
       if (!mounted) return;
       setUserEmail(String(data.user?.email || "").trim());
       setUserId(String(data.user?.id || "").trim());
     })();
-    const { data: authSub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserEmail(String(session?.user?.email || "").trim());
-      setUserId(String(session?.user?.id || "").trim());
-    });
 
     return () => {
       mounted = false;
-      authSub.subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, []);
 
   useEffect(() => {
     void fetchProjectMeta();
@@ -226,7 +224,7 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
       const res = await fetch("/api/chat/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: "New Project" }),
+        body: JSON.stringify({ title: workspaceCopy.newProject }),
       });
       const data = (await res.json()) as { ok: boolean; session?: SessionPayload; error?: string };
       if (!res.ok || !data.ok || !data.session?.id) {
@@ -340,11 +338,11 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
     href?: string;
     active: boolean;
   }> = [
-    { label: "Chat", icon: MessageSquare, href: `/projects/${encodeURIComponent(chatId)}/chat`, active: false },
-    { label: "Analytics", icon: BarChart3, href: `/projects/${encodeURIComponent(chatId)}/analysis`, active: false },
-    { label: "Assets", icon: FolderOpen, href: `/projects/${encodeURIComponent(chatId)}/assets`, active: true },
-    { label: "Data", icon: Database, href: `/projects/${encodeURIComponent(chatId)}/data`, active: false },
-    { label: "Settings", icon: Settings, active: false },
+    { label: workspaceCopy.nav.chat, icon: MessageSquare, href: `/projects/${encodeURIComponent(chatId)}/chat`, active: false },
+    { label: workspaceCopy.nav.analytics, icon: BarChart3, href: `/projects/${encodeURIComponent(chatId)}/analysis`, active: false },
+    { label: workspaceCopy.nav.assets, icon: FolderOpen, href: `/projects/${encodeURIComponent(chatId)}/assets`, active: true },
+    { label: workspaceCopy.nav.data, icon: Database, href: `/projects/${encodeURIComponent(chatId)}/data`, active: false },
+    { label: workspaceCopy.nav.settings, icon: Settings, active: false },
   ];
 
   return (
@@ -386,18 +384,19 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
               className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] px-3 py-2 text-xs font-semibold text-[var(--shp-muted)] hover:border-[var(--shp-primary)] hover:text-[var(--shp-primary)]"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back
+              {workspaceCopy.back}
             </button>
-            <div className="ml-auto flex items-center">
+            <div className="ml-auto flex items-center gap-2">
+              <LanguageSwitcher locale={locale} compact />
               {projects.length === 0 ? (
-                <span className="px-2 text-xs text-[var(--shp-muted)]">No projects</span>
+                <span className="px-2 text-xs text-[var(--shp-muted)]">{workspaceCopy.noProjects}</span>
               ) : (
                 <label className="relative flex items-center">
                   <select
                     value={chatId}
                     onChange={(event) => handleProjectSelect(event.target.value)}
                     className="h-9 w-[220px] max-w-[42vw] appearance-none rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] px-3 pr-8 text-xs font-medium text-[var(--shp-text)] outline-none transition-colors focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] focus:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)]"
-                    aria-label="Select project"
+                    aria-label={workspaceCopy.selectProject}
                   >
                     {projects.map((project) => (
                       <option key={project.id} value={project.id}>
@@ -429,8 +428,8 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
                   type="button"
                   onClick={() => setSidebarCollapsed((prev) => !prev)}
                   className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] p-1.5 text-[var(--shp-muted)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_88%,var(--shp-bg)_12%)] hover:text-[var(--shp-text)]"
-                  title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                  aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                  title={sidebarCollapsed ? workspaceCopy.expandSidebar : workspaceCopy.collapseSidebar}
+                  aria-label={sidebarCollapsed ? workspaceCopy.expandSidebar : workspaceCopy.collapseSidebar}
                 >
                   {sidebarCollapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
                 </button>
@@ -471,21 +470,21 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
                   "inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_16%,transparent)] px-3 py-2 text-sm font-semibold text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_24%,transparent)] disabled:cursor-not-allowed disabled:opacity-60",
                   sidebarCollapsed ? "px-2" : "",
                 ].join(" ")}
-                title="New project"
+                title={workspaceCopy.newProject}
               >
                 {creatingProject ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                {!sidebarCollapsed ? <span>New Project</span> : null}
+                {!sidebarCollapsed ? <span>{workspaceCopy.newProject}</span> : null}
               </button>
               <div
                 className={[
                   "mt-2 flex items-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_35%,transparent)] px-3 py-2",
                   sidebarCollapsed ? "justify-center px-2" : "",
                 ].join(" ")}
-                title={userEmail || "Guest"}
+                title={userEmail || workspaceCopy.guest}
               >
                 <User2 className="h-4 w-4 shrink-0 text-[var(--shp-muted)]" />
                 {!sidebarCollapsed ? (
-                  <span className="max-w-[190px] truncate text-sm text-[var(--shp-text)]">{userEmail || "Guest"}</span>
+                  <span className="max-w-[190px] truncate text-sm text-[var(--shp-text)]">{userEmail || workspaceCopy.guest}</span>
                 ) : null}
               </div>
               {userEmail ? (
@@ -494,10 +493,10 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
                     "mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_74%,transparent)] px-3 py-2 text-sm text-[var(--shp-muted)] hover:border-[var(--shp-primary)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_10%,transparent)] hover:text-[var(--shp-primary)]",
                     sidebarCollapsed ? "px-2" : "",
                   ].join(" ")}
-                  title="Sign out"
+                  title={workspaceCopy.signOut}
                 >
                   <LogOut className="h-4 w-4" />
-                  {!sidebarCollapsed ? <span>Sign out</span> : null}
+                  {!sidebarCollapsed ? <span>{workspaceCopy.signOut}</span> : null}
                 </SignOutButton>
               ) : null}
             </div>
@@ -506,7 +505,7 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
           <section className="shp-shell h-[calc(100vh-120px)] min-h-[700px] overflow-auto rounded-xl p-6">
             <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] pb-5">
               <div>
-                <h2 className="text-4xl font-semibold tracking-tight text-[var(--shp-text)]">Project Assets</h2>
+                <h2 className="text-4xl font-semibold tracking-tight text-[var(--shp-text)]">{workspaceCopy.assets.title}</h2>
               </div>
               <button
                 type="button"
@@ -515,7 +514,7 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
                 className="shp-btn-primary inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-black disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                Upload Files
+                {workspaceCopy.assets.uploadFiles}
               </button>
             </div>
 
@@ -533,7 +532,7 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
                         : "text-[var(--shp-muted)] hover:text-[var(--shp-text)]",
                     ].join(" ")}
                   >
-                    {tab === "all" ? "All" : tab === "image" ? "Images" : tab === "code" ? "Code" : "Documents"}
+                    {tab === "all" ? workspaceCopy.assets.all : tab === "image" ? workspaceCopy.assets.images : tab === "code" ? workspaceCopy.assets.code : workspaceCopy.assets.documents}
                   </button>
                 ))}
               </div>
@@ -542,7 +541,7 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search assets..."
+                  placeholder={workspaceCopy.assets.search}
                   className="h-10 w-full rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] pl-9 pr-3 text-sm text-[var(--shp-text)] outline-none focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)]"
                 />
               </form>
@@ -562,7 +561,7 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
                     : "border border-rose-400/35 bg-rose-500/10 text-rose-700",
                 ].join(" ")}
               >
-                {isUnauthorized ? "Sign in to view and manage assets." : error}
+                {isUnauthorized ? workspaceCopy.assets.unauthorized : error}
               </div>
             ) : null}
 
@@ -570,11 +569,11 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
               {loadingAssets ? (
                 <div className="col-span-full flex items-center gap-2 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_60%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] px-4 py-3 text-sm text-[var(--shp-muted)]">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading assets...
+                  {workspaceCopy.assets.loading}
                 </div>
               ) : assets.length === 0 ? (
                 <div className="col-span-full rounded-xl border border-dashed border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-4 py-8 text-center text-sm text-[var(--shp-muted)]">
-                  No assets yet. Upload files or generate website files from chat.
+                  {workspaceCopy.assets.empty}
                 </div>
               ) : (
                 assets.map((asset) => (
@@ -585,10 +584,10 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
                     <div className="mb-2 flex items-start justify-between gap-2">
                       <div className="flex items-center gap-1.5">
                         <div className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-2 py-0.5 text-[11px] text-[var(--shp-muted)]">
-                          {categoryLabel(asset.category)}
+                          {categoryLabel(asset.category, workspaceCopy)}
                         </div>
                         <div className={`rounded-md border px-2 py-0.5 text-[11px] ${assetStatusTone(asset.status)}`}>
-                          {assetStatusLabel(asset.status)}
+                          {assetStatusLabel(asset.status, workspaceCopy)}
                         </div>
                       </div>
                       <button
@@ -596,14 +595,14 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
                         onClick={() => void handleDeleteAsset(asset.key)}
                         disabled={deletingKey === asset.key}
                         className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] p-1 text-[var(--shp-muted)] hover:border-rose-400/50 hover:text-rose-600 disabled:opacity-60"
-                        title="Delete asset"
+                        title={workspaceCopy.assets.deleteAsset}
                       >
                         {deletingKey === asset.key ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                       </button>
                     </div>
                     <p className="line-clamp-2 min-h-10 text-sm font-medium text-[var(--shp-text)]">{asset.name}</p>
                     <p className="mt-1 text-xs text-[var(--shp-muted)]">
-                      {formatBytes(asset.size)} • {sourceLabel(asset.source)}
+                      {formatBytes(asset.size)} • {sourceLabel(asset.source, workspaceCopy)}
                     </p>
                     {asset.version ? (
                       <p className="mt-1 text-[11px] text-[var(--shp-muted)]">Version {asset.version}</p>
@@ -618,7 +617,7 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
                         rel="noreferrer"
                         className="inline-flex rounded-md border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] px-2 py-1 text-[11px] text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)]"
                       >
-                        Open
+                        {workspaceCopy.assets.open}
                       </a>
                     </div>
                   </article>
@@ -657,7 +656,7 @@ export function ProjectAssetsWorkspace({ projectId }: { projectId: string }) {
                   onClick={() => router.push(`/projects/${encodeURIComponent(chatId)}/chat`)}
                   className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-4 py-2 text-sm text-[var(--shp-muted)] hover:text-[var(--shp-text)]"
                 >
-                  Open Chat
+                  {workspaceCopy.assets.openChat}
                 </button>
               </div>
             </div>

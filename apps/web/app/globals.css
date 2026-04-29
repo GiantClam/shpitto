@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-shpitto-sans);
   
   @keyframes grid {
     0% { transform: translateY(-50%); }
@@ -12,6 +12,7 @@
 }
 
 :root {
+  --font-shpitto-sans: "Aptos", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --shp-bg: #f7f3ee;
   --shp-bg-soft: #fffaf5;
   --shp-surface: #ffffff;
@@ -31,6 +32,7 @@
 }
 
 body {
+  font-family: var(--font-shpitto-sans);
   color-scheme: light;
   color: var(--shp-text);
   background:

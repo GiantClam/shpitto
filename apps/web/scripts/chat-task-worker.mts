@@ -15,6 +15,10 @@ import {
 } from "../lib/agent/chat-task-store.ts";
 
 function loadWorkerEnv() {
+  if (process.env.VITEST || process.env.NODE_ENV === "test" || String(process.env.CHAT_WORKER_LOAD_ENV || "").trim() === "0") {
+    return;
+  }
+
   const scriptDir = path.dirname(fileURLToPath(import.meta.url));
   const webRoot = path.resolve(scriptDir, "..");
   const repoRoot = path.resolve(webRoot, "..", "..");

@@ -119,6 +119,151 @@ describe("chat api async mode", () => {
     expect((pendingEdits[0]?.patchPlan as any)?.operations?.some((op: any) => op.target === "locale")).toBe(true);
   });
 
+  it("does not queue pending edits when user explicitly asks to continue generation", async () => {
+    const chatId = `chat-continue-active-${Date.now()}`;
+    const { createChatTask } = await import("./chat-task-store");
+    const active = await createChatTask(chatId, undefined, {
+      assistantText: "queued generation",
+      phase: "queued",
+      internal: {
+        inputState: {
+          messages: [],
+          phase: "conversation",
+          current_page_index: 0,
+          attempt_count: 0,
+          workflow_context: {
+            executionMode: "generate",
+            skillId: "website-generation-workflow",
+          },
+        },
+      },
+      progress: { stage: "queued" } as any,
+    });
+
+    const { POST } = await import("../../app/api/chat/route");
+    const req = new Request("http://localhost/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: chatId,
+        messages: [{ role: "user", parts: [{ type: "text", text: "\u7ee7\u7eed\u751f\u6210" }] }],
+      }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(202);
+
+    const task = await getActiveChatTask(chatId);
+    expect(task?.id).toBe(active.id);
+    expect(task?.result?.internal?.pendingEdits || []).toHaveLength(0);
+  });
+
+  it("uses latest confirmed canonical prompt when user asks to continue generation", async () => {
+    const chatId = `chat-continue-confirmed-${Date.now()}`;
+    const canonicalPrompt = "# Canonical Website Generation Prompt\n\nGenerate the previously confirmed CASUX site.";
+    const { appendChatTimelineMessage, createChatTask, failChatTask } = await import("./chat-task-store");
+    const failed = await createChatTask(chatId, undefined, {
+      assistantText: "failed",
+      phase: "skeleton",
+      progress: { stage: "failed" } as any,
+    });
+    await failChatTask(failed.id, "previous generation failed");
+    await appendChatTimelineMessage({
+      chatId,
+      role: "user",
+      text: canonicalPrompt,
+    });
+
+    const { POST } = await import("../../app/api/chat/route");
+    const req = new Request("http://localhost/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: chatId,
+        messages: [{ role: "user", parts: [{ type: "text", text: "\u7ee7\u7eed\u751f\u6210" }] }],
+      }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(202);
+
+    const task = await getLatestChatTaskForChat(chatId);
+    expect(task?.id).not.toBe(failed.id);
+    expect(task?.status).toBe("queued");
+    expect((task?.result?.internal?.inputState as any)?.workflow_context?.sourceRequirement).toBe(canonicalPrompt);
+  });
+
+  it("uses latest task sourceRequirement when user asks to continue generation", async () => {
+    const chatId = `chat-continue-task-source-${Date.now()}`;
+    const canonicalPrompt = "# Canonical Website Generation Prompt\n\nGenerate from task sourceRequirement.";
+    const { createChatTask, failChatTask } = await import("./chat-task-store");
+    const failed = await createChatTask(chatId, undefined, {
+      assistantText: "failed",
+      phase: "skeleton",
+      internal: {
+        inputState: {
+          messages: [],
+          phase: "conversation",
+          current_page_index: 0,
+          attempt_count: 0,
+          workflow_context: {
+            skillId: "website-generation-workflow",
+            sourceRequirement: canonicalPrompt,
+          },
+        },
+      },
+      progress: { stage: "failed" } as any,
+    });
+    await failChatTask(failed.id, "previous generation failed");
+
+    const { POST } = await import("../../app/api/chat/route");
+    const req = new Request("http://localhost/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: chatId,
+        messages: [{ role: "user", parts: [{ type: "text", text: "continue generation" }] }],
+      }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(202);
+
+    const task = await getLatestChatTaskForChat(chatId);
+    expect(task?.id).not.toBe(failed.id);
+    expect((task?.result?.internal?.inputState as any)?.workflow_context?.sourceRequirement).toBe(canonicalPrompt);
+  });
+
+  it("uses local checkpoint findings when user asks to continue generation after storage history is unavailable", async () => {
+    const chatId = `chat-continue-local-${Date.now()}`;
+    const taskId = crypto.randomUUID();
+    const canonicalPrompt = "# Canonical Website Generation Prompt\n\nGenerate the locally recovered CASUX site.";
+    const findingsPath = path.resolve(process.cwd(), ".tmp", "chat-tasks", chatId, taskId, "latest", "workflow", "findings.md");
+    await fs.mkdir(path.dirname(findingsPath), { recursive: true });
+    await fs.writeFile(
+      findingsPath,
+      ["# Findings", "", "## Input Prompt", canonicalPrompt, "", "## Derived Route Plan", "- Routes: /"].join("\n"),
+      "utf8",
+    );
+
+    const { POST } = await import("../../app/api/chat/route");
+    const req = new Request("http://localhost/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: chatId,
+        messages: [{ role: "user", parts: [{ type: "text", text: "\u7ee7\u7eed\u751f\u6210" }] }],
+      }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(202);
+
+    const task = await getLatestChatTaskForChat(chatId);
+    expect(task?.status).toBe("queued");
+    expect((task?.result?.internal?.inputState as any)?.workflow_context?.sourceRequirement).toBe(canonicalPrompt);
+  });
+
   it("locks user input while deploy task is active", async () => {
     const chatId = `chat-deploy-lock-${Date.now()}`;
     const { createChatTask } = await import("./chat-task-store");
@@ -379,15 +524,22 @@ describe("chat api async mode", () => {
     expect(json?.task?.result?.internal).toBeUndefined();
   });
 
-  it("recovers task status from local checkpoint when task store has no record", async () => {
+  it("keeps an in-progress local checkpoint running when planned route files are missing", async () => {
     const chatId = `chat-local-status-${Date.now()}`;
     const taskId = `local-status-${Date.now()}`;
     const root = path.resolve(process.cwd(), ".tmp", "chat-tasks", chatId, taskId, "latest");
     const siteDir = path.join(root, "site");
+    const workflowDir = path.join(root, "workflow");
     await fs.mkdir(siteDir, { recursive: true });
+    await fs.mkdir(workflowDir, { recursive: true });
     await fs.writeFile(path.join(siteDir, "index.html"), "<!doctype html><html><body>ok</body></html>", "utf8");
     await fs.writeFile(path.join(siteDir, "styles.css"), "body{margin:0}", "utf8");
     await fs.writeFile(path.join(siteDir, "script.js"), "console.log('ok')", "utf8");
+    await fs.writeFile(
+      path.join(workflowDir, "task_plan.md"),
+      ["# Task Plan", "", "- Routes: /, /contact"].join("\n"),
+      "utf8",
+    );
     await fs.writeFile(
       path.join(root, "manifest.json"),
       JSON.stringify({
@@ -408,8 +560,9 @@ describe("chat api async mode", () => {
     expect(json?.recoveredFromLocalCheckpoint).toBe(true);
     expect(json?.task?.id).toBe(taskId);
     expect(json?.task?.chatId).toBe(chatId);
-    expect(json?.task?.status).toBe("succeeded");
-    expect(json?.task?.result?.progress?.stage).toBe("done");
+    expect(json?.task?.status).toBe("running");
+    expect(json?.task?.result?.progress?.stage).toBe("generating:tool-round-10:/contact/index.html");
+    expect(json?.task?.result?.progress?.missingFiles).toEqual(["/contact/index.html"]);
     expect(json?.task?.result?.progress?.generatedFiles).toEqual(
       expect.arrayContaining(["/index.html", "/styles.css", "/script.js"]),
     );
@@ -463,5 +616,227 @@ describe("chat api async mode", () => {
     expect(workflow.requirementSpec?.deployment?.provider).toBe("cloudflare");
     expect(workflow.canonicalPrompt).toBe("deploy to cloudflare");
     expect(workflow.requirementDraft).toBeUndefined();
+  });
+
+  it("preserves restored site artifacts and marks Chinese deploy requests", async () => {
+    const chatId = `chat-deploy-zh-${Date.now()}`;
+    const remoteOnlyProjectPath = `/app/apps/web/.tmp/chat-tasks/${chatId}/task/project.json`;
+    const siteArtifacts = {
+      projectId: "deploy-zh-test",
+      pages: [{ path: "/", html: "<!doctype html><html><head></head><body>ok</body></html>" }],
+      staticSite: {
+        mode: "skill-direct",
+        files: [
+          {
+            path: "/index.html",
+            type: "text/html",
+            content: "<!doctype html><html><head></head><body>ok</body></html>",
+          },
+        ],
+      },
+    };
+
+    const { createChatTask, completeChatTask } = await import("./chat-task-store");
+    const previous = await createChatTask(chatId, undefined, {
+      assistantText: "generated",
+      phase: "end",
+      internal: {
+        sessionState: {
+          messages: [],
+          phase: "end",
+          current_page_index: 0,
+          attempt_count: 0,
+          workflow_context: {},
+          site_artifacts: siteArtifacts,
+        },
+      },
+      progress: { checkpointProjectPath: remoteOnlyProjectPath } as any,
+    });
+    await completeChatTask(previous.id, {
+      assistantText: "generated",
+      phase: "end",
+      internal: previous.result?.internal,
+      progress: { checkpointProjectPath: remoteOnlyProjectPath } as any,
+    });
+
+    const { POST } = await import("../../app/api/chat/route");
+    const req = new Request("http://localhost/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: chatId,
+        messages: [{ role: "user", parts: [{ type: "text", text: "部署到 Cloudflare" }] }],
+      }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(202);
+
+    const latest = await getActiveChatTask(chatId);
+    const inputState = (latest?.result?.internal?.inputState as any) || {};
+    const workflow = inputState.workflow_context || {};
+    expect(workflow.deployRequested).toBe(true);
+    expect(workflow.deploySourceProjectPath).toBe(remoteOnlyProjectPath);
+    expect(inputState.site_artifacts?.projectId).toBe("deploy-zh-test");
+    expect(workflow.canonicalPrompt).toBe("部署到 Cloudflare");
+  });
+
+  it("routes real Chinese Cloudflare deploy requests to deploy mode", async () => {
+    const chatId = `chat-deploy-real-zh-${Date.now()}`;
+    const siteArtifacts = {
+      projectId: "deploy-real-zh-test",
+      pages: [{ path: "/", html: "<!doctype html><html><head></head><body>ok</body></html>" }],
+      staticSite: {
+        mode: "skill-direct",
+        files: [
+          {
+            path: "/index.html",
+            type: "text/html",
+            content: "<!doctype html><html><head></head><body>ok</body></html>",
+          },
+        ],
+      },
+    };
+
+    const { createChatTask, completeChatTask } = await import("./chat-task-store");
+    const previous = await createChatTask(chatId, undefined, {
+      assistantText: "generated",
+      phase: "end",
+      internal: {
+        sessionState: {
+          messages: [],
+          phase: "end",
+          current_page_index: 0,
+          attempt_count: 0,
+          workflow_context: {},
+          site_artifacts: siteArtifacts,
+        },
+      },
+      progress: { checkpointProjectPath: `/remote/${chatId}/project.json` } as any,
+    });
+    await completeChatTask(previous.id, {
+      assistantText: "generated",
+      phase: "end",
+      internal: previous.result?.internal,
+      progress: previous.result?.progress as any,
+    });
+
+    const { POST } = await import("../../app/api/chat/route");
+    const req = new Request("http://localhost/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: chatId,
+        messages: [{ role: "user", parts: [{ type: "text", text: "\u90e8\u7f72\u5230 Cloudflare" }] }],
+      }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(202);
+
+    const latest = await getActiveChatTask(chatId);
+    const workflow = ((latest?.result?.internal?.inputState as any) || {}).workflow_context || {};
+    expect(workflow.deployRequested).toBe(true);
+    expect(workflow.executionMode).toBe("deploy");
+    expect(workflow.canonicalPrompt).toBe("\u90e8\u7f72\u5230 Cloudflare");
+  });
+
+  it("recovers deploy artifacts from preview files when only a remote checkpoint path remains", async () => {
+    const prevFetch = globalThis.fetch;
+    const chatId = `chat-deploy-preview-recovery-${Date.now()}`;
+    const remoteOnlyProjectPath = `/app/apps/web/.tmp/chat-tasks/${chatId}/task/project.json`;
+    let sourceTaskId = "";
+
+    try {
+      globalThis.fetch = (async (input: RequestInfo | URL) => {
+        const url = String(input);
+        const responses: Record<string, string> = {
+          "index.html": [
+            "<!doctype html><html><head>",
+            `<link rel="stylesheet" href="/api/chat/tasks/${encodeURIComponent(sourceTaskId)}/preview/styles.css">`,
+            "</head><body>",
+            `<a href="/api/chat/tasks/${encodeURIComponent(sourceTaskId)}/preview/products/">Products</a>`,
+            `ok<script src="/api/chat/tasks/${encodeURIComponent(sourceTaskId)}/preview/script.js"></script>`,
+            "</body></html>",
+          ].join(""),
+          "styles.css": "body{color:#111}",
+          "script.js": "console.log('ok')",
+        };
+        const key = Object.keys(responses).find((item) => url.endsWith(`/preview/${item}`));
+        if (!key) return new Response("missing", { status: 404 });
+        const type = key.endsWith(".html") ? "text/html" : key.endsWith(".css") ? "text/css" : "application/javascript";
+        return new Response(responses[key], { status: 200, headers: { "content-type": type } });
+      }) as typeof fetch;
+
+      const { createChatTask, completeChatTask, failChatTask } = await import("./chat-task-store");
+      const previous = await createChatTask(chatId, undefined, {
+        assistantText: "generated",
+        phase: "end",
+        internal: {
+          sessionState: {
+            messages: [],
+            phase: "end",
+            current_page_index: 0,
+            attempt_count: 0,
+            workflow_context: {},
+          },
+        },
+        progress: {
+          checkpointProjectPath: remoteOnlyProjectPath,
+          generatedFiles: ["/index.html", "/styles.css", "/script.js"],
+        } as any,
+      });
+      await completeChatTask(previous.id, {
+        assistantText: "generated",
+        phase: "end",
+        internal: previous.result?.internal,
+        progress: {
+          checkpointProjectPath: remoteOnlyProjectPath,
+          generatedFiles: ["/index.html", "/styles.css", "/script.js"],
+        } as any,
+      });
+      sourceTaskId = previous.id;
+      const failed = await createChatTask(chatId, undefined, {
+        assistantText: "bad refine",
+        phase: "refine",
+        internal: {
+          sessionState: {
+            messages: [],
+            phase: "end",
+            current_page_index: 0,
+            attempt_count: 0,
+            workflow_context: {},
+          },
+        },
+        progress: { stage: "refining:prepare" } as any,
+      });
+      await failChatTask(failed.id, "No preview/deployed baseline found for refine.");
+
+      const { POST } = await import("../../app/api/chat/route");
+      const req = new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: chatId,
+          messages: [{ role: "user", parts: [{ type: "text", text: "部署到 Cloudflare" }] }],
+        }),
+      });
+
+      const res = await POST(req);
+      expect(res.status).toBe(202);
+
+      const latest = await getActiveChatTask(chatId);
+      const inputState = (latest?.result?.internal?.inputState as any) || {};
+      const files = inputState.site_artifacts?.staticSite?.files || [];
+      expect(files.map((file: any) => file.path)).toEqual(["/index.html", "/styles.css", "/script.js"]);
+      const indexHtml = String(files.find((file: any) => file.path === "/index.html")?.content || "");
+      expect(indexHtml).toContain('href="/styles.css"');
+      expect(indexHtml).toContain('src="/script.js"');
+      expect(indexHtml).toContain('href="/products/"');
+      expect(indexHtml).not.toContain("/api/chat/tasks/");
+      expect(inputState.site_artifacts?.staticSite?.generation?.source).toBe("preview-recovery");
+    } finally {
+      globalThis.fetch = prevFetch;
+    }
   });
 });

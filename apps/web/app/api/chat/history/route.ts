@@ -16,12 +16,20 @@ function parseLegacyTaskEventText(text: string): { eventType?: string; payload?:
   if (!eventMatch) return {};
   const eventType = String(eventMatch[1] || "").trim().toLowerCase();
   if (!eventType) return {};
-  const detail = raw
-    .slice(eventMatch[0].length)
-    .replace(/^[-:：\s]+/, "")
-    .trim();
+  const detail = raw.slice(eventMatch[0].length).replace(/^[-:\s]+/, "").trim();
   if (!detail) return { eventType };
   return { eventType, payload: { message: detail } };
+}
+
+function repairLegacyMojibakeTimelineText(text: string): string {
+  const raw = String(text || "");
+  const trimmed = raw.trim();
+  if (/^\?{3}\s+Cloudflare$/i.test(trimmed)) return "部署到 Cloudflare";
+  const brokenDeploy = trimmed.match(/^\?{4,}(https:\/\/\S+)([\s\S]*)$/);
+  if (brokenDeploy?.[1]) {
+    return `部署成功：${brokenDeploy[1]}${brokenDeploy[2] || ""}`;
+  }
+  return raw;
 }
 
 function isTaskEventTimelineMessage(item: { role: string; text: string; metadata?: Record<string, unknown> | null }): boolean {
@@ -53,12 +61,12 @@ export async function GET(req: Request) {
   const toReadableTimelineText = (item: (typeof messages)[number]) => {
     const metadata = (item.metadata || {}) as Record<string, unknown>;
     const isSnapshot = String(metadata.source || "").trim() === "task_event_snapshot";
-    if (!isSnapshot && item.role !== "system") return item.text;
+    if (!isSnapshot && item.role !== "system") return repairLegacyMojibakeTimelineText(item.text);
     const metadataEventType = String(metadata.eventType || "").trim();
     const legacy = parseLegacyTaskEventText(item.text);
     const eventType = metadataEventType || legacy.eventType;
-    if (!isSnapshot && !legacy.eventType) return item.text;
-    if (!eventType) return item.text;
+    if (!isSnapshot && !legacy.eventType) return repairLegacyMojibakeTimelineText(item.text);
+    if (!eventType) return repairLegacyMojibakeTimelineText(item.text);
     return formatTaskEventSnapshot({
       eventType,
       stage: String(metadata.stage || "").trim() || undefined,

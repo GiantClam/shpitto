@@ -1,25 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedRouteUserId } from "@/lib/supabase/route-user";
 import { getProjectAssetObject } from "@/lib/project-assets";
 
 export const runtime = "nodejs";
-
-async function mustGetUserId() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) return undefined;
-  return user.id;
-}
 
 export async function GET(
   request: NextRequest,
   ctx: { params: Promise<{ projectId: string }> },
 ) {
   try {
-    const userId = await mustGetUserId();
+    const userId = await getAuthenticatedRouteUserId();
     if (!userId) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
     const { projectId: rawProjectId } = await ctx.params;

@@ -322,7 +322,7 @@ function extractPageHeadingLabels(requirementText: string): string[] {
     if (!label) continue;
     if (!pageHint.test(label)) continue;
     if (blockedHeading.test(label)) continue;
-    if (/^[\u4e00-\u5341]+[銆?锛?]/u.test(label)) continue;
+    if (/^[\u4e00-\u5341]+[、，：:]/u.test(label)) continue;
     labels.push(label);
   }
 

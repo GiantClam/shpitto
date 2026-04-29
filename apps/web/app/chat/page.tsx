@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createChatSessionForOwner, listChatSessionsForOwner } from "@/lib/agent/chat-task-store";
-import { createClient } from "@/lib/supabase/server";
+import { getCachedAuthUser } from "@/lib/supabase/auth-cache";
 
 type ChatEntryPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -12,10 +12,7 @@ function toSingle(value: string | string[] | undefined): string {
 }
 
 export default async function ChatEntryPage({ searchParams }: ChatEntryPageProps) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCachedAuthUser();
 
   if (!user?.id) {
     redirect(`/login?next=${encodeURIComponent("/launch-center")}`);

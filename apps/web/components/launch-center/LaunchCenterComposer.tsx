@@ -116,7 +116,7 @@ export function LaunchCenterComposer({ isAuthenticated, locale = "en" }: LaunchC
       if (!res.ok || !data.ok || !data.session?.id) {
         throw new Error(data.error || copy.createFailed);
       }
-      storeLaunchCenterChatHandoff(data.session.id, {
+      await storeLaunchCenterChatHandoff(data.session.id, {
         prompt: finalPrompt,
         files: pendingFiles,
       });

@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { handleSkillToolCall } from "./skill-tool-registry";
+import { buildSkillToolSystemInstructions, handleSkillToolCall } from "./skill-tool-registry";
 
 describe("skill-tool-registry", () => {
+  it("routes publicly researchable gaps through web_search guidance", () => {
+    const instructions = buildSkillToolSystemInstructions();
+
+    expect(instructions).toContain("web_search");
+    expect(instructions).toContain("publicly researchable gaps");
+    expect(instructions).toContain("Evidence Brief");
+  });
+
   it("loads allowed skill content", async () => {
     const result = await handleSkillToolCall(
       { name: "load_skill", args: { skill_id: "website-generation-workflow" } },
@@ -31,10 +39,23 @@ describe("skill-tool-registry", () => {
   it("rejects skill outside bundle", async () => {
     await expect(
       handleSkillToolCall(
-        { name: "load_skill", args: { skill_id: "not-allowed" } },
+        { name: "load_skill", args: { skill_id: "website-refinement-workflow" } },
         { loadedSkills: new Map() },
       ),
     ).rejects.toThrow("not allowed");
+  });
+
+  it("loads website seed skill by frontmatter name", async () => {
+    const result = await handleSkillToolCall(
+      { name: "load_skill", args: { skill_id: "web-prototype" } },
+      { loadedSkills: new Map(), maxSkillChars: 1200 },
+    );
+
+    expect(result.kind).toBe("skill");
+    if (result.kind === "skill") {
+      expect(result.skillId).toBe("open-design-web-prototype");
+      expect(result.toolResult).toContain("Website Skill Contract");
+    }
   });
 
   it("supports web_search via serper tool", async () => {

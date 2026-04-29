@@ -220,11 +220,12 @@ function buildAssetReferenceText(params: {
     `Asset "${params.name}"`,
     `path: ${params.path}`,
     `logical path: ${params.logicalPath}`,
+    `exact src: ${params.logicalPath}`,
     params.version ? `(version ${params.version})` : "",
-    params.previewCdnPrefix ? `preview CDN prefix: ${params.previewCdnPrefix}` : "",
-    params.releaseCdnPrefix ? `release CDN prefix: ${params.releaseCdnPrefix}` : "",
     params.previewUrl ? `preview URL: ${params.previewUrl}` : "",
     params.releaseUrl ? `release URL: ${params.releaseUrl}` : "",
+    params.previewCdnPrefix ? `preview CDN prefix: ${params.previewCdnPrefix}` : "",
+    params.releaseCdnPrefix ? `release CDN prefix: ${params.releaseCdnPrefix}` : "",
     params.cachePolicy ? `cache: ${params.cachePolicy}` : "",
     params.key ? `key: ${params.key}` : "",
   ].filter(Boolean).join(" ");
@@ -233,6 +234,13 @@ function buildAssetReferenceText(params: {
 function escapeRegExp(value: string) {
   return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
+
+type ProjectAssetUrlReference = {
+  path: string;
+  previewUrl?: string;
+  url?: string;
+  releaseUrl?: string;
+};
 
 export function rewriteProjectAssetLogicalUrls(content: string, cdnPrefix: string): string {
   const normalizedPrefix = String(cdnPrefix || "").trim().replace(/\/+$/, "");
@@ -246,22 +254,198 @@ export function rewriteProjectAssetLogicalUrls(content: string, cdnPrefix: strin
     .replace(encodedPattern, (_match, assetPath: string) => `${normalizedPrefix.replace(/\//g, "\\/")}\\/${assetPath}`);
 }
 
-function rewriteStaticProjectFilesAssetUrls(project: any, cdnPrefix: string): any {
-  const files = project?.staticSite?.files;
-  if (!Array.isArray(files) || !String(cdnPrefix || "").trim()) return project;
-  return {
-    ...project,
-    staticSite: {
-      ...(project.staticSite || {}),
-      files: files.map((file: any) => {
-        if (!file || typeof file.content !== "string") return file;
-        const lowerPath = String(file.path || "").toLowerCase();
-        if (!/\.(html?|css|js|json|xml|md|txt)$/i.test(lowerPath)) return file;
-        const content = rewriteProjectAssetLogicalUrls(file.content, cdnPrefix);
-        return content === file.content ? file : { ...file, content };
-      }),
-    },
+export function rewriteProjectAssetLogicalUrlsWithAssetMap(
+  content: string,
+  cdnPrefix: string,
+  assets: ProjectAssetUrlReference[],
+  options: { prefer?: "preview" | "release" } = {},
+): string {
+  const normalizedPrefix = String(cdnPrefix || "").trim().replace(/\/+$/, "");
+  const byPath = new Map(
+    (assets || [])
+      .filter((asset) => String(asset.path || "").trim())
+      .map((asset) => [
+        normalizeRelativePath(asset.path),
+        String(
+          options.prefer === "release"
+            ? asset.releaseUrl || asset.previewUrl || asset.url || ""
+            : asset.previewUrl || asset.url || asset.releaseUrl || "",
+        ).trim(),
+      ]),
+  );
+  if (!normalizedPrefix && byPath.size === 0) return String(content || "");
+
+  const logicalRoot = `${PROJECT_ASSET_LOGICAL_ROOT}/`;
+  const encodedRoot = logicalRoot.replace(/\//g, "\\/");
+  const resolveUrl = (assetPath: string) => {
+    const normalizedPath = normalizeRelativePath(assetPath);
+    return byPath.get(normalizedPath) || (normalizedPrefix ? `${normalizedPrefix}/${normalizedPath}` : `${logicalRoot}${normalizedPath}`);
   };
+  const pattern = new RegExp(`${escapeRegExp(logicalRoot)}([^"'\\s),>]+)`, "g");
+  const encodedPattern = new RegExp(`${escapeRegExp(encodedRoot)}([^"'\\s),>]+)`, "g");
+  return String(content || "")
+    .replace(pattern, (_match, assetPath: string) => resolveUrl(assetPath))
+    .replace(encodedPattern, (_match, assetPath: string) => resolveUrl(assetPath).replace(/\//g, "\\/"));
+}
+
+function rewriteProjectAssetReferenceValue(
+  value: string,
+  cdnPrefix: string,
+  assets: Array<ProjectAssetUrlReference & Partial<Pick<ProjectAssetRecord, "category" | "updatedAt" | "name">>>,
+  options: { prefer?: "preview" | "release" } = {},
+): string {
+  const raw = String(value || "").trim();
+  if (!raw) return String(value || "");
+  return repairBrokenProjectAssetDirectoryUrls(
+    rewriteProjectAssetLogicalUrlsWithAssetMap(raw, cdnPrefix, assets, options),
+    cdnPrefix,
+    assets,
+    options,
+  );
+}
+
+function safeDecodePathSegment(value: string): string {
+  try {
+    return decodeURIComponent(String(value || ""));
+  } catch {
+    return String(value || "");
+  }
+}
+
+export function extractProjectAssetPreviewScopeFromContent(content: string):
+  | { ownerUserId: string; projectId: string; cdnPrefix: string }
+  | undefined {
+  const normalized = String(content || "").replace(/\\\//g, "/");
+  const match = normalized.match(
+    /\bhttps?:\/\/[^"'\s),>]+\/project-assets\/([^/"'\s),>]+)\/([^/"'\s),>]+)\/preview\/([^/"'\s),>]+)\/files(?=\/|["'\s),>]|$)/i,
+  );
+  if (!match?.[0] || !match[1] || !match[2]) return undefined;
+  return {
+    ownerUserId: safeDecodePathSegment(match[1]),
+    projectId: safeDecodePathSegment(match[2]),
+    cdnPrefix: match[0].replace(/\/+$/, ""),
+  };
+}
+
+function rewriteProjectBrandingAssetUrls(
+  project: any,
+  cdnPrefix: string,
+  assets: Array<ProjectAssetUrlReference & Partial<Pick<ProjectAssetRecord, "category" | "updatedAt" | "name">>>,
+  options: { prefer?: "preview" | "release" } = {},
+): any {
+  if (!project || typeof project !== "object") return project;
+
+  let nextProject = project;
+
+  const rewriteLogo = (logo: unknown) => {
+    if (typeof logo !== "string") return logo;
+    return rewriteProjectAssetReferenceValue(logo, cdnPrefix, assets, options);
+  };
+
+  if (project.branding && typeof project.branding === "object" && "logo" in project.branding) {
+    const nextLogo = rewriteLogo((project.branding as any).logo);
+    if (nextLogo !== (project.branding as any).logo) {
+      if (nextProject === project) nextProject = { ...project };
+      nextProject.branding = { ...(project.branding || {}), logo: nextLogo };
+    }
+  }
+
+  if (
+    project.site_config &&
+    typeof project.site_config === "object" &&
+    project.site_config.branding &&
+    typeof project.site_config.branding === "object" &&
+    "logo" in project.site_config.branding
+  ) {
+    const nextLogo = rewriteLogo((project.site_config.branding as any).logo);
+    if (nextLogo !== (project.site_config.branding as any).logo) {
+      if (nextProject === project) nextProject = { ...project };
+      nextProject.site_config = {
+        ...(project.site_config || {}),
+        branding: { ...(project.site_config.branding || {}), logo: nextLogo },
+      };
+    }
+  }
+
+  return nextProject;
+}
+
+export function repairBrokenProjectAssetDirectoryUrls(
+  content: string,
+  cdnPrefix: string,
+  assets: Array<ProjectAssetUrlReference & Partial<Pick<ProjectAssetRecord, "category" | "updatedAt" | "name">>>,
+  options: { prefer?: "preview" | "release" } = {},
+): string {
+  const normalizedPrefix = String(cdnPrefix || "").trim().replace(/\/+$/, "");
+
+  const imageAssets = (assets || [])
+    .filter((asset) => asset.category === "image" && String(asset.path || "").trim())
+    .sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0));
+  if (imageAssets.length === 0) return String(content || "");
+
+  const replacementFor = (match: string, brokenDir: string, fallbackPrefix: string) => {
+    const normalizedDir = normalizeRelativePath(String(brokenDir || ""));
+    const candidate =
+      imageAssets.find((asset) => String(asset.path || "").startsWith(normalizedDir)) ||
+      imageAssets.find((asset) => /logo|brand|mark/i.test(`${asset.name} ${asset.path}`)) ||
+      imageAssets[0];
+    if (!candidate?.path) return match;
+    const candidateUrl =
+      options.prefer === "release"
+        ? String(candidate.releaseUrl || candidate.previewUrl || candidate.url || "").trim()
+        : String(candidate.previewUrl || candidate.url || candidate.releaseUrl || "").trim();
+    const prefix = String(fallbackPrefix || normalizedPrefix || "").trim().replace(/\/+$/, "");
+    return candidateUrl || (prefix ? `${prefix}/${candidate.path}` : match);
+  };
+
+  const anyProjectAssetDirectoryPattern =
+    /\bhttps?:\/\/[^"'\s),>]+\/project-assets\/[^/"'\s),>]+\/[^/"'\s),>]+\/(?:preview\/[^/"'\s),>]+\/files|release\/current\/files)\/((?:uploads|chat-uploads|generated)\/?)(?=["'\s),>]|$)/gi;
+  let repaired = String(content || "").replace(anyProjectAssetDirectoryPattern, (match, brokenDir: string) => {
+    const fallbackPrefix = match.slice(0, Math.max(0, match.length - String(brokenDir || "").length - 1));
+    return replacementFor(match, brokenDir, fallbackPrefix);
+  });
+
+  if (!normalizedPrefix) return repaired;
+  const pattern = new RegExp(`${escapeRegExp(normalizedPrefix)}/((?:uploads|chat-uploads|generated)/?)(?=["'\\s),>]|$)`, "g");
+  repaired = repaired.replace(pattern, (match, brokenDir: string) => replacementFor(match, brokenDir, normalizedPrefix));
+  return repaired;
+}
+
+function rewriteStaticProjectFilesAssetUrls(
+  project: any,
+  cdnPrefix: string,
+  assets: Array<ProjectAssetUrlReference & Partial<Pick<ProjectAssetRecord, "category" | "updatedAt" | "name">>> = [],
+  options: { prefer?: "preview" | "release" } = {},
+): any {
+  const files = project?.staticSite?.files;
+  const canRewriteFiles = Array.isArray(files) && Boolean(String(cdnPrefix || "").trim() || assets.length > 0);
+  let nextProject = project;
+
+  if (canRewriteFiles) {
+    const nextFiles = files.map((file: any) => {
+      if (!file || typeof file.content !== "string") return file;
+      const lowerPath = String(file.path || "").toLowerCase();
+      if (!/\.(html?|css|js|json|xml|md|txt)$/i.test(lowerPath)) return file;
+      const content = repairBrokenProjectAssetDirectoryUrls(
+        rewriteProjectAssetLogicalUrlsWithAssetMap(file.content, cdnPrefix, assets, options),
+        cdnPrefix,
+        assets,
+        options,
+      );
+      return content === file.content ? file : { ...file, content };
+    });
+    if (nextFiles.some((file: any, index: number) => file !== files[index])) {
+      nextProject = {
+        ...project,
+        staticSite: {
+          ...(project.staticSite || {}),
+          files: nextFiles,
+        },
+      };
+    }
+  }
+
+  return rewriteProjectBrandingAssetUrls(nextProject, cdnPrefix, assets, options);
 }
 
 export async function resolveProjectAssetPreviewCdnPrefix(params: {
@@ -298,9 +482,9 @@ export async function rewriteProjectAssetLogicalUrlsForPreview(project: any, par
 export function rewriteProjectAssetLogicalUrlsForRelease(project: any, params: {
   ownerUserId?: string;
   projectId?: string;
-}) {
+}, assets: Pick<ProjectAssetRecord, "category" | "path" | "updatedAt" | "name" | "previewUrl" | "releaseUrl" | "url">[] = []) {
   const prefix = resolveProjectAssetReleaseCdnPrefix(params);
-  return rewriteStaticProjectFilesAssetUrls(project, prefix);
+  return rewriteStaticProjectFilesAssetUrls(project, prefix, assets, { prefer: "release" });
 }
 
 function parseVersion(value: string): { major: number; minor: number; patch: number } | undefined {

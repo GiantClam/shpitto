@@ -16,6 +16,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { BrandLogo } from "@/components/brand/BrandLogo";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import {
   ArrowLeft,
   BarChart3,
@@ -40,9 +41,13 @@ import {
   User2,
   X,
 } from "lucide-react";
-import { LOCALE_COOKIE_NAME, normalizeLocale } from "@/lib/i18n";
+import { LOCALE_COOKIE_NAME, normalizeLocale, type Locale } from "@/lib/i18n";
 import { takeLaunchCenterChatHandoff } from "@/lib/launch-center/chat-handoff";
-import { createClient } from "@/lib/supabase/client";
+import {
+  WEBSITE_DESIGN_DIRECTIONS,
+  getWebsiteDesignDirection,
+} from "@/lib/open-design/design-directions";
+import { getProjectWorkspaceCopy } from "./project-workspace-copy";
 
 type TaskStatus = "queued" | "running" | "succeeded" | "failed";
 
@@ -370,6 +375,12 @@ const OPTION_I18N_FALLBACKS: Record<string, Record<RequirementFormLocale, string
   minimal: { zh: "极简现代", en: "Minimal and modern" },
   industrial: { zh: "工业制造", en: "Industrial manufacturing" },
   warm: { zh: "温暖亲和", en: "Warm and approachable" },
+  ...Object.fromEntries(
+    WEBSITE_DESIGN_DIRECTIONS.map((direction) => [
+      direction.id,
+      { zh: direction.zhLabel, en: direction.label },
+    ]),
+  ),
   home: { zh: "首页", en: "Home" },
   about: { zh: "关于", en: "About" },
   products: { zh: "产品", en: "Products" },
@@ -434,8 +445,6 @@ type RequirementFormValues = {
   customNotes: string;
 };
 
-const DEFAULT_PROMPT =
-  "Build a 6-page industrial-style English website for LC-CNC: Home, 3C Machines, Custom Solutions, Cases, About, Contact. Keep shared styles and script across all pages, and ensure navigation links work.";
 const DEFAULT_ASSISTANT_GREETING =
   "Describe your website request and I will submit a generation task with live progress.";
 const REQUIREMENT_FORM_HEADER = "[Requirement Form]";
@@ -668,6 +677,154 @@ function MarkdownDraftView({ content, compact = false }: { content: string; comp
   );
 }
 
+function asStringList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => String(item || "").trim()).filter(Boolean);
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+function DomainGuidanceCard({ metadata }: { metadata: Record<string, unknown> }) {
+  const locale = localeFromMetadata(metadata);
+  const copy =
+    locale === "zh"
+      ? {
+          title: "域名配置指导",
+          recommendedRecords: "推荐 DNS 记录",
+          recordType: "类型",
+          host: "主机记录",
+          value: "记录值",
+          ttl: "TTL",
+          note: "说明",
+          openSite: "打开站点",
+        }
+      : {
+          title: "Domain Configuration Guide",
+          recommendedRecords: "Recommended DNS records",
+          recordType: "Type",
+          host: "Host",
+          value: "Value",
+          ttl: "TTL",
+          note: "Note",
+          openSite: "Open site",
+        };
+  const title = String(metadata.title || copy.title);
+  const deployedUrl = String(metadata.deployedUrl || "").trim();
+  const deploymentHost = String(metadata.deploymentHost || "").trim();
+  const rawSteps = asStringList(metadata.steps);
+  const dnsRecords = (Array.isArray(metadata.dnsRecords) ? metadata.dnsRecords : [])
+    .map((item) => asRecord(item))
+    .map((item) => ({
+      type: String(item.type || "").trim(),
+      host: String(item.host || "").trim(),
+      value: String(item.value || item.target || "").trim(),
+      ttl: String(item.ttl || "").trim(),
+      note: String(item.note || "").trim(),
+    }))
+    .filter((item) => item.type && item.host && item.value);
+  const visibleDnsRecords =
+    dnsRecords.length > 0
+      ? dnsRecords
+      : deploymentHost
+        ? [
+            {
+              type: "CNAME",
+              host: "www",
+              value: deploymentHost,
+              ttl: locale === "zh" ? "自动 / 默认" : "Auto / Default",
+              note: locale === "zh" ? "用于 www.example.com 这类子域名。" : "Use for a subdomain such as www.example.com.",
+            },
+          ]
+        : [];
+  const hasProviderSpecificSteps = rawSteps.some((step) => /cloudflare|custom domains|pages/i.test(step));
+  const defaultSteps =
+    locale === "zh"
+      ? [
+          "在你的域名 DNS 管理后台新增记录。",
+          "如果配置 www 子域名，使用表格中的 CNAME 记录；如果配置根域名，使用 @ 记录。",
+          "保存后等待 DNS 生效，再回到域名配置入口添加并校验你的自定义域名。",
+          "状态和证书生效后，打开自定义域名确认网站可访问。",
+        ]
+      : [
+          "Add a new record in your domain DNS settings.",
+          "For a www subdomain, use the CNAME record in the table. For an apex domain, use the @ record.",
+          "After saving, wait for DNS propagation, then add and verify the custom domain from the domain configuration entry.",
+          "After the status and certificate are active, open the custom domain to verify the site.",
+        ];
+  const steps = rawSteps.length > 0 && !hasProviderSpecificSteps ? rawSteps : defaultSteps;
+
+  return (
+    <div className="mt-3 overflow-hidden rounded-2xl border border-[color-mix(in_oklab,var(--shp-primary)_28%,var(--shp-border)_72%)] bg-[radial-gradient(circle_at_top_left,color-mix(in_oklab,var(--shp-primary)_18%,transparent),transparent_44%),color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] shadow-[0_18px_60px_color-mix(in_oklab,var(--shp-primary)_10%,transparent)]">
+      <div className="flex items-start gap-3 border-b border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-4 py-3">
+        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[color-mix(in_oklab,var(--shp-primary)_34%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,var(--shp-surface)_86%)] text-[var(--shp-primary)]">
+          <Globe2 className="h-4 w-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-[var(--shp-text)]">{title}</p>
+          {deployedUrl ? (
+            <a href={deployedUrl} target="_blank" rel="noreferrer" className="mt-1 block truncate text-xs text-[var(--shp-primary)] hover:underline" title={deployedUrl}>
+              {deployedUrl}
+            </a>
+          ) : null}
+        </div>
+      </div>
+      <div className="space-y-3 px-4 py-3">
+        {visibleDnsRecords.length > 0 ? (
+          <div className="overflow-hidden rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_48%,transparent)]">
+            <div className="border-b border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] px-3 py-2">
+              <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--shp-muted)]">{copy.recommendedRecords}</p>
+            </div>
+            <div className="divide-y divide-[color-mix(in_oklab,var(--shp-border)_48%,transparent)]">
+              {visibleDnsRecords.map((record, index) => (
+                <div key={`${record.type}-${record.host}-${index}`} className="grid gap-2 px-3 py-3 text-xs md:grid-cols-[90px_90px_minmax(0,1fr)_90px]">
+                  <div>
+                    <p className="text-[10px] text-[var(--shp-muted)]">{copy.recordType}</p>
+                    <code className="mt-1 block font-mono text-[var(--shp-text)]">{record.type}</code>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-[var(--shp-muted)]">{copy.host}</p>
+                    <code className="mt-1 block font-mono text-[var(--shp-text)]">{record.host}</code>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-[var(--shp-muted)]">{copy.value}</p>
+                    <code className="mt-1 block break-all font-mono text-[var(--shp-text)]">{record.value}</code>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-[var(--shp-muted)]">{copy.ttl}</p>
+                    <code className="mt-1 block font-mono text-[var(--shp-text)]">{record.ttl || "-"}</code>
+                  </div>
+                  {record.note ? <p className="md:col-span-4 text-[11px] leading-relaxed text-[var(--shp-muted)]">{record.note}</p> : null}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        {steps.length > 0 ? (
+          <ol className="space-y-2">
+            {steps.map((step, index) => (
+              <li key={`${index}-${step}`} className="grid grid-cols-[24px_minmax(0,1fr)] gap-2 text-xs leading-relaxed text-[var(--shp-muted)]">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--shp-primary)_16%,transparent)] text-[10px] font-semibold text-[var(--shp-primary)]">
+                  {index + 1}
+                </span>
+                <span className="pt-0.5">{renderInlineMarkdown(step)}</span>
+              </li>
+            ))}
+          </ol>
+        ) : null}
+        <div className="flex flex-wrap gap-2 pt-1">
+          {deployedUrl ? (
+            <a href={deployedUrl} target="_blank" rel="noreferrer" className="rounded-lg border border-[color-mix(in_oklab,var(--shp-primary)_48%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,var(--shp-surface)_86%)] px-3 py-2 text-xs font-semibold text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_22%,var(--shp-surface)_78%)]">
+              {copy.openSite}
+            </a>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function toReadableStage(stage?: string, locale: RequirementFormLocale = "en") {
   if (!stage) return "-";
   if (stage.startsWith("generating:")) {
@@ -802,6 +959,60 @@ function appendPreviewRefreshParam(url: string, nonce: number): string {
   return `${beforeHash}${separator}refresh=${nonce}${hash}`;
 }
 
+type PreviewDeviceId = "browser" | "macbook" | "ipad" | "iphone" | "android";
+
+const PREVIEW_DEVICE_OPTIONS: Array<{
+  id: PreviewDeviceId;
+  label: string;
+  frame?: string;
+  viewport: string;
+  iframeClassName: string;
+}> = [
+  {
+    id: "browser",
+    label: "Browser",
+    frame: "browser-chrome.html",
+    viewport: "1440",
+    iframeClassName: "h-full w-full rounded-[24px] bg-transparent shadow-2xl",
+  },
+  {
+    id: "macbook",
+    label: "MacBook",
+    frame: "macbook.html",
+    viewport: "1440",
+    iframeClassName: "h-full w-full bg-transparent",
+  },
+  {
+    id: "ipad",
+    label: "iPad",
+    frame: "ipad-pro.html",
+    viewport: "1024",
+    iframeClassName: "h-full w-full bg-transparent",
+  },
+  {
+    id: "iphone",
+    label: "iPhone",
+    frame: "iphone-15-pro.html",
+    viewport: "390",
+    iframeClassName: "h-full w-full bg-transparent",
+  },
+  {
+    id: "android",
+    label: "Pixel",
+    frame: "android-pixel.html",
+    viewport: "412",
+    iframeClassName: "h-full w-full bg-transparent",
+  },
+];
+
+function buildPreviewDeviceUrl(previewUrl: string, deviceId: PreviewDeviceId, urlLabel: string): string {
+  const device = PREVIEW_DEVICE_OPTIONS.find((item) => item.id === deviceId);
+  if (!device?.frame) return previewUrl;
+  const params = new URLSearchParams({ screen: previewUrl });
+  if (device.id === "browser") params.set("url", urlLabel || "Generated preview");
+  return `/frames/${device.frame}?${params.toString()}`;
+}
+
 function hostFromUrl(value: string): string {
   const normalized = String(value || "").trim();
   if (!normalized) return "";
@@ -838,6 +1049,7 @@ function optionLabel(options: RequirementSlotOption[], value?: string): string {
     minimal: "Minimal and modern",
     industrial: "Industrial manufacturing",
     warm: "Warm and approachable",
+    ...Object.fromEntries(WEBSITE_DESIGN_DIRECTIONS.map((direction) => [direction.id, direction.label])),
     home: "Home",
     about: "About",
     products: "Products",
@@ -1177,8 +1389,57 @@ function RequirementFormCard({
   );
 
   const renderMultiGroup = (key: string, selected: string[], field: "targetAudience" | "contentSources" | "designTheme" | "functionalRequirements" | "primaryGoal") => (
-    <div className="mt-2 flex flex-wrap gap-2">
-      {getOptions(key).map((option) => {
+    <div className={key === "visual-system" ? "mt-2 grid gap-2" : "mt-2 flex flex-wrap gap-2"}>
+      {key === "visual-system" ? (
+        <div className="grid gap-2 sm:grid-cols-2">
+          {WEBSITE_DESIGN_DIRECTIONS.map((direction) => {
+            const active = selected.includes(direction.id);
+            return (
+              <button
+                key={direction.id}
+                type="button"
+                onClick={() => toggleArrayValue(field, direction.id)}
+                className={[
+                  "rounded-xl border p-3 text-left transition",
+                  active
+                    ? "border-[color-mix(in_oklab,var(--shp-primary)_66%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,var(--shp-surface)_86%)] shadow-[0_14px_34px_-24px_color-mix(in_oklab,var(--shp-primary)_70%,black)]"
+                    : "border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_76%,transparent)] hover:border-[color-mix(in_oklab,var(--shp-primary)_40%,var(--shp-border)_60%)]",
+                ].join(" ")}
+              >
+                <span className="flex items-start justify-between gap-3">
+                  <span>
+                    <span className="block text-xs font-semibold text-[var(--shp-text)]">
+                      {formLocale === "zh" ? direction.zhLabel : direction.label}
+                    </span>
+                    <span className="mt-1 line-clamp-2 block text-[11px] leading-relaxed text-[var(--shp-muted)]">
+                      {formLocale === "zh" ? direction.zhMood : direction.mood}
+                    </span>
+                  </span>
+                  <span
+                    className={[
+                      "mt-0.5 h-4 w-4 shrink-0 rounded-full border",
+                      active
+                        ? "border-[color-mix(in_oklab,var(--shp-primary)_72%,transparent)] bg-[var(--shp-primary)]"
+                        : "border-[color-mix(in_oklab,var(--shp-border)_80%,transparent)]",
+                    ].join(" ")}
+                    aria-hidden="true"
+                  />
+                </span>
+                <span className="mt-3 flex overflow-hidden rounded-full border border-black/5">
+                  {[direction.palette.bg, direction.palette.surface, direction.palette.border, direction.palette.fg, direction.palette.accent].map((color, index) => (
+                    <span key={`${direction.id}-${color}-${index}`} className="h-3 flex-1" style={{ background: color }} />
+                  ))}
+                </span>
+                <span className="mt-2 block text-[10px] uppercase tracking-[0.14em] text-[var(--shp-muted)]">
+                  {direction.references.slice(0, 2).join(" / ")}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+      <div className={key === "visual-system" ? "flex flex-wrap gap-2" : "contents"}>
+      {getOptions(key).filter((option) => !(key === "visual-system" && getWebsiteDesignDirection(option.value))).map((option) => {
         const active = selected.includes(option.value);
         return (
           <button
@@ -1196,6 +1457,7 @@ function RequirementFormCard({
           </button>
         );
       })}
+      </div>
     </div>
   );
 
@@ -1362,18 +1624,18 @@ function RequirementFormCard({
   );
 }
 
-export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
+export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: string; locale?: Locale }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = useMemo(() => createClient(), []);
   const initialPrompt = useMemo(() => String(searchParams.get("prompt") || "").trim(), [searchParams]);
   const initialDraft = useMemo(() => String(searchParams.get("draft") || "").trim(), [searchParams]);
 
   const [userEmail, setUserEmail] = useState("");
   const [userId, setUserId] = useState("");
-  const [projectTitle, setProjectTitle] = useState("Current Project");
+  const workspaceCopy = getProjectWorkspaceCopy(locale);
+  const [projectTitle, setProjectTitle] = useState(workspaceCopy.currentProject);
   const [projectUpdatedAt, setProjectUpdatedAt] = useState<number | undefined>(undefined);
-  const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
+  const [prompt, setPrompt] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [loadingTask, setLoadingTask] = useState(false);
   const [error, setError] = useState("");
@@ -1394,6 +1656,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
   const [assetPickerQuery, setAssetPickerQuery] = useState("");
   const [availableAssets, setAvailableAssets] = useState<ProjectAsset[]>([]);
   const [previewRefreshNonce, setPreviewRefreshNonce] = useState(0);
+  const [previewDevice, setPreviewDevice] = useState<PreviewDeviceId>("browser");
 
   const pollTimerRef = useRef<number | null>(null);
   const messagesScrollRef = useRef<HTMLDivElement | null>(null);
@@ -1413,6 +1676,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
     [chatPanelWidth],
   );
   const browserLocale = useMemo<RequirementFormLocale>(() => {
+    if (locale === "zh") return "zh";
     if (typeof document === "undefined") return "en";
     return normalizeLocale(
       document.cookie
@@ -1421,7 +1685,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
         .find((part) => part.startsWith(`${LOCALE_COOKIE_NAME}=`))
         ?.split("=")[1] || navigator.language,
     );
-  }, []);
+  }, [locale]);
   const conversationLocale = useMemo<RequirementFormLocale>(() => {
     for (let index = messages.length - 1; index >= 0; index -= 1) {
       const message = messages[index];
@@ -1526,12 +1790,12 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
       setProjects(data.sessions.filter((session) => !session.archived));
       const hit = data.sessions.find((session) => session.id === chatId);
       if (!hit) return;
-      setProjectTitle(String(hit.title || "Current Project"));
+      setProjectTitle(String(hit.title || workspaceCopy.currentProject));
       setProjectUpdatedAt(Number(hit.updatedAt || Date.now()));
     } catch {
       // best-effort project metadata
     }
-  }, [chatId, userId]);
+  }, [chatId, userId, workspaceCopy.currentProject]);
 
   const fetchProjectAssetsForPicker = useCallback(async () => {
     if (!chatId.trim()) return;
@@ -1555,22 +1819,17 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
   useEffect(() => {
     let mounted = true;
     void (async () => {
-      const { data } = await supabase.auth.getUser();
+      const res = await fetch("/api/auth/session", { cache: "no-store" }).catch(() => null);
+      const data = res ? ((await res.json().catch(() => ({}))) as any) : {};
       if (!mounted) return;
       setUserEmail(String(data.user?.email || "").trim());
       setUserId(String(data.user?.id || "").trim());
     })();
 
-    const { data: authSub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserEmail(String(session?.user?.email || "").trim());
-      setUserId(String(session?.user?.id || "").trim());
-    });
-
     return () => {
       mounted = false;
-      authSub.subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, []);
 
   useEffect(() => {
     void fetchProjectMeta();
@@ -1737,15 +1996,14 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
     return generatedFiles.some((filePath) => /(^|\/)index\.html$/i.test(String(filePath || "").trim()));
   }, [generatedFiles]);
 
-  const previewUrl = useMemo(() => {
+  const localPreviewUrl = useMemo(() => {
     if (!task?.id) return "";
-    const deployedUrl = String(task.result?.deployedUrl || "").trim();
-    if (deployedUrl) return deployedUrl;
-    if (!hasGeneratedHtml && task.status !== "succeeded") return "";
+    if (!hasGeneratedHtml) return "";
     return `/api/chat/tasks/${encodeURIComponent(task.id)}/preview/index.html`;
   }, [task, hasGeneratedHtml]);
 
   const deployedUrl = useMemo(() => String(task?.result?.deployedUrl || "").trim(), [task]);
+  const previewUrl = useMemo(() => localPreviewUrl || deployedUrl, [deployedUrl, localPreviewUrl]);
   const deployedHost = useMemo(() => hostFromUrl(deployedUrl), [deployedUrl]);
   const isDeploying = useMemo(() => {
     const stage = String(task?.result?.progress?.stage || "").toLowerCase();
@@ -1756,6 +2014,13 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
   const previewFrameUrl = useMemo(() => {
     return appendPreviewRefreshParam(previewUrl, previewRefreshNonce);
   }, [previewUrl, previewRefreshNonce]);
+  const activePreviewDevice = useMemo(
+    () => PREVIEW_DEVICE_OPTIONS.find((device) => device.id === previewDevice) || PREVIEW_DEVICE_OPTIONS[0],
+    [previewDevice],
+  );
+  const previewShellUrl = useMemo(() => {
+    return buildPreviewDeviceUrl(previewFrameUrl, previewDevice, deployedHost || "Local preview");
+  }, [deployedHost, previewDevice, previewFrameUrl]);
 
   useEffect(() => {
     if (!previewUrl || !task?.id) {
@@ -1850,20 +2115,6 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
         alreadySelected: pendingKeys.has(asset.key),
       }));
   }, [assetPickerQuery, availableAssets, pendingAssetRefs]);
-
-  function toLocalPreviewHref(generatedPath: string): string {
-    if (!task?.id) return "#";
-    const normalized = String(generatedPath || "").trim();
-    if (!normalized || normalized === "/" || normalized === "/index.html" || normalized === "index.html") {
-      return `/api/chat/tasks/${encodeURIComponent(task.id)}/preview/index.html`;
-    }
-
-    let target = normalized.replace(/^\/+/, "");
-    if (target.endsWith("index.html")) {
-      target = target.slice(0, -("index.html".length));
-    }
-    return `/api/chat/tasks/${encodeURIComponent(task.id)}/preview/${target}`;
-  }
 
   const submitPromptText = useCallback(
     async (nextText: string, assetRefsOverride?: ProjectAsset[]) => {
@@ -1997,7 +2248,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
       const res = await fetch("/api/chat/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: "New Project" }),
+        body: JSON.stringify({ title: workspaceCopy.newProject }),
       });
       const data = (await res.json()) as { ok: boolean; session?: SessionPayload; error?: string };
       if (!res.ok || !data.ok || !data.session?.id) {
@@ -2088,12 +2339,15 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
 
   useEffect(() => {
     if (!historyReady || appliedLaunchHandoff.current) return;
-    const handoff = takeLaunchCenterChatHandoff(projectId);
-    if (!handoff?.prompt) return;
-
     appliedLaunchHandoff.current = true;
-    setPrompt(handoff.prompt);
     void (async () => {
+      const handoff = await takeLaunchCenterChatHandoff(projectId);
+      if (!handoff?.prompt) {
+        appliedLaunchHandoff.current = false;
+        return;
+      }
+
+      setPrompt(handoff.prompt);
       try {
         const uploadedAssets = handoff.files.length > 0
           ? await uploadAssetsFromChat(handoff.files, false)
@@ -2114,11 +2368,11 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
     href?: string;
     active: boolean;
   }> = [
-    { label: "Chat", icon: MessageSquare, href: `/projects/${encodeURIComponent(chatId)}/chat`, active: true },
-    { label: "Analytics", icon: BarChart3, href: `/projects/${encodeURIComponent(chatId)}/analysis`, active: false },
-    { label: "Assets", icon: FolderOpen, href: `/projects/${encodeURIComponent(chatId)}/assets`, active: false },
-    { label: "Data", icon: Database, href: `/projects/${encodeURIComponent(chatId)}/data`, active: false },
-    { label: "Settings", icon: Settings, active: false },
+    { label: workspaceCopy.nav.chat, icon: MessageSquare, href: `/projects/${encodeURIComponent(chatId)}/chat`, active: true },
+    { label: workspaceCopy.nav.analytics, icon: BarChart3, href: `/projects/${encodeURIComponent(chatId)}/analysis`, active: false },
+    { label: workspaceCopy.nav.assets, icon: FolderOpen, href: `/projects/${encodeURIComponent(chatId)}/assets`, active: false },
+    { label: workspaceCopy.nav.data, icon: Database, href: `/projects/${encodeURIComponent(chatId)}/data`, active: false },
+    { label: workspaceCopy.nav.settings, icon: Settings, active: false },
   ];
 
   return (
@@ -2147,18 +2401,19 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
               className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] px-3 py-2 text-xs font-semibold text-[var(--shp-muted)] hover:border-[var(--shp-primary)] hover:text-[var(--shp-primary)]"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back
+              {workspaceCopy.back}
             </button>
-            <div className="ml-auto flex items-center">
+            <div className="ml-auto flex items-center gap-2">
+              <LanguageSwitcher locale={locale} compact />
               {projects.length === 0 ? (
-                <span className="px-2 text-xs text-[var(--shp-muted)]">No projects</span>
+                <span className="px-2 text-xs text-[var(--shp-muted)]">{workspaceCopy.noProjects}</span>
               ) : (
                 <label className="relative flex items-center">
                   <select
                     value={chatId}
                     onChange={(event) => handleProjectSelect(event.target.value)}
                     className="h-9 w-[220px] max-w-[42vw] appearance-none rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] px-3 pr-8 text-xs font-medium text-[var(--shp-text)] outline-none transition-colors focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] focus:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)]"
-                    aria-label="Select project"
+                    aria-label={workspaceCopy.selectProject}
                   >
                     {projects.map((project) => (
                       <option key={project.id} value={project.id}>
@@ -2197,8 +2452,8 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                   type="button"
                   onClick={() => setSidebarCollapsed((prev) => !prev)}
                   className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] p-1.5 text-[var(--shp-muted)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_88%,var(--shp-bg)_12%)] hover:text-[var(--shp-text)]"
-                  title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                  aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                  title={sidebarCollapsed ? workspaceCopy.expandSidebar : workspaceCopy.collapseSidebar}
+                  aria-label={sidebarCollapsed ? workspaceCopy.expandSidebar : workspaceCopy.collapseSidebar}
                 >
                   {sidebarCollapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
                 </button>
@@ -2245,21 +2500,21 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                   "inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_16%,transparent)] px-3 py-2 text-sm font-semibold text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_24%,transparent)] disabled:cursor-not-allowed disabled:opacity-60",
                   sidebarCollapsed ? "px-2" : "",
                 ].join(" ")}
-                title="New project"
+                title={workspaceCopy.newProject}
               >
                 {creatingProject ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                {!sidebarCollapsed ? <span>New Project</span> : null}
+                {!sidebarCollapsed ? <span>{workspaceCopy.newProject}</span> : null}
               </button>
               <div
                 className={[
                   "mt-2 flex items-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_35%,transparent)] px-3 py-2",
                   sidebarCollapsed ? "justify-center px-2" : "",
                 ].join(" ")}
-                title={userEmail || "Guest"}
+                title={userEmail || workspaceCopy.guest}
               >
                 <User2 className="h-4 w-4 shrink-0 text-[var(--shp-muted)]" />
                 {!sidebarCollapsed ? (
-                  <span className="max-w-[190px] truncate text-sm text-[var(--shp-text)]">{userEmail || "Guest"}</span>
+                  <span className="max-w-[190px] truncate text-sm text-[var(--shp-text)]">{userEmail || workspaceCopy.guest}</span>
                 ) : null}
               </div>
               {userEmail ? (
@@ -2268,10 +2523,10 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                     "mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_74%,transparent)] px-3 py-2 text-sm text-[var(--shp-muted)] hover:border-[var(--shp-primary)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_10%,transparent)] hover:text-[var(--shp-primary)]",
                     sidebarCollapsed ? "px-2" : "",
                   ].join(" ")}
-                  title="Sign out"
+                  title={workspaceCopy.signOut}
                 >
                   <LogOut className="h-4 w-4" />
-                  {!sidebarCollapsed ? <span>Sign out</span> : null}
+                  {!sidebarCollapsed ? <span>{workspaceCopy.signOut}</span> : null}
                 </SignOutButton>
               ) : null}
             </div>
@@ -2356,6 +2611,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                           {String(metadata.label || CHAT_CARD_COPY[messageLocale].confirmAndGenerate)}
                         </button>
                       ) : null}
+                      {cardType === "domain_guidance" ? <DomainGuidanceCard metadata={metadata} /> : null}
                       <p className="mt-1 text-[10px] text-[color-mix(in_oklab,var(--shp-muted)_72%,transparent)]">
                         {new Date(message.timestamp).toLocaleTimeString()}
                       </p>
@@ -2437,7 +2693,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
               {assetPickerOpen ? (
                 <div className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-3">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs font-medium text-[var(--shp-text)]">Add Files To Chat</p>
+                    <p className="text-xs font-medium text-[var(--shp-text)]">{workspaceCopy.chat.addFiles}</p>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -2446,14 +2702,14 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                         className="inline-flex items-center gap-1 rounded-md border border-[color-mix(in_oklab,var(--shp-primary)_42%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_16%,transparent)] px-2 py-1 text-[11px] text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_24%,transparent)]"
                       >
                         <Upload className="h-3 w-3" />
-                        Upload Local
+                        {workspaceCopy.chat.uploadLocal}
                       </button>
                       <button
                         type="button"
                         onClick={() => setAssetPickerOpen(false)}
                         className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] px-2 py-1 text-[11px] text-[var(--shp-muted)] hover:text-[var(--shp-text)]"
                       >
-                        Close
+                        {workspaceCopy.chat.close}
                       </button>
                     </div>
                   </div>
@@ -2463,7 +2719,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                     <input
                       value={assetPickerQuery}
                       onChange={(event) => setAssetPickerQuery(event.target.value)}
-                      placeholder="Search existing assets..."
+                      placeholder={workspaceCopy.chat.searchAssets}
                       className="h-8 w-full rounded-md border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_56%,black_44%)] pl-8 pr-2 text-xs text-[var(--shp-text)] outline-none focus:border-[color-mix(in_oklab,var(--shp-primary)_42%,transparent)]"
                     />
                   </div>
@@ -2472,11 +2728,11 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                     {assetPickerLoading ? (
                       <div className="flex items-center gap-2 px-2 py-2 text-xs text-[var(--shp-muted)]">
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        Loading assets...
+                        {workspaceCopy.chat.loadingAssets}
                       </div>
                     ) : filteredAvailableAssets.length === 0 ? (
                       <div className="px-2 py-2 text-xs text-[var(--shp-muted)]">
-                        No matching assets. Upload local files to continue.
+                        {workspaceCopy.chat.noAssets}
                       </div>
                     ) : (
                       filteredAvailableAssets.map((asset) => (
@@ -2496,7 +2752,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                             disabled={asset.alreadySelected}
                             className="shrink-0 rounded-md border border-[color-mix(in_oklab,var(--shp-primary)_45%,transparent)] px-2 py-1 text-[10px] text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_12%,var(--shp-surface)_88%)] disabled:cursor-not-allowed disabled:opacity-60"
                           >
-                            {asset.alreadySelected ? "Added" : "Add"}
+                            {asset.alreadySelected ? workspaceCopy.chat.added : workspaceCopy.chat.add}
                           </button>
                         </div>
                       ))
@@ -2521,25 +2777,25 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                   onKeyDown={(e) => void handlePromptKeyDown(e)}
                   rows={1}
                   className="no-scrollbar w-full resize-none overflow-y-auto rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] px-3 py-2.5 text-sm leading-6 text-[var(--shp-text)] outline-none focus:border-[color-mix(in_oklab,var(--shp-primary)_40%,var(--shp-border)_60%)]"
-                  placeholder={`Describe changes for ${projectTitle}...`}
+                  placeholder={workspaceCopy.chat.promptPlaceholder(projectTitle)}
                 />
                 <button
                   type="submit"
                   disabled={submitting}
                   className="shp-btn-primary inline-flex h-11 w-11 items-center justify-center rounded-lg text-black disabled:cursor-not-allowed disabled:opacity-60"
-                  title="Send"
+                  title={workspaceCopy.chat.send}
                 >
                   <SendHorizontal className="h-4 w-4" />
                 </button>
               </div>
-              <p className="text-[11px] text-[var(--shp-muted)]">Press Enter to send, Shift+Enter for new line.</p>
-              {loadingTask ? <p className="text-xs text-[var(--shp-primary)]">Syncing task progress...</p> : null}
+              <p className="text-[11px] text-[var(--shp-muted)]">{workspaceCopy.chat.sendHint}</p>
+              {loadingTask ? <p className="text-xs text-[var(--shp-primary)]">{workspaceCopy.chat.syncing}</p> : null}
               {error ? <p className="text-xs text-rose-700">{error}</p> : null}
             </form>
           </aside>
 
           <div className="shp-shell flex h-[calc(100vh-120px)] min-h-[700px] flex-col overflow-hidden rounded-xl">
-            <div className="flex items-center justify-between border-b border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] px-3 py-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] px-3 py-2.5">
               <div className="flex min-w-0 items-center gap-1.5">
                 <button
                   type="button"
@@ -2548,15 +2804,32 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                 >
                   <MessageSquare className="h-4 w-4" />
                 </button>
+                <span className="truncate text-xs font-semibold text-[var(--shp-text)]">{workspaceCopy.chat.generatedPreview}</span>
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-[var(--shp-muted)]">
+              <div className="flex flex-wrap items-center justify-end gap-2 text-xs text-[var(--shp-muted)]">
                 <span className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] px-2 py-1 text-[var(--shp-text)]">
                   Latest
                 </span>
                 <span className={`inline-flex rounded-md border px-2 py-1 text-[10px] ${statusTone(task?.status || null)}`}>
                   {stageText}
                 </span>
+                <label className="relative inline-flex items-center">
+                  <span className="sr-only">Preview viewport</span>
+                  <select
+                    value={previewDevice}
+                    onChange={(event) => setPreviewDevice(event.target.value as PreviewDeviceId)}
+                    className="h-7 appearance-none rounded-md border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] px-2 pr-7 text-xs font-medium text-[var(--shp-text)] outline-none hover:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)] focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)]"
+                    title={`Preview website in ${activePreviewDevice.label} viewport (${activePreviewDevice.viewport})`}
+                  >
+                    {PREVIEW_DEVICE_OPTIONS.map((device) => (
+                      <option key={device.id} value={device.id}>
+                        {device.label} · {device.viewport}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--shp-muted)]" />
+                </label>
                 <button
                   type="button"
                   onClick={() => void submitPromptText(conversationLocale === "zh" ? "部署到 Cloudflare" : "deploy to cloudflare")}
@@ -2590,8 +2863,8 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-1 rounded-md border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] px-2 py-1 text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)]"
-                    title="Open preview in fullscreen"
-                    aria-label="Open preview in fullscreen"
+                    title={workspaceCopy.chat.openFullscreen}
+                    aria-label={workspaceCopy.chat.openFullscreen}
                   >
                     <Maximize2 className="h-3.5 w-3.5" />
                     <span className="sr-only">Fullscreen</span>
@@ -2601,76 +2874,18 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
             </div>
 
             <div className="flex h-full min-h-0 flex-col">
-              <div className="border-b border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] px-4 py-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  {generatedFiles.length === 0 ? (
-                    <span className="text-xs text-[var(--shp-muted)]">Waiting for generated files...</span>
-                  ) : (
-                    generatedFiles.slice(-8).map((filePath) => (
-                      <a
-                        key={filePath}
-                        href={toLocalPreviewHref(filePath)}
-                        target="_blank"
-                        rel="noreferrer"
-                    className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] px-2 py-1 text-xs text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)]"
-                      >
-                        {filePath}
-                      </a>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              {deployedUrl ? (
-                <div className="border-b border-[color-mix(in_oklab,var(--shp-primary)_24%,var(--shp-border)_76%)] bg-[color-mix(in_oklab,var(--shp-primary)_8%,transparent)] px-4 py-3">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <Globe2 className="h-4 w-4 text-[var(--shp-primary)]" />
-                        <p className="text-sm font-semibold text-[var(--shp-text)]">域名配置指导</p>
-                      </div>
-                      <p className="mt-1 text-xs text-[var(--shp-muted)]">
-                        当前已部署到{" "}
-                        <a href={deployedUrl} target="_blank" rel="noreferrer" className="text-[var(--shp-primary)] hover:underline">
-                          {deployedHost || deployedUrl}
-                        </a>
-                        ，绑定自定义域名时将 DNS 指向该 Pages 地址。
-                      </p>
-                    </div>
-                    <a
-                      href="https://developers.cloudflare.com/pages/configuration/custom-domains/"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="shrink-0 rounded-md border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] px-2 py-1 text-xs text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)]"
-                    >
-                      Cloudflare Docs
-                    </a>
-                  </div>
-                  <ol className="mt-3 grid gap-2 text-xs leading-relaxed text-[var(--shp-muted)] md:grid-cols-2">
-                    <li className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] px-3 py-2">
-                      1. 在 Cloudflare Pages 项目中进入 Custom domains，添加你的域名或 www 子域名。
-                    </li>
-                    <li className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] px-3 py-2">
-                      2. 如域名 DNS 托管在 Cloudflare，按提示让 Pages 自动创建记录并签发证书。
-                    </li>
-                    <li className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] px-3 py-2">
-                      3. 如使用外部 DNS，为 www 或子域名创建 CNAME，目标填写 {deployedHost || "your-project.pages.dev"}。
-                    </li>
-                    <li className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] px-3 py-2">
-                      4. 根域名使用 Cloudflare nameservers 的 CNAME flattening，或使用 DNS 服务商支持的 ALIAS/ANAME。
-                    </li>
-                  </ol>
-                </div>
-              ) : null}
-
               {previewUrl ? (
-                <iframe
-                  key={previewFrameUrl}
-                  src={previewFrameUrl}
-                  className="h-full w-full bg-white"
-                  title="Generated Website Preview"
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
-                />
+                <div className="h-full min-h-0 overflow-auto bg-[radial-gradient(circle_at_top_left,color-mix(in_oklab,var(--shp-primary)_12%,transparent),transparent_30rem),linear-gradient(135deg,color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%),color-mix(in_oklab,var(--shp-bg)_82%,var(--shp-surface)_18%))] p-4 sm:p-6">
+                  <div className="grid h-full min-h-full items-start justify-items-center">
+                    <iframe
+                      key={previewShellUrl}
+                      src={previewShellUrl}
+                      className={activePreviewDevice.iframeClassName}
+                      title={`Generated Website ${activePreviewDevice.label} Preview`}
+                      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+                    />
+                  </div>
+                </div>
               ) : (
                 <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-[var(--shp-muted)]">
                   <p>Your live preview will appear here once the first HTML page is generated.</p>

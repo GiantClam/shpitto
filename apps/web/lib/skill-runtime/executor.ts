@@ -7,6 +7,7 @@ import { getR2Client } from "../r2.ts";
 import { buildCloudflareBeaconSnippet, CloudflareClient, type CloudflareWebAnalyticsSite } from "../cloudflare.ts";
 import { Bundler } from "../bundler.ts";
 import {
+  listProjectAssets,
   publishCurrentProjectAssets,
   rewriteProjectAssetLogicalUrlsForRelease,
   syncGeneratedProjectAssetsFromSite,
@@ -45,10 +46,14 @@ import { SKILL_RUNTIME_FIXED_PHASES, type SkillRuntimePhase } from "./phase-type
 import {
   loadProjectSkill,
   resolveProjectSkillAlias,
+  selectDocumentContentSkillsForIntent,
+  selectWebsiteSeedSkillsForIntent,
   WEBSITE_GENERATION_SKILL_BUNDLE,
   type ProjectSkillDescriptor,
 } from "./project-skill-loader.ts";
+import { lintGeneratedWebsiteHtml, renderAntiSlopFeedback, type AntiSlopLintResult } from "../visual-qa/anti-slop-linter.ts";
 import { runSkillToolExecutor } from "./skill-tool-executor.ts";
+import { renderWebsiteQualityContract } from "./website-quality-contract.ts";
 import { validateComponent, type DesignSpec, type ValidationResult } from "../../skills/design-website-generator/tools/component-validator.ts";
 import {
   buildContextForPageN,
@@ -167,6 +172,36 @@ const PAGE_CONTEXT_MAX_TERMS = Math.max(6, Number(process.env.SKILL_PAGE_CONTEXT
 function shouldUseSkillToolMode() {
   if (String(process.env.SKILL_TOOL_FORCE_LOCAL || "").trim() === "1") return false;
   return String(process.env.SKILL_TOOL_MODE || "1").trim() !== "0";
+}
+
+function mergeValidationWithAntiSlop(base: ValidationResult, antiSlop: AntiSlopLintResult): ValidationResult {
+  const antiChecks = antiSlop.issues.map((issue) => ({
+    rule: `anti-slop:${issue.code}`,
+    category: "accessibility" as const,
+    passed: false,
+    message: issue.message,
+    severity: issue.severity === "error" ? ("major" as const) : ("minor" as const),
+  }));
+  const errors = [
+    ...(base.errors || []),
+    ...antiSlop.issues
+      .filter((issue) => issue.severity === "error")
+      .map((issue) => `[anti-slop] ${issue.message}`),
+  ];
+  const warnings = [
+    ...(base.warnings || []),
+    ...antiSlop.issues
+      .filter((issue) => issue.severity === "warning")
+      .map((issue) => `[anti-slop] ${issue.message}`),
+  ];
+
+  return {
+    passed: base.passed && antiSlop.passed && errors.length === 0,
+    score: Math.min(Number(base.score || 0), antiSlop.score),
+    checks: [...(base.checks || []), ...antiChecks],
+    errors,
+    warnings,
+  };
 }
 
 function nowIso(): string {
@@ -289,13 +324,17 @@ function extractRequirementText(state: AgentState): string {
 function isDeployConfirmationIntent(text: string): boolean {
   const normalized = String(text || "").trim().toLowerCase();
   if (!normalized) return false;
+  if (/^(?:\u90e8\u7f72|\u53d1\u5e03|\u4e0a\u7ebf|\u786e\u8ba4\u90e8\u7f72)$/.test(normalized)) return true;
+  if (normalized.includes("\u90e8\u7f72\u5230 cloudflare")) return true;
+  if (normalized.includes("\u53d1\u5e03\u5230 cloudflare")) return true;
+  if (normalized.includes("\u4e0a\u7ebf\u5230 cloudflare")) return true;
   if (/^deploy(?:\s+now|\s+site)?$/.test(normalized)) return true;
-  if (/^(?:部署|发布|上线|确认部署|部署到cloudflare)$/.test(normalized)) return true;
+  if (/^(?:\u90e8\u7f72|\u53d1\u5e03|\u4e0a\u7ebf|\u786e\u8ba4\u90e8\u7f72|\u90e8\u7f72\u5230cloudflare)$/.test(normalized)) return true;
   if (normalized.includes("deploy to cloudflare")) return true;
   if (normalized.includes("deploy cloudflare")) return true;
-  if (normalized.includes("部署到cloudflare")) return true;
-  if (normalized.includes("部署到 cloudflare")) return true;
-  if (normalized.includes("发布到cloudflare")) return true;
+  if (normalized.includes("\u90e8\u7f72\u5230cloudflare")) return true;
+  if (normalized.includes("\u90e8\u7f72\u5230 cloudflare")) return true;
+  if (normalized.includes("\u53d1\u5e03\u5230cloudflare")) return true;
   return false;
 }
 
@@ -386,12 +425,12 @@ function detectAccentColor(instruction: string): { name: string; hex: string } |
     return { name: "custom", hex: hexMatch[0] };
   }
   const candidates: Array<{ name: string; hex: string; patterns: RegExp[] }> = [
-    { name: "blue", hex: "#2563eb", patterns: [/蓝|blue|indigo|azure/] },
-    { name: "green", hex: "#16a34a", patterns: [/绿|green|emerald|mint/] },
-    { name: "red", hex: "#dc2626", patterns: [/红|red|crimson/] },
-    { name: "orange", hex: "#ea580c", patterns: [/橙|orange|amber/] },
-    { name: "purple", hex: "#7c3aed", patterns: [/紫|purple|violet/] },
-    { name: "black", hex: "#111827", patterns: [/黑|black|dark/] },
+    { name: "blue", hex: "#2563eb", patterns: [/(\u84dd|blue|indigo|azure)/] },
+    { name: "green", hex: "#16a34a", patterns: [/(\u7eff|green|emerald|mint)/] },
+    { name: "red", hex: "#dc2626", patterns: [/(\u7ea2|red|crimson)/] },
+    { name: "orange", hex: "#ea580c", patterns: [/(\u6a59|orange|amber)/] },
+    { name: "purple", hex: "#7c3aed", patterns: [/(\u7d2b|purple|violet)/] },
+    { name: "black", hex: "#111827", patterns: [/(\u9ed1|black|dark)/] },
   ];
   for (const candidate of candidates) {
     if (candidate.patterns.some((re) => re.test(text))) {
@@ -404,8 +443,8 @@ function detectAccentColor(instruction: string): { name: string; hex: string } |
 function detectTitleOverride(instruction: string): string | undefined {
   const text = String(instruction || "").trim();
   const patterns = [
-    /(?:标题|title)\s*(?:改成|为|:|：)\s*[“"']?([^"”'。！？\n\r]+)[”"']?/i,
-    /(?:叫做|命名为)\s*[“"']?([^"”'。！？\n\r]+)[”"']?/i,
+    /(?:\u6807\u9898|title)\s*(?:\u6539\u6210|\u4e3a|to|:|\uff1a)\s*["']?([^"'\u3002\uff01\uff1f\uff1b\n\r]+)["']?/i,
+    /(?:\u53eb\u505a|\u547d\u540d\u4e3a)\s*["']?([^"'\u3002\uff01\uff1f\uff1b\n\r]+)["']?/i,
   ];
   for (const pattern of patterns) {
     const match = text.match(pattern);
@@ -417,13 +456,13 @@ function detectTitleOverride(instruction: string): string | undefined {
 
 function detectTextReplacement(instruction: string): { from: string; to: string } | undefined {
   const text = String(instruction || "").trim();
-  const cn = text.match(/把\s*[“"']?([^"”'，。；;]+)[”"']?\s*改成\s*[“"']?([^"”'，。；;\n\r]+)[”"']?/i);
+  const cn = text.match(/\u628a\s*["'\u201c\u201d\u2018\u2019]?([^"'\u201c\u201d\u2018\u2019\uff0c\u3002\uff1b;]+)["'\u201c\u201d\u2018\u2019]?\s*\u6539\u6210\s*["'\u201c\u201d\u2018\u2019]?([^"'\u201c\u201d\u2018\u2019\uff0c\u3002\uff1b;\n\r]+)["'\u201c\u201d\u2018\u2019]?/i);
   if (cn?.[1] && cn?.[2]) {
     const from = String(cn[1]).trim();
     const to = String(cn[2]).trim();
     if (from && to && from !== to) return { from, to };
   }
-  const en = text.match(/replace\s+[“"']?([^"”']+)[”"']?\s+with\s+[“"']?([^"”'\n\r]+)[”"']?/i);
+  const en = text.match(/replace\s+["'\u201c\u201d\u2018\u2019]?([^"'\u201c\u201d\u2018\u2019]+)["'\u201c\u201d\u2018\u2019]?\s+with\s+["'\u201c\u201d\u2018\u2019]?([^"'\u201c\u201d\u2018\u2019\n\r]+)["'\u201c\u201d\u2018\u2019]?/i);
   if (en?.[1] && en?.[2]) {
     const from = String(en[1]).trim();
     const to = String(en[2]).trim();
@@ -514,6 +553,29 @@ function injectCloudflareAnalyticsBeacon(project: any, siteTag: string): any {
   return syncPagesFromStaticFiles(withStatic);
 }
 
+function normalizeDeployHost(value: string): string {
+  const raw = String(value || "").trim().toLowerCase();
+  if (!raw) return "";
+  try {
+    return new URL(raw.startsWith("http") ? raw : `https://${raw}`).host.toLowerCase();
+  } catch {
+    return raw.replace(/^\/+|\/+$/g, "");
+  }
+}
+
+function isPagesDevHost(host: string): boolean {
+  const normalized = normalizeDeployHost(host);
+  return normalized === "pages.dev" || normalized.endsWith(".pages.dev");
+}
+
+function shouldProvisionWebAnalyticsForDeployment(host: string): boolean {
+  if (String(process.env.CLOUDFLARE_WA_AUTO_PROVISION || "1").trim() === "0") return false;
+  if (isPagesDevHost(host)) {
+    return String(process.env.CLOUDFLARE_WA_ENABLE_PAGES_DEV || "").trim() === "1";
+  }
+  return true;
+}
+
 function applyRefineInstructionToProject(project: any, instruction: string): { project: any; changedFiles: string[] } {
   const next = ensureSkillDirectStaticProject(project);
   const files = dedupeFiles((next?.staticSite?.files || []) as any[]);
@@ -602,25 +664,25 @@ function applyDeterministicRefineFixups(
     return { project, changedFiles: [] };
   }
 
-  const hasDeleteIntent = /(删除|移除|去掉|remove|delete)/i.test(normalizedInstruction);
+  const hasDeleteIntent = /(\u5220\u9664|\u79fb\u9664|\u53bb\u6389|remove|delete)/i.test(normalizedInstruction);
   const removeMenuButton =
     hasDeleteIntent &&
-    /(menu|菜单|导航栏)/i.test(normalizedInstruction);
+    /(menu|\u83dc\u5355|\u5bfc\u822a\u680f)/i.test(normalizedInstruction);
 
   const literalTargets = new Set<string>();
   if (/for enterprise and saas teams/i.test(normalizedInstruction)) {
     literalTargets.add("For enterprise and SaaS teams");
   }
   const quotedPatterns = [
-    /[“"']([^“”"'\n\r]{2,120})[”"']/g,
-    /删除\s*([A-Za-z][A-Za-z0-9 .&/+-]{3,120})/gi,
+    /["'\u201c\u201d\u2018\u2019]([^"'\u201c\u201d\u2018\u2019\n\r]{2,120})["'\u201c\u201d\u2018\u2019]/g,
+    /\u5220\u9664\s*([A-Za-z][A-Za-z0-9 .&/+-]{3,120})/gi,
   ];
   for (const pattern of quotedPatterns) {
     let match: RegExpExecArray | null;
     while ((match = pattern.exec(normalizedInstruction))) {
       const candidate = String(match[1] || "").trim();
       if (!candidate) continue;
-      if (/^(menu|菜单)$/i.test(candidate)) continue;
+      if (/^(menu|\u83dc\u5355)$/i.test(candidate)) continue;
       literalTargets.add(candidate);
     }
   }
@@ -894,15 +956,37 @@ function toSafeProjectNameToken(value: string, fallback: string): string {
   return (normalized || fallback).slice(0, 28);
 }
 
+function pagesProjectNameFromUrl(rawUrl: unknown): string {
+  const raw = String(rawUrl || "").trim();
+  if (!raw) return "";
+  try {
+    const host = new URL(raw).host.toLowerCase();
+    const suffix = ".pages.dev";
+    if (!host.endsWith(suffix)) return "";
+    const left = host.slice(0, -suffix.length).replace(/\.$/, "");
+    if (!left) return "";
+    const labels = left.split(".").filter(Boolean);
+    const projectName = labels.length > 1 ? labels.slice(1).join(".") : labels[0];
+    return toSafeProjectNameToken(projectName, "");
+  } catch {
+    return "";
+  }
+}
+
 function resolveDeployProjectName(project: any, state: AgentState, chatId: string): string {
+  const previousProjectName = pagesProjectNameFromUrl((state as any)?.deployed_url);
+  if (previousProjectName) return previousProjectName;
+
   const prefix = toSafeProjectNameToken(String(process.env.CLOUDFLARE_PAGES_PROJECT_PREFIX || "shpitto"), "shpitto");
-  const brandToken = toSafeProjectNameToken(
-    String(project?.branding?.name || project?.projectId || "site"),
+  const projectToken = toSafeProjectNameToken(
+    String(chatId || (state as any)?.db_project_id || project?.projectId || "site"),
     "site",
   );
-  const suffixSource = String((state as any)?.user_id || chatId || crypto.randomUUID());
-  const suffixToken = toSafeProjectNameToken(sanitizePathToken(suffixSource), "deploy").slice(0, 10);
-  const merged = `${prefix}-${brandToken}-${suffixToken}`
+  const ownerSource = String((state as any)?.user_id || "").trim();
+  const ownerToken = ownerSource ? toSafeProjectNameToken(sanitizePathToken(ownerSource), "owner").slice(0, 10) : "";
+  const merged = [prefix, projectToken, ownerToken]
+    .filter(Boolean)
+    .join("-")
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "");
   return merged.slice(0, 58);
@@ -1099,6 +1183,20 @@ function buildDomainConfigurationGuidance(params: {
   deploymentHost: string;
   locale: "zh-CN" | "en";
 }): string {
+  const steps = buildDomainConfigurationGuidanceSteps(params);
+  const title = params.locale === "zh-CN" ? "## \u57df\u540d\u914d\u7f6e\u6307\u5bfc" : "## Domain Configuration Guide";
+  return [title, "", ...steps.map((step, index) => `${index + 1}. ${step}`)].join("\n");
+}
+
+function resolveCustomDomainCnameTarget(deploymentHost: string, liveHost: string) {
+  return String(process.env.CLOUDFLARE_SAAS_CNAME_TARGET || deploymentHost || liveHost || "your-site.example.com").trim();
+}
+
+function buildDomainDnsRecords(params: {
+  liveUrl: string;
+  deploymentHost: string;
+  locale: "zh-CN" | "en";
+}): Array<{ type: string; host: string; value: string; ttl: string; note: string }> {
   const liveHost = (() => {
     try {
       return new URL(params.liveUrl).host;
@@ -1106,27 +1204,73 @@ function buildDomainConfigurationGuidance(params: {
       return "";
     }
   })();
-  const cnameTarget = params.deploymentHost || liveHost || "your-project.pages.dev";
+  const cnameTarget = resolveCustomDomainCnameTarget(params.deploymentHost, liveHost);
+  const ttl = params.locale === "zh-CN" ? "自动 / 默认" : "Auto / Default";
   if (params.locale === "zh-CN") {
     return [
-      "## 域名配置指导",
-      "",
-      "1. 在当前项目的部署预览区点击域名配置入口，或进入 Cloudflare Pages 对应项目的 Custom domains。",
-      "2. 添加你的自定义域名，例如 `www.example.com` 或根域名 `example.com`。",
-      `3. 如果 DNS 不在 Cloudflare，为 \`www\` 或子域名添加 CNAME，目标填写 \`${cnameTarget}\`。`,
-      "4. 如果配置根域名，按 Cloudflare Pages 提示使用 CNAME Flattening，或将 DNS 托管迁移到 Cloudflare。",
-      "5. 等待域名状态和 SSL 证书变为 Active 后，打开自定义域名验证站点是否可访问。",
-    ].join("\n");
+      {
+        type: "CNAME",
+        host: "www",
+        value: cnameTarget,
+        ttl,
+        note: "用于 www.example.com 这类子域名。",
+      },
+      {
+        type: "CNAME / ALIAS / ANAME",
+        host: "@",
+        value: cnameTarget,
+        ttl,
+        note: "用于 example.com 根域名；如果 DNS 服务商不支持根域名 CNAME，请选择 ALIAS、ANAME 或等价的扁平化记录。",
+      },
+    ];
   }
   return [
-    "## Domain Configuration Guide",
-    "",
-    "1. Use the domain configuration entry in the deployment preview area, or open the Cloudflare Pages project and go to Custom domains.",
-    "2. Add your custom domain, for example `www.example.com` or the apex domain `example.com`.",
-    `3. If DNS is hosted outside Cloudflare, create a CNAME for \`www\` or the subdomain pointing to \`${cnameTarget}\`.`,
-    "4. For an apex/root domain, follow Cloudflare Pages guidance for CNAME Flattening or move DNS hosting to Cloudflare.",
-    "5. Wait until the domain and SSL certificate are Active, then open the custom domain to verify the site.",
-  ].join("\n");
+    {
+      type: "CNAME",
+      host: "www",
+      value: cnameTarget,
+      ttl,
+      note: "Use for a subdomain such as www.example.com.",
+    },
+    {
+      type: "CNAME / ALIAS / ANAME",
+      host: "@",
+      value: cnameTarget,
+      ttl,
+      note: "Use for an apex domain such as example.com. If your DNS provider does not support apex CNAME, use ALIAS, ANAME, or an equivalent flattened record.",
+    },
+  ];
+}
+
+function buildDomainConfigurationGuidanceSteps(params: {
+  liveUrl: string;
+  deploymentHost: string;
+  locale: "zh-CN" | "en";
+}): string[] {
+  const liveHost = (() => {
+    try {
+      return new URL(params.liveUrl).host;
+    } catch {
+      return "";
+    }
+  })();
+  const cnameTarget = resolveCustomDomainCnameTarget(params.deploymentHost, liveHost);
+  if (params.locale === "zh-CN") {
+    return [
+      "在你的域名 DNS 管理后台新增一条记录；如果配置 `www.example.com`，使用下方 `www` 的 CNAME 记录。",
+      `记录值填写 \`${cnameTarget}\`，TTL 保持自动或默认即可。`,
+      "如果配置根域名 `example.com`，主机记录填写 `@`；若 DNS 服务商不支持根域名 CNAME，请选择 ALIAS、ANAME 或等价的扁平化记录。",
+      "保存 DNS 后等待解析生效，再回到域名配置入口添加并校验你的自定义域名。",
+      "状态和证书生效后，打开自定义域名确认网站可访问。",
+    ];
+  }
+  return [
+    "Open your domain DNS settings and add a record. For `www.example.com`, use the `www` CNAME record shown below.",
+    `Set the record value to \`${cnameTarget}\` and keep TTL as Auto or Default.`,
+    "For an apex domain such as `example.com`, use host `@`. If your DNS provider does not support apex CNAME, use ALIAS, ANAME, or an equivalent flattened record.",
+    "Save the DNS record, then add and verify the custom domain from the domain configuration entry.",
+    "After the status and certificate are active, open the custom domain to verify the site.",
+  ];
 }
 
 function stripMarkdownCodeFences(raw: string): string {
@@ -1231,7 +1375,24 @@ async function resolveWebsiteRuntimeSkill(params: {
       `skill "${loadedSkill.id}" is not supported by website runtime. supported: ${WEBSITE_MAIN_SKILL_ID}`,
     );
   }
-  const loadedSkillIds = Array.from(new Set(WEBSITE_GENERATION_SKILL_BUNDLE.map((id) => resolveProjectSkillAlias(id))));
+  const requirementText = extractRequirementText(params.state);
+  const selectedSeedSkills = await selectWebsiteSeedSkillsForIntent({
+    requirementText,
+    routes: ((params.state as any)?.sitemap?.routes || []) as string[],
+    maxSkills: Number(process.env.SKILL_RUNTIME_MAX_SEED_SKILLS || 2),
+  });
+  const selectedDocumentSkills = await selectDocumentContentSkillsForIntent({
+    requirementText,
+    routes: ((params.state as any)?.sitemap?.routes || []) as string[],
+    maxSkills: Number(process.env.SKILL_RUNTIME_MAX_DOCUMENT_SKILLS || 3),
+  });
+  const loadedSkillIds = Array.from(
+    new Set([
+      ...WEBSITE_GENERATION_SKILL_BUNDLE.map((id) => resolveProjectSkillAlias(id)),
+      ...selectedSeedSkills.map((item) => item.id),
+      ...selectedDocumentSkills.map((item) => item.id),
+    ]),
+  );
   const skillDirective = extractSkillDirectiveSnippet(loadedSkill);
   const existingWorkflow = ((params.state as any)?.workflow_context || {}) as Record<string, unknown>;
   const hasExistingGuidance =
@@ -1249,7 +1410,6 @@ async function resolveWebsiteRuntimeSkill(params: {
     designMd: String(existingWorkflow.designMd || ""),
   };
   if (!hasExistingGuidance || !styleHit) {
-    const requirementText = extractRequirementText(params.state);
     const workflowContext = await loadWorkflowSkillContext(requirementText);
     stylePreset = normalizeStylePreset(workflowContext.stylePreset, {});
     styleHit = workflowContext.hit;
@@ -1270,6 +1430,10 @@ async function resolveWebsiteRuntimeSkill(params: {
       skillId: loadedSkill.id,
       skillDirective,
       loadedSkillIds,
+      selectedSeedSkillIds: selectedSeedSkills.map((item) => item.id),
+      selectedSeedSkillReasons: selectedSeedSkills,
+      selectedDocumentSkillIds: selectedDocumentSkills.map((item) => item.id),
+      selectedDocumentSkillReasons: selectedDocumentSkills,
       skillMdPath: loadedSkill.skillMdPath,
       selectionCriteria: guidance.selectionCriteria,
       sequentialWorkflow: guidance.sequentialWorkflow,
@@ -1296,7 +1460,7 @@ function hasValidHtmlCore(rawHtml: string): boolean {
   if (!html.trim()) return false;
   if (!/<\/head>/i.test(html)) return false;
   if (!/<body[\s>]/i.test(html)) return false;
-  // Allow truncated HTML (missing </body> or </html>) — ensureHtmlDocument will patch them
+  // Allow truncated HTML (missing </body> or </html>); ensureHtmlDocument will patch them.
   const hasStyleOpen = /<style[\s>]/i.test(html);
   const hasStyleClose = /<\/style>/i.test(html);
   if (hasStyleOpen && !hasStyleClose) return false;
@@ -1487,7 +1651,7 @@ function renderLocalDesign(
   decision: LocalDecisionPlan,
   stylePreset: DesignStylePreset = DEFAULT_STYLE_PRESET,
 ): string {
-  const langLine = locale === "zh-CN" ? "中文为主，工业风，高对比。" : "Primary language: English. Industrial, high-contrast visual system.";
+  const langLine = locale === "zh-CN" ? "\u4e2d\u6587\u4e3a\u4e3b\uff0c\u5de5\u4e1a\u98ce\uff0c\u9ad8\u5bf9\u6bd4\u3002" : "Primary language: English. Industrial, high-contrast visual system.";
   return [
     "# DESIGN",
     "",
@@ -1562,7 +1726,7 @@ function renderLocalPage(params: { route: string; decision: LocalDecisionPlan; r
   const skeletonHtml = blueprint.contentSkeleton.map((section) => `<li>${section}</li>`).join("");
   const mixText = formatComponentMix(blueprint.componentMix);
   const body = isContact
-    ? `<section class="card"><h2>${locale === "zh-CN" ? "快速询价" : "Quick Quote"}</h2><form><input placeholder="Name" /><input placeholder="Company" /><input placeholder="Email" /><input placeholder="WhatsApp" /><input placeholder="Machine Model" /><input placeholder="Quantity" /><input placeholder="Deadline" /><button class="btn btn-primary" type="submit">${locale === "zh-CN" ? "提交" : "Submit"}</button></form><p>${blueprint.responsibility}</p></section>`
+    ? `<section class="card"><h2>${locale === "zh-CN" ? "\u5feb\u901f\u8be2\u4ef7" : "Quick Quote"}</h2><form><input placeholder="Name" /><input placeholder="Company" /><input placeholder="Email" /><input placeholder="WhatsApp" /><input placeholder="Machine Model" /><input placeholder="Quantity" /><input placeholder="Deadline" /><button class="btn btn-primary" type="submit">${locale === "zh-CN" ? "\u63d0\u4ea4" : "Submit"}</button></form><p>${blueprint.responsibility}</p></section>`
     : `<section class="card"><h2>${title}</h2><p>${String(requirementText || "").slice(0, 420)}</p><p><strong>Page Responsibility:</strong> ${blueprint.responsibility}</p><p><strong>Component Mix:</strong> ${mixText}</p><ul>${skeletonHtml}</ul></section>`;
 
   return ensureHtmlDocument(`<!doctype html>
@@ -1574,13 +1738,13 @@ function renderLocalPage(params: { route: string; decision: LocalDecisionPlan; r
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <header><div class="container nav"><strong>LC-CNC™</strong><nav class="nav-links">${nav}</nav></div></header>
+  <header><div class="container nav"><strong>LC-CNC&trade;</strong><nav class="nav-links">${nav}</nav></div></header>
   <main class="container hero">
     <h1>${title}</h1>
-    <p>${locale === "zh-CN" ? "工业风静态站点页面" : "Industrial static site page"}</p>
+    <p>${locale === "zh-CN" ? "\u5de5\u4e1a\u98ce\u9759\u6001\u7ad9\u70b9\u9875\u9762" : "Industrial static site page"}</p>
     ${body}
   </main>
-  <footer><div class="container">© <span data-year></span> LC-CNC</div></footer>
+  <footer><div class="container">&copy; <span data-year></span> LC-CNC</div></footer>
   <script src="/script.js"></script>
 </body>
 </html>`);
@@ -2085,7 +2249,12 @@ class NativeSkillRuntime {
   }
 
   private async buildStageSkillDirective(stage: StageSkillScope): Promise<{ ids: string[]; text: string }> {
-    const stageIds = STAGE_SKILL_SCOPES[stage] || [WEBSITE_MAIN_SKILL_ID];
+    const coreSet = new Set(WEBSITE_GENERATION_SKILL_BUNDLE.map((id) => resolveProjectSkillAlias(id)));
+    const seedSkillIds =
+      stage === "styles" || stage === "page"
+        ? this.context.enabledSkillIds.filter((id) => !coreSet.has(resolveProjectSkillAlias(id)))
+        : [];
+    const stageIds = [...(STAGE_SKILL_SCOPES[stage] || [WEBSITE_MAIN_SKILL_ID]), ...seedSkillIds];
     const allowSet = new Set(this.context.enabledSkillIds.map((id) => resolveProjectSkillAlias(id)));
     const selectedIds = Array.from(
       new Set(stageIds.map((id) => resolveProjectSkillAlias(id)).filter((id) => !!id && allowSet.has(id))),
@@ -2310,15 +2479,22 @@ class NativeSkillRuntime {
       finalHtml = ensureHtmlDocument(modelHtml);
       if (!finalHtml.trim()) finalHtml = params.fallbackHtml;
 
-      finalQa = await validateComponent(finalHtml, this.context.designSpec, this.context.designContext);
+      finalQa = mergeValidationWithAntiSlop(
+        await validateComponent(finalHtml, this.context.designSpec, this.context.designContext),
+        lintGeneratedWebsiteHtml(finalHtml),
+      );
       const pass = finalQa.passed && Number(finalQa.score || 0) >= QA_MIN_SCORE;
       if (pass) break;
 
+      const antiSlopFeedback = renderAntiSlopFeedback(lintGeneratedWebsiteHtml(finalHtml));
       const hints = [
         ...((finalQa.errors || []).slice(0, 6)),
         ...((finalQa.warnings || []).slice(0, 4)),
       ];
-      qaFeedback = hints.length > 0 ? hints.map((item) => `- ${item}`).join("\n") : "- Improve design compliance and accessibility.";
+      qaFeedback = [
+        hints.length > 0 ? hints.map((item) => `- ${item}`).join("\n") : "- Improve design compliance and accessibility.",
+        antiSlopFeedback,
+      ].filter(Boolean).join("\n");
       attempt += 1;
       if (attempt > QA_MAX_RETRIES) break;
     }
@@ -2375,13 +2551,15 @@ class NativeSkillRuntime {
     if (process.env.NODE_ENV !== "test") {
       const stageSkill = await this.buildStageSkillDirective("styles");
       const stageGuidance = this.buildStageGuidance("styles");
+      const qualityContract = renderWebsiteQualityContract();
       const systemPrompt = `You are a senior frontend design-system engineer.
 Generate only raw CSS for styles.css.
 Keep the output production-safe, responsive, and semantically consistent.
 Never include markdown fences or explanation text.
-Follow skill directives and design guidance strictly.`;
+Follow skill directives, design guidance, and the website quality contract strictly.`;
       const prompt = `Generate a single styles.css for a multi-page industrial website.
 Output raw CSS only. No markdown fences.
+${qualityContract}
 Skill ID: ${this.context.skillId}
 Loaded Skills: ${stageSkill.ids.join(", ")}
 Skill directives:
@@ -2417,6 +2595,7 @@ ${this.requirementText.slice(0, 1800)}`;
     if (process.env.NODE_ENV !== "test") {
       const stageSkill = await this.buildStageSkillDirective("script");
       const stageGuidance = this.buildStageGuidance("script");
+      const qualityContract = renderWebsiteQualityContract();
       const systemPrompt = `You are a frontend JavaScript engineer.
 Generate only raw JavaScript for script.js.
 Keep behavior minimal, deterministic, and accessibility-friendly.
@@ -2424,6 +2603,7 @@ No markdown fences and no explanatory text.`;
       const prompt = `Generate a single script.js for a multi-page static website.
 Output raw JavaScript only. No markdown fences.
 Include only small UI helpers.
+${qualityContract}
 Skill ID: ${this.context.skillId}
 Loaded Skills: ${stageSkill.ids.join(", ")}
 Skill directives:
@@ -2460,6 +2640,7 @@ ${blueprintDigest(this.context.decision)}`;
     if (process.env.NODE_ENV !== "test") {
       const stageSkill = await this.buildStageSkillDirective("page");
       const stageGuidance = this.buildStageGuidance("page");
+      const qualityContract = renderWebsiteQualityContract();
       const navLinks = buildNavFromDecision(this.context.decision)
         .map((item) => `${item.label}:${item.href}`)
         .join(", ");
@@ -2474,10 +2655,12 @@ ${blueprintDigest(this.context.decision)}`;
         "You are a staff frontend engineer generating complete static HTML pages.",
         "Only output raw HTML. No markdown, no commentary.",
         "Always include <!doctype html>, <html>, <head>, <body>.",
+        "Always include <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">.",
         "Always include <link rel=\"stylesheet\" href=\"/styles.css\"> and <script src=\"/script.js\"></script>.",
-        "Follow design-system tokens, accessibility, and the provided skill guidance strictly.",
+        "Follow design-system tokens, accessibility, the provided skill guidance, and the website quality contract strictly.",
       ].join("\n");
       const promptBuilder = (qaFeedback: string, attempt: number) => `Generate one complete HTML document for route ${normalizedRoute}.
+${qualityContract}
 Skill ID: ${this.context.skillId}
 Loaded Skills: ${stageSkill.ids.join(", ")}
 Skill directives:
@@ -2960,11 +3143,15 @@ async function runDeployOnlyTask(params: {
     }
 
     await updateChatTaskProgress(taskId, {
-      assistantText: `Provisioning analytics for ${deploymentHost}...`,
+      assistantText: shouldProvisionWebAnalyticsForDeployment(deploymentHost)
+        ? `Provisioning analytics for ${deploymentHost}...`
+        : `Skipping Cloudflare Web Analytics for ${deploymentHost}.`,
       phase: "deploy",
       progress: {
         stage: "deploying:analytics",
-        stageMessage: "Preparing Cloudflare Web Analytics site token...",
+        stageMessage: shouldProvisionWebAnalyticsForDeployment(deploymentHost)
+          ? "Preparing Cloudflare Web Analytics site token..."
+          : "Skipping Web Analytics for pages.dev preview deployment.",
         startedAt: new Date(startedAt).toISOString(),
         lastTokenAt: nowIso(),
         elapsedMs: Date.now() - startedAt,
@@ -2972,14 +3159,20 @@ async function runDeployOnlyTask(params: {
       } as any,
     });
 
-    try {
-      analyticsSite = await cf.ensureWebAnalyticsSite(deploymentHost);
-      deployProject = injectCloudflareAnalyticsBeacon(sourceProject, analyticsSite.siteTag);
-      analyticsStatus = "active";
-    } catch (error) {
-      analyticsStatus = "degraded";
-      analyticsWarning = String((error as any)?.message || error || "Cloudflare analytics provisioning failed");
-      console.warn(`[SkillRuntimeExecutor] analytics provisioning warning: ${analyticsWarning}`);
+    if (shouldProvisionWebAnalyticsForDeployment(deploymentHost)) {
+      try {
+        analyticsSite = await cf.ensureWebAnalyticsSite(deploymentHost);
+        deployProject = injectCloudflareAnalyticsBeacon(sourceProject, analyticsSite.siteTag);
+        analyticsStatus = "active";
+      } catch (error) {
+        analyticsStatus = "degraded";
+        analyticsWarning = String((error as any)?.message || error || "Cloudflare analytics provisioning failed");
+        console.warn(`[SkillRuntimeExecutor] analytics provisioning warning: ${analyticsWarning}`);
+      }
+    } else {
+      analyticsStatus = "pending";
+      analyticsWarning =
+        "Skipped for pages.dev preview deployment. Bind a custom domain or set CLOUDFLARE_WA_ENABLE_PAGES_DEV=1 to enable Web Analytics.";
     }
 
     try {
@@ -2989,10 +3182,14 @@ async function runDeployOnlyTask(params: {
           projectId: chatId,
         });
         publishedAssetVersion = String(published.publishedVersion || "").trim();
+        const projectAssets = await listProjectAssets({
+          ownerUserId,
+          projectId: chatId,
+        }).catch(() => []);
         deployProject = rewriteProjectAssetLogicalUrlsForRelease(deployProject, {
           ownerUserId,
           projectId: chatId,
-        });
+        }, projectAssets);
       }
     } catch (error) {
       console.warn(
@@ -3052,10 +3249,9 @@ async function runDeployOnlyTask(params: {
     }
 
     await cf.createProject(projectName);
-    const deployment = await cf.uploadDeployment(projectName, bundle);
-    const deployedUrl = String((deployment as any)?.result?.url || `https://${projectName}.pages.dev`);
+    await cf.uploadDeployment(projectName, bundle);
     const productionUrl = `https://${projectName}.pages.dev`;
-    const postDeploySmoke = await runPostDeploySmoke(deployedUrl, { fallbackUrls: [productionUrl] });
+    const postDeploySmoke = await runPostDeploySmoke(productionUrl);
     if (postDeploySmoke.status === "failed") {
       await failChatTask(
         taskId,
@@ -3066,7 +3262,7 @@ async function runDeployOnlyTask(params: {
       );
       return;
     }
-    const liveUrl = postDeploySmoke.url || deployedUrl;
+    const liveUrl = productionUrl;
 
     if (ownerUserId) {
       try {
@@ -3103,13 +3299,18 @@ async function runDeployOnlyTask(params: {
       extractStateMessageText(inputState.messages),
       (inputState.workflow_context as any)?.preferredLocale,
     );
-    const domainGuidance = buildDomainConfigurationGuidance({
+    const domainGuidanceSteps = buildDomainConfigurationGuidanceSteps({
+      liveUrl,
+      deploymentHost,
+      locale: deployLocale,
+    });
+    const domainDnsRecords = buildDomainDnsRecords({
       liveUrl,
       deploymentHost,
       locale: deployLocale,
     });
     const deploymentMessageParts = [
-      deployLocale === "zh-CN" ? `部署成功：${liveUrl}` : `Deployment successful: ${liveUrl}`,
+      deployLocale === "zh-CN" ? `\u90e8\u7f72\u6210\u529f\uff1a${liveUrl}` : `Deployment successful: ${liveUrl}`,
       publishedAssetVersion ? `(Published assets ${publishedAssetVersion})` : "",
       analyticsStatus === "active"
         ? "(Cloudflare analytics enabled)"
@@ -3117,10 +3318,17 @@ async function runDeployOnlyTask(params: {
           ? `(Analytics pending: ${analyticsWarning})`
           : "(Analytics pending)",
       `(Smoke: pre=${preDeploySmoke.status}, post=${postDeploySmoke.status})`,
-      "",
-      domainGuidance,
     ].filter(Boolean);
     const deploymentMessage = deploymentMessageParts.join("\n");
+    const domainGuidanceMetadata = {
+      cardType: "domain_guidance",
+      locale: deployLocale === "zh-CN" ? "zh" : "en",
+      title: deployLocale === "zh-CN" ? "\u57df\u540d\u914d\u7f6e\u6307\u5bfc" : "Domain Configuration Guide",
+      deployedUrl: liveUrl,
+      deploymentHost,
+      steps: domainGuidanceSteps,
+      dnsRecords: domainDnsRecords,
+    };
 
     const nextState: AgentState = {
       ...inputState,
@@ -3162,6 +3370,7 @@ async function runDeployOnlyTask(params: {
       actions: [{ text: "View Live Site", payload: liveUrl, type: "url" }],
       phase: "end",
       deployedUrl: liveUrl,
+      timelineMetadata: domainGuidanceMetadata,
       internal: {
         workerId,
         inputState: buildSessionSnapshot(nextState),

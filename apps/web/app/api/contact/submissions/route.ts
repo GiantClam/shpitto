@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listContactSubmissionsByOwner, listContactSubmissionsByProject } from "@/lib/agent/db";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedRouteUserId } from "@/lib/supabase/route-user";
 
 export const dynamic = "force-dynamic";
 
@@ -14,13 +14,8 @@ function safeParseJson(value: string) {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
-
-    if (error || !user) {
+    const userId = await getAuthenticatedRouteUserId();
+    if (!userId) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
 
@@ -30,8 +25,8 @@ export async function GET(request: NextRequest) {
     const safeLimit = Number.isFinite(limitParam) ? limitParam : 100;
     const safeOffset = Number.isFinite(offsetParam) ? Math.max(0, Math.floor(offsetParam)) : 0;
     const rows = projectId
-      ? await listContactSubmissionsByProject(user.id, projectId, safeLimit, safeOffset)
-      : await listContactSubmissionsByOwner(user.id, safeLimit, safeOffset);
+      ? await listContactSubmissionsByProject(userId, projectId, safeLimit, safeOffset)
+      : await listContactSubmissionsByOwner(userId, safeLimit, safeOffset);
 
     return NextResponse.json({
       ok: true,

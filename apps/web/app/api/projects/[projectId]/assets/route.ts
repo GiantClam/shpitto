@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedRouteUserId } from "@/lib/supabase/route-user";
 import { getR2Client } from "@/lib/r2";
 import { getLatestChatTaskForChat } from "@/lib/agent/chat-task-store";
 import {
@@ -17,16 +17,6 @@ import {
 export const runtime = "nodejs";
 
 const MAX_UPLOAD_BYTES = Math.max(256 * 1024, Number(process.env.PROJECT_ASSET_UPLOAD_MAX_BYTES || 20 * 1024 * 1024));
-
-async function mustGetUserId() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) return undefined;
-  return user.id;
-}
 
 function toCategory(input: string): "all" | ProjectAssetCategory {
   const normalized = String(input || "").trim().toLowerCase();
@@ -49,7 +39,7 @@ export async function GET(
   ctx: { params: Promise<{ projectId: string }> },
 ) {
   try {
-    const userId = await mustGetUserId();
+    const userId = await getAuthenticatedRouteUserId();
     if (!userId) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
     const { projectId: rawProjectId } = await ctx.params;
@@ -125,7 +115,7 @@ export async function POST(
   ctx: { params: Promise<{ projectId: string }> },
 ) {
   try {
-    const userId = await mustGetUserId();
+    const userId = await getAuthenticatedRouteUserId();
     if (!userId) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     if (!getR2Client().isConfigured()) {
       return NextResponse.json({ ok: false, error: "Cloudflare R2 is not configured." }, { status: 503 });
@@ -191,7 +181,7 @@ export async function DELETE(
   ctx: { params: Promise<{ projectId: string }> },
 ) {
   try {
-    const userId = await mustGetUserId();
+    const userId = await getAuthenticatedRouteUserId();
     if (!userId) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
     const { projectId: rawProjectId } = await ctx.params;

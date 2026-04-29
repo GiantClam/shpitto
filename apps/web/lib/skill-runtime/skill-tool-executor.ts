@@ -19,12 +19,20 @@ import { invokeModelWithIdleTimeout } from "./llm-stream.ts";
 import { collectCompletedPhases, getGeneratedFilePaths, getPages, getStaticArtifactFiles } from "./artifacts.ts";
 import { resolveRunProviderRunnerLock, type RunProviderLock } from "./provider-runner.ts";
 import {
+  getWebsiteGenerationSkillBundle,
+  listDocumentContentSkillIds,
+  listWebsiteSeedSkillIds,
+  selectDocumentContentSkillsForIntent,
+  selectWebsiteSeedSkillsForIntent,
+} from "./project-skill-loader.ts";
+import {
   SKILL_TOOL_DEFINITIONS,
   buildSkillToolSystemInstructions,
   handleSkillToolCall,
   type SkillToolCall,
   type SkillToolFile,
 } from "./skill-tool-registry.ts";
+import { renderWebsiteQualityContract } from "./website-quality-contract.ts";
 
 type LlmProvider = "aiberm" | "crazyroute";
 
@@ -251,7 +259,6 @@ function isLikelyValidJs(raw: string): boolean {
   if (!text || containsToolTranscriptNoise(text)) return false;
   try {
     // Syntax check only. Does not execute generated code.
-    // eslint-disable-next-line no-new-func
     new Function(text);
     return true;
   } catch {
@@ -1392,6 +1399,7 @@ function buildToolRoundPrompt(params: {
     "- Every round must include at least one tool call until all required files are emitted.",
     "- Emit_file content must be raw file content (no markdown fences, no tool transcript wrappers).",
     "- Follow the website-generation-workflow skill contract for Canonical Website Prompt adherence, page differentiation, and shared shell/footer rules.",
+    "- Follow the Website Quality Contract: website-only scope, multi-device WYSIWYG preview, strong visual direction, responsive CSS, and no placeholder/template slop.",
     "- Avoid repeated generic section names like only surface/section/cards across every page; use route-specific module classes where useful.",
     params.objective.strictSingleTarget
       ? "- This round must focus on the objective target file only."
@@ -1411,6 +1419,21 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
   const sanitizedRequirementWithReferences = stripLegacyGenerationBlueprintSections(requirementWithReferences);
   const decision = applyStateSitemapToDecision(buildLocalDecisionPlan(params.state), params.state.sitemap);
   const workflow = await loadWorkflowSkillContext(sanitizedRequirementWithReferences);
+  const qualityContract = renderWebsiteQualityContract();
+  const availableSkillIds = await getWebsiteGenerationSkillBundle();
+  const websiteSeedSkillIds = await listWebsiteSeedSkillIds();
+  const documentSkillIds = await listDocumentContentSkillIds();
+  const selectedSeedSkills = await selectWebsiteSeedSkillsForIntent({
+    requirementText: sanitizedRequirementWithReferences,
+    routes: decision.routes,
+    maxSkills: Number(process.env.SKILL_TOOL_MAX_SEED_SKILLS || 2),
+  });
+  const selectedDocumentSkills = await selectDocumentContentSkillsForIntent({
+    requirementText: sanitizedRequirementWithReferences,
+    routes: decision.routes,
+    referencedAssets,
+    maxSkills: Number(process.env.SKILL_TOOL_MAX_DOCUMENT_SKILLS || 3),
+  });
   const stylePreset = normalizeStylePreset(workflow.stylePreset, {});
   const lock = resolveRunProviderRunnerLock({
     provider: (params.state as any)?.workflow_context?.lockedProvider,
@@ -1440,6 +1463,8 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
         "Never emit placeholder tokens like <UNKNOWN>.",
         "Keep files production-ready and internally consistent.",
         "",
+        qualityContract,
+        "",
         buildSkillToolSystemInstructions(),
         "",
         "You may call multiple tools in a round.",
@@ -1455,6 +1480,16 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
           : []),
         `- Locale: ${decision.locale}`,
         `- Preferred design system: ${workflow.hit?.name || workflow.hit?.id || "auto"}`,
+        `- Available website skills: ${availableSkillIds.join(", ")}`,
+        `- Website seed skills discovered from frontmatter: ${websiteSeedSkillIds.join(", ") || "(none)"}`,
+        `- Recommended seed skills for this brief: ${selectedSeedSkills.map((item) => `${item.id} (${item.reason})`).join(", ") || "(none)"}`,
+        `- Document content skills available: ${documentSkillIds.join(", ") || "(none)"}`,
+        `- Recommended document skills for uploaded/source files: ${
+          selectedDocumentSkills.map((item) => `${item.id} (${item.reason})`).join(", ") || "(none)"
+        }`,
+        selectedDocumentSkills.length > 0
+          ? "- Load recommended document skills before interpreting extracted source material from uploaded PDFs, Word files, or slide decks."
+          : "- No document-specific skill is required unless later tool context introduces PDF, DOCX, or PPTX source files.",
         `- Design rationale: ${
           workflow.hit?.selection_candidates?.find((item) => item.id === workflow.hit?.id)?.reason ||
           workflow.hit?.design_desc ||
@@ -1463,6 +1498,8 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
         "",
         "Design excerpt:",
         String(workflow.designMd || "").slice(0, DEFAULT_INITIAL_DESIGN_CHARS) || "(no design.md)",
+        "",
+        qualityContract,
         "",
         "Workflow skill contract:",
         String(workflow.workflowSkill || "").slice(0, DEFAULT_INITIAL_WORKFLOW_SKILL_CHARS) || "(no workflow skill)",

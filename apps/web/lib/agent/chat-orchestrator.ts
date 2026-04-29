@@ -1,4 +1,9 @@
-﻿export type ConversationStage = "drafting" | "previewing" | "deployed" | "deploying";
+import {
+  WEBSITE_DESIGN_DIRECTIONS,
+  renderWebsiteDesignDirectionPrompt,
+} from "../open-design/design-directions";
+
+export type ConversationStage = "drafting" | "previewing" | "deployed" | "deploying";
 
 export type ChatIntent = "clarify" | "generate" | "refine_preview" | "refine_deployed" | "deploy";
 
@@ -732,8 +737,20 @@ export function buildRequirementPatchPlan(text: string, revision = 1): Requireme
 }
 
 export function isDeployIntent(text: string): boolean {
+  const rawText = String(text || "").trim().toLowerCase();
+  if (/^(?:\u90e8\u7f72|\u53d1\u5e03|\u4e0a\u7ebf|\u786e\u8ba4\u90e8\u7f72)$/.test(rawText)) return true;
+  if (rawText.includes("\u90e8\u7f72\u5230 cloudflare")) return true;
+  if (rawText.includes("\u90e8\u7f72\u5230cloudflare")) return true;
+  if (rawText.includes("\u53d1\u5e03\u5230 cloudflare")) return true;
+  if (rawText.includes("\u53d1\u5e03\u5230cloudflare")) return true;
+  if (rawText.includes("\u4e0a\u7ebf\u5230 cloudflare")) return true;
+  if (rawText.includes("\u4e0a\u7ebf\u5230cloudflare")) return true;
   const normalized = toLower(text);
   if (!normalized) return false;
+  if (/^(?:部署|发布|上线|确认部署)$/.test(normalized)) return true;
+  if (normalized.includes("部署到 cloudflare")) return true;
+  if (normalized.includes("发布到 cloudflare")) return true;
+  if (normalized.includes("上线到 cloudflare")) return true;
   if (/^deploy(?:\s+now|\s+site)?$/.test(normalized)) return true;
   if (/^(?:部署|发布|上线|确认部署|部署到cloudflare)$/.test(normalized)) return true;
   if (normalized.includes("deploy to cloudflare")) return true;
@@ -802,6 +819,9 @@ const AUDIENCE_OPTIONS: RequirementSlotOption[] = [
 ];
 
 const DESIGN_THEME_OPTIONS: RequirementSlotOption[] = [
+  ...WEBSITE_DESIGN_DIRECTIONS.map((direction) =>
+    localizedOption(direction.id, direction.zhLabel, direction.label),
+  ),
   localizedOption("professional", "专业可信", "Professional and trustworthy"),
   localizedOption("tech", "科技感", "Technology-driven"),
   localizedOption("luxury", "高端奢华", "Premium"),
@@ -1351,6 +1371,7 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
     existing_domain: "Existing domain or old website",
     uploaded_files: "Uploaded materials",
     industry_research: "Use industry research",
+    ...Object.fromEntries(WEBSITE_DESIGN_DIRECTIONS.map((direction) => [direction.id, direction.label])),
   };
   const slotLabel = (slot: RequirementSlot) => {
     const labels: Record<string, string> = {
@@ -1430,6 +1451,7 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
     .map((slot) => `- ${slotLabel(slot)}`)
     .join("\n");
   const completion = `${slots.filter((slot) => slot.filled).length}/${slots.length}`;
+  const visualDirectionContract = renderWebsiteDesignDirectionPrompt(spec.visualStyle);
 
   return [
     "# Canonical Website Generation Prompt",
@@ -1498,6 +1520,8 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
     "The visual direction must fit the website type and source material, not a preset theme. Keep the interface polished, readable, and practical on desktop, tablet, and mobile.",
     "```",
     "",
+    visualDirectionContract,
+    visualDirectionContract ? "" : "",
     "## 5. Special Component Prompt",
     "```",
     "Include only components supported by confirmed requirements and source material:",

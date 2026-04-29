@@ -1,5 +1,6 @@
-import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+
+const AUTH_CACHE_COOKIE_NAME = 'shpitto_auth_cache'
 
 const PUBLIC_EXACT_PATHS = new Set<string>([
   '/',
@@ -9,6 +10,7 @@ const PUBLIC_EXACT_PATHS = new Set<string>([
   '/auth/callback',
   '/auth/password',
   '/auth/signup',
+  '/auth/session/repair',
   '/auth/email-verification/resend',
   '/auth/email-verification/confirm',
   '/auth/password/forgot',
@@ -39,16 +41,12 @@ export function hasSupabaseAuthCookie(request: Pick<NextRequest, 'cookies'>): bo
   })
 }
 
-function isAuthSessionMissingError(error: unknown): boolean {
-  const anyError = error as { name?: unknown; message?: unknown }
-  return (
-    String(anyError?.name || '') === 'AuthSessionMissingError' ||
-    String(anyError?.message || '').toLowerCase().includes('auth session missing')
-  )
+export function hasAuthCacheCookie(request: Pick<NextRequest, 'cookies'>): boolean {
+  return Boolean(request.cookies.get(AUTH_CACHE_COOKIE_NAME)?.value)
 }
 
 export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: request.headers,
     },
@@ -57,68 +55,21 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl?.pathname || '/'
   const isPublic = isPublicPath(pathname)
 
-  if (isPublic && !hasSupabaseAuthCookie(request)) {
+  if (isPublic) {
     return response
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!supabaseUrl || !supabaseAnonKey) {
-    if (isPublic) return response
-    const loginUrl = request.nextUrl.clone()
-    loginUrl.pathname = '/login'
-    loginUrl.searchParams.set('next', pathname + (request.nextUrl.search || ''))
-    loginUrl.searchParams.set('reason', 'supabase_env_missing')
-    return NextResponse.redirect(loginUrl)
-  }
-
-  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll()
-      },
-      setAll(cookiesToSet: { name: string; value: string; options: any }[]) {
-        cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-        response = NextResponse.next({
-          request: {
-            headers: request.headers,
-          },
-        })
-        cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
-      },
-    },
-  })
-
-  let user: any = null
-  try {
-    const {
-      data: { user: currentUser },
-      error,
-    } = await supabase.auth.getUser()
-    if (error) throw error
-    user = currentUser
-  } catch (error) {
-    if (isPublic) {
-      if (!isAuthSessionMissingError(error)) {
-        console.warn('[supabase-middleware] getUser failed on public path, bypassing:', error)
-      }
-      return response
+  if (!hasAuthCacheCookie(request)) {
+    const nextPath = pathname + (request.nextUrl.search || '')
+    const redirectUrl = request.nextUrl.clone()
+    if (hasSupabaseAuthCookie(request)) {
+      redirectUrl.pathname = '/auth/session/repair'
+      redirectUrl.searchParams.set('next', nextPath)
+      return NextResponse.redirect(redirectUrl)
     }
-    if (hasSupabaseAuthCookie(request) && isAuthSessionMissingError(error)) {
-      return response
-    }
-    const loginUrl = request.nextUrl.clone()
-    loginUrl.pathname = '/login'
-    loginUrl.searchParams.set('next', pathname + (request.nextUrl.search || ''))
-    loginUrl.searchParams.set('reason', 'auth_check_failed')
-    return NextResponse.redirect(loginUrl)
-  }
-
-  if (!isPublic && !user) {
-    const loginUrl = request.nextUrl.clone()
-    loginUrl.pathname = '/login'
-    loginUrl.searchParams.set('next', pathname + (request.nextUrl.search || ''))
-    return NextResponse.redirect(loginUrl)
+    redirectUrl.pathname = '/login'
+    redirectUrl.searchParams.set('next', nextPath)
+    return NextResponse.redirect(redirectUrl)
   }
 
   return response

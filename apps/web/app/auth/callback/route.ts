@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { cookies } from 'next/headers'
+import { setAuthCacheCookie } from '@/lib/supabase/auth-cache'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -9,9 +9,17 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`)
+      const response = NextResponse.redirect(`${origin}${next}`)
+      const user = data.user || data.session?.user
+      if (user?.id) {
+        setAuthCacheCookie(response, {
+          id: user.id,
+          email: user.email || undefined,
+        })
+      }
+      return response
     } else {
       console.error(`[Auth Callback] Exchange Error:`, error)
     }

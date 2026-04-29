@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { POST } from "../../app/auth/password/route";
+import { AUTH_CACHE_COOKIE_NAME } from "./auth-cache";
 
 const mocks = vi.hoisted(() => ({
   createServerClient: vi.fn(),
@@ -36,7 +37,10 @@ describe("password auth route", () => {
               options: { path: "/", httpOnly: true, sameSite: "lax" },
             },
           ]);
-          return { error: null };
+          return {
+            data: { user: { id: "user-1", email: "qa@example.com" } },
+            error: null,
+          };
         }),
       },
     }));
@@ -46,6 +50,7 @@ describe("password auth route", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(response.cookies.get("sb-example-auth-token")?.value).toBe("token");
+    expect(response.cookies.get(AUTH_CACHE_COOKIE_NAME)?.value).toBeTruthy();
     expect(mocks.createServerClient).toHaveBeenCalledWith(
       "https://example.supabase.co",
       "anon-key",
@@ -77,5 +82,6 @@ describe("password auth route", () => {
     expect(response.status).toBe(400);
     expect(body).toEqual({ ok: false, error: "Invalid login credentials" });
     expect(response.cookies.get("sb-example-auth-token")).toBeUndefined();
+    expect(response.cookies.get(AUTH_CACHE_COOKIE_NAME)).toBeUndefined();
   });
 });

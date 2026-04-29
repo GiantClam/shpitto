@@ -73,6 +73,9 @@ type DraftProviderConfig = {
 
 type PromptDraftDisplayLocale = "zh" | "en";
 
+const SOURCE_MATERIAL_APPENDIX_PER_SOURCE_LIMIT = 12_000;
+const SOURCE_MATERIAL_APPENDIX_TOTAL_LIMIT = 24_000;
+
 function normalizeText(value: unknown): string {
   return String(value || "").trim();
 }
@@ -542,16 +545,58 @@ function mergeTemplateWithResearch(
   const resolvedEvidenceBrief =
     evidenceBrief || (knowledgeProfile ? buildWebsiteEvidenceBrief(knowledgeProfile) : undefined);
   const evidenceLines = resolvedEvidenceBrief ? [formatWebsiteEvidenceBrief(resolvedEvidenceBrief), ""] : [];
+  const sourceAppendix = formatSourceMaterialAppendix(knowledgeProfile);
+  const sourceAppendixLines = sourceAppendix ? [sourceAppendix, ""] : [];
   return [
     localDraft,
     "",
     ...evidenceLines,
+    ...sourceAppendixLines,
     "## 7.5 External Research Addendum",
     summary ? `- Search summary: ${summary}` : "- Search summary: none",
     refs ? "- Reference sources:\n" + refs : "- Reference sources: none",
     knowledgeProfile ? "" : "",
     knowledgeProfile ? formatWebsiteKnowledgeProfile(knowledgeProfile) : "",
   ].join("\n");
+}
+
+function formatSourceMaterialAppendix(knowledgeProfile?: WebsiteKnowledgeProfile): string {
+  const sourceEntries = (knowledgeProfile?.sources || [])
+    .filter((source) => source.confidence >= 0.65 && normalizeText(source.snippet))
+    .slice(0, 4);
+  if (sourceEntries.length === 0) return "";
+
+  let remaining = SOURCE_MATERIAL_APPENDIX_TOTAL_LIMIT;
+  const blocks: string[] = [];
+  for (const [index, source] of sourceEntries.entries()) {
+    if (remaining <= 0) break;
+    const location = normalizeText(source.url || source.fileName);
+    const title = normalizeText(source.title || location || `Source ${index + 1}`);
+    const snippet = normalizeText(source.snippet)
+      .replace(/```/g, "'''")
+      .slice(0, Math.min(SOURCE_MATERIAL_APPENDIX_PER_SOURCE_LIMIT, remaining));
+    remaining -= snippet.length;
+    if (!snippet) continue;
+    blocks.push(
+      [
+        `### Source ${index + 1}: [${source.type}] ${title}`,
+        location ? `- Location: ${location}` : "",
+        `- Confidence: ${source.confidence.toFixed(2)}`,
+        "",
+        snippet,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    );
+  }
+  if (blocks.length === 0) return "";
+
+  return [
+    "## 7.25 Source Material Appendix (Internal Generation Input)",
+    "Use these excerpts to preserve source-defined page content, structure, terminology, components, and visual direction. They are internal generation inputs; do not render appendix labels, source notes, or raw analysis markers as visitor-facing copy.",
+    "",
+    ...blocks,
+  ].join("\n\n");
 }
 
 function ensureCanonicalPromptHasEvidenceBrief(draft: string, evidenceBrief?: WebsiteEvidenceBrief): string {
@@ -565,6 +610,22 @@ function ensureCanonicalPromptHasEvidenceBrief(draft: string, evidenceBrief?: We
     return `${normalizedDraft.slice(0, addendumIndex).trimEnd()}\n\n${evidenceSection}\n${normalizedDraft.slice(addendumIndex)}`;
   }
   return `${normalizedDraft}\n\n${evidenceSection}`;
+}
+
+function ensureCanonicalPromptHasSourceMaterialAppendix(
+  draft: string,
+  knowledgeProfile?: WebsiteKnowledgeProfile,
+): string {
+  const normalizedDraft = normalizeText(draft);
+  const appendix = formatSourceMaterialAppendix(knowledgeProfile);
+  if (!appendix || !normalizedDraft || /##\s*7\.25\s+Source Material Appendix\b/i.test(normalizedDraft)) {
+    return normalizedDraft;
+  }
+  const addendumIndex = normalizedDraft.search(/\n##\s*7\.5\s+External Research Addendum/i);
+  if (addendumIndex >= 0) {
+    return `${normalizedDraft.slice(0, addendumIndex).trimEnd()}\n\n${appendix}\n${normalizedDraft.slice(addendumIndex)}`;
+  }
+  return `${normalizedDraft}\n\n${appendix}`;
 }
 
 function looksLikeTemplateDraft(text: string): boolean {
@@ -695,12 +756,12 @@ async function requestPromptDraftWithLlm(params: {
             "- Use user constraints directly, avoid generic wording.",
             "- Use the uploaded/domain/source facts as high-confidence website content. Do not replace source-defined websites with generic product, SaaS, fintech, industrial, or e-commerce assumptions.",
             "- Every planned page needs a concrete page-level prompt: page goal, audience intent, section order, required facts/copy, components, interactions, and visual treatment.",
-            "- For missing information, make limited concrete assumptions and mark them with [Assumption]. Do not invent brand-owned proof points.",
+            "- For missing information, follow the workflow skill's Evidence Brief and visitor-facing copy contracts. Do not invent brand-owned proof points.",
             "- Preserve and refine the 'Prompt Control Manifest' section; do not delete its fixed file list, routes, or page intent contract.",
             "- Preserve the 'Prompt Control Manifest (Machine Readable)' JSON block exactly as the authoritative route/file handoff. Do not translate JSON keys, route values, or file paths.",
             "- Every page must keep a distinct body structure derived from the canonical prompt and source content. Shared header/footer/design language is allowed, repeated inner-page body templates are not.",
             "- Preserve the home hero responsive layout safety requirements so text, stats, CTA, and media cannot overlap.",
-            "- Mention assumptions explicitly.",
+            "- Keep planning assumptions and visitor-facing copy behavior aligned with the workflow skill.",
           ].join("\n"),
         },
       ],
@@ -764,23 +825,26 @@ async function requestPromptDraftWithLlm(params: {
   if (!rawDraft) return undefined;
   const evidenceBrief = params.evidenceBrief || (params.knowledgeProfile ? buildWebsiteEvidenceBrief(params.knowledgeProfile) : undefined);
 
-  const canonicalPrompt = ensureCanonicalPromptHasEvidenceBrief(
-    enrichCanonicalPromptWithControlManifest(
-      looksLikeTemplateDraft(rawDraft)
-        ? rawDraft
-        : mergeTemplateWithResearch(
-            params.templateDraft,
-            params.researchSources,
-            params.researchSummary,
-            params.knowledgeProfile,
-            evidenceBrief,
-          ),
-      params.requirementText,
-      params.workflowContractSummary,
-      params.decisionPlan,
-      params.routeSource,
+  const canonicalPrompt = ensureCanonicalPromptHasSourceMaterialAppendix(
+    ensureCanonicalPromptHasEvidenceBrief(
+      enrichCanonicalPromptWithControlManifest(
+        looksLikeTemplateDraft(rawDraft)
+          ? rawDraft
+          : mergeTemplateWithResearch(
+              params.templateDraft,
+              params.researchSources,
+              params.researchSummary,
+              params.knowledgeProfile,
+              evidenceBrief,
+            ),
+        params.requirementText,
+        params.workflowContractSummary,
+        params.decisionPlan,
+        params.routeSource,
+      ),
+      evidenceBrief,
     ),
-    evidenceBrief,
+    params.knowledgeProfile,
   );
   const mergedSources = normalizeSources([...(parsed?.sources || []), ...params.researchSources]);
   return {

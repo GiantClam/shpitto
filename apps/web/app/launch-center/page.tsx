@@ -2,18 +2,15 @@ import Link from "next/link";
 import { Clock3, FolderKanban, LayoutTemplate, MessageCircle, Sparkles } from "lucide-react";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { getLaunchCenterData } from "@/lib/launch-center/data";
-import { createClient } from "@/lib/supabase/server";
 import { LaunchCenterComposer } from "@/components/launch-center/LaunchCenterComposer";
 import { getLandingCopy } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n-server";
+import { getOptionalServerUser } from "@/lib/supabase/optional-user";
 
 export default async function LaunchCenterPage() {
   const locale = await getServerLocale();
   const copy = getLandingCopy(locale).launch;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getOptionalServerUser();
   const userId = String(user?.id || "").trim();
   const userEmail = String(user?.email || "").trim();
   const draftHref = userEmail ? "/chat" : "/login";

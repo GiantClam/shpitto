@@ -4,7 +4,7 @@ import {
   type ChatSessionSummary,
 } from "../../../../../lib/agent/chat-task-store";
 import { invalidateLaunchCenterRecentProjectsCache } from "@/lib/launch-center/cache";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedRouteUserId } from "@/lib/supabase/route-user";
 
 export const runtime = "nodejs";
 
@@ -29,22 +29,12 @@ function toSessionPayload(session: ChatSessionSummary) {
   };
 }
 
-async function mustGetUserId() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) return undefined;
-  return user.id;
-}
-
 export async function PATCH(
   request: NextRequest,
   ctx: { params: Promise<{ chatId: string }> },
 ) {
   try {
-    const userId = await mustGetUserId();
+    const userId = await getAuthenticatedRouteUserId();
     if (!userId) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }

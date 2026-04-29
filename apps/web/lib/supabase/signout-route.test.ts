@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GET, POST } from "../../app/auth/signout/route";
+import { AUTH_CACHE_COOKIE_NAME } from "./auth-cache";
 
 const mocks = vi.hoisted(() => ({
   createClient: vi.fn(),
@@ -34,5 +35,6 @@ describe("signout route", () => {
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(mocks.createClient).toHaveBeenCalledOnce();
     expect(mocks.signOut).toHaveBeenCalledOnce();
+    expect(response.cookies.get(AUTH_CACHE_COOKIE_NAME)?.value).toBe("");
   });
 });

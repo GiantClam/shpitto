@@ -8,15 +8,12 @@ import { BlogSection } from "@/components/landing/BlogSection";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { getLandingCopy } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n-server";
-import { createClient } from "@/lib/supabase/server";
+import { getOptionalServerUser } from "@/lib/supabase/optional-user";
 
 export default async function LandingPage() {
   const locale = await getServerLocale();
   const copy = getLandingCopy(locale);
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getOptionalServerUser();
   const userEmail = String(user?.email || "").trim();
 
   return (

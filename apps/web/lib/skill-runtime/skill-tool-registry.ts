@@ -1,8 +1,11 @@
 import {
+  getWebsiteGenerationSkillBundle,
   loadProjectSkill,
   resolveProjectSkillAlias,
   WEBSITE_GENERATION_SKILL_BUNDLE,
+  type ProjectSkillDescriptor,
 } from "./project-skill-loader.ts";
+import { renderWebsiteSkillMetadataPrompt } from "./od-skill-metadata.ts";
 import { resolveSerperSearchConfigFromEnv, searchSerper, type WebSearchSource } from "../tools/web-search/serper.ts";
 
 export type SkillToolName = "load_skill" | "emit_file" | "web_search" | "finish";
@@ -64,8 +67,12 @@ export const SKILL_TOOL_DEFINITIONS = [
       properties: {
         skill_id: {
           type: "string",
-          enum: WEBSITE_GENERATION_SKILL_BUNDLE,
-          description: "Skill id to load from apps/web/skills.",
+          description: [
+            "Skill id, SKILL.md frontmatter name, or trigger to load from apps/web/skills.",
+            `Core skills: ${WEBSITE_GENERATION_SKILL_BUNDLE.join(", ")}.`,
+            "Website seed skills are discovered dynamically from od.mode=website frontmatter.",
+            "Document content skills (pdf, docx, pptx) are available when uploaded source files require extraction or interpretation.",
+          ].join(" "),
         },
       },
       required: ["skill_id"],
@@ -164,7 +171,6 @@ function validateAndSanitizeFileContent(filePath: string, rawContent: string): s
   if (normalizedPath.endsWith(".js")) {
     try {
       // Syntax check only. Does not execute generated code.
-      // eslint-disable-next-line no-new-func
       new Function(content);
     } catch (error: any) {
       throw new Error(`emit_file.content is invalid JavaScript (${filePath}): ${String(error?.message || error)}`);
@@ -198,13 +204,13 @@ function assertValidOutputPath(rawPath: string): string {
   return normalized;
 }
 
-function assertAllowedSkill(skillId: string): string {
-  const resolved = resolveProjectSkillAlias(skillId);
-  const allowSet = new Set(WEBSITE_GENERATION_SKILL_BUNDLE.map((id) => resolveProjectSkillAlias(id)));
-  if (!allowSet.has(resolved)) {
-    throw new Error(`skill "${resolved}" is not allowed in website generation bundle.`);
+async function loadAllowedWebsiteSkill(skillId: string): Promise<ProjectSkillDescriptor> {
+  const skill = await loadProjectSkill(skillId);
+  const allowSet = new Set((await getWebsiteGenerationSkillBundle()).map((id) => resolveProjectSkillAlias(id)));
+  if (!allowSet.has(skill.id) && skill.websiteMetadata?.mode !== "website") {
+    throw new Error(`skill "${skill.id}" is not allowed in website generation bundle.`);
   }
-  return resolved;
+  return skill;
 }
 
 export function buildSkillToolSystemInstructions(): string {
@@ -217,7 +223,7 @@ export function buildSkillToolSystemInstructions(): string {
 
   return [
     "You must operate by emitting tool calls.",
-    "Use `web_search` when factual grounding helps before generating final files.",
+    "Use `web_search` when factual grounding helps before generating final files, including publicly researchable gaps identified by the loaded workflow skill or Evidence Brief.",
     "Use `load_skill` before each major generation task (styles, script, and each page batch).",
     "Use `emit_file` to output every final artifact.",
     "When all required files are emitted, call `finish`.",
@@ -238,7 +244,8 @@ export async function handleSkillToolCall(
   if (call.name === "load_skill") {
     const rawSkillId = String(call.args?.skill_id || "").trim();
     if (!rawSkillId) throw new Error("load_skill requires skill_id.");
-    const resolvedSkillId = assertAllowedSkill(rawSkillId);
+    const skill = await loadAllowedWebsiteSkill(rawSkillId);
+    const resolvedSkillId = skill.id;
     const cached = context.loadedSkills.get(resolvedSkillId);
     if (cached) {
       return {
@@ -251,12 +258,16 @@ export async function handleSkillToolCall(
         ].join("\n"),
       };
     }
-    const skill = await loadProjectSkill(resolvedSkillId);
+    const metadataPrompt = skill.websiteMetadata ? renderWebsiteSkillMetadataPrompt(skill.websiteMetadata) : "";
     const payload = [
       `# skill:${resolvedSkillId}`,
       "",
+      metadataPrompt,
+      metadataPrompt ? "" : undefined,
       clipText(skill.content, Number(context.maxSkillChars || DEFAULT_MAX_SKILL_CHARS)),
-    ].join("\n");
+    ]
+      .filter((part): part is string => typeof part === "string")
+      .join("\n");
     context.loadedSkills.set(resolvedSkillId, payload);
     return {
       kind: "skill",
