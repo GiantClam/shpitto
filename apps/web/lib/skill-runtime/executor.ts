@@ -6,7 +6,11 @@ import { ChatOpenAI } from "@langchain/openai";
 import { getR2Client } from "../r2.ts";
 import { buildCloudflareBeaconSnippet, CloudflareClient, type CloudflareWebAnalyticsSite } from "../cloudflare.ts";
 import { Bundler } from "../bundler.ts";
-import { publishCurrentProjectAssets, syncGeneratedProjectAssetsFromSite } from "../project-assets.ts";
+import {
+  publishCurrentProjectAssets,
+  rewriteProjectAssetLogicalUrlsForRelease,
+  syncGeneratedProjectAssetsFromSite,
+} from "../project-assets.ts";
 import type { ChatTaskPendingEdit, ChatTaskResult } from "../agent/chat-task-store.ts";
 import {
   completeChatTask,
@@ -1186,7 +1190,7 @@ function clipTextWithBudget(input: string, maxChars: number): string {
   if (!text) return "";
   if (!Number.isFinite(maxChars) || maxChars <= 0) return text;
   if (text.length <= maxChars) return text;
-  const markerIndex = text.search(/\n##\s+(?:7\.\s+External Research Addendum|Website Knowledge Profile)\b/i);
+  const markerIndex = text.search(/\n##\s+(?:7\.\s+Evidence Brief|7\.5\s+External Research Addendum|Website Knowledge Profile)\b/i);
   if (markerIndex > 0 && markerIndex < text.length - 200) {
     const headBudget = Math.max(1_000, Math.floor(maxChars * 0.42));
     const sourceBudget = Math.max(600, maxChars - headBudget - 96);
@@ -2942,6 +2946,7 @@ async function runDeployOnlyTask(params: {
   let analyticsSite: CloudflareWebAnalyticsSite | null = null;
   let analyticsStatus = "pending";
   let analyticsWarning = "";
+  let publishedAssetVersion = "";
 
   try {
     if (ownerUserId) {
@@ -2975,6 +2980,24 @@ async function runDeployOnlyTask(params: {
       analyticsStatus = "degraded";
       analyticsWarning = String((error as any)?.message || error || "Cloudflare analytics provisioning failed");
       console.warn(`[SkillRuntimeExecutor] analytics provisioning warning: ${analyticsWarning}`);
+    }
+
+    try {
+      if (ownerUserId) {
+        const published = await publishCurrentProjectAssets({
+          ownerUserId,
+          projectId: chatId,
+        });
+        publishedAssetVersion = String(published.publishedVersion || "").trim();
+        deployProject = rewriteProjectAssetLogicalUrlsForRelease(deployProject, {
+          ownerUserId,
+          projectId: chatId,
+        });
+      }
+    } catch (error) {
+      console.warn(
+        `[SkillRuntimeExecutor] publishCurrentProjectAssets failed before deploy: ${String((error as any)?.message || error || "unknown")}`,
+      );
     }
 
     await updateChatTaskProgress(taskId, {
@@ -3074,21 +3097,6 @@ async function runDeployOnlyTask(params: {
           `[SkillRuntimeExecutor] post-deploy D1 sync warning: ${String((error as any)?.message || error || "unknown")}`,
         );
       }
-    }
-
-    let publishedAssetVersion = "";
-    try {
-      if (ownerUserId) {
-        const published = await publishCurrentProjectAssets({
-          ownerUserId,
-          projectId: chatId,
-        });
-        publishedAssetVersion = String(published.publishedVersion || "").trim();
-      }
-    } catch (error) {
-      console.warn(
-        `[SkillRuntimeExecutor] publishCurrentProjectAssets failed after deploy: ${String((error as any)?.message || error || "unknown")}`,
-      );
     }
 
     const deployLocale = detectLocale(

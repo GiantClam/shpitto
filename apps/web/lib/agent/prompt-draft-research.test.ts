@@ -6,6 +6,7 @@ import {
   buildPromptDraftWithResearch,
   buildSerperQueriesForTesting,
   enrichCanonicalPromptWithControlManifestForTesting,
+  mergeTemplateWithKnowledgeProfileForTesting,
 } from "./prompt-draft-research";
 
 describe("prompt draft research", () => {
@@ -61,6 +62,7 @@ describe("prompt draft research", () => {
     expect(result.canonicalPrompt).not.toContain("quote-form");
     expect(result.canonicalPrompt).toContain("Do not add unlisted pages");
     expect(result.canonicalPrompt).toContain("Workflow Skill Contract");
+    expect(result.canonicalPrompt).toContain("Evidence Brief Contract");
     expect(result.canonicalPrompt).toContain("Shared Shell/Footer Contract");
     expect(result.canonicalPrompt).toContain("Do not reduce inner-page footers to a single copyright line");
     expect(result.canonicalPrompt).toContain("overflow-wrap: anywhere");
@@ -185,6 +187,51 @@ describe("prompt draft research", () => {
     expect(contract.routes).not.toContain("/custom-solutions");
   });
 
+  it("adds an evidence brief that preserves source-backed content priorities", () => {
+    const prompt = mergeTemplateWithKnowledgeProfileForTesting("# Canonical Website Generation Prompt", {
+      sourceMode: "domain",
+      domains: ["example.com"],
+      sources: [
+        {
+          type: "domain",
+          title: "Example Research Center",
+          url: "https://example.com/",
+          snippet:
+            "Example Research Center provides pediatric environment assessment services, certification programs, and family guidance resources.",
+          confidence: 0.92,
+        },
+      ],
+      brand: {
+        name: "Example Research Center",
+        description: "A pediatric environment research organization focused on assessment and certification.",
+      },
+      audience: ["Parents evaluating spaces for children aged 0-12"],
+      offerings: ["Pediatric environment assessment services", "Certification programs"],
+      differentiators: ["Research-backed standards"],
+      proofPoints: ["Certification program evidence from the source site"],
+      suggestedPages: [
+        {
+          route: "/assessment",
+          title: "Assessment",
+          purpose: "Explain assessment service scope and route parents to inquiry.",
+          contentInputs: ["Pediatric environment assessment services", "Parents evaluating spaces for children aged 0-12"],
+        },
+      ],
+      contentGaps: ["Client case studies are not available in the source material."],
+      summary: "Example Research Center provides pediatric environment assessment services and certification programs.",
+    });
+
+    expect(prompt).toContain("## 7. Evidence Brief");
+    expect(prompt).toContain("[brand] Brand or organization: Example Research Center");
+    expect(prompt).toContain("[offering] Pediatric environment assessment services");
+    expect(prompt).toContain("Assessment (/assessment)");
+    expect(prompt).toContain("Content inputs: Pediatric environment assessment services");
+    expect(prompt).toContain("Gap: Client case studies are not available in the source material.");
+    expect(prompt).toContain("Example Research Center provides pediatric environment assessment services");
+    expect(prompt).toContain("## 7.5 External Research Addendum");
+    expect(prompt).toContain("## Website Knowledge Profile");
+  });
+
   it("includes confirmed functional requirements in the prompt draft", async () => {
     const requirement = [
       "需求表单已提交：",
@@ -197,7 +244,7 @@ describe("prompt draft research", () => {
           targetAudience: ["enterprise_buyers"],
           designTheme: ["professional"],
           pageStructure: { mode: "multi", pages: ["home", "contact"] },
-          functionalRequirements: ["customer_inquiry_form", "multilingual_switch"],
+          functionalRequirements: ["customer_inquiry_form"],
           primaryGoal: ["lead_generation"],
           language: "zh-CN",
           brandLogo: { mode: "text_mark" },
@@ -215,7 +262,7 @@ describe("prompt draft research", () => {
 
     expect(result.canonicalPrompt).toContain("Functional requirements");
     expect(result.canonicalPrompt).toContain("Customer inquiry form");
-    expect(result.canonicalPrompt).toContain("Language switch");
+    expect(result.canonicalPrompt).not.toContain("Language switch");
   });
 
   it("prioritizes explicit domains over long requirement-form search text", () => {
@@ -226,7 +273,7 @@ describe("prompt draft research", () => {
       "- 目标受众：面向0到12岁孩子的家长",
       "- 设计主题：温暖亲和",
       "- 页面结构：多页网站：Home / 首页、About / 关于、Products / 产品、Cases / 案例、Services / 服务、Blog / 博客、Contact / 联系",
-      "- 功能需求：联系表单、资料下载、多语言切换",
+      "- 功能需求：联系表单、资料下载",
       "",
       "[Requirement Form]",
       "```json",

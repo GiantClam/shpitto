@@ -14,6 +14,10 @@ export type ProjectAssetRecord = {
   size: number;
   updatedAt: number;
   url: string;
+  logicalPath: string;
+  previewUrl: string;
+  releaseUrl: string;
+  cachePolicy: "preview-no-store" | "release-cdn" | "unknown";
   referenceText: string;
   path: string;
   version?: string;
@@ -72,6 +76,13 @@ const ASSET_ROOT =
 const MANIFEST_RELATIVE_PATH = "_meta/manifest.v2.json";
 const PREVIEW_ROOT_FOLDER = "preview";
 const RELEASE_ROOT_FOLDER = "release/current/files";
+const PREVIEW_ASSET_CACHE_CONTROL =
+  String(process.env.PROJECT_ASSET_PREVIEW_CACHE_CONTROL || "no-store, max-age=0").trim() ||
+  "no-store, max-age=0";
+const RELEASE_ASSET_CACHE_CONTROL =
+  String(process.env.PROJECT_ASSET_RELEASE_CACHE_CONTROL || "public, max-age=300, stale-while-revalidate=86400").trim() ||
+  "public, max-age=300, stale-while-revalidate=86400";
+export const PROJECT_ASSET_LOGICAL_ROOT = "/assets/project";
 
 function sanitizeToken(input: string) {
   const normalized = String(input || "").trim().replace(/[^a-zA-Z0-9._-]+/g, "_");
@@ -173,6 +184,123 @@ function getReleaseObjectKey(prefix: string, relativePath: string) {
 
 function buildFileProxyUrl(projectId: string, key: string) {
   return `/api/projects/${encodeURIComponent(projectId)}/assets/file?key=${encodeURIComponent(key)}`;
+}
+
+function buildReleasePublicUrl(prefix: string, relativePath: string) {
+  return getR2Client().toPublicUrl(getReleaseObjectKey(prefix, relativePath)) || "";
+}
+
+export function toProjectAssetLogicalPath(relativePath: string) {
+  return `${PROJECT_ASSET_LOGICAL_ROOT}/${normalizeRelativePath(relativePath)}`;
+}
+
+function buildPreviewCdnPrefix(prefix: string, version: string) {
+  const normalizedVersion = String(version || "").trim();
+  if (!normalizedVersion) return "";
+  return getR2Client().toPublicUrl(`${prefix}${PREVIEW_ROOT_FOLDER}/${normalizedVersion}/files`) || "";
+}
+
+function buildReleaseCdnPrefix(prefix: string) {
+  return getR2Client().toPublicUrl(`${prefix}${RELEASE_ROOT_FOLDER}`) || "";
+}
+
+function buildAssetReferenceText(params: {
+  name: string;
+  path: string;
+  logicalPath: string;
+  version?: string;
+  previewUrl?: string;
+  releaseUrl?: string;
+  previewCdnPrefix?: string;
+  releaseCdnPrefix?: string;
+  cachePolicy?: string;
+  key?: string;
+}) {
+  return [
+    `Asset "${params.name}"`,
+    `path: ${params.path}`,
+    `logical path: ${params.logicalPath}`,
+    params.version ? `(version ${params.version})` : "",
+    params.previewCdnPrefix ? `preview CDN prefix: ${params.previewCdnPrefix}` : "",
+    params.releaseCdnPrefix ? `release CDN prefix: ${params.releaseCdnPrefix}` : "",
+    params.previewUrl ? `preview URL: ${params.previewUrl}` : "",
+    params.releaseUrl ? `release URL: ${params.releaseUrl}` : "",
+    params.cachePolicy ? `cache: ${params.cachePolicy}` : "",
+    params.key ? `key: ${params.key}` : "",
+  ].filter(Boolean).join(" ");
+}
+
+function escapeRegExp(value: string) {
+  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export function rewriteProjectAssetLogicalUrls(content: string, cdnPrefix: string): string {
+  const normalizedPrefix = String(cdnPrefix || "").trim().replace(/\/+$/, "");
+  if (!normalizedPrefix) return String(content || "");
+  const logicalRoot = `${PROJECT_ASSET_LOGICAL_ROOT}/`;
+  const encodedRoot = logicalRoot.replace(/\//g, "\\/");
+  const pattern = new RegExp(`${escapeRegExp(logicalRoot)}([^"'\\s),>]+)`, "g");
+  const encodedPattern = new RegExp(`${escapeRegExp(encodedRoot)}([^"'\\s),>]+)`, "g");
+  return String(content || "")
+    .replace(pattern, (_match, assetPath: string) => `${normalizedPrefix}/${assetPath}`)
+    .replace(encodedPattern, (_match, assetPath: string) => `${normalizedPrefix.replace(/\//g, "\\/")}\\/${assetPath}`);
+}
+
+function rewriteStaticProjectFilesAssetUrls(project: any, cdnPrefix: string): any {
+  const files = project?.staticSite?.files;
+  if (!Array.isArray(files) || !String(cdnPrefix || "").trim()) return project;
+  return {
+    ...project,
+    staticSite: {
+      ...(project.staticSite || {}),
+      files: files.map((file: any) => {
+        if (!file || typeof file.content !== "string") return file;
+        const lowerPath = String(file.path || "").toLowerCase();
+        if (!/\.(html?|css|js|json|xml|md|txt)$/i.test(lowerPath)) return file;
+        const content = rewriteProjectAssetLogicalUrls(file.content, cdnPrefix);
+        return content === file.content ? file : { ...file, content };
+      }),
+    },
+  };
+}
+
+export async function resolveProjectAssetPreviewCdnPrefix(params: {
+  ownerUserId?: string;
+  projectId?: string;
+}): Promise<string> {
+  const ownerUserId = String(params.ownerUserId || "").trim();
+  const projectId = String(params.projectId || "").trim();
+  if (!ownerUserId || !projectId || !getR2Client().isConfigured()) return "";
+  const prefix = getProjectPrefix(ownerUserId, projectId);
+  const manifest = await loadManifest(prefix);
+  if (!manifest?.currentVersion) return "";
+  return buildPreviewCdnPrefix(prefix, manifest.currentVersion);
+}
+
+export function resolveProjectAssetReleaseCdnPrefix(params: {
+  ownerUserId?: string;
+  projectId?: string;
+}): string {
+  const ownerUserId = String(params.ownerUserId || "").trim();
+  const projectId = String(params.projectId || "").trim();
+  if (!ownerUserId || !projectId || !getR2Client().isConfigured()) return "";
+  return buildReleaseCdnPrefix(getProjectPrefix(ownerUserId, projectId));
+}
+
+export async function rewriteProjectAssetLogicalUrlsForPreview(project: any, params: {
+  ownerUserId?: string;
+  projectId?: string;
+}) {
+  const prefix = await resolveProjectAssetPreviewCdnPrefix(params);
+  return rewriteStaticProjectFilesAssetUrls(project, prefix);
+}
+
+export function rewriteProjectAssetLogicalUrlsForRelease(project: any, params: {
+  ownerUserId?: string;
+  projectId?: string;
+}) {
+  const prefix = resolveProjectAssetReleaseCdnPrefix(params);
+  return rewriteStaticProjectFilesAssetUrls(project, prefix);
 }
 
 function parseVersion(value: string): { major: number; minor: number; patch: number } | undefined {
@@ -454,6 +582,7 @@ function toAssetStatus(
 }
 
 function toAssetRecord(params: {
+  prefix: string;
   projectId: string;
   currentVersion: string;
   file: AssetSnapshotEntry;
@@ -461,8 +590,21 @@ function toAssetRecord(params: {
 }): ProjectAssetRecord {
   const file = params.file;
   const status = toAssetStatus(file, params.publishedMap);
-  const url = getR2Client().toPublicUrl(file.key) || buildFileProxyUrl(params.projectId, file.key);
-  const referenceText = `Asset "${file.name}" path: ${file.path} (version ${params.currentVersion}) URL: ${url}`;
+  const previewUrl = getR2Client().toPublicUrl(file.key) || buildFileProxyUrl(params.projectId, file.key);
+  const releaseUrl = buildReleasePublicUrl(params.prefix, file.path);
+  const logicalPath = toProjectAssetLogicalPath(file.path);
+  const referenceText = buildAssetReferenceText({
+    name: file.name,
+    path: file.path,
+    version: params.currentVersion,
+    logicalPath,
+    previewCdnPrefix: buildPreviewCdnPrefix(params.prefix, params.currentVersion),
+    releaseCdnPrefix: buildReleaseCdnPrefix(params.prefix),
+    previewUrl,
+    releaseUrl,
+    cachePolicy: "logical path is rewritten to preview CDN during editing and release CDN during publish",
+    key: file.key,
+  });
   return {
     id: file.id || toAssetId(file.key),
     key: file.key,
@@ -472,7 +614,11 @@ function toAssetRecord(params: {
     contentType: file.contentType,
     size: file.size,
     updatedAt: file.updatedAt,
-    url,
+    url: previewUrl,
+    logicalPath,
+    previewUrl,
+    releaseUrl,
+    cachePolicy: "preview-no-store",
     referenceText,
     path: file.path,
     version: params.currentVersion,
@@ -555,6 +701,7 @@ export async function listProjectAssets(params: {
   return (current.files || [])
     .map((file) =>
       toAssetRecord({
+        prefix: state.prefix,
         projectId: state.projectId,
         currentVersion: current.version,
         file,
@@ -625,7 +772,10 @@ export async function uploadProjectAssets(params: {
       String(input.contentType || guessContentType(targetPath)).trim() || "application/octet-stream";
     const objectKey = getPreviewObjectKey(state.prefix, nextVersion, targetPath);
 
-    await r2.putObject(objectKey, payload, { contentType });
+    await r2.putObject(objectKey, payload, {
+      contentType,
+      cacheControl: PREVIEW_ASSET_CACHE_CONTROL,
+    });
     const entry = buildSnapshotEntry({
       key: objectKey,
       relativePath: targetPath,
@@ -650,6 +800,7 @@ export async function uploadProjectAssets(params: {
   return {
     uploaded: uploadedEntries.map((file) =>
       toAssetRecord({
+        prefix: state.prefix,
         projectId: state.projectId,
         currentVersion: version,
         file,
@@ -785,7 +936,10 @@ export async function syncGeneratedProjectAssetsFromSite(params: {
       const content = await fs.readFile(absolutePath);
       const contentType = guessContentType(relativePath);
       const objectKey = getPreviewObjectKey(state.prefix, nextVersion, relativePath);
-      await r2.putObject(objectKey, content, { contentType });
+      await r2.putObject(objectKey, content, {
+        contentType,
+        cacheControl: PREVIEW_ASSET_CACHE_CONTROL,
+      });
       byPath.set(
         relativePath,
         buildSnapshotEntry({
@@ -849,6 +1003,7 @@ export async function publishCurrentProjectAssets(params: {
       const releaseKey = getReleaseObjectKey(state.prefix, file.path);
       await r2.putObject(releaseKey, Buffer.from(object.body), {
         contentType: file.contentType || object.contentType,
+        cacheControl: RELEASE_ASSET_CACHE_CONTROL,
       });
       copied += 1;
     } catch {
@@ -912,6 +1067,9 @@ export function mapR2ListedObjectToAsset(
     size: Number(object.size || 0),
     updatedAt: object.lastModified ? Date.parse(object.lastModified) : nowMs(),
   });
+  const websiteUrl = getR2Client().toPublicUrl(entry.key) || buildFileProxyUrl(projectId, entry.key);
+  const releaseUrl = buildReleasePublicUrl(prefix, entry.path);
+  const logicalPath = toProjectAssetLogicalPath(entry.path);
   return {
     id: entry.id,
     key: entry.key,
@@ -921,10 +1079,20 @@ export function mapR2ListedObjectToAsset(
     contentType: entry.contentType,
     size: entry.size,
     updatedAt: entry.updatedAt,
-    url: getR2Client().toPublicUrl(entry.key) || buildFileProxyUrl(projectId, entry.key),
-    referenceText: `Asset "${entry.name}" path: ${entry.path} URL: ${
-      getR2Client().toPublicUrl(entry.key) || buildFileProxyUrl(projectId, entry.key)
-    }`,
+    url: websiteUrl,
+    logicalPath,
+    previewUrl: websiteUrl,
+    releaseUrl,
+    cachePolicy: "unknown",
+    referenceText: buildAssetReferenceText({
+      name: entry.name,
+      path: entry.path,
+      logicalPath,
+      releaseCdnPrefix: buildReleaseCdnPrefix(prefix),
+      previewUrl: websiteUrl,
+      releaseUrl,
+      key: entry.key,
+    }),
     path: entry.path,
     status: "new",
     published: false,

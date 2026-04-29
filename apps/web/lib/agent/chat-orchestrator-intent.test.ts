@@ -91,13 +91,12 @@ describe("chat orchestrator intent", () => {
     const slots = buildRequirementSlots(text);
     const functionSlot = slots.find((slot) => slot.key === "functional-requirements");
 
-    expect(spec.functionalRequirements).toEqual(["customer_inquiry_form", "multilingual_switch"]);
+    expect(spec.functionalRequirements).toEqual(["customer_inquiry_form"]);
     expect(functionSlot?.options?.map((option) => option.value)).toEqual([
       "customer_inquiry_form",
       "contact_form",
       "search_filter",
       "downloads",
-      "multilingual_switch",
       "none",
     ]);
   });

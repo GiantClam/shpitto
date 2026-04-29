@@ -1,4 +1,4 @@
-import { ArrowUpRight, Palette, Layout, MousePointer2 } from "lucide-react";
+import { ArrowUpRight, BarChart3, FolderKanban, MousePointer2, PanelsTopLeft } from "lucide-react";
 import { getLandingCopy, type Locale } from "@/lib/i18n";
 
 export function VisualQualitySection({ locale = "en" }: { locale?: Locale }) {
@@ -6,25 +6,25 @@ export function VisualQualitySection({ locale = "en" }: { locale?: Locale }) {
   const features = [
     {
       ...copy.features[0],
-      icon: <Layout className="h-6 w-6 text-[var(--shp-primary)]" />,
+      icon: <PanelsTopLeft className="h-6 w-6 text-[var(--shp-primary)]" />,
       colSpan: "md:col-span-2",
       bg: "from-[color-mix(in_oklab,var(--shp-primary)_24%,transparent)] to-[color-mix(in_oklab,var(--shp-surface)_82%,transparent)]",
     },
     {
       ...copy.features[1],
-      icon: <MousePointer2 className="h-6 w-6 text-[var(--shp-primary)]" />,
+      icon: <FolderKanban className="h-6 w-6 text-[var(--shp-primary)]" />,
       colSpan: "md:col-span-1",
       bg: "from-[color-mix(in_oklab,var(--shp-primary)_20%,transparent)] to-[color-mix(in_oklab,var(--shp-surface)_82%,transparent)]",
     },
     {
       ...copy.features[2],
-      icon: <Palette className="h-6 w-6 text-[var(--shp-warm)]" />,
+      icon: <BarChart3 className="h-6 w-6 text-[var(--shp-warm)]" />,
       colSpan: "md:col-span-1",
       bg: "from-[color-mix(in_oklab,var(--shp-warm)_20%,transparent)] to-[color-mix(in_oklab,var(--shp-surface)_82%,transparent)]",
     },
     {
       ...copy.features[3],
-      icon: <Layout className="h-6 w-6 text-[var(--shp-secondary)]" />,
+      icon: <MousePointer2 className="h-6 w-6 text-[var(--shp-secondary)]" />,
       colSpan: "md:col-span-2",
       bg: "from-[color-mix(in_oklab,var(--shp-secondary)_24%,transparent)] to-[color-mix(in_oklab,var(--shp-surface)_82%,transparent)]",
     },

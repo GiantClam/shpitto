@@ -20,6 +20,16 @@ Preserve existing routes and structure unless the user explicitly requests a str
 - Convert deletion requests into real removals of matching nodes, text, and related hooks.
 - Keep changes minimal and local to the requested scope.
 
+### 2.5) Referenced Asset Handling
+- If the user request contains a `[Referenced Assets]` block, treat each listed asset as an external project asset with an authoritative `logical path`.
+- When any referenced asset is used in the website, use the exact provided `logical path` in `src`, `href`, `srcset`, `poster`, CSS `url(...)`, JavaScript string references, JSON metadata, or downloadable links.
+- Do not shorten referenced assets to relative paths such as `uploads/...`, `assets/...`, `images/...`, `./uploads/...`, or directory-only values like `uploads/`.
+- Do not use `preview URL`, `release URL`, `preview CDN prefix`, `release CDN prefix`, or `key` directly in generated website code. Those values are runtime resolver metadata only.
+- Do not manually construct or edit `preview/{version}` or `release/current` URL segments. The platform rewrites logical paths to stage-specific CDN URLs.
+- Apply this rule to all file types and asset categories, not only logos, icons, or images.
+- If multiple assets are listed, use the logical path that belongs to the matching asset line by name/path and leave unrelated references unchanged.
+- Before returning edits, inspect every changed file and verify that newly introduced references to listed assets use the `logical path`, not a local workspace path or a CDN URL.
+
 ### 3) Produce Strict JSON Output
 Return JSON only using this schema:
 
@@ -41,6 +51,7 @@ Return JSON only using this schema:
 - Return full file content in each `edits[].content` field.
 - Include only files that actually changed.
 - Keep HTML, CSS, and JS valid and runnable.
+- Preserve exact referenced asset logical paths when editing asset references.
 - Never wrap JSON in markdown fences.
 
 ## Change Quality Rules
@@ -56,5 +67,6 @@ Return JSON only using this schema:
 
 ## Completion Criteria
 - Preview should show the requested change clearly.
+- Referenced assets should use their provided logical paths so the platform can rewrite them to the correct CDN prefix.
 - Edited files should be minimal and directly explainable by the request.
 - The summary should match the actual edits.

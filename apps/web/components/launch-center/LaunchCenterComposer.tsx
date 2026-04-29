@@ -4,6 +4,7 @@ import { FormEvent, type ChangeEvent, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUpRight, Loader2, MessageCircle, Paperclip, Upload, X } from "lucide-react";
 import { getLandingCopy, type Locale } from "@/lib/i18n";
+import { storeLaunchCenterChatHandoff } from "@/lib/launch-center/chat-handoff";
 
 type SessionPayload = {
   id: string;
@@ -16,28 +17,8 @@ type SessionsResponse = {
   error?: string;
 };
 
-type ProjectAsset = {
-  id: string;
-  key: string;
-  name: string;
-  source: "upload" | "chat_upload" | "generated";
-  category: "image" | "code" | "document" | "other";
-  contentType: string;
-  size: number;
-  updatedAt: number;
-  url: string;
-  referenceText: string;
-};
-
-type AssetUploadResponse = {
-  ok: boolean;
-  uploaded?: ProjectAsset[];
-  error?: string;
-};
-
 type LaunchCenterComposerProps = {
   isAuthenticated: boolean;
-  userId?: string;
   locale?: Locale;
 };
 
@@ -48,8 +29,6 @@ const COMPOSER_FILE_COPY: Record<
     uploadLocal: string;
     selectedFiles: string;
     removeFile: string;
-    uploadFailed: string;
-    startFailed: string;
   }
 > = {
   en: {
@@ -57,16 +36,12 @@ const COMPOSER_FILE_COPY: Record<
     uploadLocal: "Upload local files",
     selectedFiles: "Selected files",
     removeFile: "Remove file",
-    uploadFailed: "File upload failed",
-    startFailed: "Failed to start generation.",
   },
   zh: {
     attach: "\u6dfb\u52a0\u6587\u4ef6",
     uploadLocal: "\u4e0a\u4f20\u672c\u5730\u6587\u4ef6",
     selectedFiles: "\u5df2\u9009\u6587\u4ef6",
     removeFile: "\u79fb\u9664\u6587\u4ef6",
-    uploadFailed: "\u6587\u4ef6\u4e0a\u4f20\u5931\u8d25",
-    startFailed: "\u542f\u52a8\u751f\u6210\u5931\u8d25\u3002",
   },
 };
 
@@ -89,26 +64,7 @@ function formatFileSize(size: number): string {
   return `${(size / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function createUserMessage(prompt: string) {
-  return {
-    id: crypto.randomUUID(),
-    role: "user" as const,
-    parts: [{ type: "text" as const, text: prompt }],
-  };
-}
-
-function buildReferencedAssetsBlock(assets: ProjectAsset[]): string {
-  const lines = assets
-    .map((asset) => {
-      const base = String(asset.referenceText || `Asset "${asset.name}"`).trim();
-      return `- ${base}${base.includes(" key: ") ? "" : ` key: ${asset.key}`}`;
-    })
-    .filter(Boolean);
-  if (lines.length === 0) return "";
-  return ["", "[Referenced Assets]", ...lines].join("\n");
-}
-
-export function LaunchCenterComposer({ isAuthenticated, userId = "", locale = "en" }: LaunchCenterComposerProps) {
+export function LaunchCenterComposer({ isAuthenticated, locale = "en" }: LaunchCenterComposerProps) {
   const copy = getLandingCopy(locale).launch.composer;
   const fileCopy = COMPOSER_FILE_COPY[locale] || COMPOSER_FILE_COPY.en;
   const router = useRouter();
@@ -138,24 +94,6 @@ export function LaunchCenterComposer({ isAuthenticated, userId = "", locale = "e
     event.target.value = "";
   }
 
-  async function uploadPendingFiles(projectId: string, files: File[]): Promise<ProjectAsset[]> {
-    if (files.length === 0) return [];
-    const form = new FormData();
-    form.append("source", "chat_upload");
-    for (const file of files) {
-      form.append("files", file, file.name);
-    }
-    const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/assets`, {
-      method: "POST",
-      body: form,
-    });
-    const data = (await res.json()) as AssetUploadResponse;
-    if (!res.ok || !data.ok || !Array.isArray(data.uploaded)) {
-      throw new Error(data.error || fileCopy.uploadFailed);
-    }
-    return data.uploaded;
-  }
-
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     const finalPrompt = String(prompt || "").trim();
@@ -178,26 +116,12 @@ export function LaunchCenterComposer({ isAuthenticated, userId = "", locale = "e
       if (!res.ok || !data.ok || !data.session?.id) {
         throw new Error(data.error || copy.createFailed);
       }
-      const uploadedAssets = await uploadPendingFiles(data.session.id, pendingFiles);
-      const assetReferenceBlock = buildReferencedAssetsBlock(uploadedAssets);
-      const runtimePrompt = `${finalPrompt}${assetReferenceBlock}`.trim();
-      const chatRes = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: data.session.id,
-          user_id: userId || undefined,
-          async: true,
-          skill_id: "website-generation-workflow",
-          messages: [createUserMessage(runtimePrompt)],
-        }),
+      storeLaunchCenterChatHandoff(data.session.id, {
+        prompt: finalPrompt,
+        files: pendingFiles,
       });
-      await chatRes.text();
-      if (!chatRes.ok && chatRes.status !== 202 && chatRes.status !== 200) {
-        throw new Error(`${fileCopy.startFailed} (${chatRes.status})`);
-      }
       setPendingFiles([]);
-      router.push(`/projects/${encodeURIComponent(data.session.id)}/chat`);
+      router.push(`/projects/${encodeURIComponent(data.session.id)}/chat?launch=1`);
     } catch (err: any) {
       setLoading(false);
       setError(String(err?.message || err || copy.createFailed));

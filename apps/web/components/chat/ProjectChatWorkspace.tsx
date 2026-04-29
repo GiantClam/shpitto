@@ -30,6 +30,7 @@ import {
   MessageSquare,
   Paperclip,
   Plus,
+  Maximize2,
   RefreshCw,
   Search,
   SendHorizontal,
@@ -40,6 +41,7 @@ import {
   X,
 } from "lucide-react";
 import { LOCALE_COOKIE_NAME, normalizeLocale } from "@/lib/i18n";
+import { takeLaunchCenterChatHandoff } from "@/lib/launch-center/chat-handoff";
 import { createClient } from "@/lib/supabase/client";
 
 type TaskStatus = "queued" | "running" | "succeeded" | "failed";
@@ -380,7 +382,6 @@ const OPTION_I18N_FALLBACKS: Record<string, Record<RequirementFormLocale, string
   contact_form: { zh: "联系表单", en: "Contact form" },
   search_filter: { zh: "搜索/筛选", en: "Search and filters" },
   downloads: { zh: "资料下载", en: "Downloads" },
-  multilingual_switch: { zh: "多语言切换", en: "Language switch" },
   none: { zh: "无需特殊功能，仅展示内容", en: "No special functionality, content display only" },
   lead_generation: { zh: "获取咨询", en: "Lead generation" },
   product_showcase: { zh: "展示产品", en: "Product showcase" },
@@ -849,7 +850,6 @@ function optionLabel(options: RequirementSlotOption[], value?: string): string {
     contact_form: "Contact form",
     search_filter: "Search and filters",
     downloads: "Downloads",
-    multilingual_switch: "Language switch",
     none: "No special functionality, content display only",
     lead_generation: "Lead generation",
     product_showcase: "Product showcase",
@@ -1400,7 +1400,9 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
   const promptRef = useRef<HTMLTextAreaElement | null>(null);
   const autoSubmittedInitialPrompt = useRef(false);
   const appliedInitialDraft = useRef(false);
+  const appliedLaunchHandoff = useRef(false);
   const attachmentInputRef = useRef<HTMLInputElement | null>(null);
+  const previewAutoRefreshSignatureRef = useRef("");
 
   const chatId = projectId;
   const workspaceGridStyle = useMemo(
@@ -1755,6 +1757,27 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
     return appendPreviewRefreshParam(previewUrl, previewRefreshNonce);
   }, [previewUrl, previewRefreshNonce]);
 
+  useEffect(() => {
+    if (!previewUrl || !task?.id) {
+      previewAutoRefreshSignatureRef.current = "";
+      return;
+    }
+
+    const previewSignature = [
+      task.id,
+      task.status,
+      task.updatedAt || "",
+      generatedFiles.join("|"),
+    ].join("::");
+    const previousSignature = previewAutoRefreshSignatureRef.current;
+    previewAutoRefreshSignatureRef.current = previewSignature;
+
+    if (!previousSignature || previousSignature === previewSignature) return;
+    if (task.status === "succeeded" || hasGeneratedHtml) {
+      setPreviewRefreshNonce(Date.now());
+    }
+  }, [generatedFiles, hasGeneratedHtml, previewUrl, task?.id, task?.status, task?.updatedAt]);
+
   const stageText = useMemo(() => {
     return task?.result?.progress?.stageMessage || toReadableStage(task?.result?.progress?.stage, conversationLocale) || task?.status || "-";
   }, [conversationLocale, task]);
@@ -1843,7 +1866,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
   }
 
   const submitPromptText = useCallback(
-    async (nextText: string) => {
+    async (nextText: string, assetRefsOverride?: ProjectAsset[]) => {
       const finalPrompt = String(nextText || "").trim();
       if (!chatId.trim()) return;
       const submitLocale = detectMessageLocale(finalPrompt);
@@ -1859,7 +1882,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
       setAssetPickerOpen(false);
       setPrompt("");
       clearPollTimer();
-      const currentAssetRefs = [...pendingAssetRefs];
+      const currentAssetRefs = assetRefsOverride ? [...assetRefsOverride] : [...pendingAssetRefs];
       const assetReferenceBlock =
         currentAssetRefs.length > 0
           ? [
@@ -2015,7 +2038,7 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
     setAssetPickerOpen((prev) => !prev);
   }
 
-  async function uploadAssetsFromChat(files: FileList | File[], addToPending = true): Promise<ProjectAsset[]> {
+  const uploadAssetsFromChat = useCallback(async (files: FileList | File[], addToPending = true): Promise<ProjectAsset[]> => {
     const selected = Array.from(files || []).filter(Boolean);
     if (!selected.length) return [];
     if (addToPending) setAssetPickerOpen(true);
@@ -2061,7 +2084,29 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
     } finally {
       if (attachmentInputRef.current) attachmentInputRef.current.value = "";
     }
-  }
+  }, [appendMessage, chatId, conversationLocale]);
+
+  useEffect(() => {
+    if (!historyReady || appliedLaunchHandoff.current) return;
+    const handoff = takeLaunchCenterChatHandoff(projectId);
+    if (!handoff?.prompt) return;
+
+    appliedLaunchHandoff.current = true;
+    setPrompt(handoff.prompt);
+    void (async () => {
+      try {
+        const uploadedAssets = handoff.files.length > 0
+          ? await uploadAssetsFromChat(handoff.files, false)
+          : [];
+        await submitPromptText(handoff.prompt, uploadedAssets);
+      } catch (err: any) {
+        setLoadingTask(false);
+        setError(String(err?.message || err || "Failed to start generation."));
+      } finally {
+        router.replace(`/projects/${encodeURIComponent(projectId)}/chat`);
+      }
+    })();
+  }, [historyReady, projectId, router, submitPromptText, uploadAssetsFromChat]);
 
   const navItems: Array<{
     label: string;
@@ -2544,9 +2589,12 @@ export function ProjectChatWorkspace({ projectId }: { projectId: string }) {
                     href={previewUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] px-2 py-1 text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)]"
+                    className="inline-flex items-center gap-1 rounded-md border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] px-2 py-1 text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)]"
+                    title="Open preview in fullscreen"
+                    aria-label="Open preview in fullscreen"
                   >
-                    Open
+                    <Maximize2 className="h-3.5 w-3.5" />
+                    <span className="sr-only">Fullscreen</span>
                   </a>
                 ) : null}
               </div>

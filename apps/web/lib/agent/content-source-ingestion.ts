@@ -41,6 +41,31 @@ export type WebsiteKnowledgeProfile = {
   summary: string;
 };
 
+export type WebsiteEvidenceBrief = {
+  sourceMode: WebsiteKnowledgeProfile["sourceMode"];
+  priorityFacts: Array<{
+    category: "brand" | "audience" | "offering" | "differentiator" | "proof";
+    fact: string;
+  }>;
+  sourcePriorities: Array<{
+    rank: number;
+    type: WebsiteKnowledgeSource["type"];
+    title: string;
+    location?: string;
+    confidence: number;
+    snippet?: string;
+  }>;
+  pageBriefs: Array<{
+    route: string;
+    title: string;
+    purpose: string;
+    contentInputs: string[];
+    sourceHints: string[];
+  }>;
+  contentGaps: string[];
+  assumptions: string[];
+};
+
 type AssetReference = {
   key?: string;
   fileName?: string;
@@ -645,6 +670,21 @@ function extractBulletCandidates(text: string, patterns: RegExp[], limit: number
   return Array.from(new Set(hits)).slice(0, limit);
 }
 
+function uniqueBriefItems(values: string[], limit: number): string[] {
+  const seen = new Set<string>();
+  const output: string[] = [];
+  for (const value of values) {
+    const normalized = normalizeText(value);
+    if (!normalized) continue;
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    output.push(normalized);
+    if (output.length >= limit) break;
+  }
+  return output;
+}
+
 function inferSourceMode(domains: string[], uploadedCount: number, requirementText: string): WebsiteKnowledgeProfile["sourceMode"] {
   const newSite = /new website|new site|新建站|没有资料|暂无内容|from scratch/i.test(requirementText);
   if (domains.length > 0 && uploadedCount > 0) return "mixed";
@@ -724,6 +764,75 @@ function buildKnowledgeProfile(params: {
   };
 }
 
+export function buildWebsiteEvidenceBrief(profile: WebsiteKnowledgeProfile): WebsiteEvidenceBrief {
+  const priorityFacts: WebsiteEvidenceBrief["priorityFacts"] = [];
+  const addFacts = (category: WebsiteEvidenceBrief["priorityFacts"][number]["category"], facts: string[]) => {
+    for (const fact of uniqueBriefItems(facts, 8)) {
+      priorityFacts.push({ category, fact });
+    }
+  };
+
+  addFacts("brand", [
+    profile.brand.name ? `Brand or organization: ${profile.brand.name}` : "",
+    profile.brand.description ? `Source description: ${profile.brand.description}` : "",
+  ]);
+  addFacts("audience", profile.audience);
+  addFacts("offering", profile.offerings);
+  addFacts("differentiator", profile.differentiators);
+  addFacts("proof", profile.proofPoints);
+
+  const sourcePriorities = [...profile.sources]
+    .sort((a, b) => b.confidence - a.confidence)
+    .slice(0, 10)
+    .map((source, index) => ({
+      rank: index + 1,
+      type: source.type,
+      title: normalizeText(source.title || source.url || source.fileName || `Source ${index + 1}`).slice(0, 160),
+      location: normalizeText(source.url || source.fileName) || undefined,
+      confidence: source.confidence,
+      snippet: normalizeText(source.snippet).slice(0, 520) || undefined,
+    }));
+  const sourceHints = sourcePriorities
+    .slice(0, 4)
+    .map((source) => source.title)
+    .filter(Boolean);
+
+  const pageBriefs = profile.suggestedPages.slice(0, 16).map((page) => ({
+    route: page.route,
+    title: page.title,
+    purpose: page.purpose,
+    contentInputs: uniqueBriefItems(page.contentInputs, 8),
+    sourceHints,
+  }));
+
+  const assumptions = uniqueBriefItems(
+    [
+      profile.sources.length === 0
+        ? "Business details not backed by external or uploaded sources must be marked as assumptions."
+        : "",
+      profile.offerings.length === 0
+        ? "Offering/service details are thin; use only user-provided context and mark any inferred items as assumptions."
+        : "",
+      profile.proofPoints.length === 0
+        ? "Proof points are thin; do not invent metrics, awards, client names, certifications, or testimonials."
+        : "",
+      profile.sourceMode === "new_site"
+        ? "For a new site, use industry patterns only for structure and UX, not as brand-owned facts."
+        : "",
+    ],
+    6,
+  );
+
+  return {
+    sourceMode: profile.sourceMode,
+    priorityFacts: priorityFacts.slice(0, 24),
+    sourcePriorities,
+    pageBriefs,
+    contentGaps: profile.contentGaps.slice(0, 8),
+    assumptions,
+  };
+}
+
 export async function buildWebsiteKnowledgeProfile(params: {
   requirementText: string;
   searchConfig?: SerperSearchConfig;
@@ -793,6 +902,52 @@ export async function buildWebsiteKnowledgeProfile(params: {
   });
 }
 
+export function formatWebsiteEvidenceBrief(brief: WebsiteEvidenceBrief): string {
+  const priorityLines = brief.priorityFacts.length
+    ? brief.priorityFacts.map((item) => `- [${item.category}] ${item.fact}`)
+    : ["- No source-backed priority facts were extracted; the prompt must keep business claims conservative."];
+  const sourceLines = brief.sourcePriorities.length
+    ? brief.sourcePriorities.flatMap((source) =>
+        [
+          `${source.rank}. [${source.type}] ${source.title}${source.location ? ` | ${source.location}` : ""} | confidence ${source.confidence.toFixed(2)}`,
+          source.snippet ? `   - Evidence: ${source.snippet}` : "",
+        ].filter(Boolean),
+      )
+    : ["- No readable source priorities available."];
+  const pageLines = brief.pageBriefs.length
+    ? brief.pageBriefs.flatMap((page, index) => [
+        `${index + 1}. ${page.title} (${page.route})`,
+        `   - Purpose: ${page.purpose}`,
+        `   - Content inputs: ${page.contentInputs.length ? page.contentInputs.join(" | ") : "derive conservatively from priority facts"}`,
+        `   - Source hints: ${page.sourceHints.length ? page.sourceHints.join(" | ") : "none"}`,
+      ])
+    : ["- No page briefs available."];
+  const gapLines = brief.contentGaps.length
+    ? brief.contentGaps.map((gap) => `- Gap: ${gap}`)
+    : ["- Gap: none"];
+  const assumptionLines = brief.assumptions.length
+    ? brief.assumptions.map((assumption) => `- Assumption rule: ${assumption}`)
+    : ["- Assumption rule: none"];
+
+  return [
+    "## 7. Evidence Brief",
+    `- Source mode: ${brief.sourceMode}`,
+    "",
+    "### Priority Facts",
+    ...priorityLines,
+    "",
+    "### Source Priorities",
+    ...sourceLines,
+    "",
+    "### Page Briefs",
+    ...pageLines,
+    "",
+    "### Gaps And Assumptions",
+    ...gapLines,
+    ...assumptionLines,
+  ].join("\n");
+}
+
 export function formatWebsiteKnowledgeProfile(profile: WebsiteKnowledgeProfile): string {
   const sourceLines = profile.sources
     .slice(0, 8)
@@ -821,8 +976,10 @@ export function formatWebsiteKnowledgeProfile(profile: WebsiteKnowledgeProfile):
 }
 
 export const __contentSourceIngestionForTesting = {
+  buildWebsiteEvidenceBrief,
   buildKnowledgeProfile,
   extractDocumentSuggestedPages,
   extractTextFromUploadedBytes,
+  formatWebsiteEvidenceBrief,
   shouldSkipGenericSearchForUploadedMaterials,
 };

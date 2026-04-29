@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getChatTask } from "../../../../../../../lib/agent/chat-task-store";
+import {
+  resolveProjectAssetPreviewCdnPrefix,
+  rewriteProjectAssetLogicalUrls,
+} from "../../../../../../../lib/project-assets";
 
 export const runtime = "nodejs";
 
@@ -17,7 +21,6 @@ type VirtualPreviewFile = {
 };
 
 declare global {
-  // eslint-disable-next-line no-var
   var __shpittoPreviewSiteDirCache: Map<string, PreviewSiteDirCacheEntry> | undefined;
 }
 
@@ -76,9 +79,10 @@ function detectMime(filePath: string): string {
   return "application/octet-stream";
 }
 
-function rewriteHtmlForPreview(html: string, previewBase: string): string {
+function rewriteHtmlForPreview(html: string, previewBase: string, assetCdnPrefix = ""): string {
+  const withAssetUrls = rewriteProjectAssetLogicalUrls(html, assetCdnPrefix);
   // Rewrite root-absolute href/src paths to task preview base to keep links and assets working.
-  const attrRewritten = html.replace(
+  const attrRewritten = withAssetUrls.replace(
     /\b(href|src)=["']\/(?!\/|api\/|_next\/)([^"']*)["']/gi,
     (_m, attr: string, target: string) => `${attr}="${previewBase}/${target}"`,
   );
@@ -89,6 +93,12 @@ function rewriteHtmlForPreview(html: string, previewBase: string): string {
   );
 
   return sharedAssetRewritten.replace(/\bhref=["']\/["']/gi, `href="${previewBase}/"`);
+}
+
+function shouldRewriteAssetLogicalUrls(mime: string) {
+  return /^(text\/html|text\/css|application\/javascript|text\/javascript|application\/json|text\/plain|text\/markdown)/i.test(
+    String(mime || ""),
+  );
 }
 
 function normalizePreviewFilePath(value: string): string {
@@ -346,6 +356,10 @@ export async function GET(
   } catch (error) {
     taskLookupError = error;
   }
+  const assetCdnPrefix = await resolveProjectAssetPreviewCdnPrefix({
+    ownerUserId: task?.ownerUserId,
+    projectId: task?.chatId,
+  }).catch(() => "");
 
   let siteDir = await resolveSiteDirFromTask(task);
   if (siteDir) {
@@ -360,7 +374,7 @@ export async function GET(
       const mime = virtualFile.type || detectMime(virtualFile.path);
       if (mime.startsWith("text/html")) {
         const previewBase = `/api/chat/tasks/${encodeURIComponent(taskId)}/preview`;
-        return new NextResponse(rewriteHtmlForPreview(virtualFile.content, previewBase), {
+        return new NextResponse(rewriteHtmlForPreview(virtualFile.content, previewBase, assetCdnPrefix), {
           status: 200,
           headers: {
             "Content-Type": mime,
@@ -369,7 +383,10 @@ export async function GET(
         });
       }
 
-      return new NextResponse(virtualFile.content, {
+      const body = shouldRewriteAssetLogicalUrls(mime)
+        ? rewriteProjectAssetLogicalUrls(virtualFile.content, assetCdnPrefix)
+        : virtualFile.content;
+      return new NextResponse(body, {
         status: 200,
         headers: {
           "Content-Type": mime,
@@ -450,8 +467,18 @@ export async function GET(
   const mime = detectMime(filePath);
   if (mime.startsWith("text/html")) {
     const previewBase = `/api/chat/tasks/${encodeURIComponent(taskId)}/preview`;
-    const rewritten = rewriteHtmlForPreview(content.toString("utf-8"), previewBase);
+    const rewritten = rewriteHtmlForPreview(content.toString("utf-8"), previewBase, assetCdnPrefix);
     return new NextResponse(rewritten, {
+      status: 200,
+      headers: {
+        "Content-Type": mime,
+        "Cache-Control": "no-store, max-age=0",
+      },
+    });
+  }
+
+  if (shouldRewriteAssetLogicalUrls(mime)) {
+    return new NextResponse(rewriteProjectAssetLogicalUrls(content.toString("utf-8"), assetCdnPrefix), {
       status: 200,
       headers: {
         "Content-Type": mime,

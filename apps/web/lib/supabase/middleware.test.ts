@@ -45,6 +45,7 @@ describe('supabase middleware', () => {
   it('allows public auth and blog entry routes without an existing session cookie', async () => {
     const authResponse = await updateSession(new NextRequest('http://localhost/auth/password'))
     const signupResponse = await updateSession(new NextRequest('http://localhost/auth/signup'))
+    const registerResponse = await updateSession(new NextRequest('http://localhost/register'))
     const forgotResponse = await updateSession(new NextRequest('http://localhost/auth/password/forgot'))
     const resetPageResponse = await updateSession(new NextRequest('http://localhost/reset-password'))
     const verifyEmailResponse = await updateSession(new NextRequest('http://localhost/verify-email'))
@@ -53,6 +54,7 @@ describe('supabase middleware', () => {
 
     expect(authResponse.status).toBe(200)
     expect(signupResponse.status).toBe(200)
+    expect(registerResponse.status).toBe(200)
     expect(forgotResponse.status).toBe(200)
     expect(resetPageResponse.status).toBe(200)
     expect(verifyEmailResponse.status).toBe(200)

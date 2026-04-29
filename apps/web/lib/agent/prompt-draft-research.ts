@@ -6,10 +6,13 @@ import {
   type RequirementSlot,
 } from "./chat-orchestrator";
 import {
+  buildWebsiteEvidenceBrief,
   buildWebsiteKnowledgeProfile,
   buildWebsiteSearchQueries,
+  formatWebsiteEvidenceBrief,
   formatWebsiteKnowledgeProfile,
   resolveWebSearchQueryBudget,
+  type WebsiteEvidenceBrief,
   type WebsiteKnowledgeProfile,
 } from "./content-source-ingestion.ts";
 import {
@@ -37,6 +40,7 @@ export type PromptDraftBuildResult = {
   researchSummary?: string;
   sources: PromptDraftSource[];
   promptControlManifest: PromptControlManifest;
+  evidenceBrief?: WebsiteEvidenceBrief;
   knowledgeProfile?: WebsiteKnowledgeProfile;
   model?: string;
   provider?: ProviderName;
@@ -169,6 +173,7 @@ async function loadWebsiteWorkflowContractSummary(): Promise<string> {
     return [
       extractMarkdownSection(content, "### Phase 0.25: Canonical Prompt Confirmation Gate (Mandatory)"),
       extractMarkdownSection(content, "### Phase 0.25: Prompt Draft Confirmation Gate (Mandatory)"),
+      extractMarkdownSection(content, "#### Evidence Brief Contract (Mandatory)"),
       extractMarkdownSection(content, "#### Page Differentiation Contract (Mandatory)"),
       extractMarkdownSection(content, "#### Shared Shell/Footer Contract (Mandatory)"),
     ]
@@ -480,6 +485,20 @@ export function enrichCanonicalPromptWithControlManifestForTesting(draft: string
   return enrichCanonicalPromptWithControlManifest(draft, requirementText);
 }
 
+export function mergeTemplateWithKnowledgeProfileForTesting(
+  localDraft: string,
+  knowledgeProfile: WebsiteKnowledgeProfile,
+): string {
+  const evidenceBrief = buildWebsiteEvidenceBrief(knowledgeProfile);
+  return mergeTemplateWithResearch(
+    localDraft,
+    mapKnowledgeSourcesToPromptSources(knowledgeProfile),
+    knowledgeProfile.summary,
+    knowledgeProfile,
+    evidenceBrief,
+  );
+}
+
 async function collectSerperResearch(params: {
   requirementText: string;
   slots: RequirementSlot[];
@@ -513,21 +532,39 @@ function mergeTemplateWithResearch(
   sources: PromptDraftSource[],
   summary: string,
   knowledgeProfile?: WebsiteKnowledgeProfile,
+  evidenceBrief?: WebsiteEvidenceBrief,
 ): string {
-  if (sources.length === 0 && !summary && !knowledgeProfile) return localDraft;
+  if (sources.length === 0 && !summary && !knowledgeProfile && !evidenceBrief) return localDraft;
   const refs = sources
     .slice(0, 6)
     .map((source, idx) => `${idx + 1}. ${source.title} - ${source.url}`)
     .join("\n");
+  const resolvedEvidenceBrief =
+    evidenceBrief || (knowledgeProfile ? buildWebsiteEvidenceBrief(knowledgeProfile) : undefined);
+  const evidenceLines = resolvedEvidenceBrief ? [formatWebsiteEvidenceBrief(resolvedEvidenceBrief), ""] : [];
   return [
     localDraft,
     "",
-    "## 7. External Research Addendum",
+    ...evidenceLines,
+    "## 7.5 External Research Addendum",
     summary ? `- Search summary: ${summary}` : "- Search summary: none",
     refs ? "- Reference sources:\n" + refs : "- Reference sources: none",
     knowledgeProfile ? "" : "",
     knowledgeProfile ? formatWebsiteKnowledgeProfile(knowledgeProfile) : "",
   ].join("\n");
+}
+
+function ensureCanonicalPromptHasEvidenceBrief(draft: string, evidenceBrief?: WebsiteEvidenceBrief): string {
+  const normalizedDraft = normalizeText(draft);
+  if (!evidenceBrief || !normalizedDraft || /##\s*7\.\s+Evidence Brief/i.test(normalizedDraft)) {
+    return normalizedDraft;
+  }
+  const evidenceSection = formatWebsiteEvidenceBrief(evidenceBrief);
+  const addendumIndex = normalizedDraft.search(/\n##\s*7\.5\s+External Research Addendum/i);
+  if (addendumIndex >= 0) {
+    return `${normalizedDraft.slice(0, addendumIndex).trimEnd()}\n\n${evidenceSection}\n${normalizedDraft.slice(addendumIndex)}`;
+  }
+  return `${normalizedDraft}\n\n${evidenceSection}`;
 }
 
 function looksLikeTemplateDraft(text: string): boolean {
@@ -559,6 +596,7 @@ async function requestPromptDraftWithLlm(params: {
   routeSource: PromptControlManifest["routeSource"];
   researchSources: PromptDraftSource[];
   researchSummary: string;
+  evidenceBrief?: WebsiteEvidenceBrief;
   knowledgeProfile?: WebsiteKnowledgeProfile;
   displayLocale?: PromptDraftDisplayLocale;
 }): Promise<PromptDraftBuildResult | undefined> {
@@ -587,6 +625,11 @@ async function requestPromptDraftWithLlm(params: {
           .slice(0, 6)
           .map((item, idx) => `${idx + 1}. ${item.title} | ${item.url} | ${item.snippet || ""}`)
           .join("\n")
+    : "(none)";
+  const evidenceBriefBlock = params.evidenceBrief
+    ? formatWebsiteEvidenceBrief(params.evidenceBrief)
+    : params.knowledgeProfile
+      ? formatWebsiteEvidenceBrief(buildWebsiteEvidenceBrief(params.knowledgeProfile))
       : "(none)";
 
   async function runSingleAttempt(attempt: {
@@ -632,6 +675,9 @@ async function requestPromptDraftWithLlm(params: {
             "Web search findings (Serper):",
             params.researchSummary || "(none)",
             attempt.compact ? compactResearchBlock : fullResearchBlock,
+            "",
+            "Evidence Brief:",
+            evidenceBriefBlock,
             "",
             "Website knowledge profile:",
             params.knowledgeProfile ? formatWebsiteKnowledgeProfile(params.knowledgeProfile) : "(none)",
@@ -716,15 +762,25 @@ async function requestPromptDraftWithLlm(params: {
   const parsed = result?.parsed;
   const rawDraft = normalizeText(result?.rawDraft);
   if (!rawDraft) return undefined;
+  const evidenceBrief = params.evidenceBrief || (params.knowledgeProfile ? buildWebsiteEvidenceBrief(params.knowledgeProfile) : undefined);
 
-  const canonicalPrompt = enrichCanonicalPromptWithControlManifest(
-    looksLikeTemplateDraft(rawDraft)
-      ? rawDraft
-      : mergeTemplateWithResearch(params.templateDraft, params.researchSources, params.researchSummary, params.knowledgeProfile),
-    params.requirementText,
-    params.workflowContractSummary,
-    params.decisionPlan,
-    params.routeSource,
+  const canonicalPrompt = ensureCanonicalPromptHasEvidenceBrief(
+    enrichCanonicalPromptWithControlManifest(
+      looksLikeTemplateDraft(rawDraft)
+        ? rawDraft
+        : mergeTemplateWithResearch(
+            params.templateDraft,
+            params.researchSources,
+            params.researchSummary,
+            params.knowledgeProfile,
+            evidenceBrief,
+          ),
+      params.requirementText,
+      params.workflowContractSummary,
+      params.decisionPlan,
+      params.routeSource,
+    ),
+    evidenceBrief,
   );
   const mergedSources = normalizeSources([...(parsed?.sources || []), ...params.researchSources]);
   return {
@@ -733,6 +789,7 @@ async function requestPromptDraftWithLlm(params: {
     researchSummary: normalizeText(parsed?.researchSummary || params.researchSummary),
     sources: mergedSources,
     promptControlManifest: buildPromptControlManifest(params.decisionPlan, params.routeSource),
+    evidenceBrief,
     knowledgeProfile: params.knowledgeProfile,
     model: usedModel,
     provider: params.config.provider,
@@ -819,9 +876,11 @@ export async function buildPromptDraftWithResearch(params: {
   let sources: PromptDraftSource[] = [];
   let researchSummary = "";
   let webSearchFailureReason = "";
+  let evidenceBrief: WebsiteEvidenceBrief | undefined;
   let knowledgeProfile: WebsiteKnowledgeProfile | undefined;
   const applyResolvedKnowledgeProfile = (profile: WebsiteKnowledgeProfile) => {
     knowledgeProfile = profile;
+    evidenceBrief = buildWebsiteEvidenceBrief(profile);
     sources = mapKnowledgeSourcesToPromptSources(profile);
     researchSummary = profile.summary;
     const next = applyKnowledgeProfileToPromptPlan({
@@ -897,12 +956,13 @@ export async function buildPromptDraftWithResearch(params: {
 
   const provider = resolveDraftProviderConfig();
   if (!provider.config) {
-    const canonicalPrompt = mergeTemplateWithResearch(localDraft, sources, researchSummary, knowledgeProfile);
+    const canonicalPrompt = mergeTemplateWithResearch(localDraft, sources, researchSummary, knowledgeProfile, evidenceBrief);
     return {
       canonicalPrompt,
       usedWebSearch: hasWebEvidence(knowledgeProfile),
       sources,
       promptControlManifest,
+      evidenceBrief,
       knowledgeProfile,
       researchSummary,
       fallbackReason: provider.reason,
@@ -923,6 +983,7 @@ export async function buildPromptDraftWithResearch(params: {
         routeSource,
         researchSources: sources,
         researchSummary,
+        evidenceBrief,
         knowledgeProfile,
         displayLocale: params.displayLocale,
       });
@@ -935,12 +996,13 @@ export async function buildPromptDraftWithResearch(params: {
       }
     } catch (error) {
       const llmReason = normalizeText((error as any)?.message || error) || "llm_draft_failed";
-      const canonicalPrompt = mergeTemplateWithResearch(localDraft, sources, researchSummary, knowledgeProfile);
+      const canonicalPrompt = mergeTemplateWithResearch(localDraft, sources, researchSummary, knowledgeProfile, evidenceBrief);
       return {
         canonicalPrompt,
         usedWebSearch: hasWebEvidence(knowledgeProfile),
         sources,
         promptControlManifest,
+        evidenceBrief,
         knowledgeProfile,
         researchSummary,
         fallbackReason: webSearchFailureReason
@@ -953,12 +1015,13 @@ export async function buildPromptDraftWithResearch(params: {
     }
   }
 
-  const canonicalPrompt = mergeTemplateWithResearch(localDraft, sources, researchSummary, knowledgeProfile);
+  const canonicalPrompt = mergeTemplateWithResearch(localDraft, sources, researchSummary, knowledgeProfile, evidenceBrief);
   return {
     canonicalPrompt,
     usedWebSearch: hasWebEvidence(knowledgeProfile),
     sources,
     promptControlManifest,
+    evidenceBrief,
     knowledgeProfile,
     researchSummary,
     fallbackReason: webSearchFailureReason || "llm_draft_disabled",

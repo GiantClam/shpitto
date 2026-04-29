@@ -39,7 +39,7 @@ export default async function LandingPage() {
             <p className="mx-auto mb-12 max-w-2xl text-xl text-[var(--shp-muted)]">
               {copy.finalCta.body}
             </p>
-            <Link href="/chat" className="shp-btn-primary inline-flex items-center gap-2 px-10 py-5 text-lg font-black">
+            <Link href="/launch-center" className="shp-btn-primary inline-flex items-center gap-2 px-10 py-5 text-lg font-black">
               <Zap className="h-5 w-5 fill-current" />
               {copy.finalCta.button}
             </Link>

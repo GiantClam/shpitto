@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 
 type PutObjectOptions = {
   contentType?: string;
+  cacheControl?: string;
 };
 
 export type R2ListedObject = {
@@ -216,6 +217,7 @@ export class CloudflareR2Client {
       body,
       headers: {
         ...(options.contentType ? { "Content-Type": options.contentType } : {}),
+        ...(options.cacheControl ? { "Cache-Control": options.cacheControl } : {}),
       },
     });
 

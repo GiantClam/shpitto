@@ -132,7 +132,6 @@ const SUPPORTED_FUNCTIONAL_REQUIREMENT_LABELS: Record<string, string> = {
   contact_form: "联系表单",
   search_filter: "搜索/筛选",
   downloads: "资料下载",
-  multilingual_switch: "多语言切换",
   none: "无需特殊功能，仅展示内容",
 };
 
@@ -143,7 +142,6 @@ const SUPPORTED_FUNCTIONAL_REQUIREMENT_PATTERNS: Array<{ value: string; pattern:
   { value: "contact_form", pattern: /联系表单|联系页面|留言表单|contact form/i },
   { value: "search_filter", pattern: /搜索|筛选|过滤|search|filter/i },
   { value: "downloads", pattern: /资料下载|下载|文档|download|downloads/i },
-  { value: "multilingual_switch", pattern: /多语言切换|语言切换|中英切换|language switch|bilingual/i },
   { value: "none", pattern: /无需特殊功能|仅展示内容|不需要功能|none/i },
 ];
 
@@ -534,7 +532,7 @@ function extractRequirementFieldsFromText(text: string): ExtractedRequirementFie
     ...extractDelimitedList(raw, ["features", "functions", "功能", "功能需求"]),
     ...Array.from(
       raw.matchAll(
-        /(客户询盘|询盘表单|询价表单|需求表单|联系表单|留言表单|搜索|筛选|下载|资料下载|多语言切换|语言切换|中英切换|inquiry form|contact form|search|filter|download|language switch|bilingual)/gi,
+        /(客户询盘|询盘表单|询价表单|需求表单|联系表单|留言表单|搜索|筛选|下载|资料下载|inquiry form|contact form|search|filter|download)/gi,
       ),
     ).map((match) => match[1]),
   ]);
@@ -829,7 +827,6 @@ const FUNCTIONAL_REQUIREMENT_OPTIONS: RequirementSlotOption[] = [
   localizedOption("contact_form", SUPPORTED_FUNCTIONAL_REQUIREMENT_LABELS.contact_form, "Contact form"),
   localizedOption("search_filter", SUPPORTED_FUNCTIONAL_REQUIREMENT_LABELS.search_filter, "Search and filters"),
   localizedOption("downloads", SUPPORTED_FUNCTIONAL_REQUIREMENT_LABELS.downloads, "Downloads"),
-  localizedOption("multilingual_switch", SUPPORTED_FUNCTIONAL_REQUIREMENT_LABELS.multilingual_switch, "Language switch"),
   localizedOption("none", SUPPORTED_FUNCTIONAL_REQUIREMENT_LABELS.none, "No special functionality, content display only"),
 ];
 
@@ -1337,7 +1334,6 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
     contact_form: "Contact form",
     search_filter: "Search and filters",
     downloads: "Downloads",
-    multilingual_switch: "Language switch",
     none: "No special functionality, content display only",
     lead_generation: "Lead generation",
     product_showcase: "Product showcase",

@@ -9,6 +9,13 @@ type HeroProps = {
 
 export function Hero({ ctaHref = "/login", locale = "en" }: HeroProps) {
   const copy = getLandingCopy(locale).hero;
+  const isZh = locale === "zh";
+  const siteTypes = isZh
+    ? ["个人 Blog", "企业官网", "AI 工具站"]
+    : ["Personal Blog", "Company Site", "AI Tool Site"];
+  const studioSteps = isZh
+    ? ["生成", "预览", "部署", "看数据"]
+    : ["Generate", "Preview", "Deploy", "Measure"];
   return (
     <section className="relative overflow-hidden px-6 pb-24 pt-32 text-[var(--shp-text)] lg:pb-40 lg:pt-48">
       <div className="absolute inset-0 z-0 opacity-25">
@@ -72,12 +79,34 @@ export function Hero({ ctaHref = "/login", locale = "en" }: HeroProps) {
             </div>
 
             <div className="relative flex h-[calc(100%-2.5rem)]">
-              <div className="hidden w-64 border-r border-[color-mix(in_oklab,var(--shp-border)_74%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_88%,white_12%)] p-4 md:block">
-                <div className="mb-6 h-8 w-24 animate-pulse rounded bg-[color-mix(in_oklab,var(--shp-surface)_74%,transparent)]"></div>
+              <div className="hidden w-64 border-r border-[color-mix(in_oklab,var(--shp-border)_74%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_88%,white_12%)] p-4 text-left md:block">
+                <div className="mb-5 text-xs font-black uppercase tracking-[0.22em] text-[var(--shp-primary)]">
+                  {isZh ? "网站类型" : "Site types"}
+                </div>
                 <div className="space-y-3">
-                  <div className="h-4 w-full rounded bg-[color-mix(in_oklab,var(--shp-surface)_76%,transparent)]"></div>
-                  <div className="h-4 w-3/4 rounded bg-[color-mix(in_oklab,var(--shp-surface)_76%,transparent)]"></div>
-                  <div className="h-4 w-5/6 rounded bg-[color-mix(in_oklab,var(--shp-surface)_76%,transparent)]"></div>
+                  {siteTypes.map((item, index) => (
+                    <div
+                      key={item}
+                      className={[
+                        "rounded-xl border px-3 py-2 text-xs font-bold",
+                        index === 0
+                          ? "border-[color-mix(in_oklab,var(--shp-primary)_48%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,transparent)] text-[var(--shp-text)]"
+                          : "border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_76%,transparent)] text-[var(--shp-muted)]",
+                      ].join(" ")}
+                    >
+                      {item}
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-6 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_72%,transparent)] p-3">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--shp-muted)]">
+                    {isZh ? "项目资源" : "Assets"}
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    <div className="h-10 rounded-lg bg-[color-mix(in_oklab,var(--shp-warm)_18%,var(--shp-surface)_82%)]"></div>
+                    <div className="h-10 rounded-lg bg-[color-mix(in_oklab,var(--shp-primary)_18%,var(--shp-surface)_82%)]"></div>
+                    <div className="h-10 rounded-lg bg-[color-mix(in_oklab,var(--shp-secondary)_18%,var(--shp-surface)_82%)]"></div>
+                  </div>
                 </div>
               </div>
 
@@ -90,10 +119,41 @@ export function Hero({ ctaHref = "/login", locale = "en" }: HeroProps) {
                     <span className="ml-auto h-4 w-2 animate-pulse bg-[var(--shp-primary)]"></span>
                   </div>
 
-                  <div className="mt-8 grid grid-cols-3 gap-4 opacity-70">
-                    <div className="h-32 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_75%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_74%,transparent)]"></div>
-                    <div className="h-32 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_75%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_10%,var(--shp-surface)_90%)]"></div>
-                    <div className="h-32 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_75%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_74%,transparent)]"></div>
+                  <div className="grid gap-3 sm:grid-cols-4">
+                    {studioSteps.map((step, index) => (
+                      <div
+                        key={step}
+                        className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_78%,transparent)] px-3 py-2 text-xs font-bold text-[var(--shp-text)]"
+                      >
+                        <div className="mb-2 flex items-center gap-2">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--shp-primary)_18%,transparent)] text-[10px] text-[var(--shp-primary)]">
+                            {index + 1}
+                          </span>
+                          {step}
+                        </div>
+                        <div className="h-1.5 rounded-full bg-[color-mix(in_oklab,var(--shp-primary)_18%,var(--shp-surface)_82%)]"></div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-8 grid grid-cols-3 gap-4">
+                    <div className="h-32 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_75%,transparent)] bg-[linear-gradient(135deg,color-mix(in_oklab,var(--shp-surface)_86%,transparent),color-mix(in_oklab,var(--shp-warm)_12%,transparent))] p-3 text-left">
+                      <div className="h-2 w-16 rounded-full bg-[var(--shp-primary)]"></div>
+                      <div className="mt-8 h-3 w-20 rounded-full bg-[color-mix(in_oklab,var(--shp-text)_30%,transparent)]"></div>
+                      <div className="mt-2 h-2 w-24 rounded-full bg-[color-mix(in_oklab,var(--shp-muted)_28%,transparent)]"></div>
+                    </div>
+                    <div className="h-32 rounded-lg border border-[color-mix(in_oklab,var(--shp-primary)_35%,transparent)] bg-[linear-gradient(135deg,color-mix(in_oklab,var(--shp-primary)_12%,var(--shp-surface)_88%),color-mix(in_oklab,var(--shp-surface)_92%,transparent))] p-3">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="h-12 rounded-md bg-[color-mix(in_oklab,var(--shp-primary)_18%,transparent)]"></div>
+                        <div className="h-12 rounded-md bg-[color-mix(in_oklab,var(--shp-secondary)_18%,transparent)]"></div>
+                      </div>
+                      <div className="mt-3 h-3 rounded-full bg-[color-mix(in_oklab,var(--shp-text)_24%,transparent)]"></div>
+                    </div>
+                    <div className="h-32 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_75%,transparent)] bg-[linear-gradient(135deg,color-mix(in_oklab,var(--shp-secondary)_12%,var(--shp-surface)_88%),color-mix(in_oklab,var(--shp-surface)_92%,transparent))] p-3">
+                      <div className="ml-auto h-6 w-14 rounded-full bg-[color-mix(in_oklab,var(--shp-secondary)_22%,transparent)]"></div>
+                      <div className="mt-8 h-2 rounded-full bg-[color-mix(in_oklab,var(--shp-muted)_30%,transparent)]"></div>
+                      <div className="mt-2 h-2 w-2/3 rounded-full bg-[color-mix(in_oklab,var(--shp-muted)_24%,transparent)]"></div>
+                    </div>
                   </div>
                 </div>
               </div>

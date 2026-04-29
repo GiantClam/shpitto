@@ -19,7 +19,7 @@ describe("chat api async mode", () => {
           targetAudience: ["enterprise_buyers", "overseas_customers"],
           designTheme: ["professional", "industrial"],
           pageStructure: { mode: "multi", pages: ["home", "products", "cases", "contact"] },
-          functionalRequirements: ["customer_inquiry_form", "multilingual_switch"],
+          functionalRequirements: ["customer_inquiry_form"],
           primaryGoal: ["lead_generation"],
           language: "zh-CN",
           brandLogo: { mode: "text_mark" },

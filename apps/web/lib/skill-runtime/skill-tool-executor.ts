@@ -412,7 +412,7 @@ export function sanitizeRequirementForGenerationForTesting(text: string): string
 function clipRuntimeRequirement(input: string, maxChars: number): string {
   const text = String(input || "").trim();
   if (!Number.isFinite(maxChars) || maxChars <= 0 || text.length <= maxChars) return text;
-  const markerIndex = text.search(/\n##\s+(?:7\.\s+External Research Addendum|Website Knowledge Profile)\b/i);
+  const markerIndex = text.search(/\n##\s+(?:7\.\s+Evidence Brief|7\.5\s+External Research Addendum|Website Knowledge Profile)\b/i);
   if (markerIndex > 0 && markerIndex < text.length - 200) {
     const headBudget = Math.max(6_000, Math.floor(maxChars * 0.42));
     const sourceBudget = Math.max(2_000, maxChars - headBudget - 96);

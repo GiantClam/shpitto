@@ -85,6 +85,21 @@ Generation must not start from the raw user request alone. Generation may start 
 
 Quality gate: A confirmed Canonical Website Prompt exists before task creation or any file generation.
 
+#### Evidence Brief Contract (Mandatory)
+
+When requirement enrichment, uploaded files, domain extraction, or web search produce a `## 7. Evidence Brief`, treat that section as the authoritative source hierarchy for website content focus.
+
+Evidence Brief responsibilities:
+
+1. Preserve `Priority Facts` in the Canonical Website Prompt. These facts define brand semantics, audience, offerings, differentiators, and proof points.
+2. Use `Source Priorities` to decide which facts are reliable. Uploaded files, same-domain pages, and explicit user input outrank generic web search. Generic industry research may shape structure and UX, but it must not become brand-owned claims.
+3. Use `Page Briefs` to write route-specific page prompts. Each page prompt must include page goal, audience intent, source-backed content inputs, section order, and next action.
+4. Use `Gaps And Assumptions` to keep unsupported details honest. Mark assumptions explicitly and do not invent metrics, awards, client names, certifications, testimonials, or product claims.
+5. The Evidence Brief is a content strategy artifact, not a route/file manifest. The Prompt Control Manifest remains the only machine-readable route/file handoff.
+6. If Evidence Brief content conflicts with generic template defaults, Evidence Brief content wins.
+
+Quality gate: A Canonical Website Prompt generated from researched material must visibly preserve priority facts, page briefs, content gaps, and assumption rules.
+
 ### Phase 0.3: Route Planning Policy (Mandatory)
 
 Treat the route plan as a workflow artifact, not as free-form prose extraction.
@@ -118,6 +133,19 @@ Quality gate: Index is available and style decision is traceable.
 Quality gate: Design system validation passes.
 
 ### Phase 1.5: Image and Icon Asset Preparation
+
+#### Referenced Project Assets
+
+When the confirmed prompt or runtime context includes a `[Referenced Assets]` block:
+
+1. Treat each listed asset as an external project asset with an authoritative `logical path`.
+2. If the generated website uses that asset, reference the exact `logical path` in browser-facing code: HTML `src`, `href`, `srcset`, `poster`, CSS `url(...)`, JavaScript string references, JSON metadata, or downloadable links.
+3. Never shorten referenced assets to local workspace paths such as `uploads/...`, `assets/...`, `images/...`, `./uploads/...`, or directory-only values like `uploads/`.
+4. Do not use `preview URL`, `release URL`, `preview CDN prefix`, `release CDN prefix`, or `key` directly in generated website code. Those values are runtime resolver metadata only.
+5. Apply this rule to every asset category, including logos, icons, images, PDFs, documents, videos, scripts, style files, and downloadable resources.
+6. If multiple assets are listed, match by asset name/path and use the corresponding logical path. Do not replace unrelated internal site files.
+7. Do not manually construct or edit `preview/{version}` or `release/current` URL segments. The platform rewrites logical paths to stage-specific CDN URLs.
+8. During QA, inspect generated HTML/CSS/JS/JSON and verify that every used referenced asset points to the provided logical path, not a local workspace path or a CDN URL.
 
 #### Image Generation (prefer local `web-image-generator` skill, fallback to shared image tooling)
 

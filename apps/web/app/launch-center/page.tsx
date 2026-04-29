@@ -41,7 +41,7 @@ export default async function LaunchCenterPage() {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-              <LaunchCenterComposer isAuthenticated={Boolean(userId)} userId={userId} locale={locale} />
+              <LaunchCenterComposer isAuthenticated={Boolean(userId)} locale={locale} />
 
               <div className="space-y-3">
                 {[

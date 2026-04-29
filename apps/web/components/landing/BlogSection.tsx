@@ -7,24 +7,24 @@ export function BlogSection({ locale = "en" }: { locale?: Locale }) {
   const posts = [
     {
       ...copy.posts[0],
-      slug: "future-of-industrial-web-design",
+      slug: "personal-blog-from-ai-notes",
       date: "Oct 24, 2025",
       author: "Sarah Chen",
-      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800",
+      image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800",
     },
     {
       ...copy.posts[1],
-      slug: "apex-robotics-case-study",
+      slug: "company-site-generate-deploy-measure",
       date: "Nov 02, 2025",
       author: "Mike Ross",
-      image: "https://images.unsplash.com/photo-1582719188393-bb71ca45dbb9?auto=format&fit=crop&q=80&w=800",
+      image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800",
     },
     {
       ...copy.posts[2],
-      slug: "seo-for-manufacturers-2026",
+      slug: "launch-ai-tool-site-without-cms",
       date: "Nov 15, 2025",
       author: "Alex V.",
-      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800",
+      image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&q=80&w=800",
     },
   ];
 
