@@ -12,6 +12,7 @@ import {
   sanitizeRequirementForGenerationForTesting,
   validateAndNormalizeRequiredFiles,
 } from "./skill-tool-executor";
+import { renderWebsiteQualityContract } from "./website-quality-contract";
 import { buildLocalDecisionPlan } from "./decision-layer";
 
 async function* streamFrom(chunks: any[]) {
@@ -238,6 +239,16 @@ describe("skill-tool-executor", () => {
     const contactContract = formatTargetPageContract(plan, "/contact/index.html");
     expect(contactContract).toContain('Dedicated page for "Contact"');
     expect(contactContract).toContain("Sibling page intents");
+  });
+
+  it("keeps the website quality contract aligned with concrete anti-slop rules", () => {
+    const contract = renderWebsiteQualityContract();
+
+    expect(contract).toContain("Navigation must use meaningful route labels");
+    expect(contract).toContain("Footer must contribute real site content");
+    expect(contract).toContain("Mobile nav may collapse visually");
+    expect(contract).toContain("External imagery must come from source-backed or project-owned assets");
+    expect(contract).toContain("Metrics must be source-backed");
   });
 
   it("keeps person-led homepages distinct from downstream blog archives", () => {

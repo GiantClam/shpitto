@@ -87,6 +87,108 @@ describe("anti-slop-linter", () => {
     expect(result.issues.map((issue) => issue.code)).not.toContain("placeholder-copy");
   });
 
+  it("warns on footer and navigation shells that add no real site content", () => {
+    const result = lintGeneratedWebsiteHtml(`<!doctype html>
+<html>
+  <head>
+    <title>Product suite</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <nav class="mobile-nav">
+      <button type="button">Menu</button>
+      <span>Navigation</span>
+      <a href="#">Quick Links</a>
+    </nav>
+    <main>
+      <section><h1>Operational planning platform</h1><p>The page explains how teams coordinate schedules, approvals, and execution across actual workflows. It names the decision owners, the handoff moments, and the operational constraints so the copy reads like a real product surface rather than a generic shell.</p></section>
+      <section><h2>Scheduling</h2><p>Scheduling uses live capacity, explicit owner assignments, and route-specific context to make each release decision visible. The section explains what changes, who confirms it, and which downstream step begins next.</p></section>
+      <section><h2>Approvals</h2><p>Approval paths stay explicit so reviewers know who can sign off and when the next action is due. The copy keeps the operational role clear instead of collapsing the section into generic navigation or shell labels.</p></section>
+      <section><h2>Execution</h2><p>Execution notes stay tied to named routes and concrete responsibilities, not generic shells or empty layouts. The body copy describes the actual delivery rhythm, not a marketing summary or structural footer block.</p></section>
+      <section><h2>Hand-off</h2><p>The layout also explains the follow-up state, the working review path, and how each user returns to the next decision without relying on generic quick links or filler content.</p></section>
+    </main>
+    <footer>
+      <div>Footer</div>
+      <div>Copyright</div>
+    </footer>
+  </body>
+</html>`);
+
+    expect(result.passed).toBe(true);
+    expect(result.issues.map((issue) => issue.code)).toContain("nav-scaffold-copy");
+    expect(result.issues.map((issue) => issue.code)).toContain("footer-scaffold-copy");
+    expect(renderAntiSlopFeedback(result)).toContain("menu/navigation shells");
+  });
+
+  it("blocks placeholder demo imagery from external URLs", () => {
+    const result = lintGeneratedWebsiteHtml(`<!doctype html>
+<html>
+  <head>
+    <title>Media page</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <section>
+        <h1>Evidence review workspace</h1>
+        <p>This screen shows a concrete workflow with enough content to avoid generic layout noise.</p>
+        <img src="https://placehold.co/1200x800/png" alt="Workspace preview" />
+      </section>
+      <section><h2>Notes</h2><p>Each panel describes an actual operation path, review artifact, or decision state.</p></section>
+      <section><h2>Context</h2><p>The page uses project-owned copy for the primary content and keeps the media slot clearly visible.</p></section>
+      <section><h2>Flow</h2><p>The page should still read as a purposeful product surface even before runtime data loads.</p></section>
+    </main>
+  </body>
+</html>`);
+
+    expect(result.passed).toBe(false);
+    expect(result.issues.map((issue) => issue.code)).toContain("external-placeholder-image");
+    expect(renderAntiSlopFeedback(result)).toContain("placeholder/demo image URLs");
+  });
+
+  it("blocks unsourced invented metrics but allows source-backed metric context", () => {
+    const invented = lintGeneratedWebsiteHtml(`<!doctype html>
+<html>
+  <head>
+    <title>Claims page</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <section><h1>Launch faster with 10x better growth</h1><p>Teams get 99% conversion lift and 500+ hours saved from a platform that scales effortlessly.</p></section>
+      <section><h2>Outcome</h2><p>Each claim reads like a standalone marketing promise without any citation or benchmark context.</p></section>
+      <section><h2>Delivery</h2><p>The page intentionally uses concrete route copy, but the numbers are still unsourced and should be removed.</p></section>
+      <section><h2>Plan</h2><p>Use measurable proof only when a brief, case study, or benchmark actually supplies it.</p></section>
+    </main>
+  </body>
+</html>`);
+
+    expect(invented.passed).toBe(false);
+    expect(invented.issues.map((issue) => issue.code)).toContain("invented-metric-claim");
+
+    const sourced = lintGeneratedWebsiteHtml(`<!doctype html>
+<html>
+  <head>
+    <title>Claims page</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <section><h1>Launch plan</h1><p>According to the 2025 customer benchmark, the pilot cut review time by 10x in a tightly scoped workflow.</p></section>
+      <section><h2>Evidence</h2><p>The claim is grounded in a benchmarked source context, so the linter should not mark it as invented.</p></section>
+      <section><h2>Scope</h2><p>The result still needs careful reading, but the metric is accompanied by explicit source language.</p></section>
+      <section><h2>Next step</h2><p>Keep citing the report or brief whenever a metric appears in final copy.</p></section>
+    </main>
+  </body>
+</html>`);
+
+    expect(sourced.issues.map((issue) => issue.code)).not.toContain("invented-metric-claim");
+  });
+
   it("blocks homepage semantics that read like a download or certification portal", () => {
     const result = lintGeneratedWebsiteRouteHtml(
       `<!doctype html><html><head><title>CASUX | 资料下载与认证入口</title></head><body><h1>沉淀标准、研究与实践资料的统一入口</h1></body></html>`,

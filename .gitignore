@@ -64,3 +64,4 @@ docs
 .playwright-cli/
 output/
 docs/
+test-results/

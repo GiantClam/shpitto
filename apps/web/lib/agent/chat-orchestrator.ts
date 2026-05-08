@@ -5,6 +5,7 @@ import {
   recommendWebsiteDesignDirections,
   renderWebsiteDesignDirectionPrompt,
 } from "../open-design/design-directions";
+import type { DesignSystemSource, DesignSystemSummary } from "../design-system-registry";
 
 export type ConversationStage = "drafting" | "previewing" | "deployed" | "deploying";
 
@@ -44,6 +45,8 @@ export type BrandLogoRequirement = {
   altText?: string;
 };
 
+export type DesignSystemInspiration = DesignSystemSummary;
+
 export type RequirementFormValues = {
   siteType?: string;
   targetAudience?: string[];
@@ -54,6 +57,7 @@ export type RequirementFormValues = {
   primaryGoal?: string[];
   language?: "zh-CN" | "en" | "bilingual";
   brandLogo?: BrandLogoRequirement;
+  designSystemInspiration?: DesignSystemInspiration;
   contentSources?: string[];
   customNotes?: string;
 };
@@ -77,6 +81,7 @@ export type RequirementSpec = {
   locale?: "zh-CN" | "en" | "bilingual";
   tone?: string;
   brandLogo?: BrandLogoRequirement;
+  designSystemInspiration?: DesignSystemInspiration;
   contentSources?: string[];
   customNotes?: string;
   deployment?: {
@@ -273,6 +278,35 @@ function normalizeBrandLogo(value: unknown): BrandLogoRequirement | undefined {
   };
 }
 
+function normalizeDesignSystemInspiration(value: unknown): DesignSystemInspiration | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const raw = value as Record<string, unknown>;
+  const id = normalizeText(String(raw.id || ""));
+  const title = normalizeText(String(raw.title || ""));
+  const category = normalizeText(String(raw.category || ""));
+  const summary = normalizeText(String(raw.summary || ""));
+  const sourcePath = normalizeText(String(raw.sourcePath || ""));
+  const sourceText = normalizeText(String(raw.source || ""));
+  const source =
+    sourceText === "builder" ||
+    sourceText === "workflow-skill" ||
+    sourceText === "cache" ||
+    sourceText === "unknown"
+      ? (sourceText as DesignSystemSource)
+      : "unknown";
+  const swatches = toStringArray(raw.swatches);
+  if (!id && !title && !summary && !category) return undefined;
+  return {
+    id,
+    title,
+    category,
+    summary,
+    swatches,
+    sourcePath,
+    source,
+  };
+}
+
 function normalizeSupportedFunctionalRequirements(values: string[]): string[] {
   const mapped: string[] = [];
   for (const value of values) {
@@ -326,6 +360,9 @@ function normalizeRequirementFormValues(value: unknown): RequirementFormValues |
   const primaryGoal = toStringArray(raw.primaryGoal || raw.ctas);
   const language = normalizeFormLanguage(raw.language || raw.locale);
   const brandLogo = normalizeBrandLogo(raw.brandLogo || raw.logo);
+  const designSystemInspiration = normalizeDesignSystemInspiration(
+    raw.designSystemInspiration || raw.designSystem || raw.inspiration,
+  );
   const contentSources = normalizeContentSources(toStringArray(raw.contentSources || raw.contentSource));
   const customNotes = normalizeText(String(raw.customNotes || raw.notes || ""));
 
@@ -339,6 +376,7 @@ function normalizeRequirementFormValues(value: unknown): RequirementFormValues |
     primaryGoal.length === 0 &&
     !language &&
     !brandLogo &&
+    !designSystemInspiration &&
     contentSources.length === 0 &&
     !customNotes
   ) {
@@ -355,6 +393,7 @@ function normalizeRequirementFormValues(value: unknown): RequirementFormValues |
     ...(primaryGoal.length > 0 ? { primaryGoal } : {}),
     ...(language ? { language } : {}),
     ...(brandLogo ? { brandLogo } : {}),
+    ...(designSystemInspiration ? { designSystemInspiration } : {}),
     ...(contentSources.length > 0 ? { contentSources } : {}),
     ...(customNotes ? { customNotes } : {}),
   };
@@ -469,6 +508,7 @@ type ExtractedRequirementFields = {
   locale?: "zh-CN" | "en" | "bilingual";
   tone?: string;
   brandLogo?: BrandLogoRequirement;
+  designSystemInspiration?: DesignSystemInspiration;
   contentSources?: string[];
   customNotes?: string;
   deployment?: RequirementSpec["deployment"];
@@ -695,6 +735,24 @@ function renderDefaultVisualInclinationPrompt(decision: VisualDirectionDecision)
     .join("\n");
 }
 
+function renderDesignSystemInspirationPrompt(inspiration?: DesignSystemInspiration): string {
+  if (!inspiration) return "";
+
+  return [
+    "## Design System Inspiration",
+    "",
+    `- Selected reference: ${inspiration.title}${inspiration.category ? ` (${inspiration.category})` : ""}`,
+    inspiration.summary ? `- Summary: ${inspiration.summary}` : "",
+    inspiration.sourcePath ? `- Source path: ${inspiration.sourcePath}` : "",
+    inspiration.source ? `- Source: ${inspiration.source}` : "",
+    inspiration.swatches.length > 0 ? `- Palette swatches: ${inspiration.swatches.join(", ")}` : "",
+    "- Treat this as the source of truth for palette, spacing, radius, density, and component weight.",
+    "- Adapt the reference to the site's content and information architecture; do not copy the reference layout verbatim.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 function hasValue(value: unknown): boolean {
   return !(
     value === undefined ||
@@ -807,6 +865,7 @@ export function buildRequirementSpec(text: string, sourceMessages?: string[]): R
     locale: merged.values.locale,
     tone: merged.values.tone,
     brandLogo: merged.values.brandLogo,
+    designSystemInspiration: merged.values.designSystemInspiration || parsedInput.formValues?.designSystemInspiration,
     contentSources: merged.values.contentSources || [],
     customNotes: merged.values.customNotes,
     deployment: merged.values.deployment || { requested: false },
@@ -1591,6 +1650,7 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
           ? `Multi-page website (${(spec.pageStructure.pages || spec.pages || []).join(" / ") || "use the confirmed page list"})`
           : "";
   const secondaryVisualTags = spec.secondaryVisualTags || [];
+  const designSystemInspiration = spec.designSystemInspiration;
   const confirmedParameters = [
     spec.siteType ? `- Website type: ${optionLabel(SITE_TYPE_OPTIONS, spec.siteType)}` : "",
     spec.targetAudience?.length ? `- Target audience: ${optionLabels(AUDIENCE_OPTIONS, spec.targetAudience)}` : "",
@@ -1602,6 +1662,9 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
         ? `- Design theme signals: ${optionLabels(DESIGN_THEME_OPTIONS, spec.visualStyle)}`
         : "",
     secondaryVisualTags.length ? `- Secondary visual tags: ${secondaryVisualTags.join(", ")}` : "",
+    designSystemInspiration
+      ? `- Design system inspiration: ${designSystemInspiration.title}${designSystemInspiration.category ? ` (${designSystemInspiration.category})` : ""}`
+      : "",
     pageStructureLabel ? `- Site structure: ${pageStructureLabel}` : "",
     spec.functionalRequirements?.length
       ? `- Functional requirements: ${optionLabels(FUNCTIONAL_REQUIREMENT_OPTIONS, spec.functionalRequirements)}`
@@ -1648,6 +1711,24 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
       ? renderWebsiteDesignDirectionPrompt([spec.primaryVisualDirection])
       : "";
   const defaultVisualInclinationPrompt = renderDefaultVisualInclinationPrompt(visualDecision);
+  const designSystemInspirationPrompt = renderDesignSystemInspirationPrompt(designSystemInspiration);
+  const preflightChecklist = [
+    "## Generation Preflight Checklist",
+    "",
+    "- Confirm that the route plan, content sources, page structure, and conversion goal all appear in the confirmed parameters before drafting pages.",
+    designSystemInspiration
+      ? "- Use the selected design system inspiration as the visual source of truth for palette, spacing, radius, density, and component weight."
+      : "- If no design system inspiration is selected, derive the visual system from the confirmed website direction and source material.",
+    spec.visualDecisionSource === "user_explicit"
+      ? "- Treat the user-selected visual direction as stronger than any system-recommended default."
+      : "- If the user did not explicitly select a visual direction, keep the system-recommended default soft and overridable.",
+    "- Keep every route distinct in purpose and content depth; do not duplicate the same page skeleton with different text.",
+    spec.contentSources?.includes("new_site")
+      ? "- Do not invent unsupported brand facts, client claims, metrics, testimonials, or screenshots."
+      : "- Use source-backed facts first; label assumptions explicitly when you must fill a gap.",
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   return [
     "# Canonical Website Generation Prompt",
@@ -1716,10 +1797,14 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
     "The visual direction must fit the website type and source material, not a preset theme. Keep the interface polished, readable, and practical on desktop, tablet, and mobile.",
     "```",
     "",
+    designSystemInspirationPrompt,
+    designSystemInspirationPrompt ? "" : "",
     defaultVisualInclinationPrompt,
     defaultVisualInclinationPrompt ? "" : "",
     visualDirectionContract,
     visualDirectionContract ? "" : "",
+    preflightChecklist,
+    "",
     "## 5. Special Component Prompt",
     "```",
     "Include only components supported by confirmed requirements and source material:",

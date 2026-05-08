@@ -24,6 +24,16 @@ const PLACEHOLDER_PATTERNS = [
   /https?:\/\/(?:example\.com|placeholder\.com)/i,
 ];
 
+const NAV_SCAFFOLD_TOKENS = new Set(["menu", "navigation", "nav", "quick", "links", "quicklinks", "more", "pages", "site"]);
+const FOOTER_SCAFFOLD_TOKENS = new Set(["footer", "copyright", "copy", "rights", "reserved", "powered", "quick", "links", "quicklinks", "navigation", "menu", "legal"]);
+const PLACEHOLDER_IMAGE_URL_PATTERN =
+  /https?:\/\/(?:[\w-]+\.)?(?:example\.com|placeholder\.com|placehold\.co|via\.placeholder\.com|dummyimage\.com|picsum\.photos|source\.unsplash\.com|loremflickr\.com|placekitten\.com|fillmurray\.com)\b[^\s"'<>)]*/i;
+const SOURCE_CONTEXT_PATTERN =
+  /\b(?:according to|based on|source|cited|citation|report|study|survey|benchmark|measured|measure|internal data|our data|customer data|pilot|case study|analysis|research|audit|observed|tracked|results from|from the)\b/i;
+const METRIC_TOKEN_PATTERN = /\b(?:\d+(?:\.\d+)?%|\d+(?:\.\d+)?x|\d+\+)\b/i;
+const INVENTED_METRIC_CONTEXT_PATTERN =
+  /\b(?:faster|boost|increase|improve|reduce|save|hours saved|growth|conversion lift|revenue|roi|engagement|traffic|uplift|outperform|scale)\b/i;
+
 const HEX_COLOR_PATTERN = /#[0-9a-fA-F]{3,8}\b/g;
 
 function stripTags(html: string): string {
@@ -80,6 +90,22 @@ function extractTagText(source: string, tagName: string): string {
     .trim();
 }
 
+function extractTagBlock(source: string, tagName: string): string {
+  const match = String(source || "").match(new RegExp(`<${tagName}\\b[^>]*>([\\s\\S]*?)<\\/${tagName}>`, "i"));
+  return String(match?.[1] || "");
+}
+
+function extractAnchorTexts(source: string): string[] {
+  return Array.from(String(source || "").matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/gi))
+    .map((match) =>
+      String(match[1] || "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim(),
+    )
+    .filter(Boolean);
+}
+
 function extractMetaDescription(source: string): string {
   const match = String(source || "").match(/<meta\b[^>]*name=["']description["'][^>]*content=["']([^"']*)["'][^>]*>/i);
   return String(match?.[1] || "").replace(/\s+/g, " ").trim();
@@ -106,6 +132,39 @@ function createIssue(
   message: string,
 ): AntiSlopIssue {
   return { code, severity, message };
+}
+
+function normalizeLabelTokens(text: string): string[] {
+  return String(text || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\u00c0-\u024f\u2e80-\u9fff]+/gi, " ")
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter(Boolean);
+}
+
+function countMeaningfulTokens(text: string, scaffoldTokens: Set<string>): number {
+  return normalizeLabelTokens(text).filter((token) => {
+    if (scaffoldTokens.has(token)) return false;
+    if (/^\d{2,4}$/.test(token)) return false;
+    if (/^\d+(?:\.\d+)?%?$/.test(token)) return false;
+    return token.length > 1;
+  }).length;
+}
+
+function hasSourceContext(text: string): boolean {
+  return SOURCE_CONTEXT_PATTERN.test(text);
+}
+
+function hasInventedMetricClaim(sentence: string): boolean {
+  const text = String(sentence || "").trim();
+  if (!text || hasSourceContext(text)) return false;
+
+  if (METRIC_TOKEN_PATTERN.test(text) && INVENTED_METRIC_CONTEXT_PATTERN.test(text)) {
+    return true;
+  }
+
+  return /\bhours saved\b/i.test(text) || /\bconversion lift\b/i.test(text) || (/\bgrowth\b/i.test(text) && /(?:claim|boost|drive|increase|improve|unlock|deliver|generate|accelerate)/i.test(text));
 }
 
 export function lintGeneratedWebsiteHtml(html: string): AntiSlopLintResult {
@@ -193,6 +252,73 @@ export function lintGeneratedWebsiteHtml(html: string): AntiSlopLintResult {
       severity: "warning",
       message: "Default typography detected; use the selected design direction's expressive font pairing.",
     });
+  }
+
+  const navBlock = extractTagBlock(source, "nav");
+  if (navBlock) {
+    const navText = extractTagText(navBlock, "nav") || stripTags(navBlock);
+    const navLabels = extractAnchorTexts(navBlock);
+    const navMeaningfulTokens = countMeaningfulTokens(`${navText} ${navLabels.join(" ")}`, NAV_SCAFFOLD_TOKENS);
+    const looksLikeMobileNav = /(?:mobile[-_\s]?nav|nav[-_\s]?drawer|menu[-_\s]?toggle|hamburger)/i.test(source);
+    const hasGenericNavScaffold = /\b(?:menu|navigation|quick\s*links?|nav)\b/i.test(navText);
+    if ((hasGenericNavScaffold || looksLikeMobileNav) && navMeaningfulTokens === 0) {
+      pushIssue(issues, {
+        code: "nav-scaffold-copy",
+        severity: "warning",
+        message: "Navigation shell uses generic menu/navigation/quick links copy without meaningful route labels.",
+      });
+      if (looksLikeMobileNav && navLabels.length === 0) {
+        pushIssue(issues, {
+          code: "mobile-nav-scaffold-copy",
+          severity: "warning",
+          message: "Mobile nav collapses into a menu-only scaffold without meaningful destinations; keep the real links visible in markup.",
+        });
+      }
+    }
+  }
+
+  const footerBlock = extractTagBlock(source, "footer");
+  if (footerBlock) {
+    const footerText = extractTagText(footerBlock, "footer") || stripTags(footerBlock);
+    const footerLabels = extractAnchorTexts(footerBlock);
+    const footerMeaningfulTokens = countMeaningfulTokens(`${footerText} ${footerLabels.join(" ")}`, FOOTER_SCAFFOLD_TOKENS);
+    const footerHasScaffoldOnly =
+      footerMeaningfulTokens === 0 &&
+      (/\b(?:footer|copyright|all rights reserved|powered by|quick\s*links?|navigation|menu)\b/i.test(footerText) ||
+        /©/.test(footerText));
+    const footerLooksLikePlaceholder =
+      footerMeaningfulTokens <= 1 &&
+      /\b(?:copyright|all rights reserved|footer)\b/i.test(footerText) &&
+      !/\b20\d{2}\b/.test(footerText);
+    if (footerHasScaffoldOnly || footerLooksLikePlaceholder) {
+      pushIssue(issues, {
+        code: "footer-scaffold-copy",
+        severity: "warning",
+        message: "Footer is only scaffold copy; add genuine site content, brand context, or meaningful site links.",
+      });
+    }
+  }
+
+  if (PLACEHOLDER_IMAGE_URL_PATTERN.test(source)) {
+    pushIssue(issues, {
+      code: "external-placeholder-image",
+      severity: "error",
+      message: "External placeholder or demo image URL detected; replace it with source-backed or project-owned imagery.",
+    });
+  }
+
+  for (const sentence of text
+    .split(/[.!?。！？]+/g)
+    .map((part) => part.trim())
+    .filter(Boolean)) {
+    if (hasInventedMetricClaim(sentence)) {
+      pushIssue(issues, {
+        code: "invented-metric-claim",
+        severity: "error",
+        message: "Standalone marketing metric claim detected without source-backed context; remove it or cite the evidence.",
+      });
+      break;
+    }
   }
 
   const score = Math.max(
@@ -362,6 +488,16 @@ export function renderAntiSlopFeedback(result: AntiSlopLintResult): string {
       "Add an explicit home signal such as Home, Homepage, 首页, 主站, or 统一入口 to the title, H1, or lead copy.",
     "weak-responsive-css":
       "Add at least one @media block and one clamp() or container query so typography, spacing, or layout adapts on mobile.",
+    "nav-scaffold-copy":
+      "Rewrite the navigation labels so they are route-specific instead of generic menu/navigation shells.",
+    "mobile-nav-scaffold-copy":
+      "Keep the mobile nav connected to real destinations instead of a menu-only shell with no meaningful links.",
+    "footer-scaffold-copy":
+      "Replace footer placeholder copy with brand context, useful site content, or legitimate legal/navigation links that add real value.",
+    "external-placeholder-image":
+      "Swap placeholder/demo image URLs for project-owned or source-backed assets, and keep image provenance tied to the brief or citation.",
+    "invented-metric-claim":
+      "Remove unsourced percentages, multipliers, and growth claims unless the brief or a cited source explicitly supports them.",
     "empty-hero-visual-rail":
       "Either reduce the hero visual rail height or put real media, chart, or data-viz content inside it instead of leaving a large empty block.",
     "search-result-width-mismatch":

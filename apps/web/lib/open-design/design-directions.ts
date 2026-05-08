@@ -5,6 +5,8 @@ export type WebsiteDesignDirection = {
   mood: string;
   zhMood: string;
   references: string[];
+  pageArchetypes: string[];
+  contentPosture: string[];
   displayFont: string;
   bodyFont: string;
   monoFont?: string;
@@ -49,6 +51,16 @@ export const WEBSITE_DESIGN_DIRECTIONS: WebsiteDesignDirection[] = [
       "Print-magazine feel with generous whitespace, serif display type, paper tones, ink text, and one warm accent.",
     zhMood: "杂志式留白、衬线大标题、纸张底色、墨色文字和单一暖色强调。",
     references: ["Monocle", "Financial Times Weekend", "NYT Magazine", "It's Nice That"],
+    pageArchetypes: [
+      "Magazine-style homepage with a strong editorial lead",
+      "Feature story page with a large opening image and pull quote",
+      "Topic index page with generous whitespace and section rhythm",
+    ],
+    contentPosture: [
+      "Long-form editorial copy with a visible reading rhythm",
+      "One decisive lead story per viewport, not many competing blocks",
+      "Proof is framed as quotes, references, or curated highlights",
+    ],
     displayFont: "'Iowan Old Style', 'Charter', Georgia, serif",
     bodyFont: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
     palette: {
@@ -74,6 +86,16 @@ export const WEBSITE_DESIGN_DIRECTIONS: WebsiteDesignDirection[] = [
       "Precise software-native interface with near-greyscale surfaces, hairline borders, crisp type, and one cobalt accent.",
     zhMood: "软件产品式精确感，近灰阶界面、细线边框、清晰字体和单一钴蓝强调。",
     references: ["Linear", "Vercel", "Notion", "Stripe docs"],
+    pageArchetypes: [
+      "Product landing page with a compact hero and feature grid",
+      "Pricing or conversion page with clear CTA hierarchy",
+      "Support or docs page with tight navigation and signal-heavy content",
+    ],
+    contentPosture: [
+      "Tight copy with high signal density and minimal ornament",
+      "Screenshots, product surfaces, and structured benefits lead the story",
+      "Each section should answer a concrete user question quickly",
+    ],
     displayFont: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif",
     bodyFont: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif",
     palette: {
@@ -99,6 +121,16 @@ export const WEBSITE_DESIGN_DIRECTIONS: WebsiteDesignDirection[] = [
       "Cream backgrounds, gentle radii, soft editorial tone, and restrained terracotta accents for a human product website.",
     zhMood: "奶油色背景、柔和圆角、温暖编辑感和克制陶土色强调，适合亲和可信的网站。",
     references: ["Mercury", "Substack", "Headspace", "Stripe pre-2020"],
+    pageArchetypes: [
+      "Warm homepage with a calm narrative opening",
+      "Service or about page with story-led trust building",
+      "Campaign or feature page with soft section transitions",
+    ],
+    contentPosture: [
+      "Empathetic copy with gentle pacing and low friction",
+      "Use photos, testimonials, and human proof before hard specs",
+      "Avoid dense dashboards unless the brief explicitly asks for them",
+    ],
     displayFont: "'Tiempos Headline', 'Newsreader', 'Iowan Old Style', Georgia, serif",
     bodyFont: "'Sohne', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
     palette: {
@@ -124,6 +156,16 @@ export const WEBSITE_DESIGN_DIRECTIONS: WebsiteDesignDirection[] = [
       "Information-dense engineering interface with structured grids, status pills, restrained green signal, and useful content per square inch.",
     zhMood: "工程工具式信息密度，结构化网格、状态标签、克制信号绿和高可读内容。",
     references: ["GitHub", "Datadog", "Cloudflare dashboard", "Sentry"],
+    pageArchetypes: [
+      "Utility dashboard with dense status and action rows",
+      "Docs or developer landing page with compact navigation",
+      "Operational overview page with tables, chips, and logs",
+    ],
+    contentPosture: [
+      "Information-first copy with concise labels and fast scanning",
+      "Use tables, status pills, and structured metadata over decoration",
+      "Every screen should justify its density with utility",
+    ],
     displayFont: "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif",
     bodyFont: "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif",
     monoFont: "'JetBrains Mono', 'IBM Plex Mono', ui-monospace, Menlo, monospace",
@@ -150,6 +192,16 @@ export const WEBSITE_DESIGN_DIRECTIONS: WebsiteDesignDirection[] = [
       "Deliberately sharp, high-contrast, grid-visible layout with oversized type and almost no decorative softness.",
     zhMood: "刻意锋利、高对比、显性网格、超大字体和低装饰感，适合强表达网站。",
     references: ["Are.na", "Yale Center for British Art", "MSCHF", "Read.cv"],
+    pageArchetypes: [
+      "Manifesto-like landing page",
+      "Project index with strong typographic rhythm",
+      "Campaign splash page with asymmetrical grouping",
+    ],
+    contentPosture: [
+      "Copy can be terse, abrupt, or intentionally provocative",
+      "Structure should feel authored rather than templated",
+      "Use tension, contrast, and negative space as narrative tools",
+    ],
     displayFont: "'Times New Roman', 'Iowan Old Style', Georgia, serif",
     bodyFont: "ui-monospace, 'IBM Plex Mono', 'JetBrains Mono', Menlo, monospace",
     palette: {
@@ -175,6 +227,16 @@ export const WEBSITE_DESIGN_DIRECTIONS: WebsiteDesignDirection[] = [
       "High-trust industrial website with graphite surfaces, blueprint structure, calibrated blue accents, and clear product evidence.",
     zhMood: "高可信工业站，石墨灰界面、蓝图式结构、校准蓝强调和清晰产品证据。",
     references: ["Siemens", "Hexagon", "Keyence", "Bosch Rexroth"],
+    pageArchetypes: [
+      "Capabilities homepage with product evidence and CTA paths",
+      "Specification or catalog page with comparison-first structure",
+      "Case study page with process, proof, and certification detail",
+    ],
+    contentPosture: [
+      "Proof-first copy that foregrounds specs, certifications, and process",
+      "Use structured modules, comparison tables, and evidence blocks",
+      "Keep CTA direct and operational: quote, catalog, sample, consult",
+    ],
     displayFont: "'Space Grotesk', 'IBM Plex Sans', system-ui, sans-serif",
     bodyFont: "'IBM Plex Sans', 'Noto Sans SC', system-ui, sans-serif",
     monoFont: "'IBM Plex Mono', 'JetBrains Mono', ui-monospace, monospace",
@@ -201,6 +263,16 @@ export const WEBSITE_DESIGN_DIRECTIONS: WebsiteDesignDirection[] = [
       "Mature manufacturing brand with warm neutrals, deep ink, brass accents, and story-led trust building.",
     zhMood: "成熟制造品牌，暖中性色、深墨色、黄铜强调和故事化信任表达。",
     references: ["Bang & Olufsen", "Patek Philippe", "Muji", "industrial editorial catalogs"],
+    pageArchetypes: [
+      "Heritage homepage with a narrative opening and measured pacing",
+      "Craft story page focused on process, materials, and origin",
+      "Product story page with restrained luxury and tactile detail",
+    ],
+    contentPosture: [
+      "Editorial storytelling that builds trust through history and craft",
+      "Use warm proof, material language, and tactile detail over hype",
+      "Avoid startup SaaS tropes; let maturity and discipline carry the tone",
+    ],
     displayFont: "'Iowan Old Style', 'Noto Serif SC', Georgia, serif",
     bodyFont: "'IBM Plex Sans', 'Noto Sans SC', system-ui, sans-serif",
     palette: {
@@ -398,6 +470,10 @@ export function renderWebsiteDesignDirectionPrompt(ids: string[] | undefined | n
       `### ${direction.label} (${direction.id})`,
       `- Mood: ${direction.mood}`,
       `- References: ${direction.references.join(", ")}`,
+      "- Page archetypes:",
+      ...direction.pageArchetypes.map((item) => `  - ${item}`),
+      "- Content posture:",
+      ...direction.contentPosture.map((item) => `  - ${item}`),
       "- Palette:",
       `  - bg: ${direction.palette.bg}`,
       `  - surface: ${direction.palette.surface}`,

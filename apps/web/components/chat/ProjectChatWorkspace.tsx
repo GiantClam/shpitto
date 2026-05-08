@@ -16,6 +16,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { BrandLogo } from "@/components/brand/BrandLogo";
+import { DesignSystemPicker } from "@/components/design-system/DesignSystemPicker";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import {
   ArrowLeft,
@@ -43,6 +44,7 @@ import {
 } from "lucide-react";
 import { LOCALE_COOKIE_NAME, normalizeLocale, type Locale } from "@/lib/i18n";
 import { takeLaunchCenterChatHandoff } from "@/lib/launch-center/chat-handoff";
+import type { DesignSystemSummary } from "@/lib/design-system-registry";
 import {
   WEBSITE_DESIGN_DIRECTIONS,
   getWebsiteDesignDirection,
@@ -341,6 +343,7 @@ const REQUIREMENT_FORM_COPY: Record<RequirementFormLocale, Record<string, string
     customAudience: "自定义受众",
     designTheme: "主视觉方向与风格标签",
     customTheme: "自定义风格标签",
+    designSystemInspiration: "设计系统灵感",
     recommendedThemes: "推荐方向",
     allThemes: "全部方向",
     pageStructure: "页面数与页面结构",
@@ -374,6 +377,7 @@ const REQUIREMENT_FORM_COPY: Record<RequirementFormLocale, Record<string, string
     customAudience: "Custom audience",
     designTheme: "Primary visual direction and style tags",
     customTheme: "Custom style tag",
+    designSystemInspiration: "Design system inspiration",
     recommendedThemes: "Recommended directions",
     allThemes: "All directions",
     pageStructure: "Page count and site structure",
@@ -485,6 +489,7 @@ type RequirementFormValues = {
     referenceText?: string;
     altText?: string;
   };
+  designSystemInspiration?: DesignSystemSummary;
   customNotes: string;
 };
 
@@ -1225,6 +1230,10 @@ function initialRequirementFormValues(metadata: Record<string, unknown>): Requir
   const spec = currentSpecFromMetadata(metadata);
   const pageStructure = spec.pageStructure && typeof spec.pageStructure === "object" ? spec.pageStructure : {};
   const brandLogo = spec.brandLogo && typeof spec.brandLogo === "object" ? spec.brandLogo : {};
+  const designSystemInspiration =
+    spec.designSystemInspiration && typeof spec.designSystemInspiration === "object"
+      ? (spec.designSystemInspiration as DesignSystemSummary)
+      : undefined;
   const visualStyle = stringArray(spec.visualStyle);
   const fallbackDirection = visualStyle.find((value) => Boolean(getWebsiteDesignDirection(value)));
   const primaryVisualDirection = String(spec.primaryVisualDirection || fallbackDirection || "").trim() || undefined;
@@ -1259,6 +1268,7 @@ function initialRequirementFormValues(metadata: Record<string, unknown>): Requir
       referenceText: String(brandLogo.referenceText || ""),
       altText: String(brandLogo.altText || ""),
     },
+    designSystemInspiration,
     customNotes: String(spec.customNotes || spec.businessContext || ""),
   };
 }
@@ -1285,6 +1295,9 @@ function buildRequirementFormMessage(
       : logoOption
         ? optionDisplayLabel(logoOption, locale, "brand-logo")
         : optionLabel(logoOptions, values.brandLogo.mode);
+  const designSystemSummary = values.designSystemInspiration
+    ? `${values.designSystemInspiration.title}${values.designSystemInspiration.category ? ` (${values.designSystemInspiration.category})` : ""}`
+    : "";
   const primaryDirection = values.primaryVisualDirection ? getWebsiteDesignDirection(values.primaryVisualDirection) : undefined;
   const summary = [
     locale === "zh" ? "生成前必填信息已提交：" : "Requirement form submitted:",
@@ -1302,6 +1315,7 @@ function buildRequirementFormMessage(
         .filter(Boolean)
         .join(" + ")
     }`,
+    designSystemSummary ? `- ${copy.designSystemInspiration}: ${designSystemSummary}` : "",
     `- ${copy.pageStructure}: ${pageSummary}`,
     `- ${copy.functionalRequirements}: ${optionLabels(getOptions("functional-requirements"), values.functionalRequirements, locale, "functional-requirements")}`,
     `- ${copy.primaryGoal}: ${optionLabels(getOptions("interaction-cta"), values.primaryGoal, locale, "interaction-cta")}`,
@@ -1486,6 +1500,12 @@ function RequirementFormCard({
     setValues((prev) => ({
       ...prev,
       primaryVisualDirection: prev.primaryVisualDirection === directionId ? undefined : directionId,
+    }));
+  };
+  const selectDesignSystemInspiration = (designSystem: DesignSystemSummary) => {
+    setValues((prev) => ({
+      ...prev,
+      designSystemInspiration: designSystem,
     }));
   };
   const togglePage = (value: string) => {
@@ -1741,6 +1761,19 @@ function RequirementFormCard({
             <input value={customTheme} onChange={(event) => setCustomTheme(event.target.value)} placeholder={t.customTheme} className="min-w-0 flex-1 rounded-md border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-transparent px-2 py-1.5 text-xs outline-none" />
             <button type="button" onClick={() => { addCustomValue("secondaryVisualTags", customTheme); setCustomTheme(""); }} className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] px-2 text-xs">{t.add}</button>
           </div>
+        </section>
+
+        <section>
+          <p className="text-xs font-medium text-[var(--shp-text)]">{t.designSystemInspiration}</p>
+          <div className="mt-2 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] p-2">
+            <DesignSystemPicker selectedId={values.designSystemInspiration?.id} onSelect={selectDesignSystemInspiration} />
+          </div>
+          {values.designSystemInspiration ? (
+            <p className="mt-2 text-[11px] leading-relaxed text-[var(--shp-muted)]">
+              {values.designSystemInspiration.title}
+              {values.designSystemInspiration.category ? ` · ${values.designSystemInspiration.category}` : ""}
+            </p>
+          ) : null}
         </section>
 
         <section>

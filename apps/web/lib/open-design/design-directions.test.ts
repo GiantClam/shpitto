@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { recommendWebsiteDesignDirections } from "./design-directions";
+import { recommendWebsiteDesignDirections, renderWebsiteDesignDirectionPrompt } from "./design-directions";
 
 describe("recommendWebsiteDesignDirections", () => {
   it("recommends industrial directions for manufacturing requirements", () => {
@@ -70,5 +70,13 @@ describe("recommendWebsiteDesignDirections", () => {
 
   it("returns empty when no meaningful signals are present", () => {
     expect(recommendWebsiteDesignDirections({})).toEqual([]);
+  });
+
+  it("renders page archetypes and content posture in the confirmed direction prompt", () => {
+    const prompt = renderWebsiteDesignDirectionPrompt(["modern-minimal"]);
+
+    expect(prompt).toContain("Page archetypes:");
+    expect(prompt).toContain("Content posture:");
+    expect(prompt).toContain("Product landing page with a compact hero and feature grid");
   });
 });

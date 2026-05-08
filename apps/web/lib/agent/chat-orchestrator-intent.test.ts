@@ -226,6 +226,40 @@ describe("chat orchestrator intent", () => {
     expect(prompt).not.toContain("Default Visual Inclination (System Recommended)");
   });
 
+  it("includes the selected design system inspiration and preflight checklist in the canonical prompt", () => {
+    const text = [
+      "Requirement form submitted:",
+      "",
+      "[Requirement Form]",
+      "```json",
+      JSON.stringify({
+        siteType: "company",
+        targetAudience: ["enterprise_buyers"],
+        primaryVisualDirection: "modern-minimal",
+        designSystemInspiration: {
+          id: "linear-like",
+          title: "Linear-like workspace",
+          category: "Product design system",
+          summary: "Precise software-native surfaces with tight spacing and a restrained palette.",
+          swatches: ["#0f172a", "#f8fafc", "#2563eb"],
+          sourcePath: "skills/design-systems/design-md/linear-like.md",
+          source: "workflow-skill",
+        },
+        secondaryVisualTags: ["minimal"],
+        primaryGoal: ["brand_trust"],
+        contentSources: ["existing_domain"],
+        customNotes: "Precision CNC manufacturing website with certifications and process storytelling.",
+      }),
+      "```",
+    ].join("\n");
+    const prompt = composeStructuredPrompt(text, buildRequirementSlots(text));
+
+    expect(prompt).toContain("Design system inspiration");
+    expect(prompt).toContain("Linear-like workspace (Product design system)");
+    expect(prompt).toContain("Generation Preflight Checklist");
+    expect(prompt).toContain("Use the selected design system inspiration as the visual source of truth");
+  });
+
   it("injects a recommended visual inclination only when the user did not explicitly choose a theme", () => {
     const text = [
       "Requirement form submitted:",
