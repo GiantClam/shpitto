@@ -2,6 +2,7 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import crypto from "node:crypto";
 import { Agent, ProxyAgent, type Dispatcher } from "undici";
 import { invalidateLaunchCenterRecentProjectsCache } from "../launch-center/cache.ts";
+import type { QaSummary } from "../skill-runtime/qa-summary.ts";
 
 export type ChatTaskStatus = "queued" | "running" | "succeeded" | "failed";
 
@@ -53,6 +54,7 @@ export type ChatTaskResult = {
     checkpointWorkflowDir?: string;
     checkpointError?: string;
     nextStep?: string;
+    qaSummary?: QaSummary;
   };
 };
 
@@ -705,6 +707,18 @@ export function formatTaskEventSnapshot(params: {
     pushIf("Files", (payload as any).fileCount);
     pushIf("Pages", (payload as any).pageCount);
     pushIf("Error code", (payload as any).errorCode);
+    const qaSummary = (payload as any).qaSummary as QaSummary | undefined;
+    if (qaSummary) {
+      pushIf("QA score", qaSummary.averageScore);
+      pushIf("QA retries", qaSummary.totalRetries);
+      if (Array.isArray(qaSummary.categories) && qaSummary.categories.length > 0) {
+        const antiSlop = qaSummary.categories
+          .slice(0, 3)
+          .map((item) => `${item.code} x${item.count}`)
+          .join(", ");
+        pushIf("Anti-slop", antiSlop);
+      }
+    }
 
     let head = `Task status updated (${stageLabel}).`;
     if (eventType === "task_created") head = "Task created and queued.";
@@ -1638,6 +1652,7 @@ export async function completeChatTask(taskId: string, result: ChatTaskResult): 
           pageCount: result.progress?.pageCount || null,
           provider: result.progress?.provider || null,
           model: result.progress?.model || null,
+          qaSummary: result.progress?.qaSummary || null,
         },
       });
       if (result.assistantText) {
@@ -1698,6 +1713,7 @@ export async function updateChatTaskProgress(
           provider: merged.progress?.provider || null,
           model: merged.progress?.model || null,
           errorCode: merged.progress?.errorCode || null,
+          qaSummary: merged.progress?.qaSummary || null,
         },
       });
     }

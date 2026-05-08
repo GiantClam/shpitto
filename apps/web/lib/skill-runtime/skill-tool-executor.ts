@@ -33,6 +33,7 @@ import {
   type SkillToolFile,
 } from "./skill-tool-registry.ts";
 import { renderWebsiteQualityContract } from "./website-quality-contract.ts";
+import type { QaSummary } from "./qa-summary.ts";
 import {
   lintGeneratedWebsiteHtml,
   lintGeneratedWebsiteRouteHtml,
@@ -71,6 +72,7 @@ export type SkillToolExecutorStepSnapshot = {
   workflowArtifacts: RuntimeWorkflowFile[];
   pages: Array<{ path: string; html: string }>;
   preferredLocale: "zh-CN" | "en";
+  qaSummary?: QaSummary;
 };
 
 export type SkillToolExecutorParams = {
@@ -89,6 +91,25 @@ export type SkillToolExecutorSummary = {
   phase: string;
   completedPhases: string[];
   deployedUrl?: string;
+  qaSummary?: QaSummary;
+};
+
+type ValidatedQaSummary = {
+  averageScore: number;
+  totalRoutes: number;
+  passedRoutes: number;
+  totalRetries: number;
+  retriesAllowed: number;
+  antiSlopIssueCount: number;
+  categories: Array<{ code: string; severity: "error" | "warning"; count: number }>;
+};
+
+type SkillToolQaRecord = {
+  route: string;
+  score: number;
+  passed: boolean;
+  retries: number;
+  antiSlopIssues: Array<{ code: string; severity: "error" | "warning" }>;
 };
 
 type ToolRoundCall = {
@@ -1564,8 +1585,29 @@ export function validateAndNormalizeRequiredFiles(params: {
   files: RuntimeWorkflowFile[];
   requirementText?: string;
 }): RuntimeWorkflowFile[] {
+  return validateAndNormalizeRequiredFilesWithQa(params).files;
+}
+
+export function validateAndNormalizeRequiredFilesWithQa(params: {
+  decision: LocalDecisionPlan;
+  files: RuntimeWorkflowFile[];
+  requirementText?: string;
+}): { files: RuntimeWorkflowFile[]; qaSummary: QaSummary; qaRecords: SkillToolQaRecord[] } {
   const files = dedupeFiles(params.files);
   const byPath = new Map(files.map((file) => [normalizePath(file.path), file]));
+  const categories = new Map<string, { code: string; severity: "error" | "warning"; count: number }>();
+  let aggregateScore = 100;
+  let totalRoutes = 0;
+  const qaRecords: SkillToolQaRecord[] = [];
+  const collectLint = (lint: { score: number; issues: Array<{ code: string; severity: "error" | "warning" }> }) => {
+    aggregateScore = Math.min(aggregateScore, Number.isFinite(lint.score) ? lint.score : 0);
+    for (const issue of lint.issues || []) {
+      const key = `${issue.severity}:${issue.code}`;
+      const existing = categories.get(key);
+      if (existing) existing.count += 1;
+      else categories.set(key, { code: issue.code, severity: issue.severity, count: 1 });
+    }
+  };
   const missing = requiredFileChecklist(params.decision, {
     files,
     requirementText: params.requirementText || "",
@@ -1585,11 +1627,13 @@ export function validateAndNormalizeRequiredFiles(params: {
   }
 
   const stylesLint = lintGeneratedWebsiteStyles(styles.content);
+  collectLint(stylesLint);
   if (!stylesLint.passed) {
     throw new Error(`skill_tool_invalid_required_file: /styles.css failed layout QA\n${renderAntiSlopFeedback(stylesLint)}`);
   }
 
   for (const route of params.decision.routes) {
+    totalRoutes += 1;
     const pagePath = routeToHtmlPath(route);
     const page = byPath.get(pagePath);
     const html = ensureHtmlDocument(String(page?.content || ""));
@@ -1613,9 +1657,17 @@ export function validateAndNormalizeRequiredFiles(params: {
         pagePurpose: params.decision.pageBlueprints.find((item) => normalizePath(item.route) === normalizePath(route))?.purpose,
       }),
     );
+    collectLint(routeLint);
     if (!routeLint.passed) {
       throw new Error(`skill_tool_invalid_required_file: ${pagePath} failed route QA\n${renderAntiSlopFeedback(routeLint)}`);
     }
+    qaRecords.push({
+      route: normalizePath(route),
+      score: Math.max(0, Math.round(Number(routeLint.score || 0))),
+      passed: true,
+      retries: 0,
+      antiSlopIssues: routeLint.issues.map((issue) => ({ code: issue.code, severity: issue.severity })),
+    });
     const requestedSiteContentCount = requestedPublishableContentCount(params.requirementText || "");
     if (requestedSiteContentCount) {
       const scaffoldTerms = findVisibleBlogEditorialScaffold(html);
@@ -1723,7 +1775,7 @@ export function validateAndNormalizeRequiredFiles(params: {
     }
   }
 
-  return files.map((file) => {
+  const normalizedFiles = files.map((file) => {
     if (file.path === "/styles.css") {
       return {
         ...file,
@@ -1749,6 +1801,16 @@ export function validateAndNormalizeRequiredFiles(params: {
     }
     return file;
   });
+  const qaSummary: QaSummary = {
+    averageScore: Math.max(0, Math.round(aggregateScore)),
+    totalRoutes,
+    passedRoutes: totalRoutes,
+    totalRetries: 0,
+    retriesAllowed: 0,
+    antiSlopIssueCount: Array.from(categories.values()).reduce((sum, item) => sum + item.count, 0),
+    categories: Array.from(categories.values()).sort((left, right) => right.count - left.count || left.code.localeCompare(right.code)),
+  };
+  return { files: normalizedFiles, qaSummary, qaRecords };
 }
 
 function normalizeHrefRoute(href: string): string {
@@ -1953,6 +2015,7 @@ function emitSnapshot(params: {
   files: RuntimeWorkflowFile[];
   workflowArtifacts: RuntimeWorkflowFile[];
   pages: Array<{ path: string; html: string }>;
+  qaSummary?: QaSummary;
   onStep?: (snapshot: SkillToolExecutorStepSnapshot) => Promise<void> | void;
 }): Promise<void> | void {
   if (!params.onStep) return;
@@ -1965,6 +2028,7 @@ function emitSnapshot(params: {
     workflowArtifacts: params.workflowArtifacts,
     pages: params.pages,
     preferredLocale: params.locale,
+    qaSummary: params.qaSummary,
   });
 }
 
@@ -2231,6 +2295,8 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     let lastRoundCallNames = "";
     let lastRoundToolErrors = "";
     let completedStaticFiles: RuntimeWorkflowFile[] | undefined;
+    let completedQaSummary: QaSummary | undefined;
+    let completedQaRecords: SkillToolQaRecord[] = [];
     for (let round = 0; round < totalToolRounds; round += 1) {
       if (Date.now() - stageStartedAt > stageBudgetMs) {
         throw new Error(
@@ -2406,11 +2472,14 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
       }
       if (stillMissing.length === 0) {
         try {
-          completedStaticFiles = validateAndNormalizeRequiredFiles({
+          const validated = validateAndNormalizeRequiredFilesWithQa({
             decision,
             files: emittedFiles,
             requirementText: toolRequirementContext,
           });
+          completedStaticFiles = validated.files;
+          completedQaSummary = validated.qaSummary;
+          completedQaRecords = validated.qaRecords;
           break;
         } catch (error) {
           const feedback = errorText(error);
@@ -2434,12 +2503,37 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
       }
     }
 
-  completedStaticFiles ||= validateAndNormalizeRequiredFiles({
-    decision,
-    files: emittedFiles,
-    requirementText: toolRequirementContext,
-  });
-  const mergedWorkflowFiles = dedupeFiles([...workflowFiles, ...completedStaticFiles.filter((file) => file.path.endsWith(".md"))]);
+  if (!completedStaticFiles || !completedQaSummary) {
+    const validated = validateAndNormalizeRequiredFilesWithQa({
+      decision,
+      files: emittedFiles,
+      requirementText: toolRequirementContext,
+    });
+    completedStaticFiles = validated.files;
+    completedQaSummary = validated.qaSummary;
+    completedQaRecords = validated.qaRecords;
+  }
+  const qaReportFile: RuntimeWorkflowFile = {
+    path: "/qa-report.json",
+    type: "application/json",
+    content: JSON.stringify(
+      {
+        generatedAt: nowIso(),
+        minPassingScore: 84,
+        retriesAllowed: 0,
+        averageScore: completedQaSummary.averageScore,
+        summary: completedQaSummary,
+        records: completedQaRecords,
+      },
+      null,
+      2,
+    ),
+  };
+  const mergedWorkflowFiles = dedupeFiles([
+    ...workflowFiles,
+    ...completedStaticFiles.filter((file) => file.path.endsWith(".md")),
+    qaReportFile,
+  ]);
   const { staticFiles } = splitStaticAndWorkflow(completedStaticFiles);
   const pages = buildPagesFromRoutes(decision.routes, staticFiles, decision.locale, brandName);
   const routeToFile: Record<string, string> = {};
@@ -2523,14 +2617,15 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
   const finalPages = getPages(finalState);
 
   await emitSnapshot({
-    stepKey: "validation",
+    stepKey: "/qa-report.json",
     stepIndex: totalToolRounds,
     totalSteps: totalToolRounds,
-    status: "generating:validation",
+    status: "generating:qa_report",
     locale: decision.locale,
     files: finalFiles as RuntimeWorkflowFile[],
     workflowArtifacts: mergedWorkflowFiles,
     pages: finalPages as Array<{ path: string; html: string }>,
+    qaSummary: completedQaSummary,
     onStep: params.onStep,
   });
 
@@ -2544,5 +2639,6 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     phase: String(finalState.phase || "end"),
     completedPhases: collectCompletedPhases(finalState),
     deployedUrl: finalState.deployed_url,
+    qaSummary: completedQaSummary,
   };
 }

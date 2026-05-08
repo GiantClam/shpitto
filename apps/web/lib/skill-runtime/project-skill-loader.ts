@@ -16,6 +16,7 @@ export type ProjectSkillDescriptor = {
   config?: Record<string, unknown>;
   websiteMetadata?: WebsiteSkillMetadata;
   frontmatter: SkillFrontmatterSummary;
+  resourceIndex?: ProjectSkillResourceIndex;
 };
 
 export type ProjectSkillBundleDescriptor = {
@@ -94,6 +95,26 @@ type ProjectSkillIndexEntry = {
   websiteMetadata?: WebsiteSkillMetadata;
 };
 
+export type ProjectSkillTemplateSummary = {
+  path: string;
+  tokenNames: string[];
+  responsiveBreakpoint?: string;
+  keyClasses: string[];
+};
+
+export type ProjectSkillChecklistSummary = {
+  path: string;
+  p0Count: number;
+  p1Count: number;
+  p2Count: number;
+  criticalChecks: string[];
+};
+
+export type ProjectSkillResourceIndex = {
+  templateHtml?: ProjectSkillTemplateSummary;
+  checklist?: ProjectSkillChecklistSummary;
+};
+
 export type WebsiteSeedSkillSelection = {
   id: string;
   score: number;
@@ -110,6 +131,112 @@ async function readJsonIfExists(filePath: string): Promise<Record<string, unknow
     // Ignore invalid or missing JSON: skill runtime can still rely on SKILL.md.
   }
   return undefined;
+}
+
+function uniqueTrimmed(items: string[]): string[] {
+  return Array.from(new Set((items || []).map((item) => String(item || "").trim()).filter(Boolean)));
+}
+
+function summarizeTemplateHtml(content: string, filePath: string): ProjectSkillTemplateSummary | undefined {
+  const text = String(content || "");
+  if (!text.trim()) return undefined;
+  const rootBlock = text.match(/:root\s*\{([\s\S]*?)\}/i)?.[1] || "";
+  const tokenNames = uniqueTrimmed(Array.from(rootBlock.matchAll(/--([a-z0-9-]+)\s*:/gi)).map((match) => `--${match[1]}`));
+  const responsiveBreakpoint = text.match(/@media\s*\(max-width:\s*([0-9]+px)\)/i)?.[1] || undefined;
+  const keyClassCandidates = ["container", "section", "topnav", "pagefoot", "grid-2", "grid-3", "grid-4", "card", "btn", "ph-img"];
+  const keyClasses = keyClassCandidates.filter((className) => new RegExp(`\\.${className}\\b`).test(text));
+  return {
+    path: filePath,
+    tokenNames: tokenNames.slice(0, 12),
+    responsiveBreakpoint,
+    keyClasses,
+  };
+}
+
+function extractChecklistSection(content: string, headingPrefix: string): string[] {
+  const lines = String(content || "").split(/\r?\n/);
+  const start = lines.findIndex((line) => line.trim().toLowerCase().startsWith(headingPrefix.toLowerCase()));
+  if (start < 0) return [];
+  const block: string[] = [];
+  for (const line of lines.slice(start + 1)) {
+    if (/^##\s+/.test(line.trim())) break;
+    block.push(line);
+  }
+  return block;
+}
+
+function countChecklistItems(lines: string[]): number {
+  return lines.filter((line) => /^\s*-\s*\[[ xX]?\]/.test(line)).length;
+}
+
+function summarizeChecklist(content: string, filePath: string): ProjectSkillChecklistSummary | undefined {
+  const text = String(content || "");
+  if (!text.trim()) return undefined;
+  const p0Lines = extractChecklistSection(text, "## P0");
+  const p1Lines = extractChecklistSection(text, "## P1");
+  const p2Lines = extractChecklistSection(text, "## P2");
+  const criticalChecks = uniqueTrimmed(
+    p0Lines
+      .filter((line) => /^\s*-\s*\[[ xX]?\]/.test(line))
+      .map((line) => line.match(/\*\*(.+?)\*\*/) ? String(line.match(/\*\*(.+?)\*\*/)?.[1] || "") : line.replace(/^\s*-\s*\[[ xX]?\]\s*/, "").split(". ")[0] || "")
+      .slice(0, 6),
+  );
+  return {
+    path: filePath,
+    p0Count: countChecklistItems(p0Lines),
+    p1Count: countChecklistItems(p1Lines),
+    p2Count: countChecklistItems(p2Lines),
+    criticalChecks,
+  };
+}
+
+async function buildProjectSkillResourceIndex(rootDir: string): Promise<ProjectSkillResourceIndex | undefined> {
+  const fs = await import("node:fs/promises");
+  const templatePath = path.join(rootDir, "assets", "template.html");
+  const checklistPath = path.join(rootDir, "references", "checklist.md");
+  const resourceIndex: ProjectSkillResourceIndex = {};
+
+  if (await pathExists(templatePath)) {
+    const template = summarizeTemplateHtml(await fs.readFile(templatePath, "utf8"), "assets/template.html");
+    if (template) resourceIndex.templateHtml = template;
+  }
+  if (await pathExists(checklistPath)) {
+    const checklist = summarizeChecklist(await fs.readFile(checklistPath, "utf8"), "references/checklist.md");
+    if (checklist) resourceIndex.checklist = checklist;
+  }
+
+  return resourceIndex.templateHtml || resourceIndex.checklist ? resourceIndex : undefined;
+}
+
+export function renderProjectSkillResourceIndex(index?: ProjectSkillResourceIndex): string {
+  if (!index) return "";
+  const lines = ["## Seed Resource Index"];
+  if (index.templateHtml) {
+    lines.push(
+      [
+        `- ${index.templateHtml.path}: reusable HTML seed`,
+        index.templateHtml.tokenNames.length > 0 ? `tokens ${index.templateHtml.tokenNames.join(", ")}` : "",
+        index.templateHtml.keyClasses.length > 0 ? `key classes ${index.templateHtml.keyClasses.join(", ")}` : "",
+        index.templateHtml.responsiveBreakpoint ? `responsive collapse at ${index.templateHtml.responsiveBreakpoint}` : "",
+      ]
+        .filter(Boolean)
+        .join("; "),
+    );
+  }
+  if (index.checklist) {
+    lines.push(
+      [
+        `- ${index.checklist.path}: self-review gates`,
+        `P0=${index.checklist.p0Count}`,
+        `P1=${index.checklist.p1Count}`,
+        `P2=${index.checklist.p2Count}`,
+        index.checklist.criticalChecks.length > 0 ? `critical checks ${index.checklist.criticalChecks.join("; ")}` : "",
+      ]
+        .filter(Boolean)
+        .join("; "),
+    );
+  }
+  return lines.join("\n");
 }
 
 export async function listProjectSkills(start?: string): Promise<string[]> {
@@ -381,6 +508,7 @@ export async function loadProjectSkill(skillId: string, start?: string): Promise
     config,
     websiteMetadata,
     frontmatter,
+    resourceIndex: await buildProjectSkillResourceIndex(targetRoot),
   };
 }
 

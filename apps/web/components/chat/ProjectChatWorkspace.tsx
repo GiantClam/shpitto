@@ -50,6 +50,8 @@ import {
   getWebsiteDesignDirection,
   recommendWebsiteDesignDirections,
 } from "@/lib/open-design/design-directions";
+import { buildPreviewDeviceUrl } from "@/lib/preview-frame";
+import type { QaSummary } from "@/lib/skill-runtime/qa-summary";
 import { getProjectWorkspaceCopy } from "./project-workspace-copy";
 
 type TaskStatus = "queued" | "running" | "succeeded" | "failed";
@@ -68,6 +70,7 @@ type TaskResult = {
     pageCount?: number;
     generatedFiles?: string[];
     checkpointProjectPath?: string;
+    qaSummary?: QaSummary;
   };
 };
 
@@ -88,6 +91,7 @@ type TaskEventPayload = {
   error?: unknown;
   message?: unknown;
   text?: unknown;
+  qaSummary?: QaSummary | unknown;
 };
 
 type TaskEvent = {
@@ -975,6 +979,26 @@ function cleanEventValue(value: unknown): string {
   return String(value || "").trim();
 }
 
+export function formatQaSummaryDetail(summary: QaSummary | null | undefined, locale: RequirementFormLocale = "en"): string {
+  if (!summary) return "";
+  const parts: string[] = [];
+  parts.push(`QA ${Math.max(0, Number(summary.averageScore || 0))}`);
+  if (Number(summary.totalRetries || 0) > 0) parts.push(`${Number(summary.totalRetries || 0)} retries`);
+  if (Number(summary.antiSlopIssueCount || 0) > 0 && Array.isArray(summary.categories) && summary.categories.length > 0) {
+    const topCategories = summary.categories
+      .slice(0, 3)
+      .map((item) => `anti-slop/${item.code} x${item.count}`)
+      .join(", ");
+    if (topCategories) parts.push(topCategories);
+  }
+  if (Number(summary.totalRoutes || 0) > 0) {
+    const passed = Math.max(0, Number(summary.passedRoutes || 0));
+    const total = Math.max(0, Number(summary.totalRoutes || 0));
+    parts.push(locale === "zh" ? `${passed}/${total} 页通过` : `${passed}/${total} routes passed`);
+  }
+  return parts.join(" · ");
+}
+
 function friendlyFileLabel(filePath?: string, locale: RequirementFormLocale = "en"): string {
   const copy = CHAT_CARD_COPY[locale];
   const normalized = cleanEventValue(filePath).replace(/\\/g, "/").replace(/^\/+/, "");
@@ -987,6 +1011,7 @@ function friendlyFileLabel(filePath?: string, locale: RequirementFormLocale = "e
   if (lower.endsWith("task_plan.md")) return copy.taskPlan;
   if (lower.endsWith("findings.md")) return copy.findings;
   if (lower.endsWith("design.md")) return copy.design;
+  if (lower.endsWith("qa-report.json")) return copy.qaReport;
   if (lower.endsWith("qa_report.md")) return copy.qaReport;
   return fileName.replace(/\.(html|md|css|js)$/i, "");
 }
@@ -1028,9 +1053,14 @@ function progressDetailFromEvent(event: TaskEvent, locale: RequirementFormLocale
   const filePath = cleanEventValue(payload.filePath || payload.path);
   const error = cleanEventValue(payload.error);
   const message = cleanEventValue(payload.message || payload.text);
+  const qaSummary = (payload.qaSummary || null) as QaSummary | null;
   const fileLabel = friendlyFileLabel(filePath, locale);
   if (error) return error;
   if (message && !/^task_[a-z_]+\b/i.test(message)) return message;
+  const qaDetail = formatQaSummaryDetail(qaSummary, locale);
+  if (qaDetail && (cleanEventValue(event.stage).toLowerCase().includes("qa") || cleanEventValue(event.eventType).toLowerCase().includes("succeeded"))) {
+    return qaDetail;
+  }
   if (fileLabel) return `${CHAT_CARD_COPY[locale].currentProcessing}: ${fileLabel}`;
   return "";
 }
@@ -1115,14 +1145,6 @@ const PREVIEW_DEVICE_OPTIONS: Array<{
     iframeClassName: "h-full w-full bg-transparent",
   },
 ];
-
-function buildPreviewDeviceUrl(previewUrl: string, deviceId: PreviewDeviceId, urlLabel: string): string {
-  const device = PREVIEW_DEVICE_OPTIONS.find((item) => item.id === deviceId);
-  if (!device?.frame) return previewUrl;
-  const params = new URLSearchParams({ screen: previewUrl });
-  if (device.id === "browser") params.set("url", urlLabel || "Generated preview");
-  return `/frames/${device.frame}?${params.toString()}`;
-}
 
 function hostFromUrl(value: string): string {
   const normalized = String(value || "").trim();
@@ -2278,7 +2300,9 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
     [previewDevice],
   );
   const previewShellUrl = useMemo(() => {
-    return buildPreviewDeviceUrl(previewFrameUrl, previewDevice, deployedHost || "Local preview");
+    const device = PREVIEW_DEVICE_OPTIONS.find((item) => item.id === previewDevice) || PREVIEW_DEVICE_OPTIONS[0];
+    const currentOrigin = typeof window !== "undefined" ? window.location.origin : "";
+    return buildPreviewDeviceUrl(previewFrameUrl, device, deployedHost || "Local preview", currentOrigin);
   }, [deployedHost, previewDevice, previewFrameUrl]);
 
   useEffect(() => {
@@ -2353,6 +2377,8 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
       const lastUpdated = formatProgressTime(task.updatedAt);
       if (lastUpdated) parts.push(`${copy.lastUpdated} ${lastUpdated}`);
     }
+    const qaDetail = formatQaSummaryDetail(progress.qaSummary || null, conversationLocale);
+    if (qaDetail) parts.push(qaDetail);
     return parts.join(" · ");
   }, [conversationLocale, task]);
 

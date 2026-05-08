@@ -126,10 +126,30 @@
 
   <script>
     (function () {
+      function sanitizeScreenTarget(value) {
+        var raw = String(value || '').trim();
+        if (!raw || /^(?:javascript|data|vbscript|file):/i.test(raw)) return '';
+        try {
+          var resolved = new URL(raw, location.origin);
+          if (!/^https?:$/.test(resolved.protocol)) return '';
+          if (resolved.origin !== location.origin) return '';
+          return resolved.pathname + resolved.search + resolved.hash;
+        } catch (_error) {
+          return '';
+        }
+      }
+
+      function showBlockedTarget(iframe) {
+        if (!iframe) return;
+        iframe.setAttribute('title', 'Blocked preview target');
+        iframe.srcdoc = '<!doctype html><html><body style="margin:0;display:grid;place-items:center;min-height:100vh;font:14px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;color:#6b6964;background:#fafaf7;">Blocked preview target.</body></html>';
+      }
+
       var qs = new URLSearchParams(location.search);
-      var src = qs.get('screen');
+      var src = sanitizeScreenTarget(qs.get('screen'));
       var iframe = document.getElementById('screen');
       if (src) iframe.src = src;
+      else if (qs.get('screen')) showBlockedTarget(iframe);
     })();
   </script>
 </body>

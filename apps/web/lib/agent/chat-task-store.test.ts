@@ -382,6 +382,28 @@ describe("chat-task-store", () => {
     expect(progressText).toContain("Tool: emit_file");
     expect(progressText).toContain("File: /index.html");
 
+    const qaText = formatTaskEventSnapshot({
+      eventType: "task_progress",
+      stage: "generating:qa_report",
+      payload: {
+        qaSummary: {
+          averageScore: 92,
+          totalRoutes: 6,
+          passedRoutes: 6,
+          totalRetries: 2,
+          retriesAllowed: 2,
+          antiSlopIssueCount: 3,
+          categories: [
+            { code: "nav-scaffold-copy", count: 2, severity: "warning" },
+            { code: "footer-scaffold-copy", count: 1, severity: "warning" },
+          ],
+        },
+      },
+    });
+    expect(qaText).toContain("QA score: 92");
+    expect(qaText).toContain("QA retries: 2");
+    expect(qaText).toContain("Anti-slop: nav-scaffold-copy x2, footer-scaffold-copy x1");
+
     const failedText = formatTaskEventSnapshot({
       eventType: "task_failed",
       stage: "failed",

@@ -257,8 +257,8 @@ apps/web/components/chat/ProjectChatWorkspace.tsx
 
 后续强化：
 
-- 增加 `screen` 参数同源校验，避免用户手动构造外部 URL 预览。
-- 增加 frame route smoke test。
+- 已完成：`/frames/*` 已增加 `screen` 参数同源校验，阻止外部 URL / `javascript:` / `data:` 注入预览 iframe。
+- 已完成：已补充 preview frame smoke test，覆盖 Browser / MacBook / iPad / iPhone / Pixel 外壳。
 
 ## Phase 5: Anti-Slop Linter 与 QA 合并
 
@@ -346,16 +346,10 @@ pnpm test -- anti-slop-linter.test.ts project-skill-loader.test.ts
 
 ## 剩余风险
 
-1. `DesignSystemPicker` 当前已可复用，但尚未强接入 chat brief 的 design-system 选择状态。
-2. 设备 frame 当前用于预览展示，仍需要补 `screen` 参数同源 sanitizer 测试。
-3. anti-slop linter 是首批规则，后续应补充 footer/nav/mobile-nav/external-image/invented-metric 等更细规则。
-4. prompt stack 已统一质量合同，但还未做 snapshot 测试锁定最终 prompt 文本。
-5. copied Open Design seed skill 内部 markdown 存在上游文本编码痕迹，不影响运行，但后续可做文档清理。
+1. copied Open Design seed skill 内部 markdown 仍保留上游文本编码痕迹，不影响运行，但后续可做文档清理。
 
 ## 后续建议
 
-1. 将 `DesignSystemPicker` 接入 brief 表单，让用户显式选择 design system。
-2. 为 `/frames/*` 增加同源 preview sanitizer 和 smoke test。
-3. 给 `Website Quality Contract` 与 `load_skill` payload 增加 snapshot tests。
-4. 在 QA report 中单独输出 anti-slop issue 分类和 repair 次数。
-5. 对 seed skill 的 `assets/template.html` 与 `references/checklist.md` 做摘要索引，减少每轮 prompt token。
+1. 将本方案对应的实现整理为一次 Lore commit，并保留回滚边界说明。
+2. 如果后续继续扩展 Open Design seed skill，优先保持 frontmatter discovery 和 resource index 自动发现路径，不再为具体 skill 添加 TS 分支。
+3. 后续如需继续降 token，可把 `references/layouts.md` 做第二层摘要索引，但应保持按需注入而不是默认全量展开。

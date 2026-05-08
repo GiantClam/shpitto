@@ -83,6 +83,7 @@ import {
 } from "../visual-qa/anti-slop-linter.ts";
 import { runSkillToolExecutor } from "./skill-tool-executor.ts";
 import { renderWebsiteQualityContract } from "./website-quality-contract.ts";
+import type { QaSummary } from "./qa-summary.ts";
 import { validateComponent, type DesignSpec, type ValidationResult } from "../../skills/design-website-generator/tools/component-validator.ts";
 import {
   buildContextForPageN,
@@ -132,6 +133,7 @@ export type SkillRuntimeStepSnapshot = {
   workflowArtifacts: WorkflowArtifactFile[];
   pages: Array<{ path: string; html: string }>;
   preferredLocale: "zh-CN" | "en";
+  qaSummary?: QaSummary;
 };
 
 export type SkillRuntimeExecutionSummary = {
@@ -144,6 +146,7 @@ export type SkillRuntimeExecutionSummary = {
   phase: string;
   completedPhases: SkillRuntimePhase[];
   deployedUrl?: string;
+  qaSummary?: QaSummary;
 };
 
 export type RunSkillRuntimeExecutorParams = {
@@ -196,6 +199,7 @@ type PageQaRecord = {
   retries: number;
   errors: string[];
   warnings: string[];
+  antiSlopIssues: Array<{ code: string; severity: "error" | "warning" }>;
 };
 
 const QA_MAX_RETRIES = Math.max(0, Number(process.env.SKILL_QA_MAX_RETRIES || 2));
@@ -240,6 +244,33 @@ function mergeValidationWithAntiSlop(base: ValidationResult, antiSlop: AntiSlopL
 
 function nowIso(): string {
   return new Date().toISOString();
+}
+
+function buildQaSummaryFromPageRecords(records: PageQaRecord[], retriesAllowed: number): QaSummary {
+  const safeRecords = Array.isArray(records) ? records : [];
+  const averageScore =
+    safeRecords.length > 0
+      ? Math.round(safeRecords.reduce((sum, item) => sum + Number(item.score || 0), 0) / safeRecords.length)
+      : 100;
+  const categoryMap = new Map<string, { code: string; severity: "error" | "warning"; count: number }>();
+  for (const record of safeRecords) {
+    for (const issue of record.antiSlopIssues || []) {
+      const key = `${issue.severity}:${issue.code}`;
+      const existing = categoryMap.get(key);
+      if (existing) existing.count += 1;
+      else categoryMap.set(key, { code: issue.code, severity: issue.severity, count: 1 });
+    }
+  }
+  const categories = Array.from(categoryMap.values()).sort((left, right) => right.count - left.count || left.code.localeCompare(right.code));
+  return {
+    averageScore,
+    totalRoutes: safeRecords.length,
+    passedRoutes: safeRecords.filter((item) => item.passed).length,
+    totalRetries: safeRecords.reduce((sum, item) => sum + Math.max(0, Number(item.retries || 0)), 0),
+    retriesAllowed: Math.max(0, Number(retriesAllowed || 0)),
+    antiSlopIssueCount: categories.reduce((sum, item) => sum + item.count, 0),
+    categories,
+  };
 }
 
 async function bestEffortWithTimeout<T>(
@@ -3102,6 +3133,7 @@ class NativeSkillRuntime {
       workflowArtifacts: [...this.workflowFiles],
       pages: [...this.pages],
       preferredLocale: this.context.locale,
+      qaSummary: this.qaRecords.length > 0 ? buildQaSummaryFromPageRecords(this.qaRecords, QA_MAX_RETRIES) : undefined,
     });
   }
 
@@ -3408,6 +3440,7 @@ class NativeSkillRuntime {
     let qaFeedback = "";
     let finalHtml = "";
     let finalQa: ValidationResult | null = null;
+    let finalAntiSlop = { passed: true, score: 100, issues: [] as Array<{ code: string; severity: "error" | "warning"; message: string }> };
     const pageBlueprint = findPageBlueprint(this.context.decision, params.route);
 
     while (attempt <= QA_MAX_RETRIES) {
@@ -3428,6 +3461,7 @@ class NativeSkillRuntime {
           pagePurpose: pageBlueprint.purpose,
         }),
       );
+      finalAntiSlop = antiSlop;
       finalQa = mergeValidationWithAntiSlop(
         await validateComponent(finalHtml, this.context.designSpec, this.context.designContext),
         antiSlop,
@@ -3462,6 +3496,7 @@ class NativeSkillRuntime {
       retries: Math.min(attempt, QA_MAX_RETRIES),
       errors: qa.errors || [],
       warnings: qa.warnings || [],
+      antiSlopIssues: finalAntiSlop.issues.map((issue) => ({ code: issue.code, severity: issue.severity })),
     });
     return finalHtml || params.fallbackHtml;
   }
@@ -3675,6 +3710,7 @@ ${qaFeedback ? `\nQA fix instructions (attempt ${attempt}):\n${qaFeedback}` : ""
       this.qaRecords.length > 0
         ? Math.round(this.qaRecords.reduce((sum, item) => sum + Number(item.score || 0), 0) / this.qaRecords.length)
         : 100;
+    const summary = buildQaSummaryFromPageRecords(this.qaRecords, QA_MAX_RETRIES);
     await this.writeWorkflow(
       "/qa-report.json",
       JSON.stringify(
@@ -3683,6 +3719,7 @@ ${qaFeedback ? `\nQA fix instructions (attempt ${attempt}):\n${qaFeedback}` : ""
           minPassingScore: QA_MIN_SCORE,
           retriesAllowed: QA_MAX_RETRIES,
           averageScore,
+          summary,
           records: this.qaRecords,
         },
         null,
@@ -3810,6 +3847,10 @@ ${qaFeedback ? `\nQA fix instructions (attempt ${attempt}):\n${qaFeedback}` : ""
     };
     return finalState;
   }
+
+  getQaSummary(): QaSummary {
+    return buildQaSummaryFromPageRecords(this.qaRecords, QA_MAX_RETRIES);
+  }
 }
 
 async function runLegacySkillRuntimeExecutor(params: RunSkillRuntimeExecutorParams): Promise<SkillRuntimeExecutionSummary> {
@@ -3833,6 +3874,7 @@ async function runLegacySkillRuntimeExecutor(params: RunSkillRuntimeExecutorPara
     throw new Error("skill-runtime failed to complete all stages");
   }
   const finalText = String(assistantText || "").trim() || `Skill-native completed in ${elapsedMs}ms.`;
+  const qaSummary = runtime.getQaSummary();
 
   return {
     state: nextState,
@@ -3844,6 +3886,7 @@ async function runLegacySkillRuntimeExecutor(params: RunSkillRuntimeExecutorPara
     phase: String(nextState.phase || "end"),
     completedPhases: SKILL_RUNTIME_FIXED_PHASES.filter((phase) => completedPhases.includes(phase)),
     deployedUrl: nextState.deployed_url,
+    qaSummary,
   };
 }
 
@@ -3860,6 +3903,7 @@ export async function runSkillRuntimeExecutor(params: RunSkillRuntimeExecutorPar
       phase: String(summary.phase || summary.state.phase || "end"),
       completedPhases: SKILL_RUNTIME_FIXED_PHASES.filter((phase) => summary.completedPhases.includes(phase)),
       deployedUrl: summary.deployedUrl,
+      qaSummary: summary.qaSummary,
     };
   }
   return await runLegacySkillRuntimeExecutor(params);
@@ -5808,6 +5852,7 @@ export class SkillRuntimeExecutor {
                 checkpointWorkflowDir: latestCheckpointWorkflowDir,
                 r2UploadedCount: persisted.r2UploadedCount,
                 r2UploadError: persisted.r2Error || null,
+                qaSummary: snapshot.qaSummary,
               } as any,
             });
           } catch (progressError) {
@@ -5919,6 +5964,7 @@ export class SkillRuntimeExecutor {
           round: stepCount,
           maxRounds: stepCount,
           pendingEditsCount: pendingEdits.length,
+          qaSummary: summary.qaSummary,
         } as any,
       };
 

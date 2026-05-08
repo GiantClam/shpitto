@@ -1,6 +1,7 @@
 import {
   getWebsiteGenerationSkillBundle,
   loadProjectSkill,
+  renderProjectSkillResourceIndex,
   resolveProjectSkillAlias,
   WEBSITE_GENERATION_SKILL_BUNDLE,
   type ProjectSkillDescriptor,
@@ -259,11 +260,14 @@ export async function handleSkillToolCall(
       };
     }
     const metadataPrompt = skill.websiteMetadata ? renderWebsiteSkillMetadataPrompt(skill.websiteMetadata) : "";
+    const resourceIndexPrompt = renderProjectSkillResourceIndex(skill.resourceIndex);
     const payload = [
       `# skill:${resolvedSkillId}`,
       "",
       metadataPrompt,
       metadataPrompt ? "" : undefined,
+      resourceIndexPrompt,
+      resourceIndexPrompt ? "" : undefined,
       clipText(skill.content, Number(context.maxSkillChars || DEFAULT_MAX_SKILL_CHARS)),
     ]
       .filter((part): part is string => typeof part === "string")

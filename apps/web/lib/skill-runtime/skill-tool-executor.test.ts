@@ -11,6 +11,7 @@ import {
   runSkillToolExecutor,
   sanitizeRequirementForGenerationForTesting,
   validateAndNormalizeRequiredFiles,
+  validateAndNormalizeRequiredFilesWithQa,
 } from "./skill-tool-executor";
 import { renderWebsiteQualityContract } from "./website-quality-contract";
 import { buildLocalDecisionPlan } from "./decision-layer";
@@ -251,6 +252,48 @@ describe("skill-tool-executor", () => {
     expect(contract).toContain("Metrics must be source-backed");
   });
 
+  it("returns structured qa summary for validated files", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build routes / and /contact.")],
+      phase: "conversation",
+    } as any);
+
+    const validated = validateAndNormalizeRequiredFilesWithQa({
+      decision,
+      files: validGeneratedFiles(decision.routes),
+      requirementText: "Build routes / and /contact.",
+    });
+
+    expect(validated.files.length).toBeGreaterThan(0);
+    expect(validated.qaSummary.totalRoutes).toBe(decision.routes.length);
+    expect(validated.qaSummary.passedRoutes).toBe(decision.routes.length);
+    expect(validated.qaSummary.averageScore).toBeGreaterThan(0);
+    expect(Array.isArray(validated.qaRecords)).toBe(true);
+  });
+
+  it("locks the website quality contract wording with a snapshot", () => {
+    expect(renderWebsiteQualityContract()).toMatchInlineSnapshot(`
+      "## Website Quality Contract
+      - Runtime scope is website generation only; do not generate mobile apps, slide decks, native app screens, or external coding-agent instructions.
+      - One generated website must render correctly in desktop browser, MacBook, iPad, iPhone, and Android preview shells.
+      - Treat preview as WYSIWYG: navigation, layout, media, forms, and responsive breakpoints must work inside iframe preview.
+      - Use the selected local design system as the visual source of truth for color, typography, spacing, radius, shadows, motion, and component rhythm.
+      - Avoid AI-slop defaults: no placeholder copy, no generic Feature 1/2/3 grids, no anonymous testimonials, no fake metrics, no repeated card modules across pages.
+      - Navigation must use meaningful route labels; do not leave desktop or mobile nav shells as generic menu/navigation/quick links scaffolds.
+      - Footer must contribute real site content; avoid copyright-only placeholders, label-only footers, or generic legal shells that add no value.
+      - Mobile nav may collapse visually, but it still needs the same meaningful destinations as desktop rather than a menu-only placeholder shell.
+      - External imagery must come from source-backed or project-owned assets; do not ship example.com, placeholder.com, or other demo/stock placeholder URLs.
+      - Metrics must be source-backed; do not invent percentages, multipliers, "hours saved", growth, or conversion-lift claims without brief or citation support.
+      - Visual direction must be distinctive: expressive type pairing, intentional background system, layered sections, strong hero composition, and mobile-specific composition.
+      - CSS must include responsive strategy using media queries, container queries, or clamp-based fluid sizing.
+      - Every page must contain enough route-specific content depth to stand alone; sibling pages must not be superficial copies.
+      - Route / must always read as the site home entry, not as a downloads hub, certification portal, or login page.
+      - If a hero visual rail is tall, it must contain real media, chart, or data-viz content; do not leave a large empty visual card with only bottom-aligned text.
+      - Result cards rendered inside a 12-column grid must span the full available row unless the design explicitly calls for a narrower card layout.
+      - Final HTML must include viewport meta, semantic landmarks, accessible labels, keyboard-safe interactions, and shared stylesheet/script references."
+    `);
+  });
+
   it("keeps person-led homepages distinct from downstream blog archives", () => {
     const plan = buildLocalDecisionPlan({
       messages: [
@@ -300,6 +343,45 @@ describe("skill-tool-executor", () => {
     const detailContract = formatTargetPageContract(plan, "/blog/agile-devops-system-design/index.html", requirement);
     expect(detailContract).toContain("Render exactly one visible article language body in this file.");
     expect(detailContract).toContain("alternating zh/en paragraphs in the initial HTML");
+  });
+
+  it("locks a representative target page contract with a snapshot", () => {
+    const plan = buildLocalDecisionPlan({
+      messages: [
+        new HumanMessage(
+          "Build a 6-page industrial-style English website for LC-CNC: Home, 3C Machines, Custom Solutions, Cases, About, Contact.",
+        ),
+      ],
+      phase: "conversation",
+    } as any);
+
+    expect(formatTargetPageContract(plan, "/3c-machines/index.html")).toMatchInlineSnapshot(`
+      "Target page contract:
+      - File: /3c-machines/index.html
+      - Route: /3c-machines
+      - Nav label: 3C Machines
+      - Page intent: Dedicated page for "3C Machines". Derive its content depth, section structure, and interactions from the confirmed Canonical Website Prompt, source content, and route intent.
+      - Intent source: nav_label
+      - Page kind: intent
+      - The confirmed Canonical Website Prompt is authoritative for page structure, content depth, audience, and design direction.
+      - Page constraints:
+        - Canonical Website Prompt is the authoritative source for website type, audience, content scope, page structure, and design direction.
+        - Do not use hardcoded industry templates, product assumptions, or generic replacement text when the Canonical Website Prompt provides source content.
+        - The page must be meaningfully distinct from sibling pages in section purpose, headings, content, and layout.
+        - Navigation links must stay within the fixed route list and preserve the configured navigation order.
+      - No route-specific source excerpt was found; derive a unique page architecture from the complete Canonical Website Prompt.
+      - Derive route-specific sections, headings, card types, and interactions from the Canonical Website Prompt and source content.
+      - Use a page-specific body architecture. Shared header/footer/design tokens are allowed; the main content section order, visual modules, and primary components must differ from sibling routes.
+      - Do not apply a hardcoded industry skeleton or copy the previous page layout and only swap text.
+      - Follow the workflow skill's Shared Shell/Footer Contract for header, main, and footer requirements.
+      Sibling page intents to stay visually distinct from:
+      /: Homepage. Establish the brand overview, core value, primary route entry, and next action while preserving site home-entry semantics.
+      /custom-solutions: Dedicated page for "Custom Solutions". Derive its content depth, section structure, and interactions from the confirmed Canonical Website Prompt, source content, and route intent.
+      /cases: Dedicated page for "Cases". Derive its content depth, section structure, and interactions from the confirmed Canonical Website Prompt, source content, and route intent.
+      /blog: Content collection page for "Blog". The visible page must follow this route's own information architecture; implementation capability must not become a visitor-facing topic.
+      /contact: Dedicated page for "Contact". Derive its content depth, section structure, and interactions from the confirmed Canonical Website Prompt, source content, and route intent.
+      /about: Dedicated page for "About". Derive its content depth, section structure, and interactions from the confirmed Canonical Website Prompt, source content, and route intent."
+    `);
   });
 
   it("strips legacy localized 3.5 module blueprints before generation", () => {
