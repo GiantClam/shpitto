@@ -2,7 +2,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createChatTask, getChatTask } from "../agent/chat-task-store";
-import { runPostDeploySmoke, SkillRuntimeExecutor } from "./executor";
+import {
+  buildBlogContentWorkflowPreview,
+  buildGeneratedBlogSeedPostsForTesting,
+  runPostDeploySmoke,
+  SkillRuntimeExecutor,
+} from "./executor";
 
 function buildStaticSiteProject() {
   return {
@@ -22,6 +27,256 @@ function buildStaticSiteProject() {
 }
 
 describe("SkillRuntimeExecutor deploy-only path", () => {
+  it("builds three source-derived Blog seed posts from the provided website content", () => {
+    const posts = buildGeneratedBlogSeedPostsForTesting({
+      locale: "zh-CN",
+      sourceText: [
+        "URL：https://example.com/casux",
+        "source: requirement_spec, route: /casux-research-center, navLabel: CASUX研究中心, purpose: 查询目录页。",
+        "CASUX 信息平台汇聚政策法规、标准文件、研究报告、案例库与产品数据库。",
+        "CASUX 适儿化改造标准体系服务儿童友好空间建设、认证查询和资料下载。",
+        "研究中心提供环境健康、空间体验和实践案例的证据支持。",
+      ].join("\n"),
+    });
+
+    expect(posts).toHaveLength(3);
+    expect(posts.map((post) => post.status)).toEqual(["published", "published", "published"]);
+    expect(posts.map((post) => post.slug)).toEqual([
+      "casux-standards-resources",
+      "casux-research-cases",
+      "casux-certification-actions",
+    ]);
+    const combined = posts.map((post) => `${post.title} ${post.excerpt} ${post.contentMd}`).join("\n");
+    expect(combined).toMatch(/CASUX|适儿化|儿童友好|标准文件|研究报告|案例库|认证查询|资料下载/);
+    expect(combined).not.toMatch(/Specific Replay|marker|lorem ipsum|template news|requirement_spec|navLabel|route:/i);
+  });
+
+  it("prioritizes concrete source document titles when seeding Blog posts", () => {
+    const posts = buildGeneratedBlogSeedPostsForTesting({
+      locale: "zh-CN",
+      sourceText: [
+        "CASUX 信息平台展示用户资料中的具体内容。",
+        "《儿童友好城市建设相关政策汇编》",
+        "该政策汇编用于整理儿童友好城市建设、社区空间改造和适儿化服务相关法规政策。",
+        "《适儿化空间建设标准指南》",
+        "该标准指南说明空间安全、环保材料、无障碍、采光通风和儿童参与设计。",
+        "《儿童友好空间实践案例研究报告》",
+        "该研究报告用于归纳案例库中的实践路径、评估方法和项目经验。",
+      ].join("\n"),
+    });
+
+    expect(posts).toHaveLength(3);
+    expect(posts.map((post) => post.title)).toEqual([
+      "儿童友好城市建设相关政策汇编",
+      "适儿化空间建设标准指南",
+      "儿童友好空间实践案例研究报告",
+    ]);
+    expect(posts[0]?.category).toBe("政策法规");
+    expect(posts[0]?.slug).toBe("policy-resource-1");
+    const combined = posts.map((post) => `${post.title} ${post.excerpt} ${post.contentMd}`).join("\n");
+    expect(combined).toContain("儿童友好城市建设相关政策汇编");
+    expect(combined).not.toMatch(/Blog backend|Blog API|runtime|fallback/i);
+  });
+
+  it("does not treat page planning labels as source document titles", () => {
+    const posts = buildGeneratedBlogSeedPostsForTesting({
+      locale: "zh-CN",
+      sourceText: [
+        "route: /casux-certification, navLabel: CASUX优标, purpose: 查询目录页。提供检索、筛选、结果展示与下一步引导的闭环。",
+        "CASUX研究中心",
+        "如何从零创立一个符合 CASUX 标准的适儿化空间",
+        "CASUX 信息平台汇聚政策法规、标准文件、研究报告、案例库与产品数据库。",
+      ].join("\n"),
+    });
+
+    const titles = posts.map((post) => post.title).join("\n");
+    expect(titles).not.toContain("查询目录页");
+    expect(titles).not.toContain("CASUX研究中心");
+    expect(titles).not.toContain("如何从零创立");
+  });
+
+  it("does not treat requirement form JSON values as source document titles", () => {
+    const posts = buildGeneratedBlogSeedPostsForTesting({
+      locale: "zh-CN",
+      sourceText: [
+        "我要一个个人blog，主要是ai blog，帮我生成3篇文章",
+        "[Requirement Form]",
+        "```json",
+        '{"siteType":"portfolio","targetAudience":["consumers"],"contentSources":["new_site"],"primaryVisualDirection":"warm-soft","secondaryVisualTags":["playful","minimal"],"pageStructure":{"mode":"multi","planning":"manual","pages":["blog"]},"functionalRequirements":["none"],"primaryGoal":["brand_trust"],"language":"bilingual","brandLogo":{"mode":"text_mark"},"customNotes":""}',
+        "```",
+        "这个个人 AI blog 面向普通读者，使用温暖柔和的视觉风格，围绕 AI 写作、日常工具和理性判断生成三篇完整文章。",
+      ].join("\n"),
+    });
+
+    const combined = posts.map((post) => `${post.slug} ${post.title} ${post.excerpt} ${post.contentMd}`).join("\n");
+    expect(combined).not.toMatch(/\b(manual|portfolio|bilingual|new_site|brand_trust|warm-soft|text_mark)\b/i);
+  });
+
+  it("builds complete personal career Blog posts from provided resume material", () => {
+    const posts = buildGeneratedBlogSeedPostsForTesting({
+      locale: "zh-CN",
+      sourceText: [
+        "bays wong",
+        "职业履历亮点",
+        "华为研发体系变革专家，作为部门级敏捷转型首席教练，推动组织级 DevOps 落地与效能提升工程。",
+        "微信全球化进程奠基者，作为微信创始团队核心成员，主导实时音视频技术架构演进，建设覆盖全球50+国家的基础设施。",
+        "云领天下 CTO，为 K12 提供全场景解决方案，覆盖全国 5000+ 家学校。",
+        "来画科技 CTO，完成 AI 技术从实验室到商业化的关键跨越，打造 AI 数字人创作 SaaS 平台。",
+        "HelloTalk CTO，构建高可用技术架构、数据智能中台及 AI 创新应用体系。",
+      ].join("\n"),
+    });
+
+    expect(posts).toHaveLength(3);
+    expect(posts.map((post) => post.slug)).toEqual([
+      "agile-devops-system-design",
+      "wechat-real-time-media-global",
+      "ai-saas-commercialization-cto-practice",
+    ]);
+    expect(posts.every((post) => post.contentMd.length > 500)).toBe(true);
+    const combined = posts.map((post) => `${post.title} ${post.excerpt} ${post.contentMd}`).join("\n");
+    expect(combined).toMatch(/Bays Wong|华为|微信|HelloTalk|来画科技|云领天下|DevOps|SaaS/);
+    expect(combined).not.toMatch(/lorem ipsum|template news|metadata-only|Blog backend|runtime/i);
+  });
+
+  it("builds a pending Blog workflow preview from generated site artifacts", () => {
+    const preview = buildBlogContentWorkflowPreview({
+      locale: "zh-CN",
+      inputState: {
+        messages: [] as any,
+        phase: "end",
+        current_page_index: 0,
+        attempt_count: 0,
+        workflow_context: {
+          sourceRequirement: "bays wong 华为 微信 HelloTalk 来画科技 云领天下 DevOps 实时音视频 AI SaaS",
+        },
+      } as any,
+      project: {
+        staticSite: {
+          files: [
+            {
+              path: "/blog/index.html",
+              content:
+                '<!doctype html><html><body><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><h1>博客</h1><div data-shpitto-blog-list></div></section></body></html>',
+            },
+          ],
+        },
+      },
+    });
+
+    expect(preview.required).toBe(true);
+    expect(preview.reason).toBe("ready");
+    expect(preview.navLabel).toBeTruthy();
+    expect(preview.posts).toHaveLength(3);
+  });
+
+  it("prefers current static blog detail pages over stale workflow preview posts", () => {
+    const preview = buildBlogContentWorkflowPreview({
+      locale: "zh-CN",
+      inputState: {
+        messages: [] as any,
+        phase: "end",
+        current_page_index: 0,
+        attempt_count: 0,
+        workflow_context: {
+          sourceRequirement: "Bays Wong 华为 微信 HelloTalk 来画科技 云领天下 DevOps 实时音视频 AI SaaS",
+          blogContentPreviewPosts: [
+            {
+              slug: "stale-k12-post",
+              title: "K12 Standards And Resource Guide",
+              excerpt: "stale",
+              contentMd: "# stale",
+            },
+          ],
+        },
+      } as any,
+      project: {
+        staticSite: {
+          files: [
+            {
+              path: "/blog/index.html",
+              content: [
+                '<!doctype html><html><body><main>',
+                '<section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list>',
+                '<article><a href="/blog/agile-devops-transformation/">A</a></article>',
+                '<article><a href="/blog/wechat-real-time-media-architecture/">B</a></article>',
+                '<article><a href="/blog/ai-commercialization-practice/">C</a></article>',
+                "</div></section></main></body></html>",
+              ].join(""),
+            },
+            {
+              path: "/blog/agile-devops-transformation/index.html",
+              content: [
+                '<!doctype html><html><head><title>从敏捷到 DevOps：华为研发体系如何真正升级｜Bays Wong</title><meta name="description" content="华为研发体系变革的实践复盘：敏捷转型、DevOps 落地与组织效能升级的关键做法。" /></head><body><main>',
+                '<article><h1>从敏捷到 DevOps：华为研发体系如何真正升级</h1><div class="article-meta"><span>2024-12-18</span><span>组织实践</span><span>研发效能</span></div>',
+                '<p class="section-lead">大型研发组织的升级，从来不是把一套新名词贴到旧流程上。</p><h2>判断起点</h2><p>第一段正文足够长，用于模拟完整文章内容与部署提取。</p><p>第二段正文继续展开工程实践与组织协同。</p><p>第三段正文说明反馈闭环和持续改进。</p></article>',
+                "</main></body></html>",
+              ].join(""),
+            },
+            {
+              path: "/blog/wechat-real-time-media-architecture/index.html",
+              content: [
+                '<!doctype html><html><head><title>微信实时音视频架构：为全球 50+ 国家而设计的弹性底座｜Bays Wong</title><meta name="description" content="微信全球化进程中的实时音视频架构复盘：弹性、覆盖与亿级用户连接能力。" /></head><body><main>',
+                '<article><h1>微信实时音视频架构：为全球 50+ 国家而设计的弹性底座</h1><div class="article-meta"><span>2024-11-09</span><span>全球化架构</span><span>实时音视频</span></div>',
+                '<p class="section-lead">全球化实时连接能力是一项基础设施工程。</p><h2>基础设施</h2><p>第一段正文足够长，用于模拟完整文章内容与部署提取。</p><p>第二段正文继续展开网络覆盖与调度能力。</p><p>第三段正文说明产品战略与架构协同。</p></article>',
+                "</main></body></html>",
+              ].join(""),
+            },
+            {
+              path: "/blog/ai-commercialization-practice/index.html",
+              content: [
+                '<!doctype html><html><head><title>把 AI 从实验室带到商业现场｜Bays Wong</title><meta name="description" content="把 AI 从实验室带到商业现场：来画、HelloTalk 与云领天下的实践复盘。" /></head><body><main>',
+                '<article><h1>把 AI 从实验室带到商业现场</h1><div class="article-meta"><span>2024-09-26</span><span>创业实践</span><span>AI 商业化</span></div>',
+                '<p class="section-lead">AI 商业化的关键不在演示，而在进入真实业务流程。</p><h2>产品化</h2><p>第一段正文足够长，用于模拟完整文章内容与部署提取。</p><p>第二段正文继续展开平台能力与运营约束。</p><p>第三段正文说明技术价值如何进入商业结果。</p></article>',
+                "</main></body></html>",
+              ].join(""),
+            },
+          ],
+        },
+      },
+    });
+
+    expect(preview.required).toBe(true);
+    expect(preview.posts.map((post) => post.slug)).toEqual([
+      "agile-devops-transformation",
+      "wechat-real-time-media-architecture",
+      "ai-commercialization-practice",
+    ]);
+    expect(preview.posts[0]?.title).toContain("华为研发体系");
+    expect(preview.posts.map((post) => post.title).join(" ")).not.toContain("K12");
+  });
+
+  it("treats an explicit /blog route as a deploy-time Blog workflow surface even before the data mount is injected", () => {
+    const preview = buildBlogContentWorkflowPreview({
+      locale: "zh-CN",
+      inputState: {
+        messages: [] as any,
+        phase: "end",
+        current_page_index: 0,
+        attempt_count: 0,
+        workflow_context: {
+          sourceRequirement: "Bays Wong 华为 微信 HelloTalk 来画科技 云领天下 DevOps 实时音视频 AI SaaS",
+        },
+      } as any,
+      project: {
+        staticSite: {
+          files: [
+            {
+              path: "/blog/index.html",
+              content:
+                '<!doctype html><html><body><main><section><h1>Blog</h1><article><a href="/blog/devops/">DevOps 组织落地</a></article></section></main></body></html>',
+            },
+          ],
+        },
+      },
+    });
+
+    expect(preview.required).toBe(true);
+    expect(preview.reason).toBe("ready");
+    expect(preview.navLabel).toBeTruthy();
+    expect(preview.posts).toHaveLength(3);
+    expect(preview.posts.map((post) => post.title).join(" ")).toMatch(/华为|微信|AI|创业|DevOps/);
+  });
+
   it("retries post-deploy smoke after transient remote fetch failures", async () => {
     const prevFetch = globalThis.fetch;
     const prevAccountId = process.env.CLOUDFLARE_ACCOUNT_ID;
@@ -138,6 +393,7 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
     const lastMessage = String(nextState?.messages?.[nextState.messages.length - 1]?.content || "");
     expect(lastMessage).toContain("Deployment successful:");
     expect(lastMessage).toContain(".pages.dev");
+    expect(lastMessage).toContain("custom domain");
     expect(lastMessage).not.toContain("Domain Configuration Guide");
     expect(lastMessage).not.toContain("Custom domains");
     const completedTask = await getChatTask(task.id);

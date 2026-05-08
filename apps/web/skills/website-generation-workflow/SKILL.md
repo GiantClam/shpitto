@@ -108,6 +108,7 @@ Quality gate: A Canonical Website Prompt generated from researched material must
 4. Transform source-backed facts into concrete headings, value propositions, cards, comparison rows, process steps, and CTAs. Do not copy analysis notes verbatim.
 5. Each route must use a distinct hero composition and section rhythm. Shared header, footer, tokens, and navigation are allowed; repeated hero/body skeletons with swapped text are not.
 6. If the Canonical Website Prompt includes a `Source Material Appendix`, treat it as internal generation input for preserving page content depth, not as a visitor-facing section to render.
+7. If the website is centered on one named person such as an author, founder, consultant, or executive, the homepage must first function as that person's public introduction. The hero, H1, title, and first screen should establish identity, expertise, and positioning before directing visitors into `/blog`, archives, or content categories. The blog/content route is a downstream publishing surface, not the homepage identity itself.
 
 #### Verified Specifics Guard (Mandatory)
 
@@ -150,6 +151,92 @@ Treat the route plan as a workflow artifact, not as free-form prose extraction.
 9. Navigation order is constrained: keep `/` first, preserve the relative order of business/content pages, place the contact page second-to-last, and place the about page last.
 
 Quality gate: The fixed route list contains user-facing website pages only. It must not include prompt-field routes such as `/target-audience`, `/primary-goal`, `/content-modules`, `/conversion-goals`, `/navigation`, `/hero`, or `/core-module-entries`.
+
+### Phase 0.35: Semantic Content Backend Integration Contract (Mandatory)
+
+Blog backend capability is semantic infrastructure, not a visible page template and not hardcoded to one navigation label. During route planning, identify the existing navigation page that most clearly represents a content stream, information platform, article hub, news/insights surface, publication library, or knowledge center. Assign that page a Blog backend confidence score from the workflow policy. If confidence meets the configured threshold, that existing route becomes the content-backend route powered by the Blog API. Only add a separate `/blog` navigation entry when no existing route has sufficient confidence.
+
+When a content-backend route is selected, treat it as a first-class product feature and SEO content surface, not as a decorative mock page and not as a visible "Blog data source" block. The selected page may be `/blog`, but it may also be a semantically equivalent route such as an information platform, content stream, news, insights, publication library, or knowledge hub.
+
+Visible IA rule:
+
+1. The Blog backend is an invisible implementation capability. Do not expose backend names, API/storage/runtime/hydration/fallback jargon, data-source mechanics, English design jargon, or policy wording as visitor-facing headings, labels, helper copy, or section titles unless the navigation label itself is explicitly Blog/博客.
+2. The selected route's own information architecture must define the visible content model. For an information platform or knowledge hub, present API-backed posts as the page's own collections such as case library, standards/documents, research reports, policy/regulation updates, product database entries, publication cards, or insight records according to the prompt and source evidence.
+3. The data attributes are invisible integration hooks only. `data-shpitto-blog-root`, `data-shpitto-blog-api`, and `data-shpitto-blog-list` must be attached to page-specific sections, lists, cards, or database surfaces without becoming visible copy.
+4. Fallback content must read like the selected route's real resource collection. Use native fields such as resource type, document/category label, publication date, scope, summary, tags, status, CTA, or detail link. Do not dump a generic chronological blog feed into an unrelated page.
+5. Dynamic `/blog/{slug}/` detail pages must inherit the selected route's detail grammar. If the selected route is an information platform, the detail shell should feel like a resource/report/case/standard detail page, while still using `/blog/{slug}/` for SEO-addressable runtime routing.
+6. Do not place article/resource cards that link to `/blog/{slug}/` outside `[data-shpitto-blog-list]`. Static explanatory cards may describe categories, but every readable article row/card must come from the same Blog-backed list surface so deployed data and fallback content share one visual component.
+7. Visitor-facing copy must be final content, not an explanation of the content model. Do not use headings or helper copy such as "three launch articles", "reading method", "how to read", "each article includes date/read time/tags", "this page collects...", "the list is backed by...", or any copy that describes the page mechanics instead of delivering the article/resource content itself. Route heroes may introduce the editorial point of view, but they must make a substantive claim or thesis for readers, not explain the site structure.
+   - Also reject softer editorial-scaffold variants such as "AI 阅读路径", "阅读路径", "先看这三篇", "建议从这三篇开始", "你会在这里看到", "这里收纳了三篇文章", "文章会带你了解", "按这个顺序阅读", "what you'll find here", "start with these three articles", or "this collection helps you...". These are still page-mechanics or reading-order explanations, not formal visitor-facing content.
+   - Replace those phrases with a real editorial thesis, decision lens, or source-backed claim. Example: instead of "这里收纳三种最常见也最实用的 AI 阅读路径", write a claim such as "AI 真正改变日常效率的，不是功能数量，而是把判断、表达与执行拆成可复用的动作。"
+8. When the user asks for articles, posts, reports, guides, or records, treat those items as deliverables. The page must present real item titles, substantive summaries, and clear detail entry points; the detail pages or Blog records must contain finished body content, not only titles, metadata, or excerpts.
+9. A requested article count is an internal production constraint, not a visible slogan. Do not write hero copy, section titles, meta descriptions, helper text, or return links that announce "three articles", "three launch articles", "start with these three", "持续更新三篇首发文章", or similar count-led framing unless the source material itself is explicitly about that count.
+10. Express coverage by topic, tension, or editorial angle instead. The exact requested count should be visible through the actual number of cards/detail pages and through the preview-confirmation workflow, not through explanatory visitor copy.
+11. For bilingual sites, language switching is a UI capability, not an editorial storyline. Do not describe Chinese and English as "两种阅读路径", "双路径阅读", "先看中文再看英文", "two reading paths", or similar framing. Use direct language-switch wording instead.
+12. If the overall site is person-led but the selected content-backend route is `/blog`, keep `/blog` as the archive/index while leaving `/` as the biography/value-proposition entry. Do not let the blog hero or article taxonomy replace the person's homepage introduction.
+
+Generation responsibilities:
+
+1. Design the selected content-backend route as part of the same website visual system, language, navigation, typography, spacing, and CTA strategy.
+2. The selected page must include a stable data-source mount inside a page-specific resource/list/database module:
+   - `data-shpitto-blog-root`
+   - `data-shpitto-blog-api="/api/blog/posts"`
+   - a child container with `data-shpitto-blog-list`
+3. Render 3-6 polished fallback resource cards inside the data-backed list. They must match the site's brand, locale, category language, taxonomy, and content strategy. These cards are preview/no-JS fallback content.
+   - `data-fallback-posts`, inline JSON, or hidden templates may support hydration, but they are not a substitute for visible fallback cards. The initial HTML inside `[data-shpitto-blog-list]` must already contain readable article/resource items with direct `/blog/{slug}/` links.
+4. Detail links must use SEO-addressable paths: `/blog/{slug}/`.
+5. Shared `/script.js` must include a small Blog hydrator that:
+   - detects `[data-shpitto-blog-root]`,
+   - fetches `/api/blog/posts`,
+   - renders returned posts into `[data-shpitto-blog-list]`,
+   - keeps fallback cards if the API is unavailable.
+   - if the page has filter chips, search input, category tabs, or tag links, those controls must work after runtime hydration; either request `/api/blog/posts?tag=...`, `/api/blog/posts?category=...`, or `/api/blog/posts?search=...`, or re-apply client-side filters after replacing the list.
+   - do not bind filters only to pre-hydration fallback cards.
+6. Visible Blog taxonomy must match the data. If controls read `全部`, `研发`, `架构`, `创业`, `AI`, then fallback cards and deployed Blog records must include those exact tag/category values so each control returns a meaningful subset.
+7. The generated content-backend page must have a clear, site-native detail region style. Deployment derives `/shpitto-blog-post-shell.html` from the generated site, preserving the same `<html lang>`, header, footer, CSS, typography, taxonomy language, and CTA language for dynamic `/blog/{slug}/` rendering. Dynamic `/blog/{slug}/`, `/blog/tag/{tag}/`, `/blog/category/{category}/`, and search-result collection pages must never fall back to a generic light-theme runtime template when the generated site uses a distinct visual theme.
+8. Do not generate Cloudflare D1 credentials, Worker source, binding names, secrets, or server code in static HTML/JS. The deployed runtime owns `/api/blog/*`, `/blog/{slug}/`, RSS, sitemap, and D1 access.
+9. Deployment may inject or refresh Blog data, but that is a compatibility fallback. The generated selected page itself must already expose a coherent page-specific content surface without mentioning deployment, runtime refresh, hydration, fallback, backend, API, or data-source mechanics to visitors.
+11. When deploying a generated site with a selected content-backend route, create or update exactly 3 published Blog records derived from the user's provided requirements, uploaded/source material, Evidence Brief, and generated page copy. Prefer concrete source titles first: if the user's material names specific policies, standards, guides, reports, case studies, databases, manuals, or compilations, use those names as Blog post titles before falling back to synthesized guide titles. These records must be strongly related to the user's content, use page-appropriate categories/tags, and must not be generic verification posts, lorem ipsum, template news, or unrelated filler.
+12. Blog article generation is an explicit workflow stage between site preview and deployment, not a hidden deploy-time side effect. After the site preview is ready and a Blog/content-backed route exists, generate the article set, show the titles/excerpts/categories/tags to the user for confirmation, and only then proceed to deployment.
+13. Deployment/runtime hydration must preserve the generated list's article/card class and visual rhythm. It may replace list data, but it must not replace a site-specific resource card layout with a generic Blog card style.
+14. If the user requests a specific number of articles/posts/reports/guides, generate that exact number of complete content items. Each item must have:
+   - a stable slug and `/blog/{slug}/` detail link,
+   - title, date or publish state, category/tags, reading time or scope,
+   - a list-page summary that is useful on its own,
+   - full body content with multiple paragraphs and meaningful section headings,
+   - no placeholder, outline-only, "coming soon", "待补充", or metadata-only detail page.
+15. For article-style Blog routes, the list page is an index, not the article body. It must link to full details, and deployed/static output must make each requested article readable even when the Blog API or runtime route is unavailable. If runtime detail rendering cannot be guaranteed, emit static `/blog/{slug}/index.html` pages for every requested article using the same shell and typography.
+    - Do not satisfy this requirement with data attributes alone. The no-JS initial HTML must visibly expose the article titles/summaries and their `/blog/{slug}/` links before any script runs.
+16. Use web search or uploaded/source material enrichment when the user's requested article content needs facts, examples, current context, named tools, policies, standards, reports, or nontrivial domain knowledge. For broad personal-opinion or conceptual posts, LLM drafting may fill the prose, but it must still produce complete publishable body content. Generic web search may inform framing and examples; explicit user-provided content remains the highest-priority source.
+17. When web search is used for article generation, distill facts into the Evidence Brief and write original article prose. Do not paste source excerpts, do not expose "web search says" copy to visitors, and do not cite unsupported claims as if they came from the site owner.
+
+Blog-backed list structure resilience:
+
+1. The card or row class assigned to direct children of `[data-shpitto-blog-list]` must be visually complete on its own. If the class draws a border, radius, background, or shadow, that same class must define adequate internal padding, vertical rhythm, and child spacing.
+   - Example: if each runtime item uses `.article-card` or `.blog-card` as the direct child of `[data-shpitto-blog-list]`, then `.article-card` or `.blog-card` itself must include the essential padding. Do not put all gutters only on nested wrappers such as `.article-card__body`, `.card__content`, or `.entry-main`.
+2. Do not rely only on fallback-only wrappers such as `.card__body`, `.card__footer`, `.article-body`, or `.resource-main` for the card's essential gutters. Runtime Blog data may replace inner markup while preserving the outer article/card class.
+3. If the chosen visual design needs nested wrappers, also provide direct-child fallback styles for runtime-injected simple markup, for example direct `h3`, `p`, meta, tag, and link spacing inside the card class.
+4. Preserve the selected page's article/resource visual grammar when hydrating data, but make the CSS tolerant of both the generated fallback markup and a simplified runtime card body. The result must not shrink into text touching borders or cramped tag rows after deployment.
+
+Quality gate: the selected content-backend route is visually integrated with the site and contains the Blog API mount, but the visitor-facing page reads as its own information platform, publication library, news surface, knowledge hub, or Blog according to route semantics; visible copy is formal content rather than explanatory page-mechanics copy; `/script.js` can hydrate the mount without breaking no-JS SEO fallback content; every user-requested article/resource has complete body content and a readable `/blog/{slug}/` detail page or Blog runtime record; deployed `/blog/{slug}/` can reuse the generated site shell without falling back to a generic runtime template or the home page; the deployed project has 3 source-derived published Blog posts when the user requested Blog content. If a semantically equivalent route already exists, do not add a duplicate Blog navigation entry.
+
+### Phase 0.4: Semantic and Layout Preflight Gate (Mandatory)
+
+Before emitting any files, run a route- and layout-aware preflight check.
+
+1. Route `/` must read as the site home entry. Its title, meta description, H1, and first lead paragraph must establish brand mission, audience, scope, and navigation overview. Do not include download, certification, query/search, login, or registration wording in those fields; place those downstream functions only in later cards, navigation, or CTA modules.
+2. If a hero visual rail is tall, it must contain real media, chart, or data-viz content. A large empty right rail with only bottom-aligned text is a generation failure.
+3. Dense result cards rendered inside a 12-column grid must span the full available row unless the prompt explicitly calls for a narrower card pattern.
+4. The selected content-backend route must still use `/blog/{slug}/` detail links and preserve the hidden data-source mount contract from Phase 0.35.
+5. Express these checks as page-type rules in the Canonical Website Prompt and tool contract. Do not encode brand-specific exceptions in TS; if a page belongs to the `home`, `search-directory`, `blog-data-index`, or `auth` class, apply the corresponding generic gate.
+6. Route aliases belong in the workflow skill policy (`skill.json`) and should be consumed by the runtime. Do not hardcode brand-specific alias tables in decision-layer TS.
+7. Formal content gate: reject generated pages whose prominent headings, hero panels, sidebars, or helper blocks explain the page structure instead of delivering visitor-facing substance. Examples of failures include "reading method", "three launch articles", "article overview", "each article has tags/read time/detail links", "this collection contains...", "fallback resources", or equivalent process/meta copy. Replace them with editorial thesis, source-backed insight, real article/resource content, or remove the block.
+   - Treat reading-order and guide-the-reader phrasing as failures too, including "AI 阅读路径", "阅读路径", "从这三篇开始", "建议先读", "what you'll find here", "start with these three articles", and "this page collects".
+8. Requested-content completeness gate: if the prompt asks for a fixed number of articles/posts/resources, validate that the generated output contains the same number of readable detail targets. Each target must include full body prose with multiple paragraphs or sections. A card with only title, tags, date, excerpt, or "read more" is not a completed content item.
+9. Count-led editorial framing gate: if the prompt asks for a fixed number of articles/posts/resources, the generated page may contain that number of cards and details, but it must not turn the count itself into visitor-facing scaffold copy such as "三篇文章，三种方式", "持续更新三篇首发文章", "这里有三篇完整文章", or equivalent count-announcement prose.
+10. Homepage entry gate: the home page may point visitors to the Blog/content route, but it must do so with site-positioning or topical CTA language. Do not explain the site by saying the blog currently has three articles, by summarizing those three articles in sequence, or by telling readers to start from those three pieces.
+
+Quality gate: route semantics, layout structure, formal visitor-facing copy, and requested content completeness are validated before generation proceeds; a mismatch fails the page preflight instead of being deferred to later visual QA.
 
 ### Phase 0.5: Style Library Load and Indexing
 
@@ -223,13 +310,18 @@ Quality gate:
 
 ### Phase 1.6: Site-wide Bilingual Content (EN/ZH)
 
-1. Define default and fallback language (default `en`, support `zh`).
-2. Build a unified i18n key structure (page-level + section-level keys).
-3. Add language switch in the top navigation (EN / ZH).
-4. Ensure all core copy has bilingual mapping (nav, headings, CTA, form labels, footer).
-5. Preserve the current route on language switch; only content language changes.
-6. Persist language preference (recommended: `localStorage`).
-7. Keep default-language content readable without JavaScript.
+Definition: bilingual means one active language at a time with a working language state and switch. It never means showing Chinese and English copy simultaneously in the same visible heading, card, paragraph, nav item, CTA, footer, or article.
+
+1. Define default and fallback language from the user/session context (default `en`, support `zh` unless the brief makes Chinese primary).
+2. Render only the default language as visible text in the initial HTML. Store the alternate language in `data-i18n-*` attributes, an in-page JS dictionary, generated `i18n/messages.*.json`, or hidden templates that are not visually exposed.
+3. Build a unified i18n key structure (page-level + section-level keys).
+4. Add language switch in the top navigation (EN / ZH) only when switching actually replaces visible copy.
+5. Ensure all core copy has bilingual mapping (nav, headings, CTA, form labels, footer, Blog/content cards, and detail/article pages).
+6. Preserve the current route on language switch; only content language changes.
+7. Persist language preference (recommended: `localStorage`) and update `html[lang]`, active switch state, and relevant `aria-label` values.
+8. Keep default-language content readable without JavaScript.
+9. If a complete language switch cannot be implemented, generate a single-language site. Do not fake bilingual support with visible `中文 / English`, `中文（English）`, duplicated translated headings, or consecutive Chinese and English paragraphs.
+10. When the user writes in Chinese or the requirement form says `language: "bilingual"` for a Chinese conversation, the default visible language is Chinese. English UI microcopy such as `Latest essays`, `3 stories`, `one theme`, `read more`, `featured`, `insights`, `journal`, or `collection` is not decorative; it is inactive-language copy and must be translated or moved into i18n storage.
 
 Outputs:
 
@@ -240,6 +332,7 @@ Outputs:
 Quality gate:
 
 - Bilingual coverage of critical copy = 100%.
+- At any time, the visible page shows exactly one active language. The alternate language may exist only in data/dictionary/template storage until selected.
 - Language switch causes no broken routes and no leaked placeholder keys.
 - Language switch does not reduce accessibility (`lang`, `aria-label`, readable form labels).
 
@@ -251,9 +344,11 @@ Navigation requirements:
 
 1. If a mobile menu button toggles a class such as `.is-open`, CSS must include the matching visible state for the controlled nav, for example `.nav.is-open { display: flex; }` or an equivalent layout rule inside the same breakpoint.
 2. Menu state must update both DOM visibility and accessibility state: `aria-expanded`, focusability, Escape-to-close, click-outside close, and close-on-link-click on mobile.
-3. Desktop navigation must not wrap into unstable multi-line headers at intermediate widths. If the declared routes do not fit, switch to the mobile/disclosure navigation at a higher breakpoint, reduce link density, or use a compact overflow strategy.
-4. Header height must remain predictable across supported desktop/tablet widths; avoid layouts where nav wrapping unexpectedly increases sticky header height.
-5. Active route styling must work after preview URL rewriting and must not rely on raw `/` path matching only.
+3. The visible navigation menu must be exactly one line at every rendered width. Do not allow primary nav links to wrap onto a second row, even at intermediate desktop/tablet widths.
+4. If the declared routes do not fit in one line, switch to the mobile/disclosure navigation at a higher breakpoint, reduce link density, shorten labels, or use a compact "More" overflow strategy. The overflow/disclosure trigger counts as the one-line menu; wrapped link rows do not.
+5. CSS must enforce this explicitly with rules such as `flex-wrap: nowrap`, `white-space: nowrap`, constrained gaps, overflow handling, and responsive breakpoints. Do not rely on the browser's default flex wrapping behavior.
+6. Header height must remain predictable across supported desktop/tablet widths; avoid layouts where nav wrapping unexpectedly increases sticky header height.
+7. Active route styling must work after preview URL rewriting and must not rely on raw `/` path matching only.
 
 i18n requirements:
 
@@ -262,19 +357,34 @@ i18n requirements:
 3. The default language must render without JavaScript. JavaScript may enhance switching by replacing text from an in-page dictionary or generated i18n files.
 4. Switching language must preserve the current route, active nav state, form accessibility labels, and persisted language preference.
 5. If full bilingual content cannot be implemented for the generated site, do not render an EN/ZH switch. Prefer a single-language site over a fake language toggle.
+6. Visible bilingual pairs are invalid. Reject patterns such as `中文 / English`, `中文（English）`, `Chinese / 中文`, Chinese and English titles in one heading, or Chinese and English versions of the same paragraph shown one after another.
+7. Blog/content-backed lists and article/detail pages must follow the same language-state contract. Their card titles, summaries, metadata, and article bodies must switch language instead of rendering both languages together.
+8. In a Chinese default render, short technical acronyms like `AI`, `API`, `SEO`, `UI`, and `UX` are allowed, but English editorial/UI words are not. Translate visible labels such as `stories`, `theme`, `latest`, `essay`, `read`, `featured`, `collection`, and `journal`.
+9. Article detail pages must not include an English abstract, English summary, or English translated paragraph below a Chinese article body. If bilingual article content is required, the English title/abstract/body belongs in i18n data and becomes visible only after switching to English.
+10. Static `/blog/{slug}/index.html` pages for bilingual sites must follow the same rule as runtime pages: exactly one visible language body per render. Do not emit Chinese paragraph followed by its English translation, alternating zh/en paragraphs, bilingual blockquotes, or dual-language body sections on the same initial page.
 
 Component spacing requirements:
 
 1. Reusable row/list components such as news, article, download, result, and case rows must define horizontal padding or an equivalent card/list gutter. Avoid `padding: 16px 0` when the row sits inside a bordered panel.
 2. Row layouts must have mobile-specific rules that preserve readable gutters, touch target spacing, and non-overlapping media/meta columns.
-3. Shared row classes must be visually tested in at least one dense-content module; if a row appears flush against a panel edge, revise the component before emitting final files.
+3. Any visible card/panel class that defines a border, border-radius, background surface, or box-shadow must also define internal spacing. At minimum, it needs explicit `padding` and either `display: grid; gap: ...`, `display: flex; gap: ...`, or child margin rules. Do not create shell-only classes such as `.about-panel` that only draw an outer border while inner text inherits `margin: 0` and touches the edge.
+4. When a component class is added to a shared visual group for `background`, `border`, `border-radius`, or `box-shadow`, it must also be added to the matching spacing/layout group unless that class has its own dedicated padding/gap block.
+5. Panel/card content that uses reset selectors such as `.card-title, .card-copy { margin: 0; }` must rely on parent `gap`, not default margins, for vertical rhythm.
+6. Blog/content-backed list item classes are direct-runtime surfaces. Their outer card/row class must include enough padding and gap even when the runtime injects only meta, heading, summary, tags, and link nodes without the original fallback wrappers.
+7. Shared row classes must be visually tested in at least one dense-content module; if a row appears flush against a panel edge, revise the component before emitting final files.
+8. Homepage feature/value/coverage cards shown in a 2-4 column row must be treated as roomy feature cards, not compact badges. Each card needs explicit four-side padding, parent-controlled vertical rhythm (`gap` or equivalent), and a mobile rule that preserves the same gutter feel after stacking.
+9. If a feature card uses a large ordinal, step number, watermark, kicker, or badge in a corner, that decorative element must have its own inset and must not consume the content gutter. Titles and body copy must still read from the same padded text column rather than appearing jammed into the card edge.
 
 Quality gate:
 
 - Mobile menu: button click makes the controlled nav visibly open and closable.
 - Language switch: clicking EN/ZH changes representative visible copy and keeps the route intact.
-- Header: navigation remains one line or intentionally switches to a disclosure menu at 320 / 768 / 1024 / 1280 / 1440 widths.
+- Language exclusivity: before and after switching, screenshots and DOM-visible text show one language only; the inactive language is not visible in headings, cards, paragraphs, nav, footer, or articles.
+- Header: the visible navigation menu is one line at 320 / 768 / 1024 / 1280 / 1440 widths. At widths where all links cannot fit, the header must show a one-line disclosure/overflow menu instead of wrapping links.
 - List rows: representative dense-list rows have readable left/right gutters on desktop and mobile.
+- Cards and panels: every bordered/rounded/shadowed component has visible inner padding and stable vertical spacing between kicker/title/body/actions. No card content may visually touch the border.
+- Homepage feature trios: representative 3-up info/value cards keep consistent top/right/bottom/left gutters, and any oversized numeral or badge remains visibly inset from the border instead of crowding the title/body.
+- Blog-backed lists: after runtime/snapshot data replacement, article/resource list items keep the same generous gutters, borders, tag spacing, and readable vertical rhythm as the generated fallback cards.
 
 ### Phase 2: Section Batch Generation
 
@@ -312,6 +422,9 @@ Footer requirements:
 2. Include brand summary, primary navigation links, product or solution links, a contact CTA or contact channel, and copyright.
 3. Keep footer structure consistent across pages while allowing page-local active states and copy localization.
 4. Ensure footer copy participates in bilingual content when EN/ZH support is enabled.
+5. Footer navigation with more than 3 links must not use the unstable combination of a narrow right column, `flex-wrap`, `justify-content: flex-end`, and pill-button links. Use a left-aligned link list, balanced two-column text links, a full-width footer nav row, or an intentionally grouped footer sitemap instead.
+6. If the footer switches from multi-column to single-column at any breakpoint, footer nav alignment must switch to `flex-start` or a readable grid/list at the same breakpoint. Do not keep right-aligned wrapped footer links in a single-column footer.
+7. Pill-style footer links are allowed only when they fit in one intentional row or when each wrapped row remains visually balanced. A final lone right-aligned pill is a footer layout failure.
 
 Missing or degenerate footers are generation failures, not polish issues.
 
@@ -337,6 +450,9 @@ Quality gate: Visual consistency > 85%.
    - Every route follows its page-specific intent and confirmed Canonical Website Prompt content.
    - Inner pages are not repeated templates with swapped text.
    - Every HTML page includes the complete shared shell/footer contract.
+   - Footer nav with more than 3 links does not render as right-aligned wrapped pills in a narrow column or single-column footer.
+   - Route semantics were already validated in preflight, so do not accept a homepage that reads like a downloads portal or certification index.
+   - Dense result cards inside 12-column grids retain full-width row spans.
 
 Quality gate: All checks pass.
 

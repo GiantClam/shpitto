@@ -152,6 +152,27 @@
     }
   },
   "routePlanningPolicy": {
+    "routeAliases": [
+      { "route": "/", "keys": ["home", "homepage", "index", "首页", "主页"] },
+      { "route": "/products", "keys": ["products", "product", "产品"] },
+      { "route": "/custom-solutions", "keys": ["customsolutions", "solutions", "solution", "方案"] },
+      { "route": "/cases", "keys": ["cases", "case", "案例"] },
+      { "route": "/about", "keys": ["about", "company", "关于"] },
+      { "route": "/contact", "keys": ["contact", "contacts", "联系", "咨询"] },
+      { "route": "/blog", "keys": ["blog", "blogs", "博客", "文章"] },
+      { "route": "/news", "keys": ["news", "updates", "资讯", "新闻"] },
+      { "route": "/casux-creation", "keys": ["casuxcreation", "creation", "创设"] },
+      { "route": "/casux-construction", "keys": ["casuxconstruction", "construction", "建设"] },
+      { "route": "/casux-certification", "keys": ["casuxcertification", "casuxqualitymark", "certification", "优标", "测评", "认证"] },
+      { "route": "/casux-advocacy", "keys": ["casuxadvocacy", "advocacy", "alliance", "倡导", "联盟"] },
+      { "route": "/casux-research-center", "keys": ["casuxresearchcenter", "researchcenter", "research", "研究中心"] },
+      { "route": "/casux-information-platform", "keys": ["casuxinformationplatform", "informationplatform", "platform", "信息平台"] },
+      { "route": "/downloads", "keys": ["downloads", "download", "资料下载", "下载"] },
+      { "route": "/login", "keys": ["login", "signin", "sign-in", "登录"] },
+      { "route": "/register", "keys": ["register", "signup", "sign-up", "注册"] },
+      { "route": "/reset-password", "keys": ["forgotpassword", "resetpassword", "passwordreset", "recoverpassword", "找回密码", "忘记密码"] },
+      { "route": "/verify-email", "keys": ["verifyemail", "emailverification", "confirmemail", "resendverification", "验证邮箱", "邮箱验证"] }
+    ],
     "blockedLabels": [
       "and internationalization requirements",
       "and business context",
@@ -218,7 +239,7 @@
       "multi-page\\s+website\\s*\\(automatically",
       "automatically\\s+plan\\s+first-level\\s+navigation"
     ],
-    "defaultAutoRoutes": ["/", "/custom-solutions", "/cases", "/contact", "/about"],
+    "defaultAutoRoutes": ["/", "/custom-solutions", "/cases", "/blog", "/contact", "/about"],
     "conditionalAutoRoutes": [
       {
         "route": "/products",
@@ -235,6 +256,134 @@
         "insertBefore": "/contact",
         "matchPatterns": ["download", "whitepaper", "manual", "pdf", "document", "resource"]
       }
+    ]
+  },
+  "blogIntegrationPolicy": {
+    "route": "/blog",
+    "apiEndpoint": "/api/blog/posts",
+    "rootAttribute": "data-shpitto-blog-root",
+    "listAttribute": "data-shpitto-blog-list",
+    "apiAttribute": "data-shpitto-blog-api",
+    "detailPathPattern": "/blog/{slug}/",
+    "postShellPath": "/shpitto-blog-post-shell.html",
+    "themeMetadataPath": "/shpitto-blog-theme.json",
+    "generationMode": "site-native-data-source-page",
+    "semanticRoutePolicy": {
+      "fallbackRoute": "/blog",
+      "confidenceThreshold": 70,
+      "signals": [
+        {
+          "patterns": ["(?:^|/)blog(?:/|$)", "\\bblogs?\\b", "博客", "文章"],
+          "score": 100,
+          "reason": "Explicit Blog route or label."
+        },
+        {
+          "patterns": ["information[-\\s]?platform", "content[-\\s]?stream", "article[-\\s]?stream", "knowledge[-\\s]?(?:hub|center|base)", "insights?", "publications?", "updates?", "资讯", "信息平台", "内容流", "知识库", "动态"],
+          "score": 86,
+          "reason": "Existing navigation route is a content/information stream and should use Blog backend data."
+        },
+        {
+          "patterns": ["news", "media", "press", "stories", "journal", "magazine", "case[-\\s]?library", "研究动态", "新闻", "媒体", "案例库"],
+          "score": 78,
+          "reason": "Existing navigation route represents dated editorial content."
+        },
+        {
+          "patterns": ["research[-\\s]?center", "resource[-\\s]?center", "resources?", "library", "资料库", "研究中心", "资源中心"],
+          "score": 52,
+          "reason": "Route may contain content, but needs another content-stream signal to own Blog backend."
+        }
+      ],
+      "negativeSignals": [
+        {
+          "patterns": ["download", "downloads", "资料下载", "下载"],
+          "score": 38,
+          "reason": "Downloads/resource file routes are not automatically editorial Blog backends."
+        },
+        {
+          "patterns": ["login", "register", "auth", "password", "登录", "注册", "密码"],
+          "score": 100,
+          "reason": "Auth routes cannot own Blog backend."
+        },
+        {
+          "patterns": ["contact", "about", "home", "首页", "关于", "联系"],
+          "score": 30,
+          "reason": "Core utility routes should not absorb Blog backend unless explicitly named Blog."
+        }
+      ]
+    },
+    "presentationPolicy": {
+      "backendIsInvisible": true,
+      "forbiddenVisibleTermsUnlessExplicitBlogRoute": [
+        "Blog data source",
+        "blog data-source",
+        "Blog backend",
+        "Blog API",
+        "D1",
+        "API mount",
+        "content API",
+        "article list",
+        "runtime",
+        "static fallback",
+        "fallback card",
+        "hydration",
+        "博客数据源",
+        "博客后端",
+        "博客 API",
+        "内容 API",
+        "文章列表",
+        "运行时",
+        "静态回退",
+        "回退卡片",
+        "水合",
+        "数据源挂载"
+      ],
+      "contentModels": [
+        {
+          "routeSignals": ["information platform", "knowledge hub", "content stream", "publication library", "信息平台", "知识库", "内容平台"],
+          "collectionLabels": ["案例库", "标准文件", "研究报告", "政策法规", "产品数据库"],
+          "cardFields": ["内容类型", "发布日期", "适用范围", "摘要", "标签", "阅读全文"],
+          "detailTone": "resource, report, standard, or case detail page rather than generic blog article"
+        },
+        {
+          "routeSignals": ["news", "updates", "insights", "资讯", "新闻", "动态"],
+          "collectionLabels": ["最新动态", "专题解读", "观点文章", "媒体资料"],
+          "cardFields": ["栏目", "发布日期", "摘要", "标签", "阅读全文"],
+          "detailTone": "editorial news or insight detail page"
+        },
+        {
+          "routeSignals": ["blog", "博客"],
+          "collectionLabels": ["文章", "专题", "标签", "归档"],
+          "cardFields": ["分类", "发布日期", "摘要", "标签", "阅读全文"],
+          "detailTone": "site-native blog article detail page"
+        }
+      ],
+      "rules": [
+        "Use the selected route's visible information architecture; Blog is the hidden data backend.",
+        "Attach data-shpitto-blog-root, data-shpitto-blog-api, and data-shpitto-blog-list to the page's own list/resource/database modules without exposing these implementation details in visible copy.",
+        "When the selected route is not explicitly Blog, never title the visible section Blog data source, Blog backend, or article list.",
+        "Fallback cards and dynamic cards should preserve the selected route taxonomy and visual rhythm rather than rendering a detached generic feed; never mention fallback, runtime, hydration, or API mechanics to visitors."
+      ]
+    },
+    "fallbackCardCount": {
+      "min": 3,
+      "max": 6
+    },
+    "contentSeedingPolicy": {
+      "deployPublishedPostCount": 3,
+      "sourcePriority": ["canonicalPrompt", "sourceRequirement", "uploadedOrExtractedEvidence", "userMessages", "generatedPageCopy"],
+      "rules": [
+        "On deploy, create or update 3 published Blog records from user-provided content.",
+        "Article titles, excerpts, body sections, categories, and tags must be strongly related to the user's provided material and selected content route.",
+        "Do not seed generic verification posts, lorem ipsum, template news, or unrelated filler.",
+        "Do not delete user-authored Blog records when refreshing generated source-derived posts."
+      ]
+    },
+    "rules": [
+      "The generated Blog page must share the same visual system, language, header, footer, and CTA strategy as the rest of the site.",
+      "The Blog page must include a stable data-source mount so deployment can bind project-scoped D1 Blog data without replacing the page shell.",
+      "Deployment derives the dynamic Blog detail shell from the generated site so /blog/{slug}/ uses the same language, CSS, navigation, and footer as the generated website.",
+      "Fallback article cards are required for preview, no-JS rendering, and SEO-safe first paint.",
+      "Static code must not include D1 credentials, Cloudflare binding code, Worker source, or secrets."
     ]
   }
 }

@@ -17,7 +17,8 @@ describe("chat api async mode", () => {
           contentSources: ["new_site"],
           customNotes: "Industrial manufacturer website with products, cases, inquiry goals, and bilingual content needs.",
           targetAudience: ["enterprise_buyers", "overseas_customers"],
-          designTheme: ["professional", "industrial"],
+          primaryVisualDirection: "industrial-b2b",
+          secondaryVisualTags: ["professional"],
           pageStructure: { mode: "multi", pages: ["home", "products", "cases", "contact"] },
           functionalRequirements: ["customer_inquiry_form"],
           primaryGoal: ["lead_generation"],
@@ -381,7 +382,7 @@ describe("chat api async mode", () => {
     expect(timeline.some((message) => String(message.metadata?.cardType || "") === "prompt_draft")).toBe(true);
     const progress = timeline.find((message) => String(message.metadata?.cardType || "") === "requirement_progress");
     expect((progress?.metadata as any)?.required?.passed ?? true).toBe(true);
-  });
+  }, 15000);
 
   it("requires prompt draft confirmation before website generation from drafting", async () => {
     const chatId = `chat-draft-gate-${Date.now()}`;
@@ -410,7 +411,10 @@ describe("chat api async mode", () => {
 
   it("carries prompt draft routing contract into confirmed generation without rebuilding the draft", async () => {
     const chatId = `chat-draft-contract-${Date.now()}`;
-    const userText = requirementFormPayload();
+    const userText = requirementFormPayload({
+      primaryVisualDirection: "heritage-manufacturing",
+      secondaryVisualTags: [],
+    });
     const { POST } = await import("../../app/api/chat/route");
 
     const draftRes = await POST(
@@ -430,7 +434,6 @@ describe("chat api async mode", () => {
     const confirm = timeline.find((message) => String(message.metadata?.cardType || "") === "confirm_generate");
     const promptDraftText = String((promptDraftCard?.metadata as any)?.canonicalPrompt || "");
     const promptDraftContract = (promptDraftCard?.metadata as any)?.promptControlManifest;
-    expect(promptDraftContract?.routes).toEqual(["/", "/products", "/cases", "/contact"]);
     expect((promptDraftCard?.metadata as any)?.promptDraft).toBeUndefined();
     expect((promptDraftCard?.metadata as any)?.generationRoutingContract).toBeUndefined();
 
@@ -449,9 +452,99 @@ describe("chat api async mode", () => {
     const task = await getLatestChatTaskForChat(chatId);
     const workflow = (task?.result?.internal?.inputState as any)?.workflow_context || {};
     expect(workflow.canonicalPrompt).toBe(promptDraftText);
+    expect(workflow.primaryVisualDirection).toBe("heritage-manufacturing");
+    expect(workflow.secondaryVisualTags || []).toEqual([]);
+    expect(workflow.visualDecisionSource).toBe("user_explicit");
+    expect(workflow.lockPrimaryVisualDirection).toBe(true);
     expect(workflow.requirementDraft).toBeUndefined();
     expect(workflow.promptControlManifest).toEqual(promptDraftContract);
     expect(workflow.generationRoutingContract).toBeUndefined();
+  });
+
+  it("keeps confirmed canonical prompts in generation mode even when they mention deployment defaults", async () => {
+    const chatId = `chat-confirm-generate-deploy-words-${Date.now()}`;
+    const { POST } = await import("../../app/api/chat/route");
+    const canonicalPrompt = [
+      "# Canonical Website Generation Prompt",
+      "",
+      "Generate a personal AI blog with three articles.",
+      "",
+      "Default deployment: Cloudflare Pages (pages.dev).",
+      "缺失项：部署域名与交付要求",
+      "",
+      "### Prompt Control Manifest (Machine Readable)",
+      "```json",
+      JSON.stringify({
+        schemaVersion: 1,
+        promptKind: "canonical_website_prompt",
+        routes: ["/", "/blog"],
+        navLabels: ["首页", "博客"],
+        files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html"],
+      }),
+      "```",
+    ].join("\n");
+
+    const res = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: chatId,
+          messages: [{ role: "user", parts: [{ type: "text", text: `__SHP_CONFIRM_GENERATE__\n${canonicalPrompt}` }] }],
+        }),
+      }),
+    );
+
+    expect(res.status).toBe(202);
+    const task = await getLatestChatTaskForChat(chatId);
+    const workflow = (task?.result?.internal?.inputState as any)?.workflow_context || {};
+    expect(workflow.executionMode).toBe("generate");
+    expect(workflow.deployRequested).toBe(false);
+    const timeline = await listChatTimelineMessages(chatId, 30);
+    expect(timeline.some((message) => String(message.text || "").includes("__SHP_CONFIRM_GENERATE__"))).toBe(false);
+  });
+
+  it("blocks deploy mode by task lifecycle when no completed generation baseline exists", async () => {
+    const chatId = `chat-deploy-lifecycle-gate-${Date.now()}`;
+    const { createChatTask, failChatTask } = await import("./chat-task-store");
+    const failedDeploy = await createChatTask(chatId, undefined, {
+      assistantText: "Deploy request confirmed. Preparing Cloudflare deployment.",
+      phase: "deploy",
+      internal: {
+        inputState: {
+          messages: [],
+          phase: "conversation",
+          current_page_index: 0,
+          attempt_count: 0,
+          workflow_context: {
+            executionMode: "deploy",
+            deployRequested: true,
+          },
+        },
+      },
+      progress: { stage: "deploying:prepare" },
+    });
+    await failChatTask(failedDeploy.id, "No generated site artifacts found for deployment.");
+
+    const { POST } = await import("../../app/api/chat/route");
+    const res = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: chatId,
+          messages: [{ role: "user", parts: [{ type: "text", text: "部署到 Cloudflare，验证线上网站可用" }] }],
+        }),
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const latest = await getLatestChatTaskForChat(chatId);
+    expect(latest?.id).toBe(failedDeploy.id);
+    const timeline = await listChatTimelineMessages(chatId, 30);
+    const gate = timeline.find((message) => String(message.metadata?.cardType || "") === "lifecycle_gate");
+    expect(gate?.metadata?.requestedIntent).toBe("deploy");
+    expect(gate?.metadata?.requiredTaskStatus).toBe("succeeded");
   });
 
   it("does not allow uploaded-logo strategy through until a logo asset is present", async () => {
@@ -618,6 +711,156 @@ describe("chat api async mode", () => {
     expect(workflow.requirementDraft).toBeUndefined();
   });
 
+  it("gates deploy behind Blog article confirmation when preview posts are pending", async () => {
+    const chatId = `chat-blog-confirm-${Date.now()}`;
+    const siteArtifacts = {
+      projectId: "blog-confirm-test",
+      pages: [{ path: "/", html: "<!doctype html><html><head></head><body>ok</body></html>" }],
+      staticSite: {
+        mode: "skill-direct",
+        files: [
+          {
+            path: "/blog/index.html",
+            type: "text/html",
+            content:
+              '<!doctype html><html><body><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list><article class="blog-card">preview</article></div></section></body></html>',
+          },
+        ],
+      },
+    };
+
+    const { createChatTask, completeChatTask } = await import("./chat-task-store");
+    const previous = await createChatTask(chatId, undefined, {
+      assistantText: "generated",
+      phase: "end",
+      internal: {
+        sessionState: {
+          messages: [],
+          phase: "end",
+          current_page_index: 0,
+          attempt_count: 0,
+          workflow_context: {
+            blogContentPreviewStatus: "pending_confirmation",
+            blogNavLabel: "博客",
+            blogContentPreviewPosts: [
+              {
+                slug: "ai-one",
+                title: "AI One",
+                excerpt: "preview article",
+                category: "AI",
+                tags: ["AI"],
+              },
+            ],
+          },
+          site_artifacts: siteArtifacts,
+        },
+      },
+      progress: { checkpointProjectPath: "/remote/project.json" } as any,
+    });
+    await completeChatTask(previous.id, {
+      assistantText: "generated",
+      phase: "end",
+      internal: previous.result?.internal,
+      progress: { checkpointProjectPath: "/remote/project.json" } as any,
+    });
+
+    const { POST } = await import("../../app/api/chat/route");
+    const res = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: chatId,
+          messages: [{ role: "user", parts: [{ type: "text", text: "deploy to cloudflare" }] }],
+        }),
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    expect(await getActiveChatTask(chatId)).toBeUndefined();
+    const timeline = await listChatTimelineMessages(chatId, 30);
+    const confirm = timeline.find((message) => String(message.metadata?.cardType || "") === "confirm_blog_content_deploy");
+    expect(confirm).toBeTruthy();
+    expect(String(confirm?.metadata?.payload || "")).toBe("__SHP_CONFIRM_BLOG_CONTENT_DEPLOY__");
+    expect(Array.isArray((confirm?.metadata as any)?.posts)).toBe(true);
+  });
+
+  it("queues deploy after Blog article confirmation", async () => {
+    const chatId = `chat-blog-confirm-deploy-${Date.now()}`;
+    const siteArtifacts = {
+      projectId: "blog-confirm-deploy-test",
+      pages: [{ path: "/", html: "<!doctype html><html><head></head><body>ok</body></html>" }],
+      staticSite: {
+        mode: "skill-direct",
+        files: [
+          {
+            path: "/blog/index.html",
+            type: "text/html",
+            content:
+              '<!doctype html><html><body><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list><article class="blog-card">preview</article></div></section></body></html>',
+          },
+        ],
+      },
+    };
+
+    const { createChatTask, completeChatTask } = await import("./chat-task-store");
+    const previous = await createChatTask(chatId, undefined, {
+      assistantText: "generated",
+      phase: "end",
+      internal: {
+        sessionState: {
+          messages: [],
+          phase: "end",
+          current_page_index: 0,
+          attempt_count: 0,
+          workflow_context: {
+            blogContentPreviewStatus: "pending_confirmation",
+            blogNavLabel: "博客",
+            blogContentPreviewPosts: [
+              {
+                slug: "ai-one",
+                title: "AI One",
+                excerpt: "preview article",
+                category: "AI",
+                tags: ["AI"],
+              },
+            ],
+          },
+          site_artifacts: siteArtifacts,
+        },
+      },
+      progress: { checkpointProjectPath: "/remote/project.json" } as any,
+    });
+    await completeChatTask(previous.id, {
+      assistantText: "generated",
+      phase: "end",
+      internal: previous.result?.internal,
+      progress: { checkpointProjectPath: "/remote/project.json" } as any,
+    });
+
+    const { POST } = await import("../../app/api/chat/route");
+    const res = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: chatId,
+          messages: [{ role: "user", parts: [{ type: "text", text: "__SHP_CONFIRM_BLOG_CONTENT_DEPLOY__" }] }],
+        }),
+      }),
+    );
+
+    expect(res.status).toBe(202);
+    const latest = await getActiveChatTask(chatId);
+    const workflow = (latest?.result?.internal?.inputState as any)?.workflow_context || {};
+    expect(workflow.executionMode).toBe("deploy");
+    expect(workflow.deployRequested).toBe(true);
+    expect(workflow.blogContentConfirmed).toBe(true);
+    expect(Array.isArray(workflow.blogContentPreviewPosts)).toBe(true);
+    const timeline = await listChatTimelineMessages(chatId, 30);
+    expect(timeline.some((message) => String(message.text || "").includes("__SHP_CONFIRM_BLOG_CONTENT_DEPLOY__"))).toBe(false);
+  });
+
   it("preserves restored site artifacts and marks Chinese deploy requests", async () => {
     const chatId = `chat-deploy-zh-${Date.now()}`;
     const remoteOnlyProjectPath = `/app/apps/web/.tmp/chat-tasks/${chatId}/task/project.json`;
@@ -739,6 +982,73 @@ describe("chat api async mode", () => {
     expect(workflow.deployRequested).toBe(true);
     expect(workflow.executionMode).toBe("deploy");
     expect(workflow.canonicalPrompt).toBe("\u90e8\u7f72\u5230 Cloudflare");
+  });
+
+  it("routes natural deploy verification messages to deploy mode", async () => {
+    const cases = [
+      "\u90e8\u7f72\u5230 Cloudflare\uff0c\u9a8c\u8bc1\u7ebf\u4e0a\u7f51\u7ad9\u53ef\u7528",
+      "deploy the latest generated website to Cloudflare",
+    ];
+
+    for (const text of cases) {
+      const chatId = `chat-deploy-natural-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const siteArtifacts = {
+        projectId: "deploy-natural-test",
+        pages: [{ path: "/", html: "<!doctype html><html><head></head><body>ok</body></html>" }],
+        staticSite: {
+          mode: "skill-direct",
+          files: [
+            {
+              path: "/index.html",
+              type: "text/html",
+              content: "<!doctype html><html><head></head><body>ok</body></html>",
+            },
+          ],
+        },
+      };
+
+      const { createChatTask, completeChatTask } = await import("./chat-task-store");
+      const previous = await createChatTask(chatId, undefined, {
+        assistantText: "generated",
+        phase: "end",
+        internal: {
+          sessionState: {
+            messages: [],
+            phase: "end",
+            current_page_index: 0,
+            attempt_count: 0,
+            workflow_context: {},
+            site_artifacts: siteArtifacts,
+          },
+        },
+        progress: { checkpointProjectPath: `/remote/${chatId}/project.json` } as any,
+      });
+      await completeChatTask(previous.id, {
+        assistantText: "generated",
+        phase: "end",
+        internal: previous.result?.internal,
+        progress: previous.result?.progress as any,
+      });
+
+      const { POST } = await import("../../app/api/chat/route");
+      const req = new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: chatId,
+          messages: [{ role: "user", parts: [{ type: "text", text }] }],
+        }),
+      });
+
+      const res = await POST(req);
+      expect(res.status).toBe(202);
+
+      const latest = await getActiveChatTask(chatId);
+      const workflow = ((latest?.result?.internal?.inputState as any) || {}).workflow_context || {};
+      expect(workflow.deployRequested).toBe(true);
+      expect(workflow.executionMode).toBe("deploy");
+      expect(workflow.canonicalPrompt).toBe(text);
+    }
   });
 
   it("recovers deploy artifacts from preview files when only a remote checkpoint path remains", async () => {

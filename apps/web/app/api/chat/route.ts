@@ -10,6 +10,7 @@ import {
   getActiveChatTask,
   getLatestDeployableChatTaskForChat,
   getLatestChatTaskForChat,
+  getLatestPreviewableChatTaskForChat,
   listChatTimelineMessages,
   type ChatTaskResult,
 } from "../../../lib/agent/chat-task-store";
@@ -23,18 +24,40 @@ import {
   buildRequirementSlots,
   decideChatIntent,
   deriveConversationStage,
+  hydrateRequirementSlotsFromSpec,
   isDeployIntent,
   parseRequirementFormFromText,
   validateRequiredRequirementSlots,
 } from "../../../lib/agent/chat-orchestrator";
+import {
+  readChatLongTermPreferences,
+  readChatShortTermMemory,
+  writeChatLongTermPreferences,
+  writeChatShortTermMemory,
+  type ChatLongTermPreferenceSnapshot,
+  type ChatRevisionPointer,
+  type ChatShortTermMemorySnapshot,
+} from "../../../lib/agent/chat-memory";
 import { buildPromptDraftWithResearch } from "../../../lib/agent/prompt-draft-research";
 import {
   appendReferencedAssetsBlock,
   collectReferencedAssetsFromTexts,
   parseReferencedAssetsFromText,
 } from "../../../lib/agent/referenced-assets";
+import { buildBlogContentWorkflowPreview } from "../../../lib/skill-runtime/executor";
 import { loadProjectSkill } from "../../../lib/skill-runtime/project-skill-loader";
 import { invalidateLaunchCenterRecentProjectsCache } from "../../../lib/launch-center/cache";
+import {
+  BillingAccessError,
+  assertCanCreateProject,
+  assertCanMutatePublishedSite,
+} from "../../../lib/billing/enforcement";
+import {
+  hasBillableProject,
+  releaseCreatedProjectUsageReservation,
+  reserveCreatedProjectUsage,
+} from "../../../lib/billing/store";
+import { saveProjectState } from "../../../lib/agent/db";
 
 export const runtime = "nodejs";
 
@@ -50,6 +73,7 @@ type ChatRequestBody = {
 };
 
 const CONFIRM_GENERATE_PREFIX = "__SHP_CONFIRM_GENERATE__";
+const CONFIRM_BLOG_CONTENT_DEPLOY_PREFIX = "__SHP_CONFIRM_BLOG_CONTENT_DEPLOY__";
 const CONTINUE_STALE_RUNNING_TASK_MS = Math.max(
   30_000,
   Number(process.env.CHAT_CONTINUE_STALE_RUNNING_TASK_MS || 120_000),
@@ -83,6 +107,9 @@ const CHAT_COPY: Record<ChatDisplayLocale, Record<string, string>> = {
     queuedStageSuffix: "task queued. Waiting for background worker...",
     syncDisabled: "Synchronous generation path is disabled. Use async task mode.",
     storageUnavailable: "Chat storage is temporarily unavailable. Please retry in a few seconds.",
+    generateBeforeDeploy: "This chat does not have a completed generated site yet. Generate the site first, then confirm deployment.",
+    blogConfirmBeforeDeploy: "Review and confirm the generated Blog articles before deployment.",
+    blogConfirmLabel: "Confirm Blog Articles and Deploy",
     requestFailed: "Failed to process chat request.",
   },
   zh: {
@@ -110,6 +137,9 @@ const CHAT_COPY: Record<ChatDisplayLocale, Record<string, string>> = {
     queuedStageSuffix: "\u4efb\u52a1\u5df2\u6392\u961f\uff0c\u7b49\u5f85\u540e\u53f0\u6267\u884c\u5668\u3002",
     syncDisabled: "\u540c\u6b65\u751f\u6210\u8def\u5f84\u5df2\u7981\u7528\uff0c\u8bf7\u4f7f\u7528\u5f02\u6b65\u4efb\u52a1\u6a21\u5f0f\u3002",
     storageUnavailable: "\u804a\u5929\u5b58\u50a8\u6682\u65f6\u4e0d\u53ef\u7528\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5\u3002",
+    generateBeforeDeploy: "\u5f53\u524d\u4f1a\u8bdd\u8fd8\u6ca1\u6709\u5df2\u5b8c\u6210\u7684\u7f51\u7ad9\u751f\u6210\u7ed3\u679c\uff0c\u8bf7\u5148\u5b8c\u6210\u751f\u6210\uff0c\u518d\u786e\u8ba4\u90e8\u7f72\u3002",
+    blogConfirmBeforeDeploy: "\u8bf7\u5148\u67e5\u770b\u5e76\u786e\u8ba4\u751f\u6210\u7684 Blog \u6587\u7ae0\uff0c\u7136\u540e\u518d\u90e8\u7f72\u4e0a\u7ebf\u3002",
+    blogConfirmLabel: "\u786e\u8ba4 Blog \u6587\u7ae0\u5e76\u90e8\u7f72",
     requestFailed: "\u5904\u7406\u804a\u5929\u8bf7\u6c42\u5931\u8d25\u3002",
   },
 };
@@ -150,6 +180,228 @@ function localizedQueuedStageMessage(locale: ChatDisplayLocale, mode: "generate"
     return `${modeLabel}${chatCopy(locale, "queuedStageSuffix")}`;
   }
   return `${mode} ${chatCopy(locale, "queuedStageSuffix")}`;
+}
+
+function hasText(value: unknown): value is string {
+  return Boolean(String(value || "").trim());
+}
+
+function uniqueStrings(values: Array<string | undefined>): string[] {
+  const seen = new Set<string>();
+  const output: string[] = [];
+  for (const value of values) {
+    const normalized = String(value || "").trim();
+    if (!normalized) continue;
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    output.push(normalized);
+  }
+  return output;
+}
+
+function buildWorkflowContextFromLongTermPreferences(
+  preferences?: ChatLongTermPreferenceSnapshot,
+): Record<string, unknown> {
+  if (!preferences) return {};
+  return {
+    ...(preferences.preferredLocale ? { preferredLocale: preferences.preferredLocale } : {}),
+    ...(preferences.primaryVisualDirection ? { primaryVisualDirection: preferences.primaryVisualDirection } : {}),
+    ...(Array.isArray(preferences.secondaryVisualTags) && preferences.secondaryVisualTags.length > 0
+      ? { secondaryVisualTags: preferences.secondaryVisualTags }
+      : {}),
+    ...(preferences.deploymentProvider || preferences.deploymentDomain
+      ? {
+          deploymentPreference: {
+            provider: preferences.deploymentProvider,
+            domain: preferences.deploymentDomain,
+          },
+        }
+      : {}),
+  };
+}
+
+function mergeRequirementSpecWithMemory(params: {
+  requirementSpec: ReturnType<typeof buildRequirementSpec>;
+  shortTermMemory?: ChatShortTermMemorySnapshot;
+  longTermPreferences?: ChatLongTermPreferenceSnapshot;
+}): ReturnType<typeof buildRequirementSpec> {
+  const { requirementSpec } = params;
+  const shortTermSpec = params.shortTermMemory?.requirementState?.currentValues;
+  const longTerm = params.longTermPreferences;
+  const explicitFallbackDirection =
+    (shortTermSpec?.visualDecisionSource === "user_explicit" ? shortTermSpec.primaryVisualDirection : undefined) ||
+    longTerm?.primaryVisualDirection;
+  const shouldOverrideRecommendedDirection =
+    Boolean(explicitFallbackDirection) && requirementSpec.visualDecisionSource !== "user_explicit";
+  const mergedTargetAudience =
+    requirementSpec.targetAudience?.length
+      ? requirementSpec.targetAudience
+      : shortTermSpec?.targetAudience?.length
+        ? shortTermSpec.targetAudience
+        : longTerm?.targetAudience;
+  const mergedPrimaryVisualDirection =
+    shouldOverrideRecommendedDirection
+      ? explicitFallbackDirection
+      : requirementSpec.primaryVisualDirection || shortTermSpec?.primaryVisualDirection || longTerm?.primaryVisualDirection;
+  const mergedSecondaryVisualTags =
+    requirementSpec.secondaryVisualTags?.length
+      ? requirementSpec.secondaryVisualTags
+      : shortTermSpec?.secondaryVisualTags?.length
+        ? shortTermSpec.secondaryVisualTags
+        : longTerm?.secondaryVisualTags;
+  const mergedVisualStyle =
+    requirementSpec.visualStyle?.length
+      ? requirementSpec.visualStyle
+      : shortTermSpec?.visualStyle?.length
+        ? shortTermSpec.visualStyle
+        : mergedSecondaryVisualTags;
+  const deploymentProvider =
+    requirementSpec.deployment?.provider || shortTermSpec?.deployment?.provider || longTerm?.deploymentProvider;
+  const deploymentDomain =
+    requirementSpec.deployment?.domain || shortTermSpec?.deployment?.domain || longTerm?.deploymentDomain;
+
+  return {
+    ...requirementSpec,
+    ...(hasText(requirementSpec.brand) ? {} : hasText(shortTermSpec?.brand) ? { brand: shortTermSpec?.brand } : {}),
+    ...(hasText(requirementSpec.businessContext)
+      ? {}
+      : hasText(shortTermSpec?.businessContext)
+        ? { businessContext: shortTermSpec?.businessContext }
+        : {}),
+    ...(mergedTargetAudience?.length ? { targetAudience: mergedTargetAudience } : {}),
+    ...(hasText(requirementSpec.locale)
+      ? {}
+      : hasText(shortTermSpec?.locale)
+        ? { locale: shortTermSpec?.locale }
+        : hasText(longTerm?.preferredLocale)
+          ? { locale: longTerm?.preferredLocale }
+          : {}),
+    ...(hasText(requirementSpec.tone)
+      ? {}
+      : hasText(shortTermSpec?.tone)
+        ? { tone: shortTermSpec?.tone }
+        : hasText(longTerm?.tone)
+          ? { tone: longTerm?.tone }
+          : {}),
+    ...(mergedPrimaryVisualDirection ? { primaryVisualDirection: mergedPrimaryVisualDirection } : {}),
+    ...(mergedSecondaryVisualTags?.length ? { secondaryVisualTags: mergedSecondaryVisualTags } : {}),
+    ...(mergedVisualStyle?.length ? { visualStyle: mergedVisualStyle } : {}),
+    ...(requirementSpec.visualDecisionSource === "user_explicit"
+      ? { visualDecisionSource: requirementSpec.visualDecisionSource }
+      : explicitFallbackDirection
+        ? { visualDecisionSource: "user_explicit" as const }
+        : shortTermSpec?.visualDecisionSource
+          ? { visualDecisionSource: shortTermSpec.visualDecisionSource }
+          : mergedPrimaryVisualDirection
+            ? { visualDecisionSource: "fallback" as const }
+            : {}),
+    ...((deploymentProvider || deploymentDomain || requirementSpec.deployment?.requested || shortTermSpec?.deployment?.requested)
+      ? {
+          deployment: {
+            provider: deploymentProvider,
+            domain: deploymentDomain,
+            requested:
+              Boolean(requirementSpec.deployment?.requested) || Boolean(shortTermSpec?.deployment?.requested) || Boolean(deploymentProvider || deploymentDomain),
+          },
+        }
+      : {}),
+  };
+}
+
+function buildExplicitLongTermPreferences(params: {
+  ownerUserId?: string;
+  formValues?: ReturnType<typeof parseRequirementFormFromText>["formValues"];
+  requirementSpec: ReturnType<typeof buildRequirementSpec>;
+}): ChatLongTermPreferenceSnapshot | undefined {
+  const ownerUserId = String(params.ownerUserId || "").trim();
+  if (!ownerUserId) return undefined;
+  const formValues = params.formValues;
+  const next: ChatLongTermPreferenceSnapshot = {
+    ownerUserId,
+    updatedAt: new Date().toISOString(),
+  };
+  if (formValues?.language && params.requirementSpec.locale) {
+    next.preferredLocale = params.requirementSpec.locale;
+  }
+  if (formValues?.primaryVisualDirection && params.requirementSpec.primaryVisualDirection) {
+    next.primaryVisualDirection = params.requirementSpec.primaryVisualDirection;
+  }
+  if (Array.isArray(formValues?.secondaryVisualTags) && formValues.secondaryVisualTags.length > 0) {
+    next.secondaryVisualTags = params.requirementSpec.secondaryVisualTags || [];
+  }
+  if (Array.isArray(formValues?.targetAudience) && formValues.targetAudience.length > 0) {
+    next.targetAudience = params.requirementSpec.targetAudience || formValues.targetAudience;
+  }
+  if (params.requirementSpec.deployment?.requested) {
+    if (params.requirementSpec.deployment.provider) next.deploymentProvider = params.requirementSpec.deployment.provider;
+    if (params.requirementSpec.deployment.domain) next.deploymentDomain = params.requirementSpec.deployment.domain;
+  }
+  if (!next.preferredLocale && !next.primaryVisualDirection && !next.secondaryVisualTags?.length && !next.targetAudience?.length && !next.deploymentProvider && !next.deploymentDomain) {
+    return undefined;
+  }
+  return next;
+}
+
+function buildRevisionPointer(params: {
+  executionMode: "generate" | "refine" | "deploy";
+  requirementRevision: number;
+  existingWorkflow: Record<string, unknown>;
+  shortTermMemory?: ChatShortTermMemorySnapshot;
+}): ChatRevisionPointer {
+  const existingRevisionId =
+    String(params.existingWorkflow.siteRevisionId || params.shortTermMemory?.revisionPointer?.revisionId || "").trim() || undefined;
+  const revisionId =
+    params.executionMode === "deploy" && existingRevisionId ? existingRevisionId : crypto.randomUUID();
+  return {
+    revisionId,
+    baseRevisionId: params.executionMode === "generate" ? existingRevisionId : existingRevisionId || params.shortTermMemory?.revisionPointer?.baseRevisionId,
+    mode: params.executionMode,
+    requirementRevision: params.requirementRevision,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+async function persistRouteMemorySnapshot(params: {
+  chatId: string;
+  ownerUserId?: string;
+  stage: ReturnType<typeof deriveConversationStage>;
+  intent?: ReturnType<typeof decideChatIntent>["intent"];
+  intentConfidence?: number;
+  requirementSpec: ReturnType<typeof buildRequirementSpec>;
+  slots: ReturnType<typeof buildRequirementSlots>;
+  missingCriticalSlots: string[];
+  assumptions: string[];
+  activeScope?: string;
+  revisionPointer: ChatRevisionPointer;
+  workflowContext?: Record<string, unknown>;
+  recentSummary?: string;
+  correctionSummary?: string[];
+  explicitLongTermPreferences?: ChatLongTermPreferenceSnapshot;
+}): Promise<void> {
+  await writeChatShortTermMemory({
+    threadId: params.chatId,
+    stage: params.stage,
+    intent: params.intent,
+    intentConfidence: params.intentConfidence,
+    recentSummary: params.recentSummary,
+    activeScope: params.activeScope,
+    revisionPointer: params.revisionPointer,
+    workflowContext: params.workflowContext,
+    updatedAt: new Date().toISOString(),
+    requirementState: {
+      slots: params.slots,
+      conflicts: params.correctionSummary || [],
+      missingCriticalSlots: params.missingCriticalSlots,
+      readyScore: Math.max(0, Math.min(100, Math.round((params.slots.filter((slot) => slot.filled).length / Math.max(1, params.slots.length)) * 100))),
+      activeScope: params.activeScope,
+      assumptions: params.assumptions,
+      currentValues: params.requirementSpec,
+    },
+  });
+  if (params.explicitLongTermPreferences && params.ownerUserId) {
+    await writeChatLongTermPreferences(params.explicitLongTermPreferences);
+  }
 }
 
 function createInitialState(): AgentState {
@@ -194,20 +446,71 @@ function reviveSessionState(raw: any): AgentState | undefined {
   };
 }
 
+async function restoreProjectArtifactFromCheckpointPath(checkpointProjectPath: string): Promise<any | undefined> {
+  const rawPath = String(checkpointProjectPath || "").trim();
+  if (!rawPath) return undefined;
+  const normalized = rawPath.replace(/\\/g, "/");
+  const suffixMatch = normalized.match(/(?:^|\/)\.tmp\/chat-tasks\/(.+)$/i);
+  const candidates = [path.resolve(rawPath)];
+  if (suffixMatch?.[1]) {
+    const suffix = suffixMatch[1].replace(/^\/+/, "");
+    candidates.push(
+      path.resolve(process.cwd(), ".tmp", "chat-tasks", suffix),
+      path.resolve(process.cwd(), "apps", "web", ".tmp", "chat-tasks", suffix),
+    );
+  }
+  for (const absPath of Array.from(new Set(candidates))) {
+    if (!absPath || !absPath.toLowerCase().endsWith(".json")) continue;
+    try {
+      const raw = await fs.readFile(absPath, "utf8");
+      const parsed = JSON.parse(raw);
+      if (isStaticSiteProjectLike(parsed)) return parsed;
+    } catch {
+      // try next candidate
+    }
+  }
+  return undefined;
+}
+
+function recoverProjectArtifactFromTaskInternal(internal: Record<string, unknown>): any | undefined {
+  const candidates = [
+    (internal as any).artifactSnapshot,
+    (internal as any).sessionState?.site_artifacts,
+    (internal as any).sessionState?.project_json,
+    (internal as any).inputState?.site_artifacts,
+    (internal as any).inputState?.project_json,
+  ];
+  return candidates.find((candidate) => isStaticSiteProjectLike(candidate));
+}
+
 async function getSession(chatId: string): Promise<AgentState> {
   const latestTask = await getLatestChatTaskForChat(chatId);
   const baselineTask = taskHasRouteBaseline(latestTask)
     ? latestTask
-    : await getLatestDeployableChatTaskForChat(chatId).catch(() => undefined);
+    : await getLatestCompletedGenerationBaselineTask(chatId, latestTask);
   const sessionTask = baselineTask || latestTask;
   const internal = (sessionTask?.result?.internal || {}) as Record<string, unknown>;
   const fromSessionState = reviveSessionState(internal.sessionState);
-  const checkpointProjectPath = String(sessionTask?.result?.progress?.checkpointProjectPath || "").trim();
-  const deployedUrl = String(sessionTask?.result?.deployedUrl || "").trim();
+  const checkpointProjectPath = String(
+    sessionTask?.result?.progress?.checkpointProjectPath ||
+      sessionTask?.result?.progress?.checkpointSiteDir ||
+      sessionTask?.result?.progress?.checkpointDir ||
+      "",
+  ).trim();
+  const deployedUrl = String(latestTask?.result?.deployedUrl || sessionTask?.result?.deployedUrl || "").trim();
+  const recoveredArtifactFromCheckpoint = await restoreProjectArtifactFromCheckpointPath(checkpointProjectPath);
+  const recoveredArtifactFromTask = recoverProjectArtifactFromTaskInternal(internal);
+  const recoveredArtifact = recoveredArtifactFromTask || recoveredArtifactFromCheckpoint;
   if (fromSessionState) {
     return {
       ...fromSessionState,
       deployed_url: deployedUrl || fromSessionState.deployed_url,
+      project_json:
+        (isStaticSiteProjectLike((fromSessionState as any).project_json) ? (fromSessionState as any).project_json : undefined) ||
+        recoveredArtifact,
+      site_artifacts:
+        (isStaticSiteProjectLike((fromSessionState as any).site_artifacts) ? (fromSessionState as any).site_artifacts : undefined) ||
+        recoveredArtifact,
       workflow_context: {
         ...(fromSessionState.workflow_context || {}),
         deploySourceProjectPath:
@@ -223,6 +526,12 @@ async function getSession(chatId: string): Promise<AgentState> {
     return {
       ...fromInputState,
       deployed_url: deployedUrl || fromInputState.deployed_url,
+      project_json:
+        (isStaticSiteProjectLike((fromInputState as any).project_json) ? (fromInputState as any).project_json : undefined) ||
+        recoveredArtifact,
+      site_artifacts:
+        (isStaticSiteProjectLike((fromInputState as any).site_artifacts) ? (fromInputState as any).site_artifacts : undefined) ||
+        recoveredArtifact,
       workflow_context: {
         ...(fromInputState.workflow_context || {}),
         deploySourceProjectPath:
@@ -230,6 +539,22 @@ async function getSession(chatId: string): Promise<AgentState> {
         deploySourceTaskId: sessionTask?.id || (fromInputState.workflow_context as any)?.deploySourceTaskId,
         checkpointProjectPath:
           checkpointProjectPath || (fromInputState.workflow_context as any)?.checkpointProjectPath,
+      } as any,
+    };
+  }
+  if (baselineTask) {
+    const recoveredState = createInitialState();
+    return {
+      ...recoveredState,
+      phase: "end",
+      deployed_url: deployedUrl || undefined,
+      project_json: recoveredArtifact,
+      site_artifacts: recoveredArtifact,
+      workflow_context: {
+        ...(recoveredState.workflow_context || {}),
+        deploySourceProjectPath: checkpointProjectPath,
+        deploySourceTaskId: baselineTask.id,
+        checkpointProjectPath,
       } as any,
     };
   }
@@ -411,7 +736,7 @@ function buildUploadedMaterialsRequirementHint(params: { text: string }): string
     siteType: "company",
     contentSources: ["uploaded_files"],
     targetAudience: ["infer_from_uploaded_materials"],
-    designTheme: ["professional"],
+    secondaryVisualTags: ["professional"],
     pageStructure: { mode: "multi", planning: "auto" },
     functionalRequirements: ["contact_form"],
     primaryGoal: ["brand_trust", "lead_generation"],
@@ -439,6 +764,86 @@ function extractConfirmedPrompt(raw: string): string | null {
   if (!text.startsWith(CONFIRM_GENERATE_PREFIX)) return null;
   const payload = text.slice(CONFIRM_GENERATE_PREFIX.length).trim();
   return payload || null;
+}
+
+function isBlogContentDeployConfirmation(raw: string): boolean {
+  return String(raw || "").trim().startsWith(CONFIRM_BLOG_CONTENT_DEPLOY_PREFIX);
+}
+
+function isInternalTimelineActionPayload(raw: string): boolean {
+  const text = String(raw || "").trim();
+  if (!text) return false;
+  return text.startsWith(CONFIRM_GENERATE_PREFIX) || text.startsWith(CONFIRM_BLOG_CONTENT_DEPLOY_PREFIX);
+}
+
+function visibleTimelineUserText(raw: string, normalized?: string): string {
+  if (isInternalTimelineActionPayload(raw)) return "";
+  return String(normalized || raw || "").trim();
+}
+
+function normalizeBlogPreviewPostsForCard(posts: unknown[]) {
+  return posts
+    .filter((post) => post && typeof post === "object")
+    .map((post) => {
+      const item = post as Record<string, unknown>;
+      return {
+        slug: String(item.slug || "").trim(),
+        title: String(item.title || "").trim(),
+        excerpt: String(item.excerpt || "").trim(),
+        category: String(item.category || "").trim(),
+        tags: Array.isArray(item.tags) ? item.tags.map((tag) => String(tag || "").trim()).filter(Boolean) : [],
+      };
+    })
+    .filter((post) => post.slug || post.title);
+}
+
+function buildBlogContentConfirmationMetadata(params: {
+  locale: ChatDisplayLocale;
+  navLabel?: string;
+  posts: unknown[];
+}) {
+  return {
+    cardType: "confirm_blog_content_deploy",
+    locale: params.locale,
+    title:
+      params.locale === "zh"
+        ? "Blog 文章已生成，确认后再部署上线"
+        : "Blog articles are ready. Confirm before deployment.",
+    label: chatCopy(params.locale, "blogConfirmLabel"),
+    payload: CONFIRM_BLOG_CONTENT_DEPLOY_PREFIX,
+    navLabel: String(params.navLabel || "").trim(),
+    posts: normalizeBlogPreviewPostsForCard(params.posts),
+  } as Record<string, unknown>;
+}
+
+function looksLikeCanonicalWebsitePrompt(text: string): boolean {
+  const normalized = String(text || "").trim();
+  return (
+    /^#\s*Canonical Website Generation Prompt\b/i.test(normalized) ||
+    /Prompt Control Manifest \(Machine Readable\)/i.test(normalized) ||
+    /"promptKind"\s*:\s*"canonical_website_prompt"/i.test(normalized)
+  );
+}
+
+function hasUploadedSourceMaterial(text: string): boolean {
+  const normalized = String(text || "");
+  return (
+    /##\s*7\.25\s+Source Material Appendix\b/i.test(normalized) ||
+    /##\s*7\.\s+Evidence Brief\b/i.test(normalized) ||
+    /"routeSource"\s*:\s*"uploaded_source_page_plan"/i.test(normalized) ||
+    /##\s+Website Knowledge Profile\b/i.test(normalized)
+  );
+}
+
+function shouldRebuildConfirmedPromptForUploadedSources(params: {
+  confirmedPrompt?: string | null;
+  confirmedPromptDraftText: string;
+  referencedAssets: string[];
+}): boolean {
+  if (!params.confirmedPrompt || params.referencedAssets.length === 0) return false;
+  const prompt = String(params.confirmedPromptDraftText || params.confirmedPrompt || "").trim();
+  if (!looksLikeCanonicalWebsitePrompt(prompt)) return true;
+  return !hasUploadedSourceMaterial(prompt);
 }
 
 function isContinueGenerationIntent(raw: string): boolean {
@@ -522,12 +927,20 @@ async function appendTimelineMessageBestEffort(input: {
   }
 }
 
+async function invalidateLaunchCenterRecentProjectsCacheBestEffort() {
+  try {
+    await invalidateLaunchCenterRecentProjectsCache();
+  } catch {
+    // Best-effort cache invalidation; do not block chat responses.
+  }
+}
+
 function localTaskRootsForChat(chatId: string): string[] {
   const safeChatId = String(chatId || "").replace(/[^a-zA-Z0-9_-]/g, "_");
   return Array.from(
     new Set([
-      path.resolve(process.cwd(), ".tmp", "chat-tasks", safeChatId),
-      path.resolve(process.cwd(), "apps", "web", ".tmp", "chat-tasks", safeChatId),
+      path.resolve(/* turbopackIgnore: true */ process.cwd(), ".tmp", "chat-tasks", safeChatId),
+      path.resolve(/* turbopackIgnore: true */ process.cwd(), "apps", "web", ".tmp", "chat-tasks", safeChatId),
     ]),
   );
 }
@@ -598,6 +1011,85 @@ function taskHasRouteBaseline(task: Awaited<ReturnType<typeof getLatestChatTaskF
       (internal.inputState as any)?.site_artifacts ||
       (internal.inputState as any)?.project_json,
   );
+}
+
+function taskExecutionMode(task: Awaited<ReturnType<typeof getLatestChatTaskForChat>>): string {
+  const workflow = ((task?.result?.internal?.inputState as any)?.workflow_context ||
+    (task?.result?.internal?.sessionState as any)?.workflow_context ||
+    {}) as Record<string, unknown>;
+  const explicit = String(workflow.executionMode || workflow.intent || task?.result?.progress?.nextStep || "").trim().toLowerCase();
+  if (explicit === "deploy" || explicit === "generate" || explicit === "refine") return explicit;
+  const phase = String(task?.result?.phase || "").trim().toLowerCase();
+  if (phase === "deploy" || phase === "generate" || phase === "refine") return phase;
+  const stage = String(task?.result?.progress?.stage || "").trim().toLowerCase();
+  if (stage.includes("deploy")) return "deploy";
+  if (stage.includes("refine")) return "refine";
+  return "";
+}
+
+function taskIsCompletedGenerationBaseline(task: Awaited<ReturnType<typeof getLatestChatTaskForChat>>): boolean {
+  if (!task || task.status !== "succeeded" || !taskHasRouteBaseline(task)) return false;
+  return taskExecutionMode(task) !== "deploy";
+}
+
+async function getLatestCompletedGenerationBaselineTask(
+  chatId: string,
+  latestTask?: Awaited<ReturnType<typeof getLatestChatTaskForChat>>,
+) {
+  if (taskIsCompletedGenerationBaseline(latestTask)) return latestTask;
+  const previewableTask = await getLatestPreviewableChatTaskForChat(chatId, { statuses: ["succeeded"] }).catch(
+    () => undefined,
+  );
+  return taskIsCompletedGenerationBaseline(previewableTask) ? previewableTask : undefined;
+}
+
+function deployableProjectArtifact(
+  previousState: AgentState,
+  deployableTask: Awaited<ReturnType<typeof getLatestDeployableChatTaskForChat>> | undefined,
+) {
+  const candidates = [
+    (previousState as any).site_artifacts,
+    (previousState as any).project_json,
+    (deployableTask?.result?.internal as any)?.artifactSnapshot,
+    (deployableTask?.result?.internal as any)?.sessionState?.site_artifacts,
+    (deployableTask?.result?.internal as any)?.sessionState?.project_json,
+    (deployableTask?.result?.internal as any)?.inputState?.site_artifacts,
+    (deployableTask?.result?.internal as any)?.inputState?.project_json,
+  ];
+  return candidates.find((candidate) => isStaticSiteProjectLike(candidate));
+}
+
+function taskWorkflowContext(task: Awaited<ReturnType<typeof getLatestChatTaskForChat>> | undefined): Record<string, unknown> {
+  return (
+    (((task?.result?.internal as any)?.sessionState?.workflow_context ||
+      (task?.result?.internal as any)?.inputState?.workflow_context ||
+      {}) as Record<string, unknown>)
+  );
+}
+
+async function recoverDeployableProjectArtifact(
+  params: {
+    reqUrl: string;
+    deployIntentRequested: boolean;
+    hasCompletedGenerationBaseline: boolean;
+    previousState: AgentState;
+    deployableTask: Awaited<ReturnType<typeof getLatestDeployableChatTaskForChat>> | undefined;
+    latestTask: Awaited<ReturnType<typeof getLatestChatTaskForChat>> | undefined;
+  },
+) {
+  const previousDeployArtifact =
+    (params.previousState as any).site_artifacts || (params.previousState as any).project_json;
+  if (
+    !params.deployIntentRequested ||
+    !params.hasCompletedGenerationBaseline ||
+    isStaticSiteProjectLike(previousDeployArtifact)
+  ) {
+    return undefined;
+  }
+  return buildDeployStaticSiteFromPreview(
+    params.deployableTask || params.latestTask,
+    new URL(params.reqUrl).origin,
+  ).catch(() => undefined);
 }
 
 function normalizeGeneratedFilePath(value: string): string {
@@ -716,19 +1208,44 @@ export async function POST(req: Request) {
   }
   const displayLocale = detectChatDisplayLocale(userText);
   const continueGenerationRequested = isContinueGenerationIntent(userText);
+  const timelineUserText = visibleTimelineUserText(userText);
+  let usageReservedForThisRequest:
+    | {
+        ownerUserId: string;
+        sourceProjectId: string;
+      }
+    | undefined;
 
   try {
   const previousState = await withTimeout(getSession(chatId), CHAT_ROUTE_STORE_TIMEOUT_MS, "Chat session lookup").catch(() =>
     createInitialState(),
   );
+  let latestTask: Awaited<ReturnType<typeof getLatestChatTaskForChat>> | undefined;
+  let activeTaskLookupError: unknown;
   const activeTask = await withTimeout(getActiveChatTask(chatId), CHAT_ROUTE_STORE_TIMEOUT_MS, "Active task lookup").catch(
-    () => undefined,
+    (error) => {
+      activeTaskLookupError = error;
+      return undefined;
+    },
   );
-  if (activeTask && (activeTask.status === "queued" || activeTask.status === "running")) {
-    const activeWorkflow = (activeTask.result?.internal?.inputState as any)?.workflow_context || {};
+  if (!activeTask && activeTaskLookupError && isTransientStorageConnectivityError(activeTaskLookupError)) {
+    try {
+      latestTask = await withTimeout(getLatestChatTaskForChat(chatId), CHAT_ROUTE_STORE_TIMEOUT_MS, "Latest task lookup");
+    } catch (error) {
+      if (isTransientStorageConnectivityError(error)) {
+        console.warn(`[ChatRoute] latest task fallback degraded for ${chatId}: ${formatUnknownError(error)}`);
+      }
+      latestTask = undefined;
+    }
+  }
+  const activeOrLatestTask =
+    activeTask ||
+    (latestTask && (latestTask.status === "queued" || latestTask.status === "running") ? latestTask : undefined);
+  if (activeOrLatestTask && (activeOrLatestTask.status === "queued" || activeOrLatestTask.status === "running")) {
+    const activeWorkflow = (activeOrLatestTask.result?.internal?.inputState as any)?.workflow_context || {};
     const activeExecutionMode = String(activeWorkflow.executionMode || "").trim().toLowerCase();
-    const activeProgressStage = String(activeTask.result?.progress?.stage || "").trim().toLowerCase();
-    const activeNextStep = String(activeTask.result?.progress?.nextStep || "").trim().toLowerCase();
+    const activeProgressStage = String(activeOrLatestTask.result?.progress?.stage || "").trim().toLowerCase();
+    const activeNextStep = String(activeOrLatestTask.result?.progress?.nextStep || "").trim().toLowerCase();
     const deployLocked =
       activeExecutionMode === "deploy" ||
       activeProgressStage.includes("deploy") ||
@@ -736,24 +1253,26 @@ export async function POST(req: Request) {
     const shouldBypassActiveTaskForContinuation =
       continueGenerationRequested &&
       !deployLocked &&
-      activeTask.status === "running" &&
-      isStaleRunningTaskForContinuation(activeTask);
+      activeOrLatestTask.status === "running" &&
+      isStaleRunningTaskForContinuation(activeOrLatestTask);
     if (shouldBypassActiveTaskForContinuation) {
-      await appendTimelineMessageBestEffort({
-        chatId,
-        role: "user",
-        text: userText,
-        ownerUserId: body.user_id || previousState.user_id,
-        taskId: activeTask.id,
-        metadata: { cardType: "continue_generation", staleTaskId: activeTask.id, locale: displayLocale },
-      });
+      if (timelineUserText) {
+        await appendTimelineMessageBestEffort({
+          chatId,
+          role: "user",
+          text: timelineUserText,
+          ownerUserId: body.user_id || previousState.user_id,
+          taskId: activeOrLatestTask.id,
+          metadata: { cardType: "continue_generation", staleTaskId: activeOrLatestTask.id, locale: displayLocale },
+        });
+      }
     } else {
     if (deployLocked) {
       return createTaskStreamResponse({
         assistantText: chatCopy(displayLocale, "deployLocked"),
-        taskId: activeTask.id,
+        taskId: activeOrLatestTask.id,
         chatId,
-        status: activeTask.status,
+        status: activeOrLatestTask.status,
         statusCode: 423,
         displayLocale,
       });
@@ -761,22 +1280,24 @@ export async function POST(req: Request) {
     const shouldQueuePendingEdit =
       activeExecutionMode !== "deploy" && !isDeployIntent(userText) && !continueGenerationRequested;
     if (shouldQueuePendingEdit) {
-      await appendPendingEditToChatTask(activeTask.id, {
+      await appendPendingEditToChatTask(activeOrLatestTask.id, {
         text: userText,
         ownerUserId: body.user_id || previousState.user_id,
         patchPlan: buildRequirementPatchPlan(userText),
       });
     }
-    await appendTimelineMessageBestEffort({
-      chatId,
-      role: "user",
-      text: userText,
-      ownerUserId: body.user_id || previousState.user_id,
-      taskId: activeTask.id,
-      metadata: shouldQueuePendingEdit
-        ? { cardType: "pending_edit", queuedForTaskId: activeTask.id, locale: displayLocale }
-        : undefined,
-    });
+    if (timelineUserText) {
+      await appendTimelineMessageBestEffort({
+        chatId,
+        role: "user",
+        text: timelineUserText,
+        ownerUserId: body.user_id || previousState.user_id,
+        taskId: activeOrLatestTask.id,
+        metadata: shouldQueuePendingEdit
+          ? { cardType: "pending_edit", queuedForTaskId: activeOrLatestTask.id, locale: displayLocale }
+          : undefined,
+      });
+    }
     const assistantText = shouldQueuePendingEdit
       ? chatCopy(displayLocale, "pendingEditQueued")
       : chatCopy(displayLocale, "activeTaskRunning");
@@ -785,17 +1306,17 @@ export async function POST(req: Request) {
       role: "assistant",
       text: assistantText,
       ownerUserId: body.user_id || previousState.user_id,
-      taskId: activeTask.id,
+      taskId: activeOrLatestTask.id,
       metadata: shouldQueuePendingEdit
-        ? { cardType: "pending_edit_queued", queuedForTaskId: activeTask.id, locale: displayLocale }
+        ? { cardType: "pending_edit_queued", queuedForTaskId: activeOrLatestTask.id, locale: displayLocale }
         : { locale: displayLocale },
     });
-    await invalidateLaunchCenterRecentProjectsCache();
+    await invalidateLaunchCenterRecentProjectsCacheBestEffort();
     return createTaskStreamResponse({
       assistantText,
-      taskId: activeTask.id,
+      taskId: activeOrLatestTask.id,
       chatId,
-      status: activeTask.status,
+      status: activeOrLatestTask.status,
       statusCode: 202,
       displayLocale,
     });
@@ -803,9 +1324,10 @@ export async function POST(req: Request) {
   }
 
   const useAsyncTaskMode = shouldUseAsyncTaskMode(body);
+  const blogContentDeployConfirmed = isBlogContentDeployConfirmation(userText);
   const explicitConfirmedPrompt = extractConfirmedPrompt(userText);
   let confirmedPrompt = explicitConfirmedPrompt;
-  let normalizedUserText = explicitConfirmedPrompt || userText;
+  let normalizedUserText = explicitConfirmedPrompt || (blogContentDeployConfirmed ? "deploy to cloudflare" : userText);
   const requestedSkillId = String(
     body.skill_id || (previousState.workflow_context as any)?.skillId || "website-generation-workflow",
   )
@@ -819,27 +1341,26 @@ export async function POST(req: Request) {
     return errorStreamResponse(`Invalid skill_id: ${message}`, 400);
   }
 
-  let latestTask: Awaited<ReturnType<typeof getLatestChatTaskForChat>> | undefined;
-  try {
-    latestTask = await withTimeout(getLatestChatTaskForChat(chatId), CHAT_ROUTE_STORE_TIMEOUT_MS, "Latest task lookup");
-  } catch (error) {
-    if (!continueGenerationRequested && isTransientStorageConnectivityError(error)) {
-      return errorStreamResponse(chatCopy(displayLocale, "storageUnavailable"), 503);
+  if (!latestTask) {
+    try {
+      latestTask = await withTimeout(getLatestChatTaskForChat(chatId), CHAT_ROUTE_STORE_TIMEOUT_MS, "Latest task lookup");
+    } catch (error) {
+      if (isTransientStorageConnectivityError(error)) {
+        console.warn(
+          `[ChatRoute] latest task lookup degraded for ${chatId}: ${formatUnknownError(error)}`,
+        );
+      }
+      latestTask = undefined;
     }
-    latestTask = undefined;
   }
-  const deployableTask = taskHasRouteBaseline(latestTask)
-    ? latestTask
-    : await withTimeout(
-        getLatestDeployableChatTaskForChat(chatId),
-        CHAT_ROUTE_STORE_TIMEOUT_MS,
-        "Deployable task lookup",
-      ).catch(() => undefined);
+  const deployableTask = await withTimeout(
+    getLatestCompletedGenerationBaselineTask(chatId, latestTask),
+    CHAT_ROUTE_STORE_TIMEOUT_MS,
+    "Deployable task lookup",
+  ).catch(() => undefined);
+  const hasCompletedGenerationBaseline = Boolean(deployableTask);
   const checkpointProjectPath = String(
     deployableTask?.result?.progress?.checkpointProjectPath ||
-      latestTask?.result?.progress?.checkpointProjectPath ||
-      (previousState.workflow_context as any)?.checkpointProjectPath ||
-      (previousState.workflow_context as any)?.deploySourceProjectPath ||
       "",
   ).trim();
   const timelineMessages = await withTimeout(
@@ -877,6 +1398,9 @@ export async function POST(req: Request) {
   const historyUserMessages = historyUserMessagesRaw
     .map((text) => parseReferencedAssetsFromText(text).cleanText || text)
     .filter(Boolean);
+  const ownerUserId = body.user_id || previousState.user_id;
+  const shortTermMemory = await readChatShortTermMemory(chatId);
+  const longTermPreferences = ownerUserId ? await readChatLongTermPreferences(ownerUserId) : undefined;
   const referencedAssets = collectReferencedAssetsFromTexts([...historyUserMessagesRaw, normalizedUserText]);
   const aggregated = aggregateRequirementFromHistory({
     historyUserMessages,
@@ -894,8 +1418,17 @@ export async function POST(req: Request) {
   const effectiveRequirementSourceMessages = uploadedMaterialsRequirementHint
     ? [...aggregated.sourceMessages, uploadedMaterialsRequirementHint]
     : aggregated.sourceMessages;
-  const slots = buildRequirementSlots(effectiveRequirementText);
-  const requirementSpec = buildRequirementSpec(effectiveRequirementText, effectiveRequirementSourceMessages);
+  const memoryWorkflowContext = {
+    ...buildWorkflowContextFromLongTermPreferences(longTermPreferences),
+    ...((shortTermMemory?.workflowContext || {}) as Record<string, unknown>),
+    ...((previousState.workflow_context || {}) as Record<string, unknown>),
+  } as Record<string, unknown>;
+  const requirementSpec = mergeRequirementSpecWithMemory({
+    requirementSpec: buildRequirementSpec(effectiveRequirementText, effectiveRequirementSourceMessages),
+    shortTermMemory,
+    longTermPreferences,
+  });
+  const slots = hydrateRequirementSlotsFromSpec(buildRequirementSlots(effectiveRequirementText), requirementSpec);
   const requiredSlotValidation = validateRequiredRequirementSlots(slots);
   const requirementPatchPlan = buildRequirementPatchPlan(currentUserRequirementText, aggregated.revision);
   const stage = deriveConversationStage({
@@ -903,7 +1436,7 @@ export async function POST(req: Request) {
     latestProgressStage: String(latestTask?.result?.progress?.stage || ""),
     latestDeployedUrl: String(latestTask?.result?.deployedUrl || ""),
     checkpointProjectPath,
-    workflowContext: (previousState.workflow_context || {}) as Record<string, unknown>,
+    workflowContext: memoryWorkflowContext,
   });
   const decision = decideChatIntent({
     userText: currentUserRequirementText,
@@ -928,11 +1461,159 @@ export async function POST(req: Request) {
     requiresRequirementForm,
     question,
   });
+  const explicitLongTermPreferences = buildExplicitLongTermPreferences({
+    ownerUserId,
+    formValues: parsedRequirementForm.formValues,
+    requirementSpec,
+  });
+  const draftRevisionPointer = buildRevisionPointer({
+    executionMode:
+      decision.intent === "deploy"
+        ? "deploy"
+        : decision.intent === "refine_preview" || decision.intent === "refine_deployed"
+          ? "refine"
+          : "generate",
+    requirementRevision: aggregated.revision,
+    existingWorkflow: memoryWorkflowContext,
+    shortTermMemory,
+  });
+  const deployIntentRequested =
+    !confirmedPrompt && (blogContentDeployConfirmed || decision.intent === "deploy" || isDeployIntent(normalizedUserText));
+  const recoveredDeployableArtifactForGate = await recoverDeployableProjectArtifact({
+    reqUrl: req.url,
+    deployIntentRequested,
+    hasCompletedGenerationBaseline,
+    previousState,
+    deployableTask,
+    latestTask,
+  });
+  if (deployIntentRequested && !hasCompletedGenerationBaseline) {
+    await appendTimelineMessageBestEffort({
+      chatId,
+      role: "user",
+      text: normalizedUserText,
+      ownerUserId: body.user_id || previousState.user_id,
+    });
+    await appendTimelineMessageBestEffort({
+      chatId,
+      role: "assistant",
+      text: chatCopy(displayLocale, "generateBeforeDeploy"),
+      ownerUserId: body.user_id || previousState.user_id,
+      metadata: {
+        cardType: "lifecycle_gate",
+        locale: displayLocale,
+        requestedIntent: "deploy",
+        requiredTaskStatus: "succeeded",
+        hasCompletedGenerationBaseline,
+      },
+    });
+    await persistRouteMemorySnapshot({
+      chatId,
+      ownerUserId,
+      stage,
+      intent: "deploy",
+      intentConfidence: decision.confidence,
+      requirementSpec,
+      slots,
+      missingCriticalSlots: decision.missingSlots,
+      assumptions: decision.assumedDefaults,
+      revisionPointer: draftRevisionPointer,
+      workflowContext: {
+        ...memoryWorkflowContext,
+        conversationStage: stage,
+        intent: "deploy",
+        intentConfidence: decision.confidence,
+        requirementSpec,
+        requirementRevision: aggregated.revision,
+      },
+      recentSummary: effectiveRequirementText,
+      correctionSummary: aggregated.correctionSummary,
+      explicitLongTermPreferences,
+    });
+    await invalidateLaunchCenterRecentProjectsCacheBestEffort();
+    return createInfoStreamResponse(chatCopy(displayLocale, "generateBeforeDeploy"), 200);
+  }
+  const deployArtifact = deployableProjectArtifact(previousState, deployableTask) || recoveredDeployableArtifactForGate;
+  const existingWorkflow = {
+    ...taskWorkflowContext(deployableTask || latestTask),
+    ...memoryWorkflowContext,
+  } as Record<string, unknown>;
+  const workflowBlogPreviewPosts = Array.isArray((existingWorkflow as any)?.blogContentPreviewPosts)
+    ? ((existingWorkflow as any)?.blogContentPreviewPosts as unknown[])
+    : [];
+  const workflowBlogPreviewStatus = String((existingWorkflow as any)?.blogContentPreviewStatus || "").trim();
+  const workflowBlogConfirmed = Boolean((existingWorkflow as any)?.blogContentConfirmed);
+  const deployBlogPreview =
+    deployIntentRequested && hasCompletedGenerationBaseline && isStaticSiteProjectLike(deployArtifact)
+      ? buildBlogContentWorkflowPreview({
+          inputState: previousState,
+          project: deployArtifact,
+          locale: displayLocale === "zh" ? "zh-CN" : "en",
+        })
+      : { required: false, reason: "skipped", navLabel: "", posts: [] };
+  const needsBlogContentConfirmation =
+    deployIntentRequested &&
+    hasCompletedGenerationBaseline &&
+    (deployBlogPreview.required || workflowBlogPreviewStatus === "pending_confirmation") &&
+    !blogContentDeployConfirmed &&
+    !workflowBlogConfirmed;
+  if (needsBlogContentConfirmation) {
+    const previewPosts = workflowBlogPreviewPosts.length > 0 ? workflowBlogPreviewPosts : deployBlogPreview.posts;
+    await appendTimelineMessageBestEffort({
+      chatId,
+      role: "user",
+      text: normalizedUserText,
+      ownerUserId: body.user_id || previousState.user_id,
+    });
+    await appendTimelineMessageBestEffort({
+      chatId,
+      role: "assistant",
+      text: chatCopy(displayLocale, "blogConfirmBeforeDeploy"),
+      ownerUserId: body.user_id || previousState.user_id,
+      metadata: buildBlogContentConfirmationMetadata({
+        locale: displayLocale,
+        navLabel: String((existingWorkflow as any)?.blogNavLabel || deployBlogPreview.navLabel || "").trim(),
+        posts: previewPosts,
+      }),
+    });
+    await persistRouteMemorySnapshot({
+      chatId,
+      ownerUserId,
+      stage,
+      intent: "deploy",
+      intentConfidence: decision.confidence,
+      requirementSpec,
+      slots,
+      missingCriticalSlots: decision.missingSlots,
+      assumptions: decision.assumedDefaults,
+      revisionPointer: draftRevisionPointer,
+      workflowContext: {
+        ...existingWorkflow,
+        conversationStage: stage,
+        intent: "deploy",
+        intentConfidence: decision.confidence,
+        requirementSpec,
+        requirementRevision: aggregated.revision,
+        blogContentPreviewPosts: previewPosts,
+        blogContentPreviewStatus: "pending_confirmation",
+      },
+      recentSummary: effectiveRequirementText,
+      correctionSummary: aggregated.correctionSummary,
+      explicitLongTermPreferences,
+    });
+    await invalidateLaunchCenterRecentProjectsCacheBestEffort();
+    return createInfoStreamResponse(chatCopy(displayLocale, "blogConfirmBeforeDeploy"), 200);
+  }
+  const rebuildConfirmedPromptForUploadedSources = shouldRebuildConfirmedPromptForUploadedSources({
+    confirmedPrompt,
+    confirmedPromptDraftText,
+    referencedAssets,
+  });
   const shouldBuildPromptDraft =
     isWebsiteSkill(requestedSkillId) &&
-    !confirmedPrompt &&
     !requiresRequirementForm &&
-    (decision.intent === "clarify" || decision.intent === "generate");
+    ((!confirmedPrompt && (decision.intent === "clarify" || decision.intent === "generate")) ||
+      rebuildConfirmedPromptForUploadedSources);
   const promptDraftResult = shouldBuildPromptDraft
     ? await buildPromptDraftWithResearch({
         requirementText: effectiveRequirementText,
@@ -1024,7 +1705,30 @@ export async function POST(req: Request) {
         missingRequiredSlots: requiredSlotValidation.missingRequiredSlots,
       },
     });
-    await invalidateLaunchCenterRecentProjectsCache();
+    await persistRouteMemorySnapshot({
+      chatId,
+      ownerUserId,
+      stage,
+      intent: "clarify",
+      intentConfidence: decision.confidence,
+      requirementSpec,
+      slots,
+      missingCriticalSlots: requiredSlotValidation.missingRequiredSlots,
+      assumptions: decision.assumedDefaults,
+      revisionPointer: draftRevisionPointer,
+      workflowContext: {
+        ...memoryWorkflowContext,
+        conversationStage: stage,
+        intent: "clarify",
+        intentConfidence: decision.confidence,
+        requirementSpec,
+        requirementRevision: aggregated.revision,
+      },
+      recentSummary: effectiveRequirementText,
+      correctionSummary: aggregated.correctionSummary,
+      explicitLongTermPreferences,
+    });
+    await invalidateLaunchCenterRecentProjectsCacheBestEffort();
     return createInfoStreamResponse(chatCopy(displayLocale, "requirementFormInfo"), 200);
   }
 
@@ -1115,7 +1819,33 @@ export async function POST(req: Request) {
         requiresPromptDraftConfirmation,
       },
     });
-    await invalidateLaunchCenterRecentProjectsCache();
+    await persistRouteMemorySnapshot({
+      chatId,
+      ownerUserId,
+      stage,
+      intent: decision.intent,
+      intentConfidence: decision.confidence,
+      requirementSpec,
+      slots,
+      missingCriticalSlots: decision.missingSlots,
+      assumptions: decision.assumedDefaults,
+      revisionPointer: draftRevisionPointer,
+      workflowContext: {
+        ...memoryWorkflowContext,
+        conversationStage: stage,
+        intent: decision.intent,
+        intentConfidence: decision.confidence,
+        requirementSpec,
+        requirementRevision: aggregated.revision,
+        canonicalPrompt,
+        requirementAggregatedText: effectiveRequirementText,
+        promptControlManifest,
+      },
+      recentSummary: canonicalPrompt || effectiveRequirementText,
+      correctionSummary: aggregated.correctionSummary,
+      explicitLongTermPreferences,
+    });
+    await invalidateLaunchCenterRecentProjectsCacheBestEffort();
     if (requiresPromptDraftConfirmation) {
       return createInfoStreamResponse(chatCopy(displayLocale, "promptDraftWaiting"), 200);
     }
@@ -1123,13 +1853,37 @@ export async function POST(req: Request) {
     return createInfoStreamResponse(chatCopy(displayLocale, "clarificationInfo"), 200);
   }
 
-  const deployRequested = decision.intent === "deploy" || isDeployIntent(normalizedUserText);
+  const deployRequested = deployIntentRequested && hasCompletedGenerationBaseline;
   const refineRequested = decision.intent === "refine_preview" || decision.intent === "refine_deployed";
   const executionMode: "generate" | "refine" | "deploy" = deployRequested
     ? "deploy"
     : refineRequested
       ? "refine"
       : "generate";
+  const revisionPointer = buildRevisionPointer({
+    executionMode,
+    requirementRevision: aggregated.revision,
+    existingWorkflow,
+    shortTermMemory,
+  });
+  const retainedGenerationRequirement =
+    findTaskGenerationPrompt(deployableTask || latestTask) ||
+    String((existingWorkflow as any)?.sourceRequirement || (existingWorkflow as any)?.canonicalPrompt || "").trim();
+  const runtimeSourceRequirement =
+    deployRequested && retainedGenerationRequirement
+      ? retainedGenerationRequirement
+      : executionMode === "generate" && isWebsiteSkill(requestedSkillId)
+        ? canonicalPrompt
+        : appendReferencedAssetsBlock(currentUserRequirementText, referencedAssets);
+  const canonicalPromptForExecution =
+    deployRequested && retainedGenerationRequirement
+      ? String((existingWorkflow as any)?.canonicalPrompt || retainedGenerationRequirement || canonicalPrompt).trim() || canonicalPrompt
+      : canonicalPrompt;
+  const requirementAggregatedTextForExecution =
+    deployRequested && retainedGenerationRequirement
+      ? String((existingWorkflow as any)?.requirementAggregatedText || retainedGenerationRequirement || effectiveRequirementText).trim() ||
+        effectiveRequirementText
+      : effectiveRequirementText;
   const runtimeUserText =
     executionMode === "generate" && isWebsiteSkill(requestedSkillId)
       ? canonicalPrompt
@@ -1138,21 +1892,26 @@ export async function POST(req: Request) {
     (previousState as any).site_artifacts || (previousState as any).project_json;
   const recoveredDeployArtifact =
     deployRequested && !isStaticSiteProjectLike(previousDeployArtifact)
-      ? await buildDeployStaticSiteFromPreview(deployableTask || latestTask, new URL(req.url).origin).catch(() => undefined)
+      ? recoveredDeployableArtifactForGate ||
+        (await buildDeployStaticSiteFromPreview(deployableTask || latestTask, new URL(req.url).origin).catch(() => undefined))
       : undefined;
+
+  const effectiveProjectArtifact = isStaticSiteProjectLike(previousDeployArtifact)
+    ? previousDeployArtifact
+    : recoveredDeployArtifact;
 
   const inputState: AgentState = {
     ...previousState,
     user_id: body.user_id || previousState.user_id,
     access_token: body.access_token || previousState.access_token,
-    project_json: (previousState as any).project_json || recoveredDeployArtifact,
-    site_artifacts: (previousState as any).site_artifacts || recoveredDeployArtifact,
+    project_json: effectiveProjectArtifact,
+    site_artifacts: effectiveProjectArtifact,
     workflow_context: {
       ...(previousState.workflow_context || {}),
       runMode: useAsyncTaskMode ? "async-task" : "sync",
       genMode: "skill_native",
       skillId: requestedSkillId,
-      sourceRequirement: runtimeUserText,
+      sourceRequirement: runtimeSourceRequirement,
       refineSkillId: String(process.env.CHAT_REFINE_SKILL_ID || "website-refinement-workflow"),
       executionMode,
       conversationStage: stage,
@@ -1161,6 +1920,13 @@ export async function POST(req: Request) {
       intentReason: decision.reason,
       deployRequested,
       refineRequested,
+      blogContentConfirmed:
+        blogContentDeployConfirmed || (deployRequested ? Boolean((previousState.workflow_context as any)?.blogContentConfirmed) : false),
+      blogContentPreviewPosts:
+        workflowBlogPreviewPosts.length > 0 ? workflowBlogPreviewPosts : deployBlogPreview.posts,
+      blogContentPreviewStatus:
+        workflowBlogPreviewStatus || (deployBlogPreview.required ? "pending_confirmation" : deployBlogPreview.reason || "skipped"),
+      blogNavLabel: String((previousState.workflow_context as any)?.blogNavLabel || deployBlogPreview.navLabel || "").trim(),
       designOverrides:
         body.design_overrides && typeof body.design_overrides === "object"
           ? body.design_overrides
@@ -1173,15 +1939,22 @@ export async function POST(req: Request) {
       refineSourceProjectPath: checkpointProjectPath || String((previousState.workflow_context as any)?.deploySourceProjectPath || ""),
       refineSourceTaskId: String(deployableTask?.id || latestTask?.id || (previousState.workflow_context as any)?.deploySourceTaskId || ""),
       checkpointProjectPath,
+      siteRevisionId: revisionPointer.revisionId,
+      baseSiteRevisionId: revisionPointer.baseRevisionId,
+      siteRevisionMode: revisionPointer.mode,
       requirementCompletionPercent: decision.completionPercent,
       requirementSlots: slots,
       requirementSpec,
+      primaryVisualDirection: requirementSpec.primaryVisualDirection,
+      secondaryVisualTags: requirementSpec.secondaryVisualTags || [],
+      visualDecisionSource: requirementSpec.visualDecisionSource,
+      lockPrimaryVisualDirection: requirementSpec.visualDecisionSource === "user_explicit",
       requirementPatchPlan,
       requirementRevision: aggregated.revision,
       supersededMessages: aggregated.supersededMessages,
       correctionSummary: aggregated.correctionSummary,
-      canonicalPrompt,
-      requirementAggregatedText: effectiveRequirementText,
+      canonicalPrompt: canonicalPromptForExecution,
+      requirementAggregatedText: requirementAggregatedTextForExecution,
       promptControlManifest,
       latestUserText: currentUserRequirementText,
       latestUserTextRaw: normalizedUserText,
@@ -1203,6 +1976,39 @@ export async function POST(req: Request) {
   };
   const acceptedMessage = acceptedMessageByMode[executionMode];
 
+  try {
+    if (ownerUserId && executionMode === "generate") {
+      const hadBillableProject = await hasBillableProject(ownerUserId, chatId);
+      await assertCanCreateProject(ownerUserId, chatId);
+      if (!hadBillableProject) {
+        await reserveCreatedProjectUsage({
+          ownerUserId,
+          sourceProjectId: chatId,
+          projectName: normalizedUserText.slice(0, 80) || "Untitled Project",
+        });
+        usageReservedForThisRequest = { ownerUserId, sourceProjectId: chatId };
+      }
+      await saveProjectState(
+        ownerUserId,
+        {
+          branding: { name: normalizedUserText.slice(0, 80) || "Untitled Project" },
+          billing: { reservedAt: new Date().toISOString(), status: "generation_queued" },
+        },
+        body.access_token || previousState.access_token,
+        chatId,
+      ).catch((error) => {
+        console.warn(`[ChatRoute] billing project reservation failed: ${String((error as any)?.message || error)}`);
+      });
+    } else if (ownerUserId && executionMode === "deploy") {
+      await assertCanMutatePublishedSite(ownerUserId);
+    }
+  } catch (error) {
+    if (error instanceof BillingAccessError) {
+      return errorStreamResponse(error.message, error.status);
+    }
+    throw error;
+  }
+
   const initialResult: ChatTaskResult = {
     assistantText: acceptedMessage,
     phase: "queued",
@@ -1216,8 +2022,8 @@ export async function POST(req: Request) {
       stage: "queued",
       stageMessage: localizedQueuedStageMessage(displayLocale, executionMode),
       skillId: requestedSkillId,
-      provider: String(process.env.LLM_PROVIDER || "aiberm"),
-      model: String(process.env.LLM_MODEL || process.env.LLM_MODEL_AIBERM || "openai/gpt-5.4-mini"),
+      provider: String(process.env.LLM_PROVIDER || "pptoken"),
+      model: String(process.env.LLM_MODEL || process.env.LLM_MODEL_PPTOKEN || process.env.PPTOKEN_MODEL || "gpt-5.4-mini"),
       attempt: 1,
       startedAt: new Date().toISOString(),
       round: 0,
@@ -1226,15 +2032,40 @@ export async function POST(req: Request) {
       nextStep: executionMode,
     } as any,
   };
-  const task = await createChatTask(chatId, body.user_id || previousState.user_id, initialResult);
-  await appendTimelineMessageBestEffort({
+  const task = await createChatTask(chatId, ownerUserId, initialResult);
+  await persistRouteMemorySnapshot({
     chatId,
-    role: "user",
-    text: normalizedUserText,
-    ownerUserId: body.user_id || previousState.user_id,
-    taskId: task.id,
+    ownerUserId,
+    stage,
+    intent: decision.intent,
+    intentConfidence: decision.confidence,
+    requirementSpec,
+    slots,
+    missingCriticalSlots: decision.missingSlots,
+    assumptions: decision.assumedDefaults,
+    revisionPointer: {
+      ...revisionPointer,
+      taskId: task.id,
+      checkpointProjectPath: String((inputState.workflow_context as any)?.checkpointProjectPath || "").trim() || undefined,
+      updatedAt: new Date().toISOString(),
+    },
+    workflowContext: (inputState.workflow_context || {}) as Record<string, unknown>,
+    recentSummary: canonicalPromptForExecution || runtimeSourceRequirement,
+    correctionSummary: aggregated.correctionSummary,
+    explicitLongTermPreferences,
   });
-  await appendTimelineMessageBestEffort({
+  usageReservedForThisRequest = undefined;
+  const queuedTimelineUserText = visibleTimelineUserText(userText, normalizedUserText);
+  if (queuedTimelineUserText) {
+    void appendTimelineMessageBestEffort({
+      chatId,
+      role: "user",
+      text: queuedTimelineUserText,
+      ownerUserId: body.user_id || previousState.user_id,
+      taskId: task.id,
+    });
+  }
+  void appendTimelineMessageBestEffort({
     chatId,
     role: "assistant",
     text: acceptedMessage,
@@ -1242,7 +2073,7 @@ export async function POST(req: Request) {
     taskId: task.id,
     metadata: { status: "queued", executionMode, intent: decision.intent, stage, locale: displayLocale },
   });
-  await invalidateLaunchCenterRecentProjectsCache();
+  void invalidateLaunchCenterRecentProjectsCacheBestEffort();
 
   return createTaskStreamResponse({
     assistantText: acceptedMessage,
@@ -1253,6 +2084,15 @@ export async function POST(req: Request) {
     displayLocale,
   });
   } catch (error) {
+    if (usageReservedForThisRequest) {
+      await releaseCreatedProjectUsageReservation(usageReservedForThisRequest).catch((rollbackError) => {
+        console.warn(
+          `[ChatRoute] billing project reservation rollback failed: ${String(
+            (rollbackError as any)?.message || rollbackError,
+          )}`,
+        );
+      });
+    }
     if (isTransientStorageConnectivityError(error)) {
       return errorStreamResponse(chatCopy(displayLocale, "storageUnavailable"), 503);
     }

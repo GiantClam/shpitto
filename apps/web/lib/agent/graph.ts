@@ -19,6 +19,7 @@ import {
 } from "./db";
 import { getD1Client } from "../d1";
 import { getR2Client } from "../r2";
+import { assertCanMutatePublishedSite } from "../billing/enforcement";
 import { injectOrganizationJsonLd, normalizeComponentType, stitchTracks } from "./engine";
 import { loadWorkflowSkillContext, type DesignSkillHit } from "./website-workflow";
 import type { RequirementSpec } from "./chat-orchestrator";
@@ -45,7 +46,7 @@ for (const envPath of envPaths) {
 
 configureUndiciProxyFromEnv();
 
-type LlmProvider = "openrouter" | "aiberm" | "crazyroute";
+type LlmProvider = "pptoken" | "openrouter" | "aiberm" | "crazyroute";
 
 type ProviderConfig = {
   provider: LlmProvider;
@@ -91,6 +92,7 @@ const createInitialRuntimeState = (): ProviderRuntimeState => ({
 const providerRuntimeState: ProviderRuntimeSnapshot = {
   lastSuccessfulProvider: undefined,
   providerStates: {
+    pptoken: createInitialRuntimeState(),
     aiberm: createInitialRuntimeState(),
     crazyroute: createInitialRuntimeState(),
     openrouter: createInitialRuntimeState(),
@@ -106,6 +108,7 @@ export const getProviderTraceSnapshot = (): ProviderTraceHit[] => providerTraceS
 export const getProviderRuntimeSnapshot = (): ProviderRuntimeSnapshot => ({
   lastSuccessfulProvider: providerRuntimeState.lastSuccessfulProvider,
   providerStates: {
+    pptoken: { ...providerRuntimeState.providerStates.pptoken },
     aiberm: { ...providerRuntimeState.providerStates.aiberm },
     crazyroute: { ...providerRuntimeState.providerStates.crazyroute },
     openrouter: { ...providerRuntimeState.providerStates.openrouter },
@@ -115,6 +118,7 @@ export const getProviderRuntimeSnapshot = (): ProviderRuntimeSnapshot => ({
 export const resetProviderRuntimeState = () => {
   providerRuntimeState.lastSuccessfulProvider = undefined;
   providerRuntimeState.providerStates = {
+    pptoken: createInitialRuntimeState(),
     aiberm: createInitialRuntimeState(),
     crazyroute: createInitialRuntimeState(),
     openrouter: createInitialRuntimeState(),
@@ -122,12 +126,13 @@ export const resetProviderRuntimeState = () => {
   providerRingCursor = 0;
 };
 
-const DEFAULT_PROVIDER_ORDER: LlmProvider[] = ["aiberm", "crazyroute", "openrouter"];
+const DEFAULT_PROVIDER_ORDER: LlmProvider[] = ["pptoken", "aiberm", "crazyroute", "openrouter"];
 let providerRingCursor = 0;
 
 const normalizeProviderToken = (raw: string): LlmProvider | undefined => {
   const token = String(raw || "").trim().toLowerCase();
   if (!token) return undefined;
+  if (token === "pptoken") return "pptoken";
   if (token === "aiberm") return "aiberm";
   if (token === "crazyroute" || token === "crazyrouter" || token === "crazyreoute") return "crazyroute";
   if (token === "openrouter") return "openrouter";
@@ -138,6 +143,7 @@ const resolveLlmProvider = (): LlmProvider => {
   const requested = normalizeProviderToken(process.env.LLM_PROVIDER || "");
   if (requested) return requested;
 
+  if (process.env.PPTOKEN_API_KEY) return "pptoken";
   if (process.env.AIBERM_API_KEY) return "aiberm";
   if (process.env.CRAZYROUTE_API_KEY || process.env.CRAZYREOUTE_API_KEY || process.env.CRAZYROUTER_API_KEY) {
     return "crazyroute";
@@ -147,8 +153,35 @@ const resolveLlmProvider = (): LlmProvider => {
 
 const getProviderOrder = (): LlmProvider[] => [...DEFAULT_PROVIDER_ORDER];
 
+const resolveSharedRequestedModel = () =>
+  String(process.env.LLM_MODEL || process.env.LLM_MODEL_DEFAULT || "").trim();
+
+const resolveSharedFallbackModel = () =>
+  String(process.env.LLM_MODEL_FALLBACK || process.env.LLM_MODEL_DEFAULT || "").trim();
+
 const getProviderConfig = (providerOverride?: LlmProvider): ProviderConfig => {
   const provider = providerOverride || resolveLlmProvider();
+  const sharedModel = resolveSharedRequestedModel();
+  const sharedFallbackModel = resolveSharedFallbackModel();
+
+  if (provider === "pptoken") {
+    return {
+      provider,
+      apiKey: process.env.PPTOKEN_API_KEY,
+      baseURL: process.env.PPTOKEN_BASE_URL || "https://api.pptoken.org/v1",
+      defaultHeaders: {},
+      modelName:
+        sharedModel ||
+        process.env.LLM_MODEL_PPTOKEN ||
+        process.env.PPTOKEN_MODEL ||
+        "gpt-5.4-mini",
+      fallbackModelName:
+        sharedFallbackModel ||
+        process.env.LLM_MODEL_FALLBACK_PPTOKEN ||
+        process.env.PPTOKEN_MODEL_FALLBACK ||
+        "gpt-5.4-mini",
+    };
+  }
 
   if (provider === "aiberm") {
     return {
@@ -157,15 +190,15 @@ const getProviderConfig = (providerOverride?: LlmProvider): ProviderConfig => {
       baseURL: process.env.AIBERM_BASE_URL || "https://aiberm.com/v1",
       defaultHeaders: {},
       modelName:
+        sharedModel ||
         process.env.LLM_MODEL_AIBERM ||
         process.env.AIBERM_MODEL ||
-        process.env.LLM_MODEL ||
-        "openai/gpt-5.4-mini",
+        "gpt-5.4-mini",
       fallbackModelName:
+        sharedFallbackModel ||
         process.env.LLM_MODEL_FALLBACK_AIBERM ||
         process.env.AIBERM_MODEL_FALLBACK ||
-        process.env.LLM_MODEL_FALLBACK ||
-        "openai/gpt-5.4",
+        "gpt-5.4-mini",
     };
   }
 
@@ -183,23 +216,23 @@ const getProviderConfig = (providerOverride?: LlmProvider): ProviderConfig => {
         "https://crazyrouter.com/v1",
       defaultHeaders: {},
       modelName:
+        sharedModel ||
         process.env.LLM_MODEL_CRAZYROUTE ||
         process.env.LLM_MODEL_CRAZYREOUTE ||
         process.env.LLM_MODEL_CRAZYROUTER ||
         process.env.CRAZYROUTE_MODEL ||
         process.env.CRAZYREOUTE_MODEL ||
         process.env.CRAZYROUTER_MODEL ||
-        process.env.LLM_MODEL ||
-        "claude-sonnet-4-5-20250929",
+        "gpt-5.4-mini",
       fallbackModelName:
+        sharedFallbackModel ||
         process.env.LLM_MODEL_FALLBACK_CRAZYROUTE ||
         process.env.LLM_MODEL_FALLBACK_CRAZYREOUTE ||
         process.env.LLM_MODEL_FALLBACK_CRAZYROUTER ||
         process.env.CRAZYROUTE_MODEL_FALLBACK ||
         process.env.CRAZYREOUTE_MODEL_FALLBACK ||
         process.env.CRAZYROUTER_MODEL_FALLBACK ||
-        process.env.LLM_MODEL_FALLBACK ||
-        "claude-opus-4-5-20251101",
+        "gpt-5.4-mini",
     };
   }
 
@@ -402,6 +435,10 @@ export interface AgentState {
     refineRequested?: boolean;
     refineSourceProjectPath?: string;
     refineSourceTaskId?: string;
+    primaryVisualDirection?: string;
+    secondaryVisualTags?: string[];
+    visualDecisionSource?: "user_explicit" | "user_recommended_default" | "prompt_adaptive" | "fallback";
+    lockPrimaryVisualDirection?: boolean;
     requirementCompletionPercent?: number;
     requirementSlots?: Array<{ key: string; label: string; filled: boolean; evidence?: string }>;
     requirementSpec?: RequirementSpec;
@@ -635,7 +672,7 @@ const selectProviderAttemptOrder = (operation: string): LlmProvider[] => {
   const lastSuccess = providerRuntimeState.lastSuccessfulProvider;
   const canProbeNow = now - lastRecoveryProbeAt >= PROVIDER_RECOVERY_PROBE_INTERVAL_MS || !lastRecoveryProbeAt;
   if ((!start || start === "openrouter") && canProbeNow) {
-    const preferredProbe = (["aiberm", "crazyroute"] as LlmProvider[]).find(
+    const preferredProbe = (["pptoken", "aiberm", "crazyroute"] as LlmProvider[]).find(
       (provider) => available.includes(provider) && shouldRecoveryProbeProvider(provider, now),
     );
     if (preferredProbe) {
@@ -1862,6 +1899,7 @@ const deployNode = async (state: AgentState): Promise<Partial<AgentState>> => {
         // 1) Persist project in D1 first so we have a stable project_id.
         let dbProjectId: string | undefined = state.db_project_id;
         console.log(`[Deploy] Saving project state to D1 (User: ${state.user_id})...`);
+        await assertCanMutatePublishedSite(state.user_id);
         dbProjectId = await saveProjectState(state.user_id, sourceProject, state.access_token, state.db_project_id);
         console.log(`[Deploy] Project saved. ID: ${dbProjectId}`);
         if (!dbProjectId) {

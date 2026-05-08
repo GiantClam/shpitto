@@ -6,6 +6,7 @@ import {
   listProjectCustomDomains,
   upsertProjectCustomDomain,
 } from "@/lib/agent/db";
+import { BillingAccessError, assertCanMutatePublishedSite } from "@/lib/billing/enforcement";
 
 export const runtime = "nodejs";
 
@@ -76,6 +77,14 @@ export async function POST(
 
     const project = await getOwnedProjectSummary(projectId, userId);
     if (!project) return NextResponse.json({ ok: false, error: "Project not found or access denied." }, { status: 404 });
+    try {
+      await assertCanMutatePublishedSite(userId);
+    } catch (error) {
+      if (error instanceof BillingAccessError) {
+        return NextResponse.json({ ok: false, error: error.message, code: error.code }, { status: error.status });
+      }
+      throw error;
+    }
 
     const body = (await request.json().catch(() => ({}))) as {
       hostname?: string;

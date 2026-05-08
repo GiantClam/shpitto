@@ -21,14 +21,14 @@ describe("design-website llm-executor", () => {
     createSpy.mockReset();
     constructorOptions.length = 0;
 
-    process.env.LLM_PROVIDER = "aiberm";
-    process.env.AIBERM_API_KEY = "test-aiberm-key";
-    delete process.env.AIBERM_BASE_URL;
+    process.env.LLM_PROVIDER = "pptoken";
+    process.env.PPTOKEN_API_KEY = "test-pptoken-key";
+    delete process.env.PPTOKEN_BASE_URL;
     delete process.env.ANTHROPIC_API_KEY;
     delete process.env.OPENROUTER_API_KEY;
   });
 
-  it("sends Anthropic system prompt as top-level parameter instead of system message role", async () => {
+  it("sends provider calls with system prompt as top-level parameter instead of system message role", async () => {
     createSpy.mockResolvedValue({
       content: [{ type: "text", text: '{"ok":true}' }],
     });
@@ -36,7 +36,7 @@ describe("design-website llm-executor", () => {
     const mod = await import("../../skills/design-website-generator/tools/llm-executor");
     await mod.executeLLM("hello world", "system context");
 
-    expect(constructorOptions[0]?.baseURL).toBe("https://aiberm.com/v1");
+    expect(constructorOptions[0]?.baseURL).toBe("https://api.pptoken.org/v1");
     expect(createSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         system: "system context",

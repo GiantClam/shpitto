@@ -1,12 +1,14 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { serializeAuthTheme, withAuthThemePath } from "@/lib/auth/theme";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { AuthCardShell } from "@/components/auth/AuthCardShell";
 import type { Locale } from "@/lib/i18n";
+import type { AuthTheme } from "@/lib/auth/theme";
 
 const copy = {
   en: {
@@ -58,9 +60,12 @@ const copy = {
 type Props = {
   initialLocale: Locale;
   nextPath: string;
+  theme?: AuthTheme;
+  projectId?: string;
+  siteKey?: string;
 };
 
-export function RegisterForm({ initialLocale, nextPath }: Props) {
+export function RegisterForm({ initialLocale, nextPath, theme, projectId, siteKey }: Props) {
   const [locale, setLocale] = useState<Locale>(initialLocale);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -79,7 +84,7 @@ export function RegisterForm({ initialLocale, nextPath }: Props) {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+          redirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}${theme ? `&theme=${encodeURIComponent(serializeAuthTheme(theme))}` : ""}${projectId ? `&projectId=${encodeURIComponent(projectId)}` : ""}${siteKey ? `&siteKey=${encodeURIComponent(siteKey)}` : ""}`,
           skipBrowserRedirect: true,
         },
       });
@@ -117,11 +122,11 @@ export function RegisterForm({ initialLocale, nextPath }: Props) {
     }
 
     setLoading(true);
-    const response = await fetch("/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, next: nextPath }),
-    });
+      const response = await fetch("/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, next: nextPath, theme: serializeAuthTheme(theme), projectId, siteKey }),
+      });
     const data = (await response.json().catch(() => ({}))) as { error?: string; message?: string };
 
     if (!response.ok) {
@@ -131,12 +136,20 @@ export function RegisterForm({ initialLocale, nextPath }: Props) {
     }
 
     const params = new URLSearchParams({ email, next: nextPath });
+    const themeQuery = serializeAuthTheme(theme);
+    if (themeQuery) params.set("theme", themeQuery);
     router.push(`/verify-email?${params.toString()}`);
   };
 
   return (
-    <AuthCardShell locale={locale} onLocaleChange={setLocale} backHref="/login" footer={t.legal}>
-      <div className="mb-6 inline-flex items-center rounded-full bg-[color-mix(in_oklab,var(--shp-primary)_10%,white_90%)] px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-[var(--shp-primary)]">
+    <AuthCardShell
+      locale={locale}
+      onLocaleChange={setLocale}
+      backHref={withAuthThemePath("/login", nextPath, theme, undefined, { projectId, siteKey })}
+      footer={t.legal}
+      theme={theme}
+    >
+      <div className="mb-6 inline-flex items-center rounded-full bg-[color-mix(in_oklab,var(--shp-primary)_10%,var(--shp-panel)_90%)] px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-[var(--shp-primary)]">
         {t.badge}
       </div>
       <h1 className="mb-2 text-2xl font-bold text-[var(--shp-text)]">{t.title}</h1>
@@ -146,7 +159,7 @@ export function RegisterForm({ initialLocale, nextPath }: Props) {
       <button
         onClick={handleGoogleSignup}
         disabled={loading}
-        className="mb-6 flex w-full items-center justify-center gap-3 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-white px-4 py-3 font-semibold text-[var(--shp-text)] transition-all hover:border-[var(--shp-primary)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_6%,white_94%)]"
+        className="mb-6 flex w-full items-center justify-center gap-3 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[var(--shp-panel)] px-4 py-3 font-semibold text-[var(--shp-text)] transition-all hover:border-[var(--shp-primary)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_6%,var(--shp-panel)_94%)]"
       >
         <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -159,10 +172,10 @@ export function RegisterForm({ initialLocale, nextPath }: Props) {
 
       <div className="relative mb-6">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-slate-200" />
+          <div className="w-full border-t border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)]" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="bg-white px-2 text-[var(--shp-muted)]">{t.divider}</span>
+          <span className="bg-[var(--shp-panel)] px-2 text-[var(--shp-muted)]">{t.divider}</span>
         </div>
       </div>
 
@@ -204,7 +217,7 @@ export function RegisterForm({ initialLocale, nextPath }: Props) {
         </div>
 
         {message ? (
-          <div className={`rounded-lg p-3 text-sm ${message.type === "error" ? "bg-[color-mix(in_oklab,var(--shp-primary)_10%,white_90%)] text-[var(--shp-primary-pressed)]" : "bg-[color-mix(in_oklab,var(--shp-primary)_10%,white_90%)] text-[var(--shp-primary-pressed)]"}`}>
+          <div className={`rounded-lg p-3 text-sm ${message.type === "error" ? "bg-[color-mix(in_oklab,var(--shp-primary)_10%,var(--shp-panel)_90%)] text-[var(--shp-primary-pressed)]" : "bg-[color-mix(in_oklab,var(--shp-primary)_10%,var(--shp-panel)_90%)] text-[var(--shp-primary-pressed)]"}`}>
             {message.text}
           </div>
         ) : null}
@@ -221,7 +234,10 @@ export function RegisterForm({ initialLocale, nextPath }: Props) {
 
       <div className="mt-6 text-center text-sm">
         <span className="text-[var(--shp-muted)]">{t.hasAccount}</span>
-        <Link href="/login" className="font-bold text-[var(--shp-primary)] hover:underline">
+        <Link
+          href={withAuthThemePath("/login", nextPath, theme, undefined, { projectId, siteKey })}
+          className="font-bold text-[var(--shp-primary)] hover:underline"
+        >
           {t.signIn}
         </Link>
       </div>

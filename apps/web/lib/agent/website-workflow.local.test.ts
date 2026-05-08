@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { loadWorkflowSkillContext, resolveDesignSkillHit } from "./website-workflow";
+import {
+  loadWorkflowSkillContext,
+  normalizeWorkflowVisualDecisionContext,
+  resolveDesignSkillHit,
+} from "./website-workflow";
 
 describe("website-workflow local awesome-design templates", () => {
   it("loads design context from local templates without remote fetch", async () => {
@@ -121,5 +125,72 @@ describe("website-workflow local awesome-design templates", () => {
       if (prevUseLlm === undefined) delete process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
       else process.env.WORKFLOW_STYLE_SELECT_USE_LLM = prevUseLlm;
     }
+  });
+
+  it("locks a structured explicit open-design direction above prompt-adaptive runtime selection", async () => {
+    const prevUseLlm = process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
+    process.env.WORKFLOW_STYLE_SELECT_USE_LLM = "0";
+
+    try {
+      const prompt = [
+        "# Canonical Website Generation Prompt",
+        "Visual style: fresh green #2E8B57 and white as the main palette, warm orange accents.",
+        "The mood must feel natural, safe, warm, child-friendly, and professionally institutional.",
+      ].join("\n");
+      const hit = await resolveDesignSkillHit(prompt, {
+        primaryVisualDirection: "heritage-manufacturing",
+        visualDecisionSource: "user_explicit",
+        lockPrimaryVisualDirection: true,
+      });
+
+      expect(hit.selection_mode).toBe("open_design_explicit");
+      expect(hit.id).toBe("open-design-heritage-manufacturing");
+      expect(hit.design_md_inline).toContain("Open Design Direction: Heritage manufacturing / craft");
+      expect(hit.design_md_inline).not.toContain("Prompt-Adaptive Design System");
+    } finally {
+      if (prevUseLlm === undefined) delete process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
+      else process.env.WORKFLOW_STYLE_SELECT_USE_LLM = prevUseLlm;
+    }
+  });
+
+  it("uses structured orchestrator visual decisions before prompt-derived runtime guessing", async () => {
+    const prevUseLlm = process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
+    process.env.WORKFLOW_STYLE_SELECT_USE_LLM = "0";
+
+    try {
+      const prompt = [
+        "# Canonical Website Generation Prompt",
+        "Visual style: fresh green #2E8B57 and white as the main palette, warm orange accents.",
+        "The mood must feel natural, safe, warm, child-friendly, and professionally institutional.",
+      ].join("\n");
+      const hit = await resolveDesignSkillHit(prompt, {
+        primaryVisualDirection: "industrial-b2b",
+        visualDecisionSource: "user_recommended_default",
+        lockPrimaryVisualDirection: false,
+      });
+
+      expect(hit.selection_mode).toBe("open_design_context");
+      expect(hit.id).toBe("open-design-industrial-b2b");
+      expect(hit.design_md_inline).toContain("Open Design Direction: Industrial B2B / precision");
+      expect(hit.design_md_inline).not.toContain("Prompt-Adaptive Design System");
+    } finally {
+      if (prevUseLlm === undefined) delete process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
+      else process.env.WORKFLOW_STYLE_SELECT_USE_LLM = prevUseLlm;
+    }
+  });
+
+  it("filters direction ids out of structured secondary visual tags", () => {
+    expect(
+      normalizeWorkflowVisualDecisionContext({
+        primaryVisualDirection: "industrial-b2b",
+        secondaryVisualTags: ["minimal", "heritage-manufacturing", "trustworthy"],
+        visualDecisionSource: "user_recommended_default",
+      }),
+    ).toEqual({
+      primaryVisualDirection: "industrial-b2b",
+      secondaryVisualTags: ["minimal", "trustworthy"],
+      visualDecisionSource: "user_recommended_default",
+      lockPrimaryVisualDirection: false,
+    });
   });
 });

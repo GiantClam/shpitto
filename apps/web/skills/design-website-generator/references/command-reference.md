@@ -111,7 +111,7 @@ run-design-qa --components '["<button>...</button>", "<Card>...</Card>"]' --desi
 
 | 变量名 | 默认值 | 说明 |
 |--------|--------|------|
-| LLM_PROVIDER | aiberm | LLM 提供商：aiberm, openrouter, anthropic |
+| LLM_PROVIDER | pptoken | LLM 提供商：pptoken, aiberm, crazyrouter, openrouter, anthropic |
 | LLM_MODEL | claude-sonnet-4-20250514 | 使用的模型 |
 
 **设置示例**:

@@ -62,6 +62,14 @@ describe("supabase middleware", () => {
     expect(location).toBe("http://localhost/login?next=%2Fprojects%2Fdemo%2Fanalysis");
   });
 
+  it("redirects project data routes to login with the original next path", async () => {
+    const response = await updateSession(new NextRequest("http://localhost/projects/demo/data"));
+    const location = response.headers.get("location");
+
+    expect(response.status).toBe(307);
+    expect(location).toBe("http://localhost/login?next=%2Fprojects%2Fdemo%2Fdata");
+  });
+
   it("allows private workspace routes when the local auth cache exists", async () => {
     const response = await updateSession(
       new NextRequest("http://localhost/projects/demo/analysis", {

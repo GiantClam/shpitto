@@ -22,7 +22,8 @@ const replayMessages = [
         siteType: "portfolio",
         targetAudience: ["overseas_customers"],
         contentSources: ["new_site"],
-        designTheme: ["tech", "minimal"],
+        primaryVisualDirection: "modern-minimal",
+        secondaryVisualTags: ["tech"],
         pageStructure: {
           mode: "multi",
           planning: "manual",

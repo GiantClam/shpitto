@@ -64,7 +64,7 @@ async function main() {
   await fs.mkdir(outSite, { recursive: true });
 
   console.log("[lc-cnc-run] Starting generation, NODE_ENV =", process.env.NODE_ENV);
-  console.log("[lc-cnc-run] Provider:", process.env.LLM_PROVIDER || "aiberm");
+  console.log("[lc-cnc-run] Provider:", process.env.LLM_PROVIDER || "pptoken");
 
   const timeoutMs = Math.max(600_000, Number(process.env.REAL_SKILL_TIMEOUT_MS || 1_200_000));
 

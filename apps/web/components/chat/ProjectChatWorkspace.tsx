@@ -46,6 +46,7 @@ import { takeLaunchCenterChatHandoff } from "@/lib/launch-center/chat-handoff";
 import {
   WEBSITE_DESIGN_DIRECTIONS,
   getWebsiteDesignDirection,
+  recommendWebsiteDesignDirections,
 } from "@/lib/open-design/design-directions";
 import { getProjectWorkspaceCopy } from "./project-workspace-copy";
 
@@ -124,6 +125,15 @@ function taskHasGeneratedHtml(task?: TaskPayload | null): boolean {
   return generatedFiles.some((filePath) => /(^|\/)index\.html$/i.test(String(filePath || "").trim()));
 }
 
+function taskHasLocalPreviewCheckpoint(task?: TaskPayload | null): boolean {
+  return Boolean(
+    String(
+      task?.result?.progress?.checkpointProjectPath ||
+        "",
+    ).trim(),
+  );
+}
+
 function taskHasPreviewBaseline(task?: TaskPayload | null): boolean {
   if (!task) return false;
   if (String(task.result?.deployedUrl || "").trim()) return true;
@@ -192,6 +202,16 @@ type ChatMessage = {
   timestamp: number;
 };
 
+type PromptSubmitSource = "prompt" | "timeline-action";
+
+type PromptSubmitOptions = {
+  source?: PromptSubmitSource;
+};
+
+export function shouldSuppressOptimisticTimelineEcho(options?: PromptSubmitOptions): boolean {
+  return (options?.source || "prompt") === "timeline-action";
+}
+
 type RequirementSlotOption = {
   value: string;
   label: string;
@@ -204,6 +224,8 @@ const CHAT_CARD_COPY: Record<RequirementFormLocale, Record<string, string>> = {
   zh: {
     promptDraftExpand: "Prompt Draft（点击展开）",
     confirmAndGenerate: "确认并开始生成",
+    confirmBlogAndDeploy: "确认 Blog 文章并部署",
+    blogPreviewTitle: "部署前将写入以下 Blog 文章",
     progressTitle: "网站生成进度",
     taskSubmitted: "任务已提交",
     workerStarted: "后台生成已启动",
@@ -254,6 +276,8 @@ const CHAT_CARD_COPY: Record<RequirementFormLocale, Record<string, string>> = {
   en: {
     promptDraftExpand: "Prompt Draft (click to expand)",
     confirmAndGenerate: "Confirm and Generate",
+    confirmBlogAndDeploy: "Confirm Blog Articles and Deploy",
+    blogPreviewTitle: "These Blog articles will be published before deploy",
     progressTitle: "Website generation progress",
     taskSubmitted: "Task submitted",
     workerStarted: "Background generation started",
@@ -315,8 +339,10 @@ const REQUIREMENT_FORM_COPY: Record<RequirementFormLocale, Record<string, string
     contentNotes: "业务/内容补充",
     contentSourceHint: "如果是新建站，请补充品牌定位、核心服务、优势、案例或资质；如果有旧站或资料，系统会优先使用域名和上传文件。",
     customAudience: "自定义受众",
-    designTheme: "设计主题",
-    customTheme: "自定义主题",
+    designTheme: "主视觉方向与风格标签",
+    customTheme: "自定义风格标签",
+    recommendedThemes: "推荐方向",
+    allThemes: "全部方向",
     pageStructure: "页面数与页面结构",
     singlePage: "单页网站",
     multiPage: "多页网站",
@@ -346,8 +372,10 @@ const REQUIREMENT_FORM_COPY: Record<RequirementFormLocale, Record<string, string
     contentNotes: "Business/content details",
     contentSourceHint: "For a new website, add brand positioning, services, advantages, cases, or credentials. If you have an old site or files, the system will prioritize domain and uploaded materials.",
     customAudience: "Custom audience",
-    designTheme: "Design theme",
-    customTheme: "Custom theme",
+    designTheme: "Primary visual direction and style tags",
+    customTheme: "Custom style tag",
+    recommendedThemes: "Recommended directions",
+    allThemes: "All directions",
     pageStructure: "Page count and site structure",
     singlePage: "Single-page website",
     multiPage: "Multi-page website",
@@ -440,7 +468,8 @@ type RequirementFormValues = {
   siteType?: string;
   targetAudience: string[];
   contentSources: string[];
-  designTheme: string[];
+  primaryVisualDirection?: string;
+  secondaryVisualTags: string[];
   pageStructure: {
     mode: "single" | "multi";
     planning?: "manual" | "auto";
@@ -700,6 +729,67 @@ function asStringList(value: unknown): string[] {
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+function BlogContentDeployCard(params: {
+  metadata: Record<string, unknown>;
+  locale: RequirementFormLocale;
+  confirmPayload: string;
+  disabled: boolean;
+  onConfirm: (payload: string) => void;
+}) {
+  const copy = CHAT_CARD_COPY[params.locale];
+  const title = String(params.metadata.title || copy.blogPreviewTitle).trim();
+  const posts = (Array.isArray(params.metadata.posts) ? params.metadata.posts : [])
+    .map((item) => asRecord(item))
+    .map((item) => ({
+      slug: String(item.slug || "").trim(),
+      title: String(item.title || "").trim(),
+      excerpt: String(item.excerpt || "").trim(),
+      category: String(item.category || "").trim(),
+      tags: asStringList(item.tags),
+    }))
+    .filter((item) => item.title);
+
+  if (!posts.length) return null;
+
+  return (
+    <div className="mt-3 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_95%,var(--shp-bg)_5%)] p-3">
+      <p className="text-xs font-semibold text-[var(--shp-text)]">{title}</p>
+      <div className="mt-3 space-y-2">
+        {posts.map((post) => (
+          <div
+            key={post.slug || post.title}
+            className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_60%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_98%,var(--shp-bg)_2%)] px-3 py-2"
+          >
+            <p className="text-[11px] uppercase tracking-[0.12em] text-[var(--shp-muted)]">{post.category || "Blog"}</p>
+            <p className="mt-1 text-sm font-semibold text-[var(--shp-text)]">{post.title}</p>
+            {post.excerpt ? <p className="mt-1 text-xs text-[var(--shp-muted)]">{post.excerpt}</p> : null}
+            {post.tags.length > 0 ? (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {post.tags.map((tag) => (
+                  <span
+                    key={`${post.slug}-${tag}`}
+                    className="rounded-full border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-2 py-0.5 text-[10px] text-[var(--shp-muted)]"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={() => params.onConfirm(params.confirmPayload)}
+        disabled={params.disabled}
+        className="mt-3 rounded-lg border border-[color-mix(in_oklab,var(--shp-primary)_55%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,var(--shp-surface)_86%)] px-3 py-2 text-xs font-semibold text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_22%,var(--shp-surface)_78%)] disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {String(params.metadata.label || copy.confirmBlogAndDeploy)}
+      </button>
+    </div>
+  );
 }
 
 function DomainGuidanceCard({ metadata }: { metadata: Record<string, unknown> }) {
@@ -1135,11 +1225,23 @@ function initialRequirementFormValues(metadata: Record<string, unknown>): Requir
   const spec = currentSpecFromMetadata(metadata);
   const pageStructure = spec.pageStructure && typeof spec.pageStructure === "object" ? spec.pageStructure : {};
   const brandLogo = spec.brandLogo && typeof spec.brandLogo === "object" ? spec.brandLogo : {};
+  const visualStyle = stringArray(spec.visualStyle);
+  const fallbackDirection = visualStyle.find((value) => Boolean(getWebsiteDesignDirection(value)));
+  const primaryVisualDirection = String(spec.primaryVisualDirection || fallbackDirection || "").trim() || undefined;
+  const secondaryVisualTags = Array.from(
+    new Set(
+      [
+        ...stringArray(spec.secondaryVisualTags),
+        ...visualStyle.filter((value) => !getWebsiteDesignDirection(value)),
+      ].filter(Boolean),
+    ),
+  );
   return {
     siteType: String(spec.siteType || ""),
     targetAudience: stringArray(spec.targetAudience),
     contentSources: stringArray(spec.contentSources),
-    designTheme: stringArray(spec.visualStyle),
+    primaryVisualDirection,
+    secondaryVisualTags,
     pageStructure: {
       mode: pageStructure.mode === "single" ? "single" : "multi",
       planning: pageStructure.planning === "auto" || pageStructure.mode === "auto" ? "auto" : "manual",
@@ -1183,13 +1285,23 @@ function buildRequirementFormMessage(
       : logoOption
         ? optionDisplayLabel(logoOption, locale, "brand-logo")
         : optionLabel(logoOptions, values.brandLogo.mode);
+  const primaryDirection = values.primaryVisualDirection ? getWebsiteDesignDirection(values.primaryVisualDirection) : undefined;
   const summary = [
     locale === "zh" ? "生成前必填信息已提交：" : "Requirement form submitted:",
     `- ${copy.websiteType}: ${optionLabels(getOptions("site-type"), [values.siteType || ""], locale, "site-type")}`,
     `- ${copy.contentSources}: ${optionLabels(getOptions("content-source"), values.contentSources, locale, "content-source")}`,
     values.customNotes ? `- ${copy.contentNotes}: ${values.customNotes}` : "",
     `- ${copy.targetAudience}: ${optionLabels(getOptions("target-audience"), values.targetAudience, locale, "target-audience")}`,
-    `- ${copy.designTheme}: ${optionLabels(getOptions("visual-system"), values.designTheme, locale, "visual-system")}`,
+    `- ${copy.designTheme}: ${
+      [
+        primaryDirection ? (locale === "zh" ? primaryDirection.zhLabel : primaryDirection.label) : "",
+        values.secondaryVisualTags.length
+          ? optionLabels(getOptions("visual-system"), values.secondaryVisualTags, locale, "visual-system")
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" + ")
+    }`,
     `- ${copy.pageStructure}: ${pageSummary}`,
     `- ${copy.functionalRequirements}: ${optionLabels(getOptions("functional-requirements"), values.functionalRequirements, locale, "functional-requirements")}`,
     `- ${copy.primaryGoal}: ${optionLabels(getOptions("interaction-cta"), values.primaryGoal, locale, "interaction-cta")}`,
@@ -1218,13 +1330,31 @@ function hasRequirementFormMinimum(values: RequirementFormValues): boolean {
     values.siteType &&
       values.contentSources.length > 0 &&
       values.targetAudience.length > 0 &&
-      values.designTheme.length > 0 &&
+      values.primaryVisualDirection &&
       pageOk &&
       values.functionalRequirements.length > 0 &&
       values.primaryGoal.length > 0 &&
       values.language &&
       logoOk,
   );
+}
+
+function formatThemeRecommendationReason(
+  reason: { kind: "siteType" | "audience" | "goal" | "contentSource" | "keyword"; matched: string },
+  locale: RequirementFormLocale,
+): string {
+  if (locale === "zh") {
+    if (reason.kind === "siteType") return "匹配当前网站类型";
+    if (reason.kind === "audience") return "匹配当前目标受众";
+    if (reason.kind === "goal") return "匹配当前转化目标";
+    if (reason.kind === "contentSource") return "适合当前内容来源";
+    return `命中关键词：${reason.matched}`;
+  }
+  if (reason.kind === "siteType") return "Fits the current website type";
+  if (reason.kind === "audience") return "Fits the current audience";
+  if (reason.kind === "goal") return "Fits the current conversion goal";
+  if (reason.kind === "contentSource") return "Fits the current content source";
+  return `Matched keyword: ${reason.matched}`;
 }
 
 function RequirementFormCard({
@@ -1266,6 +1396,35 @@ function RequirementFormCard({
   );
   const logoInputRef = useRef<HTMLInputElement | null>(null);
   const t = REQUIREMENT_FORM_COPY[formLocale];
+  const recommendedDirections = useMemo(
+    () =>
+      recommendWebsiteDesignDirections({
+        siteType: values.siteType,
+        targetAudience: values.targetAudience,
+        primaryGoal: values.primaryGoal,
+        contentSources: values.contentSources,
+        designTheme: [
+          ...(values.primaryVisualDirection ? [values.primaryVisualDirection] : []),
+          ...values.secondaryVisualTags,
+        ],
+        functionalRequirements: values.functionalRequirements,
+        customNotes: values.customNotes,
+      }).filter((item) => item.direction.id !== values.primaryVisualDirection),
+    [
+      values.siteType,
+      values.targetAudience,
+      values.primaryGoal,
+      values.contentSources,
+      values.primaryVisualDirection,
+      values.secondaryVisualTags,
+      values.functionalRequirements,
+      values.customNotes,
+    ],
+  );
+  const recommendedDirectionIds = useMemo(
+    () => new Set(recommendedDirections.map((item) => item.direction.id)),
+    [recommendedDirections],
+  );
 
   useEffect(() => {
     void onLoadAssets();
@@ -1275,7 +1434,7 @@ function RequirementFormCard({
   const selectedValuesForSlot = (key: string): string[] => {
     if (key === "target-audience") return values.targetAudience;
     if (key === "content-source") return values.contentSources;
-    if (key === "visual-system") return values.designTheme;
+    if (key === "visual-system") return values.secondaryVisualTags;
     if (key === "sitemap-pages") return values.pageStructure.pages;
     if (key === "interaction-cta") return values.primaryGoal;
     return [];
@@ -1295,7 +1454,7 @@ function RequirementFormCard({
       .map((value) => ({ value, label: value }));
     return [...baseOptions, ...customOptions];
   };
-  const toggleArrayValue = (field: "targetAudience" | "contentSources" | "designTheme" | "functionalRequirements" | "primaryGoal", value: string) => {
+  const toggleArrayValue = (field: "targetAudience" | "contentSources" | "secondaryVisualTags" | "functionalRequirements" | "primaryGoal", value: string) => {
     setValues((prev) => {
       let existing = new Set(prev[field]);
       if (field === "functionalRequirements" && value === "none") {
@@ -1310,7 +1469,7 @@ function RequirementFormCard({
       return { ...prev, [field]: Array.from(existing) };
     });
   };
-  const addCustomValue = (field: "targetAudience" | "designTheme" | "primaryGoal" | "pages", value: string) => {
+  const addCustomValue = (field: "targetAudience" | "secondaryVisualTags" | "primaryGoal" | "pages", value: string) => {
     const normalized = value.trim();
     if (!normalized) return;
     setValues((prev) => {
@@ -1322,6 +1481,12 @@ function RequirementFormCard({
       if (current.includes(normalized)) return prev;
       return { ...prev, [field]: [...current, normalized] };
     });
+  };
+  const setPrimaryVisualDirection = (directionId: string) => {
+    setValues((prev) => ({
+      ...prev,
+      primaryVisualDirection: prev.primaryVisualDirection === directionId ? undefined : directionId,
+    }));
   };
   const togglePage = (value: string) => {
     setValues((prev) => {
@@ -1404,55 +1569,90 @@ function RequirementFormCard({
     </div>
   );
 
-  const renderMultiGroup = (key: string, selected: string[], field: "targetAudience" | "contentSources" | "designTheme" | "functionalRequirements" | "primaryGoal") => (
+  const renderDirectionCard = (
+    direction: (typeof WEBSITE_DESIGN_DIRECTIONS)[number],
+    active: boolean,
+    recommendationReason?: string,
+  ) => (
+    <button
+      key={direction.id}
+      type="button"
+      onClick={() => setPrimaryVisualDirection(direction.id)}
+      className={[
+        "rounded-xl border p-3 text-left transition",
+        active
+          ? "border-[color-mix(in_oklab,var(--shp-primary)_66%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,var(--shp-surface)_86%)] shadow-[0_14px_34px_-24px_color-mix(in_oklab,var(--shp-primary)_70%,black)]"
+          : "border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_76%,transparent)] hover:border-[color-mix(in_oklab,var(--shp-primary)_40%,var(--shp-border)_60%)]",
+      ].join(" ")}
+    >
+      <span className="flex items-start justify-between gap-3">
+        <span>
+          <span className="block text-xs font-semibold text-[var(--shp-text)]">
+            {formLocale === "zh" ? direction.zhLabel : direction.label}
+          </span>
+          <span className="mt-1 line-clamp-2 block text-[11px] leading-relaxed text-[var(--shp-muted)]">
+            {formLocale === "zh" ? direction.zhMood : direction.mood}
+          </span>
+        </span>
+        <span
+          className={[
+            "mt-0.5 h-4 w-4 shrink-0 rounded-full border",
+            active
+              ? "border-[color-mix(in_oklab,var(--shp-primary)_72%,transparent)] bg-[var(--shp-primary)]"
+              : "border-[color-mix(in_oklab,var(--shp-border)_80%,transparent)]",
+          ].join(" ")}
+          aria-hidden="true"
+        />
+      </span>
+      <span className="mt-3 flex overflow-hidden rounded-full border border-black/5">
+        {[direction.palette.bg, direction.palette.surface, direction.palette.border, direction.palette.fg, direction.palette.accent].map((color, index) => (
+          <span key={`${direction.id}-${color}-${index}`} className="h-3 flex-1" style={{ background: color }} />
+        ))}
+      </span>
+      <span className="mt-2 block text-[10px] uppercase tracking-[0.14em] text-[var(--shp-muted)]">
+        {direction.references.slice(0, 2).join(" / ")}
+      </span>
+      {recommendationReason ? (
+        <span className="mt-2 block rounded-lg border border-[color-mix(in_oklab,var(--shp-primary)_24%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_10%,transparent)] px-2 py-1 text-[11px] leading-relaxed text-[var(--shp-text)]">
+          {recommendationReason}
+        </span>
+      ) : null}
+    </button>
+  );
+
+  const renderMultiGroup = (key: string, selected: string[], field: "targetAudience" | "contentSources" | "secondaryVisualTags" | "functionalRequirements" | "primaryGoal") => (
     <div className={key === "visual-system" ? "mt-2 grid gap-2" : "mt-2 flex flex-wrap gap-2"}>
       {key === "visual-system" ? (
-        <div className="grid gap-2 sm:grid-cols-2">
-          {WEBSITE_DESIGN_DIRECTIONS.map((direction) => {
-            const active = selected.includes(direction.id);
-            return (
-              <button
-                key={direction.id}
-                type="button"
-                onClick={() => toggleArrayValue(field, direction.id)}
-                className={[
-                  "rounded-xl border p-3 text-left transition",
-                  active
-                    ? "border-[color-mix(in_oklab,var(--shp-primary)_66%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,var(--shp-surface)_86%)] shadow-[0_14px_34px_-24px_color-mix(in_oklab,var(--shp-primary)_70%,black)]"
-                    : "border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_76%,transparent)] hover:border-[color-mix(in_oklab,var(--shp-primary)_40%,var(--shp-border)_60%)]",
-                ].join(" ")}
-              >
-                <span className="flex items-start justify-between gap-3">
-                  <span>
-                    <span className="block text-xs font-semibold text-[var(--shp-text)]">
-                      {formLocale === "zh" ? direction.zhLabel : direction.label}
-                    </span>
-                    <span className="mt-1 line-clamp-2 block text-[11px] leading-relaxed text-[var(--shp-muted)]">
-                      {formLocale === "zh" ? direction.zhMood : direction.mood}
-                    </span>
-                  </span>
-                  <span
-                    className={[
-                      "mt-0.5 h-4 w-4 shrink-0 rounded-full border",
-                      active
-                        ? "border-[color-mix(in_oklab,var(--shp-primary)_72%,transparent)] bg-[var(--shp-primary)]"
-                        : "border-[color-mix(in_oklab,var(--shp-border)_80%,transparent)]",
-                    ].join(" ")}
-                    aria-hidden="true"
-                  />
-                </span>
-                <span className="mt-3 flex overflow-hidden rounded-full border border-black/5">
-                  {[direction.palette.bg, direction.palette.surface, direction.palette.border, direction.palette.fg, direction.palette.accent].map((color, index) => (
-                    <span key={`${direction.id}-${color}-${index}`} className="h-3 flex-1" style={{ background: color }} />
-                  ))}
-                </span>
-                <span className="mt-2 block text-[10px] uppercase tracking-[0.14em] text-[var(--shp-muted)]">
-                  {direction.references.slice(0, 2).join(" / ")}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        <>
+          {recommendedDirections.length > 0 ? (
+            <div>
+              <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--shp-muted)]">
+                {t.recommendedThemes}
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {recommendedDirections.map((recommendation) =>
+                  renderDirectionCard(
+                    recommendation.direction,
+                    values.primaryVisualDirection === recommendation.direction.id,
+                    recommendation.reasons[0]
+                      ? formatThemeRecommendationReason(recommendation.reasons[0], formLocale)
+                      : undefined,
+                  ),
+                )}
+              </div>
+            </div>
+          ) : null}
+          <div>
+            <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--shp-muted)]">
+              {t.allThemes}
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {WEBSITE_DESIGN_DIRECTIONS.filter((direction) => !recommendedDirectionIds.has(direction.id)).map((direction) =>
+                renderDirectionCard(direction, values.primaryVisualDirection === direction.id),
+              )}
+            </div>
+          </div>
+        </>
       ) : null}
       <div className={key === "visual-system" ? "flex flex-wrap gap-2" : "contents"}>
       {getOptions(key).filter((option) => !(key === "visual-system" && getWebsiteDesignDirection(option.value))).map((option) => {
@@ -1536,10 +1736,10 @@ function RequirementFormCard({
 
         <section>
           <p className="text-xs font-medium text-[var(--shp-text)]">{t.designTheme}</p>
-          {renderMultiGroup("visual-system", values.designTheme, "designTheme")}
+          {renderMultiGroup("visual-system", values.secondaryVisualTags, "secondaryVisualTags")}
           <div className="mt-2 flex gap-2">
             <input value={customTheme} onChange={(event) => setCustomTheme(event.target.value)} placeholder={t.customTheme} className="min-w-0 flex-1 rounded-md border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-transparent px-2 py-1.5 text-xs outline-none" />
-            <button type="button" onClick={() => { addCustomValue("designTheme", customTheme); setCustomTheme(""); }} className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] px-2 text-xs">{t.add}</button>
+            <button type="button" onClick={() => { addCustomValue("secondaryVisualTags", customTheme); setCustomTheme(""); }} className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] px-2 text-xs">{t.add}</button>
           </div>
         </section>
 
@@ -2024,6 +2224,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
   const localPreviewUrl = useMemo(() => {
     if (!previewTask?.id) return "";
     if (!hasGeneratedHtml) return "";
+    if (!taskHasLocalPreviewCheckpoint(previewTask)) return "";
     return `/api/chat/tasks/${encodeURIComponent(previewTask.id)}/preview/index.html`;
   }, [previewTask, hasGeneratedHtml]);
 
@@ -2142,11 +2343,12 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
   }, [assetPickerQuery, availableAssets, pendingAssetRefs]);
 
   const submitPromptText = useCallback(
-    async (nextText: string, assetRefsOverride?: ProjectAsset[]) => {
+    async (nextText: string, assetRefsOverride?: ProjectAsset[], options?: PromptSubmitOptions) => {
       const finalPrompt = String(nextText || "").trim();
       if (!chatId.trim()) return;
       const submitLocale = detectMessageLocale(finalPrompt);
       const submitCopy = CHAT_CARD_COPY[submitLocale];
+      const suppressOptimisticTimelineEcho = shouldSuppressOptimisticTimelineEcho(options);
       if (!finalPrompt) {
         setError(submitCopy.noPrompt);
         return;
@@ -2172,8 +2374,10 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
           : "";
       const runtimePrompt = `${finalPrompt}${assetReferenceBlock}`.trim();
       setPendingAssetRefs([]);
-      appendMessage("user", runtimePrompt);
-      appendMessage("assistant", submitCopy.received, { locale: submitLocale });
+      if (!suppressOptimisticTimelineEcho) {
+        appendMessage("user", runtimePrompt);
+        appendMessage("assistant", submitCopy.received, { locale: submitLocale });
+      }
 
       try {
         const res = await fetch("/api/chat", {
@@ -2263,7 +2467,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
       window.open(normalized, "_blank", "noopener,noreferrer");
       return;
     }
-    await submitPromptText(normalized);
+    await submitPromptText(normalized, undefined, { source: "timeline-action" });
   }
 
   async function handleCreateProject() {
@@ -2636,6 +2840,15 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
                         >
                           {String(metadata.label || CHAT_CARD_COPY[messageLocale].confirmAndGenerate)}
                         </button>
+                      ) : null}
+                      {cardType === "confirm_blog_content_deploy" && confirmPayload ? (
+                        <BlogContentDeployCard
+                          metadata={metadata}
+                          locale={messageLocale}
+                          confirmPayload={confirmPayload}
+                          disabled={submitting || loadingTask}
+                          onConfirm={(payload) => void handleTimelineAction(payload)}
+                        />
                       ) : null}
                       {cardType === "domain_guidance" ? <DomainGuidanceCard metadata={metadata} /> : null}
                       <p className="mt-1 text-[10px] text-[color-mix(in_oklab,var(--shp-muted)_72%,transparent)]">

@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { recordProjectAuthUserActivity } from "@/lib/agent/db";
 import { getAuthEmailRuntimeConfig, resetPasswordWithToken } from "../../../../lib/auth/cloudflare-email-auth";
 import { assertRateLimit, jsonResponse } from "../../../../lib/auth/route-utils";
 
@@ -12,9 +13,16 @@ export async function POST(request: NextRequest) {
     return jsonResponse({ ok: false, error: "Auth email service is not configured." }, { status: 500 });
   }
 
-  const payload = (await request.json().catch(() => ({}))) as { token?: unknown; password?: unknown };
+  const payload = (await request.json().catch(() => ({}))) as {
+    token?: unknown;
+    password?: unknown;
+    projectId?: unknown;
+    siteKey?: unknown;
+  };
   const token = String(payload.token || "").trim();
   const password = String(payload.password || "");
+  const projectId = String(payload.projectId || "").trim();
+  const siteKey = String(payload.siteKey || "").trim();
 
   if (!token) {
     return jsonResponse({ ok: false, error: "Password reset token is required." }, { status: 400 });
@@ -29,6 +37,16 @@ export async function POST(request: NextRequest) {
     if (!reset) {
       return jsonResponse({ ok: false, error: "Password reset link is invalid or expired." }, { status: 400 });
     }
+    void recordProjectAuthUserActivity({
+      projectId: projectId || undefined,
+      siteKey: siteKey || undefined,
+      authUserId: reset.userId,
+      email: reset.email,
+      emailVerified: true,
+      event: "password_reset_completed",
+    }).catch((error) => {
+      console.warn("[auth-password-reset] project auth activity sync failed:", error);
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to reset password.";
     return jsonResponse({ ok: false, error: message }, { status: 400 });

@@ -3,7 +3,7 @@ import {
   formatTaskEventSnapshot,
   getChatTaskEvents,
   getLatestChatTaskForChat,
-  getLatestDeployableChatTaskForChat,
+  getLatestPreviewableChatTaskForChat,
   listChatTimelineMessages,
   sanitizeTaskResultForClient,
 } from "../../../../lib/agent/chat-task-store";
@@ -25,10 +25,10 @@ function parseLegacyTaskEventText(text: string): { eventType?: string; payload?:
 function repairLegacyMojibakeTimelineText(text: string): string {
   const raw = String(text || "");
   const trimmed = raw.trim();
-  if (/^\?{3}\s+Cloudflare$/i.test(trimmed)) return "部署到 Cloudflare";
-  const brokenDeploy = trimmed.match(/^\?{4,}(https:\/\/\S+)([\s\S]*)$/);
-  if (brokenDeploy?.[1]) {
-    return `部署成功：${brokenDeploy[1]}${brokenDeploy[2] || ""}`;
+  if (/^\?{3}\s+Cloudflare$/i.test(trimmed)) return "Deploying to Cloudflare";
+  const questionMarkDeploy = trimmed.match(/^\?{4,}(https:\/\/\S+)([\s\S]*)$/);
+  if (questionMarkDeploy?.[1]) {
+    return `Deployment succeeded: ${questionMarkDeploy[1]}${questionMarkDeploy[2] || ""}`;
   }
   return raw;
 }
@@ -82,7 +82,7 @@ export async function GET(req: Request) {
   const [messages, task, previewTask] = await Promise.all([
     listChatTimelineMessages(chatId, 500),
     getLatestChatTaskForChat(chatId),
-    getLatestDeployableChatTaskForChat(chatId, { statuses: ["succeeded"] }),
+    getLatestPreviewableChatTaskForChat(chatId, { statuses: ["succeeded"] }),
   ]);
   const events = task?.id ? await getChatTaskEvents(task.id, 500) : [];
 

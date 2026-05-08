@@ -14,8 +14,8 @@ export interface ExecuteLLMOptions {
   jsonRetries?: number;
 }
 
-const DEFAULT_MODEL = process.env.LLM_MODEL || 'claude-sonnet-4-20250514';
-const LLM_PROVIDER = process.env.LLM_PROVIDER || 'aiberm';
+const DEFAULT_MODEL = process.env.LLM_MODEL || process.env.LLM_MODEL_PPTOKEN || process.env.PPTOKEN_MODEL || 'gpt-5.4-mini';
+const LLM_PROVIDER = process.env.LLM_PROVIDER || 'pptoken';
 
 let anthropicClient: any = null;
 let anthropicClientKey = '';
@@ -27,8 +27,9 @@ type ProviderConfig = {
 };
 
 function resolveProviderConfig(): ProviderConfig {
-  const provider = (LLM_PROVIDER || 'aiberm').toLowerCase();
+  const provider = (LLM_PROVIDER || 'pptoken').toLowerCase();
   const fallbackApiKey =
+    process.env.PPTOKEN_API_KEY ||
     process.env.ANTHROPIC_API_KEY ||
     process.env.ANTHROPIC_KEY ||
     process.env.AIBERM_API_KEY ||
@@ -40,6 +41,14 @@ function resolveProviderConfig(): ProviderConfig {
       provider,
       apiKey: process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_KEY || fallbackApiKey || '',
       baseURL: process.env.ANTHROPIC_BASE_URL || process.env.LLM_BASE_URL,
+    };
+  }
+
+  if (provider === 'pptoken') {
+    return {
+      provider,
+      apiKey: process.env.PPTOKEN_API_KEY || fallbackApiKey || '',
+      baseURL: process.env.PPTOKEN_BASE_URL || process.env.LLM_BASE_URL || 'https://api.pptoken.org/v1',
     };
   }
 
@@ -75,7 +84,7 @@ async function getAnthropicClient() {
     const { default: Anthropic } = await import('@anthropic-ai/sdk');
 
     if (!config.apiKey) {
-      throw new Error('No API key found. Set ANTHROPIC_API_KEY, AIBERM_API_KEY, or OPENROUTER_API_KEY');
+      throw new Error('No API key found. Set PPTOKEN_API_KEY, ANTHROPIC_API_KEY, AIBERM_API_KEY, or OPENROUTER_API_KEY');
     }
 
     anthropicClient = new Anthropic({

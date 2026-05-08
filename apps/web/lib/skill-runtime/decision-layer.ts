@@ -28,7 +28,7 @@ export type PageBlueprint = {
   source: PageIntentSource;
   evidence?: string;
   constraints: string[];
-  pageKind: "intent";
+  pageKind: "intent" | "home" | "search-directory" | "blog-data-index" | "auth";
   responsibility: string;
   contentSkeleton: string[];
   componentMix: ComponentMix;
@@ -43,26 +43,6 @@ export type LocalDecisionPlan = {
   pageBlueprints: PageBlueprint[];
   brandHint?: string;
 };
-
-const ROUTE_ALIASES: Array<{ keys: string[]; route: string }> = [
-  { keys: ["home", "homepage", "index", "\u9996\u9875", "\u4e3b\u9875"], route: "/" },
-  { keys: ["products", "product", "\u4ea7\u54c1"], route: "/products" },
-  { keys: ["customsolutions", "solutions", "solution", "\u65b9\u6848"], route: "/custom-solutions" },
-  { keys: ["cases", "case", "\u6848\u4f8b"], route: "/cases" },
-  { keys: ["about", "company", "\u5173\u4e8e"], route: "/about" },
-  { keys: ["contact", "contacts", "\u8054\u7cfb", "\u54a8\u8be2"], route: "/contact" },
-  { keys: ["blog", "blogs", "\u535a\u5ba2", "\u6587\u7ae0"], route: "/blog" },
-  { keys: ["news", "updates", "\u8d44\u8baf", "\u65b0\u95fb"], route: "/news" },
-  { keys: ["casuxcreation", "creation", "\u521b\u8bbe"], route: "/casux-creation" },
-  { keys: ["casuxconstruction", "construction", "\u5efa\u8bbe"], route: "/casux-construction" },
-  { keys: ["casuxcertification", "casuxqualitymark", "certification", "\u4f18\u6807", "\u6d4b\u8bc4", "\u8ba4\u8bc1"], route: "/casux-certification" },
-  { keys: ["casuxadvocacy", "advocacy", "alliance", "\u5021\u5bfc", "\u8054\u76df"], route: "/casux-advocacy" },
-  { keys: ["casuxresearchcenter", "researchcenter", "research", "\u7814\u7a76\u4e2d\u5fc3"], route: "/casux-research-center" },
-  { keys: ["casuxinformationplatform", "informationplatform", "platform", "\u4fe1\u606f\u5e73\u53f0"], route: "/casux-information-platform" },
-  { keys: ["downloads", "download", "\u8d44\u6599\u4e0b\u8f7d", "\u4e0b\u8f7d"], route: "/downloads" },
-  { keys: ["login", "signin", "sign-in", "\u767b\u5f55"], route: "/login" },
-  { keys: ["register", "signup", "sign-up", "\u6ce8\u518c"], route: "/register" },
-];
 
 function detectLocale(text: string): "zh-CN" | "en" {
   return /[\u4e00-\u9fff]/.test(text) ? "zh-CN" : "en";
@@ -88,6 +68,11 @@ function normalizeRoute(route: string): string {
     .replace(/[^a-zA-Z0-9/_-]/g, "")
     .replace(/\/$/, "")
     .toLowerCase();
+}
+
+function isSearchDirectoryRoute(route: string, label: string): boolean {
+  const text = `${normalizeRoute(route)} ${String(label || "").trim()}`.toLowerCase();
+  return /(certification|search|directory|download|downloads|query|lookup|catalog|results|assessment|evaluation)/i.test(text);
 }
 
 function slugifyLabel(label: string): string {
@@ -132,23 +117,22 @@ function isHumanLikeMessage(raw: any): boolean {
 
 function extractRequirementText(state: AgentState): string {
   const messages = Array.isArray(state.messages) ? state.messages : [];
+  const humanMessages: string[] = [];
   for (let i = messages.length - 1; i >= 0; i -= 1) {
     const msg: any = messages[i];
     const content = extractMessageContent(msg);
     if (!content) continue;
-    if (isHumanLikeMessage(msg)) return content;
+    if (isHumanLikeMessage(msg)) humanMessages.push(content);
   }
   const workflow = (state as any)?.workflow_context || {};
   const fallbackCandidates = [
     String(workflow.canonicalPrompt || "").trim(),
+    String(workflow.sourceRequirement || "").trim(),
     String(workflow.latestUserText || "").trim(),
     String(workflow.requirementAggregatedText || "").trim(),
-    String(workflow.sourceRequirement || "").trim(),
+    ...humanMessages,
   ];
-  for (const candidate of fallbackCandidates) {
-    if (candidate) return candidate;
-  }
-  return "";
+  return Array.from(new Set(fallbackCandidates.filter(Boolean))).join("\n\n").trim();
 }
 
 function extractBrandHint(requirementText: string): string | undefined {
@@ -252,7 +236,7 @@ function isLikelyPageLabel(label: string): boolean {
   if (blockedHint.test(text)) return false;
 
   const pageHint =
-    /(home|products?|3c\s*machines|solutions?|cases?|about|contact|blogs?|news|downloads?|login|register|creation|construction|certification|advocacy|research|platform|\u9996\u9875|\u4ea7\u54c1|\u65b9\u6848|\u6848\u4f8b|\u5173\u4e8e|\u8054\u7cfb|\u535a\u5ba2|\u6587\u7ae0|\u4e0b\u8f7d|\u767b\u5f55|\u6ce8\u518c|\u521b\u8bbe|\u5efa\u8bbe|\u4f18\u6807|\u5021\u5bfc|\u7814\u7a76|\u5e73\u53f0)/iu;
+    /(home|products?|3c\s*machines|solutions?|cases?|about|contact|blogs?|news|downloads?|login|register|password|reset|forgot|verify|verification|creation|construction|certification|advocacy|research|platform|\u9996\u9875|\u4ea7\u54c1|\u65b9\u6848|\u6848\u4f8b|\u5173\u4e8e|\u8054\u7cfb|\u535a\u5ba2|\u6587\u7ae0|\u4e0b\u8f7d|\u767b\u5f55|\u6ce8\u518c|\u5bc6\u7801|\u9a8c\u8bc1|\u521b\u8bbe|\u5efa\u8bbe|\u4f18\u6807|\u5021\u5bfc|\u7814\u7a76|\u5e73\u53f0)/iu;
   if (pageHint.test(text)) return true;
 
   return /^[A-Za-z0-9][A-Za-z0-9 _-]{0,32}$/.test(text) && words.length <= 3;
@@ -295,7 +279,7 @@ function extractNavLabels(requirementText: string): string[] {
 function extractCommaPageLabels(requirementText: string): string[] {
   const lines = requirementText.split(/\r?\n/).map((line) => String(line || "").trim());
   const labels: string[] = [];
-  const pageHint = /(pages?|page\s+list|routes?|includes?|navigation|nav|\u9875\u9762|\u5bfc\u822a|\u5305\u62ec|\u5305\u542b)/iu;
+  const pageHint = /(pages?|page\s+list|routes?|includes?|navigation|nav|login|register|password|reset|forgot|verify|verification|\u9875\u9762|\u5bfc\u822a|\u5305\u62ec|\u5305\u542b|\u767b\u5f55|\u6ce8\u518c|\u5bc6\u7801|\u9a8c\u8bc1)/iu;
   const blockedHint = /(color|typography|spacing|style\s+guide|seo|meta|tag|tags|label|filters?|\u6807\u7b7e|\u989c\u8272|\u5b57\u4f53|\u89c4\u8303)/iu;
 
   for (const line of lines) {
@@ -312,7 +296,7 @@ function extractPageHeadingLabels(requirementText: string): string[] {
   const labels: string[] = [];
   const headingRegex = /^\s{0,3}#{1,6}\s*(.+?)\s*$/gm;
   const pageHint =
-    /(page|\u9875\u9762|\u9996\u9875|\u767b\u5f55|\u6ce8\u518c|\u4e0b\u8f7d|\u4fe1\u606f\u5e73\u53f0|\u7814\u7a76\u4e2d\u5fc3|\u521b\u8bbe|\u5efa\u8bbe|\u4f18\u6807|\u5021\u5bfc)/iu;
+    /(page|\u9875\u9762|\u9996\u9875|\u767b\u5f55|\u6ce8\u518c|\u5bc6\u7801|\u9a8c\u8bc1|\u4e0b\u8f7d|\u4fe1\u606f\u5e73\u53f0|\u7814\u7a76\u4e2d\u5fc3|\u521b\u8bbe|\u5efa\u8bbe|\u4f18\u6807|\u5021\u5bfc)/iu;
   const blockedHeading =
     /(\u63d0\u793a\u8bcd|\u89c4\u8303|\u7ec4\u4ef6|\u901a\u7528|\u7279\u6b8a|\u8be6\u7ec6|\u6574\u4f53\u5b9a\u4f4d|\u5b50\u57df\u540d|\u8bf4\u660e)/iu;
 
@@ -332,7 +316,7 @@ function extractPageHeadingLabels(requirementText: string): string[] {
 function extractNumberedPageLabels(requirementText: string): string[] {
   const labels: string[] = [];
   const pageHint =
-    /(home|products?|3c\s*machines|solutions?|cases?|about|contact|blogs?|news|downloads?|login|register|creation|construction|certification|advocacy|research|platform|\u9996\u9875|\u4ea7\u54c1|\u65b9\u6848|\u6848\u4f8b|\u5173\u4e8e|\u8054\u7cfb|\u535a\u5ba2|\u6587\u7ae0|\u4e0b\u8f7d|\u767b\u5f55|\u6ce8\u518c)/iu;
+    /(home|products?|3c\s*machines|solutions?|cases?|about|contact|blogs?|news|downloads?|login|register|password|reset|forgot|verify|verification|creation|construction|certification|advocacy|research|platform|\u9996\u9875|\u4ea7\u54c1|\u65b9\u6848|\u6848\u4f8b|\u5173\u4e8e|\u8054\u7cfb|\u535a\u5ba2|\u6587\u7ae0|\u4e0b\u8f7d|\u767b\u5f55|\u6ce8\u518c|\u5bc6\u7801|\u9a8c\u8bc1)/iu;
   const blockedHint =
     /(color|typography|spacing|style\s+guide|seo|meta|cta|guideline|\u989c\u8272|\u5b57\u4f53|\u95f4\u8ddd|\u89c4\u8303|\u63d0\u793a\u8bcd)/iu;
   const lineRegex = /^\s*(?:[-*]\s*)?(?:\d{1,2}[\).])\s*([^\n]{1,120})$/gmu;
@@ -539,7 +523,7 @@ function labelToRoute(label: string, index: number): string {
   const normalizedLabel = normalizeLabelForMatching(label);
   if (!normalizedLabel) return index === 1 ? "/" : `/page-${index}`;
 
-  const matchedAlias = ROUTE_ALIASES.find((entry) =>
+  const matchedAlias = routePlanningPolicy.routeAliases.find((entry) =>
     entry.keys.some((key) => normalizedLabel.includes(normalizeLabelForMatching(key))),
   );
   if (matchedAlias) return matchedAlias.route;
@@ -590,15 +574,11 @@ function routeToNavLabel(route: string, locale: "zh-CN" | "en" = "en"): string {
     "/news": { zh: "\u65b0\u95fb", en: "News" },
     "/contact": { zh: "\u8054\u7cfb", en: "Contact" },
     "/about": { zh: "\u5173\u4e8e", en: "About" },
-    "/casux-creation": { zh: "CASUX\u521b\u8bbe", en: "CASUX Creation" },
-    "/casux-construction": { zh: "CASUX\u5efa\u8bbe", en: "CASUX Construction" },
-    "/casux-certification": { zh: "CASUX\u4f18\u6807", en: "CASUX Certification" },
-    "/casux-advocacy": { zh: "CASUX\u5021\u5bfc", en: "CASUX Advocacy" },
-    "/casux-research-center": { zh: "CASUX\u7814\u7a76\u4e2d\u5fc3", en: "CASUX Research Center" },
-    "/casux-information-platform": { zh: "CASUX\u4fe1\u606f\u5e73\u53f0", en: "CASUX Information Platform" },
     "/downloads": { zh: "\u8d44\u6599\u4e0b\u8f7d", en: "Downloads" },
     "/login": { zh: "\u767b\u5f55", en: "Login" },
     "/register": { zh: "\u6ce8\u518c", en: "Register" },
+    "/reset-password": { zh: "\u627e\u56de\u5bc6\u7801", en: "Reset Password" },
+    "/verify-email": { zh: "\u9a8c\u8bc1\u90ae\u7bb1", en: "Verify Email" },
   };
 
   if (knownLabels[normalized]) return locale === "zh-CN" ? knownLabels[normalized].zh : knownLabels[normalized].en;
@@ -618,15 +598,104 @@ function orderNavigationRoutes(routes: string[]): string[] {
   const homeRoutes = normalizedRoutes.filter((route) => normalizeRoute(route) === "/");
   const aboutRoutes = normalizedRoutes.filter((route) => /^\/about(?:\/|$)/.test(normalizeRoute(route)));
   const contactRoutes = normalizedRoutes.filter((route) => /^\/contact(?:\/|$)/.test(normalizeRoute(route)));
+  const authRoutes = normalizedRoutes.filter((route) => /^(?:\/login|\/register|\/reset-password|\/verify-email)(?:\/|$)/.test(normalizeRoute(route)));
   const middleRoutes = normalizedRoutes.filter((route) => {
     const normalized = normalizeRoute(route);
-    return normalized !== "/" && !/^\/about(?:\/|$)/.test(normalized) && !/^\/contact(?:\/|$)/.test(normalized);
+    return (
+      normalized !== "/" &&
+      !/^\/about(?:\/|$)/.test(normalized) &&
+      !/^\/contact(?:\/|$)/.test(normalized) &&
+      !/^(?:\/login|\/register|\/reset-password|\/verify-email)(?:\/|$)/.test(normalized)
+    );
   });
 
-  return [...homeRoutes, ...middleRoutes, ...contactRoutes, ...aboutRoutes];
+  return [...homeRoutes, ...middleRoutes, ...contactRoutes, ...aboutRoutes, ...authRoutes];
+}
+
+function shouldEnsureBlogRoute(): boolean {
+  return String(process.env.SHPITTO_GENERATION_BLOG_ROUTE || "1").trim() !== "0";
+}
+
+function safeRegex(pattern: string): RegExp | undefined {
+  try {
+    return new RegExp(pattern, "iu");
+  } catch {
+    return undefined;
+  }
+}
+
+function scoreBlogSemanticRoute(route: string, navLabel: string): { score: number; reasons: string[] } {
+  const normalizedRoute = normalizeRoute(route);
+  const text = `${normalizedRoute} ${String(navLabel || "")}`.trim();
+  const policy = routePlanningPolicy.blogSemanticRoutePolicy;
+  const fallbackRoute = normalizeRoute(policy.fallbackRoute || "/blog");
+  if (normalizedRoute === fallbackRoute || normalizedRoute === "/blog") {
+    return { score: 100, reasons: ["explicit Blog route"] };
+  }
+
+  let score = 0;
+  const reasons: string[] = [];
+  for (const signal of policy.signals) {
+    if (signal.patterns.some((pattern) => safeRegex(pattern)?.test(text))) {
+      score += signal.score;
+      if (signal.reason) reasons.push(signal.reason);
+    }
+  }
+  for (const signal of policy.negativeSignals) {
+    if (signal.patterns.some((pattern) => safeRegex(pattern)?.test(text))) {
+      score -= signal.score;
+      if (signal.reason) reasons.push(`negative: ${signal.reason}`);
+    }
+  }
+
+  return {
+    score: Math.max(0, Math.min(100, score)),
+    reasons,
+  };
+}
+
+function isBlogSemanticRoute(route: string, navLabel: string): boolean {
+  const result = scoreBlogSemanticRoute(route, navLabel);
+  const threshold = routePlanningPolicy.blogSemanticRoutePolicy.confidenceThreshold || 70;
+  return result.score >= threshold;
+}
+
+function findBlogSemanticRoute(routes: string[], navLabels?: string[]): string | undefined {
+  const candidates = routes.map((route, index) => {
+    const normalizedRoute = normalizeRoute(route);
+    const label = String(navLabels?.[index] || routeToNavLabel(normalizedRoute)).trim();
+    return {
+      route: normalizedRoute,
+      ...scoreBlogSemanticRoute(normalizedRoute, label),
+      index,
+    };
+  });
+  const threshold = routePlanningPolicy.blogSemanticRoutePolicy.confidenceThreshold || 70;
+  return candidates
+    .filter((candidate) => candidate.score >= threshold)
+    .sort((left, right) => right.score - left.score || left.index - right.index)[0]?.route;
+}
+
+function ensureBlogRoute(routes: string[], options: { singlePage: boolean }): string[] {
+  const normalizedRoutes = uniqueRoutes(routes);
+  if (!shouldEnsureBlogRoute() || options.singlePage) return normalizedRoutes;
+  if (findBlogSemanticRoute(normalizedRoutes)) return normalizedRoutes;
+  return [...normalizedRoutes, normalizeRoute(routePlanningPolicy.blogSemanticRoutePolicy.fallbackRoute || "/blog")];
 }
 
 const EMPTY_COMPONENT_MIX: ComponentMix = { hero: 0, feature: 0, grid: 0, proof: 0, form: 0, cta: 0 };
+
+const BLOG_DATA_SOURCE_CONSTRAINTS = [
+  "Treat the selected Blog-capable navigation route as a first-class page-specific content surface, not a generic article mockup, detached landing page, or visible backend implementation block.",
+  'The generated page for that route must include data-shpitto-blog-root and data-shpitto-blog-api="/api/blog/posts" inside the page collection/list/database module.',
+  "Inside that section, include a data-shpitto-blog-list container with polished fallback resource cards that match the route taxonomy, language, typography, spacing, and visual system.",
+  "Implementation mechanics are invisible infrastructure. Do not expose backend names, API/storage/runtime/hydration/fallback jargon, data-source mechanics, English design jargon, or policy wording in visitor-facing copy unless the route itself is explicitly Blog.",
+  "Do not mention deployment refresh, fallback behavior, data hydration, API mechanics, data attributes, backend storage, or internal prompt terminology in visitor-facing copy.",
+  "Use source-aligned fallback resource titles/excerpts only as preview fallbacks; deployment replaces or refreshes them from the project-scoped Blog D1 Worker API.",
+  "Detail links must use /blog/{slug}/ so deployment-time static detail pages and sitemap output are SEO-addressable.",
+  "Dynamic /blog/{slug}/ detail pages should inherit the selected route's detail grammar, such as resource, report, standard, case, news, insight, or blog article according to route semantics.",
+  "Do not generate D1 credentials, Cloudflare binding code, worker code, or database secrets in static HTML.",
+];
 
 function allIndexesOf(input: string, needle: string): number[] {
   const text = String(input || "");
@@ -711,6 +780,19 @@ function scorePageBriefCandidate(text: string, index: number, sourceStart: numbe
     score -= 35;
   }
   if (route === "/" && /(?:home|\u9996\u9875|\u4e3b\u9875|\u2eda\u2faf)/iu.test(near)) score += 12;
+  if (route === "/") {
+    const blockedHomeTerms = [
+      /资料下载/iu,
+      /下载/iu,
+      /认证入口/iu,
+      /认证查询/iu,
+      /查询/iu,
+      /申请系统/iu,
+      /login/iu,
+      /register/iu,
+    ];
+    if (blockedHomeTerms.some((pattern) => pattern.test(near))) score -= 60;
+  }
   for (const term of terms) {
     if (after.includes(term)) score += 2;
   }
@@ -792,6 +874,162 @@ function buildPageBlueprint(
 ): PageBlueprint {
   const normalizedRoute = normalizeRoute(route);
   const resolvedLabel = String(navLabel || routeToNavLabel(normalizedRoute, locale) || (locale === "zh-CN" ? "\u9875\u9762" : "Page")).trim();
+  if (normalizedRoute === "/login" || normalizedRoute === "/register" || normalizedRoute === "/reset-password" || normalizedRoute === "/verify-email") {
+    const authLabel = resolvedLabel || routeToNavLabel(normalizedRoute, locale);
+    const authCopy: Record<
+      string,
+      { purpose: string; skeleton: string[] }
+    > = {
+      "/login": {
+        purpose:
+          locale === "zh-CN"
+            ? `登录页 "${authLabel}"。把邮箱登录、Google OAuth、找回密码和返回路径保留在同一套品牌壳里。`
+            : `Sign-in page for "${authLabel}". Keep email login, Google OAuth, password recovery, and next-path handling inside one branded shell.`,
+        skeleton: [
+          "Auth hero with concise value proposition and trust cue",
+          "Google sign-in and email/password form",
+          "Forgot password entry point that preserves next",
+          "Sign-up link for new users",
+        ],
+      },
+      "/register": {
+        purpose:
+          locale === "zh-CN"
+            ? `注册页 "${authLabel}"。把邮箱注册、Google OAuth 和验证说明保持在同一主题壳中。`
+            : `Registration page for "${authLabel}". Keep email registration, Google OAuth, and verification guidance inside the same theme shell.`,
+        skeleton: [
+          "Registration hero with trust-building copy",
+          "Google sign-up and email/password form",
+          "Email verification guidance and next-step explanation",
+          "Back-to-sign-in link",
+        ],
+      },
+      "/reset-password": {
+        purpose:
+          locale === "zh-CN"
+            ? `找回密码页 "${authLabel}"。保持极简、清晰，并延续站点主题。`
+            : `Password reset page for "${authLabel}". Keep the flow minimal, clear, and consistent with the site theme.`,
+        skeleton: [
+          "Reset-password hero with security guidance",
+          "New password and confirmation fields",
+          "Success state that returns the user to sign in",
+        ],
+      },
+      "/verify-email": {
+        purpose:
+          locale === "zh-CN"
+            ? `邮箱验证页 "${authLabel}"。保持验证状态、重发动作和返回登录路径与站点风格一致。`
+            : `Email verification page for "${authLabel}". Keep verification status, resend, and return-to-sign-in paths consistent with the site style.`,
+        skeleton: [
+          "Verification hero and status message",
+          "Resend verification action",
+          "Displayed email context and sign-in return link",
+        ],
+      },
+    };
+    const copy = authCopy[normalizedRoute];
+    return {
+      route: normalizedRoute,
+      navLabel: authLabel,
+      purpose: copy.purpose,
+      source,
+      evidence,
+      constraints: [
+        "Canonical Website Prompt remains authoritative for brand voice, audience, language, and visual direction.",
+        "Auth pages must match the site's color system, typography, spacing, and brand tone.",
+        "Preserve next destinations through login, registration, verification, and reset-password links.",
+        "Do not use detached stock auth UI or alternate branding.",
+      ],
+      pageKind: "auth",
+      responsibility: copy.purpose,
+      contentSkeleton: copy.skeleton,
+      componentMix: { hero: 18, feature: 0, grid: 0, proof: 10, form: 57, cta: 15 },
+    };
+  }
+  if (isBlogSemanticRoute(normalizedRoute, resolvedLabel)) {
+    const semanticScore = scoreBlogSemanticRoute(normalizedRoute, resolvedLabel);
+    const purpose =
+      locale === "zh-CN"
+        ? `内容集合页 "${resolvedLabel}"。可见页面必须沿用该路由自身的信息架构；实现能力不得成为访客可见主题。`
+        : `Content collection page for "${resolvedLabel}". The visible page must follow this route's own information architecture; implementation capability must not become a visitor-facing topic.`;
+    return {
+      route: normalizedRoute,
+      navLabel: resolvedLabel,
+      purpose,
+      source,
+      evidence,
+      constraints: [
+        "Canonical Website Prompt remains authoritative for brand voice, audience, language, and visual direction.",
+        `Blog backend route confidence: ${semanticScore.score}/100${semanticScore.reasons.length ? ` (${semanticScore.reasons.join("; ")})` : ""}.`,
+        ...BLOG_DATA_SOURCE_CONSTRAINTS,
+      ],
+      pageKind: "blog-data-index",
+      responsibility: purpose,
+      contentSkeleton: [
+        "Site-matched hero explaining the value of this route's content/resource system",
+        'Page-specific data-backed collection surface: <section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts">',
+        "Fallback resource cards inside [data-shpitto-blog-list] using the selected route taxonomy, categories, excerpts, dates, tags, and /blog/{slug}/ detail links",
+        "For information-platform or knowledge-hub routes, structure the visible list around page collections such as case library, standards/documents, research reports, policy updates, or product database entries when supported by the prompt",
+        "Optional category/filter controls only if they are styled, page-specific, and usable with the static HTML content",
+        "Contextual CTA that connects readers back to the site's primary conversion path",
+      ],
+      componentMix: { hero: 20, feature: 15, grid: 35, proof: 5, form: 0, cta: 25 },
+    };
+  }
+  if (normalizedRoute === "/") {
+    const purpose =
+      locale === "zh-CN"
+        ? "首页。建立品牌总览、核心价值、主路径入口与下一步行动，保持站点总入口语义。"
+        : "Homepage. Establish the brand overview, core value, primary route entry, and next action while preserving site home-entry semantics.";
+    return {
+      route: normalizedRoute,
+      navLabel: resolvedLabel,
+      purpose,
+      source,
+      evidence,
+      constraints: [
+        "Canonical Website Prompt remains authoritative for brand voice, audience, language, and visual direction.",
+        "Do not reframe the homepage as a downloads hub, certification portal, or login page.",
+        "Use a clear hero, overview, proof, and CTA rhythm; do not copy a downstream inner page layout.",
+      ],
+      pageKind: "home",
+      responsibility: purpose,
+      contentSkeleton: [
+        "Brand-led hero establishing the site home entry",
+        "Core value or capability overview with distinct supporting cards",
+        "Evidence, standards, or proof section that reinforces the site mission",
+        "Primary CTA to the most important next step",
+      ],
+      componentMix: { hero: 30, feature: 25, grid: 15, proof: 20, form: 0, cta: 10 },
+    };
+  }
+  if (isSearchDirectoryRoute(normalizedRoute, resolvedLabel)) {
+    const purpose =
+      locale === "zh-CN"
+        ? "查询目录页。提供检索、筛选、结果展示与下一步引导的闭环。"
+        : "Search-directory page. Provide search, filtering, results, and next-step guidance in one closed loop.";
+    return {
+      route: normalizedRoute,
+      navLabel: resolvedLabel,
+      purpose,
+      source,
+      evidence,
+      constraints: [
+        "Canonical Website Prompt remains authoritative for brand voice, audience, language, and visual direction.",
+        "Search results and query cards must occupy the full available row; never leave them as narrow fragments inside a 12-column grid.",
+        "Keep the visual rail compact unless it contains real media, charts, or metrics.",
+      ],
+      pageKind: "search-directory",
+      responsibility: purpose,
+      contentSkeleton: [
+        "Query or filter controls aligned to the route's directory purpose",
+        "Full-width result stack with readable cards or rows",
+        "Methodology, criteria, or explanation section for result interpretation",
+        "Application CTA to the next step",
+      ],
+      componentMix: { hero: 15, feature: 10, grid: 35, proof: 20, form: 10, cta: 10 },
+    };
+  }
   const purpose =
     normalizedRoute === "/"
       ? "Primary landing page. Derive the hero, section order, and conversion path from the confirmed Canonical Website Prompt and source content."
@@ -827,8 +1065,14 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
     workflowContractPlan.routes.length > 0 ? { routes: [], navLabels: [] } : extractPromptControlManifestRoutePlan(requirementText, locale);
   const workflowContractRoutes = workflowContractPlan.routes;
   const contractRoutes = workflowContractRoutes.length > 0 ? workflowContractRoutes : promptContractPlan.routes;
-  const singlePageRoutes = contractRoutes.length > 0 ? [] : hasExplicitSinglePageIntent(requirementText) ? ["/"] : [];
-  const specRoutes = contractRoutes.length > 0 || singlePageRoutes.length > 0 ? [] : extractRequirementSpecRoutes(state, requirementText);
+  const explicitRoutes = extractExplicitRoutes(requirementText).filter((route) => !isRoutePlanningArtifact(route));
+  const hasExplicitRoutePlan = explicitRoutes.length > 0;
+  const singlePageRoutes =
+    contractRoutes.length > 0 || hasExplicitRoutePlan ? [] : hasExplicitSinglePageIntent(requirementText) ? ["/"] : [];
+  const specRoutes =
+    contractRoutes.length > 0 || hasExplicitRoutePlan || singlePageRoutes.length > 0
+      ? []
+      : extractRequirementSpecRoutes(state, requirementText);
   const navLabels = extractNavLabels(requirementText);
   const commaLabels = extractCommaPageLabels(requirementText);
   const numberedLabels = extractNumberedPageLabels(requirementText);
@@ -838,25 +1082,29 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
   );
 
   const labelRoutes = labelsToRoutes(mergedLabels).filter((route) => !isRoutePlanningArtifact(route));
-  const explicitRoutes = extractExplicitRoutes(requirementText).filter((route) => !isRoutePlanningArtifact(route));
   const stateRoutes = Array.isArray(state.sitemap)
     ? state.sitemap.map((item) => normalizeRoute(String(item || ""))).filter((route) => !isRoutePlanningArtifact(route))
     : [];
 
-  const candidates = [...stateRoutes, ...labelRoutes, ...explicitRoutes];
+  const candidates = hasExplicitRoutePlan ? explicitRoutes : [...stateRoutes, ...labelRoutes, ...explicitRoutes];
   const plannedFallback = candidates.length === 0 && hasAutoPagePlanningIntent(requirementText) ? inferDefaultAutoRoutes(requirementText) : [];
   const baseRoutes =
     contractRoutes.length > 0
       ? contractRoutes
-      : singlePageRoutes.length > 0
-        ? singlePageRoutes
-        : specRoutes.length > 0
-          ? specRoutes
-          : candidates.length > 0
-            ? candidates
-            : plannedFallback;
+      : hasExplicitRoutePlan
+          ? explicitRoutes
+        : singlePageRoutes.length > 0
+          ? singlePageRoutes
+          : specRoutes.length > 0
+            ? specRoutes
+            : candidates.length > 0
+              ? candidates
+              : plannedFallback;
   const withHome = baseRoutes.some((route) => normalizeRoute(route) === "/") ? baseRoutes : ["/", ...baseRoutes];
-  const routes = orderNavigationRoutes(withHome.length > 0 ? withHome : ["/"]).slice(0, 16);
+  const withSystemRoutes = ensureBlogRoute(withHome.length > 0 ? withHome : ["/"], {
+    singlePage: singlePageRoutes.length > 0,
+  });
+  const routes = orderNavigationRoutes(withSystemRoutes).slice(0, 16);
 
   const labelMap = new Map<string, string>();
   const structuredNavLabels =
@@ -873,11 +1121,13 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
       labelMap.set(route, label);
     }
   }
-  for (let i = 0; i < mergedLabels.length; i += 1) {
-    const label = String(mergedLabels[i] || "").trim();
-    const mappedRoute = normalizeRoute(labelToRoute(label, i + 1));
-    if (label && mappedRoute && !labelMap.has(mappedRoute)) {
-      labelMap.set(mappedRoute, label);
+  if (!hasExplicitRoutePlan) {
+    for (let i = 0; i < mergedLabels.length; i += 1) {
+      const label = String(mergedLabels[i] || "").trim();
+      const mappedRoute = normalizeRoute(labelToRoute(label, i + 1));
+      if (label && mappedRoute && !labelMap.has(mappedRoute)) {
+        labelMap.set(mappedRoute, label);
+      }
     }
   }
 
@@ -887,19 +1137,21 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
       ? "workflow_contract"
       : contractRoutes.length > 0
         ? "prompt_contract"
-        : singlePageRoutes.length > 0
-          ? "requirement_spec"
-          : specRoutes.length > 0
+        : hasExplicitRoutePlan
+            ? "explicit_route"
+          : singlePageRoutes.length > 0
             ? "requirement_spec"
-            : stateRoutes.length > 0
-              ? "state_sitemap"
-              : labelRoutes.length > 0
-                ? "nav_label"
-                : explicitRoutes.length > 0
-                  ? "explicit_route"
-                  : plannedFallback.length > 0
-                    ? "auto_plan"
-                    : "default";
+            : specRoutes.length > 0
+              ? "requirement_spec"
+              : stateRoutes.length > 0
+                ? "state_sitemap"
+                : labelRoutes.length > 0
+                  ? "nav_label"
+                  : explicitRoutes.length > 0
+                    ? "explicit_route"
+                    : plannedFallback.length > 0
+                      ? "auto_plan"
+                      : "default";
   const pageBlueprints = routes.map((route, index) =>
     buildPageBlueprint(route, locale, normalizedNavLabels[index], pageIntentSource, requirementText.slice(0, 800)),
   );

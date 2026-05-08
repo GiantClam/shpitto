@@ -150,6 +150,13 @@ export class CloudflareD1Client {
             name TEXT NOT NULL,
             config_json TEXT NOT NULL,
             r2_snapshot_key TEXT,
+            project_status TEXT NOT NULL DEFAULT 'active',
+            deleted_at TEXT,
+            archived_at TEXT,
+            cleanup_started_at TEXT,
+            cleanup_completed_at TEXT,
+            cleanup_status TEXT,
+            cleanup_error TEXT,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
           );
@@ -205,6 +212,29 @@ export class CloudflareD1Client {
           );
           `,
           `
+          CREATE TABLE IF NOT EXISTS shpitto_project_auth_users (
+            id TEXT PRIMARY KEY,
+            project_id TEXT NOT NULL REFERENCES shpitto_projects(id) ON DELETE CASCADE,
+            account_id TEXT NOT NULL REFERENCES shpitto_accounts(id) ON DELETE CASCADE,
+            owner_user_id TEXT NOT NULL REFERENCES shpitto_users(id) ON DELETE CASCADE,
+            source_app TEXT NOT NULL DEFAULT '${SOURCE_APP}',
+            site_key TEXT REFERENCES shpitto_project_sites(site_key),
+            auth_user_id TEXT,
+            email TEXT NOT NULL,
+            email_verified INTEGER NOT NULL DEFAULT 0,
+            last_event TEXT NOT NULL DEFAULT 'signup',
+            signup_count INTEGER NOT NULL DEFAULT 0,
+            login_count INTEGER NOT NULL DEFAULT 0,
+            verification_count INTEGER NOT NULL DEFAULT 0,
+            password_reset_count INTEGER NOT NULL DEFAULT 0,
+            first_seen_at TEXT NOT NULL,
+            last_seen_at TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE(project_id, email)
+          );
+          `,
+          `
           CREATE TABLE IF NOT EXISTS shpitto_contact_submissions (
             id TEXT PRIMARY KEY,
             project_id TEXT NOT NULL REFERENCES shpitto_projects(id) ON DELETE CASCADE,
@@ -221,19 +251,114 @@ export class CloudflareD1Client {
             created_at TEXT NOT NULL
           );
           `,
+          `
+          CREATE TABLE IF NOT EXISTS shpitto_blog_posts (
+            id TEXT PRIMARY KEY,
+            project_id TEXT NOT NULL REFERENCES shpitto_projects(id) ON DELETE CASCADE,
+            account_id TEXT NOT NULL REFERENCES shpitto_accounts(id) ON DELETE CASCADE,
+            owner_user_id TEXT NOT NULL REFERENCES shpitto_users(id) ON DELETE CASCADE,
+            source_app TEXT NOT NULL DEFAULT '${SOURCE_APP}',
+            slug TEXT NOT NULL,
+            title TEXT NOT NULL,
+            excerpt TEXT NOT NULL DEFAULT '',
+            content_md TEXT NOT NULL DEFAULT '',
+            content_html TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'draft',
+            author_name TEXT NOT NULL DEFAULT '',
+            category TEXT NOT NULL DEFAULT '',
+            tags_json TEXT NOT NULL DEFAULT '[]',
+            cover_image_url TEXT NOT NULL DEFAULT '',
+            cover_image_alt TEXT NOT NULL DEFAULT '',
+            seo_title TEXT NOT NULL DEFAULT '',
+            seo_description TEXT NOT NULL DEFAULT '',
+            theme_key TEXT NOT NULL DEFAULT '',
+            layout_key TEXT NOT NULL DEFAULT '',
+            published_at TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE(project_id, slug)
+          );
+          `,
+          `
+          CREATE TABLE IF NOT EXISTS shpitto_blog_post_revisions (
+            id TEXT PRIMARY KEY,
+            post_id TEXT NOT NULL REFERENCES shpitto_blog_posts(id) ON DELETE CASCADE,
+            project_id TEXT NOT NULL REFERENCES shpitto_projects(id) ON DELETE CASCADE,
+            account_id TEXT NOT NULL REFERENCES shpitto_accounts(id) ON DELETE CASCADE,
+            owner_user_id TEXT NOT NULL REFERENCES shpitto_users(id) ON DELETE CASCADE,
+            source_app TEXT NOT NULL DEFAULT '${SOURCE_APP}',
+            version INTEGER NOT NULL,
+            snapshot_json TEXT NOT NULL,
+            created_at TEXT NOT NULL
+          );
+          `,
+          `
+          CREATE TABLE IF NOT EXISTS shpitto_blog_assets (
+            id TEXT PRIMARY KEY,
+            post_id TEXT NOT NULL REFERENCES shpitto_blog_posts(id) ON DELETE CASCADE,
+            project_id TEXT NOT NULL REFERENCES shpitto_projects(id) ON DELETE CASCADE,
+            account_id TEXT NOT NULL REFERENCES shpitto_accounts(id) ON DELETE CASCADE,
+            owner_user_id TEXT NOT NULL REFERENCES shpitto_users(id) ON DELETE CASCADE,
+            source_app TEXT NOT NULL DEFAULT '${SOURCE_APP}',
+            r2_object_key TEXT NOT NULL UNIQUE,
+            mime_type TEXT,
+            size_bytes INTEGER,
+            width INTEGER,
+            height INTEGER,
+            alt TEXT NOT NULL DEFAULT '',
+            caption TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+          );
+          `,
+          `
+          CREATE TABLE IF NOT EXISTS shpitto_blog_settings (
+            project_id TEXT PRIMARY KEY REFERENCES shpitto_projects(id) ON DELETE CASCADE,
+            account_id TEXT NOT NULL REFERENCES shpitto_accounts(id) ON DELETE CASCADE,
+            owner_user_id TEXT NOT NULL REFERENCES shpitto_users(id) ON DELETE CASCADE,
+            source_app TEXT NOT NULL DEFAULT '${SOURCE_APP}',
+            enabled INTEGER NOT NULL DEFAULT 1,
+            nav_label TEXT NOT NULL DEFAULT 'Blog',
+            home_featured_count INTEGER NOT NULL DEFAULT 3,
+            default_layout_key TEXT NOT NULL DEFAULT '',
+            default_theme_key TEXT NOT NULL DEFAULT '',
+            rss_enabled INTEGER NOT NULL DEFAULT 1,
+            sitemap_enabled INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+          );
+          `,
           "CREATE INDEX IF NOT EXISTS idx_shpitto_projects_owner ON shpitto_projects(owner_user_id, updated_at DESC);",
           "CREATE INDEX IF NOT EXISTS idx_shpitto_deployments_project ON shpitto_deployments(project_id, created_at DESC);",
           "CREATE INDEX IF NOT EXISTS idx_shpitto_project_sites_owner ON shpitto_project_sites(owner_user_id, updated_at DESC);",
           "CREATE INDEX IF NOT EXISTS idx_shpitto_project_domains_project ON shpitto_project_domains(project_id, updated_at DESC);",
           "CREATE INDEX IF NOT EXISTS idx_shpitto_project_domains_owner ON shpitto_project_domains(owner_user_id, updated_at DESC);",
+          "CREATE INDEX IF NOT EXISTS idx_shpitto_project_auth_users_project ON shpitto_project_auth_users(project_id, last_seen_at DESC);",
+          "CREATE INDEX IF NOT EXISTS idx_shpitto_project_auth_users_owner ON shpitto_project_auth_users(owner_user_id, last_seen_at DESC);",
           "CREATE INDEX IF NOT EXISTS idx_shpitto_contact_submissions_owner ON shpitto_contact_submissions(owner_user_id, created_at DESC);",
           "CREATE INDEX IF NOT EXISTS idx_shpitto_contact_submissions_site ON shpitto_contact_submissions(site_key, created_at DESC);",
+          "CREATE INDEX IF NOT EXISTS idx_shpitto_blog_posts_project ON shpitto_blog_posts(project_id, status, published_at DESC, updated_at DESC);",
+          "CREATE INDEX IF NOT EXISTS idx_shpitto_blog_posts_owner ON shpitto_blog_posts(owner_user_id, updated_at DESC);",
+          "CREATE INDEX IF NOT EXISTS idx_shpitto_blog_post_revisions_post ON shpitto_blog_post_revisions(post_id, version DESC);",
+          "CREATE INDEX IF NOT EXISTS idx_shpitto_blog_assets_post ON shpitto_blog_assets(post_id, created_at DESC);",
         ];
 
         for (const statement of statements) {
           await this.execute(statement);
         }
 
+        await this.ensureTableColumns("shpitto_projects", [
+          { name: "project_status", definition: "project_status TEXT NOT NULL DEFAULT 'active'" },
+          { name: "deleted_at", definition: "deleted_at TEXT" },
+          { name: "archived_at", definition: "archived_at TEXT" },
+          { name: "cleanup_started_at", definition: "cleanup_started_at TEXT" },
+          { name: "cleanup_completed_at", definition: "cleanup_completed_at TEXT" },
+          { name: "cleanup_status", definition: "cleanup_status TEXT" },
+          { name: "cleanup_error", definition: "cleanup_error TEXT" },
+        ]);
+        await this.execute(
+          "CREATE INDEX IF NOT EXISTS idx_shpitto_projects_billable_owner ON shpitto_projects(owner_user_id, cleanup_completed_at);",
+        );
         await this.ensureTableColumns("shpitto_project_sites", [
           { name: "analytics_provider", definition: "analytics_provider TEXT NOT NULL DEFAULT 'cloudflare_web_analytics'" },
           { name: "analytics_status", definition: "analytics_status TEXT NOT NULL DEFAULT 'pending'" },
@@ -249,6 +374,31 @@ export class CloudflareD1Client {
           { name: "ssl_status", definition: "ssl_status TEXT" },
           { name: "verification_errors_json", definition: "verification_errors_json TEXT" },
           { name: "origin_host", definition: "origin_host TEXT" },
+        ]);
+        await this.ensureTableColumns("shpitto_blog_posts", [
+          { name: "excerpt", definition: "excerpt TEXT NOT NULL DEFAULT ''" },
+          { name: "content_md", definition: "content_md TEXT NOT NULL DEFAULT ''" },
+          { name: "content_html", definition: "content_html TEXT NOT NULL DEFAULT ''" },
+          { name: "status", definition: "status TEXT NOT NULL DEFAULT 'draft'" },
+          { name: "author_name", definition: "author_name TEXT NOT NULL DEFAULT ''" },
+          { name: "category", definition: "category TEXT NOT NULL DEFAULT ''" },
+          { name: "tags_json", definition: "tags_json TEXT NOT NULL DEFAULT '[]'" },
+          { name: "cover_image_url", definition: "cover_image_url TEXT NOT NULL DEFAULT ''" },
+          { name: "cover_image_alt", definition: "cover_image_alt TEXT NOT NULL DEFAULT ''" },
+          { name: "seo_title", definition: "seo_title TEXT NOT NULL DEFAULT ''" },
+          { name: "seo_description", definition: "seo_description TEXT NOT NULL DEFAULT ''" },
+          { name: "theme_key", definition: "theme_key TEXT NOT NULL DEFAULT ''" },
+          { name: "layout_key", definition: "layout_key TEXT NOT NULL DEFAULT ''" },
+          { name: "published_at", definition: "published_at TEXT" },
+        ]);
+        await this.ensureTableColumns("shpitto_blog_settings", [
+          { name: "enabled", definition: "enabled INTEGER NOT NULL DEFAULT 1" },
+          { name: "nav_label", definition: "nav_label TEXT NOT NULL DEFAULT 'Blog'" },
+          { name: "home_featured_count", definition: "home_featured_count INTEGER NOT NULL DEFAULT 3" },
+          { name: "default_layout_key", definition: "default_layout_key TEXT NOT NULL DEFAULT ''" },
+          { name: "default_theme_key", definition: "default_theme_key TEXT NOT NULL DEFAULT ''" },
+          { name: "rss_enabled", definition: "rss_enabled INTEGER NOT NULL DEFAULT 1" },
+          { name: "sitemap_enabled", definition: "sitemap_enabled INTEGER NOT NULL DEFAULT 1" },
         ]);
 
         const accountKey = process.env.SHPITTO_ACCOUNT_KEY || SOURCE_APP;

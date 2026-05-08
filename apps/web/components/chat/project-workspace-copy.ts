@@ -78,25 +78,40 @@ export type ProjectWorkspaceCopy = {
   data: {
     title: string;
     inquiries: string;
-    websiteSupport: string;
+    authUsers?: string;
+    blog?: string;
     searchInquiries: string;
+    searchUsers?: string;
     exportCsv: string;
     exporting: string;
     loadingInquiries: string;
+    loadingUsers?: string;
     noMatchingInquiries: string;
     noInquiries: string;
+    noMatchingUsers?: string;
+    noUsers?: string;
     date: string;
     customerName: string;
     emailAddress: string;
+    verified?: string;
+    firstSeen?: string;
+    lastSeen?: string;
+    lastEvent?: string;
+    authUserId?: string;
+    siteKey?: string;
+    signupCount?: string;
+    loginCount?: string;
+    verificationCount?: string;
+    passwordResetCount?: string;
     subject: string;
     status: string;
     action: string;
     viewDetails: string;
     detailsTitle: string;
     selectInquiry: string;
+    detailsTitleUsers?: string;
+    selectUser?: string;
     quickActions: string;
-    supportTitle: string;
-    noDeploymentHost: string;
   };
 };
 
@@ -179,25 +194,40 @@ const copy: Record<Locale, ProjectWorkspaceCopy> = {
     data: {
       title: "Project Data Hub",
       inquiries: "Inquiries",
-      websiteSupport: "Website Support",
+      authUsers: "Auth Users",
+      blog: "Blog",
       searchInquiries: "Search inquiries...",
+      searchUsers: "Search auth users...",
       exportCsv: "Export CSV",
       exporting: "Exporting...",
       loadingInquiries: "Loading inquiry data...",
+      loadingUsers: "Loading auth user data...",
       noMatchingInquiries: "No matching inquiries found.",
       noInquiries: "No inquiry submissions yet.",
+      noMatchingUsers: "No matching auth users found.",
+      noUsers: "No auth users yet.",
       date: "Date",
       customerName: "Customer Name",
       emailAddress: "Email Address",
+      verified: "Verified",
+      firstSeen: "First Seen",
+      lastSeen: "Last Seen",
+      lastEvent: "Last Event",
+      authUserId: "Auth User ID",
+      siteKey: "Site Key",
+      signupCount: "Signups",
+      loginCount: "Logins",
+      verificationCount: "Verifications",
+      passwordResetCount: "Password Resets",
       subject: "Subject",
       status: "Status",
       action: "Action",
       viewDetails: "View details",
       detailsTitle: "Detailed Selection View",
       selectInquiry: "Select a row from the table above to inspect full inquiry details.",
+      detailsTitleUsers: "Auth User Details",
+      selectUser: "Select an auth user row to inspect the account record.",
       quickActions: "Quick Actions",
-      supportTitle: "Website Support Data",
-      noDeploymentHost: "No deployment host yet",
     },
   },
   zh: {
@@ -278,25 +308,40 @@ const copy: Record<Locale, ProjectWorkspaceCopy> = {
     data: {
       title: "项目数据中心",
       inquiries: "询盘",
-      websiteSupport: "网站支持",
+      authUsers: "认证用户",
+      blog: "博客",
       searchInquiries: "搜索询盘...",
+      searchUsers: "搜索认证用户...",
       exportCsv: "导出 CSV",
       exporting: "正在导出...",
       loadingInquiries: "正在加载询盘数据...",
+      loadingUsers: "正在加载认证用户数据...",
       noMatchingInquiries: "没有匹配的询盘。",
       noInquiries: "暂无询盘提交。",
+      noMatchingUsers: "没有匹配的认证用户。",
+      noUsers: "暂无认证用户。",
       date: "日期",
       customerName: "客户姓名",
       emailAddress: "邮箱地址",
+      verified: "已验证",
+      firstSeen: "首次出现",
+      lastSeen: "最近出现",
+      lastEvent: "最近事件",
+      authUserId: "认证用户 ID",
+      siteKey: "站点 Key",
+      signupCount: "注册数",
+      loginCount: "登录数",
+      verificationCount: "验证数",
+      passwordResetCount: "重置密码数",
       subject: "主题",
       status: "状态",
       action: "操作",
       viewDetails: "查看详情",
       detailsTitle: "详细信息",
       selectInquiry: "从上方表格选择一行，查看完整询盘详情。",
+      detailsTitleUsers: "认证用户详情",
+      selectUser: "从上方表格选择一行，查看账号记录。",
       quickActions: "快捷操作",
-      supportTitle: "网站支持数据",
-      noDeploymentHost: "暂无部署域名",
     },
   },
 };

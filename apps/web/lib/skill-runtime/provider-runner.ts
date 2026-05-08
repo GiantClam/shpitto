@@ -1,5 +1,5 @@
 import type { AgentState } from "../agent/graph.ts";
-import { resolveRunProviderLock, type ProviderLock } from "./provider-lock.ts";
+import { resolveRunProviderLock, resolveRunProviderLocks, type ProviderLock } from "./provider-lock.ts";
 
 export type RunProviderLock = ProviderLock;
 
@@ -8,6 +8,13 @@ export function resolveRunProviderRunnerLock(preferred?: {
   model?: string;
 }): RunProviderLock {
   return resolveRunProviderLock(preferred);
+}
+
+export function resolveRunProviderRunnerLocks(preferred?: {
+  provider?: string;
+  model?: string;
+}): RunProviderLock[] {
+  return resolveRunProviderLocks(preferred);
 }
 
 export function bindRunProviderLockToState(state: AgentState, lock: RunProviderLock): AgentState {
@@ -20,4 +27,3 @@ export function bindRunProviderLockToState(state: AgentState, lock: RunProviderL
     } as any,
   };
 }
-

@@ -2,7 +2,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { HumanMessage } from "@langchain/core/messages";
-import { createChatTask, getChatTask, getLatestChatTaskForChat } from "./chat-task-store";
+import { completeChatTask, createChatTask, getChatTask, getLatestChatTaskForChat } from "./chat-task-store";
 
 describe("chat refine worker", () => {
   it("executes refine tasks and writes new checkpoint artifacts", async () => {
@@ -314,5 +314,326 @@ describe("chat refine worker", () => {
     const updated = await getChatTask(task.id);
     expect(updated?.status).toBe("failed");
     expect(String(updated?.result?.error || "")).toContain("No preview/deployed baseline");
+  });
+
+  it("recovers refine baseline from the latest succeeded preview task when current input state lacks direct paths", async () => {
+    const chatId = `chat-refine-worker-recover-${Date.now()}`;
+    const sourceProjectPath = path.resolve(process.cwd(), ".tmp", "chat-tests", `${chatId}-source.json`);
+    await fs.mkdir(path.dirname(sourceProjectPath), { recursive: true });
+    await fs.writeFile(
+      sourceProjectPath,
+      JSON.stringify(
+        {
+          projectId: "refine-worker-recover",
+          pages: [{ path: "/", html: "<!doctype html><html><head><title>Old</title></head><body><h1>Old</h1></body></html>" }],
+          staticSite: {
+            mode: "skill-direct",
+            files: [
+              { path: "/index.html", type: "text/html", content: "<!doctype html><html><head><title>Old</title></head><body><h1>Old</h1></body></html>" },
+              { path: "/styles.css", type: "text/css", content: "body{color:#111}" },
+              { path: "/script.js", type: "text/javascript", content: "console.log('ok');" },
+            ],
+          },
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
+
+    const baselineTask = await createChatTask(chatId, undefined, {
+      assistantText: "generated",
+      phase: "end",
+      progress: {
+        stage: "done",
+        checkpointProjectPath: sourceProjectPath,
+        generatedFiles: ["/index.html", "/styles.css", "/script.js"],
+      } as any,
+    });
+    await completeChatTask(baselineTask.id, {
+      assistantText: "generated",
+      phase: "end",
+      progress: {
+        stage: "done",
+        checkpointProjectPath: sourceProjectPath,
+        generatedFiles: ["/index.html", "/styles.css", "/script.js"],
+      } as any,
+    });
+
+    const inputState: any = {
+      messages: [new HumanMessage({ content: "\u628a Old \u6539\u6210 Recovered Title" })],
+      phase: "end",
+      current_page_index: 0,
+      attempt_count: 0,
+      workflow_context: {
+        executionMode: "refine",
+        refineRequested: true,
+      },
+    };
+
+    const task = await createChatTask(chatId, undefined, {
+      assistantText: "queued refine",
+      phase: "queued",
+      internal: { inputState, skillId: "website-generation-workflow" },
+      progress: { stage: "queued" } as any,
+    });
+
+    const { runChatTaskWorkerOnce } = await import("../../scripts/chat-task-worker");
+    const processed = await runChatTaskWorkerOnce();
+    expect(processed).toBe(true);
+
+    const updated = await getChatTask(task.id);
+    expect(updated?.status).toBe("succeeded");
+    const refinedProjectPath = String(updated?.result?.progress?.checkpointProjectPath || "").trim();
+    const refinedProjectRaw = await fs.readFile(refinedProjectPath, "utf8");
+    expect(refinedProjectRaw).toContain("Recovered Title");
+  });
+
+  it("maps remote checkpoint paths back to local chat-task checkpoints during refine recovery", async () => {
+    const chatId = `chat-refine-worker-remote-${Date.now()}`;
+    const baselineTaskId = `baseline-${Date.now()}`;
+    const localTaskRoot = path.resolve(process.cwd(), ".tmp", "chat-tasks", chatId, baselineTaskId);
+    const localProjectPath = path.join(localTaskRoot, "project.json");
+    await fs.mkdir(localTaskRoot, { recursive: true });
+    await fs.writeFile(
+      localProjectPath,
+      JSON.stringify(
+        {
+          projectId: "refine-worker-remote",
+          pages: [{ path: "/", html: "<!doctype html><html><head><title>Remote</title></head><body><h1>Remote</h1></body></html>" }],
+          staticSite: {
+            mode: "skill-direct",
+            files: [
+              { path: "/index.html", type: "text/html", content: "<!doctype html><html><head><title>Remote</title></head><body><h1>Remote</h1></body></html>" },
+              { path: "/styles.css", type: "text/css", content: "body{color:#111}" },
+              { path: "/script.js", type: "text/javascript", content: "console.log('ok');" },
+            ],
+          },
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
+    const remoteProjectPath = `/app/apps/web/.tmp/chat-tasks/${chatId}/${baselineTaskId}/project.json`;
+
+    const baselineTask = await createChatTask(chatId, undefined, {
+      assistantText: "generated",
+      phase: "end",
+      progress: {
+        stage: "done",
+        checkpointProjectPath: remoteProjectPath,
+        generatedFiles: ["/index.html", "/styles.css", "/script.js"],
+      } as any,
+    });
+    await completeChatTask(baselineTask.id, {
+      assistantText: "generated",
+      phase: "end",
+      progress: {
+        stage: "done",
+        checkpointProjectPath: remoteProjectPath,
+        generatedFiles: ["/index.html", "/styles.css", "/script.js"],
+      } as any,
+    });
+
+    const inputState: any = {
+      messages: [new HumanMessage({ content: "\u628a Remote \u6539\u6210 Local Recovery" })],
+      phase: "end",
+      current_page_index: 0,
+      attempt_count: 0,
+      workflow_context: {
+        executionMode: "refine",
+        refineRequested: true,
+        refineSourceTaskId: baselineTask.id,
+        deploySourceTaskId: baselineTask.id,
+        checkpointProjectPath: remoteProjectPath,
+      },
+    };
+
+    const task = await createChatTask(chatId, undefined, {
+      assistantText: "queued refine",
+      phase: "queued",
+      internal: { inputState, skillId: "website-generation-workflow" },
+      progress: { stage: "queued" } as any,
+    });
+
+    const { runChatTaskWorkerOnce } = await import("../../scripts/chat-task-worker");
+    const processed = await runChatTaskWorkerOnce();
+    expect(processed).toBe(true);
+
+    const updated = await getChatTask(task.id);
+    expect(updated?.status).toBe("succeeded");
+    const refinedProjectPath = String(updated?.result?.progress?.checkpointProjectPath || "").trim();
+    const refinedProjectRaw = await fs.readFile(refinedProjectPath, "utf8");
+    expect(refinedProjectRaw).toContain("Local Recovery");
+  });
+
+  it("applies deterministic spacing fixups to homepage timeline cards", async () => {
+    const chatId = `chat-refine-worker-spacing-${Date.now()}`;
+    const sourceProjectPath = path.resolve(process.cwd(), ".tmp", "chat-tests", `${chatId}-source.json`);
+    await fs.mkdir(path.dirname(sourceProjectPath), { recursive: true });
+    await fs.writeFile(
+      sourceProjectPath,
+      JSON.stringify(
+        {
+          projectId: "refine-worker-spacing",
+          pages: [
+            {
+              path: "/",
+              html:
+                '<!doctype html><html><head><title>Demo</title></head><body><div class="timeline-grid"><div class="panel timeline-step" data-step="01"><h3>AI 观察</h3><p>One</p></div><div class="panel timeline-step" data-step="02"><h3>工程实践</h3><p>Two</p></div><div class="panel timeline-step" data-step="03"><h3>全球化视角</h3><p>Three</p></div></div></body></html>',
+            },
+          ],
+          staticSite: {
+            mode: "skill-direct",
+            files: [
+              {
+                path: "/index.html",
+                type: "text/html",
+                content:
+                  '<!doctype html><html><head><title>Demo</title></head><body><div class="timeline-grid"><div class="panel timeline-step" data-step="01"><h3>AI 观察</h3><p>One</p></div><div class="panel timeline-step" data-step="02"><h3>工程实践</h3><p>Two</p></div><div class="panel timeline-step" data-step="03"><h3>全球化视角</h3><p>Three</p></div></div></body></html>',
+              },
+              {
+                path: "/styles.css",
+                type: "text/css",
+                content:
+                  ".timeline-grid { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }\n.timeline-step { position: relative; overflow: hidden; }\n.timeline-step::before { content: attr(data-step); position: absolute; right: 1rem; top: 1rem; font-size: 2.7rem; }",
+              },
+              { path: "/script.js", type: "text/javascript", content: "console.log('ok');" },
+            ],
+          },
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
+
+    const inputState: any = {
+      messages: [new HumanMessage({ content: "\u628a\u9996\u9875 AI \u89c2\u5bdf\u3001\u5de5\u7a0b\u5b9e\u8df5\u3001\u5168\u7403\u5316\u89c6\u89d2 \u8fd9\u4e09\u5f20\u5361\u7247\u7684\u5185\u8fb9\u8ddd\u589e\u5927" })],
+      phase: "end",
+      current_page_index: 0,
+      attempt_count: 0,
+      workflow_context: {
+        executionMode: "refine",
+        refineRequested: true,
+        checkpointProjectPath: sourceProjectPath,
+        deploySourceProjectPath: sourceProjectPath,
+      },
+    };
+
+    const task = await createChatTask(chatId, undefined, {
+      assistantText: "queued refine",
+      phase: "queued",
+      internal: { inputState, skillId: "website-generation-workflow" },
+      progress: { stage: "queued" } as any,
+    });
+
+    const { runChatTaskWorkerOnce } = await import("../../scripts/chat-task-worker");
+    const processed = await runChatTaskWorkerOnce();
+    expect(processed).toBe(true);
+
+    const updated = await getChatTask(task.id);
+    expect(updated?.status).toBe("succeeded");
+    const refinedProjectPath = String(updated?.result?.progress?.checkpointProjectPath || "").trim();
+    const refinedProject = JSON.parse(await fs.readFile(refinedProjectPath, "utf8"));
+    const refinedCss = String(
+      (refinedProject?.staticSite?.files || []).find((file: any) => String(file?.path || "") === "/styles.css")
+        ?.content || "",
+    );
+    expect(refinedCss).toContain("padding: clamp(1.35rem, 2.6vw, 1.85rem);");
+    expect(refinedCss).toContain(".timeline-grid {\n  display: grid;\n  grid-template-columns: repeat(3, minmax(0, 1fr));\n  gap: 1.25rem;\n}");
+    expect(refinedCss).toContain(".timeline-step h3");
+    expect(refinedCss).toContain(".timeline-step p");
+    expect(refinedCss).not.toContain("\\n.timeline-step");
+    expect(refinedCss).not.toContain(".timeline-step {\\n");
+  });
+
+  it("prefers workflow latest user text for timeline card spacing refine when message content is degraded", async () => {
+    const chatId = `chat-refine-worker-spacing-fallback-${Date.now()}`;
+    const sourceProjectPath = path.resolve(process.cwd(), ".tmp", "chat-tests", `${chatId}-source.json`);
+    await fs.mkdir(path.dirname(sourceProjectPath), { recursive: true });
+    await fs.writeFile(
+      sourceProjectPath,
+      JSON.stringify(
+        {
+          projectId: "refine-worker-spacing-fallback",
+          pages: [
+            {
+              path: "/",
+              html:
+                '<!doctype html><html><head><title>Demo</title></head><body><div class="value-grid"><div class="value-card"><h3>Value A</h3><p>Alpha</p></div><div class="value-card"><h3>Value B</h3><p>Beta</p></div><div class="value-card"><h3>Value C</h3><p>Gamma</p></div></div><div class="timeline-grid"><div class="panel timeline-step" data-step="01"><h3>AI 观察</h3><p>One</p></div><div class="panel timeline-step" data-step="02"><h3>工程实践</h3><p>Two</p></div><div class="panel timeline-step" data-step="03"><h3>全球化视角</h3><p>Three</p></div></div></body></html>',
+            },
+          ],
+          staticSite: {
+            mode: "skill-direct",
+            files: [
+              {
+                path: "/index.html",
+                type: "text/html",
+                content:
+                  '<!doctype html><html><head><title>Demo</title></head><body><div class="value-grid"><div class="value-card"><h3>Value A</h3><p>Alpha</p></div><div class="value-card"><h3>Value B</h3><p>Beta</p></div><div class="value-card"><h3>Value C</h3><p>Gamma</p></div></div><div class="timeline-grid"><div class="panel timeline-step" data-step="01"><h3>AI 观察</h3><p>One</p></div><div class="panel timeline-step" data-step="02"><h3>工程实践</h3><p>Two</p></div><div class="panel timeline-step" data-step="03"><h3>全球化视角</h3><p>Three</p></div></div></body></html>',
+              },
+              {
+                path: "/styles.css",
+                type: "text/css",
+                content: [
+                  ".value-grid { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }",
+                  ".value-card { padding: 1rem; border: 1px solid #ddd; }",
+                  ".timeline-grid { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }",
+                  ".timeline-step { position: relative; overflow: hidden; }",
+                  ".timeline-step::before { content: attr(data-step); position: absolute; right: 1rem; top: 1rem; font-size: 2.7rem; }",
+                ].join("\n"),
+              },
+              { path: "/script.js", type: "text/javascript", content: "console.log('ok');" },
+            ],
+          },
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
+
+    const inputState: any = {
+      messages: [new HumanMessage({ content: "??? ai????????????? ?????????????????" })],
+      phase: "end",
+      current_page_index: 0,
+      attempt_count: 0,
+      workflow_context: {
+        executionMode: "refine",
+        refineRequested: true,
+        checkpointProjectPath: sourceProjectPath,
+        deploySourceProjectPath: sourceProjectPath,
+        latestUserText: "\u628a\u9996\u9875 AI \u89c2\u5bdf\u3001\u5de5\u7a0b\u5b9e\u8df5\u3001\u5168\u7403\u5316\u89c6\u89d2 \u8fd9\u4e09\u5f20\u5361\u7247\u7684\u5185\u8fb9\u8ddd\u589e\u5927",
+        latestUserTextRaw: "\u628a\u9996\u9875 AI \u89c2\u5bdf\u3001\u5de5\u7a0b\u5b9e\u8df5\u3001\u5168\u7403\u5316\u89c6\u89d2 \u8fd9\u4e09\u5f20\u5361\u7247\u7684\u5185\u8fb9\u8ddd\u589e\u5927",
+      },
+    };
+
+    const task = await createChatTask(chatId, undefined, {
+      assistantText: "queued refine",
+      phase: "queued",
+      internal: { inputState, skillId: "website-generation-workflow" },
+      progress: { stage: "queued" } as any,
+    });
+
+    const { runChatTaskWorkerOnce } = await import("../../scripts/chat-task-worker");
+    const processed = await runChatTaskWorkerOnce();
+    expect(processed).toBe(true);
+
+    const updated = await getChatTask(task.id);
+    expect(updated?.status).toBe("succeeded");
+    const refinedProjectPath = String(updated?.result?.progress?.checkpointProjectPath || "").trim();
+    const refinedProject = JSON.parse(await fs.readFile(refinedProjectPath, "utf8"));
+    const refinedCss = String(
+      (refinedProject?.staticSite?.files || []).find((file: any) => String(file?.path || "") === "/styles.css")
+        ?.content || "",
+    );
+    expect(refinedCss).toContain(".timeline-step {\n  position: relative;\n  overflow: hidden;\n  padding: clamp(1.35rem, 2.6vw, 1.85rem);");
+    expect(refinedCss).toContain(".timeline-step h3");
+    expect(refinedCss).toContain(".timeline-step p");
+    expect(refinedCss).toContain(".timeline-grid {\n  display: grid;\n  grid-template-columns: repeat(3, minmax(0, 1fr));\n  gap: 1.25rem;\n}");
+    expect(refinedCss).toContain(".value-card { padding: 1rem; border: 1px solid #ddd; }");
+    expect(refinedCss).not.toContain(".value-grid .value-card");
   });
 });

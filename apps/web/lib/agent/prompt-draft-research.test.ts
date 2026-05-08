@@ -1,5 +1,6 @@
 ﻿import { describe, expect, it } from "vitest";
 import { buildRequirementSlots } from "./chat-orchestrator";
+import { afterEach, vi } from "vitest";
 import {
   buildPromptControlManifestFromKnowledgeProfileForTesting,
   buildPromptControlManifestForTesting,
@@ -10,6 +11,10 @@ import {
 } from "./prompt-draft-research";
 
 describe("prompt draft research", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("falls back in test env and still keeps user constraints in draft", async () => {
     const requirement =
       "给我做 LC-CNC 英文官网，包含 Home/About/Products/Cases/Contact，主色 #22c55e，部署到 cloudflare";
@@ -47,6 +52,7 @@ describe("prompt draft research", () => {
       "/3c-machines",
       "/custom-solutions",
       "/cases",
+      "/blog",
       "/contact",
       "/about",
     ]);
@@ -74,7 +80,7 @@ describe("prompt draft research", () => {
       "Build a site. Pages: Home, Products, Cases, Contact. Contact form fields include Email and Phone.",
     );
 
-    expect(contract.routes).toEqual(["/", "/products", "/cases", "/contact"]);
+    expect(contract.routes).toEqual(["/", "/products", "/cases", "/blog", "/contact"]);
     expect(contract.files).toEqual(
       expect.arrayContaining(["/index.html", "/products/index.html", "/cases/index.html", "/contact/index.html"]),
     );
@@ -276,6 +282,48 @@ describe("prompt draft research", () => {
     );
   });
 
+  it("still injects uploaded source material when the test environment skips network search", async () => {
+    const sourceExcerpt = [
+      "CASUX 网站完整页面生成提示词",
+      "主导航菜单： 首页 | CASUX创设 | CASUX建设 | CASUX优标 | CASUX倡导 | CASUX研究中心 | CASUX信息平台 | 资料下载",
+      "网站定位：专业标准制定机构 + 研究中心 + 信息平台三合一。",
+      "视觉风格：以生态绿色 #2E8B57 和白色为主色调，搭配暖橙色作为 CTA 点缀。",
+      "生成标准文件展示卡片组件：左侧 PDF 图标，中间标准名称、标准编号、发布机构、发布日期，右侧下载按钮。",
+      "生成适儿空间 CASUX 评分可视化组件：总分、圆形进度条、五维度雷达图、认证等级徽章。",
+    ].join("\n");
+    const fetchMock = vi.fn(async () => new Response(sourceExcerpt, {
+      headers: { "content-type": "text/plain; charset=utf-8" },
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const requirement = "根据附件 PDF 文档内容生成 CASUX 官网。";
+    const result = await buildPromptDraftWithResearch({
+      requirementText: requirement,
+      slots: buildRequirementSlots(requirement),
+      referencedAssets: ['Asset "CASUX_.md.pdf" URL: https://example.test/CASUX_.md.pdf'],
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(result.fallbackReason).toContain("test_environment_skip_network");
+    expect(result.knowledgeProfile?.sourceMode).toBe("uploaded_files");
+    expect(result.promptControlManifest.routeSource).toBe("uploaded_source_page_plan");
+    expect(result.promptControlManifest.routes).toEqual(
+      expect.arrayContaining([
+        "/",
+        "/casux-creation",
+        "/casux-construction",
+        "/casux-certification",
+        "/casux-advocacy",
+        "/casux-research-center",
+        "/casux-information-platform",
+      ]),
+    );
+    expect(result.canonicalPrompt).toContain("## 7.25 Source Material Appendix");
+    expect(result.canonicalPrompt).toContain("CASUX建设");
+    expect(result.canonicalPrompt).toContain("生成标准文件展示卡片组件");
+    expect(result.canonicalPrompt).not.toContain("/custom-solutions/index.html");
+  });
+
   it("includes confirmed functional requirements in the prompt draft", async () => {
     const requirement = [
       "需求表单已提交：",
@@ -286,7 +334,7 @@ describe("prompt draft research", () => {
         {
           siteType: "company",
           targetAudience: ["enterprise_buyers"],
-          designTheme: ["professional"],
+          secondaryVisualTags: ["professional"],
           pageStructure: { mode: "multi", pages: ["home", "contact"] },
           functionalRequirements: ["customer_inquiry_form"],
           primaryGoal: ["lead_generation"],

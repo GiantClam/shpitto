@@ -30,8 +30,8 @@ function isSafeTaskIdForLocalLookup(taskId: string): boolean {
 function getLocalTaskRoots(): string[] {
   return Array.from(
     new Set([
-      path.resolve(process.cwd(), ".tmp", "chat-tasks"),
-      path.resolve(process.cwd(), "apps", "web", ".tmp", "chat-tasks"),
+      path.resolve(/* turbopackIgnore: true */ process.cwd(), ".tmp", "chat-tasks"),
+      path.resolve(/* turbopackIgnore: true */ process.cwd(), "apps", "web", ".tmp", "chat-tasks"),
     ]),
   );
 }

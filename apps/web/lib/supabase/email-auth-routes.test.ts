@@ -53,7 +53,12 @@ describe("Cloudflare email auth routes", () => {
   it("creates a Supabase user through admin auth and sends Cloudflare verification email", async () => {
     mocks.createAuthUserWithVerification.mockResolvedValue({ userId: "user-1", email: "user@example.com" });
 
-    const request = jsonRequest("/auth/signup", { email: "User@Example.com", password: "password123", next: "/chat" });
+    const request = jsonRequest("/auth/signup", {
+      email: "User@Example.com",
+      password: "password123",
+      next: "/chat",
+      theme: '{"brandName":"Acme"}',
+    });
     const response = await signup(request);
     const body = await response.json();
 
@@ -62,7 +67,10 @@ describe("Cloudflare email auth routes", () => {
     expect(mocks.createAuthUserWithVerification).toHaveBeenCalledWith({
       email: "user@example.com",
       password: "password123",
+      projectId: "",
+      siteKey: "",
       request,
+      theme: '{"brandName":"Acme"}',
     });
   });
 
@@ -70,13 +78,15 @@ describe("Cloudflare email auth routes", () => {
     mocks.findAuthUserByEmail.mockResolvedValue({ userId: "user-1", email: "user@example.com", emailVerified: false });
     mocks.sendEmailVerification.mockResolvedValue({ verificationUrl: "http://localhost/verify-email?token=abc" });
 
-    const response = await resendVerification(jsonRequest("/auth/email-verification/resend", { email: "user@example.com" }));
+    const response = await resendVerification(
+      jsonRequest("/auth/email-verification/resend", { email: "user@example.com", theme: '{"brandName":"Acme"}' }),
+    );
     const body = await response.json();
 
     expect(response.status).toBe(200);
     expect(body.ok).toBe(true);
     expect(mocks.sendEmailVerification).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: "user-1", email: "user@example.com" }),
+      expect.objectContaining({ userId: "user-1", email: "user@example.com", theme: '{"brandName":"Acme"}' }),
     );
   });
 
@@ -95,7 +105,13 @@ describe("Cloudflare email auth routes", () => {
     mocks.findAuthUserByEmail.mockResolvedValue({ userId: "user-1", email: "user@example.com", emailVerified: true });
     mocks.sendPasswordReset.mockResolvedValue({ resetUrl: "http://localhost/reset-password?token=abc" });
 
-    const response = await forgotPassword(jsonRequest("/auth/password/forgot", { email: "user@example.com" }));
+    const response = await forgotPassword(
+      jsonRequest("/auth/password/forgot", {
+        email: "user@example.com",
+        next: "/projects/demo/data",
+        theme: '{"brandName":"Acme"}',
+      }),
+    );
     const body = await response.json();
 
     expect(response.status).toBe(200);
@@ -109,6 +125,8 @@ describe("Cloudflare email auth routes", () => {
         email: "user@example.com",
         requestedIp: "127.0.0.1",
         userAgent: "vitest",
+        nextPath: "/projects/demo/data",
+        theme: '{"brandName":"Acme"}',
       }),
     );
   });

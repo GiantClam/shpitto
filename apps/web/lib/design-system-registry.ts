@@ -41,10 +41,10 @@ const SOURCE_PRIORITY: Record<DesignSystemSource, number> = {
   unknown: 0,
 };
 
-function repoRoot(): string {
+function appRoot(): string {
   const cwd = path.resolve(/* turbopackIgnore: true */ process.cwd());
-  if (cwd.endsWith(`${path.sep}apps${path.sep}web`)) return path.resolve(cwd, "..", "..");
-  return cwd;
+  if (cwd.endsWith(`${path.sep}apps${path.sep}web`)) return cwd;
+  return path.resolve(cwd, "apps", "web");
 }
 
 async function pathExists(targetPath: string): Promise<boolean> {
@@ -137,14 +137,13 @@ function extractSwatches(body: string): string[] {
 }
 
 function relativeToRepo(filePath: string): string {
-  return path.relative(repoRoot(), filePath).replace(/\\/g, "/");
+  return path.relative(appRoot(), filePath).replace(/\\/g, "/");
 }
 
 async function readIndexMetadata(): Promise<Map<string, IndexStyleMeta>> {
   const fs = await import("node:fs/promises");
   const candidates = [
-    path.join(repoRoot(), "apps", "web", "skills", "website-generation-workflow", "awesome-design.local.index.json"),
-    path.join(repoRoot(), ".cache", "awesome-design-md", "index.json"),
+    path.join(/* turbopackIgnore: true */ appRoot(), "skills", "website-generation-workflow", "awesome-design.local.index.json"),
   ];
   const bySlug = new Map<string, IndexStyleMeta>();
 
@@ -175,14 +174,9 @@ async function discoverCandidates(): Promise<DesignSystemCandidate[]> {
   const fs = await import("node:fs/promises");
   const roots: Array<{ dir: string; source: DesignSystemSource }> = [
     {
-      dir: path.join(repoRoot(), "builder", "design-systems", "design-md"),
-      source: "builder",
-    },
-    {
       dir: path.join(
-        repoRoot(),
-        "apps",
-        "web",
+        /* turbopackIgnore: true */
+        appRoot(),
         "skills",
         "website-generation-workflow",
         "awesome-design-md",
@@ -191,7 +185,7 @@ async function discoverCandidates(): Promise<DesignSystemCandidate[]> {
       source: "workflow-skill",
     },
     {
-      dir: path.join(repoRoot(), "apps", "web", "skills", "design-systems", "design-md"),
+      dir: path.join(/* turbopackIgnore: true */ appRoot(), "skills", "design-systems", "design-md"),
       source: "workflow-skill",
     },
   ];

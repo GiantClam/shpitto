@@ -14,6 +14,7 @@ export type LandingCopy = {
     projects: string;
     features: string;
     showcase: string;
+    pricing: string;
     blog: string;
     login: string;
     getStarted: string;
@@ -117,6 +118,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
       projects: "Workspace",
       features: "Features",
       showcase: "Showcase",
+      pricing: "Pricing",
       blog: "Blog",
       login: "Log in",
       getStarted: "Get Started",
@@ -271,6 +273,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
       projects: "工作台",
       features: "功能",
       showcase: "案例",
+      pricing: "套餐",
       blog: "博客",
       login: "登录",
       getStarted: "开始使用",

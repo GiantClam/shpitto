@@ -4,13 +4,18 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Loader2, MailCheck } from "lucide-react";
 import { BrandLogo } from "@/components/brand/BrandLogo";
+import { serializeAuthTheme, withAuthThemePath } from "@/lib/auth/theme";
 import type { Locale } from "@/lib/i18n";
+import type { AuthTheme } from "@/lib/auth/theme";
 
 type Props = {
   initialLocale: Locale;
   email: string;
   nextPath: string;
   token: string;
+  theme?: AuthTheme;
+  projectId?: string;
+  siteKey?: string;
 };
 
 const copy = {
@@ -40,8 +45,11 @@ const copy = {
   },
 };
 
-export function VerifyEmailForm({ initialLocale, email, nextPath, token }: Props) {
+export function VerifyEmailForm({ initialLocale, email, nextPath, token, theme, projectId, siteKey }: Props) {
   const t = copy[initialLocale] || copy.en;
+  const loginHref = withAuthThemePath("/login", nextPath, theme, undefined, { projectId, siteKey });
+  const brandName = String(theme?.brandName || "Shpitto").trim() || "Shpitto";
+  const hasCustomBrand = Boolean(theme?.brandName && brandName !== "Shpitto");
   const [loading, setLoading] = useState(Boolean(token));
   const [message, setMessage] = useState<string | null>(token ? t.verifying : null);
   const [error, setError] = useState<string | null>(null);
@@ -55,11 +63,11 @@ export function VerifyEmailForm({ initialLocale, email, nextPath, token }: Props
       setError(null);
       setMessage(t.verifying);
 
-      const response = await fetch("/auth/email-verification/confirm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
-      });
+    const response = await fetch("/auth/email-verification/confirm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, projectId, siteKey }),
+    });
       const data = (await response.json().catch(() => ({}))) as { error?: string; message?: string };
 
       if (cancelled) return;
@@ -91,7 +99,7 @@ export function VerifyEmailForm({ initialLocale, email, nextPath, token }: Props
     const response = await fetch("/auth/email-verification/resend", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, next: nextPath }),
+      body: JSON.stringify({ email, next: nextPath, theme: serializeAuthTheme(theme), projectId, siteKey }),
     });
     const data = (await response.json().catch(() => ({}))) as { error?: string; message?: string };
 
@@ -105,30 +113,57 @@ export function VerifyEmailForm({ initialLocale, email, nextPath, token }: Props
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[color-mix(in_oklab,var(--shp-bg)_92%,white_8%)] p-4">
-      <section className="w-full max-w-md rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-white p-8 shadow-xl">
+      <section className="w-full max-w-md rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[var(--shp-panel)] p-8 shadow-xl">
         <div className="mb-8 flex items-center gap-3">
-          <Link href="/login" className="-ml-2 rounded-full p-2 transition-colors hover:bg-[color-mix(in_oklab,var(--shp-primary)_10%,transparent)]">
+          <Link href={loginHref} className="-ml-2 rounded-full p-2 transition-colors hover:bg-[color-mix(in_oklab,var(--shp-primary)_10%,transparent)]">
             <ArrowLeft className="h-5 w-5 text-[var(--shp-muted)]" />
           </Link>
-          <BrandLogo variant="full" className="shrink-0" />
+          {theme?.logo ? (
+            <Link
+              href="/"
+              aria-label={brandName}
+              className="inline-flex items-center gap-3 rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_88%,white_12%)] px-3 py-2"
+            >
+              <div
+                role="img"
+                aria-label={brandName}
+                className="h-10 w-24 rounded-lg bg-center bg-no-repeat"
+                style={{ backgroundImage: `url("${theme.logo}")`, backgroundSize: "contain" }}
+              />
+              <span className="max-w-[12rem] truncate text-sm font-bold text-[var(--shp-text)]">{brandName}</span>
+            </Link>
+          ) : hasCustomBrand ? (
+            <Link
+              href="/"
+              aria-label={brandName}
+              className="inline-flex items-center gap-3 rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_88%,white_12%)] px-3 py-2"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--shp-primary)] text-sm font-black text-white">
+                {brandName.charAt(0).toUpperCase()}
+              </div>
+              <span className="max-w-[12rem] truncate text-sm font-bold text-[var(--shp-text)]">{brandName}</span>
+            </Link>
+          ) : (
+            <BrandLogo variant="full" className="shrink-0" />
+          )}
         </div>
 
-        <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[color-mix(in_oklab,var(--shp-primary)_12%,white_88%)] text-[var(--shp-primary)]">
+        <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[color-mix(in_oklab,var(--shp-primary)_12%,var(--shp-panel)_88%)] text-[var(--shp-primary)]">
           <MailCheck className="h-7 w-7" />
         </div>
         <h1 className="mb-2 text-2xl font-bold text-[var(--shp-text)]">{t.title}</h1>
         <p className="mb-6 text-sm leading-6 text-[var(--shp-muted)]">{t.body}</p>
 
         {email ? (
-          <div className="mb-4 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_70%,white_30%)] px-4 py-3 text-sm">
+          <div className="mb-4 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_70%,var(--shp-panel)_30%)] px-4 py-3 text-sm">
             <p className="text-[var(--shp-muted)]">{t.emailLabel}</p>
             <p className="font-semibold text-[var(--shp-text)]">{email}</p>
           </div>
         ) : null}
 
-        {!token && !email ? <div className="mb-4 rounded-lg bg-[color-mix(in_oklab,var(--shp-primary)_10%,white_90%)] p-3 text-sm text-[var(--shp-primary-pressed)]">{t.missingToken}</div> : null}
-        {message ? <div className="mb-4 rounded-lg bg-[color-mix(in_oklab,var(--shp-primary)_10%,white_90%)] p-3 text-sm text-[var(--shp-primary-pressed)]">{message}</div> : null}
-        {error ? <div className="mb-4 rounded-lg bg-[color-mix(in_oklab,var(--shp-primary)_10%,white_90%)] p-3 text-sm text-[var(--shp-primary-pressed)]">{error}</div> : null}
+        {!token && !email ? <div className="mb-4 rounded-lg bg-[color-mix(in_oklab,var(--shp-primary)_10%,var(--shp-panel)_90%)] p-3 text-sm text-[var(--shp-primary-pressed)]">{t.missingToken}</div> : null}
+        {message ? <div className="mb-4 rounded-lg bg-[color-mix(in_oklab,var(--shp-primary)_10%,var(--shp-panel)_90%)] p-3 text-sm text-[var(--shp-primary-pressed)]">{message}</div> : null}
+        {error ? <div className="mb-4 rounded-lg bg-[color-mix(in_oklab,var(--shp-primary)_10%,var(--shp-panel)_90%)] p-3 text-sm text-[var(--shp-primary-pressed)]">{error}</div> : null}
 
         <button
           type="button"
@@ -139,7 +174,7 @@ export function VerifyEmailForm({ initialLocale, email, nextPath, token }: Props
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           {t.resend}
         </button>
-        <Link href="/login" className="mt-5 block text-center text-sm font-semibold text-[var(--shp-primary)] hover:underline">
+        <Link href={loginHref} className="mt-5 block text-center text-sm font-semibold text-[var(--shp-primary)] hover:underline">
           {t.back}
         </Link>
       </section>

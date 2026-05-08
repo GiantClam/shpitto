@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
+import { recordProjectAuthUserActivity } from "@/lib/agent/db";
 import { setAuthCacheCookie } from "@/lib/supabase/auth-cache";
 
 export const runtime = "nodejs";
@@ -7,6 +8,10 @@ export const runtime = "nodejs";
 type PasswordLoginPayload = {
   email?: unknown;
   password?: unknown;
+  projectId?: unknown;
+  siteKey?: unknown;
+  next?: unknown;
+  theme?: unknown;
 };
 
 async function readPayload(request: NextRequest): Promise<PasswordLoginPayload> {
@@ -33,6 +38,8 @@ export async function POST(request: NextRequest) {
   const payload = await readPayload(request);
   const email = String(payload.email || "").trim();
   const password = String(payload.password || "");
+  const projectId = String(payload.projectId || "").trim();
+  const siteKey = String(payload.siteKey || "").trim();
 
   if (!email || !password) {
     return jsonResponse({ ok: false, error: "Email and password are required." }, { status: 400 });
@@ -62,6 +69,16 @@ export async function POST(request: NextRequest) {
     setAuthCacheCookie(response, {
       id: data.user.id,
       email: data.user.email || email,
+    });
+    void recordProjectAuthUserActivity({
+      projectId: projectId || undefined,
+      siteKey: siteKey || undefined,
+      authUserId: data.user.id,
+      email: data.user.email || email,
+      emailVerified: Boolean(data.user.email_confirmed_at),
+      event: "login",
+    }).catch((error) => {
+      console.warn("[auth-password] project auth activity sync failed:", error);
     });
   }
 

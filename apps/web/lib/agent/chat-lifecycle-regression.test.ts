@@ -169,6 +169,40 @@ describe("chat lifecycle regression", () => {
       const redeployTask = await getLatestChatTaskForChat(chatDeployedFlow);
       expect((redeployTask?.result?.internal?.inputState as any)?.workflow_context?.executionMode).toBe("deploy");
 
+      const chatRedeployAfterBareDeploy = `chat-reg-redeploy-after-bare-deploy-${Date.now()}`;
+      const redeployBaseline = await seedPreviewBaseline(chatRedeployAfterBareDeploy, "bare-deploy");
+      const bareDeployTask = await createChatTask(chatRedeployAfterBareDeploy, undefined, {
+        assistantText: "deployed",
+        phase: "end",
+        progress: {
+          stage: "deployed",
+        } as any,
+        deployedUrl: "https://bare-deploy.pages.dev",
+      });
+      await completeChatTask(bareDeployTask.id, {
+        assistantText: "deployed",
+        phase: "end",
+        progress: {
+          stage: "deployed",
+        } as any,
+        deployedUrl: "https://bare-deploy.pages.dev",
+      });
+
+      const redeployAfterBareDeployRes = await sendChat(chatRedeployAfterBareDeploy, "重新部署");
+      expect(redeployAfterBareDeployRes.status).toBe(202);
+      const redeployAfterBareDeployTask = await getLatestChatTaskForChat(chatRedeployAfterBareDeploy);
+      const redeployAfterBareDeployWorkflow =
+        (redeployAfterBareDeployTask?.result?.internal?.inputState as any)?.workflow_context || {};
+      const redeployAfterBareDeployInputState = (redeployAfterBareDeployTask?.result?.internal?.inputState as any) || {};
+      expect(redeployAfterBareDeployWorkflow.executionMode).toBe("refine");
+      expect(Boolean(redeployAfterBareDeployWorkflow.refineRequested)).toBe(true);
+      expect(Boolean(redeployAfterBareDeployWorkflow.deployRequested)).toBe(false);
+      expect(String(redeployAfterBareDeployWorkflow.refineSourceProjectPath || "")).toBe(
+        redeployBaseline.projectPath,
+      );
+      expect(Array.isArray(redeployAfterBareDeployInputState.project_json?.pages)).toBe(true);
+      expect(Array.isArray(redeployAfterBareDeployInputState.site_artifacts?.staticSite?.files)).toBe(true);
+
       const chatLowConfidence = `chat-reg-low-confidence-${Date.now()}`;
       const lowConfidenceRes = await sendChat(chatLowConfidence, "maybe something later");
       expect(lowConfidenceRes.status).toBe(200);
@@ -227,4 +261,49 @@ describe("chat lifecycle regression", () => {
     },
     240_000,
   );
+
+  it("hydrates refine input artifacts from baseline artifactSnapshot when checkpoint path is remote-only", async () => {
+    const chatId = `chat-reg-artifact-snapshot-${Date.now()}`;
+    const remoteProjectPath = `/app/apps/web/.tmp/chat-tasks/${chatId}/baseline/project.json`;
+    const artifactSnapshot = {
+      projectId: chatId,
+      pages: [{ path: "/", html: "<!doctype html><html><head><title>Demo</title></head><body>Demo</body></html>" }],
+      staticSite: {
+        mode: "skill-direct",
+        files: [
+          { path: "/index.html", type: "text/html", content: "<!doctype html><html><head><title>Demo</title></head><body>Demo</body></html>" },
+          { path: "/styles.css", type: "text/css", content: "body{color:#111}" },
+          { path: "/script.js", type: "text/javascript", content: "console.log('ok')" },
+        ],
+      },
+    };
+
+    const task = await createChatTask(chatId, undefined, {
+      assistantText: "generated",
+      phase: "end",
+      internal: {
+        artifactSnapshot,
+      } as any,
+      progress: {
+        stage: "done",
+        checkpointProjectPath: remoteProjectPath,
+      } as any,
+    });
+    await completeChatTask(task.id, {
+      assistantText: "generated",
+      phase: "end",
+      internal: task.result?.internal,
+      progress: {
+        stage: "done",
+        checkpointProjectPath: remoteProjectPath,
+      } as any,
+    });
+
+    const res = await sendChat(chatId, "Change the primary color to blue");
+    expect(res.status).toBe(202);
+    const refineTask = await getLatestChatTaskForChat(chatId);
+    const inputState = (refineTask?.result?.internal?.inputState as any) || {};
+    expect(Array.isArray(inputState.project_json?.pages)).toBe(true);
+    expect(Array.isArray(inputState.site_artifacts?.staticSite?.files)).toBe(true);
+  });
 });

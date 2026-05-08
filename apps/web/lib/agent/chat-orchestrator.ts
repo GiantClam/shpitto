@@ -1,5 +1,8 @@
 import {
   WEBSITE_DESIGN_DIRECTIONS,
+  getWebsiteDesignDirection,
+  isWebsiteDesignDirectionId,
+  recommendWebsiteDesignDirections,
   renderWebsiteDesignDirectionPrompt,
 } from "../open-design/design-directions";
 
@@ -44,7 +47,8 @@ export type BrandLogoRequirement = {
 export type RequirementFormValues = {
   siteType?: string;
   targetAudience?: string[];
-  designTheme?: string[];
+  primaryVisualDirection?: string;
+  secondaryVisualTags?: string[];
   pageStructure?: PageStructureRequirement;
   functionalRequirements?: string[];
   primaryGoal?: string[];
@@ -63,6 +67,9 @@ export type RequirementSpec = {
   pages?: string[];
   pageStructure?: PageStructureRequirement;
   visualStyle?: string[];
+  primaryVisualDirection?: string;
+  secondaryVisualTags?: string[];
+  visualDecisionSource?: "user_explicit" | "user_recommended_default" | "prompt_adaptive" | "fallback";
   functionalRequirements?: string[];
   contentModules?: string[];
   ctas?: string[];
@@ -307,7 +314,11 @@ function normalizeRequirementFormValues(value: unknown): RequirementFormValues |
   const raw = value as Record<string, unknown>;
   const siteType = normalizeText(String(raw.siteType || raw.websiteType || ""));
   const targetAudience = toStringArray(raw.targetAudience);
-  const designTheme = toStringArray(raw.designTheme || raw.visualStyle);
+  const primaryVisualDirection = getWebsiteDesignDirection(String(raw.primaryVisualDirection || ""))?.id;
+  const secondaryVisualTags = unique([
+    ...toStringArray(raw.secondaryVisualTags).filter((value) => !getWebsiteDesignDirection(value)),
+    ...toStringArray(raw.visualStyle).filter((value) => !getWebsiteDesignDirection(value)),
+  ]);
   const pageStructure = normalizePageStructure(raw.pageStructure);
   const functionalRequirements = normalizeSupportedFunctionalRequirements(
     toStringArray(raw.functionalRequirements || raw.features || raw.functions),
@@ -321,7 +332,8 @@ function normalizeRequirementFormValues(value: unknown): RequirementFormValues |
   if (
     !siteType &&
     targetAudience.length === 0 &&
-    designTheme.length === 0 &&
+    !primaryVisualDirection &&
+    secondaryVisualTags.length === 0 &&
     !pageStructure &&
     functionalRequirements.length === 0 &&
     primaryGoal.length === 0 &&
@@ -336,7 +348,8 @@ function normalizeRequirementFormValues(value: unknown): RequirementFormValues |
   return {
     ...(siteType ? { siteType } : {}),
     ...(targetAudience.length > 0 ? { targetAudience } : {}),
-    ...(designTheme.length > 0 ? { designTheme } : {}),
+    ...(primaryVisualDirection ? { primaryVisualDirection } : {}),
+    ...(secondaryVisualTags.length > 0 ? { secondaryVisualTags } : {}),
     ...(pageStructure ? { pageStructure } : {}),
     ...(functionalRequirements.length > 0 ? { functionalRequirements } : {}),
     ...(primaryGoal.length > 0 ? { primaryGoal } : {}),
@@ -461,6 +474,13 @@ type ExtractedRequirementFields = {
   deployment?: RequirementSpec["deployment"];
 };
 
+type VisualDirectionDecision = {
+  primaryVisualDirection?: string;
+  secondaryVisualTags: string[];
+  visualDecisionSource?: RequirementSpec["visualDecisionSource"];
+  recommendation?: ReturnType<typeof recommendWebsiteDesignDirections>[number];
+};
+
 function extractRequirementFieldsFromText(text: string): ExtractedRequirementFields {
   const raw = normalizeText(text);
   const form = parseRequirementFormFromText(raw).formValues;
@@ -506,7 +526,7 @@ function extractRequirementFieldsFromText(text: string): ExtractedRequirementFie
         ? { mode: pages.length > 1 ? "multi" as const : "single" as const, planning: "manual" as const, pages }
         : undefined);
   const visualStyle = unique([
-    ...(form?.designTheme || []),
+    ...(form?.secondaryVisualTags || []),
     ...extractDelimitedList(raw, ["style", "visual", "视觉", "风格", "配色"]),
     ...Array.from(raw.matchAll(/(工业风|科技感|温暖|活泼|高级|极简|专业|可信|蓝色|绿色|黑金|高对比)/g)).map(
       (match) => match[1],
@@ -591,6 +611,90 @@ function extractRequirementFieldsFromText(text: string): ExtractedRequirementFie
   };
 }
 
+function resolveVisualDirectionDecision(
+  spec: Pick<
+    RequirementSpec,
+    "siteType" | "targetAudience" | "primaryGoal" | "contentSources" | "visualStyle" | "functionalRequirements" | "customNotes"
+  >,
+  formValues?: RequirementFormValues,
+): VisualDirectionDecision {
+  const explicitPrimaryDirection = getWebsiteDesignDirection(formValues?.primaryVisualDirection || "")?.id;
+  const nonDirectionalTags = unique([
+    ...(formValues?.secondaryVisualTags || []),
+    ...(spec.visualStyle || []).filter((value) => !isWebsiteDesignDirectionId(value)),
+  ]);
+
+  if (explicitPrimaryDirection) {
+    return {
+      primaryVisualDirection: explicitPrimaryDirection,
+      secondaryVisualTags: nonDirectionalTags,
+      visualDecisionSource: "user_explicit",
+    };
+  }
+
+  const recommendations = recommendWebsiteDesignDirections({
+    siteType: spec.siteType,
+    targetAudience: spec.targetAudience,
+    primaryGoal: spec.primaryGoal,
+    contentSources: spec.contentSources,
+    designTheme: nonDirectionalTags,
+    functionalRequirements: spec.functionalRequirements,
+    customNotes: spec.customNotes,
+  });
+  const recommendation = recommendations[0];
+  if (recommendation) {
+    return {
+      primaryVisualDirection: recommendation.direction.id,
+      secondaryVisualTags: nonDirectionalTags,
+      visualDecisionSource: "user_recommended_default",
+      recommendation,
+    };
+  }
+
+  return {
+    secondaryVisualTags: nonDirectionalTags,
+    visualDecisionSource: nonDirectionalTags.length > 0 ? "fallback" : undefined,
+  };
+}
+
+function formatVisualRecommendationReason(decision: VisualDirectionDecision): string | undefined {
+  const reasons = decision.recommendation?.reasons || [];
+  if (reasons.length === 0) return undefined;
+  return reasons
+    .map((reason) => {
+      const labelMap: Record<string, string> = {
+        siteType: "site type",
+        audience: "audience",
+        goal: "goal",
+        contentSource: "content source",
+        keyword: "keyword",
+      };
+      return `${labelMap[reason.kind] || reason.kind}: ${reason.matched}`;
+    })
+    .join("; ");
+}
+
+function renderDefaultVisualInclinationPrompt(decision: VisualDirectionDecision): string {
+  if (decision.visualDecisionSource !== "user_recommended_default" || !decision.primaryVisualDirection) return "";
+  const direction = getWebsiteDesignDirection(decision.primaryVisualDirection);
+  if (!direction) return "";
+  const reason = formatVisualRecommendationReason(decision);
+
+  return [
+    "## Default Visual Inclination (System Recommended)",
+    "",
+    `- Recommended direction: ${direction.label} (${direction.id})`,
+    "- This is a default visual starting point because the user did not explicitly select a theme.",
+    reason ? `- Recommendation basis: ${reason}` : "",
+    `- Mood tendency: ${direction.mood}`,
+    `- Palette tendency: bg ${direction.palette.bg}, surface ${direction.palette.surface}, accent ${direction.palette.accent}`,
+    `- Typography tendency: display ${direction.displayFont}; body ${direction.bodyFont}`,
+    "- Treat this as a soft default. Any later explicit user theme selection must override it.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 function hasValue(value: unknown): boolean {
   return !(
     value === undefined ||
@@ -665,6 +769,18 @@ export function buildRequirementSpec(text: string, sourceMessages?: string[]): R
     .map((message) => normalizeText(message))
     .filter(Boolean);
   const merged = mergeRequirementFieldsFromSources(sources);
+  const visualDecision = resolveVisualDirectionDecision(
+    {
+      siteType: merged.values.siteType,
+      targetAudience: merged.values.targetAudience || [],
+      primaryGoal: merged.values.primaryGoal || [],
+      contentSources: merged.values.contentSources || [],
+      visualStyle: merged.values.visualStyle || [],
+      functionalRequirements: merged.values.functionalRequirements || [],
+      customNotes: merged.values.customNotes,
+    },
+    parsedInput.formValues,
+  );
   const explicitConstraints = unique(
     raw
       .split(/\n|。|；|;/g)
@@ -681,6 +797,9 @@ export function buildRequirementSpec(text: string, sourceMessages?: string[]): R
     pages: merged.values.pages || [],
     pageStructure: merged.values.pageStructure,
     visualStyle: merged.values.visualStyle || [],
+    primaryVisualDirection: visualDecision.primaryVisualDirection,
+    secondaryVisualTags: visualDecision.secondaryVisualTags,
+    visualDecisionSource: visualDecision.visualDecisionSource,
     functionalRequirements: merged.values.functionalRequirements || [],
     contentModules: merged.values.contentModules || [],
     ctas: merged.values.ctas || [],
@@ -738,6 +857,12 @@ export function buildRequirementPatchPlan(text: string, revision = 1): Requireme
 
 export function isDeployIntent(text: string): boolean {
   const rawText = String(text || "").trim().toLowerCase();
+  if (
+    /(?:部署|发布|上线).{0,40}(?:cloudflare|pages\.dev|线上|生产|正式|网站|站点|可用|验证)/i.test(rawText) ||
+    /(?:确认|开始|执行).{0,12}(?:部署|发布|上线)/i.test(rawText)
+  ) {
+    return true;
+  }
   if (/^(?:\u90e8\u7f72|\u53d1\u5e03|\u4e0a\u7ebf|\u786e\u8ba4\u90e8\u7f72)$/.test(rawText)) return true;
   if (rawText.includes("\u90e8\u7f72\u5230 cloudflare")) return true;
   if (rawText.includes("\u90e8\u7f72\u5230cloudflare")) return true;
@@ -752,6 +877,12 @@ export function isDeployIntent(text: string): boolean {
   if (normalized.includes("发布到 cloudflare")) return true;
   if (normalized.includes("上线到 cloudflare")) return true;
   if (/^deploy(?:\s+now|\s+site)?$/.test(normalized)) return true;
+  if (/\b(?:deploy|publish|release|ship)\b.{0,80}\b(?:cloudflare|pages\.dev|production|live|online|website|site)\b/i.test(normalized)) {
+    return true;
+  }
+  if (/\b(?:cloudflare|pages\.dev|production|live|online)\b.{0,80}\b(?:deploy|publish|release|ship)\b/i.test(normalized)) {
+    return true;
+  }
   if (/^(?:部署|发布|上线|确认部署|部署到cloudflare)$/.test(normalized)) return true;
   if (normalized.includes("deploy to cloudflare")) return true;
   if (normalized.includes("deploy cloudflare")) return true;
@@ -986,26 +1117,7 @@ export function buildRequirementSlots(text: string): RequirementSlot[] {
   const normalized = toLower(text);
   const parsedForm = parseRequirementFormFromText(text);
   const spec = buildRequirementSpec(text, parsedForm.hasForm ? [text] : undefined);
-  const structuredEvidence: Record<string, string | undefined> = {
-    "site-type": spec.siteType,
-    "brand-positioning": spec.brand || spec.businessContext,
-    "content-source": spec.contentSources?.join(", "),
-    "target-audience": spec.targetAudience?.join(", "),
-    "sitemap-pages": spec.pageStructure?.mode
-      ? `${spec.pageStructure.mode}${spec.pageStructure.pages?.length ? `: ${spec.pageStructure.pages.join(", ")}` : ""}`
-      : spec.pages?.join(", "),
-    "visual-system": spec.visualStyle?.join(", "),
-    "functional-requirements": spec.functionalRequirements?.join(", "),
-    "content-modules": spec.contentModules?.join(", "),
-    "interaction-cta": (spec.primaryGoal?.length ? spec.primaryGoal : spec.ctas)?.join(", "),
-    "language-and-tone": spec.locale || spec.tone,
-    "brand-logo": spec.brandLogo?.mode
-      ? spec.brandLogo.mode === "uploaded" && !(spec.brandLogo.assetKey || spec.brandLogo.assetId || spec.brandLogo.referenceText)
-        ? undefined
-        : spec.brandLogo.mode
-      : undefined,
-    "deployment-and-domain": spec.deployment?.provider || spec.deployment?.domain || (spec.deployment?.requested ? "deployment requested" : undefined),
-  };
+  const structuredEvidence = buildStructuredSlotEvidence(spec);
   return SLOT_DEFINITIONS.map((slot) => {
     const evidence = structuredEvidence[slot.key] || containsAny(normalized, slot.patterns);
     const value =
@@ -1018,7 +1130,11 @@ export function buildRequirementSlots(text: string): RequirementSlot[] {
           : slot.key === "sitemap-pages"
             ? spec.pageStructure
             : slot.key === "visual-system"
-              ? spec.visualStyle
+              ? {
+                  primaryVisualDirection: spec.primaryVisualDirection,
+                  secondaryVisualTags: spec.secondaryVisualTags || [],
+                  visualStyle: spec.visualStyle || [],
+                }
               : slot.key === "functional-requirements"
                 ? spec.functionalRequirements
                 : slot.key === "interaction-cta"
@@ -1040,6 +1156,72 @@ export function buildRequirementSlots(text: string): RequirementSlot[] {
       options: slot.options,
       allowCustom: slot.allowCustom,
       value,
+    };
+  });
+}
+
+function buildStructuredSlotEvidence(spec: RequirementSpec): Record<string, string | undefined> {
+  return {
+    "site-type": spec.siteType,
+    "brand-positioning": spec.brand || spec.businessContext,
+    "content-source": spec.contentSources?.join(", "),
+    "target-audience": spec.targetAudience?.join(", "),
+    "sitemap-pages": spec.pageStructure?.mode
+      ? `${spec.pageStructure.mode}${spec.pageStructure.pages?.length ? `: ${spec.pageStructure.pages.join(", ")}` : ""}`
+      : spec.pages?.join(", "),
+    "visual-system": [spec.primaryVisualDirection, ...(spec.secondaryVisualTags || []), ...(spec.visualStyle || [])]
+      .filter(Boolean)
+      .join(", "),
+    "functional-requirements": spec.functionalRequirements?.join(", "),
+    "content-modules": spec.contentModules?.join(", "),
+    "interaction-cta": (spec.primaryGoal?.length ? spec.primaryGoal : spec.ctas)?.join(", "),
+    "language-and-tone": spec.locale || spec.tone,
+    "brand-logo": spec.brandLogo?.mode
+      ? spec.brandLogo.mode === "uploaded" && !(spec.brandLogo.assetKey || spec.brandLogo.assetId || spec.brandLogo.referenceText)
+        ? undefined
+        : spec.brandLogo.mode
+      : undefined,
+    "deployment-and-domain":
+      spec.deployment?.provider || spec.deployment?.domain || (spec.deployment?.requested ? "deployment requested" : undefined),
+  };
+}
+
+export function hydrateRequirementSlotsFromSpec(slots: RequirementSlot[], spec: RequirementSpec): RequirementSlot[] {
+  const structuredEvidence = buildStructuredSlotEvidence(spec);
+  return slots.map((slot) => {
+    const evidence = structuredEvidence[slot.key];
+    if (!evidence) return slot;
+    const nextValue =
+      slot.key === "site-type"
+        ? spec.siteType
+        : slot.key === "content-source"
+          ? spec.contentSources
+          : slot.key === "target-audience"
+            ? spec.targetAudience
+            : slot.key === "sitemap-pages"
+              ? spec.pageStructure
+              : slot.key === "visual-system"
+                ? {
+                    primaryVisualDirection: spec.primaryVisualDirection,
+                    secondaryVisualTags: spec.secondaryVisualTags || [],
+                    visualStyle: spec.visualStyle || [],
+                  }
+                : slot.key === "functional-requirements"
+                  ? spec.functionalRequirements
+                  : slot.key === "interaction-cta"
+                    ? spec.primaryGoal?.length
+                      ? spec.primaryGoal
+                      : spec.ctas
+                    : slot.key === "language-and-tone"
+                      ? spec.locale || spec.tone
+                      : slot.key === "brand-logo"
+                        ? spec.brandLogo
+                        : slot.value;
+    return {
+      ...slot,
+      filled: true,
+      evidence: evidence.slice(0, 80),
+      value: nextValue,
     };
   });
 }
@@ -1321,6 +1503,8 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
   const normalizedRequirement = normalizeText(rawRequirement);
   const parsedForm = parseRequirementFormFromText(rawRequirement);
   const spec = buildRequirementSpec(rawRequirement, parsedForm.hasForm ? [rawRequirement] : undefined);
+  const visualDecision = resolveVisualDirectionDecision(spec, parsedForm.formValues);
+  const primaryVisualDirection = getWebsiteDesignDirection(spec.primaryVisualDirection);
   const promptLabels: Record<string, string> = {
     company: "Company website",
     landing: "Product landing page",
@@ -1406,10 +1590,18 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
           : spec.pageStructure?.mode === "multi"
           ? `Multi-page website (${(spec.pageStructure.pages || spec.pages || []).join(" / ") || "use the confirmed page list"})`
           : "";
+  const secondaryVisualTags = spec.secondaryVisualTags || [];
   const confirmedParameters = [
     spec.siteType ? `- Website type: ${optionLabel(SITE_TYPE_OPTIONS, spec.siteType)}` : "",
     spec.targetAudience?.length ? `- Target audience: ${optionLabels(AUDIENCE_OPTIONS, spec.targetAudience)}` : "",
-    spec.visualStyle?.length ? `- Design theme: ${optionLabels(DESIGN_THEME_OPTIONS, spec.visualStyle)}` : "",
+    primaryVisualDirection
+      ? spec.visualDecisionSource === "user_explicit"
+        ? `- Primary visual direction: ${primaryVisualDirection.label}`
+        : `- Default visual inclination: ${primaryVisualDirection.label} (system-recommended default)`
+      : spec.visualStyle?.length
+        ? `- Design theme signals: ${optionLabels(DESIGN_THEME_OPTIONS, spec.visualStyle)}`
+        : "",
+    secondaryVisualTags.length ? `- Secondary visual tags: ${secondaryVisualTags.join(", ")}` : "",
     pageStructureLabel ? `- Site structure: ${pageStructureLabel}` : "",
     spec.functionalRequirements?.length
       ? `- Functional requirements: ${optionLabels(FUNCTIONAL_REQUIREMENT_OPTIONS, spec.functionalRequirements)}`
@@ -1451,7 +1643,11 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
     .map((slot) => `- ${slotLabel(slot)}`)
     .join("\n");
   const completion = `${slots.filter((slot) => slot.filled).length}/${slots.length}`;
-  const visualDirectionContract = renderWebsiteDesignDirectionPrompt(spec.visualStyle);
+  const visualDirectionContract =
+    spec.visualDecisionSource === "user_explicit" && spec.primaryVisualDirection
+      ? renderWebsiteDesignDirectionPrompt([spec.primaryVisualDirection])
+      : "";
+  const defaultVisualInclinationPrompt = renderDefaultVisualInclinationPrompt(visualDecision);
 
   return [
     "# Canonical Website Generation Prompt",
@@ -1520,6 +1716,8 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
     "The visual direction must fit the website type and source material, not a preset theme. Keep the interface polished, readable, and practical on desktop, tablet, and mobile.",
     "```",
     "",
+    defaultVisualInclinationPrompt,
+    defaultVisualInclinationPrompt ? "" : "",
     visualDirectionContract,
     visualDirectionContract ? "" : "",
     "## 5. Special Component Prompt",

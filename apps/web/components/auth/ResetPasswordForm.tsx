@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useState } from "react";
 import { ArrowLeft, Loader2, LockKeyhole } from "lucide-react";
 import { BrandLogo } from "@/components/brand/BrandLogo";
+import { withAuthThemePath } from "@/lib/auth/theme";
 import type { Locale } from "@/lib/i18n";
+import type { AuthTheme } from "@/lib/auth/theme";
 
 const copy = {
   en: {
@@ -33,7 +35,21 @@ const copy = {
   },
 };
 
-export function ResetPasswordForm({ initialLocale, token }: { initialLocale: Locale; token: string }) {
+export function ResetPasswordForm({
+  initialLocale,
+  token,
+  nextPath,
+  theme,
+  projectId,
+  siteKey,
+}: {
+  initialLocale: Locale;
+  token: string;
+  nextPath: string;
+  theme?: AuthTheme;
+  projectId?: string;
+  siteKey?: string;
+}) {
   const t = copy[initialLocale] || copy.en;
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -41,6 +57,8 @@ export function ResetPasswordForm({ initialLocale, token }: { initialLocale: Loc
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(
     token ? null : { type: "error", text: t.missingToken },
   );
+  const brandName = String(theme?.brandName || "Shpitto").trim() || "Shpitto";
+  const hasCustomBrand = Boolean(theme?.brandName && brandName !== "Shpitto");
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -63,7 +81,7 @@ export function ResetPasswordForm({ initialLocale, token }: { initialLocale: Loc
     const response = await fetch("/auth/password/reset", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, password }),
+      body: JSON.stringify({ token, password, projectId, siteKey }),
     });
     const data = (await response.json().catch(() => ({}))) as { error?: string; message?: string };
 
@@ -79,14 +97,44 @@ export function ResetPasswordForm({ initialLocale, token }: { initialLocale: Loc
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[color-mix(in_oklab,var(--shp-bg)_92%,white_8%)] p-4">
-      <section className="w-full max-w-md rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-white p-8 shadow-xl">
+      <section className="w-full max-w-md rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[var(--shp-panel)] p-8 shadow-xl">
         <div className="mb-8 flex items-center gap-3">
-          <Link href="/login" className="-ml-2 rounded-full p-2 transition-colors hover:bg-[color-mix(in_oklab,var(--shp-primary)_10%,transparent)]">
+          <Link
+            href={withAuthThemePath("/login", nextPath, theme, undefined, { projectId, siteKey })}
+            className="-ml-2 rounded-full p-2 transition-colors hover:bg-[color-mix(in_oklab,var(--shp-primary)_10%,transparent)]"
+          >
             <ArrowLeft className="h-5 w-5 text-[var(--shp-muted)]" />
           </Link>
-          <BrandLogo variant="full" className="shrink-0" />
+          {theme?.logo ? (
+            <Link
+              href="/"
+              aria-label={brandName}
+              className="inline-flex items-center gap-3 rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_88%,white_12%)] px-3 py-2"
+            >
+              <div
+                role="img"
+                aria-label={brandName}
+                className="h-10 w-24 rounded-lg bg-center bg-no-repeat"
+                style={{ backgroundImage: `url("${theme.logo}")`, backgroundSize: "contain" }}
+              />
+              <span className="max-w-[12rem] truncate text-sm font-bold text-[var(--shp-text)]">{brandName}</span>
+            </Link>
+          ) : hasCustomBrand ? (
+            <Link
+              href="/"
+              aria-label={brandName}
+              className="inline-flex items-center gap-3 rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_88%,white_12%)] px-3 py-2"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--shp-primary)] text-sm font-black text-white">
+                {brandName.charAt(0).toUpperCase()}
+              </div>
+              <span className="max-w-[12rem] truncate text-sm font-bold text-[var(--shp-text)]">{brandName}</span>
+            </Link>
+          ) : (
+            <BrandLogo variant="full" className="shrink-0" />
+          )}
         </div>
-        <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[color-mix(in_oklab,var(--shp-primary)_12%,white_88%)] text-[var(--shp-primary)]">
+        <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[color-mix(in_oklab,var(--shp-primary)_12%,var(--shp-panel)_88%)] text-[var(--shp-primary)]">
           <LockKeyhole className="h-7 w-7" />
         </div>
         <h1 className="mb-2 text-2xl font-bold text-[var(--shp-text)]">{t.title}</h1>
@@ -116,7 +164,7 @@ export function ResetPasswordForm({ initialLocale, token }: { initialLocale: Loc
             />
           </div>
           {message ? (
-            <div className="rounded-lg bg-[color-mix(in_oklab,var(--shp-primary)_10%,white_90%)] p-3 text-sm text-[var(--shp-primary-pressed)]">
+            <div className="rounded-lg bg-[color-mix(in_oklab,var(--shp-primary)_10%,var(--shp-panel)_90%)] p-3 text-sm text-[var(--shp-primary-pressed)]">
               {message.text}
             </div>
           ) : null}
@@ -129,7 +177,10 @@ export function ResetPasswordForm({ initialLocale, token }: { initialLocale: Loc
             {t.submit}
           </button>
         </form>
-        <Link href="/login" className="mt-5 block text-center text-sm font-semibold text-[var(--shp-primary)] hover:underline">
+        <Link
+          href={withAuthThemePath("/login", nextPath, theme, undefined, { projectId, siteKey })}
+          className="mt-5 block text-center text-sm font-semibold text-[var(--shp-primary)] hover:underline"
+        >
           {t.signIn}
         </Link>
       </section>

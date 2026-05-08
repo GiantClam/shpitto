@@ -1,59 +1,63 @@
-# Task Plan: Prompt Draft Evidence Brief
+# Task Plan: Shpitto Pricing Billing PayPal
 
 ## Goal
-Increase prompt draft information density by introducing a structured evidence brief between web/source research and canonical website prompt authoring, then verify the behavior with focused tests.
+Implement pricing, entitlement-based project limits, prepaid billing, PayPal order capture, subscription-ready records, 15-day retention cleanup, and regression tests for each phase.
 
 ## Current Phase
-Phase 5
+Phase 1
 
 ## Phases
 
-### Phase 1: Discovery And Plan Document
-- [x] Confirm current research and prompt draft flow.
-- [x] Identify information-density failure points.
-- [x] Write implementation plan document.
-- **Status:** complete
+### Phase 1: Discovery And Boundaries
+- [ ] Map project creation/deployment persistence.
+- [ ] Map auth helpers and API route patterns.
+- [ ] Identify safe integration points without touching unrelated dirty files.
+- **Status:** in_progress
 
-### Phase 2: Evidence Brief Implementation
-- [x] Add a structured evidence brief contract to content ingestion.
-- [x] Feed the evidence brief into template fallback and LLM prompt authoring.
-- [x] Preserve existing routing and source contracts.
-- **Status:** complete
+### Phase 2: Billing Domain Logic
+- [ ] Add authoritative plan definitions.
+- [ ] Add pricing, entitlement, quota, upgrade quote, and retention cleanup calculations.
+- [ ] Add unit tests for price math, quota counting, upgrade proration, and cleanup eligibility.
+- **Status:** pending
 
-### Phase 3: Regression Tests
-- [x] Add tests that assert evidence priority and page-level source inputs appear in the prompt.
-- [x] Update existing expectations without weakening route/control coverage.
-- **Status:** complete
+### Phase 3: Storage And Schema
+- [ ] Extend Supabase schema with billing tables and project lifecycle fields.
+- [ ] Extend D1 schema/runtime table setup for billing and cleanup metadata.
+- [ ] Add persistence helpers with idempotent checkout/capture/event behavior.
+- [ ] Add storage tests with mocked clients where practical.
+- **Status:** pending
 
-### Phase 4: Verification
-- [x] Run focused prompt draft tests.
-- [x] Run any adjacent tests needed by changed contracts.
-- [x] Record test results.
-- **Status:** complete
+### Phase 4: Billing APIs And PayPal
+- [ ] Add plans, entitlement, checkout, PayPal order/capture/webhook, upgrade quote/checkout, cancel-renewal routes.
+- [ ] Verify API validation, auth, idempotency, and failure paths.
+- **Status:** pending
 
-### Phase 5: Delivery
-- [x] Review changed files.
-- [x] Summarize implementation, verification, and remaining risks.
-- **Status:** complete
+### Phase 5: Quota And Retention Enforcement
+- [ ] Enforce project count quota before project creation/generation/deploy entry points.
+- [ ] Add 15-day retention cleanup queue logic.
+- [ ] Add tests for blocked project creation and cleanup release.
+- **Status:** pending
 
-## Key Questions
-1. How can source facts survive prompt generation without turning the prompt draft layer into a full website generator?
-2. Which test assertions prove the user-visible content density improves?
+### Phase 6: UI Pages
+- [ ] Add pricing page and account billing pages.
+- [ ] Show monthly display price, 12-month payment, retention, quota, and upgrade CTAs.
+- [ ] Add component/page tests where available.
+- **Status:** pending
 
-## Decisions Made
+### Phase 7: Verification And Delivery
+- [ ] Run focused tests after each phase.
+- [ ] Run lint/typecheck/full tests as feasible.
+- [ ] Summarize changed files, tests, and remaining risks.
+- **Status:** pending
+
+## Key Decisions
 | Decision | Rationale |
 |----------|-----------|
-| Add an Evidence Brief derived from Website Knowledge Profile | Keeps research structured and authoritative before LLM prompt writing. |
-| Keep Prompt Control Manifest separate from content planning | Existing route/file contract should remain machine-readable and stable. |
-| Start with deterministic formatting, not new dependencies | Reduces risk and matches existing local patterns. |
-| Preserve Evidence Brief during runtime prompt clipping | Long prompts should keep source priorities, not only early template text. |
+| Count created projects, not only published sites | Matches business rule: created projects consume site quota until cleanup completes. |
+| Orders API first, subscriptions later | Prepaid 12+ month lock-in and upgrade differences are easier with local ledger. |
+| 15-day retention before cleanup | Gives users recovery window while bounding Cloudflare/R2 cost. |
+| Keep existing dirty files separate | Avoid overwriting unrelated user work. |
 
 ## Errors Encountered
 | Error | Attempt | Resolution |
 |-------|---------|------------|
-| `pnpm --filter web vitest` missing script | 1 | Use existing `pnpm --filter web test -- ...` script. |
-| Evidence Brief patch failed near legacy regex text | 1 | Reapply with smaller stable anchors. |
-
-## Notes
-- Avoid touching unrelated dirty worktree files.
-- Use focused tests for the prompt draft research path.

@@ -1,37 +1,25 @@
-# Findings & Decisions
+# Findings: Shpitto Pricing Billing PayPal
 
 ## Requirements
-- Write a clear scheme document for improving prompt draft content density after user info search and web search.
-- Implement the scheme in the codebase.
-- Verify with tests.
+- Implement Free, Experience, Starter, Growth, and Scale plans.
+- Display monthly prices while charging prepaid 12+ month totals with 7折 discount.
+- Count projects at creation time toward site quota, including drafts, deleted, archived, expired, paused, and deployed projects.
+- Release quota only after 15-day retention cleanup completes.
+- Use PayPal for first payment path with order capture and webhook idempotency.
+- Ensure every phase has regression tests.
 
-## Research Findings
-- `resolveWebSearchQueryBudget()` defaults ordinary requests to 3 queries, which limits coverage before prompt drafting.
-- `formatWebsiteKnowledgeProfile()` truncates each source snippet to 260 characters and presents source findings as a compact profile.
-- `requestPromptDraftWithLlm()` passes research as `Web search findings` plus `Website knowledge profile`, but the canonical prompt authoring rules do not require a prioritized evidence brief.
-- External prompt/RAG best practice supports separating instructions from context, using structured context, and passing retrieved evidence rather than over-compressed summaries.
+## Initial Findings
+- Existing worktree has unrelated dirty files in blog/workspace areas and D1 docs; implementation must avoid reverting them.
+- `apps/web` uses Next.js route handlers and Vitest.
+- Root `docs/` is ignored, so the plan document is local guidance but not tracked by Git.
 
-## Technical Decisions
+## Decisions
 | Decision | Rationale |
 |----------|-----------|
-| Introduce `WebsiteEvidenceBrief` | Creates a stable contract for must-use facts, page inputs, source priorities, gaps, and assumptions. |
-| Format the brief as a dedicated markdown section | Existing prompt draft flow is markdown-oriented and tests can assert deterministic content. |
-| Use existing profile fields first | Avoids new services and keeps the change local to ingestion/prompt authoring. |
-| Update runtime clipping markers for `## 7. Evidence Brief` | Prompt budget clipping must preserve the new research handoff section. |
-| Move Evidence Brief generation policy into `website-generation-workflow/SKILL.md` | The product is skill-centered; TS should build and pass evidence, not own website-generation policy. |
+| Implement billing math as pure TypeScript first | Makes price/quota/upgrade tests deterministic before API/storage wiring. |
+| Keep PayPal integration behind small service functions | Allows mocked route tests without network calls. |
+| Use service-role Supabase for billing-sensitive tables | Existing auth uses Supabase; payment data should not rely on client RLS writes. |
 
-## Issues Encountered
-| Issue | Resolution |
-|-------|------------|
-| Existing worktree has unrelated edits | Limit changes to docs and prompt draft ingestion/test files. |
-| Initial patch failed around a non-ASCII regex block | Re-applied with smaller stable anchors. |
-
-## Resources
-- `apps/web/lib/agent/content-source-ingestion.ts`
-- `apps/web/lib/agent/prompt-draft-research.ts`
-- `apps/web/lib/agent/prompt-draft-research.test.ts`
-- OpenAI prompt engineering and structured output guidance.
-- Anthropic prompt engineering guidance for structured context.
-
-## Visual/Browser Findings
-- No visual/browser testing is required for this backend prompt pipeline change.
+## Open Questions
+- Production PayPal currency may need USD if CNY is unavailable; implementation should support configurable display and settlement currency.
+- Actual cleanup of Cloudflare Pages projects must be conservative and idempotent.

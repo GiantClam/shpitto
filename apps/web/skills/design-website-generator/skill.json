@@ -126,14 +126,14 @@
   "envVars": [
     {
       "name": "LLM_PROVIDER",
-      "description": "LLM provider: aiberm, openrouter, anthropic",
-      "default": "aiberm",
+      "description": "LLM provider: pptoken, aiberm, crazyrouter, openrouter, anthropic",
+      "default": "pptoken",
       "required": false
     },
     {
       "name": "LLM_MODEL",
       "description": "LLM model to use for generation",
-      "default": "claude-sonnet-4-20250514",
+      "default": "gpt-5.4-mini",
       "required": false
     }
   ],

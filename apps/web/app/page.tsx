@@ -65,7 +65,7 @@ export default async function LandingPage() {
             <h4 className="mb-6 font-bold text-[var(--shp-text)]">{copy.footer.product}</h4>
             <ul className="space-y-4">
               <li><a href="#" className="hover:text-[var(--shp-primary)]">{copy.footer.links.features}</a></li>
-              <li><a href="#" className="hover:text-[var(--shp-primary)]">{copy.footer.links.pricing}</a></li>
+              <li><Link href="/pricing" className="hover:text-[var(--shp-primary)]">{copy.footer.links.pricing}</Link></li>
               <li><a href="#" className="hover:text-[var(--shp-primary)]">{copy.footer.links.showcase}</a></li>
               <li><a href="#" className="hover:text-[var(--shp-primary)]">{copy.footer.links.integrations}</a></li>
             </ul>

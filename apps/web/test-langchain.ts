@@ -8,9 +8,9 @@ import path from "node:path";
 dotenv.config({ path: path.resolve(process.cwd(), "../../.env"), override: false });
 
 const run = async () => {
-  const apiKey = process.env.AIBERM_API_KEY;
-  const modelName = process.env.LLM_MODEL_AIBERM || process.env.LLM_MODEL || "claude-sonnet-4-5-20250929";
-  const baseURL = process.env.AIBERM_BASE_URL || "https://aiberm.com/v1";
+  const apiKey = process.env.PPTOKEN_API_KEY || process.env.AIBERM_API_KEY;
+  const modelName = process.env.LLM_MODEL_PPTOKEN || process.env.PPTOKEN_MODEL || process.env.LLM_MODEL || "gpt-5.4-mini";
+  const baseURL = process.env.PPTOKEN_BASE_URL || "https://api.pptoken.org/v1";
 
   console.log(`Model: ${modelName}`);
   console.log(`Key: ${apiKey?.substring(0, 10)}...`);

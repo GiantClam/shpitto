@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { getD1Client } from "../d1.ts";
 import { getR2Client } from "../r2.ts";
+import { normalizeAuthEmail } from "../auth/cloudflare-email-auth.ts";
 
 const SOURCE_APP = "shpitto";
 const ACCOUNT_KEY = (process.env.SHPITTO_ACCOUNT_KEY || SOURCE_APP).trim();
@@ -18,6 +19,10 @@ type SiteBindingRow = {
   projectId: string;
   accountId: string;
   ownerUserId: string;
+};
+
+type ProjectBindingRow = SiteBindingRow & {
+  siteKey: string | null;
 };
 
 export type ProjectSiteAnalyticsBinding = {
@@ -59,6 +64,24 @@ export type ProjectCustomDomainRecord = {
   updatedAt: string;
 };
 
+export type ProjectAuthUserRecord = {
+  id: string;
+  projectId: string;
+  siteKey: string | null;
+  authUserId: string | null;
+  email: string;
+  emailVerified: boolean;
+  lastEvent: string;
+  signupCount: number;
+  loginCount: number;
+  verificationCount: number;
+  passwordResetCount: number;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type ContactSubmissionRecord = {
   id: string;
   project_id: string;
@@ -94,6 +117,10 @@ function buildStableSiteKey(projectId: string, userId: string) {
   return `sp_${digest.slice(0, 32)}`;
 }
 
+export function deriveProjectSiteKey(projectId: string, userId: string) {
+  return buildStableSiteKey(projectId, userId);
+}
+
 function baseContactUrl() {
   if (CONTACT_API_URL) return CONTACT_API_URL;
   if (APP_BASE_URL) {
@@ -110,7 +137,7 @@ async function ensureSchemaReady() {
   await d1.ensureShpittoSchema();
 }
 
-async function ensureUserLink(userId: string, email?: string | null) {
+export async function ensureUserLink(userId: string, email?: string | null) {
   const d1 = getD1Client();
   await ensureSchemaReady();
   if (!d1.isConfigured()) return;
@@ -656,6 +683,70 @@ async function resolveSiteBinding(siteKey: string): Promise<SiteBindingRow | nul
   );
 }
 
+async function resolveProjectBinding(params: { projectId?: string | null; siteKey?: string | null }): Promise<ProjectBindingRow | null> {
+  const d1 = getD1Client();
+  await ensureSchemaReady();
+  if (!d1.isConfigured()) return null;
+
+  const projectId = String(params.projectId || "").trim();
+  const siteKey = String(params.siteKey || "").trim();
+
+  if (siteKey) {
+    const bySiteKey = await d1.queryOne<Record<string, unknown>>(
+      `
+      SELECT
+        p.id AS projectId,
+        p.account_id AS accountId,
+        p.owner_user_id AS ownerUserId,
+        s.site_key AS siteKey
+      FROM shpitto_project_sites s
+      INNER JOIN shpitto_projects p ON p.id = s.project_id
+      WHERE s.site_key = ?
+        AND s.source_app = ?
+      LIMIT 1;
+      `,
+      [siteKey, SOURCE_APP],
+    );
+
+    if (bySiteKey) {
+      if (projectId && String(bySiteKey.projectId || "") !== projectId) return null;
+      return {
+        projectId: String(bySiteKey.projectId || ""),
+        accountId: String(bySiteKey.accountId || ""),
+        ownerUserId: String(bySiteKey.ownerUserId || ""),
+        siteKey: bySiteKey.siteKey ? String(bySiteKey.siteKey) : null,
+      };
+    }
+  }
+
+  if (!projectId) return null;
+
+  const byProjectId = await d1.queryOne<Record<string, unknown>>(
+    `
+    SELECT
+      p.id AS projectId,
+      p.account_id AS accountId,
+      p.owner_user_id AS ownerUserId,
+      s.site_key AS siteKey
+    FROM shpitto_projects p
+    LEFT JOIN shpitto_project_sites s ON s.project_id = p.id
+    WHERE p.id = ?
+      AND p.source_app = ?
+    LIMIT 1;
+    `,
+    [projectId, SOURCE_APP],
+  );
+
+  if (!byProjectId) return null;
+
+  return {
+    projectId: String(byProjectId.projectId || ""),
+    accountId: String(byProjectId.accountId || ""),
+    ownerUserId: String(byProjectId.ownerUserId || ""),
+    siteKey: byProjectId.siteKey ? String(byProjectId.siteKey) : null,
+  };
+}
+
 export async function submitContactForm(
   siteKey: string,
   submissionData: Record<string, unknown>,
@@ -724,6 +815,127 @@ export async function submitContactForm(
     accountId: binding.accountId,
     r2ObjectKey,
   };
+}
+
+export async function recordProjectAuthUserActivity(params: {
+  projectId?: string | null;
+  siteKey?: string | null;
+  authUserId?: string | null;
+  email: string;
+  emailVerified?: boolean;
+  event:
+    | "signup"
+    | "login"
+    | "oauth_login"
+    | "email_verified"
+    | "verification_resend"
+    | "password_reset_requested"
+    | "password_reset_completed";
+}) {
+  const d1 = getD1Client();
+  await ensureSchemaReady();
+  if (!d1.isConfigured()) return null;
+
+  const binding = await resolveProjectBinding({ projectId: params.projectId, siteKey: params.siteKey });
+  if (!binding) return null;
+
+  const now = nowIso();
+  const event = String(params.event || "").trim().toLowerCase();
+  const email = normalizeAuthEmail(params.email);
+  const authUserId = String(params.authUserId || "").trim() || null;
+  const isSignup = event === "signup";
+  const isLogin = event === "login" || event === "oauth_login";
+  const isVerification = event === "email_verified" || event === "verification_resend";
+  const isPasswordReset = event === "password_reset_requested" || event === "password_reset_completed";
+
+  await d1.execute(
+    `
+    INSERT INTO shpitto_project_auth_users (
+      id, project_id, account_id, owner_user_id, source_app, site_key, auth_user_id,
+      email, email_verified, last_event, signup_count, login_count, verification_count,
+      password_reset_count, first_seen_at, last_seen_at, created_at, updated_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(project_id, email) DO UPDATE SET
+      account_id = excluded.account_id,
+      owner_user_id = excluded.owner_user_id,
+      source_app = excluded.source_app,
+      site_key = COALESCE(excluded.site_key, shpitto_project_auth_users.site_key),
+      auth_user_id = COALESCE(excluded.auth_user_id, shpitto_project_auth_users.auth_user_id),
+      email_verified = CASE
+        WHEN excluded.email_verified = 1 THEN 1
+        ELSE shpitto_project_auth_users.email_verified
+      END,
+      last_event = excluded.last_event,
+      signup_count = shpitto_project_auth_users.signup_count + CASE WHEN excluded.last_event = 'signup' THEN 1 ELSE 0 END,
+      login_count = shpitto_project_auth_users.login_count + CASE WHEN excluded.last_event IN ('login', 'oauth_login') THEN 1 ELSE 0 END,
+      verification_count = shpitto_project_auth_users.verification_count + CASE WHEN excluded.last_event IN ('email_verified', 'verification_resend') THEN 1 ELSE 0 END,
+      password_reset_count = shpitto_project_auth_users.password_reset_count + CASE WHEN excluded.last_event IN ('password_reset_requested', 'password_reset_completed') THEN 1 ELSE 0 END,
+      last_seen_at = excluded.last_seen_at,
+      updated_at = excluded.updated_at;
+    `,
+    [
+      randomUUID(),
+      binding.projectId,
+      binding.accountId,
+      binding.ownerUserId,
+      SOURCE_APP,
+      binding.siteKey || params.siteKey || null,
+      authUserId,
+      email,
+      params.emailVerified ? 1 : 0,
+      event,
+      isSignup ? 1 : 0,
+      isLogin ? 1 : 0,
+      isVerification ? 1 : 0,
+      isPasswordReset ? 1 : 0,
+      now,
+      now,
+      now,
+      now,
+    ],
+  );
+
+  return {
+    projectId: binding.projectId,
+    siteKey: binding.siteKey,
+    email,
+  };
+}
+
+export async function listProjectAuthUsersByProject(userId: string, projectId: string, limit = 100, offset = 0) {
+  const d1 = getD1Client();
+  await ensureSchemaReady();
+  if (!d1.isConfigured()) return [] as ProjectAuthUserRecord[];
+
+  return d1.query<ProjectAuthUserRecord>(
+    `
+    SELECT
+      id,
+      project_id AS projectId,
+      site_key AS siteKey,
+      auth_user_id AS authUserId,
+      email,
+      email_verified AS emailVerified,
+      last_event AS lastEvent,
+      signup_count AS signupCount,
+      login_count AS loginCount,
+      verification_count AS verificationCount,
+      password_reset_count AS passwordResetCount,
+      first_seen_at AS firstSeenAt,
+      last_seen_at AS lastSeenAt,
+      created_at AS createdAt,
+      updated_at AS updatedAt
+    FROM shpitto_project_auth_users
+    WHERE owner_user_id = ?
+      AND project_id = ?
+      AND source_app = ?
+    ORDER BY last_seen_at DESC, created_at DESC
+    LIMIT ?
+    OFFSET ?;
+    `,
+    [userId, projectId, SOURCE_APP, Math.max(1, Math.min(limit, 500)), Math.max(0, Math.floor(offset))],
+  );
 }
 
 export async function listContactSubmissionsByOwner(userId: string, limit = 100, offset = 0) {

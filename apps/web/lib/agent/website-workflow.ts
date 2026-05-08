@@ -5,6 +5,7 @@ import { promisify } from "node:util";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { ChatOpenAI } from "@langchain/openai";
 import { normalizeStylePreset, type DesignStylePreset } from "../design-style-preset.ts";
+import { getWebsiteDesignDirection } from "../open-design/design-directions.ts";
 
 const execFileAsync = promisify(execFile);
 
@@ -28,7 +29,14 @@ export type DesignSkillHit = {
   design_md_path?: string;
   design_md_inline?: string;
   index_generated_at?: string;
-  selection_mode?: "local_score" | "explicit_match" | "prompt_adaptive" | "llm_semantic_rerank" | "llm_semantic_override";
+  selection_mode?:
+    | "local_score"
+    | "explicit_match"
+    | "open_design_explicit"
+    | "open_design_context"
+    | "prompt_adaptive"
+    | "llm_semantic_rerank"
+    | "llm_semantic_override";
   local_top_candidate?: {
     id: string;
     name: string;
@@ -81,6 +89,13 @@ export type WorkflowRuntimeContextField = keyof WorkflowRuntimeContext;
 
 export type WorkflowRuntimeContextLoadOptions = {
   fields?: WorkflowRuntimeContextField[];
+};
+
+export type WorkflowVisualDecisionContext = {
+  primaryVisualDirection?: string;
+  secondaryVisualTags?: string[];
+  visualDecisionSource?: "user_explicit" | "user_recommended_default" | "prompt_adaptive" | "fallback";
+  lockPrimaryVisualDirection?: boolean;
 };
 
 type AwesomeIndexStyle = {
@@ -149,7 +164,7 @@ type WorkflowLlmStyleSelection = {
 };
 
 type WorkflowProviderConfig = {
-  provider: "aiberm" | "crazyroute" | "openrouter";
+  provider: "pptoken" | "aiberm" | "crazyroute" | "openrouter";
   apiKey?: string;
   baseURL: string;
   modelName: string;
@@ -202,6 +217,28 @@ type StyleSelectionPolicy = {
   explicitStyleReferenceIgnoredTokens?: string[];
   promptAdaptiveDesign?: PromptAdaptiveDesignPolicy;
 };
+
+export function normalizeWorkflowVisualDecisionContext(
+  input?: WorkflowVisualDecisionContext | null,
+): WorkflowVisualDecisionContext | undefined {
+  if (!input) return undefined;
+  const primaryVisualDirection = getWebsiteDesignDirection(input.primaryVisualDirection || "")?.id;
+  if (!primaryVisualDirection) return undefined;
+  return {
+    primaryVisualDirection,
+    secondaryVisualTags: Array.isArray(input.secondaryVisualTags)
+      ? input.secondaryVisualTags.filter(
+          (value): value is string =>
+            typeof value === "string" &&
+            value.trim().length > 0 &&
+            !getWebsiteDesignDirection(value),
+        )
+      : [],
+    visualDecisionSource: input.visualDecisionSource,
+    lockPrimaryVisualDirection:
+      Boolean(input.lockPrimaryVisualDirection) || input.visualDecisionSource === "user_explicit",
+  };
+}
 
 function pathExists(p: string) {
   return fs
@@ -653,6 +690,151 @@ function extractPromptVisualIntent(query: string, policy?: PromptAdaptiveDesignP
   };
 }
 
+function buildOpenDesignDirectionMd(
+  directionId: string,
+  source:
+    | "explicit"
+    | "recommended"
+    | "system-recommended default"
+    | "explicit upstream choice"
+    | "structured visual decision",
+): string {
+  const direction = getWebsiteDesignDirection(directionId);
+  if (!direction) return "";
+  const isExplicitSource = source === "explicit" || source === "explicit upstream choice";
+  const isRecommendedSource = source === "recommended" || source === "system-recommended default";
+
+  return [
+    "# DESIGN",
+    "",
+    `# Open Design Direction: ${direction.label}`,
+    "",
+    isExplicitSource
+      ? "This design contract comes from an explicit user-selected open-design direction and must remain the primary visual category."
+      : isRecommendedSource
+        ? "This design contract comes from a system-recommended open-design direction and should be treated as a default visual inclination."
+      : "This design contract comes from a system-recommended open-design direction and should be treated as a default visual inclination.",
+    "",
+    "## 1. Direction Summary",
+    `- Direction id: ${direction.id}`,
+    `- Mood: ${direction.mood}`,
+    `- References: ${direction.references.join(", ")}`,
+    "",
+    "## 2. Palette",
+    `- Background: ${direction.palette.bg}`,
+    `- Surface: ${direction.palette.surface}`,
+    `- Foreground: ${direction.palette.fg}`,
+    `- Muted: ${direction.palette.muted}`,
+    `- Border: ${direction.palette.border}`,
+    `- Accent: ${direction.palette.accent}`,
+    "",
+    "## 3. Typography",
+    `- Display font: ${direction.displayFont}`,
+    `- Body font: ${direction.bodyFont}`,
+    direction.monoFont ? `- Mono font: ${direction.monoFont}` : "",
+    "",
+    "## 4. Layout Posture",
+    ...direction.posture.map((item) => `- ${item}`),
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function buildStylePresetFromOpenDesignDirection(directionId: string): Partial<DesignStylePreset> {
+  const direction = getWebsiteDesignDirection(directionId);
+  if (!direction) return {};
+
+  const colorMap: Record<string, DesignStylePreset["colors"]> = {
+    "editorial-monocle": {
+      primary: "#A84B3A",
+      accent: "#A84B3A",
+      background: "#F8F4EA",
+      surface: "#FFFDF8",
+      panel: "#FFFDF8",
+      text: "#2E241F",
+      muted: "#6B5A52",
+      border: "#E6DDD0",
+    },
+    "modern-minimal": {
+      primary: "#2563EB",
+      accent: "#2563EB",
+      background: "#FFFFFF",
+      surface: "#FFFFFF",
+      panel: "#FFFFFF",
+      text: "#111827",
+      muted: "#6B7280",
+      border: "#E5E7EB",
+    },
+    "warm-soft": {
+      primary: "#C56B4E",
+      accent: "#C56B4E",
+      background: "#FBF5EE",
+      surface: "#FFFDF9",
+      panel: "#FFFDF9",
+      text: "#3A2A24",
+      muted: "#7A665C",
+      border: "#E8D9CC",
+    },
+    "tech-utility": {
+      primary: "#16A34A",
+      accent: "#16A34A",
+      background: "#F8FAFC",
+      surface: "#FFFFFF",
+      panel: "#FFFFFF",
+      text: "#0F172A",
+      muted: "#475569",
+      border: "#E2E8F0",
+    },
+    "brutalist-experimental": {
+      primary: "#E4572E",
+      accent: "#E4572E",
+      background: "#F7F5F0",
+      surface: "#FFFFFF",
+      panel: "#FFFFFF",
+      text: "#111111",
+      muted: "#444444",
+      border: "#111111",
+    },
+    "industrial-b2b": {
+      primary: "#2563EB",
+      accent: "#2563EB",
+      background: "#F8FAFC",
+      surface: "#FFFFFF",
+      panel: "#FFFFFF",
+      text: "#0F172A",
+      muted: "#475569",
+      border: "#CBD5E1",
+    },
+    "heritage-manufacturing": {
+      primary: "#B8893E",
+      accent: "#B8893E",
+      background: "#F7F2E8",
+      surface: "#FFFDF8",
+      panel: "#FFFDF8",
+      text: "#2B211C",
+      muted: "#6C5A4E",
+      border: "#DCCDB8",
+    },
+  };
+
+  const isSharp = directionId === "brutalist-experimental" || directionId === "industrial-b2b" || directionId === "tech-utility";
+  const isDarkFooter = directionId === "industrial-b2b" || directionId === "tech-utility" || directionId === "brutalist-experimental";
+
+  return {
+    mode: "light",
+    typography: `${direction.displayFont}; ${direction.bodyFont}`,
+    borderRadius: isSharp ? "sm" : "md",
+    navVariant: isSharp ? "underline" : "pill",
+    headerVariant: "solid",
+    footerVariant: isDarkFooter ? "dark" : "light",
+    buttonVariant: "solid",
+    heroTheme: isDarkFooter ? "dark" : "light",
+    heroEffect: "none",
+    navLabelMaxChars: 12,
+    colors: colorMap[directionId] || {},
+  };
+}
+
 function isValidDesignMdText(raw: string): boolean {
   const text = raw.trim();
   if (text.length < AWESOME_DESIGN_MIN_CONTENT_LENGTH) return false;
@@ -806,6 +988,19 @@ function normalizeWorkflowStyleId(raw: unknown): string {
 
 function resolveWorkflowProviderConfig(): WorkflowProviderConfig {
   const providerRaw = String(process.env.LLM_PROVIDER || "").trim().toLowerCase();
+  const sharedModel = String(process.env.LLM_MODEL || process.env.LLM_MODEL_DEFAULT || "").trim();
+  if (providerRaw === "pptoken") {
+    return {
+      provider: "pptoken",
+      apiKey: process.env.PPTOKEN_API_KEY,
+      baseURL: process.env.PPTOKEN_BASE_URL || "https://api.pptoken.org/v1",
+      modelName:
+        sharedModel ||
+        process.env.LLM_MODEL_PPTOKEN ||
+        process.env.PPTOKEN_MODEL ||
+        "gpt-5.4-mini",
+    };
+  }
   if (providerRaw === "crazyroute" || providerRaw === "crazyrouter" || providerRaw === "crazyreoute") {
     return {
       provider: "crazyroute",
@@ -819,11 +1014,11 @@ function resolveWorkflowProviderConfig(): WorkflowProviderConfig {
         process.env.CRAZYREOUTE_BASE_URL ||
         "https://crazyrouter.com/v1",
       modelName:
+        sharedModel ||
         process.env.LLM_MODEL_CRAZYROUTE ||
         process.env.LLM_MODEL_CRAZYROUTER ||
         process.env.LLM_MODEL_CRAZYREOUTE ||
-        process.env.LLM_MODEL ||
-        "openai/gpt-5.4-mini",
+        "gpt-5.4-mini",
     };
   }
   if (providerRaw === "openrouter") {
@@ -840,13 +1035,13 @@ function resolveWorkflowProviderConfig(): WorkflowProviderConfig {
   }
   return {
     provider: "aiberm",
-    apiKey: process.env.AIBERM_API_KEY || process.env.ANTHROPIC_API_KEY || process.env.OPENROUTER_API_KEY,
+    apiKey: process.env.AIBERM_API_KEY || process.env.PPTOKEN_API_KEY || process.env.ANTHROPIC_API_KEY || process.env.OPENROUTER_API_KEY,
     baseURL: process.env.AIBERM_BASE_URL || "https://aiberm.com/v1",
     modelName:
+      sharedModel ||
       process.env.LLM_MODEL_AIBERM ||
       process.env.AIBERM_MODEL ||
-      process.env.LLM_MODEL ||
-      "openai/gpt-5.4-mini",
+      "gpt-5.4-mini",
   };
 }
 
@@ -1208,10 +1403,14 @@ function buildPresetFromDesignMd(designMd: string): Partial<DesignStylePreset> {
   };
 }
 
-export async function resolveDesignSkillHit(input: string | undefined | null): Promise<DesignSkillHit> {
+export async function resolveDesignSkillHit(
+  input: string | undefined | null,
+  visualDecision?: WorkflowVisualDecisionContext,
+): Promise<DesignSkillHit> {
   await ensureAwesomeIndex();
 
   const query = (input || "").trim();
+  const normalizedVisualDecision = normalizeWorkflowVisualDecisionContext(visualDecision);
   const stylePolicy = await loadStyleSelectionPolicy();
   const ignoredStyleTokens = new Set((stylePolicy.explicitStyleReferenceIgnoredTokens || []).map((token) => String(token).toLowerCase()));
   const queryLower = query.toLowerCase();
@@ -1257,6 +1456,57 @@ export async function resolveDesignSkillHit(input: string | undefined | null): P
   let selectionMode: NonNullable<DesignSkillHit["selection_mode"]> = explicit ? "explicit_match" : "local_score";
   let llmRecommendedId: string | undefined;
   let llmOverrideReason: string | undefined;
+
+  const structuredDirectionId = normalizedVisualDecision?.primaryVisualDirection;
+  if (!explicit && structuredDirectionId) {
+    const direction = getWebsiteDesignDirection(structuredDirectionId);
+    if (direction) {
+      const lockedPrimary = Boolean(normalizedVisualDecision?.lockPrimaryVisualDirection);
+      const sourceLabel =
+        normalizedVisualDecision?.visualDecisionSource === "user_recommended_default"
+          ? "system-recommended default"
+          : normalizedVisualDecision?.visualDecisionSource === "user_explicit"
+            ? "explicit upstream choice"
+            : "structured visual decision";
+      return {
+        id: `open-design-${direction.id}`,
+        name: direction.label,
+        design_desc: `Open-design direction selected upstream from ${sourceLabel}: ${direction.label}.`,
+        score: 10_000,
+        matched_keywords: [direction.id],
+        source: "website-generation-workflow",
+        category: "Open Design",
+        design_md_inline: buildOpenDesignDirectionMd(direction.id, sourceLabel),
+        index_generated_at: index?.generatedAt,
+        selection_mode: lockedPrimary ? "open_design_explicit" : "open_design_context",
+        local_top_candidate: localBest
+          ? {
+              id: localBest.style.slug,
+              name: localBest.style.name,
+              score: localBest.score,
+              category: localBest.style.category,
+              matched_keywords: localBest.matched_keywords,
+            }
+          : undefined,
+        llm_candidate_limit: WORKFLOW_STYLE_LLM_CANDIDATE_LIMIT,
+        selection_candidates: top3.map((entry, index) => ({
+          id: entry.style.slug,
+          name: entry.style.name,
+          score: entry.score,
+          local_rank: index + 1,
+          base_score: entry.base_score,
+          category: entry.style.category,
+          design_md_url: entry.style.designMdUrl,
+          design_md_path: entry.style.designMdPath,
+          excluded_reason: lockedPrimary
+            ? `Structured visual decision locked ${direction.id} as the primary visual category.`
+            : `Structured visual decision selected ${direction.id} as the primary visual category.`,
+        })),
+        style_preset: normalizeStylePreset(buildStylePresetFromOpenDesignDirection(direction.id), {}),
+      };
+    }
+  }
+
   const promptVisualIntent = extractPromptVisualIntent(query, stylePolicy.promptAdaptiveDesign);
 
   if (!explicit && promptVisualIntent.active) {
@@ -1407,7 +1657,10 @@ export async function resolveDesignSkillHit(input: string | undefined | null): P
   };
 }
 
-export async function loadWorkflowSkillContext(input: string | undefined | null): Promise<WorkflowSkillContext> {
+export async function loadWorkflowSkillContext(
+  input: string | undefined | null,
+  visualDecision?: WorkflowVisualDecisionContext,
+): Promise<WorkflowSkillContext> {
   const {
     workflowSkill,
     selectionCriteria,
@@ -1431,7 +1684,7 @@ export async function loadWorkflowSkillContext(input: string | undefined | null)
     throw new Error(`sequential-workflow prompt missing at ${sequentialWorkflow}`);
   }
 
-  const hit = await resolveDesignSkillHit(input);
+  const hit = await resolveDesignSkillHit(input, visualDecision);
 
   let designMd = "";
   if (hit.design_md_inline?.trim()) {

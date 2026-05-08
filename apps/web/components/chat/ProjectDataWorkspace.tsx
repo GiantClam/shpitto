@@ -6,16 +6,16 @@ import { useRouter } from "next/navigation";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
+import { ProjectBlogWorkspace } from "@/components/chat/ProjectBlogWorkspace";
 import {
-  Activity,
   ArrowLeft,
   BarChart3,
+  BookOpen,
   ChevronDown,
   ChevronsLeft,
   ChevronsRight,
   Database,
   FolderOpen,
-  LifeBuoy,
   Loader2,
   LogOut,
   MessageSquare,
@@ -60,50 +60,31 @@ type ContactSubmissionsResponse = {
   error?: string;
 };
 
-type AnalyticsPayload = {
-  status: "pending" | "active" | "degraded" | "not_configured";
-  provider: string;
-  siteTag?: string;
-  syncedAt?: string | null;
-  window: {
-    startAt: string;
-    endAt: string;
-  };
-  totals: {
-    visits: number;
-    pageViews: number;
-    bounceRate: number | null;
-    avgVisitDurationSeconds: number | null;
-  };
-  pages: Array<{ requestPath: string; visits: number; pageViews: number }>;
-  sources: Array<{
-    refererHost: string;
-    refererPath: string;
-    channel: "direct" | "search" | "social" | "referral";
-    visits: number;
-    pageViews: number;
-  }>;
-  channels: Array<{
-    channel: "direct" | "search" | "social" | "referral";
-    visits: number;
-    pageViews: number;
-  }>;
+type ProjectAuthUserItem = {
+  id: string;
+  projectId: string;
+  siteKey: string | null;
+  authUserId: string | null;
+  email: string;
+  emailVerified: boolean;
+  lastEvent: string;
+  signupCount: number;
+  loginCount: number;
+  verificationCount: number;
+  passwordResetCount: number;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
-type AnalyticsResponse = {
+type ProjectAuthUsersResponse = {
   ok: boolean;
-  project?: {
-    id: string;
-    name: string;
-    latestDeploymentUrl?: string | null;
-    deploymentHost?: string | null;
-  };
-  analytics?: AnalyticsPayload;
-  warning?: string;
+  items?: ProjectAuthUserItem[];
   error?: string;
 };
 
-type DataTab = "inquiries" | "website_support";
+type DataTab = "inquiries" | "auth_users" | "blog";
 
 type InquiryStatus = "new" | "pending" | "closed";
 
@@ -121,6 +102,8 @@ type InquiryRow = {
   referer: string;
   rawSubmission: Record<string, unknown>;
 };
+
+type AuthUserRow = ProjectAuthUserItem;
 
 function formatVersionLabel(updatedAt?: number): string {
   if (!updatedAt) return "v1.0.0";
@@ -149,27 +132,6 @@ function formatDateTimeLabel(value: string) {
 
 function numberText(value: number): string {
   return Intl.NumberFormat("en-US").format(Math.max(0, Number(value || 0)));
-}
-
-function percentText(value: number | null): string {
-  if (value == null || !Number.isFinite(value)) return "N/A";
-  return `${(Math.max(0, value) * 100).toFixed(1)}%`;
-}
-
-function durationText(seconds: number | null): string {
-  if (seconds == null || !Number.isFinite(seconds)) return "N/A";
-  if (seconds < 60) return `${Math.max(0, Math.round(seconds))}s`;
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.round(seconds % 60);
-  return `${mins}m ${String(secs).padStart(2, "0")}s`;
-}
-
-function rangeToWindow(range: "7d" | "30d") {
-  const now = new Date();
-  const endAt = now.toISOString();
-  const days = range === "30d" ? 30 : 7;
-  const startAt = new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
-  return { startAt, endAt };
 }
 
 function normalizeSpaces(value: string) {
@@ -319,6 +281,28 @@ function inquiryMatchesQuery(row: InquiryRow, keyword: string): boolean {
   return hay.includes(query);
 }
 
+function authUserStatusTone(verified: boolean) {
+  return verified
+    ? "border-emerald-400/35 bg-emerald-500/10 text-emerald-700"
+    : "border-amber-400/35 bg-amber-500/10 text-amber-700";
+}
+
+function authUserEventLabel(event: string) {
+  const value = String(event || "").trim().toLowerCase();
+  if (value === "signup") return "Signup";
+  if (value === "login") return "Login";
+  if (value === "oauth_login") return "OAuth Login";
+  if (value === "email_verified") return "Email Verified";
+  if (value === "verification_resend") return "Verification Resent";
+  if (value === "password_reset_requested") return "Password Reset Requested";
+  if (value === "password_reset_completed") return "Password Reset Completed";
+  return value || "-";
+}
+
+function authUserStatusText(verified: boolean) {
+  return verified ? "Verified" : "Unverified";
+}
+
 export function ProjectDataWorkspace({ projectId, locale = "en" }: { projectId: string; locale?: Locale }) {
   const router = useRouter();
   const workspaceCopy = getProjectWorkspaceCopy(locale);
@@ -338,13 +322,11 @@ export function ProjectDataWorkspace({ projectId, locale = "en" }: { projectId: 
   const [search, setSearch] = useState("");
   const [inquiries, setInquiries] = useState<InquiryRow[]>([]);
   const [selectedInquiryId, setSelectedInquiryId] = useState("");
-  const [supportRange, setSupportRange] = useState<"7d" | "30d">("7d");
-  const [loadingSupport, setLoadingSupport] = useState(false);
-  const [supportError, setSupportError] = useState("");
-  const [supportWarning, setSupportWarning] = useState("");
-  const [supportAnalytics, setSupportAnalytics] = useState<AnalyticsPayload | null>(null);
-  const [supportHost, setSupportHost] = useState("");
-  const [supportUrl, setSupportUrl] = useState("");
+  const [loadingAuthUsers, setLoadingAuthUsers] = useState(false);
+  const [authUsersError, setAuthUsersError] = useState("");
+  const [authUserSearch, setAuthUserSearch] = useState("");
+  const [authUsers, setAuthUsers] = useState<AuthUserRow[]>([]);
+  const [selectedAuthUserId, setSelectedAuthUserId] = useState("");
   const [exportingCsv, setExportingCsv] = useState(false);
   const [exportNotice, setExportNotice] = useState("");
 
@@ -394,36 +376,37 @@ export function ProjectDataWorkspace({ projectId, locale = "en" }: { projectId: 
     }
   }, [chatId]);
 
-  const fetchSupportData = useCallback(async () => {
+  const fetchAuthUsers = useCallback(async () => {
     if (!chatId.trim()) return;
-    setLoadingSupport(true);
-    setSupportError("");
-    setSupportWarning("");
+    setLoadingAuthUsers(true);
+    setAuthUsersError("");
     try {
-      const { startAt, endAt } = rangeToWindow(supportRange);
       const params = new URLSearchParams({
-        start: startAt,
-        end: endAt,
-        limit: "20",
+        limit: "200",
+        projectId: chatId,
       });
-      const res = await fetch(`/api/projects/${encodeURIComponent(chatId)}/analysis?${params.toString()}`, {
+      const res = await fetch(`/api/projects/${encodeURIComponent(chatId)}/auth-users?${params.toString()}`, {
         cache: "no-store",
       });
-      const data = (await res.json()) as AnalyticsResponse;
-      if (!res.ok || !data.ok || !data.analytics) {
-        throw new Error(data.error || "Failed to load website support data.");
+      const data = (await res.json()) as ProjectAuthUsersResponse;
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "Failed to load auth user data.");
       }
-      setSupportAnalytics(data.analytics);
-      setSupportHost(String(data.project?.deploymentHost || "").trim());
-      setSupportUrl(String(data.project?.latestDeploymentUrl || "").trim());
-      setSupportWarning(String(data.warning || "").trim());
+      const nextRows = Array.isArray(data.items) ? data.items.map((item) => ({ ...item })) : [];
+      setAuthUsers(nextRows);
+      setSelectedAuthUserId((prev) => {
+        if (nextRows.length === 0) return "";
+        if (prev && nextRows.some((row) => row.id === prev)) return prev;
+        return nextRows[0].id;
+      });
     } catch (err: any) {
-      setSupportError(String(err?.message || err || "Failed to load website support data."));
-      setSupportAnalytics(null);
+      setAuthUsersError(String(err?.message || err || "Failed to load auth user data."));
+      setAuthUsers([]);
+      setSelectedAuthUserId("");
     } finally {
-      setLoadingSupport(false);
+      setLoadingAuthUsers(false);
     }
-  }, [chatId, supportRange]);
+  }, [chatId]);
 
   useEffect(() => {
     let mounted = true;
@@ -450,9 +433,9 @@ export function ProjectDataWorkspace({ projectId, locale = "en" }: { projectId: 
   }, [activeTab, fetchInquiries]);
 
   useEffect(() => {
-    if (activeTab !== "website_support") return;
-    void fetchSupportData();
-  }, [activeTab, fetchSupportData]);
+    if (activeTab !== "auth_users") return;
+    void fetchAuthUsers();
+  }, [activeTab, fetchAuthUsers]);
 
   const filteredInquiries = useMemo(() => {
     const keyword = String(search || "").trim();
@@ -466,11 +449,49 @@ export function ProjectDataWorkspace({ projectId, locale = "en" }: { projectId: 
     return filteredInquiries[0] || null;
   }, [filteredInquiries, selectedInquiryId]);
 
-  const supportTotals = supportAnalytics?.totals || {
-    visits: 0,
-    pageViews: 0,
-    bounceRate: null,
-    avgVisitDurationSeconds: null,
+  const filteredAuthUsers = useMemo(() => {
+    const keyword = String(authUserSearch || "").trim().toLowerCase();
+    if (!keyword) return authUsers;
+    return authUsers.filter((item) => {
+      const hay = [
+        item.email,
+        item.authUserId,
+        item.siteKey || "",
+        item.lastEvent,
+        item.firstSeenAt,
+        item.lastSeenAt,
+      ]
+        .join(" ")
+        .toLowerCase();
+      return hay.includes(keyword);
+    });
+  }, [authUserSearch, authUsers]);
+
+  const selectedAuthUser = useMemo(() => {
+    const found = filteredAuthUsers.find((item) => item.id === selectedAuthUserId);
+    if (found) return found;
+    return filteredAuthUsers[0] || null;
+  }, [filteredAuthUsers, selectedAuthUserId]);
+
+  const authUsersCopy = {
+    loading: workspaceCopy.data.loadingUsers || "Loading auth user data...",
+    noMatching: workspaceCopy.data.noMatchingUsers || "No matching auth users found.",
+    noRows: workspaceCopy.data.noUsers || "No auth users yet.",
+    detailsTitle: workspaceCopy.data.detailsTitleUsers || "Auth User Details",
+    selectUser: workspaceCopy.data.selectUser || "Select an auth user row to inspect the account record.",
+    verified: workspaceCopy.data.verified || "Verified",
+    firstSeen: workspaceCopy.data.firstSeen || "First Seen",
+    lastSeen: workspaceCopy.data.lastSeen || "Last Seen",
+    lastEvent: workspaceCopy.data.lastEvent || "Last Event",
+    authUserId: workspaceCopy.data.authUserId || "Auth User ID",
+    siteKey: workspaceCopy.data.siteKey || "Site Key",
+    signupCount: workspaceCopy.data.signupCount || "Signups",
+    loginCount: workspaceCopy.data.loginCount || "Logins",
+    verificationCount: workspaceCopy.data.verificationCount || "Verifications",
+    passwordResetCount: workspaceCopy.data.passwordResetCount || "Password Resets",
+    searchUsers: workspaceCopy.data.searchUsers || "Search auth users...",
+    viewDetails: workspaceCopy.data.viewDetails || "View details",
+    quickActions: workspaceCopy.data.quickActions || "Quick Actions",
   };
 
   const fetchInquiryBatchForExport = useCallback(
@@ -556,6 +577,16 @@ export function ProjectDataWorkspace({ projectId, locale = "en" }: { projectId: 
       setSelectedInquiryId("");
     }
   }, [filteredInquiries, selectedInquiry, selectedInquiryId]);
+
+  useEffect(() => {
+    if (selectedAuthUser && selectedAuthUser.id !== selectedAuthUserId) {
+      setSelectedAuthUserId(selectedAuthUser.id);
+      return;
+    }
+    if (filteredAuthUsers.length === 0 && selectedAuthUserId) {
+      setSelectedAuthUserId("");
+    }
+  }, [filteredAuthUsers, selectedAuthUser, selectedAuthUserId]);
 
   async function handleCreateProject() {
     if (creatingProject) return;
@@ -750,26 +781,28 @@ export function ProjectDataWorkspace({ projectId, locale = "en" }: { projectId: 
                   Central Repository - {projectTitle}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  if (activeTab === "inquiries") {
-                    void fetchInquiries();
-                    return;
-                  }
-                  void fetchSupportData();
-                }}
-                disabled={activeTab === "inquiries" ? loadingInquiries : loadingSupport}
-                className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-4 py-2 text-sm text-[var(--shp-muted)] hover:text-[var(--shp-text)] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {activeTab === "inquiries"
-                  ? loadingInquiries
-                    ? "Syncing..."
-                    : "Sync Now"
-                  : loadingSupport
-                    ? "Syncing..."
-                    : "Sync Now"}
-              </button>
+              {activeTab === "blog" ? null : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (activeTab === "inquiries") {
+                      void fetchInquiries();
+                      return;
+                    }
+                    void fetchAuthUsers();
+                  }}
+                  disabled={activeTab === "inquiries" ? loadingInquiries : loadingAuthUsers}
+                  className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-4 py-2 text-sm text-[var(--shp-muted)] hover:text-[var(--shp-text)] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {activeTab === "inquiries"
+                    ? loadingInquiries
+                      ? "Syncing..."
+                      : "Sync Now"
+                    : loadingAuthUsers
+                      ? "Syncing..."
+                      : "Sync Now"}
+                </button>
+              )}
             </div>
 
             <div className="mt-5 inline-flex items-center gap-2 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] p-1.5">
@@ -782,7 +815,7 @@ export function ProjectDataWorkspace({ projectId, locale = "en" }: { projectId: 
                     ? "bg-[color-mix(in_oklab,var(--shp-primary)_24%,transparent)] text-[var(--shp-text)]"
                     : "text-[var(--shp-muted)] hover:text-[var(--shp-text)]",
                 ].join(" ")}
-              >
+                >
                 <MessageSquare className="h-4 w-4" />
                 {workspaceCopy.data.inquiries}
                 <span className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-1.5 text-xs">
@@ -791,19 +824,32 @@ export function ProjectDataWorkspace({ projectId, locale = "en" }: { projectId: 
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab("website_support")}
+                onClick={() => setActiveTab("auth_users")}
                 className={[
                   "inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm",
-                  activeTab === "website_support"
+                  activeTab === "auth_users"
                     ? "bg-[color-mix(in_oklab,var(--shp-primary)_24%,transparent)] text-[var(--shp-text)]"
                     : "text-[var(--shp-muted)] hover:text-[var(--shp-text)]",
                 ].join(" ")}
               >
-                <LifeBuoy className="h-4 w-4" />
-                {workspaceCopy.data.websiteSupport}
+                <User2 className="h-4 w-4" />
+                {workspaceCopy.data.authUsers || "Auth Users"}
                 <span className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-1.5 text-xs">
-                  {numberText(supportTotals.visits)}
+                  {authUsers.length}
                 </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("blog")}
+                className={[
+                  "inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm",
+                  activeTab === "blog"
+                    ? "bg-[color-mix(in_oklab,var(--shp-primary)_24%,transparent)] text-[var(--shp-text)]"
+                    : "text-[var(--shp-muted)] hover:text-[var(--shp-text)]",
+                ].join(" ")}
+              >
+                <BookOpen className="h-4 w-4" />
+                {workspaceCopy.data.blog || "Blog"}
               </button>
             </div>
 
@@ -978,156 +1024,202 @@ export function ProjectDataWorkspace({ projectId, locale = "en" }: { projectId: 
                   </article>
                 </div>
               </div>
-            ) : (
+            ) : activeTab === "auth_users" ? (
               <div className="mt-5 space-y-4">
                 <div className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <h3 className="text-2xl font-semibold text-[var(--shp-text)]">{workspaceCopy.data.supportTitle}</h3>
-                      <p className="mt-1 text-xs text-[var(--shp-muted)]">
-                        {supportHost ? `Host: ${supportHost}` : workspaceCopy.data.noDeploymentHost}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
+                    <h3 className="text-2xl font-semibold text-[var(--shp-text)]">Auth User Records</h3>
+                    <div className="flex w-full max-w-[560px] items-center gap-2">
+                      <div className="relative w-full">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--shp-muted)]" />
+                        <input
+                          value={authUserSearch}
+                          onChange={(event) => setAuthUserSearch(event.target.value)}
+                          placeholder={authUsersCopy.searchUsers}
+                          className="h-10 w-full rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_66%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_40%,transparent)] pl-9 pr-3 text-sm text-[var(--shp-text)] outline-none focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)]"
+                        />
+                      </div>
                       <button
                         type="button"
-                        onClick={() => setSupportRange("7d")}
-                        className={[
-                          "rounded-md border px-3 py-1.5 text-xs",
-                          supportRange === "7d"
-                            ? "border-[color-mix(in_oklab,var(--shp-primary)_50%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_18%,transparent)] text-[var(--shp-text)]"
-                            : "border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] text-[var(--shp-muted)]",
-                        ].join(" ")}
+                        onClick={() => void fetchAuthUsers()}
+                        disabled={loadingAuthUsers}
+                        className="shrink-0 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-3 py-2 text-xs text-[var(--shp-muted)] hover:text-[var(--shp-text)] disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {workspaceCopy.analytics.last7Days}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSupportRange("30d")}
-                        className={[
-                          "rounded-md border px-3 py-1.5 text-xs",
-                          supportRange === "30d"
-                            ? "border-[color-mix(in_oklab,var(--shp-primary)_50%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_18%,transparent)] text-[var(--shp-text)]"
-                            : "border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] text-[var(--shp-muted)]",
-                        ].join(" ")}
-                      >
-                        {workspaceCopy.analytics.last30Days}
+                        {loadingAuthUsers ? "Syncing..." : "Sync Now"}
                       </button>
                     </div>
                   </div>
-                  {supportUrl ? (
-                    <a
-                      href={supportUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-2 inline-flex items-center gap-1 text-xs text-[var(--shp-primary)] hover:underline"
-                    >
-                      <Activity className="h-3.5 w-3.5" />
-                      {workspaceCopy.analytics.openLiveSite}
-                    </a>
+
+                  {authUsersError ? (
+                    <div className="mt-4 rounded-lg border border-rose-400/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-700">
+                      {authUsersError}
+                    </div>
                   ) : null}
-                </div>
 
-                {supportWarning ? (
-                  <div className="rounded-lg border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700">
-                    {supportWarning}
-                  </div>
-                ) : null}
-                {supportError ? (
-                  <div className="rounded-lg border border-rose-400/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-700">
-                    {supportError}
-                  </div>
-                ) : null}
-                {loadingSupport ? (
-                  <div className="flex items-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_60%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] px-3 py-2 text-sm text-[var(--shp-muted)]">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Loading website support data...
-                  </div>
-                ) : null}
+                  {loadingAuthUsers ? (
+                    <div className="mt-4 flex items-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_60%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] px-3 py-2 text-sm text-[var(--shp-muted)]">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {authUsersCopy.loading}
+                    </div>
+                  ) : null}
 
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <article className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-4">
-                    <p className="text-xs uppercase tracking-[0.2em] text-[var(--shp-muted)]">{workspaceCopy.analytics.visits}</p>
-                    <p className="mt-2 text-3xl font-semibold text-[var(--shp-text)]">{numberText(supportTotals.visits)}</p>
-                  </article>
-                  <article className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-4">
-                    <p className="text-xs uppercase tracking-[0.2em] text-[var(--shp-muted)]">{workspaceCopy.analytics.pageViews}</p>
-                    <p className="mt-2 text-3xl font-semibold text-[var(--shp-text)]">{numberText(supportTotals.pageViews)}</p>
-                  </article>
-                  <article className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-4">
-                    <p className="text-xs uppercase tracking-[0.2em] text-[var(--shp-muted)]">{workspaceCopy.analytics.bounceRate}</p>
-                    <p className="mt-2 text-3xl font-semibold text-[var(--shp-text)]">{percentText(supportTotals.bounceRate)}</p>
-                  </article>
-                  <article className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-4">
-                    <p className="text-xs uppercase tracking-[0.2em] text-[var(--shp-muted)]">{workspaceCopy.analytics.avgDuration}</p>
-                    <p className="mt-2 text-3xl font-semibold text-[var(--shp-text)]">
-                      {durationText(supportTotals.avgVisitDurationSeconds)}
-                    </p>
-                  </article>
-                </div>
-
-                <div className="grid gap-4 xl:grid-cols-[1.2fr_1fr]">
-                  <article className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-4">
-                    <h3 className="text-base font-semibold text-[var(--shp-text)]">{workspaceCopy.analytics.topPages}</h3>
-                    <div className="mt-3 overflow-x-auto">
-                      <table className="w-full min-w-[520px] text-left text-sm">
-                        <thead>
-                          <tr className="text-[11px] uppercase tracking-[0.18em] text-[var(--shp-muted)]">
-                            <th className="py-2">Path</th>
-                            <th className="py-2">{workspaceCopy.analytics.visits}</th>
-                            <th className="py-2">{workspaceCopy.analytics.pageViews}</th>
+                  <div className="mt-4 overflow-x-auto">
+                    <table className="w-full min-w-[1180px] text-left text-sm">
+                      <thead>
+                        <tr className="text-[11px] uppercase tracking-[0.18em] text-[var(--shp-muted)]">
+                          <th className="py-2">{authUsersCopy.firstSeen}</th>
+                          <th className="py-2">{workspaceCopy.data.emailAddress}</th>
+                          <th className="py-2">{authUsersCopy.verified}</th>
+                          <th className="py-2">{authUsersCopy.lastEvent}</th>
+                          <th className="py-2">{authUsersCopy.lastSeen}</th>
+                          <th className="py-2">{authUsersCopy.signupCount}</th>
+                          <th className="py-2">{authUsersCopy.loginCount}</th>
+                          <th className="py-2">{workspaceCopy.data.action}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredAuthUsers.length === 0 ? (
+                          <tr>
+                            <td colSpan={8} className="py-6 text-center text-sm text-[var(--shp-muted)]">
+                              {authUserSearch ? authUsersCopy.noMatching : authUsersCopy.noRows}
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {(supportAnalytics?.pages || []).length === 0 ? (
-                            <tr>
-                              <td colSpan={3} className="py-4 text-xs text-[var(--shp-muted)]">
-                                No page-level support data yet.
+                        ) : (
+                          filteredAuthUsers.map((row) => (
+                            <tr key={row.id} className="border-t border-[color-mix(in_oklab,var(--shp-border)_56%,transparent)]">
+                              <td className="py-3 text-[var(--shp-muted)]">{formatDateLabel(row.firstSeenAt)}</td>
+                              <td className="py-3 text-[var(--shp-text)]">{row.email || "-"}</td>
+                              <td className="py-3">
+                                <span className={`inline-flex rounded-md border px-2 py-1 text-[11px] ${authUserStatusTone(row.emailVerified)}`}>
+                                  {authUserStatusText(row.emailVerified)}
+                                </span>
+                              </td>
+                              <td className="py-3 text-[var(--shp-text)]">{authUserEventLabel(row.lastEvent)}</td>
+                              <td className="py-3 text-[var(--shp-muted)]">{formatDateTimeLabel(row.lastSeenAt)}</td>
+                              <td className="py-3 text-[var(--shp-text)]">{numberText(row.signupCount)}</td>
+                              <td className="py-3 text-[var(--shp-text)]">{numberText(row.loginCount)}</td>
+                              <td className="py-3">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedAuthUserId(row.id)}
+                                  className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] px-2 py-1 text-xs text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)]"
+                                >
+                                  {authUsersCopy.viewDetails}
+                                </button>
                               </td>
                             </tr>
-                          ) : (
-                            (supportAnalytics?.pages || []).map((row) => (
-                              <tr key={row.requestPath} className="border-t border-[color-mix(in_oklab,var(--shp-border)_56%,transparent)]">
-                                <td className="py-2 text-[var(--shp-text)]">{row.requestPath || "/"}</td>
-                                <td className="py-2 text-[var(--shp-text)]">{numberText(row.visits)}</td>
-                                <td className="py-2 text-[var(--shp-text)]">{numberText(row.pageViews)}</td>
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
+                  <article className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-4">
+                    <h3 className="text-lg font-semibold text-[var(--shp-text)]">{authUsersCopy.detailsTitle}</h3>
+                    {!selectedAuthUser ? (
+                      <p className="mt-3 text-sm text-[var(--shp-muted)]">{authUsersCopy.selectUser}</p>
+                    ) : (
+                      <div className="mt-3 space-y-3 text-sm">
+                        <div className="grid gap-3 md:grid-cols-2">
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.14em] text-[var(--shp-muted)]">Email</p>
+                            <p className="mt-1 break-all text-[var(--shp-text)]">{selectedAuthUser.email || "-"}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.14em] text-[var(--shp-muted)]">{authUsersCopy.verified}</p>
+                            <p className="mt-1 text-[var(--shp-text)]">{authUserStatusText(selectedAuthUser.emailVerified)}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.14em] text-[var(--shp-muted)]">{authUsersCopy.authUserId}</p>
+                            <p className="mt-1 break-all text-[var(--shp-text)]">{selectedAuthUser.authUserId || "-"}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.14em] text-[var(--shp-muted)]">{authUsersCopy.siteKey}</p>
+                            <p className="mt-1 break-all text-[var(--shp-text)]">{selectedAuthUser.siteKey || "-"}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.14em] text-[var(--shp-muted)]">{authUsersCopy.firstSeen}</p>
+                            <p className="mt-1 text-[var(--shp-text)]">{formatDateTimeLabel(selectedAuthUser.firstSeenAt)}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.14em] text-[var(--shp-muted)]">{authUsersCopy.lastSeen}</p>
+                            <p className="mt-1 text-[var(--shp-text)]">{formatDateTimeLabel(selectedAuthUser.lastSeenAt)}</p>
+                          </div>
+                        </div>
+
+                        <div className="grid gap-3 md:grid-cols-2">
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.14em] text-[var(--shp-muted)]">{authUsersCopy.lastEvent}</p>
+                            <p className="mt-1 text-[var(--shp-text)]">{authUserEventLabel(selectedAuthUser.lastEvent)}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.14em] text-[var(--shp-muted)]">{workspaceCopy.data.status}</p>
+                            <p className="mt-1 text-[var(--shp-text)]">
+                              {selectedAuthUser.emailVerified ? authUsersCopy.verified : "Unverified"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="grid gap-3 md:grid-cols-2">
+                          <div className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_90%,var(--shp-bg)_10%)] p-3">
+                            <p className="text-xs uppercase tracking-[0.14em] text-[var(--shp-muted)]">{authUsersCopy.signupCount}</p>
+                            <p className="mt-1 text-2xl font-semibold text-[var(--shp-text)]">{numberText(selectedAuthUser.signupCount)}</p>
+                          </div>
+                          <div className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_90%,var(--shp-bg)_10%)] p-3">
+                            <p className="text-xs uppercase tracking-[0.14em] text-[var(--shp-muted)]">{authUsersCopy.loginCount}</p>
+                            <p className="mt-1 text-2xl font-semibold text-[var(--shp-text)]">{numberText(selectedAuthUser.loginCount)}</p>
+                          </div>
+                          <div className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_90%,var(--shp-bg)_10%)] p-3">
+                            <p className="text-xs uppercase tracking-[0.14em] text-[var(--shp-muted)]">{authUsersCopy.verificationCount}</p>
+                            <p className="mt-1 text-2xl font-semibold text-[var(--shp-text)]">{numberText(selectedAuthUser.verificationCount)}</p>
+                          </div>
+                          <div className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_90%,var(--shp-bg)_10%)] p-3">
+                            <p className="text-xs uppercase tracking-[0.14em] text-[var(--shp-muted)]">{authUsersCopy.passwordResetCount}</p>
+                            <p className="mt-1 text-2xl font-semibold text-[var(--shp-text)]">{numberText(selectedAuthUser.passwordResetCount)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </article>
 
                   <article className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-4">
-                    <h3 className="text-base font-semibold text-[var(--shp-text)]">{workspaceCopy.analytics.trafficChannels}</h3>
-                    <div className="mt-3 space-y-2">
-                      {(supportAnalytics?.channels || []).length === 0 ? (
-                        <p className="text-xs text-[var(--shp-muted)]">No channel data yet.</p>
-                      ) : (
-                        (supportAnalytics?.channels || []).map((row) => {
-                          const total = Math.max(1, supportTotals.visits || 0);
-                          const width = Math.max(4, Math.min(100, (row.visits / total) * 100));
-                          return (
-                            <div key={row.channel}>
-                              <div className="mb-1 flex items-center justify-between text-xs">
-                                <span className="capitalize text-[var(--shp-text)]">{row.channel}</span>
-                                <span className="text-[var(--shp-muted)]">{numberText(row.visits)} visits</span>
-                              </div>
-                        <div className="h-2 rounded-full bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)]">
-                                <div
-                                  className="h-2 rounded-full bg-[color-mix(in_oklab,var(--shp-primary)_72%,transparent)]"
-                                  style={{ width: `${width}%` }}
-                                />
-                              </div>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
+                    <h3 className="text-base font-semibold text-[var(--shp-text)]">{authUsersCopy.quickActions}</h3>
+                    <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-[var(--shp-text)]">
+                      <li>
+                        <button
+                          type="button"
+                          onClick={() => void fetchAuthUsers()}
+                          disabled={loadingAuthUsers}
+                          className="text-left hover:underline disabled:cursor-not-allowed disabled:no-underline disabled:opacity-60"
+                        >
+                          Sync auth users
+                        </button>
+                      </li>
+                      <li>
+                        <button
+                          type="button"
+                          onClick={() => setAuthUserSearch("")}
+                          className="text-left hover:underline"
+                        >
+                          Clear search filter
+                        </button>
+                      </li>
+                      <li>Review sign-up, login, and verification activity.</li>
+                    </ul>
+                    {selectedAuthUser ? (
+                      <div className="mt-4 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] p-3 text-xs text-[var(--shp-muted)]">
+                        <p className="font-medium text-[var(--shp-text)]">Current Selection</p>
+                        <p className="mt-1 break-all">{selectedAuthUser.email}</p>
+                        <p className="break-all">{selectedAuthUser.siteKey || "-"}</p>
+                      </div>
+                    ) : null}
                   </article>
                 </div>
               </div>
+            ) : (
+              <ProjectBlogWorkspace projectId={chatId} projectTitle={projectTitle} locale={locale} />
             )}
           </section>
         </section>

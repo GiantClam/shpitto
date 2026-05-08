@@ -186,6 +186,10 @@ function routeFromDocumentPageLabel(label: string, index: number): string {
     { route: "/downloads", keys: ["downloads", "download", "\u8d44\u6599\u4e0b\u8f7d", "\u4e0b\u8f7d"] },
     { route: "/about", keys: ["about", "\u5173\u4e8e"] },
     { route: "/contact", keys: ["contact", "\u8054\u7cfb", "\u54a8\u8be2"] },
+    { route: "/login", keys: ["login", "signin", "sign in", "\u767b\u5f55"] },
+    { route: "/register", keys: ["register", "signup", "sign up", "\u6ce8\u518c"] },
+    { route: "/reset-password", keys: ["forgot password", "reset password", "password reset", "\u627e\u56de\u5bc6\u7801", "\u5fd8\u8bb0\u5bc6\u7801"] },
+    { route: "/verify-email", keys: ["verify email", "email verification", "confirm email", "\u9a8c\u8bc1\u90ae\u7bb1", "\u90ae\u7bb1\u9a8c\u8bc1"] },
   ];
   const matched = known.find((entry) => entry.keys.some((key) => normalized.includes(normalizeLabelForMatching(key))));
   if (matched) return matched.route;
@@ -201,7 +205,7 @@ function routeFromDocumentPageLabel(label: string, index: number): string {
 
 function isUnsupportedGeneratedPageLabel(label: string): boolean {
   const normalized = normalizeLabelForMatching(label);
-  return /(login|signin|register|signup|auth|\u767b\u5f55|\u6ce8\u518c)/iu.test(normalized);
+  return /(authcodeerror|autherror|\u8ba4\u8bc1\u9519\u8bef)/iu.test(normalized);
 }
 
 function splitExplicitNavLabels(line: string): string[] {
@@ -248,15 +252,10 @@ function extractDocumentSuggestedPages(text: string): { pages: SuggestedPage[]; 
 
   const pages: SuggestedPage[] = [];
   const gaps: string[] = [];
-  if (/(login|signin|register|signup|auth|\u767b\u5f55|\u6ce8\u518c)/iu.test(source)) {
-    gaps.push(
-      "Document mentions user registration/login, but local auth/register pages are not generated unless the runtime supports that feature; link it as an external system instead.",
-    );
-  }
   const seenRoutes = new Set<string>();
   for (const label of labels) {
     if (isUnsupportedGeneratedPageLabel(label)) {
-      gaps.push(`Document mentions ${label}, but local auth/register pages are not generated unless the runtime supports that feature; link it as an external system instead.`);
+      gaps.push(`Document mentions ${label}, but this route is treated as a non-page auth artifact and should stay external.`);
       continue;
     }
     const route = routeFromDocumentPageLabel(label, pages.length);

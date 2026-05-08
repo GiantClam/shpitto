@@ -25,6 +25,57 @@ describe("decision-layer", () => {
     expect(contact?.constraints.join(" ")).toContain("Canonical Website Prompt is the authoritative source");
   });
 
+  it("treats Blog as a data-source page at the blueprint layer", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage("Build a multi-page website. Nav: Home | Solutions | Blog | Contact"),
+      ],
+      phase: "conversation",
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+    const blog = plan.pageBlueprints.find((page) => page.route === "/blog");
+
+    expect(blog?.pageKind).toBe("blog-data-index");
+    expect(blog?.responsibility).toContain("Content collection page");
+    expect(blog?.contentSkeleton.join(" ")).toContain("data-shpitto-blog-root");
+    expect(blog?.constraints.join(" ")).toContain('data-shpitto-blog-api="/api/blog/posts"');
+    expect(blog?.constraints.join(" ")).toContain("/blog/{slug}/");
+    expect(blog?.constraints.join(" ")).toContain("Implementation mechanics are invisible infrastructure");
+  });
+
+  it("uses an existing semantic content route as the Blog data-source page instead of adding duplicate /blog", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          "Build a multi-page website. The information platform publishes updates, insights, and article content.",
+        ),
+      ],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/products", "/information-platform", "/contact"],
+          navLabels: ["Home", "Products", "Information Platform", "Contact"],
+          files: ["/styles.css", "/script.js", "/index.html", "/products/index.html", "/information-platform/index.html", "/contact/index.html"],
+        },
+      },
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+    const informationPlatform = plan.pageBlueprints.find((page) => page.route === "/information-platform");
+
+    expect(plan.routes).toEqual(["/", "/products", "/information-platform", "/contact"]);
+    expect(plan.routes).not.toContain("/blog");
+    expect(informationPlatform?.pageKind).toBe("blog-data-index");
+    expect(informationPlatform?.constraints.join(" ")).toContain("Blog backend route confidence");
+    expect(informationPlatform?.contentSkeleton.join(" ")).toContain("data-shpitto-blog-root");
+    expect(informationPlatform?.contentSkeleton.join(" ")).toContain("case library");
+    expect(informationPlatform?.constraints.join(" ")).toContain("English design jargon");
+  });
+
   it("keeps the final comma-delimited page when another sentence follows", () => {
     const state: any = {
       messages: [
@@ -42,6 +93,7 @@ describe("decision-layer", () => {
       "/3c-machines",
       "/custom-solutions",
       "/cases",
+      "/blog",
       "/contact",
       "/about",
     ]);
@@ -61,6 +113,7 @@ describe("decision-layer", () => {
 
     expect(plan.routes).toEqual(["/", "/products", "/cases", "/news", "/contact", "/about"]);
     expect(plan.navLabels.slice(-2)).toEqual(["Contact", "About"]);
+    expect(plan.pageBlueprints.find((page) => page.route === "/news")?.pageKind).toBe("blog-data-index");
   });
 
   it("derives CASUX routes from Chinese prompt without forcing LC-CNC defaults", () => {
@@ -94,6 +147,8 @@ describe("decision-layer", () => {
         "/downloads",
       ]),
     );
+    expect(plan.routes).not.toContain("/blog");
+    expect(plan.pageBlueprints.find((page) => page.route === "/casux-information-platform")?.pageKind).toBe("blog-data-index");
     expect(plan.routes).not.toEqual(expect.arrayContaining(["/3c-machines", "/custom-solutions"]));
   });
 
@@ -312,7 +367,8 @@ describe("decision-layer", () => {
     const plan = buildLocalDecisionPlan(state);
 
     expect(plan.routes).toEqual(expect.arrayContaining(["/", "/about", "/custom-solutions", "/cases", "/contact"]));
-    expect(plan.routes.length).toBeLessThanOrEqual(6);
+    expect(plan.routes).toEqual(expect.arrayContaining(["/blog"]));
+    expect(plan.routes.length).toBeLessThanOrEqual(7);
     expect(plan.routes).not.toEqual(
       expect.arrayContaining([
         "/infer-audience",
@@ -420,7 +476,7 @@ describe("decision-layer", () => {
 
     const plan = buildLocalDecisionPlan(state);
 
-    expect(plan.routes).toEqual(["/", "/products", "/custom-solutions", "/cases", "/contact"]);
+    expect(plan.routes).toEqual(["/", "/products", "/custom-solutions", "/cases", "/blog", "/contact"]);
     expect(plan.routes).not.toEqual(expect.arrayContaining(["/email", "/phone", "/spec-cards", "/quote-form"]));
   });
 
@@ -449,7 +505,7 @@ describe("decision-layer", () => {
 
     const plan = buildLocalDecisionPlan(state);
 
-    expect(plan.routes).toEqual(["/", "/products", "/cases", "/contact"]);
+    expect(plan.routes).toEqual(["/", "/products", "/cases", "/blog", "/contact"]);
   });
 
   it("uses workflow promptControlManifest before parsing prompt text", () => {
@@ -478,8 +534,8 @@ describe("decision-layer", () => {
 
     const plan = buildLocalDecisionPlan(state);
 
-    expect(plan.routes).toEqual(["/", "/products", "/cases", "/contact"]);
-    expect(plan.navLabels).toEqual(["Home", "Products", "Cases", "Contact"]);
+    expect(plan.routes).toEqual(["/", "/products", "/cases", "/blog", "/contact"]);
+    expect(plan.navLabels).toEqual(["Home", "Products", "Cases", "Blog", "Contact"]);
     expect(plan.routes).not.toEqual(expect.arrayContaining(["/email", "/phone", "/spec-cards", "/quote-form"]));
   });
 
@@ -502,6 +558,25 @@ describe("decision-layer", () => {
 
     expect(plan.routes).toEqual(["/"]);
     expect(plan.routes).not.toEqual(expect.arrayContaining(["/services", "/css-js", "/login"]));
+  });
+
+  it("maps auth-related page labels to dedicated auth routes and blueprints", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          [
+            "Pages: Home, Login, Register, Reset Password, Verify Email.",
+            "Keep the auth flow branded and consistent with the rest of the site.",
+          ].join("\n"),
+        ),
+      ],
+      phase: "conversation",
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+    expect(plan.routes).toEqual(expect.arrayContaining(["/", "/login", "/register", "/reset-password", "/verify-email"]));
+    expect(plan.pageBlueprints.find((page) => page.route === "/login")?.pageKind).toBe("auth");
+    expect(plan.pageBlueprints.find((page) => page.route === "/reset-password")?.pageKind).toBe("auth");
   });
 
   it("preserves manifest nav labels when canonical prompt contains page intent prose", () => {
@@ -536,5 +611,46 @@ describe("decision-layer", () => {
     expect(plan.routes).toEqual(["/", "/blog"]);
     expect(plan.navLabels).toEqual(["首页", "Blog"]);
     expect(plan.pageBlueprints.find((page) => page.route === "/blog")?.navLabel).toBe("Blog");
+  });
+
+  it("uses explicit route mentions instead of turning prose constraints into pages or nav labels", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          [
+            "生成个人 Blog 网站。",
+            "1. 路由包含首页 `/` 与 `/blog/`，导航一行显示，不允许换行。",
+            "2. Blog runtime/snapshot 替换数据后，列表项外层卡片仍必须有 padding/gap。",
+            "3. Footer 导航链接超过 3 个时，不要使用窄右列 + flex-wrap + flex-end + pill button。",
+            "4. 首页必须优先介绍本人，可以链接到方案能力，但不要新增方案页面。",
+          ].join("\n"),
+        ),
+      ],
+      phase: "conversation",
+      sitemap: ["/", "/snapshot", "/gap", "/custom-solutions"],
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+
+    expect(plan.routes).toEqual(["/", "/blog"]);
+    expect(plan.navLabels).toEqual(["首页", "博客"]);
+    expect(plan.routes).not.toEqual(expect.arrayContaining(["/snapshot", "/gap", "/custom-solutions"]));
+    expect(plan.pageBlueprints.every((page) => page.source === "explicit_route")).toBe(true);
+  });
+
+  it("keeps explicit blog route when the prompt says only generate home and blog", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          "只生成首页 / 与 /blog/ 两个导航页面，首页必须介绍本人，Blog 页面由 Blog 后端支撑。",
+        ),
+      ],
+      phase: "conversation",
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+
+    expect(plan.routes).toEqual(["/", "/blog"]);
+    expect(plan.pageBlueprints.every((page) => page.source === "explicit_route")).toBe(true);
   });
 });

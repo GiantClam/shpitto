@@ -1,7 +1,9 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { NextRequest } from "next/server";
-import { buildAppUrl } from "../app-url";
-import { createSupabaseAdminClient, getSupabaseAdminConfig } from "../supabase/admin";
+import { buildAppUrl } from "../app-url.ts";
+import { createSupabaseAdminClient, getSupabaseAdminConfig } from "../supabase/admin.ts";
+import { safeAuthNextPath } from "./next-path.ts";
+import { safeAuthTheme, serializeAuthTheme } from "./theme.ts";
 
 const CLOUDFLARE_EMAIL_API_BASE = "https://api.cloudflare.com/client/v4/accounts";
 const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
@@ -68,9 +70,13 @@ function hashToken(token: string) {
   return createHash("sha256").update(token.trim()).digest("hex");
 }
 
-function buildActionUrl(path: string, token: string, request: NextRequest) {
+function buildActionUrl(path: string, token: string, request: NextRequest, extraParams?: Record<string, string | undefined>) {
   const url = new URL(buildAppUrl(path, request));
   url.searchParams.set("token", token);
+  for (const [key, value] of Object.entries(extraParams || {})) {
+    const safeValue = key === "next" ? safeAuthNextPath(value, "") : String(value || "").trim();
+    if (safeValue) url.searchParams.set(key, safeValue);
+  }
   return url.toString();
 }
 
@@ -212,6 +218,9 @@ export async function createAuthUserWithVerification(params: {
   email: string;
   password: string;
   request: NextRequest;
+  theme?: string;
+  projectId?: string;
+  siteKey?: string;
 }) {
   const email = normalizeAuthEmail(params.email);
   const supabase = createAdminOrThrow();
@@ -234,6 +243,9 @@ export async function createAuthUserWithVerification(params: {
       userId: data.user.id,
       email,
       request: params.request,
+      theme: params.theme,
+      projectId: params.projectId,
+      siteKey: params.siteKey,
     });
   } catch (error) {
     await supabase.from(EMAIL_VERIFICATION_TOKENS_TABLE).delete().eq("user_id", data.user.id);
@@ -266,9 +278,20 @@ export async function issueEmailVerificationToken(userId: string, email: string)
   return { token, expiresAt };
 }
 
-export async function sendEmailVerification(params: { userId: string; email: string; request: NextRequest }) {
+export async function sendEmailVerification(params: {
+  userId: string;
+  email: string;
+  request: NextRequest;
+  theme?: string;
+  projectId?: string;
+  siteKey?: string;
+}) {
   const { token } = await issueEmailVerificationToken(params.userId, params.email);
-  const verificationUrl = buildActionUrl("/verify-email", token, params.request);
+  const verificationUrl = buildActionUrl("/verify-email", token, params.request, {
+    theme: serializeAuthTheme(safeAuthTheme(params.theme)),
+    projectId: params.projectId,
+    siteKey: params.siteKey,
+  });
   const content = buildVerificationEmailContent(verificationUrl);
 
   await sendCloudflareEmail({
@@ -326,6 +349,10 @@ export async function sendPasswordReset(params: {
   request: NextRequest;
   requestedIp: string;
   userAgent: string;
+  nextPath?: string;
+  theme?: string;
+  projectId?: string;
+  siteKey?: string;
 }) {
   const supabase = createAdminOrThrow();
   const token = generateToken();
@@ -347,7 +374,12 @@ export async function sendPasswordReset(params: {
 
   if (error) throw error;
 
-  const resetUrl = buildActionUrl("/reset-password", token, params.request);
+  const resetUrl = buildActionUrl("/reset-password", token, params.request, {
+    next: params.nextPath,
+    theme: serializeAuthTheme(safeAuthTheme(params.theme)),
+    projectId: params.projectId,
+    siteKey: params.siteKey,
+  });
   const content = buildPasswordResetEmailContent(resetUrl);
   try {
     await sendCloudflareEmail({

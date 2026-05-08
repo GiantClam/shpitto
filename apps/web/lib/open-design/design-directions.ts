@@ -19,6 +19,27 @@ export type WebsiteDesignDirection = {
   posture: string[];
 };
 
+export type WebsiteDesignRecommendationInput = {
+  siteType?: string;
+  targetAudience?: string[];
+  primaryGoal?: string[];
+  contentSources?: string[];
+  designTheme?: string[];
+  functionalRequirements?: string[];
+  customNotes?: string;
+};
+
+export type WebsiteDesignDirectionRecommendationReason = {
+  kind: "siteType" | "audience" | "goal" | "contentSource" | "keyword";
+  matched: string;
+};
+
+export type WebsiteDesignDirectionRecommendation = {
+  direction: WebsiteDesignDirection;
+  score: number;
+  reasons: WebsiteDesignDirectionRecommendationReason[];
+};
+
 export const WEBSITE_DESIGN_DIRECTIONS: WebsiteDesignDirection[] = [
   {
     id: "editorial-monocle",
@@ -200,6 +221,159 @@ export const WEBSITE_DESIGN_DIRECTIONS: WebsiteDesignDirection[] = [
 ];
 
 export const WEBSITE_DESIGN_DIRECTION_IDS = WEBSITE_DESIGN_DIRECTIONS.map((direction) => direction.id);
+
+const WEBSITE_DESIGN_DIRECTION_SIGNAL_MAP: Record<
+  string,
+  {
+    siteTypes?: string[];
+    audiences?: string[];
+    goals?: string[];
+    contentSources?: string[];
+    keywords?: RegExp[];
+    negativeKeywords?: RegExp[];
+  }
+> = {
+  "editorial-monocle": {
+    siteTypes: ["company", "portfolio"],
+    audiences: ["consumers", "investors", "overseas_customers"],
+    goals: ["brand_trust"],
+    contentSources: ["existing_domain", "uploaded_files"],
+    keywords: [/editorial|magazine|journal|story|stories|media|publication|content-heavy/i],
+    negativeKeywords: [/dashboard|api|docs|infra|developer|factory|industrial|brutalist|poster/i],
+  },
+  "modern-minimal": {
+    siteTypes: ["landing", "company"],
+    audiences: ["developers", "investors", "enterprise_buyers"],
+    goals: ["lead_generation", "book_demo", "product_showcase"],
+    keywords: [/saas|software|startup|ai|app|product|platform|minimal|clean|linear|modern/i],
+    negativeKeywords: [/heritage|craft|artisan|editorial|magazine|brutalist|poster|factory-floor/i],
+  },
+  "warm-soft": {
+    siteTypes: ["company", "landing", "portfolio"],
+    audiences: ["consumers", "students", "overseas_customers"],
+    goals: ["brand_trust", "lead_generation"],
+    keywords: [/warm|friendly|human|approachable|soft|calm|lifestyle|service/i],
+    negativeKeywords: [/api|dashboard|docs|technical|industrial|precision|factory|brutalist|poster/i],
+  },
+  "tech-utility": {
+    siteTypes: ["company", "landing"],
+    audiences: ["developers", "enterprise_buyers", "government"],
+    goals: ["product_showcase", "book_demo"],
+    keywords: [/dashboard|data|developer|api|docs|tool|infra|cloud|status|technical/i],
+    negativeKeywords: [/editorial|storytelling|craft|artisan|warm-soft|lifestyle|brutalist|poster/i],
+  },
+  "brutalist-experimental": {
+    siteTypes: ["portfolio", "event", "landing"],
+    audiences: ["students", "consumers", "developers"],
+    keywords: [/brutalist|experimental|bold|avant|graphic|poster|edgy|art/i],
+    negativeKeywords: [/precision manufacturing|certification|supplier|catalog|warm|friendly|heritage|timeless/i],
+  },
+  "industrial-b2b": {
+    siteTypes: ["company"],
+    audiences: ["enterprise_buyers", "government", "overseas_customers"],
+    goals: ["lead_generation", "download_materials", "product_showcase"],
+    contentSources: ["existing_domain", "uploaded_files"],
+    keywords: [/industrial|manufactur|factory|machine|precision|engineering|b2b|supplier|spec|catalog|certification/i],
+    negativeKeywords: [/editorial|magazine|brutalist|poster|playful|youthful|lifestyle/i],
+  },
+  "heritage-manufacturing": {
+    siteTypes: ["company", "portfolio"],
+    audiences: ["enterprise_buyers", "overseas_customers", "investors"],
+    goals: ["brand_trust", "product_showcase"],
+    contentSources: ["existing_domain", "uploaded_files"],
+    keywords: [/heritage|craft|premium|luxury|timeless|legacy|materials|quality|artisan/i],
+    negativeKeywords: [/api|dashboard|docs|infra|brutalist|poster|edgy|saas|linear/i],
+  },
+};
+
+function normalizeSignalList(values: string[] | undefined | null): string[] {
+  return (values || []).map((value) => String(value || "").trim().toLowerCase()).filter(Boolean);
+}
+
+function pushUniqueReason(
+  reasons: WebsiteDesignDirectionRecommendationReason[],
+  reason: WebsiteDesignDirectionRecommendationReason,
+) {
+  if (reasons.some((item) => item.kind === reason.kind && item.matched === reason.matched)) return;
+  reasons.push(reason);
+}
+
+function collectKeywordMatches(text: string, patterns: RegExp[] | undefined): string[] {
+  const matches = new Set<string>();
+  for (const pattern of patterns || []) {
+    const match = text.match(pattern);
+    if (match?.[0]) matches.add(match[0].toLowerCase());
+  }
+  return Array.from(matches);
+}
+
+export function recommendWebsiteDesignDirections(
+  input: WebsiteDesignRecommendationInput,
+  limit = 3,
+): WebsiteDesignDirectionRecommendation[] {
+  const siteType = String(input.siteType || "").trim().toLowerCase();
+  const audiences = normalizeSignalList(input.targetAudience);
+  const goals = normalizeSignalList(input.primaryGoal);
+  const contentSources = normalizeSignalList(input.contentSources);
+  const freeText = [
+    ...(input.designTheme || []),
+    ...(input.functionalRequirements || []),
+    String(input.customNotes || ""),
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  const recommendations = WEBSITE_DESIGN_DIRECTIONS.map((direction) => {
+    const signalMap = WEBSITE_DESIGN_DIRECTION_SIGNAL_MAP[direction.id] || {};
+    const reasons: WebsiteDesignDirectionRecommendationReason[] = [];
+    let score = 0;
+
+    if (siteType && signalMap.siteTypes?.includes(siteType)) {
+      score += 4;
+      pushUniqueReason(reasons, { kind: "siteType", matched: siteType });
+    }
+
+    for (const audience of audiences) {
+      if (!signalMap.audiences?.includes(audience)) continue;
+      score += 3;
+      pushUniqueReason(reasons, { kind: "audience", matched: audience });
+    }
+
+    for (const goal of goals) {
+      if (!signalMap.goals?.includes(goal)) continue;
+      score += 2;
+      pushUniqueReason(reasons, { kind: "goal", matched: goal });
+    }
+
+    for (const source of contentSources) {
+      if (!signalMap.contentSources?.includes(source)) continue;
+      score += 1;
+      pushUniqueReason(reasons, { kind: "contentSource", matched: source });
+    }
+
+    for (const match of collectKeywordMatches(freeText, signalMap.keywords)) {
+      score += 2;
+      pushUniqueReason(reasons, { kind: "keyword", matched: match });
+    }
+
+    for (const match of collectKeywordMatches(freeText, signalMap.negativeKeywords)) {
+      score -= 3;
+    }
+
+    return {
+      direction,
+      score,
+      reasons,
+    };
+  })
+    .filter((item) => item.score > 0)
+    .sort((left, right) => {
+      if (right.score !== left.score) return right.score - left.score;
+      return left.direction.label.localeCompare(right.direction.label);
+    });
+
+  return recommendations.slice(0, Math.max(1, limit));
+}
 
 export function getWebsiteDesignDirection(id: string | undefined | null): WebsiteDesignDirection | undefined {
   const normalized = String(id || "").trim().toLowerCase();

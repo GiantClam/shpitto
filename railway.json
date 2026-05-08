@@ -5,7 +5,7 @@
     "buildCommand": null
   },
   "deploy": {
-    "startCommand": "pnpm --filter web worker:chat",
+    "startCommand": "pnpm --filter web railway:start",
     "restartPolicyType": "ALWAYS",
     "restartPolicyMaxRetries": 10
   }

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildRequirementSlots,
   buildRequirementSpec,
+  composeStructuredPrompt,
   decideChatIntent,
   validateRequiredRequirementSlots,
   type ConversationStage,
@@ -47,6 +48,20 @@ describe("chat orchestrator intent", () => {
   it("routes real Chinese Cloudflare deploy intent to deploy when baseline exists", () => {
     const decision = decide("\u90e8\u7f72\u5230 Cloudflare", "previewing");
     expect(decision.intent).toBe("deploy");
+    expect(decision.shouldCreateTask).toBe(true);
+  });
+
+  it("routes Chinese deploy and online verification phrasing to deploy", () => {
+    const decision = decide("\u90e8\u7f72\u5230 Cloudflare\uff0c\u9a8c\u8bc1\u7ebf\u4e0a\u7f51\u7ad9\u53ef\u7528", "previewing");
+    expect(decision.intent).toBe("deploy");
+    expect(decision.reason).toBe("explicit-deploy-intent");
+    expect(decision.shouldCreateTask).toBe(true);
+  });
+
+  it("routes natural English deploy phrasing to deploy", () => {
+    const decision = decide("deploy the latest generated website to Cloudflare", "previewing");
+    expect(decision.intent).toBe("deploy");
+    expect(decision.reason).toBe("explicit-deploy-intent");
     expect(decision.shouldCreateTask).toBe(true);
   });
 
@@ -122,7 +137,7 @@ describe("chat orchestrator intent", () => {
       JSON.stringify({
         siteType: "company",
         targetAudience: ["enterprise_buyers"],
-        designTheme: ["professional"],
+        secondaryVisualTags: ["professional"],
         pageStructure: { mode: "multi", planning: "auto" },
         functionalRequirements: ["contact_form"],
         primaryGoal: ["lead_generation"],
@@ -165,7 +180,7 @@ describe("chat orchestrator intent", () => {
         contentSources: ["new_site"],
         customNotes: "Industrial company website with enough business details for draft planning.",
         targetAudience: ["enterprise_buyers"],
-        designTheme: ["professional"],
+        secondaryVisualTags: ["professional"],
         pageStructure: { mode: "multi", planning: "auto" },
         functionalRequirements: ["contact_form"],
         primaryGoal: ["lead_generation"],
@@ -182,5 +197,106 @@ describe("chat orchestrator intent", () => {
     expect(spec.pageStructure?.planning).toBe("auto");
     expect(slots.find((slot) => slot.key === "sitemap-pages")?.filled).toBe(true);
     expect(validation.passed).toBe(true);
+  });
+
+  it("keeps an explicit user-selected visual direction above recommendations", () => {
+    const text = [
+      "Requirement form submitted:",
+      "",
+      "[Requirement Form]",
+      "```json",
+      JSON.stringify({
+        siteType: "company",
+        targetAudience: ["enterprise_buyers"],
+        primaryVisualDirection: "heritage-manufacturing",
+        secondaryVisualTags: ["minimal"],
+        primaryGoal: ["brand_trust"],
+        contentSources: ["existing_domain"],
+        customNotes: "Precision CNC manufacturing website with certifications and process storytelling.",
+      }),
+      "```",
+    ].join("\n");
+    const spec = buildRequirementSpec(text);
+    const prompt = composeStructuredPrompt(text, buildRequirementSlots(text));
+
+    expect(spec.primaryVisualDirection).toBe("heritage-manufacturing");
+    expect(spec.visualDecisionSource).toBe("user_explicit");
+    expect(spec.secondaryVisualTags).toContain("minimal");
+    expect(prompt).toContain("Primary visual direction: Heritage manufacturing / craft");
+    expect(prompt).not.toContain("Default Visual Inclination (System Recommended)");
+  });
+
+  it("injects a recommended visual inclination only when the user did not explicitly choose a theme", () => {
+    const text = [
+      "Requirement form submitted:",
+      "",
+      "[Requirement Form]",
+      "```json",
+      JSON.stringify({
+        siteType: "company",
+        targetAudience: ["enterprise_buyers"],
+        primaryGoal: ["lead_generation"],
+        contentSources: ["existing_domain"],
+        customNotes: "Precision CNC manufacturing website with machine specs and certifications.",
+      }),
+      "```",
+    ].join("\n");
+    const spec = buildRequirementSpec(text);
+    const prompt = composeStructuredPrompt(text, buildRequirementSlots(text));
+
+    expect(spec.primaryVisualDirection).toBe("industrial-b2b");
+    expect(spec.secondaryVisualTags).toEqual([]);
+    expect(spec.visualDecisionSource).toBe("user_recommended_default");
+    expect(prompt).toContain("Default Visual Inclination (System Recommended)");
+    expect(prompt).toContain("Recommended direction: Industrial B2B / precision (industrial-b2b)");
+    expect(prompt).toContain("system-recommended default");
+  });
+
+  it("uses structured primary visual direction fields as the only explicit theme decision input", () => {
+    const text = [
+      "Requirement form submitted:",
+      "",
+      "[Requirement Form]",
+      "```json",
+      JSON.stringify({
+        siteType: "company",
+        targetAudience: ["enterprise_buyers"],
+        primaryVisualDirection: "industrial-b2b",
+        secondaryVisualTags: ["minimal", "trustworthy"],
+        primaryGoal: ["lead_generation"],
+        contentSources: ["existing_domain"],
+      }),
+      "```",
+    ].join("\n");
+    const spec = buildRequirementSpec(text);
+
+    expect(spec.primaryVisualDirection).toBe("industrial-b2b");
+    expect(spec.secondaryVisualTags).toEqual(expect.arrayContaining(["minimal", "trustworthy"]));
+    expect(spec.secondaryVisualTags).not.toContain("warm-soft");
+    expect(spec.visualDecisionSource).toBe("user_explicit");
+  });
+
+  it("filters direction ids out of structured secondary visual tags", () => {
+    const text = [
+      "Requirement form submitted:",
+      "",
+      "[Requirement Form]",
+      "```json",
+      JSON.stringify({
+        siteType: "company",
+        targetAudience: ["enterprise_buyers"],
+        primaryVisualDirection: "heritage-manufacturing",
+        secondaryVisualTags: ["industrial-b2b", "minimal", "trustworthy"],
+        primaryGoal: ["brand_trust"],
+        contentSources: ["existing_domain"],
+      }),
+      "```",
+    ].join("\n");
+    const spec = buildRequirementSpec(text);
+
+    expect(spec.primaryVisualDirection).toBe("heritage-manufacturing");
+    expect(spec.secondaryVisualTags).toEqual(expect.arrayContaining(["minimal", "trustworthy"]));
+    expect(spec.secondaryVisualTags).not.toContain("industrial-b2b");
+    expect(spec.visualDecisionSource).toBe("user_explicit");
   });
 });

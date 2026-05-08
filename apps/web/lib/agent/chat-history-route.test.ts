@@ -27,8 +27,8 @@ describe("chat history route", () => {
 
       expect(res.status).toBe(200);
       expect(messages.map((item: any) => item.text)).toEqual([
-        "部署到 Cloudflare",
-        "部署成功：https://demo.pages.dev\n(Smoke: pre=passed, post=passed)",
+        "Deploying to Cloudflare",
+        "Deployment succeeded: https://demo.pages.dev\n(Smoke: pre=passed, post=passed)",
       ]);
     } finally {
       if (prevUseSupabase === undefined) delete process.env.CHAT_TASKS_USE_SUPABASE;
@@ -77,6 +77,7 @@ describe("chat history route", () => {
         progress: {
           stage: "refined",
           generatedFiles: ["/index.html", "/styles.css"],
+          checkpointProjectPath: "/tmp/chat-refined/project.json",
         },
       });
 
@@ -97,6 +98,52 @@ describe("chat history route", () => {
       expect(json?.task?.status).toBe("failed");
       expect(json?.previewTask?.id).toBe(generatedTask.id);
       expect(json?.previewTask?.result?.progress?.generatedFiles).toEqual(["/index.html", "/styles.css"]);
+    } finally {
+      if (prevUseSupabase === undefined) delete process.env.CHAT_TASKS_USE_SUPABASE;
+      else process.env.CHAT_TASKS_USE_SUPABASE = prevUseSupabase;
+    }
+  });
+
+  it("keeps previewTask pinned to the latest local preview baseline after a newer deploy succeeds", async () => {
+    const prevUseSupabase = process.env.CHAT_TASKS_USE_SUPABASE;
+    process.env.CHAT_TASKS_USE_SUPABASE = "0";
+
+    try {
+      const chatId = `chat-history-preview-local-${Date.now()}`;
+      const generatedTask = await createChatTask(chatId);
+      await completeChatTask(generatedTask.id, {
+        assistantText: "Preview ready.",
+        progress: {
+          stage: "done",
+          generatedFiles: ["/index.html", "/styles.css"],
+          checkpointProjectPath: "/tmp/chat-preview/project.json",
+        } as any,
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 2));
+
+      const deployTask = await createChatTask(chatId, undefined, {
+        phase: "deploy",
+        progress: { stage: "deploying" } as any,
+      });
+      await completeChatTask(deployTask.id, {
+        assistantText: "Deployment succeeded.",
+        deployedUrl: "https://demo.pages.dev",
+        progress: {
+          stage: "deployed",
+          generatedFiles: ["/index.html", "/styles.css"],
+        } as any,
+      });
+
+      const { GET } = await import("../../app/api/chat/history/route");
+      const res = await GET(new Request(`http://localhost/api/chat/history?chatId=${encodeURIComponent(chatId)}`));
+      const json = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(json?.task?.id).toBe(deployTask.id);
+      expect(json?.task?.result?.deployedUrl).toBe("https://demo.pages.dev");
+      expect(json?.previewTask?.id).toBe(generatedTask.id);
+      expect(String(json?.previewTask?.result?.progress?.checkpointProjectPath || "")).toBe("/tmp/chat-preview/project.json");
     } finally {
       if (prevUseSupabase === undefined) delete process.env.CHAT_TASKS_USE_SUPABASE;
       else process.env.CHAT_TASKS_USE_SUPABASE = prevUseSupabase;

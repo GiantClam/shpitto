@@ -200,6 +200,9 @@ function buildPromptControlManifestSection(
     `${index + 1}. ${page.navLabel} (${page.route} -> ${routeToHtmlPath(page.route)})`,
     `   - Page intent: ${page.purpose}`,
     `   - Route source: ${page.source}`,
+    `   - Page kind: ${page.pageKind}`,
+    ...(page.constraints.length ? page.constraints.map((item) => `   - Constraint: ${item}`) : []),
+    ...(page.contentSkeleton.length ? page.contentSkeleton.map((item) => `   - Required module: ${item}`) : []),
     "   - Derive page-specific sections, content depth, and interactions from the Canonical Website Prompt and source material.",
     "   - Do not apply a hardcoded industry skeleton or reuse another page by only replacing text.",
   ]);
@@ -301,6 +304,29 @@ function resolveDraftProviderConfig(): { config?: DraftProviderConfig; reason?: 
     model: process.env.CHAT_DRAFT_MODEL || process.env.SKILL_NATIVE_MODEL_LOCK,
   });
 
+  if (lock.provider === "pptoken") {
+    const apiKey = normalizeText(process.env.PPTOKEN_API_KEY);
+    if (!apiKey) return { reason: "missing_provider_api_key:pptoken" };
+    return {
+      config: {
+        provider: "pptoken",
+        apiKey,
+        baseURL: normalizeText(process.env.PPTOKEN_BASE_URL) || "https://api.pptoken.org/v1",
+        model:
+          normalizeText(process.env.CHAT_DRAFT_MODEL) ||
+          normalizeText(lock.model) ||
+          normalizeText(process.env.LLM_MODEL) ||
+          normalizeText(process.env.LLM_MODEL_PPTOKEN) ||
+          normalizeText(process.env.PPTOKEN_MODEL) ||
+          "gpt-5.4-mini",
+        fallbackModel:
+          normalizeText(process.env.CHAT_DRAFT_FALLBACK_MODEL) ||
+          normalizeText(process.env.LLM_MODEL_FALLBACK_PPTOKEN) ||
+          undefined,
+      },
+    };
+  }
+
   if (lock.provider === "aiberm") {
     const apiKey = normalizeText(process.env.AIBERM_API_KEY);
     if (!apiKey) return { reason: "missing_provider_api_key:aiberm" };
@@ -312,10 +338,10 @@ function resolveDraftProviderConfig(): { config?: DraftProviderConfig; reason?: 
         model:
           normalizeText(process.env.CHAT_DRAFT_MODEL) ||
           normalizeText(lock.model) ||
+          normalizeText(process.env.LLM_MODEL) ||
           normalizeText(process.env.LLM_MODEL_AIBERM) ||
           normalizeText(process.env.AIBERM_MODEL) ||
-          normalizeText(process.env.LLM_MODEL) ||
-          "openai/gpt-5.4-mini",
+          "gpt-5.4-mini",
         fallbackModel:
           normalizeText(process.env.CHAT_DRAFT_FALLBACK_MODEL) ||
           normalizeText(process.env.LLM_MODEL_FALLBACK_AIBERM) ||
@@ -341,14 +367,14 @@ function resolveDraftProviderConfig(): { config?: DraftProviderConfig; reason?: 
       model:
         normalizeText(process.env.CHAT_DRAFT_MODEL) ||
         normalizeText(lock.model) ||
+        normalizeText(process.env.LLM_MODEL) ||
         normalizeText(process.env.LLM_MODEL_CRAZYROUTE) ||
         normalizeText(process.env.LLM_MODEL_CRAZYROUTER) ||
         normalizeText(process.env.LLM_MODEL_CRAZYREOUTE) ||
         normalizeText(process.env.CRAZYROUTE_MODEL) ||
         normalizeText(process.env.CRAZYROUTER_MODEL) ||
         normalizeText(process.env.CRAZYREOUTE_MODEL) ||
-        normalizeText(process.env.LLM_MODEL) ||
-        "openai/gpt-5.4-mini",
+        "gpt-5.4-mini",
       fallbackModel:
         normalizeText(process.env.CHAT_DRAFT_FALLBACK_MODEL) ||
         normalizeText(process.env.LLM_MODEL_FALLBACK_CRAZYROUTE) ||
@@ -923,18 +949,6 @@ export async function buildPromptDraftWithResearch(params: {
     decisionPlan,
     routeSource,
   );
-  const networkGate = shouldSkipNetworkInCurrentEnv();
-  if (networkGate.skip) {
-    return {
-      canonicalPrompt: localDraft,
-      usedWebSearch: false,
-      sources: [],
-      promptControlManifest,
-      fallbackReason: networkGate.reason,
-      draftMode: "template",
-    };
-  }
-
   const searchTimeoutMs = Number(params.timeoutMs || process.env.CHAT_DRAFT_WEB_SEARCH_TIMEOUT_MS || 16_000);
   const llmTimeoutMs = resolveDraftLlmTimeoutMs(params.timeoutMs);
   let sources: PromptDraftSource[] = [];
@@ -968,6 +982,25 @@ export async function buildPromptDraftWithResearch(params: {
       projectId: params.projectId,
     });
   };
+  const networkGate = shouldSkipNetworkInCurrentEnv();
+  if (networkGate.skip) {
+    if (params.referencedAssets?.length) {
+      const uploadedOnlyProfile = await buildUploadedOnlyKnowledgeProfile();
+      if (uploadedOnlyProfile) applyResolvedKnowledgeProfile(uploadedOnlyProfile);
+    }
+    const canonicalPrompt = mergeTemplateWithResearch(localDraft, sources, researchSummary, knowledgeProfile, evidenceBrief);
+    return {
+      canonicalPrompt,
+      usedWebSearch: hasWebEvidence(knowledgeProfile),
+      sources,
+      promptControlManifest,
+      evidenceBrief,
+      knowledgeProfile,
+      researchSummary,
+      fallbackReason: networkGate.reason,
+      draftMode: "template",
+    };
+  }
 
   if (shouldEnableWebSearch()) {
     const serper = resolveSerperSearchConfigFromEnv();

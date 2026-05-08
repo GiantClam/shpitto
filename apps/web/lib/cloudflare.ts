@@ -422,6 +422,11 @@ export class CloudflareClient {
     );
   }
 
+  async deleteWebAnalyticsSite(siteTag: string): Promise<void> {
+    this.assertRealConfigured("deleteWebAnalyticsSite");
+    await this.deleteWebAnalyticsSiteByTag(siteTag);
+  }
+
   async cleanupWebAnalyticsSites(params?: {
     excludeHosts?: string[];
     maxDelete?: number;
@@ -1039,6 +1044,22 @@ export class CloudflareClient {
     return this.createCustomHostname(params);
   }
 
+  async deleteCustomHostname(customHostnameId: string): Promise<void> {
+    this.assertSaasConfigured("deleteCustomHostname");
+    const id = String(customHostnameId || "").trim();
+    if (!id) return;
+    if (this.shouldUseMock()) return;
+
+    await this.readCloudflareJson<Record<string, unknown>>(
+      `${this.baseUrl}/zones/${this.zoneId}/custom_hostnames/${encodeURIComponent(id)}`,
+      () => ({
+        method: "DELETE",
+        headers: this.headers,
+      }),
+      "custom-hostnames:delete",
+    );
+  }
+
   async updateFallbackOrigin(origin: string): Promise<void> {
     this.assertSaasConfigured("updateFallbackOrigin");
     const originHost = normalizeHost(String(origin || ""));
@@ -1126,7 +1147,7 @@ export class CloudflareClient {
     );
   }
 
-  async createProject(name: string) {
+  async createProject(name: string, options?: { bindingName?: string; databaseId?: string }) {
     this.assertRealConfigured("createProject");
     if (this.shouldUseMock()) {
       console.log("[Cloudflare] Missing credentials, mocking createProject");
@@ -1144,18 +1165,27 @@ export class CloudflareClient {
         `createProject:get:${name}`,
       );
 
+      const d1BindingName = String(options?.bindingName || "").trim();
+      const d1DatabaseId = String(options?.databaseId || "").trim();
+      const functionConfig: Record<string, unknown> = {
+        compatibility_date: "2026-01-13",
+        compatibility_flags: [],
+        fail_open: false,
+      };
+      if (d1BindingName && d1DatabaseId) {
+        functionConfig.d1_databases = {
+          [d1BindingName]: {
+            id: d1DatabaseId,
+          },
+        };
+      }
+
       const projectConfig = {
         name,
         production_branch: "main",
         deployment_configs: {
-          production: {
-            compatibility_date: "2026-01-13",
-            compatibility_flags: []
-          },
-          preview: {
-            compatibility_date: "2026-01-13",
-            compatibility_flags: []
-          }
+          production: functionConfig,
+          preview: functionConfig,
         }
       };
 
@@ -1370,5 +1400,20 @@ export class CloudflareClient {
     if (!res.ok) return null;
     const data = await res.json();
     return data.result;
+  }
+
+  async deletePagesProject(projectName: string): Promise<void> {
+    this.assertRealConfigured("deletePagesProject");
+    const name = String(projectName || "").trim();
+    if (!name || this.shouldUseMock()) return;
+
+    await this.readCloudflareJson<Record<string, unknown>>(
+      `${this.baseUrl}/accounts/${this.accountId}/pages/projects/${encodeURIComponent(name)}`,
+      () => ({
+        method: "DELETE",
+        headers: this.headers,
+      }),
+      `pages:delete-project:${name}`,
+    );
   }
 }

@@ -6,6 +6,7 @@ import {
   createChatTask,
   failChatTask,
   formatTaskEventSnapshot,
+  formatUnknownError,
   getActiveChatTask,
   getChatTask,
   listChatTimelineMessages,
@@ -139,6 +140,45 @@ describe("chat-task-store", () => {
     expect(calls).toBe(2);
   });
 
+  it("retries Cloudflare 521 responses for Supabase task reads", async () => {
+    let calls = 0;
+    const fetchWithOne521 = async () => {
+      calls += 1;
+      if (calls === 1) {
+        return new Response(
+          "<!DOCTYPE html><html><head><title>supabase.co | 521: Web server is down</title></head><body>Error code 521</body></html>",
+          { status: 521 },
+        );
+      }
+      return new Response("ok", { status: 200 });
+    };
+    const taskFetch = createSupabaseTaskFetch({
+      fetchImpl: fetchWithOne521 as any,
+      timeoutMs: 1_000,
+      retries: 1,
+      retryBaseMs: 0,
+      dispatcher: null,
+    });
+
+    const response = await taskFetch("https://example.supabase.co/rest/v1/shpitto_chat_tasks", { method: "GET" });
+
+    expect(response.status).toBe(200);
+    expect(calls).toBe(2);
+  });
+
+  it("summarizes Cloudflare HTML upstream errors instead of returning the full page", () => {
+    const summary = formatUnknownError({
+      message:
+        '<!DOCTYPE html><html><head><title>supabase.co | 521: Web server is down</title></head><body><span class="md:block w-full truncate">ofmwvapsmsokwvqhwhtf.supabase.co</span><span class="code-label">Error code 521</span></body></html>',
+    });
+
+    expect(summary).toContain("Supabase upstream error");
+    expect(summary).toContain("status 521");
+    expect(summary).toContain("Web server is down");
+    expect(summary).toContain("host=ofmwvapsmsokwvqhwhtf.supabase.co");
+    expect(summary).not.toContain("<!DOCTYPE html>");
+  });
+
   it("does not retry Supabase task writes by default", async () => {
     let calls = 0;
     const alwaysTimeout = async () => {
@@ -173,6 +213,34 @@ describe("chat-task-store", () => {
     expect(requeued).toBeGreaterThan(0);
     const active = await getActiveChatTask(chatId);
     expect(active?.status).toBe("queued");
+  });
+
+  it("claims only tasks matching requested execution modes", async () => {
+    const chatId = `chat-claim-modes-${Date.now()}`;
+    const generateTask = await createChatTask(`${chatId}-generate`, undefined, {
+      internal: {
+        inputState: {
+          messages: [],
+          phase: "conversation",
+          workflow_context: { executionMode: "generate" },
+        },
+      },
+    });
+    const deployTask = await createChatTask(`${chatId}-deploy`, undefined, {
+      internal: {
+        inputState: {
+          messages: [],
+          phase: "end",
+          workflow_context: { executionMode: "deploy", deployRequested: true },
+        },
+      },
+    });
+
+    const claimedDeploy = await claimNextQueuedChatTask("deploy-worker", { modes: ["deploy"] });
+    expect(claimedDeploy?.id).toBe(deployTask.id);
+    expect((await getChatTask(generateTask.id))?.status).toBe("queued");
+    await completeChatTask(deployTask.id, { assistantText: "deployed" });
+    await completeChatTask(generateTask.id, { assistantText: "done" });
   });
 
   it("supports session create, list and archive flow", async () => {
@@ -302,7 +370,7 @@ describe("chat-task-store", () => {
       eventType: "task_created",
       stage: "queued",
     });
-    expect(createdText).toContain("任务已创建");
+    expect(createdText).toContain("Task created and queued.");
     expect(createdText).not.toContain("task_created");
 
     const progressText = formatTaskEventSnapshot({
@@ -310,16 +378,16 @@ describe("chat-task-store", () => {
       stage: "worker:claimed",
       payload: { toolName: "emit_file", filePath: "/index.html", model: "gpt-5.3-codex" },
     });
-    expect(progressText).toContain("任务进度更新");
-    expect(progressText).toContain("工具：emit_file");
-    expect(progressText).toContain("文件：/index.html");
+    expect(progressText).toContain("Task progress updated");
+    expect(progressText).toContain("Tool: emit_file");
+    expect(progressText).toContain("File: /index.html");
 
     const failedText = formatTaskEventSnapshot({
       eventType: "task_failed",
       stage: "failed",
       payload: { error: "Connect Timeout Error" },
     });
-    expect(failedText).toContain("任务执行失败");
-    expect(failedText).toContain("错误：Connect Timeout Error");
+    expect(failedText).toContain("Task failed.");
+    expect(failedText).toContain("Error: Connect Timeout Error");
   });
 });

@@ -8,6 +8,13 @@ create table if not exists shpitto_projects (
   source_app text default 'shpitto', -- 'shpitto' or other app names
   name text not null,
   config jsonb not null, -- Stores ProjectBlueprint (Puck JSON)
+  project_status text not null default 'active',
+  deleted_at timestamp with time zone,
+  archived_at timestamp with time zone,
+  cleanup_started_at timestamp with time zone,
+  cleanup_completed_at timestamp with time zone,
+  cleanup_status text,
+  cleanup_error text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now())
 );
@@ -87,8 +94,105 @@ create table if not exists shpitto_password_reset_tokens (
   updated_at timestamp with time zone default timezone('utc'::text, now())
 );
 
+create table if not exists shpitto_billing_plans (
+  id text primary key,
+  code text not null unique,
+  name text not null,
+  site_limit integer not null,
+  base_monthly_price_minor integer not null,
+  currency text not null,
+  min_months integer not null default 12,
+  is_one_time boolean not null default false,
+  active boolean not null default true,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+create table if not exists shpitto_entitlements (
+  id uuid primary key default uuid_generate_v4(),
+  owner_user_id uuid not null references auth.users(id) on delete cascade,
+  plan_code text not null,
+  status text not null,
+  site_limit integer not null,
+  valid_from timestamp with time zone not null,
+  valid_until timestamp with time zone not null,
+  current_period_months integer not null,
+  auto_renew boolean not null default false,
+  paypal_subscription_id text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+create table if not exists shpitto_checkout_sessions (
+  id uuid primary key default uuid_generate_v4(),
+  owner_user_id uuid not null references auth.users(id) on delete cascade,
+  purpose text not null,
+  plan_code text not null,
+  months integer not null,
+  site_limit integer not null,
+  currency text not null,
+  amount_minor integer not null,
+  discount_factor numeric not null,
+  price_snapshot jsonb not null,
+  status text not null,
+  paypal_order_id text unique,
+  paypal_subscription_id text,
+  expires_at timestamp with time zone not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+create table if not exists shpitto_billing_ledger (
+  id uuid primary key default uuid_generate_v4(),
+  owner_user_id uuid not null references auth.users(id) on delete cascade,
+  entitlement_id uuid references shpitto_entitlements(id),
+  checkout_session_id uuid references shpitto_checkout_sessions(id),
+  entry_type text not null,
+  amount_minor integer not null,
+  currency text not null,
+  service_days integer not null default 0,
+  service_start timestamp with time zone,
+  service_end timestamp with time zone,
+  paypal_order_id text,
+  paypal_capture_id text unique,
+  paypal_event_id text,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+create table if not exists shpitto_paypal_events (
+  id text primary key,
+  event_type text not null,
+  resource_id text,
+  payload jsonb not null,
+  processed_at timestamp with time zone,
+  processing_error text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+create table if not exists shpitto_billing_project_usages (
+  id uuid primary key default uuid_generate_v4(),
+  owner_user_id uuid not null references auth.users(id) on delete cascade,
+  source_app text not null default 'shpitto',
+  source_project_id text not null,
+  project_name text not null default '',
+  project_status text not null default 'active',
+  deleted_at timestamp with time zone,
+  archived_at timestamp with time zone,
+  cleanup_started_at timestamp with time zone,
+  cleanup_completed_at timestamp with time zone,
+  cleanup_status text,
+  cleanup_error text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()),
+  unique(owner_user_id, source_app, source_project_id)
+);
+
 create index if not exists idx_shpitto_projects_tenant_source
   on shpitto_projects(tenant_id, source_app);
+create index if not exists idx_shpitto_projects_billable_tenant
+  on shpitto_projects(tenant_id, cleanup_completed_at);
 create index if not exists idx_shpitto_deployments_project
   on shpitto_deployments(project_id);
 create index if not exists idx_shpitto_project_sites_tenant_source
@@ -101,6 +205,14 @@ create index if not exists idx_shpitto_email_verification_tokens_user
   on shpitto_email_verification_tokens(user_id);
 create index if not exists idx_shpitto_password_reset_tokens_user
   on shpitto_password_reset_tokens(user_id);
+create index if not exists idx_shpitto_entitlements_owner
+  on shpitto_entitlements(owner_user_id, status, valid_until desc);
+create index if not exists idx_shpitto_checkout_sessions_owner
+  on shpitto_checkout_sessions(owner_user_id, created_at desc);
+create index if not exists idx_shpitto_billing_ledger_owner
+  on shpitto_billing_ledger(owner_user_id, created_at desc);
+create index if not exists idx_shpitto_billing_project_usages_owner
+  on shpitto_billing_project_usages(owner_user_id, cleanup_completed_at);
 
 -- RLS Policies
 alter table shpitto_projects enable row level security;
@@ -110,6 +222,12 @@ alter table shpitto_contact_submissions enable row level security;
 alter table shpitto_auth_users enable row level security;
 alter table shpitto_email_verification_tokens enable row level security;
 alter table shpitto_password_reset_tokens enable row level security;
+alter table shpitto_billing_plans enable row level security;
+alter table shpitto_entitlements enable row level security;
+alter table shpitto_checkout_sessions enable row level security;
+alter table shpitto_billing_ledger enable row level security;
+alter table shpitto_paypal_events enable row level security;
+alter table shpitto_billing_project_usages enable row level security;
 
 drop policy if exists "Users can view own projects" on shpitto_projects;
 drop policy if exists "Users can insert own projects" on shpitto_projects;
@@ -120,6 +238,11 @@ drop policy if exists "Users can view own project site bindings" on shpitto_proj
 drop policy if exists "Users can insert own project site bindings" on shpitto_project_sites;
 drop policy if exists "Users can update own project site bindings" on shpitto_project_sites;
 drop policy if exists "Users can view own contact submissions" on shpitto_contact_submissions;
+drop policy if exists "Users can view billing plans" on shpitto_billing_plans;
+drop policy if exists "Users can view own entitlements" on shpitto_entitlements;
+drop policy if exists "Users can view own checkout sessions" on shpitto_checkout_sessions;
+drop policy if exists "Users can view own billing ledger" on shpitto_billing_ledger;
+drop policy if exists "Users can view own billing project usages" on shpitto_billing_project_usages;
 
 create policy "Users can view own projects" on shpitto_projects
   for select using (auth.uid() = tenant_id and source_app = 'shpitto');
@@ -154,6 +277,21 @@ create policy "Users can update own project site bindings" on shpitto_project_si
 
 create policy "Users can view own contact submissions" on shpitto_contact_submissions
   for select using (auth.uid() = tenant_id and source_app = 'shpitto');
+
+create policy "Users can view billing plans" on shpitto_billing_plans
+  for select using (active = true);
+
+create policy "Users can view own entitlements" on shpitto_entitlements
+  for select using (auth.uid() = owner_user_id);
+
+create policy "Users can view own checkout sessions" on shpitto_checkout_sessions
+  for select using (auth.uid() = owner_user_id);
+
+create policy "Users can view own billing ledger" on shpitto_billing_ledger
+  for select using (auth.uid() = owner_user_id);
+
+create policy "Users can view own billing project usages" on shpitto_billing_project_usages
+  for select using (auth.uid() = owner_user_id);
 
 -- Public contact ingest entrypoint.
 -- SECURITY DEFINER lets us keep project-site binding private while still accepting public submissions.

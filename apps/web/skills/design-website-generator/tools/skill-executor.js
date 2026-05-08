@@ -367,17 +367,19 @@ Generate the complete React component code.`;
 }
 
 async function executeLLM(prompt, systemContext = '') {
-  const apiKey = process.env.ANTHROPIC_API_KEY || process.env.AIBERM_API_KEY;
+  const apiKey = process.env.PPTOKEN_API_KEY || process.env.ANTHROPIC_API_KEY || process.env.AIBERM_API_KEY;
   
   if (!apiKey) {
-    throw new Error('No API key found. Set ANTHROPIC_API_KEY or AIBERM_API_KEY');
+    throw new Error('No API key found. Set PPTOKEN_API_KEY, ANTHROPIC_API_KEY, or AIBERM_API_KEY');
   }
   
   try {
     const { default: Anthropic } = await import('@anthropic-ai/sdk');
-    const provider = String(process.env.LLM_PROVIDER || 'aiberm').toLowerCase();
+    const provider = String(process.env.LLM_PROVIDER || 'pptoken').toLowerCase();
     const baseURL =
-      provider === 'aiberm'
+      provider === 'pptoken'
+        ? process.env.PPTOKEN_BASE_URL || 'https://api.pptoken.org/v1'
+        : provider === 'aiberm'
         ? process.env.AIBERM_BASE_URL || 'https://aiberm.com/v1'
         : process.env.LLM_BASE_URL;
     const client = new Anthropic({
@@ -388,7 +390,7 @@ async function executeLLM(prompt, systemContext = '') {
     const messages = [{ role: 'user', content: prompt }];
     
     const response = await client.messages.create({
-      model: process.env.LLM_MODEL || 'claude-sonnet-4-20250514',
+      model: process.env.LLM_MODEL || process.env.LLM_MODEL_PPTOKEN || process.env.PPTOKEN_MODEL || 'gpt-5.4-mini',
       max_tokens: 8192,
       temperature: 0.5,
       ...(systemContext ? { system: systemContext } : {}),

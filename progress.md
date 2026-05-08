@@ -1,78 +1,59 @@
-# Progress Log
+# Progress Log: Shpitto Pricing Billing PayPal
 
-## Session: 2026-04-29
+## Session: 2026-04-30
 
-### Phase 1: Discovery And Plan Document
-- **Status:** complete
-- **Started:** 2026-04-29
-- Actions taken:
-  - Inspected prompt draft research and content source ingestion flow.
-  - Confirmed current tests pass with `pnpm --filter web test -- lib/agent/prompt-draft-research.test.ts`.
-  - Identified source compression and weak evidence priority as the core issue.
-- Files created/modified:
-  - `task_plan.md`
-  - `findings.md`
-  - `progress.md`
-
-### Phase 2: Evidence Brief Implementation
+### Phase 1: Discovery And Boundaries
 - **Status:** complete
 - Actions taken:
-  - Added `WebsiteEvidenceBrief`, deterministic builder, and formatter.
-  - Passed Evidence Brief into template fallback and LLM prompt authoring.
-  - Ensured final canonical prompts preserve the Evidence Brief even if the LLM omits it.
-  - Updated runtime prompt clipping to preserve `## 7. Evidence Brief`.
-- Files created/modified:
-  - `apps/web/lib/agent/content-source-ingestion.ts`
-  - `apps/web/lib/agent/prompt-draft-research.ts`
-  - `apps/web/lib/skill-runtime/executor.ts`
-  - `apps/web/lib/skill-runtime/skill-tool-executor.ts`
+  - Loaded `planning-with-files` workflow instructions.
+  - Captured current worktree status and noted unrelated dirty files.
+  - Reset planning files for the billing implementation task.
+  - Located generation, deployment, project persistence, and custom domain enforcement points.
 
-### Phase 3: Regression Tests
+### Phase 2: Billing Domain Logic
 - **Status:** complete
 - Actions taken:
-  - Added a prompt draft regression test for source-backed priority facts, page briefs, gaps, and research addendum compatibility.
-- Files created/modified:
-  - `apps/web/lib/agent/prompt-draft-research.test.ts`
+  - Added pricing, plan, upgrade quote, entitlement, quota, and retention pure-domain modules.
+  - Added regression coverage for 7 折 annual pricing, fixed Experience pricing, unsupported durations, upgrade quote, quota blocking, and 15-day retention cleanup eligibility.
+
+### Phase 3: Persistence, API, Enforcement, UI
+- **Status:** complete
+- Actions taken:
+  - Added D1/Supabase billing tables and project lifecycle cleanup columns.
+  - Added D1-backed billing store for free trials, checkout sessions, paid entitlements, ledger entries, PayPal events, and created-project counting.
+  - Added PayPal Orders/capture/webhook client and API routes for plans, entitlement, checkout, PayPal order create/capture/webhook, upgrade quote/checkout, and cancel-renewal MVP response.
+  - Added quota enforcement to chat generation, deploy flow, legacy graph deploy flow, and custom domain binding.
+  - Added `/pricing` and `/account/billing` pages.
+  - Added retention cleanup module and CLI script.
 
 ### Phase 4: Verification
 - **Status:** complete
 - Actions taken:
-  - Ran focused prompt draft/content-source tests.
-  - Ran adjacent skill runtime tests for prompt handling.
-  - Checked TypeScript diagnostics for changed source files.
-- Files created/modified:
-  - `progress.md`
-
-### Phase 5: Delivery
-- **Status:** complete
-- Actions taken:
-  - Reviewed the focused diff and confirmed unrelated pre-existing worktree changes remain separate.
-  - Moved Evidence Brief preservation rules into `website-generation-workflow/SKILL.md` so TS remains data plumbing.
-  - Prepared final implementation summary and verification evidence.
-- Files created/modified:
-  - `task_plan.md`
-  - `progress.md`
-  - `apps/web/skills/website-generation-workflow/SKILL.md`
+  - Ran focused billing regression tests.
+  - Ran TypeScript project check.
+  - Ran full web Vitest suite.
+  - Ran ESLint.
+  - Ran production Next build.
 
 ## Test Results
-| Test | Input | Expected | Actual | Status |
-|------|-------|----------|--------|--------|
-| Existing prompt draft tests | `pnpm --filter web test -- lib/agent/prompt-draft-research.test.ts` | Pass | 10 passed | Pass |
-| Prompt draft and content ingestion | `pnpm --filter web test -- lib/agent/prompt-draft-research.test.ts lib/agent/content-source-ingestion.test.ts` | Pass | 2 files, 18 tests passed | Pass |
-| Runtime prompt handling | `pnpm --filter web test -- lib/skill-runtime/skill-tool-executor.test.ts lib/skill-runtime/decision-layer.test.ts` | Pass | 2 files, 33 tests passed | Pass |
-| Changed-file diagnostics | LSP diagnostics on 4 changed TypeScript files | No TS errors | 0 diagnostics | Pass |
+| Test | Expected | Actual | Status |
+|------|----------|--------|--------|
+| `pnpm --filter web test -- lib/billing/pricing.test.ts lib/billing/entitlements.test.ts` | Billing domain tests pass | 2 files / 7 tests passed | Pass |
+| `pnpm --filter web test -- lib/billing/pricing.test.ts lib/billing/entitlements.test.ts lib/billing/enforcement.test.ts lib/billing/cleanup.test.ts lib/billing/paypal.test.ts` | Billing-focused regression tests pass | 5 files / 12 tests passed | Pass |
+| `pnpm --filter web exec tsc --noEmit` | TypeScript passes | Passed | Pass |
+| `pnpm --filter web test` | Full web test suite passes | 54 files passed, 1 skipped; 243 tests passed, 1 skipped | Pass |
+| `pnpm --filter web lint` | No lint errors | 0 errors, 6 existing `<img>` warnings | Pass |
+| `pnpm --filter web build` | Production build succeeds | Build succeeded; existing middleware and `.tmp/chat-tasks` tracing warnings | Pass |
 
 ## Error Log
 | Timestamp | Error | Attempt | Resolution |
 |-----------|-------|---------|------------|
-| 2026-04-29 | `pnpm --filter web vitest run ...` reported no selected package script | 1 | Used `pnpm --filter web test -- ...` |
-| 2026-04-29 | Evidence Brief patch did not match near legacy regex text | 1 | Switch to smaller patches around stable type/function anchors |
 
 ## 5-Question Reboot Check
 | Question | Answer |
 |----------|--------|
-| Where am I? | Phase 5, final review and delivery. |
-| Where am I going? | Review diff and deliver summary. |
-| What's the goal? | Improve prompt draft information density via a structured evidence brief. |
-| What have I learned? | See `findings.md`. |
+| Where am I? | Implementation and verification complete. |
+| Where am I going? | Final report. |
+| What's the goal? | Implement the pricing/billing/PayPal solution with regression tests. |
+| What have I learned? | Billing rules, persistence, APIs, pages, and build all pass verification. |
 | What have I done? | See phase logs above. |

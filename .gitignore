@@ -51,6 +51,7 @@ captured_request.bin
 dummy_deploy
 temp_dist
 test-dist
+docs
 
 # Local agent/runtime state (non-project artifacts)
 .omx/
@@ -59,3 +60,7 @@ test-dist
 
 .vercel
 .gstack/
+.gstack/*
+.playwright-cli/
+output/
+docs/

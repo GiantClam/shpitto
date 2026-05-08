@@ -4,8 +4,123 @@ import path from "node:path";
 import dotenv from "dotenv";
 import { getLatestChatTaskForChat } from "./chat-task-store";
 
+dotenv.config({ path: path.resolve(process.cwd(), ".env.local"), override: false, quiet: true });
+dotenv.config({ path: path.resolve(process.cwd(), "scripts/.env.local"), override: false, quiet: true });
 dotenv.config({ path: path.resolve(process.cwd(), "../../.env"), override: false });
 process.env.CLOUDFLARE_REQUIRE_REAL = "1";
+
+async function seedFullFlowBlogData(projectId: string, marker: string) {
+  const { getD1Client } = await import("../d1");
+  const d1 = getD1Client();
+  await d1.ensureShpittoSchema();
+  const now = new Date().toISOString();
+  const accountId = `${projectId}-account`;
+  const userId = `${projectId}-user`;
+  const postId = `${projectId}-post`;
+  const title = `Chat Full Flow Blog Verification ${marker}`;
+
+  await d1.execute(
+    `
+    INSERT INTO shpitto_accounts (id, account_key, created_at)
+    VALUES (?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET account_key = excluded.account_key;
+    `,
+    [accountId, accountId, now],
+  );
+  await d1.execute(
+    `
+    INSERT INTO shpitto_users (id, account_id, email, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET updated_at = excluded.updated_at;
+    `,
+    [userId, accountId, `${userId}@example.test`, now, now],
+  );
+  await d1.execute(
+    `
+    INSERT INTO shpitto_projects (id, account_id, owner_user_id, source_app, name, config_json, created_at, updated_at)
+    VALUES (?, ?, ?, 'shpitto', ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET config_json = excluded.config_json, updated_at = excluded.updated_at;
+    `,
+    [projectId, accountId, userId, "Chat Full Flow Blog", JSON.stringify({ projectId, marker }), now, now],
+  );
+  await d1.execute(
+    `
+    INSERT INTO shpitto_blog_settings (
+      project_id, account_id, owner_user_id, source_app, enabled, nav_label, home_featured_count,
+      default_layout_key, default_theme_key, rss_enabled, sitemap_enabled, created_at, updated_at
+    )
+    VALUES (?, ?, ?, 'shpitto', 1, 'Blog', 3, '', '', 1, 1, ?, ?)
+    ON CONFLICT(project_id) DO UPDATE SET enabled = 1, nav_label = 'Blog', updated_at = excluded.updated_at;
+    `,
+    [projectId, accountId, userId, now, now],
+  );
+  await d1.execute(
+    `
+    INSERT INTO shpitto_blog_posts (
+      id, project_id, account_id, owner_user_id, source_app, slug, title, excerpt, content_md, content_html,
+      status, author_name, category, tags_json, cover_image_url, cover_image_alt, seo_title, seo_description,
+      theme_key, layout_key, published_at, created_at, updated_at
+    )
+    VALUES (?, ?, ?, ?, 'shpitto', ?, ?, ?, ?, ?, 'published', 'Full Flow Tester', 'Full Flow', ?, '', '', ?, ?, '', '', ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      title = excluded.title,
+      excerpt = excluded.excerpt,
+      content_md = excluded.content_md,
+      content_html = excluded.content_html,
+      status = excluded.status,
+      published_at = excluded.published_at,
+      updated_at = excluded.updated_at;
+    `,
+    [
+      postId,
+      projectId,
+      accountId,
+      userId,
+      "chat-full-flow-blog-verification",
+      title,
+      `Chat full flow online marker ${marker}`,
+      `# ${title}\n\nChat full flow blog content marker: ${marker}.`,
+      `<p>Chat full flow blog content marker: <strong>${marker}</strong>.</p>`,
+      JSON.stringify(["chat-full-flow", "deployment"]),
+      title,
+      `Chat full flow online marker ${marker}`,
+      now,
+      now,
+      now,
+    ],
+  );
+
+  return { accountId, userId, title };
+}
+
+async function cleanupFullFlowBlogData(projectId: string, accountId: string, userId: string) {
+  const { getD1Client } = await import("../d1");
+  const d1 = getD1Client();
+  await d1.execute("DELETE FROM shpitto_blog_post_revisions WHERE project_id = ?;", [projectId]).catch(() => null);
+  await d1.execute("DELETE FROM shpitto_blog_assets WHERE project_id = ?;", [projectId]).catch(() => null);
+  await d1.execute("DELETE FROM shpitto_blog_posts WHERE project_id = ?;", [projectId]).catch(() => null);
+  await d1.execute("DELETE FROM shpitto_blog_settings WHERE project_id = ?;", [projectId]).catch(() => null);
+  await d1.execute("DELETE FROM shpitto_projects WHERE id = ?;", [projectId]).catch(() => null);
+  await d1.execute("DELETE FROM shpitto_users WHERE id = ?;", [userId]).catch(() => null);
+  await d1.execute("DELETE FROM shpitto_accounts WHERE id = ?;", [accountId]).catch(() => null);
+}
+
+async function fetchTextWithRetry(url: string, predicate: (text: string, status: number) => boolean) {
+  let lastStatus = 0;
+  let lastText = "";
+  for (let attempt = 1; attempt <= 12; attempt += 1) {
+    try {
+      const res = await fetch(url, { headers: { "user-agent": "shpitto-chat-full-flow-blog/1.0" } });
+      lastStatus = res.status;
+      lastText = await res.text();
+      if (predicate(lastText, res.status)) return { status: res.status, text: lastText };
+    } catch (error) {
+      lastText = String((error as Error)?.message || error || "fetch failed");
+    }
+    await new Promise((resolve) => setTimeout(resolve, Math.min(10_000, 1500 * attempt)));
+  }
+  throw new Error(`Timed out fetching ${url} (last status ${lastStatus || "unknown"}): ${lastText.slice(0, 240)}`);
+}
 
 describe("chat entry full website flow", () => {
   const confirmPayload = (text: string) => `__SHP_CONFIRM_GENERATE__\n${text}`;
@@ -14,14 +129,18 @@ describe("chat entry full website flow", () => {
     "runs real flow from chat -> generation -> deploy and verifies each stage",
     async () => {
       const prevUseSupabase = process.env.CHAT_TASKS_USE_SUPABASE;
+      let blogSeed: Awaited<ReturnType<typeof seedFullFlowBlogData>> | null = null;
+      let chatId = "";
 
       process.env.CHAT_TASKS_USE_SUPABASE = "0";
 
       try {
         expect(Boolean(process.env.CLOUDFLARE_ACCOUNT_ID)).toBe(true);
         expect(Boolean(process.env.CLOUDFLARE_API_TOKEN)).toBe(true);
+        expect(Boolean(process.env.CLOUDFLARE_D1_DATABASE_ID || process.env.CLOUDFLARE_D1_DB_ID || process.env.D1_DATABASE_ID)).toBe(true);
 
-        const chatId = `chat-full-flow-${Date.now()}`;
+        const marker = Date.now().toString(36);
+        chatId = `chat-full-flow-${marker}`;
         const { POST } = await import("../../app/api/chat/route");
         const { GET: getTaskStatus } = await import("../../app/api/chat/tasks/[taskId]/route");
         const { GET: getHistory } = await import("../../app/api/chat/history/route");
@@ -100,6 +219,8 @@ describe("chat entry full website flow", () => {
         expect(previewHtml.toLowerCase()).toContain("<!doctype html");
         expect(previewHtml).toContain(`/api/chat/tasks/${encodeURIComponent(queuedGenerateTask!.id)}/preview/`);
 
+        blogSeed = await seedFullFlowBlogData(chatId, marker);
+
         // 5) Chat request queues deploy task based on generated checkpoint
         const deployReq = new Request("http://localhost/api/chat", {
           method: "POST",
@@ -135,7 +256,9 @@ describe("chat entry full website flow", () => {
         expect(doneDeployRes.status).toBe(200);
         expect(doneDeployJson?.task?.status).toBe("succeeded");
         expect(doneDeployJson?.task?.result?.progress?.stage).toBe("deployed");
-        expect(String(doneDeployJson?.task?.result?.deployedUrl || "")).toContain(".pages.dev");
+        const deployedUrl = String(doneDeployJson?.task?.result?.deployedUrl || "").replace(/\/+$/, "");
+        expect(deployedUrl).toContain(".pages.dev");
+        expect(doneDeployJson?.task?.result?.progress?.blogRuntimeStatus).toMatch(/^snapshot:/);
         expect(doneDeployJson?.task?.result?.actions).toEqual(
           expect.arrayContaining([
             expect.objectContaining({
@@ -158,7 +281,48 @@ describe("chat entry full website flow", () => {
         expect(Array.isArray(historyJson?.messages)).toBe(true);
         expect((historyJson?.messages || []).filter((item: any) => item.role === "user").length).toBeGreaterThanOrEqual(2);
         expect((historyJson?.messages || []).filter((item: any) => item.role === "assistant").length).toBeGreaterThanOrEqual(2);
+
+        const home = await fetchTextWithRetry(
+          deployedUrl,
+          (text, status) => status === 200 && text.toLowerCase().includes("<!doctype html") && text.includes('href="/blog/"'),
+        );
+        const blog = await fetchTextWithRetry(
+          `${deployedUrl}/blog/`,
+          (text, status) =>
+            status === 200 &&
+            text.includes(blogSeed!.title) &&
+            text.includes(`Chat full flow online marker ${marker}`) &&
+            text.includes("/styles.css"),
+        );
+        const post = await fetchTextWithRetry(
+          `${deployedUrl}/blog/chat-full-flow-blog-verification/`,
+          (text, status) => status === 200 && text.includes("Chat full flow blog content marker") && text.includes(marker),
+        );
+        const snapshot = await fetchTextWithRetry(
+          `${deployedUrl}/shpitto-blog-snapshot.json`,
+          (text, status) => status === 200 && text.includes('"mode": "deployment-d1-static-snapshot"') && text.includes('"postCount": 1'),
+        );
+
+        console.log(
+          JSON.stringify(
+            {
+              CHAT_ENTRY_FULL_FLOW_BLOG_RESULT: {
+                deployedUrl,
+                homeStatus: home.status,
+                blogStatus: blog.status,
+                postStatus: post.status,
+                snapshotStatus: snapshot.status,
+                blogRuntimeStatus: doneDeployJson?.task?.result?.progress?.blogRuntimeStatus,
+              },
+            },
+            null,
+            2,
+          ),
+        );
       } finally {
+        if (blogSeed && chatId) {
+          await cleanupFullFlowBlogData(chatId, blogSeed.accountId, blogSeed.userId);
+        }
         if (prevUseSupabase === undefined) delete process.env.CHAT_TASKS_USE_SUPABASE;
         else process.env.CHAT_TASKS_USE_SUPABASE = prevUseSupabase;
       }

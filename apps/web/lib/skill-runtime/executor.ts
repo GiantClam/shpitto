@@ -5,7 +5,20 @@ import { AIMessage, BaseMessage, HumanMessage, SystemMessage } from "@langchain/
 import { ChatOpenAI } from "@langchain/openai";
 import { getR2Client } from "../r2.ts";
 import { buildCloudflareBeaconSnippet, CloudflareClient, type CloudflareWebAnalyticsSite } from "../cloudflare.ts";
+import { deployWithWrangler, type WranglerDeployResult } from "../cloudflare-pages-wrangler.ts";
 import { Bundler } from "../bundler.ts";
+import {
+  injectDeployedBlogRuntime,
+  isDeployedBlogRuntimeEnabled,
+  resolveBlogD1BindingConfig,
+} from "../deployed-blog-runtime.ts";
+import {
+  buildDeployedBlogSnapshotFilesFromD1,
+  injectDeployedBlogSnapshot,
+} from "../deployed-blog-snapshot.ts";
+import { getD1Client } from "../d1.ts";
+import { renderMarkdownToHtml } from "../blog-markdown.ts";
+import type { BlogPostUpsertInput } from "../blog-types.ts";
 import {
   listProjectAssets,
   publishCurrentProjectAssets,
@@ -18,6 +31,7 @@ import {
   createChatTask,
   failChatTask,
   getChatTask,
+  getLatestPreviewableChatTaskForChat,
   touchChatTaskHeartbeat,
   updateChatTaskProgress,
 } from "../agent/chat-task-store.ts";
@@ -25,16 +39,25 @@ import { extractUiPayload } from "../agent/chat-ui-payload.ts";
 import type { AgentState } from "../agent/graph.ts";
 import {
   archiveSiteArtifactsToR2,
+  deriveProjectSiteKey,
+  getOwnedProjectSummary,
+  listProjectCustomDomains,
   recordDeployment,
   saveProjectState,
   syncProjectCustomDomainOrigin,
   upsertProjectSiteBinding,
 } from "../agent/db.ts";
-import { loadWorkflowSkillContext, type DesignSkillHit } from "../agent/website-workflow.ts";
+import { assertCanMutatePublishedSite } from "../billing/enforcement.ts";
+import {
+  loadWorkflowSkillContext,
+  normalizeWorkflowVisualDecisionContext,
+  type DesignSkillHit,
+} from "../agent/website-workflow.ts";
+import { readChatShortTermMemory, writeChatShortTermMemory } from "../agent/chat-memory.ts";
 import { DEFAULT_STYLE_PRESET, normalizeStylePreset, type DesignStylePreset } from "../design-style-preset.ts";
 import { artifactCounts, collectCompletedPhases, getGeneratedFilePaths, getPages, getStaticArtifactFiles, mergeAgentState } from "./artifacts.ts";
 import { invokeModelWithIdleTimeout } from "./llm-stream.ts";
-import { bindRunProviderLockToState, resolveRunProviderRunnerLock, type RunProviderLock } from "./provider-runner.ts";
+import { bindRunProviderLockToState, resolveRunProviderRunnerLock, resolveRunProviderRunnerLocks, type RunProviderLock } from "./provider-runner.ts";
 import {
   buildLocalDecisionPlan,
   extractRouteSourceBrief,
@@ -51,7 +74,13 @@ import {
   WEBSITE_GENERATION_SKILL_BUNDLE,
   type ProjectSkillDescriptor,
 } from "./project-skill-loader.ts";
-import { lintGeneratedWebsiteHtml, renderAntiSlopFeedback, type AntiSlopLintResult } from "../visual-qa/anti-slop-linter.ts";
+import {
+  lintGeneratedWebsiteHtml,
+  lintGeneratedWebsiteRouteHtml,
+  mergeAntiSlopLintResults,
+  renderAntiSlopFeedback,
+  type AntiSlopLintResult,
+} from "../visual-qa/anti-slop-linter.ts";
 import { runSkillToolExecutor } from "./skill-tool-executor.ts";
 import { renderWebsiteQualityContract } from "./website-quality-contract.ts";
 import { validateComponent, type DesignSpec, type ValidationResult } from "../../skills/design-website-generator/tools/component-validator.ts";
@@ -67,7 +96,7 @@ import {
   type TypoUsage,
 } from "../../skills/design-website-generator/tools/context-builder.ts";
 
-type LlmProvider = "aiberm" | "crazyroute";
+type LlmProvider = "pptoken" | "aiberm" | "crazyroute";
 
 type ProviderConfig = {
   provider: LlmProvider;
@@ -75,6 +104,11 @@ type ProviderConfig = {
   baseURL: string;
   defaultHeaders?: Record<string, string>;
   modelName: string;
+};
+
+type ProviderAttempt = {
+  lock: RunProviderLock;
+  config: ProviderConfig;
 };
 
 type StaticArtifactFile = {
@@ -208,6 +242,33 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
+async function bestEffortWithTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  label: string,
+): Promise<T | undefined> {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<undefined>((resolve) => {
+        timer = setTimeout(() => {
+          console.warn(`[SkillRuntimeExecutor] ${label} timed out after ${timeoutMs}ms; continuing.`);
+          resolve(undefined);
+        }, timeoutMs);
+        timer.unref?.();
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+function resolveGeneratedAssetSyncTimeoutMs(): number {
+  const raw = Number(process.env.CHAT_GENERATED_ASSET_SYNC_TIMEOUT_MS || 30_000);
+  return Number.isFinite(raw) ? Math.max(5_000, raw) : 30_000;
+}
+
 function sanitizePathToken(value: string): string {
   const normalized = String(value || "").trim().replace(/[^a-zA-Z0-9._-]+/g, "_");
   return normalized || "unknown";
@@ -300,6 +361,18 @@ function isHumanLikeMessage(raw: any): boolean {
 }
 
 function extractRequirementText(state: AgentState): string {
+  const workflow = toRecord((state as any)?.workflow_context);
+  const prioritizedWorkflowCandidates = [
+    String(workflow.latestUserText || "").trim(),
+    String(workflow.latestUserTextRaw || "").trim(),
+    String(workflow.canonicalPrompt || "").trim(),
+    String(workflow.requirementAggregatedText || "").trim(),
+    String(workflow.sourceRequirement || "").trim(),
+  ];
+  for (const candidate of prioritizedWorkflowCandidates) {
+    if (candidate) return candidate;
+  }
+
   const messages = Array.isArray(state.messages) ? state.messages : [];
   for (let i = messages.length - 1; i >= 0; i -= 1) {
     const msg: any = messages[i];
@@ -307,16 +380,6 @@ function extractRequirementText(state: AgentState): string {
       const content = extractMessageContent(msg);
       if (content) return content;
     }
-  }
-  const workflow = toRecord((state as any)?.workflow_context);
-  const fallbackCandidates = [
-    String(workflow.canonicalPrompt || "").trim(),
-    String(workflow.latestUserText || "").trim(),
-    String(workflow.requirementAggregatedText || "").trim(),
-    String(workflow.sourceRequirement || "").trim(),
-  ];
-  for (const candidate of fallbackCandidates) {
-    if (candidate) return candidate;
   }
   return "";
 }
@@ -343,24 +406,135 @@ function isProjectLikeArtifact(value: unknown): value is { pages: any[] } {
 }
 
 async function readProjectJsonFromPath(filePath: string): Promise<any | undefined> {
-  const absPath = path.resolve(String(filePath || ""));
-  if (!absPath.toLowerCase().endsWith(".json")) return undefined;
-  try {
-    const raw = await fs.readFile(absPath, "utf8");
-    const parsed = JSON.parse(raw);
-    if (isProjectLikeArtifact(parsed)) return parsed;
-  } catch {
-    // ignore and let caller fallback to other sources
+  const candidates = resolveCheckpointProjectPathCandidates(filePath);
+  for (const absPath of candidates) {
+    if (!absPath.toLowerCase().endsWith(".json")) continue;
+    try {
+      const raw = await fs.readFile(absPath, "utf8");
+      const parsed = JSON.parse(raw);
+      if (isProjectLikeArtifact(parsed)) return parsed;
+    } catch {
+      // ignore and let caller fallback to other sources
+    }
   }
   return undefined;
 }
 
-async function resolveDeploySourceProject(state: AgentState): Promise<any | undefined> {
+function localChatTaskRootCandidates(chatId?: string, taskId?: string): string[] {
+  const safeChatId = sanitizePathToken(String(chatId || "").trim());
+  const safeTaskId = sanitizePathToken(String(taskId || "").trim());
+  if (!safeChatId || !safeTaskId) return [];
+  return Array.from(
+    new Set([
+      path.resolve(process.cwd(), ".tmp", "chat-tasks", safeChatId, safeTaskId),
+      path.resolve(process.cwd(), "apps", "web", ".tmp", "chat-tasks", safeChatId, safeTaskId),
+    ]),
+  );
+}
+
+function resolveCheckpointProjectPathCandidates(filePath: string): string[] {
+  const raw = String(filePath || "").trim();
+  if (!raw) return [];
+  const normalized = raw.replace(/\\/g, "/");
+  const suffixMatch = normalized.match(/(?:^|\/)\.tmp\/chat-tasks\/(.+)$/i);
+  const candidates = [path.resolve(raw)];
+  if (suffixMatch?.[1]) {
+    const suffix = suffixMatch[1].replace(/^\/+/, "");
+    candidates.push(
+      path.resolve(process.cwd(), ".tmp", "chat-tasks", suffix),
+      path.resolve(process.cwd(), "apps", "web", ".tmp", "chat-tasks", suffix),
+    );
+  }
+  return Array.from(new Set(candidates));
+}
+
+async function readProjectJsonFromLocalTaskRoot(chatId?: string, taskId?: string): Promise<any | undefined> {
+  for (const taskRoot of localChatTaskRootCandidates(chatId, taskId)) {
+    const project = await readProjectJsonFromPath(path.join(taskRoot, "project.json"));
+    if (project) return project;
+  }
+  return undefined;
+}
+
+async function readLatestProjectJsonFromLocalChatRoots(chatId?: string, excludeTaskId?: string): Promise<any | undefined> {
+  const safeChatId = sanitizePathToken(String(chatId || "").trim());
+  if (!safeChatId) return undefined;
+  const chatRoots = Array.from(
+    new Set([
+      path.resolve(process.cwd(), ".tmp", "chat-tasks", safeChatId),
+      path.resolve(process.cwd(), "apps", "web", ".tmp", "chat-tasks", safeChatId),
+    ]),
+  );
+  const candidates: Array<{ filePath: string; mtimeMs: number }> = [];
+  for (const chatRoot of chatRoots) {
+    try {
+      const entries = await fs.readdir(chatRoot, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        if (excludeTaskId && entry.name === sanitizePathToken(excludeTaskId)) continue;
+        const projectPath = path.join(chatRoot, entry.name, "project.json");
+        try {
+          const stat = await fs.stat(projectPath);
+          if (stat.isFile()) candidates.push({ filePath: projectPath, mtimeMs: stat.mtimeMs });
+        } catch {
+          // ignore incomplete checkpoint
+        }
+      }
+    } catch {
+      // ignore missing local chat root
+    }
+  }
+  candidates.sort((a, b) => b.mtimeMs - a.mtimeMs);
+  for (const candidate of candidates) {
+    const project = await readProjectJsonFromPath(candidate.filePath);
+    if (project) return project;
+  }
+  return undefined;
+}
+
+async function resolveProjectArtifactFromTask(task: Awaited<ReturnType<typeof getLatestPreviewableChatTaskForChat>>) {
+  if (!task) return undefined;
+  const internal = (task.result?.internal || {}) as Record<string, unknown>;
+  const artifactCandidates = [
+    (internal as any).artifactSnapshot,
+    (internal as any).sessionState?.site_artifacts,
+    (internal as any).sessionState?.project_json,
+    (internal as any).inputState?.site_artifacts,
+    (internal as any).inputState?.project_json,
+  ];
+  for (const candidate of artifactCandidates) {
+    if (isProjectLikeArtifact(candidate)) return candidate;
+  }
+
+  const progress = (task.result?.progress || {}) as Record<string, unknown>;
+  const pathCandidates = [
+    String(progress.checkpointProjectPath || ""),
+    String(progress.checkpointSiteDir || ""),
+    String(progress.checkpointDir || ""),
+  ].filter(Boolean);
+
+  for (const candidate of pathCandidates) {
+    const normalized = String(candidate || "").trim();
+    const project =
+      normalized.toLowerCase().endsWith(".json")
+        ? await readProjectJsonFromPath(normalized)
+        : await readProjectJsonFromPath(path.join(normalized, "project.json"));
+    if (project) return project;
+  }
+
+  return undefined;
+}
+
+async function resolveDeploySourceProject(
+  state: AgentState,
+  params?: { chatId?: string; taskId?: string },
+): Promise<any | undefined> {
   if (isProjectLikeArtifact((state as any)?.site_artifacts)) return (state as any).site_artifacts;
   if (isProjectLikeArtifact((state as any)?.project_json)) return (state as any).project_json;
 
   const workflow = toRecord((state as any)?.workflow_context);
   const sourcePathCandidates = [
+    String(workflow.refineSourceProjectPath || ""),
     String(workflow.deploySourceProjectPath || ""),
     String(workflow.checkpointProjectPath || ""),
     String(workflow.lastCheckpointProjectPath || ""),
@@ -371,7 +545,48 @@ async function resolveDeploySourceProject(state: AgentState): Promise<any | unde
     if (project) return project;
   }
 
+  const sourceTaskIdCandidates = [
+    String(workflow.refineSourceTaskId || ""),
+    String(workflow.deploySourceTaskId || ""),
+  ].filter(Boolean);
+
+  for (const sourceTaskId of sourceTaskIdCandidates) {
+    const sourceTask = await getChatTask(sourceTaskId).catch(() => undefined);
+    const project = await resolveProjectArtifactFromTask(sourceTask);
+    if (project) return project;
+    if (params?.chatId) {
+      const localProject = await readProjectJsonFromLocalTaskRoot(params.chatId, sourceTaskId);
+      if (localProject) return localProject;
+    }
+  }
+
+  if (params?.chatId) {
+    const latestPreviewTask = await getLatestPreviewableChatTaskForChat(params.chatId, { statuses: ["succeeded"] }).catch(
+      () => undefined,
+    );
+    if (latestPreviewTask && latestPreviewTask.id !== params.taskId) {
+      const project = await resolveProjectArtifactFromTask(latestPreviewTask);
+      if (project) return project;
+    }
+    const localProject = await readLatestProjectJsonFromLocalChatRoots(params.chatId, params.taskId);
+    if (localProject) return localProject;
+  }
+
   return undefined;
+}
+
+function summarizeRefineBaselineInputs(state: AgentState) {
+  const workflow = toRecord((state as any)?.workflow_context);
+  return {
+    refineSourceProjectPath: String(workflow.refineSourceProjectPath || "").trim() || null,
+    deploySourceProjectPath: String(workflow.deploySourceProjectPath || "").trim() || null,
+    checkpointProjectPath: String(workflow.checkpointProjectPath || "").trim() || null,
+    lastCheckpointProjectPath: String(workflow.lastCheckpointProjectPath || "").trim() || null,
+    refineSourceTaskId: String(workflow.refineSourceTaskId || "").trim() || null,
+    deploySourceTaskId: String(workflow.deploySourceTaskId || "").trim() || null,
+    hasProjectJson: isProjectLikeArtifact((state as any)?.project_json),
+    hasSiteArtifacts: isProjectLikeArtifact((state as any)?.site_artifacts),
+  };
 }
 
 function cloneJson<T>(value: T): T {
@@ -668,6 +883,13 @@ function applyDeterministicRefineFixups(
   const removeMenuButton =
     hasDeleteIntent &&
     /(menu|\u83dc\u5355|\u5bfc\u822a\u680f)/i.test(normalizedInstruction);
+  const hasSpacingIntent = /(\u8fb9\u8ddd|\u5185\u8fb9\u8ddd|\u7559\u767d|\u95f4\u8ddd|padding|spacing|space)/i.test(
+    normalizedInstruction,
+  );
+  const mentionsTimelineCards =
+    /AI\s*(?:\u89c2\u5bdf|\u89c0\u5bdf)|\u5de5\u7a0b\u5b9e\u8df5|\u5168\u7403\u5316\u89c6\u89d2|global/i.test(normalizedInstruction) &&
+    /(\u4e09\u4e2adiv|\u4e09\u5f20\u5361|\u4e09\u4e2a\u5361|\u5361\u7247|div|card)/i.test(normalizedInstruction);
+  const adjustTimelineCardSpacing = hasSpacingIntent && mentionsTimelineCards;
 
   const literalTargets = new Set<string>();
   if (/for enterprise and saas teams/i.test(normalizedInstruction)) {
@@ -687,7 +909,7 @@ function applyDeterministicRefineFixups(
     }
   }
 
-  if (!removeMenuButton && literalTargets.size === 0) {
+  if (!removeMenuButton && literalTargets.size === 0 && !adjustTimelineCardSpacing) {
     return { project, changedFiles: [] };
   }
 
@@ -697,6 +919,101 @@ function applyDeterministicRefineFixups(
 
   const updatedFiles = files.map((file) => {
     const lowerPath = String(file.path || "").toLowerCase();
+    if (adjustTimelineCardSpacing && lowerPath.endsWith(".css")) {
+      const before = String(file.content || "");
+      let after = before;
+      const timelineGridRule = [
+        ".timeline-grid {",
+        "  display: grid;",
+        "  grid-template-columns: repeat(3, minmax(0, 1fr));",
+        "  gap: 1.25rem;",
+        "}",
+      ].join("\n");
+      const timelineStepRule = [
+        ".timeline-step {",
+        "  position: relative;",
+        "  overflow: hidden;",
+        "  padding: clamp(1.35rem, 2.6vw, 1.85rem);",
+        "  display: grid;",
+        "  gap: 0.85rem;",
+        "  align-content: start;",
+        "  min-height: 14rem;",
+        "}",
+      ].join("\n");
+      const timelineStepHeadingRule = [
+        ".timeline-step h3 {",
+        "  margin: 0;",
+        "  max-width: calc(100% - 4.5rem);",
+        "}",
+      ].join("\n");
+      const timelineStepBodyRule = [
+        ".timeline-step p {",
+        "  margin: 0;",
+        "  max-width: 24ch;",
+        "  color: var(--muted);",
+        "}",
+      ].join("\n");
+      const timelineStepMarkerRule = [
+        ".timeline-step::before {",
+        "  content: attr(data-step);",
+        "  position: absolute;",
+        "  right: 1.15rem;",
+        "  top: 1rem;",
+        "  font-family: var(--display);",
+        "  font-size: 2.7rem;",
+        "  color: color-mix(in oklab, var(--accent) 20%, transparent);",
+        "}",
+      ].join("\n");
+      const overrideBlock = [
+        timelineGridRule,
+        timelineStepRule,
+        timelineStepHeadingRule,
+        timelineStepBodyRule,
+        timelineStepMarkerRule,
+      ].join("\n");
+      if (/\.timeline-step\s*\{[\s\S]*?\}/.test(after)) {
+        after = after.replace(
+          /\.timeline-grid\s*\{[\s\S]*?\}/,
+          timelineGridRule,
+        );
+        after = after.replace(
+          /\.timeline-step\s*\{[\s\S]*?\}/,
+          timelineStepRule,
+        );
+        if (/\.timeline-step h3\s*\{/.test(after)) {
+          after = after.replace(
+            /\.timeline-step h3\s*\{[\s\S]*?\}/,
+            timelineStepHeadingRule,
+          );
+        } else {
+          after += `\n${timelineStepHeadingRule}`;
+        }
+        if (/\.timeline-step p\s*\{/.test(after)) {
+          after = after.replace(
+            /\.timeline-step p\s*\{[\s\S]*?\}/,
+            timelineStepBodyRule,
+          );
+        } else {
+          after += `\n${timelineStepBodyRule}`;
+        }
+        if (/\.timeline-step::before\s*\{/.test(after)) {
+          after = after.replace(
+            /\.timeline-step::before\s*\{[\s\S]*?\}/,
+            timelineStepMarkerRule,
+          );
+        } else {
+          after += `\n${timelineStepMarkerRule}`;
+        }
+      } else {
+        after += `\n\n${overrideBlock}\n`;
+      }
+      if (after !== before) {
+        changed.add(file.path);
+        return { ...file, content: after };
+      }
+      return file;
+    }
+
     if (!lowerPath.endsWith(".html")) return file;
 
     const before = String(file.content || "");
@@ -998,6 +1315,8 @@ export type DeploySmokeResult = {
   url?: string;
 };
 
+type CloudflareDeployStrategy = "direct-upload" | "wrangler";
+
 function isRemoteDeploySmokeEnabled(): boolean {
   if (String(process.env.DEPLOY_SMOKE_DISABLE || "").trim() === "1") return false;
   return Boolean(String(process.env.CLOUDFLARE_ACCOUNT_ID || "").trim() && String(process.env.CLOUDFLARE_API_TOKEN || "").trim());
@@ -1186,6 +1505,148 @@ function buildDomainConfigurationGuidance(params: {
   const steps = buildDomainConfigurationGuidanceSteps(params);
   const title = params.locale === "zh-CN" ? "## \u57df\u540d\u914d\u7f6e\u6307\u5bfc" : "## Domain Configuration Guide";
   return [title, "", ...steps.map((step, index) => `${index + 1}. ${step}`)].join("\n");
+}
+
+export async function resolveProjectAuthApiBase(params: { projectId: string; userId: string }): Promise<string> {
+  const projectId = String(params.projectId || "").trim();
+  const userId = String(params.userId || "").trim();
+  if (!projectId || !userId) return "";
+
+  try {
+    const [project, domains] = await Promise.all([
+      getOwnedProjectSummary(projectId, userId),
+      listProjectCustomDomains(projectId, userId).catch(() => []),
+    ]);
+
+    const customDomain = domains.find((domain) => String(domain.hostname || "").trim())?.hostname;
+    if (customDomain) return `https://${String(customDomain).trim()}`;
+
+    const latestDeploymentUrl = String(project?.latestDeploymentUrl || "").trim();
+    if (latestDeploymentUrl) {
+      try {
+        return new URL(latestDeploymentUrl).origin;
+      } catch {
+        // fall through to the deployment host fallback below.
+      }
+    }
+
+    const deploymentHost = String(project?.deploymentHost || "").trim();
+    if (deploymentHost) {
+      return `https://${deploymentHost.replace(/^https?:\/\//i, "").replace(/^\/+|\/+$/g, "")}`;
+    }
+  } catch {
+    return "";
+  }
+
+  return "";
+}
+
+function normalizeCloudflareDeployStrategy(value: string): CloudflareDeployStrategy | undefined {
+  const normalized = String(value || "").trim().toLowerCase().replace(/_/g, "-");
+  if (normalized === "wrangler") return "wrangler";
+  if (normalized === "direct" || normalized === "direct-upload" || normalized === "upload") return "direct-upload";
+  return undefined;
+}
+
+function resolveCloudflareDeployStrategy(params: { blogRuntimeEnabled: boolean; blogRuntimeInjected: boolean }): CloudflareDeployStrategy {
+  if (params.blogRuntimeEnabled || params.blogRuntimeInjected) return "wrangler";
+  const configured = normalizeCloudflareDeployStrategy(String(process.env.CLOUDFLARE_DEPLOY_STRATEGY || ""));
+  if (configured) return configured;
+  return "direct-upload";
+}
+
+async function fetchDeploySmokeText(url: string, timeoutMs: number): Promise<{ status: number; contentType: string; text: string }> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      signal: controller.signal,
+      headers: { "user-agent": "shpitto-blog-runtime-smoke/1.0" },
+    });
+    return {
+      status: res.status,
+      contentType: res.headers.get("content-type") || "",
+      text: await res.text().catch(() => ""),
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function runPostDeployBlogRuntimeSmoke(baseUrl: string): Promise<DeploySmokeResult> {
+  const target = String(baseUrl || "").replace(/\/+$/g, "");
+  if (!target) {
+    return { status: "failed", checks: [{ name: "blog_runtime_url_present", passed: false, message: "Deployment URL is empty" }] };
+  }
+  if (!isRemoteDeploySmokeEnabled()) {
+    return {
+      status: "skipped",
+      url: target,
+      checks: [
+        {
+          name: "blog_runtime_remote_fetch",
+          passed: true,
+          message: "Skipped because Cloudflare credentials are not configured",
+        },
+      ],
+    };
+  }
+
+  const timeoutMs = Math.max(2_000, Number(process.env.DEPLOY_SMOKE_TIMEOUT_MS || 15_000));
+  const checks: DeploySmokeResult["checks"] = [];
+
+  async function checkText(
+    name: string,
+    pathName: string,
+    validate: (response: { status: number; contentType: string; text: string }) => boolean,
+    message: string,
+  ) {
+    const url = `${target}${pathName}`;
+    try {
+      const response = await fetchDeploySmokeText(url, timeoutMs);
+      checks.push({
+        name,
+        passed: response.status >= 200 && response.status < 400 && validate(response),
+        message: `${message}; HTTP ${response.status}; content-type=${response.contentType || "unknown"}`,
+      });
+    } catch (error) {
+      checks.push({
+        name,
+        passed: false,
+        message: `${url}: ${String((error as any)?.message || error || "fetch failed")}`,
+      });
+    }
+  }
+
+  await checkText("blog_index_html", "/blog/", (res) => /<html[\s>]|<body[\s>]/i.test(res.text), "Blog index should be HTML");
+  await checkText(
+    "blog_posts_api_json",
+    "/api/blog/posts",
+    (res) => res.contentType.toLowerCase().includes("json") && /"ok"\s*:\s*true/.test(res.text),
+    "Blog posts API should be JSON from Pages Functions",
+  );
+  await checkText(
+    "blog_runtime_metadata",
+    "/shpitto-blog-runtime.json",
+    (res) => res.contentType.toLowerCase().includes("json") && res.text.includes('"mode": "deployment-d1-runtime"'),
+    "Blog runtime metadata should identify D1 runtime mode",
+  );
+  await checkText(
+    "blog_rss_xml",
+    "/blog/rss.xml",
+    (res) => /xml|rss/i.test(res.contentType) || /<rss[\s>]/i.test(res.text),
+    "Blog RSS should be XML",
+  );
+  await checkText(
+    "sitemap_includes_blog",
+    "/sitemap.xml",
+    (res) => res.text.includes("/blog"),
+    "Sitemap should include Blog URLs",
+  );
+
+  return { ...evaluateDeploySmoke(checks), url: target };
 }
 
 function resolveCustomDomainCnameTarget(deploymentHost: string, liveHost: string) {
@@ -1410,7 +1871,10 @@ async function resolveWebsiteRuntimeSkill(params: {
     designMd: String(existingWorkflow.designMd || ""),
   };
   if (!hasExistingGuidance || !styleHit) {
-    const workflowContext = await loadWorkflowSkillContext(requirementText);
+    const workflowContext = await loadWorkflowSkillContext(
+      requirementText,
+      normalizeWorkflowVisualDecisionContext(existingWorkflow as any),
+    );
     stylePreset = normalizeStylePreset(workflowContext.stylePreset, {});
     styleHit = workflowContext.hit;
     guidance = {
@@ -1495,6 +1959,21 @@ function ensureHtmlDocument(rawHtml: string): string {
   return html;
 }
 
+function providerErrorText(error: unknown): string {
+  if (error instanceof Error) return String(error.message || error).trim();
+  return String(error || "").trim();
+}
+
+function isRetryableProviderError(error: unknown): boolean {
+  const text = providerErrorText(error).toLowerCase();
+  if (!text) return false;
+  if (/(401|403|forbidden|unauthorized|invalid api key|authentication failed)/i.test(text)) return false;
+  if (/(404|model not found|unsupported model|not supported|bad request|invalid_request_error)/i.test(text)) return false;
+  return /(timeout|timed out|bodytimeouterror|body timeout|und_err_body_timeout|terminated|429|rate limit|503|502|504|service unavailable|connection error|network|socket hang up|econnreset|econnaborted|etimedout|eai_again|enotfound|fetch failed|temporarily unavailable|overloaded|upstream)/i.test(
+    text,
+  );
+}
+
 function createModelForProvider(config: ProviderConfig, timeoutMs: number, maxTokens: number, temperature = 0.2): ChatOpenAI {
   const model = new ChatOpenAI({
     modelName: config.modelName,
@@ -1515,13 +1994,22 @@ function createModelForProvider(config: ProviderConfig, timeoutMs: number, maxTo
 }
 
 function resolveProviderConfig(lock: RunProviderLock): ProviderConfig {
+  if (lock.provider === "pptoken") {
+    return {
+      provider: "pptoken",
+      apiKey: process.env.PPTOKEN_API_KEY,
+      baseURL: process.env.PPTOKEN_BASE_URL || "https://api.pptoken.org/v1",
+      defaultHeaders: {},
+      modelName: String(lock.model || process.env.LLM_MODEL_PPTOKEN || process.env.PPTOKEN_MODEL || process.env.LLM_MODEL || "gpt-5.4-mini"),
+    };
+  }
   if (lock.provider === "aiberm") {
     return {
       provider: "aiberm",
       apiKey: process.env.AIBERM_API_KEY,
       baseURL: process.env.AIBERM_BASE_URL || "https://aiberm.com/v1",
       defaultHeaders: {},
-      modelName: String(lock.model || process.env.LLM_MODEL_AIBERM || process.env.AIBERM_MODEL || process.env.LLM_MODEL || "openai/gpt-5.4-mini"),
+      modelName: String(lock.model || process.env.LLM_MODEL_AIBERM || process.env.AIBERM_MODEL || process.env.LLM_MODEL || "gpt-5.4-mini"),
     };
   }
   return {
@@ -1539,7 +2027,7 @@ function resolveProviderConfig(lock: RunProviderLock): ProviderConfig {
         process.env.LLM_MODEL_CRAZYROUTER ||
         process.env.LLM_MODEL_CRAZYREOUTE ||
         process.env.LLM_MODEL ||
-        "openai/gpt-5.4-mini",
+        "gpt-5.4-mini",
     ),
   };
 }
@@ -1574,7 +2062,9 @@ function blueprintDigest(plan: LocalDecisionPlan): string {
   return plan.pageBlueprints
     .map(
       (page) =>
-        `- ${page.route}\n  navLabel: ${page.navLabel}\n  source: ${page.source}\n  intent: ${page.purpose}`,
+        `- ${page.route}\n  navLabel: ${page.navLabel}\n  source: ${page.source}\n  kind: ${page.pageKind}\n  intent: ${page.purpose}${
+          page.contentSkeleton.length ? `\n  skeleton: ${page.contentSkeleton.join(" -> ")}` : ""
+        }${page.constraints.length ? `\n  constraints: ${page.constraints.join(" | ")}` : ""}`,
     )
     .join("\n");
 }
@@ -1673,6 +2163,15 @@ function renderLocalDesign(
   ].join("\n");
 }
 
+function escapeHtml(value: string): string {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function renderLocalStyles(stylePreset: DesignStylePreset = DEFAULT_STYLE_PRESET): string {
   return [
     ":root {",
@@ -1698,6 +2197,23 @@ function renderLocalStyles(stylePreset: DesignStylePreset = DEFAULT_STYLE_PRESET
     ".btn-primary { background: var(--accent); color: #111827; }",
     ".grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }",
     ".card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; box-shadow: 0 6px 22px rgba(17,24,39,.06); }",
+    ".auth-shell { display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); align-items: stretch; }",
+    ".auth-copy, .auth-panel { display: grid; gap: 14px; }",
+    ".auth-eyebrow { margin: 0; font-size: 12px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }",
+    ".auth-title { margin: 0; font-size: clamp(28px, 4vw, 44px); line-height: 1.08; }",
+    ".auth-lead { margin: 0; color: var(--muted); max-width: 58ch; }",
+    ".auth-pills { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }",
+    ".auth-mini-card { padding: 14px; border-radius: 12px; background: color-mix(in oklab, var(--surface) 92%, white 8%); }",
+    ".auth-mini-card p { margin: 0; }",
+    ".auth-mini-card p + p { margin-top: 6px; color: var(--muted); font-size: 14px; line-height: 1.5; }",
+    ".auth-form { display: grid; gap: 12px; }",
+    ".auth-field { display: grid; gap: 8px; }",
+    ".auth-field label { font-size: 14px; font-weight: 700; color: var(--fg); }",
+    ".auth-status { margin: 0; min-height: 1.2rem; font-size: 14px; line-height: 1.5; color: var(--muted); }",
+    ".auth-status[data-state='error'] { color: #b91c1c; }",
+    ".auth-status[data-state='success'] { color: #166534; }",
+    ".auth-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }",
+    ".btn-block { width: 100%; text-align: center; }",
     "footer { margin-top: 50px; background: #111827; color: #fff; padding: 26px 0; }",
     "form { display: grid; gap: 10px; }",
     "input, textarea, select { width: 100%; border: 1px solid #d1d5db; border-radius: 10px; padding: 10px 12px; }",
@@ -1705,32 +2221,422 @@ function renderLocalStyles(stylePreset: DesignStylePreset = DEFAULT_STYLE_PRESET
   ].join("\n");
 }
 
+export function renderLocalAuthBody(params: {
+  route: string;
+  locale: "zh-CN" | "en";
+  title: string;
+  blueprint: PageBlueprint;
+  projectId?: string;
+  siteKey?: string;
+}): string {
+  const { route, locale, title, blueprint, projectId, siteKey } = params;
+  const routeKey = normalizePath(route);
+  const safeProjectId = escapeHtml(String(projectId || "").trim());
+  const safeSiteKey = escapeHtml(String(siteKey || "").trim());
+  const copy: Record<
+    string,
+    {
+      eyebrow: string;
+      lead: string;
+      cardA: string;
+      cardB: string;
+      submit: string;
+      secondaryHref: string;
+      secondaryLabel: string;
+      tertiaryHref?: string;
+      tertiaryLabel?: string;
+    }
+  > = {
+    "/login": {
+      eyebrow: locale === "zh-CN" ? "登录" : "Sign in",
+      lead:
+        locale === "zh-CN"
+          ? "使用与站点主题一致的登录壳完成邮箱登录、Google OAuth、找回密码和返回路径。"
+          : "Use the same theme shell as the site to handle email login, Google OAuth, password recovery, and return paths.",
+      cardA: locale === "zh-CN" ? "邮箱登录" : "Email login",
+      cardB: locale === "zh-CN" ? "继续使用 Google" : "Continue with Google",
+      submit: locale === "zh-CN" ? "登录" : "Sign in",
+      secondaryHref: "/register",
+      secondaryLabel: locale === "zh-CN" ? "去注册" : "Create account",
+      tertiaryHref: "/reset-password",
+      tertiaryLabel: locale === "zh-CN" ? "找回密码" : "Forgot password",
+    },
+    "/register": {
+      eyebrow: locale === "zh-CN" ? "注册" : "Register",
+      lead:
+        locale === "zh-CN"
+          ? "完成邮箱注册、Google OAuth 和验证提示，并保持主题与生成站点一致。"
+          : "Complete email registration, Google OAuth, and verification guidance while keeping the site theme intact.",
+      cardA: locale === "zh-CN" ? "邮箱注册" : "Email sign-up",
+      cardB: locale === "zh-CN" ? "邮箱验证" : "Email verification",
+      submit: locale === "zh-CN" ? "创建账号" : "Create account",
+      secondaryHref: "/login",
+      secondaryLabel: locale === "zh-CN" ? "返回登录" : "Back to sign in",
+    },
+    "/reset-password": {
+      eyebrow: locale === "zh-CN" ? "找回密码" : "Reset password",
+      lead:
+        locale === "zh-CN"
+          ? "在同一套视觉系统中重置密码，并保留返回登录和原始 next 路径。"
+          : "Reset the password in the same visual system and preserve the original next path.",
+      cardA: locale === "zh-CN" ? "新密码" : "New password",
+      cardB: locale === "zh-CN" ? "回到登录" : "Return to sign in",
+      submit: locale === "zh-CN" ? "更新密码" : "Update password",
+      secondaryHref: "/login",
+      secondaryLabel: locale === "zh-CN" ? "返回登录" : "Back to sign in",
+    },
+    "/verify-email": {
+      eyebrow: locale === "zh-CN" ? "验证邮箱" : "Verify email",
+      lead:
+        locale === "zh-CN"
+          ? "显示验证状态、允许重发，并保持返回登录和 next 路径一致。"
+          : "Show verification status, allow resend, and keep return-to-sign-in and next paths consistent.",
+      cardA: locale === "zh-CN" ? "验证状态" : "Verification status",
+      cardB: locale === "zh-CN" ? "重发验证" : "Resend verification",
+      submit: locale === "zh-CN" ? "重发验证邮件" : "Resend verification email",
+      secondaryHref: "/login",
+      secondaryLabel: locale === "zh-CN" ? "返回登录" : "Back to sign in",
+    },
+  };
+  const current = copy[routeKey] || copy["/login"];
+  const safeTitle = escapeHtml(title);
+  const safeResponsibility = escapeHtml(blueprint.responsibility);
+  const authForm = (() => {
+    if (routeKey === "/login") {
+      return `
+        <form class="auth-form" data-shpitto-auth-form="login">
+          <input type="hidden" name="projectId" value="${safeProjectId}" data-shpitto-auth-project-id />
+          <input type="hidden" name="siteKey" value="${safeSiteKey}" data-shpitto-auth-site-key />
+          <input type="hidden" name="next" value="/" data-shpitto-auth-next />
+          <div class="auth-field">
+            <label for="auth-email">${locale === "zh-CN" ? "邮箱" : "Email"}</label>
+            <input id="auth-email" name="email" type="email" autocomplete="email" required placeholder="name@company.com" />
+          </div>
+          <div class="auth-field">
+            <label for="auth-password">${locale === "zh-CN" ? "密码" : "Password"}</label>
+            <input id="auth-password" name="password" type="password" autocomplete="current-password" required minlength="8" placeholder="${locale === "zh-CN" ? "输入密码" : "Enter password"}" />
+          </div>
+          <p class="auth-status" data-shpitto-auth-status></p>
+          <button class="btn btn-primary btn-block" type="submit">${escapeHtml(current.submit)}</button>
+        </form>
+      `;
+    }
+    if (routeKey === "/register") {
+      return `
+        <form class="auth-form" data-shpitto-auth-form="register">
+          <input type="hidden" name="projectId" value="${safeProjectId}" data-shpitto-auth-project-id />
+          <input type="hidden" name="siteKey" value="${safeSiteKey}" data-shpitto-auth-site-key />
+          <input type="hidden" name="next" value="/" data-shpitto-auth-next />
+          <div class="auth-field">
+            <label for="auth-email">${locale === "zh-CN" ? "邮箱" : "Email"}</label>
+            <input id="auth-email" name="email" type="email" autocomplete="email" required placeholder="name@company.com" />
+          </div>
+          <div class="auth-field">
+            <label for="auth-password">${locale === "zh-CN" ? "密码" : "Password"}</label>
+            <input id="auth-password" name="password" type="password" autocomplete="new-password" required minlength="8" placeholder="${locale === "zh-CN" ? "至少 8 个字符" : "At least 8 characters"}" />
+          </div>
+          <div class="auth-field">
+            <label for="auth-confirm">${locale === "zh-CN" ? "确认密码" : "Confirm password"}</label>
+            <input id="auth-confirm" name="confirmPassword" type="password" autocomplete="new-password" required minlength="8" placeholder="${locale === "zh-CN" ? "再次输入密码" : "Repeat password"}" />
+          </div>
+          <p class="auth-status" data-shpitto-auth-status></p>
+          <button class="btn btn-primary btn-block" type="submit">${escapeHtml(current.submit)}</button>
+        </form>
+      `;
+    }
+    if (routeKey === "/reset-password") {
+      return `
+        <form class="auth-form" data-shpitto-auth-form="reset-password">
+          <input type="hidden" name="projectId" value="${safeProjectId}" data-shpitto-auth-project-id />
+          <input type="hidden" name="siteKey" value="${safeSiteKey}" data-shpitto-auth-site-key />
+          <input type="hidden" name="next" value="/" data-shpitto-auth-next />
+          <div class="auth-field">
+            <label for="auth-password">${locale === "zh-CN" ? "新密码" : "New password"}</label>
+            <input id="auth-password" name="password" type="password" autocomplete="new-password" required minlength="8" placeholder="${locale === "zh-CN" ? "至少 8 个字符" : "At least 8 characters"}" />
+          </div>
+          <div class="auth-field">
+            <label for="auth-confirm">${locale === "zh-CN" ? "确认密码" : "Confirm password"}</label>
+            <input id="auth-confirm" name="confirmPassword" type="password" autocomplete="new-password" required minlength="8" placeholder="${locale === "zh-CN" ? "再次输入新密码" : "Repeat new password"}" />
+          </div>
+          <p class="auth-status" data-shpitto-auth-status></p>
+          <button class="btn btn-primary btn-block" type="submit">${escapeHtml(current.submit)}</button>
+        </form>
+      `;
+    }
+    return `
+      <form class="auth-form" data-shpitto-auth-form="verify-email">
+        <input type="hidden" name="projectId" value="${safeProjectId}" data-shpitto-auth-project-id />
+        <input type="hidden" name="siteKey" value="${safeSiteKey}" data-shpitto-auth-site-key />
+        <input type="hidden" name="next" value="/" data-shpitto-auth-next />
+        <div class="auth-field">
+          <label for="auth-email">${locale === "zh-CN" ? "邮箱" : "Email"}</label>
+          <input id="auth-email" name="email" type="email" autocomplete="email" required placeholder="name@company.com" />
+        </div>
+        <p class="auth-status" data-shpitto-auth-status></p>
+        <button class="btn btn-primary btn-block" type="submit">${escapeHtml(current.submit)}</button>
+      </form>
+    `;
+  })();
+
+  return `
+    <section class="card auth-shell">
+      <div class="auth-copy">
+        <p class="auth-eyebrow">${escapeHtml(current.eyebrow)}</p>
+        <h2 class="auth-title">${safeTitle}</h2>
+        <p class="auth-lead">${escapeHtml(current.lead)}</p>
+        <div class="auth-pills">
+          <article class="card auth-mini-card">
+            <p>${escapeHtml(current.cardA)}</p>
+            <p>${safeResponsibility}</p>
+          </article>
+          <article class="card auth-mini-card">
+            <p>${escapeHtml(current.cardB)}</p>
+            <p>${escapeHtml(blueprint.constraints[1] || blueprint.constraints[0] || "")}</p>
+          </article>
+        </div>
+      </div>
+      <div class="auth-panel">
+        ${authForm}
+        <div class="auth-actions">
+          <a class="btn btn-primary btn-block" href="${escapeHtml(current.secondaryHref)}" data-shpitto-auth-link="secondary">${escapeHtml(current.secondaryLabel)}</a>
+          ${current.tertiaryHref ? `<a class="btn btn-block" href="${escapeHtml(current.tertiaryHref)}" data-shpitto-auth-link="tertiary">${escapeHtml(current.tertiaryLabel || "")}</a>` : ""}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
 function renderLocalScript(): string {
   return [
     "(function () {",
     "  const year = document.querySelector('[data-year]');",
     "  if (year) year.textContent = String(new Date().getFullYear());",
+    "  const safeNextPath = function (value, fallback) {",
+    "    const next = String(value || '').trim();",
+    "    return next && next.startsWith('/') && !next.startsWith('//') ? next : fallback;",
+    "  };",
+    "  const resolveAuthContext = function () {",
+    "    const params = new URLSearchParams(window.location.search);",
+    "    const theme = String(params.get('theme') || '').trim();",
+    "    const authApiBase = String(document.documentElement.getAttribute('data-shpitto-auth-api-base') || window.location.origin).trim() || window.location.origin;",
+    "    const projectId = String(document.documentElement.getAttribute('data-shpitto-project-id') || '').trim() || String(document.querySelector('[data-shpitto-auth-project-id]')?.value || '').trim();",
+    "    const siteKey = String(document.documentElement.getAttribute('data-shpitto-site-key') || '').trim() || String(document.querySelector('[data-shpitto-auth-site-key]')?.value || '').trim();",
+    "    const referrer = (() => {",
+    "      try {",
+    "        if (!document.referrer) return '';",
+    "        const url = new URL(document.referrer);",
+    "        return url.origin === window.location.origin ? `${url.pathname}${url.search}${url.hash}` : '';",
+    "      } catch {",
+    "        return '';",
+    "      }",
+    "    })();",
+    "    const next = safeNextPath(params.get('next'), safeNextPath(referrer, '/'));",
+    "    return { params, next, theme, authApiBase, projectId, siteKey };",
+    "  };",
+    "  const authContext = resolveAuthContext();",
+    "  document.querySelectorAll('[data-shpitto-auth-next]').forEach(function (input) {",
+    "    input.value = authContext.next;",
+    "  });",
+    "  document.querySelectorAll('[data-shpitto-auth-link]').forEach(function (anchor) {",
+    "    const url = new URL(anchor.getAttribute('href') || '/', window.location.origin);",
+    "    url.searchParams.set('next', authContext.next);",
+    "    if (authContext.theme) url.searchParams.set('theme', authContext.theme);",
+    "    anchor.setAttribute('href', url.pathname + url.search + url.hash);",
+    "  });",
+    "  const authStatusByForm = new WeakMap();",
+    "  const setAuthStatus = function (form, state, message) {",
+    "    const status = authStatusByForm.get(form) || form.querySelector('[data-shpitto-auth-status]');",
+    "    if (!status) return;",
+    "    authStatusByForm.set(form, status);",
+    "    status.textContent = message || '';",
+    "    status.dataset.state = state || '';",
+    "  };",
+    "  const setButtonLoading = function (form, loading) {",
+    "    const button = form.querySelector('button[type=\"submit\"]');",
+    "    if (!button) return;",
+    "    if (!button.dataset.label) button.dataset.label = button.textContent || '';",
+    "    button.disabled = Boolean(loading);",
+    "    button.textContent = loading ? '...' : button.dataset.label;",
+    "  };",
+    "  const getFormValue = function (form, name) {",
+    "    const field = form.querySelector(`[name=\"${name}\"]`);",
+    "    return field ? String(field.value || '').trim() : '';",
+    "  };",
+    "  const buildAuthPayload = function (form, extra) {",
+    "    const payload = {",
+    "      email: getFormValue(form, 'email'),",
+    "      password: getFormValue(form, 'password'),",
+    "      token: getFormValue(form, 'token'),",
+    "      projectId: authContext.projectId,",
+    "      siteKey: authContext.siteKey,",
+    "      next: authContext.next,",
+    "      theme: authContext.theme,",
+    "      ...extra,",
+    "    };",
+    "    return payload;",
+    "  };",
+    "  const jsonHeaders = { 'Content-Type': 'application/json', Accept: 'application/json' };",
+    "  const submitAuthForm = async function (form, endpoint, payload, successHandler) {",
+    "    setButtonLoading(form, true);",
+    "    setAuthStatus(form, '', '');",
+    "    try {",
+    "      const target = new URL(endpoint, authContext.authApiBase);",
+    "      const response = await fetch(target.toString(), { method: 'POST', headers: jsonHeaders, body: JSON.stringify(payload) });",
+    "      const data = await response.json().catch(() => ({}));",
+    "      if (!response.ok) {",
+    "        setAuthStatus(form, 'error', String(data.error || data.message || 'Request failed.'));",
+    "        return;",
+    "      }",
+    "      if (typeof successHandler === 'function') {",
+    "        await successHandler(data, response);",
+    "      }",
+    "    } catch (error) {",
+    "      setAuthStatus(form, 'error', String((error && error.message) || error || 'Request failed.'));",
+    "    } finally {",
+    "      setButtonLoading(form, false);",
+    "    }",
+    "  };",
+    "  const loginForm = document.querySelector('[data-shpitto-auth-form=\"login\"]');",
+    "  if (loginForm) {",
+    "    loginForm.addEventListener('submit', function (event) {",
+    "      event.preventDefault();",
+    "      submitAuthForm(loginForm, '/auth/password', buildAuthPayload(loginForm), function () {",
+    "        window.location.assign(authContext.next || '/');",
+    "      });",
+    "    });",
+    "  }",
+    "  const registerForm = document.querySelector('[data-shpitto-auth-form=\"register\"]');",
+    "  if (registerForm) {",
+    "    registerForm.addEventListener('submit', function (event) {",
+    "      event.preventDefault();",
+    "      const password = getFormValue(registerForm, 'password');",
+    "      const confirmPassword = getFormValue(registerForm, 'confirmPassword');",
+    "      if (password.length < 8) {",
+    "        setAuthStatus(registerForm, 'error', 'Password must be at least 8 characters.');",
+    "        return;",
+    "      }",
+    "      if (password !== confirmPassword) {",
+    "        setAuthStatus(registerForm, 'error', 'Passwords do not match.');",
+    "        return;",
+    "      }",
+    "      submitAuthForm(registerForm, '/auth/signup', buildAuthPayload(registerForm), function () {",
+    "        const url = new URL('/verify-email', authContext.authApiBase);",
+    "        url.searchParams.set('email', getFormValue(registerForm, 'email'));",
+    "        url.searchParams.set('next', authContext.next || '/');",
+    "        if (authContext.theme) url.searchParams.set('theme', authContext.theme);",
+    "        if (authContext.projectId) url.searchParams.set('projectId', authContext.projectId);",
+    "        if (authContext.siteKey) url.searchParams.set('siteKey', authContext.siteKey);",
+    "        window.location.assign(url.pathname + url.search + url.hash);",
+    "      });",
+    "    });",
+    "  }",
+    "  const resetForm = document.querySelector('[data-shpitto-auth-form=\"reset-password\"]');",
+    "  if (resetForm) {",
+    "    resetForm.addEventListener('submit', function (event) {",
+    "      event.preventDefault();",
+    "      const password = getFormValue(resetForm, 'password');",
+    "      const confirmPassword = getFormValue(resetForm, 'confirmPassword');",
+    "      const token = String(new URLSearchParams(window.location.search).get('token') || '').trim();",
+    "      if (!token) {",
+    "        setAuthStatus(resetForm, 'error', 'This password reset link is missing a token.');",
+    "        return;",
+    "      }",
+    "      if (password.length < 8) {",
+    "        setAuthStatus(resetForm, 'error', 'Password must be at least 8 characters.');",
+    "        return;",
+    "      }",
+    "      if (password !== confirmPassword) {",
+    "        setAuthStatus(resetForm, 'error', 'Passwords do not match.');",
+    "        return;",
+    "      }",
+    "      submitAuthForm(resetForm, '/auth/password/reset', { token: token, password: password, projectId: authContext.projectId, siteKey: authContext.siteKey }, function () {",
+    "        setAuthStatus(resetForm, 'success', 'Password updated. Please sign in again.');",
+    "        setTimeout(function () {",
+    "          window.location.assign('/login?next=' + encodeURIComponent(authContext.next || '/') + (authContext.theme ? '&theme=' + encodeURIComponent(authContext.theme) : ''));",
+    "        }, 650);",
+    "      });",
+    "    });",
+    "  }",
+    "  const verifyForm = document.querySelector('[data-shpitto-auth-form=\"verify-email\"]');",
+    "  if (verifyForm) {",
+    "    const token = String(new URLSearchParams(window.location.search).get('token') || '').trim();",
+    "    const emailField = verifyForm.querySelector('[name=\"email\"]');",
+    "    if (emailField) emailField.value = String(new URLSearchParams(window.location.search).get('email') || '').trim();",
+    "    if (token) {",
+    "      setAuthStatus(verifyForm, '', 'Verifying your email...');",
+    "      submitAuthForm(verifyForm, '/auth/email-verification/confirm', { token: token, projectId: authContext.projectId, siteKey: authContext.siteKey }, function () {",
+    "        setAuthStatus(verifyForm, 'success', 'Email verified. You can now sign in.');",
+    "      });",
+    "    }",
+    "    verifyForm.addEventListener('submit', function (event) {",
+    "      event.preventDefault();",
+    "      const email = getFormValue(verifyForm, 'email');",
+    "      if (!email) {",
+    "        setAuthStatus(verifyForm, 'error', 'Enter your email on the sign-in page to resend verification.');",
+    "        return;",
+    "      }",
+    "      submitAuthForm(verifyForm, '/auth/email-verification/resend', { email: email, next: authContext.next, theme: authContext.theme, projectId: authContext.projectId, siteKey: authContext.siteKey }, function () {",
+    "        setAuthStatus(verifyForm, 'success', 'If the account exists, a verification email has been sent.');",
+    "      });",
+    "    });",
+    "  }",
+    "  const blogRoot = document.querySelector('[data-shpitto-blog-root]');",
+    "  const blogList = blogRoot && blogRoot.querySelector('[data-shpitto-blog-list]');",
+    "  if (blogRoot && blogList) {",
+    "    const api = blogRoot.getAttribute('data-shpitto-blog-api') || '/api/blog/posts';",
+    "    const escapeHtml = function (value) { return String(value == null ? '' : value).replace(/[&<>\"']/g, function (char) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' })[char] || char; }); };",
+    "    fetch(api + '?limit=12', { headers: { accept: 'application/json' } })",
+    "      .then(function (response) { return response.ok ? response.json() : null; })",
+    "      .then(function (data) {",
+    "        if (!data || !data.ok || !Array.isArray(data.posts) || data.posts.length === 0) return;",
+    "        blogList.innerHTML = data.posts.slice(0, 12).map(function (post) {",
+    "          const slug = encodeURIComponent(String(post.slug || 'post'));",
+    "          const title = String(post.title || 'Untitled');",
+    "          const excerpt = String(post.excerpt || '');",
+    "          const category = String(post.category || 'Article');",
+    "          return '<article class=\"card\"><p>' + escapeHtml(category) + '</p><h3><a href=\"/blog/' + slug + '/\">' + escapeHtml(title) + '</a></h3><p>' + escapeHtml(excerpt) + '</p></article>';",
+    "        }).join('');",
+    "      })",
+    "      .catch(function () {});",
+    "  }",
     "})();",
   ].join("\n");
 }
 
-function renderLocalPage(params: { route: string; decision: LocalDecisionPlan; requirementText: string }): string {
-  const { route, decision, requirementText } = params;
+function renderLocalPage(params: {
+  route: string;
+  decision: LocalDecisionPlan;
+  requirementText: string;
+  projectId?: string;
+  siteKey?: string;
+  authApiBase?: string;
+}): string {
+  const { route, decision, requirementText, projectId, siteKey, authApiBase } = params;
   const locale = decision.locale;
   const blueprint = findPageBlueprint(decision, route);
   const nav = buildNavFromDecision(decision)
     .map((item) => `<a href=\"${item.href === "/" ? "/" : item.href + "/"}\">${item.label}</a>`)
     .join("");
   const title = extractPageTitleForRoute(route, locale);
+  const isAuth = /^(?:\/login|\/register|\/reset-password|\/verify-email)(?:\/|$)/.test(normalizePath(route));
   const isContact = normalizePath(route) === "/contact";
+  const isBlog = normalizePath(route) === "/blog";
   const skeletonHtml = blueprint.contentSkeleton.map((section) => `<li>${section}</li>`).join("");
   const mixText = formatComponentMix(blueprint.componentMix);
-  const body = isContact
-    ? `<section class="card"><h2>${locale === "zh-CN" ? "\u5feb\u901f\u8be2\u4ef7" : "Quick Quote"}</h2><form><input placeholder="Name" /><input placeholder="Company" /><input placeholder="Email" /><input placeholder="WhatsApp" /><input placeholder="Machine Model" /><input placeholder="Quantity" /><input placeholder="Deadline" /><button class="btn btn-primary" type="submit">${locale === "zh-CN" ? "\u63d0\u4ea4" : "Submit"}</button></form><p>${blueprint.responsibility}</p></section>`
-    : `<section class="card"><h2>${title}</h2><p>${String(requirementText || "").slice(0, 420)}</p><p><strong>Page Responsibility:</strong> ${blueprint.responsibility}</p><p><strong>Component Mix:</strong> ${mixText}</p><ul>${skeletonHtml}</ul></section>`;
+  const safeAuthApiBase = String(authApiBase || "").trim();
+  const htmlAuthApiBase = safeAuthApiBase ? ` data-shpitto-auth-api-base="${escapeHtml(safeAuthApiBase)}"` : "";
+  const htmlProjectAttr = String(projectId || "").trim() ? ` data-shpitto-project-id="${escapeHtml(String(projectId || "").trim())}"` : "";
+  const htmlSiteAttr = String(siteKey || "").trim() ? ` data-shpitto-site-key="${escapeHtml(String(siteKey || "").trim())}"` : "";
+  const body = isBlog
+    ? `<section class="card"><h2>${title}</h2><p>${blueprint.responsibility}</p><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div class="grid" data-shpitto-blog-list><article class="card"><p>${locale === "zh-CN" ? "\u6587\u7ae0" : "Article"}</p><h3><a href="/blog/launch-notes/">${locale === "zh-CN" ? "\u54c1\u724c\u52a8\u6001" : "Launch Notes"}</a></h3><p>${locale === "zh-CN" ? "\u9605\u8bfb\u6700\u65b0\u5185\u5bb9\u4e0e\u89c2\u70b9\u3002" : "Read the latest content and perspectives."}</p></article></div></section></section>`
+    : isAuth
+      ? renderLocalAuthBody({ route, locale, title, blueprint, projectId, siteKey })
+    : isContact
+      ? `<section class="card"><h2>${locale === "zh-CN" ? "\u5feb\u901f\u8be2\u4ef7" : "Quick Quote"}</h2><form><input placeholder="Name" /><input placeholder="Company" /><input placeholder="Email" /><input placeholder="WhatsApp" /><input placeholder="Machine Model" /><input placeholder="Quantity" /><input placeholder="Deadline" /><button class="btn btn-primary" type="submit">${locale === "zh-CN" ? "\u63d0\u4ea4" : "Submit"}</button></form><p>${blueprint.responsibility}</p></section>`
+      : `<section class="card"><h2>${title}</h2><p>${String(requirementText || "").slice(0, 420)}</p><p><strong>Page Responsibility:</strong> ${blueprint.responsibility}</p><p><strong>Component Mix:</strong> ${mixText}</p><ul>${skeletonHtml}</ul></section>`;
 
   return ensureHtmlDocument(`<!doctype html>
-<html lang="${locale === "zh-CN" ? "zh-CN" : "en"}">
+<html lang="${locale === "zh-CN" ? "zh-CN" : "en"}"${htmlAuthApiBase}${htmlProjectAttr}${htmlSiteAttr}>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -2053,6 +2959,8 @@ class NativeSkillRuntime {
   private readonly onStep?: (snapshot: SkillRuntimeStepSnapshot) => Promise<void> | void;
   private readonly timeoutMs: number;
   private readonly totalSteps: number;
+  private readonly providerAttempts: ProviderAttempt[];
+  private activeProviderIndex = 0;
   private stepIndex = 0;
   private files: StaticArtifactFile[];
   private workflowFiles: WorkflowArtifactFile[];
@@ -2073,11 +2981,12 @@ class NativeSkillRuntime {
     );
     const requirementText = decision.requirementText || extractRequirementText(params.state);
     const locale = detectLocale(requirementText, (params.state as any)?.workflow_context?.preferredLocale);
-    const providerLock = resolveRunProviderRunnerLock({
+    const providerAttempts = resolveProviderAttempts({
       provider: (params.state as any)?.workflow_context?.lockedProvider,
       model: (params.state as any)?.workflow_context?.lockedModel,
     });
-    const providerConfig = resolveProviderConfig(providerLock);
+    const providerLock = providerAttempts[0].lock;
+    const providerConfig = providerAttempts[0].config;
     const skillId = resolveProjectSkillAlias(
       String((params.state as any)?.workflow_context?.skillId || WEBSITE_MAIN_SKILL_ID),
     );
@@ -2155,6 +3064,7 @@ class NativeSkillRuntime {
     this.onStep = params.onStep;
     this.timeoutMs = Math.max(30_000, Number(params.timeoutMs || 90_000));
     this.totalSteps = 8 + routes.length;
+    this.providerAttempts = providerAttempts;
   }
 
   private getFile(pathName: string): StaticArtifactFile | undefined {
@@ -2222,13 +3132,43 @@ class NativeSkillRuntime {
       messages.push(new SystemMessage(systemPrompt));
     }
     messages.push(new HumanMessage(prompt));
-    const ai = await invokeModelWithIdleTimeout({
-      model,
-      messages,
-      timeoutMs,
-      operation: "skill-native-stage",
-    });
-    return String(ai?.content || "").trim();
+    let lastError: unknown;
+    for (let index = this.activeProviderIndex; index < this.providerAttempts.length; index += 1) {
+      const attempt = this.providerAttempts[index];
+      const attemptModel =
+        index === this.activeProviderIndex
+          ? model
+          : createModelForProvider(attempt.config, timeoutMs, maxTokens, opts?.temperature ?? 0.2);
+      try {
+        const ai = await invokeModelWithIdleTimeout({
+          model: attemptModel,
+          messages,
+          timeoutMs,
+          operation: `skill-native-stage:${attempt.config.provider}`,
+        });
+        if (index !== this.activeProviderIndex) {
+          this.activeProviderIndex = index;
+          this.context.providerLock = attempt.lock;
+          this.context.providerConfig = attempt.config;
+          console.warn(
+            `[skill-native] provider fallback engaged: ${attempt.config.provider}/${attempt.config.modelName}`,
+          );
+        }
+        return String(ai?.content || "").trim();
+      } catch (error) {
+        lastError = error;
+        const isLast = index >= this.providerAttempts.length - 1;
+        if (!isRetryableProviderError(error) || isLast) {
+          throw error;
+        }
+        console.warn(
+          `[skill-native] provider attempt failed for ${attempt.config.provider}/${attempt.config.modelName}; falling back: ${providerErrorText(
+            error,
+          )}`,
+        );
+      }
+    }
+    throw lastError instanceof Error ? lastError : new Error(providerErrorText(lastError));
   }
 
   private async loadSkillDirective(skillId: string, maxLen = 6000): Promise<string> {
@@ -2468,6 +3408,7 @@ class NativeSkillRuntime {
     let qaFeedback = "";
     let finalHtml = "";
     let finalQa: ValidationResult | null = null;
+    const pageBlueprint = findPageBlueprint(this.context.decision, params.route);
 
     while (attempt <= QA_MAX_RETRIES) {
       const prompt = params.promptBuilder(qaFeedback, attempt);
@@ -2479,14 +3420,22 @@ class NativeSkillRuntime {
       finalHtml = ensureHtmlDocument(modelHtml);
       if (!finalHtml.trim()) finalHtml = params.fallbackHtml;
 
+      const antiSlop = mergeAntiSlopLintResults(
+        lintGeneratedWebsiteHtml(finalHtml),
+        lintGeneratedWebsiteRouteHtml(finalHtml, {
+          route: params.route,
+          navLabel: pageBlueprint.navLabel,
+          pagePurpose: pageBlueprint.purpose,
+        }),
+      );
       finalQa = mergeValidationWithAntiSlop(
         await validateComponent(finalHtml, this.context.designSpec, this.context.designContext),
-        lintGeneratedWebsiteHtml(finalHtml),
+        antiSlop,
       );
       const pass = finalQa.passed && Number(finalQa.score || 0) >= QA_MIN_SCORE;
       if (pass) break;
 
-      const antiSlopFeedback = renderAntiSlopFeedback(lintGeneratedWebsiteHtml(finalHtml));
+      const antiSlopFeedback = renderAntiSlopFeedback(antiSlop);
       const hints = [
         ...((finalQa.errors || []).slice(0, 6)),
         ...((finalQa.warnings || []).slice(0, 4)),
@@ -2613,7 +3562,8 @@ ${stageGuidance}
 Locale: ${this.context.locale}
 Routes: ${this.context.routes.join(", ")}
 Page blueprints:
-${blueprintDigest(this.context.decision)}`;
+${blueprintDigest(this.context.decision)}
+${this.context.routes.some((route) => normalizePath(route) === "/blog") ? 'Blog script contract: if [data-shpitto-blog-root] exists, fetch /api/blog/posts, render into [data-shpitto-blog-list], and leave fallback cards intact on failure. Do not include credentials, D1 bindings, or Worker code.' : ""}`;
       js = stripMarkdownCodeFences(await this.invokeLlm(prompt, {
         maxTokens: Number(process.env.LLM_MAX_TOKENS_SKILL_DIRECT_SHARED_ASSET || 8000),
         timeoutMs: Number(process.env.LLM_REQUEST_TIMEOUT_SKILL_DIRECT_SHARED_ASSET_MS || 120000),
@@ -2657,6 +3607,7 @@ ${blueprintDigest(this.context.decision)}`;
         "Always include <!doctype html>, <html>, <head>, <body>.",
         "Always include <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">.",
         "Always include <link rel=\"stylesheet\" href=\"/styles.css\"> and <script src=\"/script.js\"></script>.",
+        "If this route is marked as content-backed, design a page-specific content surface: preserve the site theme, include data-shpitto-blog-root, data-shpitto-blog-list, and data-shpitto-blog-api=\"/api/blog/posts\", and render polished preview resources without exposing backend or implementation labels.",
         "Follow design-system tokens, accessibility, the provided skill guidance, and the website quality contract strictly.",
       ].join("\n");
       const promptBuilder = (qaFeedback: string, attempt: number) => `Generate one complete HTML document for route ${normalizedRoute}.
@@ -2676,6 +3627,7 @@ Design tokens:
 - overrides: ${JSON.stringify(this.context.designConfirm.overrides)}
 Locale: ${this.context.locale}
 Navigation links: ${navLinks}
+Internal content binding contract, not visitor copy: when the current page kind is blog-data-index, include data-shpitto-blog-root, data-shpitto-blog-list, and data-shpitto-blog-api="/api/blog/posts" inside the selected page's collection/list/database module; use source-aligned preview resource cards only. Never expose backend names, API/storage/runtime/hydration/fallback jargon, data-source mechanics, English design jargon, policy wording, or deployment mechanics in visible copy unless this route is explicitly Blog. Do not generate database credentials, D1 binding code, Cloudflare Worker code, or secrets.
 Page responsibility: ${blueprint.responsibility}
 Page skeleton: ${blueprint.contentSkeleton.join(" -> ")}
 Component mix: ${formatComponentMix(blueprint.componentMix)}
@@ -2740,8 +3692,12 @@ ${qaFeedback ? `\nQA fix instructions (attempt ${attempt}):\n${qaFeedback}` : ""
     );
   }
 
-  private buildSiteArtifacts(baseState: AgentState) {
+  private async buildSiteArtifacts(baseState: AgentState) {
     const brandName = String((baseState as any)?.site_artifacts?.branding?.name || "LC-CNC").trim() || "LC-CNC";
+    const projectId = String((baseState as any)?.db_project_id || "").trim();
+    const ownerUserId = String((baseState as any)?.user_id || "").trim();
+    const authApiBase = projectId && ownerUserId ? await resolveProjectAuthApiBase({ projectId, userId: ownerUserId }) : "";
+    const siteKey = projectId && ownerUserId ? deriveProjectSiteKey(projectId, ownerUserId) : "";
     const routeToFile: Record<string, string> = {};
     for (const route of this.context.routes) {
       routeToFile[normalizePath(route)] = routeToHtmlPath(route);
@@ -2755,6 +3711,9 @@ ${qaFeedback ? `\nQA fix instructions (attempt ${attempt}):\n${qaFeedback}` : ""
             route: normalizedRoute,
             decision: this.context.decision,
             requirementText: this.requirementText,
+            projectId,
+            siteKey,
+            authApiBase,
           }),
       );
       return {
@@ -2825,7 +3784,7 @@ ${qaFeedback ? `\nQA fix instructions (attempt ${attempt}):\n${qaFeedback}` : ""
     await this.ensureQaReport();
     await this.repairAllPages();
 
-    const siteArtifacts = this.buildSiteArtifacts(baseState);
+    const siteArtifacts = await this.buildSiteArtifacts(baseState);
     const actions = [{ text: "Deploy to Cloudflare", payload: "deploy", type: "button" as const }];
     const finalState: AgentState = {
       ...baseState,
@@ -2989,9 +3948,68 @@ function buildSessionSnapshot(state: AgentState): Partial<AgentState> {
       deploySourceProjectPath: workflow.deploySourceProjectPath,
       deploySourceTaskId: workflow.deploySourceTaskId,
       checkpointProjectPath: workflow.checkpointProjectPath,
+      siteRevisionId: workflow.siteRevisionId,
+      baseSiteRevisionId: workflow.baseSiteRevisionId,
+      siteRevisionMode: workflow.siteRevisionMode,
       deployRequested: workflow.deployRequested,
     } as any,
   };
+}
+
+async function syncChatMemoryFromState(params: {
+  chatId: string;
+  stage: "previewing" | "deployed" | "drafting" | "deploying";
+  intent?: string;
+  intentConfidence?: number;
+  taskId: string;
+  state: AgentState;
+  recentSummary: string;
+  deployedUrl?: string;
+}): Promise<void> {
+  const workflow = toRecord((params.state as any)?.workflow_context);
+  const requirementSpec = workflow.requirementSpec;
+  if (!requirementSpec || typeof requirementSpec !== "object") return;
+  const existingMemory = await readChatShortTermMemory(params.chatId);
+  const revisionId = String(workflow.siteRevisionId || existingMemory?.revisionPointer?.revisionId || "").trim();
+  if (!revisionId) return;
+  const slots = Array.isArray(workflow.requirementSlots) ? workflow.requirementSlots : existingMemory?.requirementState?.slots || [];
+  const missingCriticalSlots = slots.filter((slot: any) => slot?.required && !slot?.filled).map((slot: any) => String(slot?.label || ""));
+  await writeChatShortTermMemory({
+    threadId: params.chatId,
+    stage: params.stage,
+    intent: (params.intent || workflow.intent || existingMemory?.intent || "") as any,
+    intentConfidence:
+      typeof params.intentConfidence === "number"
+        ? params.intentConfidence
+        : Number(workflow.intentConfidence || existingMemory?.intentConfidence || 0) || undefined,
+    recentSummary: params.recentSummary,
+    updatedAt: new Date().toISOString(),
+    revisionPointer: {
+      revisionId,
+      baseRevisionId: String(workflow.baseSiteRevisionId || existingMemory?.revisionPointer?.baseRevisionId || "").trim() || undefined,
+      mode: (String(workflow.siteRevisionMode || existingMemory?.revisionPointer?.mode || "generate").trim().toLowerCase() as
+        | "generate"
+        | "refine"
+        | "deploy"),
+      taskId: params.taskId,
+      checkpointProjectPath: String(workflow.checkpointProjectPath || "").trim() || undefined,
+      deployedUrl: params.deployedUrl || String((params.state as any)?.deployed_url || "").trim() || undefined,
+      requirementRevision: Number(workflow.requirementRevision || existingMemory?.revisionPointer?.requirementRevision || 0) || undefined,
+      updatedAt: new Date().toISOString(),
+    },
+    workflowContext: workflow,
+    requirementState: {
+      slots: slots as any,
+      conflicts: Array.isArray(workflow.correctionSummary) ? (workflow.correctionSummary as string[]) : existingMemory?.requirementState?.conflicts || [],
+      missingCriticalSlots,
+      readyScore:
+        Number(workflow.requirementCompletionPercent || existingMemory?.requirementState?.readyScore || 0) ||
+        Math.round((slots.filter((slot: any) => slot?.filled).length / Math.max(1, slots.length)) * 100),
+      activeScope: String(workflow.activeScope || existingMemory?.requirementState?.activeScope || "").trim() || undefined,
+      assumptions: Array.isArray(workflow.assumedDefaults) ? (workflow.assumedDefaults as string[]) : existingMemory?.requirementState?.assumptions || [],
+      currentValues: requirementSpec as any,
+    },
+  });
 }
 
 function collectPendingEditOperations(pendingEdits: ChatTaskPendingEdit[]): unknown[] {
@@ -3087,6 +4105,820 @@ async function queuePendingRefineTask(params: {
   });
 }
 
+function htmlToReadableText(input: string) {
+  return String(input || "")
+    .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;|&#160;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractMetaContent(html: string, name: string): string {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const patterns = [
+    new RegExp(`<meta[^>]+name=["']${escaped}["'][^>]+content=["']([^"']*)["'][^>]*>`, "i"),
+    new RegExp(`<meta[^>]+content=["']([^"']*)["'][^>]+name=["']${escaped}["'][^>]*>`, "i"),
+  ];
+  for (const pattern of patterns) {
+    const match = String(html || "").match(pattern);
+    const content = htmlToReadableText(match?.[1] || "");
+    if (content) return content;
+  }
+  return "";
+}
+
+function extractMainHtml(html: string): string {
+  return String(html || "").match(/<main\b[^>]*>([\s\S]*?)<\/main>/i)?.[1] || String(html || "");
+}
+
+function extractOrderedBlogDetailRoutesFromProject(project: any): string[] {
+  const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
+  const blogIndexHtml = String(files.find((file: any) => normalizePath(String(file?.path || "")) === "/blog/index.html")?.content || "");
+  const discovered = new Set<string>();
+  const pattern = /href=["'](\/blog\/(?!tag\/|category\/|rss\.xml)([^"'?#]+?)\/?)["']/gi;
+  for (const match of blogIndexHtml.matchAll(pattern)) {
+    const route = normalizePath(String(match[1] || "").replace(/\/+$/g, ""));
+    if (!route || route === "/blog") continue;
+    discovered.add(route);
+  }
+  for (const file of files) {
+    const filePath = normalizePath(String(file?.path || ""));
+    const match = filePath.match(/^\/blog\/([^/]+)\/index\.html$/i);
+    if (!match?.[1]) continue;
+    discovered.add(`/blog/${match[1]}`);
+  }
+  return Array.from(discovered);
+}
+
+function buildMarkdownFromStaticArticleHtml(html: string, title: string, excerpt: string): string {
+  const mainHtml = extractMainHtml(html);
+  const blocks = Array.from(mainHtml.matchAll(/<(h1|h2|h3|p|li)\b[^>]*>([\s\S]*?)<\/\1>/gi))
+    .map((match) => ({ tag: String(match[1] || "").toLowerCase(), text: htmlToReadableText(match[2] || "") }))
+    .filter((block) => block.text);
+  const lines: string[] = [];
+  const normalizedTitle = title.trim();
+  if (normalizedTitle) lines.push(`# ${normalizedTitle}`, "");
+  if (excerpt) lines.push(excerpt, "");
+  for (const block of blocks) {
+    if (block.tag === "h1" && normalizedTitle && block.text === normalizedTitle) continue;
+    if (excerpt && block.text === excerpt) continue;
+    if (block.tag === "h2") {
+      lines.push(`## ${block.text}`, "");
+      continue;
+    }
+    if (block.tag === "h3") {
+      lines.push(`### ${block.text}`, "");
+      continue;
+    }
+    if (block.tag === "li") {
+      lines.push(`- ${block.text}`);
+      continue;
+    }
+    if (block.text.length >= 24) {
+      lines.push(block.text, "");
+    }
+  }
+  return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+function extractStaticBlogPostsFromProject(params: {
+  project: any;
+  locale: "zh-CN" | "en";
+  fallbackAuthorName: string;
+}): BlogPostUpsertInput[] {
+  const files = Array.isArray(params.project?.staticSite?.files) ? params.project.staticSite.files : [];
+  const byPath = new Map<string, string>(
+    files.map((file: any) => [normalizePath(String(file?.path || "")), String(file?.content || "")] as const),
+  );
+  const routes = extractOrderedBlogDetailRoutesFromProject(params.project);
+  const posts: BlogPostUpsertInput[] = [];
+
+  for (const route of routes) {
+    const slug = String(route.split("/").filter(Boolean).pop() || "").trim();
+    const html = byPath.get(`${route}/index.html`) || "";
+    if (!slug || !html) continue;
+    const mainHtml = extractMainHtml(html);
+    const title =
+      htmlToReadableText(String(mainHtml.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || "")) ||
+      htmlToReadableText(String(html).match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "").replace(/[|｜].*$/, "").trim();
+    if (!title) continue;
+    const excerpt =
+      extractMetaContent(html, "description") ||
+      htmlToReadableText(String(mainHtml.match(/<p\b[^>]*class=["'][^"']*(?:section-lead|hero__lede)[^"']*["'][^>]*>([\s\S]*?)<\/p>/i)?.[1] || "")) ||
+      htmlToReadableText(String(mainHtml.match(/<p\b[^>]*>([\s\S]*?)<\/p>/i)?.[1] || ""));
+    const metaMatches = Array.from(mainHtml.matchAll(/<div\b[^>]*class=["'][^"']*article-meta[^"']*["'][^>]*>[\s\S]*?<\/div>/gi));
+    const spans = metaMatches.flatMap((match) =>
+      Array.from(String(match[0] || "").matchAll(/<span\b[^>]*>([\s\S]*?)<\/span>/gi))
+        .map((item) => htmlToReadableText(String(item[1] || "")))
+        .filter(Boolean),
+    );
+    const category = spans[1] || "";
+    const tags = Array.from(new Set([...spans.slice(2), category].filter(Boolean))).slice(0, 6);
+    const contentMd = buildMarkdownFromStaticArticleHtml(html, title, excerpt);
+    if (contentMd.length < 80) continue;
+    posts.push({
+      slug,
+      title,
+      excerpt,
+      contentMd,
+      status: "published",
+      authorName: params.fallbackAuthorName,
+      category,
+      tags,
+      seoTitle: htmlToReadableText(String(html).match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "") || `${title} | ${params.fallbackAuthorName}`,
+      seoDescription: excerpt,
+    });
+  }
+
+  return posts;
+}
+
+function collectDeployBlogSourceText(inputState: AgentState, project: any) {
+  const workflow = toRecord((inputState as any)?.workflow_context);
+  const messages = Array.isArray(inputState.messages) ? inputState.messages : [];
+  const messageText = messages
+    .filter((message: any) => {
+      if (!(message instanceof HumanMessage) && !isHumanLikeMessage(message)) return false;
+      const content = extractMessageContent(message);
+      return content && !isDeployConfirmationIntent(content);
+    })
+    .map((message: any) => extractMessageContent(message))
+    .filter(Boolean)
+    .join("\n\n");
+
+  const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
+  const generatedText = files
+    .filter((file: any) => String(file?.path || "").endsWith(".html"))
+    .map((file: any) => htmlToReadableText(String(file?.content || "")))
+    .filter(Boolean)
+    .join("\n\n");
+
+  return [
+    String(workflow.canonicalPrompt || "").trim(),
+    String(workflow.sourceRequirement || "").trim(),
+    String(workflow.requirementAggregatedText || "").trim(),
+    String(workflow.latestUserText || "").trim(),
+    messageText,
+    generatedText,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+function splitContentSentences(text: string) {
+  const normalized = String(text || "")
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/[{}[\]"`]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return normalized
+    .split(/(?<=[。！？!?；;])\s+|\n+|(?<=\.)\s+/g)
+    .map((item) => item.replace(/\s+/g, " ").trim())
+    .filter((item) => item.length >= 18 && item.length <= 220)
+    .filter((item) => !/(data-shpitto|Blog API|D1|Cloudflare|runtime|fallback|route-native|native collections?|Specific Replay|marker|wrangler|deploy)/i.test(item))
+    .filter((item) => !/(requirement_spec|source\s*:|route\s*:|navLabel\s*:|purpose\s*:|pageKind\s*:|workflow_context|promptControlManifest|canonicalPrompt)/i.test(item))
+    .filter((item) => !/博客数据源|博客后端|运行时|静态回退|回退卡片|部署刷新|测试标记/.test(item));
+}
+
+function inferBlogBrand(text: string, locale: "zh-CN" | "en") {
+  const blocked = new Set(["HTML", "CSS", "PDF", "API", "JSON", "SEO", "CTA", "URL", "HTTP", "HTTPS", "WWW", "D1", "DB"]);
+  const candidates = Array.from(String(text || "").matchAll(/\b[A-Z][A-Z0-9-]{2,12}\b/g))
+    .map((match) => match[0])
+    .filter((value) => !blocked.has(value));
+  if (candidates.length) {
+    const ranked = candidates
+      .map((value, index) => ({
+        value,
+        index,
+        count: (String(text || "").match(new RegExp(`\\b${value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "g")) || []).length,
+      }))
+      .sort((left, right) => right.count - left.count || left.index - right.index);
+    return ranked[0].value;
+  }
+  const chineseBrand = String(text || "").match(/([\u4e00-\u9fffA-Za-z0-9-]{2,16})(?:官网|网站|平台|信息平台|研究中心)/);
+  if (chineseBrand?.[1]) return chineseBrand[1];
+  return locale === "zh-CN" ? "站点" : "Site";
+}
+
+function scoreContentSentence(sentence: string, brand: string) {
+  let score = 0;
+  if (brand && sentence.includes(brand)) score += 12;
+  if (/(标准|研究|报告|案例|政策|认证|资料|下载|平台|数据库|产品|空间|儿童|友好|建设|倡导|评估|规范)/.test(sentence)) score += 10;
+  if (/(standard|research|report|case|policy|certification|resource|platform|database|product|insight|guide)/i.test(sentence)) score += 8;
+  if (sentence.length >= 40 && sentence.length <= 140) score += 4;
+  return score;
+}
+
+function pickContentSnippets(sourceText: string, brand: string, count: number) {
+  const seen = new Set<string>();
+  return splitContentSentences(sourceText)
+    .map((sentence, index) => ({ sentence, index, score: scoreContentSentence(sentence, brand) }))
+    .filter((item) => {
+      const key = item.sentence.slice(0, 48);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((left, right) => right.score - left.score || left.index - right.index)
+    .slice(0, count)
+    .map((item) => item.sentence);
+}
+
+function normalizeSourceDocumentTitle(value: string) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .replace(/^[《「『“"'([{（【\s]+|[》」』”"')\]}）】\s]+$/g, "")
+    .replace(/[。；;:：,，、\s]+$/g, "")
+    .trim();
+}
+
+function isLikelyStructuredRequirementConfigLine(line: string) {
+  const value = String(line || "").trim();
+  if (!value) return false;
+  const configTerms =
+    /(siteType|targetAudience|contentSources|designTheme|primaryVisualDirection|secondaryVisualTags|visualStyle|pageStructure|planning|functionalRequirements|primaryGoal|language|brandLogo|customNotes|mode|pages|manual|bilingual|portfolio|new_site|brand_trust)/i;
+  if (/["{}[\]]/.test(value) && configTerms.test(value)) return true;
+  return /^(?:siteType|targetAudience|contentSources|designTheme|primaryVisualDirection|secondaryVisualTags|visualStyle|pageStructure|planning|functionalRequirements|primaryGoal|language|brandLogo|customNotes|mode|pages)\s*[:=]/i.test(value);
+}
+
+function isBlockedSourceDocumentTitle(title: string) {
+  return /^(manual|portfolio|bilingual|new_site|brand_trust|warm-soft|playful|minimal|text_mark|none|consumers|blog|multi|single|company|landing|ecommerce|event|other)$/i.test(
+    String(title || "").trim(),
+  );
+}
+
+function collectSourceDocumentTitles(text: string) {
+  const source = String(text || "");
+  const titlePattern = /(政策|法规|标准|指南|规范|报告|案例|汇编|白皮书|手册|清单|数据库|目录|研究|policy|standard|guide|report|case|whitepaper|manual|database)/i;
+  const lineTitlePattern = /(汇编|指南|规范|报告|白皮书|手册|清单|数据库|compilation|guide|standard|specification|report|whitepaper|manual|checklist|database)$/i;
+  const strongTitlePattern = /(文件|汇编|指南|规范|报告|白皮书|手册|清单|数据库|compilation|guide|standard|specification|report|whitepaper|manual|checklist|database)/i;
+  const candidates: string[] = [];
+  for (const match of source.matchAll(/[《「『“"]([^《》「」『』“”"]{4,90})[》」』”"]/g)) {
+    candidates.push(match[1] || "");
+  }
+  for (const rawLine of source.replace(/\r/g, "\n").split("\n")) {
+    if (/[。！？.!?]\s*$/.test(rawLine.trim())) continue;
+    const line = normalizeSourceDocumentTitle(rawLine.replace(/^[\s>*#\-•\d.、()（）]+/g, ""));
+    if (!line || line.length > 90) continue;
+    if (isLikelyStructuredRequirementConfigLine(line)) continue;
+    if (!lineTitlePattern.test(line)) continue;
+    if (/[。！？.!?]/.test(line)) continue;
+    if (/[，,；;]\s*/.test(line) && line.length > 24) continue;
+    candidates.push(line);
+  }
+
+  const seen = new Set<string>();
+  return candidates
+    .map(normalizeSourceDocumentTitle)
+    .filter((title) => !isBlockedSourceDocumentTitle(title))
+    .filter((title) => title.length >= 4 && title.length <= 90 && titlePattern.test(title) && strongTitlePattern.test(title))
+    .filter((title) => !/[。！？.!?]/.test(title))
+    .filter((title) => !/(requirement_spec|source\s*:|route\s*:|navLabel\s*:|purpose\s*:|workflow_context|Specific Replay|marker|siteType|targetAudience|contentSources|designTheme|primaryVisualDirection|secondaryVisualTags|visualStyle|pageStructure|planning|functionalRequirements|primaryGoal|brandLogo|customNotes|new_site|brand_trust|bilingual|portfolio)/i.test(title))
+    .filter((title) => {
+      const key = title.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 3);
+}
+
+function inferSourceDocumentTopic(title: string, locale: "zh-CN" | "en", index: number) {
+  const zh = locale === "zh-CN";
+  if (/政策|法规|汇编|policy|regulation/i.test(title)) {
+    return {
+      key: `policy-resource-${index + 1}`,
+      category: zh ? "政策法规" : "Policy",
+      tags: zh ? ["政策法规", "资料汇编", "信息平台"] : ["policy", "resources", "platform"],
+    };
+  }
+  if (/标准|指南|规范|standard|guide|spec/i.test(title)) {
+    return {
+      key: `standard-resource-${index + 1}`,
+      category: zh ? "标准文件" : "Standards",
+      tags: zh ? ["标准文件", "建设指南", "资料下载"] : ["standards", "guide", "resources"],
+    };
+  }
+  if (/案例|case/i.test(title)) {
+    return {
+      key: `case-resource-${index + 1}`,
+      category: zh ? "案例库" : "Case Library",
+      tags: zh ? ["案例库", "实践资料", "项目经验"] : ["cases", "practice", "resources"],
+    };
+  }
+  if (/数据库|目录|清单|database|catalog|list/i.test(title)) {
+    return {
+      key: `database-resource-${index + 1}`,
+      category: zh ? "产品数据库" : "Database",
+      tags: zh ? ["产品数据库", "资料目录", "检索"] : ["database", "catalog", "search"],
+    };
+  }
+  return {
+    key: `research-resource-${index + 1}`,
+    category: zh ? "研究报告" : "Research",
+    tags: zh ? ["研究报告", "专题资料", "内容集合"] : ["research", "reports", "resources"],
+  };
+}
+
+function resolveProviderAttempts(preferred?: { provider?: string; model?: string }): ProviderAttempt[] {
+  const attempts = resolveRunProviderRunnerLocks(preferred)
+    .map((lock) => ({ lock, config: resolveProviderConfig(lock) }))
+    .filter((attempt) => !!attempt.config.apiKey);
+  if (attempts.length > 0) return attempts;
+  const fallbackLock = resolveRunProviderRunnerLock(preferred);
+  return [{ lock: fallbackLock, config: resolveProviderConfig(fallbackLock) }];
+}
+
+function pickSnippetsForSourceTitle(sourceText: string, title: string, brand: string, fallbackPool: string[], count: number) {
+  const titleTokens = Array.from(
+    new Set([
+      title,
+      ...Array.from(String(title || "").matchAll(/[\u4e00-\u9fff]{2,}|[a-z0-9]{3,}/gi)).map((match) => match[0]),
+    ]),
+  ).filter(Boolean);
+  const ranked = splitContentSentences(sourceText)
+    .map((sentence, index) => ({
+      sentence,
+      index,
+      score:
+        scoreContentSentence(sentence, brand) +
+        titleTokens.reduce((total, token) => total + (sentence.includes(token) ? (token === title ? 30 : 6) : 0), 0),
+    }))
+    .sort((left, right) => right.score - left.score || left.index - right.index)
+    .map((item) => item.sentence);
+  return Array.from(new Set([...ranked, ...fallbackPool])).slice(0, count);
+}
+
+function slugToken(input: string, fallback: string) {
+  const normalized = String(input || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 72);
+  return normalized || fallback;
+}
+
+function sourceDocumentSlug(title: string, fallback: string, index: number) {
+  const base = slugToken(title, fallback);
+  return /\d$/.test(base) ? base : `${base}-${index + 1}`;
+}
+
+function isPersonalCareerBlogSource(text: string): boolean {
+  return /(?:职业履历|首席技术官|研发体系|创始团队|全球化|华为|微信|HelloTalk|来画|云领天下|personal\s+blog|career|cto)/i.test(
+    String(text || ""),
+  );
+}
+
+function buildPersonalCareerBlogSeedPosts(params: {
+  sourceText: string;
+  brand: string;
+  locale: "zh-CN" | "en";
+}): BlogPostUpsertInput[] | undefined {
+  if (params.locale !== "zh-CN" || !isPersonalCareerBlogSource(params.sourceText)) return undefined;
+  const brand = /bays\s+wong/i.test(params.sourceText) ? "Bays Wong" : params.brand || "作者";
+  const source = params.sourceText;
+  const hasHuawei = /华为|DevOps|敏捷|研发体系/i.test(source);
+  const hasWechat = /微信|实时音视频|全球化|50\+|十亿/i.test(source);
+  const hasStartup = /云领天下|来画|HelloTalk|AI|数字人|SaaS|首席技术官/i.test(source);
+  if (!hasHuawei && !hasWechat && !hasStartup) return undefined;
+
+  const postSpecs = [
+    {
+      slug: "agile-devops-system-design",
+      title: "把敏捷转型做成研发体系：从流程优化到组织级效能工程",
+      excerpt:
+        "围绕华为研发体系变革经验，讨论敏捷、DevOps 与效能提升如何从方法论变成可持续运行的组织能力。",
+      category: "研发效能",
+      tags: ["研发", "敏捷转型", "DevOps", "研发体系"],
+      sections: [
+        [
+          "转型的起点不是换一套会议节奏",
+          "在大型研发组织中，敏捷转型如果只停留在站会、看板和迭代名词上，很快会回到旧问题：需求入口不稳定、测试反馈滞后、跨团队协同成本高、发布风险不可预测。真正有效的转型，需要把需求、开发、测试、发布和线上反馈放进同一条效能链路里观察。",
+          "Bays Wong 在华为无线业务推动研发体系升级时，核心工作不是简单引入某个工具，而是作为部门级敏捷转型首席教练，帮助组织识别链路瓶颈、重设协作机制，并把效能提升从局部动作推进到组织级工程。",
+        ],
+        [
+          "DevOps 的价值在节奏和反馈",
+          "DevOps 经常被误解为流水线建设，但流水线只是表达方式。它真正解决的是研发活动能否稳定交付、风险能否前移、问题能否被快速观测和回滚。只有当发布、验证、度量和复盘连接起来，组织才会形成新的工程节奏。",
+          "这种节奏不是为了追求单点速度，而是为了让每一次交付都更可解释、更可预测。速度、质量和协同成本能够同时改善，才说明研发体系真正发生了变化。",
+        ],
+        [
+          "效能工程需要长期机制",
+          "组织级效能提升不能依赖一次项目或一组口号完成。它需要稳定的度量体系、清晰的责任边界和持续的反馈闭环。度量不是考核终点，而是帮助团队发现瓶颈、修正偏差、持续优化的系统。",
+          "把敏捷做成研发体系，意味着组织不只学会了执行流程，而是具备了持续变强的能力。这也是 Bays Wong 在研发体系变革经验中最值得沉淀的部分。",
+        ],
+      ],
+    },
+    {
+      slug: "wechat-real-time-media-global",
+      title: "实时音视频架构如何支撑微信全球化",
+      excerpt:
+        "从微信创始团队阶段的技术演进出发，梳理实时音视频网络、弹性架构和全球基础设施如何支撑亿级用户体验。",
+      category: "全球化架构",
+      tags: ["架构", "微信", "实时音视频", "弹性架构"],
+      sections: [
+        [
+          "全球化不是把服务放到海外那么简单",
+          "即时通信产品走向全球时，最难的不是让用户连接上，而是让连接稳定、低延迟并且可持续扩展。实时音视频尤其敏感，任何网络抖动、链路绕行和区域覆盖不足，都会直接影响用户对产品可靠性的判断。",
+          "Bays Wong 作为微信创始团队核心成员，在 2011-2015 年主导实时音视频技术架构演进，并负责建设覆盖全球 50+ 国家和地区的实时音视频网络基础设施。这类基础设施能力，为微信国际化战略奠定了关键技术基础。",
+        ],
+        [
+          "弹性架构服务于十亿量级增长",
+          "从千万级用户走向十亿量级，系统需要面对的不只是并发增长，还有地域差异、网络质量差异、终端差异和业务峰值的不确定性。弹性架构的价值，是让系统在复杂环境下依然可以调度、扩容、降级和恢复。",
+          "实时音视频架构的演进，本质上是在用户体验、成本、稳定性和覆盖范围之间不断做工程平衡。它要求团队把链路质量、服务调度、容量规划和故障处理视为一个整体，而不是孤立模块。",
+        ],
+        [
+          "基础设施决定产品边界",
+          "很多全球化产品的瓶颈并不在前端功能，而在基础设施能否承载真实世界的复杂网络。只有底层能力足够稳，产品团队才有空间持续扩展场景、提升体验并进入更多市场。",
+          "微信国际化阶段的技术建设说明，架构不是后台工程师的内部事务，而是产品战略的一部分。实时音视频网络能力越成熟，产品能够抵达的用户和场景就越广。",
+        ],
+      ],
+    },
+    {
+      slug: "ai-saas-commercialization-cto-practice",
+      title: "从技术实验到商业化平台：CTO 如何推动 AI 产品落地",
+      excerpt:
+        "结合云领天下、来画科技与 HelloTalk 的 CTO 经历，讨论 AI、数字人 SaaS、教育解决方案和全球化社交中的技术商业化路径。",
+      category: "AI 商业化",
+      tags: ["创业", "AI", "SaaS", "CTO"],
+      sections: [
+        [
+          "技术负责人要把能力翻译成业务结果",
+          "CTO 的工作不只是做技术选型，还要判断技术能力如何进入产品、如何形成可销售的解决方案、如何支撑业务增长。尤其在 AI、智能硬件、数字人创作和全球化社交场景中，技术价值必须通过可用、可扩展、可运营的系统体现出来。",
+          "Bays Wong 在云领天下、来画科技和 HelloTalk 的经历，体现的是从技术战略到商业价值实现的完整链条。云领天下面向 K12 提供全场景解决方案，覆盖全国 5000+ 家学校；来画科技完成 AI 技术从实验室到商业化的关键跨越，打造 AI 数字人创作 SaaS 平台；HelloTalk 则需要在全球化社交场景中把高可用架构、数据智能中台和 AI 创新应用结合起来。",
+        ],
+        [
+          "AI 产品化要跨过工程和运营两道门槛",
+          "AI 技术从演示走向商业化，往往会遇到稳定性、成本、内容质量、交付效率和用户学习成本等问题。真正可持续的 AI 产品，不是一次模型调用，而是围绕数据、工作流、权限、内容生产、质量控制和客户成功搭建完整系统。",
+          "数字人创作 SaaS 平台的关键也在这里：它需要让创作过程标准化，让复杂能力变成普通用户可以理解和复用的产品路径，同时还要保留足够的扩展性，支撑不同行业和业务场景。",
+        ],
+        [
+          "商业价值来自系统性组合",
+          "在智能硬件、数字人创作平台和全球化社交等领域，实现 300%-800% 的商业价值跃升，通常不是单点功能带来的，而是架构稳定性、数据智能、AI 应用和业务流程共同作用的结果。",
+          "这类经验说明，技术领导力的核心是把未来能力提前组织成可执行路线，并让团队持续把技术优势转化为产品优势和商业结果。",
+        ],
+      ],
+    },
+  ];
+
+  return postSpecs.map((post) => ({
+    slug: post.slug,
+    title: post.title,
+    excerpt: post.excerpt,
+    contentMd: [
+      `# ${post.title}`,
+      "",
+      post.excerpt,
+      "",
+      ...post.sections.flatMap(([heading, ...paragraphs]) => [
+        `## ${heading}`,
+        "",
+        ...paragraphs.flatMap((paragraph) => [paragraph, ""]),
+      ]),
+    ].join("\n").trim(),
+    status: "published",
+    authorName: brand,
+    category: post.category,
+    tags: post.tags,
+    seoTitle: `${post.title} | ${brand}`,
+    seoDescription: post.excerpt,
+  }));
+}
+
+export function buildGeneratedBlogSeedPostsForTesting(params: { sourceText: string; locale: "zh-CN" | "en" }): BlogPostUpsertInput[] {
+  const brand = inferBlogBrand(params.sourceText, params.locale);
+  const personalCareerPosts = buildPersonalCareerBlogSeedPosts({ sourceText: params.sourceText, brand, locale: params.locale });
+  if (personalCareerPosts) return personalCareerPosts;
+  const snippets = pickContentSnippets(params.sourceText, brand, 9);
+  const sourceTitleTopics = collectSourceDocumentTitles(params.sourceText).map((title, index) => {
+    const topic = inferSourceDocumentTopic(title, params.locale, index);
+    return { ...topic, title, sourceTitle: true };
+  });
+  const fallbackZh = [
+    `${brand}围绕标准、研究、实践与认证形成信息入口，帮助访客按主题理解内容体系。`,
+    `${brand}信息平台适合承载政策法规、标准文件、研究报告、案例库与产品数据库等内容。`,
+    `${brand}资料下载和认证查询是内容阅读后的重要行动路径。`,
+  ];
+  const fallbackEn = [
+    `${brand} organizes standards, research, practice, and certification content into a clear information entry.`,
+    `${brand} can present policies, standards, research reports, case libraries, and product database records as structured resources.`,
+    `${brand} connects content reading with downloads, certification lookup, and next-step actions.`,
+  ];
+  const pool = snippets.length >= 6 ? snippets : [...snippets, ...(params.locale === "zh-CN" ? fallbackZh : fallbackEn)];
+  const zh = params.locale === "zh-CN";
+  const topics = zh
+    ? [
+        { key: "standards-resources", category: "标准文件", title: `${brand}标准与资料体系导读`, tags: ["标准文件", "资料下载", "内容集合"] },
+        { key: "research-cases", category: "研究报告", title: `${brand}研究报告与案例库导读`, tags: ["研究报告", "案例库", "实践资料"] },
+        { key: "certification-actions", category: "政策法规", title: `${brand}认证查询与行动路径说明`, tags: ["政策法规", "认证查询", "信息平台"] },
+      ]
+    : [
+        { key: "standards-resources", category: "Standards", title: `${brand} Standards And Resource Guide`, tags: ["standards", "resources", "content"] },
+        { key: "research-cases", category: "Research", title: `${brand} Research Reports And Case Library Guide`, tags: ["research", "cases", "practice"] },
+        { key: "certification-actions", category: "Policy", title: `${brand} Certification Lookup And Next Actions`, tags: ["policy", "certification", "platform"] },
+      ];
+
+  const mergedTopics: Array<{ key: string; category: string; title: string; tags: string[]; sourceTitle?: boolean }> = [
+    ...sourceTitleTopics,
+    ...topics,
+  ].slice(0, 3);
+
+  return mergedTopics.map((topic, index) => {
+    const selected = topic.sourceTitle
+      ? pickSnippetsForSourceTitle(params.sourceText, topic.title, brand, pool, 3)
+      : pool.slice(index * 3, index * 3 + 3);
+    const title = topic.title;
+    const excerpt =
+      selected[0] ||
+      (topic.sourceTitle && zh
+        ? `《${title}》是本次资料中的核心条目，适合归入${topic.category}并与相关资料统一阅读。`
+        : topic.sourceTitle
+          ? `${title} is a source-provided resource item organized into the site content collection.`
+          : zh
+            ? `${title}，整理站点资料中的关键内容。`
+            : `${title}, organized from the provided site materials.`);
+    const contentMd = zh
+      ? [
+          `# ${title}`,
+          "",
+          "本文整理站点资料中与该主题最相关的内容，保留原始语义，不补造未提供的机构、编号或案例细节。",
+          "",
+          "## 重点摘要",
+          ...selected.map((item) => `- ${item}`),
+          "",
+          "## 阅读建议",
+          "可结合信息平台中的分类导航继续查看相关条目，并根据需要进入资料下载或认证查询路径。",
+        ].join("\n")
+      : [
+          `# ${title}`,
+          "",
+          "This article summarizes the most relevant material from the provided website brief without inventing unsupported organizations, identifiers, or case details.",
+          "",
+          "## Key Points",
+          ...selected.map((item) => `- ${item}`),
+          "",
+          "## Suggested Next Step",
+          "Use the information platform categories to continue reading related records, then move to downloads or certification lookup when needed.",
+        ].join("\n");
+    return {
+      slug: topic.sourceTitle ? sourceDocumentSlug(topic.title, topic.key, index) : `${slugToken(brand, "site")}-${topic.key}`,
+      title,
+      excerpt,
+      contentMd,
+      status: "published",
+      authorName: brand,
+      category: topic.category,
+      tags: topic.tags,
+      seoTitle: title,
+      seoDescription: excerpt,
+    };
+  });
+}
+
+export type BlogContentWorkflowPreview = {
+  required: boolean;
+  reason: string;
+  navLabel: string;
+  posts: BlogPostUpsertInput[];
+};
+
+export function projectHasGeneratedBlogContentMount(project: any) {
+  const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
+  return files.some((file: any) => {
+    const filePath = normalizePath(String(file?.path || ""));
+    const content = String(file?.content || "");
+    return filePath === "/blog/index.html" || /data-shpitto-blog-root/i.test(content);
+  });
+}
+
+export function buildBlogContentWorkflowPreview(params: {
+  inputState: AgentState;
+  project: any;
+  locale: "zh-CN" | "en";
+}): BlogContentWorkflowPreview {
+  if (!projectHasGeneratedBlogContentMount(params.project)) {
+    return { required: false, reason: "no_content_mount", navLabel: "", posts: [] };
+  }
+  const sourceText = collectDeployBlogSourceText(params.inputState, params.project);
+  const staticPosts = extractStaticBlogPostsFromProject({
+    project: params.project,
+    locale: params.locale,
+    fallbackAuthorName: inferBlogBrand(sourceText, params.locale),
+  });
+  if (staticPosts.length > 0) {
+    return {
+      required: true,
+      reason: "ready",
+      navLabel: resolveBlogNavLabelFromProject(params.project, params.locale),
+      posts: staticPosts.slice(0, 6),
+    };
+  }
+  if (sourceText.trim().length < 40) {
+    return {
+      required: false,
+      reason: "no_source",
+      navLabel: resolveBlogNavLabelFromProject(params.project, params.locale),
+      posts: [],
+    };
+  }
+  return {
+    required: true,
+    reason: "ready",
+    navLabel: resolveBlogNavLabelFromProject(params.project, params.locale),
+    posts: buildGeneratedBlogSeedPostsForTesting({ sourceText, locale: params.locale }),
+  };
+}
+
+function buildBlogContentConfirmTimelineMetadata(params: {
+  locale: "zh-CN" | "en";
+  navLabel: string;
+  posts: BlogPostUpsertInput[];
+}) {
+  const locale = params.locale === "zh-CN" ? "zh" : "en";
+  return {
+    cardType: "confirm_blog_content_deploy",
+    locale,
+    title:
+      params.locale === "zh-CN"
+        ? "Blog 文章已生成，确认后再部署上线"
+        : "Blog articles are ready. Confirm before deployment.",
+    label:
+      params.locale === "zh-CN"
+        ? "确认 Blog 文章并部署"
+        : "Confirm Blog Articles and Deploy",
+    payload: "__SHP_CONFIRM_BLOG_CONTENT_DEPLOY__",
+    navLabel: params.navLabel,
+    posts: params.posts.map((post) => ({
+      slug: String(post.slug || "").trim(),
+      title: String(post.title || "").trim(),
+      excerpt: String(post.excerpt || "").trim(),
+      category: String(post.category || "").trim(),
+      tags: Array.isArray(post.tags) ? post.tags.map((tag) => String(tag || "").trim()).filter(Boolean) : [],
+    })),
+  } as Record<string, unknown>;
+}
+
+function resolveBlogNavLabelFromProject(project: any, locale: "zh-CN" | "en") {
+  const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
+  const blogFile = files.find((file: any) => /data-shpitto-blog-root/i.test(String(file?.content || "")));
+  const content = String(blogFile?.content || "");
+  const title = content.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || content.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "";
+  const cleaned = htmlToReadableText(title).replace(/[|｜].*$/, "").trim();
+  return cleaned || (locale === "zh-CN" ? "信息平台" : "Blog");
+}
+
+async function ensureGeneratedBlogContentForDeploy(params: {
+  projectId: string;
+  userId?: string;
+  inputState: AgentState;
+  project: any;
+  locale: "zh-CN" | "en";
+}) {
+  if (!params.projectId) return { status: "skipped", postCount: 0 };
+  if (!projectHasGeneratedBlogContentMount(params.project)) return { status: "skipped:no_content_mount", postCount: 0 };
+  const sourceText = collectDeployBlogSourceText(params.inputState, params.project);
+  if (sourceText.trim().length < 40) return { status: "skipped:no_source", postCount: 0 };
+
+  const d1 = getD1Client();
+  await d1.ensureShpittoSchema();
+  if (!d1.isConfigured()) return { status: "skipped:no_d1", postCount: 0 };
+  const project = params.userId
+    ? await d1.queryOne<Record<string, unknown>>(
+        `
+        SELECT id, account_id AS accountId, owner_user_id AS ownerUserId
+        FROM shpitto_projects
+        WHERE id = ?
+          AND owner_user_id = ?
+          AND source_app = 'shpitto'
+        LIMIT 1;
+        `,
+        [params.projectId, params.userId],
+      )
+    : await d1.queryOne<Record<string, unknown>>(
+        `
+        SELECT id, account_id AS accountId, owner_user_id AS ownerUserId
+        FROM shpitto_projects
+        WHERE id = ?
+          AND source_app = 'shpitto'
+        LIMIT 1;
+        `,
+        [params.projectId],
+      );
+  const accountId = String(project?.accountId || "").trim();
+  const ownerUserId = String(params.userId || project?.ownerUserId || "").trim();
+  if (!project || !accountId) return { status: "skipped:no_project", postCount: 0 };
+  if (!ownerUserId) return { status: "skipped:no_owner", postCount: 0 };
+
+  const now = new Date().toISOString();
+  await d1.execute(
+    `
+    INSERT INTO shpitto_blog_settings (
+      project_id, account_id, owner_user_id, source_app, enabled, nav_label, home_featured_count,
+      default_layout_key, default_theme_key, rss_enabled, sitemap_enabled, created_at, updated_at
+    )
+    VALUES (?, ?, ?, 'shpitto', 1, ?, 3, '', '', 1, 1, ?, ?)
+    ON CONFLICT(project_id) DO UPDATE SET
+      account_id = excluded.account_id,
+      owner_user_id = excluded.owner_user_id,
+      enabled = 1,
+      nav_label = excluded.nav_label,
+      home_featured_count = 3,
+      rss_enabled = 1,
+      sitemap_enabled = 1,
+      updated_at = excluded.updated_at;
+    `,
+    [params.projectId, accountId, ownerUserId, resolveBlogNavLabelFromProject(params.project, params.locale), now, now],
+  );
+
+  const workflowPosts = Array.isArray((params.inputState.workflow_context as any)?.blogContentPreviewPosts)
+    ? (((params.inputState.workflow_context as any)?.blogContentPreviewPosts || []) as BlogPostUpsertInput[])
+        .filter((post) => post && typeof post === "object")
+    : [];
+  const staticPosts = extractStaticBlogPostsFromProject({
+    project: params.project,
+    locale: params.locale,
+    fallbackAuthorName: inferBlogBrand(sourceText, params.locale),
+  });
+  const posts = staticPosts.length > 0
+    ? staticPosts
+    : workflowPosts.length > 0
+    ? workflowPosts
+    : buildGeneratedBlogSeedPostsForTesting({ sourceText, locale: params.locale });
+  await d1.execute(
+    `
+    DELETE FROM shpitto_blog_posts
+    WHERE project_id = ?
+      AND source_app = 'shpitto'
+      AND (
+        id LIKE 'generated-content-post-%'
+        OR id LIKE ?
+      );
+    `,
+    [params.projectId, `${params.projectId}-%-post-%`],
+  );
+  let written = 0;
+  for (const [index, post] of posts.entries()) {
+    const postId = `generated-content-post-${index + 1}`;
+    const publishedAt = new Date(Date.now() - index * 60_000).toISOString();
+    await d1.execute(
+      `
+      INSERT INTO shpitto_blog_posts (
+        id, project_id, account_id, owner_user_id, source_app, slug, title, excerpt, content_md, content_html,
+        status, author_name, category, tags_json, cover_image_url, cover_image_alt, seo_title, seo_description,
+        theme_key, layout_key, published_at, created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, 'shpitto', ?, ?, ?, ?, ?, 'published', ?, ?, ?, '', '', ?, ?, '', '', ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        project_id = excluded.project_id,
+        account_id = excluded.account_id,
+        owner_user_id = excluded.owner_user_id,
+        slug = excluded.slug,
+        title = excluded.title,
+        excerpt = excluded.excerpt,
+        content_md = excluded.content_md,
+        content_html = excluded.content_html,
+        status = 'published',
+        author_name = excluded.author_name,
+        category = excluded.category,
+        tags_json = excluded.tags_json,
+        seo_title = excluded.seo_title,
+        seo_description = excluded.seo_description,
+        published_at = excluded.published_at,
+        updated_at = excluded.updated_at;
+      `,
+      [
+        postId,
+        params.projectId,
+        accountId,
+        ownerUserId,
+        post.slug || postId,
+        post.title,
+        post.excerpt || "",
+        post.contentMd,
+        renderMarkdownToHtml(post.contentMd),
+        post.authorName || "",
+        post.category || "",
+        JSON.stringify(post.tags || []),
+        post.seoTitle || post.title,
+        post.seoDescription || post.excerpt || "",
+        publishedAt,
+        now,
+        now,
+      ],
+    );
+    written += 1;
+  }
+  return { status: written >= 3 ? "seeded" : "partial", postCount: written };
+}
+
 async function runDeployOnlyTask(params: {
   taskId: string;
   chatId: string;
@@ -3112,11 +4944,29 @@ async function runDeployOnlyTask(params: {
     } as any,
   });
 
-  const sourceProject = await resolveDeploySourceProject(inputState);
+  const sourceProject = await resolveDeploySourceProject(inputState, { chatId, taskId });
   if (!sourceProject) {
     await failChatTask(
       taskId,
       "No generated site artifacts found for deployment. Please generate a site first, then confirm deploy.",
+    );
+    return;
+  }
+  const deployLocale = detectLocale(
+    extractStateMessageText(inputState.messages),
+    (inputState.workflow_context as any)?.preferredLocale,
+  );
+  const blogPreview = buildBlogContentWorkflowPreview({
+    inputState,
+    project: sourceProject,
+    locale: deployLocale,
+  });
+  if (blogPreview.required && !(inputState.workflow_context as any)?.blogContentConfirmed) {
+    await failChatTask(
+      taskId,
+      deployLocale === "zh-CN"
+        ? "Blog 文章尚未确认。请先确认生成的文章内容，再执行部署。"
+        : "Blog articles are not confirmed yet. Confirm the generated article set before deploying.",
     );
     return;
   }
@@ -3130,9 +4980,12 @@ async function runDeployOnlyTask(params: {
   let analyticsStatus = "pending";
   let analyticsWarning = "";
   let publishedAssetVersion = "";
+  let deploymentStrategy: CloudflareDeployStrategy = "direct-upload";
+  let wranglerDeployment: WranglerDeployResult | null = null;
 
   try {
     if (ownerUserId) {
+      await assertCanMutatePublishedSite(ownerUserId);
       try {
         dbProjectId = await saveProjectState(ownerUserId, sourceProject, inputState.access_token, chatId);
       } catch (error) {
@@ -3197,17 +5050,76 @@ async function runDeployOnlyTask(params: {
       );
     }
 
+    const contentSeedLocale = detectLocale(
+      collectDeployBlogSourceText(inputState, deployProject) || extractStateMessageText(inputState.messages),
+      (inputState.workflow_context as any)?.preferredLocale,
+    );
+    let generatedBlogContentStatus: { status: string; postCount: number } = { status: "skipped", postCount: 0 };
+    try {
+      generatedBlogContentStatus = await ensureGeneratedBlogContentForDeploy({
+        projectId: dbProjectId || chatId,
+        userId: ownerUserId || undefined,
+        inputState,
+        project: deployProject,
+        locale: contentSeedLocale,
+      });
+    } catch (error) {
+      generatedBlogContentStatus = { status: "failed", postCount: 0 };
+      console.warn(
+        `[SkillRuntimeExecutor] ensureGeneratedBlogContentForDeploy failed: ${String((error as any)?.message || error || "unknown")}`,
+      );
+    }
+
+    const blogD1Binding = resolveBlogD1BindingConfig();
+    let blogRuntimeStatus = "snapshot:skipped";
+    let blogRuntimeInjected = false;
+    try {
+      const snapshotFiles = await buildDeployedBlogSnapshotFilesFromD1(dbProjectId || chatId);
+      const snapshot = injectDeployedBlogSnapshot(deployProject, snapshotFiles);
+      deployProject = snapshot.project;
+      blogRuntimeStatus = snapshot.injected ? `snapshot:${snapshot.files.length}` : "snapshot:skipped";
+    } catch (error) {
+      blogRuntimeStatus = "snapshot:failed";
+      console.warn(
+        `[SkillRuntimeExecutor] buildDeployedBlogSnapshotFilesFromD1 failed: ${String((error as any)?.message || error || "unknown")}`,
+      );
+    }
+    if (isDeployedBlogRuntimeEnabled()) {
+      const injected = injectDeployedBlogRuntime(deployProject, {
+        projectId: dbProjectId || chatId,
+        d1BindingName: blogD1Binding?.bindingName || "DB",
+        generatedAt: nowIso(),
+      });
+      deployProject = injected.project;
+      blogRuntimeInjected = injected.injected;
+      blogRuntimeStatus = injected.injected
+        ? blogD1Binding
+          ? `active:${blogD1Binding.bindingName}`
+          : "injected_without_d1_binding"
+        : "skipped";
+    }
+    deploymentStrategy = resolveCloudflareDeployStrategy({
+      blogRuntimeEnabled: isDeployedBlogRuntimeEnabled(),
+      blogRuntimeInjected,
+    });
+
     await updateChatTaskProgress(taskId, {
-      assistantText: `Deploying to Cloudflare project ${projectName}...`,
+      assistantText: `Deploying to Cloudflare project ${projectName} (${deploymentStrategy})...`,
       phase: "deploy",
       progress: {
         stage: "deploying:upload",
-        stageMessage: "Uploading static bundle to Cloudflare Pages...",
+        stageMessage:
+          deploymentStrategy === "wrangler"
+            ? "Publishing Pages Functions bundle with Wrangler..."
+            : "Uploading static bundle to Cloudflare Pages...",
         startedAt: new Date(startedAt).toISOString(),
         lastTokenAt: nowIso(),
         elapsedMs: Date.now() - startedAt,
         attempt: 1,
         analyticsStatus,
+        blogRuntimeStatus,
+        generatedBlogContentStatus,
+        deploymentStrategy,
       } as any,
     });
 
@@ -3248,14 +5160,39 @@ async function runDeployOnlyTask(params: {
       }
     }
 
-    await cf.createProject(projectName);
-    await cf.uploadDeployment(projectName, bundle);
+    await cf.createProject(projectName, deploymentStrategy === "wrangler" ? blogD1Binding || undefined : undefined);
+    if (deploymentStrategy === "wrangler") {
+      wranglerDeployment = await deployWithWrangler({
+        taskId,
+        projectName,
+        branch: "main",
+        bundle,
+      });
+    } else {
+      await cf.uploadDeployment(projectName, bundle);
+    }
     const productionUrl = `https://${projectName}.pages.dev`;
-    const postDeploySmoke = await runPostDeploySmoke(productionUrl);
+    const postDeploySmoke = await runPostDeploySmoke(productionUrl, {
+      fallbackUrls: wranglerDeployment?.deploymentUrl ? [wranglerDeployment.deploymentUrl] : undefined,
+    });
     if (postDeploySmoke.status === "failed") {
       await failChatTask(
         taskId,
         `Post-deploy smoke gate failed: ${postDeploySmoke.checks
+          .filter((check) => !check.passed)
+          .map((check) => `${check.name}${check.message ? ` (${check.message})` : ""}`)
+          .join(", ")}`,
+      );
+      return;
+    }
+    const blogRuntimeSmoke =
+      deploymentStrategy === "wrangler" && isDeployedBlogRuntimeEnabled()
+        ? await runPostDeployBlogRuntimeSmoke(productionUrl)
+        : undefined;
+    if (blogRuntimeSmoke?.status === "failed") {
+      await failChatTask(
+        taskId,
+        `Post-deploy Blog runtime smoke gate failed: ${blogRuntimeSmoke.checks
           .filter((check) => !check.passed)
           .map((check) => `${check.name}${check.message ? ` (${check.message})` : ""}`)
           .join(", ")}`,
@@ -3295,10 +5232,6 @@ async function runDeployOnlyTask(params: {
       }
     }
 
-    const deployLocale = detectLocale(
-      extractStateMessageText(inputState.messages),
-      (inputState.workflow_context as any)?.preferredLocale,
-    );
     const domainGuidanceSteps = buildDomainConfigurationGuidanceSteps({
       liveUrl,
       deploymentHost,
@@ -3309,6 +5242,11 @@ async function runDeployOnlyTask(params: {
       deploymentHost,
       locale: deployLocale,
     });
+    domainGuidanceSteps.push(
+      deployLocale === "zh-CN"
+        ? "域名生效后，重新检查登录、注册和找回密码页面，确认 auth 已自动跟随这个域名。"
+        : "Once the domain is active, reopen the login, registration, and password recovery pages to confirm auth now follows that domain automatically.",
+    );
     const deploymentMessageParts = [
       deployLocale === "zh-CN" ? `\u90e8\u7f72\u6210\u529f\uff1a${liveUrl}` : `Deployment successful: ${liveUrl}`,
       publishedAssetVersion ? `(Published assets ${publishedAssetVersion})` : "",
@@ -3317,7 +5255,23 @@ async function runDeployOnlyTask(params: {
         : analyticsWarning
           ? `(Analytics pending: ${analyticsWarning})`
           : "(Analytics pending)",
-      `(Smoke: pre=${preDeploySmoke.status}, post=${postDeploySmoke.status})`,
+      blogRuntimeStatus.startsWith("active:")
+        ? `(Blog runtime bound to D1 ${blogRuntimeStatus.slice("active:".length)})`
+        : blogRuntimeStatus === "injected_without_d1_binding"
+          ? "(Blog runtime injected; D1 binding missing)"
+          : blogRuntimeStatus.startsWith("snapshot:")
+            ? `(Blog snapshot ${blogRuntimeStatus.slice("snapshot:".length)} file(s))`
+          : "",
+      generatedBlogContentStatus.postCount
+        ? `(Generated ${generatedBlogContentStatus.postCount} content-derived Blog post(s))`
+        : "",
+      `(Deploy: ${deploymentStrategy})`,
+      `(Smoke: pre=${preDeploySmoke.status}, post=${postDeploySmoke.status}${
+        blogRuntimeSmoke ? `, blogRuntime=${blogRuntimeSmoke.status}` : ""
+      })`,
+      deployLocale === "zh-CN"
+        ? "请继续到域名配置里绑定并验证你的自定义域名，auth 页面会在域名生效后自动跟随该域名。"
+        : "Next, bind and verify your custom domain in the domain configuration flow. Auth pages will automatically follow that domain once it becomes active.",
     ].filter(Boolean);
     const deploymentMessage = deploymentMessageParts.join("\n");
     const domainGuidanceMetadata = {
@@ -3344,9 +5298,19 @@ async function runDeployOnlyTask(params: {
         deploySourceTaskId: String((inputState.workflow_context as any)?.deploySourceTaskId || ""),
         analyticsStatus,
         analyticsSiteTag: analyticsSite?.siteTag || "",
+        blogRuntimeStatus,
+        generatedBlogContentStatus,
+        blogContentPreviewStatus:
+          blogPreview.required && (inputState.workflow_context as any)?.blogContentConfirmed
+            ? "confirmed"
+            : String((inputState.workflow_context as any)?.blogContentPreviewStatus || ""),
+        deploymentStrategy,
+        wranglerDeploymentUrl: wranglerDeployment?.deploymentUrl || "",
+        productionUrl: liveUrl,
         smoke: {
           preDeploy: preDeploySmoke,
           postDeploy: postDeploySmoke,
+          ...(blogRuntimeSmoke ? { blogRuntime: blogRuntimeSmoke } : {}),
         },
         ...(publishedAssetVersion ? { publishedAssetVersion } : {}),
       } as any,
@@ -3388,15 +5352,31 @@ async function runDeployOnlyTask(params: {
         checkpointSaved: false,
         analyticsStatus,
         analyticsSiteTag: analyticsSite?.siteTag || "",
+        blogRuntimeStatus,
+        generatedBlogContentStatus,
+        deploymentStrategy,
+        wranglerDeploymentUrl: wranglerDeployment?.deploymentUrl || "",
+        productionUrl: liveUrl,
         smoke: {
           preDeploy: preDeploySmoke,
           postDeploy: postDeploySmoke,
+          ...(blogRuntimeSmoke ? { blogRuntime: blogRuntimeSmoke } : {}),
         },
         ...(publishedAssetVersion ? { publishedAssetVersion } : {}),
       } as any,
     };
 
     await completeChatTask(taskId, mergedResult);
+    await syncChatMemoryFromState({
+      chatId,
+      taskId,
+      stage: "deployed",
+      state: nextState,
+      recentSummary: deploymentMessage,
+      deployedUrl: liveUrl,
+    }).catch((error) => {
+      console.warn(`[SkillRuntimeExecutor] short-term memory sync failed after deploy: ${String((error as any)?.message || error)}`);
+    });
   } catch (error) {
     const message = String((error as any)?.message || error || "Deploy failed.");
     await failChatTask(taskId, message);
@@ -3439,8 +5419,13 @@ async function runRefineTask(params: {
     } as any,
   });
 
-  const sourceProject = await resolveDeploySourceProject(inputState);
+  const sourceProject = await resolveDeploySourceProject(inputState, { chatId, taskId });
   if (!sourceProject) {
+    console.warn("[SkillRuntimeExecutor] refine baseline missing", {
+      chatId,
+      taskId,
+      baseline: summarizeRefineBaselineInputs(inputState),
+    });
     await failChatTask(
       taskId,
       "No preview/deployed baseline found for refine. Please generate a site first, then request refinement.",
@@ -3573,6 +5558,27 @@ async function runRefineTask(params: {
     "utf8",
   );
 
+  const refineLocale = detectLocale(
+    extractRequirementText(inputState),
+    (inputState.workflow_context as any)?.preferredLocale,
+  );
+  const refinedBlogPreview = buildBlogContentWorkflowPreview({
+    inputState,
+    project: refined.project,
+    locale: refineLocale,
+  });
+  const refinedBlogWorkflowState = refinedBlogPreview.required
+    ? {
+        blogContentPreviewPosts: refinedBlogPreview.posts,
+        blogContentPreviewStatus: "pending_confirmation",
+        blogContentConfirmed: false,
+      }
+    : {
+        blogContentPreviewPosts: [],
+        blogContentPreviewStatus: refinedBlogPreview.reason,
+        blogContentConfirmed: false,
+      };
+
   const nextState: AgentState = {
     ...inputState,
     phase: "end",
@@ -3586,6 +5592,7 @@ async function runRefineTask(params: {
       checkpointProjectPath,
       deploySourceProjectPath: checkpointProjectPath,
       deploySourceTaskId: taskId,
+      ...refinedBlogWorkflowState,
     } as any,
     messages: [
       ...(inputState.messages || []),
@@ -3598,19 +5605,37 @@ async function runRefineTask(params: {
   if (setSessionState) setSessionState(nextState);
 
   const elapsedMs = Date.now() - startedAt;
-  await syncGeneratedProjectAssetsFromSite({
-    ownerUserId: String(inputState.user_id || "").trim() || undefined,
-    projectId: chatId,
-    taskId,
-    siteDir: checkpointSiteDir,
-    generatedFiles: materialized.generatedFiles,
-  }).catch(() => {
-    // Best-effort asset sync should not block task completion.
-  });
+  await bestEffortWithTimeout(
+    syncGeneratedProjectAssetsFromSite({
+      ownerUserId: String(inputState.user_id || "").trim() || undefined,
+      projectId: chatId,
+      taskId,
+      siteDir: checkpointSiteDir,
+      generatedFiles: materialized.generatedFiles,
+    }).catch((error) => {
+      console.warn(
+        `[SkillRuntimeExecutor] Generated asset sync failed after refine: ${String((error as any)?.message || error)}`,
+      );
+      return undefined;
+    }),
+    resolveGeneratedAssetSyncTimeoutMs(),
+    "generated asset sync after refine",
+  );
   const pendingEdits = await readPendingEditsForTask(taskId);
   await completeChatTask(taskId, {
-    assistantText: `Refinement completed. Updated ${refined.changedFiles.length} files.`,
+    assistantText: refinedBlogPreview.required
+      ? refineLocale === "zh-CN"
+        ? `修改已完成，并已生成 ${refinedBlogPreview.posts.length} 篇 Blog 文章草案。确认后即可部署。`
+        : `Refinement completed. ${refinedBlogPreview.posts.length} Blog article drafts are ready for confirmation before deploy.`
+      : `Refinement completed. Updated ${refined.changedFiles.length} files.`,
     phase: "end",
+    timelineMetadata: refinedBlogPreview.required
+      ? buildBlogContentConfirmTimelineMetadata({
+          locale: refineLocale,
+          navLabel: refinedBlogPreview.navLabel,
+          posts: refinedBlogPreview.posts,
+        })
+      : undefined,
     internal: {
       workerId,
       inputState: buildSessionSnapshot(nextState),
@@ -3636,6 +5661,15 @@ async function runRefineTask(params: {
       nextStep: "preview",
       pendingEditsCount: pendingEdits.length,
     } as any,
+  });
+  await syncChatMemoryFromState({
+    chatId,
+    taskId,
+    stage: "previewing",
+    state: nextState,
+    recentSummary: `Refinement completed. Updated ${refined.changedFiles.length} files.`,
+  }).catch((error) => {
+    console.warn(`[SkillRuntimeExecutor] short-term memory sync failed after refine: ${String((error as any)?.message || error)}`);
   });
   if (pendingEdits.length > 0) {
     await queuePendingRefineTask({
@@ -3783,14 +5817,44 @@ export class SkillRuntimeExecutor {
       });
 
       const checkpointProjectPath = path.join(checkpointRoot, "project.json");
+      const generatedProjectArtifact =
+        (summary.state as any)?.site_artifacts ||
+        (summary.state as any)?.project_json ||
+        {
+          projectId: chatId,
+          pages: getPages(summary.state as any),
+          staticSite: {
+            mode: "skill-direct",
+            files: getStaticArtifactFiles(summary.state as any),
+          },
+        };
+      const generatedBlogPreview = buildBlogContentWorkflowPreview({
+        inputState: summary.state as AgentState,
+        project: generatedProjectArtifact,
+        locale: decision.locale,
+      });
+      const generatedBlogWorkflowState = generatedBlogPreview.required
+        ? {
+            blogContentPreviewPosts: generatedBlogPreview.posts,
+            blogContentPreviewStatus: "pending_confirmation",
+            blogContentConfirmed: false,
+          }
+        : {
+            blogContentPreviewPosts: [],
+            blogContentPreviewStatus: generatedBlogPreview.reason,
+            blogContentConfirmed: false,
+          };
       const sessionStateForNext: AgentState = {
         ...(summary.state as any),
+        site_artifacts: generatedProjectArtifact,
+        project_json: generatedProjectArtifact,
         workflow_context: {
           ...((summary.state as any)?.workflow_context || {}),
           deploySourceProjectPath: checkpointProjectPath,
           deploySourceTaskId: taskId,
           checkpointProjectPath,
           deployRequested: false,
+          ...generatedBlogWorkflowState,
         },
       };
 
@@ -3803,21 +5867,32 @@ export class SkillRuntimeExecutor {
         fileCount: summary.fileCount,
         completedPhases: summary.completedPhases,
       }, null, 2), "utf8");
-      await fs.writeFile(checkpointProjectPath, JSON.stringify((summary.state as any)?.site_artifacts || null, null, 2), "utf8");
+      await fs.writeFile(checkpointProjectPath, JSON.stringify(generatedProjectArtifact || null, null, 2), "utf8");
 
       const elapsedMs = Date.now() - startedAt;
       const pendingEdits = await readPendingEditsForTask(taskId);
       const mergedResult: ChatTaskResult = {
-        assistantText: summary.assistantText,
+        assistantText: generatedBlogPreview.required
+          ? decision.locale === "zh-CN"
+            ? `网站已生成，并已准备 ${generatedBlogPreview.posts.length} 篇 Blog 文章草案。请先确认文章内容，再继续部署上线。`
+            : `The website is generated and ${generatedBlogPreview.posts.length} Blog article drafts are ready. Confirm the articles before deployment.`
+          : summary.assistantText,
         actions: summary.actions,
         phase: summary.phase,
         deployedUrl: summary.deployedUrl,
+        timelineMetadata: generatedBlogPreview.required
+          ? buildBlogContentConfirmTimelineMetadata({
+              locale: decision.locale,
+              navLabel: generatedBlogPreview.navLabel,
+              posts: generatedBlogPreview.posts,
+            })
+          : undefined,
         internal: {
           skillId: loadedSkill.id,
           workerId,
           inputState: buildSessionSnapshot(sessionStateForNext),
           sessionState: buildSessionSnapshot(sessionStateForNext),
-          artifactSnapshot: (summary.state as any)?.site_artifacts || null,
+          artifactSnapshot: generatedProjectArtifact || null,
           pendingEdits,
         } as any,
         progress: {
@@ -3852,17 +5927,35 @@ export class SkillRuntimeExecutor {
         return;
       }
 
-      await syncGeneratedProjectAssetsFromSite({
-        ownerUserId: String(inputState.user_id || "").trim() || undefined,
-        projectId: chatId,
-        taskId,
-        siteDir: latestCheckpointSiteDir,
-        generatedFiles: summary.generatedFiles,
-      }).catch(() => {
-        // Best-effort asset sync should not block task completion.
-      });
+      await bestEffortWithTimeout(
+        syncGeneratedProjectAssetsFromSite({
+          ownerUserId: String(inputState.user_id || "").trim() || undefined,
+          projectId: chatId,
+          taskId,
+          siteDir: latestCheckpointSiteDir,
+          generatedFiles: summary.generatedFiles,
+        }).catch((error) => {
+          console.warn(
+            `[SkillRuntimeExecutor] Generated asset sync failed after generation: ${String(
+              (error as any)?.message || error,
+            )}`,
+          );
+          return undefined;
+        }),
+        resolveGeneratedAssetSyncTimeoutMs(),
+        "generated asset sync after generation",
+      );
 
       await completeChatTask(taskId, mergedResult);
+      await syncChatMemoryFromState({
+        chatId,
+        taskId,
+        stage: "previewing",
+        state: sessionStateForNext,
+        recentSummary: String(mergedResult.assistantText || ""),
+      }).catch((error) => {
+        console.warn(`[SkillRuntimeExecutor] short-term memory sync failed after generation: ${String((error as any)?.message || error)}`);
+      });
       if (pendingEdits.length > 0) {
         await queuePendingRefineTask({
           taskId,

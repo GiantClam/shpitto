@@ -1,23 +1,29 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { serializeAuthTheme, withAuthQueryPath, withAuthThemePath } from "@/lib/auth/theme";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { AuthCardShell } from "@/components/auth/AuthCardShell";
 import { getLandingCopy, type Locale } from "@/lib/i18n";
+import type { AuthTheme } from "@/lib/auth/theme";
 
-const POST_LOGIN_PATH = "/launch-center";
+type LoginFormProps = {
+  initialLocale: Locale;
+  nextPath: string;
+  theme?: AuthTheme;
+  projectId?: string;
+  siteKey?: string;
+};
 
-export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
+export function LoginForm({ initialLocale, nextPath, theme, projectId, siteKey }: LoginFormProps) {
   const [locale, setLocale] = useState<Locale>(initialLocale);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
   const [mode, setMode] = useState<"signin" | "forgot">("signin");
-  const router = useRouter();
 
   const supabase = createClient();
   const copy = getLandingCopy(locale).login;
@@ -27,18 +33,18 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
     setLoading(true);
     setMessage(null);
 
-    const response = await fetch("/auth/password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+      const response = await fetch("/auth/password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, projectId, siteKey }),
+      });
     const data = (await response.json().catch(() => ({}))) as { error?: string };
 
     if (!response.ok) {
       setMessage({ type: "error", text: data.error || "Invalid login credentials" });
       setLoading(false);
     } else {
-      window.location.assign(POST_LOGIN_PATH);
+      window.location.assign(nextPath);
     }
   };
 
@@ -49,7 +55,12 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(POST_LOGIN_PATH)}`,
+          redirectTo: `${location.origin}${withAuthQueryPath("/auth/callback", {
+            next: nextPath,
+            theme: serializeAuthTheme(theme),
+            projectId,
+            siteKey,
+          })}`,
           skipBrowserRedirect: true,
         },
       });
@@ -78,11 +89,11 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
     setLoading(true);
     setMessage(null);
 
-    const response = await fetch("/auth/password/forgot", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
+      const response = await fetch("/auth/password/forgot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, next: nextPath, theme: serializeAuthTheme(theme), projectId, siteKey }),
+      });
     const data = (await response.json().catch(() => ({}))) as { error?: string; message?: string };
 
     if (!response.ok) {
@@ -94,14 +105,14 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
   };
 
   return (
-    <AuthCardShell locale={locale} onLocaleChange={setLocale} backHref="/" footer={copy.legal}>
+    <AuthCardShell locale={locale} onLocaleChange={setLocale} backHref="/" footer={copy.legal} theme={theme}>
       <h1 className="mb-2 text-2xl font-bold text-[var(--shp-text)]">{copy.welcome}</h1>
       <p className="mb-8 text-[var(--shp-muted)]">{copy.subtitle}</p>
 
       <button
         onClick={handleGoogleLogin}
         disabled={loading}
-        className="mb-6 flex w-full items-center justify-center gap-3 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-white px-4 py-3 font-semibold text-[var(--shp-text)] transition-all hover:border-[var(--shp-primary)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_6%,white_94%)]"
+        className="mb-6 flex w-full items-center justify-center gap-3 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[var(--shp-panel)] px-4 py-3 font-semibold text-[var(--shp-text)] transition-all hover:border-[var(--shp-primary)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_6%,var(--shp-panel)_94%)]"
       >
         <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -114,10 +125,10 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
 
       <div className="relative mb-6">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-slate-200" />
+          <div className="w-full border-t border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)]" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="bg-white px-2 text-[var(--shp-muted)]">{copy.divider}</span>
+          <span className="bg-[var(--shp-panel)] px-2 text-[var(--shp-muted)]">{copy.divider}</span>
         </div>
       </div>
 
@@ -160,7 +171,7 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
         ) : null}
 
         {message ? (
-          <div className={`rounded-lg p-3 text-sm ${message.type === "error" ? "bg-[color-mix(in_oklab,var(--shp-primary)_10%,white_90%)] text-[var(--shp-primary-pressed)]" : "bg-[color-mix(in_oklab,var(--shp-primary)_10%,white_90%)] text-[var(--shp-primary-pressed)]"}`}>
+          <div className={`rounded-lg p-3 text-sm ${message.type === "error" ? "bg-[color-mix(in_oklab,var(--shp-primary)_10%,var(--shp-panel)_90%)] text-[var(--shp-primary-pressed)]" : "bg-[color-mix(in_oklab,var(--shp-primary)_10%,var(--shp-panel)_90%)] text-[var(--shp-primary-pressed)]"}`}>
             {message.text}
           </div>
         ) : null}
@@ -190,7 +201,10 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
         ) : (
           <>
             <span className="text-[var(--shp-muted)]">{copy.noAccount}</span>
-            <Link href="/register" className="font-bold text-[var(--shp-primary)] hover:underline">
+            <Link
+              href={withAuthThemePath("/register", nextPath, theme, undefined, { projectId, siteKey })}
+              className="font-bold text-[var(--shp-primary)] hover:underline"
+            >
               {copy.signUp}
             </Link>
           </>

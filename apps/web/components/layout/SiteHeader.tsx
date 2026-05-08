@@ -2,16 +2,22 @@ import Link from "next/link";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
+import { serializeAuthTheme, withAuthQueryPath } from "@/lib/auth/theme";
 import { getLandingCopy, type Locale } from "@/lib/i18n";
+import type { AuthTheme } from "@/lib/auth/theme";
 
 type SiteHeaderProps = {
   userEmail?: string;
   getStartedHref?: string;
   locale?: Locale;
+  authTheme?: AuthTheme;
 };
 
-export function SiteHeader({ userEmail = "", getStartedHref = "/chat", locale = "en" }: SiteHeaderProps) {
+export function SiteHeader({ userEmail = "", getStartedHref = "/chat", locale = "en", authTheme }: SiteHeaderProps) {
   const copy = getLandingCopy(locale).nav;
+  const loginHref = withAuthQueryPath("/login", {
+    theme: serializeAuthTheme(authTheme),
+  });
   return (
     <header className="fixed top-0 z-50 w-full border-b border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_76%,transparent)] backdrop-blur-md transition-all duration-300">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
@@ -29,6 +35,9 @@ export function SiteHeader({ userEmail = "", getStartedHref = "/chat", locale = 
           </Link>
           <Link href="/#showcase" className="hover:text-[var(--shp-primary)]">
             {copy.showcase}
+          </Link>
+          <Link href="/pricing" className="hover:text-[var(--shp-primary)]">
+            {copy.pricing}
           </Link>
           <Link href="/blog" className="hover:text-[var(--shp-primary)]">
             {copy.blog}
@@ -52,7 +61,7 @@ export function SiteHeader({ userEmail = "", getStartedHref = "/chat", locale = 
             </>
           ) : (
             <>
-              <Link href="/login" className="hidden text-sm font-bold text-[var(--shp-muted)] hover:text-[var(--shp-primary)] sm:block">
+              <Link href={loginHref} className="hidden text-sm font-bold text-[var(--shp-muted)] hover:text-[var(--shp-primary)] sm:block">
                 {copy.login}
               </Link>
               <Link href={getStartedHref} className="shp-btn-primary rounded-full px-6 py-2.5 text-sm font-bold">

@@ -1,6 +1,6 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import crypto from "node:crypto";
-import { Agent } from "undici";
+import { Agent, ProxyAgent, type Dispatcher } from "undici";
 import { invalidateLaunchCenterRecentProjectsCache } from "../launch-center/cache.ts";
 
 export type ChatTaskStatus = "queued" | "running" | "succeeded" | "failed";
@@ -74,6 +74,10 @@ export type ChatTaskRecord = {
   ownerUserId?: string;
 };
 
+export type ChatTaskClaimOptions = {
+  modes?: string[];
+};
+
 export type ChatTimelineRole = "user" | "assistant" | "system";
 
 export type ChatTimelineMessage = {
@@ -119,6 +123,29 @@ type SupabaseTaskRow = {
   expires_at: string | null;
 };
 
+type SupabaseStaleRunningTaskRow = {
+  id: string;
+  assistant_text: string | null;
+  internal: Record<string, unknown> | null;
+};
+
+type SupabaseConsistencyTaskRow = {
+  id: string;
+  chat_id: string;
+  owner_user_id: string | null;
+  status: ChatTaskStatus;
+  assistant_text: string | null;
+  progress_stage: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type SupabaseClaimCandidateRow = {
+  id: string;
+  execution_mode: string | null;
+  deploy_requested: string | null;
+};
+
 type SupabaseTaskEventRow = {
   id: string;
   task_id: string;
@@ -135,7 +162,7 @@ type SupabaseTaskFetchOptions = {
   connectTimeoutMs?: number;
   retries?: number;
   retryBaseMs?: number;
-  dispatcher?: Agent | null;
+  dispatcher?: Dispatcher | null;
 };
 
 type SupabaseChatMessageRow = {
@@ -230,7 +257,7 @@ function isRetryableSupabaseTaskMethod(method: string): boolean {
 }
 
 function isRetryableSupabaseTaskResponse(response: Response): boolean {
-  return [408, 409, 425, 429, 500, 502, 503, 504].includes(Number(response.status));
+  return [408, 409, 425, 429, 500, 502, 503, 504, 521, 522, 523, 524].includes(Number(response.status));
 }
 
 function isTransientSupabaseTaskFetchError(error: unknown): boolean {
@@ -273,19 +300,39 @@ function sleepMs(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, Math.max(0, ms)));
 }
 
-let supabaseTaskDispatcher: Agent | undefined;
+let supabaseTaskDispatcher: Dispatcher | undefined;
 let supabaseTaskDispatcherKey = "";
 let supabaseTaskClient: any;
 let supabaseTaskClientKey = "";
 
-function getSupabaseTaskDispatcher(params: { timeoutMs: number; connectTimeoutMs: number }): Agent {
-  const key = `${params.timeoutMs}:${params.connectTimeoutMs}`;
+function resolveSupabaseTaskProxyUrl(): string {
+  return String(
+    process.env.SUPABASE_TASK_PROXY_URL ||
+      process.env.HTTPS_PROXY ||
+      process.env.https_proxy ||
+      process.env.HTTP_PROXY ||
+      process.env.http_proxy ||
+      "",
+  ).trim();
+}
+
+function getSupabaseTaskDispatcher(params: { timeoutMs: number; connectTimeoutMs: number }): Dispatcher {
+  const proxyUrl = resolveSupabaseTaskProxyUrl();
+  const key = `${params.timeoutMs}:${params.connectTimeoutMs}:${proxyUrl}`;
   if (!supabaseTaskDispatcher || supabaseTaskDispatcherKey !== key) {
-    supabaseTaskDispatcher = new Agent({
-      connect: { timeout: params.connectTimeoutMs },
-      headersTimeout: params.timeoutMs,
-      bodyTimeout: params.timeoutMs,
-    });
+    supabaseTaskDispatcher = proxyUrl
+      ? new ProxyAgent({
+          uri: proxyUrl,
+          requestTls: { rejectUnauthorized: true },
+          proxyTls: { rejectUnauthorized: true },
+          headersTimeout: params.timeoutMs,
+          bodyTimeout: params.timeoutMs,
+        })
+      : new Agent({
+          connect: { timeout: params.connectTimeoutMs },
+          headersTimeout: params.timeoutMs,
+          bodyTimeout: params.timeoutMs,
+        });
     supabaseTaskDispatcherKey = key;
   }
   return supabaseTaskDispatcher;
@@ -371,7 +418,8 @@ function mustGetSupabaseClient() {
   const retries = resolveSupabaseTaskFetchRetries();
   const retryBaseMs = resolveSupabaseTaskRetryBaseMs();
   const serviceKeyHash = crypto.createHash("sha256").update(serviceKey).digest("hex").slice(0, 16);
-  const clientKey = [url, serviceKeyHash, timeoutMs, connectTimeoutMs, retries, retryBaseMs].join("|");
+  const proxyUrlHash = crypto.createHash("sha256").update(resolveSupabaseTaskProxyUrl()).digest("hex").slice(0, 16);
+  const clientKey = [url, serviceKeyHash, timeoutMs, connectTimeoutMs, retries, retryBaseMs, proxyUrlHash].join("|");
   if (supabaseTaskClient && supabaseTaskClientKey === clientKey) {
     return supabaseTaskClient;
   }
@@ -508,10 +556,34 @@ function fromSessionRow(row: SupabaseChatSessionRow): ChatSessionSummary {
   };
 }
 
-function formatUnknownError(error: unknown): string {
+export function summarizeSupabaseHtmlError(raw: string): string | undefined {
+  const source = String(raw || "").trim();
+  if (!source) return undefined;
+  const normalized = source.toLowerCase();
+  if (!normalized.includes("<html") && !normalized.includes("<!doctype html")) return undefined;
+
+  const title = source.match(/<title>([^<]+)<\/title>/i)?.[1]?.replace(/\s+/g, " ").trim() || "";
+  const code = source.match(/Error code\s*([0-9]{3})/i)?.[1]?.trim() || "";
+  const host =
+    source.match(/<span class="md:block w-full truncate">([^<]+\.supabase\.co)<\/span>/i)?.[1]?.trim() ||
+    source.match(/utm_campaign=([a-z0-9.-]+\.supabase\.co)/i)?.[1]?.trim() ||
+    "";
+
+  if (!title && !code) {
+    return "Supabase upstream returned an HTML error page.";
+  }
+
+  const parts = ["Supabase upstream error"];
+  if (code) parts.push(`status ${code}`);
+  if (title) parts.push(title);
+  if (host) parts.push(`host=${host}`);
+  return parts.join(" | ");
+}
+
+export function formatUnknownError(error: unknown): string {
   if (error instanceof Error) {
     const text = String(error.message || "").trim();
-    if (text) return text;
+    if (text) return summarizeSupabaseHtmlError(text) || text;
   }
   if (error && typeof error === "object") {
     const anyErr = error as Record<string, unknown>;
@@ -520,7 +592,8 @@ function formatUnknownError(error: unknown): string {
     const details = String(anyErr.details || "").trim();
     const hint = String(anyErr.hint || "").trim();
     if (message) {
-      const parts = [code ? `[${code}] ${message}` : message];
+      const normalizedMessage = summarizeSupabaseHtmlError(message) || message;
+      const parts = [code ? `[${code}] ${normalizedMessage}` : normalizedMessage];
       if (details && details !== "null" && details !== "undefined") {
         parts.push(`details: ${details}`);
       }
@@ -535,7 +608,8 @@ function formatUnknownError(error: unknown): string {
       // ignore JSON stringify failures and fall back below
     }
   }
-  return String(error);
+  const fallback = String(error);
+  return summarizeSupabaseHtmlError(fallback) || fallback;
 }
 
 function withTaskStoreErrorContext(error: unknown) {
@@ -596,40 +670,76 @@ export function formatTaskEventSnapshot(params: {
   stage?: string;
   payload?: Record<string, unknown>;
 }): string {
-  const eventType = String(params.eventType || "").trim().toLowerCase();
-  const stageLabel = toReadableStageLabel(params.stage);
-  const payload = params.payload || {};
-  const details: string[] = [];
+  {
+    const readableStageLabel = (stage?: string): string => {
+      const normalized = String(stage || "").trim().toLowerCase();
+      if (!normalized) return "processing";
+      if (normalized === "queued") return "queued";
+      if (normalized === "running") return "running";
+      if (normalized === "done") return "done";
+      if (normalized === "failed") return "failed";
+      if (normalized === "deployed") return "deployed";
+      if (normalized === "refined") return "refined";
+      if (normalized === "worker:claimed") return "worker claimed";
+      if (normalized.startsWith("generating:")) return "generating";
+      if (normalized.startsWith("deploy")) return "deploying";
+      if (normalized.startsWith("refine")) return "refining";
+      return "processing";
+    };
+    const eventType = String(params.eventType || "").trim().toLowerCase();
+    const stageLabel = readableStageLabel(params.stage);
+    const payload = params.payload || {};
+    const details: string[] = [];
+    const pushIf = (label: string, value: unknown) => {
+      const text = String(value || "").trim();
+      if (text) details.push(`${label}: ${text}`);
+    };
 
-  const pushIf = (value: unknown) => {
-    const text = String(value || "").trim();
-    if (text) details.push(text);
-  };
+    const payloadText = normalizeEventPayloadText(payload);
+    const errorText = String((payload as any).error || "").trim();
+    pushIf("Tool", (payload as any).toolName);
+    pushIf("Path", (payload as any).path);
+    pushIf("File", (payload as any).filePath);
+    pushIf("Provider", (payload as any).provider);
+    pushIf("Model", (payload as any).model);
+    pushIf("Files", (payload as any).fileCount);
+    pushIf("Pages", (payload as any).pageCount);
+    pushIf("Error code", (payload as any).errorCode);
 
-  const payloadText = normalizeEventPayloadText(payload);
-  const errorText = String((payload as any).error || "").trim();
+    let head = `Task status updated (${stageLabel}).`;
+    if (eventType === "task_created") head = "Task created and queued.";
+    if (eventType === "task_claimed") head = "Background worker claimed the task.";
+    if (eventType === "task_progress") head = `Task progress updated (${stageLabel}).`;
+    if (eventType === "task_succeeded") head = "Task completed.";
+    if (eventType === "task_failed") head = "Task failed.";
 
-  if ((payload as any).toolName) pushIf(`工具：${String((payload as any).toolName)}`);
-  if ((payload as any).path) pushIf(`路径：${String((payload as any).path)}`);
-  if ((payload as any).filePath) pushIf(`文件：${String((payload as any).filePath)}`);
-  if ((payload as any).provider) pushIf(`提供商：${String((payload as any).provider)}`);
-  if ((payload as any).model) pushIf(`模型：${String((payload as any).model)}`);
-  if ((payload as any).fileCount) pushIf(`文件数：${String((payload as any).fileCount)}`);
-  if ((payload as any).pageCount) pushIf(`页面数：${String((payload as any).pageCount)}`);
-  if ((payload as any).errorCode) pushIf(`错误码：${String((payload as any).errorCode)}`);
+    const textParts: string[] = [head];
+    if (payloadText) textParts.push(payloadText);
+    if (errorText) textParts.push(`Error: ${errorText}`);
+    if (details.length > 0) textParts.push(`Details: ${details.slice(0, 3).join("; ")}`);
+    return textParts.join(" ");
+  }
 
-  let head = `任务状态更新（${stageLabel}）`;
-  if (eventType === "task_created") head = "任务已创建，已进入队列。";
-  if (eventType === "task_claimed") head = "后台执行器已接管任务，开始处理。";
-  if (eventType === "task_progress") head = `任务进度更新（${stageLabel}）。`;
-  if (eventType === "task_succeeded") head = "任务执行完成。";
-  if (eventType === "task_failed") head = "任务执行失败。";
+}
 
-  const textParts: string[] = [head];
-  if (payloadText) textParts.push(payloadText);
-  if (errorText) textParts.push(`错误：${errorText}`);
-  if (details.length > 0) textParts.push(`详情：${details.slice(0, 3).join("，")}`);
-  return textParts.join(" ");
+function normalizeClaimModes(modes?: string[]): Set<string> | undefined {
+  const normalized = (modes || [])
+    .map((mode) => String(mode || "").trim().toLowerCase())
+    .filter(Boolean);
+  return normalized.length > 0 ? new Set(normalized) : undefined;
+}
+
+function resolveTaskExecutionMode(task: Pick<ChatTaskRecord, "result">): "generate" | "refine" | "deploy" {
+  const workflow = ((task.result?.internal?.inputState as any)?.workflow_context || {}) as Record<string, unknown>;
+  const explicit = String(workflow.executionMode || "").trim().toLowerCase();
+  if (explicit === "deploy" || Boolean(workflow.deployRequested)) return "deploy";
+  if (explicit === "refine" || explicit === "refine_preview" || explicit === "refine_deployed") return "refine";
+  return "generate";
+}
+
+function taskMatchesClaimModes(task: Pick<ChatTaskRecord, "result">, modes?: Set<string>): boolean {
+  if (!modes || modes.size === 0) return true;
+  return modes.has(resolveTaskExecutionMode(task));
 }
 
 async function writeTaskEventBestEffort(params: {
@@ -925,6 +1035,22 @@ function taskHasDeployableBaseline(task: ChatTaskRecord | undefined): boolean {
   );
 }
 
+export function taskHasLocalPreviewBaseline(task: ChatTaskRecord | undefined): boolean {
+  if (!task) return false;
+  const result = task.result || {};
+  const progress = result.progress || {};
+  const internal = result.internal || {};
+  return Boolean(
+    String(progress.checkpointProjectPath || progress.checkpointSiteDir || progress.checkpointDir || "").trim() ||
+      (internal.sessionState as any)?.site_artifacts ||
+      (internal.sessionState as any)?.project_json ||
+      (internal.inputState as any)?.site_artifacts ||
+      (internal.inputState as any)?.project_json ||
+      (internal as any).artifactSnapshot ||
+      (result as any).site_artifacts,
+  );
+}
+
 function getRememberedLatestBaselineTask(chatId: string, statuses?: ChatTaskStatus[]): ChatTaskRecord | undefined {
   cleanupTasks();
   const allowedStatuses = statuses?.length ? new Set(statuses) : undefined;
@@ -935,13 +1061,114 @@ function getRememberedLatestBaselineTask(chatId: string, statuses?: ChatTaskStat
   return records[0];
 }
 
+export async function getLatestPreviewableChatTaskForChat(
+  chatId: string,
+  options?: { statuses?: ChatTaskStatus[] },
+): Promise<ChatTaskRecord | undefined> {
+  const statuses = options?.statuses?.filter(Boolean);
+  if (!isSupabaseTaskStoreEnabled()) {
+    cleanupTasks();
+    const allowedStatuses = statuses?.length ? new Set(statuses) : undefined;
+    const records = [...getStore().tasks.values()].filter(
+      (item) => item.chatId === chatId && (!allowedStatuses || allowedStatuses.has(item.status)) && taskHasLocalPreviewBaseline(item),
+    );
+    records.sort((a, b) => b.createdAt - a.createdAt);
+    return records[0];
+  }
+
+  try {
+    const supabase = mustGetSupabaseClient();
+    let query = supabase.from(TASK_TABLE).select("*").eq("chat_id", chatId);
+    if (statuses?.length) {
+      query = query.in("status", statuses);
+    }
+    const { data, error } = await query.order("created_at", { ascending: false }).limit(20);
+    if (error) throw error;
+    const rows = Array.isArray(data) ? data : [];
+    const tasks = rows.map((row) => rememberSupabaseTask(fromRow(row as SupabaseTaskRow))!);
+    return tasks.find((task) => taskHasLocalPreviewBaseline(task));
+  } catch (error) {
+    cleanupTasks();
+    const allowedStatuses = statuses?.length ? new Set(statuses) : undefined;
+    const remembered = [...getStore().tasks.values()]
+      .filter((item) => item.chatId === chatId && (!allowedStatuses || allowedStatuses.has(item.status)) && taskHasLocalPreviewBaseline(item))
+      .sort((a, b) => b.createdAt - a.createdAt)[0];
+    if (remembered && isTransientTaskStoreError(error)) {
+      warnTaskStoreFallback(`getLatestPreviewableChatTaskForChat(${chatId})`, error);
+      return remembered;
+    }
+    throw withTaskStoreErrorContext(error);
+  }
+}
+
 function isTransientTaskStoreError(error: unknown): boolean {
   return isTransientSupabaseTaskFetchError(error);
+}
+
+function isRetryableSupabaseTaskWriteError(error: unknown): boolean {
+  if (isTransientSupabaseTaskFetchError(error)) return true;
+  const normalized = formatUnknownError(error).toLowerCase();
+  return [
+    "status 408",
+    "status 429",
+    "status 500",
+    "status 502",
+    "status 503",
+    "status 504",
+    "too many requests",
+    "rate limit",
+    "service unavailable",
+    "temporarily unavailable",
+    "gateway timeout",
+    "upstream",
+    "overloaded",
+  ].some((token) => normalized.includes(token));
+}
+
+function isDuplicateTaskInsertError(error: unknown): boolean {
+  const anyError = (error || {}) as { code?: string; message?: string; details?: string };
+  const code = String(anyError.code || "").trim();
+  const normalized = formatUnknownError(error).toLowerCase();
+  return (
+    code === "23505" ||
+    (normalized.includes("duplicate") && normalized.includes(TASK_TABLE)) ||
+    normalized.includes("duplicate key value violates unique constraint")
+  );
 }
 
 function warnTaskStoreFallback(scope: string, error: unknown): void {
   const message = formatUnknownError(error);
   console.warn(`[chat-task-store] ${scope} using local shadow cache after Supabase failure: ${message}`);
+}
+
+async function getSupabaseTaskById(supabase: any, taskId: string): Promise<ChatTaskRecord | undefined> {
+  const { data, error } = await supabase.from(TASK_TABLE).select("*").eq("id", taskId).maybeSingle();
+  if (error) throw error;
+  return data ? rememberSupabaseTask(fromRow(data as SupabaseTaskRow)) : undefined;
+}
+
+async function insertSupabaseTaskWithRetry(supabase: any, row: Record<string, unknown>): Promise<ChatTaskRecord> {
+  const taskId = String(row.id || "").trim();
+  const maxAttempts = Math.max(1, resolveSupabaseTaskFetchRetries() + 1);
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const { data, error } = await supabase.from(TASK_TABLE).insert(row).select("*").single();
+    if (data) return rememberSupabaseTask(fromRow(data as SupabaseTaskRow))!;
+
+    if (isDuplicateTaskInsertError(error) && taskId) {
+      const existing = await getSupabaseTaskById(supabase, taskId);
+      if (existing) return existing;
+    }
+
+    if (attempt < maxAttempts && isRetryableSupabaseTaskWriteError(error)) {
+      await sleepMs(Math.min(5_000, resolveSupabaseTaskRetryBaseMs() * attempt));
+      continue;
+    }
+
+    throw error || new Error("Failed to create chat task.");
+  }
+
+  throw new Error("Failed to create chat task.");
 }
 
 export async function createChatTask(
@@ -958,23 +1185,16 @@ export async function createChatTask(
     const taskId = crypto.randomUUID();
     const ts = now();
     const expiresAt = asIso(ts + TASK_TTL_MS);
-    const { data, error } = await supabase
-      .from(TASK_TABLE)
-      .insert({
-        id: taskId,
-        chat_id: chatId,
-        owner_user_id: ownerUserId || null,
-        status: "queued",
-        result: normalizeTaskResultCanonicalFields(initialResult) || null,
-        created_at: asIso(ts),
-        updated_at: asIso(ts),
-        expires_at: expiresAt,
-      })
-      .select("*")
-      .single();
-
-    if (error || !data) throw error || new Error("Failed to create chat task.");
-    const task = rememberSupabaseTask(fromRow(data as SupabaseTaskRow))!;
+    const task = await insertSupabaseTaskWithRetry(supabase, {
+      id: taskId,
+      chat_id: chatId,
+      owner_user_id: ownerUserId || null,
+      status: "queued",
+      result: normalizeTaskResultCanonicalFields(initialResult) || null,
+      created_at: asIso(ts),
+      updated_at: asIso(ts),
+      expires_at: expiresAt,
+    });
     await upsertChatSessionBestEffort({
       chatId: task.chatId,
       ownerUserId: ownerUserId || undefined,
@@ -999,15 +1219,19 @@ export function sanitizeTaskResultForClient(result?: ChatTaskResult | null): Cha
   return rest;
 }
 
-export async function claimNextQueuedChatTask(workerId: string): Promise<ChatTaskRecord | undefined> {
+export async function claimNextQueuedChatTask(
+  workerId: string,
+  options: ChatTaskClaimOptions = {},
+): Promise<ChatTaskRecord | undefined> {
   const claimedAt = asIso(now());
+  const claimModes = normalizeClaimModes(options.modes);
   if (!isSupabaseTaskStoreEnabled()) {
     cleanupTasks();
     const store = getStore();
     const queued = [...store.tasks.values()]
       .filter((task) => task.status === "queued")
       .sort((a, b) => a.createdAt - b.createdAt);
-    const candidate = queued[0];
+    const candidate = queued.find((task) => taskMatchesClaimModes(task, claimModes));
     if (!candidate) return undefined;
     const nextInternal = {
       ...(candidate.result?.internal || {}),
@@ -1025,40 +1249,60 @@ export async function claimNextQueuedChatTask(workerId: string): Promise<ChatTas
   }
 
   const supabase = mustGetSupabaseClient();
-  try {
-    const { data: claimedByRpc, error: rpcError } = await supabase.rpc("shpitto_claim_next_chat_task", {
-      p_worker_id: workerId,
-    });
-    if (!rpcError && claimedByRpc) {
-      const row = (Array.isArray(claimedByRpc) ? claimedByRpc[0] : claimedByRpc) as SupabaseTaskRow;
-      if (row?.id) {
-        const task = rememberSupabaseTask(fromRow(row))!;
-        await writeTaskEventBestEffort({
-          taskId: task.id,
-          chatId: task.chatId,
-          eventType: "task_claimed",
-          stage: "worker:claimed",
-          payload: { workerId, claimMode: "rpc_skip_locked" },
-        });
-        return task;
+  if (!claimModes) {
+    try {
+      const { data: claimedByRpc, error: rpcError } = await supabase.rpc("shpitto_claim_next_chat_task", {
+        p_worker_id: workerId,
+      });
+      if (!rpcError && claimedByRpc) {
+        const row = (Array.isArray(claimedByRpc) ? claimedByRpc[0] : claimedByRpc) as SupabaseTaskRow;
+        if (row?.id) {
+          const task = rememberSupabaseTask(fromRow(row))!;
+          await writeTaskEventBestEffort({
+            taskId: task.id,
+            chatId: task.chatId,
+            eventType: "task_claimed",
+            stage: "worker:claimed",
+            payload: { workerId, claimMode: "rpc_skip_locked" },
+          });
+          return task;
+        }
       }
+    } catch {
+      // fall back to optimistic select+update below when RPC is unavailable.
     }
-  } catch {
-    // fall back to optimistic select+update below when RPC is unavailable.
   }
 
   for (let attempt = 0; attempt < 15; attempt += 1) {
     const { data: queued, error: queuedError } = await supabase
       .from(TASK_TABLE)
-      .select("*")
+      .select(`
+        id,
+        execution_mode:result->internal->inputState->workflow_context->>executionMode,
+        deploy_requested:result->internal->inputState->workflow_context->>deployRequested
+      `)
       .eq("status", "queued")
       .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
+      .limit(claimModes ? 25 : 1);
     if (queuedError) throw withTaskStoreErrorContext(queuedError);
-    if (!queued) return undefined;
+    const rows = Array.isArray(queued)
+      ? (queued as SupabaseClaimCandidateRow[])
+      : queued
+        ? [queued as SupabaseClaimCandidateRow]
+        : [];
+    if (rows.length === 0) return undefined;
 
-    const row = queued as SupabaseTaskRow;
+    const candidate = rows.find((row) => taskMatchesClaimModes(fromClaimCandidateRow(row), claimModes));
+    if (!candidate) return undefined;
+    const { data: fullRow, error: fullRowError } = await supabase
+      .from(TASK_TABLE)
+      .select("*")
+      .eq("id", candidate.id)
+      .eq("status", "queued")
+      .maybeSingle();
+    if (fullRowError) throw withTaskStoreErrorContext(fullRowError);
+    if (!fullRow) continue;
+    const row = fullRow as SupabaseTaskRow;
     const nextResult: ChatTaskResult = {
       ...(row.result || {}),
       internal: {
@@ -1129,7 +1373,11 @@ export async function requeueStaleRunningTasks(maxIdleMs = 1000 * 60 * 10): Prom
   const supabase = mustGetSupabaseClient();
   const { data, error } = await supabase
     .from(TASK_TABLE)
-    .select("*")
+    .select(`
+      id,
+      assistant_text:result->>assistantText,
+      internal:result->internal
+    `)
     .eq("status", "running")
     .lt("updated_at", cutoffIso)
     .limit(200);
@@ -1137,15 +1385,15 @@ export async function requeueStaleRunningTasks(maxIdleMs = 1000 * 60 * 10): Prom
   if (!Array.isArray(data) || data.length === 0) return 0;
 
   let requeued = 0;
-  for (const row of data as SupabaseTaskRow[]) {
-    const existing = row.result || {};
+  for (const row of data as SupabaseStaleRunningTaskRow[]) {
+    const assistantText = String(row.assistant_text || "").trim();
+    const existingInternal = isRecord(row.internal) ? row.internal : undefined;
     const nextResult: ChatTaskResult = {
-      ...existing,
       assistantText:
-        existing.assistantText ||
+        assistantText ||
         "Task was requeued after stale running timeout. Waiting for worker claim.",
       internal: {
-        ...(existing.internal || {}),
+        ...(existingInternal || {}),
         requeuedAt: asIso(now()),
         requeueReason: "stale-running-timeout",
       },
@@ -1207,14 +1455,23 @@ async function listTasksForConsistency(limit: number, maxTaskAgeMs: number): Pro
   const supabase = mustGetSupabaseClient();
   const { data, error } = await supabase
     .from(TASK_TABLE)
-    .select("*")
+    .select(`
+      id,
+      chat_id,
+      owner_user_id,
+      status,
+      assistant_text:result->>assistantText,
+      progress_stage:result->progress->>stage,
+      created_at,
+      updated_at
+    `)
     .in("status", ["queued", "running", "succeeded", "failed"])
     .gte("created_at", asIso(cutoffTs))
     .order("updated_at", { ascending: false })
     .limit(safeLimit);
   if (error) throw withTaskStoreErrorContext(error);
   if (!Array.isArray(data)) return [];
-  return (data as SupabaseTaskRow[]).map(fromRow);
+  return (data as SupabaseConsistencyTaskRow[]).map(fromConsistencyRow);
 }
 
 export async function runChatTaskConsistencySweep(options: {
@@ -1268,6 +1525,46 @@ export async function runChatTaskConsistencySweep(options: {
     scanned: tasks.length,
     sessionTouched,
     timelineRepaired,
+  };
+}
+
+function fromConsistencyRow(row: SupabaseConsistencyTaskRow): ChatTaskRecord {
+  const assistantText = String(row.assistant_text || "").trim();
+  const progressStage = String(row.progress_stage || "").trim();
+  const result: ChatTaskResult | undefined =
+    assistantText || progressStage
+      ? {
+          ...(assistantText ? { assistantText } : {}),
+          ...(progressStage ? { progress: { stage: progressStage } as ChatTaskResult["progress"] } : {}),
+        }
+      : undefined;
+
+  return {
+    id: row.id,
+    chatId: row.chat_id,
+    ownerUserId: row.owner_user_id || undefined,
+    status: row.status,
+    result,
+    createdAt: Date.parse(row.created_at),
+    updatedAt: Date.parse(row.updated_at),
+  };
+}
+
+function fromClaimCandidateRow(row: SupabaseClaimCandidateRow): Pick<ChatTaskRecord, "result"> & { id: string } {
+  const executionMode = String(row.execution_mode || "").trim();
+  const deployRequestedText = String(row.deploy_requested || "").trim().toLowerCase();
+  return {
+    id: row.id,
+    result: {
+      internal: {
+        inputState: {
+          workflow_context: {
+            ...(executionMode ? { executionMode } : {}),
+            deployRequested: deployRequestedText === "true",
+          },
+        },
+      },
+    },
   };
 }
 
@@ -1621,13 +1918,14 @@ export async function getActiveChatTask(chatId: string): Promise<ChatTaskRecord 
       .from(TASK_TABLE)
       .select("*")
       .eq("chat_id", chatId)
-      .in("status", ["queued", "running"])
       .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(5);
     if (error) throw error;
-    if (!data) return undefined;
-    return rememberSupabaseTask(fromRow(data as SupabaseTaskRow));
+    const rows = Array.isArray(data) ? (data as SupabaseTaskRow[]) : data ? [data as SupabaseTaskRow] : [];
+    const task = rows
+      .map((row) => rememberSupabaseTask(fromRow(row))!)
+      .find((item) => item.status === "queued" || item.status === "running");
+    return task;
   } catch (error) {
     const remembered = getRememberedActiveTask(chatId);
     if (remembered && isTransientTaskStoreError(error)) {

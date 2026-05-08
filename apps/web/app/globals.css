@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "@milkdown/crepe/theme/common/style.css";
+@import "@milkdown/crepe/theme/frame.css";
 
 @theme {
   --font-sans: var(--font-shpitto-sans);
@@ -108,6 +110,55 @@ a {
   .chat-ui .shp-btn-primary:hover {
     transform: scale(1.02);
     box-shadow: 0 10px 22px color-mix(in oklab, var(--shp-primary) 26%, transparent);
+  }
+
+  .blog-milkdown-editor {
+    --crepe-color-background: transparent;
+    --crepe-color-on-background: var(--shp-text);
+    --crepe-color-surface: color-mix(in oklab, var(--shp-surface) 94%, var(--shp-bg) 6%);
+    --crepe-color-surface-low: color-mix(in oklab, var(--shp-surface-alt) 70%, var(--shp-surface) 30%);
+    --crepe-color-on-surface: var(--shp-text);
+    --crepe-color-outline: color-mix(in oklab, var(--shp-border) 82%, transparent);
+    --crepe-color-primary: var(--shp-primary);
+    --crepe-color-secondary: var(--shp-secondary);
+    --crepe-font-default: var(--font-shpitto-sans);
+    --crepe-font-code: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    min-height: 460px;
+  }
+
+  .blog-milkdown-editor .milkdown {
+    min-height: 460px;
+    background: transparent;
+    color: var(--shp-text);
+  }
+
+  .blog-milkdown-editor .ProseMirror {
+    min-height: 430px;
+    padding: 28px;
+    outline: none;
+    color: var(--shp-text);
+    font-size: 15px;
+    line-height: 1.75;
+  }
+
+  .blog-milkdown-editor .ProseMirror p.is-editor-empty:first-child::before {
+    color: var(--shp-muted);
+  }
+
+  .blog-milkdown-editor .ProseMirror h1,
+  .blog-milkdown-editor .ProseMirror h2,
+  .blog-milkdown-editor .ProseMirror h3 {
+    color: var(--shp-text);
+  }
+
+  .blog-milkdown-editor .ProseMirror a {
+    color: var(--shp-primary);
+  }
+
+  .blog-milkdown-editor .ProseMirror pre,
+  .blog-milkdown-editor .ProseMirror code {
+    background: color-mix(in oklab, var(--shp-bg) 70%, var(--shp-surface-alt) 30%);
+    color: var(--shp-hot);
   }
 }
 

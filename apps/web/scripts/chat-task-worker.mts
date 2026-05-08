@@ -11,6 +11,7 @@ import {
   failChatTask,
   requeueStaleRunningTasks,
   runChatTaskConsistencySweep,
+  summarizeSupabaseHtmlError,
   updateChatTaskProgress,
 } from "../lib/agent/chat-task-store.ts";
 
@@ -57,6 +58,10 @@ const CONSISTENCY_SWEEP_MAX_TASK_AGE_MS = Math.max(
   Number(process.env.CHAT_WORKER_CONSISTENCY_SWEEP_MAX_TASK_AGE_MS || 1000 * 60 * 60 * 6),
 );
 const ONCE = String(process.env.CHAT_WORKER_ONCE || "0").trim() === "1" || process.argv.includes("--once");
+const CLAIM_MODES = String(process.env.CHAT_WORKER_CLAIM_MODES || "")
+  .split(",")
+  .map((mode) => mode.trim().toLowerCase())
+  .filter(Boolean);
 let lastConsistencySweepAt = 0;
 
 function toAgentState(value: unknown): AgentState | undefined {
@@ -70,7 +75,7 @@ function toAgentState(value: unknown): AgentState | undefined {
 function summarizeError(error: unknown): string {
   const text = String(error instanceof Error ? error.message : error || "").trim();
   if (!text) return "unknown error";
-  const compact = text.replace(/\s+/g, " ");
+  const compact = (summarizeSupabaseHtmlError(text) || text).replace(/\s+/g, " ");
   return compact.length > 240 ? `${compact.slice(0, 240)}...` : compact;
 }
 
@@ -96,6 +101,15 @@ function isRetryableNetworkError(error: unknown): boolean {
     "status 429",
     "status 503",
     "status 504",
+    "status 521",
+    "status 522",
+    "status 523",
+    "status 524",
+    "error code 521",
+    "error code 522",
+    "error code 523",
+    "error code 524",
+    "web server is down",
   ].some((token) => text.includes(token));
 }
 
@@ -148,11 +162,13 @@ async function maybeRunConsistencySweep(force = false): Promise<void> {
   } catch (error) {
     console.error("[ChatTaskWorker] consistency sweep failed:", error);
   }
-}
+  }
 
 async function processOneTask(): Promise<boolean> {
   await withRetry("requeue stale tasks", () => requeueStaleRunningTasks(STALE_RUNNING_MS));
-  const task = await withRetry("claim next queued task", () => claimNextQueuedChatTask(WORKER_ID));
+  const task = await withRetry("claim next queued task", () =>
+    claimNextQueuedChatTask(WORKER_ID, CLAIM_MODES.length > 0 ? { modes: CLAIM_MODES } : undefined),
+  );
   if (!task) return false;
 
   const inputState = toAgentState(task.result?.internal?.inputState);
@@ -213,7 +229,7 @@ export async function runChatTaskWorkerOnce(): Promise<boolean> {
 
 export async function runChatTaskWorkerLoop() {
   console.log(
-    `[ChatTaskWorker] starting ${WORKER_ID}, poll=${POLL_MS}ms, once=${ONCE ? "yes" : "no"}, consistencySweep=${CONSISTENCY_SWEEP_ENABLED ? "on" : "off"}`,
+    `[ChatTaskWorker] starting ${WORKER_ID}, poll=${POLL_MS}ms, once=${ONCE ? "yes" : "no"}, modes=${CLAIM_MODES.length ? CLAIM_MODES.join(",") : "all"}, consistencySweep=${CONSISTENCY_SWEEP_ENABLED ? "on" : "off"}`,
   );
   while (true) {
     let hadTask = false;
