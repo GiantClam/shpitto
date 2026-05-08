@@ -353,3 +353,36 @@ pnpm test -- anti-slop-linter.test.ts project-skill-loader.test.ts
 1. 将本方案对应的实现整理为一次 Lore commit，并保留回滚边界说明。
 2. 如果后续继续扩展 Open Design seed skill，优先保持 frontmatter discovery 和 resource index 自动发现路径，不再为具体 skill 添加 TS 分支。
 3. 后续如需继续降 token，可把 `references/layouts.md` 做第二层摘要索引，但应保持按需注入而不是默认全量展开。
+## Phase 7: Refine Semantics Upgrade
+
+Goal:
+- Treat website refine as non-full-site incremental evolution.
+- Keep patch edits, structural completion, page addition/removal, and single-route regeneration inside the refine lane unless the user explicitly asks to regenerate the entire site.
+
+Policy:
+1. `generate` is first creation only.
+2. `refine` is the default for any non-full-site follow-up on an existing preview/deployed baseline.
+3. `refine` is split internally into:
+   - `patch`: modify existing page content/style/layout.
+   - `structural`: add/remove pages, repair missing deliverables, adjust navigation/route relationships.
+   - `route_regenerate`: rewrite one page or one route family from the current baseline.
+4. `full_regenerate` is reserved for explicit whole-site rebuild intent only.
+5. `deploy` remains a separate action and must never be merged into refine or generate.
+
+Implementation scope:
+- Skill contract:
+  - Add a mandatory refinement semantics contract to `website-generation-workflow/SKILL.md`.
+  - Add machine-readable `refinementPolicy` to `skill.json`.
+- Intent routing:
+  - Detect structural refine phrases such as `补 blog 内容页`, `补齐 detail pages`, `新增页面`, `删除页面`.
+  - Detect route-regenerate phrases such as `重写 /about`, `重做 blog 页`, `regenerate page`.
+  - Keep these requests in `refine_preview` / `refine_deployed` instead of upgrading them to whole-site generation.
+- Runtime:
+  - Preserve `executionMode=refine` and add `refineScope` metadata so downstream executors know whether the task is patch, structural, or route-level regeneration.
+- For structural refine of missing route deliverables or newly requested pages, complete the missing route HTML outputs from the current site baseline instead of failing with a generic refine mismatch error.
+
+Acceptance:
+- `三篇blog缺少内容页面，请补充` on a preview baseline routes to `refine_preview` with `refineScope=structural`.
+- The refine worker can complete missing blog detail pages from an existing `/blog/index.html` baseline and can materialize newly requested route pages such as `/pricing/index.html` without escalating to full-site regeneration.
+- Explicit whole-site requests such as `重新生成整个网站` still route to full generation.
+- Deploy remains independent from generate/refine.

@@ -84,6 +84,11 @@ import {
 import { runSkillToolExecutor } from "./skill-tool-executor.ts";
 import { renderWebsiteQualityContract } from "./website-quality-contract.ts";
 import type { QaSummary } from "./qa-summary.ts";
+import {
+  findDuplicatedBilingualDomCopy,
+  findVisibleSimultaneousBilingualCopy,
+  isBilingualRequirementText,
+} from "./bilingual-copy-guard.ts";
 import { validateComponent, type DesignSpec, type ValidationResult } from "../../skills/design-website-generator/tools/component-validator.ts";
 import {
   buildContextForPageN,
@@ -748,6 +753,113 @@ function syncPagesFromStaticFiles(project: any): any {
   return next;
 }
 
+function hasRouteRemovalIntent(instruction: string): boolean {
+  return /(\u5220\u9664|\u79fb\u9664|\u53bb\u6389|\u4e0d\u8981|\u4e0d\u5e94\u8be5\u6709|remove|delete|should\s+not\s+have|do\s+not\s+want|no\s+longer\s+need)/i.test(
+    String(instruction || ""),
+  );
+}
+
+function collectRouteRemovalTargets(project: any, instruction: string): string[] {
+  if (!hasRouteRemovalIntent(instruction)) return [];
+
+  const routes = new Set<string>();
+  const normalizedInstruction = String(instruction || "");
+  if (/(?:\/custom-solutions\b|custom[-\s]?solutions?\b|\u65b9\u6848(?:\u9875|\u9875\u9762)?)/i.test(normalizedInstruction)) {
+    routes.add("/custom-solutions");
+  }
+
+  for (const page of Array.isArray(project?.pages) ? project.pages : []) {
+    const route = normalizePath(String(page?.path || ""));
+    if (!route || route === "/") continue;
+    const slug = route.split("/").filter(Boolean).pop() || "";
+    if (slug && new RegExp(`(?:^|[^a-z])${slug.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:[^a-z]|$)`, "i").test(normalizedInstruction)) {
+      routes.add(route);
+    }
+  }
+
+  return Array.from(routes);
+}
+
+function stripRouteLinksFromHtml(html: string, route: string): string {
+  const normalizedRoute = normalizePath(route);
+  if (!normalizedRoute || normalizedRoute === "/") return String(html || "");
+  const escapedRoute = normalizedRoute.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const escapedTrimmed = normalizedRoute.slice(1).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const hrefPattern = `(?:${escapedRoute}(?:/index\\.html)?/?|\\./${escapedTrimmed}(?:/index\\.html)?/?|${escapedTrimmed}(?:/index\\.html)?/?)`;
+  return String(html || "")
+    .replace(new RegExp(`<a\\b[^>]*href=["']${hrefPattern}["'][^>]*>[\\s\\S]*?<\\/a>`, "gi"), "")
+    .replace(/\s{2,}/g, " ");
+}
+
+function removeRoutesFromProject(project: any, routes: string[]): { project: any; changedFiles: string[] } {
+  const routeSet = new Set(routes.map((route) => normalizePath(route)).filter(Boolean));
+  if (routeSet.size === 0) return { project, changedFiles: [] };
+
+  const next = ensureSkillDirectStaticProject(project);
+  const files = dedupeFiles((next?.staticSite?.files || []) as any[]);
+  const changed = new Set<string>();
+  const keptFiles: any[] = [];
+
+  for (const file of files) {
+    const filePath = normalizePath(String(file?.path || ""));
+    const route = filePath === "/index.html" ? "/" : normalizePath(filePath.replace(/\/index\.html$/i, ""));
+    if (routeSet.has(route)) {
+      changed.add(filePath);
+      continue;
+    }
+    if (filePath.toLowerCase().endsWith(".html")) {
+      let content = String(file.content || "");
+      for (const targetRoute of routeSet) {
+        const updated = stripRouteLinksFromHtml(content, targetRoute);
+        if (updated !== content) {
+          content = updated;
+        }
+      }
+      if (content !== String(file.content || "")) {
+        keptFiles.push({ ...file, content });
+        changed.add(filePath);
+        continue;
+      }
+    }
+    keptFiles.push(file);
+  }
+
+  next.staticSite = {
+    ...(next.staticSite || {}),
+    mode: "skill-direct",
+    files: keptFiles,
+  };
+  next.pages = (Array.isArray(next.pages) ? next.pages : []).filter(
+    (page: any) => !routeSet.has(normalizePath(String(page?.path || ""))),
+  );
+  return {
+    project: syncPagesFromStaticFiles(next),
+    changedFiles: Array.from(changed).sort((a, b) => a.localeCompare(b)),
+  };
+}
+
+function assertBilingualStaticSiteContract(project: any, requirementText: string): void {
+  if (!isBilingualRequirementText(requirementText)) return;
+  const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
+  for (const file of files) {
+    const filePath = normalizePath(String(file?.path || ""));
+    if (!filePath.toLowerCase().endsWith(".html")) continue;
+    const html = String(file?.content || "");
+    const duplicatedDom = findDuplicatedBilingualDomCopy(html);
+    if (duplicatedDom.length > 0) {
+      throw new Error(
+        `bilingual_language_switch_contract_failed: ${filePath} duplicates bilingual body copy in lang-zh/lang-en DOM pairs instead of swapping one active language at a time: ${duplicatedDom.join(" | ")}`,
+      );
+    }
+    const visibleLeaks = findVisibleSimultaneousBilingualCopy(html);
+    if (visibleLeaks.length > 0) {
+      throw new Error(
+        `bilingual_language_switch_contract_failed: ${filePath} renders simultaneous bilingual visible copy instead of one active language at a time: ${visibleLeaks.join(" | ")}`,
+      );
+    }
+  }
+}
+
 function injectCloudflareAnalyticsBeacon(project: any, siteTag: string): any {
   const normalizedTag = String(siteTag || "").trim();
   if (!normalizedTag) return project;
@@ -901,7 +1013,7 @@ function applyRefineInstructionToProject(project: any, instruction: string): { p
   };
 }
 
-function applyDeterministicRefineFixups(
+export function applyDeterministicRefineFixups(
   project: any,
   instruction: string,
 ): { project: any; changedFiles: string[] } {
@@ -910,10 +1022,11 @@ function applyDeterministicRefineFixups(
     return { project, changedFiles: [] };
   }
 
-  const hasDeleteIntent = /(\u5220\u9664|\u79fb\u9664|\u53bb\u6389|remove|delete)/i.test(normalizedInstruction);
+  const hasDeleteIntent = hasRouteRemovalIntent(normalizedInstruction);
   const removeMenuButton =
     hasDeleteIntent &&
     /(menu|\u83dc\u5355|\u5bfc\u822a\u680f)/i.test(normalizedInstruction);
+  const routesToRemove = collectRouteRemovalTargets(project, normalizedInstruction);
   const hasSpacingIntent = /(\u8fb9\u8ddd|\u5185\u8fb9\u8ddd|\u7559\u767d|\u95f4\u8ddd|padding|spacing|space)/i.test(
     normalizedInstruction,
   );
@@ -940,7 +1053,7 @@ function applyDeterministicRefineFixups(
     }
   }
 
-  if (!removeMenuButton && literalTargets.size === 0 && !adjustTimelineCardSpacing) {
+  if (!removeMenuButton && literalTargets.size === 0 && !adjustTimelineCardSpacing && routesToRemove.length === 0) {
     return { project, changedFiles: [] };
   }
 
@@ -1069,7 +1182,7 @@ function applyDeterministicRefineFixups(
     return file;
   });
 
-  if (changed.size === 0) {
+  if (changed.size === 0 && routesToRemove.length === 0) {
     return { project, changedFiles: [] };
   }
 
@@ -1088,8 +1201,17 @@ function applyDeterministicRefineFixups(
     },
   };
   const withSyncedPages = syncPagesFromStaticFiles(withStatic);
+  let finalProject = withSyncedPages;
+  if (routesToRemove.length > 0) {
+    const routeRemoval = removeRoutesFromProject(finalProject, routesToRemove);
+    if (routeRemoval.changedFiles.length > 0) {
+      finalProject = routeRemoval.project;
+      for (const filePath of routeRemoval.changedFiles) changed.add(filePath);
+    }
+  }
+
   return {
-    project: withSyncedPages,
+    project: finalProject,
     changedFiles: Array.from(changed).sort((a, b) => a.localeCompare(b)),
   };
 }
@@ -1099,6 +1221,22 @@ type RefineSkillEdit = {
   content: string;
   reason?: string;
 };
+
+const STRUCTURAL_ROUTE_ALIAS_MAP: Array<{ route: string; keys: string[] }> = [
+  { route: "/", keys: ["home", "homepage", "index", "首页"] },
+  { route: "/products", keys: ["product", "products", "产品", "产品页"] },
+  { route: "/custom-solutions", keys: ["solution", "solutions", "custom solution", "custom solutions", "方案", "解决方案"] },
+  { route: "/cases", keys: ["case", "cases", "案例", "案例页"] },
+  { route: "/about", keys: ["about", "company", "关于", "关于我们"] },
+  { route: "/contact", keys: ["contact", "contacts", "联系", "联系我们"] },
+  { route: "/blog", keys: ["blog", "blogs", "article", "articles", "博客", "文章", "内容页"] },
+  { route: "/news", keys: ["news", "updates", "update", "资讯", "新闻", "动态"] },
+  { route: "/downloads", keys: ["download", "downloads", "resource", "resources", "资料下载", "下载"] },
+  { route: "/pricing", keys: ["pricing", "price", "prices", "报价", "价格", "定价"] },
+  { route: "/faq", keys: ["faq", "faqs", "questions", "常见问题", "问答"] },
+  { route: "/services", keys: ["service", "services", "服务"] },
+  { route: "/team", keys: ["team", "teams", "团队"] },
+];
 
 function parseJsonFromLlmText(raw: string): any | undefined {
   const text = String(raw || "").trim();
@@ -1169,7 +1307,10 @@ async function applyRefineInstructionWithSkill(params: {
       content: file.content.slice(0, 24_000),
     }));
 
-  const allowedPaths = new Set(fileContext.map((file) => file.path));
+  const approvedNewRoutePaths = extractStructuralRefineRouteAdditions(next, normalizedInstruction).map((route) =>
+    routeToHtmlPath(route),
+  );
+  const allowedPaths = new Set([...fileContext.map((file) => file.path), ...approvedNewRoutePaths]);
   const model = createModelForProvider(
     params.providerConfig,
     Math.max(25_000, Number(params.timeoutMs || 90_000)),
@@ -1185,7 +1326,7 @@ async function applyRefineInstructionWithSkill(params: {
   ].join(" ");
 
   const userPrompt = [
-    "Task: apply the user refine request to existing files.",
+    "Task: apply the user refine request to the current static site files.",
     "",
     "User refine request:",
     normalizedInstruction,
@@ -1195,6 +1336,9 @@ async function applyRefineInstructionWithSkill(params: {
     "",
     "Current files (path + full content):",
     JSON.stringify(fileContext, null, 2),
+    "",
+    "Approved new file paths for this refine request:",
+    JSON.stringify(approvedNewRoutePaths, null, 2),
     "",
     "Output JSON schema:",
     "{",
@@ -1208,6 +1352,8 @@ async function applyRefineInstructionWithSkill(params: {
     "- Output full file content for each edited file (not patch).",
     "- Only edit files that are truly needed.",
     "- Keep HTML/CSS/JS valid and production-safe.",
+    "- You may create a new file only when its path is listed in 'Approved new file paths for this refine request'.",
+    "- When creating a new route page, output a complete production-ready HTML document for that path, not a stub.",
     "- For deletion requests, remove the exact target text/element instead of adding comments.",
     "- If request says remove menu button, remove the corresponding button/trigger from nav markup and related JS hooks when needed.",
   ].join("\n");
@@ -1235,10 +1381,19 @@ async function applyRefineInstructionWithSkill(params: {
   const changed = new Set<string>();
   for (const edit of edits) {
     const existing = fileMap.get(edit.path);
-    if (!existing) continue;
-    const before = String(existing.content || "");
     const after = String(edit.content || "");
-    if (!after.trim() || before === after) continue;
+    if (!after.trim()) continue;
+    if (!existing) {
+      fileMap.set(edit.path, {
+        path: edit.path,
+        content: after,
+        type: guessMimeByPath(edit.path),
+      });
+      changed.add(edit.path);
+      continue;
+    }
+    const before = String(existing.content || "");
+    if (before === after) continue;
     fileMap.set(edit.path, {
       ...existing,
       content: after,
@@ -3774,7 +3929,7 @@ ${qaFeedback ? `\nQA fix instructions (attempt ${attempt}):\n${qaFeedback}` : ""
     ]);
     const workflowFiles = dedupeFiles(this.workflowFiles);
 
-    return {
+    const projectArtifact = {
       projectId: toProjectIdSlug(brandName),
       branding: {
         name: brandName,
@@ -3804,6 +3959,11 @@ ${qaFeedback ? `\nQA fix instructions (attempt ${attempt}):\n${qaFeedback}` : ""
         files: workflowFiles,
       },
     };
+    return materializeGeneratedBlogDetailPages({
+      project: projectArtifact,
+      inputState: baseState,
+      locale: this.context.locale,
+    });
   }
 
   async run(baseState: AgentState): Promise<AgentState> {
@@ -4103,6 +4263,7 @@ async function queuePendingRefineTask(params: {
       conversationStage: "previewing",
       intent: "refine_preview",
       intentReason: "pending-edits-after-active-task",
+      refineScope: "patch",
       refineRequested: true,
       deployRequested: false,
       sourceRequirement: pendingText,
@@ -4199,6 +4360,120 @@ function extractOrderedBlogDetailRoutesFromProject(project: any): string[] {
     discovered.add(`/blog/${match[1]}`);
   }
   return Array.from(discovered);
+}
+
+function slugFromBlogDetailRoute(route: string): string {
+  return String(normalizePath(route).split("/").filter(Boolean).pop() || "").trim();
+}
+
+function projectHasStaticBlogDetailFile(project: any, route: string): boolean {
+  const targetPath = `${normalizePath(route)}/index.html`;
+  const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
+  return files.some((file: any) => normalizePath(String(file?.path || "")) === targetPath);
+}
+
+function renderGeneratedBlogDetailPage(params: {
+  post: BlogPostUpsertInput;
+  locale: "zh-CN" | "en";
+  brandName: string;
+  navLabel: string;
+  relatedPosts: BlogPostUpsertInput[];
+}): string {
+  const { post, locale, brandName, navLabel, relatedPosts } = params;
+  const lang = locale === "zh-CN" ? "zh-CN" : "en";
+  const readMoreLabel = locale === "zh-CN" ? "继续阅读" : "Continue reading";
+  const backToBlogLabel = locale === "zh-CN" ? "返回博客" : "Back to blog";
+  const backHomeLabel = locale === "zh-CN" ? "查看首页" : "See home";
+  const metaBits = [post.category, ...(Array.isArray(post.tags) ? post.tags.slice(0, 2) : [])].filter(Boolean);
+  const metaText = metaBits.join(" · ");
+  const articleHtml = renderMarkdownToHtml(String(post.contentMd || "").trim());
+  const relatedHtml = relatedPosts
+    .slice(0, 2)
+    .map((item) => {
+      const slug = String(item.slug || "").trim();
+      const title = escapeHtml(String(item.title || "").trim());
+      const excerpt = escapeHtml(String(item.excerpt || "").trim());
+      if (!slug || !title) return "";
+      return [
+        '<article class="feature-card">',
+        `  <span class="feature-card__eyebrow">${escapeHtml(navLabel)}</span>`,
+        `  <h3><a href="/blog/${escapeHtml(slug)}/" class="article-card__link">${title}</a></h3>`,
+        `  <p>${excerpt}</p>`,
+        "</article>",
+      ].join("\n");
+    })
+    .filter(Boolean)
+    .join("\n");
+
+  return ensureHtmlDocument(`<!doctype html>
+<html lang="${lang}" data-language="${lang}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <title>${escapeHtml(String(post.seoTitle || post.title || `${brandName} ${navLabel}`).trim())}</title>
+  <meta name="description" content="${escapeHtml(String(post.seoDescription || post.excerpt || "").trim())}" />
+  <link rel="stylesheet" href="../../styles.css" />
+  <script src="../../script.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">${locale === "zh-CN" ? "跳到主要内容" : "Skip to main content"}</a>
+  <header class="site-header" role="banner">
+    <div class="site-header__inner">
+      <a class="brand" href="/" aria-label="${escapeHtml(brandName)}">
+        <span class="brand__mark" aria-hidden="true">${escapeHtml(String(brandName || "S").trim().charAt(0) || "S")}</span>
+        <span class="brand__text">${escapeHtml(brandName)}</span>
+      </a>
+      <nav class="topnav" aria-label="${locale === "zh-CN" ? "主导航" : "Primary navigation"}">
+        <a href="/">${locale === "zh-CN" ? "首页" : "Home"}</a>
+        <a href="/blog" aria-current="page">${escapeHtml(navLabel)}</a>
+      </nav>
+    </div>
+  </header>
+  <main id="main">
+    <article class="site-shell">
+      <header class="page-hero" aria-labelledby="post-title">
+        <div class="page-hero__grid">
+          <div>
+            <p class="hero__lede">${escapeHtml(navLabel)}</p>
+            <h1 id="post-title">${escapeHtml(String(post.title || "").trim())}</h1>
+            ${post.excerpt ? `<p class="page-hero__intro">${escapeHtml(String(post.excerpt || "").trim())}</p>` : ""}
+            ${metaText ? `<div class="article-card__meta" style="margin-top:1.2rem;"><span>${escapeHtml(metaText)}</span></div>` : ""}
+          </div>
+        </div>
+      </header>
+      <div class="prose" aria-label="${locale === "zh-CN" ? "文章正文" : "Article body"}">
+        ${articleHtml}
+      </div>
+    </article>
+    <section class="section site-shell" aria-labelledby="related-title">
+      <div class="section__head">
+        <div>
+          <p class="hero__lede">${escapeHtml(readMoreLabel)}</p>
+          <h2 class="section__title" id="related-title">${locale === "zh-CN" ? "相关条目" : "Related entries"}</h2>
+        </div>
+      </div>
+      <div class="feature-grid">
+        ${relatedHtml}
+      </div>
+    </section>
+    <section class="section site-shell" aria-labelledby="back-title">
+      <div class="panel">
+        <div class="page-hero__grid" style="align-items:center">
+          <div>
+            <p class="hero__lede">${escapeHtml(backToBlogLabel)}</p>
+            <h2 class="section__title" id="back-title">${locale === "zh-CN" ? "回到博客继续浏览完整内容" : "Return to the blog and continue reading"}</h2>
+            <div class="page-hero__actions">
+              <a class="button--accent" href="/blog">${escapeHtml(backToBlogLabel)}</a>
+              <a class="button--ghost" href="/">${escapeHtml(backHomeLabel)}</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>`);
 }
 
 function buildMarkdownFromStaticArticleHtml(html: string, title: string, excerpt: string): string {
@@ -4778,6 +5053,287 @@ export function buildBlogContentWorkflowPreview(params: {
     reason: "ready",
     navLabel: resolveBlogNavLabelFromProject(params.project, params.locale),
     posts: buildGeneratedBlogSeedPostsForTesting({ sourceText, locale: params.locale }),
+  };
+}
+
+export function materializeGeneratedBlogDetailPagesForTesting(params: {
+  project: any;
+  inputState: AgentState;
+  locale: "zh-CN" | "en";
+}): any {
+  return materializeGeneratedBlogDetailPages(params);
+}
+
+function materializeGeneratedBlogDetailPages(params: {
+  project: any;
+  inputState: AgentState;
+  locale: "zh-CN" | "en";
+}): any {
+  const baseProject = ensureSkillDirectStaticProject(params.project);
+  if (!projectHasGeneratedBlogContentMount(baseProject)) return baseProject;
+
+  const preview = buildBlogContentWorkflowPreview({
+    project: baseProject,
+    inputState: params.inputState,
+    locale: params.locale,
+  });
+  if (!preview.required || !Array.isArray(preview.posts) || preview.posts.length === 0) return baseProject;
+
+  const desiredRoutes = extractOrderedBlogDetailRoutesFromProject(baseProject);
+  const postRoutes =
+    desiredRoutes.length > 0
+      ? desiredRoutes
+      : preview.posts.map((post) => `/blog/${sanitizePathToken(String(post.slug || "").trim())}`);
+  const brandName = String(baseProject?.branding?.name || inferBlogBrand(collectDeployBlogSourceText(params.inputState, baseProject), params.locale)).trim() || (params.locale === "zh-CN" ? "网站" : "Site");
+  const navLabel = resolveBlogNavLabelFromProject(baseProject, params.locale);
+  const posts = preview.posts.map((post, index) => {
+    const route = postRoutes[index] || `/blog/${sanitizePathToken(String(post.slug || "").trim() || `post-${index + 1}`)}`;
+    const slug = slugFromBlogDetailRoute(route) || sanitizePathToken(String(post.slug || "").trim() || `post-${index + 1}`);
+    return {
+      ...post,
+      slug,
+    };
+  });
+
+  const next = cloneJson(baseProject);
+  const files = dedupeFiles((next?.staticSite?.files || []) as any[]);
+  const pagesByRoute = new Map<string, { path: string; html: string }>(
+    (Array.isArray(next?.pages) ? next.pages : []).map((page: any) => [normalizePath(String(page?.path || "")), { path: normalizePath(String(page?.path || "")), html: String(page?.html || "") }] as const),
+  );
+
+  const generatedFiles: Array<{ path: string; content: string; type: string }> = [];
+  posts.forEach((post, index) => {
+    const route = postRoutes[index] || `/blog/${post.slug}`;
+    if (projectHasStaticBlogDetailFile({ staticSite: { files } }, route)) return;
+    const relatedPosts = posts.filter((item) => item.slug !== post.slug);
+    const html = renderGeneratedBlogDetailPage({
+      post,
+      locale: params.locale,
+      brandName,
+      navLabel,
+      relatedPosts,
+    });
+    generatedFiles.push({
+      path: `${normalizePath(route)}/index.html`,
+      content: html,
+      type: "text/html",
+    });
+    pagesByRoute.set(normalizePath(route), { path: normalizePath(route), html });
+  });
+
+  if (generatedFiles.length === 0) return next;
+  next.staticSite = {
+    ...(next.staticSite || {}),
+    mode: "skill-direct",
+    files: dedupeFiles([...files, ...generatedFiles]),
+  };
+  next.pages = Array.from(pagesByRoute.values()).sort((a, b) => {
+    if (a.path === "/") return -1;
+    if (b.path === "/") return 1;
+    return a.path.localeCompare(b.path);
+  });
+  return next;
+}
+
+function diffStaticProjectFiles(beforeProject: any, afterProject: any): string[] {
+  const beforeFiles = dedupeFiles((ensureSkillDirectStaticProject(beforeProject)?.staticSite?.files || []) as any[]);
+  const afterFiles = dedupeFiles((ensureSkillDirectStaticProject(afterProject)?.staticSite?.files || []) as any[]);
+  const beforeMap = new Map(
+    beforeFiles.map((file) => [normalizePath(String(file?.path || "")), String(file?.content || "")] as const),
+  );
+  const changed = new Set<string>();
+  for (const file of afterFiles) {
+    const normalizedPath = normalizePath(String(file?.path || ""));
+    const nextContent = String(file?.content || "");
+    const previousContent = beforeMap.get(normalizedPath);
+    if (previousContent === undefined || previousContent !== nextContent) {
+      changed.add(normalizedPath);
+    }
+    beforeMap.delete(normalizedPath);
+  }
+  for (const removedPath of beforeMap.keys()) changed.add(removedPath);
+  return Array.from(changed).sort((a, b) => a.localeCompare(b));
+}
+
+function isBlogDetailCompletionRefineInstruction(instruction: string): boolean {
+  const normalized = String(instruction || "").trim().toLowerCase();
+  if (!normalized) return false;
+  return /(?:blog|article|post|内容页|详情页|明细页|文章页|detail page|detail pages)/i.test(normalized) &&
+    /(?:缺少|缺失|补齐|补全|补充|complete|fill|missing|add|generate|create)/i.test(normalized);
+}
+
+function listProjectRoutes(project: any): string[] {
+  const routes = new Set<string>();
+  for (const page of Array.isArray(project?.pages) ? project.pages : []) {
+    const route = normalizePath(String(page?.path || "/"));
+    if (route) routes.add(route);
+  }
+  for (const file of Array.isArray(project?.staticSite?.files) ? project.staticSite.files : []) {
+    const filePath = normalizePath(String(file?.path || ""));
+    if (!filePath.toLowerCase().endsWith(".html")) continue;
+    const route = filePath === "/index.html" ? "/" : normalizePath(filePath.replace(/\/index\.html$/i, ""));
+    if (route) routes.add(route);
+  }
+  return Array.from(routes).sort((a, b) => {
+    if (a === "/") return -1;
+    if (b === "/") return 1;
+    return a.localeCompare(b);
+  });
+}
+
+function normalizeStructuralRouteCandidate(value: string): string | undefined {
+  const raw = String(value || "").trim().replace(/^["'“”‘’]|["'“”‘’]$/g, "");
+  if (!raw) return undefined;
+  if (raw.startsWith("/")) {
+    const normalized = normalizePath(raw.replace(/\/+$/g, ""));
+    return normalized || undefined;
+  }
+
+  const lowered = raw.toLowerCase().replace(/\s+/g, " ").trim();
+  for (const alias of STRUCTURAL_ROUTE_ALIAS_MAP) {
+    if (alias.keys.some((key) => lowered === key || lowered.includes(key))) {
+      return alias.route;
+    }
+  }
+
+  if (/^[a-z][a-z0-9\s/_-]{1,48}$/i.test(raw)) {
+    const slug = slugToken(raw, "");
+    if (slug) return normalizePath(`/${slug}`);
+  }
+
+  return undefined;
+}
+
+function extractStructuralRefineRouteAdditions(project: any, instruction: string): string[] {
+  const text = String(instruction || "").trim();
+  if (!text) return [];
+  if (!/(?:新增|添加|增加|补(?:一个|一页|上)?|补充|创建|create|add|new|include|missing)/i.test(text)) {
+    return [];
+  }
+
+  const existingRoutes = new Set(listProjectRoutes(project));
+  const discovered = new Set<string>();
+  const pushRoute = (candidate: string | undefined) => {
+    const route = normalizeStructuralRouteCandidate(candidate || "");
+    if (!route || existingRoutes.has(route)) return;
+    discovered.add(route);
+  };
+
+  for (const match of text.matchAll(/(?:^|[\s(（,:：])((?:\/[a-z0-9][a-z0-9/_-]*)+)(?=$|[\s)）,.，。；;])/gi)) {
+    pushRoute(match[1]);
+  }
+  for (const match of text.matchAll(/(?:新增|添加|增加|补(?:一个|一页|上)?|补充|创建)\s*(?:一个|一页|页|个)?\s*([A-Za-z][A-Za-z0-9\s/_-]{1,40}|[\u4e00-\u9fff]{2,16})\s*(?:页面|页)/gi)) {
+    pushRoute(match[1]);
+  }
+  for (const match of text.matchAll(/(?:add|create|include)\s+(?:a|an|one|another)?\s*([a-z][a-z0-9\s/_-]{1,40})\s+(?:page|route)/gi)) {
+    pushRoute(match[1]);
+  }
+  for (const match of text.matchAll(/["'“”]([^"'“”]{2,48})["'“”]\s*(?:页面|页|page|route)/gi)) {
+    pushRoute(match[1]);
+  }
+
+  return Array.from(discovered).sort((a, b) => a.localeCompare(b));
+}
+
+function materializeStructuralRefineAddedRoutes(params: {
+  project: any;
+  inputState: AgentState;
+  instruction: string;
+  locale: "zh-CN" | "en";
+}): { project: any; changedFiles: string[] } {
+  const addRoutes = extractStructuralRefineRouteAdditions(params.project, params.instruction);
+  if (addRoutes.length === 0) {
+    return { project: params.project, changedFiles: [] };
+  }
+
+  const next = ensureSkillDirectStaticProject(params.project);
+  const stateForDecision = cloneJson(params.inputState || {});
+  stateForDecision.sitemap = Array.from(new Set([...listProjectRoutes(next), ...addRoutes]));
+  const decision = buildLocalDecisionPlan(stateForDecision);
+  const requirementText = decision.requirementText || extractRequirementText(stateForDecision) || params.instruction;
+  const files = dedupeFiles((next?.staticSite?.files || []) as any[]);
+  const byPath = new Map(files.map((file) => [normalizePath(String(file.path || "")), { ...file }] as const));
+  const homeHtml = ensureHtmlDocument(String(byPath.get("/index.html")?.content || ""));
+  const homeNavBlock = String(homeHtml.match(/<nav\b[^>]*>[\s\S]*?<\/nav>/i)?.[0] || "");
+  const homeFooterBlock = String(homeHtml.match(/<footer\b[^>]*>[\s\S]*?<\/footer>/i)?.[0] || "");
+  const changed = new Set<string>();
+
+  for (const route of addRoutes) {
+    const targetPath = routeToHtmlPath(route);
+    if (byPath.has(targetPath)) continue;
+    let html = renderLocalPage({
+      route,
+      decision,
+      requirementText,
+    });
+    if (homeNavBlock) {
+      html = html.replace(/<nav\b[^>]*>[\s\S]*?<\/nav>/i, homeNavBlock);
+    }
+    if (homeFooterBlock) {
+      html = /<footer\b[^>]*>[\s\S]*?<\/footer>/i.test(html)
+        ? html.replace(/<footer\b[^>]*>[\s\S]*?<\/footer>/i, homeFooterBlock)
+        : html.replace(/<\/body>/i, `${homeFooterBlock}\n</body>`);
+    }
+    byPath.set(targetPath, {
+      path: targetPath,
+      type: "text/html",
+      content: html,
+    });
+    changed.add(targetPath);
+  }
+
+  if (changed.size === 0) {
+    return { project: params.project, changedFiles: [] };
+  }
+
+  next.staticSite = {
+    ...(next.staticSite || {}),
+    mode: "skill-direct",
+    files: Array.from(byPath.values()),
+  };
+  return {
+    project: syncPagesFromStaticFiles(next),
+    changedFiles: Array.from(changed).sort((a, b) => a.localeCompare(b)),
+  };
+}
+
+function applyStructuralRefineCompletions(params: {
+  project: any;
+  inputState: AgentState;
+  instruction: string;
+  locale: "zh-CN" | "en";
+}): { project: any; changedFiles: string[] } {
+  let currentProject = params.project;
+  const changed = new Set<string>();
+
+  const addedRoutes = materializeStructuralRefineAddedRoutes({
+    project: currentProject,
+    inputState: params.inputState,
+    instruction: params.instruction,
+    locale: params.locale,
+  });
+  if (addedRoutes.changedFiles.length > 0) {
+    currentProject = addedRoutes.project;
+    for (const filePath of addedRoutes.changedFiles) changed.add(filePath);
+  }
+
+  const normalizedInstruction = String(params.instruction || "").trim();
+  if (isBlogDetailCompletionRefineInstruction(normalizedInstruction)) {
+    const materialized = materializeGeneratedBlogDetailPages({
+      project: currentProject,
+      inputState: params.inputState,
+      locale: params.locale,
+    });
+    const changedFiles = diffStaticProjectFiles(currentProject, materialized).filter(
+      (filePath) => /^\/blog\/.+\/index\.html$/i.test(filePath),
+    );
+    currentProject = materialized;
+    for (const filePath of changedFiles) changed.add(filePath);
+  }
+
+  return {
+    project: currentProject,
+    changedFiles: Array.from(changed).sort((a, b) => a.localeCompare(b)),
   };
 }
 
@@ -5478,6 +6034,11 @@ async function runRefineTask(params: {
   }
 
   const requirementText = extractRequirementText(inputState);
+  const refineScope = String((inputState.workflow_context as any)?.refineScope || "patch").trim().toLowerCase();
+  const refineLocale = detectLocale(
+    requirementText,
+    (inputState.workflow_context as any)?.preferredLocale,
+  );
   const refineSkillEnabledRaw = String(
     process.env.CHAT_REFINE_ENABLE_SKILL ||
       (process.env.NODE_ENV === "test" ? "0" : "1"),
@@ -5542,6 +6103,28 @@ async function runRefineTask(params: {
       changedFiles: Array.from(mergedChanged).sort((a, b) => a.localeCompare(b)),
     };
   }
+  if (refineScope === "structural" || refineScope === "route_regenerate") {
+    const structuralCompletion = applyStructuralRefineCompletions({
+      project: refined.project,
+      inputState,
+      instruction: requirementText,
+      locale: refineLocale,
+    });
+    if (structuralCompletion.changedFiles.length > 0) {
+      const mergedChanged = new Set<string>([
+        ...refined.changedFiles,
+        ...structuralCompletion.changedFiles,
+      ]);
+      refined = {
+        ...refined,
+        project: structuralCompletion.project,
+        changedFiles: Array.from(mergedChanged).sort((a, b) => a.localeCompare(b)),
+        summary:
+          refined.summary ||
+          "Completed structural refinement by materializing missing route-level content deliverables.",
+      };
+    }
+  }
   if (refined.changedFiles.length === 0) {
     await failChatTask(
       taskId,
@@ -5564,6 +6147,7 @@ async function runRefineTask(params: {
     } as any,
   });
 
+  assertBilingualStaticSiteContract(refined.project, requirementText);
   await fs.mkdir(checkpointRoot, { recursive: true });
   await fs.mkdir(checkpointWorkflowDir, { recursive: true });
   const materialized = await materializeSiteDirectoryFromProject(refined.project, checkpointSiteDir);
@@ -5602,10 +6186,6 @@ async function runRefineTask(params: {
     "utf8",
   );
 
-  const refineLocale = detectLocale(
-    extractRequirementText(inputState),
-    (inputState.workflow_context as any)?.preferredLocale,
-  );
   const refinedBlogPreview = buildBlogContentWorkflowPreview({
     inputState,
     project: refined.project,
@@ -5873,6 +6453,7 @@ export class SkillRuntimeExecutor {
             files: getStaticArtifactFiles(summary.state as any),
           },
         };
+      assertBilingualStaticSiteContract(generatedProjectArtifact, extractRequirementText(summary.state as AgentState));
       const generatedBlogPreview = buildBlogContentWorkflowPreview({
         inputState: summary.state as AgentState,
         project: generatedProjectArtifact,

@@ -9,6 +9,7 @@ export function renderWebsiteQualityContract(): string {
     "- Navigation must use meaningful route labels; do not leave desktop or mobile nav shells as generic menu/navigation/quick links scaffolds.",
     "- Footer must contribute real site content; avoid copyright-only placeholders, label-only footers, or generic legal shells that add no value.",
     "- Mobile nav may collapse visually, but it still needs the same meaningful destinations as desktop rather than a menu-only placeholder shell.",
+    "- When refine or generation creates a new page, that page must reuse the current site's active theme and the same shared navigation/footer shell unless the brief explicitly requests a shell redesign.",
     "- External imagery must come from source-backed or project-owned assets; do not ship example.com, placeholder.com, or other demo/stock placeholder URLs.",
     "- Metrics must be source-backed; do not invent percentages, multipliers, \"hours saved\", growth, or conversion-lift claims without brief or citation support.",
     "- Visual direction must be distinctive: expressive type pairing, intentional background system, layered sections, strong hero composition, and mobile-specific composition.",

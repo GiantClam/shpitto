@@ -30,6 +30,31 @@ describe("chat orchestrator intent", () => {
   it("routes preview refinements to refine_preview", () => {
     const decision = decide("把主色改成蓝色", "previewing");
     expect(decision.intent).toBe("refine_preview");
+    expect(decision.refineScope).toBe("patch");
+    expect(decision.shouldCreateTask).toBe(true);
+  });
+
+  it("treats missing blog detail page requests as structural refine on preview", () => {
+    const decision = decide("三篇blog缺少内容页面，请补充", "previewing");
+    expect(decision.intent).toBe("refine_preview");
+    expect(decision.reason).toBe("explicit-structural-refine-on-preview");
+    expect(decision.refineScope).toBe("structural");
+    expect(decision.shouldCreateTask).toBe(true);
+  });
+
+  it("treats add-page requests as structural refine on preview", () => {
+    const decision = decide("新增一个 pricing 页面，其他页面不动", "previewing");
+    expect(decision.intent).toBe("refine_preview");
+    expect(decision.reason).toBe("explicit-structural-refine-on-preview");
+    expect(decision.refineScope).toBe("structural");
+    expect(decision.shouldCreateTask).toBe(true);
+  });
+
+  it("treats single-route rewrite requests as route regenerate refine", () => {
+    const decision = decide("重写 /about 页面，其他页面不动", "previewing");
+    expect(decision.intent).toBe("refine_preview");
+    expect(decision.reason).toBe("explicit-route-regenerate-on-preview");
+    expect(decision.refineScope).toBe("route_regenerate");
     expect(decision.shouldCreateTask).toBe(true);
   });
 
@@ -110,6 +135,19 @@ describe("chat orchestrator intent", () => {
     expect(spec.targetAudience).toContain("procurement teams");
     expect(slots.find((slot) => slot.key === "sitemap-pages")?.filled).toBe(true);
     expect(slots.find((slot) => slot.key === "target-audience")?.filled).toBe(true);
+  });
+
+  it("does not treat 解决方案 prose as an explicit 方案 page", () => {
+    const text = [
+      "为 K12 学校提供全场景解决方案。",
+      "需要 3 篇 blog 文章。",
+      "网站页面保留 Home、Blog、Contact。",
+    ].join("");
+    const spec = buildRequirementSpec(text);
+
+    expect(spec.pages).toContain("blog");
+    expect(spec.pages).not.toContain("方案");
+    expect(spec.pageStructure?.pages || []).not.toContain("方案");
   });
 
   it("filters function options to currently supported website capabilities", () => {

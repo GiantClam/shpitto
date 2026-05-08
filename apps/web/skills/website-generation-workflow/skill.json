@@ -97,24 +97,24 @@
         "palette",
         "typography",
         "layout",
-        "视觉",
-        "设计",
-        "色调",
-        "配色",
-        "字体",
-        "布局"
+        "瑙嗚",
+        "璁捐",
+        "鑹茶皟",
+        "閰嶈壊",
+        "瀛椾綋",
+        "甯冨眬"
       ],
       "signals": [
-        { "key": "natural", "pattern": "green|eco|ecological|nature|natural|绿|生态|自然", "core": true, "mood": "natural", "primaryDefault": "naturalPrimary", "accentDefault": "naturalAccent", "surfaceDefault": "naturalSurface" },
-        { "key": "warm", "pattern": "warm|approachable|human|friendly|温暖|亲和|友好", "core": true, "mood": "warm", "primaryDefault": "warmPrimary", "accentDefault": "warmAccent" },
-        { "key": "accent-warm", "pattern": "orange|amber|橙|暖橙", "core": true, "accentDefault": "warmAccent" },
-        { "key": "light", "pattern": "white|light|bright|clean|白色|浅色|明亮|清新", "core": true },
-        { "key": "soft", "pattern": "soft|gentle|rounded|柔和|圆润|圆角", "core": true },
-        { "key": "professional", "pattern": "professional|institution|authority|trust|standard|专业|机构|标准|可信", "mood": "professional" },
-        { "key": "friendly-audience", "pattern": "child|children|kids|family|儿童|适儿|家庭", "core": true, "mood": "friendly" },
-        { "key": "editorial", "pattern": "editorial|research|publication|content|reading|研究|资讯|内容|阅读" }
+        { "key": "natural", "pattern": "green|eco|ecological|nature|natural|缁縷鐢熸€亅鑷劧", "core": true, "mood": "natural", "primaryDefault": "naturalPrimary", "accentDefault": "naturalAccent", "surfaceDefault": "naturalSurface" },
+        { "key": "warm", "pattern": "warm|approachable|human|friendly|娓╂殩|浜插拰|鍙嬪ソ", "core": true, "mood": "warm", "primaryDefault": "warmPrimary", "accentDefault": "warmAccent" },
+        { "key": "accent-warm", "pattern": "orange|amber|姗檤鏆栨", "core": true, "accentDefault": "warmAccent" },
+        { "key": "light", "pattern": "white|light|bright|clean|鐧借壊|娴呰壊|鏄庝寒|娓呮柊", "core": true },
+        { "key": "soft", "pattern": "soft|gentle|rounded|鏌斿拰|鍦嗘鼎|鍦嗚", "core": true },
+        { "key": "professional", "pattern": "professional|institution|authority|trust|standard|涓撲笟|鏈烘瀯|鏍囧噯|鍙俊", "mood": "professional" },
+        { "key": "friendly-audience", "pattern": "child|children|kids|family|鍎跨|閫傚効|瀹跺涵", "core": true, "mood": "friendly" },
+        { "key": "editorial", "pattern": "editorial|research|publication|content|reading|鐮旂┒|璧勮|鍐呭|闃呰" }
       ],
-      "darkModePatterns": ["dark", "black", "midnight", "暗色", "黑色"],
+      "darkModePatterns": ["dark", "black", "midnight", "鏆楄壊", "榛戣壊"],
       "defaults": {
         "primary": "#2563EB",
         "naturalPrimary": "#2E8B57",
@@ -153,25 +153,25 @@
   },
   "routePlanningPolicy": {
     "routeAliases": [
-      { "route": "/", "keys": ["home", "homepage", "index", "首页", "主页"] },
-      { "route": "/products", "keys": ["products", "product", "产品"] },
-      { "route": "/custom-solutions", "keys": ["customsolutions", "solutions", "solution", "方案"] },
-      { "route": "/cases", "keys": ["cases", "case", "案例"] },
-      { "route": "/about", "keys": ["about", "company", "关于"] },
-      { "route": "/contact", "keys": ["contact", "contacts", "联系", "咨询"] },
-      { "route": "/blog", "keys": ["blog", "blogs", "博客", "文章"] },
-      { "route": "/news", "keys": ["news", "updates", "资讯", "新闻"] },
-      { "route": "/casux-creation", "keys": ["casuxcreation", "creation", "创设"] },
-      { "route": "/casux-construction", "keys": ["casuxconstruction", "construction", "建设"] },
-      { "route": "/casux-certification", "keys": ["casuxcertification", "casuxqualitymark", "certification", "优标", "测评", "认证"] },
-      { "route": "/casux-advocacy", "keys": ["casuxadvocacy", "advocacy", "alliance", "倡导", "联盟"] },
-      { "route": "/casux-research-center", "keys": ["casuxresearchcenter", "researchcenter", "research", "研究中心"] },
-      { "route": "/casux-information-platform", "keys": ["casuxinformationplatform", "informationplatform", "platform", "信息平台"] },
-      { "route": "/downloads", "keys": ["downloads", "download", "资料下载", "下载"] },
-      { "route": "/login", "keys": ["login", "signin", "sign-in", "登录"] },
-      { "route": "/register", "keys": ["register", "signup", "sign-up", "注册"] },
-      { "route": "/reset-password", "keys": ["forgotpassword", "resetpassword", "passwordreset", "recoverpassword", "找回密码", "忘记密码"] },
-      { "route": "/verify-email", "keys": ["verifyemail", "emailverification", "confirmemail", "resendverification", "验证邮箱", "邮箱验证"] }
+      { "route": "/", "keys": ["home", "homepage", "index", "棣栭〉", "涓婚〉"] },
+      { "route": "/products", "keys": ["products", "product", "浜у搧"] },
+      { "route": "/custom-solutions", "keys": ["customsolutions", "solutions", "solution", "鏂规"] },
+      { "route": "/cases", "keys": ["cases", "case", "妗堜緥"] },
+      { "route": "/about", "keys": ["about", "company", "鍏充簬"] },
+      { "route": "/contact", "keys": ["contact", "contacts", "鑱旂郴", "鍜ㄨ"] },
+      { "route": "/blog", "keys": ["blog", "blogs", "鍗氬", "鏂囩珷"] },
+      { "route": "/news", "keys": ["news", "updates", "璧勮", "鏂伴椈"] },
+      { "route": "/casux-creation", "keys": ["casuxcreation", "creation", "鍒涜"] },
+      { "route": "/casux-construction", "keys": ["casuxconstruction", "construction", "寤鸿"] },
+      { "route": "/casux-certification", "keys": ["casuxcertification", "casuxqualitymark", "certification", "浼樻爣", "娴嬭瘎", "璁よ瘉"] },
+      { "route": "/casux-advocacy", "keys": ["casuxadvocacy", "advocacy", "alliance", "鍊″", "鑱旂洘"] },
+      { "route": "/casux-research-center", "keys": ["casuxresearchcenter", "researchcenter", "research", "鐮旂┒涓績"] },
+      { "route": "/casux-information-platform", "keys": ["casuxinformationplatform", "informationplatform", "platform", "淇℃伅骞冲彴"] },
+      { "route": "/downloads", "keys": ["downloads", "download", "璧勬枡涓嬭浇", "涓嬭浇"] },
+      { "route": "/login", "keys": ["login", "signin", "sign-in", "鐧诲綍"] },
+      { "route": "/register", "keys": ["register", "signup", "sign-up", "娉ㄥ唽"] },
+      { "route": "/reset-password", "keys": ["forgotpassword", "resetpassword", "passwordreset", "recoverpassword", "鎵惧洖瀵嗙爜", "蹇樿瀵嗙爜"] },
+      { "route": "/verify-email", "keys": ["verifyemail", "emailverification", "confirmemail", "resendverification", "楠岃瘉閭", "閭楠岃瘉"] }
     ],
     "blockedLabels": [
       "and internationalization requirements",
@@ -239,7 +239,7 @@
       "multi-page\\s+website\\s*\\(automatically",
       "automatically\\s+plan\\s+first-level\\s+navigation"
     ],
-    "defaultAutoRoutes": ["/", "/custom-solutions", "/cases", "/blog", "/contact", "/about"],
+    "defaultAutoRoutes": ["/", "/custom-solutions", "/cases", "/contact", "/about"],
     "conditionalAutoRoutes": [
       {
         "route": "/products",
@@ -258,6 +258,40 @@
       }
     ]
   },
+  "refinementPolicy": {
+    "defaultMode": "incremental_site_evolution",
+    "allowImplicitFullRegenerate": false,
+    "subtypes": ["patch", "structural", "route_regenerate"],
+    "fullRegenerateTriggers": [
+      "full regenerate",
+      "regenerate all",
+      "rebuild everything",
+      "regenerate whole site",
+      "rebuild whole site"
+    ],
+    "structuralRefineTriggers": [
+      "complete blog detail pages",
+      "complete detail pages",
+      "missing detail pages",
+      "missing blog content page",
+      "add page",
+      "remove page"
+    ],
+    "routeRegenerateTriggers": [
+      "rewrite /about",
+      "redo blog page",
+      "rewrite page",
+      "redo page",
+      "regenerate page"
+    ],
+    "rules": [
+      "If the user does not explicitly request a whole-site rebuild, keep the task in refinement.",
+      "Structural refine may add or remove route files when the current route plan already implies those deliverables or when the user explicitly requests a new page without asking for whole-site regeneration.",
+      "Any newly created page must inherit the current site's active theme, shared navigation, and shared footer contract unless the user explicitly requests a shell redesign.",
+      "Route regenerate rewrites one route or one route family from the current baseline without discarding the whole site.",
+      "Refinement may reopen preview confirmation or Blog confirmation, but it must not auto-deploy."
+    ]
+  },
   "blogIntegrationPolicy": {
     "route": "/blog",
     "apiEndpoint": "/api/blog/posts",
@@ -265,6 +299,15 @@
     "listAttribute": "data-shpitto-blog-list",
     "apiAttribute": "data-shpitto-blog-api",
     "detailPathPattern": "/blog/{slug}/",
+    "allowImplicitFallbackRoute": false,
+    "generationRequiresDetailForAnyBlogRoute": true,
+    "previewRequiresStaticOrReadableDetailOutput": true,
+    "generationAndDeploymentAreSeparateActions": true,
+    "deploymentRequiresExplicitUserAction": true,
+    "regenerationRestartsBlogWorkflow": true,
+    "regenerationRequiresFreshBlogPreviewConfirmation": true,
+    "regenerationReopensDeployHandoff": true,
+    "regenerationMustNotEndAtShellPreviewOnly": true,
     "postShellPath": "/shpitto-blog-post-shell.html",
     "themeMetadataPath": "/shpitto-blog-theme.json",
     "generationMode": "site-native-data-source-page",
@@ -273,41 +316,41 @@
       "confidenceThreshold": 70,
       "signals": [
         {
-          "patterns": ["(?:^|/)blog(?:/|$)", "\\bblogs?\\b", "博客", "文章"],
+          "patterns": ["(?:^|/)blog(?:/|$)", "\\bblogs?\\b", "articles?"],
           "score": 100,
-          "reason": "Explicit Blog route or label."
+          "reason": "Explicit blog route or label."
         },
         {
-          "patterns": ["information[-\\s]?platform", "content[-\\s]?stream", "article[-\\s]?stream", "knowledge[-\\s]?(?:hub|center|base)", "insights?", "publications?", "updates?", "资讯", "信息平台", "内容流", "知识库", "动态"],
+          "patterns": ["information[-\\s]?platform", "content[-\\s]?stream", "article[-\\s]?stream", "knowledge[-\\s]?(?:hub|center|base)", "insights?", "publications?", "updates?"],
           "score": 86,
-          "reason": "Existing navigation route is a content/information stream and should use Blog backend data."
+          "reason": "Existing navigation route is a content or information stream."
         },
         {
-          "patterns": ["news", "media", "press", "stories", "journal", "magazine", "case[-\\s]?library", "研究动态", "新闻", "媒体", "案例库"],
+          "patterns": ["news", "media", "press", "stories", "journal", "magazine", "case[-\\s]?library"],
           "score": 78,
           "reason": "Existing navigation route represents dated editorial content."
         },
         {
-          "patterns": ["research[-\\s]?center", "resource[-\\s]?center", "resources?", "library", "资料库", "研究中心", "资源中心"],
+          "patterns": ["research[-\\s]?center", "resource[-\\s]?center", "resources?", "library"],
           "score": 52,
-          "reason": "Route may contain content, but needs another content-stream signal to own Blog backend."
+          "reason": "Route may contain content but needs another content-stream signal to own the blog backend."
         }
       ],
       "negativeSignals": [
         {
-          "patterns": ["download", "downloads", "资料下载", "下载"],
+          "patterns": ["download", "downloads"],
           "score": 38,
-          "reason": "Downloads/resource file routes are not automatically editorial Blog backends."
+          "reason": "Downloads routes are not automatically editorial blog backends."
         },
         {
-          "patterns": ["login", "register", "auth", "password", "登录", "注册", "密码"],
+          "patterns": ["login", "register", "auth", "password"],
           "score": 100,
-          "reason": "Auth routes cannot own Blog backend."
+          "reason": "Auth routes cannot own the blog backend."
         },
         {
-          "patterns": ["contact", "about", "home", "首页", "关于", "联系"],
+          "patterns": ["contact", "about", "home"],
           "score": 30,
-          "reason": "Core utility routes should not absorb Blog backend unless explicitly named Blog."
+          "reason": "Core utility routes should not absorb the blog backend unless explicitly named blog."
         }
       ]
     },
@@ -325,43 +368,33 @@
         "runtime",
         "static fallback",
         "fallback card",
-        "hydration",
-        "博客数据源",
-        "博客后端",
-        "博客 API",
-        "内容 API",
-        "文章列表",
-        "运行时",
-        "静态回退",
-        "回退卡片",
-        "水合",
-        "数据源挂载"
+        "hydration"
       ],
       "contentModels": [
         {
-          "routeSignals": ["information platform", "knowledge hub", "content stream", "publication library", "信息平台", "知识库", "内容平台"],
-          "collectionLabels": ["案例库", "标准文件", "研究报告", "政策法规", "产品数据库"],
-          "cardFields": ["内容类型", "发布日期", "适用范围", "摘要", "标签", "阅读全文"],
+          "routeSignals": ["information platform", "knowledge hub", "content stream", "publication library"],
+          "collectionLabels": ["case library", "standards", "reports", "policy updates", "product database"],
+          "cardFields": ["type", "date", "scope", "summary", "tags", "detail link"],
           "detailTone": "resource, report, standard, or case detail page rather than generic blog article"
         },
         {
-          "routeSignals": ["news", "updates", "insights", "资讯", "新闻", "动态"],
-          "collectionLabels": ["最新动态", "专题解读", "观点文章", "媒体资料"],
-          "cardFields": ["栏目", "发布日期", "摘要", "标签", "阅读全文"],
+          "routeSignals": ["news", "updates", "insights"],
+          "collectionLabels": ["latest updates", "feature stories", "insight articles", "media resources"],
+          "cardFields": ["section", "date", "summary", "tags", "detail link"],
           "detailTone": "editorial news or insight detail page"
         },
         {
-          "routeSignals": ["blog", "博客"],
-          "collectionLabels": ["文章", "专题", "标签", "归档"],
-          "cardFields": ["分类", "发布日期", "摘要", "标签", "阅读全文"],
+          "routeSignals": ["blog"],
+          "collectionLabels": ["articles", "topics", "tags", "archive"],
+          "cardFields": ["category", "date", "summary", "tags", "detail link"],
           "detailTone": "site-native blog article detail page"
         }
       ],
       "rules": [
-        "Use the selected route's visible information architecture; Blog is the hidden data backend.",
-        "Attach data-shpitto-blog-root, data-shpitto-blog-api, and data-shpitto-blog-list to the page's own list/resource/database modules without exposing these implementation details in visible copy.",
-        "When the selected route is not explicitly Blog, never title the visible section Blog data source, Blog backend, or article list.",
-        "Fallback cards and dynamic cards should preserve the selected route taxonomy and visual rhythm rather than rendering a detached generic feed; never mention fallback, runtime, hydration, or API mechanics to visitors."
+        "Use the selected route's visible information architecture; blog is the hidden data backend.",
+        "Attach the blog data attributes to the page's own list, resource, or database modules without exposing implementation details in visible copy.",
+        "When the selected route is not explicitly blog, never title the visible section blog data source, blog backend, or article list.",
+        "Fallback cards and dynamic cards should preserve the selected route taxonomy and visual rhythm rather than rendering a detached generic feed."
       ]
     },
     "fallbackCardCount": {
@@ -372,18 +405,23 @@
       "deployPublishedPostCount": 3,
       "sourcePriority": ["canonicalPrompt", "sourceRequirement", "uploadedOrExtractedEvidence", "userMessages", "generatedPageCopy"],
       "rules": [
-        "On deploy, create or update 3 published Blog records from user-provided content.",
+        "On deploy, create or update 3 published blog records from user-provided content.",
         "Article titles, excerpts, body sections, categories, and tags must be strongly related to the user's provided material and selected content route.",
         "Do not seed generic verification posts, lorem ipsum, template news, or unrelated filler.",
-        "Do not delete user-authored Blog records when refreshing generated source-derived posts."
+        "Do not delete user-authored blog records when refreshing generated source-derived posts."
       ]
     },
     "rules": [
-      "The generated Blog page must share the same visual system, language, header, footer, and CTA strategy as the rest of the site.",
-      "The Blog page must include a stable data-source mount so deployment can bind project-scoped D1 Blog data without replacing the page shell.",
-      "Deployment derives the dynamic Blog detail shell from the generated site so /blog/{slug}/ uses the same language, CSS, navigation, and footer as the generated website.",
+      "The generated blog page must share the same visual system, language, header, footer, and CTA strategy as the rest of the site.",
+      "The blog page must include a stable data-source mount so deployment can bind project-scoped D1 blog data without replacing the page shell.",
+      "Deployment derives the dynamic blog detail shell from the generated site so /blog/{slug}/ uses the same language, CSS, navigation, and footer as the generated website.",
       "Fallback article cards are required for preview, no-JS rendering, and SEO-safe first paint.",
-      "Static code must not include D1 credentials, Cloudflare binding code, Worker source, or secrets."
+      "Static code must not include D1 credentials, Cloudflare binding code, worker source, or secrets.",
+      "A regenerate or rebuild request for any site with an explicit blog or selected content-backed route restarts the full blog workflow rather than refreshing only shell pages.",
+      "Regeneration must re-emit the blog article preview or confirmation artifact and matching /blog/{slug}/ detail deliverables before deployment is offered again.",
+      "Regeneration reopens the deploy handoff stage, but deployment still requires a later explicit user action."
     ]
   }
 }
+
+

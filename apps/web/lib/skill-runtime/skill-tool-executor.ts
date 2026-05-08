@@ -41,6 +41,11 @@ import {
   mergeAntiSlopLintResults,
   renderAntiSlopFeedback,
 } from "../visual-qa/anti-slop-linter.ts";
+import {
+  findDuplicatedBilingualDomCopy,
+  findVisibleSimultaneousBilingualCopy as sharedFindVisibleSimultaneousBilingualCopy,
+  isBilingualRequirementText as sharedIsBilingualRequirementText,
+} from "./bilingual-copy-guard.ts";
 
 type LlmProvider = "pptoken" | "aiberm" | "crazyroute";
 
@@ -334,9 +339,7 @@ function htmlVisibleText(html: string) {
 }
 
 function isBilingualRequirementText(text = ""): boolean {
-  return /(?:\bbilingual\b|EN\s*\/\s*ZH|ZH\s*\/\s*EN|language\s+switch|multi-?language|\u53cc\u8bed|\u4e2d\u82f1|\u4e2d\u6587.{0,12}\u82f1\u6587|\u82f1\u6587.{0,12}\u4e2d\u6587|\u591a\u8bed\u8a00|\u8bed\u8a00.{0,8}\u5207\u6362)/i.test(
-    String(text || ""),
-  );
+  return sharedIsBilingualRequirementText(text);
 }
 
 function cjkCount(text: string): number {
@@ -376,7 +379,7 @@ function latinContentWords(text: string): string[] {
     "chinese",
   ]);
   return (String(text || "").match(/[A-Za-z][A-Za-z'-]{2,}/g) || [])
-    .filter((word) => !ignoredTokens.has(word.toLowerCase()))
+    .filter((word) => !ignoredTokens.has(word.toLowerCase()));
 }
 
 function hasSubstantialCjkAndLatin(text: string): boolean {
@@ -764,6 +767,13 @@ function stripLegacyGenerationBlueprintSections(text: string): string {
 
 export function sanitizeRequirementForGenerationForTesting(text: string): string {
   return stripLegacyGenerationBlueprintSections(text);
+}
+
+export function requiredFileChecklistForTesting(
+  decision: LocalDecisionPlan,
+  params: { files?: RuntimeWorkflowFile[]; requirementText?: string } = {},
+): string[] {
+  return requiredFileChecklist(decision, params);
 }
 
 function clipRuntimeRequirement(input: string, maxChars: number): string {
@@ -1632,6 +1642,8 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
     throw new Error(`skill_tool_invalid_required_file: /styles.css failed layout QA\n${renderAntiSlopFeedback(stylesLint)}`);
   }
 
+  assertSharedShellConsistency(params.decision, byPath);
+
   for (const route of params.decision.routes) {
     totalRoutes += 1;
     const pagePath = routeToHtmlPath(route);
@@ -1702,28 +1714,33 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
           `skill_tool_invalid_required_file: ${pagePath} Blog list item outer class lacks runtime-safe padding: ${blogListSpacingIssues.join(", ")}`,
         );
       }
+      const detailRoutes = extractBlogDetailRoutes(html);
+      if (detailRoutes.length === 0) {
+        throw new Error(
+          `skill_tool_invalid_required_file: ${pagePath} must expose at least one /blog/{slug}/ detail link because Blog/content-backed generation always includes detail pages`,
+        );
+      }
       const requestedCount = requestedPublishableContentCount(params.requirementText || "");
       if (requestedCount) {
-        const detailRoutes = extractBlogDetailRoutes(html);
         if (detailRoutes.length < requestedCount) {
           throw new Error(
             `skill_tool_invalid_required_file: ${pagePath} must expose ${requestedCount} /blog/{slug}/ detail links for the requested publishable content items; found ${detailRoutes.length}`,
           );
         }
-        for (const detailRoute of detailRoutes.slice(0, requestedCount)) {
-          const detailPath = routeToHtmlPath(detailRoute);
-          const detailFile = byPath.get(detailPath);
-          if (!detailFile || !isMeaningfulArticleDetailHtml(String(detailFile.content || ""))) {
-            throw new Error(
-              `skill_tool_invalid_required_file: ${detailPath} must contain a complete article/detail body, not only title, metadata, or excerpt content`,
-            );
-          }
-          const detailScaffoldTerms = findVisibleBlogDetailEditorialScaffold(String(detailFile.content || ""));
-          if (detailScaffoldTerms.length > 0) {
-            throw new Error(
-              `skill_tool_invalid_required_file: ${detailPath} exposes editorial scaffold/explanatory wording instead of final article content: ${detailScaffoldTerms.join(", ")}`,
-            );
-          }
+      }
+      for (const detailRoute of detailRoutes.slice(0, requestedCount || detailRoutes.length)) {
+        const detailPath = routeToHtmlPath(detailRoute);
+        const detailFile = byPath.get(detailPath);
+        if (!detailFile || !isMeaningfulArticleDetailHtml(String(detailFile.content || ""))) {
+          throw new Error(
+            `skill_tool_invalid_required_file: ${detailPath} must contain a complete article/detail body, not only title, metadata, or excerpt content`,
+          );
+        }
+        const detailScaffoldTerms = findVisibleBlogDetailEditorialScaffold(String(detailFile.content || ""));
+        if (detailScaffoldTerms.length > 0) {
+          throw new Error(
+            `skill_tool_invalid_required_file: ${detailPath} exposes editorial scaffold/explanatory wording instead of final article content: ${detailScaffoldTerms.join(", ")}`,
+          );
         }
       }
     }
@@ -1760,13 +1777,19 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
     }
   }
 
-  if (isBilingualRequirementText(params.requirementText || "")) {
+  if (sharedIsBilingualRequirementText(params.requirementText || "")) {
     const allHtml = files
       .filter((item) => normalizePath(item.path).endsWith(".html"))
       .map((item) => String(item.content || ""))
       .join("\n");
     for (const file of files.filter((item) => normalizePath(item.path).endsWith(".html"))) {
-      const leaks = findVisibleSimultaneousBilingualCopy(String(file.content || ""));
+      const duplicatedDom = findDuplicatedBilingualDomCopy(String(file.content || ""));
+      if (duplicatedDom.length > 0) {
+        throw new Error(
+          `skill_tool_invalid_required_file: ${normalizePath(file.path)} contains duplicated bilingual DOM copy in lang-zh/lang-en pairs instead of swapping one active language at a time: ${duplicatedDom.join(" | ")}`,
+        );
+      }
+      const leaks = sharedFindVisibleSimultaneousBilingualCopy(String(file.content || ""));
       if (leaks.length > 0) {
         throw new Error(
           `skill_tool_invalid_required_file: ${normalizePath(file.path)} renders obvious simultaneous bilingual visible copy instead of language-switched content: ${leaks.join(" | ")}`,
@@ -1827,6 +1850,69 @@ function normalizeHrefRoute(href: string): string {
   value = value.split("#")[0]?.split("?")[0] || "";
   value = value.replace(/\/index\.html$/i, "/").replace(/\.html$/i, "");
   return normalizePath(value || "/");
+}
+
+function extractTagBlock(html: string, tagName: string): string {
+  const match = String(html || "").match(new RegExp(`<${tagName}\\b[^>]*>[\\s\\S]*?<\\/${tagName}>`, "i"));
+  return String(match?.[0] || "");
+}
+
+function extractPlannedRoutesFromHtmlBlock(html: string, allowedRoutes: Set<string>): string[] {
+  const routes = Array.from(String(html || "").matchAll(/href\s*=\s*["']([^"']+)["']/gi))
+    .map((match) => normalizeHrefRoute(match[1] || ""))
+    .filter((route) => !!route && allowedRoutes.has(route));
+  return Array.from(new Set(routes));
+}
+
+function assertSharedShellConsistency(decision: LocalDecisionPlan, byPath: Map<string, RuntimeWorkflowFile>) {
+  const plannedRoutes = new Set(decision.routes.map((route) => normalizePath(route)));
+  const homeHtml = ensureHtmlDocument(String(byPath.get("/index.html")?.content || ""));
+  if (!homeHtml) return;
+
+  const canonicalNavBlock = extractTagBlock(homeHtml, "nav");
+  const canonicalFooterBlock = extractTagBlock(homeHtml, "footer");
+  const canonicalNavRoutes = extractPlannedRoutesFromHtmlBlock(canonicalNavBlock, plannedRoutes);
+  const canonicalFooterRoutes = extractPlannedRoutesFromHtmlBlock(canonicalFooterBlock, plannedRoutes);
+
+  for (const route of decision.routes) {
+    const normalizedRoute = normalizePath(route);
+    if (normalizedRoute === "/") continue;
+    const pagePath = routeToHtmlPath(normalizedRoute);
+    const html = ensureHtmlDocument(String(byPath.get(pagePath)?.content || ""));
+    if (!html) continue;
+
+    if (canonicalNavBlock) {
+      const pageNavBlock = extractTagBlock(html, "nav");
+      if (!pageNavBlock) {
+        throw new Error(`skill_tool_invalid_required_file: ${pagePath} must preserve the shared navigation shell defined on /index.html`);
+      }
+      if (canonicalNavRoutes.length > 0) {
+        const pageNavRoutes = extractPlannedRoutesFromHtmlBlock(pageNavBlock, plannedRoutes);
+        const missingNavRoutes = canonicalNavRoutes.filter((item) => !pageNavRoutes.includes(item));
+        if (missingNavRoutes.length > 0) {
+          throw new Error(
+            `skill_tool_invalid_required_file: ${pagePath} must preserve the shared navigation destinations from /index.html; missing ${missingNavRoutes.join(", ")}`,
+          );
+        }
+      }
+    }
+
+    if (canonicalFooterBlock) {
+      const pageFooterBlock = extractTagBlock(html, "footer");
+      if (!pageFooterBlock) {
+        throw new Error(`skill_tool_invalid_required_file: ${pagePath} must preserve the shared footer shell defined on /index.html`);
+      }
+      if (canonicalFooterRoutes.length > 0) {
+        const pageFooterRoutes = extractPlannedRoutesFromHtmlBlock(pageFooterBlock, plannedRoutes);
+        const missingFooterRoutes = canonicalFooterRoutes.filter((item) => !pageFooterRoutes.includes(item));
+        if (missingFooterRoutes.length > 0) {
+          throw new Error(
+            `skill_tool_invalid_required_file: ${pagePath} must preserve the shared footer destinations from /index.html; missing ${missingFooterRoutes.join(", ")}`,
+          );
+        }
+      }
+    }
+  }
 }
 
 export function enforceNavigationOrder(html: string, decision: LocalDecisionPlan): string {
@@ -1911,6 +1997,16 @@ function buildPagesFromRoutes(routes: string[], staticFiles: RuntimeWorkflowFile
   });
 }
 
+function discoveredBlogDetailChecklist(files: RuntimeWorkflowFile[] = []): string[] {
+  const detailRoutes: string[] = [];
+  for (const file of files) {
+    if (normalizePath(file.path).endsWith(".html")) {
+      detailRoutes.push(...extractBlogDetailRoutes(String(file.content || "")));
+    }
+  }
+  return Array.from(new Set(detailRoutes)).map((route) => routeToHtmlPath(route));
+}
+
 function requestedBlogDetailChecklist(
   decision: LocalDecisionPlan,
   files: RuntimeWorkflowFile[] = [],
@@ -1918,22 +2014,17 @@ function requestedBlogDetailChecklist(
 ): string[] {
   const requestedCount = requestedPublishableContentCount(requirementText);
   if (!requestedCount) return [];
-  const detailRoutes: string[] = [];
-  for (const file of files) {
-    if (normalizePath(file.path).endsWith(".html")) {
-      detailRoutes.push(...extractBlogDetailRoutes(String(file.content || "")));
-    }
-  }
-  return Array.from(new Set(detailRoutes)).slice(0, requestedCount).map((route) => routeToHtmlPath(route));
+  return discoveredBlogDetailChecklist(files).slice(0, requestedCount);
 }
 
 function requiredFileChecklist(decision: LocalDecisionPlan, params: { files?: RuntimeWorkflowFile[]; requirementText?: string } = {}): string[] {
-  return [
+  return Array.from(new Set([
     "/styles.css",
     "/script.js",
     ...decision.routes.map((route) => routeToHtmlPath(route)),
+    ...discoveredBlogDetailChecklist(params.files || []),
     ...requestedBlogDetailChecklist(decision, params.files || [], params.requirementText || ""),
-  ];
+  ]));
 }
 
 function resolveMaxToolRounds(decision: LocalDecisionPlan, requirementText = ""): number {
@@ -1994,6 +2085,14 @@ function planRoundObjective(round: number, missingFiles: string[]): RoundObjecti
       targetFiles: [firstTarget],
       instruction:
         "This round only emit /index.html as a complete HTML document referencing /styles.css and /script.js.",
+      strictSingleTarget: true,
+    };
+  }
+  if (/^\/blog\/.+\/index\.html$/i.test(firstTarget)) {
+    return {
+      targetFiles: [firstTarget],
+      instruction:
+        `This round only emit ${firstTarget} as a complete Blog detail HTML document referencing /styles.css and /script.js. Write a full readable article/detail page with title, multiple substantial body paragraphs, section headings, and site-native shell/header/footer. Do not emit a stub, excerpt-only shell, metadata-only page, or a rewritten /blog/index.html.`,
       strictSingleTarget: true,
     };
   }

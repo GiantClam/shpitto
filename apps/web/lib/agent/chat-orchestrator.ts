@@ -134,6 +134,7 @@ export type IntentDecision = {
   missingSlots: string[];
   assumedDefaults: string[];
   shouldCreateTask: boolean;
+  refineScope?: "patch" | "structural" | "route_regenerate" | "full_regenerate";
 };
 
 export type RequiredSlotValidation = {
@@ -521,6 +522,20 @@ type VisualDirectionDecision = {
   recommendation?: ReturnType<typeof recommendWebsiteDesignDirections>[number];
 };
 
+function extractStandaloneChinesePageKeywords(text: string): string[] {
+  const source = String(text || "");
+  const separators = "[\\s,，、|/;；:：()（）\\[\\]{}【】<>《》\"'“”‘’]+";
+  const keywords = ["首页", "关于", "产品", "服务", "方案", "案例", "联系", "新闻", "博客", "下载", "价格"];
+  const matches: string[] = [];
+  for (const keyword of keywords) {
+    const pattern = new RegExp(`(?:^|${separators})(${keyword})(?=$|${separators})`, "g");
+    for (const match of source.matchAll(pattern)) {
+      if (match[1]) matches.push(match[1]);
+    }
+  }
+  return matches;
+}
+
 function extractRequirementFieldsFromText(text: string): ExtractedRequirementFields {
   const raw = normalizeText(text);
   const form = parseRequirementFormFromText(raw).formValues;
@@ -555,7 +570,7 @@ function extractRequirementFieldsFromText(text: string): ExtractedRequirementFie
         /\b(home|about|products?|services?|solutions?|cases?|contact|news|blog|downloads?|pricing)\b/gi,
       ),
     ).map((match) => match[1]),
-    ...Array.from(raw.matchAll(/(首页|关于|产品|服务|方案|案例|联系|新闻|博客|下载|价格)/g)).map((match) => match[1]),
+    ...extractStandaloneChinesePageKeywords(raw),
   ]);
   const wantsAutoPageStructure = /自动生成页面结构|自动规划页面|自动页面结构|帮我规划页面|auto(?:matically)? generate (?:the )?(?:page structure|sitemap)|auto(?:matic)? sitemap/i.test(raw);
   const pageStructure =
@@ -955,6 +970,22 @@ export function isGenerateIntent(text: string): boolean {
   const normalized = toLower(text);
   if (!normalized) return false;
   return /(?:开始生成|直接生成|马上生成|立即生成|生成网站|生成页面|开始做|go ahead|start|generate|build now|create now|ship it|开工)/i.test(
+    normalized,
+  );
+}
+
+function isStructuralRefineIntent(text: string): boolean {
+  const normalized = toLower(text);
+  if (!normalized) return false;
+  return /(?:补齐|补全|补充|缺少|缺失|新增(?:一个|一页|页|个)?\s*.+?页面|添加(?:一个|一页|页|个)?\s*.+?页面|增加(?:一个|一页|页|个)?\s*.+?页面|删除(?:一个|一页|页|个)?\s*.+?页面|去掉(?:一个|一页|页|个)?\s*.+?页面|新增页面|添加页面|增加页面|删除页面|去掉页面|导航中不应该有|detail page|detail pages|missing page|missing pages|add\s+(?:a|an|one|another)?\s*.+?\s+page|remove\s+(?:the\s+)?(?:.+?\s+)?page|new\s+.+?\s+page|missing blog|blog content page|blog detail|blog details)/i.test(
+    normalized,
+  );
+}
+
+function isRouteRegenerateIntent(text: string): boolean {
+  const normalized = toLower(text);
+  if (!normalized) return false;
+  return /(?:重做(?!整个)|重写(?!整个)|重生成(?!整个)|重建(?!整个)|重新生成(?!整个网站)|rewrite page|redo page|regenerate page|rebuild page|regenerate blog|rewrite blog|redo blog)/i.test(
     normalized,
   );
 }
@@ -1458,7 +1489,62 @@ export function decideChatIntent(params: {
       missingSlots: missingSlotLabels,
       assumedDefaults: inferAssumedDefaults(params.stage, missingSlotLabels),
       shouldCreateTask: true,
+      refineScope: "full_regenerate",
     };
+  }
+
+  if (isRouteRegenerateIntent(text)) {
+    if (params.stage === "deployed") {
+      return {
+        intent: "refine_deployed",
+        confidence: 0.92,
+        reason: "explicit-route-regenerate-on-deployed",
+        completionPercent: completion,
+        missingSlots: missingSlotLabels,
+        assumedDefaults: [],
+        shouldCreateTask: true,
+        refineScope: "route_regenerate",
+      };
+    }
+    if (params.stage === "previewing") {
+      return {
+        intent: "refine_preview",
+        confidence: 0.92,
+        reason: "explicit-route-regenerate-on-preview",
+        completionPercent: completion,
+        missingSlots: missingSlotLabels,
+        assumedDefaults: [],
+        shouldCreateTask: true,
+        refineScope: "route_regenerate",
+      };
+    }
+  }
+
+  if (isStructuralRefineIntent(text)) {
+    if (params.stage === "deployed") {
+      return {
+        intent: "refine_deployed",
+        confidence: 0.92,
+        reason: "explicit-structural-refine-on-deployed",
+        completionPercent: completion,
+        missingSlots: missingSlotLabels,
+        assumedDefaults: [],
+        shouldCreateTask: true,
+        refineScope: "structural",
+      };
+    }
+    if (params.stage === "previewing") {
+      return {
+        intent: "refine_preview",
+        confidence: 0.92,
+        reason: "explicit-structural-refine-on-preview",
+        completionPercent: completion,
+        missingSlots: missingSlotLabels,
+        assumedDefaults: [],
+        shouldCreateTask: true,
+        refineScope: "structural",
+      };
+    }
   }
 
   if (isRefineIntent(text)) {
@@ -1471,6 +1557,7 @@ export function decideChatIntent(params: {
         missingSlots: missingSlotLabels,
         assumedDefaults: [],
         shouldCreateTask: true,
+        refineScope: "patch",
       };
     }
     if (params.stage === "previewing") {
@@ -1482,6 +1569,7 @@ export function decideChatIntent(params: {
         missingSlots: missingSlotLabels,
         assumedDefaults: [],
         shouldCreateTask: true,
+        refineScope: "patch",
       };
     }
   }
@@ -1519,6 +1607,7 @@ export function decideChatIntent(params: {
       missingSlots: missingSlotLabels,
       assumedDefaults: [],
       shouldCreateTask: true,
+      refineScope: "patch",
     };
   }
 
@@ -1531,6 +1620,7 @@ export function decideChatIntent(params: {
       missingSlots: missingSlotLabels,
       assumedDefaults: [],
       shouldCreateTask: true,
+      refineScope: "patch",
     };
   }
 

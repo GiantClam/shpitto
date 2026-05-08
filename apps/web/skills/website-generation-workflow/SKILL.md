@@ -154,7 +154,7 @@ Quality gate: The fixed route list contains user-facing website pages only. It m
 
 ### Phase 0.35: Semantic Content Backend Integration Contract (Mandatory)
 
-Blog backend capability is semantic infrastructure, not a visible page template and not hardcoded to one navigation label. During route planning, identify the existing navigation page that most clearly represents a content stream, information platform, article hub, news/insights surface, publication library, or knowledge center. Assign that page a Blog backend confidence score from the workflow policy. If confidence meets the configured threshold, that existing route becomes the content-backend route powered by the Blog API. Only add a separate `/blog` navigation entry when no existing route has sufficient confidence.
+Blog backend capability is semantic infrastructure, not a visible page template and not hardcoded to one navigation label. During route planning, identify the existing navigation page that most clearly represents a content stream, information platform, article hub, news/insights surface, publication library, or knowledge center. Assign that page a Blog backend confidence score from the workflow policy. If confidence meets the configured threshold, that existing route becomes the content-backend route powered by the Blog API. Do not inject a fallback `/blog` navigation route. A separate `/blog` entry is allowed only when the user, requirement form, sitemap, prompt control manifest, or explicit route contract already requested `/blog`.
 
 When a content-backend route is selected, treat it as a first-class product feature and SEO content surface, not as a decorative mock page and not as a visible "Blog data source" block. The selected page may be `/blog`, but it may also be a semantically equivalent route such as an information platform, content stream, news, insights, publication library, or knowledge hub.
 
@@ -196,19 +196,46 @@ Generation responsibilities:
 7. The generated content-backend page must have a clear, site-native detail region style. Deployment derives `/shpitto-blog-post-shell.html` from the generated site, preserving the same `<html lang>`, header, footer, CSS, typography, taxonomy language, and CTA language for dynamic `/blog/{slug}/` rendering. Dynamic `/blog/{slug}/`, `/blog/tag/{tag}/`, `/blog/category/{category}/`, and search-result collection pages must never fall back to a generic light-theme runtime template when the generated site uses a distinct visual theme.
 8. Do not generate Cloudflare D1 credentials, Worker source, binding names, secrets, or server code in static HTML/JS. The deployed runtime owns `/api/blog/*`, `/blog/{slug}/`, RSS, sitemap, and D1 access.
 9. Deployment may inject or refresh Blog data, but that is a compatibility fallback. The generated selected page itself must already expose a coherent page-specific content surface without mentioning deployment, runtime refresh, hydration, fallback, backend, API, or data-source mechanics to visitors.
-11. When deploying a generated site with a selected content-backend route, create or update exactly 3 published Blog records derived from the user's provided requirements, uploaded/source material, Evidence Brief, and generated page copy. Prefer concrete source titles first: if the user's material names specific policies, standards, guides, reports, case studies, databases, manuals, or compilations, use those names as Blog post titles before falling back to synthesized guide titles. These records must be strongly related to the user's content, use page-appropriate categories/tags, and must not be generic verification posts, lorem ipsum, template news, or unrelated filler.
-12. Blog article generation is an explicit workflow stage between site preview and deployment, not a hidden deploy-time side effect. After the site preview is ready and a Blog/content-backed route exists, generate the article set, show the titles/excerpts/categories/tags to the user for confirmation, and only then proceed to deployment.
+10. When deploying a generated site with a selected content-backend route, create or update exactly 3 published Blog records derived from the user's provided requirements, uploaded/source material, Evidence Brief, and generated page copy. Prefer concrete source titles first: if the user's material names specific policies, standards, guides, reports, case studies, databases, manuals, or compilations, use those names as Blog post titles before falling back to synthesized guide titles. These records must be strongly related to the user's content, use page-appropriate categories/tags, and must not be generic verification posts, lorem ipsum, template news, or unrelated filler.
+11. Blog article generation is an explicit workflow stage between site preview and deployment, not a hidden deploy-time side effect. After the site preview is ready and a Blog/content-backed route exists, generate the article set, show the titles/excerpts/categories/tags to the user for confirmation, and only then proceed to deployment.
+12. Generation and deployment are separate actions. The generation action stops at preview artifacts, Blog list/detail deliverables, and any confirmation card. It must never silently deploy, auto-confirm deployment, combine generate+deploy into one completion step, or claim the site is deployed unless the user triggers a later explicit deploy action.
 13. Deployment/runtime hydration must preserve the generated list's article/card class and visual rhythm. It may replace list data, but it must not replace a site-specific resource card layout with a generic Blog card style.
-14. If the user requests a specific number of articles/posts/reports/guides, generate that exact number of complete content items. Each item must have:
+14. Any generated Blog/content-backed route implies Blog detail deliverables even when the user did not state a numeric article count. At minimum, every visible Blog/resource card rendered inside `[data-shpitto-blog-list]` must link to a corresponding `/blog/{slug}/` detail target, and each linked target must contain a complete readable body page in the generated output.
+15. If the user requests a specific number of articles/posts/reports/guides, generate that exact number of complete content items. Each item must have:
    - a stable slug and `/blog/{slug}/` detail link,
    - title, date or publish state, category/tags, reading time or scope,
    - a list-page summary that is useful on its own,
    - full body content with multiple paragraphs and meaningful section headings,
    - no placeholder, outline-only, "coming soon", "待补充", or metadata-only detail page.
-15. For article-style Blog routes, the list page is an index, not the article body. It must link to full details, and deployed/static output must make each requested article readable even when the Blog API or runtime route is unavailable. If runtime detail rendering cannot be guaranteed, emit static `/blog/{slug}/index.html` pages for every requested article using the same shell and typography.
+16. For article-style Blog routes, the list page is an index, not the article body. It must link to full details, and deployed/static output must make each requested article readable even when the Blog API or runtime route is unavailable. If runtime detail rendering cannot be guaranteed, emit static `/blog/{slug}/index.html` pages for every requested article using the same shell and typography.
     - Do not satisfy this requirement with data attributes alone. The no-JS initial HTML must visibly expose the article titles/summaries and their `/blog/{slug}/` links before any script runs.
-16. Use web search or uploaded/source material enrichment when the user's requested article content needs facts, examples, current context, named tools, policies, standards, reports, or nontrivial domain knowledge. For broad personal-opinion or conceptual posts, LLM drafting may fill the prose, but it must still produce complete publishable body content. Generic web search may inform framing and examples; explicit user-provided content remains the highest-priority source.
-17. When web search is used for article generation, distill facts into the Evidence Brief and write original article prose. Do not paste source excerpts, do not expose "web search says" copy to visitors, and do not cite unsupported claims as if they came from the site owner.
+17. Use web search or uploaded/source material enrichment when the user's requested article content needs facts, examples, current context, named tools, policies, standards, reports, or nontrivial domain knowledge. For broad personal-opinion or conceptual posts, LLM drafting may fill the prose, but it must still produce complete publishable body content. Generic web search may inform framing and examples; explicit user-provided content remains the highest-priority source.
+18. When web search is used for article generation, distill facts into the Evidence Brief and write original article prose. Do not paste source excerpts, do not expose "web search says" copy to visitors, and do not cite unsupported claims as if they came from the site owner.
+19. Regeneration is not a partial repaint. When the user asks to regenerate, rebuild, re-run, or restart generation for a site whose confirmed route plan includes `/blog` or another selected content-backed route, rerun the full content workflow for that route:
+   - regenerate the site preview,
+   - regenerate the Blog/content-backed index surface,
+   - regenerate the matching `/blog/{slug}/` detail deliverables,
+   - regenerate the Blog article confirmation artifact/card,
+   - and reopen the deployment handoff stage.
+20. A regenerate request must not stop after a fresh `/blog/index.html` preview if the site still contains a Blog/content-backed route. The regenerated run is incomplete unless the updated Blog article set and its detail pages are ready for confirmation again.
+21. Regeneration does not collapse deployment into generation. It must reopen the Blog-and-deploy handoff, but deployment still requires a later explicit user action after the regenerated article set is shown again.
+
+### Phase 0.375: Refinement Semantics Contract (Mandatory)
+
+Treat refinement as non-full-site incremental evolution from the current website baseline.
+
+1. If the user does not explicitly ask to regenerate the entire website, keep the task in the refinement lane.
+2. Refinement includes three internal subtypes:
+   - `patch`: adjust existing copy, layout, styling, or components inside already generated pages.
+   - `structural`: add/remove pages, materialize newly requested route files, repair missing route deliverables, adjust navigation relationships, or complete omitted detail pages.
+   - `route_regenerate`: rewrite one page or one route family from the current site baseline without discarding the whole website.
+3. Only requests such as "full regenerate", "rebuild everything", "推倒重来", or "重新生成整个网站" may leave refinement and re-enter full-site generation.
+4. Requests such as "补 blog 内容页", "补齐 detail pages", "新增一个页面", "删除 pricing 页", "重写 /about", or "重做 blog 页" are still refinement tasks unless they explicitly ask for whole-site regeneration.
+5. Structural refinement may create new route files when those files are missing deliverables implied by the current confirmed route plan, or when the user explicitly requests a new page without asking for full-site regeneration.
+6. Any newly created page must inherit the current site's active theme, shared navigation, and shared footer contract by default. A structural refine must not introduce a visually detached page, a different header/footer system, or a one-off navigation shell unless the user explicitly requests a shell redesign.
+7. Route-level regeneration must preserve the rest of the site's shell, navigation, style system, and unaffected routes unless the user explicitly asks to change them too.
+8. Refinement is site-baseline-aware. It should prefer editing or completing the existing project over restarting planning from scratch.
+9. Deployment remains a separate action. A refinement may reopen preview confirmation or Blog confirmation, but it must not auto-deploy unless the user later asks to deploy.
 
 Blog-backed list structure resilience:
 
@@ -235,6 +262,13 @@ Before emitting any files, run a route- and layout-aware preflight check.
 8. Requested-content completeness gate: if the prompt asks for a fixed number of articles/posts/resources, validate that the generated output contains the same number of readable detail targets. Each target must include full body prose with multiple paragraphs or sections. A card with only title, tags, date, excerpt, or "read more" is not a completed content item.
 9. Count-led editorial framing gate: if the prompt asks for a fixed number of articles/posts/resources, the generated page may contain that number of cards and details, but it must not turn the count itself into visitor-facing scaffold copy such as "三篇文章，三种方式", "持续更新三篇首发文章", "这里有三篇完整文章", or equivalent count-announcement prose.
 10. Homepage entry gate: the home page may point visitors to the Blog/content route, but it must do so with site-positioning or topical CTA language. Do not explain the site by saying the blog currently has three articles, by summarizing those three articles in sequence, or by telling readers to start from those three pieces.
+11. Blog-detail inevitability gate: if the route plan includes `/blog` or another Blog/content-backed route, the generated list surface must expose at least one visible `/blog/{slug}/` detail entry and must include matching readable detail output. A Blog index without detail targets is a generation failure even when the prompt did not request a numeric article count.
+12. Action-separation gate: generation and deployment must remain distinct workflow actions. The generation stage may produce preview files, Blog cards, Blog detail pages, and confirmation artifacts, but it must not claim deployment success, auto-trigger deployment, or collapse "generate site" and "deploy site" into one step unless the user explicitly asks for deployment later.
+13. Regeneration continuity gate: if a prior or current confirmed route plan includes a Blog/content-backed route, then a regenerate/rebuild request must re-enter the Blog workflow instead of ending at plain site preview. The regenerated output must again produce:
+   - the Blog/content-backed list surface,
+   - the corresponding `/blog/{slug}/` detail pages,
+   - and a renewed pre-deploy Blog confirmation artifact.
+   Do not treat regeneration as complete if only the shell pages were refreshed.
 
 Quality gate: route semantics, layout structure, formal visitor-facing copy, and requested content completeness are validated before generation proceeds; a mismatch fails the page preflight instead of being deferred to later visual QA.
 

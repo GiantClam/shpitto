@@ -1918,6 +1918,7 @@ export async function POST(req: Request) {
       intent: decision.intent,
       intentConfidence: decision.confidence,
       intentReason: decision.reason,
+      refineScope: decision.refineScope,
       deployRequested,
       refineRequested,
       blogContentConfirmed:

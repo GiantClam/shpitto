@@ -7,6 +7,7 @@ import {
   invokeModelWithRetry,
   isRetryableProviderError,
   normalizeToolChoiceForProvider,
+  requiredFileChecklistForTesting,
   resolveToolProtocolForProvider,
   runSkillToolExecutor,
   sanitizeRequirementForGenerationForTesting,
@@ -43,7 +44,7 @@ main { display: grid; gap: 24px; }
 
   const pageHead = `<style>${pageStyle}</style>`;
 
-  return [
+  const files = [
     {
       path: "/styles.css",
       content: pageStyle,
@@ -125,6 +126,62 @@ main { display: grid; gap: 24px; }
       };
     }),
   ];
+
+  const buildDetailPage = (slug: string, title: string) =>
+    [
+      "<!doctype html>",
+      '<html lang="en">',
+      "<head>",
+      `  <title>${title}</title>`,
+      '  <meta charset="utf-8" />',
+      '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+      pageHead,
+      '  <link rel="stylesheet" href="/styles.css" />',
+      "</head>",
+      "<body>",
+      "  <nav>",
+      '    <a href="/">Home</a>',
+      '    <a href="/blog/">Blog</a>',
+      "  </nav>",
+      "  <main>",
+      "    <article>",
+      `      <h1>${title}</h1>`,
+      `      <p>This ${slug} article explains a concrete operating decision, the surrounding business context, and the editorial reason the topic deserves a full detail page rather than a shallow list-only mention. The reader should immediately understand what changed, why the topic matters, and how the final implementation affects the rest of the website system.</p>`,
+      "      <p>It gives readers enough narrative detail to understand the problem, the constraints, the reasoning behind the selected approach, and the practical consequences of shipping the chosen implementation. Instead of stopping at a title and excerpt, the article spells out the operational tradeoffs, the expected user impact, and the checks that keep the result grounded in the original brief.</p>",
+      "      <p>The body is intentionally long enough to behave like a publishable detail page, with multiple paragraphs that can stand on their own for SEO, no-JS browsing, and preview environments where runtime hydration may never run. That matters because the archive page is only useful when every visible teaser card opens into a destination that preserves meaning even outside the deployed dynamic runtime.</p>",
+      "      <section><h2>Context</h2><p>The surrounding site shell, typography, and navigation stay consistent so readers move from the archive into a fully readable destination without losing orientation or seeing a generic runtime fallback template. The detail page therefore carries the same design language as the parent site while expanding the topic into a more substantial editorial argument.</p></section>",
+      "      <section><h2>Decision</h2><p>Each linked detail target must resolve to a stable route, contain finished prose instead of outline fragments, and preserve the same visual system that the generated list promises on the parent page. A route that only shows a title, date, or skeleton paragraph would break that contract and make the list card misleading.</p></section>",
+      "      <section><h2>Impact</h2><p>That combination protects addressability, keeps cards honest about what they lead to, and avoids the common failure mode where a polished archive page collapses into placeholders once a visitor clicks through. It also gives the deployment layer a trustworthy static fallback if the dynamic Blog runtime is unavailable, slow, or intentionally disabled during preview.</p></section>",
+      "    </article>",
+      "  </main>",
+      '  <script src="/script.js"></script>',
+      "</body>",
+      "</html>",
+    ].join("\n");
+
+  const detailFixtures = [
+    ["demo", "Demo detail"],
+    ["insight", "Insight detail"],
+    ["standards", "Standards detail"],
+    ["devops", "DevOps delivery detail"],
+    ["ai-one", "AI article one"],
+    ["ai-two", "AI article two"],
+    ["ai-three", "AI article three"],
+    ["a", "Article A"],
+    ["b", "Article B"],
+    ["c", "Article C"],
+    ["agile-devops-system-design", "Agile DevOps system design"],
+  ] as const;
+
+  for (const [slug, title] of detailFixtures) {
+    files.push({
+      path: `/blog/${slug}/index.html`,
+      type: "text/html",
+      content: buildDetailPage(slug, title),
+    });
+  }
+
+  return files;
 }
 
 describe("skill-tool-executor", () => {
@@ -248,8 +305,60 @@ describe("skill-tool-executor", () => {
     expect(contract).toContain("Navigation must use meaningful route labels");
     expect(contract).toContain("Footer must contribute real site content");
     expect(contract).toContain("Mobile nav may collapse visually");
+    expect(contract).toContain("new page");
     expect(contract).toContain("External imagery must come from source-backed or project-owned assets");
     expect(contract).toContain("Metrics must be source-backed");
+  });
+
+  it("fails qa when a route page drops the shared shell defined on home", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a website with Home and Pricing pages.")],
+      phase: "conversation",
+      sitemap: ["/", "/pricing"],
+    } as any);
+
+    const files = [
+      {
+        path: "/styles.css",
+        type: "text/css",
+        content: "body{font-family:system-ui;} header,footer{padding:16px;} nav{display:flex;gap:12px;}",
+      },
+      {
+        path: "/script.js",
+        type: "text/javascript",
+        content: "document.documentElement.dataset.ready='true';",
+      },
+      {
+        path: "/index.html",
+        type: "text/html",
+        content: [
+          "<!doctype html>",
+          '<html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/styles.css" /></head><body>',
+          "<header><nav><a href=\"/\">Home</a><a href=\"/pricing/\">Pricing</a></nav></header>",
+          "<main><h1>Home</h1><p>Home content with a coherent shell.</p></main>",
+          "<footer><a href=\"/\">Home</a><a href=\"/pricing/\">Pricing</a><p>Footer summary</p></footer>",
+          '<script src="/script.js"></script></body></html>',
+        ].join(""),
+      },
+      {
+        path: "/pricing/index.html",
+        type: "text/html",
+        content: [
+          "<!doctype html>",
+          '<html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/styles.css" /></head><body>',
+          "<main><h1>Pricing</h1><p>This page incorrectly drops the shared header and footer shell.</p></main>",
+          '<script src="/script.js"></script></body></html>',
+        ].join(""),
+      },
+    ];
+
+    expect(() =>
+      validateAndNormalizeRequiredFilesWithQa({
+        decision,
+        files,
+        requirementText: "Build a website with Home and Pricing pages.",
+      }),
+    ).toThrow(/shared navigation shell/i);
   });
 
   it("returns structured qa summary for validated files", () => {
@@ -282,6 +391,7 @@ describe("skill-tool-executor", () => {
       - Navigation must use meaningful route labels; do not leave desktop or mobile nav shells as generic menu/navigation/quick links scaffolds.
       - Footer must contribute real site content; avoid copyright-only placeholders, label-only footers, or generic legal shells that add no value.
       - Mobile nav may collapse visually, but it still needs the same meaningful destinations as desktop rather than a menu-only placeholder shell.
+      - When refine or generation creates a new page, that page must reuse the current site's active theme and the same shared navigation/footer shell unless the brief explicitly requests a shell redesign.
       - External imagery must come from source-backed or project-owned assets; do not ship example.com, placeholder.com, or other demo/stock placeholder URLs.
       - Metrics must be source-backed; do not invent percentages, multipliers, "hours saved", growth, or conversion-lift claims without brief or citation support.
       - Visual direction must be distinctive: expressive type pairing, intentional background system, layered sections, strong hero composition, and mobile-specific composition.
@@ -378,7 +488,6 @@ describe("skill-tool-executor", () => {
       /: Homepage. Establish the brand overview, core value, primary route entry, and next action while preserving site home-entry semantics.
       /custom-solutions: Dedicated page for "Custom Solutions". Derive its content depth, section structure, and interactions from the confirmed Canonical Website Prompt, source content, and route intent.
       /cases: Dedicated page for "Cases". Derive its content depth, section structure, and interactions from the confirmed Canonical Website Prompt, source content, and route intent.
-      /blog: Content collection page for "Blog". The visible page must follow this route's own information architecture; implementation capability must not become a visitor-facing topic.
       /contact: Dedicated page for "Contact". Derive its content depth, section structure, and interactions from the confirmed Canonical Website Prompt, source content, and route intent.
       /about: Dedicated page for "About". Derive its content depth, section structure, and interactions from the confirmed Canonical Website Prompt, source content, and route intent."
     `);
@@ -755,6 +864,51 @@ describe("skill-tool-executor", () => {
     ).not.toThrow();
   });
 
+  it("blocks duplicated lang-zh/lang-en body content even when only one language is visible at a time", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a bilingual Chinese and English company site with a language switch.")],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/about"],
+          navLabels: ["Home", "About"],
+          files: ["/styles.css", "/script.js", "/index.html", "/about/index.html"],
+        },
+      },
+    } as any);
+    const files = validGeneratedFiles(decision.routes).map((file) =>
+      file.path === "/index.html"
+        ? {
+            ...file,
+            content: String(file.content).replace(
+              /<main>[\s\S]*<\/main>/,
+              [
+                "<main>",
+                '<section aria-label="Language switch"><button type="button">中文</button><button type="button">English</button></section>',
+                "<section>",
+                '<h1><span class="lang-zh">工业自动化合作伙伴</span><span class="lang-en">Industrial automation partner</span></h1>',
+                '<p><span class="lang-zh">我们为学校和机构提供完整的部署支持与内容服务。</span><span class="lang-en">We provide full deployment support and editorial services for schools and institutions.</span></p>',
+                '<div class="feature-card"><h2><span class="lang-zh">实施路径</span><span class="lang-en">Implementation roadmap</span></h2><p><span class="lang-zh">每个阶段都有明确负责人和交付物。</span><span class="lang-en">Each phase has a named owner and explicit deliverables.</span></p></div>',
+                "</section>",
+                "</main>",
+              ].join(""),
+            ),
+          }
+        : file,
+    );
+
+    expect(() =>
+      validateAndNormalizeRequiredFiles({
+        decision,
+        files,
+        requirementText: "Build a bilingual Chinese and English company site with a language switch.",
+      }),
+    ).toThrow("duplicated bilingual DOM copy");
+  });
+
   it("requires an explicit /blog route to include the Blog data-source contract", () => {
     const decision = buildLocalDecisionPlan({
       messages: [new HumanMessage("生成个人网站，导航包含 Blog，Blog 要承载正式文章。")],
@@ -895,6 +1049,76 @@ describe("skill-tool-executor", () => {
         requirementText: "我要一个个人blog，主要是ai blog，帮我生成3篇文章",
       }),
     ).toThrow("must contain a complete article/detail body");
+  });
+
+  it("requires any explicit /blog route to expose detail links and matching detail pages even without a requested count", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a personal blog with Home and Blog.")],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/blog"],
+          navLabels: ["Home", "Blog"],
+          files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html"],
+        },
+      },
+    } as any);
+    const files = validGeneratedFiles(decision.routes)
+      .filter((file) => file.path !== "/blog/demo/index.html")
+      .map((file) =>
+        file.path === "/styles.css"
+          ? {
+              ...file,
+              content: `${String(file.content || "")}\n.blog-card { padding: 24px; }`,
+            }
+          : file.path === "/blog/index.html"
+            ? {
+                ...file,
+                content: String(file.content).replace(
+                  /<main>[\s\S]*<\/main>/,
+                  '<main><h1>Blog</h1><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list><article class="blog-card"><h2>Entry one</h2><p>A polished summary without a detail link.</p></article></div></section></main>',
+                ),
+              }
+            : file,
+      );
+
+    expect(() =>
+      validateAndNormalizeRequiredFiles({
+        decision,
+        files,
+        requirementText: "Build a personal blog with Home and Blog.",
+      }),
+    ).toThrow("must expose at least one /blog/{slug}/ detail link");
+  });
+
+  it("treats discovered /blog/{slug}/ links as missing required files before final validation", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a personal blog with Home and Blog.")],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/blog"],
+          navLabels: ["Home", "Blog"],
+          files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html"],
+        },
+      },
+    } as any);
+    const files = validGeneratedFiles(decision.routes).filter(
+      (file) => file.path !== "/blog/demo/index.html",
+    );
+
+    expect(
+      requiredFileChecklistForTesting(decision, {
+        files,
+        requirementText: "Build a personal blog with Home and Blog.",
+      }),
+    ).toContain("/blog/demo/index.html");
   });
 
   it("blocks a homepage that reads like a downloads or certification portal", () => {

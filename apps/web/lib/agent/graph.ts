@@ -432,6 +432,7 @@ export interface AgentState {
     intent?: string;
     intentConfidence?: number;
     intentReason?: string;
+    refineScope?: "patch" | "structural" | "route_regenerate" | "full_regenerate";
     refineRequested?: boolean;
     refineSourceProjectPath?: string;
     refineSourceTaskId?: string;

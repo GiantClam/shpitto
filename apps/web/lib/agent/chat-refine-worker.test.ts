@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { HumanMessage } from "@langchain/core/messages";
 import { completeChatTask, createChatTask, getChatTask, getLatestChatTaskForChat } from "./chat-task-store";
+import { applyDeterministicRefineFixups } from "../skill-runtime/executor";
 
 describe("chat refine worker", () => {
   it("executes refine tasks and writes new checkpoint artifacts", async () => {
@@ -122,6 +123,160 @@ describe("chat refine worker", () => {
     const refinedProjectRaw = await fs.readFile(refinedProjectPath, "utf8");
     expect(refinedProjectRaw).toContain("#ff5500");
     expect(refinedProjectRaw).toContain("New Brand");
+  });
+
+  it("materializes missing blog detail pages during structural refine", async () => {
+    const chatId = `chat-refine-worker-blog-details-${Date.now()}`;
+    const sourceProjectPath = path.resolve(process.cwd(), ".tmp", "chat-tests", `${chatId}-source.json`);
+    await fs.mkdir(path.dirname(sourceProjectPath), { recursive: true });
+    await fs.writeFile(
+      sourceProjectPath,
+      JSON.stringify(
+        {
+          projectId: "refine-worker-blog-details",
+          pages: [
+            {
+              path: "/blog",
+              html: '<!doctype html><html><body><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list><article><a href="/blog/alpha/">Alpha</a><p>Alpha summary</p></article><article><a href="/blog/beta/">Beta</a><p>Beta summary</p></article></div></section></body></html>',
+            },
+          ],
+          staticSite: {
+            mode: "skill-direct",
+            files: [
+              {
+                path: "/blog/index.html",
+                type: "text/html",
+                content:
+                  '<!doctype html><html><body><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list><article><a href="/blog/alpha/">Alpha</a><p>Alpha summary</p></article><article><a href="/blog/beta/">Beta</a><p>Beta summary</p></article></div></section></body></html>',
+              },
+              { path: "/styles.css", type: "text/css", content: "body{color:#111}" },
+              { path: "/script.js", type: "text/javascript", content: "console.log('ok');" },
+            ],
+          },
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
+
+    const inputState: any = {
+      messages: [new HumanMessage({ content: "三篇blog缺少内容页面，请补充" })],
+      phase: "end",
+      current_page_index: 0,
+      attempt_count: 0,
+      workflow_context: {
+        executionMode: "refine",
+        refineScope: "structural",
+        refineRequested: true,
+        checkpointProjectPath: sourceProjectPath,
+        deploySourceProjectPath: sourceProjectPath,
+      },
+    };
+
+    const task = await createChatTask(chatId, undefined, {
+      assistantText: "queued refine",
+      phase: "queued",
+      internal: { inputState, skillId: "website-generation-workflow" },
+      progress: { stage: "queued" } as any,
+    });
+
+    const { runChatTaskWorkerOnce } = await import("../../scripts/chat-task-worker");
+    const processed = await runChatTaskWorkerOnce();
+    expect(processed).toBe(true);
+
+    const updated = await getChatTask(task.id);
+    expect(updated?.status).toBe("succeeded");
+    const refinedProjectPath = String(updated?.result?.progress?.checkpointProjectPath || "").trim();
+    const refinedProject = JSON.parse(await fs.readFile(refinedProjectPath, "utf8"));
+    const filePaths = ((refinedProject?.staticSite?.files || []) as any[]).map((file) => String(file.path || ""));
+    expect(filePaths).toEqual(
+      expect.arrayContaining(["/blog/alpha/index.html", "/blog/beta/index.html"]),
+    );
+  });
+
+  it("materializes newly requested route pages during structural refine", async () => {
+    const chatId = `chat-refine-worker-add-page-${Date.now()}`;
+    const sourceProjectPath = path.resolve(process.cwd(), ".tmp", "chat-tests", `${chatId}-source.json`);
+    await fs.mkdir(path.dirname(sourceProjectPath), { recursive: true });
+    await fs.writeFile(
+      sourceProjectPath,
+      JSON.stringify(
+        {
+          projectId: "refine-worker-add-page",
+          pages: [
+            {
+              path: "/",
+              html: "<!doctype html><html><head><title>Home</title></head><body><header><nav><a href=\"/\">Home</a><a href=\"/about/\">About</a><a href=\"/contact/\">Contact</a></nav></header><main><h1>Home</h1></main></body></html>",
+            },
+            {
+              path: "/about",
+              html: "<!doctype html><html><head><title>About</title></head><body><main><h1>About</h1></main></body></html>",
+            },
+          ],
+          staticSite: {
+            mode: "skill-direct",
+            files: [
+              {
+                path: "/index.html",
+                type: "text/html",
+                content:
+                  "<!doctype html><html><head><title>Home</title></head><body><header><nav><a href=\"/\">Home</a><a href=\"/about/\">About</a><a href=\"/contact/\">Contact</a></nav></header><main><h1>Home</h1></main></body></html>",
+              },
+              {
+                path: "/about/index.html",
+                type: "text/html",
+                content: "<!doctype html><html><head><title>About</title></head><body><main><h1>About</h1></main></body></html>",
+              },
+              {
+                path: "/contact/index.html",
+                type: "text/html",
+                content: "<!doctype html><html><head><title>Contact</title></head><body><main><h1>Contact</h1></main></body></html>",
+              },
+              { path: "/styles.css", type: "text/css", content: "body{color:#111}" },
+              { path: "/script.js", type: "text/javascript", content: "console.log('ok');" },
+            ],
+          },
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
+
+    const inputState: any = {
+      messages: [new HumanMessage({ content: "新增一个 pricing 页面，其他页面不动" })],
+      phase: "end",
+      current_page_index: 0,
+      attempt_count: 0,
+      workflow_context: {
+        executionMode: "refine",
+        refineScope: "structural",
+        refineRequested: true,
+        checkpointProjectPath: sourceProjectPath,
+        deploySourceProjectPath: sourceProjectPath,
+      },
+    };
+
+    const task = await createChatTask(chatId, undefined, {
+      assistantText: "queued refine",
+      phase: "queued",
+      internal: { inputState, skillId: "website-generation-workflow" },
+      progress: { stage: "queued" } as any,
+    });
+
+    const { runChatTaskWorkerOnce } = await import("../../scripts/chat-task-worker");
+    const processed = await runChatTaskWorkerOnce();
+    expect(processed).toBe(true);
+
+    const updated = await getChatTask(task.id);
+    expect(updated?.status).toBe("succeeded");
+    const refinedProjectPath = String(updated?.result?.progress?.checkpointProjectPath || "").trim();
+    const refinedProject = JSON.parse(await fs.readFile(refinedProjectPath, "utf8"));
+    const filePaths = ((refinedProject?.staticSite?.files || []) as any[]).map((file) => String(file.path || ""));
+    const pagePaths = ((refinedProject?.pages || []) as any[]).map((page) => String(page.path || ""));
+    expect(filePaths).toEqual(expect.arrayContaining(["/pricing/index.html"]));
+    expect(pagePaths).toEqual(expect.arrayContaining(["/pricing"]));
   });
 
   it("creates a follow-up refine task from pending edits captured while active", async () => {
@@ -285,6 +440,69 @@ describe("chat refine worker", () => {
     expect(indexHtml).not.toContain("For enterprise and SaaS teams");
     expect(indexHtml).not.toContain("data-nav-toggle");
     expect(indexHtml).not.toContain(">Menu<");
+  });
+
+  it("removes custom solutions routes and nav links when the user says the nav should not include 方案", async () => {
+    const project = {
+      projectId: "refine-worker-remove-solutions",
+      pages: [
+        {
+          path: "/",
+          html: '<!doctype html><html><head><title>Demo</title></head><body><nav><a href="/">Home</a><a href="/blog">Blog</a><a href="/custom-solutions">方案</a><a href="/contact">Contact</a></nav><main><h1>Demo</h1></main><footer><a href="/custom-solutions">方案</a></footer></body></html>',
+        },
+        {
+          path: "/blog",
+          html: '<!doctype html><html><head><title>Blog</title></head><body><nav><a href="/">Home</a><a href="/blog">Blog</a><a href="/custom-solutions">方案</a></nav><main><h1>Blog</h1></main></body></html>',
+        },
+        {
+          path: "/custom-solutions",
+          html: '<!doctype html><html><head><title>方案</title></head><body><nav><a href="/">Home</a><a href="/blog">Blog</a><a href="/custom-solutions">方案</a></nav><main><h1>方案</h1></main></body></html>',
+        },
+      ],
+      staticSite: {
+        mode: "skill-direct",
+        files: [
+          {
+            path: "/index.html",
+            type: "text/html",
+            content:
+              '<!doctype html><html><head><title>Demo</title></head><body><nav><a href="/">Home</a><a href="/blog">Blog</a><a href="/custom-solutions">方案</a><a href="/contact">Contact</a></nav><main><h1>Demo</h1></main><footer><a href="/custom-solutions">方案</a></footer></body></html>',
+          },
+          {
+            path: "/blog/index.html",
+            type: "text/html",
+            content:
+              '<!doctype html><html><head><title>Blog</title></head><body><nav><a href="/">Home</a><a href="/blog">Blog</a><a href="/custom-solutions">方案</a></nav><main><h1>Blog</h1></main></body></html>',
+          },
+          {
+            path: "/custom-solutions/index.html",
+            type: "text/html",
+            content:
+              '<!doctype html><html><head><title>方案</title></head><body><nav><a href="/">Home</a><a href="/blog">Blog</a><a href="/custom-solutions">方案</a></nav><main><h1>方案</h1></main></body></html>',
+          },
+          { path: "/styles.css", type: "text/css", content: "body{color:#111}" },
+          { path: "/script.js", type: "text/javascript", content: "console.log('ok');" },
+        ],
+      },
+    };
+
+    const refined = applyDeterministicRefineFixups(
+      project,
+      "网站应该支持中英文切换，navigate中不应该有方案页面，删除方案页面",
+    );
+    const staticFiles = Array.isArray(refined.project?.staticSite?.files) ? refined.project.staticSite.files : [];
+    const staticPaths = staticFiles.map((file: any) => String(file?.path || ""));
+    const pagePaths = (Array.isArray(refined.project?.pages) ? refined.project.pages : []).map((page: any) =>
+      String(page?.path || ""),
+    );
+    const indexHtml = String(staticFiles.find((file: any) => String(file?.path || "") === "/index.html")?.content || "");
+    const blogHtml = String(staticFiles.find((file: any) => String(file?.path || "") === "/blog/index.html")?.content || "");
+
+    expect(refined.changedFiles).toContain("/custom-solutions/index.html");
+    expect(staticPaths).not.toContain("/custom-solutions/index.html");
+    expect(pagePaths).not.toContain("/custom-solutions");
+    expect(indexHtml).not.toContain("/custom-solutions");
+    expect(blogHtml).not.toContain("/custom-solutions");
   });
 
   it("fails refine tasks when baseline is missing", async () => {
