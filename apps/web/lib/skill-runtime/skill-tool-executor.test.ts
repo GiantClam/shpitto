@@ -1,13 +1,16 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import { HumanMessage } from "@langchain/core/messages";
 import {
+  collapseVisibleBilingualPairsForTesting,
   didRoundMateriallyChangeFilesForTesting,
+  extractQaRepairTargetsForTesting,
   formatTargetPageContract,
   enforceNavigationOrder,
   htmlPathToRoute,
   invokeModelWithRetry,
   isRetryableProviderError,
   normalizeToolChoiceForProvider,
+  normalizeGeneratedJsForTesting,
   requiredFileChecklistForTesting,
   resolveToolProtocolForProvider,
   runSkillToolExecutor,
@@ -1073,6 +1076,78 @@ describe("skill-tool-executor", () => {
     ).toThrow("exposes editorial scaffold/explanatory wording");
   });
 
+  it("allows substantive blog framing that mentions three essays without turning it into scaffold copy", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Generate a personal blog with three articles that reflect the author's methods and judgment.")],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/blog"],
+          navLabels: ["Home", "Blog"],
+          files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html"],
+        },
+      },
+    } as any);
+    const files = validGeneratedFiles(decision.routes).map((file) =>
+      file.path === "/blog/index.html"
+        ? {
+            ...file,
+            content: String(file.content).replace(
+              /<main>[\s\S]*<\/main>/,
+              '<main><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><h1>Blog</h1><p>These three essays examine engineering systems, global real-time architecture, and AI commercialization as reusable judgment frameworks rather than launch announcements or reading instructions.</p><div data-shpitto-blog-list><article><a href="/blog/a/">A</a></article><article><a href="/blog/b/">B</a></article><article><a href="/blog/c/">C</a></article></div></section></main>',
+            ),
+          }
+        : file,
+    );
+
+    expect(() =>
+      validateAndNormalizeRequiredFiles({
+        decision,
+        files,
+        requirementText: "Generate a personal blog with three articles that reflect the author's methods and judgment.",
+      }),
+    ).not.toThrow();
+  });
+
+  it("does not misclassify topical prose about reading signals as a blog reading-method explainer", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Generate a practical editorial blog for engineering teams.")],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/blog"],
+          navLabels: ["Home", "Blog"],
+          files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html"],
+        },
+      },
+    } as any);
+    const files = validGeneratedFiles(decision.routes).map((file) =>
+      file.path === "/blog/index.html"
+        ? {
+            ...file,
+            content: String(file.content).replace(
+              /<main>[\s\S]*<\/main>/,
+              '<main><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><h1>Blog</h1><p>This blog focuses on working guidance: how to read signals, how to verify a route, and how to keep a dense interface disciplined when the surface becomes noisy.</p><div data-shpitto-blog-list><article><a href="/blog/a/">A</a></article><article><a href="/blog/b/">B</a></article><article><a href="/blog/c/">C</a></article></div></section></main>',
+            ),
+          }
+        : file,
+    );
+
+    expect(() =>
+      validateAndNormalizeRequiredFiles({
+        decision,
+        files,
+        requirementText: "Generate a practical editorial blog for engineering teams.",
+      }),
+    ).not.toThrow();
+  });
+
   it("does not hard-fail bilingual output only because a switch contract is absent", () => {
     const decision = buildLocalDecisionPlan({
       messages: [new HumanMessage("Build a bilingual Chinese and English AI blog with a language switch.")],
@@ -1375,6 +1450,42 @@ describe("skill-tool-executor", () => {
     ];
 
     expect(didRoundMateriallyChangeFilesForTesting(previousFiles, currentFiles, ["/index.html"])).toBe(true);
+  });
+
+  it("extracts exact QA repair targets from invalid required file feedback", () => {
+    const feedback = [
+      "skill_tool_invalid_required_file: /blog/ai-from-lab-to-commercial-scale/index.html renders obvious simultaneous bilingual visible copy instead of language-switched content",
+      "skill_tool_invalid_required_file: /index.html failed route QA",
+    ].join("\n");
+
+    expect(extractQaRepairTargetsForTesting(feedback)).toEqual([
+      "/blog/ai-from-lab-to-commercial-scale/index.html",
+      "/index.html",
+    ]);
+  });
+
+  it("collapses duplicated visible zh/en sibling nodes into one i18n-aware node", () => {
+    const html = [
+      '<h2 class="module-title" data-i18n-zh>继续阅读</h2>',
+      '<h2 class="module-title" data-i18n-en>Continue reading</h2>',
+    ].join("\n");
+
+    expect(collapseVisibleBilingualPairsForTesting(html, "zh")).toContain(
+      '<h2 class="module-title" data-i18n data-i18n-zh="继续阅读" data-i18n-en="Continue reading">继续阅读</h2>',
+    );
+  });
+
+  it("injects data-i18n toggle support into bilingual runtime scripts", () => {
+    const script = [
+      "(() => {",
+      "  const root = document.documentElement;",
+      "  root.dataset.lang = 'zh';",
+      "})();",
+    ].join("\n");
+
+    const normalized = normalizeGeneratedJsForTesting(script, "Chinese and English bilingual site");
+    expect(normalized).toContain("document.querySelectorAll('[data-i18n]')");
+    expect(normalized).toContain("attributeFilter: ['data-lang']");
   });
 
   it("blocks a homepage that reads like a downloads or certification portal", () => {

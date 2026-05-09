@@ -1,5 +1,7 @@
-import crypto from "node:crypto";
+﻿import crypto from "node:crypto";
+import { readFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { AIMessage, HumanMessage, SystemMessage, ToolMessage, type BaseMessage } from "@langchain/core/messages";
 import OpenAI from "openai";
 import type { AgentState } from "../agent/graph.ts";
@@ -128,6 +130,29 @@ type ToolRoundOutput = {
   tool_calls: ToolRoundCall[];
   rawMessage?: AIMessage;
 };
+
+type BilingualPromptGuidance = {
+  roundLanguageGuidance: string[];
+  roundStrictProtocol: string[];
+  targetBlogDetailGuidance: string[];
+  targetLanguageGate: string[];
+};
+
+type BlogPromptGuidance = {
+  targetBlogIndexGate: string[];
+  targetBlogCountGate: string[];
+  targetBlogDetailGate: string[];
+};
+
+const BILINGUAL_PROMPT_GUIDANCE_PATH = fileURLToPath(
+  new URL("../../skills/website-generation-workflow/BILINGUAL_PROMPT_GUIDANCE.md", import.meta.url),
+);
+const BLOG_PROMPT_GUIDANCE_PATH = fileURLToPath(
+  new URL("../../skills/website-generation-workflow/BLOG_PROMPT_GUIDANCE.md", import.meta.url),
+);
+
+let cachedBilingualPromptGuidance: BilingualPromptGuidance | null = null;
+let cachedBlogPromptGuidance: BlogPromptGuidance | null = null;
 
 const MAX_TOOL_ROUNDS = Math.max(2, Number(process.env.SKILL_TOOL_MAX_ROUNDS || 20));
 const MAX_TOOL_QA_REPAIR_ROUNDS = Math.max(1, Number(process.env.SKILL_TOOL_QA_REPAIR_ROUNDS || 4));
@@ -580,8 +605,10 @@ function findVisibleBlogEditorialScaffold(html: string): string[] {
   const text = htmlVisibleText(html);
   const terms: Array<[string, RegExp]> = [
     ["reading path", /(?:阅读路径|阅读方式|推荐阅读顺序|如何阅读)/i],
-    ["three article explainer", /(?:三篇文章|三篇首发文章).{0,80}(?:对应|说明|带你|讲清楚|阅读|文章)/i],
-    ["reading method", /(?:阅读方式|推荐阅读顺序|how to read|reading method|suggested reading order)/i],
+    [
+      "reading method",
+      /(?:(?:how to read|reading method|suggested reading order).{0,80}(?:this page|this archive|this blog|these articles|the collection|the archive|the list)|(?:阅读方式|推荐阅读顺序|如何阅读).{0,80}(?:本页|页面|博客|文章|合集|列表))/i,
+    ],
     ["page contents explainer", /(?:本页内容|这个页面是|以下是博客|article collection|what you[’']ll find|this page (?:is|collects))/i],
     ["launch article framing", /(?:三篇首发文章|首发文章|three launch articles|launch articles)/i],
     ["metadata explanation", /(?:每篇文章|each article).{0,80}(?:日期|阅读时长|标签|date|read(?:ing)? time|tags)/i],
@@ -591,7 +618,7 @@ function findVisibleBlogEditorialScaffold(html: string): string[] {
 }
 
 function findVisibleBlogDetailEditorialScaffold(html: string): string[] {
-  const indexOnlyTerms = new Set(["reading path", "three article explainer"]);
+  const indexOnlyTerms = new Set(["reading path"]);
   return findVisibleBlogEditorialScaffold(html).filter((term) => !indexOnlyTerms.has(term));
 }
 
@@ -727,6 +754,26 @@ function didRoundMateriallyChangeFiles(
   });
 }
 
+function extractQaRepairTargets(feedback: string): string[] {
+  const targets = new Set<string>();
+  const text = String(feedback || "");
+  const explicitFilePattern = /skill_tool_invalid_required_file:\s+([^\s]+?)(?=\s|$)/g;
+  for (const match of text.matchAll(explicitFilePattern)) {
+    const candidate = normalizePath(String(match[1] || ""));
+    if (!candidate.startsWith("/")) continue;
+    if (
+      candidate.endsWith(".html") ||
+      candidate.endsWith(".css") ||
+      candidate.endsWith(".js") ||
+      candidate.endsWith(".json") ||
+      candidate.endsWith(".md")
+    ) {
+      targets.add(candidate);
+    }
+  }
+  return Array.from(targets);
+}
+
 function hasValidHtmlCore(rawHtml: string): boolean {
   const html = String(rawHtml || "");
   if (!html.trim()) return false;
@@ -805,6 +852,140 @@ function normalizeGeneratedCss(rawCss: string): string {
     "    display: flex;",
     "  }",
     "}",
+  ].join("\n");
+}
+
+function extractMarkdownBulletSection(markdown: string, heading: string): string[] {
+  const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(`^## ${escapedHeading}\\s*$([\\s\\S]*?)(?=^##\\s|\\Z)`, "m");
+  const match = markdown.match(pattern);
+  if (!match) return [];
+  return String(match[1] || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("- "));
+}
+
+function loadBilingualPromptGuidance(): BilingualPromptGuidance {
+  if (cachedBilingualPromptGuidance) return cachedBilingualPromptGuidance;
+  const markdown = readFileSync(BILINGUAL_PROMPT_GUIDANCE_PATH, "utf8");
+  cachedBilingualPromptGuidance = {
+    roundLanguageGuidance: extractMarkdownBulletSection(markdown, "Round Language Guidance"),
+    roundStrictProtocol: extractMarkdownBulletSection(markdown, "Round Strict Protocol"),
+    targetBlogDetailGuidance: extractMarkdownBulletSection(markdown, "Target Blog Detail Guidance"),
+    targetLanguageGate: extractMarkdownBulletSection(markdown, "Target Language Gate"),
+  };
+  return cachedBilingualPromptGuidance;
+}
+
+function loadBlogPromptGuidance(): BlogPromptGuidance {
+  if (cachedBlogPromptGuidance) return cachedBlogPromptGuidance;
+  const markdown = readFileSync(BLOG_PROMPT_GUIDANCE_PATH, "utf8");
+  cachedBlogPromptGuidance = {
+    targetBlogIndexGate: extractMarkdownBulletSection(markdown, "Target Blog Index Gate"),
+    targetBlogCountGate: extractMarkdownBulletSection(markdown, "Target Blog Count Gate"),
+    targetBlogDetailGate: extractMarkdownBulletSection(markdown, "Target Blog Detail Gate"),
+  };
+  return cachedBlogPromptGuidance;
+}
+
+function renderPromptGuidance(lines: string[], replacements: Record<string, string>): string[] {
+  return lines.map((line) =>
+    Object.entries(replacements).reduce(
+      (acc, [token, value]) => acc.replaceAll(`{{${token}}}`, value),
+      line,
+    ),
+  );
+}
+
+function escapeHtmlAttribute(value: string): string {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function stripLanguageVariantAttributes(attrs: string): string {
+  return String(attrs || "")
+    .replace(/\sdata-i18n(?:-zh|-en)?(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function collapseVisibleBilingualPairs(rawHtml: string, defaultVisibleLanguage: "zh-CN" | "zh" | "en"): string {
+  let html = String(rawHtml || "");
+  if (!html) return html;
+
+  const patterns = [
+    {
+      regex:
+        /<([a-zA-Z][\w:-]*)([^>]*)\sdata-i18n-zh(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?([^>]*)>([^<>]*)<\/\1>\s*<\1([^>]*)\sdata-i18n-en(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?([^>]*)>([^<>]*)<\/\1>/g,
+      firstLang: "zh" as const,
+      secondLang: "en" as const,
+    },
+    {
+      regex:
+        /<([a-zA-Z][\w:-]*)([^>]*)\sdata-i18n-en(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?([^>]*)>([^<>]*)<\/\1>\s*<\1([^>]*)\sdata-i18n-zh(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?([^>]*)>([^<>]*)<\/\1>/g,
+      firstLang: "en" as const,
+      secondLang: "zh" as const,
+    },
+  ];
+
+  for (const pattern of patterns) {
+    html = html.replace(
+      pattern.regex,
+      (
+        match,
+        tagName,
+        leftAttrsA,
+        leftAttrsB,
+        firstContent,
+        rightAttrsA,
+        rightAttrsB,
+        secondContent,
+      ) => {
+        const firstAttrs = stripLanguageVariantAttributes(`${leftAttrsA || ""} ${leftAttrsB || ""}`);
+        const secondAttrs = stripLanguageVariantAttributes(`${rightAttrsA || ""} ${rightAttrsB || ""}`);
+        if (!firstAttrs || firstAttrs !== secondAttrs) return match;
+        const firstVisible = String(firstContent || "").trim();
+        const secondVisible = String(secondContent || "").trim();
+        if (!firstVisible || !secondVisible) return match;
+        const zhText = pattern.firstLang === "zh" ? firstVisible : secondVisible;
+        const enText = pattern.firstLang === "en" ? firstVisible : secondVisible;
+        const visible = defaultVisibleLanguage === "en" ? enText : zhText;
+        return `<${tagName} ${firstAttrs} data-i18n data-i18n-zh="${escapeHtmlAttribute(zhText)}" data-i18n-en="${escapeHtmlAttribute(enText)}">${visible}</${tagName}>`;
+      },
+    );
+  }
+
+  return html;
+}
+
+function normalizeGeneratedJs(rawJs: string, requirementText = ""): string {
+  const js = stripMarkdownCodeFences(rawJs).trim();
+  if (!js) return "";
+  if (!isBilingualRequirementText(requirementText)) return js;
+  if (/__shpitto_apply_i18n|data-i18n-zh|data-i18n-en/i.test(js)) return js;
+  return [
+    js,
+    "",
+    "(() => {",
+    "  const root = document.documentElement;",
+    "  const applyI18n = () => {",
+    "    const lang = root.dataset.lang === 'en' ? 'en' : 'zh';",
+    "    document.querySelectorAll('[data-i18n]').forEach((node) => {",
+    "      const value = lang === 'en' ? node.getAttribute('data-i18n-en') : node.getAttribute('data-i18n-zh');",
+    "      if (typeof value === 'string' && value.length) node.textContent = value;",
+    "    });",
+    "    document.querySelectorAll('[data-i18n-zh][data-i18n-en]:not([data-i18n])').forEach((node) => {",
+    "      const value = lang === 'en' ? node.getAttribute('data-i18n-en') : node.getAttribute('data-i18n-zh');",
+    "      if (typeof value === 'string' && value.length) node.textContent = value;",
+    "    });",
+    "  };",
+    "  applyI18n();",
+    "  new MutationObserver(() => applyI18n()).observe(root, { attributes: true, attributeFilter: ['data-lang'] });",
+    "})();",
   ].join("\n");
 }
 
@@ -931,6 +1112,18 @@ export function didRoundMateriallyChangeFilesForTesting(
   return didRoundMateriallyChangeFiles(previousFiles, currentFiles, emittedPathsThisRound);
 }
 
+export function extractQaRepairTargetsForTesting(feedback: string): string[] {
+  return extractQaRepairTargets(feedback);
+}
+
+export function collapseVisibleBilingualPairsForTesting(rawHtml: string, defaultVisibleLanguage: "zh-CN" | "zh" | "en"): string {
+  return collapseVisibleBilingualPairs(rawHtml, defaultVisibleLanguage);
+}
+
+export function normalizeGeneratedJsForTesting(rawJs: string, requirementText = ""): string {
+  return normalizeGeneratedJs(rawJs, requirementText);
+}
+
 function clipRuntimeRequirement(input: string, maxChars: number): string {
   const text = String(input || "").trim();
   if (!Number.isFinite(maxChars) || maxChars <= 0 || text.length <= maxChars) return text;
@@ -963,6 +1156,24 @@ export function formatTargetPageContract(plan: LocalDecisionPlan, targetFile: st
   const page = findPageBlueprint(plan, route);
   const requestedContentCount = requestedPublishableContentCount(requirementText);
   const isGeneratedBlogDetailRoute = /^\/blog\/[^/]+$/i.test(route) && !plan.routes.map(normalizePath).includes(route);
+  const bilingualPromptGuidance = loadBilingualPromptGuidance();
+  const blogPromptGuidance = loadBlogPromptGuidance();
+  const renderedTargetBlogDetailGuidance = renderPromptGuidance(
+    bilingualPromptGuidance.targetBlogDetailGuidance,
+    { DEFAULT_VISIBLE_LANGUAGE: bilingualDefaultVisibleLanguage(requirementText) },
+  );
+  const renderedTargetLanguageGate = renderPromptGuidance(
+    bilingualPromptGuidance.targetLanguageGate,
+    { DEFAULT_VISIBLE_LANGUAGE: bilingualDefaultVisibleLanguage(requirementText) },
+  );
+  const renderedTargetBlogIndexGate = renderPromptGuidance(blogPromptGuidance.targetBlogIndexGate, {});
+  const renderedTargetBlogCountGate =
+    requestedContentCount
+      ? renderPromptGuidance(blogPromptGuidance.targetBlogCountGate, {
+          REQUESTED_CONTENT_COUNT: String(requestedContentCount),
+        })
+      : [];
+  const renderedTargetBlogDetailGate = renderPromptGuidance(blogPromptGuidance.targetBlogDetailGate, {});
   const sourceBrief = extractRouteSourceBrief(requirementText, page.route, page.navLabel, 4200);
   const siblingIntents = plan.pageBlueprints
     .filter((item) => normalizePath(item.route) !== normalizePath(route))
@@ -971,49 +1182,18 @@ export function formatTargetPageContract(plan: LocalDecisionPlan, targetFile: st
     .join("\n");
   const blogContentBackendGate =
     page.pageKind === "blog-data-index"
-      ? [
-          "- Semantic content binding gate: this block is internal implementation instruction, not visitor copy. Do not copy the gate wording into HTML.",
-          "- The visible page must not title or describe the section using backend names, API/storage/runtime/hydration/fallback jargon, data-source mechanics, English design jargon, or policy wording unless the nav label is explicitly Blog/博客.",
-          "- Attach data-shpitto-blog-root, data-shpitto-blog-api=\"/api/blog/posts\", and data-shpitto-blog-list to the selected page's own content surface rather than to a detached generic Blog block.",
-          "- Use the route's own taxonomy for visible collections. For information-platform, knowledge-hub, or publication-library routes, prefer page-specific collection patterns such as case library, standards/documents, research reports, policy/regulation updates, product database entries, publication cards, or insight records according to the source prompt.",
-          "- Preview cards must look like native resource/database/report/case cards with type/category, date/status/scope, summary, tags, and /blog/{slug}/ detail links.",
-          "- Hidden JSON such as data-fallback-posts is optional support only. It does not replace visible fallback markup. The initial HTML inside [data-shpitto-blog-list] must already render readable cards/rows with direct /blog/{slug}/ anchors before any hydration runs.",
-          "- The direct child card/row class inside [data-shpitto-blog-list] must be runtime-safe on its own. If it draws border/background/radius/shadow, that same outer class must include padding and vertical spacing instead of relying only on nested __body/__content wrappers.",
-          "- The generated detail style must be reusable by /blog/{slug}/ and should feel like this route's resource/report/case/standard/news detail page, not a detached generic blog template.",
-          "- Visitor-facing copy must be final publishable content. Do not explain page mechanics, reading instructions, launch-article counts, metadata fields, backend behavior, or how the list is assembled.",
-          "- Do not use headings or paragraphs such as reading method, suggested reading order, reading path, AI reading path, what you'll find, start with these three articles, article collection, this page collects, each article includes date/read time/tags, or their Chinese equivalents.",
-          "- Hero copy and section ledes must make a substantive claim, insight, or editorial thesis about the subject itself. Do not write guide-the-reader sentences like '这里收纳三种最常见也最实用的 AI 阅读路径' or '建议先读这三篇'.",
-          requestedContentCount
-            ? `- The source request asks for ${requestedContentCount} publishable content item(s). This index must expose exactly ${requestedContentCount} substantial native cards with stable /blog/{slug}/ links, and those links must correspond to complete article/detail pages emitted as static HTML files.`
-            : "",
-          requestedContentCount
-            ? `- The requested count (${requestedContentCount}) is an internal delivery constraint only. Do not announce it in hero copy, meta descriptions, section headings, helper text, or return links with phrasing like three articles, three launch articles, here are three complete articles, or three ways into the topic.`
-            : "",
-          requestedContentCount
-            ? "- Cards are summaries only; do not stop at title/metadata/excerpt. The corresponding detail pages must contain complete body prose with sections and paragraphs strongly grounded in the user's topic."
-            : "",
-        ].join("\n")
+      ? [...renderedTargetBlogIndexGate, ...renderedTargetBlogCountGate].join("\n")
       : "";
     const generatedBlogDetailGate =
       isGeneratedBlogDetailRoute
         ? [
-            "- Blog detail page gate: this file is a required publishable article/detail target for a visible /blog/{slug}/ entry.",
-            "- Write a complete visitor-facing article, not a title-only page, not a list card, and not an explanation of the Blog system.",
-            "- Include a page-specific title, date/category metadata if useful, at least three substantial body paragraphs, and section headings that answer the topic directly.",
-            "- Expand the exact visible list-card topic. Reuse the user's real subject matter, named entities, source-document themes, or route-specific tension instead of drifting into generic implementation/process filler.",
-            "- Keep the article strongly related to the user's supplied subject and site positioning. If factual/current examples are needed and not in the prompt, the workflow should use web research before drafting rather than inventing weak filler.",
-            isBilingualRequirementText(requirementText)
-              ? `- Bilingual article detail guidance: default visible language is ${bilingualDefaultVisibleLanguage(requirementText)}. Render exactly one visible article language body in this file. Store alternate-language article title/summary/body in i18n data and reveal it through the language switch instead of placing English summaries under Chinese text, Chinese summaries under English text, side-by-side translations, or alternating zh/en paragraphs in the initial HTML.`
-              : "",
+            ...renderedTargetBlogDetailGate,
+            ...(isBilingualRequirementText(requirementText) ? renderedTargetBlogDetailGuidance : []),
         ].join("\n")
       : "";
   const bilingualLanguageGate = isBilingualRequirementText(requirementText)
     ? [
-        "- Bilingual language gate: show exactly one active language at a time. Do not render Chinese and English simultaneously in visible headings, paragraphs, cards, nav items, CTAs, footer, or article bodies.",
-        `- Default visible language for this file: ${bilingualDefaultVisibleLanguage(requirementText)}. If this is zh-CN, all visible UI/editorial labels must be Chinese; English labels such as Latest essays, stories, one theme, featured, read more, collection, or journal are inactive-language copy and must not be visible until English is selected.`,
-        "- Store alternate-language copy in data-i18n attributes, an in-page dictionary, generated i18n files, or hidden templates, and replace visible text when EN/ZH is selected.",
-        "- Invalid visible patterns include `Chinese / \u4e2d\u6587`, `\u4e2d\u6587 / English`, translated titles in one heading, and Chinese plus English paragraphs shown consecutively.",
-        "- Do not explain bilingual behavior with editorial phrasing like two reading paths, bilingual reading paths, ????, or ????????. Language switching is a control, not a visitor-facing thesis.",
+        ...renderedTargetLanguageGate,
       ].join("\n")
     : "";
 
@@ -2349,6 +2529,15 @@ function buildToolRoundPrompt(params: {
   const requestedContentCount = requestedPublishableContentCount(params.requirementText);
   const requiresLanguageSwitch = isBilingualRequirementText(params.requirementText);
   const defaultVisibleLanguage = bilingualDefaultVisibleLanguage(params.requirementText);
+  const bilingualPromptGuidance = loadBilingualPromptGuidance();
+  const renderedRoundLanguageGuidance = renderPromptGuidance(
+    bilingualPromptGuidance.roundLanguageGuidance,
+    { DEFAULT_VISIBLE_LANGUAGE: defaultVisibleLanguage },
+  );
+  const renderedRoundStrictProtocol = renderPromptGuidance(
+    bilingualPromptGuidance.roundStrictProtocol,
+    { DEFAULT_VISIBLE_LANGUAGE: defaultVisibleLanguage },
+  );
   return [
     `Round: ${params.round + 1}/${params.totalRounds}`,
     `Routes: ${params.decision.routes.join(", ")}`,
@@ -2370,9 +2559,7 @@ function buildToolRoundPrompt(params: {
     requestedContentCount
       ? `Requested publishable content gate: the brief asks for ${requestedContentCount} complete content item(s). Blog/content-backed output must provide ${requestedContentCount} full article/detail targets with body prose, not title-only cards or explanatory list mechanics.`
       : "",
-    requiresLanguageSwitch
-      ? `Language guidance: bilingual/EN-ZH output should show one active language at a time. Default visible language is ${defaultVisibleLanguage}. Store inactive translations in data-i18n attributes, dictionaries, generated i18n files, or hidden templates and switch them with /script.js; avoid obvious visible translation pairs such as Chinese text followed by the same English paragraph.`
-      : "",
+    ...(requiresLanguageSwitch ? renderedRoundLanguageGuidance : []),
     "",
     "Current emitted files:",
     currentFiles || "(none)",
@@ -2381,9 +2568,7 @@ function buildToolRoundPrompt(params: {
     "- Use native tool calls (load_skill, emit_file, finish); do not fake tool calls in plain text.",
     "- Every round must include at least one tool call until all required files are emitted.",
     "- Emit_file content must be raw file content (no markdown fences, no tool transcript wrappers).",
-    "- If bilingual/EN-ZH support is requested, visible copy should show one active language at a time; avoid obvious inline translated pairs such as `中文 / English`, duplicated headings, or consecutive translated paragraphs.",
-    "- If emitting article/detail pages for a bilingual site, render exactly one visible article language body at a time; alternate-language article translations should live in i18n data and be swapped into view by /script.js. Do not place an English abstract/summary below a Chinese article body, do not append Chinese translations below English copy, and do not alternate zh/en paragraphs in the same initial page render.",
-    "- For bilingual sites, never describe the language toggle as a reading path, dual path, or recommended reading order. Keep language-switch labels literal and UI-focused.",
+    ...(requiresLanguageSwitch ? renderedRoundStrictProtocol : []),
     "- Follow the website-generation-workflow skill contract for Canonical Website Prompt adherence, page differentiation, and shared shell/footer rules.",
     "- Follow the Website Quality Contract: website-only scope, multi-device WYSIWYG preview, strong visual direction, responsive CSS, and no placeholder/template slop.",
     "- Visitor-facing content must be final site content. Do not show explanatory scaffolding such as reading method, what you'll find, article collection, this page collects, each article includes date/read time/tags, launch articles, three launch articles, 首发文章, 三篇首发文章, or their Chinese equivalents.",
@@ -2581,6 +2766,8 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     let noProgressRounds = 0;
     let lastRoundCallNames = "";
     let lastRoundToolErrors = "";
+    let qaRepairTargets: string[] = [];
+    const defaultVisibleLanguage = bilingualDefaultVisibleLanguage(toolRequirementContext);
     let completedStaticFiles: RuntimeWorkflowFile[] | undefined;
     let completedQaSummary: QaSummary | undefined;
     let completedQaRecords: SkillToolQaRecord[] = [];
@@ -2591,7 +2778,9 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
         );
       }
       const missing = missingRequiredFiles(decision, emittedFiles, toolRequirementContext);
-      const objective = planRoundObjective(round, missing);
+      const activeRepairTargets = missing.length === 0 ? qaRepairTargets : [];
+      const objectiveTargets = activeRepairTargets.length > 0 ? activeRepairTargets : missing;
+      const objective = planRoundObjective(round, objectiveTargets);
       const prompt = buildToolRoundPrompt({
         round,
         totalRounds: totalToolRounds,
@@ -2604,7 +2793,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
           "Follow requirement semantics and conversion goals.",
         loadedSkillIds: Array.from(loadedSkills.keys()),
         emittedFiles,
-        requiredMissing: missing,
+        requiredMissing: objectiveTargets,
         objective,
         requirementText: toolRequirementContext,
       });
@@ -2672,9 +2861,18 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
             }),
           );
           if (result.kind === "file") {
-            const normalizedFile = normalizePath(String(result.file.path || "")) === "/styles.css"
-              ? { ...result.file, content: normalizeGeneratedCss(String(result.file.content || "")) }
-              : result.file;
+            const normalizedPath = normalizePath(String(result.file.path || ""));
+            let normalizedFile = result.file;
+            if (normalizedPath === "/styles.css") {
+              normalizedFile = { ...result.file, content: normalizeGeneratedCss(String(result.file.content || "")) };
+            } else if (normalizedPath === "/script.js") {
+              normalizedFile = { ...result.file, content: normalizeGeneratedJs(String(result.file.content || ""), toolRequirementContext) };
+            } else if (normalizedPath.endsWith(".html") && isBilingualRequirementText(toolRequirementContext)) {
+              normalizedFile = {
+                ...result.file,
+                content: collapseVisibleBilingualPairs(String(result.file.content || ""), defaultVisibleLanguage),
+              };
+            }
             emittedFiles.push(normalizedFile);
             emittedThisRound += 1;
             emittedPathsThisRound.push(normalizePath(normalizedFile.path));
@@ -2780,10 +2978,14 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
             throw error;
           }
           assistantNotes.push(`tool_validation_repair:${feedback.slice(0, 500)}`);
+          qaRepairTargets = extractQaRepairTargets(feedback);
           toolHistoryMessages.push(
             new HumanMessage(
               [
                 "Generated files failed the workflow QA gate. Re-emit only the affected complete file(s), then call finish after validation can pass.",
+                qaRepairTargets.length > 0
+                  ? `QA repair targets: ${qaRepairTargets.join(", ")}`
+                  : "QA repair targets: (none extracted; preserve all routes while fixing the reported issue)",
                 feedback,
                 "Repair requirements are generic page-type/layout rules from the workflow skill; preserve route list, navigation, Blog data-source contract, and generated file paths.",
               ].join("\n"),

@@ -324,6 +324,110 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
     expect(preview.posts.map((post) => post.title).join(" ")).not.toContain("K12");
   });
 
+  it("falls back to source-aligned blog posts when static detail pages drift away from a CASUX source", () => {
+    const preview = buildBlogContentWorkflowPreview({
+      locale: "zh-CN",
+      inputState: {
+        messages: [] as any,
+        phase: "end",
+        current_page_index: 0,
+        attempt_count: 0,
+        workflow_context: {
+          sourceRequirement: "CASUX 适儿空间标准 研究报告 认证查询 政策法规 资料下载 信息平台",
+        },
+      } as any,
+      project: {
+        staticSite: {
+          files: [
+            {
+              path: "/blog/index.html",
+              content: [
+                '<!doctype html><html><body><main><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list>',
+                '<article><a href="/blog/reading-the-noise-before-it-spreads/">A</a></article>',
+                '<article><a href="/blog/what-good-review-discipline-actually-looks-like/">B</a></article>',
+                '<article><a href="/blog/how-small-operational-habits-change-outcomes/">C</a></article>',
+                "</div></section></main></body></html>",
+              ].join(""),
+            },
+            {
+              path: "/blog/reading-the-noise-before-it-spreads/index.html",
+              content:
+                '<!doctype html><html><head><title>Reading the noise before it spreads | Casux</title><meta name="description" content="Generic operational article." /></head><body><main><article><h1>Reading the noise before it spreads</h1><p>Generic operational article about signal reading.</p><h2>Context</h2><p>Generic content that does not mention the source domain.</p><p>More generic content that still ignores the certification platform.</p><p>Final generic content paragraph for extraction.</p></article></main></body></html>',
+            },
+            {
+              path: "/blog/what-good-review-discipline-actually-looks-like/index.html",
+              content:
+                '<!doctype html><html><head><title>What good review discipline actually looks like | Casux</title><meta name="description" content="Generic review article." /></head><body><main><article><h1>What good review discipline actually looks like</h1><p>Generic review article with no CASUX topic anchor.</p><h2>Practice</h2><p>Generic content paragraph.</p><p>Generic content paragraph two.</p><p>Generic content paragraph three.</p></article></main></body></html>',
+            },
+            {
+              path: "/blog/how-small-operational-habits-change-outcomes/index.html",
+              content:
+                '<!doctype html><html><head><title>How small operational habits change outcomes | Casux</title><meta name="description" content="Generic habits article." /></head><body><main><article><h1>How small operational habits change outcomes</h1><p>Generic operations article with no certification or standards domain.</p><h2>Habits</h2><p>Generic content paragraph.</p><p>Generic content paragraph two.</p><p>Generic content paragraph three.</p></article></main></body></html>',
+            },
+          ],
+        },
+      },
+    });
+
+    expect(preview.required).toBe(true);
+    expect(preview.posts).toHaveLength(3);
+    expect(preview.posts.map((post) => post.title).join(" ")).toMatch(/CASUX|标准|研究|认证|政策|资料/);
+    expect(preview.posts[0]?.title).toContain("CASUX");
+    expect(preview.posts.map((post) => post.title).join(" ")).not.toMatch(/reading the noise|review discipline|operational habits/i);
+  });
+
+  it("falls back to source-aligned blog posts when static detail pages keep CASUX in the title but drift into signal-house generic content", () => {
+    const preview = buildBlogContentWorkflowPreview({
+      locale: "zh-CN",
+      inputState: {
+        messages: [] as any,
+        phase: "end",
+        current_page_index: 0,
+        attempt_count: 0,
+        workflow_context: {
+          sourceRequirement: "CASUX 适儿空间标准 研究报告 认证查询 政策法规 资料下载 信息平台",
+        },
+      } as any,
+      project: {
+        staticSite: {
+          files: [
+            {
+              path: "/blog/index.html",
+              content: [
+                '<!doctype html><html><body><main><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list>',
+                '<article><a href="/blog/casux-standards-resources/">A</a></article>',
+                '<article><a href="/blog/casux-research-cases/">B</a></article>',
+                '<article><a href="/blog/casux-certification-actions/">C</a></article>',
+                "</div></section></main></body></html>",
+              ].join(""),
+            },
+            {
+              path: "/blog/casux-standards-resources/index.html",
+              content:
+                '<!doctype html><html><head><title>CASUX Standards And Resource Guide | Signal House</title><meta name="description" content="Signal House error monitoring editorial notes." /></head><body><main><article><h1>CASUX Standards And Resource Guide</h1><p>Signal House error monitoring editorial notes.</p><h2>Context</h2><p>Turn a noisy signal set into a sharp working view.</p><p>This article summarizes the most relevant material from the provided website brief without inventing unsupported organizations, identifiers, or case details.</p></article></main></body></html>',
+            },
+            {
+              path: "/blog/casux-research-cases/index.html",
+              content:
+                '<!doctype html><html><head><title>CASUX Research Reports And Case Library Guide | Signal House</title></head><body><main><article><h1>CASUX Research Reports And Case Library Guide</h1><p>Operational context, signals, and clarity built for fast triage.</p><h2>Practice</h2><p>Tool workspace guidance for monitoring insight.</p><p>Generic review language that ignores the source domain.</p></article></main></body></html>',
+            },
+            {
+              path: "/blog/casux-certification-actions/index.html",
+              content:
+                '<!doctype html><html><head><title>CASUX Certification Lookup And Next Actions | Signal House</title></head><body><main><article><h1>CASUX Certification Lookup And Next Actions</h1><p>The blog surface pairs concise resource cards with durable article links.</p><h2>Habits</h2><p>Monitoring insight and tool workspace language without CASUX specifics.</p><p>Signal systems prose that does not belong to the source platform.</p></article></main></body></html>',
+            },
+          ],
+        },
+      },
+    });
+
+    expect(preview.required).toBe(true);
+    expect(preview.posts).toHaveLength(3);
+    const combined = preview.posts.map((post) => `${post.title} ${post.excerpt} ${post.contentMd}`).join(" ");
+    expect(combined).toMatch(/CASUX|标准|研究|认证|政策|资料/);
+    expect(combined).not.toMatch(/Signal House|signal systems|tool workspace|error monitoring|monitoring insight/i);
+  });
+
   it("treats an explicit /blog route as a deploy-time Blog workflow surface even before the data mount is injected", () => {
     const preview = buildBlogContentWorkflowPreview({
       locale: "zh-CN",

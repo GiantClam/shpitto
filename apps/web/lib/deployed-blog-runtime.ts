@@ -89,7 +89,7 @@ export function buildDeployedBlogRuntimeFiles(params: BlogRuntimeParams): Static
       content: JSON.stringify(
         {
           version: 1,
-          include: ["/api/blog/*", "/blog", "/blog/", "/blog/*", "/sitemap.xml"],
+          include: ["/api/blog/*", "/blog/*", "/sitemap.xml"],
           exclude: [],
         },
         null,
@@ -425,7 +425,9 @@ function renderList(posts, title = "Blog", description = "Latest articles") {
   const body = \`<section>
     <p class="meta">\${escapeHtml(description)}</p>
     <h1>\${escapeHtml(title)}</h1>
-    <div class="grid">\${posts.length ? posts.map(renderPostCard).join("") : '<div class="card"><p>No published posts yet.</p></div>'}</div>
+    <section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts">
+      <div class="grid" data-shpitto-blog-list>\${posts.length ? posts.map(renderPostCard).join("") : '<div class="card"><p>No published posts yet.</p></div>'}</div>
+    </section>
   </section>\`;
   return renderShell({ title, description, body });
 }
@@ -454,7 +456,9 @@ function renderGeneratedListBody(posts, title, description, cardClass) {
     <div class="container">
       <p class="meta">\${escapeHtml(description)}</p>
       <h1>\${escapeHtml(title)}</h1>
-      <div class="blog-grid" data-shpitto-blog-list>\${cards}</div>
+      <section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts">
+        <div class="blog-grid" data-shpitto-blog-list>\${cards}</div>
+      </section>
     </div>
   </section>\`;
 }

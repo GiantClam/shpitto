@@ -35,9 +35,9 @@ describe("deployed blog runtime", () => {
     const routes = files.find((file) => file.path === "/_routes.json");
     expect(String(routes?.content || "")).toContain("/sitemap.xml");
     expect(String(routes?.content || "")).toContain("/api/blog/*");
-    expect(String(routes?.content || "")).toContain('"/blog"');
-    expect(String(routes?.content || "")).toContain('"/blog/"');
     expect(String(routes?.content || "")).toContain("/blog/*");
+    expect(String(routes?.content || "")).not.toContain('"/blog"');
+    expect(String(routes?.content || "")).not.toContain('"/blog/"');
   });
 
   it("emits syntactically valid module worker source", async () => {
@@ -270,6 +270,8 @@ describe("deployed blog runtime", () => {
     expect(response.headers.get("content-type")).toContain("text/html");
     expect(html).toContain("Hello World");
     expect(html).toContain('/blog/hello-world/');
+    expect(html).toContain('data-shpitto-blog-root');
+    expect(html).toContain('data-shpitto-blog-api="/api/blog/posts"');
   });
 
   it("injects runtime files without dropping generated static files", () => {

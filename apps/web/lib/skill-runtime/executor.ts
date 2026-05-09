@@ -4623,7 +4623,64 @@ function extractStaticBlogPostsFromProject(params: {
   return posts;
 }
 
-function collectDeployBlogSourceText(inputState: AgentState, project: any) {
+function staticBlogPostsNeedSourceAlignedFallback(params: {
+  sourceText: string;
+  staticPosts: BlogPostUpsertInput[];
+}) {
+  if (!Array.isArray(params.staticPosts) || params.staticPosts.length === 0) return false;
+  const sourceText = String(params.sourceText || "");
+  const staticText = params.staticPosts
+    .map((post) => [post.title, post.excerpt, post.contentMd, post.category, ...(Array.isArray(post.tags) ? post.tags : [])].join(" "))
+    .join("\n")
+    .toLowerCase();
+
+  const anchorGroups = [
+    { source: /casux/i, content: /casux/i },
+    { source: /适儿|儿童|空间|标准|研究|认证|案例|政策|资料|信息平台/i, content: /适儿|儿童|空间|标准|研究|认证|案例|政策|资料|信息平台/i },
+  ];
+  const driftMarkers = [
+    /signal house/i,
+    /signal systems/i,
+    /tool workspace/i,
+    /error monitoring/i,
+    /operational context/i,
+    /editorial notes/i,
+    /monitoring insight/i,
+    /turn a noisy signal set into a sharp working view/i,
+    /this article summarizes the most relevant material from the provided website brief/i,
+    /without inventing unsupported organizations, identifiers, or case details/i,
+  ];
+
+  return anchorGroups.some(
+    (group) =>
+      group.source.test(sourceText) &&
+      (!group.content.test(staticText) || driftMarkers.some((pattern) => pattern.test(staticText))),
+  );
+}
+
+function resolveBlogWorkflowPosts(params: {
+  sourceText: string;
+  locale: "zh-CN" | "en";
+  project: any;
+  fallbackAuthorName: string;
+}) {
+  const brandOverride = resolveProjectBrandName(params.project) || params.fallbackAuthorName;
+  const staticPosts = extractStaticBlogPostsFromProject({
+    project: params.project,
+    locale: params.locale,
+    fallbackAuthorName: params.fallbackAuthorName,
+  });
+  if (staticPosts.length > 0 && !staticBlogPostsNeedSourceAlignedFallback({ sourceText: params.sourceText, staticPosts })) {
+    return staticPosts;
+  }
+  return buildGeneratedBlogSeedPostsForTesting({
+    sourceText: params.sourceText,
+    locale: params.locale,
+    brandOverride,
+  });
+}
+
+function collectPrimaryBlogSourceText(inputState: AgentState) {
   const workflow = toRecord((inputState as any)?.workflow_context);
   const messages = Array.isArray(inputState.messages) ? inputState.messages : [];
   const messageText = messages
@@ -4636,6 +4693,20 @@ function collectDeployBlogSourceText(inputState: AgentState, project: any) {
     .filter(Boolean)
     .join("\n\n");
 
+  return [
+    String(workflow.canonicalPrompt || "").trim(),
+    String(workflow.sourceRequirement || "").trim(),
+    String(workflow.requirementAggregatedText || "").trim(),
+    String(workflow.latestUserText || "").trim(),
+    messageText,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+function collectDeployBlogSourceText(inputState: AgentState, project: any) {
+  const primarySourceText = collectPrimaryBlogSourceText(inputState);
+
   const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
   const generatedText = files
     .filter((file: any) => String(file?.path || "").endsWith(".html"))
@@ -4644,15 +4715,35 @@ function collectDeployBlogSourceText(inputState: AgentState, project: any) {
     .join("\n\n");
 
   return [
-    String(workflow.canonicalPrompt || "").trim(),
-    String(workflow.sourceRequirement || "").trim(),
-    String(workflow.requirementAggregatedText || "").trim(),
-    String(workflow.latestUserText || "").trim(),
-    messageText,
+    primarySourceText,
     generatedText,
   ]
     .filter(Boolean)
     .join("\n\n");
+}
+
+function resolveProjectBrandName(project: any) {
+  const normalizeBrand = (value: string) => {
+    const cleaned = String(value || "").replace(/\s+/g, " ").trim();
+    if (!cleaned || /^(?:site|website)$/i.test(cleaned)) return "";
+    if (/casux/i.test(cleaned)) return "CASUX";
+    return cleaned;
+  };
+
+  const brandingName = normalizeBrand(String(project?.branding?.name || ""));
+  if (brandingName) return brandingName;
+  const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
+  for (const file of files) {
+    const content = String(file?.content || "");
+    const brandText =
+      htmlToReadableText(String(content.match(/class=["'][^"']*brand__name[^"']*["'][^>]*>([\s\S]*?)<\/span>/i)?.[1] || "")) ||
+      htmlToReadableText(String(content.match(/class=["'][^"']*brand[^"']*["'][^>]*>([\s\S]*?)<\/a>/i)?.[1] || ""));
+    const cleaned = normalizeBrand(brandText);
+    if (cleaned) return cleaned;
+  }
+  const routes = listProjectRoutes(project).join(" ");
+  if (/\/casux(?:-|\/|$)|\bcasux\b/i.test(routes)) return "CASUX";
+  return "";
 }
 
 function splitContentSentences(text: string) {
@@ -4976,8 +5067,12 @@ function buildPersonalCareerBlogSeedPosts(params: {
   }));
 }
 
-export function buildGeneratedBlogSeedPostsForTesting(params: { sourceText: string; locale: "zh-CN" | "en" }): BlogPostUpsertInput[] {
-  const brand = inferBlogBrand(params.sourceText, params.locale);
+export function buildGeneratedBlogSeedPostsForTesting(params: {
+  sourceText: string;
+  locale: "zh-CN" | "en";
+  brandOverride?: string;
+}): BlogPostUpsertInput[] {
+  const brand = String(params.brandOverride || "").trim() || inferBlogBrand(params.sourceText, params.locale);
   const personalCareerPosts = buildPersonalCareerBlogSeedPosts({ sourceText: params.sourceText, brand, locale: params.locale });
   if (personalCareerPosts) return personalCareerPosts;
   const snippets = pickContentSnippets(params.sourceText, brand, 9);
@@ -5090,18 +5185,20 @@ export function buildBlogContentWorkflowPreview(params: {
   if (!projectHasGeneratedBlogContentMount(params.project)) {
     return { required: false, reason: "no_content_mount", navLabel: "", posts: [] };
   }
-  const sourceText = collectDeployBlogSourceText(params.inputState, params.project);
-  const staticPosts = extractStaticBlogPostsFromProject({
-    project: params.project,
+  const primarySourceText = collectPrimaryBlogSourceText(params.inputState);
+  const sourceText = primarySourceText.trim().length >= 12 ? primarySourceText : collectDeployBlogSourceText(params.inputState, params.project);
+  const posts = resolveBlogWorkflowPosts({
+    sourceText,
     locale: params.locale,
+    project: params.project,
     fallbackAuthorName: inferBlogBrand(sourceText, params.locale),
   });
-  if (staticPosts.length > 0) {
+  if (posts.length > 0) {
     return {
       required: true,
       reason: "ready",
       navLabel: resolveBlogNavLabelFromProject(params.project, params.locale),
-      posts: staticPosts.slice(0, 6),
+      posts: posts.slice(0, 6),
     };
   }
   if (sourceText.trim().length < 40) {
@@ -5148,7 +5245,8 @@ function materializeGeneratedBlogDetailPages(params: {
     desiredRoutes.length > 0
       ? desiredRoutes
       : preview.posts.map((post) => `/blog/${sanitizePathToken(String(post.slug || "").trim())}`);
-  const brandName = String(baseProject?.branding?.name || inferBlogBrand(collectDeployBlogSourceText(params.inputState, baseProject), params.locale)).trim() || (params.locale === "zh-CN" ? "网站" : "Site");
+  const brandSourceText = collectPrimaryBlogSourceText(params.inputState) || collectDeployBlogSourceText(params.inputState, baseProject);
+  const brandName = String(baseProject?.branding?.name || inferBlogBrand(brandSourceText, params.locale)).trim() || (params.locale === "zh-CN" ? "网站" : "Site");
   const navLabel = resolveBlogNavLabelFromProject(baseProject, params.locale);
   const posts = preview.posts.map((post, index) => {
     const route = postRoutes[index] || `/blog/${sanitizePathToken(String(post.slug || "").trim() || `post-${index + 1}`)}`;
@@ -5448,7 +5546,8 @@ async function ensureGeneratedBlogContentForDeploy(params: {
 }) {
   if (!params.projectId) return { status: "skipped", postCount: 0 };
   if (!projectHasGeneratedBlogContentMount(params.project)) return { status: "skipped:no_content_mount", postCount: 0 };
-  const sourceText = collectDeployBlogSourceText(params.inputState, params.project);
+  const primarySourceText = collectPrimaryBlogSourceText(params.inputState);
+  const sourceText = primarySourceText.trim().length >= 12 ? primarySourceText : collectDeployBlogSourceText(params.inputState, params.project);
   if (sourceText.trim().length < 40) return { status: "skipped:no_source", postCount: 0 };
 
   const d1 = getD1Client();
@@ -5506,16 +5605,17 @@ async function ensureGeneratedBlogContentForDeploy(params: {
     ? (((params.inputState.workflow_context as any)?.blogContentPreviewPosts || []) as BlogPostUpsertInput[])
         .filter((post) => post && typeof post === "object")
     : [];
-  const staticPosts = extractStaticBlogPostsFromProject({
-    project: params.project,
+  const resolvedPosts = resolveBlogWorkflowPosts({
+    sourceText,
     locale: params.locale,
+    project: params.project,
     fallbackAuthorName: inferBlogBrand(sourceText, params.locale),
   });
-  const posts = staticPosts.length > 0
-    ? staticPosts
+  const posts = resolvedPosts.length > 0
+    ? resolvedPosts
     : workflowPosts.length > 0
-    ? workflowPosts
-    : buildGeneratedBlogSeedPostsForTesting({ sourceText, locale: params.locale });
+      ? workflowPosts
+      : buildGeneratedBlogSeedPostsForTesting({ sourceText, locale: params.locale });
   await d1.execute(
     `
     DELETE FROM shpitto_blog_posts
