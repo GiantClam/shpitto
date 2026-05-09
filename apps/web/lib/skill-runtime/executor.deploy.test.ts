@@ -5,6 +5,7 @@ import { createChatTask, getChatTask } from "../agent/chat-task-store";
 import {
   buildBlogContentWorkflowPreview,
   buildGeneratedBlogSeedPostsForTesting,
+  materializeGeneratedBlogDetailPagesForTesting,
   runPostDeploySmoke,
   SkillRuntimeExecutor,
 } from "./executor";
@@ -167,6 +168,84 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
     expect(preview.reason).toBe("ready");
     expect(preview.navLabel).toBeTruthy();
     expect(preview.posts).toHaveLength(3);
+  });
+
+  it("materializes missing static blog detail pages for native generation artifacts", () => {
+    const project = materializeGeneratedBlogDetailPagesForTesting({
+      locale: "zh-CN",
+      inputState: {
+        messages: [] as any,
+        phase: "end",
+        current_page_index: 0,
+        attempt_count: 0,
+        workflow_context: {
+          sourceRequirement:
+            "Bays Wong 华为 微信 HelloTalk 来画科技 云领天下 DevOps 实时音视频 AI SaaS，需要 3 篇博客文章展示技术判断与商业化价值。",
+        },
+      } as any,
+      project: {
+        branding: { name: "Bays Wong" },
+        pages: [
+          { path: "/", html: "<!doctype html><html><head></head><body><h1>Home</h1></body></html>" },
+          {
+            path: "/blog",
+            html: [
+              '<!doctype html><html><head></head><body><main>',
+              '<section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list>',
+              '<article><a href="/blog/agile-devops-system-design/">A</a></article>',
+              '<article><a href="/blog/wechat-real-time-media-global/">B</a></article>',
+              '<article><a href="/blog/ai-saas-commercialization-cto-practice/">C</a></article>',
+              "</div></section></main></body></html>",
+            ].join(""),
+          },
+        ],
+        staticSite: {
+          mode: "skill-direct",
+          files: [
+            {
+              path: "/index.html",
+              type: "text/html",
+              content: "<!doctype html><html><head></head><body><h1>Home</h1></body></html>",
+            },
+            {
+              path: "/blog/index.html",
+              type: "text/html",
+              content: [
+                '<!doctype html><html><head></head><body><main>',
+                '<section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list>',
+                '<article><a href="/blog/agile-devops-system-design/">A</a></article>',
+                '<article><a href="/blog/wechat-real-time-media-global/">B</a></article>',
+                '<article><a href="/blog/ai-saas-commercialization-cto-practice/">C</a></article>',
+                "</div></section></main></body></html>",
+              ].join(""),
+            },
+            {
+              path: "/styles.css",
+              type: "text/css",
+              content: "body{font-family:sans-serif}",
+            },
+            {
+              path: "/script.js",
+              type: "text/javascript",
+              content: "console.log('ok')",
+            },
+          ],
+        },
+      },
+    });
+
+    const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
+    expect(files.map((file: any) => file.path)).toEqual(
+      expect.arrayContaining([
+        "/blog/agile-devops-system-design/index.html",
+        "/blog/wechat-real-time-media-global/index.html",
+        "/blog/ai-saas-commercialization-cto-practice/index.html",
+      ]),
+    );
+    const detail = files.find((file: any) => file.path === "/blog/agile-devops-system-design/index.html");
+    expect(String(detail?.content || "")).toContain("返回博客");
+    expect(String(detail?.content || "")).toContain("../../styles.css");
+    expect(String(detail?.content || "")).toContain("华为");
   });
 
   it("prefers current static blog detail pages over stale workflow preview posts", () => {

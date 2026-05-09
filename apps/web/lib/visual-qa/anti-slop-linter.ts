@@ -356,7 +356,7 @@ export function lintGeneratedWebsiteRouteHtml(html: string, context: WebsiteRout
     const homepageLeadText = extractLeadText(stripElements(source, ["nav", "footer"]));
     const blockedRoleTerms = [/资料下载/, /下载/, /认证入口/, /认证查询/, /查询/, /申请系统/, /login/i, /register/i];
     const blockedLeadTerms = [/资料下载/, /认证入口/, /认证查询/, /申请系统/, /登录/, /注册/, /login/i, /register/i];
-    const leadHomeSignals = [/CASUX/i, /棣栭〉/, /Home/i, /homepage/i, /鍝佺墝/, /鎬昏/, /鏍囧噯浣撶郴/, /涓撲笟鏈烘瀯/, /缁熶竴鍏ュ彛/];
+    const leadHomeSignals = [/CASUX/i, /\u9996\u9875/, /Home/i, /homepage/i, /\u54c1\u724c/, /\u603b\u89c8/, /\u6807\u51c6\u4f53\u7cfb/, /\u4e13\u4e1a\u673a\u6784/, /\u7edf\u4e00\u5165\u53e3/];
     if (
       blockedRoleTerms.some((pattern) => pattern.test(homepageRoleText)) ||
       (blockedLeadTerms.some((pattern) => pattern.test(homepageLeadText)) &&

@@ -109,4 +109,50 @@ describe("chat task preview routes", () => {
     expect(html).not.toContain('href="../styles.css"');
     expect(html).not.toContain('src="../script.js"');
   });
+
+  it("injects a preview navigation bridge so runtime-rendered blog links stay inside the task preview", async () => {
+    const chatId = `chat-preview-blog-${Date.now()}`;
+    const root = path.resolve(process.cwd(), ".tmp", "chat-tests", chatId);
+    const projectPath = path.join(root, "project.json");
+    const siteDir = path.join(root, "site");
+    await fs.mkdir(path.join(siteDir, "blog"), { recursive: true });
+    await fs.writeFile(path.join(siteDir, "index.html"), "<!doctype html><html><body>home</body></html>", "utf8");
+    await fs.writeFile(path.join(siteDir, "script.js"), "console.log('preview bridge');", "utf8");
+    await fs.writeFile(
+      path.join(siteDir, "blog", "index.html"),
+      '<!doctype html><html><head><script src="../script.js" defer></script></head><body><section data-shpitto-blog-list><a href="/blog/runtime-post/">Open article</a></section></body></html>',
+      "utf8",
+    );
+    await fs.writeFile(projectPath, JSON.stringify({}), "utf8");
+
+    const task = await createChatTask(chatId, undefined, {
+      assistantText: "done",
+      phase: "end",
+      progress: {
+        stage: "done",
+        checkpointProjectPath: projectPath,
+      } as any,
+    });
+    await completeChatTask(task.id, {
+      assistantText: "done",
+      phase: "end",
+      progress: {
+        stage: "done",
+        checkpointProjectPath: projectPath,
+      } as any,
+    });
+
+    const { GET } = await import("../../app/api/chat/tasks/[taskId]/preview/[...path]/route");
+    const res = await GET(new Request("http://localhost"), {
+      params: Promise.resolve({ taskId: task.id, path: ["blog", "index.html"] }),
+    });
+
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain(`/api/chat/tasks/${encodeURIComponent(task.id)}/preview/script.js`);
+    expect(html).toContain(`const previewBase = "/api/chat/tasks/${encodeURIComponent(task.id)}/preview"`);
+    expect(html).toContain("window.__shpittoPreviewBase = previewBase;");
+    expect(html).toContain("MutationObserver");
+    expect(html).toContain(`href="/api/chat/tasks/${encodeURIComponent(task.id)}/preview/blog/runtime-post/"`);
+  });
 });

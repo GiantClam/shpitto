@@ -353,6 +353,15 @@ pnpm test -- anti-slop-linter.test.ts project-skill-loader.test.ts
 1. 将本方案对应的实现整理为一次 Lore commit，并保留回滚边界说明。
 2. 如果后续继续扩展 Open Design seed skill，优先保持 frontmatter discovery 和 resource index 自动发现路径，不再为具体 skill 添加 TS 分支。
 3. 后续如需继续降 token，可把 `references/layouts.md` 做第二层摘要索引，但应保持按需注入而不是默认全量展开。
+
+### 后续代码开发硬约束
+
+以下约束适用于后续所有 runtime、executor、validator 和 QA contract 修改，属于强制约束，不是建议：
+
+- 内容方向责任在 skill，不在 validator 做语义裁判。
+- QA contract 仅表述“必要检查”，不允许把 runtime 变成内容总编。
+- 执行器只保留页面存在、可读、不是空壳的必要检查，不承担内容方向、风格取舍、主题裁决或语义审稿职责。
+
 ## Phase 7: Refine Semantics Upgrade
 
 Goal:

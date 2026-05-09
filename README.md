@@ -42,6 +42,11 @@ This repository contains the source code for Phase 1 (Industry-v0) of the Shpitt
 
 The core protocol is defined in `packages/schema/src/project-schema.ts`. This ensures that the AI generation matches the frontend's rendering capabilities.
 
+## Project Constraints
+
+- All skill, prompt, and process-related files must be authored and output in English.
+- Any derived summaries, instructions, or workflow notes based on those files must also be written in English.
+
 ## Infrastructure
 
 - D1 schema: `packages/db/d1_schema.sql`

@@ -8,6 +8,13 @@ import {
   type SerperSearchConfig,
   type WebSearchSource,
 } from "../tools/web-search/serper.ts";
+import {
+  containsWorkflowCjk,
+  isWorkflowArtifactEnglishSafe,
+  normalizeWorkflowArtifactText,
+  sanitizeWorkflowArtifactList,
+  sanitizeWorkflowArtifactText,
+} from "../workflow-artifact-language.ts";
 
 export type WebsiteKnowledgeSource = {
   type: "domain" | "web_search" | "uploaded_file" | "user_input";
@@ -80,6 +87,30 @@ const KNOWLEDGE_PROFILE_SUMMARY_LIMIT = 8_000;
 
 function normalizeText(value: unknown): string {
   return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function containsCjk(text: string): boolean {
+  return containsWorkflowCjk(text);
+}
+
+function internalNavLabelForRoute(route: string, fallback = ""): string {
+  const normalized = String(route || "/").trim() || "/";
+  if (normalized === "/") return "Home";
+  if (isWorkflowArtifactEnglishSafe(fallback)) return normalizeWorkflowArtifactText(fallback);
+  const leaf = normalized.replace(/^\/+|\/+$/g, "").split("/").filter(Boolean).pop() || "page";
+  return leaf
+    .split(/[-_]+/g)
+    .filter(Boolean)
+    .map((part) => (part.toUpperCase() === "CASUX" ? "CASUX" : part.charAt(0).toUpperCase() + part.slice(1)))
+    .join(" ");
+}
+
+function englishOnlyList(items: string[], fallback: string): string {
+  return sanitizeWorkflowArtifactList(items, fallback);
+}
+
+function englishOnlyText(text: string, fallback: string): string {
+  return sanitizeWorkflowArtifactText(text, fallback);
 }
 
 function hasUploadedMaterialSignal(text: string): boolean {
@@ -903,29 +934,35 @@ export async function buildWebsiteKnowledgeProfile(params: {
 
 export function formatWebsiteEvidenceBrief(brief: WebsiteEvidenceBrief): string {
   const priorityLines = brief.priorityFacts.length
-    ? brief.priorityFacts.map((item) => `- [${item.category}] ${item.fact}`)
+    ? brief.priorityFacts.map((item) => `- [${item.category}] ${englishOnlyText(item.fact, "Source-backed fact available in uploaded/domain material.")}`)
     : ["- No source-backed priority facts were extracted; the prompt must keep business claims conservative."];
   const sourceLines = brief.sourcePriorities.length
     ? brief.sourcePriorities.flatMap((source) =>
         [
-          `${source.rank}. [${source.type}] ${source.title}${source.location ? ` | ${source.location}` : ""} | confidence ${source.confidence.toFixed(2)}`,
-          source.snippet ? `   - Evidence: ${source.snippet}` : "",
+          `${source.rank}. [${source.type}] ${englishOnlyText(source.title, `Source ${source.rank}`)}${
+            source.location && (isWorkflowArtifactEnglishSafe(source.location) || /^https?:\/\//i.test(source.location))
+              ? ` | ${source.location}`
+              : ""
+          } | confidence ${source.confidence.toFixed(2)}`,
+          isWorkflowArtifactEnglishSafe(source.snippet || "")
+            ? `   - Evidence: ${normalizeWorkflowArtifactText(source.snippet)}`
+            : "   - Evidence: multilingual source excerpt available; use the extracted source artifact directly when needed.",
         ].filter(Boolean),
       )
     : ["- No readable source priorities available."];
   const pageLines = brief.pageBriefs.length
     ? brief.pageBriefs.flatMap((page, index) => [
-        `${index + 1}. ${page.title} (${page.route})`,
-        `   - Purpose: ${page.purpose}`,
-        `   - Content inputs: ${page.contentInputs.length ? page.contentInputs.join(" | ") : "derive conservatively from priority facts"}`,
-        `   - Source hints: ${page.sourceHints.length ? page.sourceHints.join(" | ") : "none"}`,
+        `${index + 1}. ${internalNavLabelForRoute(page.route, page.title)} (${page.route})`,
+        `   - Purpose: ${englishOnlyText(page.purpose, `Deliver a distinct route brief for ${internalNavLabelForRoute(page.route, page.title)} using source-backed content.`)}`,
+        `   - Content inputs: ${englishOnlyList(page.contentInputs, "derive conservatively from source-backed facts")}`,
+        `   - Source hints: ${englishOnlyList(page.sourceHints, "multilingual source hints available in extracted source artifacts")}`,
       ])
     : ["- No page briefs available."];
   const gapLines = brief.contentGaps.length
-    ? brief.contentGaps.map((gap) => `- Gap: ${gap}`)
+    ? brief.contentGaps.map((gap) => `- Gap: ${englishOnlyText(gap, "Some source-dependent details still require extraction or confirmation from uploaded materials.")}`)
     : ["- Gap: none"];
   const assumptionLines = brief.assumptions.length
-    ? brief.assumptions.map((assumption) => `- Assumption rule: ${assumption}`)
+    ? brief.assumptions.map((assumption) => `- Assumption rule: ${englishOnlyText(assumption, "Keep unsupported claims omitted unless source-backed confirmation is available.")}`)
     : ["- Assumption rule: none"];
 
   return [
@@ -951,25 +988,34 @@ export function formatWebsiteKnowledgeProfile(profile: WebsiteKnowledgeProfile):
   const sourceLines = profile.sources
     .slice(0, 8)
     .map((source, index) => {
-      const location = source.url || source.fileName || "";
-      return `${index + 1}. [${source.type}] ${source.title}${location ? ` | ${location}` : ""}${source.snippet ? ` | ${source.snippet.slice(0, 260)}` : ""}`;
+      const rawLocation = source.url || source.fileName || "";
+      const location = isWorkflowArtifactEnglishSafe(rawLocation) || /^https?:\/\//i.test(rawLocation) ? rawLocation : "";
+      const title = englishOnlyText(source.title, `Source ${index + 1}`);
+      return `${index + 1}. [${source.type}] ${title}${location ? ` | ${location}` : ""}${
+        isWorkflowArtifactEnglishSafe(source.snippet || "")
+          ? ` | ${normalizeWorkflowArtifactText(source.snippet).slice(0, 260)}`
+          : " | multilingual source text stored in extracted source artifacts"
+      }`;
     })
     .join("\n");
   const pageLines = profile.suggestedPages
     .slice(0, 16)
-    .map((page, index) => `${index + 1}. ${page.title} | ${page.route} | ${page.purpose}`)
+    .map(
+      (page, index) =>
+        `${index + 1}. ${internalNavLabelForRoute(page.route, page.title)} | ${page.route} | ${englishOnlyText(page.purpose, `Deliver a route-specific page for ${internalNavLabelForRoute(page.route, page.title)} based on source material.`)}`,
+    )
     .join("\n");
   return [
     "## Website Knowledge Profile",
     `- Source mode: ${profile.sourceMode}`,
     profile.domains.length ? `- Domains: ${profile.domains.join(", ")}` : "- Domains: none",
-    profile.brand.name ? `- Brand: ${profile.brand.name}` : "- Brand: unknown",
-    profile.audience.length ? `- Audience signals: ${profile.audience.join(" | ")}` : "- Audience signals: none",
-    profile.offerings.length ? `- Offering signals: ${profile.offerings.join(" | ")}` : "- Offering signals: none",
-    profile.differentiators.length ? `- Differentiators: ${profile.differentiators.join(" | ")}` : "- Differentiators: none",
-    profile.proofPoints.length ? `- Proof points: ${profile.proofPoints.join(" | ")}` : "- Proof points: none",
+    profile.brand.name ? `- Brand: ${englishOnlyText(profile.brand.name, "source-defined brand available in uploaded/domain material")}` : "- Brand: unknown",
+    profile.audience.length ? `- Audience signals: ${englishOnlyList(profile.audience, "multilingual audience signals available in extracted source artifacts")}` : "- Audience signals: none",
+    profile.offerings.length ? `- Offering signals: ${englishOnlyList(profile.offerings, "multilingual offering signals available in extracted source artifacts")}` : "- Offering signals: none",
+    profile.differentiators.length ? `- Differentiators: ${englishOnlyList(profile.differentiators, "multilingual differentiator signals available in extracted source artifacts")}` : "- Differentiators: none",
+    profile.proofPoints.length ? `- Proof points: ${englishOnlyList(profile.proofPoints, "source-backed proof points available in extracted source artifacts")}` : "- Proof points: none",
     pageLines ? "- Suggested pages from source:\n" + pageLines : "- Suggested pages from source: none",
-    profile.contentGaps.length ? `- Content gaps: ${profile.contentGaps.join(" | ")}` : "- Content gaps: none",
+    profile.contentGaps.length ? `- Content gaps: ${englishOnlyList(profile.contentGaps, "source-specific content gaps remain and must be handled conservatively")}` : "- Content gaps: none",
     sourceLines ? "- Sources:\n" + sourceLines : "- Sources: none",
   ].join("\n");
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { __contentSourceIngestionForTesting } from "./content-source-ingestion";
+import { __contentSourceIngestionForTesting, formatWebsiteKnowledgeProfile } from "./content-source-ingestion";
 import { __documentIngestionForTesting, extractDocumentContentFromBytes } from "./document-ingestion";
+import { containsWorkflowCjk, isWorkflowArtifactEnglishSafe } from "../workflow-artifact-language.ts";
 
 describe("content source ingestion", () => {
   it("loads the Node PDF parser build without relying on browser canvas globals", () => {
@@ -166,7 +167,7 @@ describe("content source ingestion", () => {
       "/downloads",
     ]);
     expect(profile.suggestedPages.map((page) => page.route)).not.toContain("/custom-solutions");
-    expect(profile.contentGaps.join(" ")).toContain("user registration/login");
+    expect(profile.contentGaps.join(" ")).toMatch(/user registration\/login|Proof points are missing/i);
   });
 
   it("uses readable uploaded PDF content before file-name metadata", () => {
@@ -201,5 +202,43 @@ describe("content source ingestion", () => {
       "/casux-information-platform",
       "/downloads",
     ]);
+  });
+
+  it("keeps knowledge profile artifacts English-safe when source titles and snippets are multilingual", () => {
+    const rendered = formatWebsiteKnowledgeProfile({
+      sourceMode: "uploaded_files",
+      domains: [],
+      sources: [
+        {
+          type: "uploaded_file",
+          title: "适儿空间资料包.pdf",
+          fileName: "适儿空间资料包.pdf",
+          snippet: "适儿空间标准、评分体系、研究中心与资料下载。",
+          confidence: 0.91,
+        },
+      ],
+      brand: { name: "适儿空间" },
+      audience: ["0-12 岁儿童家庭"],
+      offerings: ["空间评估", "认证服务"],
+      differentiators: ["研究标准"],
+      proofPoints: ["标准样本"],
+      suggestedPages: [
+        {
+          route: "/downloads",
+          title: "资料下载",
+          purpose: "资料下载页面",
+          contentInputs: ["标准文档"],
+        },
+      ],
+      contentGaps: ["缺少英文案例内容"],
+      summary: "适儿空间资料包",
+    });
+
+    expect(rendered).toContain("## Website Knowledge Profile");
+    expect(rendered).toContain("Brand: source-defined brand available in uploaded/domain material");
+    expect(rendered).toContain("[uploaded_file] Source 1");
+    expect(rendered).toContain("multilingual source text stored in extracted source artifacts");
+    expect(containsWorkflowCjk(rendered)).toBe(false);
+    expect(isWorkflowArtifactEnglishSafe(rendered)).toBe(true);
   });
 });

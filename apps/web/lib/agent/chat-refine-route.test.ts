@@ -368,4 +368,141 @@ describe("chat refine routing", () => {
     expect(pricingHtml).toContain('href="/about/"');
     expect(pricingHtml).toMatch(/<footer\b/i);
   });
+
+  it("runs structural refine for missing blog detail pages and materializes previewable detail routes", async () => {
+    const chatId = `chat-refine-blog-detail-chain-${Date.now()}`;
+    const projectPath = path.resolve(process.cwd(), ".tmp", "chat-tests", `${chatId}-project.json`);
+    await fs.mkdir(path.dirname(projectPath), { recursive: true });
+    await fs.writeFile(
+      projectPath,
+      JSON.stringify(
+        {
+          projectId: "refine-blog-detail-chain-demo",
+          pages: [
+            {
+              path: "/",
+              html: [
+                "<!doctype html><html><head><title>Home</title></head><body>",
+                "<header><nav><a href=\"/\">Home</a><a href=\"/blog/\">Blog</a><a href=\"/about/\">About</a></nav></header>",
+                "<main><h1>Home</h1><p>Baseline shell.</p></main>",
+                "<footer><a href=\"/\">Home</a><a href=\"/blog/\">Blog</a><p>Footer context</p></footer>",
+                "</body></html>",
+              ].join(""),
+            },
+            {
+              path: "/blog",
+              html: [
+                "<!doctype html><html><head><title>Blog</title></head><body>",
+                "<header><nav><a href=\"/\">Home</a><a href=\"/blog/\">Blog</a><a href=\"/about/\">About</a></nav></header>",
+                "<main><section data-shpitto-blog-root data-shpitto-blog-api=\"/api/blog/posts\">",
+                "<div data-shpitto-blog-list>",
+                "<article><a href=\"/blog/alpha/\">Alpha</a><p>Alpha summary</p></article>",
+                "<article><a href=\"/blog/beta/\">Beta</a><p>Beta summary</p></article>",
+                "</div></section></main>",
+                "<footer><a href=\"/\">Home</a><a href=\"/blog/\">Blog</a><p>Footer context</p></footer>",
+                "</body></html>",
+              ].join(""),
+            },
+          ],
+          staticSite: {
+            mode: "skill-direct",
+            files: [
+              {
+                path: "/index.html",
+                type: "text/html",
+                content: [
+                  "<!doctype html><html><head><title>Home</title></head><body>",
+                  "<header><nav><a href=\"/\">Home</a><a href=\"/blog/\">Blog</a><a href=\"/about/\">About</a></nav></header>",
+                  "<main><h1>Home</h1><p>Baseline shell.</p></main>",
+                  "<footer><a href=\"/\">Home</a><a href=\"/blog/\">Blog</a><p>Footer context</p></footer>",
+                  "</body></html>",
+                ].join(""),
+              },
+              {
+                path: "/blog/index.html",
+                type: "text/html",
+                content: [
+                  "<!doctype html><html><head><title>Blog</title></head><body>",
+                  "<header><nav><a href=\"/\">Home</a><a href=\"/blog/\">Blog</a><a href=\"/about/\">About</a></nav></header>",
+                  "<main><section data-shpitto-blog-root data-shpitto-blog-api=\"/api/blog/posts\">",
+                  "<div data-shpitto-blog-list>",
+                  "<article><a href=\"/blog/alpha/\">Alpha</a><p>Alpha summary</p></article>",
+                  "<article><a href=\"/blog/beta/\">Beta</a><p>Beta summary</p></article>",
+                  "</div></section></main>",
+                  "<footer><a href=\"/\">Home</a><a href=\"/blog/\">Blog</a><p>Footer context</p></footer>",
+                  "</body></html>",
+                ].join(""),
+              },
+              { path: "/styles.css", type: "text/css", content: "body{color:#111}" },
+              { path: "/script.js", type: "text/javascript", content: "console.log('ok');" },
+            ],
+          },
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
+
+    const previous = await createChatTask(chatId, undefined, {
+      assistantText: "generated",
+      phase: "end",
+      internal: {
+        sessionState: {
+          messages: [],
+          phase: "end",
+          current_page_index: 0,
+          attempt_count: 0,
+          workflow_context: {
+            checkpointProjectPath: projectPath,
+            deploySourceProjectPath: projectPath,
+          },
+        },
+      },
+      progress: {
+        stage: "done",
+        checkpointProjectPath: projectPath,
+      } as any,
+    });
+    await completeChatTask(previous.id, {
+      assistantText: "generated",
+      phase: "end",
+      internal: previous.result?.internal,
+      progress: {
+        stage: "done",
+        checkpointProjectPath: projectPath,
+      } as any,
+    });
+
+    const { POST } = await import("../../app/api/chat/route");
+    const { runChatTaskWorkerOnce } = await import("../../scripts/chat-task-worker");
+    const req = new Request("http://localhost/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: chatId,
+        messages: [{ role: "user", parts: [{ type: "text", text: "三篇blog缺少内容页面，请补充" }] }],
+      }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(202);
+
+    const queued = await getLatestChatTaskForChat(chatId);
+    expect((queued?.result?.internal?.inputState as any)?.workflow_context?.refineScope).toBe("structural");
+
+    const completed = await waitForTerminalTask(String(queued?.id || ""), runChatTaskWorkerOnce);
+    expect(completed?.status).toBe("succeeded");
+    const checkpointProjectPath = String(completed?.result?.progress?.checkpointProjectPath || "");
+    expect(checkpointProjectPath).toBeTruthy();
+    const project = JSON.parse(await fs.readFile(checkpointProjectPath, "utf8"));
+    const detailFiles = ((project?.staticSite?.files || []) as any[]).filter((file) =>
+      /^\/blog\/(?:alpha|beta)\/index\.html$/i.test(String(file?.path || "")),
+    );
+    expect(detailFiles).toHaveLength(2);
+    const alphaHtml = String(detailFiles.find((file) => String(file?.path || "") === "/blog/alpha/index.html")?.content || "");
+    expect(alphaHtml).toMatch(/<nav\b/i);
+    expect(alphaHtml).toContain('href="/blog"');
+    expect(alphaHtml).toContain('href="/"');
+    expect(alphaHtml).toMatch(/<article\b/i);
+  });
 });

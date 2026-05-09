@@ -6,6 +6,7 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { ChatOpenAI } from "@langchain/openai";
 import { normalizeStylePreset, type DesignStylePreset } from "../design-style-preset.ts";
 import { getWebsiteDesignDirection } from "../open-design/design-directions.ts";
+import { sanitizeWorkflowArtifactText } from "../workflow-artifact-language.ts";
 
 const execFileAsync = promisify(execFile);
 
@@ -1708,6 +1709,10 @@ export async function loadWorkflowSkillContext(
   if (!designMd.trim()) {
     designMd = await loadAnyLocalDesignMd();
   }
+  designMd = sanitizeWorkflowArtifactText(
+    designMd,
+    "Use the selected design system guidance and keep internal workflow notes English-only.",
+  );
 
   const styleProfiles = await loadStyleProfiles();
   const profilePreset = hit.id ? styleProfiles[hit.id] || {} : {};

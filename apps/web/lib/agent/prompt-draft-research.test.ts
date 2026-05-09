@@ -9,6 +9,7 @@ import {
   enrichCanonicalPromptWithControlManifestForTesting,
   mergeTemplateWithKnowledgeProfileForTesting,
 } from "./prompt-draft-research";
+import { containsWorkflowCjk, isWorkflowArtifactEnglishSafe } from "../workflow-artifact-language.ts";
 
 describe("prompt draft research", () => {
   afterEach(() => {
@@ -31,6 +32,10 @@ describe("prompt draft research", () => {
     expect(result.canonicalPrompt).toContain("LC-CNC");
     expect(result.canonicalPrompt).toContain("#22c55e");
     expect(result.canonicalPrompt).toContain("cloudflare");
+    expect(result.canonicalPrompt).toContain("Internal prompt language: English only.");
+    expect(result.canonicalPrompt).not.toContain("给我做");
+    expect(containsWorkflowCjk(result.canonicalPrompt)).toBe(false);
+    expect(isWorkflowArtifactEnglishSafe(result.canonicalPrompt)).toBe(true);
   });
 
   it("adds a thin generation contract before generation", async () => {
@@ -52,7 +57,6 @@ describe("prompt draft research", () => {
       "/3c-machines",
       "/custom-solutions",
       "/cases",
-      "/blog",
       "/contact",
       "/about",
     ]);
@@ -80,7 +84,7 @@ describe("prompt draft research", () => {
       "Build a site. Pages: Home, Products, Cases, Contact. Contact form fields include Email and Phone.",
     );
 
-    expect(contract.routes).toEqual(["/", "/products", "/cases", "/blog", "/contact"]);
+    expect(contract.routes).toEqual(["/", "/products", "/cases", "/contact"]);
     expect(contract.files).toEqual(
       expect.arrayContaining(["/index.html", "/products/index.html", "/cases/index.html", "/contact/index.html"]),
     );
@@ -275,8 +279,10 @@ describe("prompt draft research", () => {
 
     expect(prompt).toContain("## 7.25 Source Material Appendix");
     expect(prompt).toContain("Internal Generation Input");
-    expect(prompt).toContain("生成标准文件展示卡片组件");
-    expect(prompt).toContain("生成适儿空间CASUX评分可视化组件");
+    expect(prompt).toContain("multilingual source excerpt available");
+    expect(prompt).toContain("multilingual source text stored in extracted source artifacts");
+    expect(containsWorkflowCjk(prompt)).toBe(false);
+    expect(isWorkflowArtifactEnglishSafe(prompt)).toBe(true);
     expect(prompt.indexOf("## 7.25 Source Material Appendix")).toBeLessThan(
       prompt.indexOf("## 7.5 External Research Addendum"),
     );
@@ -319,8 +325,10 @@ describe("prompt draft research", () => {
       ]),
     );
     expect(result.canonicalPrompt).toContain("## 7.25 Source Material Appendix");
-    expect(result.canonicalPrompt).toContain("CASUX建设");
-    expect(result.canonicalPrompt).toContain("生成标准文件展示卡片组件");
+    expect(result.canonicalPrompt).toContain("CASUX Construction");
+    expect(result.canonicalPrompt).toContain("multilingual source excerpt available");
+    expect(containsWorkflowCjk(result.canonicalPrompt)).toBe(false);
+    expect(isWorkflowArtifactEnglishSafe(result.canonicalPrompt)).toBe(true);
     expect(result.canonicalPrompt).not.toContain("/custom-solutions/index.html");
   });
 

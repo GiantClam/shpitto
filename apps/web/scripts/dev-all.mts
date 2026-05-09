@@ -145,7 +145,7 @@ async function findProjectNextDevPidOnPort(port: number): Promise<number | undef
       `$port = ${port}`,
       "$project = [Regex]::Escape((Resolve-Path '.').Path)",
       "$conn = Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue | Select-Object -First 1",
-      "if (-not $conn) { return }",
+      "if (-not $conn) { exit 0 }",
       "$proc = Get-CimInstance Win32_Process -Filter \"ProcessId = $($conn.OwningProcess)\"",
       "if ($proc -and $proc.CommandLine -match 'next(\\.exe)?' -and $proc.CommandLine -match $project) {",
       "  $proc.ProcessId",

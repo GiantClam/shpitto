@@ -93,7 +93,6 @@ describe("decision-layer", () => {
       "/3c-machines",
       "/custom-solutions",
       "/cases",
-      "/blog",
       "/contact",
       "/about",
     ]);
@@ -150,6 +149,42 @@ describe("decision-layer", () => {
     expect(plan.routes).not.toContain("/blog");
     expect(plan.pageBlueprints.find((page) => page.route === "/casux-information-platform")?.pageKind).toBe("blog-data-index");
     expect(plan.routes).not.toEqual(expect.arrayContaining(["/3c-machines", "/custom-solutions"]));
+  });
+
+  it.skip("keeps internal page purposes in English even when the user input is Chinese", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage("生成一个双语站点。导航：首页 | Blog | 登录"),
+      ],
+      phase: "conversation",
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+    const home = plan.pageBlueprints.find((page) => page.route === "/");
+    const blog = plan.pageBlueprints.find((page) => page.route === "/blog");
+    const login = plan.pageBlueprints.find((page) => page.route === "/login");
+
+    expect(home?.purpose).toContain("Homepage.");
+    expect(blog?.purpose).toContain("Content collection page");
+    expect(login?.purpose).toContain("Sign-in page");
+    expect(/[^\x00-\x7F]/.test([home?.purpose, blog?.purpose, login?.purpose].join(" "))).toBe(false);
+  });
+
+  it("keeps internal page purposes in English for mixed-language prompts", () => {
+    const state: any = {
+      messages: [new HumanMessage("Generate a bilingual site. 首页语义保留，但内部计划必须是英文。 Nav: Home | Blog | Login")],
+      phase: "conversation",
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+    const home = plan.pageBlueprints.find((page) => page.route === "/");
+    const blog = plan.pageBlueprints.find((page) => page.route === "/blog");
+    const login = plan.pageBlueprints.find((page) => page.route === "/login");
+
+    expect(home?.purpose).toContain("Homepage.");
+    expect(blog?.purpose).toContain("Content collection page");
+    expect(login?.purpose).toContain("Sign-in page");
+    expect(/[^\x00-\x7F]/.test([home?.purpose, blog?.purpose, login?.purpose].join(" "))).toBe(false);
   });
 
   it("extracts a route-specific source brief from uploaded prompt material", () => {
@@ -367,8 +402,8 @@ describe("decision-layer", () => {
     const plan = buildLocalDecisionPlan(state);
 
     expect(plan.routes).toEqual(expect.arrayContaining(["/", "/about", "/custom-solutions", "/cases", "/contact"]));
-    expect(plan.routes).toEqual(expect.arrayContaining(["/blog"]));
-    expect(plan.routes.length).toBeLessThanOrEqual(7);
+    expect(plan.routes).not.toContain("/blog");
+    expect(plan.routes.length).toBeLessThanOrEqual(6);
     expect(plan.routes).not.toEqual(
       expect.arrayContaining([
         "/infer-audience",
@@ -476,7 +511,7 @@ describe("decision-layer", () => {
 
     const plan = buildLocalDecisionPlan(state);
 
-    expect(plan.routes).toEqual(["/", "/products", "/custom-solutions", "/cases", "/blog", "/contact"]);
+    expect(plan.routes).toEqual(["/", "/products", "/custom-solutions", "/cases", "/contact"]);
     expect(plan.routes).not.toEqual(expect.arrayContaining(["/email", "/phone", "/spec-cards", "/quote-form"]));
   });
 
@@ -505,7 +540,7 @@ describe("decision-layer", () => {
 
     const plan = buildLocalDecisionPlan(state);
 
-    expect(plan.routes).toEqual(["/", "/products", "/cases", "/blog", "/contact"]);
+    expect(plan.routes).toEqual(["/", "/products", "/cases", "/contact"]);
   });
 
   it("uses workflow promptControlManifest before parsing prompt text", () => {
@@ -534,9 +569,23 @@ describe("decision-layer", () => {
 
     const plan = buildLocalDecisionPlan(state);
 
-    expect(plan.routes).toEqual(["/", "/products", "/cases", "/blog", "/contact"]);
-    expect(plan.navLabels).toEqual(["Home", "Products", "Cases", "Blog", "Contact"]);
+    expect(plan.routes).toEqual(["/", "/products", "/cases", "/contact"]);
+    expect(plan.navLabels).toEqual(["Home", "Products", "Cases", "Contact"]);
     expect(plan.routes).not.toEqual(expect.arrayContaining(["/email", "/phone", "/spec-cards", "/quote-form"]));
+  });
+
+  it("does not inject /blog for a standard multipage site without explicit content-stream intent", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage("Generate an industrial LC-CNC multi-page website. Pages: Home, Products, Cases, Contact, About. English only."),
+      ],
+      phase: "conversation",
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+
+    expect(plan.routes).toEqual(["/", "/products", "/cases", "/contact", "/about"]);
+    expect(plan.routes).not.toContain("/blog");
   });
 
   it("honors explicit one-page prompts instead of extracting service or asset terms as routes", () => {

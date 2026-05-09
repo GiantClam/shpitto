@@ -7,6 +7,7 @@ import type { DesignSystemSummary } from "@/lib/design-system-registry";
 type DesignSystemPickerProps = {
   selectedId?: string;
   onSelect?: (designSystem: DesignSystemSummary) => void;
+  compact?: boolean;
 };
 
 type DesignSystemsResponse = {
@@ -19,7 +20,7 @@ function swatchesFor(system: DesignSystemSummary): string[] {
   return system.swatches.length > 0 ? system.swatches.slice(0, 5) : ["#0f172a", "#f8fafc", "#2563eb"];
 }
 
-export function DesignSystemPicker({ selectedId, onSelect }: DesignSystemPickerProps) {
+export function DesignSystemPicker({ selectedId, onSelect, compact = false }: DesignSystemPickerProps) {
   const [systems, setSystems] = useState<DesignSystemSummary[]>([]);
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -56,15 +57,17 @@ export function DesignSystemPicker({ selectedId, onSelect }: DesignSystemPickerP
 
   return (
     <div className="space-y-3">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <div className="text-sm font-semibold text-slate-950">Design system inspiration</div>
-          <div className="text-xs text-slate-500">
-            Local awesome-design-md references for stronger website visual direction.
+      {!compact ? (
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <div className="text-sm font-semibold text-slate-950">Design system inspiration</div>
+            <div className="text-xs text-slate-500">
+              Local awesome-design-md references for stronger website visual direction.
+            </div>
           </div>
+          <div className="text-xs text-slate-400">{isPending ? "Loading..." : `${systems.length} styles`}</div>
         </div>
-        <div className="text-xs text-slate-400">{isPending ? "Loading..." : `${systems.length} styles`}</div>
-      </div>
+      ) : null}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {systems.map((system) => {
           const active = selectedId === system.id;

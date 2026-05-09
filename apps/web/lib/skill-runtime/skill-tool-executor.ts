@@ -338,6 +338,126 @@ function htmlVisibleText(html: string) {
     .trim();
 }
 
+const GENERIC_BLOG_TOPIC_TOKENS = new Set([
+  "about",
+  "archive",
+  "article",
+  "articles",
+  "blog",
+  "body",
+  "case",
+  "cases",
+  "collection",
+  "complete",
+  "content",
+  "decision",
+  "demo",
+  "detail",
+  "details",
+  "entry",
+  "feature",
+  "guide",
+  "guides",
+  "home",
+  "index",
+  "insight",
+  "latest",
+  "news",
+  "page",
+  "pages",
+  "post",
+  "posts",
+  "read",
+  "reader",
+  "reading",
+  "report",
+  "reports",
+  "resource",
+  "resources",
+  "site",
+  "story",
+  "stories",
+  "topic",
+  "topics",
+  "update",
+  "updates",
+  "website",
+  "文章",
+  "内容",
+  "博客",
+  "详情",
+  "页面",
+  "标题",
+  "阅读",
+  "站点",
+  "文章页",
+  "内容页",
+]);
+
+function extractSemanticTopicTokens(text: string): string[] {
+  const source = String(text || "");
+  const tokens = new Set<string>();
+  for (const match of source.matchAll(/[A-Za-z][A-Za-z0-9-]{2,}/g)) {
+    const raw = String(match[0] || "").toLowerCase();
+    for (const part of raw.split(/-/g)) {
+      const token = part.trim();
+      if (!token || token.length < 3 || GENERIC_BLOG_TOPIC_TOKENS.has(token)) continue;
+      tokens.add(token);
+    }
+  }
+  for (const match of source.matchAll(/[\u3400-\u9fff]{2,12}/g)) {
+    const phrase = String(match[0] || "").trim();
+    if (!phrase || GENERIC_BLOG_TOPIC_TOKENS.has(phrase)) continue;
+    tokens.add(phrase);
+  }
+  return Array.from(tokens).slice(0, 12);
+}
+
+function extractRequirementSourceAnchors(text: string): string[] {
+  return extractSemanticTopicTokens(text).filter((token) => {
+    if (/^[a-z]+$/i.test(token) && token.length < 4) return false;
+    return !/^(build|built|create|creating|generate|generated|complete|personal|company|language|switch|home|about|blog|contact|pricing|cases|page|pages|site|website|english|chinese|bilingual|article|articles|post|posts)$/i.test(token);
+  });
+}
+
+function extractBlogDetailExpectations(html: string): Map<string, { title: string; context: string }> {
+  const source = String(html || "");
+  const expectations = new Map<string, { title: string; context: string }>();
+  const articleMatches = Array.from(source.matchAll(/<article\b[^>]*>([\s\S]*?)<\/article>/gi));
+  const segments = articleMatches.length > 0 ? articleMatches.map((match) => String(match[1] || "")) : [source];
+  for (const segment of segments) {
+    const linkMatch = segment.match(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/i);
+    const route = normalizeHrefRoute(linkMatch?.[1] || "");
+    if (!/^\/blog\/[^/]+\/?$/i.test(route)) continue;
+    const title = htmlVisibleText(linkMatch?.[2] || "");
+    const context = htmlVisibleText(segment);
+    if (!title) continue;
+    expectations.set(normalizePath(route), { title, context });
+  }
+  return expectations;
+}
+
+function findBlogDetailQualityIssues(html: string): string[] {
+  const source = ensureHtmlDocument(html);
+  if (!source) return ["missing html document"];
+  const paragraphs = Array.from(source.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi))
+    .map((match) => htmlVisibleText(match[0] || ""))
+    .filter((item) => item.length >= 55);
+  const sectionHeadings = Array.from(source.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/gi))
+    .map((match) => htmlVisibleText(match[1] || ""))
+    .filter((item) => item.length >= 4);
+  const issues: string[] = [];
+
+  if (paragraphs.length < 4) {
+    issues.push(`body depth too thin (${paragraphs.length} substantial paragraphs)`);
+  }
+  if (sectionHeadings.length < 2) {
+    issues.push(`body structure too thin (${sectionHeadings.length} section headings)`);
+  }
+
+  return issues;
+}
+
 function isBilingualRequirementText(text = ""): boolean {
   return sharedIsBilingualRequirementText(text);
 }
@@ -580,6 +700,33 @@ function dedupeFiles<T extends { path?: string; content?: string; type?: string 
   return Array.from(byPath.values());
 }
 
+function didRoundMateriallyChangeFiles(
+  previousFiles: Array<{ path?: string; content?: string; type?: string }>,
+  currentFiles: Array<{ path?: string; content?: string; type?: string }>,
+  emittedPathsThisRound: string[],
+): boolean {
+  const normalizedEmittedPaths = Array.from(
+    new Set((emittedPathsThisRound || []).map((value) => normalizePath(String(value || ""))).filter(Boolean)),
+  );
+  if (normalizedEmittedPaths.length === 0) return false;
+
+  const previousByPath = new Map(
+    dedupeFiles(previousFiles).map((file) => [normalizePath(file.path), file] as const),
+  );
+  const currentByPath = new Map(
+    dedupeFiles(currentFiles).map((file) => [normalizePath(file.path), file] as const),
+  );
+
+  return normalizedEmittedPaths.some((targetPath) => {
+    const previous = previousByPath.get(targetPath);
+    const current = currentByPath.get(targetPath);
+    if (!previous && current) return true;
+    if (!current) return false;
+    if (!previous) return false;
+    return previous.content !== current.content || previous.type !== current.type;
+  });
+}
+
 function hasValidHtmlCore(rawHtml: string): boolean {
   const html = String(rawHtml || "");
   if (!html.trim()) return false;
@@ -776,6 +923,14 @@ export function requiredFileChecklistForTesting(
   return requiredFileChecklist(decision, params);
 }
 
+export function didRoundMateriallyChangeFilesForTesting(
+  previousFiles: Array<{ path?: string; content?: string; type?: string }>,
+  currentFiles: Array<{ path?: string; content?: string; type?: string }>,
+  emittedPathsThisRound: string[],
+): boolean {
+  return didRoundMateriallyChangeFiles(previousFiles, currentFiles, emittedPathsThisRound);
+}
+
 function clipRuntimeRequirement(input: string, maxChars: number): string {
   const text = String(input || "").trim();
   if (!Number.isFinite(maxChars) || maxChars <= 0 || text.length <= maxChars) return text;
@@ -839,16 +994,17 @@ export function formatTargetPageContract(plan: LocalDecisionPlan, targetFile: st
             : "",
         ].join("\n")
       : "";
-  const generatedBlogDetailGate =
-    isGeneratedBlogDetailRoute && requestedContentCount
-      ? [
-          "- Blog detail page gate: this file is a required publishable article/detail target derived from the user's requested content count.",
-          "- Write a complete visitor-facing article, not a title-only page, not a list card, and not an explanation of the Blog system.",
-          "- Include a page-specific title, date/category metadata if useful, at least three substantial body paragraphs, and section headings that answer the topic directly.",
-          "- Keep the article strongly related to the user's supplied subject and site positioning. If factual/current examples are needed and not in the prompt, the workflow should use web research before drafting rather than inventing weak filler.",
-          isBilingualRequirementText(requirementText)
-            ? `- Bilingual article detail guidance: default visible language is ${bilingualDefaultVisibleLanguage(requirementText)}. Render exactly one visible article language body in this file. Store alternate-language article title/summary/body in i18n data and reveal it through the language switch instead of placing English summaries under Chinese text, Chinese summaries under English text, side-by-side translations, or alternating zh/en paragraphs in the initial HTML.`
-            : "",
+    const generatedBlogDetailGate =
+      isGeneratedBlogDetailRoute
+        ? [
+            "- Blog detail page gate: this file is a required publishable article/detail target for a visible /blog/{slug}/ entry.",
+            "- Write a complete visitor-facing article, not a title-only page, not a list card, and not an explanation of the Blog system.",
+            "- Include a page-specific title, date/category metadata if useful, at least three substantial body paragraphs, and section headings that answer the topic directly.",
+            "- Expand the exact visible list-card topic. Reuse the user's real subject matter, named entities, source-document themes, or route-specific tension instead of drifting into generic implementation/process filler.",
+            "- Keep the article strongly related to the user's supplied subject and site positioning. If factual/current examples are needed and not in the prompt, the workflow should use web research before drafting rather than inventing weak filler.",
+            isBilingualRequirementText(requirementText)
+              ? `- Bilingual article detail guidance: default visible language is ${bilingualDefaultVisibleLanguage(requirementText)}. Render exactly one visible article language body in this file. Store alternate-language article title/summary/body in i18n data and reveal it through the language switch instead of placing English summaries under Chinese text, Chinese summaries under English text, side-by-side translations, or alternating zh/en paragraphs in the initial HTML.`
+              : "",
         ].join("\n")
       : "";
   const bilingualLanguageGate = isBilingualRequirementText(requirementText)
@@ -857,7 +1013,7 @@ export function formatTargetPageContract(plan: LocalDecisionPlan, targetFile: st
         `- Default visible language for this file: ${bilingualDefaultVisibleLanguage(requirementText)}. If this is zh-CN, all visible UI/editorial labels must be Chinese; English labels such as Latest essays, stories, one theme, featured, read more, collection, or journal are inactive-language copy and must not be visible until English is selected.`,
         "- Store alternate-language copy in data-i18n attributes, an in-page dictionary, generated i18n files, or hidden templates, and replace visible text when EN/ZH is selected.",
         "- Invalid visible patterns include `Chinese / \u4e2d\u6587`, `\u4e2d\u6587 / English`, translated titles in one heading, and Chinese plus English paragraphs shown consecutively.",
-        "- Do not explain bilingual behavior with editorial phrasing like two reading paths, bilingual reading paths, 闃呰璺緞, or 鍏堢湅涓枃鍐嶇湅鑻辨枃. Language switching is a control, not a visitor-facing thesis.",
+        "- Do not explain bilingual behavior with editorial phrasing like two reading paths, bilingual reading paths, ????, or ????????. Language switching is a control, not a visitor-facing thesis.",
       ].join("\n")
     : "";
 
@@ -1606,6 +1762,7 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
   const files = dedupeFiles(params.files);
   const byPath = new Map(files.map((file) => [normalizePath(file.path), file]));
   const categories = new Map<string, { code: string; severity: "error" | "warning"; count: number }>();
+  const detailExpectations = new Map<string, { title: string; context: string }>();
   let aggregateScore = 100;
   let totalRoutes = 0;
   const qaRecords: SkillToolQaRecord[] = [];
@@ -1714,12 +1871,15 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
           `skill_tool_invalid_required_file: ${pagePath} Blog list item outer class lacks runtime-safe padding: ${blogListSpacingIssues.join(", ")}`,
         );
       }
-      const detailRoutes = extractBlogDetailRoutes(html);
-      if (detailRoutes.length === 0) {
-        throw new Error(
-          `skill_tool_invalid_required_file: ${pagePath} must expose at least one /blog/{slug}/ detail link because Blog/content-backed generation always includes detail pages`,
-        );
-      }
+        const detailRoutes = extractBlogDetailRoutes(html);
+        for (const [routeKey, expectation] of extractBlogDetailExpectations(html)) {
+          if (!detailExpectations.has(routeKey)) detailExpectations.set(routeKey, expectation);
+        }
+        if (detailRoutes.length === 0) {
+          throw new Error(
+            `skill_tool_invalid_required_file: ${pagePath} must expose at least one /blog/{slug}/ detail link because Blog/content-backed generation always includes detail pages`,
+          );
+        }
       const requestedCount = requestedPublishableContentCount(params.requirementText || "");
       if (requestedCount) {
         if (detailRoutes.length < requestedCount) {
@@ -1728,23 +1888,29 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
           );
         }
       }
-      for (const detailRoute of detailRoutes.slice(0, requestedCount || detailRoutes.length)) {
-        const detailPath = routeToHtmlPath(detailRoute);
-        const detailFile = byPath.get(detailPath);
-        if (!detailFile || !isMeaningfulArticleDetailHtml(String(detailFile.content || ""))) {
-          throw new Error(
+        for (const detailRoute of detailRoutes.slice(0, requestedCount || detailRoutes.length)) {
+          const detailPath = routeToHtmlPath(detailRoute);
+          const detailFile = byPath.get(detailPath);
+          if (!detailFile || !isMeaningfulArticleDetailHtml(String(detailFile.content || ""))) {
+            throw new Error(
             `skill_tool_invalid_required_file: ${detailPath} must contain a complete article/detail body, not only title, metadata, or excerpt content`,
           );
         }
         const detailScaffoldTerms = findVisibleBlogDetailEditorialScaffold(String(detailFile.content || ""));
-        if (detailScaffoldTerms.length > 0) {
-          throw new Error(
-            `skill_tool_invalid_required_file: ${detailPath} exposes editorial scaffold/explanatory wording instead of final article content: ${detailScaffoldTerms.join(", ")}`,
-          );
+          if (detailScaffoldTerms.length > 0) {
+            throw new Error(
+              `skill_tool_invalid_required_file: ${detailPath} exposes editorial scaffold/explanatory wording instead of final article content: ${detailScaffoldTerms.join(", ")}`,
+            );
+          }
+          const detailIssues = findBlogDetailQualityIssues(String(detailFile.content || ""));
+          if (detailIssues.length > 0) {
+            throw new Error(
+              `skill_tool_invalid_required_file: ${detailPath} ${detailIssues.join("; ")}`,
+            );
+          }
         }
       }
     }
-  }
 
   const requestedSiteContentCount = requestedPublishableContentCount(params.requirementText || "");
   if (requestedSiteContentCount) {
@@ -1760,22 +1926,28 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
         `skill_tool_invalid_required_file: site must expose ${requestedSiteContentCount} /blog/{slug}/ detail links for the requested publishable content items; found ${detailRoutes.length}`,
       );
     }
-    for (const detailRoute of detailRoutes.slice(0, requestedSiteContentCount)) {
-      const detailPath = routeToHtmlPath(detailRoute);
-      const detailFile = byPath.get(detailPath);
-      if (!detailFile || !isMeaningfulArticleDetailHtml(String(detailFile.content || ""))) {
-        throw new Error(
+      for (const detailRoute of detailRoutes.slice(0, requestedSiteContentCount)) {
+        const detailPath = routeToHtmlPath(detailRoute);
+        const detailFile = byPath.get(detailPath);
+        if (!detailFile || !isMeaningfulArticleDetailHtml(String(detailFile.content || ""))) {
+          throw new Error(
           `skill_tool_invalid_required_file: ${detailPath} must contain a complete article/detail body, not only title, metadata, or excerpt content`,
         );
       }
       const detailScaffoldTerms = findVisibleBlogDetailEditorialScaffold(String(detailFile.content || ""));
-      if (detailScaffoldTerms.length > 0) {
-        throw new Error(
-          `skill_tool_invalid_required_file: ${detailPath} exposes editorial scaffold/explanatory wording instead of final article content: ${detailScaffoldTerms.join(", ")}`,
-        );
+        if (detailScaffoldTerms.length > 0) {
+          throw new Error(
+            `skill_tool_invalid_required_file: ${detailPath} exposes editorial scaffold/explanatory wording instead of final article content: ${detailScaffoldTerms.join(", ")}`,
+          );
+        }
+        const detailIssues = findBlogDetailQualityIssues(String(detailFile.content || ""));
+        if (detailIssues.length > 0) {
+          throw new Error(
+            `skill_tool_invalid_required_file: ${detailPath} ${detailIssues.join("; ")}`,
+          );
+        }
       }
     }
-  }
 
   if (sharedIsBilingualRequirementText(params.requirementText || "")) {
     const allHtml = files
@@ -1795,6 +1967,22 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
           `skill_tool_invalid_required_file: ${normalizePath(file.path)} renders obvious simultaneous bilingual visible copy instead of language-switched content: ${leaks.join(" | ")}`,
         );
       }
+    }
+  }
+
+  for (const [detailRoute, expectation] of detailExpectations.entries()) {
+    const detailPath = routeToHtmlPath(detailRoute);
+    const detailFile = byPath.get(detailPath);
+    if (!detailFile || !isMeaningfulArticleDetailHtml(String(detailFile.content || ""))) {
+      throw new Error(
+        `skill_tool_invalid_required_file: ${detailPath} must contain a complete article/detail body, not only title, metadata, or excerpt content`,
+      );
+    }
+    const detailIssues = findBlogDetailQualityIssues(String(detailFile.content || ""));
+    if (detailIssues.length > 0) {
+      throw new Error(
+        `skill_tool_invalid_required_file: ${detailPath} ${detailIssues.join("; ")}`,
+      );
     }
   }
 
@@ -2466,6 +2654,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
       let requestedFinish = false;
       let emittedThisRound = 0;
       const emittedPathsThisRound: string[] = [];
+      const previousDedupedFiles = dedupeFiles(emittedFiles);
       const roundCalls: SkillToolCall[] = (roundOutput.tool_calls || []).map((call) => ({
         id: call.id,
         name: call.name,
@@ -2514,7 +2703,12 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
       const emittedTargetThisRound =
         !objective.strictSingleTarget ||
         objective.targetFiles.some((target) => emittedPathsThisRound.includes(normalizePath(target)));
-      const progressed = (emittedThisRound > 0 || stillMissing.length < missing.length) && emittedTargetThisRound;
+      const materialFileProgress = didRoundMateriallyChangeFiles(
+        previousDedupedFiles,
+        dedupedCurrent,
+        emittedPathsThisRound,
+      );
+      const progressed = (materialFileProgress || stillMissing.length < missing.length) && emittedTargetThisRound;
       if (objective.strictSingleTarget && emittedThisRound > 0 && !emittedTargetThisRound) {
         assistantNotes.push(
           `tool_round_off_target: expected=${objective.targetFiles.join(",")} emitted=${emittedPathsThisRound.join(",") || "(none)"}`,

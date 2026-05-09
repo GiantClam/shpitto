@@ -85,6 +85,11 @@ import { runSkillToolExecutor } from "./skill-tool-executor.ts";
 import { renderWebsiteQualityContract } from "./website-quality-contract.ts";
 import type { QaSummary } from "./qa-summary.ts";
 import {
+  containsWorkflowCjk,
+  isWorkflowArtifactEnglishSafe,
+  normalizeWorkflowArtifactText,
+} from "../workflow-artifact-language.ts";
+import {
   findDuplicatedBilingualDomCopy,
   findVisibleSimultaneousBilingualCopy,
   isBilingualRequirementText,
@@ -2244,11 +2249,46 @@ function formatComponentMix(mix: ComponentMix): string {
   ].join(", ");
 }
 
+function containsCjk(text: string): boolean {
+  return containsWorkflowCjk(text);
+}
+
+function internalNavLabelForRoute(route: string, fallback = ""): string {
+  const normalized = normalizePath(route || "/");
+  if (normalized === "/") return "Home";
+  if (isWorkflowArtifactEnglishSafe(fallback)) return normalizeWorkflowArtifactText(fallback);
+  const leaf = normalized.replace(/^\/+|\/+$/g, "").split("/").filter(Boolean).pop() || "page";
+  return leaf
+    .split(/[-_]+/g)
+    .filter(Boolean)
+    .map((part) => (part.toUpperCase() === "CASUX" ? "CASUX" : part.charAt(0).toUpperCase() + part.slice(1)))
+    .join(" ");
+}
+
+function internalPurposeForProcessText(route: string, fallback = ""): string {
+  if (isWorkflowArtifactEnglishSafe(fallback)) return normalizeWorkflowArtifactText(fallback);
+  return `Deliver a distinct route brief for ${internalNavLabelForRoute(route, fallback)} using source-backed content and a clear next action.`;
+}
+
+function buildInternalRequirementSummaryForWorkflow(requirementText: string, decision: LocalDecisionPlan, locale: "zh-CN" | "en"): string {
+  const excerpt = clipTextWithBudget(String(requirementText || "").trim(), 1600);
+  return [
+    "- Internal workflow language: English only.",
+    `- Final website locale requirement: ${locale === "zh-CN" ? "Chinese" : "English"}.`,
+    `- Planned routes: ${decision.routes.join(", ") || "/"}.`,
+    !isWorkflowArtifactEnglishSafe(excerpt)
+      ? "- The original user wording contains multilingual text and is intentionally omitted from this workflow note. Use the canonical prompt, evidence brief, and structured route plan as the source of truth."
+      : excerpt
+        ? `- Raw requirement excerpt: ${excerpt}`
+        : "- No raw requirement text available.",
+  ].join("\n");
+}
+
 function blueprintDigest(plan: LocalDecisionPlan): string {
   return plan.pageBlueprints
     .map(
       (page) =>
-        `- ${page.route}\n  navLabel: ${page.navLabel}\n  source: ${page.source}\n  kind: ${page.pageKind}\n  intent: ${page.purpose}${
+        `- ${page.route}\n  navLabel: ${internalNavLabelForRoute(page.route, page.navLabel)}\n  source: ${page.source}\n  kind: ${page.pageKind}\n  intent: ${internalPurposeForProcessText(page.route, page.purpose)}${
           page.contentSkeleton.length ? `\n  skeleton: ${page.contentSkeleton.join(" -> ")}` : ""
         }${page.constraints.length ? `\n  constraints: ${page.constraints.join(" | ")}` : ""}`,
     )
@@ -2315,8 +2355,8 @@ function renderLocalTaskPlan(params: {
 }
 
 function renderLocalFindings(requirementText: string, decision: LocalDecisionPlan): string {
-  const summary = clipTextWithBudget(requirementText, Number(process.env.SKILL_DIRECT_FINDINGS_REQUIREMENT_CHARS || 48_000));
-  return ["# Findings", "", "## Input Prompt", summary || "(empty)", "", "## Phase A Decisions", blueprintDigest(decision)].join(
+  const summary = buildInternalRequirementSummaryForWorkflow(requirementText, decision, decision.locale);
+  return ["# Findings", "", "## Request Summary", summary || "(empty)", "", "## Phase A Decisions", blueprintDigest(decision)].join(
     "\n",
   );
 }
@@ -2327,7 +2367,10 @@ function renderLocalDesign(
   decision: LocalDecisionPlan,
   stylePreset: DesignStylePreset = DEFAULT_STYLE_PRESET,
 ): string {
-  const langLine = locale === "zh-CN" ? "\u4e2d\u6587\u4e3a\u4e3b\uff0c\u5de5\u4e1a\u98ce\uff0c\u9ad8\u5bf9\u6bd4\u3002" : "Primary language: English. Industrial, high-contrast visual system.";
+  const langLine =
+    locale === "zh-CN"
+      ? "Final website locale: Chinese. Internal design/process notes remain English-only."
+      : "Final website locale: English. Internal design/process notes remain English-only.";
   return [
     "# DESIGN",
     "",
@@ -2341,8 +2384,8 @@ function renderLocalDesign(
     `- Text: ${stylePreset.colors.text}`,
     `- Font stack: ${stylePreset.typography}`,
     "",
-    "## Prompt Excerpt",
-    String(requirementText || "").trim().slice(0, 1600) || "(empty)",
+    "## Internal Requirement Summary",
+    buildInternalRequirementSummaryForWorkflow(requirementText, decision, locale),
     "",
     "## Page Blueprints",
     blueprintDigest(decision),
@@ -3691,6 +3734,11 @@ class NativeSkillRuntime {
       const stageSkill = await this.buildStageSkillDirective("styles");
       const stageGuidance = this.buildStageGuidance("styles");
       const qualityContract = renderWebsiteQualityContract();
+      const internalRequirementSummary = buildInternalRequirementSummaryForWorkflow(
+        this.requirementText,
+        this.context.decision,
+        this.context.locale,
+      );
       const systemPrompt = `You are a senior frontend design-system engineer.
 Generate only raw CSS for styles.css.
 Keep the output production-safe, responsive, and semantically consistent.
@@ -3716,7 +3764,7 @@ Routes: ${this.context.routes.join(", ")}
 Page blueprints:
 ${blueprintDigest(this.context.decision)}
 Requirements:
-${this.requirementText.slice(0, 1800)}`;
+${internalRequirementSummary}`;
       css = normalizeGeneratedCss(stripMarkdownCodeFences(await this.invokeLlm(prompt, {
         maxTokens: Number(process.env.LLM_MAX_TOKENS_SKILL_DIRECT_SHARED_ASSET || 12000),
         timeoutMs: Number(process.env.LLM_REQUEST_TIMEOUT_SKILL_DIRECT_SHARED_ASSET_MS || 120000),
@@ -3735,6 +3783,11 @@ ${this.requirementText.slice(0, 1800)}`;
       const stageSkill = await this.buildStageSkillDirective("script");
       const stageGuidance = this.buildStageGuidance("script");
       const qualityContract = renderWebsiteQualityContract();
+      const internalRequirementSummary = buildInternalRequirementSummaryForWorkflow(
+        this.requirementText,
+        this.context.decision,
+        this.context.locale,
+      );
       const systemPrompt = `You are a frontend JavaScript engineer.
 Generate only raw JavaScript for script.js.
 Keep behavior minimal, deterministic, and accessibility-friendly.
@@ -3753,6 +3806,8 @@ Locale: ${this.context.locale}
 Routes: ${this.context.routes.join(", ")}
 Page blueprints:
 ${blueprintDigest(this.context.decision)}
+Requirements:
+${internalRequirementSummary}
 ${this.context.routes.some((route) => normalizePath(route) === "/blog") ? 'Blog script contract: if [data-shpitto-blog-root] exists, fetch /api/blog/posts, render into [data-shpitto-blog-list], and leave fallback cards intact on failure. Do not include credentials, D1 bindings, or Worker code.' : ""}`;
       js = stripMarkdownCodeFences(await this.invokeLlm(prompt, {
         maxTokens: Number(process.env.LLM_MAX_TOKENS_SKILL_DIRECT_SHARED_ASSET || 8000),
@@ -3782,7 +3837,7 @@ ${this.context.routes.some((route) => normalizePath(route) === "/blog") ? 'Blog 
       const stageGuidance = this.buildStageGuidance("page");
       const qualityContract = renderWebsiteQualityContract();
       const navLinks = buildNavFromDecision(this.context.decision)
-        .map((item) => `${item.label}:${item.href}`)
+        .map((item) => `${internalNavLabelForRoute(item.href, item.label)}:${item.href}`)
         .join(", ");
       const sequentialContext = this.buildSequentialPageContext(pageOrder);
       const pageSourceBrief = extractRouteSourceBrief(
@@ -3791,6 +3846,15 @@ ${this.context.routes.some((route) => normalizePath(route) === "/blog") ? 'Blog 
         blueprint.navLabel,
         4200,
       );
+      const internalRequirementSummary = buildInternalRequirementSummaryForWorkflow(
+        this.requirementText,
+        this.context.decision,
+        this.context.locale,
+      );
+      const internalPageSourceBrief =
+        pageSourceBrief && isWorkflowArtifactEnglishSafe(pageSourceBrief)
+          ? normalizeWorkflowArtifactText(pageSourceBrief)
+          : "Route-specific source notes are multilingual; preserve the source-backed page structure and visitor intent without copying raw multilingual excerpts into this internal prompt.";
       const systemPrompt = [
         "You are a staff frontend engineer generating complete static HTML pages.",
         "Only output raw HTML. No markdown, no commentary.",
@@ -3822,9 +3886,9 @@ Page responsibility: ${blueprint.responsibility}
 Page skeleton: ${blueprint.contentSkeleton.join(" -> ")}
 Component mix: ${formatComponentMix(blueprint.componentMix)}
 Page-specific source brief excerpt (authoritative for this file):
-${pageSourceBrief || "No route-specific source excerpt found. Derive a unique page architecture from the complete requirement below."}
+${internalPageSourceBrief || "No route-specific source excerpt found. Derive a unique page architecture from the complete requirement below."}
 Requirement:
-${clipTextWithBudget(this.requirementText, Number(process.env.SKILL_DIRECT_PAGE_REQUIREMENT_CHARS || 12_000))}
+${internalRequirementSummary}
 ${sequentialContext ? `\n${sequentialContext}` : ""}
 ${qaFeedback ? `\nQA fix instructions (attempt ${attempt}):\n${qaFeedback}` : ""}`;
 

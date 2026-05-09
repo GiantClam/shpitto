@@ -229,6 +229,9 @@ type RequirementFormLocale = "zh" | "en";
 const CHAT_CARD_COPY: Record<RequirementFormLocale, Record<string, string>> = {
   zh: {
     promptDraftExpand: "Prompt Draft（点击展开）",
+    promptDraftSummaryTitle: "用户摘要",
+    promptDraftTechnicalTitle: "完整技术稿",
+    promptDraftModalTitle: "网站生成 Prompt Draft",
     confirmAndGenerate: "确认并开始生成",
     confirmBlogAndDeploy: "确认 Blog 文章并部署",
     blogPreviewTitle: "部署前将写入以下 Blog 文章",
@@ -281,6 +284,9 @@ const CHAT_CARD_COPY: Record<RequirementFormLocale, Record<string, string>> = {
   },
   en: {
     promptDraftExpand: "Prompt Draft (click to expand)",
+    promptDraftSummaryTitle: "User summary",
+    promptDraftTechnicalTitle: "Full technical draft",
+    promptDraftModalTitle: "Website generation prompt draft",
     confirmAndGenerate: "Confirm and Generate",
     confirmBlogAndDeploy: "Confirm Blog Articles and Deploy",
     blogPreviewTitle: "These Blog articles will be published before deploy",
@@ -345,6 +351,7 @@ const REQUIREMENT_FORM_COPY: Record<RequirementFormLocale, Record<string, string
     contentNotes: "业务/内容补充",
     contentSourceHint: "如果是新建站，请补充品牌定位、核心服务、优势、案例或资质；如果有旧站或资料，系统会优先使用域名和上传文件。",
     customAudience: "自定义受众",
+    designSummary: "设计主题",
     designTheme: "主视觉方向与风格标签",
     customTheme: "自定义风格标签",
     designSystemInspiration: "设计系统灵感",
@@ -379,6 +386,7 @@ const REQUIREMENT_FORM_COPY: Record<RequirementFormLocale, Record<string, string
     contentNotes: "Business/content details",
     contentSourceHint: "For a new website, add brand positioning, services, advantages, cases, or credentials. If you have an old site or files, the system will prioritize domain and uploaded materials.",
     customAudience: "Custom audience",
+    designSummary: "Design theme",
     designTheme: "Primary visual direction and style tags",
     customTheme: "Custom style tag",
     designSystemInspiration: "Design system inspiration",
@@ -979,6 +987,124 @@ function cleanEventValue(value: unknown): string {
   return String(value || "").trim();
 }
 
+function asObjectRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => String(item || "").trim()).filter(Boolean);
+}
+
+function truncatePreviewText(value: string, maxLength = 140): string {
+  const normalized = String(value || "").replace(/\s+/g, " ").trim();
+  if (!normalized || normalized.length <= maxLength) return normalized;
+  return `${normalized.slice(0, Math.max(0, maxLength - 1)).trimEnd()}…`;
+}
+
+function localizePromptDraftToken(value: string, locale: RequirementFormLocale): string {
+  const normalized = String(value || "").trim();
+  if (!normalized) return "";
+  const fallback = OPTION_I18N_FALLBACKS[normalized];
+  if (fallback?.[locale]) return fallback[locale];
+  return normalized;
+}
+
+function joinPromptDraftList(values: string[], locale: RequirementFormLocale, maxItems = 4): string {
+  const normalized = values.map((item) => String(item || "").trim()).filter(Boolean);
+  if (normalized.length === 0) return "";
+  const visible = normalized.slice(0, maxItems);
+  const suffix =
+    normalized.length > maxItems
+      ? locale === "zh"
+        ? ` +${normalized.length - maxItems}`
+        : ` +${normalized.length - maxItems}`
+      : "";
+  return `${visible.join(locale === "zh" ? "、" : ", ")}${suffix}`;
+}
+
+function derivePromptDraftRouteLabels(
+  manifest: Record<string, unknown> | null,
+  requirementSpec: Record<string, unknown> | null,
+  locale: RequirementFormLocale,
+): string[] {
+  const pageIntents = Array.isArray(manifest?.pageIntents) ? manifest?.pageIntents : [];
+  const labelsFromManifest = pageIntents
+    .map((item) => asObjectRecord(item))
+    .map((item) => cleanEventValue(item?.navLabel))
+    .filter(Boolean);
+  if (labelsFromManifest.length > 0) return labelsFromManifest;
+
+  const explicitPages = asStringArray(requirementSpec?.pages).map((item) => localizePromptDraftToken(item, locale));
+  if (explicitPages.length > 0) return explicitPages;
+
+  return asStringArray(manifest?.routes).map((route) => {
+    const normalized = String(route || "").trim();
+    if (normalized === "/") return localizePromptDraftToken("home", locale);
+    return localizePromptDraftToken(normalized.split("/").filter(Boolean).pop() || normalized, locale);
+  });
+}
+
+export function summarizePromptDraftCard(
+  metadata: Record<string, unknown>,
+  locale: RequirementFormLocale = "en",
+): string {
+  const requirementSpec = asObjectRecord(metadata.requirementSpec);
+  const manifest = asObjectRecord(metadata.promptControlManifest);
+  const designSystem = asObjectRecord(requirementSpec?.designSystemInspiration);
+  const deployment = asObjectRecord(requirementSpec?.deployment);
+  const siteType = localizePromptDraftToken(cleanEventValue(requirementSpec?.siteType), locale);
+  const audience = joinPromptDraftList(
+    asStringArray(requirementSpec?.targetAudience).map((item) => localizePromptDraftToken(item, locale)),
+    locale,
+    3,
+  );
+  const goals = joinPromptDraftList(
+    asStringArray(requirementSpec?.primaryGoal).map((item) => localizePromptDraftToken(item, locale)),
+    locale,
+    2,
+  );
+  const language = localizePromptDraftToken(cleanEventValue(requirementSpec?.locale), locale);
+  const routeLabels = joinPromptDraftList(derivePromptDraftRouteLabels(manifest, requirementSpec, locale), locale, 5);
+  const primaryDirectionId = cleanEventValue(requirementSpec?.primaryVisualDirection);
+  const primaryDirection = primaryDirectionId ? getWebsiteDesignDirection(primaryDirectionId) : undefined;
+  const directionLabel = primaryDirection ? (locale === "zh" ? primaryDirection.zhLabel : primaryDirection.label) : "";
+  const secondaryTags = joinPromptDraftList(
+    asStringArray(requirementSpec?.secondaryVisualTags).map((item) => localizePromptDraftToken(item, locale)),
+    locale,
+    2,
+  );
+  const designSummary = [directionLabel, secondaryTags, cleanEventValue(designSystem?.title)].filter(Boolean).join(" · ");
+  const contentSummary = truncatePreviewText(
+    cleanEventValue(requirementSpec?.businessContext) ||
+      cleanEventValue(requirementSpec?.customNotes) ||
+      cleanEventValue(metadata.researchSummary),
+    150,
+  );
+  const deploymentProvider = cleanEventValue(deployment?.provider);
+
+  const lines = [
+    locale === "zh" ? "**网站方案摘要**" : "**Website brief**",
+    siteType ? (locale === "zh" ? `- 类型：${siteType}` : `- Type: ${siteType}`) : "",
+    audience || goals
+      ? locale === "zh"
+        ? `- 受众与目标：${[audience, goals].filter(Boolean).join(" · ")}`
+        : `- Audience and goal: ${[audience, goals].filter(Boolean).join(" · ")}`
+      : "",
+    routeLabels ? (locale === "zh" ? `- 页面结构：${routeLabels}` : `- Pages: ${routeLabels}`) : "",
+    language ? (locale === "zh" ? `- 语言：${language}` : `- Language: ${language}`) : "",
+    designSummary ? (locale === "zh" ? `- 视觉方向：${designSummary}` : `- Visual direction: ${designSummary}`) : "",
+    contentSummary ? (locale === "zh" ? `- 内容重点：${contentSummary}` : `- Content focus: ${contentSummary}`) : "",
+    deploymentProvider
+      ? locale === "zh"
+        ? `- 部署目标：${deploymentProvider}`
+        : `- Deployment target: ${deploymentProvider}`
+      : "",
+  ].filter(Boolean);
+
+  return lines.join("\n");
+}
+
 export function formatQaSummaryDetail(summary: QaSummary | null | undefined, locale: RequirementFormLocale = "en"): string {
   if (!summary) return "";
   const parts: string[] = [];
@@ -1317,27 +1443,35 @@ function buildRequirementFormMessage(
       : logoOption
         ? optionDisplayLabel(logoOption, locale, "brand-logo")
         : optionLabel(logoOptions, values.brandLogo.mode);
-  const designSystemSummary = values.designSystemInspiration
-    ? `${values.designSystemInspiration.title}${values.designSystemInspiration.category ? ` (${values.designSystemInspiration.category})` : ""}`
-    : "";
   const primaryDirection = values.primaryVisualDirection ? getWebsiteDesignDirection(values.primaryVisualDirection) : undefined;
+  const secondaryTagSummary = values.secondaryVisualTags.length
+    ? optionLabels(getOptions("visual-system"), values.secondaryVisualTags.slice(0, 2), locale, "visual-system")
+    : "";
+  const secondaryTagOverflow =
+    values.secondaryVisualTags.length > 2
+      ? locale === "zh"
+        ? ` +${values.secondaryVisualTags.length - 2}`
+        : ` +${values.secondaryVisualTags.length - 2}`
+      : "";
+  const designSystemSummary = values.designSystemInspiration
+    ? locale === "zh"
+      ? `参考 ${values.designSystemInspiration.title}`
+      : `ref ${values.designSystemInspiration.title}`
+    : "";
+  const designSummary = [
+    primaryDirection ? (locale === "zh" ? primaryDirection.zhLabel : primaryDirection.label) : "",
+    secondaryTagSummary ? `${secondaryTagSummary}${secondaryTagOverflow}` : "",
+    designSystemSummary,
+  ]
+    .filter(Boolean)
+    .join(locale === "zh" ? " · " : " · ");
   const summary = [
     locale === "zh" ? "生成前必填信息已提交：" : "Requirement form submitted:",
     `- ${copy.websiteType}: ${optionLabels(getOptions("site-type"), [values.siteType || ""], locale, "site-type")}`,
     `- ${copy.contentSources}: ${optionLabels(getOptions("content-source"), values.contentSources, locale, "content-source")}`,
     values.customNotes ? `- ${copy.contentNotes}: ${values.customNotes}` : "",
     `- ${copy.targetAudience}: ${optionLabels(getOptions("target-audience"), values.targetAudience, locale, "target-audience")}`,
-    `- ${copy.designTheme}: ${
-      [
-        primaryDirection ? (locale === "zh" ? primaryDirection.zhLabel : primaryDirection.label) : "",
-        values.secondaryVisualTags.length
-          ? optionLabels(getOptions("visual-system"), values.secondaryVisualTags, locale, "visual-system")
-          : "",
-      ]
-        .filter(Boolean)
-        .join(" + ")
-    }`,
-    designSystemSummary ? `- ${copy.designSystemInspiration}: ${designSystemSummary}` : "",
+    designSummary ? `- ${copy.designSummary}: ${designSummary}` : "",
     `- ${copy.pageStructure}: ${pageSummary}`,
     `- ${copy.functionalRequirements}: ${optionLabels(getOptions("functional-requirements"), values.functionalRequirements, locale, "functional-requirements")}`,
     `- ${copy.primaryGoal}: ${optionLabels(getOptions("interaction-cta"), values.primaryGoal, locale, "interaction-cta")}`,
@@ -1352,6 +1486,16 @@ function buildRequirementFormMessage(
     JSON.stringify(values, null, 2),
     "```",
   ].join("\n");
+}
+
+export function summarizeRequirementCardDesignLine(
+  values: RequirementFormValues,
+  slots: RequirementSlotCard[],
+  locale: RequirementFormLocale = "en",
+): string {
+  return buildRequirementFormMessage(values, slots, locale)
+    .split("\n")
+    .find((line) => line.includes(REQUIREMENT_FORM_COPY[locale].designSummary)) || "";
 }
 
 function hasRequirementFormMinimum(values: RequirementFormValues): boolean {
@@ -1783,19 +1927,21 @@ function RequirementFormCard({
             <input value={customTheme} onChange={(event) => setCustomTheme(event.target.value)} placeholder={t.customTheme} className="min-w-0 flex-1 rounded-md border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-transparent px-2 py-1.5 text-xs outline-none" />
             <button type="button" onClick={() => { addCustomValue("secondaryVisualTags", customTheme); setCustomTheme(""); }} className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] px-2 text-xs">{t.add}</button>
           </div>
-        </section>
-
-        <section>
-          <p className="text-xs font-medium text-[var(--shp-text)]">{t.designSystemInspiration}</p>
-          <div className="mt-2 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] p-2">
-            <DesignSystemPicker selectedId={values.designSystemInspiration?.id} onSelect={selectDesignSystemInspiration} />
+          <div className="mt-3 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] p-2">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--shp-muted)]">
+                {t.designSystemInspiration}
+              </p>
+              <p className="text-[10px] text-[var(--shp-muted)]">
+                {values.designSystemInspiration ? values.designSystemInspiration.category || t.designSystemInspiration : "Optional"}
+              </p>
+            </div>
+            <DesignSystemPicker
+              selectedId={values.designSystemInspiration?.id}
+              onSelect={selectDesignSystemInspiration}
+              compact
+            />
           </div>
-          {values.designSystemInspiration ? (
-            <p className="mt-2 text-[11px] leading-relaxed text-[var(--shp-muted)]">
-              {values.designSystemInspiration.title}
-              {values.designSystemInspiration.category ? ` · ${values.designSystemInspiration.category}` : ""}
-            </p>
-          ) : null}
         </section>
 
         <section>
@@ -1916,6 +2062,8 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draftPreviewOpen, setDraftPreviewOpen] = useState(false);
   const [draftPreviewText, setDraftPreviewText] = useState("");
+  const [draftPreviewSummaryText, setDraftPreviewSummaryText] = useState("");
+  const [draftPreviewLocale, setDraftPreviewLocale] = useState<RequirementFormLocale>("en");
   const [historyReady, setHistoryReady] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [chatPanelWidth, setChatPanelWidth] = useState(CHAT_PANEL_DEFAULT_WIDTH);
@@ -2848,6 +2996,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
                 const previewText = String(metadata.canonicalPrompt || "").trim();
                 const confirmPayload = String(metadata.payload || "").trim();
                 const messageLocale = localeFromMetadata(metadata, message.text);
+                const readablePreviewText = cardType === "prompt_draft" ? summarizePromptDraftCard(metadata, messageLocale) : "";
                 if (cardType === "intent_decision" && String(metadata.reason || "") === "required-slots-incomplete") {
                   return null;
                 }
@@ -2880,13 +3029,15 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
                           type="button"
                           onClick={() => {
                             setDraftPreviewText(previewText);
+                            setDraftPreviewSummaryText(readablePreviewText || previewText);
+                            setDraftPreviewLocale(messageLocale);
                             setDraftPreviewOpen(true);
                           }}
                           className="mt-3 w-full rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] px-3 py-2 text-left text-xs text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)]"
                         >
                           <p className="font-medium">{CHAT_CARD_COPY[messageLocale].promptDraftExpand}</p>
                           <div className="mt-2 max-h-40 overflow-hidden">
-                            <MarkdownDraftView content={previewText} compact />
+                            <MarkdownDraftView content={readablePreviewText || previewText} compact />
                           </div>
                         </button>
                       ) : null}
@@ -3199,7 +3350,9 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[color-mix(in_oklab,var(--shp-text)_58%,transparent)] p-4 backdrop-blur-sm">
           <div className="shp-shell relative flex h-[min(86vh,980px)] w-[min(92vw,980px)] flex-col rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)]">
             <div className="flex items-center justify-between border-b border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] px-4 py-3">
-              <p className="text-sm font-semibold text-[var(--shp-text)]">Prompt Draft</p>
+              <p className="text-sm font-semibold text-[var(--shp-text)]">
+                {CHAT_CARD_COPY[draftPreviewLocale].promptDraftModalTitle}
+              </p>
               <button
                 type="button"
                 onClick={() => setDraftPreviewOpen(false)}
@@ -3209,8 +3362,19 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="no-scrollbar min-h-0 flex-1 overflow-auto px-4 py-4">
-              <MarkdownDraftView content={draftPreviewText} />
+            <div className="grid min-h-0 flex-1 gap-4 overflow-hidden px-4 py-4 lg:grid-cols-[320px_minmax(0,1fr)]">
+              <div className="no-scrollbar min-h-0 overflow-auto rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-4">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--shp-muted)]">
+                  {CHAT_CARD_COPY[draftPreviewLocale].promptDraftSummaryTitle}
+                </p>
+                <MarkdownDraftView content={draftPreviewSummaryText || draftPreviewText} />
+              </div>
+              <div className="no-scrollbar min-h-0 overflow-auto rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_98%,var(--shp-bg)_2%)] p-4">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--shp-muted)]">
+                  {CHAT_CARD_COPY[draftPreviewLocale].promptDraftTechnicalTitle}
+                </p>
+                <MarkdownDraftView content={draftPreviewText} />
+              </div>
             </div>
           </div>
         </div>

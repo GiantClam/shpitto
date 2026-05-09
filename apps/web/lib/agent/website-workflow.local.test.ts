@@ -4,6 +4,12 @@ import {
   normalizeWorkflowVisualDecisionContext,
   resolveDesignSkillHit,
 } from "./website-workflow";
+import {
+  containsWorkflowCjk,
+  containsWorkflowEncodingNoise,
+  containsWorkflowUnknownUnsafeChars,
+  isWorkflowArtifactEnglishSafe,
+} from "../workflow-artifact-language.ts";
 
 describe("website-workflow local awesome-design templates", () => {
   it("loads design context from local templates without remote fetch", async () => {
@@ -192,5 +198,28 @@ describe("website-workflow local awesome-design templates", () => {
       visualDecisionSource: "user_recommended_default",
       lockPrimaryVisualDirection: false,
     });
+  });
+
+  it("normalizes local design references into English-safe workflow text while preserving Unicode punctuation", async () => {
+    const prevUseLlm = process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
+    process.env.WORKFLOW_STYLE_SELECT_USE_LLM = "0";
+
+    try {
+      const context = await loadWorkflowSkillContext("Use the Apple design language for this website.");
+      expect(context.hit.id).toContain("apple");
+      expect(context.designMd).toContain("Apple's website is a masterclass in controlled drama —");
+      expect(context.designMd).toContain("minimalism as aesthetic preference; it is minimalism as reverence for the object.");
+      expect(context.designMd).toContain("precise, confident, and unapologetically direct.");
+      expect(context.designMd).toContain("dark sections feel immersive and premium");
+      expect(context.designMd).not.toContain("鈥");
+      expect(context.designMd).not.toContain("â€");
+      expect(containsWorkflowCjk(context.designMd)).toBe(false);
+      expect(containsWorkflowEncodingNoise(context.designMd)).toBe(false);
+      expect(containsWorkflowUnknownUnsafeChars(context.designMd)).toBe(false);
+      expect(isWorkflowArtifactEnglishSafe(context.designMd)).toBe(true);
+    } finally {
+      if (prevUseLlm === undefined) delete process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
+      else process.env.WORKFLOW_STYLE_SELECT_USE_LLM = prevUseLlm;
+    }
   });
 });

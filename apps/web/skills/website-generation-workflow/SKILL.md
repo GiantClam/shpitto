@@ -85,6 +85,13 @@ Generation must not start from the raw user request alone. Generation may start 
 
 Quality gate: A confirmed Canonical Website Prompt exists before task creation or any file generation.
 
+#### Internal Workflow Language Contract (Mandatory)
+
+1. All internal workflow artifacts must stay in English: Canonical Website Prompt, Prompt Control Manifest prose, task plans, findings, design notes, QA notes, repair instructions, and other process files.
+2. The requested website locale may still be Chinese, English, or bilingual, but that locale must be expressed as a requirement inside the internal artifact rather than changing the artifact language itself.
+3. Do not paste multilingual raw user wording, uploaded-source excerpts, or process annotations directly into workflow files when an English-normalized summary can carry the same planning meaning.
+4. If multilingual source material must be preserved, keep it in source storage or external artifacts and reference it from the English workflow notes instead of copying it into the prompt/process file.
+
 #### Evidence Brief Contract (Mandatory)
 
 When requirement enrichment, uploaded files, domain extraction, or web search produce a `## 7. Evidence Brief`, treat that section as the authoritative source hierarchy for website content focus.
@@ -94,7 +101,7 @@ Evidence Brief responsibilities:
 1. Preserve `Priority Facts` in the Canonical Website Prompt. These facts define brand semantics, audience, offerings, differentiators, and proof points.
 2. Use `Source Priorities` to decide which facts are reliable. Uploaded files, same-domain pages, and explicit user input outrank generic web search. Generic industry research may shape structure and UX, but it must not become brand-owned claims.
 3. Use `Page Briefs` to write route-specific page prompts. Each page prompt must include page goal, audience intent, source-backed content inputs, section order, and next action.
-4. Use `Gaps And Assumptions` only as internal planning context. Keep unsupported details honest by omitting them from visitor-facing pages or replacing them with neutral contact/download actions. Do not render assumption labels, content-gap labels, source-analysis rationale, missing-content notices, or "待补充" copy in generated HTML.
+4. Use `Gaps And Assumptions` only as internal planning context. Keep unsupported details honest by omitting them from visitor-facing pages or replacing them with neutral contact/download actions. Do not render assumption labels, content-gap labels, source-analysis rationale, missing-content notices, or placeholder-copy markers in generated HTML.
 5. The Evidence Brief is a content strategy artifact, not a route/file manifest. The Prompt Control Manifest remains the only machine-readable route/file handoff.
 6. If Evidence Brief content conflicts with generic template defaults, Evidence Brief content wins.
 
@@ -103,7 +110,7 @@ Quality gate: A Canonical Website Prompt generated from researched material must
 #### Visitor-Facing Copy Contract (Mandatory)
 
 1. Evidence Brief, Page Briefs, source priorities, gaps, assumptions, and prompt control metadata are internal strategy inputs.
-2. Generated HTML must never include process phrases such as `内容缺口`, `待补充`, `材料明确`, `材料仅`, `权限说明`, `数据说明`, `合作说明`, `分类导航要帮助用户`, `[Assumption]`, `Content gap`, or `Assumption rule`.
+2. Generated HTML must never include process phrases such as `content gap`, `placeholder copy`, `source-only note`, `permissions note`, `data note`, `collaboration note`, `navigation rationale`, `[Assumption]`, or `Assumption rule`.
 3. If source material lacks a detail, do not explain the gap to visitors. Omit the detail, use a conservative generic CTA, or route the user to contact/download/consultation.
 4. Transform source-backed facts into concrete headings, value propositions, cards, comparison rows, process steps, and CTAs. Do not copy analysis notes verbatim.
 5. Each route must use a distinct hero composition and section rhythm. Shared header, footer, tokens, and navigation are allowed; repeated hero/body skeletons with swapped text are not.
@@ -117,7 +124,7 @@ Do not manufacture brand-owned specifics just to make a page look complete.
 1. Never invent names of experts, staff, partners, clients, government agencies, institutions, awards, certifications, papers, reports, events, cities, cases, products, or spaces unless they appear in the user request, uploaded source text, Evidence Brief, same-domain crawl, or credible searched source.
 2. Never invent certification numbers, standard numbers, publication dates, file sizes, download counts, participant counts, coverage counts, city counts, member counts, prices, addresses, phone numbers, email addresses, or validity periods unless source-backed.
 3. If the source asks for a list module but does not provide concrete list items, render the module as a taxonomy, search/filter interface, process, CTA, or source-backed category list. Do not fill it with fictional examples.
-4. For certification/search/download/data modules, prefer neutral CTAs like “进入查询系统”, “查看资料库”, “登录后下载”, or “提交申请” over fake rows with made-up identifiers.
+4. For certification/search/download/data modules, prefer neutral CTAs like "Open the lookup flow", "View the resource library", "Sign in to download", or "Submit an application" over fake rows with made-up identifiers.
 5. For research-team or case-study modules without named source facts, describe roles, research directions, or evaluation dimensions instead of creating person names or client/case identities.
 6. Before finalizing each page, scan for unsupported numerals and proper nouns. Remove or generalize any value that is not traceable to the source material.
 
@@ -160,19 +167,19 @@ When a content-backend route is selected, treat it as a first-class product feat
 
 Visible IA rule:
 
-1. The Blog backend is an invisible implementation capability. Do not expose backend names, API/storage/runtime/hydration/fallback jargon, data-source mechanics, English design jargon, or policy wording as visitor-facing headings, labels, helper copy, or section titles unless the navigation label itself is explicitly Blog/博客.
+1. The Blog backend is an invisible implementation capability. Do not expose backend names, API/storage/runtime/hydration/fallback jargon, data-source mechanics, English design jargon, or policy wording as visitor-facing headings, labels, helper copy, or section titles unless the navigation label itself is explicitly Blog.
 2. The selected route's own information architecture must define the visible content model. For an information platform or knowledge hub, present API-backed posts as the page's own collections such as case library, standards/documents, research reports, policy/regulation updates, product database entries, publication cards, or insight records according to the prompt and source evidence.
 3. The data attributes are invisible integration hooks only. `data-shpitto-blog-root`, `data-shpitto-blog-api`, and `data-shpitto-blog-list` must be attached to page-specific sections, lists, cards, or database surfaces without becoming visible copy.
 4. Fallback content must read like the selected route's real resource collection. Use native fields such as resource type, document/category label, publication date, scope, summary, tags, status, CTA, or detail link. Do not dump a generic chronological blog feed into an unrelated page.
 5. Dynamic `/blog/{slug}/` detail pages must inherit the selected route's detail grammar. If the selected route is an information platform, the detail shell should feel like a resource/report/case/standard detail page, while still using `/blog/{slug}/` for SEO-addressable runtime routing.
 6. Do not place article/resource cards that link to `/blog/{slug}/` outside `[data-shpitto-blog-list]`. Static explanatory cards may describe categories, but every readable article row/card must come from the same Blog-backed list surface so deployed data and fallback content share one visual component.
 7. Visitor-facing copy must be final content, not an explanation of the content model. Do not use headings or helper copy such as "three launch articles", "reading method", "how to read", "each article includes date/read time/tags", "this page collects...", "the list is backed by...", or any copy that describes the page mechanics instead of delivering the article/resource content itself. Route heroes may introduce the editorial point of view, but they must make a substantive claim or thesis for readers, not explain the site structure.
-   - Also reject softer editorial-scaffold variants such as "AI 阅读路径", "阅读路径", "先看这三篇", "建议从这三篇开始", "你会在这里看到", "这里收纳了三篇文章", "文章会带你了解", "按这个顺序阅读", "what you'll find here", "start with these three articles", or "this collection helps you...". These are still page-mechanics or reading-order explanations, not formal visitor-facing content.
-   - Replace those phrases with a real editorial thesis, decision lens, or source-backed claim. Example: instead of "这里收纳三种最常见也最实用的 AI 阅读路径", write a claim such as "AI 真正改变日常效率的，不是功能数量，而是把判断、表达与执行拆成可复用的动作。"
+   - Also reject softer editorial-scaffold variants such as "reading path", "start with these three articles", "what you'll find here", or "this collection helps you...". These are still page-mechanics or reading-order explanations, not formal visitor-facing content.
+   - Replace those phrases with a real editorial thesis, decision lens, or source-backed claim. Example: instead of announcing a reading path, write a claim that explains the core editorial viewpoint behind the collection.
 8. When the user asks for articles, posts, reports, guides, or records, treat those items as deliverables. The page must present real item titles, substantive summaries, and clear detail entry points; the detail pages or Blog records must contain finished body content, not only titles, metadata, or excerpts.
-9. A requested article count is an internal production constraint, not a visible slogan. Do not write hero copy, section titles, meta descriptions, helper text, or return links that announce "three articles", "three launch articles", "start with these three", "持续更新三篇首发文章", or similar count-led framing unless the source material itself is explicitly about that count.
+9. A requested article count is an internal production constraint, not a visible slogan. Do not write hero copy, section titles, meta descriptions, helper text, or return links that announce "three articles", "three launch articles", "start with these three", or similar count-led framing unless the source material itself is explicitly about that count.
 10. Express coverage by topic, tension, or editorial angle instead. The exact requested count should be visible through the actual number of cards/detail pages and through the preview-confirmation workflow, not through explanatory visitor copy.
-11. For bilingual sites, language switching is a UI capability, not an editorial storyline. Do not describe Chinese and English as "两种阅读路径", "双路径阅读", "先看中文再看英文", "two reading paths", or similar framing. Use direct language-switch wording instead.
+11. For bilingual sites, language switching is a UI capability, not an editorial storyline. Do not describe the language toggle as "two reading paths" or any similar framing. Use direct language-switch wording instead.
 12. If the overall site is person-led but the selected content-backend route is `/blog`, keep `/blog` as the archive/index while leaving `/` as the biography/value-proposition entry. Do not let the blog hero or article taxonomy replace the person's homepage introduction.
 
 Generation responsibilities:
@@ -192,7 +199,7 @@ Generation responsibilities:
    - keeps fallback cards if the API is unavailable.
    - if the page has filter chips, search input, category tabs, or tag links, those controls must work after runtime hydration; either request `/api/blog/posts?tag=...`, `/api/blog/posts?category=...`, or `/api/blog/posts?search=...`, or re-apply client-side filters after replacing the list.
    - do not bind filters only to pre-hydration fallback cards.
-6. Visible Blog taxonomy must match the data. If controls read `全部`, `研发`, `架构`, `创业`, `AI`, then fallback cards and deployed Blog records must include those exact tag/category values so each control returns a meaningful subset.
+6. Visible Blog taxonomy must match the data. If controls expose categories such as `All`, `Research`, `Architecture`, `Operations`, or `AI`, then fallback cards and deployed Blog records must include those exact tag/category values so each control returns a meaningful subset.
 7. The generated content-backend page must have a clear, site-native detail region style. Deployment derives `/shpitto-blog-post-shell.html` from the generated site, preserving the same `<html lang>`, header, footer, CSS, typography, taxonomy language, and CTA language for dynamic `/blog/{slug}/` rendering. Dynamic `/blog/{slug}/`, `/blog/tag/{tag}/`, `/blog/category/{category}/`, and search-result collection pages must never fall back to a generic light-theme runtime template when the generated site uses a distinct visual theme.
 8. Do not generate Cloudflare D1 credentials, Worker source, binding names, secrets, or server code in static HTML/JS. The deployed runtime owns `/api/blog/*`, `/blog/{slug}/`, RSS, sitemap, and D1 access.
 9. Deployment may inject or refresh Blog data, but that is a compatibility fallback. The generated selected page itself must already expose a coherent page-specific content surface without mentioning deployment, runtime refresh, hydration, fallback, backend, API, or data-source mechanics to visitors.
@@ -201,12 +208,15 @@ Generation responsibilities:
 12. Generation and deployment are separate actions. The generation action stops at preview artifacts, Blog list/detail deliverables, and any confirmation card. It must never silently deploy, auto-confirm deployment, combine generate+deploy into one completion step, or claim the site is deployed unless the user triggers a later explicit deploy action.
 13. Deployment/runtime hydration must preserve the generated list's article/card class and visual rhythm. It may replace list data, but it must not replace a site-specific resource card layout with a generic Blog card style.
 14. Any generated Blog/content-backed route implies Blog detail deliverables even when the user did not state a numeric article count. At minimum, every visible Blog/resource card rendered inside `[data-shpitto-blog-list]` must link to a corresponding `/blog/{slug}/` detail target, and each linked target must contain a complete readable body page in the generated output.
+    - This is a generation responsibility first. Use the user's supplied topics, named entities, source materials, and visible card promise to write the detail page at generation time instead of relying on runtime QA to infer direction later.
+    - Each detail page must expand the exact list-card topic and the user's source direction rather than drifting into generic blog filler, website-process commentary, or reusable placeholder prose.
 15. If the user requests a specific number of articles/posts/reports/guides, generate that exact number of complete content items. Each item must have:
-   - a stable slug and `/blog/{slug}/` detail link,
-   - title, date or publish state, category/tags, reading time or scope,
-   - a list-page summary that is useful on its own,
-   - full body content with multiple paragraphs and meaningful section headings,
-   - no placeholder, outline-only, "coming soon", "待补充", or metadata-only detail page.
+    - a stable slug and `/blog/{slug}/` detail link,
+    - title, date or publish state, category/tags, reading time or scope,
+    - a list-page summary that is useful on its own,
+    - full body content with multiple paragraphs and meaningful section headings,
+    - body paragraphs and subheads that reuse the user's real topics, named entities, or source-document themes,
+    - no placeholder, outline-only, "coming soon", or metadata-only detail page.
 16. For article-style Blog routes, the list page is an index, not the article body. It must link to full details, and deployed/static output must make each requested article readable even when the Blog API or runtime route is unavailable. If runtime detail rendering cannot be guaranteed, emit static `/blog/{slug}/index.html` pages for every requested article using the same shell and typography.
     - Do not satisfy this requirement with data attributes alone. The no-JS initial HTML must visibly expose the article titles/summaries and their `/blog/{slug}/` links before any script runs.
 17. Use web search or uploaded/source material enrichment when the user's requested article content needs facts, examples, current context, named tools, policies, standards, reports, or nontrivial domain knowledge. For broad personal-opinion or conceptual posts, LLM drafting may fill the prose, but it must still produce complete publishable body content. Generic web search may inform framing and examples; explicit user-provided content remains the highest-priority source.
@@ -229,8 +239,8 @@ Treat refinement as non-full-site incremental evolution from the current website
    - `patch`: adjust existing copy, layout, styling, or components inside already generated pages.
    - `structural`: add/remove pages, materialize newly requested route files, repair missing route deliverables, adjust navigation relationships, or complete omitted detail pages.
    - `route_regenerate`: rewrite one page or one route family from the current site baseline without discarding the whole website.
-3. Only requests such as "full regenerate", "rebuild everything", "推倒重来", or "重新生成整个网站" may leave refinement and re-enter full-site generation.
-4. Requests such as "补 blog 内容页", "补齐 detail pages", "新增一个页面", "删除 pricing 页", "重写 /about", or "重做 blog 页" are still refinement tasks unless they explicitly ask for whole-site regeneration.
+3. Only requests such as "full regenerate" or "rebuild everything" may leave refinement and re-enter full-site generation.
+4. Requests such as "add missing blog detail pages", "add a new page", "remove the pricing page", "rewrite /about", or "redo the blog page" are still refinement tasks unless they explicitly ask for whole-site regeneration.
 5. Structural refinement may create new route files when those files are missing deliverables implied by the current confirmed route plan, or when the user explicitly requests a new page without asking for full-site regeneration.
 6. Any newly created page must inherit the current site's active theme, shared navigation, and shared footer contract by default. A structural refine must not introduce a visually detached page, a different header/footer system, or a one-off navigation shell unless the user explicitly requests a shell redesign.
 7. Route-level regeneration must preserve the rest of the site's shell, navigation, style system, and unaffected routes unless the user explicitly asks to change them too.
@@ -258,9 +268,9 @@ Before emitting any files, run a route- and layout-aware preflight check.
 5. Express these checks as page-type rules in the Canonical Website Prompt and tool contract. Do not encode brand-specific exceptions in TS; if a page belongs to the `home`, `search-directory`, `blog-data-index`, or `auth` class, apply the corresponding generic gate.
 6. Route aliases belong in the workflow skill policy (`skill.json`) and should be consumed by the runtime. Do not hardcode brand-specific alias tables in decision-layer TS.
 7. Formal content gate: reject generated pages whose prominent headings, hero panels, sidebars, or helper blocks explain the page structure instead of delivering visitor-facing substance. Examples of failures include "reading method", "three launch articles", "article overview", "each article has tags/read time/detail links", "this collection contains...", "fallback resources", or equivalent process/meta copy. Replace them with editorial thesis, source-backed insight, real article/resource content, or remove the block.
-   - Treat reading-order and guide-the-reader phrasing as failures too, including "AI 阅读路径", "阅读路径", "从这三篇开始", "建议先读", "what you'll find here", "start with these three articles", and "this page collects".
+   - Treat reading-order and guide-the-reader phrasing as failures too, including "reading path", "start with these three articles", "what you'll find here", and "this page collects".
 8. Requested-content completeness gate: if the prompt asks for a fixed number of articles/posts/resources, validate that the generated output contains the same number of readable detail targets. Each target must include full body prose with multiple paragraphs or sections. A card with only title, tags, date, excerpt, or "read more" is not a completed content item.
-9. Count-led editorial framing gate: if the prompt asks for a fixed number of articles/posts/resources, the generated page may contain that number of cards and details, but it must not turn the count itself into visitor-facing scaffold copy such as "三篇文章，三种方式", "持续更新三篇首发文章", "这里有三篇完整文章", or equivalent count-announcement prose.
+9. Count-led editorial framing gate: if the prompt asks for a fixed number of articles/posts/resources, the generated page may contain that number of cards and details, but it must not turn the count itself into visitor-facing scaffold copy such as "three articles, three ways" or equivalent count-announcement prose.
 10. Homepage entry gate: the home page may point visitors to the Blog/content route, but it must do so with site-positioning or topical CTA language. Do not explain the site by saying the blog currently has three articles, by summarizing those three articles in sequence, or by telling readers to start from those three pieces.
 11. Blog-detail inevitability gate: if the route plan includes `/blog` or another Blog/content-backed route, the generated list surface must expose at least one visible `/blog/{slug}/` detail entry and must include matching readable detail output. A Blog index without detail targets is a generation failure even when the prompt did not request a numeric article count.
 12. Action-separation gate: generation and deployment must remain distinct workflow actions. The generation stage may produce preview files, Blog cards, Blog detail pages, and confirmation artifacts, but it must not claim deployment success, auto-trigger deployment, or collapse "generate site" and "deploy site" into one step unless the user explicitly asks for deployment later.
@@ -354,7 +364,7 @@ Definition: bilingual means one active language at a time with a working languag
 6. Preserve the current route on language switch; only content language changes.
 7. Persist language preference (recommended: `localStorage`) and update `html[lang]`, active switch state, and relevant `aria-label` values.
 8. Keep default-language content readable without JavaScript.
-9. If a complete language switch cannot be implemented, generate a single-language site. Do not fake bilingual support with visible `中文 / English`, `中文（English）`, duplicated translated headings, or consecutive Chinese and English paragraphs.
+9. If a complete language switch cannot be implemented, generate a single-language site. Do not fake bilingual support with visible `Chinese / English`, duplicated translated headings, or consecutive paragraphs that repeat the same copy in two languages.
 10. When the user writes in Chinese or the requirement form says `language: "bilingual"` for a Chinese conversation, the default visible language is Chinese. English UI microcopy such as `Latest essays`, `3 stories`, `one theme`, `read more`, `featured`, `insights`, `journal`, or `collection` is not decorative; it is inactive-language copy and must be translated or moved into i18n storage.
 
 Outputs:
@@ -391,7 +401,7 @@ i18n requirements:
 3. The default language must render without JavaScript. JavaScript may enhance switching by replacing text from an in-page dictionary or generated i18n files.
 4. Switching language must preserve the current route, active nav state, form accessibility labels, and persisted language preference.
 5. If full bilingual content cannot be implemented for the generated site, do not render an EN/ZH switch. Prefer a single-language site over a fake language toggle.
-6. Visible bilingual pairs are invalid. Reject patterns such as `中文 / English`, `中文（English）`, `Chinese / 中文`, Chinese and English titles in one heading, or Chinese and English versions of the same paragraph shown one after another.
+6. Visible bilingual pairs are invalid. Reject patterns such as `Chinese / English`, mixed-language titles in one heading, or two translated versions of the same paragraph shown one after another.
 7. Blog/content-backed lists and article/detail pages must follow the same language-state contract. Their card titles, summaries, metadata, and article bodies must switch language instead of rendering both languages together.
 8. In a Chinese default render, short technical acronyms like `AI`, `API`, `SEO`, `UI`, and `UX` are allowed, but English editorial/UI words are not. Translate visible labels such as `stories`, `theme`, `latest`, `essay`, `read`, `featured`, `collection`, and `journal`.
 9. Article detail pages must not include an English abstract, English summary, or English translated paragraph below a Chinese article body. If bilingual article content is required, the English title/abstract/body belongs in i18n data and becomes visible only after switching to English.

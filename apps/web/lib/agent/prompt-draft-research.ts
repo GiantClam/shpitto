@@ -27,6 +27,12 @@ import {
   type SerperSearchConfig,
   type WebSearchSource,
 } from "../tools/web-search/serper.ts";
+import {
+  containsWorkflowCjk,
+  isWorkflowArtifactEnglishSafe,
+  normalizeWorkflowArtifactText,
+  sanitizeWorkflowArtifactText,
+} from "../workflow-artifact-language.ts";
 
 export type PromptDraftSource = {
   title: string;
@@ -80,6 +86,60 @@ function normalizeText(value: unknown): string {
   return String(value || "").trim();
 }
 
+function containsCjk(text: string): boolean {
+  return containsWorkflowCjk(text);
+}
+
+function internalNavLabelForRoute(route: string, fallback = ""): string {
+  const normalized = String(route || "/").trim() || "/";
+  if (normalized === "/") return "Home";
+  if (isWorkflowArtifactEnglishSafe(fallback)) return normalizeWorkflowArtifactText(fallback);
+  const leaf = normalized.replace(/^\/+|\/+$/g, "").split("/").filter(Boolean).pop() || "page";
+  const known = new Map<string, string>([
+    ["about", "About"],
+    ["contact", "Contact"],
+    ["cases", "Cases"],
+    ["products", "Products"],
+    ["news", "News"],
+    ["downloads", "Downloads"],
+    ["custom-solutions", "Custom Solutions"],
+    ["casux-creation", "CASUX Creation"],
+    ["casux-construction", "CASUX Construction"],
+    ["casux-certification", "CASUX Certification"],
+    ["casux-advocacy", "CASUX Advocacy"],
+    ["casux-research-center", "CASUX Research Center"],
+    ["casux-information-platform", "CASUX Information Platform"],
+  ]);
+  if (known.has(leaf)) return String(known.get(leaf));
+  return leaf
+    .split(/[-_]+/g)
+    .filter(Boolean)
+    .map((part) => (part.toUpperCase() === "CASUX" ? "CASUX" : part.charAt(0).toUpperCase() + part.slice(1)))
+    .join(" ");
+}
+
+function internalPurposeForRoute(route: string, fallback = ""): string {
+  if (isWorkflowArtifactEnglishSafe(fallback)) return normalizeWorkflowArtifactText(fallback);
+  const normalized = String(route || "/").trim() || "/";
+  const label = internalNavLabelForRoute(normalized, fallback);
+  switch (normalized) {
+    case "/":
+      return "Establish the site overview, core value proposition, and the main navigation paths.";
+    case "/about":
+      return "Explain the organization background, positioning, and credibility signals.";
+    case "/contact":
+      return "Provide the primary contact path and capture serious inquiries.";
+    case "/cases":
+      return "Present case evidence, outcomes, and source-backed proof.";
+    case "/downloads":
+      return "Provide structured access to downloadable resources and supporting material.";
+    case "/custom-solutions":
+      return "Explain solution scenarios, delivery approach, and consultation entry points.";
+    default:
+      return `Deliver a route-specific page for ${label} with distinct source-backed content and a clear next action.`;
+  }
+}
+
 function buildPromptDecisionPlan(requirementText: string): LocalDecisionPlan {
   const parsedForm = parseRequirementFormFromText(requirementText);
   const requirementSpec = buildRequirementSpec(requirementText, [requirementText]);
@@ -113,12 +173,12 @@ function buildPromptControlManifest(
     promptKind: "canonical_website_prompt",
     routeSource,
     routes: [...plan.routes],
-    navLabels: [...plan.navLabels],
+    navLabels: plan.pageBlueprints.map((page) => internalNavLabelForRoute(page.route, page.navLabel)),
     files: Array.from(new Set(["/styles.css", "/script.js", ...htmlPaths])),
     pageIntents: plan.pageBlueprints.map((page) => ({
       route: page.route,
-      navLabel: page.navLabel,
-      purpose: page.purpose,
+      navLabel: internalNavLabelForRoute(page.route, page.navLabel),
+      purpose: internalPurposeForRoute(page.route, page.purpose),
       source: page.source,
     })),
   };
@@ -143,10 +203,23 @@ function buildPromptDecisionPlanFromKnowledgeProfile(
     return { plan: buildPromptDecisionPlan(requirementText), routeSource: "prompt_draft_page_plan" };
   }
 
-  const nav = knowledgeProfile!.suggestedPages.map((page) => page.title).join(" | ");
+  const nav = knowledgeProfile!.suggestedPages.map((page) => internalNavLabelForRoute(page.route, page.title)).join(" | ");
   const routeLines = knowledgeProfile!.suggestedPages
-    .map((page) => `- ${page.title}: ${page.route}. ${page.purpose}`)
+    .map((page) => `- ${internalNavLabelForRoute(page.route, page.title)}: ${page.route}. ${internalPurposeForRoute(page.route, page.purpose)}`)
     .join("\n");
+  const routeManifest = JSON.stringify(
+    {
+      routes: knowledgeProfile!.suggestedPages.map((page) => page.route),
+      navLabels: knowledgeProfile!.suggestedPages.map((page) => internalNavLabelForRoute(page.route, page.title)),
+      files: [
+        "/styles.css",
+        "/script.js",
+        ...knowledgeProfile!.suggestedPages.map((page) => routeToHtmlPath(page.route)),
+      ],
+    },
+    null,
+    2,
+  );
   const sourcePlannedText = [
     requirementText,
     "",
@@ -155,8 +228,40 @@ function buildPromptDecisionPlanFromKnowledgeProfile(
     "",
     "Source-defined route plan:",
     routeLines,
+    "",
+    "Source-defined route manifest:",
+    "```json",
+    routeManifest,
+    "```",
   ].join("\n");
-  return { plan: buildPromptDecisionPlan(sourcePlannedText), routeSource: "uploaded_source_page_plan" };
+  const plan = buildPromptDecisionPlan(sourcePlannedText);
+  const suggestedRoutes = knowledgeProfile!.suggestedPages.map((page) => page.route);
+  const existingByRoute = new Map(plan.pageBlueprints.map((page) => [page.route, page]));
+  plan.routes = [...suggestedRoutes];
+  plan.navLabels = knowledgeProfile!.suggestedPages.map((page) => internalNavLabelForRoute(page.route, page.title));
+  plan.pageBlueprints = knowledgeProfile!.suggestedPages.map((page) => {
+    const existing = existingByRoute.get(page.route);
+    if (existing) {
+      return {
+        ...existing,
+        navLabel: internalNavLabelForRoute(page.route, page.title),
+        purpose: internalPurposeForRoute(page.route, page.purpose || existing.purpose),
+      };
+    }
+    return {
+      route: page.route,
+      navLabel: internalNavLabelForRoute(page.route, page.title),
+      purpose: internalPurposeForRoute(page.route, page.purpose),
+      source: "prompt_contract",
+      constraints: ["Source-defined route from uploaded/domain material."],
+      pageKind: page.route === "/" ? "home" : "intent",
+      responsibility: internalPurposeForRoute(page.route, page.purpose),
+      contentSkeleton: [],
+      componentMix: { hero: 18, feature: 22, grid: 20, proof: 18, form: 8, cta: 14 },
+    };
+  });
+  plan.pageIntents = [...plan.pageBlueprints];
+  return { plan, routeSource: "uploaded_source_page_plan" };
 }
 
 function extractMarkdownSection(content: string, heading: string): string {
@@ -197,8 +302,8 @@ function buildPromptControlManifestSection(
   const promptControlManifest = buildPromptControlManifest(plan, routeSource);
   const fixedFileLines = promptControlManifest.files.map((file) => `- ${file}`);
   const pageLines = plan.pageBlueprints.flatMap((page, index) => [
-    `${index + 1}. ${page.navLabel} (${page.route} -> ${routeToHtmlPath(page.route)})`,
-    `   - Page intent: ${page.purpose}`,
+    `${index + 1}. ${internalNavLabelForRoute(page.route, page.navLabel)} (${page.route} -> ${routeToHtmlPath(page.route)})`,
+    `   - Page intent: ${internalPurposeForRoute(page.route, page.purpose)}`,
     `   - Route source: ${page.source}`,
     `   - Page kind: ${page.pageKind}`,
     ...(page.constraints.length ? page.constraints.map((item) => `   - Constraint: ${item}`) : []),
@@ -566,8 +671,18 @@ function mergeTemplateWithResearch(
   if (sources.length === 0 && !summary && !knowledgeProfile && !evidenceBrief) return localDraft;
   const refs = sources
     .slice(0, 6)
-    .map((source, idx) => `${idx + 1}. ${source.title} - ${source.url}`)
+    .map((source, idx) => {
+      const title = sanitizeWorkflowArtifactText(source.title, `Source ${idx + 1}`);
+      const location = isWorkflowArtifactEnglishSafe(source.url) || /^https?:\/\//i.test(source.url || "")
+        ? source.url
+        : `source-reference-${idx + 1}`;
+      return `${idx + 1}. ${title} - ${location}`;
+    })
     .join("\n");
+  const safeSummary = sanitizeWorkflowArtifactText(
+    summary,
+    "English-normalized search summary unavailable; rely on the evidence brief and source-backed profile.",
+  );
   const resolvedEvidenceBrief =
     evidenceBrief || (knowledgeProfile ? buildWebsiteEvidenceBrief(knowledgeProfile) : undefined);
   const evidenceLines = resolvedEvidenceBrief ? [formatWebsiteEvidenceBrief(resolvedEvidenceBrief), ""] : [];
@@ -579,7 +694,7 @@ function mergeTemplateWithResearch(
     ...evidenceLines,
     ...sourceAppendixLines,
     "## 7.5 External Research Addendum",
-    summary ? `- Search summary: ${summary}` : "- Search summary: none",
+    safeSummary ? `- Search summary: ${safeSummary}` : "- Search summary: none",
     refs ? "- Reference sources:\n" + refs : "- Reference sources: none",
     knowledgeProfile ? "" : "",
     knowledgeProfile ? formatWebsiteKnowledgeProfile(knowledgeProfile) : "",
@@ -596,8 +711,9 @@ function formatSourceMaterialAppendix(knowledgeProfile?: WebsiteKnowledgeProfile
   const blocks: string[] = [];
   for (const [index, source] of sourceEntries.entries()) {
     if (remaining <= 0) break;
-    const location = normalizeText(source.url || source.fileName);
-    const title = normalizeText(source.title || location || `Source ${index + 1}`);
+    const rawLocation = normalizeText(source.url || source.fileName);
+    const location = isWorkflowArtifactEnglishSafe(rawLocation) || /^https?:\/\//i.test(rawLocation) ? rawLocation : "";
+    const title = sanitizeWorkflowArtifactText(source.title || location, `Source ${index + 1}`);
     const snippet = normalizeText(source.snippet)
       .replace(/```/g, "'''")
       .slice(0, Math.min(SOURCE_MATERIAL_APPENDIX_PER_SOURCE_LIMIT, remaining));
@@ -608,8 +724,8 @@ function formatSourceMaterialAppendix(knowledgeProfile?: WebsiteKnowledgeProfile
         `### Source ${index + 1}: [${source.type}] ${title}`,
         location ? `- Location: ${location}` : "",
         `- Confidence: ${source.confidence.toFixed(2)}`,
-        "",
-        snippet,
+        "- Internal note: keep route semantics, terminology, and component requirements aligned with the source artifact without copying multilingual raw excerpts into workflow files.",
+        isWorkflowArtifactEnglishSafe(snippet) ? `- Excerpt summary: ${sanitizeWorkflowArtifactText(snippet, "")}` : "",
       ]
         .filter(Boolean)
         .join("\n"),
@@ -697,14 +813,13 @@ async function requestPromptDraftWithLlm(params: {
   const completion = `${params.slots.filter((slot) => slot.filled).length}/${params.slots.length}`;
   const missingLabels = params.slots.filter((slot) => !slot.filled).map((slot) => slot.label);
   const displayLocale = params.displayLocale === "zh" ? "zh" : "en";
-  const targetLanguage =
-    displayLocale === "zh"
-      ? "Simplified Chinese for user-facing display"
-      : "English for user-facing display";
-  const languagePreservationRule =
-    displayLocale === "zh"
-      ? "- Write user-facing headings, explanations, assumptions, page descriptions, and content guidance in Simplified Chinese. Keep filenames, routes, CSS/JS identifiers, code-like tokens, and product/brand names unchanged."
-      : "- Write user-facing headings, explanations, assumptions, page descriptions, and content guidance in English. Keep filenames, routes, CSS/JS identifiers, code-like tokens, and product/brand names unchanged.";
+  const targetLanguage = "English for internal workflow artifacts";
+  const languagePreservationRule = [
+    "- Write the entire canonical prompt, workflow instructions, assumptions, page descriptions, and process notes in English only.",
+    "- Do not mirror the user's preferred website locale into the language of the internal prompt artifact.",
+    `- Express the final website locale requirement explicitly as ${displayLocale === "zh" ? "Chinese-facing site output" : "English-facing site output"} while keeping the planning artifact itself in English.`,
+    "- Keep filenames, routes, CSS/JS identifiers, code-like tokens, and product/brand names unchanged.",
+  ].join(" ");
 
   const fullResearchBlock =
     params.researchSources.length > 0
@@ -876,7 +991,10 @@ async function requestPromptDraftWithLlm(params: {
   return {
     canonicalPrompt,
     usedWebSearch: hasWebEvidence(params.knowledgeProfile),
-    researchSummary: normalizeText(parsed?.researchSummary || params.researchSummary),
+    researchSummary: sanitizeWorkflowArtifactText(
+      parsed?.researchSummary || params.researchSummary,
+      "English-normalized research summary unavailable; rely on the evidence brief and source-backed profile.",
+    ),
     sources: mergedSources,
     promptControlManifest: buildPromptControlManifest(params.decisionPlan, params.routeSource),
     evidenceBrief,
@@ -956,6 +1074,11 @@ export async function buildPromptDraftWithResearch(params: {
   let webSearchFailureReason = "";
   let evidenceBrief: WebsiteEvidenceBrief | undefined;
   let knowledgeProfile: WebsiteKnowledgeProfile | undefined;
+  const getSafeResearchSummary = () =>
+    sanitizeWorkflowArtifactText(
+      researchSummary,
+      "English-normalized research summary unavailable; rely on the evidence brief and source-backed profile.",
+    );
   const applyResolvedKnowledgeProfile = (profile: WebsiteKnowledgeProfile) => {
     knowledgeProfile = profile;
     evidenceBrief = buildWebsiteEvidenceBrief(profile);
@@ -996,7 +1119,7 @@ export async function buildPromptDraftWithResearch(params: {
       promptControlManifest,
       evidenceBrief,
       knowledgeProfile,
-      researchSummary,
+      researchSummary: getSafeResearchSummary(),
       fallbackReason: networkGate.reason,
       draftMode: "template",
     };
@@ -1061,7 +1184,7 @@ export async function buildPromptDraftWithResearch(params: {
       promptControlManifest,
       evidenceBrief,
       knowledgeProfile,
-      researchSummary,
+      researchSummary: getSafeResearchSummary(),
       fallbackReason: provider.reason,
       draftMode: "template",
     };
@@ -1101,7 +1224,7 @@ export async function buildPromptDraftWithResearch(params: {
         promptControlManifest,
         evidenceBrief,
         knowledgeProfile,
-        researchSummary,
+        researchSummary: getSafeResearchSummary(),
         fallbackReason: webSearchFailureReason
           ? `web_search:${webSearchFailureReason};llm:${llmReason}`
           : llmReason,
@@ -1120,7 +1243,7 @@ export async function buildPromptDraftWithResearch(params: {
     promptControlManifest,
     evidenceBrief,
     knowledgeProfile,
-    researchSummary,
+    researchSummary: getSafeResearchSummary(),
     fallbackReason: webSearchFailureReason || "llm_draft_disabled",
     provider: provider.config.provider,
     model: provider.config.model,

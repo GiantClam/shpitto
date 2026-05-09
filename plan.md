@@ -2,6 +2,11 @@
 
 **Objective:** Rename all database tables with `shpitto_` prefix to avoid conflicts and improve namespacing.
 
+## Hard Constraints
+
+- All skill, prompt, and process-related files must be authored and output in English.
+- Any plan notes or workflow artifacts derived from those files must also be written in English.
+
 ## Phase 1: Schema Refactoring
 
 - [ ] **Task 1: Rename Tables in Schema Definition**

@@ -676,11 +676,11 @@ function findBlogSemanticRoute(routes: string[], navLabels?: string[]): string |
     .sort((left, right) => right.score - left.score || left.index - right.index)[0]?.route;
 }
 
-function ensureBlogRoute(routes: string[], options: { singlePage: boolean }): string[] {
+function ensureBlogRoute(routes: string[], options: { singlePage: boolean; requirementText: string }): string[] {
   const normalizedRoutes = uniqueRoutes(routes);
+  void options.requirementText;
   if (!shouldEnsureBlogRoute() || options.singlePage) return normalizedRoutes;
-  if (findBlogSemanticRoute(normalizedRoutes)) return normalizedRoutes;
-  return [...normalizedRoutes, normalizeRoute(routePlanningPolicy.blogSemanticRoutePolicy.fallbackRoute || "/blog")];
+  return normalizedRoutes;
 }
 
 const EMPTY_COMPONENT_MIX: ComponentMix = { hero: 0, feature: 0, grid: 0, proof: 0, form: 0, cta: 0 };
@@ -881,10 +881,7 @@ function buildPageBlueprint(
       { purpose: string; skeleton: string[] }
     > = {
       "/login": {
-        purpose:
-          locale === "zh-CN"
-            ? `登录页 "${authLabel}"。把邮箱登录、Google OAuth、找回密码和返回路径保留在同一套品牌壳里。`
-            : `Sign-in page for "${authLabel}". Keep email login, Google OAuth, password recovery, and next-path handling inside one branded shell.`,
+        purpose: `Sign-in page for "${authLabel}". Keep email login, Google OAuth, password recovery, and next-path handling inside one branded shell.`,
         skeleton: [
           "Auth hero with concise value proposition and trust cue",
           "Google sign-in and email/password form",
@@ -893,10 +890,7 @@ function buildPageBlueprint(
         ],
       },
       "/register": {
-        purpose:
-          locale === "zh-CN"
-            ? `注册页 "${authLabel}"。把邮箱注册、Google OAuth 和验证说明保持在同一主题壳中。`
-            : `Registration page for "${authLabel}". Keep email registration, Google OAuth, and verification guidance inside the same theme shell.`,
+        purpose: `Registration page for "${authLabel}". Keep email registration, Google OAuth, and verification guidance inside the same theme shell.`,
         skeleton: [
           "Registration hero with trust-building copy",
           "Google sign-up and email/password form",
@@ -905,10 +899,7 @@ function buildPageBlueprint(
         ],
       },
       "/reset-password": {
-        purpose:
-          locale === "zh-CN"
-            ? `找回密码页 "${authLabel}"。保持极简、清晰，并延续站点主题。`
-            : `Password reset page for "${authLabel}". Keep the flow minimal, clear, and consistent with the site theme.`,
+        purpose: `Password reset page for "${authLabel}". Keep the flow minimal, clear, and consistent with the site theme.`,
         skeleton: [
           "Reset-password hero with security guidance",
           "New password and confirmation fields",
@@ -916,10 +907,7 @@ function buildPageBlueprint(
         ],
       },
       "/verify-email": {
-        purpose:
-          locale === "zh-CN"
-            ? `邮箱验证页 "${authLabel}"。保持验证状态、重发动作和返回登录路径与站点风格一致。`
-            : `Email verification page for "${authLabel}". Keep verification status, resend, and return-to-sign-in paths consistent with the site style.`,
+        purpose: `Email verification page for "${authLabel}". Keep verification status, resend, and return-to-sign-in paths consistent with the site style.`,
         skeleton: [
           "Verification hero and status message",
           "Resend verification action",
@@ -948,10 +936,7 @@ function buildPageBlueprint(
   }
   if (isBlogSemanticRoute(normalizedRoute, resolvedLabel)) {
     const semanticScore = scoreBlogSemanticRoute(normalizedRoute, resolvedLabel);
-    const purpose =
-      locale === "zh-CN"
-        ? `内容集合页 "${resolvedLabel}"。可见页面必须沿用该路由自身的信息架构；实现能力不得成为访客可见主题。`
-        : `Content collection page for "${resolvedLabel}". The visible page must follow this route's own information architecture; implementation capability must not become a visitor-facing topic.`;
+    const purpose = `Content collection page for "${resolvedLabel}". The visible page must follow this route's own information architecture; implementation capability must not become a visitor-facing topic.`;
     return {
       route: normalizedRoute,
       navLabel: resolvedLabel,
@@ -977,10 +962,7 @@ function buildPageBlueprint(
     };
   }
   if (normalizedRoute === "/") {
-    const purpose =
-      locale === "zh-CN"
-        ? "首页。建立品牌总览、核心价值、主路径入口与下一步行动，保持站点总入口语义。"
-        : "Homepage. Establish the brand overview, core value, primary route entry, and next action while preserving site home-entry semantics.";
+    const purpose = "Homepage. Establish the brand overview, core value, primary route entry, and next action while preserving site home-entry semantics.";
     return {
       route: normalizedRoute,
       navLabel: resolvedLabel,
@@ -1004,10 +986,7 @@ function buildPageBlueprint(
     };
   }
   if (isSearchDirectoryRoute(normalizedRoute, resolvedLabel)) {
-    const purpose =
-      locale === "zh-CN"
-        ? "查询目录页。提供检索、筛选、结果展示与下一步引导的闭环。"
-        : "Search-directory page. Provide search, filtering, results, and next-step guidance in one closed loop.";
+    const purpose = "Search-directory page. Provide search, filtering, results, and next-step guidance in one closed loop.";
     return {
       route: normalizedRoute,
       navLabel: resolvedLabel,
@@ -1103,6 +1082,7 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
   const withHome = baseRoutes.some((route) => normalizeRoute(route) === "/") ? baseRoutes : ["/", ...baseRoutes];
   const withSystemRoutes = ensureBlogRoute(withHome.length > 0 ? withHome : ["/"], {
     singlePage: singlePageRoutes.length > 0,
+    requirementText,
   });
   const routes = orderNavigationRoutes(withSystemRoutes).slice(0, 16);
 

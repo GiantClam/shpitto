@@ -176,7 +176,81 @@ function rewriteHtmlForPreview(html: string, previewBase: string, assetCdnPrefix
     (_m, attr: string, target: string, suffix = "") => `${attr}="${previewBase}/${target}${suffix}"`,
   );
 
-  return sharedAssetRewritten.replace(/\bhref=["']\/["']/gi, `href="${previewBase}/"`);
+  const rootRewritten = sharedAssetRewritten.replace(/\bhref=["']\/["']/gi, `href="${previewBase}/"`);
+  return injectPreviewNavigationBridge(rootRewritten, previewBase);
+}
+
+function injectPreviewNavigationBridge(html: string, previewBase: string): string {
+  const safePreviewBase = JSON.stringify(String(previewBase || "").replace(/\/+$/, ""));
+  const bridge = `<script>
+(() => {
+  const previewBase = ${safePreviewBase};
+  if (!previewBase || typeof document === "undefined") return;
+  window.__shpittoPreviewBase = previewBase;
+
+  const shouldRewrite = (href) =>
+    typeof href === "string" &&
+    href.startsWith("/") &&
+    !href.startsWith("//") &&
+    !href.startsWith(previewBase + "/") &&
+    href !== previewBase &&
+    !/^\\/(?:api\\/|_next\\/)/i.test(href);
+
+  const toPreviewHref = (href) => (shouldRewrite(href) ? previewBase + href : href);
+
+  const rewriteAnchor = (anchor) => {
+    if (!anchor || typeof anchor.getAttribute !== "function") return;
+    const href = String(anchor.getAttribute("href") || "").trim();
+    const next = toPreviewHref(href);
+    if (next && next !== href) {
+      anchor.setAttribute("href", next);
+    }
+  };
+
+  const rewriteTree = (root) => {
+    if (!root) return;
+    if (root.matches && root.matches('a[href^="/"]')) rewriteAnchor(root);
+    if (typeof root.querySelectorAll === "function") {
+      root.querySelectorAll('a[href^="/"]').forEach(rewriteAnchor);
+    }
+  };
+
+  document.addEventListener(
+    "click",
+    (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const anchor = target.closest("a[href]");
+      if (!anchor) return;
+      const href = String(anchor.getAttribute("href") || "").trim();
+      const next = toPreviewHref(href);
+      if (!next || next === href) return;
+      anchor.setAttribute("href", next);
+      event.preventDefault();
+      window.location.assign(next);
+    },
+    true,
+  );
+
+  rewriteTree(document);
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (node instanceof Element) rewriteTree(node);
+      });
+    });
+  });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+})();
+</script>`;
+
+  if (/<\/head>/i.test(html)) {
+    return html.replace(/<\/head>/i, `${bridge}</head>`);
+  }
+  if (/<\/body>/i.test(html)) {
+    return html.replace(/<\/body>/i, `${bridge}</body>`);
+  }
+  return `${bridge}${html}`;
 }
 
 function shouldRewriteAssetLogicalUrls(mime: string) {

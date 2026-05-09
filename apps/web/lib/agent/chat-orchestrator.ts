@@ -6,6 +6,11 @@ import {
   renderWebsiteDesignDirectionPrompt,
 } from "../open-design/design-directions";
 import type { DesignSystemSource, DesignSystemSummary } from "../design-system-registry";
+import {
+  containsWorkflowCjk,
+  isWorkflowArtifactEnglishSafe,
+  sanitizeWorkflowArtifactText,
+} from "../workflow-artifact-language";
 
 export type ConversationStage = "drafting" | "previewing" | "deployed" | "deploying";
 
@@ -168,6 +173,22 @@ const UNSUPPORTED_FUNCTIONAL_REQUIREMENT_PATTERN =
 
 function normalizeText(value: string): string {
   return String(value || "").trim();
+}
+
+function containsCjk(text: string): boolean {
+  return containsWorkflowCjk(text);
+}
+
+function extractStableInternalConstraintTokens(text: string): string[] {
+  const raw = String(text || "");
+  const matches = [
+    ...(raw.match(/\b[A-Z][A-Z0-9-]{1,}\b/g) || []),
+    ...(raw.match(/#[0-9a-fA-F]{3,8}\b/g) || []),
+    ...(raw.match(/\bcloudflare\b/gi) || []),
+    ...(raw.match(/\bvercel\b/gi) || []),
+    ...(raw.match(/\b[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.[a-z]{2,}\b/gi) || []),
+  ];
+  return Array.from(new Set(matches.map((item) => item.trim()).filter(Boolean))).slice(0, 12);
 }
 
 function containsAny(text: string, patterns: RegExp[]): string | undefined {
@@ -1726,6 +1747,7 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
   const optionLabel = (_options: RequirementSlotOption[], value?: string) => promptLabels[value || ""] || value || "";
   const optionLabels = (options: RequirementSlotOption[], values?: string[]) =>
     (values || []).map((value) => optionLabel(options, value)).filter(Boolean).join(", ");
+  const englishPageStructureLabels = (spec.pageStructure?.pages || spec.pages || []).filter((value) => isWorkflowArtifactEnglishSafe(value));
   const logoMode = spec.brandLogo?.mode === "none"
     ? "Do not show a logo"
     : spec.brandLogo?.mode
@@ -1737,10 +1759,26 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
         : spec.pageStructure?.mode === "multi" && spec.pageStructure.planning === "auto"
           ? "Multi-page website (automatically plan first-level navigation, second-level detail pages, and necessary third-level content pages)"
           : spec.pageStructure?.mode === "multi"
-          ? `Multi-page website (${(spec.pageStructure.pages || spec.pages || []).join(" / ") || "use the confirmed page list"})`
+          ? `Multi-page website (${englishPageStructureLabels.length > 0 ? englishPageStructureLabels.join(" / ") : "use the confirmed page list from the prompt control manifest"})`
           : "";
-  const secondaryVisualTags = spec.secondaryVisualTags || [];
+  const secondaryVisualTags = (spec.secondaryVisualTags || []).filter((value) => isWorkflowArtifactEnglishSafe(value));
   const designSystemInspiration = spec.designSystemInspiration;
+  const designSystemInspirationSummary = designSystemInspiration
+    ? sanitizeWorkflowArtifactText(
+        `${sanitizeWorkflowArtifactText(designSystemInspiration.title, "Selected registry-backed design system inspiration")}${
+          isWorkflowArtifactEnglishSafe(designSystemInspiration.category || "")
+            ? ` (${String(designSystemInspiration.category).trim()})`
+            : ""
+        }`,
+        "Selected registry-backed design system inspiration",
+      )
+    : "";
+  const businessContentDetails = spec.customNotes
+    ? sanitizeWorkflowArtifactText(
+        spec.customNotes,
+        "Multilingual business notes are stored outside this internal prompt; use the evidence brief and source profile for English-normalized guidance.",
+      )
+    : "";
   const confirmedParameters = [
     spec.siteType ? `- Website type: ${optionLabel(SITE_TYPE_OPTIONS, spec.siteType)}` : "",
     spec.targetAudience?.length ? `- Target audience: ${optionLabels(AUDIENCE_OPTIONS, spec.targetAudience)}` : "",
@@ -1752,8 +1790,8 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
         ? `- Design theme signals: ${optionLabels(DESIGN_THEME_OPTIONS, spec.visualStyle)}`
         : "",
     secondaryVisualTags.length ? `- Secondary visual tags: ${secondaryVisualTags.join(", ")}` : "",
-    designSystemInspiration
-      ? `- Design system inspiration: ${designSystemInspiration.title}${designSystemInspiration.category ? ` (${designSystemInspiration.category})` : ""}`
+    designSystemInspirationSummary
+      ? `- Design system inspiration: ${designSystemInspirationSummary}`
       : "",
     pageStructureLabel ? `- Site structure: ${pageStructureLabel}` : "",
     spec.functionalRequirements?.length
@@ -1765,7 +1803,9 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
       ? `- Logo source: ${logoMode}${spec.brandLogo?.assetName ? ` (${spec.brandLogo.assetName})` : ""}`
       : "",
     spec.contentSources?.length ? `- Content sources: ${optionLabels(CONTENT_SOURCE_OPTIONS, spec.contentSources)}` : "",
-    spec.customNotes ? `- Business/content details: ${spec.customNotes}` : "",
+    businessContentDetails
+      ? `- Business/content details: ${businessContentDetails}`
+      : "",
   ].filter(Boolean);
   const logoRequirement =
     spec.brandLogo?.mode === "uploaded"
@@ -1791,6 +1831,23 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
     .filter(Boolean)
     .slice(0, 10)
     .map((item) => `- ${item}`);
+  const englishOnlyHighlights = highlights.filter((item) => isWorkflowArtifactEnglishSafe(item));
+  const stableConstraintTokens = extractStableInternalConstraintTokens(normalizedRequirement);
+  const internalRequirementSummary = [
+    "- Internal prompt language: English only.",
+    spec.locale ? `- Final website locale requirement: ${optionLabel(LANGUAGE_OPTIONS, spec.locale)}.` : "",
+    spec.contentSources?.includes("uploaded_files")
+      ? "- Uploaded materials remain the primary content source; keep the workflow artifact in English while preserving source-backed route and content decisions."
+      : "",
+    stableConstraintTokens.length ? `- Stable user tokens preserved verbatim: ${stableConstraintTokens.join(", ")}.` : "",
+    !isWorkflowArtifactEnglishSafe(normalizedRequirement)
+      ? "- The original user wording is multilingual and is intentionally not copied verbatim into this internal prompt artifact. Use the confirmed parameters, evidence brief, and prompt control manifest as the authoritative instruction set."
+      : normalizedRequirement
+        ? `- Raw requirement excerpt: ${normalizedRequirement}`
+        : "- No raw requirement text available.",
+  ]
+    .filter(Boolean)
+    .join("\n");
   const missing = slots
     .filter((slot) => !slot.filled)
     .map((slot) => `- ${slotLabel(slot)}`)
@@ -1830,13 +1887,13 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
     "",
     logoRequirement,
     logoRequirement ? "" : "",
-    "## 1. Original Requirement",
-    "```",
-    normalizedRequirement || "(empty requirement)",
-    "```",
+    "## 1. Requirement Summary (Internal English)",
+    internalRequirementSummary,
     "",
     "## 1.5 Explicit User Constraints (Highest Priority)",
-    highlights.length > 0 ? highlights.join("\n") : "- None yet; ask for them in follow-up if needed",
+    englishOnlyHighlights.length > 0
+      ? englishOnlyHighlights.join("\n")
+      : "- No standalone English constraint lines were preserved from the raw user wording; rely on the confirmed parameters and source-backed sections instead.",
     "",
     "## 1.6 Content Source Instructions",
     spec.contentSources?.length
@@ -1854,7 +1911,11 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
           spec.contentSources.includes("industry_research")
             ? "- Use industry research only to fill structural and market context gaps; do not present it as brand-owned facts."
             : "",
-          spec.customNotes ? `- User supplied content notes: ${spec.customNotes}` : "",
+          spec.customNotes
+            ? `- User supplied content notes: ${sanitizeWorkflowArtifactText(
+                spec.customNotes,
+                "Multilingual notes exist in the source materials; preserve them through the evidence brief rather than copying them into the internal prompt.",
+              )}` : "",
         ]
           .filter(Boolean)
           .join("\n")

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { HumanMessage } from "@langchain/core/messages";
 import {
+  didRoundMateriallyChangeFilesForTesting,
   formatTargetPageContract,
   enforceNavigationOrder,
   htmlPathToRoute,
@@ -146,12 +147,12 @@ main { display: grid; gap: 24px; }
       "  <main>",
       "    <article>",
       `      <h1>${title}</h1>`,
-      `      <p>This ${slug} article explains a concrete operating decision, the surrounding business context, and the editorial reason the topic deserves a full detail page rather than a shallow list-only mention. The reader should immediately understand what changed, why the topic matters, and how the final implementation affects the rest of the website system.</p>`,
-      "      <p>It gives readers enough narrative detail to understand the problem, the constraints, the reasoning behind the selected approach, and the practical consequences of shipping the chosen implementation. Instead of stopping at a title and excerpt, the article spells out the operational tradeoffs, the expected user impact, and the checks that keep the result grounded in the original brief.</p>",
-      "      <p>The body is intentionally long enough to behave like a publishable detail page, with multiple paragraphs that can stand on their own for SEO, no-JS browsing, and preview environments where runtime hydration may never run. That matters because the archive page is only useful when every visible teaser card opens into a destination that preserves meaning even outside the deployed dynamic runtime.</p>",
-      "      <section><h2>Context</h2><p>The surrounding site shell, typography, and navigation stay consistent so readers move from the archive into a fully readable destination without losing orientation or seeing a generic runtime fallback template. The detail page therefore carries the same design language as the parent site while expanding the topic into a more substantial editorial argument.</p></section>",
-      "      <section><h2>Decision</h2><p>Each linked detail target must resolve to a stable route, contain finished prose instead of outline fragments, and preserve the same visual system that the generated list promises on the parent page. A route that only shows a title, date, or skeleton paragraph would break that contract and make the list card misleading.</p></section>",
-      "      <section><h2>Impact</h2><p>That combination protects addressability, keeps cards honest about what they lead to, and avoids the common failure mode where a polished archive page collapses into placeholders once a visitor clicks through. It also gives the deployment layer a trustworthy static fallback if the dynamic Blog runtime is unavailable, slow, or intentionally disabled during preview.</p></section>",
+      `      <p>${title} is treated here as a real subject rather than a generic placeholder. The article opens by naming ${slug} directly, then explains the surrounding business context, the operational tension, and the reason this topic deserves a full detail destination instead of a shallow archive mention.</p>`,
+      `      <p>The body keeps returning to ${title} so readers understand what changed, why ${slug} matters, and which tradeoffs shape the final implementation. Instead of drifting into generic website commentary, the prose stays anchored to the visible card topic and expands it with concrete reasoning.</p>`,
+      `      <p>Readers get enough depth here for SEO, no-JS browsing, and preview environments where runtime hydration may never run. That means ${title} preserves meaning even outside the dynamic blog runtime instead of collapsing into a thin shell.</p>`,
+      `      <section><h2>${title} context</h2><p>The surrounding shell, typography, and navigation stay consistent so readers move from the archive into a fully readable destination without losing orientation. That shell continuity matters because ${slug} is meant to feel native to the same site rather than like a detached runtime fallback template.</p></section>`,
+      `      <section><h2>${title} decision</h2><p>The article explains why ${slug} becomes its own route, which constraints shaped the page, and how the chosen detail structure supports both editorial clarity and operational realism. A route that only shows a title, date, or metadata line would not satisfy the promise made by the visible archive card.</p></section>`,
+      `      <section><h2>${title} impact</h2><p>That combination protects addressability, keeps cards honest about what they lead to, and avoids the common failure mode where a polished archive page collapses into placeholders once a visitor clicks through. It also gives the deployment layer a trustworthy static fallback if the dynamic blog runtime is unavailable, slow, or intentionally disabled during preview.</p></section>`,
       "    </article>",
       "  </main>",
       '  <script src="/script.js"></script>',
@@ -397,6 +398,7 @@ describe("skill-tool-executor", () => {
       - Visual direction must be distinctive: expressive type pairing, intentional background system, layered sections, strong hero composition, and mobile-specific composition.
       - CSS must include responsive strategy using media queries, container queries, or clamp-based fluid sizing.
       - Every page must contain enough route-specific content depth to stand alone; sibling pages must not be superficial copies.
+      - Blog detail pages must be complete publishable articles: they need a real body, meaningful section structure, and enough route-specific substance to read as finished pages instead of shells, stubs, or metadata-only placeholders.
       - Route / must always read as the site home entry, not as a downloads hub, certification portal, or login page.
       - If a hero visual rail is tall, it must contain real media, chart, or data-viz content; do not leave a large empty visual card with only bottom-aligned text.
       - Result cards rendered inside a 12-column grid must span the full available row unless the design explicitly calls for a narrower card layout.
@@ -599,7 +601,37 @@ describe("skill-tool-executor", () => {
               '<main><h1>Information Platform</h1><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list><article><a href="/blog/insight/">Insight</a></article></div></section><section><h2>Context</h2><p>Updates and resource cards are organized by platform category.</p></section><section><h2>Editorial rhythm</h2><p>Published content remains addressable through stable detail links.</p></section><section><h2>Next step</h2><p>Readers can continue into related site actions.</p></section></main>',
             ),
           }
-        : file,
+        : file.path === "/blog/demo/index.html"
+          ? {
+              ...file,
+              content: [
+                "<!doctype html>",
+                '<html lang="zh-CN">',
+                "<head>",
+                "  <title>示例文章</title>",
+                '  <meta charset="utf-8" />',
+                '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+                '  <link rel="stylesheet" href="/styles.css" />',
+                "</head>",
+                "<body>",
+                '  <nav><a href="/">Home</a><a href="/blog/">Blog</a></nav>',
+                "  <main>",
+                "    <article>",
+                "      <h1>示例文章</h1>",
+                "      <p>这篇示例文章保持中文为默认可见语言，只保留 Bays Wong 作为英文品牌名，并把语言切换按钮严格限制在界面层，不把中英文正文同时放进首屏可见内容。</p>",
+                "      <p>正文继续围绕个人技术写作、组织实践复盘与产品判断展开，让访客先读到完整中文内容，再通过明确的语言开关切换到英文版本，而不是把两种语言直接堆叠在一个段落里。</p>",
+                "      <p>这种写法可以兼容 HelloTalk、SaaS、DevOps、AI 等英文专名，同时保证整页默认阅读路径只有一种可见语言，不会被 bilingual DOM copy 规则误判。</p>",
+                "      <p>因此 detail 页面既保留品牌和技术专名的真实性，也遵守单一可见语言的正文契约。</p>",
+                "      <section><h2>语言切换</h2><p>语言切换仍然是控件能力，不是正文叙事；默认中文正文保持完整，英文版本只在切换后出现。</p></section>",
+                "      <section><h2>品牌专名</h2><p>Bays Wong、HelloTalk、SaaS、DevOps、AI 作为专名或技术缩写出现在正文中，但不构成双语并排展示。</p></section>",
+                "    </article>",
+                "  </main>",
+                '  <script src="/script.js"></script>',
+                "</body>",
+                "</html>",
+              ].join("\n"),
+            }
+          : file,
     );
 
     expect(() =>
@@ -666,6 +698,36 @@ describe("skill-tool-executor", () => {
               '<main><h1>Information Platform</h1><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><h2>Resources</h2><p>These cards can be refreshed at runtime.</p><div data-shpitto-blog-list><article><a href="/blog/standards/">Standards</a></article></div></section><section><h2>Context</h2><p>Standards and reports.</p></section><section><h2>Next</h2><p>Downloads.</p></section></main>',
             ),
           }
+        : file.path === "/blog/demo/index.html"
+          ? {
+              ...file,
+              content: [
+                "<!doctype html>",
+                '<html lang="zh-CN">',
+                "<head>",
+                "  <title>示例文章</title>",
+                '  <meta charset="utf-8" />',
+                '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+                '  <link rel="stylesheet" href="/styles.css" />',
+                "</head>",
+                "<body>",
+                '  <nav><a href="/">Home</a><a href="/blog/">Blog</a></nav>',
+                "  <main>",
+                "    <article>",
+                "      <h1>示例文章</h1>",
+                "      <p>这篇示例文章保持中文为默认可见语言，只保留 Bays Wong 作为英文品牌名，并把语言切换按钮严格限制在界面层，不把中英文正文同时放进首屏可见内容。</p>",
+                "      <p>正文继续围绕个人技术写作、组织实践复盘与产品判断展开，让访客先读到完整中文内容，再通过明确的语言开关切换到英文版本，而不是把两种语言直接堆叠在一个段落里。</p>",
+                "      <p>这种写法可以兼容 HelloTalk、SaaS、DevOps、AI 等英文专名，同时保证整页默认阅读路径只有一种可见语言，不会被 bilingual DOM copy 规则误判。</p>",
+                "      <p>因此 detail 页面既保留品牌和技术专名的真实性，也遵守单一可见语言的正文契约。</p>",
+                "      <section><h2>语言切换</h2><p>语言切换仍然是控件能力，不是正文叙事；默认中文正文保持完整，英文版本只在切换后出现。</p></section>",
+                "      <section><h2>品牌专名</h2><p>Bays Wong、HelloTalk、SaaS、DevOps、AI 作为专名或技术缩写出现在正文中，但不构成双语并排展示。</p></section>",
+                "    </article>",
+                "  </main>",
+                '  <script src="/script.js"></script>',
+                "</body>",
+                "</html>",
+              ].join("\n"),
+            }
         : file,
     );
 
@@ -698,6 +760,36 @@ describe("skill-tool-executor", () => {
               '<main><h1>三篇文章，带你更轻松地进入 AI 世界。</h1><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><h2>文章集合 / Article collection</h2><p>以下是博客的三篇首发文章。每篇文章都配有日期、阅读时长与标签。</p><div data-shpitto-blog-list><article><a href="/blog/ai-one/">AI one</a></article><article><a href="/blog/ai-two/">AI two</a></article><article><a href="/blog/ai-three/">AI three</a></article></div></section></main>',
             ),
           }
+        : file.path === "/blog/demo/index.html"
+          ? {
+              ...file,
+              content: [
+                "<!doctype html>",
+                '<html lang="zh-CN">',
+                "<head>",
+                "  <title>示例文章</title>",
+                '  <meta charset="utf-8" />',
+                '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+                '  <link rel="stylesheet" href="/styles.css" />',
+                "</head>",
+                "<body>",
+                '  <nav><a href="/">Home</a><a href="/blog/">Blog</a></nav>',
+                "  <main>",
+                "    <article>",
+                "      <h1>示例文章</h1>",
+                "      <p>这篇示例文章保持中文为默认可见语言，只保留 Bays Wong 作为英文品牌名，并把语言切换按钮严格限制在界面层，不把中英文正文同时放进首屏可见内容。</p>",
+                "      <p>正文继续围绕个人技术写作、组织实践复盘与产品判断展开，让访客先读到完整中文内容，再通过明确的语言开关切换到英文版本，而不是把两种语言直接堆叠在一个段落里。</p>",
+                "      <p>这种写法可以兼容 HelloTalk、SaaS、DevOps、AI 等英文专名，同时保证整页默认阅读路径只有一种可见语言，不会被 bilingual DOM copy 规则误判。</p>",
+                "      <p>因此 detail 页面既保留品牌和技术专名的真实性，也遵守单一可见语言的正文契约。</p>",
+                "      <section><h2>语言切换</h2><p>语言切换仍然是控件能力，不是正文叙事；默认中文正文保持完整，英文版本只在切换后出现。</p></section>",
+                "      <section><h2>品牌专名</h2><p>Bays Wong、HelloTalk、SaaS、DevOps、AI 作为专名或技术缩写出现在正文中，但不构成双语并排展示。</p></section>",
+                "    </article>",
+                "  </main>",
+                '  <script src="/script.js"></script>',
+                "</body>",
+                "</html>",
+              ].join("\n"),
+            }
         : file,
     );
 
@@ -1035,7 +1127,37 @@ describe("skill-tool-executor", () => {
               ...file,
               content: String(file.content).replace(/<main>[\s\S]*<\/main>/, blogMain),
             }
-          : file,
+          : file.path === "/blog/demo/index.html"
+            ? {
+                ...file,
+                content: [
+                  "<!doctype html>",
+                  '<html lang="zh-CN">',
+                  "<head>",
+                  "  <title>示例文章</title>",
+                  '  <meta charset="utf-8" />',
+                  '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+                  '  <link rel="stylesheet" href="/styles.css" />',
+                  "</head>",
+                  "<body>",
+                  '  <nav><a href="/">Home</a><a href="/blog/">Blog</a></nav>',
+                  "  <main>",
+                  "    <article>",
+                  "      <h1>示例文章</h1>",
+                  "      <p>这篇示例文章保持中文为默认可见语言，只保留 Bays Wong 作为英文品牌名，并把语言切换按钮严格限制在界面层，不把中英文正文同时放进首屏可见内容。</p>",
+                  "      <p>正文继续围绕个人技术写作、组织实践复盘与产品判断展开，让访客先读到完整中文内容，再通过明确的语言开关切换到英文版本，而不是把两种语言直接堆叠在一个段落里。</p>",
+                  "      <p>这种写法可以兼容 HelloTalk、SaaS、DevOps、AI 等英文专名，同时保证整页默认阅读路径只有一种可见语言，不会被 bilingual DOM copy 规则误判。</p>",
+                  "      <p>因此 detail 页面既保留品牌和技术专名的真实性，也遵守单一可见语言的正文契约。</p>",
+                  "      <section><h2>语言切换</h2><p>语言切换仍然是控件能力，不是正文叙事；默认中文正文保持完整，英文版本只在切换后出现。</p></section>",
+                  "      <section><h2>品牌专名</h2><p>Bays Wong、HelloTalk、SaaS、DevOps、AI 作为专名或技术缩写出现在正文中，但不构成双语并排展示。</p></section>",
+                  "    </article>",
+                  "  </main>",
+                  '  <script src="/script.js"></script>',
+                  "</body>",
+                  "</html>",
+                ].join("\n"),
+              }
+            : file,
       ),
       thinDetail("/blog/ai-one/index.html", "AI one"),
       thinDetail("/blog/ai-two/index.html", "AI two"),
@@ -1049,6 +1171,110 @@ describe("skill-tool-executor", () => {
         requirementText: "我要一个个人blog，主要是ai blog，帮我生成3篇文章",
       }),
     ).toThrow("must contain a complete article/detail body");
+  });
+
+  it("keeps blog-detail validation focused on completeness instead of semantic topic matching", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [
+        new HumanMessage(
+          "Build a personal blog for Bays Wong. Generate 3 complete articles about WeChat real-time media architecture, DevOps operating systems, and AI SaaS commercialization.",
+        ),
+      ],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/blog"],
+          navLabels: ["Home", "Blog"],
+          files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html"],
+        },
+      },
+    } as any);
+    const files = [
+      ...validGeneratedFiles(decision.routes).map((file) =>
+        file.path === "/blog/index.html"
+          ? {
+              ...file,
+              content: String(file.content).replace(
+                /<main>[\s\S]*<\/main>/,
+                '<main><h1>Blog</h1><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list><article><a href="/blog/wechat-real-time-media/">WeChat real-time media architecture</a><p>How global real-time media infrastructure shapes product reliability.</p></article><article><a href="/blog/devops-operating-system/">DevOps operating system</a><p>Why delivery systems become management systems at scale.</p></article><article><a href="/blog/ai-saas-commercialization/">AI SaaS commercialization</a><p>Turning model capability into repeatable business outcomes.</p></article></div></section></main>',
+              ),
+            }
+          : file,
+      ).filter(
+        (file) =>
+          ![
+            "/blog/wechat-real-time-media/index.html",
+            "/blog/devops-operating-system/index.html",
+            "/blog/ai-saas-commercialization/index.html",
+          ].includes(file.path),
+      ),
+        {
+          path: "/blog/wechat-real-time-media/index.html",
+          type: "text/html",
+          content: [
+            "<!doctype html>",
+            '<html lang="en">',
+            "<head><title>Archive note</title><meta charset=\"utf-8\" /><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /><link rel=\"stylesheet\" href=\"/styles.css\" /></head>",
+            "<body><nav><a href=\"/\">Home</a><a href=\"/blog/\">Blog</a></nav><main><article>",
+            "<h1>Archive note</h1>",
+            "<p>This long article talks about generic website delivery process improvements and broad product communication habits without entering the stated technical domain.</p>",
+            "<p>It continues with broad observations about how modern teams write landing pages, iterate on marketing ideas, and coordinate previews before deployment across an ordinary static site workflow.</p>",
+            "<p>Another paragraph explains shell continuity, route stability, and how archive pages should point into detail destinations, but it still avoids the topic promised in the card.</p>",
+            "<p>The final paragraph stays abstract, talking about clean implementation and editorial structure rather than the concrete systems, constraints, or domain decisions the brief asked for.</p>",
+          "<section><h2>Context</h2><p>More generic discussion about process quality, alignment, and publishing mechanics.</p></section>",
+          "<section><h2>Decision</h2><p>More generic discussion about consistency, polish, and content workflow.</p></section>",
+          "</article></main><script src=\"/script.js\"></script></body></html>",
+        ].join(""),
+      },
+      {
+        path: "/blog/devops-operating-system/index.html",
+        type: "text/html",
+        content: [
+          "<!doctype html>",
+          '<html lang="en">',
+          "<head><title>DevOps operating system</title><meta charset=\"utf-8\" /><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /><link rel=\"stylesheet\" href=\"/styles.css\" /></head>",
+          "<body><nav><a href=\"/\">Home</a><a href=\"/blog/\">Blog</a></nav><main><article>",
+          "<h1>DevOps operating system</h1>",
+          "<p>DevOps operating system becomes a management system once delivery, observability, incident response, and release confidence stop being separate conversations. The article opens on that operating-system framing and keeps the terminology visible instead of retreating into generic website prose.</p>",
+          "<p>For Bays Wong, the topic matters because DevOps is not only a deployment pipeline. It is the practical layer where engineering judgment, release rhythm, and cross-team feedback loops become repeatable enough to support product growth.</p>",
+          "<p>The body keeps the DevOps operating system idea anchored in delivery systems, governance, and platform choices so the detail page clearly expands the archive card rather than sounding like a random editorial filler piece.</p>",
+          "<p>That framing also makes it easier to connect architecture, organizational design, and execution policy without pretending that one dashboard or one automation step solves the entire problem.</p>",
+          "<section><h2>Delivery systems</h2><p>The delivery system is described as infrastructure for trust: release safety, rollback clarity, and feedback timing all reinforce the operating-system metaphor.</p></section>",
+          "<section><h2>Management systems</h2><p>The management-system layer explains how DevOps operating system choices affect prioritization, accountability, and the real cadence of shipping.</p></section>",
+          "</article></main><script src=\"/script.js\"></script></body></html>",
+        ].join(""),
+      },
+      {
+        path: "/blog/ai-saas-commercialization/index.html",
+        type: "text/html",
+        content: [
+          "<!doctype html>",
+          '<html lang="en">',
+          "<head><title>AI SaaS commercialization</title><meta charset=\"utf-8\" /><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /><link rel=\"stylesheet\" href=\"/styles.css\" /></head>",
+          "<body><nav><a href=\"/\">Home</a><a href=\"/blog/\">Blog</a></nav><main><article>",
+          "<h1>AI SaaS commercialization</h1>",
+          "<p>AI SaaS commercialization only becomes real when model capability survives pricing pressure, onboarding friction, and operational support. This article starts from that commercialization constraint instead of talking about AI in the abstract.</p>",
+          "<p>For Bays Wong, the commercialization question is product-shaping work: which workflow gets automated, what business result becomes visible, and how the SaaS layer keeps delivering value after the first demo.</p>",
+          "<p>The detail page therefore keeps AI SaaS commercialization tied to packaging, adoption, and measurable outcome design so the reader can see how product strategy and technical delivery stay connected.</p>",
+          "<p>That topic direction avoids generic website filler and gives the route enough substance to read like a publishable commercialization article rather than a placeholder archive destination.</p>",
+          "<section><h2>Packaging</h2><p>Commercialization starts with packaging the AI capability into a repeatable SaaS offer, not with shipping a disconnected experiment.</p></section>",
+          "<section><h2>Outcome design</h2><p>The article closes on outcome design: the SaaS motion only holds when commercialization logic, operator workflow, and model behavior remain aligned.</p></section>",
+          "</article></main><script src=\"/script.js\"></script></body></html>",
+        ].join(""),
+      },
+    ];
+
+    expect(() =>
+      validateAndNormalizeRequiredFiles({
+        decision,
+        files,
+        requirementText:
+          "Build a personal blog for Bays Wong. Generate 3 complete articles about WeChat real-time media architecture, DevOps operating systems, and AI SaaS commercialization.",
+      }),
+    ).not.toThrow();
   });
 
   it("requires any explicit /blog route to expose detail links and matching detail pages even without a requested count", () => {
@@ -1119,6 +1345,36 @@ describe("skill-tool-executor", () => {
         requirementText: "Build a personal blog with Home and Blog.",
       }),
     ).toContain("/blog/demo/index.html");
+  });
+
+  it("does not treat identical re-emits for the same target file as material progress", () => {
+    const previousFiles = [
+      { path: "/index.html", content: "<html><body><h1>Home</h1></body></html>", type: "text/html" },
+      { path: "/styles.css", content: "body{color:#111;}", type: "text/css" },
+    ];
+    const currentFiles = [
+      ...previousFiles,
+      { path: "/index.html", content: "<html><body><h1>Home</h1></body></html>", type: "text/html" },
+    ];
+
+    expect(didRoundMateriallyChangeFilesForTesting(previousFiles, currentFiles, ["/index.html"])).toBe(false);
+  });
+
+  it("treats changed target file content as material progress", () => {
+    const previousFiles = [
+      { path: "/index.html", content: "<html><body><h1>Home</h1></body></html>", type: "text/html" },
+      { path: "/styles.css", content: "body{color:#111;}", type: "text/css" },
+    ];
+    const currentFiles = [
+      ...previousFiles,
+      {
+        path: "/index.html",
+        content: "<html><body><h1>Home</h1><p>Updated hero copy.</p></body></html>",
+        type: "text/html",
+      },
+    ];
+
+    expect(didRoundMateriallyChangeFilesForTesting(previousFiles, currentFiles, ["/index.html"])).toBe(true);
   });
 
   it("blocks a homepage that reads like a downloads or certification portal", () => {
