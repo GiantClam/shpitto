@@ -57,6 +57,7 @@ type TaskStatus = "queued" | "running" | "succeeded" | "failed";
 
 type TaskResult = {
   assistantText?: string;
+  phase?: string;
   deployedUrl?: string;
   error?: string;
   actions?: Array<{ text: string; payload?: string; type?: "button" | "url" }>;
@@ -110,6 +111,7 @@ type TaskResponse = {
 
 type HistoryMessage = {
   id: string;
+  taskId?: string | null;
   role: "user" | "assistant" | "system";
   text: string;
   metadata?: Record<string, unknown> | null;
@@ -205,7 +207,97 @@ type ChatMessage = {
   text: string;
   metadata?: Record<string, unknown>;
   timestamp: number;
+  taskId?: string;
 };
+
+function isTaskProgressCardMetadata(metadata: Record<string, unknown> | null | undefined): boolean {
+  return String(metadata?.cardType || "").trim() === "task_progress";
+}
+
+function parseTaskProgressEvents(metadata: Record<string, unknown>): TaskEvent[] {
+  const events = Array.isArray(metadata.events) ? metadata.events : [];
+  const normalized: TaskEvent[] = [];
+  for (const event of events) {
+    if (!event || typeof event !== "object") continue;
+    const item = event as Record<string, unknown>;
+    const id = String(item.id || "").trim();
+    const eventType = String(item.eventType || "").trim();
+    const createdAt = String(item.createdAt || "").trim();
+    if (!id || !eventType || !createdAt) continue;
+    normalized.push({
+      id,
+      eventType,
+      stage: item.stage == null ? null : String(item.stage || ""),
+      payload: item.payload && typeof item.payload === "object" ? (item.payload as TaskEventPayload) : null,
+      createdAt,
+    });
+  }
+  return normalized;
+}
+
+function parseTaskStatus(value: unknown): TaskStatus | null {
+  const normalized = String(value || "").trim();
+  if (normalized === "queued" || normalized === "running" || normalized === "succeeded" || normalized === "failed") {
+    return normalized;
+  }
+  return null;
+}
+
+function taskProgressSummaryFromMetadata(metadata: Record<string, unknown>, locale: RequirementFormLocale = "en"): string {
+  const parts: string[] = [];
+  const copy = CHAT_CARD_COPY[locale];
+  const pageCount = Number(metadata.pageCount || 0);
+  const fileCount = Number(metadata.fileCount || (Array.isArray(metadata.generatedFiles) ? metadata.generatedFiles.length : 0) || 0);
+  if (pageCount > 0) parts.push(`${pageCount} ${copy.pagesUnit}`);
+  if (fileCount > 0) parts.push(`${fileCount} ${copy.filesUnit}`);
+  const qaDetail = formatQaSummaryDetail((metadata.qaSummary || null) as QaSummary | null, locale);
+  if (qaDetail) parts.push(qaDetail);
+  const updated = formatProgressTime(Number(metadata.taskUpdatedAt || 0) || String(metadata.taskUpdatedAt || ""));
+  if (updated) parts.push(`${copy.lastUpdated} ${updated}`);
+  return parts.join(" · ");
+}
+
+function buildTaskProgressCardMessage(task: TaskPayload | null, events: TaskEvent[]): ChatMessage | null {
+  if (!task) return null;
+  const progress = task.result?.progress || {};
+  const messageEvents = events.slice(-10).map((event) => ({
+    id: event.id,
+    eventType: event.eventType,
+    stage: event.stage || null,
+    payload: event.payload || null,
+    createdAt: event.createdAt,
+  }));
+  return {
+    id: `task-progress:${task.id}`,
+    role: "assistant",
+    taskId: task.id,
+    text: `Task progress: ${String(progress.stage || task.result?.phase || task.status || "").trim() || "running"}`,
+    timestamp: Number(task.updatedAt || Date.now()),
+    metadata: {
+      cardType: "task_progress",
+      source: "task_progress_card",
+      status: task.status,
+      phase: task.result?.phase || null,
+      stage: progress.stage || task.result?.phase || task.status,
+      stageMessage: progress.stageMessage || null,
+      deployedUrl: String(task.result?.deployedUrl || "").trim() || null,
+      error: String(task.result?.error || "").trim() || null,
+      fileCount: typeof progress.fileCount === "number" ? progress.fileCount : null,
+      pageCount: typeof progress.pageCount === "number" ? progress.pageCount : null,
+      generatedFiles: Array.isArray(progress.generatedFiles) ? progress.generatedFiles : [],
+      qaSummary: progress.qaSummary || null,
+      taskCreatedAt: task.createdAt,
+      taskUpdatedAt: task.updatedAt,
+      events: messageEvents,
+    },
+  };
+}
+
+function mergeTaskProgressCardMessage(messages: ChatMessage[], progressMessage: ChatMessage | null): ChatMessage[] {
+  const retained = messages.filter((message) => !isTaskProgressCardMetadata((message.metadata || {}) as Record<string, unknown>) || message.taskId !== progressMessage?.taskId);
+  if (!progressMessage) return retained;
+  return [...retained, progressMessage].sort((left, right) => left.timestamp - right.timestamp);
+}
 
 type PromptSubmitSource = "prompt" | "timeline-action";
 
@@ -2182,6 +2274,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
     return {
       id: String(item.id || crypto.randomUUID()),
       role: item.role,
+      taskId: String((item as any).taskId || "").trim() || undefined,
       text,
       metadata: item.metadata || undefined,
       timestamp: Number(item.createdAt || Date.now()),
@@ -2516,8 +2609,15 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
     if (qaDetail) parts.push(qaDetail);
     return parts.join(" · ");
   }, [conversationLocale, task]);
+  const liveTaskProgressMessage = useMemo(
+    () => buildTaskProgressCardMessage(task, progressEvents),
+    [progressEvents, task],
+  );
 
-  const showProgressCard = Boolean(task && (task.status === "queued" || task.status === "running" || progressEvents.length > 0));
+  useEffect(() => {
+    if (!liveTaskProgressMessage) return;
+    setMessages((prev) => mergeTaskProgressCardMessage(prev, liveTaskProgressMessage));
+  }, [liveTaskProgressMessage]);
 
   const filteredAvailableAssets = useMemo(() => {
     const query = assetPickerQuery.trim().toLowerCase();
@@ -2987,6 +3087,90 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
                 if (cardType === "intent_decision" && String(metadata.reason || "") === "required-slots-incomplete") {
                   return null;
                 }
+                if (cardType === "task_progress") {
+                  const taskStatus = parseTaskStatus(metadata.status);
+                  const persistedEvents = parseTaskProgressEvents(metadata).map((event) => ({
+                    ...event,
+                    title:
+                      cleanEventValue(event.eventType).toLowerCase() === "task_created"
+                        ? CHAT_CARD_COPY[messageLocale].taskSubmitted
+                        : cleanEventValue(event.eventType).toLowerCase() === "task_claimed"
+                          ? CHAT_CARD_COPY[messageLocale].workerStarted
+                          : progressTitleFromStage(event.stage, event.payload, messageLocale),
+                    detail: progressDetailFromEvent(event, messageLocale),
+                    tone: progressTone(event.eventType, event.stage),
+                  }));
+                  const cardEvents =
+                    persistedEvents.length > 0
+                      ? persistedEvents
+                      : [
+                          {
+                            id: `${message.id}:synthetic`,
+                            eventType: taskStatus === "failed" ? "task_failed" : taskStatus === "succeeded" ? "task_succeeded" : "task_progress",
+                            stage: String(metadata.stage || taskStatus || ""),
+                            payload: {
+                              error: metadata.error || null,
+                              qaSummary: metadata.qaSummary || null,
+                            } as TaskEventPayload,
+                            createdAt: String(metadata.taskUpdatedAt || message.timestamp || ""),
+                            title: progressTitleFromStage(String(metadata.stage || taskStatus || ""), null, messageLocale),
+                            detail: cleanEventValue(metadata.error) || formatQaSummaryDetail((metadata.qaSummary || null) as QaSummary | null, messageLocale),
+                            tone: progressTone(taskStatus === "failed" ? "task_failed" : taskStatus === "succeeded" ? "task_succeeded" : "task_progress", String(metadata.stage || taskStatus || "")),
+                          },
+                        ];
+                  const cardSummary = taskProgressSummaryFromMetadata(metadata, messageLocale);
+                  const latestCardTitle =
+                    cleanEventValue(metadata.stageMessage) ||
+                    cardEvents[cardEvents.length - 1]?.title ||
+                    progressTitleFromStage(String(metadata.stage || taskStatus || ""), null, messageLocale);
+                  return (
+                    <div key={message.id} className="flex justify-start">
+                      <div className="max-w-[92%] rounded-xl border border-[color-mix(in_oklab,var(--shp-secondary)_38%,var(--shp-border)_62%)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] px-3 py-3 text-sm text-[var(--shp-text)]">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="font-semibold">{CHAT_CARD_COPY[messageLocale].progressTitle}</p>
+                            <p className="mt-1 text-xs text-[var(--shp-muted)]">{latestCardTitle}</p>
+                          </div>
+                          <span className={`shrink-0 rounded-md border px-2 py-1 text-[10px] ${statusTone(taskStatus)}`}>
+                            {statusLabel(taskStatus, messageLocale)}
+                          </span>
+                        </div>
+                        {cardSummary ? <p className="mt-2 text-xs text-[var(--shp-muted)]">{cardSummary}</p> : null}
+                        <ol className="mt-3 space-y-2">
+                          {cardEvents.map((event) => {
+                            const dotClass =
+                              event.tone === "error"
+                                ? "bg-rose-400"
+                                : event.tone === "done"
+                                  ? "bg-[var(--shp-primary)]"
+                                  : event.tone === "pending"
+                                    ? "bg-amber-300"
+                                    : "bg-[var(--shp-secondary)]";
+                            return (
+                              <li key={event.id} className="grid grid-cols-[14px_minmax(0,1fr)] gap-2">
+                                <span className={`mt-1.5 h-2 w-2 rounded-full ${dotClass}`} />
+                                <span className="min-w-0">
+                                  <span className="block text-xs font-medium text-[var(--shp-text)]">{event.title}</span>
+                                  {event.detail ? (
+                                    <span className="mt-0.5 block truncate text-[11px] text-[var(--shp-muted)]" title={event.detail}>
+                                      {event.detail}
+                                    </span>
+                                  ) : null}
+                                  <span className="mt-0.5 block text-[10px] text-[color-mix(in_oklab,var(--shp-muted)_70%,transparent)]">
+                                    {formatProgressTime(event.createdAt)}
+                                  </span>
+                                </span>
+                              </li>
+                            );
+                          })}
+                        </ol>
+                        {taskStatus === "queued" || taskStatus === "running" ? (
+                          <p className="mt-3 text-[11px] text-[var(--shp-muted)]">{CHAT_CARD_COPY[messageLocale].runningNote}</p>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                }
                 const showMessageText = cardType !== "requirement_form";
                 return (
                   <div key={message.id} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
@@ -2996,8 +3180,8 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
                         isUser
                           ? "border-[color-mix(in_oklab,var(--shp-primary)_42%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_18%,var(--shp-surface)_82%)] text-[color-mix(in_oklab,var(--shp-text)_95%,white_5%)]"
                           : isSystem
-                          ? "border-[color-mix(in_oklab,var(--shp-border)_60%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] text-[var(--shp-muted)]"
-                        : "border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] text-[var(--shp-text)]",
+                            ? "border-[color-mix(in_oklab,var(--shp-border)_60%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] text-[var(--shp-muted)]"
+                            : "border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] text-[var(--shp-text)]",
                       ].join(" ")}
                     >
                       {showMessageText ? <p>{message.text}</p> : null}
@@ -3055,53 +3239,6 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
                   </div>
                 );
               })}
-              {showProgressCard ? (
-                <div className="flex justify-start">
-                  <div className="max-w-[92%] rounded-xl border border-[color-mix(in_oklab,var(--shp-secondary)_38%,var(--shp-border)_62%)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] px-3 py-3 text-sm text-[var(--shp-text)]">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="font-semibold">{CHAT_CARD_COPY[conversationLocale].progressTitle}</p>
-                        <p className="mt-1 text-xs text-[var(--shp-muted)]">{progressEvents[progressEvents.length - 1]?.title || stageText}</p>
-                      </div>
-                      <span className={`shrink-0 rounded-md border px-2 py-1 text-[10px] ${statusTone(task?.status || null)}`}>
-                        {statusLabel(task?.status || null, conversationLocale)}
-                      </span>
-                    </div>
-                    {progressSummary ? <p className="mt-2 text-xs text-[var(--shp-muted)]">{progressSummary}</p> : null}
-                    <ol className="mt-3 space-y-2">
-                      {progressEvents.map((event) => {
-                        const dotClass =
-                          event.tone === "error"
-                            ? "bg-rose-400"
-                            : event.tone === "done"
-                              ? "bg-[var(--shp-primary)]"
-                              : event.tone === "pending"
-                                ? "bg-amber-300"
-                                : "bg-[var(--shp-secondary)]";
-                        return (
-                          <li key={event.id} className="grid grid-cols-[14px_minmax(0,1fr)] gap-2">
-                            <span className={`mt-1.5 h-2 w-2 rounded-full ${dotClass}`} />
-                            <span className="min-w-0">
-                              <span className="block text-xs font-medium text-[var(--shp-text)]">{event.title}</span>
-                              {event.detail ? (
-                                <span className="mt-0.5 block truncate text-[11px] text-[var(--shp-muted)]" title={event.detail}>
-                                  {event.detail}
-                                </span>
-                              ) : null}
-                              <span className="mt-0.5 block text-[10px] text-[color-mix(in_oklab,var(--shp-muted)_70%,transparent)]">
-                                {formatProgressTime(event.createdAt)}
-                              </span>
-                            </span>
-                          </li>
-                        );
-                      })}
-                    </ol>
-                    {task?.status === "queued" || task?.status === "running" ? (
-                      <p className="mt-3 text-[11px] text-[var(--shp-muted)]">{CHAT_CARD_COPY[conversationLocale].runningNote}</p>
-                    ) : null}
-                  </div>
-                </div>
-              ) : null}
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-3 border-t border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] px-4 py-3.5">

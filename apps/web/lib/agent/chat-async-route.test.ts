@@ -935,6 +935,105 @@ describe("chat api async mode", () => {
     expect(workflow.requirementDraft).toBeUndefined();
   });
 
+  it("lets the website skill route blog topic/count requests into structural Blog content refine", async () => {
+    const chatId = `chat-blog-route-${Date.now()}`;
+    const projectPath = path.resolve(process.cwd(), ".tmp", `chat-blog-route-${Date.now()}.json`);
+    const siteArtifacts = {
+      projectId: "blog-route-test",
+      pages: [{ path: "/", html: "<!doctype html><html><head></head><body>ok</body></html>" }],
+      staticSite: {
+        mode: "skill-direct",
+        files: [
+          {
+            path: "/index.html",
+            type: "text/html",
+            content: "<!doctype html><html><head></head><body>ok</body></html>",
+          },
+          {
+            path: "/blog/index.html",
+            type: "text/html",
+            content:
+              '<!doctype html><html><body><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list></div></section></body></html>',
+          },
+          { path: "/styles.css", type: "text/css", content: "body{color:#111}" },
+          { path: "/script.js", type: "text/javascript", content: "console.log('ok')" },
+        ],
+      },
+    };
+    await fs.mkdir(path.dirname(projectPath), { recursive: true });
+    await fs.writeFile(projectPath, JSON.stringify(siteArtifacts), "utf8");
+
+    const { setWebsiteChatRouteClassifierForTesting } = await import("../../skills/website-generation-workflow/routing-policy.ts");
+    setWebsiteChatRouteClassifierForTesting(async () => ({
+      actionDomain: "blog_content",
+      action: "regenerate_posts",
+      intent: "refine_preview",
+      confidence: 0.94,
+      reason: "semantic_blog_topic_and_count_update",
+      evidence: ["blog content", "AI/global expansion", "three articles"],
+    }));
+
+    try {
+      const { createChatTask, completeChatTask } = await import("./chat-task-store");
+      const previous = await createChatTask(chatId, undefined, {
+        assistantText: "generated",
+        phase: "end",
+        internal: {
+          sessionState: {
+            messages: [],
+            phase: "end",
+            current_page_index: 0,
+            attempt_count: 0,
+            workflow_context: {
+              checkpointProjectPath: projectPath,
+              deploySourceProjectPath: projectPath,
+            },
+            site_artifacts: siteArtifacts,
+          },
+        },
+        progress: { stage: "done", checkpointProjectPath: projectPath } as any,
+      });
+      await completeChatTask(previous.id, {
+        assistantText: "generated",
+        phase: "end",
+        internal: previous.result?.internal,
+        progress: { stage: "done", checkpointProjectPath: projectPath } as any,
+      });
+
+      const { POST } = await import("../../app/api/chat/route");
+      const res = await POST(
+        new Request("http://localhost/api/chat", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            id: chatId,
+            messages: [{ role: "user", parts: [{ type: "text", text: "blog文章内容主要是与ai、出海相关的内容，准备3篇" }] }],
+          }),
+        }),
+      );
+
+      expect(res.status).toBe(202);
+      const latest = await getLatestChatTaskForChat(chatId);
+      expect(latest?.id).not.toBe(previous.id);
+      const workflow = (latest?.result?.internal?.inputState as any)?.workflow_context || {};
+      expect(workflow.executionMode).toBe("refine");
+      expect(workflow.refineScope).toBe("structural");
+      expect(workflow.skillActionDomain).toBe("blog_content");
+      expect(workflow.skillAction).toBe("regenerate_posts");
+      expect(workflow.intent).toBe("refine_preview");
+      expect(workflow.requirementPatchPlan?.operations || []).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            target: "pages",
+            value: expect.arrayContaining(["blog"]),
+          }),
+        ]),
+      );
+    } finally {
+      setWebsiteChatRouteClassifierForTesting(undefined);
+    }
+  });
+
   it("gates deploy behind Blog article confirmation when preview posts are pending", async () => {
     const chatId = `chat-blog-confirm-${Date.now()}`;
     const siteArtifacts = {

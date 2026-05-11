@@ -277,8 +277,22 @@ function slugToken(input: string, fallback: string): string {
 function isBlogDetailCompletionRefineInstruction(instruction: string): boolean {
   const normalized = String(instruction || "").trim().toLowerCase();
   if (!normalized) return false;
-  return /(?:blog|article|post|内容页|详情页|明细页|文章页|detail page|detail pages)/i.test(normalized) &&
-    /(?:缺少|缺失|补齐|补全|补充|complete|fill|missing|add|generate|create)/i.test(normalized);
+  if (!/(?:blog|article|post|博客|博文|文章|内容页|详情页|明细页|文章页|detail page|detail pages)/i.test(normalized)) {
+    return false;
+  }
+  return /(?:缺少|缺失|补齐|补全|补充|准备\s*\d+\s*篇|生成\s*\d+\s*篇|主要|主题|方向|围绕|相关|聚焦|complete|fill|missing|add|generate|create|prepare|topic|content|regenerate|update|rewrite|focus)/i.test(
+    normalized,
+  );
+}
+
+function isBlogContentSkillAction(inputState: AgentState): boolean {
+  const workflow = ((inputState as any)?.workflow_context || {}) as Record<string, unknown>;
+  return String(workflow.skillActionDomain || "").trim() === "blog_content" &&
+    String(workflow.skillAction || "").trim() === "regenerate_posts";
+}
+
+function isBlogContentMaterializationRequested(inputState: AgentState, instruction: string): boolean {
+  return isBlogContentSkillAction(inputState) || isBlogDetailCompletionRefineInstruction(instruction);
 }
 
 function normalizeStructuralRouteCandidate(
@@ -507,7 +521,7 @@ export function applyWebsiteStructuralRefineCompletions(params: {
   }
 
   const normalizedInstruction = String(params.instruction || "").trim();
-  if (isBlogDetailCompletionRefineInstruction(normalizedInstruction)) {
+  if (isBlogContentMaterializationRequested(params.inputState, normalizedInstruction)) {
     const materialized = materializeWebsiteBlogDetailPages({
       project: currentProject,
       inputState: params.inputState,

@@ -360,6 +360,10 @@ Definition: bilingual means one active language at a time with a working languag
 2. Render only the default language as visible text in the initial HTML. Store the alternate language in `data-i18n-*` attributes, an in-page JS dictionary, generated `i18n/messages.*.json`, or hidden templates that are not visually exposed.
 3. Build a unified i18n key structure (page-level + section-level keys).
 4. Add language switch in the top navigation (EN / ZH) only when switching actually replaces visible copy.
+   - The switch must be a real visible control in the shared header/navigation, not only a JavaScript function.
+   - Required implementation protocol: `<button data-locale-toggle data-locale="zh-CN">ZH</button>` and `<button data-locale-toggle data-locale="en">EN</button>`, with translatable nodes carrying `data-i18n`, `data-i18n-zh`, and `data-i18n-en`.
+   - Do not use a different selector or data attribute name. `data-i18n-text*`, `data-language-toggle`, `data-lang-switch`, `data-en`, and `data-zh` are invalid for generated output.
+   - Never ship switch JavaScript whose queried controls do not exist in the HTML.
 5. Ensure all core copy has bilingual mapping (nav, headings, CTA, form labels, footer, Blog/content cards, and detail/article pages).
 6. Preserve the current route on language switch; only content language changes.
 7. Persist language preference (recommended: `localStorage`) and update `html[lang]`, active switch state, and relevant `aria-label` values.
@@ -397,9 +401,11 @@ Navigation requirements:
 i18n requirements:
 
 1. An EN/ZH language switch is valid only if it changes visible core copy, not merely `document.documentElement.lang` or button state.
-2. Every translatable text node in nav, heroes, CTAs, form labels, footer, and major section headings must have a stable i18n key or explicit bilingual data mapping.
+   - A bilingual implementation is invalid if alternate-language copy or switch JavaScript exists but the visible switch control is missing.
+2. Every translatable text node in nav, heroes, CTAs, form labels, footer, and major section headings must have a stable i18n key or explicit bilingual data mapping using the exact attributes `data-i18n`, `data-i18n-zh`, and `data-i18n-en`.
 3. The default language must render without JavaScript. JavaScript may enhance switching by replacing text from an in-page dictionary or generated i18n files.
 4. Switching language must preserve the current route, active nav state, form accessibility labels, and persisted language preference.
+   - The shared `/script.js` must bind click handlers to the same selector used by the header control, update active/pressed state, update `html[lang]`, and persist preference.
 5. If full bilingual content cannot be implemented for the generated site, do not render an EN/ZH switch. Prefer a single-language site over a fake language toggle.
 6. Visible bilingual pairs are invalid. Reject patterns such as `Chinese / English`, mixed-language titles in one heading, or two translated versions of the same paragraph shown one after another.
 7. Blog/content-backed lists and article/detail pages must follow the same language-state contract. Their card titles, summaries, metadata, and article bodies must switch language instead of rendering both languages together.

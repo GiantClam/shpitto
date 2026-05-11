@@ -45,6 +45,7 @@ import {
   parseReferencedAssetsFromText,
 } from "../../../lib/agent/referenced-assets";
 import { buildBlogContentWorkflowPreview } from "../../../lib/skill-runtime/executor";
+import { getSkillExecutionAdapter } from "../../../lib/skill-runtime/skill-execution-adapter-registry";
 import { loadProjectSkill } from "../../../lib/skill-runtime/project-skill-loader";
 import { invalidateLaunchCenterRecentProjectsCache } from "../../../lib/launch-center/cache";
 import {
@@ -1545,13 +1546,41 @@ export async function POST(req: Request) {
     checkpointProjectPath,
     workflowContext: memoryWorkflowContext,
   });
-  const decision = decideChatIntent({
+  let decision = decideChatIntent({
     userText: currentUserRequirementText,
     stage,
     slots,
     isWebsiteSkill: isWebsiteSkill(requestedSkillId),
     forceGenerate: Boolean(confirmedPrompt),
   });
+  try {
+    const skillAction = confirmedPrompt
+      ? undefined
+      : await (await getSkillExecutionAdapter(requestedSkillId).catch(() => undefined))?.resolveChatAction?.({
+          userText: currentUserRequirementText,
+          stage,
+          workflowContext: memoryWorkflowContext,
+        });
+    if (skillAction) {
+      decision = {
+        ...decision,
+        intent: skillAction.intent,
+        confidence: skillAction.confidence,
+        reason: skillAction.reason,
+        shouldCreateTask: skillAction.shouldCreateTask,
+        refineScope: skillAction.refineScope,
+      };
+      Object.assign(memoryWorkflowContext, {
+        skillActionDomain: skillAction.actionDomain,
+        skillAction: skillAction.action,
+        skillActionEvidence: skillAction.evidence,
+        skillActionRejected: skillAction.rejected,
+        ...(skillAction.workflowContext || {}),
+      });
+    }
+  } catch (error) {
+    console.warn(`[ChatRoute] skill action routing failed for ${requestedSkillId}: ${formatUnknownError(error)}`);
+  }
   const filled = slots.filter((slot) => slot.filled).length;
   const question = buildClarificationQuestion({
     slots,
@@ -2023,6 +2052,7 @@ export async function POST(req: Request) {
     site_artifacts: effectiveProjectArtifact,
     workflow_context: {
       ...(previousState.workflow_context || {}),
+      ...memoryWorkflowContext,
       lockedProvider: undefined,
       lockedModel: undefined,
       runMode: useAsyncTaskMode ? "async-task" : "sync",

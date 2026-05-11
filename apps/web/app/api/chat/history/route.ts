@@ -54,6 +54,7 @@ function hasVisibleTaskStatusMessage(
   return messages.some((message) => {
     if (message.taskId !== task.id) return false;
     if (message.role !== "assistant" && message.role !== "system") return false;
+    if (String((message.metadata || {}).cardType || "").trim() === "task_progress") return false;
     const metadataStatus = String((message.metadata || {}).status || "").trim();
     return metadataStatus === expectedStatus;
   });

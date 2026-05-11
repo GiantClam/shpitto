@@ -93,6 +93,14 @@ export type ChatTimelineMessage = {
   createdAt: number;
 };
 
+type TaskProgressTimelineEventSnapshot = {
+  id: string;
+  eventType: string;
+  stage?: string | null;
+  payload?: Record<string, unknown> | null;
+  createdAt: string;
+};
+
 export type ChatSessionSummary = {
   id: string;
   ownerUserId?: string;
@@ -617,6 +625,75 @@ export function formatUnknownError(error: unknown): string {
   return summarizeSupabaseHtmlError(fallback) || fallback;
 }
 
+function isTaskProgressCardMetadata(metadata: unknown): boolean {
+  return isRecord(metadata) && String(metadata.cardType || "").trim() === "task_progress";
+}
+
+function normalizeTaskProgressEventSnapshots(value: unknown): TaskProgressTimelineEventSnapshot[] {
+  if (!Array.isArray(value)) return [];
+  const normalized: TaskProgressTimelineEventSnapshot[] = [];
+  for (const item of value) {
+    if (!isRecord(item)) continue;
+    const id = String(item.id || "").trim();
+    const eventType = String(item.eventType || "").trim();
+    const createdAt = String(item.createdAt || "").trim();
+    if (!id || !eventType || !createdAt) continue;
+    normalized.push({
+      id,
+      eventType,
+      stage: item.stage == null ? null : String(item.stage || ""),
+      payload: isRecord(item.payload) ? item.payload : null,
+      createdAt,
+    });
+  }
+  return normalized;
+}
+
+function mergeTaskProgressEventSnapshots(
+  existing: TaskProgressTimelineEventSnapshot[],
+  latestEvent?: TaskProgressTimelineEventSnapshot,
+): TaskProgressTimelineEventSnapshot[] {
+  const merged = latestEvent ? [...existing, latestEvent] : [...existing];
+  const deduped = new Map<string, TaskProgressTimelineEventSnapshot>();
+  for (const event of merged) {
+    deduped.set(`${event.id}:${event.createdAt}`, event);
+  }
+  return [...deduped.values()]
+    .sort((left, right) => Date.parse(left.createdAt) - Date.parse(right.createdAt))
+    .slice(-10);
+}
+
+function buildTaskProgressTimelineMetadata(
+  task: ChatTaskRecord,
+  existingMetadata?: Record<string, unknown> | null,
+  latestEvent?: TaskProgressTimelineEventSnapshot,
+): Record<string, unknown> {
+  const progress = task.result?.progress || {};
+  const existingEvents = normalizeTaskProgressEventSnapshots(existingMetadata?.events);
+  return {
+    cardType: "task_progress",
+    source: "task_progress_card",
+    status: task.status,
+    phase: task.result?.phase || null,
+    stage: progress.stage || task.result?.phase || task.status,
+    stageMessage: progress.stageMessage || null,
+    deployedUrl: String(task.result?.deployedUrl || "").trim() || null,
+    error: String(task.result?.error || "").trim() || null,
+    fileCount: typeof progress.fileCount === "number" ? progress.fileCount : null,
+    pageCount: typeof progress.pageCount === "number" ? progress.pageCount : null,
+    generatedFiles: Array.isArray(progress.generatedFiles) ? progress.generatedFiles : [],
+    qaSummary: progress.qaSummary || null,
+    taskCreatedAt: task.createdAt,
+    taskUpdatedAt: task.updatedAt,
+    events: mergeTaskProgressEventSnapshots(existingEvents, latestEvent),
+  };
+}
+
+function taskProgressTimelineText(task: ChatTaskRecord): string {
+  const stage = String(task.result?.progress?.stage || task.result?.phase || task.status || "").trim();
+  return stage ? `Task progress: ${stage}` : "Task progress";
+}
+
 function withTaskStoreErrorContext(error: unknown) {
   const message = formatUnknownError(error);
   const normalized = message.toLowerCase();
@@ -769,6 +846,13 @@ async function writeTaskEventBestEffort(params: {
     stage: params.stage,
     payload: params.payload,
   });
+  const latestEvent: TaskProgressTimelineEventSnapshot = {
+    id: crypto.randomUUID(),
+    eventType: params.eventType,
+    stage: params.stage || null,
+    payload: params.payload || null,
+    createdAt: asIso(now()),
+  };
 
   if (!isSupabaseTaskStoreEnabled()) {
     try {
@@ -784,6 +868,7 @@ async function writeTaskEventBestEffort(params: {
           source: "task_event_snapshot",
         },
       });
+      await upsertTaskProgressTimelineMessageBestEffort({ taskId: params.taskId, latestEvent });
     } catch {
       // Best-effort logging; do not block task execution.
     }
@@ -793,13 +878,13 @@ async function writeTaskEventBestEffort(params: {
   try {
     const supabase = mustGetSupabaseClient();
     await supabase.from(TASK_EVENTS_TABLE).insert({
-      id: crypto.randomUUID(),
+      id: latestEvent.id,
       task_id: params.taskId,
       chat_id: params.chatId,
       event_type: params.eventType,
       stage: params.stage || null,
       payload: params.payload || null,
-      created_at: asIso(now()),
+      created_at: latestEvent.createdAt,
     });
     await appendChatTimelineMessage({
       chatId: params.chatId,
@@ -813,6 +898,7 @@ async function writeTaskEventBestEffort(params: {
         source: "task_event_snapshot",
       },
     });
+    await upsertTaskProgressTimelineMessageBestEffort({ taskId: params.taskId, latestEvent });
   } catch {
     // Best-effort logging; do not block task execution.
   }
@@ -1192,7 +1278,15 @@ export async function createChatTask(
   initialResult?: ChatTaskResult,
 ): Promise<ChatTaskRecord> {
   if (!isSupabaseTaskStoreEnabled()) {
-    return createMemoryTask(chatId, ownerUserId, initialResult);
+    const task = createMemoryTask(chatId, ownerUserId, initialResult);
+    await writeTaskEventBestEffort({
+      taskId: task.id,
+      chatId: task.chatId,
+      eventType: "task_created",
+      stage: "queued",
+      payload: { ownerUserId: ownerUserId || null },
+    });
+    return task;
   }
 
   try {
@@ -1264,13 +1358,23 @@ export async function claimNextQueuedChatTask(
       claimedAt,
       claimAttempts: Number(candidate.result?.internal?.claimAttempts || 0) + 1,
     };
-    return updateMemoryTask(candidate.id, {
+    const updated = updateMemoryTask(candidate.id, {
       status: "running",
       result: {
         ...(candidate.result || {}),
         internal: nextInternal,
       },
     });
+    if (updated) {
+      await writeTaskEventBestEffort({
+        taskId: updated.id,
+        chatId: updated.chatId,
+        eventType: "task_claimed",
+        stage: "worker:claimed",
+        payload: { workerId, claimMode: "memory_store" },
+      });
+    }
+    return updated;
   }
 
   const supabase = mustGetSupabaseClient();
@@ -1619,11 +1723,19 @@ async function updateSupabaseTask(taskId: string, values: Record<string, unknown
 
 export async function markChatTaskRunning(taskId: string): Promise<ChatTaskRecord | undefined> {
   if (!isSupabaseTaskStoreEnabled()) {
-    return updateMemoryTask(taskId, { status: "running" });
+    const updated = updateMemoryTask(taskId, { status: "running" });
+    if (updated) {
+      await upsertTaskProgressTimelineMessageBestEffort({ taskId: updated.id });
+    }
+    return updated;
   }
 
   try {
-    return await updateSupabaseTask(taskId, { status: "running" });
+    const updated = await updateSupabaseTask(taskId, { status: "running" });
+    if (updated) {
+      await upsertTaskProgressTimelineMessageBestEffort({ taskId: updated.id });
+    }
+    return updated;
   } catch (error) {
     throw withTaskStoreErrorContext(error);
   }
@@ -1636,6 +1748,22 @@ export async function completeChatTask(taskId: string, result: ChatTaskResult): 
       : undefined;
   if (!isSupabaseTaskStoreEnabled()) {
     const updated = updateMemoryTask(taskId, { status: "succeeded", result });
+    if (updated) {
+      await writeTaskEventBestEffort({
+        taskId: updated.id,
+        chatId: updated.chatId,
+        eventType: "task_succeeded",
+        stage: result.progress?.stage || "done",
+        payload: {
+          phase: result.phase || null,
+          fileCount: result.progress?.fileCount || null,
+          pageCount: result.progress?.pageCount || null,
+          provider: result.progress?.provider || null,
+          model: result.progress?.model || null,
+          qaSummary: result.progress?.qaSummary || null,
+        },
+      });
+    }
     if (updated && result.assistantText) {
       await appendChatTimelineMessage({
         chatId: updated.chatId,
@@ -1701,10 +1829,29 @@ export async function updateChatTaskProgress(
 ): Promise<ChatTaskRecord | undefined> {
   if (!isSupabaseTaskStoreEnabled()) {
     const existing = getStore().tasks.get(taskId);
-    return updateMemoryTask(taskId, {
+    const updated = updateMemoryTask(taskId, {
       status: "running",
       result: { ...(existing?.result || {}), ...patch },
     });
+    const merged = { ...(existing?.result || {}), ...patch };
+    if (updated) {
+      await writeTaskEventBestEffort({
+        taskId: updated.id,
+        chatId: updated.chatId,
+        eventType: "task_progress",
+        stage: merged.progress?.stage || merged.phase || "running",
+        payload: {
+          phase: merged.phase || null,
+          stage: merged.progress?.stage || null,
+          filePath: merged.progress?.filePath || null,
+          provider: merged.progress?.provider || null,
+          model: merged.progress?.model || null,
+          errorCode: merged.progress?.errorCode || null,
+          qaSummary: merged.progress?.qaSummary || null,
+        },
+      });
+    }
+    return updated;
   }
 
   try {
@@ -1808,6 +1955,15 @@ export async function failChatTask(taskId: string, error: string): Promise<ChatT
       status: "failed",
       result: { ...(existing?.result || {}), error },
     });
+    if (updated) {
+      await writeTaskEventBestEffort({
+        taskId: updated.id,
+        chatId: updated.chatId,
+        eventType: "task_failed",
+        stage: updated.result?.progress?.stage || "failed",
+        payload: { error },
+      });
+    }
     if (updated) {
       await appendChatTimelineMessage({
         chatId: updated.chatId,
@@ -2109,6 +2265,93 @@ export async function appendChatTimelineMessage(input: {
     return message;
   } catch (error) {
     throw withTaskStoreErrorContext(error);
+  }
+}
+
+async function upsertTaskProgressTimelineMessage(task: ChatTaskRecord, latestEvent?: TaskProgressTimelineEventSnapshot): Promise<void> {
+  const chatId = String(task.chatId || "").trim();
+  if (!chatId) return;
+  const timestamp = latestEvent ? Date.parse(latestEvent.createdAt) || task.updatedAt : task.updatedAt;
+  const nextText = taskProgressTimelineText(task);
+
+  if (!isSupabaseTaskStoreEnabled()) {
+    cleanupTasks();
+    const store = getStore();
+    const existing = [...(store.messagesByChat.get(chatId) || [])].find(
+      (message) => message.taskId === task.id && isTaskProgressCardMetadata(message.metadata),
+    );
+    const nextMetadata = buildTaskProgressTimelineMetadata(task, existing?.metadata || null, latestEvent);
+    const nextMessage: ChatTimelineMessage = {
+      id: existing?.id || crypto.randomUUID(),
+      chatId,
+      taskId: task.id,
+      ownerUserId: task.ownerUserId,
+      role: "assistant",
+      text: nextText,
+      metadata: nextMetadata,
+      createdAt: timestamp,
+    };
+    const retained = (store.messagesByChat.get(chatId) || []).filter((message) => message.id !== existing?.id);
+    retained.push(nextMessage);
+    retained.sort((left, right) => left.createdAt - right.createdAt);
+    store.messagesByChat.set(chatId, retained);
+    return;
+  }
+
+  const supabase = mustGetSupabaseClient();
+  const { data: existingRows, error: existingError } = await supabase
+    .from(TASK_MESSAGES_TABLE)
+    .select("*")
+    .eq("chat_id", chatId)
+    .eq("task_id", task.id)
+    .order("created_at", { ascending: true })
+    .limit(50);
+  if (existingError) throw existingError;
+  const existingRow = (Array.isArray(existingRows) ? (existingRows as SupabaseChatMessageRow[]) : []).find((row) =>
+    isTaskProgressCardMetadata(row.metadata),
+  );
+  const nextMetadata = buildTaskProgressTimelineMetadata(task, existingRow?.metadata || null, latestEvent);
+
+  if (existingRow?.id) {
+    const { error: updateError } = await supabase
+      .from(TASK_MESSAGES_TABLE)
+      .update({
+        owner_user_id: task.ownerUserId || null,
+        role: "assistant",
+        text: nextText,
+        metadata: nextMetadata,
+        created_at: asIso(timestamp),
+      })
+      .eq("id", existingRow.id);
+    if (updateError) throw updateError;
+    return;
+  }
+
+  const { error: insertError } = await supabase.from(TASK_MESSAGES_TABLE).insert({
+    id: crypto.randomUUID(),
+    chat_id: chatId,
+    task_id: task.id,
+    owner_user_id: task.ownerUserId || null,
+    role: "assistant",
+    text: nextText,
+    metadata: nextMetadata,
+    created_at: asIso(timestamp),
+  });
+  if (insertError) throw insertError;
+}
+
+async function upsertTaskProgressTimelineMessageBestEffort(
+  params: {
+    taskId: string;
+    latestEvent?: TaskProgressTimelineEventSnapshot;
+  },
+): Promise<void> {
+  try {
+    const task = await getChatTask(params.taskId);
+    if (!task) return;
+    await upsertTaskProgressTimelineMessage(task, params.latestEvent);
+  } catch {
+    // Best-effort progress card persistence should not block task execution.
   }
 }
 

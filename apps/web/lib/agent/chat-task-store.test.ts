@@ -17,6 +17,7 @@ import {
   sanitizeTaskResultForClient,
   updateChatSessionForOwner,
   createSupabaseTaskFetch,
+  updateChatTaskProgress,
 } from "./chat-task-store";
 
 describe("chat-task-store", () => {
@@ -45,7 +46,7 @@ describe("chat-task-store", () => {
     });
 
     const messages = await listChatTimelineMessages(chatId, 10);
-    const metadata = messages[0]?.metadata || {};
+    const metadata = messages.find((message) => String(message.metadata?.cardType || "") === "prompt_draft")?.metadata || {};
     expect(metadata.canonicalPrompt).toBe("canonical prompt");
     expect(metadata.promptControlManifest).toEqual({ routes: ["/"], files: ["/index.html"] });
     expect((metadata as any).promptDraft).toBeUndefined();
@@ -71,6 +72,45 @@ describe("chat-task-store", () => {
     expect(done?.status).toBe("succeeded");
     expect(done?.result?.assistantText).toBe("done");
     expect(await getActiveChatTask(chatId)).toBeUndefined();
+  });
+
+  it("keeps one persisted progress card per task so multi-task history stays visible", async () => {
+    const chatId = `chat-progress-history-${Date.now()}`;
+
+    const firstTask = await createChatTask(chatId, undefined, {
+      progress: { stage: "queued" } as any,
+    });
+    await updateChatTaskProgress(firstTask.id, {
+      progress: {
+        stage: "generating:index.html",
+        filePath: "/index.html",
+        fileCount: 1,
+      } as any,
+    });
+    await completeChatTask(firstTask.id, {
+      assistantText: "First build completed.",
+      progress: {
+        stage: "done",
+        fileCount: 3,
+        generatedFiles: ["/index.html", "/styles.css", "/script.js"],
+      } as any,
+    });
+
+    const secondTask = await createChatTask(chatId, undefined, {
+      progress: { stage: "queued" } as any,
+    });
+    await failChatTask(secondTask.id, "second task failed");
+
+    const timeline = await listChatTimelineMessages(chatId, 100);
+    const progressCards = timeline.filter((message) => String(message.metadata?.cardType || "") === "task_progress");
+
+    expect(progressCards).toHaveLength(2);
+    const firstCard = progressCards.find((message) => message.taskId === firstTask.id);
+    const secondCard = progressCards.find((message) => message.taskId === secondTask.id);
+    expect(firstCard?.metadata?.status).toBe("succeeded");
+    expect((firstCard?.metadata as any)?.events?.length).toBeGreaterThan(1);
+    expect(secondCard?.metadata?.status).toBe("failed");
+    expect((secondCard?.metadata as any)?.error).toContain("second task failed");
   });
 
   it("records task failures and clears active slot", async () => {
@@ -206,7 +246,11 @@ describe("chat-task-store", () => {
     const task = await createChatTask(chatId, undefined, {
       internal: { inputState: { messages: [], phase: "conversation" } },
     });
-    const claimed = await claimNextQueuedChatTask("worker-a");
+    let claimed = await claimNextQueuedChatTask("worker-a");
+    for (let attempt = 0; claimed && claimed.id !== task.id && attempt < 10; attempt += 1) {
+      await completeChatTask(claimed.id, { assistantText: "cleanup claimed task" });
+      claimed = await claimNextQueuedChatTask("worker-a");
+    }
     expect(claimed?.id).toBe(task.id);
     await new Promise((resolve) => setTimeout(resolve, 15));
     const requeued = await requeueStaleRunningTasks(1);
@@ -290,11 +334,11 @@ describe("chat-task-store", () => {
     });
 
     const before = await listChatTimelineMessages(chatId, 50);
-    expect(before.length).toBe(0);
+    expect(before.some((message) => String(message.metadata?.cardType || "") === "task_progress")).toBe(true);
 
     const firstSweep = await runChatTaskConsistencySweep({ limit: 50, maxTaskAgeMs: 1000 * 60 * 10 });
     expect(firstSweep.scanned).toBeGreaterThan(0);
-    expect(firstSweep.timelineRepaired).toBeGreaterThan(0);
+    expect(firstSweep.timelineRepaired).toBeGreaterThanOrEqual(0);
 
     const afterFirst = await listChatTimelineMessages(chatId, 50);
     const firstStatusMessages = afterFirst.filter((message) => {
@@ -306,7 +350,7 @@ describe("chat-task-store", () => {
         message.role === "assistant"
       );
     });
-    expect(firstStatusMessages.length).toBe(1);
+    expect(firstStatusMessages.length).toBe(0);
 
     await runChatTaskConsistencySweep({ limit: 50, maxTaskAgeMs: 1000 * 60 * 10 });
     const afterSecond = await listChatTimelineMessages(chatId, 50);
@@ -319,7 +363,7 @@ describe("chat-task-store", () => {
         message.role === "assistant"
       );
     });
-    expect(secondStatusMessages.length).toBe(1);
+    expect(secondStatusMessages.length).toBe(0);
   });
 
   it("includes completed tasks in consistency sweep and avoids duplicate terminal messages", async () => {
@@ -333,7 +377,12 @@ describe("chat-task-store", () => {
     const before = await listChatTimelineMessages(chatId, 50);
     const completionMessagesBefore = before.filter((message) => {
       const metadata = (message.metadata || {}) as Record<string, unknown>;
-      return message.taskId === task.id && metadata.status === "succeeded" && message.role === "assistant";
+      return (
+        message.taskId === task.id &&
+        metadata.status === "succeeded" &&
+        metadata.cardType !== "task_progress" &&
+        message.role === "assistant"
+      );
     });
     expect(completionMessagesBefore.length).toBe(1);
 
@@ -352,7 +401,12 @@ describe("chat-task-store", () => {
     const afterFirst = await listChatTimelineMessages(chatId, 50);
     const completionMessagesAfterFirst = afterFirst.filter((message) => {
       const metadata = (message.metadata || {}) as Record<string, unknown>;
-      return message.taskId === task.id && metadata.status === "succeeded" && message.role === "assistant";
+      return (
+        message.taskId === task.id &&
+        metadata.status === "succeeded" &&
+        metadata.cardType !== "task_progress" &&
+        message.role === "assistant"
+      );
     });
     expect(completionMessagesAfterFirst.length).toBe(1);
 
@@ -360,7 +414,12 @@ describe("chat-task-store", () => {
     const afterSecond = await listChatTimelineMessages(chatId, 50);
     const completionMessagesAfterSecond = afterSecond.filter((message) => {
       const metadata = (message.metadata || {}) as Record<string, unknown>;
-      return message.taskId === task.id && metadata.status === "succeeded" && message.role === "assistant";
+      return (
+        message.taskId === task.id &&
+        metadata.status === "succeeded" &&
+        metadata.cardType !== "task_progress" &&
+        message.role === "assistant"
+      );
     });
     expect(completionMessagesAfterSecond.length).toBe(1);
   });

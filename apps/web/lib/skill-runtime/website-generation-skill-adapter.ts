@@ -6,6 +6,7 @@ import type {
   SkillExecutionValidationResult,
 } from "./skill-execution-adapter.ts";
 import type { LocalDecisionPlan } from "./decision-layer.ts";
+import { resolveWebsiteChatAction } from "../../skills/website-generation-workflow/routing-policy.ts";
 import {
   buildWebsiteSkillToolRoundPromptForAdapter,
   formatWebsiteTargetPageContractForAdapter,
@@ -18,6 +19,9 @@ import {
 
 const WEBSITE_GENERATION_ADAPTER: SkillExecutionAdapter = {
   skillId: "website-generation-workflow",
+  resolveChatAction(params) {
+    return resolveWebsiteChatAction(params);
+  },
   buildRequiredFileChecklist(
     decision: LocalDecisionPlan,
     params: { files?: RuntimeWorkflowFile[]; requirementText?: string } = {},

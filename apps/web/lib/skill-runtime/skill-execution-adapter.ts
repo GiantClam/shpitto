@@ -43,8 +43,30 @@ export type SkillExecutionValidationResult = {
   qaRecords: SkillToolQaRecord[];
 };
 
+export type SkillChatActionIntent = "clarify" | "generate" | "refine_preview" | "refine_deployed" | "deploy";
+
+export type SkillChatActionRefineScope = "patch" | "structural" | "route_regenerate" | "full_regenerate";
+
+export type SkillChatAction = {
+  intent: SkillChatActionIntent;
+  confidence: number;
+  reason: string;
+  shouldCreateTask: boolean;
+  refineScope?: SkillChatActionRefineScope;
+  actionDomain?: string;
+  action?: string;
+  evidence?: string[];
+  rejected?: Array<{ action: string; reason: string }>;
+  workflowContext?: Record<string, unknown>;
+};
+
 export type SkillExecutionAdapter = {
   skillId: string;
+  resolveChatAction?: (params: {
+    userText: string;
+    stage: "drafting" | "previewing" | "deployed" | "deploying";
+    workflowContext?: Record<string, unknown>;
+  }) => SkillChatAction | undefined | Promise<SkillChatAction | undefined>;
   buildRequiredFileChecklist: (decision: LocalDecisionPlan, params?: { files?: RuntimeWorkflowFile[]; requirementText?: string }) => string[];
   resolveMaxToolRounds: (decision: LocalDecisionPlan, requirementText?: string) => number;
   sanitizeEmittedHtml?: (filePath: string, html: string, requirementText: string) => string;
