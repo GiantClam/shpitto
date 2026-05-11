@@ -16,7 +16,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { BrandLogo } from "@/components/brand/BrandLogo";
-import { DesignSystemPicker } from "@/components/design-system/DesignSystemPicker";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import {
   ArrowLeft,
@@ -216,6 +215,19 @@ type PromptSubmitOptions = {
 
 export function shouldSuppressOptimisticTimelineEcho(options?: PromptSubmitOptions): boolean {
   return (options?.source || "prompt") === "timeline-action";
+}
+
+function rewriteDeployDisplayText(text: string): string {
+  const raw = String(text || "");
+  if (!raw) return "";
+  return raw
+    .replace(/\bcloudflare\b/gi, "shpitto server")
+    .replace(/deploy to cloudflare/gi, "deploy to shpitto server")
+    .replace(/deploy cloudflare/gi, "deploy shpitto server")
+    .replace(/shpitto server pages/gi, "shpitto server")
+    .replace(/部署到\s*cloudflare/gi, "部署到 shpitto 服务器")
+    .replace(/发布到\s*cloudflare/gi, "部署到 shpitto 服务器")
+    .replace(/上线到\s*cloudflare/gi, "部署到 shpitto 服务器");
 }
 
 type RequirementSlotOption = {
@@ -1005,6 +1017,9 @@ function truncatePreviewText(value: string, maxLength = 140): string {
 function localizePromptDraftToken(value: string, locale: RequirementFormLocale): string {
   const normalized = String(value || "").trim();
   if (!normalized) return "";
+  if (/^cloudflare$/i.test(normalized)) {
+    return locale === "zh" ? "shpitto 服务器" : "shpitto server";
+  }
   const fallback = OPTION_I18N_FALLBACKS[normalized];
   if (fallback?.[locale]) return fallback[locale];
   return normalized;
@@ -1051,7 +1066,6 @@ export function summarizePromptDraftCard(
 ): string {
   const requirementSpec = asObjectRecord(metadata.requirementSpec);
   const manifest = asObjectRecord(metadata.promptControlManifest);
-  const designSystem = asObjectRecord(requirementSpec?.designSystemInspiration);
   const deployment = asObjectRecord(requirementSpec?.deployment);
   const siteType = localizePromptDraftToken(cleanEventValue(requirementSpec?.siteType), locale);
   const audience = joinPromptDraftList(
@@ -1074,14 +1088,14 @@ export function summarizePromptDraftCard(
     locale,
     2,
   );
-  const designSummary = [directionLabel, secondaryTags, cleanEventValue(designSystem?.title)].filter(Boolean).join(" · ");
+  const designSummary = [directionLabel, secondaryTags].filter(Boolean).join(" · ");
   const contentSummary = truncatePreviewText(
     cleanEventValue(requirementSpec?.businessContext) ||
       cleanEventValue(requirementSpec?.customNotes) ||
       cleanEventValue(metadata.researchSummary),
     150,
   );
-  const deploymentProvider = cleanEventValue(deployment?.provider);
+  const deploymentProvider = rewriteDeployDisplayText(cleanEventValue(deployment?.provider));
 
   const lines = [
     locale === "zh" ? "**网站方案摘要**" : "**Website brief**",
@@ -1453,15 +1467,9 @@ function buildRequirementFormMessage(
         ? ` +${values.secondaryVisualTags.length - 2}`
         : ` +${values.secondaryVisualTags.length - 2}`
       : "";
-  const designSystemSummary = values.designSystemInspiration
-    ? locale === "zh"
-      ? `参考 ${values.designSystemInspiration.title}`
-      : `ref ${values.designSystemInspiration.title}`
-    : "";
   const designSummary = [
     primaryDirection ? (locale === "zh" ? primaryDirection.zhLabel : primaryDirection.label) : "",
     secondaryTagSummary ? `${secondaryTagSummary}${secondaryTagOverflow}` : "",
-    designSystemSummary,
   ]
     .filter(Boolean)
     .join(locale === "zh" ? " · " : " · ");
@@ -1666,12 +1674,6 @@ function RequirementFormCard({
     setValues((prev) => ({
       ...prev,
       primaryVisualDirection: prev.primaryVisualDirection === directionId ? undefined : directionId,
-    }));
-  };
-  const selectDesignSystemInspiration = (designSystem: DesignSystemSummary) => {
-    setValues((prev) => ({
-      ...prev,
-      designSystemInspiration: designSystem,
     }));
   };
   const togglePage = (value: string) => {
@@ -1926,21 +1928,6 @@ function RequirementFormCard({
           <div className="mt-2 flex gap-2">
             <input value={customTheme} onChange={(event) => setCustomTheme(event.target.value)} placeholder={t.customTheme} className="min-w-0 flex-1 rounded-md border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-transparent px-2 py-1.5 text-xs outline-none" />
             <button type="button" onClick={() => { addCustomValue("secondaryVisualTags", customTheme); setCustomTheme(""); }} className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] px-2 text-xs">{t.add}</button>
-          </div>
-          <div className="mt-3 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] p-2">
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--shp-muted)]">
-                {t.designSystemInspiration}
-              </p>
-              <p className="text-[10px] text-[var(--shp-muted)]">
-                {values.designSystemInspiration ? values.designSystemInspiration.category || t.designSystemInspiration : "Optional"}
-              </p>
-            </div>
-            <DesignSystemPicker
-              selectedId={values.designSystemInspiration?.id}
-              onSelect={selectDesignSystemInspiration}
-              compact
-            />
           </div>
         </section>
 
@@ -3281,7 +3268,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
                 </label>
                 <button
                   type="button"
-                  onClick={() => void submitPromptText(conversationLocale === "zh" ? "部署到 Cloudflare" : "deploy to cloudflare")}
+                  onClick={() => void submitPromptText(conversationLocale === "zh" ? "部署到 shpitto 服务器" : "deploy to shpitto server")}
                   disabled={deployDisabled}
                   className={[
                     "inline-flex items-center gap-1 rounded-md border px-2 py-1 font-medium",
@@ -3289,7 +3276,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
                       ? "cursor-not-allowed border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] text-[color-mix(in_oklab,var(--shp-muted)_64%,transparent)] opacity-70"
                     : "border-[color-mix(in_oklab,var(--shp-primary)_56%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,var(--shp-surface)_86%)] text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_22%,var(--shp-surface)_78%)]",
                   ].join(" ")}
-                  title={deployedUrl ? "Redeploy latest site to Cloudflare Pages" : "Deploy latest preview to Cloudflare Pages"}
+                  title={deployedUrl ? "Redeploy latest site to shpitto server" : "Deploy latest preview to shpitto server"}
                 >
                   {isDeploying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
                   <span>{isDeploying ? "Deploying" : deployedUrl ? "Redeploy" : "Deploy"}</span>
@@ -3362,18 +3349,12 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="grid min-h-0 flex-1 gap-4 overflow-hidden px-4 py-4 lg:grid-cols-[320px_minmax(0,1fr)]">
-              <div className="no-scrollbar min-h-0 overflow-auto rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-4">
+            <div className="min-h-0 flex-1 overflow-hidden px-4 py-4">
+              <div className="no-scrollbar h-full min-h-0 overflow-auto rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-4">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--shp-muted)]">
                   {CHAT_CARD_COPY[draftPreviewLocale].promptDraftSummaryTitle}
                 </p>
                 <MarkdownDraftView content={draftPreviewSummaryText || draftPreviewText} />
-              </div>
-              <div className="no-scrollbar min-h-0 overflow-auto rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_64%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_98%,var(--shp-bg)_2%)] p-4">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--shp-muted)]">
-                  {CHAT_CARD_COPY[draftPreviewLocale].promptDraftTechnicalTitle}
-                </p>
-                <MarkdownDraftView content={draftPreviewText} />
               </div>
             </div>
           </div>

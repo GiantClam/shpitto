@@ -15,7 +15,6 @@ export interface ExecuteLLMOptions {
 }
 
 const DEFAULT_MODEL = process.env.LLM_MODEL || process.env.LLM_MODEL_PPTOKEN || process.env.PPTOKEN_MODEL || 'gpt-5.4-mini';
-const LLM_PROVIDER = process.env.LLM_PROVIDER || 'pptoken';
 
 let anthropicClient: any = null;
 let anthropicClientKey = '';
@@ -26,57 +25,45 @@ type ProviderConfig = {
   baseURL?: string;
 };
 
-function resolveProviderConfig(): ProviderConfig {
-  const provider = (LLM_PROVIDER || 'pptoken').toLowerCase();
-  const fallbackApiKey =
-    process.env.PPTOKEN_API_KEY ||
-    process.env.ANTHROPIC_API_KEY ||
-    process.env.ANTHROPIC_KEY ||
-    process.env.AIBERM_API_KEY ||
-    process.env.OPENROUTER_API_KEY ||
-    process.env.OPENAI_API_KEY;
-
-  if (provider === 'anthropic') {
-    return {
-      provider,
-      apiKey: process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_KEY || fallbackApiKey || '',
-      baseURL: process.env.ANTHROPIC_BASE_URL || process.env.LLM_BASE_URL,
-    };
-  }
-
-  if (provider === 'pptoken') {
-    return {
-      provider,
-      apiKey: process.env.PPTOKEN_API_KEY || fallbackApiKey || '',
-      baseURL: process.env.PPTOKEN_BASE_URL || process.env.LLM_BASE_URL || 'https://api.pptoken.org/v1',
-    };
-  }
-
-  if (provider === 'openrouter') {
-    return {
-      provider,
-      apiKey: process.env.OPENROUTER_API_KEY || fallbackApiKey || '',
-      baseURL: process.env.OPENROUTER_BASE_URL || process.env.LLM_BASE_URL || 'https://openrouter.ai/api/v1',
-    };
-  }
-
-  if (provider === 'aiberm') {
-    return {
-      provider,
-      apiKey: process.env.AIBERM_API_KEY || fallbackApiKey || '',
-      baseURL: process.env.AIBERM_BASE_URL || process.env.LLM_BASE_URL || 'https://aiberm.com/v1',
-    };
-  }
-
-  return {
-    provider,
-    apiKey: fallbackApiKey || '',
-    baseURL: process.env.LLM_BASE_URL,
-  };
+function getOrderedProviderConfigs(): ProviderConfig[] {
+  const order = String(process.env.LLM_PROVIDER_ORDER || 'pptoken,aiberm,crazyrouter')
+    .split(',')
+    .map((item) => String(item || '').trim().toLowerCase())
+    .filter(Boolean);
+  const unique = order.filter((provider, index) => order.indexOf(provider) === index);
+  return unique.flatMap((provider) => {
+    if (provider === 'pptoken' && process.env.PPTOKEN_API_KEY) {
+      return [{
+        provider,
+        apiKey: process.env.PPTOKEN_API_KEY,
+        baseURL: process.env.PPTOKEN_BASE_URL || process.env.LLM_BASE_URL || 'https://api.pptoken.org/v1',
+      }];
+    }
+    if (provider === 'aiberm' && process.env.AIBERM_API_KEY) {
+      return [{
+        provider,
+        apiKey: process.env.AIBERM_API_KEY,
+        baseURL: process.env.AIBERM_BASE_URL || process.env.LLM_BASE_URL || 'https://aiberm.com/v1',
+      }];
+    }
+    if ((provider === 'crazyrouter' || provider === 'crazyroute' || provider === 'crazyreoute') &&
+        (process.env.CRAZYROUTE_API_KEY || process.env.CRAZYROUTER_API_KEY || process.env.CRAZYREOUTE_API_KEY)) {
+      return [{
+        provider: 'crazyroute',
+        apiKey: process.env.CRAZYROUTE_API_KEY || process.env.CRAZYROUTER_API_KEY || process.env.CRAZYREOUTE_API_KEY || '',
+        baseURL:
+          process.env.CRAZYROUTE_BASE_URL ||
+          process.env.CRAZYROUTER_BASE_URL ||
+          process.env.CRAZYREOUTE_BASE_URL ||
+          process.env.LLM_BASE_URL ||
+          'https://crazyrouter.com/v1',
+      }];
+    }
+    return [];
+  });
 }
 
-async function getAnthropicClient() {
-  const config = resolveProviderConfig();
+async function getAnthropicClient(config: ProviderConfig) {
   const cacheKey = `${config.provider}|${config.baseURL || ''}|${config.apiKey}`;
   if (anthropicClient && anthropicClientKey === cacheKey) return anthropicClient;
 
@@ -84,7 +71,7 @@ async function getAnthropicClient() {
     const { default: Anthropic } = await import('@anthropic-ai/sdk');
 
     if (!config.apiKey) {
-      throw new Error('No API key found. Set PPTOKEN_API_KEY, ANTHROPIC_API_KEY, AIBERM_API_KEY, or OPENROUTER_API_KEY');
+      throw new Error('No API key found. Set PPTOKEN_API_KEY, AIBERM_API_KEY, or CRAZYROUTE_API_KEY');
     }
 
     anthropicClient = new Anthropic({
@@ -107,30 +94,34 @@ export async function executeLLM(
   options: ExecuteLLMOptions = {}
 ): Promise<LLMResponse> {
   const { model = DEFAULT_MODEL, maxTokens = 4096, temperature = 0.7 } = options;
-
-  const client = await getAnthropicClient();
   const system = systemContext.trim();
   const messages = [{ role: 'user' as const, content: prompt }];
-
-  try {
-    const response = await client.messages.create({
-      model,
-      max_tokens: maxTokens,
-      temperature,
-      ...(system ? { system } : {}),
-      messages,
-    });
-
-    const textContent = response.content.find((c: any) => c.type === 'text');
-    
-    return {
-      content: textContent?.type === 'text' ? textContent.text : '',
-      raw: response,
-    };
-  } catch (error: any) {
-    const provider = resolveProviderConfig().provider;
-    throw new Error(`LLM call failed (${provider}): ${error.message}`);
+  const providers = getOrderedProviderConfigs();
+  if (providers.length === 0) {
+    throw new Error('No API key found. Set PPTOKEN_API_KEY, AIBERM_API_KEY, or CRAZYROUTE_API_KEY');
   }
+  let lastError: Error | undefined;
+  for (const config of providers) {
+    try {
+      const client = await getAnthropicClient(config);
+      const response = await client.messages.create({
+        model,
+        max_tokens: maxTokens,
+        temperature,
+        ...(system ? { system } : {}),
+        messages,
+      });
+
+      const textContent = response.content.find((c: any) => c.type === 'text');
+      return {
+        content: textContent?.type === 'text' ? textContent.text : '',
+        raw: response,
+      };
+    } catch (error: any) {
+      lastError = new Error(`LLM call failed (${config.provider}): ${error.message}`);
+    }
+  }
+  throw lastError || new Error('LLM call failed');
 }
 
 function parseFirstValidJson(content: string): any {

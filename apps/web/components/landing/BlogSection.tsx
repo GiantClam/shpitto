@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Calendar, User } from "lucide-react";
 import { getLandingCopy, type Locale } from "@/lib/i18n";
@@ -47,7 +48,14 @@ export function BlogSection({ locale = "en" }: { locale?: Locale }) {
           {posts.map((post, i) => (
             <Link key={i} href={`/blog/${post.slug}`} className="group flex h-full cursor-pointer flex-col">
               <div className="relative mb-6 aspect-video overflow-hidden rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_88%,transparent)]">
-                <img src={post.image} alt={post.title} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <Image
+                  src={post.image}
+                  alt={post.title}
+                  fill
+                  unoptimized
+                  sizes="(min-width: 768px) 33vw, 100vw"
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                />
                 <div className="absolute left-4 top-4 rounded-full border border-[color-mix(in_oklab,var(--shp-border)_65%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_86%,white_14%)] px-3 py-1 text-xs font-bold uppercase tracking-wide text-[var(--shp-primary)] backdrop-blur-sm">
                   {post.category}
                 </div>

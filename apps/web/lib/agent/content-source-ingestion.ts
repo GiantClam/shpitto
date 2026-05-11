@@ -1,5 +1,10 @@
 import { getProjectAssetObject } from "../project-assets.ts";
 import {
+  buildRequirementSpec,
+  parseRequirementFormFromText,
+  type RequirementSpec,
+} from "./chat-orchestrator.ts";
+import {
   extractDeterministicTextFromDocumentBytes,
   extractDocumentContentFromBytes,
 } from "./document-ingestion.ts";
@@ -89,6 +94,15 @@ function normalizeText(value: unknown): string {
   return String(value || "").replace(/\s+/g, " ").trim();
 }
 
+function isPlaceholderBrandValue(value: string): boolean {
+  const normalized = normalizeText(value)
+    .replace(/^[:：-]+|[:：-]+$/g, "")
+    .trim()
+    .toLowerCase();
+  if (!normalized) return true;
+  return /^(?:logo|text[_ -]?mark|wordmark|site|website|blog|brand)$/i.test(normalized);
+}
+
 function containsCjk(text: string): boolean {
   return containsWorkflowCjk(text);
 }
@@ -101,7 +115,7 @@ function internalNavLabelForRoute(route: string, fallback = ""): string {
   return leaf
     .split(/[-_]+/g)
     .filter(Boolean)
-    .map((part) => (part.toUpperCase() === "CASUX" ? "CASUX" : part.charAt(0).toUpperCase() + part.slice(1)))
+    .map((part) => (part === part.toUpperCase() && /^[A-Z0-9-]+$/.test(part) ? part : part.charAt(0).toUpperCase() + part.slice(1)))
     .join(" ");
 }
 
@@ -169,8 +183,122 @@ function brandFromUploadedFileName(fileName: string): string {
   return normalizeText(acronym || stem).slice(0, 80);
 }
 
+function buildFallbackBusinessSignals(text: string, limit: number): string[] {
+  const source = String(text || "");
+  if (!source) return [];
+  const signals = new Set<string>();
+  const patterns = [
+    /\b(?:AI|DevOps|SaaS|K12|CTO|CEO|CPO|VP|GM|Huawei|WeChat|HelloTalk)\b/gi,
+    /(?:\d+\+?\s*(?:schools?|countries?|users?)|\d+%\s*(?:-|to)\s*\d+%|\d+%-\d+%)/gi,
+    /(?:个人简历网站|个人经历|职业履历亮点|全球化进程奠基者|研发体系变革专家|科技创业生态建设者|数字人创作平台|商业价值跃升)/gu,
+  ];
+  for (const pattern of patterns) {
+    for (const match of source.matchAll(pattern)) {
+      const value = normalizeText(match[0]);
+      if (!value) continue;
+      signals.add(value);
+      if (signals.size >= limit) return Array.from(signals).slice(0, limit);
+    }
+  }
+  return Array.from(signals).slice(0, limit);
+}
+
+function derivePageTitleFromSpecToken(token: string): string {
+  const normalized = normalizeText(token).toLowerCase();
+  if (normalized === "home") return "Home";
+  if (normalized === "about") return "About";
+  if (normalized === "blog") return "Blog";
+  if (normalized === "contact") return "Contact";
+  if (normalized === "products") return "Products";
+  if (normalized === "services") return "Services";
+  if (normalized === "cases") return "Cases";
+  if (normalized === "pricing") return "Pricing";
+  return internalNavLabelForRoute(`/${normalized}`, token);
+}
+
+function derivePagePurposeFromSpec(page: string, spec: RequirementSpec): string {
+  const normalized = normalizeText(page).toLowerCase();
+  if (normalized === "blog") {
+    return "Publish three source-backed blog posts that express the founder's methods, operating lessons, and AI point of view.";
+  }
+  if (normalized === "about") {
+    return "Build trust with the founder biography, career timeline, leadership scope, and cross-company impact.";
+  }
+  if (normalized === "contact") {
+    return "Provide a direct, credible way to start a conversation or collaboration.";
+  }
+  if (normalized === "cases") {
+    return "Show representative projects, outcomes, and operating patterns with clear proof-oriented storytelling.";
+  }
+  if (normalized === "products" || normalized === "services") {
+    return "Present concrete offerings, advisory themes, or capability areas with scannable detail.";
+  }
+  if (spec.siteType === "portfolio") {
+    return `Build a distinct ${derivePageTitleFromSpecToken(page)} page around the founder's experience, perspective, and proof points.`;
+  }
+  return `Deliver a route-specific ${derivePageTitleFromSpecToken(page)} page grounded in the confirmed requirement and source material.`;
+}
+
+function buildSuggestedPagesFromRequirementSpec(spec: RequirementSpec, facts: string[]): SuggestedPage[] {
+  const pageTokens = spec.pageStructure?.pages?.length
+    ? spec.pageStructure.pages
+    : spec.pages?.length
+      ? spec.pages
+      : [];
+  const contentInputs = uniqueBriefItems(
+    [
+      ...(facts || []),
+      ...(spec.businessContext ? [spec.businessContext] : []),
+      ...(spec.customNotes ? [spec.customNotes] : []),
+    ],
+    6,
+  );
+
+  if (pageTokens.length > 0) {
+    const used = new Set<string>();
+    return pageTokens.map((page, index) => {
+      const normalized = normalizeText(page).toLowerCase();
+      const baseRoute = normalized === "home" ? "/" : `/${normalized.replace(/^\/+/, "")}`;
+      const route = dedupeDocumentRoute(baseRoute, index, used);
+      return {
+        route,
+        title: derivePageTitleFromSpecToken(page),
+        purpose: derivePagePurposeFromSpec(page, spec),
+        contentInputs,
+      };
+    });
+  }
+
+  if (spec.siteType === "portfolio") {
+    return [
+      {
+        route: "/",
+        title: "Home",
+        purpose: "Introduce the founder's positioning, key leadership chapters, AI direction, and concrete proof signals.",
+        contentInputs,
+      },
+      {
+        route: "/blog",
+        title: "Blog",
+        purpose: "Publish three opinionated blog entries distilled from the founder's career experience and operating principles.",
+        contentInputs,
+      },
+    ];
+  }
+
+  return [];
+}
+
 function inferBrandFromText(text: string): string | undefined {
   const source = String(text || "");
+  const leadingVerb = source.match(/^\s*(Use|Build|Create|Generate|Make|Launch|Need|Want)\b/i)?.[1];
+  if (leadingVerb) {
+    return undefined;
+  }
+  if (/(?:logo\s+source|logo\s+strategy|brandlogo|text wordmark|generated temporary text logo|品牌文字标识|暂无\s*logo)/i.test(source)) {
+    return undefined;
+  }
+  const blockedBrand = /^(?:logo|text[_ -]?mark|wordmark|site|website|blog)$/i;
   const patterns = [
     /(?:named|called|brand(?:\s+name)?|company(?:\s+name)?|organization(?:\s+name)?)\s*[:：]?\s*["“”']?([A-Z][A-Z0-9_-]{2,30})["“”']?/i,
     /(?:名为|名称为|品牌名为|机构名为|公司名为|一个名为)\s*["“”']?([A-Z][A-Z0-9_-]{2,30})["“”']?/u,
@@ -179,10 +307,22 @@ function inferBrandFromText(text: string): string | undefined {
   for (const pattern of patterns) {
     const match = source.match(pattern);
     const value = normalizeText(match?.[1]);
-    if (value) return value.slice(0, 80);
+    if (value && !/^(?:Use|Build|Create|Generate|Make|Launch|Need|Want)$/i.test(value) && !blockedBrand.test(value)) {
+      return value.slice(0, 80);
+    }
   }
+  const signatureCandidate = source
+    .split(/\r?\n+/)
+    .map((line) => normalizeText(line))
+    .find((line) => {
+      if (!line || line.length < 3 || line.length > 24) return false;
+      if (!/^[A-Za-z][A-Za-z0-9_-]{2,24}$/.test(line)) return false;
+      return !isPlaceholderBrandValue(line);
+    });
+  if (signatureCandidate) return signatureCandidate.slice(0, 80);
   const acronym = source.match(/\b[A-Z][A-Z0-9_-]{3,20}\b/)?.[0];
-  return acronym ? normalizeText(acronym).slice(0, 80) : undefined;
+  const normalizedAcronym = normalizeText(acronym);
+  return normalizedAcronym && !blockedBrand.test(normalizedAcronym) ? normalizedAcronym.slice(0, 80) : undefined;
 }
 
 function normalizeLabelForMatching(label: string): string {
@@ -203,35 +343,93 @@ function cleanPageLabel(raw: string): string {
     .trim();
 }
 
+const DOCUMENT_PAGE_ROUTE_ALIASES: Array<{ route: string; keys: string[] }> = [
+  { route: "/", keys: ["home", "homepage", "\u9996\u9875", "\u4e3b\u9875"] },
+  { route: "/downloads", keys: ["downloads", "download", "\u8d44\u6599\u4e0b\u8f7d", "\u4e0b\u8f7d"] },
+  { route: "/about", keys: ["about", "\u5173\u4e8e"] },
+  { route: "/contact", keys: ["contact", "\u8054\u7cfb", "\u54a8\u8be2"] },
+  { route: "/login", keys: ["login", "signin", "sign in", "\u767b\u5f55"] },
+  { route: "/register", keys: ["register", "signup", "sign up", "\u6ce8\u518c"] },
+  { route: "/reset-password", keys: ["forgot password", "reset password", "password reset", "\u627e\u56de\u5bc6\u7801", "\u5fd8\u8bb0\u5bc6\u7801"] },
+  { route: "/verify-email", keys: ["verify email", "email verification", "confirm email", "\u9a8c\u8bc1\u90ae\u7bb1", "\u90ae\u7bb1\u9a8c\u8bc1"] },
+];
+
+const DOCUMENT_PAGE_CHINESE_ROUTE_TOKENS: Array<{ pattern: RegExp; replacement: string[] }> = [
+  { pattern: /\u9996\u9875|\u4e3b\u9875/u, replacement: ["home"] },
+  { pattern: /\u5173\u4e8e(?:\u6211\u4eec)?/u, replacement: ["about", "us"] },
+  { pattern: /\u8054\u7cfb(?:\u6211\u4eec)?|\u54a8\u8be2/u, replacement: ["contact", "us"] },
+  { pattern: /\u8d44\u6599\u4e0b\u8f7d|\u4e0b\u8f7d/u, replacement: ["downloads"] },
+  { pattern: /\u7814\u7a76\u4e2d\u5fc3/u, replacement: ["research", "center"] },
+  { pattern: /\u4fe1\u606f\u5e73\u53f0/u, replacement: ["information", "platform"] },
+  { pattern: /\u6807\u51c6\u4f53\u7cfb|\u6807\u51c6/u, replacement: ["standards", "system"] },
+  { pattern: /\u521b\u8bbe/u, replacement: ["creation"] },
+  { pattern: /\u5efa\u8bbe/u, replacement: ["construction"] },
+  { pattern: /\u4f18\u6807/u, replacement: ["certification"] },
+  { pattern: /\u5021\u5bfc/u, replacement: ["advocacy"] },
+  { pattern: /\u65b9\u6848/u, replacement: ["solutions"] },
+  { pattern: /\u6848\u4f8b/u, replacement: ["case", "studies"] },
+  { pattern: /\u8d44\u6e90/u, replacement: ["resources"] },
+];
+
+function uniqueTokens(tokens: string[]): string[] {
+  const seen = new Set<string>();
+  const output: string[] = [];
+  for (const token of tokens) {
+    const normalized = String(token || "").trim().toLowerCase();
+    if (!normalized || seen.has(normalized)) continue;
+    seen.add(normalized);
+    output.push(normalized);
+  }
+  return output;
+}
+
+function labelToReadableRouteSlug(label: string): string {
+  const source = String(label || "").normalize("NFKD");
+  const compactSource = source.replace(/\s+/g, "");
+  const hasCjk = /[\u4e00-\u9fff]/.test(source);
+  const asciiSlug = source
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  const asciiTokens = asciiSlug ? asciiSlug.split("-").filter(Boolean) : [];
+  const mappedTokens = DOCUMENT_PAGE_CHINESE_ROUTE_TOKENS.flatMap((entry) =>
+    entry.pattern.test(source) ? entry.replacement : [],
+  );
+  const leadingAsciiToken = hasCjk ? compactSource.match(/^[A-Za-z0-9]+/)?.[0]?.toLowerCase() || "" : "";
+  const readableTokens = uniqueTokens([
+    ...(leadingAsciiToken ? [leadingAsciiToken] : []),
+    ...asciiTokens,
+    ...mappedTokens,
+  ]);
+  return readableTokens.join("-");
+}
+
 function routeFromDocumentPageLabel(label: string, index: number): string {
   const normalized = normalizeLabelForMatching(label);
   if (!normalized) return index === 0 ? "/" : `/page-${index + 1}`;
-  const known: Array<{ route: string; keys: string[] }> = [
-    { route: "/", keys: ["home", "homepage", "\u9996\u9875", "\u4e3b\u9875"] },
-    { route: "/casux-creation", keys: ["casuxcreation", "\u521b\u8bbe"] },
-    { route: "/casux-construction", keys: ["casuxconstruction", "\u5efa\u8bbe"] },
-    { route: "/casux-certification", keys: ["casuxcertification", "casuxqualitymark", "\u4f18\u6807", "\u6d4b\u8bc4", "\u8ba4\u8bc1"] },
-    { route: "/casux-advocacy", keys: ["casuxadvocacy", "\u5021\u5bfc", "\u8054\u76df"] },
-    { route: "/casux-research-center", keys: ["casuxresearchcenter", "\u7814\u7a76\u4e2d\u5fc3"] },
-    { route: "/casux-information-platform", keys: ["casuxinformationplatform", "\u4fe1\u606f\u5e73\u53f0"] },
-    { route: "/downloads", keys: ["downloads", "download", "\u8d44\u6599\u4e0b\u8f7d", "\u4e0b\u8f7d"] },
-    { route: "/about", keys: ["about", "\u5173\u4e8e"] },
-    { route: "/contact", keys: ["contact", "\u8054\u7cfb", "\u54a8\u8be2"] },
-    { route: "/login", keys: ["login", "signin", "sign in", "\u767b\u5f55"] },
-    { route: "/register", keys: ["register", "signup", "sign up", "\u6ce8\u518c"] },
-    { route: "/reset-password", keys: ["forgot password", "reset password", "password reset", "\u627e\u56de\u5bc6\u7801", "\u5fd8\u8bb0\u5bc6\u7801"] },
-    { route: "/verify-email", keys: ["verify email", "email verification", "confirm email", "\u9a8c\u8bc1\u90ae\u7bb1", "\u90ae\u7bb1\u9a8c\u8bc1"] },
-  ];
-  const matched = known.find((entry) => entry.keys.some((key) => normalized.includes(normalizeLabelForMatching(key))));
+  const matched = DOCUMENT_PAGE_ROUTE_ALIASES.find((entry) =>
+    entry.keys.some((key) => normalized === normalizeLabelForMatching(key)),
+  );
   if (matched) return matched.route;
 
-  const slug = String(label || "")
-    .normalize("NFKD")
-    .toLowerCase()
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  const slug = labelToReadableRouteSlug(label);
   return slug ? `/${slug}` : `/page-${index + 1}`;
+}
+
+function dedupeDocumentRoute(route: string, index: number, used: Set<string>): string {
+  const normalized = String(route || "").trim() || `/page-${index + 1}`;
+  if (!used.has(normalized)) {
+    used.add(normalized);
+    return normalized;
+  }
+
+  const base = normalized === "/" ? "/home" : normalized;
+  let suffix = 2;
+  while (used.has(`${base}-${suffix}`)) suffix += 1;
+  const next = `${base}-${suffix}`;
+  used.add(next);
+  return next;
 }
 
 function isUnsupportedGeneratedPageLabel(label: string): boolean {
@@ -289,9 +487,8 @@ function extractDocumentSuggestedPages(text: string): { pages: SuggestedPage[]; 
       gaps.push(`Document mentions ${label}, but this route is treated as a non-page auth artifact and should stay external.`);
       continue;
     }
-    const route = routeFromDocumentPageLabel(label, pages.length);
-    if (!route || seenRoutes.has(route)) continue;
-    seenRoutes.add(route);
+    const route = dedupeDocumentRoute(routeFromDocumentPageLabel(label, pages.length), pages.length, seenRoutes);
+    if (!route) continue;
     pages.push({
       route,
       title: label,
@@ -715,6 +912,17 @@ function uniqueBriefItems(values: string[], limit: number): string[] {
   return output;
 }
 
+function buildUserInputSource(requirementText: string): WebsiteKnowledgeSource | undefined {
+  const normalized = normalizeText(requirementText);
+  if (!normalized || normalized.length < 80) return undefined;
+  return {
+    type: "user_input",
+    title: "Conversation requirement brief",
+    snippet: normalized.slice(0, UPLOADED_SOURCE_SNIPPET_LIMIT),
+    confidence: 0.78,
+  };
+}
+
 function inferSourceMode(domains: string[], uploadedCount: number, requirementText: string): WebsiteKnowledgeProfile["sourceMode"] {
   const newSite = /new website|new site|新建站|没有资料|暂无内容|from scratch/i.test(requirementText);
   if (domains.length > 0 && uploadedCount > 0) return "mixed";
@@ -723,7 +931,7 @@ function inferSourceMode(domains: string[], uploadedCount: number, requirementTe
   return newSite ? "new_site" : "mixed";
 }
 
-function buildKnowledgeProfile(params: {
+function buildKnowledgeProfileLegacy(params: {
   requirementText: string;
   sources: WebsiteKnowledgeSource[];
   domains: string[];
@@ -785,6 +993,118 @@ function buildKnowledgeProfile(params: {
             { route: "/cases", title: "Cases or Insights", purpose: "Show proof, outcomes, research, and stories.", contentInputs: proofPoints.slice(0, 5) },
             { route: "/contact", title: "Contact", purpose: "Capture leads and inquiries.", contentInputs: audience.slice(0, 3) },
           ],
+    contentGaps: Array.from(new Set(gaps)).slice(0, 8),
+    summary: summarySources
+      .slice(0, 6)
+      .map((source) => `${source.title}: ${source.snippet || source.url || source.fileName || ""}`)
+      .join(" ")
+      .slice(0, KNOWLEDGE_PROFILE_SUMMARY_LIMIT),
+  };
+}
+
+function buildKnowledgeProfile(params: {
+  requirementText: string;
+  sources: WebsiteKnowledgeSource[];
+  domains: string[];
+  contentGaps: string[];
+}): WebsiteKnowledgeProfile {
+  const parsedForm = parseRequirementFormFromText(params.requirementText);
+  const requirementSpec = buildRequirementSpec(
+    params.requirementText,
+    parsedForm.hasForm ? [params.requirementText] : undefined,
+  );
+  const reliableSources = params.sources.filter((source) => source.confidence >= 0.65 && hasUsefulNaturalText(source.snippet || ""));
+  const uploadedSources = params.sources.filter((source) => source.type === "uploaded_file");
+  const uploadedTextBrand = uploadedSources
+    .map((source) => inferBrandFromText(source.snippet || ""))
+    .find(Boolean);
+  const uploadedBrand = uploadedSources
+    .map((source) => brandFromUploadedFileName(source.fileName || source.title))
+    .find(Boolean);
+  const combined = [params.requirementText, ...reliableSources.map((source) => source.snippet || "")].join(" ");
+  const brand =
+    uploadedTextBrand ||
+    uploadedBrand ||
+    inferBrandFromText(params.requirementText) ||
+    requirementSpec.brand ||
+    params.requirementText.match(/(?:brand|company|name)\s*[:=]\s*([^\n,]+)/i)?.[1] ||
+    reliableSources.find((source) => source.type === "domain" || source.type === "uploaded_file")?.title ||
+    params.domains[0];
+  const safeBrand = isPlaceholderBrandValue(String(brand || "")) ? "" : normalizeText(brand);
+  const inferredSignals = buildFallbackBusinessSignals(
+    [requirementSpec.businessContext, requirementSpec.customNotes, params.requirementText].filter(Boolean).join(" "),
+    8,
+  );
+  const audience = uniqueBriefItems(
+    [
+      ...(requirementSpec.targetAudience || []),
+      ...extractBulletCandidates(combined, [/audience|customer|parent|buyer|鐢ㄦ埛|瀹㈡埛|瀹堕暱|鍙椾紬/i], 5),
+    ],
+    5,
+  );
+  const offerings = uniqueBriefItems(
+    [
+      ...extractBulletCandidates(combined, [/service|product|solution|course|assessment|research|鏈嶅姟|浜у搧|璇剧▼|璇勪及|鐮旂┒/i], 6),
+      ...inferredSignals,
+    ],
+    6,
+  );
+  const differentiators = uniqueBriefItems(
+    [
+      ...extractBulletCandidates(combined, [/unique|advantage|differenti|certif|expert|浼樺娍|宸紓|璁よ瘉|涓撲笟|鍙俊/i], 5),
+      ...inferredSignals,
+    ],
+    5,
+  );
+  const proofPoints = uniqueBriefItems(
+    [
+      ...extractBulletCandidates(combined, [/case|client|data|sample|certif|result|妗堜緥|瀹㈡埛|鏁版嵁|鏍锋湰|璧勮川|鎴愭灉/i], 5),
+      ...buildFallbackBusinessSignals([params.requirementText, requirementSpec.customNotes].filter(Boolean).join(" "), 5),
+    ],
+    5,
+  );
+  const gaps = [...params.contentGaps];
+  const explicitPagePlan = extractDocumentSuggestedPages(
+    [params.requirementText, ...uploadedSources.map((source) => source.snippet || "")].join("\n"),
+  );
+  const requirementDrivenPages = buildSuggestedPagesFromRequirementSpec(
+    requirementSpec,
+    uniqueBriefItems([...offerings, ...differentiators, ...proofPoints], 8),
+  );
+  gaps.push(...explicitPagePlan.gaps);
+  if (params.sources.length === 0) gaps.push("No external or uploaded content source was available; prompt draft must mark business details as assumptions.");
+  if (offerings.length === 0) gaps.push("Offerings/services are still thin; ask the user for 3-5 concrete products or services.");
+  if (proofPoints.length === 0) gaps.push("Proof points are missing; ask for cases, credentials, data, awards, or testimonials.");
+  const sourceMode = inferSourceMode(params.domains, uploadedSources.length, params.requirementText);
+  const summarySources =
+    sourceMode === "uploaded_files"
+      ? params.sources.filter((source) => source.type === "uploaded_file" && source.confidence >= 0.65)
+      : params.sources.filter((source) => source.confidence >= 0.65);
+
+  return {
+    sourceMode,
+    domains: params.domains,
+    sources: params.sources.slice(0, 12),
+    brand: {
+      name: safeBrand || undefined,
+      description: normalizeText(reliableSources[0]?.snippet).slice(0, 360) || undefined,
+    },
+    audience,
+    offerings,
+    differentiators,
+    proofPoints,
+    suggestedPages:
+      explicitPagePlan.pages.length > 0
+        ? explicitPagePlan.pages
+        : requirementDrivenPages.length > 0
+          ? requirementDrivenPages
+          : [
+              { route: "/", title: "Home", purpose: "Explain positioning and route visitors to proof, offerings, and contact.", contentInputs: offerings.slice(0, 3) },
+              { route: "/about", title: "About", purpose: "Build trust with organization background and credentials.", contentInputs: differentiators.slice(0, 3) },
+              { route: "/products", title: "Products or Services", purpose: "Present concrete offerings with scannable details.", contentInputs: offerings.slice(0, 5) },
+              { route: "/cases", title: "Cases or Insights", purpose: "Show proof, outcomes, research, and stories.", contentInputs: proofPoints.slice(0, 5) },
+              { route: "/contact", title: "Contact", purpose: "Capture leads and inquiries.", contentInputs: audience.slice(0, 3) },
+            ],
     contentGaps: Array.from(new Set(gaps)).slice(0, 8),
     summary: summarySources
       .slice(0, 6)
@@ -877,6 +1197,7 @@ export async function buildWebsiteKnowledgeProfile(params: {
   const webSources: WebsiteKnowledgeSource[] = [];
   const sources: WebsiteKnowledgeSource[] = [];
   const contentGaps: string[] = [];
+  const userInputSource = buildUserInputSource(params.requirementText);
   const skipGenericSearch = shouldSkipGenericSearchForUploadedMaterials({
     requirementText: params.requirementText,
     domains,
@@ -914,6 +1235,7 @@ export async function buildWebsiteKnowledgeProfile(params: {
 
   sources.push(...uploaded.sources);
   sources.push(...webSources);
+  if (userInputSource) sources.unshift(userInputSource);
 
   const deduped: WebsiteKnowledgeSource[] = [];
   const seen = new Set<string>();

@@ -126,6 +126,31 @@ describe("content source ingestion", () => {
     expect(profile.summary).not.toContain("Greasy Fork");
   });
 
+  it("does not treat Logo strategy text as the brand name", () => {
+    const profile = __contentSourceIngestionForTesting.buildKnowledgeProfile({
+      requirementText: [
+        "我想做个个人简历网站，我的个人经历如下，做AI方向。",
+        "生成前必填信息已提交：",
+        "- 网站类型: 作品集",
+        "- Logo 策略: 暂无 Logo，使用品牌文字标识",
+        "- 业务/内容补充: beihuang，华为研发体系变革专家，微信全球化进程奠基者，HelloTalk CTO。",
+      ].join("\n"),
+      domains: [],
+      contentGaps: [],
+      sources: [
+        {
+          type: "user_input",
+          title: "Conversation requirement brief",
+          snippet: "beihuang 华为研发体系变革专家 微信全球化进程奠基者 HelloTalk CTO 暂无 Logo，使用品牌文字标识",
+          confidence: 0.92,
+        },
+      ],
+    });
+
+    expect(String(profile.brand.name || "")).not.toBe("Logo");
+    expect(String(profile.brand.name || "")).not.toMatch(/text[_ -]?mark|wordmark/i);
+  });
+
   it("skips generic web search when uploaded materials are the primary source and no domain is provided", () => {
     expect(
       __contentSourceIngestionForTesting.shouldSkipGenericSearchForUploadedMaterials({
@@ -201,6 +226,80 @@ describe("content source ingestion", () => {
       "/casux-research-center",
       "/casux-information-platform",
       "/downloads",
+    ]);
+  });
+
+  it("preserves uploaded source multi-page information architecture with stable first-level routes", () => {
+    const profile = __contentSourceIngestionForTesting.buildKnowledgeProfile({
+      requirementText: "Generate the site from the uploaded planning document.",
+      domains: [],
+      contentGaps: [],
+      sources: [
+        {
+          type: "uploaded_file",
+          title: "planning.pdf",
+          fileName: "planning.pdf",
+          confidence: 0.96,
+          snippet: [
+            "Main navigation: Home | About Us | Solutions | Solutions for Schools | Case Studies | Resources | Contact Us",
+            "Each navigation item must remain a distinct first-level page in the generated sitemap.",
+          ].join("\n"),
+        },
+      ],
+    });
+
+    expect(profile.suggestedPages.map((page) => page.route)).toEqual([
+      "/",
+      "/about-us",
+      "/solutions",
+      "/solutions-for-schools",
+      "/case-studies",
+      "/resources",
+      "/contact-us",
+    ]);
+  });
+
+  it("dedupes repeated source page labels into stable sequential slugs", () => {
+    const extracted = __contentSourceIngestionForTesting.extractDocumentSuggestedPages(
+      [
+        "Main navigation: Home | Services | Services | Services Overview | Contact",
+        "Keep all source pages distinct in the generated site map.",
+      ].join("\n"),
+    );
+
+    expect(extracted.pages.map((page) => page.route)).toEqual([
+      "/",
+      "/services",
+      "/services-2",
+      "/services-overview",
+      "/contact",
+    ]);
+  });
+
+  it("builds readable routes for common Chinese IA labels", () => {
+    const extracted = __contentSourceIngestionForTesting.extractDocumentSuggestedPages(
+      "主导航： 首页 | 研究中心 | 信息平台 | 资料下载 | 联系我们",
+    );
+
+    expect(extracted.pages.map((page) => page.route)).toEqual([
+      "/",
+      "/research-center",
+      "/information-platform",
+      "/downloads",
+      "/contact-us",
+    ]);
+  });
+
+  it("keeps mixed-language labels readable instead of collapsing to numeric-only fallbacks", () => {
+    const extracted = __contentSourceIngestionForTesting.extractDocumentSuggestedPages(
+      "Main navigation: Home | CASUX研究中心 | CASUX信息平台 | CASUX标准体系",
+    );
+
+    expect(extracted.pages.map((page) => page.route)).toEqual([
+      "/",
+      "/casux-research-center",
+      "/casux-information-platform",
+      "/casux-standards-system",
     ]);
   });
 

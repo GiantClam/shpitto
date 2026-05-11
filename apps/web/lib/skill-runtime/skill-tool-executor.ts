@@ -48,6 +48,9 @@ import {
   findVisibleSimultaneousBilingualCopy as sharedFindVisibleSimultaneousBilingualCopy,
   isBilingualRequirementText as sharedIsBilingualRequirementText,
 } from "./bilingual-copy-guard.ts";
+import { sanitizeBlogIndexEditorialScaffoldText } from "../../skills/website-generation-workflow/runtime-site-completions.ts";
+import { getSkillExecutionAdapter } from "./skill-execution-adapter-registry.ts";
+import type { SkillExecutionRoundObjective, SkillExecutionValidationResult } from "./skill-execution-adapter.ts";
 
 type LlmProvider = "pptoken" | "aiberm" | "crazyroute";
 
@@ -62,6 +65,13 @@ type ProviderConfig = {
 type ProviderAttempt = {
   lock: RunProviderLock;
   config: ProviderConfig;
+};
+
+type StageAttemptMeta = {
+  activeProvider: LlmProvider;
+  activeModel: string;
+  attemptedProviders: LlmProvider[];
+  fallbackEngaged: boolean;
 };
 
 type RuntimeWorkflowFile = {
@@ -80,6 +90,8 @@ export type SkillToolExecutorStepSnapshot = {
   pages: Array<{ path: string; html: string }>;
   preferredLocale: "zh-CN" | "en";
   qaSummary?: QaSummary;
+  provider?: LlmProvider;
+  model?: string;
 };
 
 export type SkillToolExecutorParams = {
@@ -99,6 +111,8 @@ export type SkillToolExecutorSummary = {
   completedPhases: string[];
   deployedUrl?: string;
   qaSummary?: QaSummary;
+  provider?: LlmProvider;
+  model?: string;
 };
 
 type ValidatedQaSummary = {
@@ -183,6 +197,9 @@ const SKILL_TOOL_PROVIDER_RETRY_MAX_MS = Math.max(
   Number(process.env.SKILL_TOOL_PROVIDER_RETRY_MAX_MS || 10_000),
 );
 const SKILL_TOOL_PROVIDER_RETRY_JITTER_MS = Math.max(0, Number(process.env.SKILL_TOOL_PROVIDER_RETRY_JITTER_MS || 350));
+const SKILL_TOOL_STAGE_RETRY_ON_BUDGET_EXCEEDED =
+  String(process.env.SKILL_TOOL_STAGE_RETRY_ON_BUDGET_EXCEEDED || "1").trim() !== "0";
+const SKILL_TOOL_STAGE_BUDGET_RETRY_LIMIT = Math.max(0, Number(process.env.SKILL_TOOL_STAGE_BUDGET_RETRY_LIMIT || 1));
 const DEFAULT_INITIAL_REQUIREMENT_CHARS = Math.max(4_000, Number(process.env.SKILL_TOOL_INITIAL_REQUIREMENT_CHARS || 48_000));
 const DEFAULT_INITIAL_DESIGN_CHARS = Math.max(800, Number(process.env.SKILL_TOOL_INITIAL_DESIGN_CHARS || 1800));
 const DEFAULT_INITIAL_WORKFLOW_SKILL_CHARS = Math.max(
@@ -216,6 +233,14 @@ function routeToHtmlPath(route: string): string {
   const normalized = normalizePath(route).replace(/\/+$/g, "") || "/";
   if (normalized === "/") return "/index.html";
   return `${normalized}/index.html`;
+}
+
+function shouldRetrySkillToolStageWithFreshAttempt(error: unknown, meta: StageAttemptMeta): boolean {
+  if (!SKILL_TOOL_STAGE_RETRY_ON_BUDGET_EXCEEDED) return false;
+  const text = errorText(error);
+  if (!/skill-tool stage budget exceeded/i.test(text)) return false;
+  if (!meta.fallbackEngaged) return false;
+  return true;
 }
 
 export function htmlPathToRoute(filePath: string): string {
@@ -622,6 +647,28 @@ function findVisibleBlogDetailEditorialScaffold(html: string): string[] {
   return findVisibleBlogEditorialScaffold(html).filter((term) => !indexOnlyTerms.has(term));
 }
 
+function sanitizeSkillToolHtmlOutput(
+  filePath: string,
+  html: string,
+  requirementText: string,
+): string {
+  const normalizedPath = normalizePath(filePath);
+  let next = String(html || "");
+  if (!next) return next;
+  if (normalizedPath === "/blog/index.html" && requestedPublishableContentCount(requirementText)) {
+    next = sanitizeBlogIndexEditorialScaffoldText(next);
+  }
+  return next;
+}
+
+export function sanitizeWebsiteSkillHtmlOutputForAdapter(
+  filePath: string,
+  html: string,
+  requirementText: string,
+): string {
+  return sanitizeSkillToolHtmlOutput(filePath, html, requirementText);
+}
+
 function normalizeCountToken(token: string): number | undefined {
   const raw = String(token || "").trim();
   if (!raw) return undefined;
@@ -701,6 +748,10 @@ function getBlogDataSourceRoutes(decision: LocalDecisionPlan): string[] {
 function isBlogDataSourceRoute(decision: LocalDecisionPlan, route: string): boolean {
   const normalizedRoute = normalizePath(route);
   return getBlogDataSourceRoutes(decision).includes(normalizedRoute);
+}
+
+function isBlogDetailHtmlPath(filePath: string): boolean {
+  return /^\/blog\/[^/]+\/index\.html$/i.test(normalizePath(filePath));
 }
 
 function guessMimeByPath(filePath: string): string {
@@ -822,37 +873,47 @@ function isLikelyValidCss(raw: string): boolean {
 function normalizeGeneratedCss(rawCss: string): string {
   const css = stripMarkdownCodeFences(rawCss).trim();
   if (!css) return "";
-  if (!/mobile-nav-toggle/i.test(css)) return css;
-  if (/runtime-nav-toggle-fix/i.test(css)) return css;
-  return [
-    css,
-    "",
-    "/* runtime-nav-toggle-fix */",
-    ".mobile-nav-toggle,",
-    ".mobile-nav-toggle.btn {",
-    "  display: none;",
-    "}",
-    "",
-    "@media (max-width: 48rem) {",
-    "  .mobile-nav-toggle,",
-    "  .mobile-nav-toggle.btn {",
-    "    display: inline-flex;",
-    "    align-items: center;",
-    "  }",
-    "",
-    "  .site-nav {",
-    "    display: none;",
-    "    width: 100%;",
-    "    flex-direction: column;",
-    "    align-items: flex-start;",
-    "    gap: var(--space-02, 0.5rem);",
-    "  }",
-    "",
-    "  .site-nav.is-open {",
-    "    display: flex;",
-    "  }",
-    "}",
-  ].join("\n");
+  const patches: string[] = [];
+  if (/mobile-nav-toggle/i.test(css) && !/runtime-nav-toggle-fix/i.test(css)) {
+    patches.push([
+      "/* runtime-nav-toggle-fix */",
+      ".mobile-nav-toggle,",
+      ".mobile-nav-toggle.btn {",
+      "  display: none;",
+      "}",
+      "",
+      "@media (max-width: 48rem) {",
+      "  .mobile-nav-toggle,",
+      "  .mobile-nav-toggle.btn {",
+      "    display: inline-flex;",
+      "    align-items: center;",
+      "  }",
+      "",
+      "  .site-nav {",
+      "    display: none;",
+      "    width: 100%;",
+      "    flex-direction: column;",
+      "    align-items: flex-start;",
+      "    gap: var(--space-02, 0.5rem);",
+      "  }",
+      "",
+      "  .site-nav.is-open {",
+      "    display: flex;",
+      "  }",
+      "}",
+    ].join("\n"));
+  }
+  if (/\.blog-card\b/i.test(css) && !/runtime-blog-card-padding-fix/i.test(css)) {
+    patches.push([
+      "/* runtime-blog-card-padding-fix */",
+      ".blog-card {",
+      "  padding: max(1.25rem, 20px);",
+      "  display: grid;",
+      "  gap: 0.875rem;",
+      "}",
+    ].join("\n"));
+  }
+  return patches.length > 0 ? [css, ...patches].join("\n\n") : css;
 }
 
 function extractMarkdownBulletSection(markdown: string, heading: string): string[] {
@@ -989,6 +1050,14 @@ function normalizeGeneratedJs(rawJs: string, requirementText = ""): string {
   ].join("\n");
 }
 
+function hasBilingualI18nMapping(html: string): boolean {
+  return /\sdata-i18n(?:\s|=|>)/i.test(html) || /data-i18n-zh\s*=\s*["'][^"']+["'][^>]*data-i18n-en\s*=\s*["'][^"']+["']/i.test(html);
+}
+
+function hasBilingualLocaleToggle(html: string): boolean {
+  return /\sdata-locale-toggle(?:\s|=|>)/i.test(html);
+}
+
 function ensureHtmlDocument(rawHtml: string): string {
   let html = stripMarkdownCodeFences(rawHtml).trim();
   if (!html) return "";
@@ -1040,11 +1109,21 @@ function extractRequirementText(state: AgentState): string {
     if (isHumanLike) humanMessages.push(content);
   }
   const workflow = (state as any)?.workflow_context || {};
+  const executionMode = String(workflow.executionMode || "").trim().toLowerCase();
   const requirementSources = [
-    String(workflow.canonicalPrompt || "").trim(),
-    String(workflow.sourceRequirement || "").trim(),
-    String(workflow.latestUserText || "").trim(),
-    String(workflow.requirementAggregatedText || "").trim(),
+    ...(executionMode === "refine"
+      ? [
+          String(workflow.latestUserText || "").trim(),
+          String(workflow.canonicalPrompt || "").trim(),
+          String(workflow.sourceRequirement || "").trim(),
+          String(workflow.requirementAggregatedText || "").trim(),
+        ]
+      : [
+          String(workflow.canonicalPrompt || "").trim(),
+          String(workflow.sourceRequirement || "").trim(),
+          String(workflow.requirementAggregatedText || "").trim(),
+          String(workflow.latestUserText || "").trim(),
+        ]),
     ...humanMessages,
   ];
   return Array.from(new Set(requirementSources.filter(Boolean))).join("\n\n").trim();
@@ -1097,11 +1176,22 @@ export function sanitizeRequirementForGenerationForTesting(text: string): string
   return stripLegacyGenerationBlueprintSections(text);
 }
 
+export function normalizeGeneratedCssForTesting(rawCss: string): string {
+  return normalizeGeneratedCss(rawCss);
+}
+
 export function requiredFileChecklistForTesting(
   decision: LocalDecisionPlan,
   params: { files?: RuntimeWorkflowFile[]; requirementText?: string } = {},
 ): string[] {
   return requiredFileChecklist(decision, params);
+}
+
+export function planRoundObjectiveForTesting(
+  round: number,
+  missingFiles: string[],
+): { targetFiles: string[]; instruction: string; strictSingleTarget: boolean } {
+  return planRoundObjective(round, missingFiles);
 }
 
 export function didRoundMateriallyChangeFilesForTesting(
@@ -1232,6 +1322,12 @@ export function formatTargetPageContract(plan: LocalDecisionPlan, targetFile: st
     page.pageKind === "home"
       ? "- Home page feature-card gate: decorative numerals, step numbers, watermarks, or corner badges must have explicit inset positioning and must not crowd the title or body copy. Titles and paragraphs should align to one padded text column with stable top/right/bottom/left gutters."
       : "",
+    page.pageKind === "blog-data-index"
+      ? "- Blog/content index gate: visible chips, pills, eyebrow labels, hero leads, and section intros must describe the subject, editorial stance, or archive value itself. They must never tell the visitor how to read, where to start, which order to follow, or that this page collects a certain number of articles."
+      : "",
+    page.pageKind === "blog-data-index"
+      ? "- Blog/content index gate: ban visible phrases like reading path, reading method, suggested reading order, how to read, this page collects, what you'll find here, start with these three articles, launch articles, 首发文章, 阅读路径, 阅读方式, 推荐阅读顺序, 如何阅读, 本页内容, or equivalent wording even inside pills/badges."
+      : "",
     page.pageKind === "search-directory"
       ? "- Search-directory gate: if the layout uses a dense grid, search results must span the full available row and remain readable at desktop and mobile widths."
       : "",
@@ -1266,11 +1362,32 @@ function findPageBlueprint(plan: LocalDecisionPlan, route: string): PageBlueprin
   );
 }
 
+export function formatWebsiteTargetPageContractForAdapter(
+  plan: LocalDecisionPlan,
+  targetFile: string,
+  requirementText = "",
+): string {
+  return formatTargetPageContract(plan, targetFile, requirementText);
+}
+
+function isSyntheticLocaleMirrorRoute(route: string, baseRoutes: string[]): boolean {
+  const normalized = normalizePath(route);
+  if (!/^\/(?:zh|zh-cn|en)(?:\/|$)/i.test(normalized)) return false;
+  const stripped = normalizePath(normalized.replace(/^\/(?:zh|zh-cn|en)(?=\/|$)/i, "") || "/");
+  if (stripped === normalized) return false;
+  return !baseRoutes.some((candidate) => {
+    const normalizedCandidate = normalizePath(candidate);
+    return normalizedCandidate === normalized || normalizedCandidate === stripped;
+  });
+}
+
 function applyStateSitemapToDecision(base: LocalDecisionPlan, sitemap: unknown): LocalDecisionPlan {
+  const baseRoutes = Array.isArray(base.routes) ? base.routes.map((route) => normalizePath(route)) : [];
   const inputRoutes = Array.isArray(sitemap)
     ? sitemap
         .map((item) => normalizePath(String(item || "")))
         .filter((route) => route && route !== "/")
+        .filter((route) => !isSyntheticLocaleMirrorRoute(route, baseRoutes))
     : [];
   if (inputRoutes.length === 0) return base;
   const routes = Array.from(new Set(["/", ...inputRoutes])).slice(0, 12);
@@ -2135,6 +2252,7 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
       .map((item) => String(item.content || ""))
       .join("\n");
     for (const file of files.filter((item) => normalizePath(item.path).endsWith(".html"))) {
+      if (isBlogDetailHtmlPath(file.path)) continue;
       const duplicatedDom = findDuplicatedBilingualDomCopy(String(file.content || ""));
       if (duplicatedDom.length > 0) {
         throw new Error(
@@ -2145,6 +2263,29 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
       if (leaks.length > 0) {
         throw new Error(
           `skill_tool_invalid_required_file: ${normalizePath(file.path)} renders obvious simultaneous bilingual visible copy instead of language-switched content: ${leaks.join(" | ")}`,
+        );
+      }
+    }
+
+    const plannedNonBlogRoutes = params.decision.routes.filter((route) => {
+      const normalizedRoute = normalizePath(route);
+      if (normalizedRoute === "/blog") return false;
+      if (isBlogDataSourceRoute(params.decision, normalizedRoute)) return false;
+      return true;
+    });
+    for (const route of plannedNonBlogRoutes) {
+      const pagePath = routeToHtmlPath(route);
+      const page = byPath.get(pagePath);
+      const html = ensureHtmlDocument(String(page?.content || ""));
+      if (!html) continue;
+      if (!hasBilingualI18nMapping(html)) {
+        throw new Error(
+          `skill_tool_invalid_required_file: ${pagePath} is missing bilingual i18n mappings for visible core copy; add data-i18n with zh/en values instead of shipping a single-language page`,
+        );
+      }
+      if (!hasBilingualLocaleToggle(html)) {
+        throw new Error(
+          `skill_tool_invalid_required_file: ${pagePath} is missing a real bilingual language switch; add a data-locale-toggle control that swaps visible zh/en copy`,
         );
       }
     }
@@ -2202,6 +2343,14 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
     categories: Array.from(categories.values()).sort((left, right) => right.count - left.count || left.code.localeCompare(right.code)),
   };
   return { files: normalizedFiles, qaSummary, qaRecords };
+}
+
+export function validateWebsiteRequiredFilesWithQaForAdapter(params: {
+  decision: LocalDecisionPlan;
+  files: RuntimeWorkflowFile[];
+  requirementText?: string;
+}): SkillExecutionValidationResult {
+  return validateAndNormalizeRequiredFilesWithQa(params);
 }
 
 function normalizeHrefRoute(href: string): string {
@@ -2365,10 +2514,17 @@ function buildPagesFromRoutes(routes: string[], staticFiles: RuntimeWorkflowFile
   });
 }
 
-function discoveredBlogDetailChecklist(files: RuntimeWorkflowFile[] = []): string[] {
+function isPrimaryBlogIndexHtmlFile(decision: LocalDecisionPlan, filePath: string): boolean {
+  const normalized = normalizePath(filePath);
+  if (normalized === "/blog/index.html") return true;
+  const blogRoutes = getBlogDataSourceRoutes(decision).map((route) => routeToHtmlPath(route));
+  return blogRoutes.includes(normalized);
+}
+
+function discoveredBlogDetailChecklist(decision: LocalDecisionPlan, files: RuntimeWorkflowFile[] = []): string[] {
   const detailRoutes: string[] = [];
   for (const file of files) {
-    if (normalizePath(file.path).endsWith(".html")) {
+    if (isPrimaryBlogIndexHtmlFile(decision, file.path)) {
       detailRoutes.push(...extractBlogDetailRoutes(String(file.content || "")));
     }
   }
@@ -2382,7 +2538,7 @@ function requestedBlogDetailChecklist(
 ): string[] {
   const requestedCount = requestedPublishableContentCount(requirementText);
   if (!requestedCount) return [];
-  return discoveredBlogDetailChecklist(files).slice(0, requestedCount);
+  return discoveredBlogDetailChecklist(decision, files).slice(0, requestedCount);
 }
 
 function requiredFileChecklist(decision: LocalDecisionPlan, params: { files?: RuntimeWorkflowFile[]; requirementText?: string } = {}): string[] {
@@ -2390,15 +2546,26 @@ function requiredFileChecklist(decision: LocalDecisionPlan, params: { files?: Ru
     "/styles.css",
     "/script.js",
     ...decision.routes.map((route) => routeToHtmlPath(route)),
-    ...discoveredBlogDetailChecklist(params.files || []),
+    ...discoveredBlogDetailChecklist(decision, params.files || []),
     ...requestedBlogDetailChecklist(decision, params.files || [], params.requirementText || ""),
   ]));
+}
+
+export function requiredWebsiteFileChecklistForAdapter(
+  decision: LocalDecisionPlan,
+  params: { files?: RuntimeWorkflowFile[]; requirementText?: string } = {},
+): string[] {
+  return requiredFileChecklist(decision, params);
 }
 
 function resolveMaxToolRounds(decision: LocalDecisionPlan, requirementText = ""): number {
   const requestedCount = requestedPublishableContentCount(requirementText) || 0;
   const emissionRounds = Math.max(MAX_TOOL_ROUNDS, requiredFileChecklist(decision).length + requestedCount + 2);
   return emissionRounds + MAX_TOOL_QA_REPAIR_ROUNDS;
+}
+
+export function resolveWebsiteSkillMaxToolRoundsForAdapter(decision: LocalDecisionPlan, requirementText = ""): number {
+  return resolveMaxToolRounds(decision, requirementText);
 }
 
 function missingRequiredFiles(decision: LocalDecisionPlan, files: RuntimeWorkflowFile[], requirementText = ""): string[] {
@@ -2465,6 +2632,15 @@ function planRoundObjective(round: number, missingFiles: string[]): RoundObjecti
     };
   }
 
+  if (firstTarget === "/blog/index.html") {
+    return {
+      targetFiles: [firstTarget],
+      instruction:
+        "This round only emit /blog/index.html as a complete HTML document referencing /styles.css and /script.js. Use native publishable archive copy only: visible hero text, pills, and section ledes must express a real editorial thesis about the subject, never reading instructions, reading path, suggested order, article collection mechanics, or explanations of how many launch articles exist.",
+      strictSingleTarget: true,
+    };
+  }
+
   return {
     targetFiles: [firstTarget],
     instruction:
@@ -2483,6 +2659,8 @@ function emitSnapshot(params: {
   workflowArtifacts: RuntimeWorkflowFile[];
   pages: Array<{ path: string; html: string }>;
   qaSummary?: QaSummary;
+  provider?: LlmProvider;
+  model?: string;
   onStep?: (snapshot: SkillToolExecutorStepSnapshot) => Promise<void> | void;
 }): Promise<void> | void {
   if (!params.onStep) return;
@@ -2496,7 +2674,13 @@ function emitSnapshot(params: {
     pages: params.pages,
     preferredLocale: params.locale,
     qaSummary: params.qaSummary,
+    provider: params.provider,
+    model: params.model,
   });
+}
+
+export function planWebsiteSkillRoundObjectiveForAdapter(round: number, missingFiles: string[]): SkillExecutionRoundObjective {
+  return planRoundObjective(round, missingFiles);
 }
 
 function buildToolRoundPrompt(params: {
@@ -2589,6 +2773,22 @@ function buildToolRoundPrompt(params: {
   ].join("\n");
 }
 
+export function buildWebsiteSkillToolRoundPromptForAdapter(params: {
+  round: number;
+  totalRounds: number;
+  decision: LocalDecisionPlan;
+  stylePreset: DesignStylePreset;
+  styleName: string;
+  styleReason: string;
+  loadedSkillIds: string[];
+  emittedFiles: RuntimeWorkflowFile[];
+  requiredMissing: string[];
+  objective: SkillExecutionRoundObjective;
+  requirementText: string;
+}): string {
+  return buildToolRoundPrompt(params);
+}
+
 export async function runSkillToolExecutor(params: SkillToolExecutorParams): Promise<SkillToolExecutorSummary> {
   const requirementText = extractRequirementText(params.state);
   const parsedRequirement = parseReferencedAssetsFromText(requirementText);
@@ -2599,6 +2799,8 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
   );
   const sanitizedRequirementWithReferences = stripLegacyGenerationBlueprintSections(requirementWithReferences);
   const workflowContext = (params.state as any)?.workflow_context || {};
+  const skillId = String(workflowContext.skillId || "website-generation-workflow");
+  const adapter = await getSkillExecutionAdapter(skillId);
   const toolRequirementContext = Array.from(
     new Set(
       [
@@ -2642,9 +2844,14 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
   const brandName =
     String(decision.brandHint || (params.state as any)?.site_artifacts?.branding?.name || "").trim() ||
     resolveBrandName(decision);
-  const totalToolRounds = resolveMaxToolRounds(decision, toolRequirementContext);
+  const totalToolRounds = adapter.resolveMaxToolRounds(decision, toolRequirementContext);
 
-  const workflowFiles = buildWorkflowFiles({
+  const stageBudgetMs = resolveStageBudgetMs(
+    params.timeoutMs,
+    adapter.buildRequiredFileChecklist(decision).length + (requestedPublishableContentCount(toolRequirementContext) || 0),
+  );
+  const timeoutConfig = resolveRoundTimeouts(params.timeoutMs);
+  let workflowFiles = buildWorkflowFiles({
     requirementText: sanitizedRequirementWithReferences,
     decision,
     designMd: workflow.designMd,
@@ -2652,342 +2859,354 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     provider: lock.provider,
     model: lock.model,
   });
-  const emittedFiles: RuntimeWorkflowFile[] = [];
-  const loadedSkills = new Map<string, string>();
-  const assistantNotes: string[] = [];
-  const toolHistoryMessages: BaseMessage[] = [
-    new SystemMessage(
-      [
-        "You are a senior frontend engineer generating a full static multi-page website.",
-        "Output must be produced only through tools.",
-        "Never emit placeholder tokens like <UNKNOWN>.",
-        "Keep files production-ready and internally consistent.",
-        "",
-        qualityContract,
-        "",
-        buildSkillToolSystemInstructions(),
-        "",
-        "You may call multiple tools in a round.",
-      ].join("\n"),
-    ),
-    new HumanMessage(
-      [
-        "Initial context:",
-        `- User requirement:\n${clipRuntimeRequirement(toolRequirementContext, DEFAULT_INITIAL_REQUIREMENT_CHARS) || "(empty)"}`,
-        referencedAssets.length > 0 ? "- Referenced assets (must use when relevant):" : "- Referenced assets: none",
-        ...(referencedAssets.length > 0
-          ? referencedAssets.map((line) => `  - ${line}`)
-          : []),
-        `- Locale: ${decision.locale}`,
-        `- Preferred design system: ${workflow.hit?.name || workflow.hit?.id || "auto"}`,
-        `- Available website skills: ${availableSkillIds.join(", ")}`,
-        `- Website seed skills discovered from frontmatter: ${websiteSeedSkillIds.join(", ") || "(none)"}`,
-        `- Recommended seed skills for this brief: ${selectedSeedSkills.map((item) => `${item.id} (${item.reason})`).join(", ") || "(none)"}`,
-        `- Document content skills available: ${documentSkillIds.join(", ") || "(none)"}`,
-        `- Recommended document skills for uploaded/source files: ${
-          selectedDocumentSkills.map((item) => `${item.id} (${item.reason})`).join(", ") || "(none)"
-        }`,
-        selectedDocumentSkills.length > 0
-          ? "- Load recommended document skills before interpreting extracted source material from uploaded PDFs, Word files, or slide decks."
-          : "- No document-specific skill is required unless later tool context introduces PDF, DOCX, or PPTX source files.",
-        `- Design rationale: ${
-          workflow.hit?.selection_candidates?.find((item) => item.id === workflow.hit?.id)?.reason ||
-          workflow.hit?.design_desc ||
-          "N/A"
-        }`,
-        "",
-        "Design excerpt:",
-        String(workflow.designMd || "").slice(0, DEFAULT_INITIAL_DESIGN_CHARS) || "(no design.md)",
-        "",
-        qualityContract,
-        "",
-        "Workflow skill contract:",
-        String(workflow.workflowSkill || "").slice(0, DEFAULT_INITIAL_WORKFLOW_SKILL_CHARS) || "(no workflow skill)",
-        "",
-        "Required files:",
-        requiredFileChecklist(decision).join(", "),
-      ].join("\n"),
-    ),
-  ];
+  let assistantNotes: string[] = [];
+  let completedStaticFiles: RuntimeWorkflowFile[] | undefined;
+  let completedQaSummary: QaSummary | undefined;
+  let completedQaRecords: SkillToolQaRecord[] = [];
+  let lastStageFiles: RuntimeWorkflowFile[] = [];
+  let stageMeta: StageAttemptMeta = {
+    activeProvider: providerConfig.provider,
+    activeModel: providerConfig.modelName,
+    attemptedProviders: providerAttempts.map((attempt) => attempt.config.provider),
+    fallbackEngaged: false,
+  };
 
   if (!providerConfig.apiKey) {
     throw new Error(`skill_tool_provider_api_key_missing: provider=${providerConfig.provider}`);
   }
 
-    const stageBudgetMs = resolveStageBudgetMs(
-      params.timeoutMs,
-      requiredFileChecklist(decision).length + (requestedPublishableContentCount(toolRequirementContext) || 0),
-    );
-    const stageStartedAt = Date.now();
-    const timeoutConfig = resolveRoundTimeouts(params.timeoutMs);
-    activeAttempt = await selectProviderAttempt({
-      attempts: providerAttempts,
-      taskTimeoutMs: params.timeoutMs,
-      requestTimeoutMs: timeoutConfig.absoluteTimeoutMs,
-    });
-    lock = activeAttempt.lock;
-    providerConfig = activeAttempt.config;
+  for (let stageRetry = 0; stageRetry <= SKILL_TOOL_STAGE_BUDGET_RETRY_LIMIT; stageRetry += 1) {
+    const emittedFiles: RuntimeWorkflowFile[] = [];
+    const loadedSkills = new Map<string, string>();
+    assistantNotes = [];
+    const toolHistoryMessages: BaseMessage[] = [
+      new SystemMessage(
+        [
+          "You are a senior frontend engineer generating a full static multi-page website.",
+          "Output must be produced only through tools.",
+          "Never emit placeholder tokens like <UNKNOWN>.",
+          "Keep files production-ready and internally consistent.",
+          "",
+          qualityContract,
+          "",
+          buildSkillToolSystemInstructions(),
+          "",
+          "You may call multiple tools in a round.",
+        ].join("\n"),
+      ),
+      new HumanMessage(
+        [
+          "Initial context:",
+          `- User requirement:\n${clipRuntimeRequirement(toolRequirementContext, DEFAULT_INITIAL_REQUIREMENT_CHARS) || "(empty)"}`,
+          referencedAssets.length > 0 ? "- Referenced assets (must use when relevant):" : "- Referenced assets: none",
+          ...(referencedAssets.length > 0
+            ? referencedAssets.map((line) => `  - ${line}`)
+            : []),
+          `- Locale: ${decision.locale}`,
+          `- Preferred design system: ${workflow.hit?.name || workflow.hit?.id || "auto"}`,
+          `- Available website skills: ${availableSkillIds.join(", ")}`,
+          `- Website seed skills discovered from frontmatter: ${websiteSeedSkillIds.join(", ") || "(none)"}`,
+          `- Recommended seed skills for this brief: ${selectedSeedSkills.map((item) => `${item.id} (${item.reason})`).join(", ") || "(none)"}`,
+          `- Document content skills available: ${documentSkillIds.join(", ") || "(none)"}`,
+          `- Recommended document skills for uploaded/source files: ${
+            selectedDocumentSkills.map((item) => `${item.id} (${item.reason})`).join(", ") || "(none)"
+          }`,
+          selectedDocumentSkills.length > 0
+            ? "- Load recommended document skills before interpreting extracted source material from uploaded PDFs, Word files, or slide decks."
+            : "- No document-specific skill is required unless later tool context introduces PDF, DOCX, or PPTX source files.",
+          `- Design rationale: ${
+            workflow.hit?.selection_candidates?.find((item) => item.id === workflow.hit?.id)?.reason ||
+            workflow.hit?.design_desc ||
+            "N/A"
+          }`,
+          "",
+          "Design excerpt:",
+          String(workflow.designMd || "").slice(0, DEFAULT_INITIAL_DESIGN_CHARS) || "(no design.md)",
+          "",
+          qualityContract,
+          "",
+          "Workflow skill contract:",
+          String(workflow.workflowSkill || "").slice(0, DEFAULT_INITIAL_WORKFLOW_SKILL_CHARS) || "(no workflow skill)",
+          "",
+          "Required files:",
+          adapter.buildRequiredFileChecklist(decision).join(", "),
+          stageRetry > 0
+            ? `- Fresh-stage retry: ${stageRetry}/${SKILL_TOOL_STAGE_BUDGET_RETRY_LIMIT}. Avoid repeating previous repair loops; converge faster.`
+            : "",
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      ),
+    ];
 
-    const modelWithTools = createToolProtocolModel({
-      config: providerConfig,
-      requestTimeoutMs: timeoutConfig.absoluteTimeoutMs,
-      toolChoice: SKILL_TOOL_TOOL_CHOICE === "auto" ? "auto" : "required",
-    }) as {
-      invoke: (messages: BaseMessage[]) => Promise<any>;
-      stream?: (messages: BaseMessage[], options?: { signal?: AbortSignal }) => Promise<AsyncIterable<any>>;
-    };
-    const modelWithEmitFile = createToolProtocolModel({
-      config: providerConfig,
-      requestTimeoutMs: timeoutConfig.absoluteTimeoutMs,
-      toolChoice: { type: "function", function: { name: "emit_file" } },
-    }) as {
-      invoke: (messages: BaseMessage[]) => Promise<any>;
-      stream?: (messages: BaseMessage[], options?: { signal?: AbortSignal }) => Promise<AsyncIterable<any>>;
-    };
-    await emitSnapshot({
-      stepKey: "preflight",
-      stepIndex: 0,
-      totalSteps: totalToolRounds,
-      status: "generating:preflight-ok",
-      locale: decision.locale,
-      files: dedupeFiles(emittedFiles),
-      workflowArtifacts: workflowFiles,
-      pages: decision.routes.map((route) => ({
-        path: normalizePath(route),
-        html: String(
-          dedupeFiles(emittedFiles).find((file) => normalizePath(file.path) === routeToHtmlPath(route))?.content || "",
-        ),
-      })),
-      onStep: params.onStep,
-    });
-
-    let toolErrorCount = 0;
-    let idleRounds = 0;
-    let noProgressRounds = 0;
-    let lastRoundCallNames = "";
-    let lastRoundToolErrors = "";
-    let qaRepairTargets: string[] = [];
-    const defaultVisibleLanguage = bilingualDefaultVisibleLanguage(toolRequirementContext);
-    let completedStaticFiles: RuntimeWorkflowFile[] | undefined;
-    let completedQaSummary: QaSummary | undefined;
-    let completedQaRecords: SkillToolQaRecord[] = [];
-    for (let round = 0; round < totalToolRounds; round += 1) {
-      if (Date.now() - stageStartedAt > stageBudgetMs) {
-        throw new Error(
-          `skill-tool stage budget exceeded (${stageBudgetMs}ms): provider=${providerConfig.provider}, model=${providerConfig.modelName}`,
-        );
-      }
-      const missing = missingRequiredFiles(decision, emittedFiles, toolRequirementContext);
-      const activeRepairTargets = missing.length === 0 ? qaRepairTargets : [];
-      const objectiveTargets = activeRepairTargets.length > 0 ? activeRepairTargets : missing;
-      const objective = planRoundObjective(round, objectiveTargets);
-      const prompt = buildToolRoundPrompt({
-        round,
-        totalRounds: totalToolRounds,
-        decision,
-        stylePreset,
-        styleName: workflow.hit?.name || workflow.hit?.id || "selected-style",
-        styleReason:
-          workflow.hit?.selection_candidates?.find((item) => item.id === workflow.hit?.id)?.reason ||
-          workflow.hit?.design_desc ||
-          "Follow requirement semantics and conversion goals.",
-        loadedSkillIds: Array.from(loadedSkills.keys()),
-        emittedFiles,
-        requiredMissing: objectiveTargets,
-        objective,
-        requirementText: toolRequirementContext,
+    try {
+      const stageStartedAt = Date.now();
+      activeAttempt = await selectProviderAttempt({
+        attempts: providerAttempts,
+        taskTimeoutMs: params.timeoutMs,
+        requestTimeoutMs: timeoutConfig.absoluteTimeoutMs,
       });
-      toolHistoryMessages.push(new HumanMessage(prompt));
-      const modelForRound = noProgressRounds > 0 ? modelWithEmitFile : modelWithTools;
-      let roundOutput: ToolRoundOutput;
-      try {
-        roundOutput = await invokeRoundWithTimeout({
-          model: modelForRound,
-          messages: toolHistoryMessages,
-          idleTimeoutMs: timeoutConfig.idleTimeoutMs,
-          absoluteTimeoutMs: timeoutConfig.absoluteTimeoutMs,
-          operation: `skill-tool-round-${round + 1}`,
-        });
-      } catch (error) {
-        if (!isRetryableProviderError(error)) {
-          throw error;
-        }
-        const stillMissingAfterRetry = missingRequiredFiles(decision, emittedFiles, toolRequirementContext);
-        throw new Error(
-          `skill_tool_provider_retry_exhausted: ${errorText(error)}; missing=${stillMissingAfterRetry.join(", ") || "(none)"}`,
-        );
-      }
-      if (roundOutput.assistant) {
-        assistantNotes.push(String(roundOutput.assistant).trim());
-      }
-      if (roundOutput.rawMessage) {
-        toolHistoryMessages.push(roundOutput.rawMessage);
-      } else {
-        toolHistoryMessages.push(
-          new AIMessage({
-            content: roundOutput.assistant || "",
-            additional_kwargs: {
-              tool_calls: roundOutput.tool_calls.map((call) => ({
-                id: call.id || `call_${crypto.randomUUID().slice(0, 8)}`,
-                type: "function",
-                function: {
-                  name: call.name,
-                  arguments: JSON.stringify(call.args || {}),
-                },
-              })),
-            },
-          }),
-        );
-      }
-
-      let requestedFinish = false;
-      let emittedThisRound = 0;
-      const emittedPathsThisRound: string[] = [];
-      const previousDedupedFiles = dedupeFiles(emittedFiles);
-      const roundCalls: SkillToolCall[] = (roundOutput.tool_calls || []).map((call) => ({
-        id: call.id,
-        name: call.name,
-        args: (call.args || {}) as Record<string, unknown>,
-      }));
-      lastRoundCallNames = roundCalls.map((call) => call.name).join(",") || "(none)";
-
-      for (const call of roundCalls) {
-        try {
-          const result = await handleSkillToolCall(call, { loadedSkills });
-          toolHistoryMessages.push(
-            new ToolMessage({
-              tool_call_id: String(call.id || `${call.name}_${crypto.randomUUID().slice(0, 8)}`),
-              content: result.toolResult.slice(0, call.name === "load_skill" ? 16_000 : 1200),
-            }),
-          );
-          if (result.kind === "file") {
-            const normalizedPath = normalizePath(String(result.file.path || ""));
-            let normalizedFile = result.file;
-            if (normalizedPath === "/styles.css") {
-              normalizedFile = { ...result.file, content: normalizeGeneratedCss(String(result.file.content || "")) };
-            } else if (normalizedPath === "/script.js") {
-              normalizedFile = { ...result.file, content: normalizeGeneratedJs(String(result.file.content || ""), toolRequirementContext) };
-            } else if (normalizedPath.endsWith(".html") && isBilingualRequirementText(toolRequirementContext)) {
-              normalizedFile = {
-                ...result.file,
-                content: collapseVisibleBilingualPairs(String(result.file.content || ""), defaultVisibleLanguage),
-              };
-            }
-            emittedFiles.push(normalizedFile);
-            emittedThisRound += 1;
-            emittedPathsThisRound.push(normalizePath(normalizedFile.path));
-          }
-          if (result.kind === "finish") requestedFinish = true;
-          toolErrorCount = 0;
-        } catch (error: any) {
-          toolErrorCount += 1;
-          const errorText = String(error?.message || error || "unknown tool error");
-          lastRoundToolErrors = `${call.name}:${errorText}`;
-          assistantNotes.push(`tool_error:${call.name}:${errorText}`);
-          toolHistoryMessages.push(
-            new ToolMessage({
-              tool_call_id: String(call.id || `${call.name}_${crypto.randomUUID().slice(0, 8)}`),
-              content: `[tool_error:${call.name}] ${errorText}`,
-            }),
-          );
-          if (toolErrorCount >= MAX_TOOL_ERRORS) {
-            throw new Error(`skill-tool execution aborted after repeated tool errors: ${errorText}`);
-          }
-        }
-      }
-
-      const dedupedCurrent = dedupeFiles(emittedFiles);
-      const stillMissing = missingRequiredFiles(decision, dedupedCurrent, toolRequirementContext);
-      const emittedTargetThisRound =
-        !objective.strictSingleTarget ||
-        objective.targetFiles.some((target) => emittedPathsThisRound.includes(normalizePath(target)));
-      const materialFileProgress = didRoundMateriallyChangeFiles(
-        previousDedupedFiles,
-        dedupedCurrent,
-        emittedPathsThisRound,
-      );
-      const progressed = (materialFileProgress || stillMissing.length < missing.length) && emittedTargetThisRound;
-      if (objective.strictSingleTarget && emittedThisRound > 0 && !emittedTargetThisRound) {
-        assistantNotes.push(
-          `tool_round_off_target: expected=${objective.targetFiles.join(",")} emitted=${emittedPathsThisRound.join(",") || "(none)"}`,
-        );
-      }
-
-      if (roundCalls.length === 0) {
-        idleRounds += 1;
-      } else {
-        idleRounds = 0;
-      }
-      if (progressed) {
-        noProgressRounds = 0;
-      } else {
-        noProgressRounds += 1;
-      }
-
-      await emitSnapshot({
-        stepKey: roundCalls.find((call) => call.name === "emit_file")?.args?.path
-          ? normalizePath(String(roundCalls.find((call) => call.name === "emit_file")?.args?.path || ""))
-          : `round-${round + 1}`,
-        stepIndex: round + 1,
-        totalSteps: totalToolRounds,
-        status:
-          roundCalls.length > 0
-            ? `generating:tool-round-${round + 1}:${objective.targetFiles.join("|") || "auto"}`
-            : `generating:tool-idle-${idleRounds}/${MAX_IDLE_ROUNDS}`,
+      lock = activeAttempt.lock;
+      providerConfig = activeAttempt.config;
+      workflowFiles = buildWorkflowFiles({
+        requirementText: sanitizedRequirementWithReferences,
+        decision,
+        designMd: workflow.designMd,
         locale: decision.locale,
-        files: dedupedCurrent,
+        provider: lock.provider,
+        model: lock.model,
+      });
+      stageMeta = {
+        activeProvider: providerConfig.provider,
+        activeModel: providerConfig.modelName,
+        attemptedProviders: providerAttempts.map((attempt) => attempt.config.provider),
+        fallbackEngaged: providerAttempts.findIndex((attempt) => attempt.config.provider === providerConfig.provider) > 0,
+      };
+
+      const modelWithTools = createToolProtocolModel({
+        config: providerConfig,
+        requestTimeoutMs: timeoutConfig.absoluteTimeoutMs,
+        toolChoice: SKILL_TOOL_TOOL_CHOICE === "auto" ? "auto" : "required",
+      }) as {
+        invoke: (messages: BaseMessage[]) => Promise<any>;
+        stream?: (messages: BaseMessage[], options?: { signal?: AbortSignal }) => Promise<AsyncIterable<any>>;
+      };
+      const modelWithEmitFile = createToolProtocolModel({
+        config: providerConfig,
+        requestTimeoutMs: timeoutConfig.absoluteTimeoutMs,
+        toolChoice: { type: "function", function: { name: "emit_file" } },
+      }) as {
+        invoke: (messages: BaseMessage[]) => Promise<any>;
+        stream?: (messages: BaseMessage[], options?: { signal?: AbortSignal }) => Promise<AsyncIterable<any>>;
+      };
+      await emitSnapshot({
+        stepKey: "preflight",
+        stepIndex: 0,
+        totalSteps: totalToolRounds,
+        status: "generating:preflight-ok",
+        locale: decision.locale,
+        files: dedupeFiles(emittedFiles),
         workflowArtifacts: workflowFiles,
         pages: decision.routes.map((route) => ({
           path: normalizePath(route),
-          html: String(dedupedCurrent.find((file) => file.path === routeToHtmlPath(route))?.content || ""),
+          html: String(
+            dedupeFiles(emittedFiles).find((file) => normalizePath(file.path) === routeToHtmlPath(route))?.content || "",
+          ),
         })),
+        provider: stageMeta.activeProvider,
+        model: stageMeta.activeModel,
         onStep: params.onStep,
       });
 
-      if (requestedFinish && stillMissing.length > 0) {
-        throw new Error(`finish called before required files were emitted: ${stillMissing.join(", ")}`);
-      }
-      if (idleRounds >= MAX_IDLE_ROUNDS && stillMissing.length > 0) {
-        throw new Error(
-          `skill-tool idle rounds exceeded (${idleRounds}/${MAX_IDLE_ROUNDS}) with missing files: ${stillMissing.join(
-            ", ",
-          )}; last_round_calls=${lastRoundCallNames}; last_tool_error=${lastRoundToolErrors || "(none)"}`,
-        );
-      }
-      if (noProgressRounds >= MAX_NO_PROGRESS_ROUNDS && stillMissing.length > 0) {
-        throw new Error(
-          `skill-tool no-progress rounds exceeded (${noProgressRounds}/${MAX_NO_PROGRESS_ROUNDS}) with missing files: ${stillMissing.join(
-            ", ",
-          )}; last_round_calls=${lastRoundCallNames}; last_tool_error=${lastRoundToolErrors || "(none)"}`,
-        );
-      }
-      if (stillMissing.length === 0) {
+      let toolErrorCount = 0;
+      let idleRounds = 0;
+      let noProgressRounds = 0;
+      let lastRoundCallNames = "";
+      let lastRoundToolErrors = "";
+      let qaRepairTargets: string[] = [];
+      const defaultVisibleLanguage = bilingualDefaultVisibleLanguage(toolRequirementContext);
+      completedStaticFiles = undefined;
+      completedQaSummary = undefined;
+      completedQaRecords = [];
+
+      for (let round = 0; round < totalToolRounds; round += 1) {
+        if (Date.now() - stageStartedAt > stageBudgetMs) {
+          throw new Error(
+            `skill-tool stage budget exceeded (${stageBudgetMs}ms): provider=${providerConfig.provider}, model=${providerConfig.modelName}`,
+          );
+        }
+        const missing = adapter
+          .buildRequiredFileChecklist(decision, { files: emittedFiles, requirementText: toolRequirementContext })
+          .filter((path) => !new Set(emittedFiles.map((file) => normalizePath(file.path))).has(normalizePath(path)));
+        const activeRepairTargets = missing.length === 0 ? qaRepairTargets : [];
+        const objectiveTargets = activeRepairTargets.length > 0 ? activeRepairTargets : missing;
+        const objective = adapter.planRoundObjective(round, objectiveTargets);
+        const prompt = adapter.buildToolRoundPrompt({
+          round,
+          totalRounds: totalToolRounds,
+          decision,
+          stylePreset,
+          styleName: workflow.hit?.name || workflow.hit?.id || "selected-style",
+          styleReason:
+            workflow.hit?.selection_candidates?.find((item) => item.id === workflow.hit?.id)?.reason ||
+            workflow.hit?.design_desc ||
+            "Follow requirement semantics and conversion goals.",
+          loadedSkillIds: Array.from(loadedSkills.keys()),
+          emittedFiles,
+          requiredMissing: objectiveTargets,
+          objective,
+          requirementText: toolRequirementContext,
+        });
+        toolHistoryMessages.push(new HumanMessage(prompt));
+        const modelForRound = noProgressRounds > 0 ? modelWithEmitFile : modelWithTools;
+        let roundOutput: ToolRoundOutput;
         try {
-          const validated = validateAndNormalizeRequiredFilesWithQa({
-            decision,
-            files: emittedFiles,
-            requirementText: toolRequirementContext,
+          roundOutput = await invokeRoundWithTimeout({
+            model: modelForRound,
+            messages: toolHistoryMessages,
+            idleTimeoutMs: timeoutConfig.idleTimeoutMs,
+            absoluteTimeoutMs: timeoutConfig.absoluteTimeoutMs,
+            operation: `skill-tool-round-${round + 1}`,
           });
-          completedStaticFiles = validated.files;
-          completedQaSummary = validated.qaSummary;
-          completedQaRecords = validated.qaRecords;
-          break;
         } catch (error) {
-          const feedback = errorText(error);
-          if (round + 1 >= totalToolRounds) {
+          if (!isRetryableProviderError(error)) {
             throw error;
           }
-          assistantNotes.push(`tool_validation_repair:${feedback.slice(0, 500)}`);
-          qaRepairTargets = extractQaRepairTargets(feedback);
+          const stillMissingAfterRetry = adapter
+            .buildRequiredFileChecklist(decision, { files: emittedFiles, requirementText: toolRequirementContext })
+            .filter((path) => !new Set(emittedFiles.map((file) => normalizePath(file.path))).has(normalizePath(path)));
+          throw new Error(
+            `skill_tool_provider_retry_exhausted: ${errorText(error)}; missing=${stillMissingAfterRetry.join(", ") || "(none)"}`,
+          );
+        }
+        if (roundOutput.assistant) {
+          assistantNotes.push(String(roundOutput.assistant).trim());
+        }
+        if (roundOutput.rawMessage) {
+          toolHistoryMessages.push(roundOutput.rawMessage);
+        } else {
+          toolHistoryMessages.push(
+            new AIMessage({
+              content: roundOutput.assistant || "",
+              additional_kwargs: {
+                tool_calls: roundOutput.tool_calls.map((call) => ({
+                  id: call.id || `call_${crypto.randomUUID().slice(0, 8)}`,
+                  type: "function",
+                  function: {
+                    name: call.name,
+                    arguments: JSON.stringify(call.args || {}),
+                  },
+                })),
+              },
+            }),
+          );
+        }
+
+        let requestedFinish = false;
+        let emittedThisRound = 0;
+        const emittedPathsThisRound: string[] = [];
+        const previousDedupedFiles = dedupeFiles(emittedFiles);
+        const roundCalls: SkillToolCall[] = (roundOutput.tool_calls || []).map((call) => ({
+          id: call.id,
+          name: call.name,
+          args: (call.args || {}) as Record<string, unknown>,
+        }));
+        lastRoundCallNames = roundCalls.map((call) => call.name).join(",") || "(none)";
+
+        for (const call of roundCalls) {
+          try {
+            const result = await handleSkillToolCall(call, { loadedSkills });
+            toolHistoryMessages.push(
+              new ToolMessage({
+                tool_call_id: String(call.id || `${call.name}_${crypto.randomUUID().slice(0, 8)}`),
+                content: result.toolResult.slice(0, call.name === "load_skill" ? 16_000 : 1200),
+              }),
+            );
+            if (result.kind === "file") {
+              const normalizedPath = normalizePath(String(result.file.path || ""));
+              let normalizedFile = result.file;
+              if (normalizedPath === "/styles.css") {
+                normalizedFile = { ...result.file, content: normalizeGeneratedCss(String(result.file.content || "")) };
+              } else if (normalizedPath === "/script.js") {
+                normalizedFile = {
+                  ...result.file,
+                  content: normalizeGeneratedJs(String(result.file.content || ""), toolRequirementContext),
+                };
+              } else if (normalizedPath.endsWith(".html")) {
+                let nextHtml = String(result.file.content || "");
+                nextHtml = adapter.sanitizeEmittedHtml
+                  ? adapter.sanitizeEmittedHtml(normalizedPath, nextHtml, toolRequirementContext)
+                  : nextHtml;
+                if (isBilingualRequirementText(toolRequirementContext)) {
+                  nextHtml = collapseVisibleBilingualPairs(nextHtml, defaultVisibleLanguage);
+                }
+                normalizedFile = {
+                  ...result.file,
+                  content: nextHtml,
+                };
+              }
+              emittedFiles.push(normalizedFile);
+              emittedThisRound += 1;
+              emittedPathsThisRound.push(normalizePath(normalizedFile.path));
+            }
+            if (result.kind === "finish") requestedFinish = true;
+            toolErrorCount = 0;
+          } catch (error: any) {
+            toolErrorCount += 1;
+            const toolErrorText = String(error?.message || error || "unknown tool error");
+            lastRoundToolErrors = `${call.name}:${toolErrorText}`;
+            assistantNotes.push(`tool_error:${call.name}:${toolErrorText}`);
+            toolHistoryMessages.push(
+              new ToolMessage({
+                tool_call_id: String(call.id || `${call.name}_${crypto.randomUUID().slice(0, 8)}`),
+                content: `[tool_error:${call.name}] ${toolErrorText}`,
+              }),
+            );
+            if (toolErrorCount >= MAX_TOOL_ERRORS) {
+              throw new Error(`skill-tool execution aborted after repeated tool errors: ${toolErrorText}`);
+            }
+          }
+        }
+
+        const dedupedCurrent = dedupeFiles(emittedFiles);
+        const stillMissing = adapter
+          .buildRequiredFileChecklist(decision, { files: dedupedCurrent, requirementText: toolRequirementContext })
+          .filter((path) => !new Set(dedupedCurrent.map((file) => normalizePath(file.path))).has(normalizePath(path)));
+        const emittedTargetThisRound =
+          !objective.strictSingleTarget ||
+          objective.targetFiles.some((target) => emittedPathsThisRound.includes(normalizePath(target)));
+        const materialFileProgress = didRoundMateriallyChangeFiles(
+          previousDedupedFiles,
+          dedupedCurrent,
+          emittedPathsThisRound,
+        );
+        const progressed = (materialFileProgress || stillMissing.length < missing.length) && emittedTargetThisRound;
+        if (objective.strictSingleTarget && emittedThisRound > 0 && !emittedTargetThisRound) {
+          assistantNotes.push(
+            `tool_round_off_target: expected=${objective.targetFiles.join(",")} emitted=${emittedPathsThisRound.join(",") || "(none)"}`,
+          );
+        }
+
+        if (roundCalls.length === 0) {
+          idleRounds += 1;
+        } else {
+          idleRounds = 0;
+        }
+        if (progressed) {
+          noProgressRounds = 0;
+        } else {
+          noProgressRounds += 1;
+        }
+
+        await emitSnapshot({
+          stepKey: roundCalls.find((call) => call.name === "emit_file")?.args?.path
+            ? normalizePath(String(roundCalls.find((call) => call.name === "emit_file")?.args?.path || ""))
+            : `round-${round + 1}`,
+          stepIndex: round + 1,
+          totalSteps: totalToolRounds,
+          status:
+            roundCalls.length > 0
+              ? `generating:tool-round-${round + 1}:${objective.targetFiles.join("|") || "auto"}`
+              : `generating:tool-idle-${idleRounds}/${MAX_IDLE_ROUNDS}`,
+          locale: decision.locale,
+          files: dedupedCurrent,
+          workflowArtifacts: workflowFiles,
+          pages: decision.routes.map((route) => ({
+            path: normalizePath(route),
+            html: String(dedupedCurrent.find((file) => file.path === routeToHtmlPath(route))?.content || ""),
+          })),
+          provider: stageMeta.activeProvider,
+          model: stageMeta.activeModel,
+          onStep: params.onStep,
+        });
+
+        if (requestedFinish && stillMissing.length > 0) {
           toolHistoryMessages.push(
             new HumanMessage(
               [
-                "Generated files failed the workflow QA gate. Re-emit only the affected complete file(s), then call finish after validation can pass.",
-                qaRepairTargets.length > 0
-                  ? `QA repair targets: ${qaRepairTargets.join(", ")}`
-                  : "QA repair targets: (none extracted; preserve all routes while fixing the reported issue)",
-                feedback,
-                "Repair requirements are generic page-type/layout rules from the workflow skill; preserve route list, navigation, Blog data-source contract, and generated file paths.",
+                "Finish was requested too early. Do not call finish yet.",
+                `Missing required files: ${stillMissing.join(", ")}`,
+                "Next round emit the missing files as complete outputs, then call finish only after all required files exist.",
               ].join("\n"),
             ),
           );
@@ -2995,13 +3214,88 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
           noProgressRounds = 0;
           continue;
         }
+        if (idleRounds >= MAX_IDLE_ROUNDS && stillMissing.length > 0) {
+          throw new Error(
+            `skill-tool idle rounds exceeded (${idleRounds}/${MAX_IDLE_ROUNDS}) with missing files: ${stillMissing.join(
+              ", ",
+            )}; last_round_calls=${lastRoundCallNames}; last_tool_error=${lastRoundToolErrors || "(none)"}`,
+          );
+        }
+        if (noProgressRounds >= MAX_NO_PROGRESS_ROUNDS && stillMissing.length > 0) {
+          throw new Error(
+            `skill-tool no-progress rounds exceeded (${noProgressRounds}/${MAX_NO_PROGRESS_ROUNDS}) with missing files: ${stillMissing.join(
+              ", ",
+            )}; last_round_calls=${lastRoundCallNames}; last_tool_error=${lastRoundToolErrors || "(none)"}`,
+          );
+        }
+        if (stillMissing.length === 0) {
+          try {
+            const validated = adapter.validateAndNormalizeRequiredFilesWithQa({
+              decision,
+              files: emittedFiles,
+              requirementText: toolRequirementContext,
+            });
+            completedStaticFiles = validated.files;
+            completedQaSummary = validated.qaSummary;
+            completedQaRecords = validated.qaRecords;
+            break;
+          } catch (error) {
+            const feedback = errorText(error);
+            if (round + 1 >= totalToolRounds) {
+              throw error;
+            }
+            assistantNotes.push(`tool_validation_repair:${feedback.slice(0, 500)}`);
+            qaRepairTargets = extractQaRepairTargets(feedback);
+            toolHistoryMessages.push(
+              new HumanMessage(
+                [
+                  "Generated files failed the workflow QA gate. Re-emit only the affected complete file(s), then call finish after validation can pass.",
+                  qaRepairTargets.length > 0
+                    ? `QA repair targets: ${qaRepairTargets.join(", ")}`
+                    : "QA repair targets: (none extracted; preserve all routes while fixing the reported issue)",
+                  feedback,
+                  "Repair requirements are generic page-type/layout rules from the workflow skill; preserve route list, navigation, Blog data-source contract, and generated file paths.",
+                ].join("\n"),
+              ),
+            );
+            idleRounds = 0;
+            noProgressRounds = 0;
+            continue;
+          }
+        }
       }
+
+      if (!completedStaticFiles || !completedQaSummary) {
+        const validated = adapter.validateAndNormalizeRequiredFilesWithQa({
+          decision,
+          files: emittedFiles,
+          requirementText: toolRequirementContext,
+        });
+        completedStaticFiles = validated.files;
+        completedQaSummary = validated.qaSummary;
+        completedQaRecords = validated.qaRecords;
+      }
+      lastStageFiles = dedupeFiles(emittedFiles);
+      break;
+    } catch (error) {
+      if (
+        stageRetry < SKILL_TOOL_STAGE_BUDGET_RETRY_LIMIT &&
+        shouldRetrySkillToolStageWithFreshAttempt(error, stageMeta)
+      ) {
+        console.warn(
+          `[skill-tool] fresh-stage retry after budget exceeded on ${stageMeta.activeProvider}/${stageMeta.activeModel}; retry ${stageRetry + 1}/${SKILL_TOOL_STAGE_BUDGET_RETRY_LIMIT}`,
+        );
+        assistantNotes.push(`stage_retry_after_budget:${stageMeta.activeProvider}`);
+        continue;
+      }
+      throw error;
     }
+  }
 
   if (!completedStaticFiles || !completedQaSummary) {
-    const validated = validateAndNormalizeRequiredFilesWithQa({
+    const validated = adapter.validateAndNormalizeRequiredFilesWithQa({
       decision,
-      files: emittedFiles,
+      files: lastStageFiles,
       requirementText: toolRequirementContext,
     });
     completedStaticFiles = validated.files;
@@ -3076,7 +3370,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
         id: crypto.randomUUID(),
         content: assistantNotes.filter(Boolean).slice(-1)[0] || "Skill-tool site generated successfully.",
         additional_kwargs: {
-          actions: [{ text: "Deploy to Cloudflare", payload: "deploy", type: "button" }],
+          actions: [{ text: "Deploy to shpitto server", payload: "deploy", type: "button" }],
         },
       }),
     ],
@@ -3107,7 +3401,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
   const assistantText =
     assistantNotes.filter(Boolean).slice(-1)[0] ||
     `Skill-native generation completed with ${decision.routes.length} routes and ${staticFiles.length} static files.`;
-  const actions = [{ text: "Deploy to Cloudflare", payload: "deploy", type: "button" as const }];
+  const actions = [{ text: "Deploy to shpitto server", payload: "deploy", type: "button" as const }];
   const finalFiles = getStaticArtifactFiles(finalState);
   const finalPages = getPages(finalState);
 
@@ -3121,6 +3415,8 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     workflowArtifacts: mergedWorkflowFiles,
     pages: finalPages as Array<{ path: string; html: string }>,
     qaSummary: completedQaSummary,
+    provider: stageMeta.activeProvider,
+    model: stageMeta.activeModel,
     onStep: params.onStep,
   });
 
@@ -3135,5 +3431,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     completedPhases: collectCompletedPhases(finalState),
     deployedUrl: finalState.deployed_url,
     qaSummary: completedQaSummary,
+    provider: stageMeta.activeProvider,
+    model: stageMeta.activeModel,
   };
 }

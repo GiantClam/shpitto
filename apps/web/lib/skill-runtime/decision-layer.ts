@@ -70,6 +70,17 @@ function normalizeRoute(route: string): string {
     .toLowerCase();
 }
 
+function isSyntheticLocaleMirrorRoute(route: string, baseRoutes: string[]): boolean {
+  const normalized = normalizeRoute(route);
+  if (!/^\/(?:zh|zh-cn|en)(?:\/|$)/i.test(normalized)) return false;
+  const stripped = normalizeRoute(normalized.replace(/^\/(?:zh|zh-cn|en)(?=\/|$)/i, "") || "/");
+  if (stripped === normalized) return false;
+  return !baseRoutes.some((candidate) => {
+    const normalizedCandidate = normalizeRoute(candidate);
+    return normalizedCandidate === normalized || normalizedCandidate === stripped;
+  });
+}
+
 function isSearchDirectoryRoute(route: string, label: string): boolean {
   const text = `${normalizeRoute(route)} ${String(label || "").trim()}`.toLowerCase();
   return /(certification|search|directory|download|downloads|query|lookup|catalog|results|assessment|evaluation)/i.test(text);
@@ -125,22 +136,41 @@ function extractRequirementText(state: AgentState): string {
     if (isHumanLikeMessage(msg)) humanMessages.push(content);
   }
   const workflow = (state as any)?.workflow_context || {};
+  const executionMode = String(workflow.executionMode || "").trim().toLowerCase();
   const fallbackCandidates = [
-    String(workflow.canonicalPrompt || "").trim(),
-    String(workflow.sourceRequirement || "").trim(),
-    String(workflow.latestUserText || "").trim(),
-    String(workflow.requirementAggregatedText || "").trim(),
+    ...(executionMode === "refine"
+      ? [
+          String(workflow.latestUserText || "").trim(),
+          String(workflow.canonicalPrompt || "").trim(),
+          String(workflow.sourceRequirement || "").trim(),
+          String(workflow.requirementAggregatedText || "").trim(),
+        ]
+      : [
+          String(workflow.canonicalPrompt || "").trim(),
+          String(workflow.sourceRequirement || "").trim(),
+          String(workflow.requirementAggregatedText || "").trim(),
+          String(workflow.latestUserText || "").trim(),
+        ]),
     ...humanMessages,
   ];
   return Array.from(new Set(fallbackCandidates.filter(Boolean))).join("\n\n").trim();
 }
 
 function extractBrandHint(requirementText: string): string | undefined {
+  if (/(?:logo\s+source|logo\s+strategy|text wordmark|generated temporary text logo|品牌文字标识|暂无\s*logo)/i.test(requirementText)) {
+    return undefined;
+  }
   const direct = requirementText.match(/(?:logo|brand|\u54c1\u724c)\s*[:：]\s*([^\n|,，。]+)/iu);
-  if (direct?.[1]) return String(direct[1]).trim();
+  if (direct?.[1]) {
+    const value = String(direct[1]).trim();
+    if (!/^(?:logo|text[_ -]?mark|wordmark|site|website|blog|brand)$/i.test(value)) return value;
+  }
 
   const named = requirementText.match(/(?:named|name|\u540d\u4e3a)\s*["“”'`]?([A-Za-z][A-Za-z0-9 _-]{1,48})["“”'`]?/iu);
-  if (named?.[1]) return String(named[1]).trim();
+  if (named?.[1]) {
+    const value = String(named[1]).trim();
+    if (!/^(?:logo|text[_ -]?mark|wordmark|site|website|blog|brand)$/i.test(value)) return value;
+  }
 
   return undefined;
 }
@@ -206,11 +236,20 @@ function isPromptPlanningArtifactRoute(route: string): boolean {
   return isPromptPlanningArtifactLabel(normalized.replace(/^\//, "").replace(/[-_/]+/g, " "));
 }
 
+function isImplementationMechanicsRoute(route: string): boolean {
+  const normalized = normalizeRoute(route);
+  if (!normalized || normalized === "/") return false;
+  return /(?:^|\/)(?:api|storage|runtime|hydration|fallback|data-source|backend|worker|prompt|contract)(?:\/|$)/i.test(
+    normalized,
+  );
+}
+
 function isRoutePlanningArtifact(route: string): boolean {
   const normalized = normalizeRoute(route);
   if (!normalized || normalized === "/") return false;
   if (/^\/\d+$/.test(normalized)) return true;
   if (isPromptPlanningArtifactRoute(normalized)) return true;
+  if (isImplementationMechanicsRoute(normalized)) return true;
 
   const segments = normalized
     .replace(/^\//, "")
@@ -436,6 +475,20 @@ type PromptControlManifestRoutePlan = {
   navLabels: string[];
 };
 
+function extractFixedOutputFileRoutePlan(requirementText: string): PromptControlManifestRoutePlan {
+  const source = String(requirementText || "");
+  const match = source.match(/### Fixed Pages And File Output\s*([\s\S]*?)(?=\n### |\n## |\Z)/i);
+  if (!match?.[1]) return { routes: [], navLabels: [] };
+  const files = String(match[1])
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("- "))
+    .map((line) => line.replace(/^-+\s*/, "").trim())
+    .map((file) => filePathToRoute(file))
+    .filter(Boolean);
+  return { routes: normalizeStructuredRoutes(files), navLabels: [] };
+}
+
 function filePathToRoute(filePath: string): string {
   const normalized = normalizeRoute(String(filePath || "").replace(/\.(html?)$/i, ""));
   if (!normalized || normalized === "/index") return "/";
@@ -448,17 +501,17 @@ function extractPromptControlManifestRoutePlan(
   locale: "zh-CN" | "en",
 ): PromptControlManifestRoutePlan {
   const source = String(requirementText || "");
-  if (!source.includes("Prompt Control Manifest")) return { routes: [], navLabels: [] };
+  if (!source.includes("Prompt Control Manifest")) return extractFixedOutputFileRoutePlan(source);
 
   const contractBlock = source.match(/Prompt Control Manifest[^\n]*[\s\S]*?```(?:json)?\s*([\s\S]*?)```/i);
   const rawJson = String(contractBlock?.[1] || "").trim();
-  if (!rawJson) return { routes: [], navLabels: [] };
+  if (!rawJson) return extractFixedOutputFileRoutePlan(source);
 
   let parsed: any;
   try {
     parsed = JSON.parse(rawJson);
   } catch {
-    return { routes: [], navLabels: [] };
+    return extractFixedOutputFileRoutePlan(source);
   }
 
   const routes = Array.isArray(parsed?.routes) ? normalizeStructuredRoutes(parsed.routes) : [];
@@ -473,7 +526,7 @@ function extractPromptControlManifestRoutePlan(
     ? parsed.files.map((file: unknown) => filePathToRoute(String(file || ""))).filter(Boolean)
     : [];
   const fileRoutes = normalizeStructuredRoutes(files);
-  return { routes: fileRoutes, navLabels: [] };
+  return fileRoutes.length > 0 ? { routes: fileRoutes, navLabels: [] } : extractFixedOutputFileRoutePlan(source);
 }
 
 function extractWorkflowPromptControlManifestRoutePlan(
@@ -546,6 +599,7 @@ function uniqueRoutes(routes: string[]): string[] {
     const normalized = normalizeRoute(route);
     if (!normalized) continue;
     if (isRoutePlanningArtifact(normalized)) continue;
+    if (isImplementationMechanicsRoute(normalized)) continue;
 
     if (normalized === "/") {
       if (!seen.has("/")) {
@@ -676,11 +730,25 @@ function findBlogSemanticRoute(routes: string[], navLabels?: string[]): string |
     .sort((left, right) => right.score - left.score || left.index - right.index)[0]?.route;
 }
 
+function requirementRequestsBlogSurface(text: string): boolean {
+  const normalized = String(text || "").trim();
+  if (!normalized) return false;
+  const negative = [
+    /(?:不要|不需要|无需|仅首页|只做首页).{0,12}(?:blog|博客|博文)/i,
+    /(?:do not|don't|no need|without|home only|single page).{0,20}(?:blog|post archive|article archive)/i,
+  ];
+  if (negative.some((pattern) => pattern.test(normalized))) return false;
+  return /(?:\bblog\b|博客|博文|blog页面|blog route|文章列表|文章归档|内容归档|3篇\s*blog|\d+\s*篇\s*(?:blog|博客|文章))/i.test(
+    normalized,
+  );
+}
+
 function ensureBlogRoute(routes: string[], options: { singlePage: boolean; requirementText: string }): string[] {
   const normalizedRoutes = uniqueRoutes(routes);
-  void options.requirementText;
   if (!shouldEnsureBlogRoute() || options.singlePage) return normalizedRoutes;
-  return normalizedRoutes;
+  if (!requirementRequestsBlogSurface(options.requirementText)) return normalizedRoutes;
+  if (findBlogSemanticRoute(normalizedRoutes)) return normalizedRoutes;
+  return uniqueRoutes([...normalizedRoutes, "/blog"]);
 }
 
 const EMPTY_COMPONENT_MIX: ComponentMix = { hero: 0, feature: 0, grid: 0, proof: 0, form: 0, cta: 0 };
@@ -1061,8 +1129,16 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
   );
 
   const labelRoutes = labelsToRoutes(mergedLabels).filter((route) => !isRoutePlanningArtifact(route));
+  const nonStateKnownRoutes = [
+    ...contractRoutes,
+    ...explicitRoutes,
+    ...singlePageRoutes,
+    ...specRoutes,
+    ...labelRoutes,
+  ].map((route) => normalizeRoute(route));
   const stateRoutes = Array.isArray(state.sitemap)
     ? state.sitemap.map((item) => normalizeRoute(String(item || ""))).filter((route) => !isRoutePlanningArtifact(route))
+        .filter((route) => !isSyntheticLocaleMirrorRoute(route, nonStateKnownRoutes))
     : [];
 
   const candidates = hasExplicitRoutePlan ? explicitRoutes : [...stateRoutes, ...labelRoutes, ...explicitRoutes];

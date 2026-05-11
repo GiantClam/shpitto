@@ -206,6 +206,45 @@ function runtimeLocaleFrom(...parts) {
   return parts.some(isZhText) ? "zh-CN" : "en";
 }
 
+function blogRuntimeCopy(locale) {
+  if (locale === "zh-CN") {
+    return {
+      article: "\\u6587\\u7ae0",
+      latestArticles: "\\u6700\\u65b0\\u6587\\u7ae0",
+      noPublishedPosts: "\\u6682\\u65e0\\u5df2\\u53d1\\u5e03\\u7684\\u6587\\u7ae0\\u3002",
+      noContent: "\\u6682\\u65e0\\u5185\\u5bb9\\u3002",
+      tagPrefix: "\\u6807\\u7b7e\\uff1a",
+      categoryPrefix: "\\u5206\\u7c7b\\uff1a",
+      blogDisabled: "Blog \\u529f\\u80fd\\u5df2\\u5173\\u95ed\\u3002",
+      rssDisabled: "RSS \\u5df2\\u5173\\u95ed\\u3002",
+      sitemapDisabled: "Sitemap \\u5df2\\u5173\\u95ed\\u3002",
+    };
+  }
+  return {
+    article: "Article",
+    latestArticles: "Latest articles",
+    noPublishedPosts: "No published posts yet.",
+    noContent: "No content.",
+    tagPrefix: "Tag: ",
+    categoryPrefix: "Category: ",
+    blogDisabled: "Blog is disabled.",
+    rssDisabled: "RSS is disabled.",
+    sitemapDisabled: "Sitemap is disabled.",
+  };
+}
+
+function blogLocaleFromPosts(posts, ...parts) {
+  const postParts = Array.isArray(posts)
+    ? posts.flatMap((post) => [
+        post?.title || "",
+        post?.excerpt || "",
+        post?.category || "",
+        ...(Array.isArray(post?.tags) ? post.tags : []),
+      ])
+    : [];
+  return runtimeLocaleFrom(...parts, ...postParts);
+}
+
 function toPost(row) {
   return {
     id: String(row.id || ""),
@@ -409,7 +448,8 @@ function renderShell({ title, description, body }) {
 </html>\`;
 }
 
-function renderPostCard(post, cardClass = "card") {
+function renderPostCard(post, cardClass = "card", locale = runtimeLocaleFrom(post?.title || "", post?.excerpt || "", post?.category || "")) {
+  const copy = blogRuntimeCopy(locale);
   const tagHtml = post.tags.map((tag) => \`<a class="tag" href="/blog/tag/\${encodeURIComponent(tag)}">\${escapeHtml(tag)}</a>\`).join("");
   const tagsText = [post.category || "", ...(post.tags || [])].join(" ").toLowerCase();
   return \`<article class="\${escapeAttr(cardClass || "card")}" data-filter-card data-tags="\${escapeAttr(tagsText)}">
@@ -547,8 +587,8 @@ function fillPostShell(shell, post, settings) {
 async function renderPostResponse(request, env, post, settings) {
   const shell = await fetchAssetText(request, env, BLOG_POST_SHELL_PATH);
   const html = shell && shell.includes("__SHPITTO_BLOG_POST_CONTENT__")
-    ? fillPostShell(shell, post, settings)
-    : renderPost(post);
+    ? fillPostShellLocalized(shell, post, settings)
+    : renderPostLocalized(post);
   return new Response(html, {
     headers: {
       "content-type": "text/html; charset=utf-8",
@@ -593,6 +633,154 @@ function renderSitemap(posts, requestUrl) {
 </urlset>\`;
 }
 
+function blogRuntimeLocale(posts, ...parts) {
+  return blogLocaleFromPosts(posts, ...parts);
+}
+
+function renderPostCardLocalized(post, cardClass = "card", locale = runtimeLocaleFrom(post?.title || "", post?.excerpt || "", post?.category || "")) {
+  const copy = blogRuntimeCopy(locale);
+  const tagHtml = post.tags.map((tag) => \`<a class="tag" href="/blog/tag/\${encodeURIComponent(tag)}">\${escapeHtml(tag)}</a>\`).join("");
+  const tagsText = [post.category || "", ...(post.tags || [])].join(" ").toLowerCase();
+  return \`<article class="\${escapeAttr(cardClass || "card")}" data-filter-card data-tags="\${escapeAttr(tagsText)}">
+    \${post.coverImageUrl ? \`<img src="\${escapeAttr(post.coverImageUrl)}" alt="\${escapeAttr(post.coverImageAlt || post.title)}" loading="lazy" />\` : ""}
+    <p class="meta">\${escapeHtml(post.category || copy.article)} \${post.publishedAt ? " | " + escapeHtml(post.publishedAt.slice(0, 10)) : ""}</p>
+    <h2><a href="/blog/\${encodeURIComponent(post.slug)}/">\${escapeHtml(post.title)}</a></h2>
+    <p>\${escapeHtml(post.excerpt)}</p>
+    <div>\${tagHtml}</div>
+  </article>\`;
+}
+
+function renderListLocalized(posts, title = "Blog", description = "", locale = blogRuntimeLocale(posts, title, description)) {
+  const copy = blogRuntimeCopy(locale);
+  const resolvedDescription = description || copy.latestArticles;
+  const body = \`<section>
+    <p class="meta">\${escapeHtml(resolvedDescription)}</p>
+    <h1>\${escapeHtml(title)}</h1>
+    <section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts">
+      <div class="grid" data-shpitto-blog-list>\${posts.length ? posts.map((post) => renderPostCardLocalized(post, "card", locale)).join("") : \`<div class="card"><p>\${escapeHtml(copy.noPublishedPosts)}</p></div>\`}</div>
+    </section>
+  </section>\`;
+  return renderShell({ title, description: resolvedDescription, body });
+}
+
+function renderGeneratedListBodyLocalized(posts, title, description, cardClass, locale = blogRuntimeLocale(posts, title, description)) {
+  const copy = blogRuntimeCopy(locale);
+  const resolvedDescription = description || copy.latestArticles;
+  const cards = posts.length
+    ? posts.map((post) => renderPostCardLocalized(post, cardClass, locale)).join("")
+    : \`<article class="card"><p>\${escapeHtml(copy.noPublishedPosts)}</p></article>\`;
+  return \`<section class="section shpitto-blog-collection-section">
+    <div class="container">
+      <p class="meta">\${escapeHtml(resolvedDescription)}</p>
+      <h1>\${escapeHtml(title)}</h1>
+      <section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts">
+        <div class="blog-grid" data-shpitto-blog-list>\${cards}</div>
+      </section>
+    </div>
+  </section>\`;
+}
+
+function collectionPageTitleLocalized(filter, value, settings) {
+  const locale = runtimeLocaleFrom(settings?.navLabel || "", value || "", "");
+  const copy = blogRuntimeCopy(locale);
+  return filter.tag ? \`\${copy.tagPrefix}\${value}\` : \`\${copy.categoryPrefix}\${value}\`;
+}
+
+function fillListShellLocalized(shell, posts, title, description) {
+  const source = String(shell || "");
+  if (!source || !/<\\/main>/i.test(source)) return "";
+  const locale = blogRuntimeLocale(posts, title, description);
+  const copy = blogRuntimeCopy(locale);
+  const resolvedDescription = description || copy.latestArticles;
+  const cardClass = inferGeneratedCardClass(source);
+  const body = renderGeneratedListBodyLocalized(posts, title, resolvedDescription, cardClass, locale);
+  let html = setListShellHead(source, title, resolvedDescription);
+  if (/<main\\b[^>]*>[\\s\\S]*?<\\/main>/i.test(html)) {
+    html = html.replace(/(<main\\b[^>]*>)[\\s\\S]*?(<\\/main>)/i, (_match, open, close) => \`\${open}\n\${body}\n\${close}\`);
+  } else {
+    html = html.replace(/<\\/body>/i, \`\${body}\n</body>\`);
+  }
+  return html;
+}
+
+async function renderListResponseLocalized(request, env, posts, title = "Blog", description = "") {
+  const locale = blogRuntimeLocale(posts, title, description);
+  const copy = blogRuntimeCopy(locale);
+  const resolvedDescription = description || copy.latestArticles;
+  const shell = await fetchAssetText(request, env, "/blog/index.html");
+  const html = shell && /<html[\\s>]/i.test(shell) && /<\\/main>/i.test(shell)
+    ? fillListShellLocalized(shell, posts, title, resolvedDescription)
+    : "";
+  return new Response(html || renderListLocalized(posts, title, resolvedDescription, locale), {
+    headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=60" },
+  });
+}
+
+function renderPostLocalized(post) {
+  const locale = runtimeLocaleFrom(post?.title || "", post?.excerpt || "", post?.category || "", post?.contentHtml || "");
+  const copy = blogRuntimeCopy(locale);
+  const title = post.seoTitle || post.title;
+  const description = post.seoDescription || post.excerpt || post.title;
+  const tags = post.tags.map((tag) => \`<a class="tag" href="/blog/tag/\${encodeURIComponent(tag)}">\${escapeHtml(tag)}</a>\`).join("");
+  const body = \`<article>
+    \${post.coverImageUrl ? \`<img class="cover" src="\${escapeAttr(post.coverImageUrl)}" alt="\${escapeAttr(post.coverImageAlt || post.title)}" />\` : ""}
+    <p class="meta">\${escapeHtml(post.category || copy.article)} \${post.publishedAt ? " | " + escapeHtml(post.publishedAt.slice(0, 10)) : ""}</p>
+    <h1>\${escapeHtml(post.title)}</h1>
+    <p class="meta">\${escapeHtml(post.excerpt)}</p>
+    <div>\${tags}</div>
+    <section>\${post.contentHtml || \`<p>\${escapeHtml(copy.noContent)}</p>\`}</section>
+  </article>\`;
+  return renderShell({ title, description, body });
+}
+
+function fillPostShellLocalized(shell, post, settings) {
+  const locale = runtimeLocaleFrom(settings?.navLabel || "", post?.title || "", post?.excerpt || "", post?.category || "", post?.contentHtml || "");
+  const copy = blogRuntimeCopy(locale);
+  const title = post.seoTitle || post.title;
+  const description = post.seoDescription || post.excerpt || post.title;
+  const meta = [post.category || settings.navLabel || "Blog", post.publishedAt ? post.publishedAt.slice(0, 10) : ""]
+    .filter(Boolean)
+    .join(" | ");
+  const replacements = {
+    "__SHPITTO_BLOG_SEO_TITLE__": escapeHtml(title),
+    "__SHPITTO_BLOG_SEO_DESCRIPTION__": escapeAttr(description),
+    "__SHPITTO_BLOG_POST_TITLE__": escapeHtml(post.title),
+    "__SHPITTO_BLOG_POST_EXCERPT__": escapeHtml(post.excerpt),
+    "__SHPITTO_BLOG_POST_META__": escapeHtml(meta),
+    "__SHPITTO_BLOG_POST_TAGS__": renderPostTags(post),
+    "__SHPITTO_BLOG_POST_COVER__": renderPostCover(post),
+    "__SHPITTO_BLOG_POST_CONTENT__": post.contentHtml || \`<p>\${escapeHtml(copy.noContent)}</p>\`,
+  };
+  let html = String(shell || "");
+  for (const [key, value] of Object.entries(replacements)) {
+    html = html.split(key).join(value);
+  }
+  return html;
+}
+
+function renderRssLocalized(posts, requestUrl, settings = null) {
+  const origin = new URL(requestUrl).origin;
+  const locale = blogRuntimeLocale(posts, settings?.navLabel || "");
+  const copy = blogRuntimeCopy(locale);
+  const title = settings?.navLabel || (locale === "zh-CN" ? "\\u535a\\u5ba2" : "Blog");
+  const items = posts
+    .map((post) => \`<item>
+      <title>\${escapeHtml(post.title)}</title>
+      <link>\${origin}/blog/\${encodeURIComponent(post.slug)}</link>
+      <guid>\${origin}/blog/\${encodeURIComponent(post.slug)}</guid>
+      <description>\${escapeHtml(post.excerpt)}</description>
+      \${post.publishedAt ? \`<pubDate>\${new Date(post.publishedAt).toUTCString()}</pubDate>\` : ""}
+    </item>\`)
+    .join("");
+  return \`<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel>
+  <title>\${escapeHtml(title)}</title>
+  <link>\${origin}/blog</link>
+  <description>\${escapeHtml(copy.latestArticles)}</description>
+  \${items}
+</channel></rss>\`;
+}
+
 async function handleBlogRequest(request, env) {
   const db = getDb(env);
   const url = new URL(request.url);
@@ -607,7 +795,7 @@ async function handleBlogRequest(request, env) {
   if (!settings.enabled) {
     return path.startsWith("/api/")
       ? json({ ok: true, posts: [], settings })
-      : new Response("Blog is disabled.", { status: 404 });
+      : new Response(blogRuntimeCopy(runtimeLocaleFrom(settings.navLabel || "")).blogDisabled, { status: 404 });
   }
 
   if (path === "/api/blog/posts") {
@@ -627,9 +815,9 @@ async function handleBlogRequest(request, env) {
   }
 
   if (path === "/blog/rss.xml") {
-    if (!settings.rssEnabled) return new Response("RSS is disabled.", { status: 404 });
+    if (!settings.rssEnabled) return new Response(blogRuntimeCopy(runtimeLocaleFrom(settings.navLabel || "")).rssDisabled, { status: 404 });
     const posts = await listPosts(db, 50);
-    return new Response(renderRss(posts, request.url), {
+    return new Response(renderRssLocalized(posts, request.url, settings), {
       headers: { "content-type": "application/rss+xml; charset=utf-8", "cache-control": "public, max-age=300" },
     });
   }
@@ -643,18 +831,18 @@ async function handleBlogRequest(request, env) {
   if (collectionFilter) {
     const posts = await listPosts(db, { ...collectionFilter, limit: 50 });
     const value = collectionFilter.tag || collectionFilter.category || "";
-    const title = collectionPageTitle(collectionFilter, value, settings);
-    return renderListResponse(request, env, posts, title, settings.navLabel || "Blog");
+    const title = collectionPageTitleLocalized(collectionFilter, value, settings);
+    return renderListResponseLocalized(request, env, posts, title, settings.navLabel || "Blog");
   }
 
   if (isBlogIndex) {
     const posts = await listPosts(db, 50);
-    return renderListResponse(request, env, posts, settings.navLabel || "Blog", "Latest articles");
+    return renderListResponseLocalized(request, env, posts, settings.navLabel || "Blog");
   }
 
   const posts = await listPosts(db, 50);
   if (path === "/sitemap.xml") {
-    if (!settings.sitemapEnabled) return new Response("Sitemap is disabled.", { status: 404 });
+    if (!settings.sitemapEnabled) return new Response(blogRuntimeCopy(runtimeLocaleFrom(settings.navLabel || "")).sitemapDisabled, { status: 404 });
     return new Response(renderSitemap(posts, request.url), {
       headers: { "content-type": "application/xml; charset=utf-8", "cache-control": "public, max-age=300" },
     });

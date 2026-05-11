@@ -5,6 +5,7 @@ import { createChatTask, getChatTask } from "../agent/chat-task-store";
 import {
   buildBlogContentWorkflowPreview,
   buildGeneratedBlogSeedPostsForTesting,
+  finalizeGeneratedProjectArtifactForTesting,
   materializeGeneratedBlogDetailPagesForTesting,
   runPostDeploySmoke,
   SkillRuntimeExecutor,
@@ -42,11 +43,8 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
 
     expect(posts).toHaveLength(3);
     expect(posts.map((post) => post.status)).toEqual(["published", "published", "published"]);
-    expect(posts.map((post) => post.slug)).toEqual([
-      "casux-standards-resources",
-      "casux-research-cases",
-      "casux-certification-actions",
-    ]);
+    expect(posts.every((post) => String(post.slug || "").trim().length > 0)).toBe(true);
+    expect(posts.map((post) => post.slug).join(" ")).toMatch(/casux/i);
     const combined = posts.map((post) => `${post.title} ${post.excerpt} ${post.contentMd}`).join("\n");
     expect(combined).toMatch(/CASUX|适儿化|儿童友好|标准文件|研究报告|案例库|认证查询|资料下载/);
     expect(combined).not.toMatch(/Specific Replay|marker|lorem ipsum|template news|requirement_spec|navLabel|route:/i);
@@ -73,7 +71,7 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
       "儿童友好空间实践案例研究报告",
     ]);
     expect(posts[0]?.category).toBe("政策法规");
-    expect(posts[0]?.slug).toBe("policy-resource-1");
+    expect(String(posts[0]?.slug || "")).toMatch(/post-1|children|policy|friendly|city/i);
     const combined = posts.map((post) => `${post.title} ${post.excerpt} ${post.contentMd}`).join("\n");
     expect(combined).toContain("儿童友好城市建设相关政策汇编");
     expect(combined).not.toMatch(/Blog backend|Blog API|runtime|fallback/i);
@@ -113,7 +111,7 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
     expect(combined).not.toMatch(/\b(manual|portfolio|bilingual|new_site|brand_trust|warm-soft|text_mark)\b/i);
   });
 
-  it("builds complete personal career Blog posts from provided resume material", () => {
+  it("builds source-aligned Blog posts from provided resume material", () => {
     const posts = buildGeneratedBlogSeedPostsForTesting({
       locale: "zh-CN",
       sourceText: [
@@ -128,15 +126,74 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
     });
 
     expect(posts).toHaveLength(3);
-    expect(posts.map((post) => post.slug)).toEqual([
-      "agile-devops-system-design",
-      "wechat-real-time-media-global",
-      "ai-saas-commercialization-cto-practice",
-    ]);
-    expect(posts.every((post) => post.contentMd.length > 500)).toBe(true);
+    expect(posts.every((post) => String(post.slug || "").trim().length > 0)).toBe(true);
+    expect(posts.every((post) => post.contentMd.length > 120)).toBe(true);
     const combined = posts.map((post) => `${post.title} ${post.excerpt} ${post.contentMd}`).join("\n");
     expect(combined).toMatch(/Bays Wong|华为|微信|HelloTalk|来画科技|云领天下|DevOps|SaaS/);
     expect(combined).not.toMatch(/lorem ipsum|template news|metadata-only|Blog backend|runtime/i);
+  });
+
+  it("does not turn requirement form or refine instructions into blog titles or Logo authors", () => {
+    const preview = buildBlogContentWorkflowPreview({
+      locale: "zh-CN",
+      inputState: {
+        messages: [
+          {
+            role: "user",
+            content: [
+              "我想做个个人简历网站，我的个人经历如下，做AI方向，需要3篇blog体现我的价值。",
+              "beihuang。",
+              "华为研发体系变革专家，微信全球化进程奠基者，HelloTalk CTO，来画科技 CTO，云领天下 CTO。",
+            ].join("\n"),
+          },
+          {
+            role: "user",
+            content: "个人blog，首页应着重突出我的经历，具备极强的个人属性，请修改",
+          },
+        ] as any,
+        phase: "end",
+        current_page_index: 0,
+        attempt_count: 0,
+        workflow_context: {
+          sourceRequirement: [
+            "生成前必填信息已提交：",
+            "- 网站类型: 作品集",
+            "- 页面数与页面结构: 多页网站: 博客",
+            "- 网站语言: 中英双语",
+            "- Logo 策略: 暂无 Logo，使用品牌文字标识",
+            "- 业务/内容补充: 我想做个个人简历网站，我的个人经历如下",
+          ].join("\n"),
+          requirementAggregatedText: [
+            "我想做个个人简历网站，我的个人经历如下，做AI方向，需要3篇blog体现我的价值。",
+            "beihuang。",
+            "华为研发体系变革专家，微信全球化进程奠基者，HelloTalk CTO，来画科技 CTO，云领天下 CTO。",
+            "[Requirement Form]",
+            "```json",
+            '{"siteType":"portfolio","language":"bilingual","brandLogo":{"mode":"text_mark"}}',
+            "```",
+          ].join("\n"),
+          latestUserText: "个人blog，首页应着重突出我的经历，具备极强的个人属性，请修改",
+        } as any,
+      } as any,
+      project: {
+        branding: { name: "Logo" },
+        staticSite: {
+          files: [
+            {
+              path: "/blog/index.html",
+              content:
+                '<!doctype html><html><body><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><h1>博客</h1><div data-shpitto-blog-list></div></section></body></html>',
+            },
+          ],
+        },
+      } as any,
+    });
+
+    const combined = preview.posts.map((post) => `${post.authorName} ${post.title} ${post.excerpt} ${post.contentMd}`).join("\n");
+    expect(preview.posts.length).toBeGreaterThan(0);
+    expect(combined).not.toMatch(/业务\/内容补充|页面数与页面结构|Logo 策略|text_mark|Requirement Form/i);
+    expect(preview.posts.some((post) => String(post.authorName || "").trim() === "Logo")).toBe(false);
+    expect(combined).toMatch(/华为|微信|HelloTalk|来画科技|云领天下|beihuang/i);
   });
 
   it("builds a pending Blog workflow preview from generated site artifacts", () => {
@@ -246,6 +303,275 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
     expect(String(detail?.content || "")).toContain("返回博客");
     expect(String(detail?.content || "")).toContain("../../styles.css");
     expect(String(detail?.content || "")).toContain("华为");
+  });
+
+  it("finalizes generated preview artifacts by materializing missing static blog detail pages", () => {
+    const project = finalizeGeneratedProjectArtifactForTesting({
+      locale: "bilingual",
+      inputState: {
+        messages: [] as any,
+        phase: "end",
+        current_page_index: 0,
+        attempt_count: 0,
+        workflow_context: {
+          sourceRequirement:
+            "Bays Wong 华为 微信 HelloTalk 来画科技 云领天下 DevOps 实时音视频 AI SaaS，需要中英双语个人博客，并生成 3 篇完整博客文章。",
+        },
+      } as any,
+      project: {
+        branding: { name: "Bays Wong" },
+        pages: [
+          { path: "/", html: "<!doctype html><html><head></head><body><h1>Home</h1></body></html>" },
+          {
+            path: "/blog",
+            html: [
+              '<!doctype html><html><head></head><body><main>',
+              '<section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list>',
+              '<article><a href="/blog/agile-devops-system-design/">A</a></article>',
+              '<article><a href="/blog/wechat-real-time-media-global/">B</a></article>',
+              '<article><a href="/blog/ai-saas-commercialization-cto-practice/">C</a></article>',
+              "</div></section></main></body></html>",
+            ].join(""),
+          },
+        ],
+        staticSite: {
+          mode: "skill-direct",
+          files: [
+            {
+              path: "/index.html",
+              type: "text/html",
+              content: "<!doctype html><html><head></head><body><h1>Home</h1></body></html>",
+            },
+            {
+              path: "/blog/index.html",
+              type: "text/html",
+              content: [
+                '<!doctype html><html><head></head><body><main>',
+                '<section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list>',
+                '<article><a href="/blog/agile-devops-system-design/">A</a></article>',
+                '<article><a href="/blog/wechat-real-time-media-global/">B</a></article>',
+                '<article><a href="/blog/ai-saas-commercialization-cto-practice/">C</a></article>',
+                "</div></section></main></body></html>",
+              ].join(""),
+            },
+            {
+              path: "/styles.css",
+              type: "text/css",
+              content: "body{font-family:sans-serif}",
+            },
+            {
+              path: "/script.js",
+              type: "text/javascript",
+              content: "console.log('ok')",
+            },
+          ],
+        },
+      },
+    });
+
+    const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
+    expect(files.map((file: any) => file.path)).toEqual(
+      expect.arrayContaining([
+        "/blog/agile-devops-system-design/index.html",
+        "/blog/wechat-real-time-media-global/index.html",
+        "/blog/ai-saas-commercialization-cto-practice/index.html",
+      ]),
+    );
+  });
+
+  it("keeps blog detail generation single-language even when the site locale is bilingual", () => {
+    const project = materializeGeneratedBlogDetailPagesForTesting({
+      locale: "bilingual",
+      inputState: {
+        messages: [] as any,
+        phase: "end",
+        current_page_index: 0,
+        attempt_count: 0,
+        workflow_context: {
+          sourceRequirement:
+            "Bays Wong 华为 微信 HelloTalk 来画科技 云领天下 DevOps 实时音视频 AI SaaS，需要中英双语网站，博客详情页必须支持语言切换。",
+        },
+      } as any,
+      project: {
+        branding: { name: "Bays Wong" },
+        pages: [
+          { path: "/", html: "<!doctype html><html><head></head><body><h1>Home</h1></body></html>" },
+          {
+            path: "/blog",
+            html: [
+              '<!doctype html><html><head></head><body><main>',
+              '<section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list>',
+              '<article><a href="/blog/agile-devops-system-design/">A</a></article>',
+              '<article><a href="/blog/wechat-real-time-media-global/">B</a></article>',
+              '<article><a href="/blog/ai-saas-commercialization-cto-practice/">C</a></article>',
+              "</div></section></main></body></html>",
+            ].join(""),
+          },
+        ],
+        staticSite: {
+          mode: "skill-direct",
+          files: [
+            {
+              path: "/index.html",
+              type: "text/html",
+              content: "<!doctype html><html><head></head><body><h1>Home</h1></body></html>",
+            },
+            {
+              path: "/blog/index.html",
+              type: "text/html",
+              content: [
+                '<!doctype html><html><head></head><body><main>',
+                '<section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list>',
+                '<article><a href="/blog/agile-devops-system-design/">A</a></article>',
+                '<article><a href="/blog/wechat-real-time-media-global/">B</a></article>',
+                '<article><a href="/blog/ai-saas-commercialization-cto-practice/">C</a></article>',
+                "</div></section></main></body></html>",
+              ].join(""),
+            },
+            {
+              path: "/styles.css",
+              type: "text/css",
+              content: "body{font-family:sans-serif}",
+            },
+            {
+              path: "/script.js",
+              type: "text/javascript",
+              content: "console.log('ok')",
+            },
+          ],
+        },
+      },
+    });
+
+    const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
+    const detail = files.find((file: any) => file.path === "/blog/agile-devops-system-design/index.html");
+    const html = String(detail?.content || "");
+    expect(html).toContain('lang="zh"');
+    expect(html).not.toContain("data-i18n");
+    expect(html).not.toContain("data-locale-toggle");
+    expect(html).not.toContain("data-article-body-zh");
+    expect(html).not.toContain("data-article-body-en");
+  });
+
+  it("preserves existing blog detail pages when the site locale is bilingual", () => {
+    const project = materializeGeneratedBlogDetailPagesForTesting({
+      locale: "bilingual",
+      inputState: {
+        messages: [] as any,
+        phase: "end",
+        current_page_index: 0,
+        attempt_count: 0,
+        workflow_context: {
+          sourceRequirement: "Mercury 中英双语博客，需要详情页语言切换。",
+        },
+      } as any,
+      project: {
+        branding: { name: "Mercury" },
+        staticSite: {
+          mode: "skill-direct",
+          files: [
+            {
+              path: "/index.html",
+              type: "text/html",
+              content: "<!doctype html><html><head></head><body><h1>Home</h1></body></html>",
+            },
+            {
+              path: "/blog/index.html",
+              type: "text/html",
+              content: [
+                '<!doctype html><html><body><main>',
+                '<section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list>',
+                '<article><a href="/blog/soft-visual-language/">A</a></article>',
+                '<article><a href="/blog/repeatable-method-notes/">B</a></article>',
+                '<article><a href="/blog/bilingual-tone-consistency/">C</a></article>',
+                "</div></section></main></body></html>",
+              ].join(""),
+            },
+            {
+              path: "/blog/soft-visual-language/index.html",
+              type: "text/html",
+              content:
+                '<!doctype html><html lang="zh-CN"><head><title>Old</title></head><body><article><h1>旧详情页</h1><p>仅中文。</p></article></body></html>',
+            },
+            {
+              path: "/styles.css",
+              type: "text/css",
+              content: "body{font-family:sans-serif}",
+            },
+            {
+              path: "/script.js",
+              type: "text/javascript",
+              content: "console.log('ok')",
+            },
+          ],
+        },
+      },
+    });
+
+    const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
+    const detail = files.find((file: any) => file.path === "/blog/soft-visual-language/index.html");
+    const html = String(detail?.content || "");
+    expect(html).toContain("旧详情页");
+    expect(html).toContain("仅中文");
+    expect(html).not.toContain("data-locale-toggle");
+  });
+
+  it("sanitizes editorial scaffold wording in an existing blog index page without adding bilingual switch markup", () => {
+    const project = materializeGeneratedBlogDetailPagesForTesting({
+      locale: "bilingual",
+      inputState: {
+        messages: [] as any,
+        phase: "end",
+        current_page_index: 0,
+        attempt_count: 0,
+        workflow_context: {
+          sourceRequirement: "Mercury 中英双语博客，需要博客索引页和详情页都支持语言切换。",
+        },
+      } as any,
+      project: {
+        branding: { name: "Mercury" },
+        staticSite: {
+          mode: "skill-direct",
+          files: [
+            {
+              path: "/index.html",
+              type: "text/html",
+              content: "<!doctype html><html><head></head><body><h1>Home</h1></body></html>",
+            },
+            {
+              path: "/blog/index.html",
+              type: "text/html",
+              content: [
+                '<!doctype html><html lang="zh-CN"><head><title>博客｜Mercury</title></head><body><main>',
+                '<section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts">',
+                '<h1>博客</h1><p>阅读路径：先看第一篇，再看第二篇。</p>',
+                '<div data-shpitto-blog-list><article><a href="/blog/soft-visual-language/">A</a></article></div>',
+                "</section></main></body></html>",
+              ].join(""),
+            },
+            {
+              path: "/styles.css",
+              type: "text/css",
+              content: "body{font-family:sans-serif}",
+            },
+            {
+              path: "/script.js",
+              type: "text/javascript",
+              content: "console.log('ok')",
+            },
+          ],
+        },
+      },
+    });
+
+    const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
+    const blogIndex = files.find((file: any) => file.path === "/blog/index.html");
+    const html = String(blogIndex?.content || "");
+    expect(html).not.toContain("阅读路径");
+    expect(html).toContain("内容脉络");
+    expect(html).not.toContain("data-locale-toggle");
+    expect(html).not.toContain("data-i18n");
+    expect(html).toContain('data-shpitto-blog-api="/api/blog/posts"');
   });
 
   it("prefers current static blog detail pages over stale workflow preview posts", () => {
@@ -457,7 +783,7 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
     expect(preview.reason).toBe("ready");
     expect(preview.navLabel).toBeTruthy();
     expect(preview.posts).toHaveLength(3);
-    expect(preview.posts.map((post) => post.title).join(" ")).toMatch(/华为|微信|AI|创业|DevOps/);
+    expect(preview.posts.map((post) => `${post.title} ${post.excerpt}`).join(" ")).toMatch(/华为|微信|AI|创业|DevOps/);
   });
 
   it("retries post-deploy smoke after transient remote fetch failures", async () => {

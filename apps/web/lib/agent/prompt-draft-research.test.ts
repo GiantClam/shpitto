@@ -6,6 +6,7 @@ import {
   buildPromptControlManifestForTesting,
   buildPromptDraftWithResearch,
   buildSerperQueriesForTesting,
+  ensureCanonicalPromptHasBilingualContractForTesting,
   enrichCanonicalPromptWithControlManifestForTesting,
   mergeTemplateWithKnowledgeProfileForTesting,
 } from "./prompt-draft-research";
@@ -197,6 +198,94 @@ describe("prompt draft research", () => {
     expect(contract.routes).not.toContain("/custom-solutions");
   });
 
+  it("keeps generic uploaded-source multi-page IA in the prompt control manifest", () => {
+    const contract = buildPromptControlManifestFromKnowledgeProfileForTesting(
+      "Generate the website from the uploaded planning document.",
+      {
+        sourceMode: "uploaded_files",
+        domains: [],
+        sources: [],
+        brand: { name: "Example Co" },
+        audience: [],
+        offerings: [],
+        differentiators: [],
+        proofPoints: [],
+        suggestedPages: [
+          { route: "/", title: "Home", purpose: "Home page", contentInputs: [] },
+          { route: "/about-us", title: "About Us", purpose: "Company overview", contentInputs: [] },
+          { route: "/solutions", title: "Solutions", purpose: "Solutions overview", contentInputs: [] },
+          { route: "/solutions-for-schools", title: "Solutions for Schools", purpose: "Education segment page", contentInputs: [] },
+          { route: "/case-studies", title: "Case Studies", purpose: "Proof page", contentInputs: [] },
+          { route: "/resources", title: "Resources", purpose: "Downloads and guides", contentInputs: [] },
+          { route: "/contact", title: "Contact Us", purpose: "Contact page", contentInputs: [] },
+        ],
+        contentGaps: [],
+        summary: "",
+      },
+    );
+
+    expect(contract.routeSource).toBe("uploaded_source_page_plan");
+    expect(contract.routes).toEqual([
+      "/",
+      "/about-us",
+      "/solutions",
+      "/solutions-for-schools",
+      "/case-studies",
+      "/resources",
+      "/contact",
+    ]);
+    expect(contract.files).toEqual(
+      expect.arrayContaining([
+        "/index.html",
+        "/about-us/index.html",
+        "/solutions/index.html",
+        "/solutions-for-schools/index.html",
+        "/case-studies/index.html",
+        "/resources/index.html",
+        "/contact/index.html",
+      ]),
+    );
+  });
+
+  it("keeps source-derived deduped sibling routes in the prompt control manifest", () => {
+    const contract = buildPromptControlManifestFromKnowledgeProfileForTesting(
+      "Generate the website from the uploaded CASUX planning document.",
+      {
+        sourceMode: "uploaded_files",
+        domains: [],
+        sources: [],
+        brand: { name: "CASUX" },
+        audience: [],
+        offerings: [],
+        differentiators: [],
+        proofPoints: [],
+        suggestedPages: [
+          { route: "/", title: "首页", purpose: "首页", contentInputs: [] },
+          { route: "/casux-creation", title: "CASUX创设", purpose: "创设", contentInputs: [] },
+          { route: "/casux-construction", title: "CASUX建设", purpose: "建设", contentInputs: [] },
+          { route: "/casux-certification", title: "CASUX优标", purpose: "优标", contentInputs: [] },
+          { route: "/casux-advocacy", title: "CASUX倡导", purpose: "倡导", contentInputs: [] },
+          { route: "/casux-research-center", title: "CASUX研究中心", purpose: "研究中心", contentInputs: [] },
+          { route: "/casux-information-platform", title: "CASUX信息平台", purpose: "信息平台", contentInputs: [] },
+          { route: "/downloads", title: "资料下载", purpose: "资料下载", contentInputs: [] },
+        ],
+        contentGaps: [],
+        summary: "",
+      },
+    );
+
+    expect(contract.routes).toEqual([
+      "/",
+      "/casux-creation",
+      "/casux-construction",
+      "/casux-certification",
+      "/casux-advocacy",
+      "/casux-research-center",
+      "/casux-information-platform",
+      "/downloads",
+    ]);
+  });
+
   it("adds an evidence brief that preserves source-backed content priorities", () => {
     const prompt = mergeTemplateWithKnowledgeProfileForTesting("# Canonical Website Generation Prompt", {
       sourceMode: "domain",
@@ -313,19 +402,17 @@ describe("prompt draft research", () => {
     expect(result.fallbackReason).toContain("test_environment_skip_network");
     expect(result.knowledgeProfile?.sourceMode).toBe("uploaded_files");
     expect(result.promptControlManifest.routeSource).toBe("uploaded_source_page_plan");
-    expect(result.promptControlManifest.routes).toEqual(
-      expect.arrayContaining([
-        "/",
-        "/casux-creation",
-        "/casux-construction",
-        "/casux-certification",
-        "/casux-advocacy",
-        "/casux-research-center",
-        "/casux-information-platform",
-      ]),
-    );
+    expect(result.promptControlManifest.routes).toEqual([
+      "/",
+      "/casux-creation",
+      "/casux-construction",
+      "/casux-certification",
+      "/casux-advocacy",
+      "/casux-research-center",
+      "/casux-information-platform",
+    ]);
     expect(result.canonicalPrompt).toContain("## 7.25 Source Material Appendix");
-    expect(result.canonicalPrompt).toContain("CASUX Construction");
+    expect(result.canonicalPrompt).toContain("CASUX");
     expect(result.canonicalPrompt).toContain("multilingual source excerpt available");
     expect(containsWorkflowCjk(result.canonicalPrompt)).toBe(false);
     expect(isWorkflowArtifactEnglishSafe(result.canonicalPrompt)).toBe(true);
@@ -363,6 +450,51 @@ describe("prompt draft research", () => {
     expect(result.canonicalPrompt).toContain("Functional requirements");
     expect(result.canonicalPrompt).toContain("Customer inquiry form");
     expect(result.canonicalPrompt).not.toContain("Language switch");
+  });
+
+  it("injects a bilingual site contract into the prompt draft when the requested locale is bilingual", async () => {
+    const requirement = [
+      "生成前必填信息已提交：",
+      "[Requirement Form]",
+      "```json",
+      JSON.stringify(
+        {
+          siteType: "portfolio",
+          pageStructure: { mode: "multi", pages: ["blog"] },
+          functionalRequirements: ["none"],
+          primaryGoal: ["brand_trust"],
+          language: "bilingual",
+          brandLogo: { mode: "text_mark" },
+        },
+        null,
+        2,
+      ),
+      "```",
+      "做一个中英双语 blog，默认中文，并且需要语言切换。",
+    ].join("\n");
+
+    const result = await buildPromptDraftWithResearch({
+      requirementText: requirement,
+      slots: buildRequirementSlots(requirement),
+      displayLocale: "zh",
+    });
+
+    expect(result.canonicalPrompt).toContain("## 7.35 Bilingual Experience Contract");
+    expect(result.canonicalPrompt).toContain("Requested site locale: bilingual EN/ZH");
+    expect(result.canonicalPrompt).toContain("Default visible language: Chinese (zh-CN)");
+    expect(result.canonicalPrompt).toContain("`data-i18n-*`");
+    expect(result.canonicalPrompt).toContain("language switch");
+    expect(result.canonicalPrompt).toContain("Blog/content workflows stay single-language");
+  });
+
+  it("can inject a bilingual contract into an existing English workflow draft", () => {
+    const draft = ["# Canonical Website Generation Prompt", "## 1. Overview", "Build a bilingual site."].join("\n");
+    const enriched = ensureCanonicalPromptHasBilingualContractForTesting(draft, "bilingual", "zh");
+
+    expect(enriched).toContain("## 7.35 Bilingual Experience Contract");
+    expect(enriched).toContain("Default visible language: Chinese (zh-CN)");
+    expect(enriched).toContain("exactly one active language at a time");
+    expect(containsWorkflowCjk(enriched)).toBe(false);
   });
 
   it("prioritizes explicit domains over long requirement-form search text", () => {
@@ -456,5 +588,116 @@ describe("prompt draft research", () => {
         process.env.CHAT_DRAFT_LLM_ENABLED = prevLlmEnabled;
       }
     }
+  });
+
+  it("keeps freeform profile facts in template draft fallback instead of collapsing to a generic portfolio shell", async () => {
+    const requirement = [
+      "我做过华为、微信、HelloTalk 等产品与增长相关工作，过去长期服务 K12 和教育信息化场景。",
+      "近年主要做 DevOps、AI 数字人 SaaS、学校增长与运营体系，服务过 5000+ 学校，并带来 300% 到 800% 的价值提升。",
+      "希望站点以个人 portfolio + blog 形式呈现这些经历、方法论、代表项目和结果。",
+      "",
+      "[Requirement Form]",
+      "```json",
+      JSON.stringify({
+        siteType: "portfolio",
+        targetAudience: ["consumers"],
+        primaryVisualDirection: "warm-soft",
+        pageStructure: { mode: "multi", planning: "auto" },
+        functionalRequirements: ["none"],
+        primaryGoal: ["brand_trust"],
+        language: "bilingual",
+        brandLogo: { mode: "text_mark" },
+        contentSources: ["new_site"],
+        customNotes: "",
+      }),
+      "```",
+    ].join("\n");
+
+    const result = await buildPromptDraftWithResearch({
+      requirementText: requirement,
+      slots: buildRequirementSlots(requirement),
+      displayLocale: "zh",
+    });
+
+    expect(result.draftMode).toBe("template");
+    expect(result.canonicalPrompt).toContain("Business/content details");
+    expect(result.canonicalPrompt).toContain("HelloTalk");
+    expect(result.canonicalPrompt).toContain("DevOps");
+    expect(result.canonicalPrompt).toContain("SaaS");
+    expect(result.canonicalPrompt).toContain("K12");
+    expect(result.canonicalPrompt).toContain("5000");
+    expect(result.canonicalPrompt).toContain("300");
+    expect(result.canonicalPrompt).toContain("800");
+    expect(result.canonicalPrompt).toContain("Bilingual Experience Contract");
+    expect(result.canonicalPrompt).not.toContain("Brand: Logo");
+  });
+
+  it("keeps chinese resume facts and confirmed blog IA instead of falling back to generic company pages", async () => {
+    const requirement = [
+      "生成前必填信息已提交：",
+      "- 网站类型: 作品集",
+      "- 内容来源: 新建站，无现成内容",
+      "- 业务/内容补充: 我想做个个人简历网站，我的个人经历如下，做AI方向，需要3篇blog体现我的价值 beihuang 职业履历亮点 华为研发体系变革专家 微信全球化进程奠基者 云领天下 来画科技 HelloTalk K12 5000+学校 AI数字人SaaS 300%-800%的商业价值跃升。",
+      "- 页面数与页面结构: 多页网站: 博客",
+      "- 核心转化目标: 建立品牌信任",
+      "- 网站语言: 中英双语",
+      "",
+      "[Requirement Form]",
+      "```json",
+      JSON.stringify(
+        {
+          siteType: "portfolio",
+          targetAudience: ["consumers"],
+          contentSources: ["new_site"],
+          primaryVisualDirection: "warm-soft",
+          pageStructure: { mode: "multi", planning: "manual", pages: ["blog"] },
+          functionalRequirements: ["none"],
+          primaryGoal: ["brand_trust"],
+          language: "bilingual",
+          brandLogo: { mode: "text_mark" },
+          customNotes:
+            "我想做个个人简历网站，我的个人经历如下，做AI方向，需要3篇blog体现我的价值 beihuang 职业履历亮点 华为研发体系变革专家 微信全球化进程奠基者 云领天下 来画科技 HelloTalk K12 5000+学校 AI数字人SaaS 300%-800%的商业价值跃升。",
+        },
+        null,
+        2,
+      ),
+      "```",
+    ].join("\n");
+
+    const result = await buildPromptDraftWithResearch({
+      requirementText: requirement,
+      slots: buildRequirementSlots(requirement),
+      displayLocale: "zh",
+    });
+
+    expect(result.promptControlManifest.routes).toEqual(["/", "/blog"]);
+    if (result.knowledgeProfile) {
+      expect(result.knowledgeProfile.suggestedPages.map((page) => page.route)).toEqual(["/", "/blog"]);
+      expect(result.knowledgeProfile.offerings.join(" ")).toMatch(/AI|DevOps|SaaS|HelloTalk|K12/i);
+      expect(result.knowledgeProfile.proofPoints.join(" ")).toMatch(/5000|300|800/i);
+    }
+    expect(result.canonicalPrompt).toContain("HelloTalk");
+    expect(result.canonicalPrompt).toContain("Bilingual Experience Contract");
+    expect(result.canonicalPrompt).not.toContain("/about/index.html");
+    expect(result.canonicalPrompt).not.toContain("/products/index.html");
+    expect(result.canonicalPrompt).not.toContain("/cases/index.html");
+    expect(result.canonicalPrompt).not.toContain("/contact/index.html");
+  });
+
+  it("keeps /blog in the prompt plan when natural-language requirement asks for three blog posts without a requirement form", async () => {
+    const requirement =
+      "我想做个个人简历网站，我的个人经历如下，做AI方向，需要3篇blog体现我的价值。beihuang，华为研发体系变革专家，微信全球化进程奠基者，HelloTalk CTO，来画科技 CTO，云领天下 CTO。";
+
+    const result = await buildPromptDraftWithResearch({
+      requirementText: requirement,
+      slots: buildRequirementSlots(requirement),
+      displayLocale: "zh",
+    });
+
+    expect(result.promptControlManifest.routes).toEqual(["/", "/blog"]);
+    expect(result.promptControlManifest.files).toEqual(
+      expect.arrayContaining(["/index.html", "/blog/index.html", "/styles.css", "/script.js"]),
+    );
+    expect(result.canonicalPrompt).toContain("/blog/index.html");
   });
 });

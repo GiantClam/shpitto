@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import React from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -53,7 +54,15 @@ export const Hero = ({
     )}>
       {bgImage ? (
         <>
-          <img src={bgImage} alt={title || "Hero"} className="absolute inset-0 w-full h-full object-cover opacity-25" />
+          <Image
+            src={bgImage}
+            alt={title || "Hero"}
+            fill
+            priority
+            unoptimized
+            sizes="100vw"
+            className="object-cover opacity-25"
+          />
           <div className="absolute inset-0 bg-black/30" />
         </>
       ) : null}

@@ -371,4 +371,41 @@ describe("chat orchestrator intent", () => {
     expect(spec.secondaryVisualTags).not.toContain("industrial-b2b");
     expect(spec.visualDecisionSource).toBe("user_explicit");
   });
+
+  it("preserves substantive freeform profile context when a later form submission is generic", () => {
+    const freeformProfile = [
+      "我做过华为、微信、HelloTalk 等产品与增长相关工作，过去长期服务 K12 和教育信息化场景。",
+      "近年主要做 DevOps、AI 数字人 SaaS、学校增长与运营体系，服务过 5000+ 学校。",
+      "我希望网站把这些经历、方法论、代表项目和结果讲清楚，例如 300% 到 800% 的增长价值提升。",
+      "站点方向是个人 portfolio，兼顾 blog 内容沉淀。",
+    ].join("");
+    const requirementForm = [
+      "[Requirement Form]",
+      "```json",
+      JSON.stringify({
+        siteType: "portfolio",
+        targetAudience: ["consumers"],
+        primaryVisualDirection: "warm-soft",
+        pageStructure: { mode: "multi", planning: "auto" },
+        functionalRequirements: ["none"],
+        primaryGoal: ["brand_trust"],
+        language: "bilingual",
+        brandLogo: { mode: "text_mark" },
+        contentSources: ["new_site"],
+        customNotes: "",
+      }),
+      "```",
+    ].join("\n");
+    const aggregated = [freeformProfile, requirementForm].join("\n");
+
+    const spec = buildRequirementSpec(aggregated, [freeformProfile, requirementForm]);
+
+    expect(spec.businessContext).toContain("华为");
+    expect(spec.businessContext).toContain("HelloTalk");
+    expect(spec.businessContext).toContain("5000+");
+    expect(spec.customNotes).toContain("DevOps");
+    expect(spec.customNotes).toContain("300%");
+    expect(spec.siteType).toBe("portfolio");
+    expect(spec.locale).toBe("bilingual");
+  });
 });

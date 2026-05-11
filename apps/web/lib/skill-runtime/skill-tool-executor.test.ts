@@ -11,6 +11,8 @@ import {
   isRetryableProviderError,
   normalizeToolChoiceForProvider,
   normalizeGeneratedJsForTesting,
+  normalizeGeneratedCssForTesting,
+  planRoundObjectiveForTesting,
   requiredFileChecklistForTesting,
   resolveToolProtocolForProvider,
   runSkillToolExecutor,
@@ -384,6 +386,34 @@ describe("skill-tool-executor", () => {
     expect(Array.isArray(validated.qaRecords)).toBe(true);
   });
 
+  it("ignores locale mirror routes from state sitemap when bilingual support is toggle-based", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a bilingual Chinese and English personal blog with Home, Blog, About, Contact.")],
+      phase: "conversation",
+      sitemap: ["/", "/blog", "/about", "/contact", "/zh"],
+    } as any);
+
+    const required = requiredFileChecklistForTesting(decision as any, {
+      requirementText: "Build a bilingual Chinese and English personal blog with Home, Blog, About, Contact.",
+    });
+
+    expect(required).not.toContain("/zh/index.html");
+  });
+
+  it("filters implementation-mechanics routes from sitemap-derived required files", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a bilingual Chinese and English personal blog with Home and Blog.")],
+      phase: "conversation",
+      sitemap: ["/", "/blog", "/storage/runtime/hydration/fallback"],
+    } as any);
+
+    const required = requiredFileChecklistForTesting(decision, {
+      requirementText: "Build a bilingual Chinese and English personal blog with Home and Blog.",
+    });
+
+    expect(required).not.toContain("/storage/runtime/hydration/fallback/index.html");
+  });
+
   it("locks the website quality contract wording with a snapshot", () => {
     expect(renderWebsiteQualityContract()).toMatchInlineSnapshot(`
       "## Website Quality Contract
@@ -458,6 +488,213 @@ describe("skill-tool-executor", () => {
     const detailContract = formatTargetPageContract(plan, "/blog/agile-devops-system-design/index.html", requirement);
     expect(detailContract).toContain("Render exactly one visible article language body in this file.");
     expect(detailContract).toContain("alternating zh/en paragraphs in the initial HTML");
+  });
+
+  it("treats requested bilingual blog detail pages as required skill outputs instead of runtime-only completions", () => {
+    const requirement = [
+      "Build a bilingual personal blog for Bays Wong with Home, Blog, About, Contact.",
+      "Generate 3 complete articles.",
+      "Default language is zh-CN with an EN/ZH switch.",
+    ].join(" ");
+    const plan = buildLocalDecisionPlan({
+      messages: [new HumanMessage(requirement)],
+      phase: "conversation",
+    } as any);
+    const files = [
+      { path: "/styles.css", content: "body{}", type: "text/css" },
+      { path: "/script.js", content: "console.log('ok')", type: "text/javascript" },
+      { path: "/index.html", content: "<!doctype html><html></html>", type: "text/html" },
+      {
+        path: "/blog/index.html",
+        content:
+          '<!doctype html><html><body><a href="/blog/agile-devops-system-design/">A</a><a href="/blog/wechat-real-time-media-global/">B</a><a href="/blog/ai-saas-commercialization-cto-practice/">C</a></body></html>',
+        type: "text/html",
+      },
+      { path: "/about/index.html", content: "<!doctype html><html></html>", type: "text/html" },
+      { path: "/contact/index.html", content: "<!doctype html><html></html>", type: "text/html" },
+    ];
+
+    const required = requiredFileChecklistForTesting(plan, { files, requirementText: requirement });
+    expect(required).toEqual(
+      expect.arrayContaining([
+        "/blog/agile-devops-system-design/index.html",
+        "/blog/wechat-real-time-media-global/index.html",
+        "/blog/ai-saas-commercialization-cto-practice/index.html",
+      ]),
+    );
+
+    const objective = planRoundObjectiveForTesting(0, [
+      "/blog/agile-devops-system-design/index.html",
+      "/blog/wechat-real-time-media-global/index.html",
+    ]);
+    expect(objective.targetFiles).toEqual(["/blog/agile-devops-system-design/index.html"]);
+    expect(objective.instruction).toContain("complete Blog detail HTML document");
+    expect(objective.instruction).toContain("full readable article/detail page");
+  });
+
+  it("skips bilingual body-copy guard for blog detail pages while keeping detail completeness checks", () => {
+    const requirement = [
+      "Build a bilingual Chinese and English personal blog with a language switch.",
+      "Generate 3 complete articles.",
+    ].join(" ");
+    const plan = buildLocalDecisionPlan({
+      messages: [new HumanMessage(requirement)],
+      phase: "conversation",
+    } as any);
+    const invalidDetailPaths = new Set([
+      "/blog/agile-devops-system-design/index.html",
+      "/blog/wechat-real-time-media-global/index.html",
+      "/blog/ai-saas-commercialization-cto-practice/index.html",
+    ]);
+    const files = [
+      ...validGeneratedFiles(["/", "/blog", "/about", "/contact"]).filter(
+        (file) =>
+          file.path !== "/blog/index.html" &&
+          !invalidDetailPaths.has(file.path),
+      ),
+      {
+        path: "/blog/index.html",
+        type: "text/html",
+        content: [
+          "<!doctype html>",
+          '<html lang="zh-CN">',
+          "<head>",
+          "  <title>博客</title>",
+          '  <meta charset="utf-8" />',
+          '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+          '  <link rel="stylesheet" href="/styles.css" />',
+          "</head>",
+          "<body>",
+          "  <main>",
+          '    <section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts">',
+          '      <h1>博客</h1>',
+          '      <p>文章索引页保留站点级双语框架，具体文章正文不参与双语守卫。</p>',
+          '      <div data-shpitto-blog-list>',
+          '        <article><a href="/blog/agile-devops-system-design/">Article A</a></article>',
+          '        <article><a href="/blog/wechat-real-time-media-global/">Article B</a></article>',
+          '        <article><a href="/blog/ai-saas-commercialization-cto-practice/">Article C</a></article>',
+          "      </div>",
+          "    </section>",
+          "  </main>",
+          '  <script src="/script.js"></script>',
+          "</body>",
+          "</html>",
+        ].join("\n"),
+      },
+      ...Array.from(invalidDetailPaths).map((detailPath, index) => {
+        const title = ["Article A", "Article B", "Article C"][index] || `Article ${index + 1}`;
+        return {
+          path: detailPath,
+          type: "text/html",
+          content: [
+            "<!doctype html>",
+            '<html lang="zh-CN">',
+            "<head>",
+            `  <title>${title}</title>`,
+            '  <meta charset="utf-8" />',
+            '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+            '  <link rel="stylesheet" href="/styles.css" />',
+            "</head>",
+            "<body>",
+            "  <main>",
+            "    <article>",
+            `      <h1>${title}</h1>`,
+            '      <p><span class="lang-zh">这是一篇中文正文，说明作者如何把长期内容策略、技术判断、产品叙事与博客详情页的真实阅读体验绑定在一起，并强调页面必须在静态预览阶段就足够完整、可信、可阅读。</span><span class="lang-en">This English paragraph intentionally mirrors the same visible body slot so the skill-side bilingual validator can detect duplicated zh and en DOM copy in one rendered reading path.</span></p>',
+            "      <p>This article keeps expanding the same topic with concrete reasoning about content depth, route ownership, audience trust, preview fidelity, and why a polished archive card must resolve to a full article rather than a metadata shell or a runtime-only placeholder.</p>",
+            "      <section><h2>Context</h2><p>The detail route still carries a realistic amount of structure, body copy, and contextual explanation so the article-quality gates pass before the bilingual validation runs. It talks about editorial accountability, production constraints, and how static previews must remain understandable even when no dynamic blog runtime is active.</p></section>",
+            "      <section><h2>Impact</h2><p>The page remains a substantial article fixture with enough text for route-level QA, enough headings for article structure checks, and enough narrative continuity to read like a finished destination. The only intentional defect is that one visible paragraph exposes both Chinese and English body copy at the same time inside duplicated DOM spans.</p></section>",
+            "      <p>That makes this fixture useful for a boundary test: if the skill-side validator is active, it should reject the page for simultaneous bilingual body content or duplicated zh/en DOM copy; if validation were still relying on executor fallbacks, this malformed output could slip through after generation.</p>",
+            "    </article>",
+            "  </main>",
+            '  <script src="/script.js"></script>',
+            "</body>",
+            "</html>",
+          ].join("\n"),
+        };
+      }),
+    ].map((file) => {
+      if (file.path === "/index.html") {
+        return {
+          ...file,
+          content: [
+            "<!doctype html>",
+            '<html lang="zh-CN">',
+            "<head>",
+            "  <title>Home</title>",
+            '  <meta charset="utf-8" />',
+            '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+            '  <link rel="stylesheet" href="/styles.css" />',
+            "</head>",
+            "<body>",
+            "  <main>",
+            '    <section aria-label="Language switch"><button data-locale-toggle type="button">ZH</button><button type="button">EN</button></section>',
+            '    <section class="hero"><h1 data-i18n="home.title" data-i18n-zh="首页" data-i18n-en="Home">首页</h1><p data-i18n="home.lead" data-i18n-zh="这是具备真实双语框架的首页外壳。" data-i18n-en="This homepage includes a real bilingual shell.">这是具备真实双语框架的首页外壳。</p></section>',
+            "  </main>",
+            '  <script src="/script.js"></script>',
+            "</body>",
+            "</html>",
+          ].join("\n"),
+        };
+      }
+      if (file.path === "/about/index.html" || file.path === "/contact/index.html") {
+        const title = file.path === "/about/index.html" ? "关于" : "联系";
+        const enTitle = file.path === "/about/index.html" ? "About" : "Contact";
+        return {
+          ...file,
+          content: [
+            "<!doctype html>",
+            '<html lang="zh-CN">',
+            "<head>",
+            `  <title>${title}</title>`,
+            '  <meta charset="utf-8" />',
+            '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+            '  <link rel="stylesheet" href="/styles.css" />',
+            "</head>",
+            "<body>",
+            "  <main>",
+            '    <section aria-label="Language switch"><button data-locale-toggle type="button">ZH</button><button type="button">EN</button></section>',
+            `    <h1 data-i18n="page.title" data-i18n-zh="${title}" data-i18n-en="${enTitle}">${title}</h1>`,
+            `    <p data-i18n="page.lead" data-i18n-zh="该页面保留最小双语框架校验能力。" data-i18n-en="This page keeps the minimal bilingual shell for validation.">该页面保留最小双语框架校验能力。</p>`,
+            "  </main>",
+            '  <script src="/script.js"></script>',
+            "</body>",
+            "</html>",
+          ].join("\n"),
+        };
+      }
+      if (file.path !== "/blog/demo/index.html") return file;
+      return {
+        ...file,
+        content: [
+          "<!doctype html>",
+          '<html lang="zh-CN">',
+          "<head>",
+          "  <title>Demo detail</title>",
+          '  <meta charset="utf-8" />',
+          '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+          '  <link rel="stylesheet" href="/styles.css" />',
+          "</head>",
+          "<body>",
+          "  <main>",
+          "    <article>",
+          "      <h1>Demo detail</h1>",
+          '      <p><span class="lang-zh">这是一篇中文正文。</span><span class="lang-en">This is an English body paragraph.</span></p>',
+          "    </article>",
+          "  </main>",
+          '  <script src="/script.js"></script>',
+          "</body>",
+          "</html>",
+        ].join("\n"),
+      };
+    });
+
+    expect(() =>
+      validateAndNormalizeRequiredFilesWithQa({
+        decision: plan,
+        files,
+        requirementText: requirement,
+      }),
+    ).not.toThrow();
   });
 
   it("locks a representative target page contract with a snapshot", () => {
@@ -938,13 +1175,92 @@ describe("skill-tool-executor", () => {
         },
       },
     } as any);
+    const files = validGeneratedFiles(decision.routes).map((file) => {
+      if (file.path === "/index.html") {
+        return {
+          ...file,
+          content: String(file.content).replace(
+            /<main>[\s\S]*<\/main>/,
+            [
+              "<main>",
+              '<section aria-label="Language switch"><button data-locale-toggle type="button">ZH</button></section>',
+              '<section class="hero">',
+              '  <div>',
+              '    <h1 data-i18n="home.hero.title" data-i18n-zh="写给每个人的 AI 小笔记。" data-i18n-en="Thoughtful AI notes for everyday readers.">写给每个人的 AI 小笔记。</h1>',
+              '    <p data-i18n="home.hero.lead" data-i18n-zh="这里用轻松的中文解释 AI 如何进入生活。" data-i18n-en="This page explains how AI enters everyday life in a calm editorial voice.">这里用轻松的中文解释 AI 如何进入生活。</p>',
+              "  </div>",
+              '  <div class="hero__media"><svg viewBox="0 0 200 120" role="img" aria-label="Preview chart"><rect width="200" height="120" rx="24" fill="#eef4ff"/></svg></div>',
+              "</section>",
+              "</main>",
+            ].join(""),
+          ),
+        };
+      }
+      if (file.path === "/blog/index.html") {
+        return {
+          ...file,
+          content: String(file.content).replace(
+            /<main>[\s\S]*<\/main>/,
+            '<main><a href="#content">跳到主要内容</a><h1>博客｜Bays Wong</h1><section aria-label="语言切换"><button type="button">中文</button><button type="button">English</button></section><section id="content" data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><h2>技术与组织实践博客</h2><p>这里记录的是我在研发体系变革、实时音视频基础设施和创业商业化中的判断、取舍与复盘。</p><div data-shpitto-blog-list><article><a href="/blog/demo/">示例文章</a></article></div></section><section><h2>继续阅读</h2><p>从下方条目进入完整正文，默认显示中文，切换后再显示英文版本。</p></section></main>',
+          ),
+        };
+      }
+      return file;
+    });
+
+    expect(() =>
+      validateAndNormalizeRequiredFiles({
+        decision,
+        files,
+        requirementText: "Build a bilingual Chinese and English personal blog with a language switch.",
+      }),
+    ).not.toThrow();
+  });
+
+  it("normalizes blog-card outer padding in generated css for runtime-safe hydration", () => {
+    const css = `
+.blog-card { display: grid; border: 1px solid #d8d8d8; border-radius: 24px; padding: 0; overflow: hidden; }
+.blog-card__copy { padding: 28px; display: grid; gap: 14px; }
+`;
+
+    const patched = normalizeGeneratedCssForTesting(css);
+    expect(patched).toContain("runtime-blog-card-padding-fix");
+    expect(patched).toContain("padding: max(1.25rem, 20px);");
+    expect(patched).toContain("gap: 0.875rem;");
+  });
+
+  it("does not treat design-direction labels and Mercury-style brand references as simultaneous bilingual copy", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a bilingual Chinese and English personal blog with a language switch.")],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/blog"],
+          navLabels: ["首页", "博客"],
+          files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html"],
+        },
+      },
+    } as any);
     const files = validGeneratedFiles(decision.routes).map((file) =>
-      file.path === "/blog/index.html"
+      file.path === "/index.html"
         ? {
             ...file,
             content: String(file.content).replace(
               /<main>[\s\S]*<\/main>/,
-              '<main><a href="#content">跳到主要内容</a><h1>博客｜Bays Wong</h1><section aria-label="语言切换"><button type="button">中文</button><button type="button">English</button></section><section id="content" data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><h2>技术与组织实践博客</h2><p>这里记录的是我在研发体系变革、实时音视频基础设施和创业商业化中的判断、取舍与复盘。</p><div data-shpitto-blog-list><article><a href="/blog/demo/">示例文章</a></article></div></section><section><h2>继续阅读</h2><p>从下方条目进入完整正文，默认显示中文，切换后再显示英文版本。</p></section></main>',
+              [
+                "<main>",
+                '<section aria-label="Language switch"><button data-locale-toggle type="button">EN</button></section>',
+                '<section class="hero">',
+                '  <span class="eyebrow" data-i18n="theme.label" data-i18n-zh="温暖柔和 · Mercury" data-i18n-en="Warm soft · Mercury">温暖柔和 · Mercury</span>',
+                '  <h1 data-i18n="home.hero.title" data-i18n-zh="让 AI 落地到组织、架构与商业结果。" data-i18n-en="Bring AI into organizations, architecture, and business outcomes.">让 AI 落地到组织、架构与商业结果。</h1>',
+                '  <p data-i18n="home.hero.lead" data-i18n-zh="我是 beihuang，长期在研发体系、实时音视频与 AI 商业化之间工作。" data-i18n-en="I am beihuang, working across engineering systems, real-time media, and AI commercialization.">我是 beihuang，长期在研发体系、实时音视频与 AI 商业化之间工作。</p>',
+                '  <a class="button" href="/blog/" data-i18n="home.hero.cta" data-i18n-zh="进入博客" data-i18n-en="Read the blog">进入博客</a>',
+                "</section>",
+                "</main>",
+              ].join(""),
             ),
           }
         : file,
@@ -1148,7 +1464,7 @@ describe("skill-tool-executor", () => {
     ).not.toThrow();
   });
 
-  it("does not hard-fail bilingual output only because a switch contract is absent", () => {
+  it("requires bilingual non-blog pages to expose real i18n mappings and a language switch", () => {
     const decision = buildLocalDecisionPlan({
       messages: [new HumanMessage("Build a bilingual Chinese and English AI blog with a language switch.")],
       phase: "conversation",
@@ -1168,6 +1484,54 @@ describe("skill-tool-executor", () => {
       validateAndNormalizeRequiredFiles({
         decision,
         files: validGeneratedFiles(decision.routes),
+        requirementText: "Build a bilingual Chinese and English AI blog with a language switch.",
+      }),
+    ).toThrow("missing bilingual i18n mappings");
+  });
+
+  it("accepts bilingual site output when the homepage includes a real i18n mapping and toggle", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a bilingual Chinese and English AI blog with a language switch.")],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/blog"],
+          navLabels: ["Home", "Blog"],
+          files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html"],
+        },
+      },
+    } as any);
+    const files = validGeneratedFiles(decision.routes).map((file) =>
+      file.path === "/index.html"
+        ? {
+            ...file,
+            content: String(file.content).replace(
+              /<main>[\s\S]*<\/main>/,
+              [
+                "<main>",
+                '<section aria-label="Language switch"><button data-locale-toggle type="button">ZH</button></section>',
+                '<section class="hero">',
+                '  <div>',
+                '    <h1 data-i18n="home.hero.title" data-i18n-zh="写给每个人的 AI 小笔记。" data-i18n-en="Thoughtful AI notes for everyday readers.">写给每个人的 AI 小笔记。</h1>',
+                '    <p data-i18n="home.hero.lead" data-i18n-zh="这里用轻松的中文解释 AI 如何进入生活。" data-i18n-en="This page explains how AI enters everyday life in a calm editorial voice.">这里用轻松的中文解释 AI 如何进入生活。</p>',
+                "  </div>",
+                '  <div class="hero__media"><svg viewBox="0 0 200 120" role="img" aria-label="Preview chart"><rect width="200" height="120" rx="24" fill="#eef4ff"/></svg></div>',
+                "</section>",
+                '<section><h2 data-i18n="home.section.title" data-i18n-zh="阅读入口" data-i18n-en="Reading entry">阅读入口</h2><p data-i18n="home.section.body" data-i18n-zh="博客承接持续更新的中文文章。" data-i18n-en="The blog continues with regularly updated articles.">博客承接持续更新的中文文章。</p></section>',
+                "</main>",
+              ].join(""),
+            ),
+          }
+        : file,
+    );
+
+    expect(() =>
+      validateAndNormalizeRequiredFiles({
+        decision,
+        files,
         requirementText: "Build a bilingual Chinese and English AI blog with a language switch.",
       }),
     ).not.toThrow();
@@ -1420,6 +1784,44 @@ describe("skill-tool-executor", () => {
         requirementText: "Build a personal blog with Home and Blog.",
       }),
     ).toContain("/blog/demo/index.html");
+  });
+
+  it("ignores /blog/{slug}/ links discovered only inside non-primary generated html routes", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a personal blog with Home and Blog.")],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/blog"],
+          navLabels: ["Home", "Blog"],
+          files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html"],
+        },
+      },
+    } as any);
+    const files = [
+      { path: "/styles.css", type: "text/css", content: "body{}" },
+      { path: "/script.js", type: "text/javascript", content: "console.log('ok')" },
+      { path: "/index.html", type: "text/html", content: "<!doctype html><html><body><h1>Home</h1></body></html>" },
+      { path: "/blog/index.html", type: "text/html", content: '<!doctype html><html><body><main><a href="/blog/primary-post/">Primary</a></main></body></html>' },
+      {
+        path: "/list/database/index.html",
+        type: "text/html",
+        content:
+          '<!doctype html><html><body><main><a href="/blog/secondary-post/">Secondary</a><a href="/blog/third-post/">Third</a></main></body></html>',
+      },
+    ];
+
+    const required = requiredFileChecklistForTesting(decision, {
+      files,
+      requirementText: "Build a personal blog with Home and Blog. Generate 1 complete article.",
+    });
+
+    expect(required).toContain("/blog/primary-post/index.html");
+    expect(required).not.toContain("/blog/secondary-post/index.html");
+    expect(required).not.toContain("/blog/third-post/index.html");
   });
 
   it("does not treat identical re-emits for the same target file as material progress", () => {

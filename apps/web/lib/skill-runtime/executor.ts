@@ -89,12 +89,26 @@ import {
   isWorkflowArtifactEnglishSafe,
   normalizeWorkflowArtifactText,
 } from "../workflow-artifact-language.ts";
-import {
-  findDuplicatedBilingualDomCopy,
-  findVisibleSimultaneousBilingualCopy,
-  isBilingualRequirementText,
-} from "./bilingual-copy-guard.ts";
+import { isBilingualRequirementText } from "./bilingual-copy-guard.ts";
 import { validateComponent, type DesignSpec, type ValidationResult } from "../../skills/design-website-generator/tools/component-validator.ts";
+import {
+  buildBlogContentWorkflowPreview as buildWebsiteBlogContentWorkflowPreview,
+  buildBlogContentConfirmTimelineMetadataForWorkflow,
+  buildGeneratedBlogSeedPosts as buildWebsiteGeneratedBlogSeedPosts,
+  collectBlogWorkflowSourceText,
+  inferBlogBrandForWorkflow,
+  projectHasGeneratedBlogContentMount as projectHasWebsiteGeneratedBlogContentMount,
+  resolveBlogNavLabelForWorkflow,
+} from "../../skills/website-generation-workflow/blog-content-workflow.ts";
+import {
+  applyWebsiteStructuralRefineCompletions,
+  extractOrderedBlogDetailRoutesFromProject as extractWebsiteOrderedBlogDetailRoutesFromProject,
+  extractStructuralRefineRouteAdditions as extractWebsiteStructuralRefineRouteAdditions,
+  materializeWebsiteBlogDetailPages,
+  projectHasStaticBlogDetailFile as projectHasWebsiteStaticBlogDetailFile,
+  renderGeneratedBlogDetailPage as renderWebsiteGeneratedBlogDetailPage,
+  slugFromBlogDetailRoute as slugFromWebsiteBlogDetailRoute,
+} from "../../skills/website-generation-workflow/runtime-site-completions.ts";
 import {
   buildContextForPageN,
   buildDesignContext,
@@ -142,8 +156,10 @@ export type SkillRuntimeStepSnapshot = {
   files: StaticArtifactFile[];
   workflowArtifacts: WorkflowArtifactFile[];
   pages: Array<{ path: string; html: string }>;
-  preferredLocale: "zh-CN" | "en";
+  preferredLocale: "zh-CN" | "en" | "bilingual";
   qaSummary?: QaSummary;
+  provider?: string;
+  model?: string;
 };
 
 export type SkillRuntimeExecutionSummary = {
@@ -157,6 +173,8 @@ export type SkillRuntimeExecutionSummary = {
   completedPhases: SkillRuntimePhase[];
   deployedUrl?: string;
   qaSummary?: QaSummary;
+  provider?: string;
+  model?: string;
 };
 
 export type RunSkillRuntimeExecutorParams = {
@@ -315,6 +333,20 @@ function sanitizePathToken(value: string): string {
   return normalized || "unknown";
 }
 
+function localChatTasksBaseDirs(): string[] {
+  return Array.from(
+    new Set([
+      path.resolve(/* turbopackIgnore: true */ process.cwd(), ".tmp", "chat-tasks"),
+      path.resolve(/* turbopackIgnore: true */ process.cwd(), "apps", "web", ".tmp", "chat-tasks"),
+    ]),
+  );
+}
+
+function localChatTaskRoot(chatId?: string, taskId?: string): string {
+  const [primaryRoot] = localChatTaskRootCandidates(chatId, taskId);
+  return primaryRoot || path.join(localChatTasksBaseDirs()[0] || ".tmp/chat-tasks", "unknown", "unknown");
+}
+
 function normalizePath(value: string): string {
   const raw = String(value || "").trim();
   if (!raw) return "/";
@@ -370,6 +402,28 @@ function classifyErrorCode(message: string): string {
   return "unknown";
 }
 
+function preferStrongerCanonicalPrompt(...candidates: Array<unknown>): string {
+  const normalized = candidates
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .filter((value) => value.startsWith("# Canonical Website Generation Prompt"));
+  if (normalized.length === 0) return "";
+  return normalized.sort((left, right) => {
+    const score = (value: string) => {
+      let total = 0;
+      if (/Bilingual Experience Contract|Final website locale requirement:\s*Chinese and English|Language:\s*Chinese and English/i.test(value)) total += 4;
+      if (/HelloTalk|Huawei|WeChat|DevOps|SaaS|K12|AI/i.test(value)) total += 3;
+      const completion = value.match(/Requirement completion:\s*(\d+)\s*\/\s*(\d+)/i);
+      if (completion) {
+        total += Number(completion[1] || 0);
+      }
+      total += Math.min(value.length, 20000) / 10000;
+      return total;
+    };
+    return score(right) - score(left);
+  })[0];
+}
+
 function extractMessageContent(raw: any): string {
   const direct = String(raw?.content || "").trim();
   if (direct) return direct;
@@ -403,13 +457,31 @@ function isHumanLikeMessage(raw: any): boolean {
 
 function extractRequirementText(state: AgentState): string {
   const workflow = toRecord((state as any)?.workflow_context);
-  const prioritizedWorkflowCandidates = [
-    String(workflow.latestUserText || "").trim(),
-    String(workflow.latestUserTextRaw || "").trim(),
-    String(workflow.canonicalPrompt || "").trim(),
-    String(workflow.requirementAggregatedText || "").trim(),
-    String(workflow.sourceRequirement || "").trim(),
-  ];
+  const executionMode = String(workflow.executionMode || "").trim().toLowerCase();
+  const prioritizedWorkflowCandidates =
+    executionMode === "refine"
+      ? [
+          String(workflow.latestUserText || "").trim(),
+          String(workflow.latestUserTextRaw || "").trim(),
+          String(workflow.canonicalPrompt || "").trim(),
+          String(workflow.sourceRequirement || "").trim(),
+          String(workflow.requirementAggregatedText || "").trim(),
+        ]
+      : executionMode === "deploy"
+        ? [
+            String(workflow.sourceRequirement || "").trim(),
+            String(workflow.requirementAggregatedText || "").trim(),
+            String(workflow.canonicalPrompt || "").trim(),
+            String(workflow.latestUserTextRaw || "").trim(),
+            String(workflow.latestUserText || "").trim(),
+          ]
+        : [
+            String(workflow.canonicalPrompt || "").trim(),
+            String(workflow.sourceRequirement || "").trim(),
+            String(workflow.requirementAggregatedText || "").trim(),
+            String(workflow.latestUserTextRaw || "").trim(),
+            String(workflow.latestUserText || "").trim(),
+          ];
   for (const candidate of prioritizedWorkflowCandidates) {
     if (candidate) return candidate;
   }
@@ -465,12 +537,7 @@ function localChatTaskRootCandidates(chatId?: string, taskId?: string): string[]
   const safeChatId = sanitizePathToken(String(chatId || "").trim());
   const safeTaskId = sanitizePathToken(String(taskId || "").trim());
   if (!safeChatId || !safeTaskId) return [];
-  return Array.from(
-    new Set([
-      path.resolve(process.cwd(), ".tmp", "chat-tasks", safeChatId, safeTaskId),
-      path.resolve(process.cwd(), "apps", "web", ".tmp", "chat-tasks", safeChatId, safeTaskId),
-    ]),
-  );
+  return localChatTasksBaseDirs().map((baseDir) => path.join(baseDir, safeChatId, safeTaskId));
 }
 
 function resolveCheckpointProjectPathCandidates(filePath: string): string[] {
@@ -481,10 +548,7 @@ function resolveCheckpointProjectPathCandidates(filePath: string): string[] {
   const candidates = [path.resolve(raw)];
   if (suffixMatch?.[1]) {
     const suffix = suffixMatch[1].replace(/^\/+/, "");
-    candidates.push(
-      path.resolve(process.cwd(), ".tmp", "chat-tasks", suffix),
-      path.resolve(process.cwd(), "apps", "web", ".tmp", "chat-tasks", suffix),
-    );
+    candidates.push(...localChatTasksBaseDirs().map((baseDir) => path.join(baseDir, suffix)));
   }
   return Array.from(new Set(candidates));
 }
@@ -500,12 +564,7 @@ async function readProjectJsonFromLocalTaskRoot(chatId?: string, taskId?: string
 async function readLatestProjectJsonFromLocalChatRoots(chatId?: string, excludeTaskId?: string): Promise<any | undefined> {
   const safeChatId = sanitizePathToken(String(chatId || "").trim());
   if (!safeChatId) return undefined;
-  const chatRoots = Array.from(
-    new Set([
-      path.resolve(process.cwd(), ".tmp", "chat-tasks", safeChatId),
-      path.resolve(process.cwd(), "apps", "web", ".tmp", "chat-tasks", safeChatId),
-    ]),
-  );
+  const chatRoots = localChatTasksBaseDirs().map((baseDir) => path.join(baseDir, safeChatId));
   const candidates: Array<{ filePath: string; mtimeMs: number }> = [];
   for (const chatRoot of chatRoots) {
     try {
@@ -841,28 +900,6 @@ function removeRoutesFromProject(project: any, routes: string[]): { project: any
     project: syncPagesFromStaticFiles(next),
     changedFiles: Array.from(changed).sort((a, b) => a.localeCompare(b)),
   };
-}
-
-function assertBilingualStaticSiteContract(project: any, requirementText: string): void {
-  if (!isBilingualRequirementText(requirementText)) return;
-  const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
-  for (const file of files) {
-    const filePath = normalizePath(String(file?.path || ""));
-    if (!filePath.toLowerCase().endsWith(".html")) continue;
-    const html = String(file?.content || "");
-    const duplicatedDom = findDuplicatedBilingualDomCopy(html);
-    if (duplicatedDom.length > 0) {
-      throw new Error(
-        `bilingual_language_switch_contract_failed: ${filePath} duplicates bilingual body copy in lang-zh/lang-en DOM pairs instead of swapping one active language at a time: ${duplicatedDom.join(" | ")}`,
-      );
-    }
-    const visibleLeaks = findVisibleSimultaneousBilingualCopy(html);
-    if (visibleLeaks.length > 0) {
-      throw new Error(
-        `bilingual_language_switch_contract_failed: ${filePath} renders simultaneous bilingual visible copy instead of one active language at a time: ${visibleLeaks.join(" | ")}`,
-      );
-    }
-  }
 }
 
 function injectCloudflareAnalyticsBeacon(project: any, siteTag: string): any {
@@ -1669,6 +1706,18 @@ function detectLocale(text: string, preferred?: string): "zh-CN" | "en" {
   return /[\u4e00-\u9fff]/.test(text) ? "zh-CN" : "en";
 }
 
+function detectRuntimeLocale(text: string, preferred?: string): "zh-CN" | "en" | "bilingual" {
+  const override = String(preferred || "").trim().toLowerCase();
+  if (override === "bilingual" || override === "both" || /中英双语|双语/.test(override)) return "bilingual";
+  if (override.startsWith("zh")) return "zh-CN";
+  if (override.startsWith("en")) return "en";
+  return isBilingualRequirementText(text) ? "bilingual" : detectLocale(text, preferred);
+}
+
+function toVisibleLocale(locale: "zh-CN" | "en" | "bilingual"): "zh-CN" | "en" {
+  return locale === "bilingual" ? "zh-CN" : locale;
+}
+
 function extractStateMessageText(messages: unknown): string {
   if (!Array.isArray(messages)) return "";
   return messages
@@ -1691,10 +1740,11 @@ function extractStateMessageText(messages: unknown): string {
 function buildDomainConfigurationGuidance(params: {
   liveUrl: string;
   deploymentHost: string;
-  locale: "zh-CN" | "en";
+  locale: "zh-CN" | "en" | "bilingual";
 }): string {
-  const steps = buildDomainConfigurationGuidanceSteps(params);
-  const title = params.locale === "zh-CN" ? "## \u57df\u540d\u914d\u7f6e\u6307\u5bfc" : "## Domain Configuration Guide";
+  const locale = toVisibleLocale(params.locale);
+  const steps = buildDomainConfigurationGuidanceSteps({ ...params, locale });
+  const title = locale === "zh-CN" ? "## \u57df\u540d\u914d\u7f6e\u6307\u5bfc" : "## Domain Configuration Guide";
   return [title, "", ...steps.map((step, index) => `${index + 1}. ${step}`)].join("\n");
 }
 
@@ -1847,8 +1897,9 @@ function resolveCustomDomainCnameTarget(deploymentHost: string, liveHost: string
 function buildDomainDnsRecords(params: {
   liveUrl: string;
   deploymentHost: string;
-  locale: "zh-CN" | "en";
+  locale: "zh-CN" | "en" | "bilingual";
 }): Array<{ type: string; host: string; value: string; ttl: string; note: string }> {
+  const locale = toVisibleLocale(params.locale);
   const liveHost = (() => {
     try {
       return new URL(params.liveUrl).host;
@@ -1858,7 +1909,7 @@ function buildDomainDnsRecords(params: {
   })();
   const cnameTarget = resolveCustomDomainCnameTarget(params.deploymentHost, liveHost);
   const ttl = params.locale === "zh-CN" ? "自动 / 默认" : "Auto / Default";
-  if (params.locale === "zh-CN") {
+  if (locale === "zh-CN") {
     return [
       {
         type: "CNAME",
@@ -1897,8 +1948,9 @@ function buildDomainDnsRecords(params: {
 function buildDomainConfigurationGuidanceSteps(params: {
   liveUrl: string;
   deploymentHost: string;
-  locale: "zh-CN" | "en";
+  locale: "zh-CN" | "en" | "bilingual";
 }): string[] {
+  const locale = toVisibleLocale(params.locale);
   const liveHost = (() => {
     try {
       return new URL(params.liveUrl).host;
@@ -1907,7 +1959,7 @@ function buildDomainConfigurationGuidanceSteps(params: {
     }
   })();
   const cnameTarget = resolveCustomDomainCnameTarget(params.deploymentHost, liveHost);
-  if (params.locale === "zh-CN") {
+  if (locale === "zh-CN") {
     return [
       "在你的域名 DNS 管理后台新增一条记录；如果配置 `www.example.com`，使用下方 `www` 的 CNAME 记录。",
       `记录值填写 \`${cnameTarget}\`，TTL 保持自动或默认即可。`,
@@ -2223,7 +2275,8 @@ function resolveProviderConfig(lock: RunProviderLock): ProviderConfig {
   };
 }
 
-function extractPageTitleForRoute(route: string, locale: "zh-CN" | "en"): string {
+function extractPageTitleForRoute(route: string, locale: "zh-CN" | "en" | "bilingual"): string {
+  locale = toVisibleLocale(locale);
   const normalized = normalizePath(route);
   if (normalized === "/") return locale === "zh-CN" ? "首页" : "Home";
   const token = normalized.split("/").filter(Boolean).join(" ");
@@ -2234,7 +2287,7 @@ function extractPageTitleForRoute(route: string, locale: "zh-CN" | "en"): string
   return title || (locale === "zh-CN" ? "页面" : "Page");
 }
 
-function buildNav(routes: string[], locale: "zh-CN" | "en"): Array<{ label: string; href: string }> {
+function buildNav(routes: string[], locale: "zh-CN" | "en" | "bilingual"): Array<{ label: string; href: string }> {
   return routes.map((route) => ({ label: extractPageTitleForRoute(route, locale), href: normalizePath(route) }));
 }
 
@@ -2261,7 +2314,7 @@ function internalNavLabelForRoute(route: string, fallback = ""): string {
   return leaf
     .split(/[-_]+/g)
     .filter(Boolean)
-    .map((part) => (part.toUpperCase() === "CASUX" ? "CASUX" : part.charAt(0).toUpperCase() + part.slice(1)))
+    .map((part) => (part === part.toUpperCase() && /^[A-Z0-9-]+$/.test(part) ? part : part.charAt(0).toUpperCase() + part.slice(1)))
     .join(" ");
 }
 
@@ -2270,7 +2323,19 @@ function internalPurposeForProcessText(route: string, fallback = ""): string {
   return `Deliver a distinct route brief for ${internalNavLabelForRoute(route, fallback)} using source-backed content and a clear next action.`;
 }
 
-function buildInternalRequirementSummaryForWorkflow(requirementText: string, decision: LocalDecisionPlan, locale: "zh-CN" | "en"): string {
+function normalizeSlugToken(input: string, fallback: string): string {
+  const normalized = String(input || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 72);
+  return normalized || fallback;
+}
+
+function buildInternalRequirementSummaryForWorkflow(requirementText: string, decision: LocalDecisionPlan, locale: "zh-CN" | "en" | "bilingual"): string {
+  locale = toVisibleLocale(locale);
   const excerpt = clipTextWithBudget(String(requirementText || "").trim(), 1600);
   return [
     "- Internal workflow language: English only.",
@@ -2323,9 +2388,46 @@ function buildNavFromDecision(plan: LocalDecisionPlan): Array<{ label: string; h
   });
 }
 
+function getWebsiteCompletionDeps() {
+  return {
+    normalizePath,
+    routeToHtmlPath,
+    ensureHtmlDocument,
+    htmlToReadableText,
+    dedupeFiles,
+    cloneJson,
+    escapeHtml,
+    syncPagesFromStaticFiles,
+    ensureSkillDirectStaticProject,
+    toVisibleLocale,
+    buildBlogContentWorkflowPreview,
+    collectPrimaryBlogSourceText,
+    collectDeployBlogSourceText,
+    inferBlogBrand,
+    diffStaticProjectFiles,
+    listProjectRoutes,
+    buildLocalDecisionPlan,
+    extractRequirementText,
+    renderLocalPage,
+    structuralRouteAliasMap: STRUCTURAL_ROUTE_ALIAS_MAP,
+  };
+}
+
+function getWebsiteBlogWorkflowDeps() {
+  return {
+    normalizePath,
+    htmlToReadableText,
+    dedupeFiles,
+    toVisibleLocale,
+    extractMessageContent,
+    isHumanLikeMessage,
+    isDeployConfirmationIntent,
+  };
+}
+
 function renderLocalTaskPlan(params: {
   routes: string[];
-  locale: "zh-CN" | "en";
+  locale: "zh-CN" | "en" | "bilingual";
   provider: string;
   model: string;
   decision: LocalDecisionPlan;
@@ -2363,10 +2465,11 @@ function renderLocalFindings(requirementText: string, decision: LocalDecisionPla
 
 function renderLocalDesign(
   requirementText: string,
-  locale: "zh-CN" | "en",
+  locale: "zh-CN" | "en" | "bilingual",
   decision: LocalDecisionPlan,
   stylePreset: DesignStylePreset = DEFAULT_STYLE_PRESET,
 ): string {
+  locale = toVisibleLocale(locale);
   const langLine =
     locale === "zh-CN"
       ? "Final website locale: Chinese. Internal design/process notes remain English-only."
@@ -2938,13 +3041,7 @@ async function persistStepArtifacts(params: {
 }> {
   const { chatId, taskId, snapshot } = params;
   const stepSlug = `${String(snapshot.stepIndex).padStart(3, "0")}-${sanitizePathToken(snapshot.stepKey)}`;
-  const taskRoot = path.resolve(
-    process.cwd(),
-    ".tmp",
-    "chat-tasks",
-    sanitizePathToken(chatId),
-    sanitizePathToken(taskId),
-  );
+  const taskRoot = localChatTaskRoot(chatId, taskId);
   const baseDir = path.join(
     taskRoot,
     "steps",
@@ -3087,7 +3184,7 @@ async function persistStepArtifacts(params: {
 type RuntimeContext = {
   decision: LocalDecisionPlan;
   requirementText: string;
-  locale: "zh-CN" | "en";
+  locale: "zh-CN" | "en" | "bilingual";
   routes: string[];
   providerLock: RunProviderLock;
   providerConfig: ProviderConfig;
@@ -3209,7 +3306,7 @@ class NativeSkillRuntime {
       new Set((Array.isArray(params.state.sitemap) && params.state.sitemap.length > 0 ? params.state.sitemap : decision.routes).map((x) => normalizePath(String(x || "/")))),
     );
     const requirementText = decision.requirementText || extractRequirementText(params.state);
-    const locale = detectLocale(requirementText, (params.state as any)?.workflow_context?.preferredLocale);
+    const locale = detectRuntimeLocale(requirementText, (params.state as any)?.workflow_context?.preferredLocale);
     const providerAttempts = resolveProviderAttempts({
       provider: (params.state as any)?.workflow_context?.lockedProvider,
       model: (params.state as any)?.workflow_context?.lockedModel,
@@ -4046,7 +4143,7 @@ ${qaFeedback ? `\nQA fix instructions (attempt ${attempt}):\n${qaFeedback}` : ""
     await this.repairAllPages();
 
     const siteArtifacts = await this.buildSiteArtifacts(baseState);
-    const actions = [{ text: "Deploy to Cloudflare", payload: "deploy", type: "button" as const }];
+    const actions = [{ text: "Deploy to shpitto server", payload: "deploy", type: "button" as const }];
     const finalState: AgentState = {
       ...baseState,
       phase: "end",
@@ -4128,6 +4225,8 @@ export async function runSkillRuntimeExecutor(params: RunSkillRuntimeExecutorPar
       completedPhases: SKILL_RUNTIME_FIXED_PHASES.filter((phase) => summary.completedPhases.includes(phase)),
       deployedUrl: summary.deployedUrl,
       qaSummary: summary.qaSummary,
+      provider: summary.provider,
+      model: summary.model,
     };
   }
   return await runLegacySkillRuntimeExecutor(params);
@@ -4389,518 +4488,6 @@ function htmlToReadableText(input: string) {
     .trim();
 }
 
-function extractMetaContent(html: string, name: string): string {
-  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const patterns = [
-    new RegExp(`<meta[^>]+name=["']${escaped}["'][^>]+content=["']([^"']*)["'][^>]*>`, "i"),
-    new RegExp(`<meta[^>]+content=["']([^"']*)["'][^>]+name=["']${escaped}["'][^>]*>`, "i"),
-  ];
-  for (const pattern of patterns) {
-    const match = String(html || "").match(pattern);
-    const content = htmlToReadableText(match?.[1] || "");
-    if (content) return content;
-  }
-  return "";
-}
-
-function extractMainHtml(html: string): string {
-  return String(html || "").match(/<main\b[^>]*>([\s\S]*?)<\/main>/i)?.[1] || String(html || "");
-}
-
-function extractOrderedBlogDetailRoutesFromProject(project: any): string[] {
-  const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
-  const blogIndexHtml = String(files.find((file: any) => normalizePath(String(file?.path || "")) === "/blog/index.html")?.content || "");
-  const discovered = new Set<string>();
-  const pattern = /href=["'](\/blog\/(?!tag\/|category\/|rss\.xml)([^"'?#]+?)\/?)["']/gi;
-  for (const match of blogIndexHtml.matchAll(pattern)) {
-    const route = normalizePath(String(match[1] || "").replace(/\/+$/g, ""));
-    if (!route || route === "/blog") continue;
-    discovered.add(route);
-  }
-  for (const file of files) {
-    const filePath = normalizePath(String(file?.path || ""));
-    const match = filePath.match(/^\/blog\/([^/]+)\/index\.html$/i);
-    if (!match?.[1]) continue;
-    discovered.add(`/blog/${match[1]}`);
-  }
-  return Array.from(discovered);
-}
-
-function slugFromBlogDetailRoute(route: string): string {
-  return String(normalizePath(route).split("/").filter(Boolean).pop() || "").trim();
-}
-
-function projectHasStaticBlogDetailFile(project: any, route: string): boolean {
-  const targetPath = `${normalizePath(route)}/index.html`;
-  const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
-  return files.some((file: any) => normalizePath(String(file?.path || "")) === targetPath);
-}
-
-function renderGeneratedBlogDetailPage(params: {
-  post: BlogPostUpsertInput;
-  locale: "zh-CN" | "en";
-  brandName: string;
-  navLabel: string;
-  relatedPosts: BlogPostUpsertInput[];
-}): string {
-  const { post, locale, brandName, navLabel, relatedPosts } = params;
-  const lang = locale === "zh-CN" ? "zh-CN" : "en";
-  const readMoreLabel = locale === "zh-CN" ? "继续阅读" : "Continue reading";
-  const backToBlogLabel = locale === "zh-CN" ? "返回博客" : "Back to blog";
-  const backHomeLabel = locale === "zh-CN" ? "查看首页" : "See home";
-  const metaBits = [post.category, ...(Array.isArray(post.tags) ? post.tags.slice(0, 2) : [])].filter(Boolean);
-  const metaText = metaBits.join(" · ");
-  const articleHtml = renderMarkdownToHtml(String(post.contentMd || "").trim());
-  const relatedHtml = relatedPosts
-    .slice(0, 2)
-    .map((item) => {
-      const slug = String(item.slug || "").trim();
-      const title = escapeHtml(String(item.title || "").trim());
-      const excerpt = escapeHtml(String(item.excerpt || "").trim());
-      if (!slug || !title) return "";
-      return [
-        '<article class="feature-card">',
-        `  <span class="feature-card__eyebrow">${escapeHtml(navLabel)}</span>`,
-        `  <h3><a href="/blog/${escapeHtml(slug)}/" class="article-card__link">${title}</a></h3>`,
-        `  <p>${excerpt}</p>`,
-        "</article>",
-      ].join("\n");
-    })
-    .filter(Boolean)
-    .join("\n");
-
-  return ensureHtmlDocument(`<!doctype html>
-<html lang="${lang}" data-language="${lang}">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="color-scheme" content="light" />
-  <title>${escapeHtml(String(post.seoTitle || post.title || `${brandName} ${navLabel}`).trim())}</title>
-  <meta name="description" content="${escapeHtml(String(post.seoDescription || post.excerpt || "").trim())}" />
-  <link rel="stylesheet" href="../../styles.css" />
-  <script src="../../script.js" defer></script>
-</head>
-<body>
-  <a class="skip-link" href="#main">${locale === "zh-CN" ? "跳到主要内容" : "Skip to main content"}</a>
-  <header class="site-header" role="banner">
-    <div class="site-header__inner">
-      <a class="brand" href="/" aria-label="${escapeHtml(brandName)}">
-        <span class="brand__mark" aria-hidden="true">${escapeHtml(String(brandName || "S").trim().charAt(0) || "S")}</span>
-        <span class="brand__text">${escapeHtml(brandName)}</span>
-      </a>
-      <nav class="topnav" aria-label="${locale === "zh-CN" ? "主导航" : "Primary navigation"}">
-        <a href="/">${locale === "zh-CN" ? "首页" : "Home"}</a>
-        <a href="/blog" aria-current="page">${escapeHtml(navLabel)}</a>
-      </nav>
-    </div>
-  </header>
-  <main id="main">
-    <article class="site-shell">
-      <header class="page-hero" aria-labelledby="post-title">
-        <div class="page-hero__grid">
-          <div>
-            <p class="hero__lede">${escapeHtml(navLabel)}</p>
-            <h1 id="post-title">${escapeHtml(String(post.title || "").trim())}</h1>
-            ${post.excerpt ? `<p class="page-hero__intro">${escapeHtml(String(post.excerpt || "").trim())}</p>` : ""}
-            ${metaText ? `<div class="article-card__meta" style="margin-top:1.2rem;"><span>${escapeHtml(metaText)}</span></div>` : ""}
-          </div>
-        </div>
-      </header>
-      <div class="prose" aria-label="${locale === "zh-CN" ? "文章正文" : "Article body"}">
-        ${articleHtml}
-      </div>
-    </article>
-    <section class="section site-shell" aria-labelledby="related-title">
-      <div class="section__head">
-        <div>
-          <p class="hero__lede">${escapeHtml(readMoreLabel)}</p>
-          <h2 class="section__title" id="related-title">${locale === "zh-CN" ? "相关条目" : "Related entries"}</h2>
-        </div>
-      </div>
-      <div class="feature-grid">
-        ${relatedHtml}
-      </div>
-    </section>
-    <section class="section site-shell" aria-labelledby="back-title">
-      <div class="panel">
-        <div class="page-hero__grid" style="align-items:center">
-          <div>
-            <p class="hero__lede">${escapeHtml(backToBlogLabel)}</p>
-            <h2 class="section__title" id="back-title">${locale === "zh-CN" ? "回到博客继续浏览完整内容" : "Return to the blog and continue reading"}</h2>
-            <div class="page-hero__actions">
-              <a class="button--accent" href="/blog">${escapeHtml(backToBlogLabel)}</a>
-              <a class="button--ghost" href="/">${escapeHtml(backHomeLabel)}</a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
-</body>
-</html>`);
-}
-
-function buildMarkdownFromStaticArticleHtml(html: string, title: string, excerpt: string): string {
-  const mainHtml = extractMainHtml(html);
-  const blocks = Array.from(mainHtml.matchAll(/<(h1|h2|h3|p|li)\b[^>]*>([\s\S]*?)<\/\1>/gi))
-    .map((match) => ({ tag: String(match[1] || "").toLowerCase(), text: htmlToReadableText(match[2] || "") }))
-    .filter((block) => block.text);
-  const lines: string[] = [];
-  const normalizedTitle = title.trim();
-  if (normalizedTitle) lines.push(`# ${normalizedTitle}`, "");
-  if (excerpt) lines.push(excerpt, "");
-  for (const block of blocks) {
-    if (block.tag === "h1" && normalizedTitle && block.text === normalizedTitle) continue;
-    if (excerpt && block.text === excerpt) continue;
-    if (block.tag === "h2") {
-      lines.push(`## ${block.text}`, "");
-      continue;
-    }
-    if (block.tag === "h3") {
-      lines.push(`### ${block.text}`, "");
-      continue;
-    }
-    if (block.tag === "li") {
-      lines.push(`- ${block.text}`);
-      continue;
-    }
-    if (block.text.length >= 24) {
-      lines.push(block.text, "");
-    }
-  }
-  return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
-}
-
-function extractStaticBlogPostsFromProject(params: {
-  project: any;
-  locale: "zh-CN" | "en";
-  fallbackAuthorName: string;
-}): BlogPostUpsertInput[] {
-  const files = Array.isArray(params.project?.staticSite?.files) ? params.project.staticSite.files : [];
-  const byPath = new Map<string, string>(
-    files.map((file: any) => [normalizePath(String(file?.path || "")), String(file?.content || "")] as const),
-  );
-  const routes = extractOrderedBlogDetailRoutesFromProject(params.project);
-  const posts: BlogPostUpsertInput[] = [];
-
-  for (const route of routes) {
-    const slug = String(route.split("/").filter(Boolean).pop() || "").trim();
-    const html = byPath.get(`${route}/index.html`) || "";
-    if (!slug || !html) continue;
-    const mainHtml = extractMainHtml(html);
-    const title =
-      htmlToReadableText(String(mainHtml.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || "")) ||
-      htmlToReadableText(String(html).match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "").replace(/[|｜].*$/, "").trim();
-    if (!title) continue;
-    const excerpt =
-      extractMetaContent(html, "description") ||
-      htmlToReadableText(String(mainHtml.match(/<p\b[^>]*class=["'][^"']*(?:section-lead|hero__lede)[^"']*["'][^>]*>([\s\S]*?)<\/p>/i)?.[1] || "")) ||
-      htmlToReadableText(String(mainHtml.match(/<p\b[^>]*>([\s\S]*?)<\/p>/i)?.[1] || ""));
-    const metaMatches = Array.from(mainHtml.matchAll(/<div\b[^>]*class=["'][^"']*article-meta[^"']*["'][^>]*>[\s\S]*?<\/div>/gi));
-    const spans = metaMatches.flatMap((match) =>
-      Array.from(String(match[0] || "").matchAll(/<span\b[^>]*>([\s\S]*?)<\/span>/gi))
-        .map((item) => htmlToReadableText(String(item[1] || "")))
-        .filter(Boolean),
-    );
-    const category = spans[1] || "";
-    const tags = Array.from(new Set([...spans.slice(2), category].filter(Boolean))).slice(0, 6);
-    const contentMd = buildMarkdownFromStaticArticleHtml(html, title, excerpt);
-    if (contentMd.length < 80) continue;
-    posts.push({
-      slug,
-      title,
-      excerpt,
-      contentMd,
-      status: "published",
-      authorName: params.fallbackAuthorName,
-      category,
-      tags,
-      seoTitle: htmlToReadableText(String(html).match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "") || `${title} | ${params.fallbackAuthorName}`,
-      seoDescription: excerpt,
-    });
-  }
-
-  return posts;
-}
-
-function staticBlogPostsNeedSourceAlignedFallback(params: {
-  sourceText: string;
-  staticPosts: BlogPostUpsertInput[];
-}) {
-  if (!Array.isArray(params.staticPosts) || params.staticPosts.length === 0) return false;
-  const sourceText = String(params.sourceText || "");
-  const staticText = params.staticPosts
-    .map((post) => [post.title, post.excerpt, post.contentMd, post.category, ...(Array.isArray(post.tags) ? post.tags : [])].join(" "))
-    .join("\n")
-    .toLowerCase();
-
-  const anchorGroups = [
-    { source: /casux/i, content: /casux/i },
-    { source: /适儿|儿童|空间|标准|研究|认证|案例|政策|资料|信息平台/i, content: /适儿|儿童|空间|标准|研究|认证|案例|政策|资料|信息平台/i },
-  ];
-  const driftMarkers = [
-    /signal house/i,
-    /signal systems/i,
-    /tool workspace/i,
-    /error monitoring/i,
-    /operational context/i,
-    /editorial notes/i,
-    /monitoring insight/i,
-    /turn a noisy signal set into a sharp working view/i,
-    /this article summarizes the most relevant material from the provided website brief/i,
-    /without inventing unsupported organizations, identifiers, or case details/i,
-  ];
-
-  return anchorGroups.some(
-    (group) =>
-      group.source.test(sourceText) &&
-      (!group.content.test(staticText) || driftMarkers.some((pattern) => pattern.test(staticText))),
-  );
-}
-
-function resolveBlogWorkflowPosts(params: {
-  sourceText: string;
-  locale: "zh-CN" | "en";
-  project: any;
-  fallbackAuthorName: string;
-}) {
-  const brandOverride = resolveProjectBrandName(params.project) || params.fallbackAuthorName;
-  const staticPosts = extractStaticBlogPostsFromProject({
-    project: params.project,
-    locale: params.locale,
-    fallbackAuthorName: params.fallbackAuthorName,
-  });
-  if (staticPosts.length > 0 && !staticBlogPostsNeedSourceAlignedFallback({ sourceText: params.sourceText, staticPosts })) {
-    return staticPosts;
-  }
-  return buildGeneratedBlogSeedPostsForTesting({
-    sourceText: params.sourceText,
-    locale: params.locale,
-    brandOverride,
-  });
-}
-
-function collectPrimaryBlogSourceText(inputState: AgentState) {
-  const workflow = toRecord((inputState as any)?.workflow_context);
-  const messages = Array.isArray(inputState.messages) ? inputState.messages : [];
-  const messageText = messages
-    .filter((message: any) => {
-      if (!(message instanceof HumanMessage) && !isHumanLikeMessage(message)) return false;
-      const content = extractMessageContent(message);
-      return content && !isDeployConfirmationIntent(content);
-    })
-    .map((message: any) => extractMessageContent(message))
-    .filter(Boolean)
-    .join("\n\n");
-
-  return [
-    String(workflow.canonicalPrompt || "").trim(),
-    String(workflow.sourceRequirement || "").trim(),
-    String(workflow.requirementAggregatedText || "").trim(),
-    String(workflow.latestUserText || "").trim(),
-    messageText,
-  ]
-    .filter(Boolean)
-    .join("\n\n");
-}
-
-function collectDeployBlogSourceText(inputState: AgentState, project: any) {
-  const primarySourceText = collectPrimaryBlogSourceText(inputState);
-
-  const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
-  const generatedText = files
-    .filter((file: any) => String(file?.path || "").endsWith(".html"))
-    .map((file: any) => htmlToReadableText(String(file?.content || "")))
-    .filter(Boolean)
-    .join("\n\n");
-
-  return [
-    primarySourceText,
-    generatedText,
-  ]
-    .filter(Boolean)
-    .join("\n\n");
-}
-
-function resolveProjectBrandName(project: any) {
-  const normalizeBrand = (value: string) => {
-    const cleaned = String(value || "").replace(/\s+/g, " ").trim();
-    if (!cleaned || /^(?:site|website)$/i.test(cleaned)) return "";
-    if (/casux/i.test(cleaned)) return "CASUX";
-    return cleaned;
-  };
-
-  const brandingName = normalizeBrand(String(project?.branding?.name || ""));
-  if (brandingName) return brandingName;
-  const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
-  for (const file of files) {
-    const content = String(file?.content || "");
-    const brandText =
-      htmlToReadableText(String(content.match(/class=["'][^"']*brand__name[^"']*["'][^>]*>([\s\S]*?)<\/span>/i)?.[1] || "")) ||
-      htmlToReadableText(String(content.match(/class=["'][^"']*brand[^"']*["'][^>]*>([\s\S]*?)<\/a>/i)?.[1] || ""));
-    const cleaned = normalizeBrand(brandText);
-    if (cleaned) return cleaned;
-  }
-  const routes = listProjectRoutes(project).join(" ");
-  if (/\/casux(?:-|\/|$)|\bcasux\b/i.test(routes)) return "CASUX";
-  return "";
-}
-
-function splitContentSentences(text: string) {
-  const normalized = String(text || "")
-    .replace(/```[\s\S]*?```/g, " ")
-    .replace(/[{}[\]"`]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-  return normalized
-    .split(/(?<=[。！？!?；;])\s+|\n+|(?<=\.)\s+/g)
-    .map((item) => item.replace(/\s+/g, " ").trim())
-    .filter((item) => item.length >= 18 && item.length <= 220)
-    .filter((item) => !/(data-shpitto|Blog API|D1|Cloudflare|runtime|fallback|route-native|native collections?|Specific Replay|marker|wrangler|deploy)/i.test(item))
-    .filter((item) => !/(requirement_spec|source\s*:|route\s*:|navLabel\s*:|purpose\s*:|pageKind\s*:|workflow_context|promptControlManifest|canonicalPrompt)/i.test(item))
-    .filter((item) => !/博客数据源|博客后端|运行时|静态回退|回退卡片|部署刷新|测试标记/.test(item));
-}
-
-function inferBlogBrand(text: string, locale: "zh-CN" | "en") {
-  const blocked = new Set(["HTML", "CSS", "PDF", "API", "JSON", "SEO", "CTA", "URL", "HTTP", "HTTPS", "WWW", "D1", "DB"]);
-  const candidates = Array.from(String(text || "").matchAll(/\b[A-Z][A-Z0-9-]{2,12}\b/g))
-    .map((match) => match[0])
-    .filter((value) => !blocked.has(value));
-  if (candidates.length) {
-    const ranked = candidates
-      .map((value, index) => ({
-        value,
-        index,
-        count: (String(text || "").match(new RegExp(`\\b${value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "g")) || []).length,
-      }))
-      .sort((left, right) => right.count - left.count || left.index - right.index);
-    return ranked[0].value;
-  }
-  const chineseBrand = String(text || "").match(/([\u4e00-\u9fffA-Za-z0-9-]{2,16})(?:官网|网站|平台|信息平台|研究中心)/);
-  if (chineseBrand?.[1]) return chineseBrand[1];
-  return locale === "zh-CN" ? "站点" : "Site";
-}
-
-function scoreContentSentence(sentence: string, brand: string) {
-  let score = 0;
-  if (brand && sentence.includes(brand)) score += 12;
-  if (/(标准|研究|报告|案例|政策|认证|资料|下载|平台|数据库|产品|空间|儿童|友好|建设|倡导|评估|规范)/.test(sentence)) score += 10;
-  if (/(standard|research|report|case|policy|certification|resource|platform|database|product|insight|guide)/i.test(sentence)) score += 8;
-  if (sentence.length >= 40 && sentence.length <= 140) score += 4;
-  return score;
-}
-
-function pickContentSnippets(sourceText: string, brand: string, count: number) {
-  const seen = new Set<string>();
-  return splitContentSentences(sourceText)
-    .map((sentence, index) => ({ sentence, index, score: scoreContentSentence(sentence, brand) }))
-    .filter((item) => {
-      const key = item.sentence.slice(0, 48);
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    })
-    .sort((left, right) => right.score - left.score || left.index - right.index)
-    .slice(0, count)
-    .map((item) => item.sentence);
-}
-
-function normalizeSourceDocumentTitle(value: string) {
-  return String(value || "")
-    .replace(/\s+/g, " ")
-    .replace(/^[《「『“"'([{（【\s]+|[》」』”"')\]}）】\s]+$/g, "")
-    .replace(/[。；;:：,，、\s]+$/g, "")
-    .trim();
-}
-
-function isLikelyStructuredRequirementConfigLine(line: string) {
-  const value = String(line || "").trim();
-  if (!value) return false;
-  const configTerms =
-    /(siteType|targetAudience|contentSources|designTheme|primaryVisualDirection|secondaryVisualTags|visualStyle|pageStructure|planning|functionalRequirements|primaryGoal|language|brandLogo|customNotes|mode|pages|manual|bilingual|portfolio|new_site|brand_trust)/i;
-  if (/["{}[\]]/.test(value) && configTerms.test(value)) return true;
-  return /^(?:siteType|targetAudience|contentSources|designTheme|primaryVisualDirection|secondaryVisualTags|visualStyle|pageStructure|planning|functionalRequirements|primaryGoal|language|brandLogo|customNotes|mode|pages)\s*[:=]/i.test(value);
-}
-
-function isBlockedSourceDocumentTitle(title: string) {
-  return /^(manual|portfolio|bilingual|new_site|brand_trust|warm-soft|playful|minimal|text_mark|none|consumers|blog|multi|single|company|landing|ecommerce|event|other)$/i.test(
-    String(title || "").trim(),
-  );
-}
-
-function collectSourceDocumentTitles(text: string) {
-  const source = String(text || "");
-  const titlePattern = /(政策|法规|标准|指南|规范|报告|案例|汇编|白皮书|手册|清单|数据库|目录|研究|policy|standard|guide|report|case|whitepaper|manual|database)/i;
-  const lineTitlePattern = /(汇编|指南|规范|报告|白皮书|手册|清单|数据库|compilation|guide|standard|specification|report|whitepaper|manual|checklist|database)$/i;
-  const strongTitlePattern = /(文件|汇编|指南|规范|报告|白皮书|手册|清单|数据库|compilation|guide|standard|specification|report|whitepaper|manual|checklist|database)/i;
-  const candidates: string[] = [];
-  for (const match of source.matchAll(/[《「『“"]([^《》「」『』“”"]{4,90})[》」』”"]/g)) {
-    candidates.push(match[1] || "");
-  }
-  for (const rawLine of source.replace(/\r/g, "\n").split("\n")) {
-    if (/[。！？.!?]\s*$/.test(rawLine.trim())) continue;
-    const line = normalizeSourceDocumentTitle(rawLine.replace(/^[\s>*#\-•\d.、()（）]+/g, ""));
-    if (!line || line.length > 90) continue;
-    if (isLikelyStructuredRequirementConfigLine(line)) continue;
-    if (!lineTitlePattern.test(line)) continue;
-    if (/[。！？.!?]/.test(line)) continue;
-    if (/[，,；;]\s*/.test(line) && line.length > 24) continue;
-    candidates.push(line);
-  }
-
-  const seen = new Set<string>();
-  return candidates
-    .map(normalizeSourceDocumentTitle)
-    .filter((title) => !isBlockedSourceDocumentTitle(title))
-    .filter((title) => title.length >= 4 && title.length <= 90 && titlePattern.test(title) && strongTitlePattern.test(title))
-    .filter((title) => !/[。！？.!?]/.test(title))
-    .filter((title) => !/(requirement_spec|source\s*:|route\s*:|navLabel\s*:|purpose\s*:|workflow_context|Specific Replay|marker|siteType|targetAudience|contentSources|designTheme|primaryVisualDirection|secondaryVisualTags|visualStyle|pageStructure|planning|functionalRequirements|primaryGoal|brandLogo|customNotes|new_site|brand_trust|bilingual|portfolio)/i.test(title))
-    .filter((title) => {
-      const key = title.toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    })
-    .slice(0, 3);
-}
-
-function inferSourceDocumentTopic(title: string, locale: "zh-CN" | "en", index: number) {
-  const zh = locale === "zh-CN";
-  if (/政策|法规|汇编|policy|regulation/i.test(title)) {
-    return {
-      key: `policy-resource-${index + 1}`,
-      category: zh ? "政策法规" : "Policy",
-      tags: zh ? ["政策法规", "资料汇编", "信息平台"] : ["policy", "resources", "platform"],
-    };
-  }
-  if (/标准|指南|规范|standard|guide|spec/i.test(title)) {
-    return {
-      key: `standard-resource-${index + 1}`,
-      category: zh ? "标准文件" : "Standards",
-      tags: zh ? ["标准文件", "建设指南", "资料下载"] : ["standards", "guide", "resources"],
-    };
-  }
-  if (/案例|case/i.test(title)) {
-    return {
-      key: `case-resource-${index + 1}`,
-      category: zh ? "案例库" : "Case Library",
-      tags: zh ? ["案例库", "实践资料", "项目经验"] : ["cases", "practice", "resources"],
-    };
-  }
-  if (/数据库|目录|清单|database|catalog|list/i.test(title)) {
-    return {
-      key: `database-resource-${index + 1}`,
-      category: zh ? "产品数据库" : "Database",
-      tags: zh ? ["产品数据库", "资料目录", "检索"] : ["database", "catalog", "search"],
-    };
-  }
-  return {
-    key: `research-resource-${index + 1}`,
-    category: zh ? "研究报告" : "Research",
-    tags: zh ? ["研究报告", "专题资料", "内容集合"] : ["research", "reports", "resources"],
-  };
-}
-
 function resolveProviderAttempts(preferred?: { provider?: string; model?: string }): ProviderAttempt[] {
   const attempts = resolveRunProviderRunnerLocks(preferred)
     .map((lock) => ({ lock, config: resolveProviderConfig(lock) }))
@@ -4910,257 +4497,6 @@ function resolveProviderAttempts(preferred?: { provider?: string; model?: string
   return [{ lock: fallbackLock, config: resolveProviderConfig(fallbackLock) }];
 }
 
-function pickSnippetsForSourceTitle(sourceText: string, title: string, brand: string, fallbackPool: string[], count: number) {
-  const titleTokens = Array.from(
-    new Set([
-      title,
-      ...Array.from(String(title || "").matchAll(/[\u4e00-\u9fff]{2,}|[a-z0-9]{3,}/gi)).map((match) => match[0]),
-    ]),
-  ).filter(Boolean);
-  const ranked = splitContentSentences(sourceText)
-    .map((sentence, index) => ({
-      sentence,
-      index,
-      score:
-        scoreContentSentence(sentence, brand) +
-        titleTokens.reduce((total, token) => total + (sentence.includes(token) ? (token === title ? 30 : 6) : 0), 0),
-    }))
-    .sort((left, right) => right.score - left.score || left.index - right.index)
-    .map((item) => item.sentence);
-  return Array.from(new Set([...ranked, ...fallbackPool])).slice(0, count);
-}
-
-function slugToken(input: string, fallback: string) {
-  const normalized = String(input || "")
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 72);
-  return normalized || fallback;
-}
-
-function sourceDocumentSlug(title: string, fallback: string, index: number) {
-  const base = slugToken(title, fallback);
-  return /\d$/.test(base) ? base : `${base}-${index + 1}`;
-}
-
-function isPersonalCareerBlogSource(text: string): boolean {
-  return /(?:职业履历|首席技术官|研发体系|创始团队|全球化|华为|微信|HelloTalk|来画|云领天下|personal\s+blog|career|cto)/i.test(
-    String(text || ""),
-  );
-}
-
-function buildPersonalCareerBlogSeedPosts(params: {
-  sourceText: string;
-  brand: string;
-  locale: "zh-CN" | "en";
-}): BlogPostUpsertInput[] | undefined {
-  if (params.locale !== "zh-CN" || !isPersonalCareerBlogSource(params.sourceText)) return undefined;
-  const brand = /bays\s+wong/i.test(params.sourceText) ? "Bays Wong" : params.brand || "作者";
-  const source = params.sourceText;
-  const hasHuawei = /华为|DevOps|敏捷|研发体系/i.test(source);
-  const hasWechat = /微信|实时音视频|全球化|50\+|十亿/i.test(source);
-  const hasStartup = /云领天下|来画|HelloTalk|AI|数字人|SaaS|首席技术官/i.test(source);
-  if (!hasHuawei && !hasWechat && !hasStartup) return undefined;
-
-  const postSpecs = [
-    {
-      slug: "agile-devops-system-design",
-      title: "把敏捷转型做成研发体系：从流程优化到组织级效能工程",
-      excerpt:
-        "围绕华为研发体系变革经验，讨论敏捷、DevOps 与效能提升如何从方法论变成可持续运行的组织能力。",
-      category: "研发效能",
-      tags: ["研发", "敏捷转型", "DevOps", "研发体系"],
-      sections: [
-        [
-          "转型的起点不是换一套会议节奏",
-          "在大型研发组织中，敏捷转型如果只停留在站会、看板和迭代名词上，很快会回到旧问题：需求入口不稳定、测试反馈滞后、跨团队协同成本高、发布风险不可预测。真正有效的转型，需要把需求、开发、测试、发布和线上反馈放进同一条效能链路里观察。",
-          "Bays Wong 在华为无线业务推动研发体系升级时，核心工作不是简单引入某个工具，而是作为部门级敏捷转型首席教练，帮助组织识别链路瓶颈、重设协作机制，并把效能提升从局部动作推进到组织级工程。",
-        ],
-        [
-          "DevOps 的价值在节奏和反馈",
-          "DevOps 经常被误解为流水线建设，但流水线只是表达方式。它真正解决的是研发活动能否稳定交付、风险能否前移、问题能否被快速观测和回滚。只有当发布、验证、度量和复盘连接起来，组织才会形成新的工程节奏。",
-          "这种节奏不是为了追求单点速度，而是为了让每一次交付都更可解释、更可预测。速度、质量和协同成本能够同时改善，才说明研发体系真正发生了变化。",
-        ],
-        [
-          "效能工程需要长期机制",
-          "组织级效能提升不能依赖一次项目或一组口号完成。它需要稳定的度量体系、清晰的责任边界和持续的反馈闭环。度量不是考核终点，而是帮助团队发现瓶颈、修正偏差、持续优化的系统。",
-          "把敏捷做成研发体系，意味着组织不只学会了执行流程，而是具备了持续变强的能力。这也是 Bays Wong 在研发体系变革经验中最值得沉淀的部分。",
-        ],
-      ],
-    },
-    {
-      slug: "wechat-real-time-media-global",
-      title: "实时音视频架构如何支撑微信全球化",
-      excerpt:
-        "从微信创始团队阶段的技术演进出发，梳理实时音视频网络、弹性架构和全球基础设施如何支撑亿级用户体验。",
-      category: "全球化架构",
-      tags: ["架构", "微信", "实时音视频", "弹性架构"],
-      sections: [
-        [
-          "全球化不是把服务放到海外那么简单",
-          "即时通信产品走向全球时，最难的不是让用户连接上，而是让连接稳定、低延迟并且可持续扩展。实时音视频尤其敏感，任何网络抖动、链路绕行和区域覆盖不足，都会直接影响用户对产品可靠性的判断。",
-          "Bays Wong 作为微信创始团队核心成员，在 2011-2015 年主导实时音视频技术架构演进，并负责建设覆盖全球 50+ 国家和地区的实时音视频网络基础设施。这类基础设施能力，为微信国际化战略奠定了关键技术基础。",
-        ],
-        [
-          "弹性架构服务于十亿量级增长",
-          "从千万级用户走向十亿量级，系统需要面对的不只是并发增长，还有地域差异、网络质量差异、终端差异和业务峰值的不确定性。弹性架构的价值，是让系统在复杂环境下依然可以调度、扩容、降级和恢复。",
-          "实时音视频架构的演进，本质上是在用户体验、成本、稳定性和覆盖范围之间不断做工程平衡。它要求团队把链路质量、服务调度、容量规划和故障处理视为一个整体，而不是孤立模块。",
-        ],
-        [
-          "基础设施决定产品边界",
-          "很多全球化产品的瓶颈并不在前端功能，而在基础设施能否承载真实世界的复杂网络。只有底层能力足够稳，产品团队才有空间持续扩展场景、提升体验并进入更多市场。",
-          "微信国际化阶段的技术建设说明，架构不是后台工程师的内部事务，而是产品战略的一部分。实时音视频网络能力越成熟，产品能够抵达的用户和场景就越广。",
-        ],
-      ],
-    },
-    {
-      slug: "ai-saas-commercialization-cto-practice",
-      title: "从技术实验到商业化平台：CTO 如何推动 AI 产品落地",
-      excerpt:
-        "结合云领天下、来画科技与 HelloTalk 的 CTO 经历，讨论 AI、数字人 SaaS、教育解决方案和全球化社交中的技术商业化路径。",
-      category: "AI 商业化",
-      tags: ["创业", "AI", "SaaS", "CTO"],
-      sections: [
-        [
-          "技术负责人要把能力翻译成业务结果",
-          "CTO 的工作不只是做技术选型，还要判断技术能力如何进入产品、如何形成可销售的解决方案、如何支撑业务增长。尤其在 AI、智能硬件、数字人创作和全球化社交场景中，技术价值必须通过可用、可扩展、可运营的系统体现出来。",
-          "Bays Wong 在云领天下、来画科技和 HelloTalk 的经历，体现的是从技术战略到商业价值实现的完整链条。云领天下面向 K12 提供全场景解决方案，覆盖全国 5000+ 家学校；来画科技完成 AI 技术从实验室到商业化的关键跨越，打造 AI 数字人创作 SaaS 平台；HelloTalk 则需要在全球化社交场景中把高可用架构、数据智能中台和 AI 创新应用结合起来。",
-        ],
-        [
-          "AI 产品化要跨过工程和运营两道门槛",
-          "AI 技术从演示走向商业化，往往会遇到稳定性、成本、内容质量、交付效率和用户学习成本等问题。真正可持续的 AI 产品，不是一次模型调用，而是围绕数据、工作流、权限、内容生产、质量控制和客户成功搭建完整系统。",
-          "数字人创作 SaaS 平台的关键也在这里：它需要让创作过程标准化，让复杂能力变成普通用户可以理解和复用的产品路径，同时还要保留足够的扩展性，支撑不同行业和业务场景。",
-        ],
-        [
-          "商业价值来自系统性组合",
-          "在智能硬件、数字人创作平台和全球化社交等领域，实现 300%-800% 的商业价值跃升，通常不是单点功能带来的，而是架构稳定性、数据智能、AI 应用和业务流程共同作用的结果。",
-          "这类经验说明，技术领导力的核心是把未来能力提前组织成可执行路线，并让团队持续把技术优势转化为产品优势和商业结果。",
-        ],
-      ],
-    },
-  ];
-
-  return postSpecs.map((post) => ({
-    slug: post.slug,
-    title: post.title,
-    excerpt: post.excerpt,
-    contentMd: [
-      `# ${post.title}`,
-      "",
-      post.excerpt,
-      "",
-      ...post.sections.flatMap(([heading, ...paragraphs]) => [
-        `## ${heading}`,
-        "",
-        ...paragraphs.flatMap((paragraph) => [paragraph, ""]),
-      ]),
-    ].join("\n").trim(),
-    status: "published",
-    authorName: brand,
-    category: post.category,
-    tags: post.tags,
-    seoTitle: `${post.title} | ${brand}`,
-    seoDescription: post.excerpt,
-  }));
-}
-
-export function buildGeneratedBlogSeedPostsForTesting(params: {
-  sourceText: string;
-  locale: "zh-CN" | "en";
-  brandOverride?: string;
-}): BlogPostUpsertInput[] {
-  const brand = String(params.brandOverride || "").trim() || inferBlogBrand(params.sourceText, params.locale);
-  const personalCareerPosts = buildPersonalCareerBlogSeedPosts({ sourceText: params.sourceText, brand, locale: params.locale });
-  if (personalCareerPosts) return personalCareerPosts;
-  const snippets = pickContentSnippets(params.sourceText, brand, 9);
-  const sourceTitleTopics = collectSourceDocumentTitles(params.sourceText).map((title, index) => {
-    const topic = inferSourceDocumentTopic(title, params.locale, index);
-    return { ...topic, title, sourceTitle: true };
-  });
-  const fallbackZh = [
-    `${brand}围绕标准、研究、实践与认证形成信息入口，帮助访客按主题理解内容体系。`,
-    `${brand}信息平台适合承载政策法规、标准文件、研究报告、案例库与产品数据库等内容。`,
-    `${brand}资料下载和认证查询是内容阅读后的重要行动路径。`,
-  ];
-  const fallbackEn = [
-    `${brand} organizes standards, research, practice, and certification content into a clear information entry.`,
-    `${brand} can present policies, standards, research reports, case libraries, and product database records as structured resources.`,
-    `${brand} connects content reading with downloads, certification lookup, and next-step actions.`,
-  ];
-  const pool = snippets.length >= 6 ? snippets : [...snippets, ...(params.locale === "zh-CN" ? fallbackZh : fallbackEn)];
-  const zh = params.locale === "zh-CN";
-  const topics = zh
-    ? [
-        { key: "standards-resources", category: "标准文件", title: `${brand}标准与资料体系导读`, tags: ["标准文件", "资料下载", "内容集合"] },
-        { key: "research-cases", category: "研究报告", title: `${brand}研究报告与案例库导读`, tags: ["研究报告", "案例库", "实践资料"] },
-        { key: "certification-actions", category: "政策法规", title: `${brand}认证查询与行动路径说明`, tags: ["政策法规", "认证查询", "信息平台"] },
-      ]
-    : [
-        { key: "standards-resources", category: "Standards", title: `${brand} Standards And Resource Guide`, tags: ["standards", "resources", "content"] },
-        { key: "research-cases", category: "Research", title: `${brand} Research Reports And Case Library Guide`, tags: ["research", "cases", "practice"] },
-        { key: "certification-actions", category: "Policy", title: `${brand} Certification Lookup And Next Actions`, tags: ["policy", "certification", "platform"] },
-      ];
-
-  const mergedTopics: Array<{ key: string; category: string; title: string; tags: string[]; sourceTitle?: boolean }> = [
-    ...sourceTitleTopics,
-    ...topics,
-  ].slice(0, 3);
-
-  return mergedTopics.map((topic, index) => {
-    const selected = topic.sourceTitle
-      ? pickSnippetsForSourceTitle(params.sourceText, topic.title, brand, pool, 3)
-      : pool.slice(index * 3, index * 3 + 3);
-    const title = topic.title;
-    const excerpt =
-      selected[0] ||
-      (topic.sourceTitle && zh
-        ? `《${title}》是本次资料中的核心条目，适合归入${topic.category}并与相关资料统一阅读。`
-        : topic.sourceTitle
-          ? `${title} is a source-provided resource item organized into the site content collection.`
-          : zh
-            ? `${title}，整理站点资料中的关键内容。`
-            : `${title}, organized from the provided site materials.`);
-    const contentMd = zh
-      ? [
-          `# ${title}`,
-          "",
-          "本文整理站点资料中与该主题最相关的内容，保留原始语义，不补造未提供的机构、编号或案例细节。",
-          "",
-          "## 重点摘要",
-          ...selected.map((item) => `- ${item}`),
-          "",
-          "## 阅读建议",
-          "可结合信息平台中的分类导航继续查看相关条目，并根据需要进入资料下载或认证查询路径。",
-        ].join("\n")
-      : [
-          `# ${title}`,
-          "",
-          "This article summarizes the most relevant material from the provided website brief without inventing unsupported organizations, identifiers, or case details.",
-          "",
-          "## Key Points",
-          ...selected.map((item) => `- ${item}`),
-          "",
-          "## Suggested Next Step",
-          "Use the information platform categories to continue reading related records, then move to downloads or certification lookup when needed.",
-        ].join("\n");
-    return {
-      slug: topic.sourceTitle ? sourceDocumentSlug(topic.title, topic.key, index) : `${slugToken(brand, "site")}-${topic.key}`,
-      title,
-      excerpt,
-      contentMd,
-      status: "published",
-      authorName: brand,
-      category: topic.category,
-      tags: topic.tags,
-      seoTitle: title,
-      seoDescription: excerpt,
-    };
-  });
-}
-
 export type BlogContentWorkflowPreview = {
   required: boolean;
   reason: string;
@@ -5168,133 +4504,94 @@ export type BlogContentWorkflowPreview = {
   posts: BlogPostUpsertInput[];
 };
 
-export function projectHasGeneratedBlogContentMount(project: any) {
-  const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
-  return files.some((file: any) => {
-    const filePath = normalizePath(String(file?.path || ""));
-    const content = String(file?.content || "");
-    return filePath === "/blog/index.html" || /data-shpitto-blog-root/i.test(content);
+export function buildGeneratedBlogSeedPostsForTesting(params: {
+  sourceText: string;
+  locale: "zh-CN" | "en" | "bilingual";
+}): BlogPostUpsertInput[] {
+  const visibleLocale = toVisibleLocale(params.locale);
+  return buildWebsiteGeneratedBlogSeedPosts({
+    ...params,
+    locale: visibleLocale,
+    deps: getWebsiteBlogWorkflowDeps(),
   });
 }
 
+export function projectHasGeneratedBlogContentMount(project: any): boolean {
+  return projectHasWebsiteGeneratedBlogContentMount(project, getWebsiteBlogWorkflowDeps());
+}
+
 export function buildBlogContentWorkflowPreview(params: {
-  inputState: AgentState;
   project: any;
-  locale: "zh-CN" | "en";
+  inputState: AgentState;
+  locale: "zh-CN" | "en" | "bilingual";
 }): BlogContentWorkflowPreview {
-  if (!projectHasGeneratedBlogContentMount(params.project)) {
-    return { required: false, reason: "no_content_mount", navLabel: "", posts: [] };
-  }
-  const primarySourceText = collectPrimaryBlogSourceText(params.inputState);
-  const sourceText = primarySourceText.trim().length >= 12 ? primarySourceText : collectDeployBlogSourceText(params.inputState, params.project);
-  const posts = resolveBlogWorkflowPosts({
-    sourceText,
-    locale: params.locale,
-    project: params.project,
-    fallbackAuthorName: inferBlogBrand(sourceText, params.locale),
+  const visibleLocale = toVisibleLocale(params.locale);
+  return buildWebsiteBlogContentWorkflowPreview({
+    ...params,
+    locale: visibleLocale,
+    deps: getWebsiteBlogWorkflowDeps(),
   });
-  if (posts.length > 0) {
-    return {
-      required: true,
-      reason: "ready",
-      navLabel: resolveBlogNavLabelFromProject(params.project, params.locale),
-      posts: posts.slice(0, 6),
-    };
-  }
-  if (sourceText.trim().length < 40) {
-    return {
-      required: false,
-      reason: "no_source",
-      navLabel: resolveBlogNavLabelFromProject(params.project, params.locale),
-      posts: [],
-    };
-  }
-  return {
-    required: true,
-    reason: "ready",
-    navLabel: resolveBlogNavLabelFromProject(params.project, params.locale),
-    posts: buildGeneratedBlogSeedPostsForTesting({ sourceText, locale: params.locale }),
-  };
 }
 
 export function materializeGeneratedBlogDetailPagesForTesting(params: {
   project: any;
   inputState: AgentState;
-  locale: "zh-CN" | "en";
+  locale: "zh-CN" | "en" | "bilingual";
 }): any {
-  return materializeGeneratedBlogDetailPages(params);
+  const visibleLocale = toVisibleLocale(params.locale);
+  return materializeWebsiteBlogDetailPages({
+    ...params,
+    locale: visibleLocale,
+    deps: getWebsiteCompletionDeps(),
+  });
+}
+
+export function finalizeGeneratedProjectArtifactForTesting(params: {
+  project: any;
+  inputState: AgentState;
+  locale: "zh-CN" | "en" | "bilingual";
+}): any {
+  return finalizeGeneratedProjectArtifact(params);
 }
 
 function materializeGeneratedBlogDetailPages(params: {
   project: any;
   inputState: AgentState;
-  locale: "zh-CN" | "en";
+  locale: "zh-CN" | "en" | "bilingual";
 }): any {
-  const baseProject = ensureSkillDirectStaticProject(params.project);
-  if (!projectHasGeneratedBlogContentMount(baseProject)) return baseProject;
-
-  const preview = buildBlogContentWorkflowPreview({
-    project: baseProject,
-    inputState: params.inputState,
-    locale: params.locale,
+  const visibleLocale = toVisibleLocale(params.locale);
+  return materializeWebsiteBlogDetailPages({
+    ...params,
+    locale: visibleLocale,
+    deps: getWebsiteCompletionDeps(),
   });
-  if (!preview.required || !Array.isArray(preview.posts) || preview.posts.length === 0) return baseProject;
+}
 
-  const desiredRoutes = extractOrderedBlogDetailRoutesFromProject(baseProject);
-  const postRoutes =
-    desiredRoutes.length > 0
-      ? desiredRoutes
-      : preview.posts.map((post) => `/blog/${sanitizePathToken(String(post.slug || "").trim())}`);
-  const brandSourceText = collectPrimaryBlogSourceText(params.inputState) || collectDeployBlogSourceText(params.inputState, baseProject);
-  const brandName = String(baseProject?.branding?.name || inferBlogBrand(brandSourceText, params.locale)).trim() || (params.locale === "zh-CN" ? "网站" : "Site");
-  const navLabel = resolveBlogNavLabelFromProject(baseProject, params.locale);
-  const posts = preview.posts.map((post, index) => {
-    const route = postRoutes[index] || `/blog/${sanitizePathToken(String(post.slug || "").trim() || `post-${index + 1}`)}`;
-    const slug = slugFromBlogDetailRoute(route) || sanitizePathToken(String(post.slug || "").trim() || `post-${index + 1}`);
-    return {
-      ...post,
-      slug,
-    };
+function finalizeGeneratedProjectArtifact(params: {
+  project: any;
+  inputState: AgentState;
+  locale: "zh-CN" | "en" | "bilingual";
+}): any {
+  return materializeGeneratedBlogDetailPages(params);
+}
+
+function collectPrimaryBlogSourceText(inputState: AgentState): string {
+  return collectBlogWorkflowSourceText({
+    inputState,
+    deps: getWebsiteBlogWorkflowDeps(),
   });
+}
 
-  const next = cloneJson(baseProject);
-  const files = dedupeFiles((next?.staticSite?.files || []) as any[]);
-  const pagesByRoute = new Map<string, { path: string; html: string }>(
-    (Array.isArray(next?.pages) ? next.pages : []).map((page: any) => [normalizePath(String(page?.path || "")), { path: normalizePath(String(page?.path || "")), html: String(page?.html || "") }] as const),
-  );
-
-  const generatedFiles: Array<{ path: string; content: string; type: string }> = [];
-  posts.forEach((post, index) => {
-    const route = postRoutes[index] || `/blog/${post.slug}`;
-    if (projectHasStaticBlogDetailFile({ staticSite: { files } }, route)) return;
-    const relatedPosts = posts.filter((item) => item.slug !== post.slug);
-    const html = renderGeneratedBlogDetailPage({
-      post,
-      locale: params.locale,
-      brandName,
-      navLabel,
-      relatedPosts,
-    });
-    generatedFiles.push({
-      path: `${normalizePath(route)}/index.html`,
-      content: html,
-      type: "text/html",
-    });
-    pagesByRoute.set(normalizePath(route), { path: normalizePath(route), html });
+function collectDeployBlogSourceText(inputState: AgentState, project: any): string {
+  return collectBlogWorkflowSourceText({
+    inputState,
+    project,
+    deps: getWebsiteBlogWorkflowDeps(),
   });
+}
 
-  if (generatedFiles.length === 0) return next;
-  next.staticSite = {
-    ...(next.staticSite || {}),
-    mode: "skill-direct",
-    files: dedupeFiles([...files, ...generatedFiles]),
-  };
-  next.pages = Array.from(pagesByRoute.values()).sort((a, b) => {
-    if (a.path === "/") return -1;
-    if (b.path === "/") return 1;
-    return a.path.localeCompare(b.path);
-  });
-  return next;
+function inferBlogBrand(text: string, locale: "zh-CN" | "en"): string {
+  return inferBlogBrandForWorkflow(text, locale);
 }
 
 function diffStaticProjectFiles(beforeProject: any, afterProject: any): string[] {
@@ -5359,7 +4656,7 @@ function normalizeStructuralRouteCandidate(value: string): string | undefined {
   }
 
   if (/^[a-z][a-z0-9\s/_-]{1,48}$/i.test(raw)) {
-    const slug = slugToken(raw, "");
+    const slug = normalizeSlugToken(raw, "");
     if (slug) return normalizePath(`/${slug}`);
   }
 
@@ -5367,174 +4664,38 @@ function normalizeStructuralRouteCandidate(value: string): string | undefined {
 }
 
 function extractStructuralRefineRouteAdditions(project: any, instruction: string): string[] {
-  const text = String(instruction || "").trim();
-  if (!text) return [];
-  if (!/(?:新增|添加|增加|补(?:一个|一页|上)?|补充|创建|create|add|new|include|missing)/i.test(text)) {
-    return [];
-  }
-
-  const existingRoutes = new Set(listProjectRoutes(project));
-  const discovered = new Set<string>();
-  const pushRoute = (candidate: string | undefined) => {
-    const route = normalizeStructuralRouteCandidate(candidate || "");
-    if (!route || existingRoutes.has(route)) return;
-    discovered.add(route);
-  };
-
-  for (const match of text.matchAll(/(?:^|[\s(（,:：])((?:\/[a-z0-9][a-z0-9/_-]*)+)(?=$|[\s)）,.，。；;])/gi)) {
-    pushRoute(match[1]);
-  }
-  for (const match of text.matchAll(/(?:新增|添加|增加|补(?:一个|一页|上)?|补充|创建)\s*(?:一个|一页|页|个)?\s*([A-Za-z][A-Za-z0-9\s/_-]{1,40}|[\u4e00-\u9fff]{2,16})\s*(?:页面|页)/gi)) {
-    pushRoute(match[1]);
-  }
-  for (const match of text.matchAll(/(?:add|create|include)\s+(?:a|an|one|another)?\s*([a-z][a-z0-9\s/_-]{1,40})\s+(?:page|route)/gi)) {
-    pushRoute(match[1]);
-  }
-  for (const match of text.matchAll(/["'“”]([^"'“”]{2,48})["'“”]\s*(?:页面|页|page|route)/gi)) {
-    pushRoute(match[1]);
-  }
-
-  return Array.from(discovered).sort((a, b) => a.localeCompare(b));
-}
-
-function materializeStructuralRefineAddedRoutes(params: {
-  project: any;
-  inputState: AgentState;
-  instruction: string;
-  locale: "zh-CN" | "en";
-}): { project: any; changedFiles: string[] } {
-  const addRoutes = extractStructuralRefineRouteAdditions(params.project, params.instruction);
-  if (addRoutes.length === 0) {
-    return { project: params.project, changedFiles: [] };
-  }
-
-  const next = ensureSkillDirectStaticProject(params.project);
-  const stateForDecision = cloneJson(params.inputState || {});
-  stateForDecision.sitemap = Array.from(new Set([...listProjectRoutes(next), ...addRoutes]));
-  const decision = buildLocalDecisionPlan(stateForDecision);
-  const requirementText = decision.requirementText || extractRequirementText(stateForDecision) || params.instruction;
-  const files = dedupeFiles((next?.staticSite?.files || []) as any[]);
-  const byPath = new Map(files.map((file) => [normalizePath(String(file.path || "")), { ...file }] as const));
-  const homeHtml = ensureHtmlDocument(String(byPath.get("/index.html")?.content || ""));
-  const homeNavBlock = String(homeHtml.match(/<nav\b[^>]*>[\s\S]*?<\/nav>/i)?.[0] || "");
-  const homeFooterBlock = String(homeHtml.match(/<footer\b[^>]*>[\s\S]*?<\/footer>/i)?.[0] || "");
-  const changed = new Set<string>();
-
-  for (const route of addRoutes) {
-    const targetPath = routeToHtmlPath(route);
-    if (byPath.has(targetPath)) continue;
-    let html = renderLocalPage({
-      route,
-      decision,
-      requirementText,
-    });
-    if (homeNavBlock) {
-      html = html.replace(/<nav\b[^>]*>[\s\S]*?<\/nav>/i, homeNavBlock);
-    }
-    if (homeFooterBlock) {
-      html = /<footer\b[^>]*>[\s\S]*?<\/footer>/i.test(html)
-        ? html.replace(/<footer\b[^>]*>[\s\S]*?<\/footer>/i, homeFooterBlock)
-        : html.replace(/<\/body>/i, `${homeFooterBlock}\n</body>`);
-    }
-    byPath.set(targetPath, {
-      path: targetPath,
-      type: "text/html",
-      content: html,
-    });
-    changed.add(targetPath);
-  }
-
-  if (changed.size === 0) {
-    return { project: params.project, changedFiles: [] };
-  }
-
-  next.staticSite = {
-    ...(next.staticSite || {}),
-    mode: "skill-direct",
-    files: Array.from(byPath.values()),
-  };
-  return {
-    project: syncPagesFromStaticFiles(next),
-    changedFiles: Array.from(changed).sort((a, b) => a.localeCompare(b)),
-  };
+  return extractWebsiteStructuralRefineRouteAdditions(project, instruction, getWebsiteCompletionDeps());
 }
 
 function applyStructuralRefineCompletions(params: {
   project: any;
   inputState: AgentState;
   instruction: string;
-  locale: "zh-CN" | "en";
+  locale: "zh-CN" | "en" | "bilingual";
 }): { project: any; changedFiles: string[] } {
-  let currentProject = params.project;
-  const changed = new Set<string>();
-
-  const addedRoutes = materializeStructuralRefineAddedRoutes({
-    project: currentProject,
-    inputState: params.inputState,
-    instruction: params.instruction,
-    locale: params.locale,
+  return applyWebsiteStructuralRefineCompletions({
+    ...params,
+    deps: getWebsiteCompletionDeps(),
   });
-  if (addedRoutes.changedFiles.length > 0) {
-    currentProject = addedRoutes.project;
-    for (const filePath of addedRoutes.changedFiles) changed.add(filePath);
-  }
-
-  const normalizedInstruction = String(params.instruction || "").trim();
-  if (isBlogDetailCompletionRefineInstruction(normalizedInstruction)) {
-    const materialized = materializeGeneratedBlogDetailPages({
-      project: currentProject,
-      inputState: params.inputState,
-      locale: params.locale,
-    });
-    const changedFiles = diffStaticProjectFiles(currentProject, materialized).filter(
-      (filePath) => /^\/blog\/.+\/index\.html$/i.test(filePath),
-    );
-    currentProject = materialized;
-    for (const filePath of changedFiles) changed.add(filePath);
-  }
-
-  return {
-    project: currentProject,
-    changedFiles: Array.from(changed).sort((a, b) => a.localeCompare(b)),
-  };
 }
 
 function buildBlogContentConfirmTimelineMetadata(params: {
-  locale: "zh-CN" | "en";
+  locale: "zh-CN" | "en" | "bilingual";
   navLabel: string;
   posts: BlogPostUpsertInput[];
 }) {
-  const locale = params.locale === "zh-CN" ? "zh" : "en";
-  return {
-    cardType: "confirm_blog_content_deploy",
-    locale,
-    title:
-      params.locale === "zh-CN"
-        ? "Blog 文章已生成，确认后再部署上线"
-        : "Blog articles are ready. Confirm before deployment.",
-    label:
-      params.locale === "zh-CN"
-        ? "确认 Blog 文章并部署"
-        : "Confirm Blog Articles and Deploy",
-    payload: "__SHP_CONFIRM_BLOG_CONTENT_DEPLOY__",
-    navLabel: params.navLabel,
-    posts: params.posts.map((post) => ({
-      slug: String(post.slug || "").trim(),
-      title: String(post.title || "").trim(),
-      excerpt: String(post.excerpt || "").trim(),
-      category: String(post.category || "").trim(),
-      tags: Array.isArray(post.tags) ? post.tags.map((tag) => String(tag || "").trim()).filter(Boolean) : [],
-    })),
-  } as Record<string, unknown>;
+  const visibleLocale = toVisibleLocale(params.locale);
+  return buildBlogContentConfirmTimelineMetadataForWorkflow({
+    ...params,
+    locale: visibleLocale,
+    deps: {
+      toVisibleLocale,
+    },
+  });
 }
 
 function resolveBlogNavLabelFromProject(project: any, locale: "zh-CN" | "en") {
-  const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
-  const blogFile = files.find((file: any) => /data-shpitto-blog-root/i.test(String(file?.content || "")));
-  const content = String(blogFile?.content || "");
-  const title = content.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || content.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "";
-  const cleaned = htmlToReadableText(title).replace(/[|｜].*$/, "").trim();
-  return cleaned || (locale === "zh-CN" ? "信息平台" : "Blog");
+  return resolveBlogNavLabelForWorkflow(project, locale, getWebsiteBlogWorkflowDeps());
 }
 
 async function ensureGeneratedBlogContentForDeploy(params: {
@@ -5542,7 +4703,7 @@ async function ensureGeneratedBlogContentForDeploy(params: {
   userId?: string;
   inputState: AgentState;
   project: any;
-  locale: "zh-CN" | "en";
+  locale: "zh-CN" | "en" | "bilingual";
 }) {
   if (!params.projectId) return { status: "skipped", postCount: 0 };
   if (!projectHasGeneratedBlogContentMount(params.project)) return { status: "skipped:no_content_mount", postCount: 0 };
@@ -5580,6 +4741,7 @@ async function ensureGeneratedBlogContentForDeploy(params: {
   if (!project || !accountId) return { status: "skipped:no_project", postCount: 0 };
   if (!ownerUserId) return { status: "skipped:no_owner", postCount: 0 };
 
+  const visibleLocale = toVisibleLocale(params.locale);
   const now = new Date().toISOString();
   await d1.execute(
     `
@@ -5598,24 +4760,23 @@ async function ensureGeneratedBlogContentForDeploy(params: {
       sitemap_enabled = 1,
       updated_at = excluded.updated_at;
     `,
-    [params.projectId, accountId, ownerUserId, resolveBlogNavLabelFromProject(params.project, params.locale), now, now],
+    [params.projectId, accountId, ownerUserId, resolveBlogNavLabelFromProject(params.project, visibleLocale), now, now],
   );
 
   const workflowPosts = Array.isArray((params.inputState.workflow_context as any)?.blogContentPreviewPosts)
     ? (((params.inputState.workflow_context as any)?.blogContentPreviewPosts || []) as BlogPostUpsertInput[])
         .filter((post) => post && typeof post === "object")
     : [];
-  const resolvedPosts = resolveBlogWorkflowPosts({
-    sourceText,
-    locale: params.locale,
+  const previewPosts = buildBlogContentWorkflowPreview({
+    inputState: params.inputState,
     project: params.project,
-    fallbackAuthorName: inferBlogBrand(sourceText, params.locale),
-  });
-  const posts = resolvedPosts.length > 0
-    ? resolvedPosts
+    locale: visibleLocale,
+  }).posts;
+  const posts = previewPosts.length > 0
+    ? previewPosts
     : workflowPosts.length > 0
       ? workflowPosts
-      : buildGeneratedBlogSeedPostsForTesting({ sourceText, locale: params.locale });
+      : buildGeneratedBlogSeedPostsForTesting({ sourceText, locale: visibleLocale });
   await d1.execute(
     `
     DELETE FROM shpitto_blog_posts
@@ -5695,7 +4856,7 @@ async function runDeployOnlyTask(params: {
 
   await touchChatTaskHeartbeat(taskId, workerId);
   await updateChatTaskProgress(taskId, {
-    assistantText: "Deploy request confirmed. Preparing Cloudflare deployment.",
+    assistantText: "Deploy request confirmed. Preparing deployment to shpitto server.",
     phase: "deploy",
     progress: {
       stage: "deploying:prepare",
@@ -5716,14 +4877,15 @@ async function runDeployOnlyTask(params: {
     );
     return;
   }
-  const deployLocale = detectLocale(
+  const deployLocale = detectRuntimeLocale(
     extractStateMessageText(inputState.messages),
     (inputState.workflow_context as any)?.preferredLocale,
   );
+  const deployBlogLocale = toVisibleLocale(deployLocale);
   const blogPreview = buildBlogContentWorkflowPreview({
     inputState,
     project: sourceProject,
-    locale: deployLocale,
+    locale: deployBlogLocale,
   });
   if (blogPreview.required && !(inputState.workflow_context as any)?.blogContentConfirmed) {
     await failChatTask(
@@ -5814,7 +4976,7 @@ async function runDeployOnlyTask(params: {
       );
     }
 
-    const contentSeedLocale = detectLocale(
+    const contentSeedLocale = detectRuntimeLocale(
       collectDeployBlogSourceText(inputState, deployProject) || extractStateMessageText(inputState.messages),
       (inputState.workflow_context as any)?.preferredLocale,
     );
@@ -5825,7 +4987,7 @@ async function runDeployOnlyTask(params: {
         userId: ownerUserId || undefined,
         inputState,
         project: deployProject,
-        locale: contentSeedLocale,
+        locale: toVisibleLocale(contentSeedLocale),
       });
     } catch (error) {
       generatedBlogContentStatus = { status: "failed", postCount: 0 };
@@ -5868,7 +5030,7 @@ async function runDeployOnlyTask(params: {
     });
 
     await updateChatTaskProgress(taskId, {
-      assistantText: `Deploying to Cloudflare project ${projectName} (${deploymentStrategy})...`,
+      assistantText: `Deploying to shpitto server project ${projectName} (${deploymentStrategy})...`,
       phase: "deploy",
       progress: {
         stage: "deploying:upload",
@@ -6156,13 +5318,7 @@ async function runRefineTask(params: {
 }): Promise<void> {
   const { taskId, chatId, workerId, inputState, setSessionState } = params;
   const startedAt = Date.now();
-  const checkpointRoot = path.resolve(
-    process.cwd(),
-    ".tmp",
-    "chat-tasks",
-    sanitizePathToken(chatId),
-    sanitizePathToken(taskId),
-  );
+  const checkpointRoot = localChatTaskRoot(chatId, taskId);
   const checkpointProjectPath = path.join(checkpointRoot, "project.json");
   const checkpointStatePath = path.join(checkpointRoot, "state.json");
   const checkpointWorkflowDir = path.join(checkpointRoot, "workflow");
@@ -6199,10 +5355,11 @@ async function runRefineTask(params: {
 
   const requirementText = extractRequirementText(inputState);
   const refineScope = String((inputState.workflow_context as any)?.refineScope || "patch").trim().toLowerCase();
-  const refineLocale = detectLocale(
+  const refineLocale = detectRuntimeLocale(
     requirementText,
     (inputState.workflow_context as any)?.preferredLocale,
   );
+  const refineBlogLocale = toVisibleLocale(refineLocale);
   const refineSkillEnabledRaw = String(
     process.env.CHAT_REFINE_ENABLE_SKILL ||
       (process.env.NODE_ENV === "test" ? "0" : "1"),
@@ -6311,7 +5468,6 @@ async function runRefineTask(params: {
     } as any,
   });
 
-  assertBilingualStaticSiteContract(refined.project, requirementText);
   await fs.mkdir(checkpointRoot, { recursive: true });
   await fs.mkdir(checkpointWorkflowDir, { recursive: true });
   const materialized = await materializeSiteDirectoryFromProject(refined.project, checkpointSiteDir);
@@ -6353,7 +5509,7 @@ async function runRefineTask(params: {
   const refinedBlogPreview = buildBlogContentWorkflowPreview({
     inputState,
     project: refined.project,
-    locale: refineLocale,
+    locale: refineBlogLocale,
   });
   const refinedBlogWorkflowState = refinedBlogPreview.required
     ? {
@@ -6506,6 +5662,12 @@ export class SkillRuntimeExecutor {
     let stepCount = 0;
     let latestCheckpointSiteDir = "";
     let latestCheckpointWorkflowDir = "";
+    const summaryProviderRef: { current: { provider: string; model: string } } = {
+      current: {
+        provider: lock.provider,
+        model: lock.model,
+      },
+    };
 
     const stateWithLock = bindRunProviderLockToState(
       {
@@ -6517,7 +5679,10 @@ export class SkillRuntimeExecutor {
           runMode: "async-task",
           genMode: "skill_native",
           generationMode: "skill-native",
-          sourceRequirement: decision.requirementText || (preparedState.workflow_context as any)?.sourceRequirement,
+          sourceRequirement:
+            String((preparedState.workflow_context as any)?.sourceRequirement || "").trim() ||
+            String((preparedState.workflow_context as any)?.canonicalPrompt || "").trim() ||
+            decision.requirementText,
           preferredLocale: decision.locale,
           skillId: loadedSkill.id,
           skillDirective,
@@ -6530,13 +5695,7 @@ export class SkillRuntimeExecutor {
       lock,
     );
 
-    const checkpointRoot = path.resolve(
-      process.cwd(),
-      ".tmp",
-      "chat-tasks",
-      sanitizePathToken(chatId),
-      sanitizePathToken(taskId),
-    );
+    const checkpointRoot = localChatTaskRoot(chatId, taskId);
 
     try {
       await touchChatTaskHeartbeat(taskId, workerId);
@@ -6577,8 +5736,14 @@ export class SkillRuntimeExecutor {
                 stageMessage,
                 skillId: loadedSkill.id,
                 filePath: normalizePath(snapshot.stepKey),
-                provider: lock.provider,
-                model: lock.model,
+                provider:
+                  String((snapshot as any)?.provider || "").trim() ||
+                  String((summaryProviderRef.current as any)?.provider || "").trim() ||
+                  lock.provider,
+                model:
+                  String((snapshot as any)?.model || "").trim() ||
+                  String((summaryProviderRef.current as any)?.model || "").trim() ||
+                  lock.model,
                 attempt: 1,
                 startedAt: new Date(startedAt).toISOString(),
                 lastTokenAt: nowIso(),
@@ -6604,25 +5769,38 @@ export class SkillRuntimeExecutor {
           }
         },
       });
+      summaryProviderRef.current = {
+        provider: String(summary.provider || "").trim() || lock.provider,
+        model: String(summary.model || "").trim() || lock.model,
+      };
 
       const checkpointProjectPath = path.join(checkpointRoot, "project.json");
-      const generatedProjectArtifact =
-        (summary.state as any)?.site_artifacts ||
-        (summary.state as any)?.project_json ||
-        {
-          projectId: chatId,
-          pages: getPages(summary.state as any),
-          staticSite: {
-            mode: "skill-direct",
-            files: getStaticArtifactFiles(summary.state as any),
+      const generatedProjectArtifact = finalizeGeneratedProjectArtifact({
+        project:
+          (summary.state as any)?.site_artifacts ||
+          (summary.state as any)?.project_json ||
+          {
+            projectId: chatId,
+            pages: getPages(summary.state as any),
+            staticSite: {
+              mode: "skill-direct",
+              files: getStaticArtifactFiles(summary.state as any),
+            },
           },
-        };
-      assertBilingualStaticSiteContract(generatedProjectArtifact, extractRequirementText(summary.state as AgentState));
+        inputState: summary.state as AgentState,
+        locale: decision.locale,
+      });
       const generatedBlogPreview = buildBlogContentWorkflowPreview({
         inputState: summary.state as AgentState,
         project: generatedProjectArtifact,
-        locale: decision.locale,
+        locale: toVisibleLocale(decision.locale),
       });
+      const preservedCanonicalPrompt = preferStrongerCanonicalPrompt(
+        (preparedState.workflow_context as any)?.canonicalPrompt,
+        (summary.state as any)?.workflow_context?.canonicalPrompt,
+        (preparedState.workflow_context as any)?.sourceRequirement,
+        (summary.state as any)?.workflow_context?.sourceRequirement,
+      );
       const generatedBlogWorkflowState = generatedBlogPreview.required
         ? {
             blogContentPreviewPosts: generatedBlogPreview.posts,
@@ -6640,6 +5818,12 @@ export class SkillRuntimeExecutor {
         project_json: generatedProjectArtifact,
         workflow_context: {
           ...((summary.state as any)?.workflow_context || {}),
+          ...(preservedCanonicalPrompt
+            ? {
+                canonicalPrompt: preservedCanonicalPrompt,
+                sourceRequirement: preservedCanonicalPrompt,
+              }
+            : {}),
           deploySourceProjectPath: checkpointProjectPath,
           deploySourceTaskId: taskId,
           checkpointProjectPath,
@@ -6689,8 +5873,8 @@ export class SkillRuntimeExecutor {
           stage: "done",
           stageMessage: "Generation completed successfully.",
           skillId: loadedSkill.id,
-          provider: lock.provider,
-          model: lock.model,
+          provider: summaryProviderRef.current.provider,
+          model: summaryProviderRef.current.model,
           attempt: 1,
           startedAt: new Date(startedAt).toISOString(),
           lastTokenAt: nowIso(),
@@ -6765,8 +5949,8 @@ export class SkillRuntimeExecutor {
           stage: "failed",
           stageMessage: "Generation failed.",
           skillId: loadedSkill.id,
-          provider: lock.provider,
-          model: lock.model,
+          provider: summaryProviderRef.current.provider,
+          model: summaryProviderRef.current.model,
           attempt: 1,
           startedAt: new Date(startedAt).toISOString(),
           lastTokenAt: nowIso(),

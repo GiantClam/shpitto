@@ -238,6 +238,79 @@ describe("decision-layer", () => {
     expect(plan.routes).toEqual(expect.arrayContaining(["/", "/products", "/custom-solutions", "/cases", "/contact"]));
   });
 
+  it("preserves confirmed canonical prompt in generate mode even when latest user text is a short refine-like sentence", () => {
+    const canonicalPrompt = [
+      "# Canonical Website Generation Prompt",
+      "",
+      "> Requirement completion: 12/12",
+      "",
+      "## 0. Confirmed Generation Parameters",
+      "- Language: Chinese and English",
+      "- Business/content details: HelloTalk, DevOps, SaaS, K12, AI.",
+      "",
+      "## 7.35 Bilingual Experience Contract",
+      "- Requested site locale: bilingual EN/ZH",
+      "",
+      "### Prompt Control Manifest (Machine Readable)",
+      "```json",
+      JSON.stringify({
+        schemaVersion: 1,
+        promptKind: "canonical_website_prompt",
+        routes: ["/", "/blog"],
+        navLabels: ["Home", "Blog"],
+        files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html"],
+      }),
+      "```",
+    ].join("\n");
+
+    const state: any = {
+      messages: [new HumanMessage("个人blog，首页应着重突出我的经历，具备极强的个人属性，请修改")],
+      phase: "conversation",
+      workflow_context: {
+        executionMode: "generate",
+        canonicalPrompt,
+        sourceRequirement: canonicalPrompt,
+        latestUserText: "个人blog，首页应着重突出我的经历，具备极强的个人属性，请修改",
+      },
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+    expect(plan.requirementText).toContain("Requirement completion: 12/12");
+    expect(plan.requirementText).toContain("Bilingual Experience Contract");
+    expect(plan.routes).toEqual(["/", "/blog"]);
+  });
+
+  it("still lets refine mode prioritize the latest user instruction over generation baseline", () => {
+    const canonicalPrompt = [
+      "# Canonical Website Generation Prompt",
+      "",
+      "### Prompt Control Manifest (Machine Readable)",
+      "```json",
+      JSON.stringify({
+        schemaVersion: 1,
+        promptKind: "canonical_website_prompt",
+        routes: ["/", "/blog"],
+        navLabels: ["Home", "Blog"],
+        files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html"],
+      }),
+      "```",
+    ].join("\n");
+
+    const state: any = {
+      messages: [new HumanMessage("把首页 AI 观察、工程实践、全球化视角 这三张卡片的内边距增大")],
+      phase: "conversation",
+      workflow_context: {
+        executionMode: "refine",
+        canonicalPrompt,
+        sourceRequirement: canonicalPrompt,
+        latestUserText: "把首页 AI 观察、工程实践、全球化视角 这三张卡片的内边距增大",
+      },
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+    expect(plan.requirementText.startsWith("把首页 AI 观察")).toBe(true);
+  });
+
   it("falls back to workflow canonicalPrompt when message content is empty", () => {
     const state: any = {
       messages: [{ role: "user", content: "" }],
@@ -701,5 +774,59 @@ describe("decision-layer", () => {
 
     expect(plan.routes).toEqual(["/", "/blog"]);
     expect(plan.pageBlueprints.every((page) => page.source === "explicit_route")).toBe(true);
+  });
+
+  it("adds /blog when natural-language requirement asks for multiple blog posts without structured page planning", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          "我想做个个人简历网站，做AI方向，需要3篇blog体现我的价值，包含 beihuang、华为、微信全球化、HelloTalk 和 AI SaaS 经历。",
+        ),
+      ],
+      phase: "conversation",
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+
+    expect(plan.routes).toEqual(["/", "/blog"]);
+    expect(plan.pageBlueprints.find((page) => page.route === "/blog")?.pageKind).toBe("blog-data-index");
+  });
+
+  it("falls back to fixed output files when the embedded prompt control manifest json is malformed", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          [
+            "# Canonical Website Generation Prompt",
+            "",
+            "### Fixed Pages And File Output",
+            "- /styles.css",
+            "- /script.js",
+            "- /index.html",
+            "- /blog/index.html",
+            "",
+            "### Prompt Control Manifest (Machine Readable)",
+            "```json",
+            "{",
+            '  "routes": ["/", "/blog"],',
+            '  "navLabels": ["Home", "pages\\":[\\"blog\\"]}"]',
+            "}",
+            "```",
+            "",
+            "### Workflow Skill Contract (Authoritative Rules)",
+            '- Implementation mechanics are invisible infrastructure. Do not expose backend names, API/storage/runtime/hydration/fallback jargon.',
+            "- English and zh variants are toggled in place rather than emitted as separate locale-prefixed routes.",
+          ].join("\n"),
+        ),
+      ],
+      phase: "conversation",
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+
+    expect(plan.routes).toEqual(["/", "/blog"]);
+    expect(plan.routes).not.toEqual(
+      expect.arrayContaining(["/english", "/zh", "/resource", "/documents", "/list/database", "/storage/runtime/hydration/fallback"]),
+    );
   });
 });

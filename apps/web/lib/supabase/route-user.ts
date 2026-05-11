@@ -2,6 +2,10 @@ import { getCachedAuthUser } from "@/lib/supabase/auth-cache";
 import { createClient } from "@/lib/supabase/server";
 
 export async function getAuthenticatedRouteUserId(): Promise<string | undefined> {
+  const cachedUser = await getCachedAuthUser();
+  const cachedUserId = String(cachedUser?.id || "").trim();
+  if (cachedUserId) return cachedUserId;
+
   try {
     const supabase = await createClient();
     const {
@@ -10,10 +14,8 @@ export async function getAuthenticatedRouteUserId(): Promise<string | undefined>
     const sessionUserId = String(sessionUser?.id || "").trim();
     if (sessionUserId) return sessionUserId;
   } catch {
-    // Fall back to the signed auth-cache cookie for routes that do not have
-    // a Supabase session cookie available in local development.
+    // Ignore remote session lookup failures. The local auth cache is checked
+    // first so local replay routes do not stall on a slow Supabase call.
   }
-
-  const user = await getCachedAuthUser();
-  return String(user?.id || "").trim() || undefined;
+  return undefined;
 }

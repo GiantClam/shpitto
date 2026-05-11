@@ -241,7 +241,13 @@ async function persistDiskState(): Promise<void> {
   const snapshot = cloneDiskState();
   persistQueue = persistQueue.then(async () => {
     await fs.mkdir(MEMORY_DIR, { recursive: true });
-    await fs.writeFile(MEMORY_FILE, JSON.stringify(snapshot, null, 2), "utf8");
+    try {
+      await fs.writeFile(MEMORY_FILE, JSON.stringify(snapshot, null, 2), "utf8");
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException)?.code !== "ENOENT") throw error;
+      await fs.mkdir(MEMORY_DIR, { recursive: true });
+      await fs.writeFile(MEMORY_FILE, JSON.stringify(snapshot, null, 2), "utf8");
+    }
   });
   await persistQueue;
 }

@@ -78,6 +78,52 @@ describe("chat api async mode", () => {
     expect(task?.status === "queued" || task?.status === "running").toBe(true);
   });
 
+  it("does not inherit locked provider state from a previous task into a new generation task", async () => {
+    const chatId = `chat-provider-lock-reset-${Date.now()}`;
+    const canonicalPrompt = "# Canonical Website Generation Prompt\n\nGenerate a personal AI site with a blog.";
+    const { createChatTask, completeChatTask } = await import("./chat-task-store");
+    const previous = await createChatTask(chatId, undefined, {
+      assistantText: "generated",
+      phase: "end",
+      internal: {
+        inputState: {
+          messages: [],
+          phase: "end",
+          current_page_index: 0,
+          attempt_count: 0,
+          workflow_context: {
+            executionMode: "generate",
+            skillId: "website-generation-workflow",
+            lockedProvider: "pptoken",
+            lockedModel: "gpt-5.4-mini",
+            canonicalPrompt,
+            sourceRequirement: canonicalPrompt,
+          },
+        },
+      },
+      progress: { stage: "done" } as any,
+    });
+    await completeChatTask(previous.id, previous.result as any);
+
+    const { POST } = await import("../../app/api/chat/route");
+    const res = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: chatId,
+          messages: [{ role: "user", parts: [{ type: "text", text: confirmPayload(canonicalPrompt) }] }],
+        }),
+      }),
+    );
+
+    expect(res.status).toBe(202);
+    const task = await getLatestChatTaskForChat(chatId);
+    const workflow = (task?.result?.internal?.inputState as any)?.workflow_context || {};
+    expect(workflow.lockedProvider).toBeUndefined();
+    expect(workflow.lockedModel).toBeUndefined();
+  });
+
   it("queues pending edits on active generation tasks", async () => {
     const chatId = `chat-pending-edit-${Date.now()}`;
     const { createChatTask } = await import("./chat-task-store");
@@ -233,6 +279,113 @@ describe("chat api async mode", () => {
     const task = await getLatestChatTaskForChat(chatId);
     expect(task?.id).not.toBe(failed.id);
     expect((task?.result?.internal?.inputState as any)?.workflow_context?.sourceRequirement).toBe(canonicalPrompt);
+  });
+
+  it("skips polluted canonical prompt snapshots and falls back to clean task sourceRequirement when continuing generation", async () => {
+    const chatId = `chat-continue-skip-polluted-${Date.now()}`;
+    const pollutedPrompt = [
+      "# Canonical Website Generation Prompt",
+      "",
+      "## 7. Evidence Brief",
+      "- [brand] Brand or organization: Logo",
+      "- [offering] AI",
+    ].join("\n");
+    const cleanSourceRequirement = "beihuang 华为 微信 HelloTalk 来画科技 云领天下 DevOps 实时音视频 AI SaaS";
+    const { appendChatTimelineMessage, createChatTask, failChatTask } = await import("./chat-task-store");
+    const failed = await createChatTask(chatId, undefined, {
+      assistantText: "failed",
+      phase: "skeleton",
+      internal: {
+        inputState: {
+          messages: [],
+          phase: "conversation",
+          current_page_index: 0,
+          attempt_count: 0,
+          workflow_context: {
+            skillId: "website-generation-workflow",
+            sourceRequirement: cleanSourceRequirement,
+            canonicalPrompt: pollutedPrompt,
+          },
+        },
+      },
+      progress: { stage: "failed" } as any,
+    });
+    await failChatTask(failed.id, "previous generation failed");
+    await appendChatTimelineMessage({
+      chatId,
+      role: "user",
+      text: pollutedPrompt,
+    });
+
+    const { POST } = await import("../../app/api/chat/route");
+    const req = new Request("http://localhost/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: chatId,
+        messages: [{ role: "user", parts: [{ type: "text", text: "continue generation" }] }],
+      }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(202);
+
+    const task = await getLatestChatTaskForChat(chatId);
+    expect(task?.id).not.toBe(failed.id);
+    expect((task?.result?.internal?.inputState as any)?.workflow_context?.sourceRequirement).toBe(cleanSourceRequirement);
+  });
+
+  it("keeps canonical prompt drafts whose knowledge profile contains placeholder brand text", async () => {
+    const chatId = `chat-continue-knowledge-profile-brand-${Date.now()}`;
+    const canonicalPrompt = [
+      "# Canonical Website Generation Prompt",
+      "",
+      "> Requirement completion: 12/12",
+      "",
+      "## 0. Confirmed Generation Parameters",
+      "- Language: Chinese and English",
+      "- Final website locale requirement: Chinese and English",
+      "- Business/content details: HelloTalk, DevOps, SaaS, K12, AI.",
+      "",
+      "## 7. Evidence Brief",
+      "- [brand] Brand or organization: Logo",
+      "- Preserve the user's named experience and personal attributes.",
+      "",
+      "## 7.35 Bilingual Experience Contract",
+      "- Requested site locale: bilingual EN/ZH",
+      "",
+      "## Website Knowledge Profile",
+      "- Brand: Logo",
+      "- Source: user-provided knowledge profile",
+    ].join("\n");
+    const { POST } = await import("../../app/api/chat/route");
+    const { appendChatTimelineMessage } = await import("./chat-task-store");
+    await appendChatTimelineMessage({
+      chatId,
+      role: "assistant",
+      text: "Prompt draft ready.",
+      metadata: {
+        cardType: "prompt_draft",
+        canonicalPrompt,
+      },
+    });
+
+    const res = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: chatId,
+          messages: [{ role: "user", parts: [{ type: "text", text: "continue generation" }] }],
+        }),
+      }),
+    );
+
+    expect(res.status).toBe(202);
+    const task = await getLatestChatTaskForChat(chatId);
+    const workflow = (task?.result?.internal?.inputState as any)?.workflow_context || {};
+    expect(workflow.sourceRequirement).toBe(canonicalPrompt);
+    expect(workflow.canonicalPrompt).toBe(canonicalPrompt);
   });
 
   it("uses local checkpoint findings when user asks to continue generation after storage history is unavailable", async () => {
@@ -469,7 +622,7 @@ describe("chat api async mode", () => {
       "",
       "Generate a personal AI blog with three articles.",
       "",
-      "Default deployment: Cloudflare Pages (pages.dev).",
+      "Default deployment: shpitto server.",
       "缺失项：部署域名与交付要求",
       "",
       "### Prompt Control Manifest (Machine Readable)",
@@ -504,11 +657,82 @@ describe("chat api async mode", () => {
     expect(timeline.some((message) => String(message.text || "").includes("__SHP_CONFIRM_GENERATE__"))).toBe(false);
   });
 
+  it("rebuilds a canonical prompt before confirmed generation when the confirm payload carries only raw requirement text", async () => {
+    const chatId = `chat-confirm-raw-rebuild-${Date.now()}`;
+    const rawRequirement =
+      "我想做个个人简历网站，做AI方向，需要3篇blog体现我的价值，并且首页支持中英双语切换。beihuang，华为，微信全球化，HelloTalk。";
+    const { POST } = await import("../../app/api/chat/route");
+
+    const res = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: chatId,
+          messages: [{ role: "user", parts: [{ type: "text", text: `__SHP_CONFIRM_GENERATE__\n${rawRequirement}` }] }],
+        }),
+      }),
+    );
+
+    expect(res.status).toBe(202);
+    const task = await getLatestChatTaskForChat(chatId);
+    const workflow = (task?.result?.internal?.inputState as any)?.workflow_context || {};
+    expect(String(workflow.canonicalPrompt || "")).toContain("# Canonical Website Generation Prompt");
+    expect(String(workflow.canonicalPrompt || "")).toContain("Bilingual Experience Contract");
+    expect(workflow.promptControlManifest?.routes).toEqual(["/", "/blog"]);
+    expect(String(workflow.sourceRequirement || "")).toContain("# Canonical Website Generation Prompt");
+  });
+
+  it("preserves confirmed canonical prompt as sourceRequirement during async generation handoff", async () => {
+    const chatId = `chat-confirm-preserve-canonical-${Date.now()}`;
+    const { POST } = await import("../../app/api/chat/route");
+    const canonicalPrompt = [
+      "# Canonical Website Generation Prompt",
+      "",
+      "> Requirement completion: 12/12",
+      "",
+      "## 0. Confirmed Generation Parameters",
+      "- Language: Chinese and English",
+      "- Business/content details: HelloTalk, DevOps, SaaS, K12, AI.",
+      "",
+      "## 7.35 Bilingual Experience Contract",
+      "- Requested site locale: bilingual EN/ZH",
+      "",
+      "### Prompt Control Manifest (Machine Readable)",
+      "```json",
+      JSON.stringify({
+        schemaVersion: 1,
+        promptKind: "canonical_website_prompt",
+        routes: ["/", "/blog"],
+        navLabels: ["Home", "Blog"],
+        files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html"],
+      }),
+      "```",
+    ].join("\n");
+
+    const res = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: chatId,
+          messages: [{ role: "user", parts: [{ type: "text", text: `__SHP_CONFIRM_GENERATE__\n${canonicalPrompt}` }] }],
+        }),
+      }),
+    );
+
+    expect(res.status).toBe(202);
+    const task = await getLatestChatTaskForChat(chatId);
+    const workflow = (task?.result?.internal?.inputState as any)?.workflow_context || {};
+    expect(String(workflow.canonicalPrompt || "")).toBe(canonicalPrompt);
+    expect(String(workflow.sourceRequirement || "")).toBe(canonicalPrompt);
+  });
+
   it("blocks deploy mode by task lifecycle when no completed generation baseline exists", async () => {
     const chatId = `chat-deploy-lifecycle-gate-${Date.now()}`;
     const { createChatTask, failChatTask } = await import("./chat-task-store");
     const failedDeploy = await createChatTask(chatId, undefined, {
-      assistantText: "Deploy request confirmed. Preparing Cloudflare deployment.",
+      assistantText: "Deploy request confirmed. Preparing deployment to shpitto server.",
       phase: "deploy",
       internal: {
         inputState: {

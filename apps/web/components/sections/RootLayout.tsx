@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import React from "react";
 import { cn } from "@/lib/utils";
 import { inferNavLabel, resolveStylePresetFromProject } from "@/lib/design-style-preset";
@@ -129,7 +130,15 @@ export const RootLayout = ({ children, branding, title, project_json, onNavigate
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3 group cursor-pointer" onClick={() => onNavigate && onNavigate("/")}>
             {branding?.logo ? (
-              <img src={branding.logo} alt={`${siteName} Logo`} className="h-10 w-auto" />
+              <Image
+                src={branding.logo}
+                alt={`${siteName} Logo`}
+                width={160}
+                height={40}
+                unoptimized
+                sizes="160px"
+                className="h-10 w-auto"
+              />
             ) : (
               <div className="w-10 h-10 bg-[var(--primary)] rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">{siteName[0] || "S"}</div>
             )}

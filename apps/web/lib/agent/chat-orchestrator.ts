@@ -464,6 +464,56 @@ function extractDelimitedList(text: string, labels: string[]): string[] {
   return [];
 }
 
+function stripRequirementFencedBlocks(text: string): string {
+  return String(text || "").replace(/```[\s\S]*?```/g, " ");
+}
+
+function extractFreeformBusinessContext(text: string): string | undefined {
+  const parsed = parseRequirementFormFromText(text);
+  const source = normalizeText(stripRequirementFencedBlocks(parsed.cleanText || text));
+  if (!source || source.length < 80) return undefined;
+
+  const candidateLines = source
+    .split(/\r?\n+/)
+    .map((line) => normalizeText(line))
+    .filter(Boolean)
+    .filter((line) => !/^\[Requirement Form\]$/i.test(line))
+    .filter((line) => !/^(?:Requirement form submitted|生成前必填信息已提交|需求表单已提交)[:：]?$/i.test(line))
+    .filter(
+      (line) =>
+        !/^(?:brand|company|name|pages?|page list|routes?|sitemap|audience|target audience|style|visual|cta|actions|language|tone|modules?|sections?|business|content notes|business details|features|functions|siteType|targetAudience|primaryVisualDirection|secondaryVisualTags|pageStructure|functionalRequirements|primaryGoal|brandLogo|contentSources|customNotes|网站类型|页面|导航|目标受众|风格|视觉|按钮|语言|语气|模块|业务|资料说明|业务细节|补充说明|功能需求)\s*[:：]/i.test(
+          line,
+        ),
+    )
+    .filter((line) => !/^[{}\[\]",]+$/.test(line));
+
+  const candidate = normalizeText(candidateLines.join(" "));
+  if (!candidate || candidate.length < 80) return undefined;
+  const tokenCount = candidate.match(/[A-Za-z]{2,}|\d[\d,+.%x]*|[\u4e00-\u9fff]{2,}/g)?.length || 0;
+  if (tokenCount < 12) return undefined;
+  return candidate.slice(0, 1200);
+}
+
+function buildEnglishSafeBusinessSignalFallback(text: string): string {
+  const source = normalizeText(text);
+  if (!source) return "Source-backed business details available in the conversation history.";
+  const tokenMatches = [
+    ...(source.match(/\b[A-Z][A-Za-z0-9.+&/-]{1,}\b/g) || []),
+    ...(source.match(/\b[a-z]{3,}[a-z0-9.+&/-]*\b/g) || []),
+    ...(source.match(/\b\d[\d,]*(?:\+|%|x)?\b/g) || []),
+  ];
+  const tokens = unique(
+    tokenMatches.filter((token) => {
+      const normalized = normalizeText(token);
+      return normalized.length >= 2 && normalized.length <= 32;
+    }),
+    18,
+  );
+  return tokens.length > 0
+    ? `Key source signals: ${tokens.join(", ")}.`
+    : "Source-backed business details available in the conversation history.";
+}
+
 function hasCorrectionIntent(text: string): boolean {
   return /(?:改成|换成|不要|不用|取消|删除|移除|去掉|instead|replace|change|remove|delete|no longer|not\s+english|not\s+chinese)/i.test(
     text,
@@ -863,6 +913,12 @@ export function buildRequirementSpec(text: string, sourceMessages?: string[]): R
     .map((message) => normalizeText(message))
     .filter(Boolean);
   const merged = mergeRequirementFieldsFromSources(sources);
+  const freeformBusinessContext = unique(
+    sources.map((message) => extractFreeformBusinessContext(message)).filter((value): value is string => Boolean(value)),
+    4,
+  ).join(" ");
+  const resolvedBusinessContext = merged.values.businessContext || freeformBusinessContext || undefined;
+  const resolvedCustomNotes = merged.values.customNotes || freeformBusinessContext || undefined;
   const visualDecision = resolveVisualDirectionDecision(
     {
       siteType: merged.values.siteType,
@@ -871,7 +927,7 @@ export function buildRequirementSpec(text: string, sourceMessages?: string[]): R
       contentSources: merged.values.contentSources || [],
       visualStyle: merged.values.visualStyle || [],
       functionalRequirements: merged.values.functionalRequirements || [],
-      customNotes: merged.values.customNotes,
+      customNotes: resolvedCustomNotes,
     },
     parsedInput.formValues,
   );
@@ -886,7 +942,7 @@ export function buildRequirementSpec(text: string, sourceMessages?: string[]): R
     revision: sources.length,
     siteType: merged.values.siteType,
     brand: merged.values.brand,
-    businessContext: merged.values.businessContext,
+    businessContext: resolvedBusinessContext,
     targetAudience: merged.values.targetAudience || [],
     pages: merged.values.pages || [],
     pageStructure: merged.values.pageStructure,
@@ -903,7 +959,7 @@ export function buildRequirementSpec(text: string, sourceMessages?: string[]): R
     brandLogo: merged.values.brandLogo,
     designSystemInspiration: merged.values.designSystemInspiration || parsedInput.formValues?.designSystemInspiration,
     contentSources: merged.values.contentSources || [],
-    customNotes: merged.values.customNotes,
+    customNotes: resolvedCustomNotes,
     deployment: merged.values.deployment || { requested: false },
     explicitConstraints,
     source: "structured-parser",
@@ -1423,7 +1479,7 @@ export function deriveConversationStage(params: {
 function inferAssumedDefaults(stage: ConversationStage, missingSlots: string[]): string[] {
   const defaults: string[] = [];
   if (missingSlots.includes("语言与语气")) defaults.push("Default language: Chinese-first, professional and trustworthy tone");
-  if (missingSlots.includes("部署域名与交付要求")) defaults.push("Default deployment: Cloudflare Pages (pages.dev)");
+  if (missingSlots.includes("部署域名与交付要求")) defaults.push("Default deployment: shpitto server");
   if (stage === "drafting" && missingSlots.includes("页面数与页面结构")) {
     defaults.push("Default page strategy: automatically plan first-level, second-level, and third-level pages based on the business");
   }
@@ -1776,7 +1832,7 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
   const businessContentDetails = spec.customNotes
     ? sanitizeWorkflowArtifactText(
         spec.customNotes,
-        "Multilingual business notes are stored outside this internal prompt; use the evidence brief and source profile for English-normalized guidance.",
+        buildEnglishSafeBusinessSignalFallback(spec.customNotes),
       )
     : "";
   const confirmedParameters = [

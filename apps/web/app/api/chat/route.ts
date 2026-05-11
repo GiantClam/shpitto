@@ -109,7 +109,7 @@ const CHAT_COPY: Record<ChatDisplayLocale, Record<string, string>> = {
     storageUnavailable: "Chat storage is temporarily unavailable. Please retry in a few seconds.",
     generateBeforeDeploy: "This chat does not have a completed generated site yet. Generate the site first, then confirm deployment.",
     blogConfirmBeforeDeploy: "Review and confirm the generated Blog articles before deployment.",
-    blogConfirmLabel: "Confirm Blog Articles and Deploy",
+    blogConfirmLabel: "Confirm Blog Articles and Deploy to shpitto server",
     requestFailed: "Failed to process chat request.",
   },
   zh: {
@@ -139,7 +139,7 @@ const CHAT_COPY: Record<ChatDisplayLocale, Record<string, string>> = {
     storageUnavailable: "\u804a\u5929\u5b58\u50a8\u6682\u65f6\u4e0d\u53ef\u7528\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5\u3002",
     generateBeforeDeploy: "\u5f53\u524d\u4f1a\u8bdd\u8fd8\u6ca1\u6709\u5df2\u5b8c\u6210\u7684\u7f51\u7ad9\u751f\u6210\u7ed3\u679c\uff0c\u8bf7\u5148\u5b8c\u6210\u751f\u6210\uff0c\u518d\u786e\u8ba4\u90e8\u7f72\u3002",
     blogConfirmBeforeDeploy: "\u8bf7\u5148\u67e5\u770b\u5e76\u786e\u8ba4\u751f\u6210\u7684 Blog \u6587\u7ae0\uff0c\u7136\u540e\u518d\u90e8\u7f72\u4e0a\u7ebf\u3002",
-    blogConfirmLabel: "\u786e\u8ba4 Blog \u6587\u7ae0\u5e76\u90e8\u7f72",
+    blogConfirmLabel: "\u786e\u8ba4 Blog \u6587\u7ae0\u5e76\u90e8\u7f72\u5230 shpitto \u670d\u52a1\u5668",
     requestFailed: "\u5904\u7406\u804a\u5929\u8bf7\u6c42\u5931\u8d25\u3002",
   },
 };
@@ -446,6 +446,15 @@ function reviveSessionState(raw: any): AgentState | undefined {
   };
 }
 
+function localChatTasksBaseDirs(): string[] {
+  return Array.from(
+    new Set([
+      path.resolve(/* turbopackIgnore: true */ process.cwd(), ".tmp", "chat-tasks"),
+      path.resolve(/* turbopackIgnore: true */ process.cwd(), "apps", "web", ".tmp", "chat-tasks"),
+    ]),
+  );
+}
+
 async function restoreProjectArtifactFromCheckpointPath(checkpointProjectPath: string): Promise<any | undefined> {
   const rawPath = String(checkpointProjectPath || "").trim();
   if (!rawPath) return undefined;
@@ -454,10 +463,7 @@ async function restoreProjectArtifactFromCheckpointPath(checkpointProjectPath: s
   const candidates = [path.resolve(rawPath)];
   if (suffixMatch?.[1]) {
     const suffix = suffixMatch[1].replace(/^\/+/, "");
-    candidates.push(
-      path.resolve(process.cwd(), ".tmp", "chat-tasks", suffix),
-      path.resolve(process.cwd(), "apps", "web", ".tmp", "chat-tasks", suffix),
-    );
+    candidates.push(...localChatTasksBaseDirs().map((baseDir) => path.join(baseDir, suffix)));
   }
   for (const absPath of Array.from(new Set(candidates))) {
     if (!absPath || !absPath.toLowerCase().endsWith(".json")) continue;
@@ -776,9 +782,21 @@ function isInternalTimelineActionPayload(raw: string): boolean {
   return text.startsWith(CONFIRM_GENERATE_PREFIX) || text.startsWith(CONFIRM_BLOG_CONTENT_DEPLOY_PREFIX);
 }
 
+function rewriteDeployDisplayText(text: string): string {
+  const raw = String(text || "");
+  if (!raw) return "";
+  return raw
+    .replace(/deploy to cloudflare/gi, "deploy to shpitto server")
+    .replace(/deploy cloudflare/gi, "deploy shpitto server")
+    .replace(/cloudflare pages/gi, "shpitto server")
+    .replace(/部署到\s*cloudflare/gi, "部署到 shpitto 服务器")
+    .replace(/发布到\s*cloudflare/gi, "部署到 shpitto 服务器")
+    .replace(/上线到\s*cloudflare/gi, "部署到 shpitto 服务器");
+}
+
 function visibleTimelineUserText(raw: string, normalized?: string): string {
   if (isInternalTimelineActionPayload(raw)) return "";
-  return String(normalized || raw || "").trim();
+  return rewriteDeployDisplayText(String(normalized || raw || "").trim());
 }
 
 function normalizeBlogPreviewPostsForCard(posts: unknown[]) {
@@ -825,6 +843,93 @@ function looksLikeCanonicalWebsitePrompt(text: string): boolean {
   );
 }
 
+function hasPlaceholderCanonicalBrand(text: string): boolean {
+  const normalized = String(text || "").trim();
+  if (!normalized) return false;
+  const withoutKnowledgeProfile = normalized.replace(
+    /\n## Website Knowledge Profile\b[\s\S]*?(?=\n## |\n# |$)/gi,
+    "\n",
+  );
+  return (
+    /(?:^|\n)[-*\d.\s]*Brand(?:\s+or\s+organization)?\s*:\s*(?:Logo|Requirement|Site|Website|Blog)\b/i.test(
+      withoutKnowledgeProfile,
+    ) ||
+    /\[brand\]\s*Brand(?:\s+or\s+organization)?\s*:\s*(?:Logo|Requirement|Site|Website|Blog)\b/i.test(
+      withoutKnowledgeProfile,
+    )
+  );
+}
+
+function containsRequirementFormPromptLeak(text: string): boolean {
+  const normalized = String(text || "");
+  if (!normalized) return false;
+  return (
+    /\[Requirement Form\]/i.test(normalized) ||
+    /(?:^|\n)\s*[-*]?\s*(?:Logo\s+strategy|Logo\s*策略)\s*[:：]/i.test(normalized)
+  );
+}
+
+function hasStrongCanonicalPromptStructure(text: string): boolean {
+  const normalized = String(text || "").trim();
+  if (!looksLikeCanonicalWebsitePrompt(normalized)) return false;
+  const completion = normalized.match(/Requirement completion:\s*(\d+)\s*\/\s*(\d+)/i);
+  const completed = completion ? Number(completion[1]) : NaN;
+  const total = completion ? Number(completion[2]) : NaN;
+  if (Number.isFinite(completed) && Number.isFinite(total) && total > 0 && completed / total >= 0.8) {
+    return true;
+  }
+  return (
+    normalized.length > 4000 &&
+    /Prompt Control Manifest \(Machine Readable\)/i.test(normalized) &&
+    /Evidence Brief Contract|Page-Level Intent Contract|##\s*7\.\s*Evidence Brief/i.test(normalized)
+  );
+}
+
+function shouldRejectRecoveredCanonicalPrompt(text: string): boolean {
+  const normalized = String(text || "").trim();
+  if (!normalized) return false;
+  if (!looksLikeCanonicalWebsitePrompt(normalized)) return false;
+  if (containsRequirementFormPromptLeak(normalized)) return true;
+  return hasPlaceholderCanonicalBrand(normalized) && !hasStrongCanonicalPromptStructure(normalized);
+}
+
+function hasTrustedConfirmedPromptDraftMetadata(params: {
+  confirmedPrompt?: string | null;
+  confirmedPromptDraftText?: string;
+  confirmedPromptDraftMetadata?: Record<string, unknown>;
+}): boolean {
+  const confirmedPrompt = String(params.confirmedPrompt || "").trim();
+  const metadata = params.confirmedPromptDraftMetadata;
+  if (!confirmedPrompt || !metadata) return false;
+  const storedPrompt = String((metadata as any).canonicalPrompt || "").trim();
+  const normalizedDraftText = String(params.confirmedPromptDraftText || "").trim();
+  if (!storedPrompt) return false;
+  if (!looksLikeCanonicalWebsitePrompt(storedPrompt)) return false;
+  return confirmedPrompt === storedPrompt || normalizedDraftText === storedPrompt;
+}
+
+function shouldRebuildConfirmedPromptForCanonicalExecution(params: {
+  explicitConfirmedPrompt?: boolean;
+  confirmedPrompt?: string | null;
+  confirmedPromptDraftText?: string;
+  confirmedPromptDraftMetadata?: Record<string, unknown>;
+}): boolean {
+  if (!params.explicitConfirmedPrompt) return false;
+  const directConfirmedPrompt = String(params.confirmedPrompt || "").trim();
+  if (
+    directConfirmedPrompt &&
+    looksLikeCanonicalWebsitePrompt(directConfirmedPrompt) &&
+    !shouldRejectRecoveredCanonicalPrompt(directConfirmedPrompt)
+  ) {
+    return false;
+  }
+  if (hasTrustedConfirmedPromptDraftMetadata(params)) return false;
+  const normalized = String(params.confirmedPromptDraftText || params.confirmedPrompt || "").trim();
+  if (!normalized) return false;
+  if (shouldRejectRecoveredCanonicalPrompt(normalized)) return true;
+  return !looksLikeCanonicalWebsitePrompt(normalized);
+}
+
 function hasUploadedSourceMaterial(text: string): boolean {
   const normalized = String(text || "");
   return (
@@ -836,10 +941,12 @@ function hasUploadedSourceMaterial(text: string): boolean {
 }
 
 function shouldRebuildConfirmedPromptForUploadedSources(params: {
+  explicitConfirmedPrompt?: boolean;
   confirmedPrompt?: string | null;
   confirmedPromptDraftText: string;
   referencedAssets: string[];
 }): boolean {
+  if (!params.explicitConfirmedPrompt) return false;
   if (!params.confirmedPrompt || params.referencedAssets.length === 0) return false;
   const prompt = String(params.confirmedPromptDraftText || params.confirmedPrompt || "").trim();
   if (!looksLikeCanonicalWebsitePrompt(prompt)) return true;
@@ -867,15 +974,17 @@ function findLatestConfirmedGenerationPrompt(
     const item = timelineMessages[index];
     if (item.role === "user") {
       const userPrompt = String(item.text || "").trim();
-      if (userPrompt.startsWith("# Canonical Website Generation Prompt")) return userPrompt;
+      if (userPrompt.startsWith("# Canonical Website Generation Prompt") && !shouldRejectRecoveredCanonicalPrompt(userPrompt)) {
+        return userPrompt;
+      }
       const extracted = extractConfirmedPrompt(userPrompt);
-      if (extracted) return extracted;
+      if (extracted && !shouldRejectRecoveredCanonicalPrompt(extracted)) return extracted;
     }
 
     const metadata = item.metadata && typeof item.metadata === "object" ? item.metadata : undefined;
     if (!metadata || String(metadata.cardType || "") !== "prompt_draft") continue;
     const storedPrompt = String((metadata as any).canonicalPrompt || "").trim();
-    if (storedPrompt) return storedPrompt;
+    if (storedPrompt && !shouldRejectRecoveredCanonicalPrompt(storedPrompt)) return storedPrompt;
   }
   return "";
 }
@@ -887,9 +996,9 @@ function findTaskGenerationPrompt(task: Awaited<ReturnType<typeof getLatestChatT
   ];
   for (const context of contexts) {
     const sourceRequirement = String(context?.sourceRequirement || "").trim();
-    if (sourceRequirement) return sourceRequirement;
+    if (sourceRequirement && !shouldRejectRecoveredCanonicalPrompt(sourceRequirement)) return sourceRequirement;
     const canonicalPrompt = String(context?.canonicalPrompt || "").trim();
-    if (canonicalPrompt) return canonicalPrompt;
+    if (canonicalPrompt && !shouldRejectRecoveredCanonicalPrompt(canonicalPrompt)) return canonicalPrompt;
   }
   return "";
 }
@@ -937,12 +1046,7 @@ async function invalidateLaunchCenterRecentProjectsCacheBestEffort() {
 
 function localTaskRootsForChat(chatId: string): string[] {
   const safeChatId = String(chatId || "").replace(/[^a-zA-Z0-9_-]/g, "_");
-  return Array.from(
-    new Set([
-      path.resolve(/* turbopackIgnore: true */ process.cwd(), ".tmp", "chat-tasks", safeChatId),
-      path.resolve(/* turbopackIgnore: true */ process.cwd(), "apps", "web", ".tmp", "chat-tasks", safeChatId),
-    ]),
-  );
+  return localChatTasksBaseDirs().map((baseDir) => path.join(baseDir, safeChatId));
 }
 
 async function findLatestLocalContinuationPrompt(chatId: string): Promise<string> {
@@ -1326,6 +1430,7 @@ export async function POST(req: Request) {
   const useAsyncTaskMode = shouldUseAsyncTaskMode(body);
   const blogContentDeployConfirmed = isBlogContentDeployConfirmation(userText);
   const explicitConfirmedPrompt = extractConfirmedPrompt(userText);
+  const confirmedPromptExplicitlyProvided = Boolean(explicitConfirmedPrompt);
   let confirmedPrompt = explicitConfirmedPrompt;
   let normalizedUserText = explicitConfirmedPrompt || (blogContentDeployConfirmed ? "deploy to cloudflare" : userText);
   const requestedSkillId = String(
@@ -1423,6 +1528,8 @@ export async function POST(req: Request) {
     ...((shortTermMemory?.workflowContext || {}) as Record<string, unknown>),
     ...((previousState.workflow_context || {}) as Record<string, unknown>),
   } as Record<string, unknown>;
+  delete (memoryWorkflowContext as any).lockedProvider;
+  delete (memoryWorkflowContext as any).lockedModel;
   const requirementSpec = mergeRequirementSpecWithMemory({
     requirementSpec: buildRequirementSpec(effectiveRequirementText, effectiveRequirementSourceMessages),
     shortTermMemory,
@@ -1605,15 +1712,23 @@ export async function POST(req: Request) {
     return createInfoStreamResponse(chatCopy(displayLocale, "blogConfirmBeforeDeploy"), 200);
   }
   const rebuildConfirmedPromptForUploadedSources = shouldRebuildConfirmedPromptForUploadedSources({
+    explicitConfirmedPrompt: confirmedPromptExplicitlyProvided,
     confirmedPrompt,
     confirmedPromptDraftText,
     referencedAssets,
+  });
+  const rebuildConfirmedPromptForCanonicalExecution = shouldRebuildConfirmedPromptForCanonicalExecution({
+    explicitConfirmedPrompt: confirmedPromptExplicitlyProvided,
+    confirmedPrompt,
+    confirmedPromptDraftText,
+    confirmedPromptDraftMetadata,
   });
   const shouldBuildPromptDraft =
     isWebsiteSkill(requestedSkillId) &&
     !requiresRequirementForm &&
     ((!confirmedPrompt && (decision.intent === "clarify" || decision.intent === "generate")) ||
-      rebuildConfirmedPromptForUploadedSources);
+      rebuildConfirmedPromptForUploadedSources ||
+      rebuildConfirmedPromptForCanonicalExecution);
   const promptDraftResult = shouldBuildPromptDraft
     ? await buildPromptDraftWithResearch({
         requirementText: effectiveRequirementText,
@@ -1908,6 +2023,8 @@ export async function POST(req: Request) {
     site_artifacts: effectiveProjectArtifact,
     workflow_context: {
       ...(previousState.workflow_context || {}),
+      lockedProvider: undefined,
+      lockedModel: undefined,
       runMode: useAsyncTaskMode ? "async-task" : "sync",
       genMode: "skill_native",
       skillId: requestedSkillId,
@@ -2023,8 +2140,6 @@ export async function POST(req: Request) {
       stage: "queued",
       stageMessage: localizedQueuedStageMessage(displayLocale, executionMode),
       skillId: requestedSkillId,
-      provider: String(process.env.LLM_PROVIDER || "pptoken"),
-      model: String(process.env.LLM_MODEL || process.env.LLM_MODEL_PPTOKEN || process.env.PPTOKEN_MODEL || "gpt-5.4-mini"),
       attempt: 1,
       startedAt: new Date().toISOString(),
       round: 0,

@@ -7,6 +7,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { normalizeStylePreset, type DesignStylePreset } from "../design-style-preset.ts";
 import { getWebsiteDesignDirection } from "../open-design/design-directions.ts";
 import { sanitizeWorkflowArtifactText } from "../workflow-artifact-language.ts";
+import { resolveRunProviderLocks, type ProviderName } from "../skill-runtime/provider-lock";
 
 const execFileAsync = promisify(execFile);
 
@@ -988,61 +989,36 @@ function normalizeWorkflowStyleId(raw: unknown): string {
 }
 
 function resolveWorkflowProviderConfig(): WorkflowProviderConfig {
-  const providerRaw = String(process.env.LLM_PROVIDER || "").trim().toLowerCase();
-  const sharedModel = String(process.env.LLM_MODEL || process.env.LLM_MODEL_DEFAULT || "").trim();
-  if (providerRaw === "pptoken") {
+  const lock = resolveRunProviderLocks()[0];
+  const provider = (lock?.provider || "pptoken") as ProviderName;
+  if (provider === "pptoken") {
     return {
       provider: "pptoken",
       apiKey: process.env.PPTOKEN_API_KEY,
       baseURL: process.env.PPTOKEN_BASE_URL || "https://api.pptoken.org/v1",
-      modelName:
-        sharedModel ||
-        process.env.LLM_MODEL_PPTOKEN ||
-        process.env.PPTOKEN_MODEL ||
-        "gpt-5.4-mini",
+      modelName: lock.model,
     };
   }
-  if (providerRaw === "crazyroute" || providerRaw === "crazyrouter" || providerRaw === "crazyreoute") {
+  if (provider === "aiberm") {
     return {
-      provider: "crazyroute",
-      apiKey:
-        process.env.CRAZYROUTE_API_KEY ||
-        process.env.CRAZYROUTER_API_KEY ||
-        process.env.CRAZYREOUTE_API_KEY,
-      baseURL:
-        process.env.CRAZYROUTE_BASE_URL ||
-        process.env.CRAZYROUTER_BASE_URL ||
-        process.env.CRAZYREOUTE_BASE_URL ||
-        "https://crazyrouter.com/v1",
-      modelName:
-        sharedModel ||
-        process.env.LLM_MODEL_CRAZYROUTE ||
-        process.env.LLM_MODEL_CRAZYROUTER ||
-        process.env.LLM_MODEL_CRAZYREOUTE ||
-        "gpt-5.4-mini",
-    };
-  }
-  if (providerRaw === "openrouter") {
-    return {
-      provider: "openrouter",
-      apiKey: process.env.OPENROUTER_API_KEY,
-      baseURL: process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1",
-      modelName: process.env.LLM_MODEL || "anthropic/claude-sonnet-4.5",
-      defaultHeaders: {
-        "HTTP-Referer": "https://shpitto.com",
-        "X-Title": "Shpitto",
-      },
+      provider: "aiberm",
+      apiKey: process.env.AIBERM_API_KEY,
+      baseURL: process.env.AIBERM_BASE_URL || "https://aiberm.com/v1",
+      modelName: lock.model,
     };
   }
   return {
-    provider: "aiberm",
-    apiKey: process.env.AIBERM_API_KEY || process.env.PPTOKEN_API_KEY || process.env.ANTHROPIC_API_KEY || process.env.OPENROUTER_API_KEY,
-    baseURL: process.env.AIBERM_BASE_URL || "https://aiberm.com/v1",
-    modelName:
-      sharedModel ||
-      process.env.LLM_MODEL_AIBERM ||
-      process.env.AIBERM_MODEL ||
-      "gpt-5.4-mini",
+    provider: "crazyroute",
+    apiKey:
+      process.env.CRAZYROUTE_API_KEY ||
+      process.env.CRAZYROUTER_API_KEY ||
+      process.env.CRAZYREOUTE_API_KEY,
+    baseURL:
+      process.env.CRAZYROUTE_BASE_URL ||
+      process.env.CRAZYROUTER_BASE_URL ||
+      process.env.CRAZYREOUTE_BASE_URL ||
+      "https://crazyrouter.com/v1",
+    modelName: lock.model,
   };
 }
 

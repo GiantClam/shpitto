@@ -26,6 +26,7 @@ import type { RequirementSpec } from "./chat-orchestrator";
 import { configureUndiciProxyFromEnv, createHttpsProxyAgentFromEnv, isRegionDeniedError } from "./network";
 import { CloudflareClient } from "../cloudflare";
 import { Bundler } from "../bundler";
+import { resolveRunProviderLocks } from "../skill-runtime/provider-lock";
 
 // Load environment variables from .env file at project root
 const __filename = fileURLToPath(import.meta.url);
@@ -126,7 +127,7 @@ export const resetProviderRuntimeState = () => {
   providerRingCursor = 0;
 };
 
-const DEFAULT_PROVIDER_ORDER: LlmProvider[] = ["pptoken", "aiberm", "crazyroute", "openrouter"];
+const DEFAULT_PROVIDER_ORDER: LlmProvider[] = ["pptoken", "aiberm", "crazyroute"];
 let providerRingCursor = 0;
 
 const normalizeProviderToken = (raw: string): LlmProvider | undefined => {
@@ -142,16 +143,15 @@ const normalizeProviderToken = (raw: string): LlmProvider | undefined => {
 const resolveLlmProvider = (): LlmProvider => {
   const requested = normalizeProviderToken(process.env.LLM_PROVIDER || "");
   if (requested) return requested;
-
-  if (process.env.PPTOKEN_API_KEY) return "pptoken";
-  if (process.env.AIBERM_API_KEY) return "aiberm";
-  if (process.env.CRAZYROUTE_API_KEY || process.env.CRAZYREOUTE_API_KEY || process.env.CRAZYROUTER_API_KEY) {
-    return "crazyroute";
-  }
-  return "openrouter";
+  return (resolveRunProviderLocks()[0]?.provider || "pptoken") as LlmProvider;
 };
 
-const getProviderOrder = (): LlmProvider[] => [...DEFAULT_PROVIDER_ORDER];
+const getProviderOrder = (): LlmProvider[] => {
+  const ordered = resolveRunProviderLocks()
+    .map((lock) => lock.provider as LlmProvider)
+    .filter((provider, index, list) => list.indexOf(provider) === index);
+  return ordered.length > 0 ? ordered : [...DEFAULT_PROVIDER_ORDER];
+};
 
 const resolveSharedRequestedModel = () =>
   String(process.env.LLM_MODEL || process.env.LLM_MODEL_DEFAULT || "").trim();
@@ -672,7 +672,7 @@ const selectProviderAttemptOrder = (operation: string): LlmProvider[] => {
 
   const lastSuccess = providerRuntimeState.lastSuccessfulProvider;
   const canProbeNow = now - lastRecoveryProbeAt >= PROVIDER_RECOVERY_PROBE_INTERVAL_MS || !lastRecoveryProbeAt;
-  if ((!start || start === "openrouter") && canProbeNow) {
+  if (!start && canProbeNow) {
     const preferredProbe = (["pptoken", "aiberm", "crazyroute"] as LlmProvider[]).find(
       (provider) => available.includes(provider) && shouldRecoveryProbeProvider(provider, now),
     );
@@ -1426,7 +1426,7 @@ const conversationNode = async (state: AgentState): Promise<Partial<AgentState>>
     if (state.phase === "end" && !state.deployed_url) {
          actions = [
              {
-                 text: "Deploy to Cloudflare",
+                 text: "Deploy to shpitto server",
                  payload: "deploy",
                  type: "button"
              }

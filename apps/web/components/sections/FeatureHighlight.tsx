@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import React from "react";
 import { resolveLucideIcon } from "./icon-utils";
 
@@ -51,10 +52,14 @@ export const FeatureHighlight = ({
             <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-100 group">
               <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               {image ? (
-                <img 
-                  src={image} 
-                  alt={title || "Feature"} 
-                  className="w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-700"
+                <Image
+                  src={image}
+                  alt={title || "Feature"}
+                  width={1600}
+                  height={1200}
+                  unoptimized
+                  sizes="(min-width: 1024px) 50vw, 100vw"
+                  className="h-auto w-full object-cover transform transition-transform duration-700 group-hover:scale-105"
                 />
               ) : (
                 <div className="w-full aspect-[4/3] bg-slate-100 flex items-center justify-center text-slate-400">

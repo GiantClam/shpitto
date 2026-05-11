@@ -399,6 +399,9 @@ function isSupabaseTaskStoreEnabled() {
   if (String(process.env.CHAT_TASKS_USE_SUPABASE || "1").trim() === "0") {
     return false;
   }
+  if (String(process.env.CHAT_TASKS_USE_SUPABASE || "").trim() === "") {
+    return false;
+  }
   const key =
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
     process.env.SUPABASE_SERVICE_KEY ||
@@ -702,8 +705,6 @@ export function formatTaskEventSnapshot(params: {
     pushIf("Tool", (payload as any).toolName);
     pushIf("Path", (payload as any).path);
     pushIf("File", (payload as any).filePath);
-    pushIf("Provider", (payload as any).provider);
-    pushIf("Model", (payload as any).model);
     pushIf("Files", (payload as any).fileCount);
     pushIf("Pages", (payload as any).pageCount);
     pushIf("Error code", (payload as any).errorCode);
@@ -1229,8 +1230,18 @@ export async function createChatTask(
 
 export function sanitizeTaskResultForClient(result?: ChatTaskResult | null): ChatTaskResult | null {
   if (!result) return null;
-  const { internal: _internal, ...rest } = result;
-  return rest;
+  const { internal: _internal, progress, ...rest } = result;
+  const sanitizedProgress = progress
+    ? {
+        ...progress,
+        provider: undefined,
+        model: undefined,
+      }
+    : undefined;
+  return {
+    ...rest,
+    ...(sanitizedProgress ? { progress: sanitizedProgress } : {}),
+  };
 }
 
 export async function claimNextQueuedChatTask(

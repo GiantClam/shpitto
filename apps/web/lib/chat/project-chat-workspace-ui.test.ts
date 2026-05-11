@@ -85,7 +85,6 @@ describe("ProjectChatWorkspace timeline actions", () => {
     expect(line).toContain("Design theme:");
     expect(line).toContain("Modern minimal / Linear");
     expect(line).toContain("Technology-driven, Warm and approachable +2");
-    expect(line).toContain("ref Aceternity UI");
     expect(line).not.toContain("Design system inspiration");
     expect(line).not.toContain("Premium");
     expect(line).not.toContain("Playful and youthful");
@@ -126,8 +125,11 @@ describe("ProjectChatWorkspace timeline actions", () => {
     expect(summary).toContain("Audience and goal: Enterprise buyers, Developers · Lead generation");
     expect(summary).toContain("Pages: Home, Blog, Contact");
     expect(summary).toContain("Language: Chinese and English");
-    expect(summary).toContain("Visual direction: Modern minimal / Linear · Technology-driven, Warm and approachable +1 · Aceternity UI");
-    expect(summary).toContain("Deployment target: cloudflare");
+    expect(summary).toContain("Visual direction: Modern minimal / Linear");
+    expect(summary).toContain("Warm and approachable +1");
+    expect(summary).not.toContain("Aceternity UI");
+    expect(summary).toContain("Deployment target: shpitto server");
+    expect(summary).not.toContain("cloudflare");
     expect(summary).not.toContain("Canonical Website Generation Prompt");
   });
 });

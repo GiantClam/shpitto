@@ -14,8 +14,18 @@ function htmlVisibleText(html: string) {
 }
 
 export function isBilingualRequirementText(text = ""): boolean {
+  const source = stripLanguageTogglePairs(text);
+  const normalized = source.toLowerCase();
+  const negativePatterns = [
+    /(?:不要|不需要|无需|仅需|只要|保留)\s*(?:实现|做|提供)?\s*(?:中英双语|双语|多语言|语言切换)/i,
+    /(?:单语言|纯中文|仅中文|只做中文|不要英文|不需要英文)/i,
+    /(?:do not|don't|no need to|without|single-language|single language|chinese only|no bilingual|not bilingual)\s+(?:implement\s+)?(?:bilingual|language switch|multilanguage|multi-language)/i,
+  ];
+  if (negativePatterns.some((pattern) => pattern.test(source) || pattern.test(normalized))) {
+    return false;
+  }
   return /(?:\bbilingual\b|EN\s*\/\s*ZH|ZH\s*\/\s*EN|language\s+switch|multi-?language|\u53cc\u8bed|\u4e2d\u82f1|\u4e2d\u6587.{0,12}\u82f1\u6587|\u82f1\u6587.{0,12}\u4e2d\u6587|\u591a\u8bed\u8a00|\u8bed\u8a00.{0,8}\u5207\u6362)/i.test(
-    String(text || ""),
+    source,
   );
 }
 
@@ -69,6 +79,21 @@ function normalizeBilingualLeakSample(text: string): string {
   return String(text || "").replace(/\s+/g, " ").trim().slice(0, 180);
 }
 
+function looksLikeDesignLabelOrBrandHybrid(text: string): boolean {
+  const sample = String(text || "").trim();
+  if (!sample) return false;
+  if (/[·•]/.test(sample)) return true;
+  if (/mercury|substack|stripe|headspace/i.test(sample)) return true;
+  return /(warm|soft|minimal|playful|youthful|modern|editorial|calm)/i.test(sample);
+}
+
+function stripLanguageTogglePairs(text: string): string {
+  return String(text || "").replace(
+    /\b(?:中文|英文|汉语|英语|zh|zh-cn|en|english|chinese)\s*\/\s*(?:中文|英文|汉语|英语|zh|zh-cn|en|english|chinese)\b/gi,
+    " ",
+  );
+}
+
 function isExplicitBilingualPairSample(text: string): boolean {
   const source = String(text || "");
   return cjkCount(source) >= 2 && latinContentWords(source).length >= 1 && /[\/|()（）]/.test(source);
@@ -79,7 +104,7 @@ export function findVisibleSimultaneousBilingualCopy(html: string): string[] {
   if (!text || (!hasSubstantialCjkAndLatin(text) && !isExplicitBilingualPairSample(text))) return [];
 
   const samples = new Set<string>();
-  const compact = text.replace(/\s+/g, " ").trim();
+  const compact = stripLanguageTogglePairs(text).replace(/\s+/g, " ").trim();
   const patterns = [
     /[\u3400-\u9fff][^\/。！？?!\n]{1,90}\s*\/\s*[A-Za-z][^\/。！？?!\n]{2,90}/g,
     /[A-Za-z][^\/。！？?!\n]{2,90}\s*\/\s*[\u3400-\u9fff][^\/。！？?!\n]{1,90}/g,
@@ -90,6 +115,7 @@ export function findVisibleSimultaneousBilingualCopy(html: string): string[] {
   for (const pattern of patterns) {
     for (const match of compact.matchAll(pattern)) {
       const sample = normalizeBilingualLeakSample(match[0] || "");
+      if (looksLikeDesignLabelOrBrandHybrid(sample)) continue;
       if (sample && (hasSubstantialCjkAndLatin(sample) || isExplicitBilingualPairSample(sample))) {
         samples.add(sample);
       }

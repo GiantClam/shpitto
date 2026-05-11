@@ -72,6 +72,25 @@ function deployedProjectName(url: string) {
   return host.endsWith(".pages.dev") ? host.slice(0, -".pages.dev".length) : "";
 }
 
+function isDeploymentSnapshotWithMarker(text: string, expectedTitle: string) {
+  try {
+    const parsed = JSON.parse(text) as {
+      mode?: string;
+      postCount?: number;
+      posts?: Array<{ title?: string; slug?: string }>;
+    };
+    return (
+      parsed?.mode === "deployment-d1-static-snapshot" &&
+      Number(parsed?.postCount || 0) >= 1 &&
+      Array.isArray(parsed?.posts) &&
+      parsed.posts.some((post) => String(post?.title || "") === expectedTitle) &&
+      parsed.posts.some((post) => String(post?.slug || "") === "replay-blog-online-verification")
+    );
+  } catch {
+    return false;
+  }
+}
+
 function buildGeneratedBlogSite(projectId: string, canonicalPrompt: string) {
   return {
     projectId,
@@ -262,7 +281,7 @@ describe.skipIf(!runLiveReplay)("blog replay live deployment", () => {
       try {
         const { POST } = await import("../../app/api/chat/route");
         const { createChatTask, getChatTask, listChatTimelineMessages } = await import("./chat-task-store");
-        const { SkillRuntimeExecutor } = await import("../skill-runtime/executor");
+        const { SkillRuntimeExecutor, buildBlogContentWorkflowPreview } = await import("../skill-runtime/executor");
         for (const text of blogReplayMessages) {
           const res = await POST(
             new Request("http://localhost/api/chat", {
@@ -285,6 +304,25 @@ describe.skipIf(!runLiveReplay)("blog replay live deployment", () => {
         expect(canonicalPrompt).toContain("Canonical Website Generation Prompt");
         expect(manifest.routes).toEqual(["/", "/blog"]);
 
+        const generatedSite = buildGeneratedBlogSite(projectId, canonicalPrompt);
+        const blogPreview = buildBlogContentWorkflowPreview({
+          locale: "zh-CN",
+          inputState: {
+            messages: [] as any,
+            phase: "end",
+            current_page_index: 0,
+            attempt_count: 0,
+            workflow_context: {
+              sourceRequirement: canonicalPrompt,
+              promptControlManifest: manifest,
+              preferredLocale: "zh-CN",
+            } as any,
+          } as any,
+          project: generatedSite as any,
+        });
+        expect(blogPreview.required).toBe(true);
+        expect(blogPreview.posts.length).toBeGreaterThan(0);
+
         seed = await seedReplayBlogData(projectId, marker);
 
         const task = await createChatTask(chatId);
@@ -304,9 +342,12 @@ describe.skipIf(!runLiveReplay)("blog replay live deployment", () => {
               deployRequested: true,
               sourceRequirement: canonicalPrompt,
               promptControlManifest: manifest,
+              blogContentConfirmed: true,
+              blogContentPreviewPosts: blogPreview.posts,
+              blogContentPreviewStatus: "confirmed",
               preferredLocale: "zh-CN",
             } as any,
-            site_artifacts: buildGeneratedBlogSite(projectId, canonicalPrompt) as any,
+            site_artifacts: generatedSite as any,
           } as any,
           setSessionState: (state) => {
             nextState = state;
@@ -349,7 +390,7 @@ describe.skipIf(!runLiveReplay)("blog replay live deployment", () => {
         );
         const snapshot = await fetchTextWithRetry(
           `${liveUrl}/shpitto-blog-snapshot.json`,
-          (text, status) => status === 200 && text.includes('"mode": "deployment-d1-static-snapshot"') && text.includes('"postCount": 1'),
+          (text, status) => status === 200 && isDeploymentSnapshotWithMarker(text, seed!.title),
         );
 
         console.log(

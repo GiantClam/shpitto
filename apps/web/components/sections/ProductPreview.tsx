@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import React from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -40,10 +41,13 @@ export const ProductPreview = ({ title, items }: ProductPreviewProps) => (
             header={
               <div className="flex h-full min-h-[6rem] w-full flex-1 rounded-xl bg-gradient-to-br from-neutral-200 dark:from-neutral-900 dark:to-neutral-800 to-neutral-100 overflow-hidden">
                 {item.image && (
-                  <img 
-                    src={item.image} 
-                    alt={item.title} 
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover/bento:scale-110" 
+                  <Image
+                    src={item.image}
+                    alt={item.title}
+                    fill
+                    unoptimized
+                    sizes="(min-width: 768px) 50vw, 100vw"
+                    className="object-cover transition-transform duration-500 group-hover/bento:scale-110"
                   />
                 )}
               </div>

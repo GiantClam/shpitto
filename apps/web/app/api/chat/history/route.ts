@@ -25,7 +25,7 @@ function parseLegacyTaskEventText(text: string): { eventType?: string; payload?:
 function repairLegacyMojibakeTimelineText(text: string): string {
   const raw = String(text || "");
   const trimmed = raw.trim();
-  if (/^\?{3}\s+Cloudflare$/i.test(trimmed)) return "Deploying to Cloudflare";
+  if (/^\?{3}\s+Cloudflare$/i.test(trimmed)) return "Deploying to shpitto server";
   const questionMarkDeploy = trimmed.match(/^\?{4,}(https:\/\/\S+)([\s\S]*)$/);
   if (questionMarkDeploy?.[1]) {
     return `Deployment succeeded: ${questionMarkDeploy[1]}${questionMarkDeploy[2] || ""}`;

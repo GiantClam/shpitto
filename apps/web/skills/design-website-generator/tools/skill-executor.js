@@ -367,44 +367,75 @@ Generate the complete React component code.`;
 }
 
 async function executeLLM(prompt, systemContext = '') {
-  const apiKey = process.env.PPTOKEN_API_KEY || process.env.ANTHROPIC_API_KEY || process.env.AIBERM_API_KEY;
-  
-  if (!apiKey) {
-    throw new Error('No API key found. Set PPTOKEN_API_KEY, ANTHROPIC_API_KEY, or AIBERM_API_KEY');
+  const providerOrder = String(process.env.LLM_PROVIDER_ORDER || 'pptoken,aiberm,crazyrouter')
+    .split(',')
+    .map(item => String(item || '').trim().toLowerCase())
+    .filter(Boolean)
+    .filter((provider, index, list) => list.indexOf(provider) === index);
+  const providers = providerOrder.flatMap(provider => {
+    if (provider === 'pptoken' && process.env.PPTOKEN_API_KEY) {
+      return [{
+        provider,
+        apiKey: process.env.PPTOKEN_API_KEY,
+        baseURL: process.env.PPTOKEN_BASE_URL || 'https://api.pptoken.org/v1',
+      }];
+    }
+    if (provider === 'aiberm' && process.env.AIBERM_API_KEY) {
+      return [{
+        provider,
+        apiKey: process.env.AIBERM_API_KEY,
+        baseURL: process.env.AIBERM_BASE_URL || 'https://aiberm.com/v1',
+      }];
+    }
+    if ((provider === 'crazyrouter' || provider === 'crazyroute' || provider === 'crazyreoute') &&
+        (process.env.CRAZYROUTE_API_KEY || process.env.CRAZYROUTER_API_KEY || process.env.CRAZYREOUTE_API_KEY)) {
+      return [{
+        provider: 'crazyroute',
+        apiKey: process.env.CRAZYROUTE_API_KEY || process.env.CRAZYROUTER_API_KEY || process.env.CRAZYREOUTE_API_KEY,
+        baseURL:
+          process.env.CRAZYROUTE_BASE_URL ||
+          process.env.CRAZYROUTER_BASE_URL ||
+          process.env.CRAZYREOUTE_BASE_URL ||
+          'https://crazyrouter.com/v1',
+      }];
+    }
+    return [];
+  });
+
+  if (providers.length === 0) {
+    throw new Error('No API key found. Set PPTOKEN_API_KEY, AIBERM_API_KEY, or CRAZYROUTE_API_KEY');
   }
-  
-  try {
-    const { default: Anthropic } = await import('@anthropic-ai/sdk');
-    const provider = String(process.env.LLM_PROVIDER || 'pptoken').toLowerCase();
-    const baseURL =
-      provider === 'pptoken'
-        ? process.env.PPTOKEN_BASE_URL || 'https://api.pptoken.org/v1'
-        : provider === 'aiberm'
-        ? process.env.AIBERM_BASE_URL || 'https://aiberm.com/v1'
-        : process.env.LLM_BASE_URL;
-    const client = new Anthropic({
-      apiKey,
-      ...(baseURL ? { baseURL } : {}),
-    });
-    
-    const messages = [{ role: 'user', content: prompt }];
-    
-    const response = await client.messages.create({
-      model: process.env.LLM_MODEL || process.env.LLM_MODEL_PPTOKEN || process.env.PPTOKEN_MODEL || 'gpt-5.4-mini',
-      max_tokens: 8192,
-      temperature: 0.5,
-      ...(systemContext ? { system: systemContext } : {}),
-      messages,
-    });
-    
-    const textContent = response.content.find(c => c.type === 'text');
-    return {
-      content: textContent?.text || '',
-      raw: response,
-    };
-  } catch (error) {
-    throw new Error(`LLM call failed: ${error.message}`);
+
+  const { default: Anthropic } = await import('@anthropic-ai/sdk');
+  const messages = [{ role: 'user', content: prompt }];
+  let lastError;
+
+  for (const config of providers) {
+    try {
+      const client = new Anthropic({
+        apiKey: config.apiKey,
+        ...(config.baseURL ? { baseURL: config.baseURL } : {}),
+      });
+
+      const response = await client.messages.create({
+        model: process.env.LLM_MODEL || process.env.LLM_MODEL_PPTOKEN || process.env.PPTOKEN_MODEL || 'gpt-5.4-mini',
+        max_tokens: 8192,
+        temperature: 0.5,
+        ...(systemContext ? { system: systemContext } : {}),
+        messages,
+      });
+
+      const textContent = response.content.find(c => c.type === 'text');
+      return {
+        content: textContent?.text || '',
+        raw: response,
+      };
+    } catch (error) {
+      lastError = new Error(`LLM call failed (${config.provider}): ${error.message}`);
+    }
   }
+
+  throw lastError || new Error('LLM call failed');
 }
 
 export async function listDesignSystemsCommand(category) {

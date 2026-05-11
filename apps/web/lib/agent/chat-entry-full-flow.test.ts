@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import dotenv from "dotenv";
-import { getLatestChatTaskForChat } from "./chat-task-store";
+import { getChatTask, getLatestChatTaskForChat, listChatTimelineMessages } from "./chat-task-store";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local"), override: false, quiet: true });
 dotenv.config({ path: path.resolve(process.cwd(), "scripts/.env.local"), override: false, quiet: true });
@@ -122,17 +122,119 @@ async function fetchTextWithRetry(url: string, predicate: (text: string, status:
   throw new Error(`Timed out fetching ${url} (last status ${lastStatus || "unknown"}): ${lastText.slice(0, 240)}`);
 }
 
+function confirmBlogDeploy() {
+  return "__SHP_CONFIRM_BLOG_CONTENT_DEPLOY__";
+}
+
+function isDeploymentSnapshotWithMarker(text: string, expectedTitle: string) {
+  try {
+    const parsed = JSON.parse(text) as {
+      mode?: string;
+      postCount?: number;
+      posts?: Array<{ title?: string; slug?: string }>;
+    };
+    return (
+      parsed?.mode === "deployment-d1-static-snapshot" &&
+      Number(parsed?.postCount || 0) >= 1 &&
+      Array.isArray(parsed?.posts) &&
+      parsed.posts.some((post) => String(post?.title || "") === expectedTitle) &&
+      parsed.posts.some((post) => String(post?.slug || "") === "chat-full-flow-blog-verification")
+    );
+  } catch {
+    return false;
+  }
+}
+
+async function waitForTerminalTask(taskId: string, runWorkerOnce: () => Promise<boolean>) {
+  const deadline = Date.now() + 24 * 60 * 1000;
+  let lastStatus = "";
+  let lastStage = "";
+
+  while (Date.now() < deadline) {
+    const task = await getChatTask(taskId);
+    lastStatus = String(task?.status || "");
+    lastStage = String(task?.result?.progress?.stage || "");
+
+    if (task?.status === "succeeded") return task;
+    if (task?.status === "failed") {
+      throw new Error(
+        `Task ${taskId} failed: ${String(task.result?.assistantText || (task.result as any)?.error || lastStage)}`,
+      );
+    }
+
+    if (task?.status === "queued") {
+      await runWorkerOnce();
+      continue;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+  }
+
+  throw new Error(`Timed out waiting for task ${taskId}; lastStatus=${lastStatus}, lastStage=${lastStage}`);
+}
+
 describe("chat entry full website flow", () => {
   const confirmPayload = (text: string) => `__SHP_CONFIRM_GENERATE__\n${text}`;
+  const blogRequirement = [
+    "我想做个网站，关于个人 blog，主要介绍 AI 实践经验。",
+    "生成前必填信息已提交：",
+    "- 网站类型：作品集",
+    "- 内容来源：新建站点，无现成内容",
+    "- 目标受众：海外客户",
+    "- 设计主题：科技感，极简现代",
+    "- 页面结构：多页网站，包含 Home 和 Blog",
+    "- 功能需求：中英双语切换",
+    "- 核心目标：文章展示",
+    "- Logo：先使用文字标识",
+    "",
+    "[Requirement Form]",
+    "```json",
+    JSON.stringify(
+      {
+        siteType: "portfolio",
+        targetAudience: ["overseas_customers"],
+        contentSources: ["new_site"],
+        primaryVisualDirection: "modern-minimal",
+        secondaryVisualTags: ["tech"],
+        pageStructure: {
+          mode: "multi",
+          planning: "manual",
+          pages: ["home", "blog"],
+        },
+        functionalRequirements: ["multilingual_switch"],
+        primaryGoal: ["文章展示"],
+        language: "bilingual",
+        brandLogo: {
+          mode: "text_mark",
+          assetKey: "",
+          assetName: "",
+          referenceText: "",
+          altText: "",
+        },
+        customNotes: "Focus on AI practice posts and a clear blog entry path.",
+      },
+      null,
+      2,
+    ),
+    "```",
+  ].join("\n");
 
   it(
     "runs real flow from chat -> generation -> deploy and verifies each stage",
     async () => {
       const prevUseSupabase = process.env.CHAT_TASKS_USE_SUPABASE;
+      const prevAsyncTaskTimeoutMs = process.env.CHAT_ASYNC_TASK_TIMEOUT_MS;
+      const prevStageBudgetPerFileMs = process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS;
+      const prevRoundAbsoluteTimeoutMs = process.env.SKILL_TOOL_ROUND_ABSOLUTE_TIMEOUT_MS;
+      const prevProviderOrder = process.env.LLM_PROVIDER_ORDER;
       let blogSeed: Awaited<ReturnType<typeof seedFullFlowBlogData>> | null = null;
       let chatId = "";
 
       process.env.CHAT_TASKS_USE_SUPABASE = "0";
+      process.env.CHAT_ASYNC_TASK_TIMEOUT_MS = "1800000";
+      process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS = "300000";
+      process.env.SKILL_TOOL_ROUND_ABSOLUTE_TIMEOUT_MS = "480000";
+      process.env.LLM_PROVIDER_ORDER = "pptoken,aiberm,crazyrouter";
 
       try {
         expect(Boolean(process.env.CLOUDFLARE_ACCOUNT_ID)).toBe(true);
@@ -154,7 +256,7 @@ describe("chat entry full website flow", () => {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
             id: chatId,
-            messages: [{ role: "user", parts: [{ type: "text", text: confirmPayload("Generate full website") }] }],
+            messages: [{ role: "user", parts: [{ type: "text", text: confirmPayload(blogRequirement) }] }],
           }),
         });
         const generateRes = await POST(generateReq);
@@ -175,8 +277,9 @@ describe("chat entry full website flow", () => {
         expect(queuedGenerateStatusJson?.task?.status).toBe("queued");
 
         // 3) Run real worker for generation
-        const processedGeneration = await runChatTaskWorkerOnce();
-        expect(processedGeneration).toBe(true);
+        const generatedTask = await waitForTerminalTask(queuedGenerateTask!.id, runChatTaskWorkerOnce);
+        expect(generatedTask.status).toBe("succeeded");
+        expect(generatedTask.result?.progress?.stage).toBe("done");
 
         const doneGenerateRes = await getTaskStatus(new Request("http://localhost"), {
           params: Promise.resolve({ taskId: queuedGenerateTask!.id }),
@@ -231,7 +334,28 @@ describe("chat entry full website flow", () => {
           }),
         });
         const deployQueueRes = await POST(deployReq);
-        expect(deployQueueRes.status).toBe(202);
+        const deployQueueBody = await deployQueueRes.clone().text();
+        expect(deployQueueRes.status, deployQueueBody).toBe(200);
+
+        const deployGateTimeline = await listChatTimelineMessages(chatId, 500);
+        const deployConfirm = [...deployGateTimeline]
+          .reverse()
+          .find((message) => String(message.metadata?.cardType || "") === "confirm_blog_content_deploy");
+        expect(deployConfirm).toBeTruthy();
+        expect(Array.isArray((deployConfirm?.metadata as any)?.posts)).toBe(true);
+        expect((((deployConfirm?.metadata as any)?.posts || []) as unknown[]).length).toBeGreaterThan(0);
+
+        const confirmDeployReq = new Request("http://localhost/api/chat", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            id: chatId,
+            messages: [{ role: "user", parts: [{ type: "text", text: confirmBlogDeploy() }] }],
+          }),
+        });
+        const confirmDeployRes = await POST(confirmDeployReq);
+        const confirmDeployBody = await confirmDeployRes.clone().text();
+        expect(confirmDeployRes.status, confirmDeployBody).toBe(202);
 
         const queuedDeployTask = await getLatestChatTaskForChat(chatId);
         expect(queuedDeployTask).toBeTruthy();
@@ -244,10 +368,15 @@ describe("chat entry full website flow", () => {
         expect((queuedDeployTask?.result?.internal?.inputState as any)?.workflow_context?.deploySourceProjectPath).toBe(
           checkpointProjectPath,
         );
+        expect((queuedDeployTask?.result?.internal?.inputState as any)?.workflow_context?.blogContentConfirmed).toBe(true);
+        expect(Array.isArray((queuedDeployTask?.result?.internal?.inputState as any)?.workflow_context?.blogContentPreviewPosts)).toBe(true);
+        expect((((queuedDeployTask?.result?.internal?.inputState as any)?.workflow_context?.blogContentPreviewPosts || []) as unknown[]).length)
+          .toBeGreaterThan(0);
 
         // 6) Run real worker for deploy
-        const processedDeploy = await runChatTaskWorkerOnce();
-        expect(processedDeploy).toBe(true);
+        const deployedTask = await waitForTerminalTask(queuedDeployTask!.id, runChatTaskWorkerOnce);
+        expect(deployedTask.status).toBe("succeeded");
+        expect(deployedTask.result?.progress?.stage).toBe("deployed");
 
         const doneDeployRes = await getTaskStatus(new Request("http://localhost"), {
           params: Promise.resolve({ taskId: queuedDeployTask!.id }),
@@ -279,8 +408,8 @@ describe("chat entry full website flow", () => {
         expect(historyJson?.task?.status).toBe("succeeded");
         expect(String(historyJson?.task?.result?.deployedUrl || "")).toContain(".pages.dev");
         expect(Array.isArray(historyJson?.messages)).toBe(true);
-        expect((historyJson?.messages || []).filter((item: any) => item.role === "user").length).toBeGreaterThanOrEqual(2);
-        expect((historyJson?.messages || []).filter((item: any) => item.role === "assistant").length).toBeGreaterThanOrEqual(2);
+        expect((historyJson?.messages || []).filter((item: any) => item.role === "user").length).toBeGreaterThanOrEqual(1);
+        expect((historyJson?.messages || []).filter((item: any) => item.role === "assistant").length).toBeGreaterThanOrEqual(1);
 
         const home = await fetchTextWithRetry(
           deployedUrl,
@@ -300,7 +429,7 @@ describe("chat entry full website flow", () => {
         );
         const snapshot = await fetchTextWithRetry(
           `${deployedUrl}/shpitto-blog-snapshot.json`,
-          (text, status) => status === 200 && text.includes('"mode": "deployment-d1-static-snapshot"') && text.includes('"postCount": 1'),
+          (text, status) => status === 200 && isDeploymentSnapshotWithMarker(text, blogSeed!.title),
         );
 
         console.log(
@@ -325,6 +454,14 @@ describe("chat entry full website flow", () => {
         }
         if (prevUseSupabase === undefined) delete process.env.CHAT_TASKS_USE_SUPABASE;
         else process.env.CHAT_TASKS_USE_SUPABASE = prevUseSupabase;
+        if (prevAsyncTaskTimeoutMs === undefined) delete process.env.CHAT_ASYNC_TASK_TIMEOUT_MS;
+        else process.env.CHAT_ASYNC_TASK_TIMEOUT_MS = prevAsyncTaskTimeoutMs;
+        if (prevStageBudgetPerFileMs === undefined) delete process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS;
+        else process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS = prevStageBudgetPerFileMs;
+        if (prevRoundAbsoluteTimeoutMs === undefined) delete process.env.SKILL_TOOL_ROUND_ABSOLUTE_TIMEOUT_MS;
+        else process.env.SKILL_TOOL_ROUND_ABSOLUTE_TIMEOUT_MS = prevRoundAbsoluteTimeoutMs;
+        if (prevProviderOrder === undefined) delete process.env.LLM_PROVIDER_ORDER;
+        else process.env.LLM_PROVIDER_ORDER = prevProviderOrder;
       }
     },
     900_000,

@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "npm run dev:next",
     "dev:all": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/dev-all.mts",
-    "dev:next": "node --max-old-space-size=4096 ./node_modules/next/dist/bin/next dev --turbopack",
+    "dev:next": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/dev-next.mts",
     "dev:agent": "npx @langchain/langgraph-cli dev --port 8123 --host 127.0.0.1",
     "worker:chat": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/chat-task-worker.mts",
     "worker:chat:once": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/chat-task-worker.mts --once",

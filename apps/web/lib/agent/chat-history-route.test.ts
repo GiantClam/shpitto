@@ -27,7 +27,7 @@ describe("chat history route", () => {
 
       expect(res.status).toBe(200);
       expect(messages.map((item: any) => item.text)).toEqual([
-        "Deploying to Cloudflare",
+        "Deploying to shpitto server",
         "Deployment succeeded: https://demo.pages.dev\n(Smoke: pre=passed, post=passed)",
       ]);
     } finally {

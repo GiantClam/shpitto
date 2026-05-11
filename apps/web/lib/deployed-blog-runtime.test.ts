@@ -274,6 +274,74 @@ describe("deployed blog runtime", () => {
     expect(html).toContain('data-shpitto-blog-api="/api/blog/posts"');
   });
 
+  it("localizes runtime blog root and RSS defaults for zh blog settings", async () => {
+    const worker = buildDeployedBlogRuntimeFiles({
+      projectId: "project-123",
+      d1BindingName: "DB",
+    }).find((file) => file.path === "/_worker.js")?.content;
+
+    const mod = await import(`data:text/javascript;base64,${Buffer.from(String(worker || "")).toString("base64")}`);
+    const rows = [
+      {
+        id: "post-1",
+        project_id: "project-123",
+        slug: "hello-world",
+        title: "你好世界",
+        excerpt: "来自运行时列表的摘要",
+        content_html: "<p>中文内容</p>",
+        author_name: "Bays",
+        category: "",
+        tags_json: JSON.stringify(["AI"]),
+        cover_image_url: "",
+        cover_image_alt: "",
+        seo_title: "",
+        seo_description: "",
+        published_at: "2026-04-30T00:00:00.000Z",
+        updated_at: "2026-04-30T00:00:00.000Z",
+      },
+    ];
+    const env = {
+      DB: {
+        prepare(sql: string) {
+          return {
+            bind() {
+              return {
+                async first() {
+                  if (sql.includes("shpitto_blog_settings")) {
+                    return { enabled: 1, nav_label: "博客", rss_enabled: 1, sitemap_enabled: 1 };
+                  }
+                  return null;
+                },
+                async all() {
+                  return { results: rows };
+                },
+              };
+            },
+          };
+        },
+      },
+      ASSETS: {
+        async fetch() {
+          return new Response("Not found", { status: 404 });
+        },
+      },
+    };
+
+    const pageResponse = await mod.default.fetch(new Request("https://example.test/blog/"), env);
+    const pageHtml = await pageResponse.text();
+    expect(pageResponse.status).toBe(200);
+    expect(pageHtml).toContain("最新文章");
+    expect(pageHtml).not.toContain("Latest articles");
+    expect(pageHtml).toContain("文章");
+
+    const rssResponse = await mod.default.fetch(new Request("https://example.test/blog/rss.xml"), env);
+    const rssXml = await rssResponse.text();
+    expect(rssResponse.status).toBe(200);
+    expect(rssXml).toContain("<title>博客</title>");
+    expect(rssXml).toContain("<description>最新文章</description>");
+    expect(rssXml).not.toContain("Latest articles");
+  });
+
   it("injects runtime files without dropping generated static files", () => {
     const prevRuntime = process.env.SHPITTO_DEPLOY_BLOG_RUNTIME;
     const input = {

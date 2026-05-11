@@ -53,6 +53,8 @@ export function VerifyEmailForm({ initialLocale, email, nextPath, token, theme, 
   const [loading, setLoading] = useState(Boolean(token));
   const [message, setMessage] = useState<string | null>(token ? t.verifying : null);
   const [error, setError] = useState<string | null>(null);
+  const verifyingText = t.verifying;
+  const verifiedText = t.verified;
 
   useEffect(() => {
     if (!token) return;
@@ -61,13 +63,13 @@ export function VerifyEmailForm({ initialLocale, email, nextPath, token, theme, 
     async function verify() {
       setLoading(true);
       setError(null);
-      setMessage(t.verifying);
+      setMessage(verifyingText);
 
-    const response = await fetch("/auth/email-verification/confirm", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, projectId, siteKey }),
-    });
+      const response = await fetch("/auth/email-verification/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, projectId, siteKey }),
+      });
       const data = (await response.json().catch(() => ({}))) as { error?: string; message?: string };
 
       if (cancelled) return;
@@ -75,7 +77,7 @@ export function VerifyEmailForm({ initialLocale, email, nextPath, token, theme, 
         setError(data.error || "Failed to verify email.");
         setMessage(null);
       } else {
-        setMessage(data.message || t.verified);
+        setMessage(data.message || verifiedText);
       }
       setLoading(false);
     }
@@ -84,7 +86,7 @@ export function VerifyEmailForm({ initialLocale, email, nextPath, token, theme, 
     return () => {
       cancelled = true;
     };
-  }, [token, t.verifying, t.verified]);
+  }, [projectId, siteKey, token, verifiedText, verifyingText]);
 
   const resend = async () => {
     if (!email) {

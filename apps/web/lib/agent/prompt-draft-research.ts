@@ -78,6 +78,7 @@ type DraftProviderConfig = {
 };
 
 type PromptDraftDisplayLocale = "zh" | "en";
+type RequestedSiteLocale = "zh-CN" | "en" | "bilingual";
 
 const SOURCE_MATERIAL_APPENDIX_PER_SOURCE_LIMIT = 12_000;
 const SOURCE_MATERIAL_APPENDIX_TOTAL_LIMIT = 24_000;
@@ -95,49 +96,54 @@ function internalNavLabelForRoute(route: string, fallback = ""): string {
   if (normalized === "/") return "Home";
   if (isWorkflowArtifactEnglishSafe(fallback)) return normalizeWorkflowArtifactText(fallback);
   const leaf = normalized.replace(/^\/+|\/+$/g, "").split("/").filter(Boolean).pop() || "page";
-  const known = new Map<string, string>([
-    ["about", "About"],
-    ["contact", "Contact"],
-    ["cases", "Cases"],
-    ["products", "Products"],
-    ["news", "News"],
-    ["downloads", "Downloads"],
-    ["custom-solutions", "Custom Solutions"],
-    ["casux-creation", "CASUX Creation"],
-    ["casux-construction", "CASUX Construction"],
-    ["casux-certification", "CASUX Certification"],
-    ["casux-advocacy", "CASUX Advocacy"],
-    ["casux-research-center", "CASUX Research Center"],
-    ["casux-information-platform", "CASUX Information Platform"],
-  ]);
-  if (known.has(leaf)) return String(known.get(leaf));
   return leaf
     .split(/[-_]+/g)
     .filter(Boolean)
-    .map((part) => (part.toUpperCase() === "CASUX" ? "CASUX" : part.charAt(0).toUpperCase() + part.slice(1)))
+    .map((part) => (part === part.toUpperCase() && /^[A-Z0-9-]+$/.test(part) ? part : part.charAt(0).toUpperCase() + part.slice(1)))
     .join(" ");
 }
 
 function internalPurposeForRoute(route: string, fallback = ""): string {
   if (isWorkflowArtifactEnglishSafe(fallback)) return normalizeWorkflowArtifactText(fallback);
-  const normalized = String(route || "/").trim() || "/";
-  const label = internalNavLabelForRoute(normalized, fallback);
-  switch (normalized) {
-    case "/":
-      return "Establish the site overview, core value proposition, and the main navigation paths.";
-    case "/about":
-      return "Explain the organization background, positioning, and credibility signals.";
-    case "/contact":
-      return "Provide the primary contact path and capture serious inquiries.";
-    case "/cases":
-      return "Present case evidence, outcomes, and source-backed proof.";
-    case "/downloads":
-      return "Provide structured access to downloadable resources and supporting material.";
-    case "/custom-solutions":
-      return "Explain solution scenarios, delivery approach, and consultation entry points.";
-    default:
-      return `Deliver a route-specific page for ${label} with distinct source-backed content and a clear next action.`;
+  return `Deliver a route-specific page for ${internalNavLabelForRoute(route, fallback)} with distinct source-backed content and a clear next action.`;
+}
+
+function requirementNeedsBlogRoute(requirementText: string): boolean {
+  const normalized = String(requirementText || "");
+  if (!normalized) return false;
+  return /(?:\bblog\b|博客|博文|文章|posts?|articles?)/i.test(normalized);
+}
+
+function mergeRequiredBlogRoute(plan: LocalDecisionPlan, requirementText: string): LocalDecisionPlan {
+  if (!requirementNeedsBlogRoute(requirementText)) return plan;
+  if (plan.pageBlueprints.some((page) => page.pageKind === "blog-data-index" || page.route === "/blog")) return plan;
+
+  const next = {
+    ...plan,
+    routes: [...plan.routes],
+    navLabels: [...plan.navLabels],
+    pageBlueprints: [...plan.pageBlueprints],
+    pageIntents: [...plan.pageIntents],
+  };
+  const blogBlueprint = buildLocalDecisionPlan({
+    messages: [{ role: "user", content: "Only generate / and /blog. Blog is a first-class content route." }],
+    workflow_context: {
+      latestUserText: "Only generate / and /blog. Blog is a first-class content route.",
+      requirementAggregatedText: "Only generate / and /blog. Blog is a first-class content route.",
+    },
+  } as any).pageBlueprints.find((page) => page.route === "/blog");
+  if (!blogBlueprint) return plan;
+
+  if (!next.routes.includes("/blog")) next.routes.push("/blog");
+  if (!next.navLabels.some((label) => String(label || "").trim().toLowerCase() === "blog")) {
+    next.navLabels.push(blogBlueprint.navLabel);
   }
+  next.pageBlueprints.push({
+    ...blogBlueprint,
+    source: "prompt_contract",
+  });
+  next.pageIntents = [...next.pageBlueprints];
+  return next;
 }
 
 function buildPromptDecisionPlan(requirementText: string): LocalDecisionPlan {
@@ -151,10 +157,11 @@ function buildPromptDecisionPlan(requirementText: string): LocalDecisionPlan {
     workflowContext.requirementSpec = requirementSpec;
   }
 
-  return buildLocalDecisionPlan({
+  const plan = buildLocalDecisionPlan({
     messages: [{ role: "user", content: requirementText }],
     workflow_context: workflowContext,
   } as any);
+  return mergeRequiredBlogRoute(plan, requirementText);
 }
 
 function routeToHtmlPath(route: string): string {
@@ -182,6 +189,43 @@ function buildPromptControlManifest(
       source: page.source,
     })),
   };
+}
+
+function resolveRequestedSiteLocale(requirementText: string): RequestedSiteLocale {
+  const spec = buildRequirementSpec(requirementText, [requirementText]);
+  if (spec.locale === "bilingual" || spec.locale === "zh-CN" || spec.locale === "en") {
+    return spec.locale;
+  }
+  return /(?:\bbilingual\b|中英双语|双语|language\s+switch)/i.test(requirementText) ? "bilingual" : "en";
+}
+
+function ensureCanonicalPromptHasBilingualContract(
+  draft: string,
+  requestedSiteLocale: RequestedSiteLocale,
+  displayLocale: PromptDraftDisplayLocale = "en",
+): string {
+  const normalizedDraft = normalizeText(draft);
+  if (!normalizedDraft || requestedSiteLocale !== "bilingual") return normalizedDraft;
+  if (/##\s*7\.35\s+Bilingual Experience Contract\b/i.test(normalizedDraft)) {
+    return normalizedDraft;
+  }
+  const defaultVisibleLanguage = displayLocale === "zh" ? "Chinese (zh-CN)" : "English (en)";
+  const section = [
+    "## 7.35 Bilingual Experience Contract",
+    "",
+    `- Requested site locale: bilingual EN/ZH. Default visible language: ${defaultVisibleLanguage}.`,
+    "- The generated site must show exactly one active language at a time. Do not render visible Chinese/English pairs in the same heading, paragraph, card, CTA, nav item, footer, or article body.",
+    "- Store inactive-language copy in explicit i18n structures such as `data-i18n-*`, an in-page messages dictionary, generated `i18n/messages.*.json`, or hidden templates.",
+    "- Add a working EN/ZH language switch only when switching replaces visible core copy. The switch must preserve the current route and persist language preference.",
+    "- Critical bilingual coverage is mandatory for nav, hero copy, CTAs, footer, and core non-blog site sections.",
+    "- Blog/content workflows stay single-language and follow the default visible language only. Do not require EN/ZH switching inside blog cards, blog index pages, or blog/article detail pages.",
+    "- If a real bilingual switch cannot be implemented, fall back to a single-language site. Do not fake bilingual support with visible `Chinese / English` copy pairs.",
+  ].join("\n");
+  const addendumIndex = normalizedDraft.search(/\n##\s*7\.5\s+External Research Addendum/i);
+  if (addendumIndex >= 0) {
+    return `${normalizedDraft.slice(0, addendumIndex).trimEnd()}\n\n${section}\n${normalizedDraft.slice(addendumIndex)}`;
+  }
+  return `${normalizedDraft}\n\n${section}`;
 }
 
 function isGenericFallbackSuggestedPages(profile?: WebsiteKnowledgeProfile): boolean {
@@ -619,6 +663,14 @@ export function enrichCanonicalPromptWithControlManifestForTesting(draft: string
   return enrichCanonicalPromptWithControlManifest(draft, requirementText);
 }
 
+export function ensureCanonicalPromptHasBilingualContractForTesting(
+  draft: string,
+  requestedSiteLocale: RequestedSiteLocale,
+  displayLocale: PromptDraftDisplayLocale = "en",
+): string {
+  return ensureCanonicalPromptHasBilingualContract(draft, requestedSiteLocale, displayLocale);
+}
+
 export function mergeTemplateWithKnowledgeProfileForTesting(
   localDraft: string,
   knowledgeProfile: WebsiteKnowledgeProfile,
@@ -667,8 +719,11 @@ function mergeTemplateWithResearch(
   summary: string,
   knowledgeProfile?: WebsiteKnowledgeProfile,
   evidenceBrief?: WebsiteEvidenceBrief,
+  requestedSiteLocale: RequestedSiteLocale = "en",
+  displayLocale: PromptDraftDisplayLocale = "en",
 ): string {
-  if (sources.length === 0 && !summary && !knowledgeProfile && !evidenceBrief) return localDraft;
+  const seededDraft = ensureCanonicalPromptHasBilingualContract(localDraft, requestedSiteLocale, displayLocale);
+  if (sources.length === 0 && !summary && !knowledgeProfile && !evidenceBrief) return seededDraft;
   const refs = sources
     .slice(0, 6)
     .map((source, idx) => {
@@ -689,7 +744,7 @@ function mergeTemplateWithResearch(
   const sourceAppendix = formatSourceMaterialAppendix(knowledgeProfile);
   const sourceAppendixLines = sourceAppendix ? [sourceAppendix, ""] : [];
   return [
-    localDraft,
+    seededDraft,
     "",
     ...evidenceLines,
     ...sourceAppendixLines,
@@ -802,6 +857,7 @@ async function requestPromptDraftWithLlm(params: {
   evidenceBrief?: WebsiteEvidenceBrief;
   knowledgeProfile?: WebsiteKnowledgeProfile;
   displayLocale?: PromptDraftDisplayLocale;
+  requestedSiteLocale?: RequestedSiteLocale;
 }): Promise<PromptDraftBuildResult | undefined> {
   const model = normalizeText(params.config.model) || "openai/gpt-5.4-mini";
   const fallbackModel = normalizeText(params.config.fallbackModel);
@@ -813,11 +869,14 @@ async function requestPromptDraftWithLlm(params: {
   const completion = `${params.slots.filter((slot) => slot.filled).length}/${params.slots.length}`;
   const missingLabels = params.slots.filter((slot) => !slot.filled).map((slot) => slot.label);
   const displayLocale = params.displayLocale === "zh" ? "zh" : "en";
+  const requestedSiteLocale = params.requestedSiteLocale || "en";
   const targetLanguage = "English for internal workflow artifacts";
   const languagePreservationRule = [
     "- Write the entire canonical prompt, workflow instructions, assumptions, page descriptions, and process notes in English only.",
     "- Do not mirror the user's preferred website locale into the language of the internal prompt artifact.",
-    `- Express the final website locale requirement explicitly as ${displayLocale === "zh" ? "Chinese-facing site output" : "English-facing site output"} while keeping the planning artifact itself in English.`,
+    requestedSiteLocale === "bilingual"
+      ? `- Express the final website locale requirement explicitly as bilingual EN/ZH site output with ${displayLocale === "zh" ? "Chinese" : "English"} as the default visible language, while keeping the planning artifact itself in English.`
+      : `- Express the final website locale requirement explicitly as ${displayLocale === "zh" ? "Chinese-facing site output" : "English-facing site output"} while keeping the planning artifact itself in English.`,
     "- Keep filenames, routes, CSS/JS identifiers, code-like tokens, and product/brand names unchanged.",
   ].join(" ");
 
@@ -902,6 +961,7 @@ async function requestPromptDraftWithLlm(params: {
             "- Preserve the 'Prompt Control Manifest (Machine Readable)' JSON block exactly as the authoritative route/file handoff. Do not translate JSON keys, route values, or file paths.",
             "- Every page must keep a distinct body structure derived from the canonical prompt and source content. Shared header/footer/design language is allowed, repeated inner-page body templates are not.",
             "- Preserve the home hero responsive layout safety requirements so text, stats, CTA, and media cannot overlap.",
+            "- If the requested site locale is bilingual, preserve the bilingual experience contract and implement a real language switch with hidden alternate-language storage instead of visible translated duplicates.",
             "- Keep planning assumptions and visitor-facing copy behavior aligned with the workflow skill.",
           ].join("\n"),
         },
@@ -971,13 +1031,7 @@ async function requestPromptDraftWithLlm(params: {
       enrichCanonicalPromptWithControlManifest(
         looksLikeTemplateDraft(rawDraft)
           ? rawDraft
-          : mergeTemplateWithResearch(
-              params.templateDraft,
-              params.researchSources,
-              params.researchSummary,
-              params.knowledgeProfile,
-              evidenceBrief,
-            ),
+          : mergeTemplateWithResearch(params.templateDraft, params.researchSources, params.researchSummary, params.knowledgeProfile, evidenceBrief, requestedSiteLocale, displayLocale),
         params.requirementText,
         params.workflowContractSummary,
         params.decisionPlan,
@@ -1057,6 +1111,7 @@ export async function buildPromptDraftWithResearch(params: {
   displayLocale?: PromptDraftDisplayLocale;
 }): Promise<PromptDraftBuildResult> {
   const workflowContractSummary = await loadWebsiteWorkflowContractSummary();
+  const requestedSiteLocale = resolveRequestedSiteLocale(params.requirementText);
   let decisionPlan = buildPromptDecisionPlan(params.requirementText);
   let routeSource: PromptControlManifest["routeSource"] = "prompt_draft_page_plan";
   let promptControlManifest = buildPromptControlManifest(decisionPlan, routeSource);
@@ -1067,6 +1122,7 @@ export async function buildPromptDraftWithResearch(params: {
     decisionPlan,
     routeSource,
   );
+  localDraft = ensureCanonicalPromptHasBilingualContract(localDraft, requestedSiteLocale, params.displayLocale);
   const searchTimeoutMs = Number(params.timeoutMs || process.env.CHAT_DRAFT_WEB_SEARCH_TIMEOUT_MS || 16_000);
   const llmTimeoutMs = resolveDraftLlmTimeoutMs(params.timeoutMs);
   let sources: PromptDraftSource[] = [];
@@ -1093,7 +1149,7 @@ export async function buildPromptDraftWithResearch(params: {
     decisionPlan = next.decisionPlan;
     routeSource = next.routeSource;
     promptControlManifest = next.promptControlManifest;
-    localDraft = next.localDraft;
+    localDraft = ensureCanonicalPromptHasBilingualContract(next.localDraft, requestedSiteLocale, params.displayLocale);
   };
   const buildUploadedOnlyKnowledgeProfile = async () => {
     if (!params.referencedAssets?.length) return undefined;
@@ -1111,7 +1167,15 @@ export async function buildPromptDraftWithResearch(params: {
       const uploadedOnlyProfile = await buildUploadedOnlyKnowledgeProfile();
       if (uploadedOnlyProfile) applyResolvedKnowledgeProfile(uploadedOnlyProfile);
     }
-    const canonicalPrompt = mergeTemplateWithResearch(localDraft, sources, researchSummary, knowledgeProfile, evidenceBrief);
+    const canonicalPrompt = mergeTemplateWithResearch(
+      localDraft,
+      sources,
+      researchSummary,
+      knowledgeProfile,
+      evidenceBrief,
+      requestedSiteLocale,
+      params.displayLocale,
+    );
     return {
       canonicalPrompt,
       usedWebSearch: hasWebEvidence(knowledgeProfile),
@@ -1176,7 +1240,15 @@ export async function buildPromptDraftWithResearch(params: {
 
   const provider = resolveDraftProviderConfig();
   if (!provider.config) {
-    const canonicalPrompt = mergeTemplateWithResearch(localDraft, sources, researchSummary, knowledgeProfile, evidenceBrief);
+    const canonicalPrompt = mergeTemplateWithResearch(
+      localDraft,
+      sources,
+      researchSummary,
+      knowledgeProfile,
+      evidenceBrief,
+      requestedSiteLocale,
+      params.displayLocale,
+    );
     return {
       canonicalPrompt,
       usedWebSearch: hasWebEvidence(knowledgeProfile),
@@ -1206,6 +1278,7 @@ export async function buildPromptDraftWithResearch(params: {
         evidenceBrief,
         knowledgeProfile,
         displayLocale: params.displayLocale,
+        requestedSiteLocale,
       });
       if (llmDraft) {
         return {
@@ -1216,7 +1289,15 @@ export async function buildPromptDraftWithResearch(params: {
       }
     } catch (error) {
       const llmReason = normalizeText((error as any)?.message || error) || "llm_draft_failed";
-      const canonicalPrompt = mergeTemplateWithResearch(localDraft, sources, researchSummary, knowledgeProfile, evidenceBrief);
+      const canonicalPrompt = mergeTemplateWithResearch(
+        localDraft,
+        sources,
+        researchSummary,
+        knowledgeProfile,
+        evidenceBrief,
+        requestedSiteLocale,
+        params.displayLocale,
+      );
       return {
         canonicalPrompt,
         usedWebSearch: hasWebEvidence(knowledgeProfile),
@@ -1235,7 +1316,15 @@ export async function buildPromptDraftWithResearch(params: {
     }
   }
 
-  const canonicalPrompt = mergeTemplateWithResearch(localDraft, sources, researchSummary, knowledgeProfile, evidenceBrief);
+  const canonicalPrompt = mergeTemplateWithResearch(
+    localDraft,
+    sources,
+    researchSummary,
+    knowledgeProfile,
+    evidenceBrief,
+    requestedSiteLocale,
+    params.displayLocale,
+  );
   return {
     canonicalPrompt,
     usedWebSearch: hasWebEvidence(knowledgeProfile),

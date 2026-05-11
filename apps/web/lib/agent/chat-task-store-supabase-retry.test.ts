@@ -88,4 +88,19 @@ describe("chat-task-store Supabase enqueue retry", () => {
     expect(task.id).toBe(insertedTaskId);
     expect(taskInsertCalls).toBe(2);
   });
+
+  it("treats a blank CHAT_TASKS_USE_SUPABASE value as disabled", async () => {
+    vi.resetModules();
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("CHAT_TASKS_USE_SUPABASE", "");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role-key");
+
+    const { createChatTask } = await import("./chat-task-store");
+    const task = await createChatTask("chat-local", "user-local", { assistantText: "queued" });
+
+    expect(task.chatId).toBe("chat-local");
+    expect(task.ownerUserId).toBe("user-local");
+    expect(task.status).toBe("queued");
+  });
 });

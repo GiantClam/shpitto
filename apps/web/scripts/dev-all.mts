@@ -2,6 +2,7 @@ import { spawn, type ChildProcess, execFile } from "node:child_process";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
+import { withLocalChatTaskStoreDefaults } from "./dev-runtime-env.mts";
 
 const DEV_PORT = Number(process.env.PORT || 3000);
 const DEV_URL = `http://127.0.0.1:${DEV_PORT}`;
@@ -45,7 +46,7 @@ function prefixStream(stream: NodeJS.ReadableStream | null, label: string) {
 function spawnManagedProcess(label: string, command: string, args: string[]) {
   const child = spawn(command, args, {
     cwd: process.cwd(),
-    env: process.env,
+    env: withLocalChatTaskStoreDefaults(process.env),
     stdio: ["ignore", "pipe", "pipe"],
     shell: false,
     windowsHide: true,

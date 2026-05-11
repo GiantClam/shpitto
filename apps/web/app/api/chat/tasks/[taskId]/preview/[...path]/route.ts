@@ -399,6 +399,20 @@ function getLocalTaskRoots(): string[] {
   return Array.from(new Set(candidates));
 }
 
+function resolvePreviewPathCandidates(rawPath: string): string[] {
+  const raw = String(rawPath || "").trim();
+  if (!raw) return [];
+
+  const normalized = raw.replace(/\\/g, "/");
+  const suffixMatch = normalized.match(/(?:^|\/)\.tmp\/chat-tasks\/(.+)$/i);
+  const candidates = [path.resolve(raw)];
+  if (suffixMatch?.[1]) {
+    const suffix = suffixMatch[1].replace(/^\/+/, "");
+    candidates.push(...getLocalTaskRoots().map((baseDir) => path.join(baseDir, suffix)));
+  }
+  return Array.from(new Set(candidates));
+}
+
 async function resolveSiteDirFromLocalTaskRoot(taskRoot: string): Promise<string> {
   const candidates = [path.join(taskRoot, "latest", "site"), path.join(taskRoot, "site"), path.join(taskRoot, "latest")];
   const stepsRoot = path.join(taskRoot, "steps");
@@ -456,30 +470,36 @@ async function findLocalPreviewSiteDirByTaskId(taskId: string): Promise<string> 
 async function resolveSiteDirFromTask(task: any): Promise<string> {
   const progress = task?.result?.progress || {};
   const explicit = String(progress?.checkpointSiteDir || "").trim();
-  if (await hasIndexHtml(explicit)) return explicit;
+  for (const candidate of resolvePreviewPathCandidates(explicit)) {
+    if (await hasIndexHtml(candidate)) return candidate;
+  }
 
   const candidates: string[] = [];
   const checkpointDir = String(progress?.checkpointDir || "").trim();
   if (checkpointDir) {
-    candidates.push(path.join(checkpointDir, "site"), checkpointDir);
+    for (const resolvedCheckpointDir of resolvePreviewPathCandidates(checkpointDir)) {
+      candidates.push(path.join(resolvedCheckpointDir, "site"), resolvedCheckpointDir);
+    }
   }
 
   const checkpointProjectPath = String(progress?.checkpointProjectPath || "").trim();
   if (checkpointProjectPath) {
-    const checkpointRoot = path.dirname(checkpointProjectPath);
-    candidates.push(path.join(checkpointRoot, "site"));
-    const stepsRoot = path.join(checkpointRoot, "steps");
-    try {
-      const entries = await fs.readdir(stepsRoot, { withFileTypes: true });
-      const stepDirs = entries
-        .filter((entry) => entry.isDirectory())
-        .map((entry) => entry.name)
-        .sort((a, b) => b.localeCompare(a));
-      for (const stepDir of stepDirs) {
-        candidates.push(path.join(stepsRoot, stepDir, "site"), path.join(stepsRoot, stepDir));
+    for (const resolvedProjectPath of resolvePreviewPathCandidates(checkpointProjectPath)) {
+      const checkpointRoot = path.dirname(resolvedProjectPath);
+      candidates.push(path.join(checkpointRoot, "site"));
+      const stepsRoot = path.join(checkpointRoot, "steps");
+      try {
+        const entries = await fs.readdir(stepsRoot, { withFileTypes: true });
+        const stepDirs = entries
+          .filter((entry) => entry.isDirectory())
+          .map((entry) => entry.name)
+          .sort((a, b) => b.localeCompare(a));
+        for (const stepDir of stepDirs) {
+          candidates.push(path.join(stepsRoot, stepDir, "site"), path.join(stepsRoot, stepDir));
+        }
+      } catch {
+        // ignore missing steps directory
       }
-    } catch {
-      // ignore missing steps directory
     }
   }
 

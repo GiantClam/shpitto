@@ -29,7 +29,9 @@ async function fetchWithRetry(url: string, maxAttempts = 6): Promise<{ ok: boole
   return { ok: false, status: lastStatus, error: lastError };
 }
 
-dotenv.config({ path: path.resolve(process.cwd(), "../../.env"), override: false });
+dotenv.config({ path: path.resolve(process.cwd(), ".env.local"), override: false, quiet: true });
+dotenv.config({ path: path.resolve(process.cwd(), "scripts/.env.local"), override: false, quiet: true });
+dotenv.config({ path: path.resolve(process.cwd(), "../../.env"), override: false, quiet: true });
 process.env.CLOUDFLARE_REQUIRE_REAL = "1";
 
 describe("lc-cnc online regression", () => {
@@ -44,10 +46,41 @@ describe("lc-cnc online regression", () => {
       expect(Boolean(accountId)).toBe(true);
       expect(Boolean(apiToken)).toBe(true);
 
-      const prompt = `Generate a complete 6-page LC-CNC static website in English.
-Routes: /, /3c-machines, /custom-solutions, /cases, /about, /contact.
-Industrial style with clear navigation, shared /styles.css and /script.js.
-Contact page must include a quote form with fields: Name, Company, Email, WhatsApp, Machine Model, Quantity, Deadline.`;
+      const prompt = `Generate a complete industrial English website for LC-CNC.
+Required routes: /, /3c-machines, /custom-solutions, /cases, /about, /contact.
+
+Header:
+- Logo: LC-CNC
+- Navigation: Home | 3C Machines | Custom Solutions | Cases | About | Contact
+
+Hero:
+- Title: Precision 3C CNC Machines for Southeast Asia
+- Supporting line: 10-Day Prototype | 15-Day Delivery | 24/7 WhatsApp Support
+- CTAs: Get Quote on WhatsApp | Request Catalog
+
+Products:
+- 3C Phone-Frame Center
+- 3C Laptop-Shell Center
+- 3C Camera-Bezel Center
+- 3C Keypad Center
+
+Proof points:
+- Shenzhen since 2013
+- ISO-certified plant
+- 30+ R&D engineers
+- 200+ machines installed across Southeast Asia
+- Certifications: ISO 9001, CE, SGS
+
+Design and implementation rules:
+- Industrial visual style with clear navigation
+- Shared /styles.css and /script.js across all routes
+- Every page must use concrete LC-CNC-specific copy, not generic template slogans
+- Cases page must describe machining scenarios for phone frames, laptop shells, camera bezels, and keypads
+- About page must describe factory capability, engineering depth, and SEA delivery support
+- Contact page must be a quote-capture page for buyers evaluating CNC equipment, with specific copy about WhatsApp follow-up and production timelines
+- Contact page must include a quote form with fields: Name, Company, Email, WhatsApp, Machine Model, Quantity, Deadline
+- Contact page must include consent text: I agree to receive follow-up via WhatsApp.
+- Footer must include WhatsApp: +86-158-1370-3777, Email: sales@lc-cnc.com, Address: Bao'an, Shenzhen, China`;
 
       const generated = await runSkillRuntimeExecutor({
         state: {
