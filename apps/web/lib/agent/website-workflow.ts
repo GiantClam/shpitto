@@ -7,7 +7,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { normalizeStylePreset, type DesignStylePreset } from "../design-style-preset.ts";
 import { getWebsiteDesignDirection } from "../open-design/design-directions.ts";
 import { sanitizeWorkflowArtifactText } from "../workflow-artifact-language.ts";
-import { resolveRunProviderLocks, type ProviderName } from "../skill-runtime/provider-lock";
+import { resolveRunProviderLocks, type ProviderName } from "../skill-runtime/provider-lock.ts";
 
 const execFileAsync = promisify(execFile);
 

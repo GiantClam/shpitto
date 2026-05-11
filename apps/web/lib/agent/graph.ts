@@ -26,7 +26,7 @@ import type { RequirementSpec } from "./chat-orchestrator";
 import { configureUndiciProxyFromEnv, createHttpsProxyAgentFromEnv, isRegionDeniedError } from "./network";
 import { CloudflareClient } from "../cloudflare";
 import { Bundler } from "../bundler";
-import { resolveRunProviderLocks } from "../skill-runtime/provider-lock";
+import { resolveRunProviderLocks } from "../skill-runtime/provider-lock.ts";
 
 // Load environment variables from .env file at project root
 const __filename = fileURLToPath(import.meta.url);
