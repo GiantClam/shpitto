@@ -43,6 +43,8 @@ describe("supabase middleware", () => {
     const verifyEmailResponse = await updateSession(new NextRequest("http://localhost/verify-email"));
     const blogResponse = await updateSession(new NextRequest("http://localhost/blog"));
     const launchResponse = await updateSession(new NextRequest("http://localhost/launch-center"));
+    const robotsResponse = await updateSession(new NextRequest("http://localhost/robots.txt"));
+    const sitemapResponse = await updateSession(new NextRequest("http://localhost/sitemap.xml"));
 
     expect(rootResponse.status).toBe(200);
     expect(pricingResponse.status).toBe(200);
@@ -54,6 +56,8 @@ describe("supabase middleware", () => {
     expect(verifyEmailResponse.status).toBe(200);
     expect(blogResponse.status).toBe(200);
     expect(launchResponse.status).toBe(200);
+    expect(robotsResponse.status).toBe(200);
+    expect(sitemapResponse.status).toBe(200);
   });
 
   it("redirects private workspace routes when the local auth cache is missing", async () => {

@@ -20,6 +20,8 @@ const PUBLIC_EXACT_PATHS = new Set<string>([
   '/verify-email',
   '/reset-password',
   '/blog',
+  '/robots.txt',
+  '/sitemap.xml',
   '/legal/privacy',
   '/legal/terms',
 ])
