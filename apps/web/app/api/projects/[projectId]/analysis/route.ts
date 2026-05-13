@@ -3,33 +3,11 @@ import { getAuthenticatedRouteUserId } from "@/lib/supabase/route-user";
 import { CloudflareClient } from "@/lib/cloudflare";
 import { getD1Client } from "@/lib/d1";
 import { getProjectAnalyticsBinding, upsertProjectSiteBinding } from "@/lib/agent/db";
+import { shouldProvisionWebAnalytics } from "@/lib/project-web-analytics";
 
 export const runtime = "nodejs";
 
 type AnalyticsStatus = "pending" | "active" | "degraded" | "not_configured";
-
-function normalizeDeployHost(value: string): string {
-  const raw = String(value || "").trim().toLowerCase();
-  if (!raw) return "";
-  try {
-    return new URL(raw.startsWith("http") ? raw : `https://${raw}`).host.toLowerCase();
-  } catch {
-    return raw.replace(/^\/+|\/+$/g, "");
-  }
-}
-
-function isPagesDevHost(host: string): boolean {
-  const normalized = normalizeDeployHost(host);
-  return normalized === "pages.dev" || normalized.endsWith(".pages.dev");
-}
-
-function shouldProvisionWebAnalytics(host: string): boolean {
-  if (String(process.env.CLOUDFLARE_WA_AUTO_PROVISION || "1").trim() === "0") return false;
-  if (isPagesDevHost(host)) {
-    return String(process.env.CLOUDFLARE_WA_ENABLE_PAGES_DEV || "").trim() === "1";
-  }
-  return true;
-}
 
 function defaultWindow() {
   const now = new Date();
@@ -111,6 +89,7 @@ export async function GET(
     const startAt = normalizeDateInput(request.nextUrl.searchParams.get("start"), defaultRange.startAt);
     const endAt = normalizeDateInputEnd(request.nextUrl.searchParams.get("end"), defaultRange.endAt);
     const limit = Math.max(5, Math.min(100, Number(request.nextUrl.searchParams.get("limit") || 20)));
+    const shouldRefresh = String(request.nextUrl.searchParams.get("refresh") || "").trim() === "1";
 
     const d1 = getD1Client();
     if (!d1.isConfigured()) {
@@ -136,13 +115,34 @@ export async function GET(
       deploymentHost: binding.deploymentHost || binding.cfWaHost,
     };
 
-    const cf = new CloudflareClient();
     const deploymentHost = String(binding.cfWaHost || binding.deploymentHost || "").trim();
     let siteTag = String(binding.cfWaSiteTag || "").trim();
     let siteId = String(binding.cfWaSiteId || "").trim();
     let siteToken = String(binding.cfWaSiteToken || "").trim();
     let analyticsStatus: AnalyticsStatus = (String(binding.analyticsStatus || "pending").trim() as AnalyticsStatus) || "pending";
     let warning = "";
+    const cf = new CloudflareClient();
+
+    if (!shouldRefresh) {
+      if (!siteTag && deploymentHost && !shouldProvisionWebAnalytics(deploymentHost)) {
+        warning =
+          "Showing saved analytics status only. Bind a custom domain or enable CLOUDFLARE_WA_ENABLE_PAGES_DEV=1, then click Refresh to fetch live analytics.";
+      } else {
+        warning = "Showing saved analytics status only. Click Refresh to fetch the latest Cloudflare analytics data.";
+      }
+
+      return NextResponse.json({
+        ok: true,
+        project,
+        analytics: {
+          ...emptyAnalytics({ startAt, endAt }, analyticsStatus),
+          status: analyticsStatus,
+          siteTag,
+          syncedAt: binding.analyticsLastSyncAt || null,
+        },
+        warning,
+      });
+    }
 
     if (!siteTag && deploymentHost && shouldProvisionWebAnalytics(deploymentHost)) {
       try {

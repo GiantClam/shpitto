@@ -459,9 +459,16 @@ export function isWebsiteDesignDirectionId(id: string | undefined | null): boole
   return Boolean(getWebsiteDesignDirection(id));
 }
 
-export function renderWebsiteDesignDirectionPrompt(ids: string[] | undefined | null): string {
+export function renderWebsiteDesignDirectionPrompt(
+  ids: string[] | undefined | null,
+  options?: { strength?: "explicit" | "recommended" },
+): string {
   const selected = (ids || []).map((id) => getWebsiteDesignDirection(id)).filter(Boolean) as WebsiteDesignDirection[];
   if (selected.length === 0) return "";
+  const closingLine =
+    options?.strength === "recommended"
+      ? "Apply this system-recommended direction as the active visual contract for this generation unless a later explicit user theme selection overrides it. Keep the site responsive across desktop, tablet, and mobile."
+      : "Apply the selected direction as a hard visual contract unless explicit user brand assets override it. Keep the site responsive across desktop, tablet, and mobile.";
 
   return [
     "## Confirmed Visual Direction Contract",
@@ -488,7 +495,7 @@ export function renderWebsiteDesignDirectionPrompt(ids: string[] | undefined | n
       ...direction.posture.map((item) => `  - ${item}`),
       "",
     ]),
-    "Apply the selected direction as a hard visual contract unless explicit user brand assets override it. Keep the site responsive across desktop, tablet, and mobile.",
+    closingLine,
   ]
     .filter(Boolean)
     .join("\n");

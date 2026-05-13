@@ -1,7 +1,9 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
+import { getOwnedProjectState, saveProjectState } from "./agent/db";
 import { BLOG_FALLBACK_POSTS } from "./blog-content";
 import { buildBlogExcerpt, normalizeBlogMarkdown, normalizeBlogSlug, renderMarkdownToHtml, resolveUniqueBlogSlug } from "./blog-markdown";
+import { buildDeployedBlogSnapshotFilesFromD1, injectDeployedBlogSnapshot } from "./deployed-blog-snapshot";
 import { getD1Client } from "./d1";
 import { getR2Client } from "./r2";
 import type { BlogAssetRecord, BlogPostRecord, BlogPostStatus, BlogPostUpsertInput, BlogSettingsRecord } from "./blog-types";
@@ -645,6 +647,17 @@ function isProjectSlugUniqueConflict(error: unknown) {
   return text.includes("unique") && text.includes("slug");
 }
 
+async function syncProjectPublishedBlogArtifacts(projectId: string, userId: string) {
+  const projectState = await getOwnedProjectState(projectId, userId);
+  const projectJson = projectState?.projectJson as any;
+  if (!projectJson || typeof projectJson !== "object") return;
+  if (!Array.isArray(projectJson?.staticSite?.files) || projectJson.staticSite.files.length === 0) return;
+
+  const snapshotFiles = await buildDeployedBlogSnapshotFilesFromD1(projectId);
+  const injected = injectDeployedBlogSnapshot(projectJson, snapshotFiles);
+  await saveProjectState(userId, injected.project, undefined, projectId);
+}
+
 export async function listProjectBlogPosts(params: {
   projectId: string;
   userId: string;
@@ -901,6 +914,9 @@ export async function upsertProjectBlogSettings(params: {
       now,
     ],
   );
+  await syncProjectPublishedBlogArtifacts(params.projectId, params.userId).catch((error) => {
+    console.warn(`[blog] syncProjectPublishedBlogArtifacts(settings) failed: ${String((error as any)?.message || error || "unknown")}`);
+  });
   return getProjectBlogSettings(params.projectId, params.userId);
 }
 
@@ -1023,6 +1039,9 @@ export async function upsertProjectBlogPost(params: {
     ],
   );
 
+  await syncProjectPublishedBlogArtifacts(params.projectId, params.userId).catch((error) => {
+    console.warn(`[blog] syncProjectPublishedBlogArtifacts(post) failed: ${String((error as any)?.message || error || "unknown")}`);
+  });
   return getProjectBlogPost({ projectId: params.projectId, userId: params.userId, postId });
 }
 
@@ -1040,6 +1059,9 @@ export async function deleteProjectBlogPost(params: { projectId: string; userId:
     `,
     [params.postId, params.projectId, params.userId],
   );
+  await syncProjectPublishedBlogArtifacts(params.projectId, params.userId).catch((error) => {
+    console.warn(`[blog] syncProjectPublishedBlogArtifacts(delete) failed: ${String((error as any)?.message || error || "unknown")}`);
+  });
   return true;
 }
 
@@ -1129,6 +1151,9 @@ export async function deleteProjectBlogAsset(params: {
     `,
     [params.assetId, params.postId, params.projectId, params.userId],
   );
+  await syncProjectPublishedBlogArtifacts(params.projectId, params.userId).catch((error) => {
+    console.warn(`[blog] syncProjectPublishedBlogArtifacts(asset-delete) failed: ${String((error as any)?.message || error || "unknown")}`);
+  });
   return true;
 }
 
@@ -1224,6 +1249,10 @@ export async function uploadProjectBlogAsset(params: {
       ],
     );
   }
+
+  await syncProjectPublishedBlogArtifacts(params.projectId, params.userId).catch((error) => {
+    console.warn(`[blog] syncProjectPublishedBlogArtifacts(asset-upload) failed: ${String((error as any)?.message || error || "unknown")}`);
+  });
 
   const row = await d1.queryOne<Record<string, unknown>>(
     `

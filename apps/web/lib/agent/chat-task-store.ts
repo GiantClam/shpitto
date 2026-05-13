@@ -2384,6 +2384,7 @@ export async function listChatTimelineMessages(chatId: string, limit = 300): Pro
 type ListChatSessionsOptions = {
   includeArchived?: boolean;
   limit?: number;
+  includeLegacyBackfill?: boolean;
 };
 
 function withTaskMetadataForSessions(sessions: ChatSessionSummary[]): ChatSessionSummary[] {
@@ -2445,6 +2446,7 @@ export async function listChatSessionsForOwner(
   const normalizedOwner = String(ownerUserId || "").trim();
   if (!normalizedOwner) return [];
   const includeArchived = options.includeArchived === true;
+  const includeLegacyBackfill = options.includeLegacyBackfill !== false;
   const limit = Math.max(1, Math.min(200, Number(options.limit || 50)));
 
   if (!isSupabaseTaskStoreEnabled()) {
@@ -2476,27 +2478,29 @@ export async function listChatSessionsForOwner(
     const sessionsById = new Map(baseSessions.map((session) => [session.id, session] as const));
 
     // Backfill for old tasks that were created before session indexing existed.
-    const { data: legacyTasks, error: legacyError } = await supabase
-      .from(TASK_TABLE)
-      .select("*")
-      .eq("owner_user_id", normalizedOwner)
-      .order("created_at", { ascending: false })
-      .limit(limit);
-    if (!legacyError && Array.isArray(legacyTasks)) {
-      for (const row of legacyTasks as SupabaseTaskRow[]) {
-        if (sessionsById.has(row.chat_id)) continue;
-        sessionsById.set(row.chat_id, {
-          id: row.chat_id,
-          ownerUserId: row.owner_user_id || undefined,
-          title: normalizeSessionTitle("", row.chat_id),
-          archived: false,
-          pinned: false,
-          lastTaskId: row.id,
-          lastStatus: row.status,
-          lastDeployedUrl: String((row.result || {}).deployedUrl || "").trim() || undefined,
-          createdAt: Date.parse(row.created_at),
-          updatedAt: Date.parse(row.updated_at),
-        });
+    if (includeLegacyBackfill) {
+      const { data: legacyTasks, error: legacyError } = await supabase
+        .from(TASK_TABLE)
+        .select("*")
+        .eq("owner_user_id", normalizedOwner)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (!legacyError && Array.isArray(legacyTasks)) {
+        for (const row of legacyTasks as SupabaseTaskRow[]) {
+          if (sessionsById.has(row.chat_id)) continue;
+          sessionsById.set(row.chat_id, {
+            id: row.chat_id,
+            ownerUserId: row.owner_user_id || undefined,
+            title: normalizeSessionTitle("", row.chat_id),
+            archived: false,
+            pinned: false,
+            lastTaskId: row.id,
+            lastStatus: row.status,
+            lastDeployedUrl: String((row.result || {}).deployedUrl || "").trim() || undefined,
+            createdAt: Date.parse(row.created_at),
+            updatedAt: Date.parse(row.updated_at),
+          });
+        }
       }
     }
 

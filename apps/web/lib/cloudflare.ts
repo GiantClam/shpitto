@@ -127,6 +127,24 @@ type CloudflareWorkerRouteRecord = {
   script?: string | null;
 };
 
+type CloudflarePagesDomainRecord = {
+  id?: string;
+  name?: string;
+  status?: string;
+  created_on?: string;
+  validation_data?: {
+    method?: string;
+    status?: string;
+    error_message?: string;
+    txt_name?: string;
+    txt_value?: string;
+  };
+  verification_data?: {
+    status?: string;
+    error_message?: string;
+  };
+};
+
 export type CloudflareCustomHostname = {
   id: string;
   hostname: string;
@@ -134,6 +152,19 @@ export type CloudflareCustomHostname = {
   sslStatus: string;
   verificationErrors: unknown[] | null;
   customOriginServer: string | null;
+};
+
+export type CloudflarePagesDomain = {
+  id: string;
+  name: string;
+  status: string;
+  validationStatus: string;
+  validationMethod: string | null;
+  verificationStatus: string;
+  validationError: string | null;
+  verificationError: string | null;
+  txtName: string | null;
+  txtValue: string | null;
 };
 
 function toIso(value: unknown): string | null {
@@ -946,6 +977,25 @@ export class CloudflareClient {
     };
   }
 
+  private mapPagesDomainRecord(record: CloudflarePagesDomainRecord): CloudflarePagesDomain | null {
+    const id = String(record?.id || "").trim();
+    const name = normalizeHost(String(record?.name || ""));
+    if (!id || !name) return null;
+
+    return {
+      id,
+      name,
+      status: String(record?.status || "pending").trim() || "pending",
+      validationStatus: String(record?.validation_data?.status || "pending").trim() || "pending",
+      validationMethod: String(record?.validation_data?.method || "").trim() || null,
+      verificationStatus: String(record?.verification_data?.status || "pending").trim() || "pending",
+      validationError: String(record?.validation_data?.error_message || "").trim() || null,
+      verificationError: String(record?.verification_data?.error_message || "").trim() || null,
+      txtName: String(record?.validation_data?.txt_name || "").trim() || null,
+      txtValue: String(record?.validation_data?.txt_value || "").trim() || null,
+    };
+  }
+
   private assertSaasConfigured(operation: string) {
     this.assertRealConfigured(operation);
     if (!this.zoneId) {
@@ -1144,6 +1194,94 @@ export class CloudflareClient {
         }),
       }),
       "workers-routes:create",
+    );
+  }
+
+  async listPagesProjectDomains(projectName: string): Promise<CloudflarePagesDomain[]> {
+    this.assertRealConfigured("listPagesProjectDomains");
+    const normalizedProject = String(projectName || "").trim();
+    if (!normalizedProject) throw new Error("listPagesProjectDomains requires projectName.");
+    if (this.shouldUseMock()) return [];
+
+    const payload = await this.readCloudflareJson<CloudflarePagesDomainRecord[]>(
+      `${this.baseUrl}/accounts/${this.accountId}/pages/projects/${encodeURIComponent(normalizedProject)}/domains`,
+      () => ({
+        method: "GET",
+        headers: this.headers,
+      }),
+      "pages-domains:list",
+    );
+    const rows = Array.isArray(payload.result) ? payload.result : [];
+    return rows.map((row) => this.mapPagesDomainRecord(row)).filter((row): row is CloudflarePagesDomain => Boolean(row));
+  }
+
+  async createPagesProjectDomain(projectName: string, domainName: string): Promise<CloudflarePagesDomain> {
+    this.assertRealConfigured("createPagesProjectDomain");
+    const normalizedProject = String(projectName || "").trim();
+    const normalizedDomain = normalizeHost(domainName);
+    if (!normalizedProject) throw new Error("createPagesProjectDomain requires projectName.");
+    if (!normalizedDomain) throw new Error("createPagesProjectDomain requires domainName.");
+
+    if (this.shouldUseMock()) {
+      const digest = createHash("sha256").update(`${normalizedProject}:${normalizedDomain}`).digest("hex");
+      return {
+        id: `mock-pages-domain-${digest.slice(0, 16)}`,
+        name: normalizedDomain,
+        status: "pending",
+        validationStatus: "pending",
+        validationMethod: "txt",
+        verificationStatus: "pending",
+        validationError: null,
+        verificationError: null,
+        txtName: null,
+        txtValue: null,
+      };
+    }
+
+    const payload = await this.readCloudflareJson<CloudflarePagesDomainRecord>(
+      `${this.baseUrl}/accounts/${this.accountId}/pages/projects/${encodeURIComponent(normalizedProject)}/domains`,
+      () => ({
+        method: "POST",
+        headers: {
+          ...this.headers,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: normalizedDomain,
+        }),
+      }),
+      "pages-domains:create",
+    );
+    const mapped = this.mapPagesDomainRecord((payload.result || {}) as CloudflarePagesDomainRecord);
+    if (!mapped) {
+      throw new Error("Cloudflare Pages domain created but response was incomplete.");
+    }
+    return mapped;
+  }
+
+  async ensurePagesProjectDomain(projectName: string, domainName: string): Promise<CloudflarePagesDomain> {
+    const normalizedDomain = normalizeHost(domainName);
+    if (!normalizedDomain) throw new Error("ensurePagesProjectDomain requires domainName.");
+    const existing = await this.listPagesProjectDomains(projectName);
+    const hit = existing.find((row) => row.name === normalizedDomain);
+    if (hit) return hit;
+    return this.createPagesProjectDomain(projectName, normalizedDomain);
+  }
+
+  async deletePagesProjectDomain(projectName: string, domainName: string): Promise<void> {
+    this.assertRealConfigured("deletePagesProjectDomain");
+    const normalizedProject = String(projectName || "").trim();
+    const normalizedDomain = normalizeHost(domainName);
+    if (!normalizedProject) throw new Error("deletePagesProjectDomain requires projectName.");
+    if (!normalizedDomain || this.shouldUseMock()) return;
+
+    await this.readCloudflareJson<Record<string, unknown>>(
+      `${this.baseUrl}/accounts/${this.accountId}/pages/projects/${encodeURIComponent(normalizedProject)}/domains/${encodeURIComponent(normalizedDomain)}`,
+      () => ({
+        method: "DELETE",
+        headers: this.headers,
+      }),
+      `pages-domains:delete:${normalizedProject}:${normalizedDomain}`,
     );
   }
 

@@ -13,12 +13,13 @@ import {
   resolveBlogD1BindingConfig,
 } from "../deployed-blog-runtime.ts";
 import {
+  buildDeployedBlogSnapshotFiles,
   buildDeployedBlogSnapshotFilesFromD1,
   injectDeployedBlogSnapshot,
 } from "../deployed-blog-snapshot.ts";
 import { getD1Client } from "../d1.ts";
 import { renderMarkdownToHtml } from "../blog-markdown.ts";
-import type { BlogPostUpsertInput } from "../blog-types.ts";
+import type { BlogPostRecord, BlogPostUpsertInput } from "../blog-types.ts";
 import {
   listProjectAssets,
   publishCurrentProjectAssets,
@@ -400,6 +401,17 @@ function classifyErrorCode(message: string): string {
   if (normalized.includes("network") || normalized.includes("socket") || normalized.includes("econn")) return "network";
   if (normalized.includes("html")) return "html_invalid";
   return "unknown";
+}
+
+function resolveFailureProviderMeta(
+  message: string,
+  fallback: { provider: string; model: string },
+): { provider: string; model: string } {
+  const active = String(message || "").match(/skill_tool_provider_diagnostics:\s*active=([^/\s;]+)\/([^;\s]+)/i);
+  const provider = String(active?.[1] || "").trim();
+  const model = String(active?.[2] || "").trim();
+  if (!provider || !model) return fallback;
+  return { provider, model };
 }
 
 function preferStrongerCanonicalPrompt(...candidates: Array<unknown>): string {
@@ -1743,7 +1755,7 @@ function buildDomainConfigurationGuidance(params: {
   locale: "zh-CN" | "en" | "bilingual";
 }): string {
   const locale = toVisibleLocale(params.locale);
-  const steps = buildDomainConfigurationGuidanceSteps({ ...params, locale });
+  const steps = buildDomainGuidanceSteps({ ...params, locale });
   const title = locale === "zh-CN" ? "## \u57df\u540d\u914d\u7f6e\u6307\u5bfc" : "## Domain Configuration Guide";
   return [title, "", ...steps.map((step, index) => `${index + 1}. ${step}`)].join("\n");
 }
@@ -1891,7 +1903,7 @@ async function runPostDeployBlogRuntimeSmoke(baseUrl: string): Promise<DeploySmo
 }
 
 function resolveCustomDomainCnameTarget(deploymentHost: string, liveHost: string) {
-  return String(process.env.CLOUDFLARE_SAAS_CNAME_TARGET || deploymentHost || liveHost || "your-site.example.com").trim();
+  return String(deploymentHost || liveHost || "").trim();
 }
 
 function buildDomainDnsRecords(params: {
@@ -1974,6 +1986,121 @@ function buildDomainConfigurationGuidanceSteps(params: {
     "For an apex domain such as `example.com`, use host `@`. If your DNS provider does not support apex CNAME, use ALIAS, ANAME, or an equivalent flattened record.",
     "Save the DNS record, then add and verify the custom domain from the domain configuration entry.",
     "After the status and certificate are active, open the custom domain to verify the site.",
+  ];
+}
+
+function buildDomainGuidanceDnsRecords(params: {
+  liveUrl: string;
+  deploymentHost: string;
+  locale: "zh-CN" | "en" | "bilingual";
+}): Array<{ type: string; host: string; value: string; ttl: string; note: string }> {
+  const locale = toVisibleLocale(params.locale);
+  const liveHost = (() => {
+    try {
+      return new URL(params.liveUrl).host;
+    } catch {
+      return "";
+    }
+  })();
+  const cnameTarget = resolveCustomDomainCnameTarget(params.deploymentHost, liveHost);
+  const ttl = locale === "zh-CN" ? "\u81ea\u52a8 / \u9ed8\u8ba4" : "Auto / Default";
+  if (locale === "zh-CN") {
+    return [
+      {
+        type: "CNAME",
+        host: "www",
+        value: cnameTarget,
+        ttl,
+        note: "\u7528\u4e8e www.example.com \u8fd9\u7c7b\u5b50\u57df\u540d\u3002",
+      },
+      {
+        type: "CNAME / ALIAS / ANAME",
+        host: "@",
+        value: cnameTarget,
+        ttl,
+        note: "\u7528\u4e8e example.com \u6839\u57df\u540d\uff1b\u5982\u679c DNS \u670d\u52a1\u5546\u4e0d\u652f\u6301\u6839\u57df\u540d CNAME\uff0c\u8bf7\u9009\u62e9 ALIAS\u3001ANAME \u6216\u7b49\u4ef7\u7684\u6241\u5e73\u5316\u8bb0\u5f55\u3002",
+      },
+    ];
+  }
+  return [
+    {
+      type: "CNAME",
+      host: "www",
+      value: cnameTarget,
+      ttl,
+      note: "Use for a subdomain such as www.example.com.",
+    },
+    {
+      type: "CNAME / ALIAS / ANAME",
+      host: "@",
+      value: cnameTarget,
+      ttl,
+      note: "Use for an apex domain such as example.com. If your DNS provider does not support apex CNAME, use ALIAS, ANAME, or an equivalent flattened record.",
+    },
+  ];
+}
+
+function buildDomainGuidanceSteps(params: {
+  liveUrl: string;
+  deploymentHost: string;
+  locale: "zh-CN" | "en" | "bilingual";
+}): string[] {
+  const locale = toVisibleLocale(params.locale);
+  const liveHost = (() => {
+    try {
+      return new URL(params.liveUrl).host;
+    } catch {
+      return "";
+    }
+  })();
+  const cnameTarget = resolveCustomDomainCnameTarget(params.deploymentHost, liveHost);
+  if (locale === "zh-CN") {
+    return [
+      "\u5728\u4f60\u7684\u57df\u540d DNS \u7ba1\u7406\u540e\u53f0\u65b0\u589e\u4e00\u6761\u8bb0\u5f55\uff1b\u5982\u679c\u914d\u7f6e `www.example.com`\uff0c\u4f7f\u7528\u4e0b\u65b9 `www` \u7684 CNAME \u8bb0\u5f55\u3002",
+      `\u8bb0\u5f55\u503c\u586b\u5199 \`${cnameTarget}\`\uff0cTTL \u4fdd\u6301\u81ea\u52a8\u6216\u9ed8\u8ba4\u5373\u53ef\u3002`,
+      "\u5982\u679c\u914d\u7f6e\u6839\u57df\u540d `example.com`\uff0c\u4e3b\u673a\u8bb0\u5f55\u586b\u5199 `@`\uff1b\u82e5 DNS \u670d\u52a1\u5546\u4e0d\u652f\u6301\u6839\u57df\u540d CNAME\uff0c\u8bf7\u9009\u62e9 ALIAS\u3001ANAME \u6216\u7b49\u4ef7\u7684\u6241\u5e73\u5316\u8bb0\u5f55\u3002",
+      "\u4fdd\u5b58 DNS \u540e\u7b49\u5f85\u89e3\u6790\u751f\u6548\uff0c\u518d\u56de\u5230\u57df\u540d\u914d\u7f6e\u5165\u53e3\u6dfb\u52a0\u5e76\u6821\u9a8c\u4f60\u7684\u81ea\u5b9a\u4e49\u57df\u540d\u3002",
+      "\u72b6\u6001\u548c\u8bc1\u4e66\u751f\u6548\u540e\uff0c\u6253\u5f00\u81ea\u5b9a\u4e49\u57df\u540d\u786e\u8ba4\u7f51\u7ad9\u53ef\u8bbf\u95ee\u3002",
+    ];
+  }
+  return [
+    "Open your domain DNS settings and add a record. For `www.example.com`, use the `www` CNAME record shown below.",
+    `Set the record value to \`${cnameTarget}\` and keep TTL as Auto or Default.`,
+    "For an apex domain such as `example.com`, use host `@`. If your DNS provider does not support apex CNAME, use ALIAS, ANAME, or an equivalent flattened record.",
+    "Save the DNS record, then add and verify the custom domain from the domain configuration entry.",
+    "After the status and certificate are active, open the custom domain to verify the site.",
+  ];
+}
+
+function buildDomainVerificationChecklist(locale: "zh-CN" | "en" | "bilingual"): string[] {
+  if (toVisibleLocale(locale) === "zh-CN") {
+    return [
+      "DNS \u8bb0\u5f55\u7684\u7c7b\u578b\u3001\u4e3b\u673a\u8bb0\u5f55\u548c\u8bb0\u5f55\u503c\u4e0e\u5361\u7247\u4e00\u81f4\u3002",
+      "\u57df\u540d\u914d\u7f6e\u9875\u4e2d\u8be5\u57df\u540d\u72b6\u6001\u663e\u793a\u4e3a\u5df2\u751f\u6548\u6216\u5df2\u9a8c\u8bc1\u3002",
+      "HTTPS \u8bc1\u4e66\u5df2\u751f\u6548\uff0c\u6253\u5f00\u81ea\u5b9a\u4e49\u57df\u540d\u4e0d\u51fa\u73b0\u5b89\u5168\u8b66\u544a\u3002",
+      "\u9996\u9875\u3001Blog \u548c\u767b\u5f55\u7b49\u5173\u952e\u9875\u9762\u90fd\u80fd\u4f7f\u7528\u65b0\u57df\u540d\u8bbf\u95ee\u3002",
+    ];
+  }
+  return [
+    "The DNS record type, host, and value match this card.",
+    "The domain configuration page shows the domain as active or verified.",
+    "HTTPS is active and the custom domain opens without a browser security warning.",
+    "Key pages such as Home, Blog, and auth pages work on the new domain.",
+  ];
+}
+
+function buildDomainConfigurationTips(locale: "zh-CN" | "en" | "bilingual"): string[] {
+  if (toVisibleLocale(locale) === "zh-CN") {
+    return [
+      "\u89e3\u6790\u901a\u5e38\u51e0\u5206\u949f\u5185\u751f\u6548\uff0c\u4f46\u90e8\u5206 DNS \u670d\u52a1\u5546\u53ef\u80fd\u9700\u8981 24 \u5c0f\u65f6\u3002",
+      "\u5982\u679c\u57df\u540d\u5df2\u6709 A\u3001AAAA \u6216 CNAME \u8bb0\u5f55\uff0c\u9700\u8981\u5148\u786e\u8ba4\u662f\u5426\u4e0e\u65b0\u914d\u7f6e\u51b2\u7a81\u3002",
+      "\u5982\u679c\u540c\u65f6\u914d\u7f6e\u6839\u57df\u540d\u548c www\uff0c\u5efa\u8bae\u4e24\u6761\u8bb0\u5f55\u90fd\u6307\u5411\u5361\u7247\u4e2d\u7684\u8bb0\u5f55\u503c\u3002",
+    ];
+  }
+  return [
+    "DNS usually propagates within minutes, but some providers can take up to 24 hours.",
+    "If the domain already has A, AAAA, or CNAME records, check whether they conflict with the new record.",
+    "If you configure both apex and www domains, point both records to the value shown in this card.",
   ];
 }
 
@@ -4235,7 +4362,7 @@ export async function runSkillRuntimeExecutor(params: RunSkillRuntimeExecutorPar
 function toProgressStageMessage(stage: string, stepIndex?: number, totalSteps?: number): string {
   const normalized = String(stage || "").trim();
   const progress = Number.isFinite(Number(stepIndex)) && Number.isFinite(Number(totalSteps))
-    ? ` (${stepIndex}/${totalSteps})`
+    ? ` (step ${stepIndex}/${totalSteps})`
     : "";
   if (!normalized) return `Generation in progress${progress}`;
   if (normalized.includes("design_confirm")) return `Design confirmation prepared${progress}`;
@@ -4707,9 +4834,7 @@ async function ensureGeneratedBlogContentForDeploy(params: {
 }) {
   if (!params.projectId) return { status: "skipped", postCount: 0 };
   if (!projectHasGeneratedBlogContentMount(params.project)) return { status: "skipped:no_content_mount", postCount: 0 };
-  const primarySourceText = collectPrimaryBlogSourceText(params.inputState);
-  const sourceText = primarySourceText.trim().length >= 12 ? primarySourceText : collectDeployBlogSourceText(params.inputState, params.project);
-  if (sourceText.trim().length < 40) return { status: "skipped:no_source", postCount: 0 };
+  const sourceText = collectPrimaryBlogSourceText(params.inputState);
 
   const d1 = getD1Client();
   await d1.ensureShpittoSchema();
@@ -4762,7 +4887,7 @@ async function ensureGeneratedBlogContentForDeploy(params: {
     `,
     [params.projectId, accountId, ownerUserId, resolveBlogNavLabelFromProject(params.project, visibleLocale), now, now],
   );
-
+  const confirmedWorkflowPosts = Boolean((params.inputState.workflow_context as any)?.blogContentConfirmed);
   const workflowPosts = Array.isArray((params.inputState.workflow_context as any)?.blogContentPreviewPosts)
     ? (((params.inputState.workflow_context as any)?.blogContentPreviewPosts || []) as BlogPostUpsertInput[])
         .filter((post) => post && typeof post === "object")
@@ -4772,11 +4897,16 @@ async function ensureGeneratedBlogContentForDeploy(params: {
     project: params.project,
     locale: visibleLocale,
   }).posts;
-  const posts = previewPosts.length > 0
-    ? previewPosts
-    : workflowPosts.length > 0
-      ? workflowPosts
-      : buildGeneratedBlogSeedPostsForTesting({ sourceText, locale: visibleLocale });
+  if (previewPosts.length === 0 && workflowPosts.length === 0 && sourceText.trim().length < 12) {
+    return { status: "skipped:no_source", postCount: 0 };
+  }
+  const posts = confirmedWorkflowPosts && workflowPosts.length > 0
+    ? workflowPosts
+    : previewPosts.length > 0
+      ? previewPosts
+      : workflowPosts.length > 0
+        ? workflowPosts
+        : buildGeneratedBlogSeedPostsForTesting({ sourceText, locale: visibleLocale });
   await d1.execute(
     `
     DELETE FROM shpitto_blog_posts
@@ -4842,6 +4972,118 @@ async function ensureGeneratedBlogContentForDeploy(params: {
     written += 1;
   }
   return { status: written >= 3 ? "seeded" : "partial", postCount: written };
+}
+
+function buildStaticBlogSnapshotPostsForDeploy(params: {
+  projectId: string;
+  userId?: string;
+  inputState: AgentState;
+  project: any;
+  locale: "zh-CN" | "en";
+}): BlogPostRecord[] {
+  const confirmedWorkflowPosts = Boolean((params.inputState.workflow_context as any)?.blogContentConfirmed);
+  const workflowPosts = Array.isArray((params.inputState.workflow_context as any)?.blogContentPreviewPosts)
+    ? (((params.inputState.workflow_context as any)?.blogContentPreviewPosts || []) as BlogPostUpsertInput[])
+        .filter((post) => post && typeof post === "object")
+    : [];
+  const previewPosts = buildBlogContentWorkflowPreview({
+    inputState: params.inputState,
+    project: params.project,
+    locale: params.locale,
+  }).posts;
+  const posts = confirmedWorkflowPosts && workflowPosts.length > 0
+    ? workflowPosts
+    : previewPosts.length > 0
+      ? previewPosts
+      : workflowPosts;
+  const usedSlugs = new Set<string>();
+  const now = nowIso();
+  return posts.map((post, index) => {
+    const baseSlug = normalizeSlugToken(post.slug || post.title || "", `post-${index + 1}`);
+    let slug = baseSlug;
+    let suffix = 2;
+    while (usedSlugs.has(slug)) {
+      slug = `${baseSlug}-${suffix}`;
+      suffix += 1;
+    }
+    usedSlugs.add(slug);
+    const contentMd = String(post.contentMd || "").trim();
+    const publishedAt = post.publishedAt || new Date(Date.now() - index * 60_000).toISOString();
+    return {
+      id: `static-content-post-${index + 1}`,
+      projectId: params.projectId,
+      accountId: "",
+      ownerUserId: String(params.userId || "").trim(),
+      slug,
+      title: String(post.title || `Post ${index + 1}`).trim(),
+      excerpt: String(post.excerpt || "").trim(),
+      contentMd,
+      contentHtml: renderMarkdownToHtml(contentMd),
+      status: "published",
+      authorName: String(post.authorName || "").trim(),
+      category: String(post.category || "").trim(),
+      tags: Array.isArray(post.tags) ? post.tags.map((tag) => String(tag || "").trim()).filter(Boolean) : [],
+      coverImageUrl: String(post.coverImageUrl || "").trim(),
+      coverImageAlt: String(post.coverImageAlt || "").trim(),
+      seoTitle: String(post.seoTitle || post.title || "").trim(),
+      seoDescription: String(post.seoDescription || post.excerpt || "").trim(),
+      themeKey: String(post.themeKey || "").trim(),
+      layoutKey: String(post.layoutKey || "").trim(),
+      publishedAt,
+      createdAt: now,
+      updatedAt: now,
+    };
+  });
+}
+
+function buildStaticBlogSnapshotFilesForDeploy(params: {
+  projectId: string;
+  userId?: string;
+  inputState: AgentState;
+  project: any;
+  locale: "zh-CN" | "en";
+}) {
+  if (!(params.inputState.workflow_context as any)?.blogContentConfirmed) {
+    return { files: [], postCount: 0 };
+  }
+  if (!projectHasGeneratedBlogContentMount(params.project)) {
+    return { files: [], postCount: 0 };
+  }
+  const posts = buildStaticBlogSnapshotPostsForDeploy(params);
+  if (posts.length === 0) return { files: [], postCount: 0 };
+  const now = nowIso();
+  return {
+    files: buildDeployedBlogSnapshotFiles({
+      projectId: params.projectId,
+      posts,
+      settings: {
+        projectId: params.projectId,
+        accountId: "",
+        ownerUserId: String(params.userId || "").trim(),
+        enabled: true,
+        navLabel: resolveBlogNavLabelFromProject(params.project, params.locale),
+        homeFeaturedCount: 3,
+        defaultLayoutKey: "",
+        defaultThemeKey: "",
+        rssEnabled: true,
+        sitemapEnabled: true,
+        createdAt: now,
+        updatedAt: now,
+      },
+      generatedAt: now,
+    }),
+    postCount: posts.length,
+  };
+}
+
+function getSnapshotPostCount(files: Array<{ path?: string; content?: string }>) {
+  const snapshot = files.find((file) => normalizePath(String(file?.path || "")) === "/shpitto-blog-snapshot.json");
+  if (!snapshot) return 0;
+  try {
+    return Math.max(0, Number(JSON.parse(String(snapshot.content || "{}"))?.postCount || 0));
+  } catch {
+    return 0;
+  }
 }
 
 async function runDeployOnlyTask(params: {
@@ -5000,7 +5242,23 @@ async function runDeployOnlyTask(params: {
     let blogRuntimeStatus = "snapshot:skipped";
     let blogRuntimeInjected = false;
     try {
-      const snapshotFiles = await buildDeployedBlogSnapshotFilesFromD1(dbProjectId || chatId);
+      let snapshotFiles = await buildDeployedBlogSnapshotFilesFromD1(dbProjectId || chatId);
+      if (getSnapshotPostCount(snapshotFiles) === 0) {
+        const staticSnapshot = buildStaticBlogSnapshotFilesForDeploy({
+          projectId: dbProjectId || chatId,
+          userId: ownerUserId || undefined,
+          inputState,
+          project: deployProject,
+          locale: deployBlogLocale,
+        });
+        if (staticSnapshot.postCount > 0) {
+          snapshotFiles = staticSnapshot.files;
+          const statusSuffix = generatedBlogContentStatus.status.startsWith("skipped:")
+            ? generatedBlogContentStatus.status.slice("skipped:".length)
+            : "preview";
+          generatedBlogContentStatus = { status: `static:${statusSuffix}`, postCount: staticSnapshot.postCount };
+        }
+      }
       const snapshot = injectDeployedBlogSnapshot(deployProject, snapshotFiles);
       deployProject = snapshot.project;
       blogRuntimeStatus = snapshot.injected ? `snapshot:${snapshot.files.length}` : "snapshot:skipped";
@@ -5158,21 +5416,6 @@ async function runDeployOnlyTask(params: {
       }
     }
 
-    const domainGuidanceSteps = buildDomainConfigurationGuidanceSteps({
-      liveUrl,
-      deploymentHost,
-      locale: deployLocale,
-    });
-    const domainDnsRecords = buildDomainDnsRecords({
-      liveUrl,
-      deploymentHost,
-      locale: deployLocale,
-    });
-    domainGuidanceSteps.push(
-      deployLocale === "zh-CN"
-        ? "域名生效后，重新检查登录、注册和找回密码页面，确认 auth 已自动跟随这个域名。"
-        : "Once the domain is active, reopen the login, registration, and password recovery pages to confirm auth now follows that domain automatically.",
-    );
     const deploymentMessageParts = [
       deployLocale === "zh-CN" ? `\u90e8\u7f72\u6210\u529f\uff1a${liveUrl}` : `Deployment successful: ${liveUrl}`,
       publishedAssetVersion ? `(Published assets ${publishedAssetVersion})` : "",
@@ -5196,18 +5439,38 @@ async function runDeployOnlyTask(params: {
         blogRuntimeSmoke ? `, blogRuntime=${blogRuntimeSmoke.status}` : ""
       })`,
       deployLocale === "zh-CN"
-        ? "请继续到域名配置里绑定并验证你的自定义域名，auth 页面会在域名生效后自动跟随该域名。"
-        : "Next, bind and verify your custom domain in the domain configuration flow. Auth pages will automatically follow that domain once it becomes active.",
+        ? "\u4e0b\u4e00\u6b65\uff1a\u8bf7\u76f4\u63a5\u5728\u4e0b\u65b9\u6d88\u606f\u5361\u7247\u91cc\u586b\u5199\u5e76\u7ed1\u5b9a\u4f60\u7684\u81ea\u5b9a\u4e49\u57df\u540d\uff0c\u63d0\u4ea4\u540e\u4f1a\u7acb\u5373\u7ed9\u51fa DNS \u914d\u7f6e\u5361\u7247\u3002"
+        : "Next, enter the custom domain you want to use directly in the card below. After submission, the app will immediately show the exact DNS records to configure.",
     ].filter(Boolean);
     const deploymentMessage = deploymentMessageParts.join("\n");
     const domainGuidanceMetadata = {
-      cardType: "domain_guidance",
+      cardType: "domain_binding_required",
       locale: deployLocale === "zh-CN" ? "zh" : "en",
-      title: deployLocale === "zh-CN" ? "\u57df\u540d\u914d\u7f6e\u6307\u5bfc" : "Domain Configuration Guide",
+      title: deployLocale === "zh-CN" ? "\u7ed1\u5b9a\u81ea\u5b9a\u4e49\u57df\u540d" : "Bind a Custom Domain",
+      summary:
+        deployLocale === "zh-CN"
+          ? "\u8fd9\u4e2a\u7f51\u7ad9\u5df2\u7ecf\u90e8\u7f72\u6210\u529f\u3002\u8bf7\u76f4\u63a5\u5728\u8fd9\u5f20\u5361\u7247\u91cc\u586b\u5199\u4f60\u8981\u4f7f\u7528\u7684\u57df\u540d\uff0c\u63d0\u4ea4\u540e\u518d\u6309\u63d0\u793a\u914d\u7f6e DNS \u5e76\u7b49\u5f85\u751f\u6548\u3002"
+          : "Your site is deployed. Enter the domain you want to use directly in this card, submit it for binding, and then follow the DNS instructions shown here.",
+      propagation:
+        deployLocale === "zh-CN"
+          ? "\u901a\u5e38\u51e0\u5206\u949f\u751f\u6548\uff0c\u6700\u957f\u53ef\u80fd\u9700\u8981 24 \u5c0f\u65f6\u3002"
+          : "Usually active within minutes; some DNS providers can take up to 24 hours.",
       deployedUrl: liveUrl,
       deploymentHost,
-      steps: domainGuidanceSteps,
-      dnsRecords: domainDnsRecords,
+      steps:
+        deployLocale === "zh-CN"
+          ? [
+              "\u76f4\u63a5\u5728\u8fd9\u5f20\u5361\u7247\u91cc\u8f93\u5165\u4f60\u7684\u6839\u57df\u540d\u6216 www \u57df\u540d\uff0c\u63d0\u4ea4\u7ed1\u5b9a\u3002",
+              "\u63d0\u4ea4\u540e\u6309\u5361\u7247\u4e0b\u65b9\u7ed9\u51fa\u7684 DNS \u8bb0\u5f55\u914d\u7f6e\u3002",
+              "\u914d\u7f6e DNS \u540e\u5728\u5361\u7247\u91cc\u5237\u65b0\u57df\u540d\u72b6\u6001\u3002",
+              "\u57df\u540d Active \u540e\uff0c\u91cd\u65b0\u68c0\u67e5\u767b\u5f55\u3001\u6ce8\u518c\u548c\u627e\u56de\u5bc6\u7801\u9875\u9762\u3002",
+            ]
+          : [
+              "Enter the apex or www domain you want to use directly in this card and submit it for binding.",
+              "After submission, configure the exact DNS records shown below.",
+              "Once DNS is in place, refresh the domain status from the same card.",
+              "Once the domain becomes active, reopen login, registration, and password recovery pages to confirm auth now follows that domain.",
+            ],
     };
 
     const nextState: AgentState = {
@@ -5943,14 +6206,15 @@ export class SkillRuntimeExecutor {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      const failureProviderMeta = resolveFailureProviderMeta(message, summaryProviderRef.current);
       await updateChatTaskProgress(taskId, {
         assistantText: message,
         progress: {
           stage: "failed",
           stageMessage: "Generation failed.",
           skillId: loadedSkill.id,
-          provider: summaryProviderRef.current.provider,
-          model: summaryProviderRef.current.model,
+          provider: failureProviderMeta.provider,
+          model: failureProviderMeta.model,
           attempt: 1,
           startedAt: new Date(startedAt).toISOString(),
           lastTokenAt: nowIso(),

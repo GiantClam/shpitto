@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
+import { useProjectWorkspaceMeta, type ProjectWorkspaceSessionPayload } from "@/components/chat/project-workspace-context";
 import {
   Activity,
   ArrowLeft,
@@ -24,20 +25,9 @@ import {
   User2,
 } from "lucide-react";
 import type { Locale } from "@/lib/i18n";
-import { getProjectWorkspaceCopy } from "./project-workspace-copy";
+import { formatWorkspaceAccountLabel, getProjectWorkspaceCopy } from "./project-workspace-copy";
 
-type SessionPayload = {
-  id: string;
-  title: string;
-  updatedAt: number;
-  archived?: boolean;
-};
-
-type SessionsResponse = {
-  ok: boolean;
-  sessions?: SessionPayload[];
-  error?: string;
-};
+const ANALYTICS_CACHE_KEY_PREFIX = "shpitto:project-analytics:";
 
 type AnalyticsPayload = {
   status: "pending" | "active" | "degraded" | "not_configured";
@@ -87,6 +77,13 @@ type AnalyticsResponse = {
   error?: string;
 };
 
+type AnalyticsCacheEntry = {
+  analytics: AnalyticsPayload | null;
+  warning: string;
+  projectHost: string;
+  projectUrl: string;
+};
+
 function formatVersionLabel(updatedAt?: number): string {
   if (!updatedAt) return "v1.0.0";
   const d = new Date(updatedAt);
@@ -128,44 +125,73 @@ function statusTone(status: AnalyticsPayload["status"]): string {
   return "text-[var(--shp-warm)] bg-[color-mix(in_oklab,var(--shp-secondary)_16%,var(--shp-surface)_84%)] border-[color-mix(in_oklab,var(--shp-secondary)_30%,transparent)]";
 }
 
+function analyticsCacheKey(projectId: string, range: "7d" | "30d") {
+  return `${ANALYTICS_CACHE_KEY_PREFIX}${projectId}:${range}`;
+}
+
+function readAnalyticsCache(projectId: string, range: "7d" | "30d"): AnalyticsCacheEntry | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(analyticsCacheKey(projectId, range));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as AnalyticsCacheEntry;
+    if (!parsed || typeof parsed !== "object") return null;
+    return {
+      analytics: parsed.analytics || null,
+      warning: String(parsed.warning || ""),
+      projectHost: String(parsed.projectHost || ""),
+      projectUrl: String(parsed.projectUrl || ""),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeAnalyticsCache(projectId: string, range: "7d" | "30d", entry: AnalyticsCacheEntry) {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(analyticsCacheKey(projectId, range), JSON.stringify(entry));
+  } catch {
+    // ignore cache write failures
+  }
+}
+
 export function ProjectAnalyticsWorkspace({ projectId, locale = "en" }: { projectId: string; locale?: Locale }) {
   const router = useRouter();
   const workspaceCopy = getProjectWorkspaceCopy(locale);
   const chatId = projectId;
+  const {
+    userEmail,
+    userId,
+    projectTitle: sharedProjectTitle,
+    projectUpdatedAt,
+    projects,
+    refreshProjectMeta,
+  } = useProjectWorkspaceMeta();
+  const projectTitle = sharedProjectTitle || workspaceCopy.currentProject;
 
-  const [userEmail, setUserEmail] = useState("");
-  const [userId, setUserId] = useState("");
-  const [projectTitle, setProjectTitle] = useState(workspaceCopy.currentProject);
-  const [projectUpdatedAt, setProjectUpdatedAt] = useState<number | undefined>(undefined);
-  const [projects, setProjects] = useState<SessionPayload[]>([]);
   const [creatingProject, setCreatingProject] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const accountLabel = formatWorkspaceAccountLabel(userEmail, userId, workspaceCopy.guest);
 
   const [range, setRange] = useState<"7d" | "30d">("7d");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [warning, setWarning] = useState("");
-  const [analytics, setAnalytics] = useState<AnalyticsPayload | null>(null);
-  const [projectHost, setProjectHost] = useState("");
-  const [projectUrl, setProjectUrl] = useState("");
+  const [warning, setWarning] = useState(() => readAnalyticsCache(projectId, "7d")?.warning || "");
+  const [analytics, setAnalytics] = useState<AnalyticsPayload | null>(() => readAnalyticsCache(projectId, "7d")?.analytics || null);
+  const [projectHost, setProjectHost] = useState(() => readAnalyticsCache(projectId, "7d")?.projectHost || "");
+  const [projectUrl, setProjectUrl] = useState(() => readAnalyticsCache(projectId, "7d")?.projectUrl || "");
 
-  const fetchProjectMeta = useCallback(async () => {
-    if (!userId) return;
-    try {
-      const res = await fetch("/api/chat/sessions?limit=200", { cache: "no-store" });
-      const data = (await res.json()) as SessionsResponse;
-      if (!res.ok || !data.ok || !Array.isArray(data.sessions)) return;
-      setProjects(data.sessions.filter((session) => !session.archived));
-      const hit = data.sessions.find((session) => session.id === chatId);
-      if (!hit) return;
-      setProjectTitle(String(hit.title || workspaceCopy.currentProject));
-      setProjectUpdatedAt(Number(hit.updatedAt || Date.now()));
-    } catch {
-      // best-effort metadata
-    }
-  }, [chatId, userId, workspaceCopy.currentProject]);
+  useEffect(() => {
+    const cached = readAnalyticsCache(projectId, range);
+    if (!cached) return;
+    setAnalytics(cached.analytics);
+    setWarning(cached.warning);
+    setProjectHost(cached.projectHost);
+    setProjectUrl(cached.projectUrl);
+  }, [projectId, range]);
 
-  const fetchAnalytics = useCallback(async () => {
+  const fetchAnalytics = useCallback(async (options?: { refreshRemote?: boolean }) => {
     setLoading(true);
     setError("");
     setWarning("");
@@ -176,6 +202,9 @@ export function ProjectAnalyticsWorkspace({ projectId, locale = "en" }: { projec
         end: endAt,
         limit: "20",
       });
+      if (options?.refreshRemote) {
+        params.set("refresh", "1");
+      }
       const res = await fetch(`/api/projects/${encodeURIComponent(chatId)}/analysis?${params.toString()}`, {
         cache: "no-store",
       });
@@ -184,36 +213,23 @@ export function ProjectAnalyticsWorkspace({ projectId, locale = "en" }: { projec
         throw new Error(data.error || "Failed to load analytics.");
       }
       setAnalytics(data.analytics);
-      setProjectTitle(String(data.project?.name || projectTitle || workspaceCopy.currentProject));
       setProjectHost(String(data.project?.deploymentHost || "").trim());
       setProjectUrl(String(data.project?.latestDeploymentUrl || "").trim());
-      setWarning(String(data.warning || "").trim());
+      const nextWarning = String(data.warning || "").trim();
+      setWarning(nextWarning);
+      writeAnalyticsCache(chatId, range, {
+        analytics: data.analytics,
+        warning: nextWarning,
+        projectHost: String(data.project?.deploymentHost || "").trim(),
+        projectUrl: String(data.project?.latestDeploymentUrl || "").trim(),
+      });
     } catch (err: any) {
       setError(String(err?.message || err || "Failed to load analytics."));
       setAnalytics(null);
     } finally {
       setLoading(false);
     }
-  }, [chatId, range, projectTitle, workspaceCopy.currentProject]);
-
-  useEffect(() => {
-    let mounted = true;
-    void (async () => {
-      const res = await fetch("/api/auth/session", { cache: "no-store" }).catch(() => null);
-      const data = res ? ((await res.json().catch(() => ({}))) as any) : {};
-      if (!mounted) return;
-      setUserEmail(String(data.user?.email || "").trim());
-      setUserId(String(data.user?.id || "").trim());
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    void fetchProjectMeta();
-  }, [fetchProjectMeta]);
+  }, [chatId, range]);
 
   useEffect(() => {
     void fetchAnalytics();
@@ -229,11 +245,11 @@ export function ProjectAnalyticsWorkspace({ projectId, locale = "en" }: { projec
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: workspaceCopy.newProject }),
       });
-      const data = (await res.json()) as { ok: boolean; session?: SessionPayload; error?: string };
+      const data = (await res.json()) as { ok: boolean; session?: ProjectWorkspaceSessionPayload; error?: string };
       if (!res.ok || !data.ok || !data.session?.id) {
         throw new Error(data.error || "Failed to create project.");
       }
-      await fetchProjectMeta();
+      await refreshProjectMeta();
       router.push(`/projects/${encodeURIComponent(data.session.id)}/chat`);
     } catch (err: any) {
       setError(String(err?.message || err || "Failed to create project."));
@@ -267,7 +283,7 @@ export function ProjectAnalyticsWorkspace({ projectId, locale = "en" }: { projec
     { label: workspaceCopy.nav.analytics, icon: BarChart3, href: `/projects/${encodeURIComponent(chatId)}/analysis`, active: true },
     { label: workspaceCopy.nav.assets, icon: FolderOpen, href: `/projects/${encodeURIComponent(chatId)}/assets`, active: false },
     { label: workspaceCopy.nav.data, icon: Database, href: `/projects/${encodeURIComponent(chatId)}/data`, active: false },
-    { label: workspaceCopy.nav.settings, icon: Settings, active: false },
+    { label: workspaceCopy.nav.settings, icon: Settings, href: `/projects/${encodeURIComponent(chatId)}/settings`, active: false },
   ];
 
   const totals = analytics?.totals || {
@@ -389,11 +405,11 @@ export function ProjectAnalyticsWorkspace({ projectId, locale = "en" }: { projec
                   "mt-2 flex items-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] px-3 py-2",
                   sidebarCollapsed ? "justify-center px-2" : "",
                 ].join(" ")}
-                title={userEmail || workspaceCopy.guest}
+                title={userEmail || userId || workspaceCopy.guest}
               >
                 <User2 className="h-4 w-4 shrink-0 text-[var(--shp-muted)]" />
                 {!sidebarCollapsed ? (
-                  <span className="max-w-[190px] truncate text-sm text-[var(--shp-text)]">{userEmail || workspaceCopy.guest}</span>
+                  <span className="max-w-[190px] truncate text-sm text-[var(--shp-text)]">{accountLabel}</span>
                 ) : null}
               </div>
               {userEmail ? (
@@ -457,7 +473,7 @@ export function ProjectAnalyticsWorkspace({ projectId, locale = "en" }: { projec
                 </button>
                 <button
                   type="button"
-                  onClick={() => void fetchAnalytics()}
+                  onClick={() => void fetchAnalytics({ refreshRemote: true })}
                   className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-3 py-1.5 text-xs text-[var(--shp-muted)] hover:text-[var(--shp-text)]"
                 >
                   {workspaceCopy.analytics.refresh}

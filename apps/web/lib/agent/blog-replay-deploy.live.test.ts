@@ -7,6 +7,9 @@ dotenv.config({ path: path.resolve(process.cwd(), "scripts/.env.local"), overrid
 dotenv.config({ path: path.resolve(process.cwd(), "../../.env"), override: false, quiet: true });
 
 process.env.CLOUDFLARE_REQUIRE_REAL = "1";
+process.env.CHAT_DRAFT_PROVIDER = "pptoken";
+process.env.LLM_PROVIDER = "pptoken";
+process.env.LLM_PROVIDER_ORDER = "pptoken";
 
 const runLiveReplay = String(process.env.RUN_BLOG_REPLAY_DEPLOY || "").trim() === "1";
 

@@ -54,9 +54,13 @@ describe("deployed blog snapshot", () => {
     expect(paths).toContain("/blog/hello-world/index.html");
     expect(paths).not.toContain("/blog/category/news/index.html");
     expect(paths).not.toContain("/blog/tag/launch/index.html");
+    expect(paths).toContain("/api/blog/posts");
     expect(paths).toContain("/blog/rss.xml");
+    expect(paths).toContain("/sitemap.xml");
     expect(paths).toContain("/shpitto-blog-snapshot.json");
+    expect(files.find((file) => file.path === "/api/blog/posts")?.content).toContain("Hello World");
     expect(files.find((file) => file.path === "/blog/rss.xml")?.content).toContain("Hello World");
+    expect(files.find((file) => file.path === "/sitemap.xml")?.content).toContain("/blog/hello-world/");
     expect(files.find((file) => file.path === "/blog/hello-world/index.html")?.content).toContain("Hello body");
     const snapshot = JSON.parse(String(files.find((file) => file.path === "/shpitto-blog-snapshot.json")?.content || "{}"));
     expect(snapshot.postCount).toBe(1);
@@ -114,6 +118,35 @@ describe("deployed blog snapshot", () => {
     expect(paths).toContain("/shpitto-blog-post-shell.html");
     expect(paths).toContain("/shpitto-blog-theme.json");
     expect(home).toContain('href="/blog/"');
+  });
+
+  it("does not inject a duplicate Blog nav link when /blog already exists", () => {
+    const files = buildDeployedBlogSnapshotFiles({
+      projectId: "project-1",
+      posts: [post],
+      settings: null,
+      generatedAt: "2026-04-30T00:00:00.000Z",
+    });
+    const result = injectDeployedBlogSnapshot(
+      {
+        staticSite: {
+          mode: "skill-direct",
+          files: [
+            {
+              path: "/index.html",
+              content:
+                '<!doctype html><html><body><header><nav><a href="/">Home</a><a href="/blog" data-i18n="nav.blog">Blog</a></nav></header></body></html>',
+              type: "text/html",
+            },
+          ],
+        },
+      },
+      files,
+    );
+
+    const home = result.project.staticSite.files.find((file: { path: string }) => file.path === "/index.html")?.content || "";
+    expect((home.match(/href="\/blog"/g) || []).length).toBe(1);
+    expect(home).not.toContain('href="/blog/"');
   });
 
   it("preserves generated blog HTML instead of replacing it with a snapshot shell", () => {

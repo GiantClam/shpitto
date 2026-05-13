@@ -59,6 +59,7 @@ import {
   reserveCreatedProjectUsage,
 } from "../../../lib/billing/store";
 import { saveProjectState } from "../../../lib/agent/db";
+import { fallbackProjectTitle } from "../../../lib/agent/project-title";
 
 export const runtime = "nodejs";
 
@@ -2126,20 +2127,21 @@ export async function POST(req: Request) {
 
   try {
     if (ownerUserId && executionMode === "generate") {
+      const queuedProjectTitle = fallbackProjectTitle(chatId);
       const hadBillableProject = await hasBillableProject(ownerUserId, chatId);
       await assertCanCreateProject(ownerUserId, chatId);
       if (!hadBillableProject) {
         await reserveCreatedProjectUsage({
           ownerUserId,
           sourceProjectId: chatId,
-          projectName: normalizedUserText.slice(0, 80) || "Untitled Project",
+          projectName: queuedProjectTitle,
         });
         usageReservedForThisRequest = { ownerUserId, sourceProjectId: chatId };
       }
       await saveProjectState(
         ownerUserId,
         {
-          branding: { name: normalizedUserText.slice(0, 80) || "Untitled Project" },
+          branding: { name: queuedProjectTitle },
           billing: { reservedAt: new Date().toISOString(), status: "generation_queued" },
         },
         body.access_token || previousState.access_token,

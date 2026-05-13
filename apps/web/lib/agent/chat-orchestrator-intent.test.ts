@@ -321,6 +321,11 @@ describe("chat orchestrator intent", () => {
     expect(spec.visualDecisionSource).toBe("user_recommended_default");
     expect(prompt).toContain("Default Visual Inclination (System Recommended)");
     expect(prompt).toContain("Recommended direction: Industrial B2B / precision (industrial-b2b)");
+    expect(prompt).toContain("Confirmed Visual Direction Contract");
+    expect(prompt).toContain("### Industrial B2B / precision (industrial-b2b)");
+    expect(prompt).toContain(
+      "Apply this system-recommended direction as the active visual contract for this generation unless a later explicit user theme selection overrides it.",
+    );
     expect(prompt).toContain("system-recommended default");
   });
 

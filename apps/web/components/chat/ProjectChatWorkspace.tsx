@@ -18,11 +18,18 @@ import { SignOutButton } from "@/components/auth/SignOutButton";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import {
+  DomainBindingPromptCard as SharedDomainBindingPromptCard,
+  DomainGuidanceCard as SharedDomainGuidanceCard,
+  normalizeDomainGuidanceMetadata,
+} from "@/components/chat/project-domain-ui";
+import {
   ArrowLeft,
   BarChart3,
+  Check,
   ChevronDown,
   ChevronsLeft,
   ChevronsRight,
+  Copy,
   Database,
   FolderOpen,
   Globe2,
@@ -51,7 +58,7 @@ import {
 } from "@/lib/open-design/design-directions";
 import { buildPreviewDeviceUrl } from "@/lib/preview-frame";
 import type { QaSummary } from "@/lib/skill-runtime/qa-summary";
-import { getProjectWorkspaceCopy } from "./project-workspace-copy";
+import { formatWorkspaceAccountLabel, getProjectWorkspaceCopy } from "./project-workspace-copy";
 
 type TaskStatus = "queued" | "running" | "succeeded" | "failed";
 
@@ -198,6 +205,40 @@ type AssetUploadResponse = {
 type AssetListResponse = {
   ok: boolean;
   assets?: ProjectAsset[];
+  error?: string;
+};
+
+type ProjectDomainRecord = {
+  id: string;
+  projectId: string;
+  hostname: string;
+  status: string;
+  customHostnameId?: string | null;
+  sslStatus?: string | null;
+  originHost?: string | null;
+  verificationErrors?: unknown[] | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+type ProjectDomainApiResponse = {
+  ok: boolean;
+  project?: {
+    projectId: string;
+    projectName: string;
+    deploymentHost: string | null;
+    latestDeploymentUrl: string | null;
+  } | null;
+  domains?: ProjectDomainRecord[];
+  domain?: ProjectDomainRecord | null;
+  dns?: {
+    type: string;
+    host: string;
+    fqdn?: string;
+    target: string;
+  } | null;
+  warning?: string;
+  warnings?: string[];
   error?: string;
 };
 
@@ -642,6 +683,16 @@ function localeFromMetadata(metadata?: Record<string, unknown> | null, fallbackT
   return detectMessageLocale(fallbackText);
 }
 
+function normalizeHostnameInput(value: string): string {
+  return String(value || "").trim().toLowerCase().replace(/^https?:\/\//i, "").replace(/^\/+|\/+$/g, "").replace(/\/.*$/, "");
+}
+
+function isValidHostnameInput(value: string): boolean {
+  const host = normalizeHostnameInput(value);
+  if (!host || host.length > 253) return false;
+  return /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/.test(host);
+}
+
 type MarkdownBlock =
   | { type: "heading"; level: number; text: string }
   | { type: "paragraph"; text: string }
@@ -913,34 +964,452 @@ function BlogContentDeployCard(params: {
   );
 }
 
+function domainStatusTone(status: string): string {
+  const normalized = String(status || "").trim().toLowerCase();
+  if (normalized === "active" || normalized === "verified") {
+    return "border-[color-mix(in_oklab,var(--shp-primary)_42%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_12%,var(--shp-surface)_88%)] text-[var(--shp-primary-pressed)]";
+  }
+  if (normalized === "failed" || normalized === "error") {
+    return "border-rose-300/70 bg-rose-500/10 text-rose-700";
+  }
+  return "border-[color-mix(in_oklab,var(--shp-secondary)_36%,transparent)] bg-[color-mix(in_oklab,var(--shp-secondary)_10%,var(--shp-surface)_90%)] text-[var(--shp-warm)]";
+}
+
+function domainStatusLabel(status: string, locale: RequirementFormLocale): string {
+  const normalized = String(status || "").trim().toLowerCase();
+  if (normalized === "active") return locale === "zh" ? "已生效" : "Active";
+  if (normalized === "verified") return locale === "zh" ? "已验证" : "Verified";
+  if (normalized === "initializing") return locale === "zh" ? "初始化中" : "Initializing";
+  if (normalized === "pending") return locale === "zh" ? "等待 DNS / 证书" : "Pending DNS / cert";
+  if (normalized === "failed") return locale === "zh" ? "失败" : "Failed";
+  return normalized || (locale === "zh" ? "未开始" : "Not started");
+}
+
+type DomainGuidanceMetadataParams = {
+  locale: RequirementFormLocale;
+  deploymentHost: string;
+  deployedUrl?: string;
+  hostname?: string;
+};
+
+export function buildDomainGuidanceCardMetadata(params: DomainGuidanceMetadataParams): Record<string, unknown> {
+  const locale = params.locale === "zh" ? "zh" : "en";
+  const deploymentHost = normalizeHostnameInput(params.deploymentHost);
+  const hostname = normalizeHostnameInput(params.hostname || "");
+  const deployedUrl = String(params.deployedUrl || "").trim();
+  const ttl = locale === "zh" ? "自动 / 默认" : "Auto / Default";
+  const dnsTarget = deploymentHost;
+  return {
+    cardType: "domain_guidance",
+    locale,
+    title: locale === "zh" ? "域名配置指导" : "Domain Configuration Guide",
+    summary:
+      locale === "zh"
+        ? hostname
+          ? `已为 ${hostname} 创建绑定。按下面的 DNS 记录配置后，再回到这里刷新状态。`
+          : "提交域名后，按下面的 DNS 记录完成配置并刷新状态。"
+        : hostname
+          ? `Binding started for ${hostname}. Configure the DNS records below, then return here to refresh the status.`
+          : "After submitting the domain, configure the DNS records below and return here to refresh the status.",
+    domainEntry: locale === "zh" ? "Settings / 域名配置" : "Settings / Domain configuration",
+    propagation:
+      locale === "zh"
+        ? "通常几分钟生效，最长可能需要 24 小时。"
+        : "Usually active within minutes; some DNS providers can take up to 24 hours.",
+    deployedUrl,
+    deploymentHost,
+    hostname,
+    steps:
+      locale === "zh"
+        ? [
+            "在域名 DNS 管理后台新增记录。",
+            "如果配置 `www.example.com`，使用 `www` 这条记录；如果配置根域名，使用 `@`。",
+            "保存 DNS 后等待生效，再回到 Settings 刷新域名状态。",
+            "域名 Active 后，重新检查登录、注册和找回密码页面。",
+          ]
+        : [
+            "Add a new record in your domain DNS settings.",
+            "For `www.example.com`, use the `www` record below. For an apex domain, use `@`.",
+            "After saving DNS, wait for propagation and then refresh the domain status in Settings.",
+            "Once the domain is active, recheck login, registration, and password recovery pages.",
+          ],
+    verificationChecklist:
+      locale === "zh"
+        ? [
+            "DNS 记录类型、主机记录和值与卡片一致。",
+            "Settings 中该域名状态显示为 Active 或已验证。",
+            "HTTPS 可正常打开，自定义域名没有浏览器安全警告。",
+          ]
+        : [
+            "The DNS record type, host, and value match this card.",
+            "The domain status in Settings shows active or verified.",
+            "HTTPS opens without a browser security warning on the custom domain.",
+          ],
+    tips:
+      locale === "zh"
+        ? [
+            "Cloudflare DNS 使用 `仅 DNS`，不要开启代理。",
+            "非 Cloudflare 服务商默认优先使用 `www` 或其他子域名；根域名仅在支持 ALIAS、ANAME 或 Flattening 时使用。",
+          ]
+        : [
+            "With Cloudflare DNS, keep the record in DNS only mode.",
+            "For non-Cloudflare DNS providers, prefer `www` or another subdomain. Only use the apex if ALIAS, ANAME, or flattening is supported.",
+          ],
+    dnsRecords: dnsTarget
+      ? [
+          {
+            type: "CNAME",
+            host: "www",
+            value: dnsTarget,
+            ttl,
+            note: locale === "zh" ? "默认推荐；主机记录填 www" : "Recommended default; set host to www",
+          },
+          {
+            type: "CNAME",
+            host: "@",
+            value: dnsTarget,
+            ttl,
+            note:
+              locale === "zh"
+                ? "Cloudflare 可直接使用；其他 DNS 服务商仅在支持 Flattening 时使用"
+                : "Use directly on Cloudflare; on other DNS providers only if flattening is supported",
+          },
+        ]
+      : [],
+  };
+}
+
+function DomainBindingPromptCard(params: {
+  projectId: string;
+  metadata: Record<string, unknown>;
+  disabled: boolean;
+}) {
+  const locale = localeFromMetadata(params.metadata);
+  const title = String(params.metadata.title || (locale === "zh" ? "绑定自定义域名" : "Bind a Custom Domain")).trim();
+  const summary = String(
+    params.metadata.summary ||
+      (locale === "zh"
+        ? "部署完成后，还需要先提交并绑定你的域名，系统才会给出对应的 DNS 配置。"
+        : "After deployment, submit the domain you want to use first. The app will then show the exact DNS configuration."),
+  ).trim();
+  const steps = asStringList(params.metadata.steps);
+  const deployedUrl = String(params.metadata.deployedUrl || "").trim();
+  const deploymentHost = normalizeHostnameInput(String(params.metadata.deploymentHost || "").trim());
+  const copy =
+    locale === "zh"
+      ? {
+          inputLabel: "自定义域名",
+          inputPlaceholder: "例如 snapsclean.com 或 www.snapsclean.com",
+          submit: "提交并绑定域名",
+          submitting: "提交中...",
+          refresh: "刷新状态",
+          status: "状态",
+          sslStatus: "验证 / 证书",
+          origin: "DNS 目标",
+          noDomains: "还没有提交域名。先在这里填写并提交。",
+          inputHint: "支持根域名 example.com 或 www.example.com，提交后会直接展示对应 DNS 记录。",
+          invalidHostname: "域名格式不正确，请检查后重试。",
+          missingHostname: "请先填写域名。",
+          warning: "系统提示",
+          errors: "验证信息",
+          useDomain: "使用这个域名",
+        }
+      : {
+          inputLabel: "Custom domain",
+          inputPlaceholder: "For example: snapsclean.com or www.snapsclean.com",
+          submit: "Submit and Bind Domain",
+          submitting: "Submitting...",
+          refresh: "Refresh status",
+          status: "Status",
+          sslStatus: "Verification / cert",
+          origin: "DNS target",
+          noDomains: "No domain has been submitted yet. Enter one here to start binding.",
+          inputHint: "Use an apex domain such as example.com or a host like www.example.com. The DNS card will appear right after submission.",
+          invalidHostname: "The domain format looks invalid. Please check it and try again.",
+          missingHostname: "Please enter a domain first.",
+          warning: "System warning",
+          errors: "Verification details",
+          useDomain: "Use this domain",
+        };
+  const [hostnameInput, setHostnameInput] = useState("");
+  const [domains, setDomains] = useState<ProjectDomainRecord[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [warning, setWarning] = useState("");
+
+  const loadDomains = useCallback(
+    async (options?: { preserveInput?: boolean }) => {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await fetch(`/api/projects/${encodeURIComponent(params.projectId)}/domains`, { cache: "no-store" });
+        const data = (await res.json().catch(() => ({}))) as ProjectDomainApiResponse;
+        if (!res.ok || !data.ok) throw new Error(data.error || "Failed to load domain configuration.");
+        const nextDomains = Array.isArray(data.domains) ? data.domains : [];
+        setDomains(nextDomains);
+        setWarning(String(data.warning || "").trim());
+        if (!options?.preserveInput) {
+          const suggested = normalizeHostnameInput(nextDomains[0]?.hostname || "");
+          setHostnameInput((prev) => normalizeHostnameInput(prev) || suggested);
+        }
+      } catch (loadError: any) {
+        setError(String(loadError?.message || loadError || "Failed to load domain configuration."));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [params.projectId],
+  );
+
+  useEffect(() => {
+    void loadDomains();
+  }, [loadDomains]);
+
+  const activeDomain = useMemo(() => {
+    const normalizedInput = normalizeHostnameInput(hostnameInput);
+    return domains.find((item) => normalizeHostnameInput(item.hostname) === normalizedInput) || domains[0] || null;
+  }, [domains, hostnameInput]);
+
+  const guidanceMetadata = useMemo(() => {
+    if (!deploymentHost || !activeDomain?.hostname) return null;
+    return buildDomainGuidanceCardMetadata({
+      locale,
+      deploymentHost,
+      deployedUrl,
+      hostname: activeDomain.hostname,
+    });
+  }, [activeDomain?.hostname, deployedUrl, deploymentHost, locale]);
+
+  const handleSubmit = useCallback(async () => {
+    const hostname = normalizeHostnameInput(hostnameInput);
+    if (!hostname) {
+      setError(copy.missingHostname);
+      return;
+    }
+    if (!isValidHostnameInput(hostname)) {
+      setError(copy.invalidHostname);
+      return;
+    }
+    setSaving(true);
+    setError("");
+    setWarning("");
+    try {
+      const res = await fetch(`/api/projects/${encodeURIComponent(params.projectId)}/domains`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hostname }),
+      });
+      const data = (await res.json().catch(() => ({}))) as ProjectDomainApiResponse;
+      if (!res.ok || !data.ok) throw new Error(data.error || "Failed to save domain configuration.");
+      setDomains(Array.isArray(data.domains) ? data.domains : []);
+      setHostnameInput(hostname);
+      setWarning(String(data.warning || "").trim());
+    } catch (submitError: any) {
+      setError(String(submitError?.message || submitError || "Failed to save domain configuration."));
+    } finally {
+      setSaving(false);
+    }
+  }, [copy.invalidHostname, copy.missingHostname, hostnameInput, params.projectId]);
+
+  return (
+    <div className="mt-3 overflow-hidden rounded-2xl border border-[color-mix(in_oklab,var(--shp-secondary)_34%,var(--shp-border)_66%)] bg-[radial-gradient(circle_at_top_left,color-mix(in_oklab,var(--shp-secondary)_16%,transparent),transparent_46%),color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] shadow-[0_18px_60px_color-mix(in_oklab,var(--shp-secondary)_10%,transparent)]">
+      <div className="flex items-start gap-3 border-b border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-4 py-3">
+        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[color-mix(in_oklab,var(--shp-secondary)_30%,transparent)] bg-[color-mix(in_oklab,var(--shp-secondary)_12%,var(--shp-surface)_88%)] text-[var(--shp-warm)]">
+          <Globe2 className="h-4 w-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-[var(--shp-text)]">{title}</p>
+          <p className="mt-1 text-xs leading-relaxed text-[var(--shp-muted)]">{summary}</p>
+          {deployedUrl ? (
+            <a href={deployedUrl} target="_blank" rel="noreferrer" className="mt-1 block truncate text-xs text-[var(--shp-primary)] hover:underline" title={deployedUrl}>
+              {deployedUrl}
+            </a>
+          ) : null}
+        </div>
+      </div>
+      <div className="space-y-3 px-4 py-3">
+        {steps.length > 0 ? (
+          <ol className="space-y-2">
+            {steps.map((step, index) => (
+              <li key={`${index}-${step}`} className="grid grid-cols-[24px_minmax(0,1fr)] gap-2 text-xs leading-relaxed text-[var(--shp-muted)]">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--shp-secondary)_14%,transparent)] text-[10px] font-semibold text-[var(--shp-warm)]">
+                  {index + 1}
+                </span>
+                <span className="pt-0.5">{renderInlineMarkdown(step)}</span>
+              </li>
+            ))}
+          </ol>
+        ) : null}
+        <div className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-3">
+          <label className="block text-xs font-semibold text-[var(--shp-text)]">{copy.inputLabel}</label>
+          <input
+            value={hostnameInput}
+            onChange={(event) => setHostnameInput(normalizeHostnameInput(event.target.value))}
+            placeholder={copy.inputPlaceholder}
+            className="mt-2 h-11 w-full rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_48%,transparent)] px-3 text-sm text-[var(--shp-text)] outline-none focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)]"
+          />
+          <p className="mt-2 text-[11px] leading-relaxed text-[var(--shp-muted)]">{copy.inputHint}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => void handleSubmit()}
+              disabled={params.disabled || saving}
+              className="inline-flex items-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-primary)_55%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,var(--shp-surface)_86%)] px-3 py-2 text-xs font-semibold text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_22%,var(--shp-surface)_78%)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Globe2 className="h-3.5 w-3.5" />}
+              <span>{saving ? copy.submitting : copy.submit}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => void loadDomains({ preserveInput: true })}
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-3 py-2 text-xs font-semibold text-[var(--shp-muted)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_88%,var(--shp-bg)_12%)] hover:text-[var(--shp-text)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+              <span>{copy.refresh}</span>
+            </button>
+          </div>
+          {error ? <p className="mt-3 text-xs text-rose-700">{error}</p> : null}
+          {warning ? (
+            <div className="mt-3 rounded-xl border border-[color-mix(in_oklab,var(--shp-secondary)_38%,transparent)] bg-[color-mix(in_oklab,var(--shp-secondary)_10%,var(--shp-bg)_90%)] p-3">
+              <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--shp-muted)]">{copy.warning}</p>
+              <p className="mt-1 text-xs leading-relaxed text-[var(--shp-muted)]">{warning}</p>
+            </div>
+          ) : null}
+          <div className="mt-3 space-y-2">
+            {domains.length === 0 ? (
+              <p className="text-xs leading-relaxed text-[var(--shp-muted)]">{copy.noDomains}</p>
+            ) : (
+              domains.map((domain) => (
+                <div
+                  key={domain.id || domain.hostname}
+                  className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_42%,transparent)] p-3"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-[var(--shp-text)]">{domain.hostname}</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-medium ${domainStatusTone(domain.status)}`}>
+                          {copy.status}: {domainStatusLabel(domain.status, locale)}
+                        </span>
+                        {domain.sslStatus ? (
+                          <span className="inline-flex rounded-full border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] px-2 py-1 text-[10px] text-[var(--shp-muted)]">
+                            {copy.sslStatus}: {domain.sslStatus}
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="mt-2 text-[11px] text-[var(--shp-muted)]">
+                        {copy.origin}: {normalizeHostnameInput(domain.originHost || deploymentHost || "-") || "-"}
+                      </p>
+                      {Array.isArray(domain.verificationErrors) && domain.verificationErrors.length > 0 ? (
+                        <div className="mt-2 rounded-lg border border-rose-300/60 bg-rose-500/8 p-2">
+                          <p className="text-[10px] uppercase tracking-[0.16em] text-rose-700">{copy.errors}</p>
+                          <ul className="mt-1 space-y-1 text-[11px] leading-relaxed text-rose-700">
+                            {domain.verificationErrors.map((item, index) => (
+                              <li key={`${domain.hostname}-${index}`}>{String(item || "").trim()}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setHostnameInput(domain.hostname)}
+                      className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-2 py-1 text-[11px] text-[var(--shp-muted)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_10%,transparent)] hover:text-[var(--shp-text)]"
+                    >
+                      {copy.useDomain}
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+        {guidanceMetadata ? <DomainGuidanceCard metadata={guidanceMetadata} /> : null}
+      </div>
+    </div>
+  );
+}
+
 function DomainGuidanceCard({ metadata }: { metadata: Record<string, unknown> }) {
   const locale = localeFromMetadata(metadata);
   const copy =
     locale === "zh"
       ? {
           title: "域名配置指导",
+          subtitle: "按下面的信息到域名 DNS 后台添加记录，然后回到项目里校验域名状态。",
+          currentDeployment: "当前发布地址与推荐 DNS",
+          configurationEntry: "配置入口",
           recommendedRecords: "推荐 DNS 记录",
+          cloudflareDns: "Cloudflare DNS",
+          otherDnsProviders: "其他 DNS 服务商",
+          providerSplitHint: "按你的 DNS 服务商选择对应配置方式。Cloudflare 可直接配置根域名；其他 DNS 服务商默认优先使用 www，根域名仅在支持 ALIAS、ANAME 或 Flattening 时使用。",
+          name: "名称",
+          content: "内容",
+          rootDomain: "@ 根域名",
+          wwwDomain: "www 域名",
+          subdomain: "非根域名",
+          cloudflareHint: "Cloudflare 支持根域名 CNAME Flattening，`@` 可以直接指向下面的真实目标值；代理方式请选择“仅 DNS”。",
+          otherDnsHint: "非 Cloudflare 服务商默认优先配置 `www` 或其他子域名。只有当 DNS 服务商明确支持 ALIAS、ANAME 或等效 Flattening 时，才配置根域名 `@`。",
+          rootDomainHostNote: "仅在服务商支持 ALIAS、ANAME 或 Flattening 时使用；主机记录填 @",
+          wwwHostNote: "默认推荐；主机记录填 www",
+          subdomainHostNote: "适用于 blog.example.com 这类子域名；主机记录填 blog、app 等前缀",
           recordType: "类型",
           host: "主机记录",
           value: "记录值",
           ttl: "TTL",
           note: "说明",
+          copy: "复制",
+          copied: "已复制",
+          steps: "配置步骤",
+          verificationChecklist: "生效检查",
+          tips: "注意事项",
+          propagation: "预计生效时间",
           openSite: "打开站点",
         }
       : {
           title: "Domain Configuration Guide",
+          subtitle: "Add the DNS records below in your domain provider, then return to the project to verify the domain.",
+          currentDeployment: "Current deployment and DNS",
+          configurationEntry: "Configuration entry",
           recommendedRecords: "Recommended DNS records",
+          cloudflareDns: "Cloudflare DNS",
+          otherDnsProviders: "Other DNS providers",
+          providerSplitHint: "Choose the matching provider section below. Cloudflare can use the apex directly; other DNS providers should prefer www by default, and only use the apex if ALIAS, ANAME, or flattening is supported.",
+          name: "Name",
+          content: "Content",
+          rootDomain: "Apex domain (@)",
+          wwwDomain: "www subdomain",
+          subdomain: "Non-root subdomain",
+          cloudflareHint: "Cloudflare supports apex CNAME flattening, so `@` can point directly to the real target value below. Set proxy mode to DNS only.",
+          otherDnsHint: "For non-Cloudflare DNS providers, prefer `www` or another subdomain by default. Only use the apex if the provider explicitly supports ALIAS, ANAME, or equivalent flattening.",
+          rootDomainHostNote: "Use only when the provider supports ALIAS, ANAME, or flattening; set host to @",
+          wwwHostNote: "Recommended default; set host to www",
+          subdomainHostNote: "Use for subdomains such as blog.example.com; set host to a prefix like blog or app",
           recordType: "Type",
           host: "Host",
           value: "Value",
           ttl: "TTL",
           note: "Note",
+          copy: "Copy",
+          copied: "Copied",
+          steps: "Setup steps",
+          verificationChecklist: "Activation checklist",
+          tips: "Notes",
+          propagation: "Estimated propagation",
           openSite: "Open site",
         };
+  const [copiedKey, setCopiedKey] = useState("");
   const title = String(metadata.title || copy.title);
+  const summary = String(metadata.summary || copy.subtitle).trim();
+  const domainEntry = String(metadata.domainEntry || "").trim();
+  const propagation = String(metadata.propagation || "").trim();
   const deployedUrl = String(metadata.deployedUrl || "").trim();
   const deploymentHost = String(metadata.deploymentHost || "").trim();
   const rawSteps = asStringList(metadata.steps);
+  const verificationChecklist = asStringList(metadata.verificationChecklist);
+  const tips = asStringList(metadata.tips);
   const dnsRecords = (Array.isArray(metadata.dnsRecords) ? metadata.dnsRecords : [])
     .map((item) => asRecord(item))
     .map((item) => ({
@@ -981,6 +1450,109 @@ function DomainGuidanceCard({ metadata }: { metadata: Record<string, unknown> })
           "After the status and certificate are active, open the custom domain to verify the site.",
         ];
   const steps = rawSteps.length > 0 && !hasProviderSpecificSteps ? rawSteps : defaultSteps;
+  const dnsTarget =
+    visibleDnsRecords.find((record) => record.host === "@")?.value ||
+    visibleDnsRecords.find((record) => record.host === "www")?.value ||
+    visibleDnsRecords[0]?.value ||
+    deploymentHost;
+  const defaultTtl = visibleDnsRecords[0]?.ttl || (locale === "zh" ? "自动 / 默认" : "Auto / Default");
+  const providerDnsGroups = dnsTarget
+    ? [
+        {
+          key: "cloudflare",
+          title: copy.cloudflareDns,
+          hint: copy.cloudflareHint,
+          providerStyle: "cloudflare" as const,
+          rows: [
+            {
+              key: "cloudflare-root",
+              type: "CNAME",
+              name: "@",
+              value: dnsTarget,
+              ttl: defaultTtl,
+              note: copy.rootDomainHostNote,
+            },
+            {
+              key: "cloudflare-www",
+              type: "CNAME",
+              name: "www",
+              value: dnsTarget,
+              ttl: defaultTtl,
+              note: copy.wwwHostNote,
+            },
+            {
+              key: "cloudflare-subdomain",
+              type: "CNAME",
+              name: "blog",
+              value: dnsTarget,
+              ttl: defaultTtl,
+              note: copy.subdomainHostNote,
+            },
+          ],
+        },
+        {
+          key: "other",
+          title: copy.otherDnsProviders,
+          hint: copy.otherDnsHint,
+          providerStyle: "generic" as const,
+          rows: [
+            {
+              key: "other-www",
+              type: "CNAME",
+              host: "www",
+              value: dnsTarget,
+              ttl: defaultTtl,
+              note: copy.wwwHostNote,
+            },
+            {
+              key: "other-subdomain",
+              type: "CNAME",
+              host: "blog",
+              value: dnsTarget,
+              ttl: defaultTtl,
+              note: copy.subdomainHostNote,
+            },
+            {
+              key: "other-root",
+              type: "ALIAS / ANAME / Flattening",
+              host: "@",
+              value: dnsTarget,
+              ttl: defaultTtl,
+              note: copy.rootDomainHostNote,
+            },
+          ],
+        },
+      ]
+    : [];
+
+  useEffect(() => {
+    if (!copiedKey) return undefined;
+    const timeoutId = window.setTimeout(() => setCopiedKey(""), 1600);
+    return () => window.clearTimeout(timeoutId);
+  }, [copiedKey]);
+
+  const handleCopy = useCallback(async (key: string, value: string) => {
+    const text = String(value || "").trim();
+    if (!text) return;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const input = document.createElement("textarea");
+        input.value = text;
+        input.setAttribute("readonly", "");
+        input.style.position = "absolute";
+        input.style.left = "-9999px";
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        document.body.removeChild(input);
+      }
+      setCopiedKey(key);
+    } catch {
+      setCopiedKey("");
+    }
+  }, []);
 
   return (
     <div className="mt-3 overflow-hidden rounded-2xl border border-[color-mix(in_oklab,var(--shp-primary)_28%,var(--shp-border)_72%)] bg-[radial-gradient(circle_at_top_left,color-mix(in_oklab,var(--shp-primary)_18%,transparent),transparent_44%),color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] shadow-[0_18px_60px_color-mix(in_oklab,var(--shp-primary)_10%,transparent)]">
@@ -990,6 +1562,7 @@ function DomainGuidanceCard({ metadata }: { metadata: Record<string, unknown> })
         </span>
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-[var(--shp-text)]">{title}</p>
+          {summary ? <p className="mt-1 text-xs leading-relaxed text-[var(--shp-muted)]">{summary}</p> : null}
           {deployedUrl ? (
             <a href={deployedUrl} target="_blank" rel="noreferrer" className="mt-1 block truncate text-xs text-[var(--shp-primary)] hover:underline" title={deployedUrl}>
               {deployedUrl}
@@ -998,47 +1571,179 @@ function DomainGuidanceCard({ metadata }: { metadata: Record<string, unknown> })
         </div>
       </div>
       <div className="space-y-3 px-4 py-3">
-        {visibleDnsRecords.length > 0 ? (
+        {providerDnsGroups.length > 0 ? (
           <div className="overflow-hidden rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_48%,transparent)]">
             <div className="border-b border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] px-3 py-2">
-              <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--shp-muted)]">{copy.recommendedRecords}</p>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--shp-muted)]">{copy.currentDeployment}</p>
+              <p className="mt-1 text-[11px] leading-relaxed text-[var(--shp-muted)]">{copy.providerSplitHint}</p>
             </div>
-            <div className="divide-y divide-[color-mix(in_oklab,var(--shp-border)_48%,transparent)]">
-              {visibleDnsRecords.map((record, index) => (
-                <div key={`${record.type}-${record.host}-${index}`} className="grid gap-2 px-3 py-3 text-xs md:grid-cols-[90px_90px_minmax(0,1fr)_90px]">
-                  <div>
-                    <p className="text-[10px] text-[var(--shp-muted)]">{copy.recordType}</p>
-                    <code className="mt-1 block font-mono text-[var(--shp-text)]">{record.type}</code>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-[var(--shp-muted)]">{copy.host}</p>
-                    <code className="mt-1 block font-mono text-[var(--shp-text)]">{record.host}</code>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] text-[var(--shp-muted)]">{copy.value}</p>
-                    <code className="mt-1 block break-all font-mono text-[var(--shp-text)]">{record.value}</code>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-[var(--shp-muted)]">{copy.ttl}</p>
-                    <code className="mt-1 block font-mono text-[var(--shp-text)]">{record.ttl || "-"}</code>
-                  </div>
-                  {record.note ? <p className="md:col-span-4 text-[11px] leading-relaxed text-[var(--shp-muted)]">{record.note}</p> : null}
+            <div className="space-y-3 px-3 py-3">
+              {providerDnsGroups.length > 0 ? (
+                <div className="space-y-3">
+                  {providerDnsGroups.map((group) => (
+                    <div
+                      key={group.key}
+                      className="overflow-hidden rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_54%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_90%,transparent)]"
+                    >
+                      <div className="border-b border-[color-mix(in_oklab,var(--shp-border)_50%,transparent)] px-3 py-2">
+                        <p className="text-[11px] font-semibold text-[var(--shp-text)]">{group.title}</p>
+                        <p className="mt-1 text-[11px] leading-relaxed text-[var(--shp-muted)]">{group.hint}</p>
+                      </div>
+                      <div className="divide-y divide-[color-mix(in_oklab,var(--shp-border)_42%,transparent)]">
+                        {group.providerStyle === "cloudflare"
+                          ? group.rows.map((record) => (
+                              <div key={record.key} className="space-y-2 px-3 py-3">
+                                <div className="grid gap-2 text-xs md:grid-cols-[60px_60px_minmax(0,1fr)_90px]">
+                                  <div>
+                                    <p className="text-[10px] text-[var(--shp-muted)]">{copy.name}</p>
+                                    <code className="mt-1 block font-mono text-[var(--shp-text)]">{record.name}</code>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] text-[var(--shp-muted)]">{copy.recordType}</p>
+                                    <code className="mt-1 block font-mono text-[var(--shp-text)]">{record.type}</code>
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="min-w-0">
+                                      <div className="flex items-center gap-2">
+                                        <p className="text-[10px] text-[var(--shp-muted)]">{copy.content}</p>
+                                        <button
+                                          type="button"
+                                          onClick={() => void handleCopy(`${group.key}-${record.key}-value`, record.value)}
+                                          className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-2 py-0.5 text-[11px] text-[var(--shp-muted)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_10%,transparent)]"
+                                        >
+                                          {copiedKey === `${group.key}-${record.key}-value` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                                          <span>{copiedKey === `${group.key}-${record.key}-value` ? copy.copied : copy.copy}</span>
+                                        </button>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => void handleCopy(`${group.key}-${record.key}-value`, record.value)}
+                                        className="mt-1 block w-full text-left"
+                                      >
+                                        <code
+                                          className="block h-14 w-full overflow-hidden text-ellipsis rounded-md border border-[color-mix(in_oklab,var(--shp-border)_46%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_44%,transparent)] px-2 py-1.5 font-mono text-[11px] leading-4 text-[var(--shp-text)] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3]"
+                                          title={record.value}
+                                        >
+                                          {record.value}
+                                        </code>
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] text-[var(--shp-muted)]">{copy.ttl}</p>
+                                    <code className="mt-1 block font-mono text-[var(--shp-text)]">{record.ttl || "-"}</code>
+                                  </div>
+                                </div>
+                                {record.note ? <p className="text-[11px] leading-relaxed text-[var(--shp-muted)]">{record.note}</p> : null}
+                              </div>
+                            ))
+                          : group.rows.map((record) => (
+                              <div key={record.key} className="space-y-2 px-3 py-3">
+                                <div className="grid gap-2 text-xs md:grid-cols-[60px_60px_minmax(0,1fr)_100px]">
+                                  <div>
+                                    <p className="text-[10px] text-[var(--shp-muted)]">{copy.host}</p>
+                                    <code className="mt-1 block font-mono text-[var(--shp-text)]">{record.host}</code>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] text-[var(--shp-muted)]">{copy.recordType}</p>
+                                    <code className="mt-1 block font-mono text-[var(--shp-text)]">{record.type}</code>
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="min-w-0">
+                                      <div className="flex items-center gap-2">
+                                        <p className="text-[10px] text-[var(--shp-muted)]">{copy.value}</p>
+                                        <button
+                                          type="button"
+                                          onClick={() => void handleCopy(`${group.key}-${record.key}-value`, record.value)}
+                                          className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-2 py-0.5 text-[11px] text-[var(--shp-muted)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_10%,transparent)]"
+                                        >
+                                          {copiedKey === `${group.key}-${record.key}-value` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                                          <span>{copiedKey === `${group.key}-${record.key}-value` ? copy.copied : copy.copy}</span>
+                                        </button>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => void handleCopy(`${group.key}-${record.key}-value`, record.value)}
+                                        className="mt-1 block w-full text-left"
+                                      >
+                                        <code
+                                          className="block h-14 w-full overflow-hidden text-ellipsis rounded-md border border-[color-mix(in_oklab,var(--shp-border)_46%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_44%,transparent)] px-2 py-1.5 font-mono text-[11px] leading-4 text-[var(--shp-text)] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3]"
+                                          title={record.value}
+                                        >
+                                          {record.value}
+                                        </code>
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] text-[var(--shp-muted)]">{copy.ttl}</p>
+                                    <code className="mt-1 block font-mono text-[var(--shp-text)]">{record.ttl || "-"}</code>
+                                  </div>
+                                </div>
+                                {record.note ? <p className="text-[11px] leading-relaxed text-[var(--shp-muted)]">{record.note}</p> : null}
+                              </div>
+                            ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              ) : null}
             </div>
           </div>
         ) : null}
+        {(domainEntry || propagation) ? (
+          <div className="grid gap-2 text-xs md:grid-cols-2">
+            {domainEntry ? (
+              <div className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_42%,transparent)] p-3">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--shp-muted)]">{copy.configurationEntry}</p>
+                <p className="mt-1 font-medium text-[var(--shp-text)]">{domainEntry}</p>
+              </div>
+            ) : null}
+            {propagation ? (
+              <div className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_42%,transparent)] p-3">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--shp-muted)]">{copy.propagation}</p>
+                <p className="mt-1 leading-relaxed text-[var(--shp-text)]">{propagation}</p>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
         {steps.length > 0 ? (
-          <ol className="space-y-2">
-            {steps.map((step, index) => (
-              <li key={`${index}-${step}`} className="grid grid-cols-[24px_minmax(0,1fr)] gap-2 text-xs leading-relaxed text-[var(--shp-muted)]">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--shp-primary)_16%,transparent)] text-[10px] font-semibold text-[var(--shp-primary)]">
-                  {index + 1}
-                </span>
-                <span className="pt-0.5">{renderInlineMarkdown(step)}</span>
-              </li>
-            ))}
-          </ol>
+          <div className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_36%,transparent)] p-3">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--shp-muted)]">{copy.steps}</p>
+            <ol className="mt-3 space-y-2">
+              {steps.map((step, index) => (
+                <li key={`${index}-${step}`} className="grid grid-cols-[24px_minmax(0,1fr)] gap-2 text-xs leading-relaxed text-[var(--shp-muted)]">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--shp-primary)_16%,transparent)] text-[10px] font-semibold text-[var(--shp-primary)]">
+                    {index + 1}
+                  </span>
+                  <span className="pt-0.5">{renderInlineMarkdown(step)}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        ) : null}
+        {verificationChecklist.length > 0 ? (
+          <div className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_36%,transparent)] p-3">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--shp-muted)]">{copy.verificationChecklist}</p>
+            <ul className="mt-3 space-y-2">
+              {verificationChecklist.map((item, index) => (
+                <li key={`${index}-${item}`} className="grid grid-cols-[18px_minmax(0,1fr)] gap-2 text-xs leading-relaxed text-[var(--shp-muted)]">
+                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[var(--shp-primary)]" />
+                  <span>{renderInlineMarkdown(item)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        {tips.length > 0 ? (
+          <div className="rounded-xl border border-[color-mix(in_oklab,var(--shp-secondary)_36%,var(--shp-border)_64%)] bg-[color-mix(in_oklab,var(--shp-secondary)_10%,var(--shp-bg)_90%)] p-3">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--shp-muted)]">{copy.tips}</p>
+            <ul className="mt-2 space-y-1.5 text-xs leading-relaxed text-[var(--shp-muted)]">
+              {tips.map((item, index) => (
+                <li key={`${index}-${item}`}>{renderInlineMarkdown(item)}</li>
+              ))}
+            </ul>
+          </div>
         ) : null}
         <div className="flex flex-wrap gap-2 pt-1">
           {deployedUrl ? (
@@ -2156,6 +2861,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
   const [availableAssets, setAvailableAssets] = useState<ProjectAsset[]>([]);
   const [previewRefreshNonce, setPreviewRefreshNonce] = useState(0);
   const [previewDevice, setPreviewDevice] = useState<PreviewDeviceId>("browser");
+  const accountLabel = formatWorkspaceAccountLabel(userEmail, userId, workspaceCopy.guest);
 
   const pollTimerRef = useRef<number | null>(null);
   const messagesScrollRef = useRef<HTMLDivElement | null>(null);
@@ -2282,9 +2988,8 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
   }, []);
 
   const fetchProjectMeta = useCallback(async () => {
-    if (!userId) return;
     try {
-      const res = await fetch("/api/chat/sessions?limit=200", { cache: "no-store" });
+      const res = await fetch("/api/chat/sessions?limit=50", { cache: "no-store" });
       const data = (await res.json()) as SessionsResponse;
       if (!res.ok || !data.ok || !Array.isArray(data.sessions)) return;
       setProjects(data.sessions.filter((session) => !session.archived));
@@ -2295,7 +3000,8 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
     } catch {
       // best-effort project metadata
     }
-  }, [chatId, userId, workspaceCopy.currentProject]);
+  }, [chatId, workspaceCopy.currentProject]);
+
 
   const fetchProjectAssetsForPicker = useCallback(async () => {
     if (!chatId.trim()) return;
@@ -2334,6 +3040,11 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
   useEffect(() => {
     void fetchProjectMeta();
   }, [fetchProjectMeta]);
+
+  useEffect(() => {
+    if (!userId) return;
+    void fetchProjectMeta();
+  }, [fetchProjectMeta, userId]);
 
   useEffect(() => {
     if (!assetPickerOpen) return;
@@ -2896,7 +3607,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
     { label: workspaceCopy.nav.analytics, icon: BarChart3, href: `/projects/${encodeURIComponent(chatId)}/analysis`, active: false },
     { label: workspaceCopy.nav.assets, icon: FolderOpen, href: `/projects/${encodeURIComponent(chatId)}/assets`, active: false },
     { label: workspaceCopy.nav.data, icon: Database, href: `/projects/${encodeURIComponent(chatId)}/data`, active: false },
-    { label: workspaceCopy.nav.settings, icon: Settings, active: false },
+    { label: workspaceCopy.nav.settings, icon: Settings, href: `/projects/${encodeURIComponent(chatId)}/settings`, active: false },
   ];
 
   return (
@@ -3034,11 +3745,11 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
                   "mt-2 flex items-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_35%,transparent)] px-3 py-2",
                   sidebarCollapsed ? "justify-center px-2" : "",
                 ].join(" ")}
-                title={userEmail || workspaceCopy.guest}
+                title={userEmail || userId || workspaceCopy.guest}
               >
                 <User2 className="h-4 w-4 shrink-0 text-[var(--shp-muted)]" />
                 {!sidebarCollapsed ? (
-                  <span className="max-w-[190px] truncate text-sm text-[var(--shp-text)]">{userEmail || workspaceCopy.guest}</span>
+                  <span className="max-w-[190px] truncate text-sm text-[var(--shp-text)]">{accountLabel}</span>
                 ) : null}
               </div>
               {userEmail ? (
@@ -3231,7 +3942,14 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
                           onConfirm={(payload) => void handleTimelineAction(payload)}
                         />
                       ) : null}
-                      {cardType === "domain_guidance" ? <DomainGuidanceCard metadata={metadata} /> : null}
+                      {cardType === "domain_binding_required" ? (
+                        <SharedDomainBindingPromptCard
+                          projectId={chatId}
+                          metadata={metadata}
+                          disabled={submitting || loadingTask}
+                        />
+                      ) : null}
+                      {cardType === "domain_guidance" ? <SharedDomainGuidanceCard metadata={normalizeDomainGuidanceMetadata(metadata)} /> : null}
                       <p className="mt-1 text-[10px] text-[color-mix(in_oklab,var(--shp-muted)_72%,transparent)]">
                         {new Date(message.timestamp).toLocaleTimeString()}
                       </p>

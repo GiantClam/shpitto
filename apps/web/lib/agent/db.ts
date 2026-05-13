@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { getD1Client } from "../d1.ts";
 import { getR2Client } from "../r2.ts";
 import { normalizeAuthEmail } from "../auth/cloudflare-email-auth.ts";
+import { isUsableProjectTitle, normalizeProjectTitleForDisplay, selectProjectTitleForStorage } from "./project-title.ts";
 
 const SOURCE_APP = "shpitto";
 const ACCOUNT_KEY = (process.env.SHPITTO_ACCOUNT_KEY || SOURCE_APP).trim();
@@ -174,10 +175,6 @@ export async function saveProjectState(
   const d1 = getD1Client();
   await ensureSchemaReady();
 
-  const projectName =
-    (projectJson as any)?.branding?.name?.trim?.() ||
-    "Untitled Project";
-
   if (!d1.isConfigured()) {
     return existingProjectId || randomUUID();
   }
@@ -186,11 +183,21 @@ export async function saveProjectState(
 
   const timestamp = nowIso();
   let projectId = existingProjectId;
+  const rawProjectName = (projectJson as any)?.branding?.name;
+  let existingProjectName: string | undefined;
 
-  if (!projectId) {
-    const byName = await d1.queryOne<{ id: string }>(
+  if (projectId) {
+    const existingProject = await d1.queryOne<{ id: string; name: string }>(
+      "SELECT id, name FROM shpitto_projects WHERE id = ? LIMIT 1;",
+      [projectId],
+    );
+    existingProjectName = existingProject?.name;
+  }
+
+  if (!projectId && isUsableProjectTitle(rawProjectName)) {
+    const byName = await d1.queryOne<{ id: string; name: string }>(
       `
-      SELECT id
+      SELECT id, name
       FROM shpitto_projects
       WHERE owner_user_id = ?
         AND source_app = ?
@@ -198,15 +205,27 @@ export async function saveProjectState(
       ORDER BY updated_at DESC
       LIMIT 1;
       `,
-      [userId, SOURCE_APP, projectName],
+      [userId, SOURCE_APP, selectProjectTitleForStorage({ rawTitle: rawProjectName })],
     );
-    projectId = byName?.id || randomUUID();
+    projectId = byName?.id || projectId;
+    existingProjectName = byName?.name;
   }
 
-  const existing = await d1.queryOne<{ id: string }>(
-    "SELECT id FROM shpitto_projects WHERE id = ? LIMIT 1;",
+  if (!projectId) {
+    projectId = randomUUID();
+  }
+
+  const projectName = selectProjectTitleForStorage({
+    rawTitle: rawProjectName,
+    projectId,
+    existingTitle: existingProjectName,
+  });
+
+  const existing = await d1.queryOne<{ id: string; name: string }>(
+    "SELECT id, name FROM shpitto_projects WHERE id = ? LIMIT 1;",
     [projectId],
   );
+  if (!existingProjectName) existingProjectName = existing?.name;
 
   const configJson = JSON.stringify(projectJson || {});
   const r2 = getR2Client();
@@ -360,7 +379,7 @@ export async function getProjectAnalyticsBinding(projectId: string, userId: stri
   return {
     projectId: String(row.projectId || ""),
     ownerUserId: String(row.ownerUserId || ""),
-    projectName: String(row.projectName || "Project"),
+    projectName: normalizeProjectTitleForDisplay(row.projectName, row.projectId ? String(row.projectId) : ""),
     deploymentHost: row.deploymentHost ? String(row.deploymentHost) : null,
     latestDeploymentUrl: row.latestDeploymentUrl ? String(row.latestDeploymentUrl) : null,
     latestDeploymentAt: row.latestDeploymentAt ? String(row.latestDeploymentAt) : null,
@@ -410,10 +429,99 @@ export async function getOwnedProjectSummary(projectId: string, userId: string):
   if (!row) return null;
   return {
     projectId: String(row.projectId || ""),
-    projectName: String(row.projectName || "Project"),
+    projectName: normalizeProjectTitleForDisplay(row.projectName, row.projectId ? String(row.projectId) : ""),
     deploymentHost: row.deploymentHost ? String(row.deploymentHost) : null,
     latestDeploymentUrl: row.latestDeploymentUrl ? String(row.latestDeploymentUrl) : null,
   };
+}
+
+export async function getOwnedProjectState(projectId: string, userId: string): Promise<{
+  projectId: string;
+  projectName: string;
+  projectJson: unknown;
+} | null> {
+  const d1 = getD1Client();
+  await ensureSchemaReady();
+  if (!d1.isConfigured()) return null;
+
+  const row = await d1.queryOne<Record<string, unknown>>(
+    `
+    SELECT
+      p.id AS projectId,
+      p.name AS projectName,
+      p.config_json AS configJson
+    FROM shpitto_projects p
+    WHERE p.id = ?
+      AND p.owner_user_id = ?
+      AND p.source_app = ?
+    LIMIT 1;
+    `,
+    [projectId, userId, SOURCE_APP],
+  );
+  if (!row) return null;
+
+  let projectJson: unknown = {};
+  try {
+    projectJson = JSON.parse(String(row.configJson || "{}"));
+  } catch {
+    projectJson = {};
+  }
+
+  return {
+    projectId: String(row.projectId || ""),
+    projectName: normalizeProjectTitleForDisplay(row.projectName, row.projectId ? String(row.projectId) : ""),
+    projectJson,
+  };
+}
+
+export async function listOwnedProjectSummaries(userId: string, limit = 50): Promise<
+  Array<{
+    projectId: string;
+    projectName: string;
+    deploymentHost: string | null;
+    latestDeploymentUrl: string | null;
+    updatedAt: string | null;
+  }>
+> {
+  const d1 = getD1Client();
+  await ensureSchemaReady();
+  if (!d1.isConfigured()) return [];
+
+  const normalizedUserId = String(userId || "").trim();
+  if (!normalizedUserId) return [];
+
+  const rows = await d1.query<Record<string, unknown>>(
+    `
+    SELECT
+      p.id AS projectId,
+      p.name AS projectName,
+      s.deployment_host AS deploymentHost,
+      d.url AS latestDeploymentUrl,
+      COALESCE(d.created_at, p.updated_at, p.created_at) AS updatedAt
+    FROM shpitto_projects p
+    LEFT JOIN shpitto_project_sites s ON s.project_id = p.id
+    LEFT JOIN shpitto_deployments d ON d.id = (
+      SELECT id
+      FROM shpitto_deployments
+      WHERE project_id = p.id
+      ORDER BY created_at DESC
+      LIMIT 1
+    )
+    WHERE p.owner_user_id = ?
+      AND p.source_app = ?
+    ORDER BY COALESCE(d.created_at, p.updated_at, p.created_at) DESC
+    LIMIT ?;
+    `,
+    [normalizedUserId, SOURCE_APP, Math.max(1, Math.min(limit, 200))],
+  );
+
+  return rows.map((row) => ({
+    projectId: String(row.projectId || ""),
+    projectName: normalizeProjectTitleForDisplay(row.projectName, row.projectId ? String(row.projectId) : ""),
+    deploymentHost: row.deploymentHost ? String(row.deploymentHost) : null,
+    latestDeploymentUrl: row.latestDeploymentUrl ? String(row.latestDeploymentUrl) : null,
+    updatedAt: row.updatedAt ? String(row.updatedAt) : null,
+  }));
 }
 
 export async function upsertProjectCustomDomain(params: {
@@ -548,6 +656,36 @@ export async function listProjectCustomDomains(projectId: string, userId: string
       updatedAt: String(row.updatedAt || ""),
     };
   });
+}
+
+export async function deleteProjectCustomDomain(params: {
+  projectId: string;
+  userId: string;
+  hostname: string;
+}) {
+  const d1 = getD1Client();
+  await ensureSchemaReady();
+  if (!d1.isConfigured()) return false;
+
+  const projectId = String(params.projectId || "").trim();
+  const userId = String(params.userId || "").trim();
+  const hostname = normalizeHost(params.hostname || "");
+  if (!projectId || !userId || !hostname) {
+    throw new Error("deleteProjectCustomDomain requires projectId/userId/hostname.");
+  }
+
+  await d1.execute(
+    `
+    DELETE FROM shpitto_project_domains
+    WHERE project_id = ?
+      AND owner_user_id = ?
+      AND source_app = ?
+      AND hostname = ?;
+    `,
+    [projectId, userId, SOURCE_APP, hostname],
+  );
+
+  return true;
 }
 
 export async function syncProjectCustomDomainOrigin(

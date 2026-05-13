@@ -66,11 +66,12 @@ export async function GET(
 
     const category = toCategory(request.nextUrl.searchParams.get("category") || "");
     const query = String(request.nextUrl.searchParams.get("q") || "").trim();
+    const shouldSyncGenerated = String(request.nextUrl.searchParams.get("sync") || "").trim() === "1";
     let assets = await listProjectAssets({
       ownerUserId: userId,
       projectId,
     });
-    if (assets.length === 0) {
+    if (assets.length === 0 && shouldSyncGenerated) {
       const latestTask = await getLatestChatTaskForChat(projectId);
       const generatedFiles = Array.isArray(latestTask?.result?.progress?.generatedFiles)
         ? (latestTask?.result?.progress?.generatedFiles as string[])

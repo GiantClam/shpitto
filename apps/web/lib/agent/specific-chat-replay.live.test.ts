@@ -295,15 +295,23 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
       const prevAsyncTaskTimeoutMs = process.env.CHAT_ASYNC_TASK_TIMEOUT_MS;
       const prevStageBudgetPerFileMs = process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS;
       const prevRoundAbsoluteTimeoutMs = process.env.SKILL_TOOL_ROUND_ABSOLUTE_TIMEOUT_MS;
+      const prevRoundIdleTimeoutMs = process.env.SKILL_TOOL_ROUND_IDLE_TIMEOUT_MS;
+      const prevDetailTargetsPerRound = process.env.SKILL_TOOL_DETAIL_TARGETS_PER_ROUND;
+      const prevPptokenModel = process.env.LLM_MODEL_PPTOKEN;
+      const prevPptokenFallbackModel = process.env.LLM_MODEL_FALLBACK_PPTOKEN;
       const prevProvider = process.env.LLM_PROVIDER;
       const prevProviderOrder = process.env.LLM_PROVIDER_ORDER;
 
       try {
         process.env.CHAT_ASYNC_TASK_TIMEOUT_MS = "1800000";
-        process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS = "300000";
+        process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS = "420000";
+        process.env.SKILL_TOOL_ROUND_IDLE_TIMEOUT_MS = "420000";
         process.env.SKILL_TOOL_ROUND_ABSOLUTE_TIMEOUT_MS = "480000";
-        delete process.env.LLM_PROVIDER;
-        process.env.LLM_PROVIDER_ORDER = "pptoken,aiberm,crazyrouter";
+        process.env.SKILL_TOOL_DETAIL_TARGETS_PER_ROUND = "3";
+        process.env.LLM_MODEL_PPTOKEN = "gpt-5.4-mini";
+        process.env.LLM_MODEL_FALLBACK_PPTOKEN = "gpt-5.4-mini";
+        process.env.LLM_PROVIDER = "pptoken";
+        process.env.LLM_PROVIDER_ORDER = "pptoken";
 
         const { getLatestChatTaskForChat, listChatTimelineMessages } = await import("./chat-task-store");
         const beforeLatest = await getLatestChatTaskForChat(replayChatId);
@@ -316,7 +324,9 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         process.env.CHAT_TASKS_USE_SUPABASE = "0";
         (globalThis as any).__shpittoChatTaskStore = undefined;
         const { POST } = await import("../../app/api/chat/route");
-        const { runChatTaskWorkerOnce } = await import("../../scripts/chat-task-worker");
+        const { GET: getPreviewRoot } = await import("../../app/api/chat/tasks/[taskId]/preview/route");
+        const { GET: getPreviewFile } = await import("../../app/api/chat/tasks/[taskId]/preview/[...path]/route");
+        const { SkillRuntimeExecutor } = await import("../skill-runtime/executor");
 
         const generateRes = await POST(
           new Request("http://localhost/api/chat", {
@@ -337,7 +347,13 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         expect(queuedGenerate?.id).not.toBe(beforeLatest?.id);
         expect((queuedGenerate?.result?.internal?.inputState as any)?.workflow_context?.executionMode).toBe("generate");
 
-        const generated = await waitForTerminalTask(queuedGenerate!.id, runChatTaskWorkerOnce);
+        await SkillRuntimeExecutor.runTask({
+          taskId: queuedGenerate!.id,
+          chatId: replayChatId,
+          workerId: "specific-replay-generate-test",
+          inputState: (queuedGenerate?.result?.internal?.inputState || {}) as any,
+        });
+        const generated = await getLatestChatTaskForChat(replayChatId);
         expect(generated.status).toBe("succeeded");
         expect(generated.result?.progress?.stage).toBe("done");
 
@@ -354,6 +370,21 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         const blogIndexHtml = fileContent(files, "/blog/index.html");
         const blogDetailPaths = paths.filter((item) => /^\/blog\/[^/]+\/index\.html$/i.test(item));
         const combinedVisibleText = htmlToVisibleText([indexHtml, blogIndexHtml].join("\n"));
+        const previewRootRes = await getPreviewRoot(new Request("http://localhost/api/chat/tasks/x/preview"), {
+          params: Promise.resolve({ taskId: generated.id }),
+        });
+        const previewUrlPath = String(previewRootRes.headers.get("location") || "");
+        const previewBaseUrl = String(process.env.SHPITTO_PREVIEW_BASE_URL || "http://localhost:3000").replace(/\/+$/, "");
+        const previewUrl = previewUrlPath ? `${previewBaseUrl}${previewUrlPath}` : "";
+        expect(previewRootRes.status).toBe(307);
+        expect(previewUrlPath).toContain(`/api/chat/tasks/${encodeURIComponent(generated.id)}/preview/index.html`);
+
+        const previewIndexRes = await getPreviewFile(new Request("http://localhost"), {
+          params: Promise.resolve({ taskId: generated.id, path: ["index.html"] }),
+        });
+        const previewIndexHtml = await previewIndexRes.text();
+        expect(previewIndexRes.status).toBe(200);
+        expect(previewIndexHtml.toLowerCase()).toContain("<!doctype html");
 
         if (manifestRoutes.length > 0) {
           expect(manifestRoutes).toEqual(["/", "/blog"]);
@@ -373,17 +404,39 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         expect(canonicalPrompt).not.toContain("/contact/index.html");
         expect(combinedVisibleText).toMatch(/HelloTalk|Huawei|WeChat|DevOps|SaaS|K12|AI/i);
         expect(combinedVisibleText).not.toMatch(/Custom Solutions|Open scheduling|Cal\.com|template news|lorem ipsum/i);
+        console.log(
+          "SPECIFIC_CHAT_REPLAY_PREVIEW=" +
+            JSON.stringify(
+              {
+                chatId: replayChatId,
+                taskId: generated.id,
+                previewUrlPath,
+                previewUrl,
+              },
+              null,
+              2,
+            ),
+        );
       } finally {
         process.env.CHAT_TASKS_USE_SUPABASE = prevUseSupabase;
         process.env.CHAT_ASYNC_TASK_TIMEOUT_MS = prevAsyncTaskTimeoutMs;
         process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS = prevStageBudgetPerFileMs;
+        if (prevRoundIdleTimeoutMs === undefined) delete process.env.SKILL_TOOL_ROUND_IDLE_TIMEOUT_MS;
+        else process.env.SKILL_TOOL_ROUND_IDLE_TIMEOUT_MS = prevRoundIdleTimeoutMs;
         process.env.SKILL_TOOL_ROUND_ABSOLUTE_TIMEOUT_MS = prevRoundAbsoluteTimeoutMs;
+        if (prevDetailTargetsPerRound === undefined) delete process.env.SKILL_TOOL_DETAIL_TARGETS_PER_ROUND;
+        else process.env.SKILL_TOOL_DETAIL_TARGETS_PER_ROUND = prevDetailTargetsPerRound;
+        if (prevPptokenModel === undefined) delete process.env.LLM_MODEL_PPTOKEN;
+        else process.env.LLM_MODEL_PPTOKEN = prevPptokenModel;
+        if (prevPptokenFallbackModel === undefined) delete process.env.LLM_MODEL_FALLBACK_PPTOKEN;
+        else process.env.LLM_MODEL_FALLBACK_PPTOKEN = prevPptokenFallbackModel;
         if (prevProvider === undefined) delete process.env.LLM_PROVIDER;
         else process.env.LLM_PROVIDER = prevProvider;
-        process.env.LLM_PROVIDER_ORDER = prevProviderOrder;
+        if (prevProviderOrder === undefined) delete process.env.LLM_PROVIDER_ORDER;
+        else process.env.LLM_PROVIDER_ORDER = prevProviderOrder;
       }
     },
-    20 * 60 * 1000,
+    30 * 60 * 1000,
   );
 
   it(
@@ -514,15 +567,23 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
       const prevAsyncTaskTimeoutMs = process.env.CHAT_ASYNC_TASK_TIMEOUT_MS;
       const prevStageBudgetPerFileMs = process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS;
       const prevRoundAbsoluteTimeoutMs = process.env.SKILL_TOOL_ROUND_ABSOLUTE_TIMEOUT_MS;
+      const prevRoundIdleTimeoutMs = process.env.SKILL_TOOL_ROUND_IDLE_TIMEOUT_MS;
+      const prevDetailTargetsPerRound = process.env.SKILL_TOOL_DETAIL_TARGETS_PER_ROUND;
+      const prevPptokenModel = process.env.LLM_MODEL_PPTOKEN;
+      const prevPptokenFallbackModel = process.env.LLM_MODEL_FALLBACK_PPTOKEN;
       const prevProvider = process.env.LLM_PROVIDER;
       const prevProviderOrder = process.env.LLM_PROVIDER_ORDER;
 
       try {
         process.env.CHAT_ASYNC_TASK_TIMEOUT_MS = "1800000";
-        process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS = "300000";
+        process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS = "420000";
+        process.env.SKILL_TOOL_ROUND_IDLE_TIMEOUT_MS = "420000";
         process.env.SKILL_TOOL_ROUND_ABSOLUTE_TIMEOUT_MS = "480000";
-        delete process.env.LLM_PROVIDER;
-        process.env.LLM_PROVIDER_ORDER = "pptoken,aiberm,crazyrouter";
+        process.env.SKILL_TOOL_DETAIL_TARGETS_PER_ROUND = "3";
+        process.env.LLM_MODEL_PPTOKEN = "gpt-5.4-mini";
+        process.env.LLM_MODEL_FALLBACK_PPTOKEN = "gpt-5.4-mini";
+        process.env.LLM_PROVIDER = "pptoken";
+        process.env.LLM_PROVIDER_ORDER = "pptoken";
 
         expect(Boolean(process.env.CLOUDFLARE_ACCOUNT_ID)).toBe(true);
         expect(Boolean(process.env.CLOUDFLARE_API_TOKEN)).toBe(true);
@@ -551,7 +612,7 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         const { POST } = await import("../../app/api/chat/route");
         const { GET: getPreviewFile } = await import("../../app/api/chat/tasks/[taskId]/preview/[...path]/route");
         const { getChatTask } = await import("./chat-task-store");
-        const { runChatTaskWorkerOnce } = await import("../../scripts/chat-task-worker");
+        const { SkillRuntimeExecutor } = await import("../skill-runtime/executor");
 
         const generateRes = await POST(
           new Request("http://localhost/api/chat", {
@@ -572,7 +633,13 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         expect(queuedGenerate?.id).not.toBe(beforeLatest?.id);
         expect((queuedGenerate?.result?.internal?.inputState as any)?.workflow_context?.executionMode).toBe("generate");
 
-        const generated = await waitForTerminalTask(queuedGenerate!.id, runChatTaskWorkerOnce);
+        await SkillRuntimeExecutor.runTask({
+          taskId: queuedGenerate!.id,
+          chatId: replayChatId,
+          workerId: "specific-replay-generate-deploy-test",
+          inputState: (queuedGenerate?.result?.internal?.inputState || {}) as any,
+        });
+        const generated = await getChatTask(queuedGenerate!.id);
         expect(generated.status).toBe("succeeded");
         expect(generated.result?.progress?.stage).toBe("done");
         expect(String(generated.result?.timelineMetadata?.cardType || "")).toBe("confirm_blog_content_deploy");
@@ -681,7 +748,13 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
       expect((((queuedDeploy?.result?.internal?.inputState as any)?.workflow_context?.blogContentPreviewPosts || []) as unknown[]).length)
         .toBe(3);
 
-      const deployed = await waitForTerminalTask(queuedDeploy!.id, runChatTaskWorkerOnce);
+      await SkillRuntimeExecutor.runTask({
+        taskId: queuedDeploy!.id,
+        chatId: replayChatId,
+        workerId: "specific-replay-deploy-test",
+        inputState: (queuedDeploy?.result?.internal?.inputState || {}) as any,
+      });
+      const deployed = await getChatTask(queuedDeploy!.id);
       const deployedUrl = normalizePagesUrl(String(deployed.result?.deployedUrl || ""));
       const progress = (deployed.result?.progress || {}) as Record<string, any>;
       const deployInternal = (deployed.result?.internal || {}) as Record<string, any>;
@@ -837,8 +910,16 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         else process.env.CHAT_ASYNC_TASK_TIMEOUT_MS = prevAsyncTaskTimeoutMs;
         if (prevStageBudgetPerFileMs === undefined) delete process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS;
         else process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS = prevStageBudgetPerFileMs;
+        if (prevRoundIdleTimeoutMs === undefined) delete process.env.SKILL_TOOL_ROUND_IDLE_TIMEOUT_MS;
+        else process.env.SKILL_TOOL_ROUND_IDLE_TIMEOUT_MS = prevRoundIdleTimeoutMs;
         if (prevRoundAbsoluteTimeoutMs === undefined) delete process.env.SKILL_TOOL_ROUND_ABSOLUTE_TIMEOUT_MS;
         else process.env.SKILL_TOOL_ROUND_ABSOLUTE_TIMEOUT_MS = prevRoundAbsoluteTimeoutMs;
+        if (prevDetailTargetsPerRound === undefined) delete process.env.SKILL_TOOL_DETAIL_TARGETS_PER_ROUND;
+        else process.env.SKILL_TOOL_DETAIL_TARGETS_PER_ROUND = prevDetailTargetsPerRound;
+        if (prevPptokenModel === undefined) delete process.env.LLM_MODEL_PPTOKEN;
+        else process.env.LLM_MODEL_PPTOKEN = prevPptokenModel;
+        if (prevPptokenFallbackModel === undefined) delete process.env.LLM_MODEL_FALLBACK_PPTOKEN;
+        else process.env.LLM_MODEL_FALLBACK_PPTOKEN = prevPptokenFallbackModel;
         if (prevProvider === undefined) delete process.env.LLM_PROVIDER;
         else process.env.LLM_PROVIDER = prevProvider;
         if (prevProviderOrder === undefined) delete process.env.LLM_PROVIDER_ORDER;

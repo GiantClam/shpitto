@@ -254,14 +254,10 @@ function collectPrimaryBlogSourceText(inputState: AgentState, deps: BlogWorkflow
 }
 
 function collectDeployBlogSourceText(inputState: AgentState, project: any, deps: BlogWorkflowDeps) {
-  const primarySourceText = collectPrimaryBlogSourceText(inputState, deps);
-  const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
-  const generatedText = files
-    .filter((file: any) => String(file?.path || "").endsWith(".html"))
-    .map((file: any) => deps.htmlToReadableText(String(file?.content || "")))
-    .filter(Boolean)
-    .join("\n\n");
-  return [primarySourceText, generatedText].filter(Boolean).join("\n\n");
+  void project;
+  // Do not re-seed blog content from generated site HTML. Only explicit user/source
+  // material is allowed to drive generated blog posts.
+  return collectPrimaryBlogSourceText(inputState, deps);
 }
 
 function resolveProjectBrandName(project: any, deps: BlogWorkflowDeps) {
@@ -721,6 +717,7 @@ function resolveBlogWorkflowPosts(params: {
   fallbackAuthorName: string;
   deps: BlogWorkflowDeps;
 }) {
+  const sourceText = String(params.sourceText || "").trim();
   const brandOverride = resolveProjectBrandName(params.project, params.deps) || params.fallbackAuthorName;
   const staticPosts = extractStaticBlogPostsFromProject({
     project: params.project,
@@ -728,11 +725,13 @@ function resolveBlogWorkflowPosts(params: {
     fallbackAuthorName: params.fallbackAuthorName,
     deps: params.deps,
   });
-  if (staticPosts.length > 0 && !staticBlogPostsNeedSourceAlignedFallback({ sourceText: params.sourceText, staticPosts })) {
-    return staticPosts;
+  if (staticPosts.length > 0) {
+    if (sourceText.length < 12) return staticPosts;
+    if (!staticBlogPostsNeedSourceAlignedFallback({ sourceText, staticPosts })) return staticPosts;
   }
+  if (sourceText.length < 12) return [];
   return buildGeneratedBlogSeedPosts({
-    sourceText: params.sourceText,
+    sourceText,
     locale: params.locale,
     brandOverride,
     deps: params.deps,
@@ -758,9 +757,7 @@ export function buildBlogContentWorkflowPreview(params: {
     return { required: false, reason: "no_content_mount", navLabel: "", posts: [] };
   }
   const visibleLocale = params.deps.toVisibleLocale(params.locale);
-  const primarySourceText = collectPrimaryBlogSourceText(params.inputState, params.deps);
-  const sourceText =
-    primarySourceText.trim().length >= 12 ? primarySourceText : collectDeployBlogSourceText(params.inputState, params.project, params.deps);
+  const sourceText = collectPrimaryBlogSourceText(params.inputState, params.deps);
   const posts = resolveBlogWorkflowPosts({
     sourceText,
     locale: visibleLocale,
@@ -776,7 +773,7 @@ export function buildBlogContentWorkflowPreview(params: {
       posts: posts.slice(0, 6),
     };
   }
-  if (sourceText.trim().length < 40) {
+  if (sourceText.trim().length < 12) {
     return {
       required: false,
       reason: "no_source",
@@ -797,11 +794,8 @@ export function collectBlogWorkflowSourceText(params: {
   project?: any;
   deps: BlogWorkflowDeps;
 }) {
-  const primarySourceText = collectPrimaryBlogSourceText(params.inputState, params.deps);
-  if (!params.project) return primarySourceText;
-  return primarySourceText.trim().length >= 12
-    ? primarySourceText
-    : collectDeployBlogSourceText(params.inputState, params.project, params.deps);
+  void params.project;
+  return collectPrimaryBlogSourceText(params.inputState, params.deps);
 }
 
 export function inferBlogBrandForWorkflow(text: string, locale: VisibleLocale) {

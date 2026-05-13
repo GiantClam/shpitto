@@ -349,3 +349,12 @@ const copy: Record<Locale, ProjectWorkspaceCopy> = {
 export function getProjectWorkspaceCopy(locale: Locale): ProjectWorkspaceCopy {
   return copy[locale] || copy.en;
 }
+
+export function formatWorkspaceAccountLabel(userEmail: string, userId: string, guestLabel: string): string {
+  const normalizedEmail = String(userEmail || "").trim();
+  if (normalizedEmail) return normalizedEmail;
+  const normalizedUserId = String(userId || "").trim();
+  if (!normalizedUserId) return guestLabel;
+  if (normalizedUserId.length <= 14) return normalizedUserId;
+  return `${normalizedUserId.slice(0, 8)}…${normalizedUserId.slice(-4)}`;
+}

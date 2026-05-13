@@ -50,7 +50,7 @@ import {
 } from "./bilingual-copy-guard.ts";
 import { sanitizeBlogIndexEditorialScaffoldText } from "../../skills/website-generation-workflow/runtime-site-completions.ts";
 import { getSkillExecutionAdapter } from "./skill-execution-adapter-registry.ts";
-import type { SkillExecutionRoundObjective, SkillExecutionValidationResult } from "./skill-execution-adapter.ts";
+import type { SkillExecutionAdapter, SkillExecutionRoundObjective, SkillExecutionValidationResult } from "./skill-execution-adapter.ts";
 
 type LlmProvider = "pptoken" | "aiberm" | "crazyroute";
 
@@ -72,6 +72,7 @@ type StageAttemptMeta = {
   activeModel: string;
   attemptedProviders: LlmProvider[];
   fallbackEngaged: boolean;
+  providerNotes: string[];
 };
 
 type RuntimeWorkflowFile = {
@@ -170,6 +171,12 @@ let cachedBlogPromptGuidance: BlogPromptGuidance | null = null;
 
 const MAX_TOOL_ROUNDS = Math.max(2, Number(process.env.SKILL_TOOL_MAX_ROUNDS || 20));
 const MAX_TOOL_QA_REPAIR_ROUNDS = Math.max(1, Number(process.env.SKILL_TOOL_QA_REPAIR_ROUNDS || 4));
+const HTML_TARGETS_PER_ROUND = Math.max(2, Number(process.env.SKILL_TOOL_HTML_TARGETS_PER_ROUND || 5));
+const DETAIL_TARGETS_PER_ROUND = Math.max(1, Number(process.env.SKILL_TOOL_DETAIL_TARGETS_PER_ROUND || 1));
+const DEFAULT_UNREQUESTED_BLOG_DETAIL_LIMIT = Math.max(
+  1,
+  Number(process.env.SKILL_TOOL_DEFAULT_UNREQUESTED_BLOG_DETAIL_LIMIT || 3),
+);
 const MAX_IDLE_ROUNDS = Math.max(1, Number(process.env.SKILL_TOOL_MAX_IDLE_ROUNDS || 2));
 const MAX_NO_PROGRESS_ROUNDS = Math.max(1, Number(process.env.SKILL_TOOL_MAX_NO_PROGRESS_ROUNDS || 3));
 const MAX_TOOL_ERRORS = Math.max(1, Number(process.env.SKILL_TOOL_MAX_ERRORS || 4));
@@ -241,6 +248,24 @@ function shouldRetrySkillToolStageWithFreshAttempt(error: unknown, meta: StageAt
   if (!/skill-tool stage budget exceeded/i.test(text)) return false;
   if (!meta.fallbackEngaged) return false;
   return true;
+}
+
+function formatSkillToolStageError(error: unknown, meta: StageAttemptMeta, notes: string[] = []): Error {
+  const diagnostics = Array.from(new Set([...(meta.providerNotes || []), ...notes].filter(Boolean)));
+  if (diagnostics.length === 0) {
+    return error instanceof Error ? error : new Error(errorText(error));
+  }
+  const message = [
+    errorText(error),
+    `skill_tool_provider_diagnostics: active=${meta.activeProvider}/${meta.activeModel}; attempted=${meta.attemptedProviders.join(",")}`,
+    ...diagnostics.slice(-6),
+  ].join("\n");
+  const wrapped = new Error(message);
+  if (error instanceof Error) {
+    wrapped.name = error.name;
+    (wrapped as any).cause = error;
+  }
+  return wrapped;
 }
 
 export function htmlPathToRoute(filePath: string): string {
@@ -642,6 +667,27 @@ function findVisibleBlogEditorialScaffold(html: string): string[] {
   return terms.filter(([, pattern]) => pattern.test(text)).map(([term]) => term);
 }
 
+function findVisiblePageMechanicsScaffold(html: string): string[] {
+  const text = htmlVisibleText(html);
+  const terms: Array<[string, RegExp]> = [
+    ["site entry label", /(?:阅读入口|站点入口|首页路径|内容路径|浏览路径|访问路径)/],
+    ["homepage-to-content sequence", /从(?:首页|主页)开始.{0,40}(?:循序|进入|接下来|博客|深内容)/i],
+    ["next-blog sequence", /接下来看(?:博客|文章|内容).{0,40}(?:具体|更具体|深入|完整)/i],
+    ["deep-content pathway", /(?:循序进入深内容|进入深内容)/i],
+    ["page role explainer", /(?:首页|主页|博客页|页面|本页|这个页面).{0,18}(?:任务|职责|作用|目的|定位)(?:是|为|在于)/i],
+    [
+      "mechanical next step",
+      /(?:(?:首页|主页|博客|页面|站点|入口|路径|角色|目标).{0,60}(?:下一步|继续了解|接下来)|(?:下一步|继续了解|接下来).{0,60}(?:首页|主页|博客|页面|站点|入口|路径|角色|目标))/i,
+    ],
+    ["role-target routing", /按角色和目标快速进入下一步/i],
+    ["from-to browsing path", /从.{0,24}到.{0,24}(?:形成|构成|串成).{0,16}(?:路径|动线|浏览|阅读)/i],
+    ["homepage job explainer", /(?:homepage|home page|home route).{0,40}(?:job|task|purpose|role).{0,20}(?:is|:)/i],
+    ["start-from-home sequence", /(?:start from|begin with).{0,24}(?:home|homepage|the home page).{0,60}(?:then|next|continue|blog|archive|deeper)/i],
+    ["site browsing path", /(?:site|page|homepage|blog).{0,40}(?:browsing path|reading path|content path|where to start)/i],
+  ];
+  return terms.filter(([, pattern]) => pattern.test(text)).map(([term]) => term);
+}
+
 function findVisibleBlogDetailEditorialScaffold(html: string): string[] {
   const indexOnlyTerms = new Set(["reading path"]);
   return findVisibleBlogEditorialScaffold(html).filter((term) => !indexOnlyTerms.has(term));
@@ -705,7 +751,7 @@ function requestedPublishableContentCount(requirementText = ""): number | undefi
     if (value) return Math.min(value, 12);
   }
   const contentNoun =
-    "(?:文章|博客文章|帖子|博文|报告|研究报告|指南|案例|posts?|articles?|blog\\s+posts?|reports?|guides?|case\\s+studies?)";
+    "(?:文章|博客|blog|博客文章|帖子|博文|报告|研究报告|指南|案例|posts?|articles?|blog\\s+posts?|reports?|guides?|case\\s+studies?)";
   const countToken = "([0-9０-９]+|一|二|两|三|四|五|六|七|八|九|十)";
   const patterns = [
     new RegExp(`(?:生成|写|撰写|创建|产出|入库|发布|新增|整理|补充)\\s*${countToken}\\s*(?:篇|个|条|份)?\\s*${contentNoun}`, "i"),
@@ -969,7 +1015,22 @@ function escapeHtmlAttribute(value: string): string {
 
 function stripLanguageVariantAttributes(attrs: string): string {
   return String(attrs || "")
+    .replace(/\sclass=(["'])([^"']*)\1/gi, (_match, quote: string, classValue: string) => {
+      const normalizedClassValue = String(classValue || "")
+        .split(/\s+/)
+        .map((token) => token.trim())
+        .filter(Boolean)
+        .filter(
+          (token) =>
+            !/^(?:lang-(?:zh|zh-cn|en)|(?:zh|en)(?:-only)?|locale-(?:zh|en)|is-(?:zh|en)|i18n-(?:zh|en))$/i.test(
+              token,
+            ),
+        )
+        .join(" ");
+      return normalizedClassValue ? ` class=${quote}${normalizedClassValue}${quote}` : "";
+    })
     .replace(/\sdata-i18n(?:-zh|-en)?(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?/gi, "")
+    .replace(/\s(?:lang|xml:lang|data-lang|data-locale|data-variant|data-language|aria-hidden|hidden)(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?/gi, "")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -991,31 +1052,49 @@ function collapseVisibleBilingualPairs(rawHtml: string, defaultVisibleLanguage: 
       firstLang: "en" as const,
       secondLang: "zh" as const,
     },
+    {
+      regex: /<([a-zA-Z][\w:-]*)([^>]*)()>([^<>]*)<\/\1>\s*<\1([^>]*)()>([^<>]*)<\/\1>/g,
+      firstLang: "auto" as const,
+      secondLang: "auto" as const,
+    },
   ];
 
   for (const pattern of patterns) {
     html = html.replace(
       pattern.regex,
-      (
-        match,
-        tagName,
-        leftAttrsA,
-        leftAttrsB,
-        firstContent,
-        rightAttrsA,
-        rightAttrsB,
-        secondContent,
-      ) => {
+      (match, tagName, leftAttrsA, leftAttrsB, firstContent, rightAttrsA, rightAttrsB, secondContent) => {
+        const rawLeftAttrs = `${leftAttrsA || ""} ${leftAttrsB || ""}`.trim();
+        const rawRightAttrs = `${rightAttrsA || ""} ${rightAttrsB || ""}`.trim();
+        if (/data-locale-toggle\b/i.test(rawLeftAttrs) || /data-locale-toggle\b/i.test(rawRightAttrs)) return match;
         const firstAttrs = stripLanguageVariantAttributes(`${leftAttrsA || ""} ${leftAttrsB || ""}`);
         const secondAttrs = stripLanguageVariantAttributes(`${rightAttrsA || ""} ${rightAttrsB || ""}`);
-        if (!firstAttrs || firstAttrs !== secondAttrs) return match;
+        if (firstAttrs !== secondAttrs) return match;
         const firstVisible = String(firstContent || "").trim();
         const secondVisible = String(secondContent || "").trim();
         if (!firstVisible || !secondVisible) return match;
-        const zhText = pattern.firstLang === "zh" ? firstVisible : secondVisible;
-        const enText = pattern.firstLang === "en" ? firstVisible : secondVisible;
+        let zhText = pattern.firstLang === "zh" ? firstVisible : secondVisible;
+        let enText = pattern.firstLang === "en" ? firstVisible : secondVisible;
+        if (pattern.firstLang === "auto") {
+          const firstDecoded = htmlVisibleText(firstVisible);
+          const secondDecoded = htmlVisibleText(secondVisible);
+          const firstLooksZh = cjkCount(firstDecoded) >= 2 && latinLetterCount(firstDecoded) <= Math.max(8, firstDecoded.length);
+          const firstLooksEn = latinLetterCount(firstDecoded) >= 3 && cjkCount(firstDecoded) <= 1;
+          const secondLooksZh = cjkCount(secondDecoded) >= 2 && latinLetterCount(secondDecoded) <= Math.max(8, secondDecoded.length);
+          const secondLooksEn = latinLetterCount(secondDecoded) >= 3 && cjkCount(secondDecoded) <= 1;
+          if (firstLooksZh && secondLooksEn) {
+            zhText = firstVisible;
+            enText = secondVisible;
+          } else if (firstLooksEn && secondLooksZh) {
+            zhText = secondVisible;
+            enText = firstVisible;
+          } else {
+            return match;
+          }
+        }
         const visible = defaultVisibleLanguage === "en" ? enText : zhText;
-        return `<${tagName} ${firstAttrs} data-i18n data-i18n-zh="${escapeHtmlAttribute(zhText)}" data-i18n-en="${escapeHtmlAttribute(enText)}">${visible}</${tagName}>`;
+        return `<${tagName}${firstAttrs ? ` ${firstAttrs}` : ""} data-i18n data-i18n-zh="${escapeHtmlAttribute(
+          htmlVisibleText(zhText),
+        )}" data-i18n-en="${escapeHtmlAttribute(htmlVisibleText(enText))}">${visible}</${tagName}>`;
       },
     );
   }
@@ -1033,8 +1112,26 @@ function normalizeGeneratedJs(rawJs: string, requirementText = ""): string {
     "",
     "(() => {",
     "  const root = document.documentElement;",
+    "  const STORAGE_KEY = 'shpitto:locale';",
+    "  const resolveLang = () => {",
+    "    const stored = (() => { try { return localStorage.getItem(STORAGE_KEY); } catch { return ''; } })();",
+    "    if (stored === 'en' || stored === 'zh-CN') return stored;",
+    "    if (root.dataset.lang === 'en' || root.dataset.lang === 'zh-CN') return root.dataset.lang;",
+    "    return root.lang === 'en' ? 'en' : 'zh-CN';",
+    "  };",
+    "  const setLang = (lang) => {",
+    "    const next = lang === 'en' ? 'en' : 'zh-CN';",
+    "    root.dataset.lang = next;",
+    "    root.lang = next;",
+    "    document.querySelectorAll('[data-locale-toggle]').forEach((node) => {",
+    "      const target = node.getAttribute('data-locale') || (node.textContent || '').trim();",
+    "      const normalizedTarget = /^en/i.test(target) ? 'en' : 'zh-CN';",
+    "      node.setAttribute('aria-pressed', normalizedTarget === next ? 'true' : 'false');",
+    "    });",
+    "    try { localStorage.setItem(STORAGE_KEY, next); } catch {}",
+    "  };",
     "  const applyI18n = () => {",
-    "    const lang = root.dataset.lang === 'en' ? 'en' : 'zh';",
+    "    const lang = resolveLang() === 'en' ? 'en' : 'zh';",
     "    document.querySelectorAll('[data-i18n]').forEach((node) => {",
     "      const value = lang === 'en' ? node.getAttribute('data-i18n-en') : node.getAttribute('data-i18n-zh');",
     "      if (typeof value === 'string' && value.length) node.textContent = value;",
@@ -1044,6 +1141,16 @@ function normalizeGeneratedJs(rawJs: string, requirementText = ""): string {
     "      if (typeof value === 'string' && value.length) node.textContent = value;",
     "    });",
     "  };",
+    "  document.querySelectorAll('[data-locale-toggle]').forEach((node) => {",
+    "    if (node.dataset.shpittoLocaleBound === '1') return;",
+    "    node.dataset.shpittoLocaleBound = '1';",
+    "    node.addEventListener('click', () => {",
+    "      const target = node.getAttribute('data-locale') || (node.textContent || '').trim();",
+    "      setLang(/^en/i.test(target) ? 'en' : 'zh-CN');",
+    "      applyI18n();",
+    "    });",
+    "  });",
+    "  setLang(resolveLang());",
     "  applyI18n();",
     "  new MutationObserver(() => applyI18n()).observe(root, { attributes: true, attributeFilter: ['data-lang'] });",
     "})();",
@@ -1214,6 +1321,22 @@ export function normalizeGeneratedJsForTesting(rawJs: string, requirementText = 
   return normalizeGeneratedJs(rawJs, requirementText);
 }
 
+export function resolveRoundTimeoutsForTesting(params: {
+  taskTimeoutMs: number;
+  targetFileCount: number;
+}): { idleTimeoutMs: number; absoluteTimeoutMs: number } {
+  return resolveRoundTimeouts(params);
+}
+
+export function resolveExpectedRequiredFileCountForTesting(params: {
+  decision: LocalDecisionPlan;
+  adapter: SkillExecutionAdapter;
+  files?: RuntimeWorkflowFile[];
+  requirementText?: string;
+}): number {
+  return resolveExpectedRequiredFileCount(params);
+}
+
 function clipRuntimeRequirement(input: string, maxChars: number): string {
   const text = String(input || "").trim();
   if (!Number.isFinite(maxChars) || maxChars <= 0 || text.length <= maxChars) return text;
@@ -1304,11 +1427,16 @@ export function formatTargetPageContract(plan: LocalDecisionPlan, targetFile: st
     "- Derive route-specific sections, headings, card types, and interactions from the Canonical Website Prompt and source content.",
     "- Use a page-specific body architecture. Shared header/footer/design tokens are allowed; the main content section order, visual modules, and primary components must differ from sibling routes.",
     "- Do not apply a hardcoded industry skeleton or copy the previous page layout and only swap text.",
+    "- Visitor-facing copy must be substantive content for the audience, not a description of site mechanics. Do not tell visitors what the page's task is, where to start browsing, which route comes next, or that one page leads into deeper content.",
+    "- Ban visible scaffold phrases and equivalents such as 从首页开始, 接下来看博客, 循序进入深内容, 阅读入口, 站点入口, 首页路径, 继续了解, 下一步, this page provides, homepage job, where to start, start from home, or next step when they explain navigation order rather than a concrete offer or action.",
     page.route === "/"
       ? "- Homepage gate: route / must read as the site home entry. The title, meta description, H1, and first lead paragraph must establish brand mission, audience, scope, and navigation overview only. Do not put download, certification, query/search, login, or registration wording in those fields; place those downstream functions only in later cards, nav, or CTA modules."
       : "",
     page.pageKind === "home"
       ? "- Home page gate: the hero must establish the brand and entry-purpose relationship. Downstream functions may appear as secondary navigation cards, but never as the title, H1, or lead identity."
+      : "",
+    page.pageKind === "home"
+      ? "- Home page gate: downstream links must be concrete offers or destinations. Never write homepage route choreography such as 'start from the homepage, then read the blog', 'the homepage path', or 'the home page's task is to guide the next step'."
       : "",
     page.pageKind === "home"
       ? "- Home page gate: when linking to a Blog/content route, use thematic CTA language such as read the blog, explore recent writing, or enter the article archive. Do not explain the site by counting or sequencing the current articles, for example 'the blog has three recent articles' or 'start with these three pieces'."
@@ -1327,6 +1455,9 @@ export function formatTargetPageContract(plan: LocalDecisionPlan, targetFile: st
       : "",
     page.pageKind === "blog-data-index"
       ? "- Blog/content index gate: ban visible phrases like reading path, reading method, suggested reading order, how to read, this page collects, what you'll find here, start with these three articles, launch articles, 首发文章, 阅读路径, 阅读方式, 推荐阅读顺序, 如何阅读, 本页内容, or equivalent wording even inside pills/badges."
+      : "",
+    page.pageKind === "blog-data-index"
+      ? "- Blog/content index gate: do not satisfy article details with same-page anchors such as #article-detail, accordion panels, or detail sections embedded below the index. Every visible article/resource card must link to a stable /blog/{slug}/ route, and the generated output must include the matching /blog/{slug}/index.html file."
       : "",
     page.pageKind === "search-directory"
       ? "- Search-directory gate: if the layout uses a dense grid, search results must span the full available row and remain readable at desktop and mobile widths."
@@ -1368,6 +1499,22 @@ export function formatWebsiteTargetPageContractForAdapter(
   requirementText = "",
 ): string {
   return formatTargetPageContract(plan, targetFile, requirementText);
+}
+
+function buildBilingualProtocolReference(defaultVisibleLanguage: "zh-CN" | "zh" | "en"): string {
+  const visibleTitle =
+    defaultVisibleLanguage === "en" ? "Thoughtful AI notes for everyday readers." : "写给每个人的 AI 小笔记。";
+  const visibleLead =
+    defaultVisibleLanguage === "en"
+      ? "Calm editorial guidance for people who want practical AI judgment."
+      : "用克制、实用的方式解释 AI 如何进入日常判断。";
+  return [
+    "Bilingual reference scaffold (adapt the copy, keep the exact protocol):",
+    '<header><nav><a href="/" data-i18n="nav.home" data-i18n-zh="首页" data-i18n-en="Home">首页</a><a href="/blog/" data-i18n="nav.blog" data-i18n-zh="博客" data-i18n-en="Blog">博客</a><button type="button" data-locale-toggle data-locale="zh-CN">ZH</button><button type="button" data-locale-toggle data-locale="en">EN</button></nav></header>',
+    `<h1 data-i18n="home.hero.title" data-i18n-zh="写给每个人的 AI 小笔记。" data-i18n-en="Thoughtful AI notes for everyday readers.">${visibleTitle}</h1>`,
+    `<p data-i18n="home.hero.lead" data-i18n-zh="用克制、实用的方式解释 AI 如何进入日常判断。" data-i18n-en="Calm editorial guidance for people who want practical AI judgment.">${visibleLead}</p>`,
+    "Do not render the zh and en versions as two visible sibling nodes. One node holds both translations; /script.js swaps the text.",
+  ].join("\n");
 }
 
 function isSyntheticLocaleMirrorRoute(route: string, baseRoutes: string[]): boolean {
@@ -1655,7 +1802,7 @@ function createToolProtocolModel(params: {
         } catch {}
       }, Math.max(10_000, Number(params.requestTimeoutMs) || 60_000));
       try {
-        const response = await client.chat.completions.create(
+        const rawResponse = await client.chat.completions.create(
           {
             model: params.config.modelName,
             messages: baseMessagesToOpenAiMessages(messages),
@@ -1666,6 +1813,10 @@ function createToolProtocolModel(params: {
           } as any,
           { signal: controller.signal },
         );
+        const response =
+          typeof rawResponse === "string"
+            ? JSON.parse(rawResponse)
+            : rawResponse;
         const choice = response?.choices?.[0]?.message as any;
         const toolCalls = Array.isArray(choice?.tool_calls) ? choice.tool_calls : [];
         return new AIMessage({
@@ -1782,9 +1933,29 @@ function clampTimeout(taskTimeoutMs: number, candidateMs: number, minMs: number)
   return Math.max(minMs, Math.min(safeCandidate, safeTask));
 }
 
-function resolveRoundTimeouts(taskTimeoutMs: number): { idleTimeoutMs: number; absoluteTimeoutMs: number } {
-  const idleTimeoutMs = clampTimeout(taskTimeoutMs, DEFAULT_ROUND_IDLE_TIMEOUT_MS, 10_000);
-  let absoluteTimeoutMs = clampTimeout(taskTimeoutMs, DEFAULT_ROUND_ABSOLUTE_TIMEOUT_MS, idleTimeoutMs + 5_000);
+function countBlogDetailFiles(filePaths: string[]): number {
+  return filePaths.filter((filePath) => /^\/blog\/.+\/index\.html$/i.test(normalizePath(filePath))).length;
+}
+
+function resolveRoundTimeouts(params: {
+  taskTimeoutMs: number;
+  targetFileCount: number;
+}): { idleTimeoutMs: number; absoluteTimeoutMs: number } {
+  const fileCount = Math.max(1, Number(params.targetFileCount || 0));
+  const perFileIdleBudgetMs = Math.max(
+    10_000,
+    Math.min(DEFAULT_ROUND_IDLE_TIMEOUT_MS, Math.floor(STAGE_BUDGET_PER_FILE_MS * 0.5)),
+  );
+  const perFileAbsoluteBudgetMs = Math.max(
+    perFileIdleBudgetMs + 5_000,
+    Math.min(DEFAULT_ROUND_ABSOLUTE_TIMEOUT_MS, STAGE_BUDGET_PER_FILE_MS),
+  );
+  const idleTimeoutMs = clampTimeout(params.taskTimeoutMs, perFileIdleBudgetMs * fileCount, 10_000);
+  let absoluteTimeoutMs = clampTimeout(
+    params.taskTimeoutMs,
+    perFileAbsoluteBudgetMs * fileCount,
+    idleTimeoutMs + 5_000,
+  );
   if (absoluteTimeoutMs <= idleTimeoutMs) absoluteTimeoutMs = idleTimeoutMs + 5_000;
   return { idleTimeoutMs, absoluteTimeoutMs };
 }
@@ -1793,6 +1964,23 @@ function resolveStageBudgetMs(taskTimeoutMs: number, plannedFileCount: number): 
   const fileCount = Math.max(1, Number(plannedFileCount || 0));
   const computedBudget = fileCount * STAGE_BUDGET_PER_FILE_MS;
   return clampTimeout(taskTimeoutMs, computedBudget, STAGE_BUDGET_PER_FILE_MS);
+}
+
+function resolveExpectedRequiredFileCount(params: {
+  decision: LocalDecisionPlan;
+  adapter: SkillExecutionAdapter;
+  files?: RuntimeWorkflowFile[];
+  requirementText?: string;
+}): number {
+  const requirementText = String(params.requirementText || "");
+  const requiredFiles = params.adapter.buildRequiredFileChecklist(params.decision, {
+    files: params.files,
+    requirementText,
+  });
+  const requestedCount = requestedPublishableContentCount(requirementText) || 0;
+  const discoveredDetailCount = Math.min(requestedCount, countBlogDetailFiles(requiredFiles));
+  const undiscoveredRequestedCount = Math.max(0, requestedCount - discoveredDetailCount);
+  return Math.max(1, requiredFiles.length + undiscoveredRequestedCount);
 }
 
 function collectErrorTextParts(error: unknown, seen = new Set<unknown>()): string[] {
@@ -1970,8 +2158,9 @@ async function selectProviderAttempt(params: {
   attempts: ProviderAttempt[];
   taskTimeoutMs: number;
   requestTimeoutMs: number;
-}): Promise<ProviderAttempt> {
+}): Promise<{ attempt: ProviderAttempt; notes: string[] }> {
   let lastError: unknown;
+  const notes: string[] = [];
   for (let index = 0; index < params.attempts.length; index += 1) {
     const attempt = params.attempts[index];
     const preflightModel = createToolProtocolModel({
@@ -1988,7 +2177,7 @@ async function selectProviderAttempt(params: {
         config: attempt.config,
         taskTimeoutMs: params.taskTimeoutMs,
       });
-      return attempt;
+      return { attempt, notes };
     } catch (error) {
       lastError = error;
       const isLast = index >= params.attempts.length - 1;
@@ -2000,6 +2189,9 @@ async function selectProviderAttempt(params: {
       if (!canFallback || isLast) {
         throw error;
       }
+      notes.push(
+        `provider_preflight_fallback:${attempt.config.provider}/${attempt.config.modelName}:${errorText(error).slice(0, 320)}`,
+      );
       console.warn(
         `[skill-tool] provider preflight failed for ${attempt.config.provider}/${attempt.config.modelName}; falling back: ${errorText(error)}`,
       );
@@ -2134,6 +2326,12 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
       retries: 0,
       antiSlopIssues: routeLint.issues.map((issue) => ({ code: issue.code, severity: issue.severity })),
     });
+    const pageMechanicsTerms = findVisiblePageMechanicsScaffold(html);
+    if (pageMechanicsTerms.length > 0) {
+      throw new Error(
+        `skill_tool_invalid_required_file: ${pagePath} exposes page mechanics/scaffold wording instead of visitor-facing content: ${pageMechanicsTerms.join(", ")}`,
+      );
+    }
     const requestedSiteContentCount = requestedPublishableContentCount(params.requirementText || "");
     if (requestedSiteContentCount) {
       const scaffoldTerms = findVisibleBlogEditorialScaffold(html);
@@ -2169,8 +2367,11 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
         );
       }
         const detailRoutes = extractBlogDetailRoutes(html);
+        const selectedDetailRoutes = selectedBlogDetailRoutesForRequirement(detailRoutes, params.requirementText || "");
         for (const [routeKey, expectation] of extractBlogDetailExpectations(html)) {
-          if (!detailExpectations.has(routeKey)) detailExpectations.set(routeKey, expectation);
+          if (selectedDetailRoutes.includes(normalizePath(routeKey)) && !detailExpectations.has(routeKey)) {
+            detailExpectations.set(routeKey, expectation);
+          }
         }
         if (detailRoutes.length === 0) {
           throw new Error(
@@ -2184,8 +2385,15 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
             `skill_tool_invalid_required_file: ${pagePath} must expose ${requestedCount} /blog/{slug}/ detail links for the requested publishable content items; found ${detailRoutes.length}`,
           );
         }
+      } else if (
+        !shouldRequireAllDiscoveredBlogDetails(params.requirementText || "") &&
+        detailRoutes.length > DEFAULT_UNREQUESTED_BLOG_DETAIL_LIMIT
+      ) {
+        throw new Error(
+          `skill_tool_invalid_required_file: ${pagePath} exposes ${detailRoutes.length} Blog detail links without an explicit requested content count; limit the initial Blog fallback to ${DEFAULT_UNREQUESTED_BLOG_DETAIL_LIMIT} substantial entries or ask for a specific article count`,
+        );
       }
-        for (const detailRoute of detailRoutes.slice(0, requestedCount || detailRoutes.length)) {
+        for (const detailRoute of selectedDetailRoutes) {
           const detailPath = routeToHtmlPath(detailRoute);
           const detailFile = byPath.get(detailPath);
           if (!detailFile || !isMeaningfulArticleDetailHtml(String(detailFile.content || ""))) {
@@ -2288,6 +2496,21 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
           `skill_tool_invalid_required_file: ${pagePath} is missing a real bilingual language switch; add a data-locale-toggle control that swaps visible zh/en copy`,
         );
       }
+    }
+  }
+  if (!requestedSiteContentCount && !shouldRequireAllDiscoveredBlogDetails(params.requirementText || "")) {
+    const detailRoutes = Array.from(
+      new Set(
+        files
+          .filter((file) => normalizePath(file.path).endsWith(".html"))
+          .filter((file) => isPrimaryBlogIndexHtmlFile(params.decision, file.path))
+          .flatMap((file) => extractBlogDetailRoutes(String(file.content || ""))),
+      ),
+    );
+    if (detailRoutes.length > DEFAULT_UNREQUESTED_BLOG_DETAIL_LIMIT) {
+      throw new Error(
+        `skill_tool_invalid_required_file: Blog/content fallback exposes ${detailRoutes.length} detail links without an explicit requested content count; limit the initial Blog fallback to ${DEFAULT_UNREQUESTED_BLOG_DETAIL_LIMIT} substantial entries or ask for a specific article count`,
+      );
     }
   }
 
@@ -2531,6 +2754,12 @@ function discoveredBlogDetailChecklist(decision: LocalDecisionPlan, files: Runti
   return Array.from(new Set(detailRoutes)).map((route) => routeToHtmlPath(route));
 }
 
+function shouldRequireAllDiscoveredBlogDetails(requirementText = ""): boolean {
+  return /(?:complete|full|all|every|matching|corresponding|全部|所有|完整|每个|对应).{0,30}(?:blog|article|post|detail|文章|博客|详情)/i.test(
+    String(requirementText || ""),
+  );
+}
+
 function requestedBlogDetailChecklist(
   decision: LocalDecisionPlan,
   files: RuntimeWorkflowFile[] = [],
@@ -2541,13 +2770,28 @@ function requestedBlogDetailChecklist(
   return discoveredBlogDetailChecklist(decision, files).slice(0, requestedCount);
 }
 
+function selectedBlogDetailRoutesForRequirement(detailRoutes: string[], requirementText = ""): string[] {
+  const uniqueRoutes = Array.from(new Set(detailRoutes.map((route) => normalizePath(route)).filter(Boolean)));
+  const requestedCount = requestedPublishableContentCount(requirementText);
+  if (requestedCount) return uniqueRoutes.slice(0, requestedCount);
+  if (shouldRequireAllDiscoveredBlogDetails(requirementText)) return uniqueRoutes;
+  return uniqueRoutes.slice(0, DEFAULT_UNREQUESTED_BLOG_DETAIL_LIMIT);
+}
+
 function requiredFileChecklist(decision: LocalDecisionPlan, params: { files?: RuntimeWorkflowFile[]; requirementText?: string } = {}): string[] {
+  const requirementText = params.requirementText || "";
+  const discoveredDetails = discoveredBlogDetailChecklist(decision, params.files || []);
+  const requestedCount = requestedPublishableContentCount(requirementText);
+  const requiredDetails = requestedCount
+    ? discoveredDetails.slice(0, requestedCount)
+    : shouldRequireAllDiscoveredBlogDetails(requirementText)
+      ? discoveredDetails
+      : discoveredDetails.slice(0, DEFAULT_UNREQUESTED_BLOG_DETAIL_LIMIT);
   return Array.from(new Set([
     "/styles.css",
     "/script.js",
     ...decision.routes.map((route) => routeToHtmlPath(route)),
-    ...discoveredBlogDetailChecklist(decision, params.files || []),
-    ...requestedBlogDetailChecklist(decision, params.files || [], params.requirementText || ""),
+    ...requiredDetails,
   ]));
 }
 
@@ -2560,8 +2804,17 @@ export function requiredWebsiteFileChecklistForAdapter(
 
 function resolveMaxToolRounds(decision: LocalDecisionPlan, requirementText = ""): number {
   const requestedCount = requestedPublishableContentCount(requirementText) || 0;
-  const emissionRounds = Math.max(MAX_TOOL_ROUNDS, requiredFileChecklist(decision).length + requestedCount + 2);
-  return emissionRounds + MAX_TOOL_QA_REPAIR_ROUNDS;
+  const sharedRounds = 1;
+  const routeRounds = Math.max(1, Math.ceil(decision.routes.length / HTML_TARGETS_PER_ROUND));
+  const detailRounds = requestedCount > 0 ? Math.ceil(requestedCount / DETAIL_TARGETS_PER_ROUND) : 0;
+  const batchedEmissionRounds = Math.min(
+    MAX_TOOL_ROUNDS,
+    Math.max(
+      4,
+      sharedRounds + routeRounds + detailRounds + 2,
+    ),
+  );
+  return batchedEmissionRounds + MAX_TOOL_QA_REPAIR_ROUNDS;
 }
 
 export function resolveWebsiteSkillMaxToolRoundsForAdapter(decision: LocalDecisionPlan, requirementText = ""): number {
@@ -2573,6 +2826,39 @@ function missingRequiredFiles(decision: LocalDecisionPlan, files: RuntimeWorkflo
   return requiredFileChecklist(decision, { files, requirementText }).filter((path) => !set.has(path));
 }
 
+function orderObjectiveTargets(missingFiles: string[]): string[] {
+  const missing = Array.from(new Set(missingFiles.map((item) => normalizePath(item)).filter(Boolean)));
+  const css = missing.filter((item) => item === "/styles.css");
+  const js = missing.filter((item) => item === "/script.js");
+  const home = missing.filter((item) => item === "/index.html");
+  const isSharedOrHome = (item: string) => item === "/styles.css" || item === "/script.js" || item === "/index.html";
+  const routePages = missing
+    .filter((item) => item.endsWith("/index.html"))
+    .filter((item) => !isSharedOrHome(item))
+    .filter((item) => !/^\/blog\/.+\/index\.html$/i.test(item))
+    .sort((a, b) => (a === "/blog/index.html" ? -1 : b === "/blog/index.html" ? 1 : a.localeCompare(b)));
+  const blogDetails = missing.filter((item) => /^\/blog\/.+\/index\.html$/i.test(item)).sort();
+  const other = missing
+    .filter((item) => !isSharedOrHome(item))
+    .filter((item) => !routePages.includes(item) && !blogDetails.includes(item))
+    .sort();
+  return [...css, ...js, ...home, ...routePages, ...blogDetails, ...other];
+}
+
+function describeObjectiveTarget(target: string): string {
+  if (target === "/styles.css") return "/styles.css shared design tokens, responsive layout, card/list/detail styles, and footer/navigation styles";
+  if (target === "/script.js") return "/script.js shared lightweight interactions, language switch support when required, navigation behavior, and Blog hydration that preserves fallback markup";
+  if (target === "/index.html") return "/index.html complete homepage HTML referencing shared CSS/JS";
+  if (target === "/blog/index.html") {
+    return "/blog/index.html complete Blog/content index HTML with exactly the promised fallback cards and direct /blog/{slug}/ links";
+  }
+  if (/^\/blog\/.+\/index\.html$/i.test(target)) {
+    return `${target} complete Blog detail HTML with a full readable body, headings, shell/header/footer, and shared CSS/JS references`;
+  }
+  if (target.endsWith("/index.html")) return `${target} complete route HTML referencing shared CSS/JS`;
+  return `${target} complete static asset`;
+}
+
 type RoundObjective = {
   targetFiles: string[];
   instruction: string;
@@ -2580,7 +2866,7 @@ type RoundObjective = {
 };
 
 function planRoundObjective(round: number, missingFiles: string[]): RoundObjective {
-  const missing = missingFiles.map((item) => normalizePath(item));
+  const missing = orderObjectiveTargets(missingFiles);
   if (!ENABLE_STAGED_OBJECTIVE || missing.length === 0) {
     return {
       targetFiles: missing,
@@ -2589,9 +2875,7 @@ function planRoundObjective(round: number, missingFiles: string[]): RoundObjecti
     };
   }
 
-  const priorityOrder = ["/styles.css", "/script.js", "/index.html", ...missing.filter((item) => item.endsWith("/index.html"))];
-  const firstTarget = priorityOrder.find((item) => missing.includes(item)) || missing[0];
-  if (!firstTarget) {
+  if (missing.length === 0) {
     return {
       targetFiles: [],
       instruction: "No missing required files.",
@@ -2599,53 +2883,50 @@ function planRoundObjective(round: number, missingFiles: string[]): RoundObjecti
     };
   }
 
-  if (firstTarget === "/styles.css") {
+  const sharedTargets = missing.filter((item) => item === "/styles.css" || item === "/script.js");
+  if (sharedTargets.length > 0) {
     return {
-      targetFiles: [firstTarget],
+      targetFiles: sharedTargets,
       instruction:
-        "This round only emit /styles.css with complete design tokens and reusable styles that support the route intents in the generation contract. Do not emit other files in this round.",
-      strictSingleTarget: true,
-    };
-  }
-  if (firstTarget === "/script.js") {
-    return {
-      targetFiles: [firstTarget],
-      instruction:
-        "This round only emit /script.js with lightweight interactions/utilities for the generated route-specific pages and no framework dependency. If any page includes [data-shpitto-blog-root], include a small Blog API hydrator that fetches /api/blog/posts and renders into [data-shpitto-blog-list] while preserving fallback HTML. If the Blog list has filter chips/search/category controls, keep those controls working after hydration by fetching /api/blog/posts?tag=..., ?category=..., or ?search=..., or by re-applying the same client-side filters after replacing the list. Blog article generation is a separate preview-to-deploy workflow step: the generated page should already look publish-ready before runtime data is bound.",
-      strictSingleTarget: true,
-    };
-  }
-  if (firstTarget === "/index.html") {
-    return {
-      targetFiles: [firstTarget],
-      instruction:
-        "This round only emit /index.html as a complete HTML document referencing /styles.css and /script.js.",
-      strictSingleTarget: true,
-    };
-  }
-  if (/^\/blog\/.+\/index\.html$/i.test(firstTarget)) {
-    return {
-      targetFiles: [firstTarget],
-      instruction:
-        `This round only emit ${firstTarget} as a complete Blog detail HTML document referencing /styles.css and /script.js. Write a full readable article/detail page with title, multiple substantial body paragraphs, section headings, and site-native shell/header/footer. Do not emit a stub, excerpt-only shell, metadata-only page, or a rewritten /blog/index.html.`,
-      strictSingleTarget: true,
+        `Emit the shared static foundation in this round: ${sharedTargets.map(describeObjectiveTarget).join("; ")}. Keep CSS/JS consistent across every planned page. Do not emit HTML unless it is necessary to unblock these shared files.`,
+      strictSingleTarget: false,
     };
   }
 
-  if (firstTarget === "/blog/index.html") {
+  const pageTargets = missing
+    .filter((item) => item.endsWith("/index.html"))
+    .filter((item) => !/^\/blog\/.+\/index\.html$/i.test(item))
+    .slice(0, HTML_TARGETS_PER_ROUND);
+  if (pageTargets.length > 0) {
     return {
-      targetFiles: [firstTarget],
+      targetFiles: pageTargets,
       instruction:
-        "This round only emit /blog/index.html as a complete HTML document referencing /styles.css and /script.js. Use native publishable archive copy only: visible hero text, pills, and section ledes must express a real editorial thesis about the subject, never reading instructions, reading path, suggested order, article collection mechanics, or explanations of how many launch articles exist.",
-      strictSingleTarget: true,
+        `Emit these complete route HTML documents in one consistent batch: ${pageTargets.map(describeObjectiveTarget).join("; ")}. Reuse the same header, navigation, footer, CSS, JS, language switch mechanics, and route order. Each page body must be route-specific and visitor-facing; never explain browsing order or page mechanics.`,
+      strictSingleTarget: false,
     };
   }
 
+  const detailTargets = missing
+    .filter((item) => /^\/blog\/.+\/index\.html$/i.test(item))
+    .slice(0, DETAIL_TARGETS_PER_ROUND);
+  if (detailTargets.length > 0) {
+    const serialDetailMode = detailTargets.length === 1;
+    return {
+      targetFiles: detailTargets,
+      instruction:
+        serialDetailMode
+          ? `Emit this complete Blog/detail page in this round: ${detailTargets.map(describeObjectiveTarget).join("; ")}. Focus on finishing this one detail completely before moving to the next. Preserve the same shared shell, navigation, footer, bilingual behavior when required, and CSS/JS references. Do not emit stubs, excerpts-only pages, metadata-only pages, rewritten indexes, or fallback-derived filler.`
+          : `Emit these complete Blog/detail pages in one batch: ${detailTargets.map(describeObjectiveTarget).join("; ")}. Each detail must expand the matching card topic into a full body page and preserve the same shared shell, navigation, footer, bilingual behavior when required, and CSS/JS references. Do not emit stubs, excerpts-only pages, metadata-only pages, rewritten indexes, or fallback-derived filler.`,
+      strictSingleTarget: serialDetailMode,
+    };
+  }
+
+  const otherTargets = missing.slice(0, Math.max(2, Number(process.env.SKILL_TOOL_MISC_TARGETS_PER_ROUND || 6)));
   return {
-    targetFiles: [firstTarget],
+    targetFiles: otherTargets,
     instruction:
-      `This round only emit ${firstTarget} as a complete HTML document referencing /styles.css and /script.js.`,
-    strictSingleTarget: true,
+      `Emit these remaining required files in one batch: ${otherTargets.map(describeObjectiveTarget).join("; ")}.`,
+    strictSingleTarget: false,
   };
 }
 
@@ -2699,10 +2980,13 @@ function buildToolRoundPrompt(params: {
   const currentFiles = params.emittedFiles
     .map((file) => `- ${file.path} (${file.type}, ${String(file.content || "").length} chars)`)
     .join("\n");
+  const targetContracts = params.objective.targetFiles
+    .map((target) => normalizePath(target))
+    .filter((target) => target.endsWith(".html"))
+    .slice(0, 6)
+    .map((target) => formatTargetPageContract(params.decision, target, params.requirementText))
+    .filter(Boolean);
   const firstTarget = params.objective.targetFiles[0] ? normalizePath(params.objective.targetFiles[0]) : "";
-  const targetPageContract = firstTarget.endsWith(".html")
-    ? formatTargetPageContract(params.decision, firstTarget, params.requirementText)
-    : "";
   const includeFullContract =
     firstTarget === "/styles.css" ||
     firstTarget === "/script.js" ||
@@ -2735,7 +3019,7 @@ function buildToolRoundPrompt(params: {
     includeFullContract
       ? contractDigest(params.decision)
       : `- Route count: ${params.decision.routes.length}\n- Primary routes: ${params.decision.routes.slice(0, 3).join(", ")}`,
-    targetPageContract ? ["", targetPageContract].join("\n") : "",
+    targetContracts.length > 0 ? ["", "Target page contracts:", targetContracts.join("\n\n")].join("\n") : "",
     "",
     `Loaded skills: ${params.loadedSkillIds.join(", ") || "(none)"}`,
     `Missing required files: ${params.requiredMissing.join(", ") || "(none)"}`,
@@ -2744,6 +3028,7 @@ function buildToolRoundPrompt(params: {
       ? `Requested publishable content gate: the brief asks for ${requestedContentCount} complete content item(s). Blog/content-backed output must provide ${requestedContentCount} full article/detail targets with body prose, not title-only cards or explanatory list mechanics.`
       : "",
     ...(requiresLanguageSwitch ? renderedRoundLanguageGuidance : []),
+    ...(requiresLanguageSwitch ? ["", buildBilingualProtocolReference(defaultVisibleLanguage)] : []),
     "",
     "Current emitted files:",
     currentFiles || "(none)",
@@ -2755,6 +3040,8 @@ function buildToolRoundPrompt(params: {
     ...(requiresLanguageSwitch ? renderedRoundStrictProtocol : []),
     "- Follow the website-generation-workflow skill contract for Canonical Website Prompt adherence, page differentiation, and shared shell/footer rules.",
     "- Follow the Website Quality Contract: website-only scope, multi-device WYSIWYG preview, strong visual direction, responsive CSS, and no placeholder/template slop.",
+    "- Multi-page generation must be coherent, not fragile: keep one shared HTML shell contract, one shared navigation order, one shared footer, one shared CSS system, one shared JS behavior layer, one shared bilingual switch behavior when requested, and pass the same QA gate across every emitted page.",
+    "- When this round targets multiple files, emit every target file in the same round unless a provider error prevents it. Do not split one straightforward multi-page website into one model round per file.",
     "- Visitor-facing content must be final site content. Do not show explanatory scaffolding such as reading method, what you'll find, article collection, this page collects, each article includes date/read time/tags, launch articles, three launch articles, 首发文章, 三篇首发文章, or their Chinese equivalents.",
     "- If the brief asks for three articles, present the actual three article cards and complete article bodies; do not write a site-structure explanation that says the page has three launch/first articles.",
     "- Blog/content-index hero text must express a real thesis or value proposition about the topic. Never use hero or section lead sentences that merely tell the visitor how to browse, read, or start the list.",
@@ -2764,11 +3051,12 @@ function buildToolRoundPrompt(params: {
     "- On the home page, if you render a 2-4 card row for themes, strengths, coverage areas, or editorial pillars, make each item a spacious feature card with explicit four-side padding and parent-controlled gap. Avoid compressed border-only shells.",
     "- Decorative numerals, step numbers, watermarks, or corner badges inside those home feature cards must be visibly inset from the edge and must not steal the text gutter from the title/body column.",
     "- Do not rely on data-fallback-posts, hidden templates, or script-only rendering to satisfy Blog detail-link requirements. The initial HTML in [data-shpitto-blog-list] must visibly contain the article cards and /blog/{slug}/ links.",
+    "- Do not use same-page anchors such as #article-detail, accordions, hidden panels, or inline sections as substitutes for Blog detail pages. Blog cards must link to /blog/{slug}/ and each linked detail must be emitted as /blog/{slug}/index.html.",
     "- If a Blog/content list uses an outer card class like .article-card or .blog-card, that exact class must carry the essential padding itself. Do not put all gutters only on nested wrappers such as __body or __content, because runtime hydration may replace inner markup.",
     "- Avoid repeated generic section names like only surface/section/cards across every page; use route-specific module classes where useful.",
     params.objective.strictSingleTarget
       ? "- This round must focus on the objective target file only."
-      : "- You may emit multiple missing files when needed.",
+      : "- Emit all objective target files in this round when practical; batch shared assets, route pages, and Blog detail pages rather than serializing one file per round.",
     "- Call finish only after all required files exist and are complete.",
   ].join("\n");
 }
@@ -2845,12 +3133,15 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     String(decision.brandHint || (params.state as any)?.site_artifacts?.branding?.name || "").trim() ||
     resolveBrandName(decision);
   const totalToolRounds = adapter.resolveMaxToolRounds(decision, toolRequirementContext);
-
-  const stageBudgetMs = resolveStageBudgetMs(
-    params.timeoutMs,
-    adapter.buildRequiredFileChecklist(decision).length + (requestedPublishableContentCount(toolRequirementContext) || 0),
-  );
-  const timeoutConfig = resolveRoundTimeouts(params.timeoutMs);
+  const expectedRequiredFileCountAtStart = resolveExpectedRequiredFileCount({
+    decision,
+    adapter,
+    requirementText: toolRequirementContext,
+  });
+  const providerSelectionTimeoutConfig = resolveRoundTimeouts({
+    taskTimeoutMs: params.timeoutMs,
+    targetFileCount: Math.min(2, expectedRequiredFileCountAtStart),
+  });
   let workflowFiles = buildWorkflowFiles({
     requirementText: sanitizedRequirementWithReferences,
     decision,
@@ -2869,6 +3160,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     activeModel: providerConfig.modelName,
     attemptedProviders: providerAttempts.map((attempt) => attempt.config.provider),
     fallbackEngaged: false,
+    providerNotes: [],
   };
 
   if (!providerConfig.apiKey) {
@@ -2930,6 +3222,9 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
           "",
           "Required files:",
           adapter.buildRequiredFileChecklist(decision).join(", "),
+          requestedPublishableContentCount(toolRequirementContext)
+            ? `- The requested content count is ${requestedPublishableContentCount(toolRequirementContext)}. After the Blog/content index emits its /blog/{slug}/ card links, the same number of static /blog/{slug}/index.html detail files becomes required. Do not finish with only the index page or same-page anchors.`
+            : "- If a Blog/content index is planned, its visible fallback cards must expose /blog/{slug}/ links; matching static detail files become required as soon as those links exist.",
           stageRetry > 0
             ? `- Fresh-stage retry: ${stageRetry}/${SKILL_TOOL_STAGE_BUDGET_RETRY_LIMIT}. Avoid repeating previous repair loops; converge faster.`
             : "",
@@ -2941,11 +3236,13 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
 
     try {
       const stageStartedAt = Date.now();
-      activeAttempt = await selectProviderAttempt({
+      const selectedProviderAttempt = await selectProviderAttempt({
         attempts: providerAttempts,
         taskTimeoutMs: params.timeoutMs,
-        requestTimeoutMs: timeoutConfig.absoluteTimeoutMs,
+        requestTimeoutMs: providerSelectionTimeoutConfig.absoluteTimeoutMs,
       });
+      activeAttempt = selectedProviderAttempt.attempt;
+      assistantNotes.push(...selectedProviderAttempt.notes);
       lock = activeAttempt.lock;
       providerConfig = activeAttempt.config;
       workflowFiles = buildWorkflowFiles({
@@ -2961,24 +3258,9 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
         activeModel: providerConfig.modelName,
         attemptedProviders: providerAttempts.map((attempt) => attempt.config.provider),
         fallbackEngaged: providerAttempts.findIndex((attempt) => attempt.config.provider === providerConfig.provider) > 0,
+        providerNotes: selectedProviderAttempt.notes,
       };
 
-      const modelWithTools = createToolProtocolModel({
-        config: providerConfig,
-        requestTimeoutMs: timeoutConfig.absoluteTimeoutMs,
-        toolChoice: SKILL_TOOL_TOOL_CHOICE === "auto" ? "auto" : "required",
-      }) as {
-        invoke: (messages: BaseMessage[]) => Promise<any>;
-        stream?: (messages: BaseMessage[], options?: { signal?: AbortSignal }) => Promise<AsyncIterable<any>>;
-      };
-      const modelWithEmitFile = createToolProtocolModel({
-        config: providerConfig,
-        requestTimeoutMs: timeoutConfig.absoluteTimeoutMs,
-        toolChoice: { type: "function", function: { name: "emit_file" } },
-      }) as {
-        invoke: (messages: BaseMessage[]) => Promise<any>;
-        stream?: (messages: BaseMessage[], options?: { signal?: AbortSignal }) => Promise<AsyncIterable<any>>;
-      };
       await emitSnapshot({
         stepKey: "preflight",
         stepIndex: 0,
@@ -3010,9 +3292,25 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
       completedQaRecords = [];
 
       for (let round = 0; round < totalToolRounds; round += 1) {
+        const expectedRequiredFileCount = resolveExpectedRequiredFileCount({
+          decision,
+          adapter,
+          files: emittedFiles,
+          requirementText: toolRequirementContext,
+        });
+        const stageBudgetMs = resolveStageBudgetMs(params.timeoutMs, expectedRequiredFileCount);
         if (Date.now() - stageStartedAt > stageBudgetMs) {
           throw new Error(
-            `skill-tool stage budget exceeded (${stageBudgetMs}ms): provider=${providerConfig.provider}, model=${providerConfig.modelName}`,
+            [
+              `skill-tool stage budget exceeded (${stageBudgetMs}ms): provider=${providerConfig.provider}, model=${providerConfig.modelName}`,
+              `expectedRequiredFiles=${expectedRequiredFileCount}`,
+              `plannedRounds=${totalToolRounds}; emittedFiles=${dedupeFiles(emittedFiles).length}; requiredMissing=${
+                adapter
+                  .buildRequiredFileChecklist(decision, { files: emittedFiles, requirementText: toolRequirementContext })
+                  .filter((path) => !new Set(emittedFiles.map((file) => normalizePath(file.path))).has(normalizePath(path)))
+                  .join(", ") || "(none)"
+              }`,
+            ].join("\n"),
           );
         }
         const missing = adapter
@@ -3021,6 +3319,10 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
         const activeRepairTargets = missing.length === 0 ? qaRepairTargets : [];
         const objectiveTargets = activeRepairTargets.length > 0 ? activeRepairTargets : missing;
         const objective = adapter.planRoundObjective(round, objectiveTargets);
+        const timeoutConfig = resolveRoundTimeouts({
+          taskTimeoutMs: params.timeoutMs,
+          targetFileCount: Math.max(1, objective.targetFiles.length || objectiveTargets.length || 1),
+        });
         const prompt = adapter.buildToolRoundPrompt({
           round,
           totalRounds: totalToolRounds,
@@ -3038,6 +3340,22 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
           requirementText: toolRequirementContext,
         });
         toolHistoryMessages.push(new HumanMessage(prompt));
+        const modelWithTools = createToolProtocolModel({
+          config: providerConfig,
+          requestTimeoutMs: timeoutConfig.absoluteTimeoutMs,
+          toolChoice: SKILL_TOOL_TOOL_CHOICE === "auto" ? "auto" : "required",
+        }) as {
+          invoke: (messages: BaseMessage[]) => Promise<any>;
+          stream?: (messages: BaseMessage[], options?: { signal?: AbortSignal }) => Promise<AsyncIterable<any>>;
+        };
+        const modelWithEmitFile = createToolProtocolModel({
+          config: providerConfig,
+          requestTimeoutMs: timeoutConfig.absoluteTimeoutMs,
+          toolChoice: { type: "function", function: { name: "emit_file" } },
+        }) as {
+          invoke: (messages: BaseMessage[]) => Promise<any>;
+          stream?: (messages: BaseMessage[], options?: { signal?: AbortSignal }) => Promise<AsyncIterable<any>>;
+        };
         const modelForRound = noProgressRounds > 0 ? modelWithEmitFile : modelWithTools;
         let roundOutput: ToolRoundOutput;
         try {
@@ -3288,7 +3606,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
         assistantNotes.push(`stage_retry_after_budget:${stageMeta.activeProvider}`);
         continue;
       }
-      throw error;
+      throw formatSkillToolStageError(error, stageMeta, assistantNotes);
     }
   }
 

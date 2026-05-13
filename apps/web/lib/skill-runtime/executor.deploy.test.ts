@@ -227,6 +227,94 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
     expect(preview.posts).toHaveLength(3);
   });
 
+  it("does not synthesize blog posts from generated site html when explicit source text is missing", () => {
+    const preview = buildBlogContentWorkflowPreview({
+      locale: "zh-CN",
+      inputState: {
+        messages: [] as any,
+        phase: "end",
+        current_page_index: 0,
+        attempt_count: 0,
+        workflow_context: {},
+      } as any,
+      project: {
+        staticSite: {
+          files: [
+            {
+              path: "/index.html",
+              content:
+                "<!doctype html><html><body><main><section><h2>阅读入口</h2><p>从首页开始，循序进入深内容。接下来看博客，内容会更具体。</p></section></main></body></html>",
+            },
+            {
+              path: "/blog/index.html",
+              content: [
+                "<!doctype html><html><body><main>",
+                '<section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts">',
+                "<h1>博客</h1>",
+                "<p>如果你想看更具体的内容，可以从文章页开始。</p>",
+                '<div data-shpitto-blog-list></div>',
+                "</section></main></body></html>",
+              ].join(""),
+            },
+          ],
+        },
+      },
+    });
+
+    expect(preview.required).toBe(false);
+    expect(preview.reason).toBe("no_source");
+    expect(preview.posts).toHaveLength(0);
+  });
+
+  it("keeps current static blog detail pages when explicit source text is missing", () => {
+    const preview = buildBlogContentWorkflowPreview({
+      locale: "zh-CN",
+      inputState: {
+        messages: [] as any,
+        phase: "end",
+        current_page_index: 0,
+        attempt_count: 0,
+        workflow_context: {},
+      } as any,
+      project: {
+        staticSite: {
+          files: [
+            {
+              path: "/blog/index.html",
+              content: [
+                "<!doctype html><html><body><main>",
+                '<section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><h1>博客</h1><div data-shpitto-blog-list>',
+                '<article><a href="/blog/first-note/">A</a></article>',
+                '<article><a href="/blog/second-note/">B</a></article>',
+                '<article><a href="/blog/third-note/">C</a></article>',
+                "</div></section></main></body></html>",
+              ].join(""),
+            },
+            {
+              path: "/blog/first-note/index.html",
+              content:
+                '<!doctype html><html><head><title>第一篇文章｜站点</title><meta name="description" content="第一篇文章摘要，长度足够提取并且明确说明文章讨论判断框架与内容组织方式。" /></head><body><main><article><h1>第一篇文章</h1><div class="article-meta"><span>2025-01-01</span><span>观点</span><span>判断</span></div><p class="section-lead">第一篇文章摘要，长度足够提取并且明确说明文章讨论判断框架与内容组织方式。</p><h2>正文</h2><p>第一段正文足够长，用于模拟已有静态文章内容，并且包含完整句子来满足正文提取规则。</p><p>第二段正文继续展开主题与判断，说明这篇文章为什么值得保留在当前站点中继续呈现。</p><p>第三段正文补足完整内容，避免因为字数太短而在静态提取阶段被误判为空内容。</p></article></main></body></html>',
+            },
+            {
+              path: "/blog/second-note/index.html",
+              content:
+                '<!doctype html><html><head><title>第二篇文章｜站点</title><meta name="description" content="第二篇文章摘要，长度足够提取并且明确说明文章讨论方法结构与执行节奏。" /></head><body><main><article><h1>第二篇文章</h1><div class="article-meta"><span>2025-01-02</span><span>方法</span><span>结构</span></div><p class="section-lead">第二篇文章摘要，长度足够提取并且明确说明文章讨论方法结构与执行节奏。</p><h2>正文</h2><p>第一段正文足够长，用于模拟已有静态文章内容，并且包含完整句子来满足正文提取规则。</p><p>第二段正文继续展开主题与判断，说明这篇文章为什么值得保留在当前站点中继续呈现。</p><p>第三段正文补足完整内容，避免因为字数太短而在静态提取阶段被误判为空内容。</p></article></main></body></html>',
+            },
+            {
+              path: "/blog/third-note/index.html",
+              content:
+                '<!doctype html><html><head><title>第三篇文章｜站点</title><meta name="description" content="第三篇文章摘要，长度足够提取并且明确说明文章讨论实践节奏与交付方式。" /></head><body><main><article><h1>第三篇文章</h1><div class="article-meta"><span>2025-01-03</span><span>实践</span><span>节奏</span></div><p class="section-lead">第三篇文章摘要，长度足够提取并且明确说明文章讨论实践节奏与交付方式。</p><h2>正文</h2><p>第一段正文足够长，用于模拟已有静态文章内容，并且包含完整句子来满足正文提取规则。</p><p>第二段正文继续展开主题与判断，说明这篇文章为什么值得保留在当前站点中继续呈现。</p><p>第三段正文补足完整内容，避免因为字数太短而在静态提取阶段被误判为空内容。</p></article></main></body></html>',
+            },
+          ],
+        },
+      },
+    });
+
+    expect(preview.required).toBe(true);
+    expect(preview.reason).toBe("ready");
+    expect(preview.posts.map((post) => post.title)).toEqual(["第一篇文章", "第二篇文章", "第三篇文章"]);
+  });
+
   it("materializes missing static blog detail pages for native generation artifacts", () => {
     const project = materializeGeneratedBlogDetailPagesForTesting({
       locale: "zh-CN",
@@ -906,20 +994,118 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
     expect(lastMessage).not.toContain("Domain Configuration Guide");
     expect(lastMessage).not.toContain("Custom domains");
     const completedTask = await getChatTask(task.id);
-    expect(completedTask?.result?.timelineMetadata?.cardType).toBe("domain_guidance");
-    expect(completedTask?.result?.timelineMetadata?.steps).toEqual(expect.arrayContaining([expect.stringContaining("DNS")]));
+    expect(completedTask?.result?.timelineMetadata?.cardType).toBe("domain_binding_required");
+    expect(completedTask?.result?.timelineMetadata?.summary).toContain("domain");
+    expect(completedTask?.result?.timelineMetadata?.propagation).toContain("24 hours");
+    expect(completedTask?.result?.timelineMetadata?.steps).toEqual(expect.arrayContaining([expect.stringContaining("card")]));
     expect(JSON.stringify(completedTask?.result?.timelineMetadata || {})).not.toContain("Cloudflare");
     expect(JSON.stringify(completedTask?.result?.timelineMetadata || {})).not.toContain("CLOUDFLARE");
     expect(completedTask?.result?.timelineMetadata?.analyticsStatus).toBeUndefined();
     expect(completedTask?.result?.timelineMetadata?.smoke).toBeUndefined();
-    expect(completedTask?.result?.timelineMetadata?.dnsRecords).toEqual(
+    expect(completedTask?.result?.timelineMetadata?.dnsRecords).toBeUndefined();
+  });
+
+  it("materializes confirmed Blog preview posts into deployed static snapshot when D1 is unavailable", async () => {
+    process.env.CHAT_TASKS_USE_SUPABASE = "0";
+    process.env.CLOUDFLARE_ACCOUNT_ID = "";
+    process.env.CLOUDFLARE_API_TOKEN = "";
+
+    const chatId = `deploy-blog-static-${Date.now()}`;
+    let nextState: any;
+    await SkillRuntimeExecutor.runTask({
+      taskId: `deploy-blog-static-task-${Date.now()}`,
+      chatId,
+      workerId: "test-worker",
+      inputState: {
+        messages: [
+          {
+            role: "user",
+            content: "请部署这个个人 blog，文章围绕 AI 出海准备三篇。",
+          },
+        ] as any,
+        phase: "end",
+        current_page_index: 0,
+        attempt_count: 0,
+        workflow_context: {
+          skillId: "website-generation-workflow",
+          deployRequested: true,
+          blogContentConfirmed: true,
+          blogContentPreviewPosts: [
+            {
+              slug: "ai-global-product-lessons",
+              title: "AI 出海产品的第一性原理",
+              excerpt: "从用户场景、信任和增长路径拆解 AI 出海。",
+              contentMd: "# AI 出海产品的第一性原理\n\nAI 出海要先验证真实用户场景，再建立可信交付。",
+              category: "AI 出海",
+              tags: ["AI", "出海"],
+              authorName: "Shpitto",
+            },
+            {
+              slug: "cross-border-growth-loop",
+              title: "跨境增长闭环怎么搭",
+              excerpt: "用内容、产品和数据闭环降低获客成本。",
+              contentMd: "# 跨境增长闭环怎么搭\n\n增长不是投放模板，而是内容、产品和数据的协同。",
+              category: "增长",
+              tags: ["增长", "SaaS"],
+              authorName: "Shpitto",
+            },
+            {
+              slug: "ai-team-operating-system",
+              title: "AI 团队的轻量化操作系统",
+              excerpt: "小团队如何用 AI 工作流提升交付密度。",
+              contentMd: "# AI 团队的轻量化操作系统\n\n轻量流程要服务决策、交付和复盘，而不是制造额外负担。",
+              category: "团队",
+              tags: ["AI", "团队"],
+              authorName: "Shpitto",
+            },
+          ],
+        } as any,
+        site_artifacts: {
+          projectId: "deploy-blog-static-project",
+          pages: [],
+          staticSite: {
+            mode: "skill-direct",
+            files: [
+              {
+                path: "/index.html",
+                type: "text/html",
+                content:
+                  '<!doctype html><html><head><title>Home</title></head><body><header><nav><a href="/">Home</a><a href="/blog" data-i18n="nav.blog">Blog</a></nav></header><main>ok</main></body></html>',
+              },
+              {
+                path: "/blog/index.html",
+                type: "text/html",
+                content:
+                  '<!doctype html><html><head><title>Blog</title></head><body><main><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list></div></section></main></body></html>',
+              },
+            ],
+          },
+        } as any,
+      } as any,
+      setSessionState: (state) => {
+        nextState = state;
+      },
+    });
+
+    const files = Array.isArray(nextState?.site_artifacts?.staticSite?.files)
+      ? nextState.site_artifacts.staticSite.files
+      : [];
+    const paths = files.map((file: any) => String(file.path || ""));
+    expect(paths).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({
-          type: "CNAME",
-          host: "www",
-        }),
+        "/shpitto-blog-snapshot.json",
+        "/api/blog/posts",
+        "/sitemap.xml",
+        "/blog/ai-global-product-lessons/index.html",
       ]),
     );
+    const snapshot = JSON.parse(String(files.find((file: any) => file.path === "/shpitto-blog-snapshot.json")?.content || "{}"));
+    expect(snapshot.postCount).toBe(3);
+    expect(snapshot.posts.map((post: any) => post.title)).toContain("AI 出海产品的第一性原理");
+    expect(nextState?.workflow_context?.generatedBlogContentStatus).toEqual({ status: "static:no_d1", postCount: 3 });
+    const home = String(files.find((file: any) => file.path === "/index.html")?.content || "");
+    expect((home.match(/href="\/blog"/g) || []).length).toBe(1);
+    expect(home).not.toContain('href="/blog/"');
   });
 
   it("skips Web Analytics provisioning for pages.dev deployments by default", async () => {

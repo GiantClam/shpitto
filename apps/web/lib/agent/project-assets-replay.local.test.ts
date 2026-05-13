@@ -30,6 +30,39 @@ function expectProjectAssetCdnUrl(content: string, path: string, segment: "previ
   expect(content).toContain("https://");
 }
 
+function isDeploymentSnapshotWithMarker(text: string, expectedTitle: string) {
+  try {
+    const parsed = JSON.parse(text) as {
+      mode?: string;
+      postCount?: number;
+      posts?: Array<{ title?: string; slug?: string }>;
+    };
+    return (
+      parsed?.mode === "deployment-d1-static-snapshot" &&
+      Number(parsed?.postCount || 0) >= 1 &&
+      Array.isArray(parsed?.posts) &&
+      parsed.posts.some((post) => String(post?.title || "") === expectedTitle) &&
+      parsed.posts.some((post) => String(post?.slug || "") === "project-asset-replay-blog-verification")
+    );
+  } catch {
+    return false;
+  }
+}
+
+async function withRetry<T>(fn: () => Promise<T>, attempts = 4) {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (attempt >= attempts) break;
+      await new Promise((resolve) => setTimeout(resolve, Math.min(8000, 1200 * attempt)));
+    }
+  }
+  throw lastError;
+}
+
 async function seedReplayBlogData(projectId: string, marker: string) {
   const { getD1Client } = await import("../d1");
   const d1 = getD1Client();
@@ -155,7 +188,7 @@ describe.skipIf(process.env.RUN_REAL_ASSET_REPLAY !== "1")("project asset real-s
     try {
       process.env.CHAT_TASKS_USE_SUPABASE = "1";
 
-      const sourceTask = await getChatTask(REAL_REPLAY_TASK_ID);
+      const sourceTask = await withRetry(() => getChatTask(REAL_REPLAY_TASK_ID));
       expect(sourceTask).toBeTruthy();
 
       const ownerUserId = String(sourceTask?.ownerUserId || "").trim();
@@ -163,7 +196,7 @@ describe.skipIf(process.env.RUN_REAL_ASSET_REPLAY !== "1")("project asset real-s
       expect(ownerUserId).toBeTruthy();
       expect(projectId).toBeTruthy();
 
-      const assets = await listProjectAssets({ ownerUserId, projectId });
+      const assets = await withRetry(() => listProjectAssets({ ownerUserId, projectId }));
       const imageAsset = assets.find((asset) => asset.path === "uploads/file.png") || assets.find((asset) => asset.category === "image");
       expect(imageAsset?.logicalPath).toMatch(/^\/assets\/project\//);
 
@@ -273,11 +306,11 @@ describe.skipIf(process.env.RUN_REAL_ASSET_REPLAY !== "1")("project asset real-s
 
       try {
         process.env.CHAT_TASKS_USE_SUPABASE = "1";
-        const sourceTask = await getChatTask(REAL_REPLAY_TASK_ID);
+        const sourceTask = await withRetry(() => getChatTask(REAL_REPLAY_TASK_ID));
         expect(sourceTask).toBeTruthy();
         const ownerUserId = String(sourceTask?.ownerUserId || "").trim();
         const sourceProjectId = String(sourceTask?.chatId || "").trim();
-        const assets = await listProjectAssets({ ownerUserId, projectId: sourceProjectId });
+        const assets = await withRetry(() => listProjectAssets({ ownerUserId, projectId: sourceProjectId }));
         const imageAsset = assets.find((asset) => asset.path === "uploads/file.png") || assets.find((asset) => asset.category === "image");
         expect(imageAsset?.logicalPath).toMatch(/^\/assets\/project\//);
 
@@ -334,6 +367,9 @@ describe.skipIf(process.env.RUN_REAL_ASSET_REPLAY !== "1")("project asset real-s
               executionMode: "deploy",
               deployRequested: true,
               sourceRequirement: "Project assets replay deployment with Blog snapshot.",
+              blogContentConfirmed: true,
+              blogContentPreviewPosts: [],
+              blogContentPreviewStatus: "confirmed",
               preferredLocale: "en",
             } as any,
             site_artifacts: releaseProject as any,
@@ -343,7 +379,8 @@ describe.skipIf(process.env.RUN_REAL_ASSET_REPLAY !== "1")("project asset real-s
           },
         });
 
-        liveUrl = String(nextState?.deployed_url || "").replace(/\/+$/, "");
+        const completedTask = await getChatTask(deployTask.id);
+        liveUrl = String(nextState?.deployed_url || completedTask?.result?.deployedUrl || "").replace(/\/+$/, "");
         expect(liveUrl).toContain(".pages.dev");
         projectName = deployedProjectName(liveUrl);
         expect(projectName).toBeTruthy();
@@ -354,7 +391,10 @@ describe.skipIf(process.env.RUN_REAL_ASSET_REPLAY !== "1")("project asset real-s
         const home = await fetchTextWithRetry(liveUrl, (text, status) => status === 200 && text.includes("Project Asset Replay Site") && text.includes("/release/current/files"));
         const blog = await fetchTextWithRetry(`${liveUrl}/blog/`, (text, status) => status === 200 && text.includes(seed!.title) && text.includes(`Project asset replay online marker ${marker}`));
         const post = await fetchTextWithRetry(`${liveUrl}/blog/project-asset-replay-blog-verification/`, (text, status) => status === 200 && text.includes("Project asset replay blog content marker") && text.includes(marker));
-        const snapshot = await fetchTextWithRetry(`${liveUrl}/shpitto-blog-snapshot.json`, (text, status) => status === 200 && text.includes('"mode": "deployment-d1-static-snapshot"') && text.includes('"postCount": 1'));
+        const snapshot = await fetchTextWithRetry(
+          `${liveUrl}/shpitto-blog-snapshot.json`,
+          (text, status) => status === 200 && isDeploymentSnapshotWithMarker(text, seed!.title),
+        );
 
         console.log(
           JSON.stringify(

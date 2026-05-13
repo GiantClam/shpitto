@@ -812,9 +812,7 @@ function renderDefaultVisualInclinationPrompt(decision: VisualDirectionDecision)
     `- Recommended direction: ${direction.label} (${direction.id})`,
     "- This is a default visual starting point because the user did not explicitly select a theme.",
     reason ? `- Recommendation basis: ${reason}` : "",
-    `- Mood tendency: ${direction.mood}`,
-    `- Palette tendency: bg ${direction.palette.bg}, surface ${direction.palette.surface}, accent ${direction.palette.accent}`,
-    `- Typography tendency: display ${direction.displayFont}; body ${direction.bodyFont}`,
+    "- The detailed visual contract appears below and should drive this generation unless a later explicit theme selection replaces it.",
     "- Treat this as a soft default. Any later explicit user theme selection must override it.",
   ]
     .filter(Boolean)
@@ -1910,8 +1908,11 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
     .join("\n");
   const completion = `${slots.filter((slot) => slot.filled).length}/${slots.length}`;
   const visualDirectionContract =
-    spec.visualDecisionSource === "user_explicit" && spec.primaryVisualDirection
-      ? renderWebsiteDesignDirectionPrompt([spec.primaryVisualDirection])
+    spec.primaryVisualDirection &&
+    (spec.visualDecisionSource === "user_explicit" || spec.visualDecisionSource === "user_recommended_default")
+      ? renderWebsiteDesignDirectionPrompt([spec.primaryVisualDirection], {
+          strength: spec.visualDecisionSource === "user_explicit" ? "explicit" : "recommended",
+        })
       : "";
   const defaultVisualInclinationPrompt = renderDefaultVisualInclinationPrompt(visualDecision);
   const designSystemInspirationPrompt = renderDesignSystemInspirationPrompt(designSystemInspiration);

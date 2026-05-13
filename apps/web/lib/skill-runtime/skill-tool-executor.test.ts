@@ -1,6 +1,7 @@
 ﻿import { describe, expect, it } from "vitest";
 import { HumanMessage } from "@langchain/core/messages";
 import {
+  buildWebsiteSkillToolRoundPromptForAdapter,
   collapseVisibleBilingualPairsForTesting,
   didRoundMateriallyChangeFilesForTesting,
   extractQaRepairTargetsForTesting,
@@ -14,6 +15,9 @@ import {
   normalizeGeneratedCssForTesting,
   planRoundObjectiveForTesting,
   requiredFileChecklistForTesting,
+  resolveExpectedRequiredFileCountForTesting,
+  resolveRoundTimeoutsForTesting,
+  resolveWebsiteSkillMaxToolRoundsForAdapter,
   resolveToolProtocolForProvider,
   runSkillToolExecutor,
   sanitizeRequirementForGenerationForTesting,
@@ -414,6 +418,49 @@ describe("skill-tool-executor", () => {
     expect(required).not.toContain("/storage/runtime/hydration/fallback/index.html");
   });
 
+  it("counts mixed-language Chinese blog requests when resolving round budgets", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("我想做个个人简历网站，需要3篇blog体现我的价值。")],
+      phase: "conversation",
+      sitemap: ["/", "/blog"],
+    } as any);
+
+    expect(resolveWebsiteSkillMaxToolRoundsForAdapter(decision, "我想做个个人简历网站，需要3篇blog体现我的价值。")).toBe(11);
+  });
+
+  it("derives expected required file count from actual requested content count before detail slugs exist", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("我想做个个人简历网站，需要3篇blog体现我的价值。")],
+      phase: "conversation",
+      sitemap: ["/", "/blog"],
+    } as any);
+
+    expect(
+      resolveExpectedRequiredFileCountForTesting({
+        decision,
+        adapter: {
+          buildRequiredFileChecklist: requiredFileChecklistForTesting,
+        } as any,
+        requirementText: "我想做个个人简历网站，需要3篇blog体现我的价值。",
+      }),
+    ).toBe(7);
+  });
+
+  it("scales round timeout budget with the number of target files", () => {
+    const singleFile = resolveRoundTimeoutsForTesting({
+      taskTimeoutMs: 10_000_000,
+      targetFileCount: 1,
+    });
+    const fourFiles = resolveRoundTimeoutsForTesting({
+      taskTimeoutMs: 10_000_000,
+      targetFileCount: 4,
+    });
+
+    expect(fourFiles.idleTimeoutMs).toBeGreaterThan(singleFile.idleTimeoutMs);
+    expect(fourFiles.absoluteTimeoutMs).toBeGreaterThan(singleFile.absoluteTimeoutMs);
+    expect(fourFiles.absoluteTimeoutMs).toBe(singleFile.absoluteTimeoutMs * 4);
+  });
+
   it("locks the website quality contract wording with a snapshot", () => {
     expect(renderWebsiteQualityContract()).toMatchInlineSnapshot(`
       "## Website Quality Contract
@@ -527,9 +574,27 @@ describe("skill-tool-executor", () => {
       "/blog/agile-devops-system-design/index.html",
       "/blog/wechat-real-time-media-global/index.html",
     ]);
-    expect(objective.targetFiles).toEqual(["/blog/agile-devops-system-design/index.html"]);
-    expect(objective.instruction).toContain("complete Blog detail HTML document");
-    expect(objective.instruction).toContain("full readable article/detail page");
+    expect(objective.targetFiles).toEqual([
+      "/blog/agile-devops-system-design/index.html",
+    ]);
+    expect(objective.strictSingleTarget).toBe(true);
+    expect(objective.instruction).toContain("Emit this complete Blog/detail page in this round");
+    expect(objective.instruction).toContain("Focus on finishing this one detail completely before moving to the next");
+    expect(objective.instruction).toContain("full readable body");
+  });
+
+  it("serializes missing Blog detail pages one file per round by default", () => {
+    const objective = planRoundObjectiveForTesting(0, [
+      "/blog/ai-product-practice/index.html",
+      "/blog/saas-commercialization/index.html",
+      "/blog/global-messaging-products/index.html",
+    ]);
+
+    expect(objective.targetFiles).toEqual([
+      "/blog/ai-product-practice/index.html",
+    ]);
+    expect(objective.strictSingleTarget).toBe(true);
+    expect(objective.instruction).toContain("Emit this complete Blog/detail page in this round");
   });
 
   it("skips bilingual body-copy guard for blog detail pages while keeping detail completeness checks", () => {
@@ -725,6 +790,8 @@ describe("skill-tool-executor", () => {
       - Derive route-specific sections, headings, card types, and interactions from the Canonical Website Prompt and source content.
       - Use a page-specific body architecture. Shared header/footer/design tokens are allowed; the main content section order, visual modules, and primary components must differ from sibling routes.
       - Do not apply a hardcoded industry skeleton or copy the previous page layout and only swap text.
+      - Visitor-facing copy must be substantive content for the audience, not a description of site mechanics. Do not tell visitors what the page's task is, where to start browsing, which route comes next, or that one page leads into deeper content.
+      - Ban visible scaffold phrases and equivalents such as 从首页开始, 接下来看博客, 循序进入深内容, 阅读入口, 站点入口, 首页路径, 继续了解, 下一步, this page provides, homepage job, where to start, start from home, or next step when they explain navigation order rather than a concrete offer or action.
       - Follow the workflow skill's Shared Shell/Footer Contract for header, main, and footer requirements.
       Sibling page intents to stay visually distinct from:
       /: Homepage. Establish the brand overview, core value, primary route entry, and next action while preserving site home-entry semantics.
@@ -1392,6 +1459,78 @@ describe("skill-tool-executor", () => {
     ).toThrow("exposes editorial scaffold/explanatory wording");
   });
 
+  it("blocks homepage page-mechanics scaffold copy", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("生成个人网站，包含首页和博客。")],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/blog"],
+          navLabels: ["首页", "博客"],
+          files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html"],
+        },
+      },
+    } as any);
+    const files = validGeneratedFiles(decision.routes).map((file) =>
+      file.path === "/index.html"
+        ? {
+            ...file,
+            content: String(file.content).replace(
+              /<main>[\s\S]*<\/main>/,
+              '<main><section class="hero"><h1>个人站首页</h1><p>阅读入口</p><p>从首页开始，循序进入深内容。接下来看博客，内容会更具体。</p></section><section><h2>继续了解</h2><p>每个入口都对应独立页面与清晰任务，方便用户按角色和目标快速进入下一步。</p></section><section><h2>真实介绍</h2><p>这里介绍作者的工程经验、研究方向、咨询边界和可验证案例，帮助访客判断是否继续阅读。</p></section></main>',
+            ),
+          }
+        : file,
+    );
+
+    expect(() =>
+      validateAndNormalizeRequiredFiles({
+        decision,
+        files,
+        requirementText: "生成个人网站，包含首页和博客。",
+      }),
+    ).toThrow("exposes page mechanics/scaffold wording");
+  });
+
+  it("allows concrete homepage CTAs that are not route choreography", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("生成咨询顾问个人网站，首页包含案例和联系入口。")],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/cases", "/contact"],
+          navLabels: ["首页", "案例", "联系"],
+          files: ["/styles.css", "/script.js", "/index.html", "/cases/index.html", "/contact/index.html"],
+        },
+      },
+    } as any);
+    const files = validGeneratedFiles(decision.routes).map((file) =>
+      file.path === "/index.html"
+        ? {
+            ...file,
+            content: String(file.content).replace(
+              /<main>[\s\S]*<\/main>/,
+              '<main><section class="hero"><h1>增长与系统咨询</h1><p>为 SaaS 团队梳理获客、交付和数据闭环，把分散的增长实验变成可复用的经营系统。</p><a href="/cases/">查看案例</a><a href="/contact/">预约诊断</a></section><section><h2>服务边界</h2><p>咨询覆盖定位复盘、漏斗诊断、销售流程和上线后的数据看板，交付物直接对应团队当前的营收瓶颈。</p></section><section><h2>适合团队</h2><p>已经有基础客户和销售线索，但转化周期拉长、产品价值表达不稳定，或者交付过程依赖少数关键成员的团队。</p></section></main>',
+            ),
+          }
+        : file,
+    );
+
+    expect(() =>
+      validateAndNormalizeRequiredFiles({
+        decision,
+        files,
+        requirementText: "生成咨询顾问个人网站，首页包含案例和联系入口。",
+      }),
+    ).not.toThrow();
+  });
+
   it("allows substantive blog framing that mentions three essays without turning it into scaffold copy", () => {
     const decision = buildLocalDecisionPlan({
       messages: [new HumanMessage("Generate a personal blog with three articles that reflect the author's methods and judgment.")],
@@ -1520,7 +1659,7 @@ describe("skill-tool-executor", () => {
                 "  </div>",
                 '  <div class="hero__media"><svg viewBox="0 0 200 120" role="img" aria-label="Preview chart"><rect width="200" height="120" rx="24" fill="#eef4ff"/></svg></div>',
                 "</section>",
-                '<section><h2 data-i18n="home.section.title" data-i18n-zh="阅读入口" data-i18n-en="Reading entry">阅读入口</h2><p data-i18n="home.section.body" data-i18n-zh="博客承接持续更新的中文文章。" data-i18n-en="The blog continues with regularly updated articles.">博客承接持续更新的中文文章。</p></section>',
+                '<section><h2 data-i18n="home.section.title" data-i18n-zh="AI 观察" data-i18n-en="AI observations">AI 观察</h2><p data-i18n="home.section.body" data-i18n-zh="博客承接持续更新的中文文章。" data-i18n-en="The blog continues with regularly updated articles.">博客承接持续更新的中文文章。</p></section>',
                 "</main>",
               ].join(""),
             ),
@@ -1759,6 +1898,56 @@ describe("skill-tool-executor", () => {
     ).toThrow("must expose at least one /blog/{slug}/ detail link");
   });
 
+  it("rejects requested Blog articles implemented as same-page anchors instead of /blog/{slug}/ details", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a personal blog with Home and Blog. Generate 3 complete articles.")],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/blog"],
+          navLabels: ["Home", "Blog"],
+          files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html"],
+        },
+      },
+    } as any);
+    const files = validGeneratedFiles(decision.routes)
+      .filter((file) => file.path !== "/blog/demo/index.html")
+      .map((file) =>
+        file.path === "/styles.css"
+          ? {
+              ...file,
+              content: `${String(file.content || "")}\n.article-card { padding: 24px; }`,
+            }
+          : file.path === "/blog/index.html"
+            ? {
+                ...file,
+                content: String(file.content).replace(
+                  /<main>[\s\S]*<\/main>/,
+                  [
+                    "<main><h1>Blog</h1>",
+                    '<section><article class="article-card"><h2>AI product practice</h2><p>Substantial card copy.</p><a href="#ai-product-practice-detail">Open detail</a></article>',
+                    '<article class="article-card"><h2>SaaS commercialization</h2><p>Substantial card copy.</p><a href="#saas-commercialization-detail">Open detail</a></article>',
+                    '<article class="article-card"><h2>Global messaging</h2><p>Substantial card copy.</p><a href="#global-messaging-detail">Open detail</a></article>',
+                    '<article id="ai-product-practice-detail"><h2>AI product practice detail</h2><p>Long body.</p></article></section>',
+                    "</main>",
+                  ].join(""),
+                ),
+              }
+            : file,
+      );
+
+    expect(() =>
+      validateAndNormalizeRequiredFiles({
+        decision,
+        files,
+        requirementText: "Build a personal blog with Home and Blog. Generate 3 complete articles.",
+      }),
+    ).toThrow("does not include the Blog data-source contract");
+  });
+
   it("treats discovered /blog/{slug}/ links as missing required files before final validation", () => {
     const decision = buildLocalDecisionPlan({
       messages: [new HumanMessage("Build a personal blog with Home and Blog.")],
@@ -1784,6 +1973,85 @@ describe("skill-tool-executor", () => {
         requirementText: "Build a personal blog with Home and Blog.",
       }),
     ).toContain("/blog/demo/index.html");
+  });
+
+  it("caps unrequested Blog fallback detail outputs to three entries", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a personal blog with Home and Blog.")],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/blog"],
+          navLabels: ["Home", "Blog"],
+          files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html"],
+        },
+      },
+    } as any);
+    const blogLinks = [
+      "/blog/ai-as-a-system/",
+      "/blog/ai-is-not-the-answer-process-is/",
+      "/blog/devops-for-long-running-teams/",
+      "/blog/devops-value-is-fewer-errors/",
+      "/blog/k12-needs-boundaries/",
+      "/blog/k12-product-needs-rhythm/",
+    ];
+    const detailFiles = blogLinks.slice(0, 3).map((href, index) => ({
+      path: `${href.replace(/^\/+/, "")}index.html`,
+      type: "text/html",
+      content: [
+        "<!doctype html><html><head><link rel=\"stylesheet\" href=\"/styles.css\"></head><body>",
+        "<main><article>",
+        `<h1>Entry ${index + 1}</h1>`,
+        "<p>This complete article explains the personal blog topic with enough context, background, and practical framing to read as a finished detail page rather than a placeholder shell.</p>",
+        "<p>The body connects the visible archive card to a concrete argument, names the operating tension, and keeps the prose anchored to the selected personal blog theme.</p>",
+        "<p>Readers get a coherent explanation of why this topic matters, how it relates to the author, and what tradeoffs shape the final point of view.</p>",
+        "<p>The closing paragraph adds enough substance for static browsing, no-JS previews, and generated-site validation without leaning on runtime hydration.</p>",
+        "<section><h2>Context</h2><p>The article context section gives a specific frame for the topic and avoids generic archive filler.</p></section>",
+        "<section><h2>Decision</h2><p>The article decision section explains the judgment behind the topic and why it deserves a separate detail route.</p></section>",
+        "</article></main><script src=\"/script.js\"></script></body></html>",
+      ].join(""),
+    }));
+    const files = [
+      ...validGeneratedFiles(decision.routes)
+        .filter((file) => !file.path.startsWith("/blog/"))
+        .map((file) =>
+          file.path === "/styles.css"
+            ? { ...file, content: `${String(file.content || "")}\n.blog-card { padding: 24px; }` }
+            : file,
+        ),
+      {
+        path: "/blog/index.html",
+        type: "text/html",
+        content: String(validGeneratedFiles(decision.routes).find((file) => file.path === "/blog/index.html")?.content || "").replace(
+          /<main>[\s\S]*<\/main>/,
+          `<main><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list>${blogLinks
+            .map((href, index) => `<article class="blog-card"><h2><a href="${href}">Entry ${index + 1}</a></h2><p>Substantial preview ${index + 1}</p></article>`)
+            .join("")}</div></section></main>`,
+        ),
+      },
+      ...detailFiles,
+    ];
+
+    const required = requiredFileChecklistForTesting(decision, {
+      files,
+      requirementText: "Build a personal blog with Home and Blog.",
+    });
+    expect(required.filter((file) => file.startsWith("/blog/") && file !== "/blog/index.html")).toEqual([
+      "/blog/ai-as-a-system/index.html",
+      "/blog/ai-is-not-the-answer-process-is/index.html",
+      "/blog/devops-for-long-running-teams/index.html",
+    ]);
+
+    expect(() =>
+      validateAndNormalizeRequiredFiles({
+        decision,
+        files,
+        requirementText: "Build a personal blog with Home and Blog.",
+      }),
+    ).toThrow("without an explicit requested content count");
   });
 
   it("ignores /blog/{slug}/ links discovered only inside non-primary generated html routes", () => {
@@ -1877,6 +2145,17 @@ describe("skill-tool-executor", () => {
     );
   });
 
+  it("collapses plain zh/en sibling nodes into one i18n-aware node", () => {
+    const html = [
+      '<p class="hero-lead">用克制、实用的方式解释 AI 如何进入日常判断。</p>',
+      '<p class="hero-lead">Calm editorial guidance for people who want practical AI judgment.</p>',
+    ].join("\n");
+
+    expect(collapseVisibleBilingualPairsForTesting(html, "zh-CN")).toContain(
+      '<p class="hero-lead" data-i18n data-i18n-zh="用克制、实用的方式解释 AI 如何进入日常判断。" data-i18n-en="Calm editorial guidance for people who want practical AI judgment.">用克制、实用的方式解释 AI 如何进入日常判断。</p>',
+    );
+  });
+
   it("injects data-i18n toggle support into bilingual runtime scripts", () => {
     const script = [
       "(() => {",
@@ -1887,7 +2166,48 @@ describe("skill-tool-executor", () => {
 
     const normalized = normalizeGeneratedJsForTesting(script, "Chinese and English bilingual site");
     expect(normalized).toContain("document.querySelectorAll('[data-i18n]')");
+    expect(normalized).toContain("document.querySelectorAll('[data-locale-toggle]')");
+    expect(normalized).toContain("localStorage.getItem(STORAGE_KEY)");
     expect(normalized).toContain("attributeFilter: ['data-lang']");
+  });
+
+  it("adds a concrete bilingual protocol scaffold to round prompts", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a bilingual Chinese and English personal blog with a language switch.")],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/blog"],
+          navLabels: ["首页", "博客"],
+          files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html"],
+        },
+      },
+    } as any);
+
+    const prompt = buildWebsiteSkillToolRoundPromptForAdapter({
+      round: 0,
+      totalRounds: 8,
+      decision,
+      stylePreset: { id: "editorial", label: "Editorial", rationale: "test" } as any,
+      styleName: "Editorial",
+      styleReason: "Test rationale",
+      loadedSkillIds: [],
+      emittedFiles: [],
+      requiredMissing: ["/styles.css", "/script.js", "/index.html", "/blog/index.html"],
+      objective: {
+        targetFiles: ["/styles.css", "/script.js", "/index.html", "/blog/index.html"],
+        instruction: "Emit the initial shared shell and bilingual routes.",
+        strictSingleTarget: false,
+      },
+      requirementText: "Build a bilingual Chinese and English personal blog with a language switch.",
+    });
+
+    expect(prompt).toContain("Bilingual reference scaffold");
+    expect(prompt).toContain('data-locale-toggle data-locale="zh-CN"');
+    expect(prompt).toContain('data-i18n="home.hero.title"');
   });
 
   it("blocks a homepage that reads like a downloads or certification portal", () => {

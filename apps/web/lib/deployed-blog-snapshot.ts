@@ -186,6 +186,18 @@ function renderRss(posts: BlogPostRecord[]) {
 </channel></rss>`;
 }
 
+function renderSitemap(posts: BlogPostRecord[]) {
+  const urls = [
+    "<url><loc>/</loc></url>",
+    "<url><loc>/blog/</loc></url>",
+    ...posts
+      .filter((post) => post.slug)
+      .map((post) => `<url><loc>/blog/${encodeURIComponent(post.slug)}/</loc></url>`),
+  ].join("");
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`;
+}
+
 function buildSnapshotPayload(input: SnapshotInput, posts: BlogPostRecord[]): SnapshotPayload {
   const settings = input.settings;
   return {
@@ -219,10 +231,14 @@ export function buildDeployedBlogSnapshotFiles(input: SnapshotInput): StaticSite
       JSON.stringify(payload, null, 2),
       "application/json",
     ),
+    file("/api/blog/posts", JSON.stringify({ posts, settings: payload.settings }, null, 2), "application/json"),
   ];
 
   if (settings?.rssEnabled !== false) {
     files.push(file("/blog/rss.xml", renderRss(posts), "application/rss+xml"));
+  }
+  if (settings?.sitemapEnabled !== false) {
+    files.push(file("/sitemap.xml", renderSitemap(posts), "application/xml"));
   }
   for (const post of posts) {
     if (!post.slug) continue;
@@ -463,8 +479,10 @@ function fillPostShellHtml(shell: string, post: BlogPostRecord, navLabel = "Blog
 }
 
 function hasBlogLink(content: string, href = "/blog/") {
-  const target = href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\\\/$/, "\\/?");
-  return new RegExp(`href\\s*=\\s*["']${target}["']`, "i").test(content);
+  const normalized = normalizePath(href).replace(/\/+$/g, "") || "/blog";
+  const target = normalized.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const trailingSlash = normalized === "/" ? "" : "/?";
+  return new RegExp(`href\\s*=\\s*["']${target}${trailingSlash}["']`, "i").test(content);
 }
 
 function injectBlogLinkIntoGeneratedHtml(content: string, navLabel = "Blog", href = "/blog/") {

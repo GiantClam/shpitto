@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
+import { useProjectWorkspaceMeta, type ProjectWorkspaceSessionPayload } from "@/components/chat/project-workspace-context";
 import {
   ArrowLeft,
   BarChart3,
@@ -27,20 +28,7 @@ import {
   User2,
 } from "lucide-react";
 import type { Locale } from "@/lib/i18n";
-import { getProjectWorkspaceCopy, type ProjectWorkspaceCopy } from "./project-workspace-copy";
-
-type SessionPayload = {
-  id: string;
-  title: string;
-  updatedAt: number;
-  archived?: boolean;
-};
-
-type SessionsResponse = {
-  ok: boolean;
-  sessions?: SessionPayload[];
-  error?: string;
-};
+import { formatWorkspaceAccountLabel, getProjectWorkspaceCopy, type ProjectWorkspaceCopy } from "./project-workspace-copy";
 
 type ProjectAsset = {
   id: string;
@@ -125,19 +113,25 @@ function assetStatusTone(status?: ProjectAsset["status"]) {
 export function ProjectAssetsWorkspace({ projectId, locale = "en" }: { projectId: string; locale?: Locale }) {
   const router = useRouter();
   const workspaceCopy = getProjectWorkspaceCopy(locale);
+  const {
+    userEmail,
+    userId,
+    projectTitle: sharedProjectTitle,
+    projectUpdatedAt,
+    projects,
+    refreshProjectMeta,
+  } = useProjectWorkspaceMeta();
+  const projectTitle = sharedProjectTitle || workspaceCopy.currentProject;
 
-  const [userEmail, setUserEmail] = useState("");
-  const [userId, setUserId] = useState("");
-  const [projectTitle, setProjectTitle] = useState(workspaceCopy.currentProject);
-  const [projectUpdatedAt, setProjectUpdatedAt] = useState<number | undefined>(undefined);
-  const [projects, setProjects] = useState<SessionPayload[]>([]);
   const [creatingProject, setCreatingProject] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const accountLabel = formatWorkspaceAccountLabel(userEmail, userId, workspaceCopy.guest);
 
   const [assets, setAssets] = useState<ProjectAsset[]>([]);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<"all" | "image" | "code" | "document" | "other">("all");
   const [loadingAssets, setLoadingAssets] = useState(false);
+  const [syncingGenerated, setSyncingGenerated] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [r2Configured, setR2Configured] = useState(true);
   const [error, setError] = useState("");
@@ -147,36 +141,26 @@ export function ProjectAssetsWorkspace({ projectId, locale = "en" }: { projectId
   const [deletingKey, setDeletingKey] = useState("");
   const [downloadingAll, setDownloadingAll] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const attemptedGeneratedSyncRef = useRef(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const dropInputRef = useRef<HTMLInputElement | null>(null);
 
   const chatId = projectId;
 
-  const fetchProjectMeta = useCallback(async () => {
-    if (!userId) return;
-    try {
-      const res = await fetch("/api/chat/sessions?limit=200", { cache: "no-store" });
-      const data = (await res.json()) as SessionsResponse;
-      if (!res.ok || !data.ok || !Array.isArray(data.sessions)) return;
-      setProjects(data.sessions.filter((session) => !session.archived));
-      const hit = data.sessions.find((session) => session.id === chatId);
-      if (!hit) return;
-      setProjectTitle(String(hit.title || workspaceCopy.currentProject));
-      setProjectUpdatedAt(Number(hit.updatedAt || Date.now()));
-    } catch {
-      // best-effort metadata
-    }
-  }, [chatId, userId, workspaceCopy.currentProject]);
-
-  const fetchAssets = useCallback(async () => {
+  const fetchAssets = useCallback(async (options?: { syncGenerated?: boolean; background?: boolean }) => {
     if (!chatId.trim()) return;
-    setLoadingAssets(true);
-    setError("");
+    if (options?.background) {
+      setSyncingGenerated(true);
+    } else {
+      setLoadingAssets(true);
+      setError("");
+    }
     try {
       const params = new URLSearchParams();
       if (query.trim()) params.set("q", query.trim());
       if (category !== "all") params.set("category", category);
+      if (options?.syncGenerated) params.set("sync", "1");
       const res = await fetch(`/api/projects/${encodeURIComponent(chatId)}/assets?${params.toString()}`, {
         cache: "no-store",
       });
@@ -191,32 +175,27 @@ export function ProjectAssetsWorkspace({ projectId, locale = "en" }: { projectId
     } catch (err: any) {
       setError(String(err?.message || err || "Failed to load project assets."));
     } finally {
-      setLoadingAssets(false);
+      if (options?.background) {
+        setSyncingGenerated(false);
+      } else {
+        setLoadingAssets(false);
+      }
     }
   }, [category, chatId, query]);
 
   useEffect(() => {
-    let mounted = true;
-    void (async () => {
-      const res = await fetch("/api/auth/session", { cache: "no-store" }).catch(() => null);
-      const data = res ? ((await res.json().catch(() => ({}))) as any) : {};
-      if (!mounted) return;
-      setUserEmail(String(data.user?.email || "").trim());
-      setUserId(String(data.user?.id || "").trim());
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    void fetchProjectMeta();
-  }, [fetchProjectMeta]);
-
-  useEffect(() => {
     void fetchAssets();
   }, [fetchAssets]);
+
+  useEffect(() => {
+    if (loadingAssets || syncingGenerated) return;
+    if (!r2Configured) return;
+    if (category !== "all" || query.trim()) return;
+    if (assets.length > 0) return;
+    if (attemptedGeneratedSyncRef.current) return;
+    attemptedGeneratedSyncRef.current = true;
+    void fetchAssets({ syncGenerated: true, background: true });
+  }, [assets.length, category, fetchAssets, loadingAssets, query, r2Configured, syncingGenerated]);
 
   async function handleCreateProject() {
     if (creatingProject) return;
@@ -228,11 +207,11 @@ export function ProjectAssetsWorkspace({ projectId, locale = "en" }: { projectId
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: workspaceCopy.newProject }),
       });
-      const data = (await res.json()) as { ok: boolean; session?: SessionPayload; error?: string };
+      const data = (await res.json()) as { ok: boolean; session?: ProjectWorkspaceSessionPayload; error?: string };
       if (!res.ok || !data.ok || !data.session?.id) {
         throw new Error(data.error || "Failed to create project.");
       }
-      await fetchProjectMeta();
+      await refreshProjectMeta();
       router.push(`/projects/${encodeURIComponent(data.session.id)}/chat`);
     } catch (err: any) {
       setError(String(err?.message || err || "Failed to create project."));
@@ -275,6 +254,7 @@ export function ProjectAssetsWorkspace({ projectId, locale = "en" }: { projectId
       if (!res.ok || !data.ok) {
         throw new Error(data.error || "Upload failed.");
       }
+      attemptedGeneratedSyncRef.current = true;
       await fetchAssets();
     } catch (err: any) {
       setError(String(err?.message || err || "Upload failed."));
@@ -300,6 +280,7 @@ export function ProjectAssetsWorkspace({ projectId, locale = "en" }: { projectId
       if (!res.ok || !data.ok) {
         throw new Error(data.error || "Delete failed.");
       }
+      attemptedGeneratedSyncRef.current = true;
       await fetchAssets();
     } catch (err: any) {
       setError(String(err?.message || err || "Delete failed."));
@@ -366,7 +347,8 @@ export function ProjectAssetsWorkspace({ projectId, locale = "en" }: { projectId
 
   async function handleSearchSubmit(event: FormEvent) {
     event.preventDefault();
-    await fetchAssets();
+      attemptedGeneratedSyncRef.current = true;
+      await fetchAssets();
   }
 
   const navItems: Array<{
@@ -379,7 +361,7 @@ export function ProjectAssetsWorkspace({ projectId, locale = "en" }: { projectId
     { label: workspaceCopy.nav.analytics, icon: BarChart3, href: `/projects/${encodeURIComponent(chatId)}/analysis`, active: false },
     { label: workspaceCopy.nav.assets, icon: FolderOpen, href: `/projects/${encodeURIComponent(chatId)}/assets`, active: true },
     { label: workspaceCopy.nav.data, icon: Database, href: `/projects/${encodeURIComponent(chatId)}/data`, active: false },
-    { label: workspaceCopy.nav.settings, icon: Settings, active: false },
+    { label: workspaceCopy.nav.settings, icon: Settings, href: `/projects/${encodeURIComponent(chatId)}/settings`, active: false },
   ];
 
   return (
@@ -517,11 +499,11 @@ export function ProjectAssetsWorkspace({ projectId, locale = "en" }: { projectId
                   "mt-2 flex items-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_35%,transparent)] px-3 py-2",
                   sidebarCollapsed ? "justify-center px-2" : "",
                 ].join(" ")}
-                title={userEmail || workspaceCopy.guest}
+                title={userEmail || userId || workspaceCopy.guest}
               >
                 <User2 className="h-4 w-4 shrink-0 text-[var(--shp-muted)]" />
                 {!sidebarCollapsed ? (
-                  <span className="max-w-[190px] truncate text-sm text-[var(--shp-text)]">{userEmail || workspaceCopy.guest}</span>
+                  <span className="max-w-[190px] truncate text-sm text-[var(--shp-text)]">{accountLabel}</span>
                 ) : null}
               </div>
               {userEmail ? (
@@ -622,6 +604,12 @@ export function ProjectAssetsWorkspace({ projectId, locale = "en" }: { projectId
               ) : assets.length === 0 ? (
                 <div className="col-span-full rounded-xl border border-dashed border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-4 py-8 text-center text-sm text-[var(--shp-muted)]">
                   {workspaceCopy.assets.empty}
+                  {syncingGenerated ? (
+                    <div className="mt-3 inline-flex items-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_60%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] px-3 py-2 text-xs text-[var(--shp-muted)]">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      {locale === "zh" ? "正在补同步生成资源..." : "Syncing generated files..."}
+                    </div>
+                  ) : null}
                 </div>
               ) : (
                 assets.map((asset) => (

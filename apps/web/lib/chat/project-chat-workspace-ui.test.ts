@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { buildDomainGuidanceCardMetadata } from "../../components/chat/project-domain-ui";
 import {
   formatQaSummaryDetail,
   shouldSuppressOptimisticTimelineEcho,
@@ -131,5 +132,25 @@ describe("ProjectChatWorkspace timeline actions", () => {
     expect(summary).toContain("Deployment target: shpitto server");
     expect(summary).not.toContain("cloudflare");
     expect(summary).not.toContain("Canonical Website Generation Prompt");
+  });
+
+  it("builds reusable domain guidance metadata from a bound domain and deployment host", () => {
+    const metadata = buildDomainGuidanceCardMetadata({
+      locale: "en",
+      deploymentHost: "shpitto-chat-1778638147239-yoh11u-930d5607-4.pages.dev",
+      deployedUrl: "https://shpitto-chat-1778638147239-yoh11u-930d5607-4.pages.dev",
+      hostname: "snapsclean.com",
+    });
+
+    expect(metadata.cardType).toBe("domain_guidance");
+    expect(String(metadata.summary || "")).toContain("snapsclean.com");
+    expect(Array.isArray(metadata.dnsRecords)).toBe(true);
+    expect((metadata.dnsRecords as Array<Record<string, string>>)[0]).toEqual(
+      expect.objectContaining({
+        type: "CNAME",
+        host: "www",
+        value: "shpitto-chat-1778638147239-yoh11u-930d5607-4.pages.dev",
+      }),
+    );
   });
 });

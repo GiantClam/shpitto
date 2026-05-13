@@ -80,6 +80,103 @@ type PublishFields = {
   tags: string[];
 };
 
+type BlogWorkspaceCopy = {
+  defaultNavLabel: string;
+  untitledPost: string;
+  draftTemplate: string;
+  statusPublished: string;
+  statusScheduled: string;
+  statusDraft: string;
+  statusArchived: string;
+  loadPostsError: string;
+  loadAssetsError: string;
+  emptySaveError: string;
+  savePostError: string;
+  postPublished: string;
+  postSaved: string;
+  previewPublishError: string;
+  creatingDraft: string;
+  createDraftError: string;
+  createDraftRetryHint: string;
+  draftCreated: string;
+  confirmDeletePost: string;
+  deletePostError: string;
+  postDeleted: string;
+  postUnpublished: string;
+  uploadCoverBeforeSelect: string;
+  uploadCoverError: string;
+  coverUploaded: string;
+  confirmDeleteAsset: string;
+  deleteAssetError: string;
+  assetDeleted: string;
+  saveSettingsError: string;
+  settingsSaved: string;
+  headerTitle: (projectTitle: string) => string;
+  headerDescription: string;
+  refresh: string;
+  newPost: string;
+  statsPosts: string;
+  statsPublished: string;
+  statsFeeds: string;
+  statsFeedsValue: string;
+  statsLocale: string;
+  viewPublishedPost: string;
+  settingsNavLabel: string;
+  settingsFeatured: string;
+  settingsEnabled: string;
+  settingsSave: string;
+  settingsSaving: string;
+  settingsNote: string;
+  searchPlaceholder: string;
+  noPosts: string;
+  lastModified: string;
+  edit: string;
+  publish: string;
+  unpublish: string;
+  backToList: string;
+  creatingDraftRecord: string;
+  unsavedDraft: string;
+  saveChanges: string;
+  saveDraft: string;
+  publishedChangesSaved: string;
+  draftSaved: string;
+  delete: string;
+  publishConfirmationTitle: string;
+  publishConfirmationBody: string;
+  publishPreviewRefreshing: string;
+  publishPreviewReady: string;
+  slug: string;
+  slugPlaceholder: string;
+  category: string;
+  categoryPlaceholder: string;
+  tags: string;
+  tagsPlaceholder: string;
+  cancel: string;
+  confirmPublish: string;
+  title: string;
+  titlePlaceholder: string;
+  theme: string;
+  layout: string;
+  coverImage: string;
+  uploadCoverToR2: string;
+  editorToolbarNote: string;
+  blogCoverAlt: string;
+  coverImageAlt: string;
+  coverImageAltPlaceholder: string;
+  markdownContent: string;
+  editorOnly: string;
+  loadingSelectedPost: string;
+  blogImageAlt: string;
+  r2Assets: string;
+  loading: string;
+  noUploadedAssets: string;
+  selectPostForAssets: string;
+  assetUrlCopied: string;
+  copyUrl: string;
+  themeOptions: Array<{ value: string; label: string }>;
+  layoutOptions: Array<{ value: string; label: string }>;
+};
+
 const EMPTY_FORM: BlogItemForm = {
   title: "",
   slug: "",
@@ -98,48 +195,256 @@ const EMPTY_FORM: BlogItemForm = {
   publishedAt: null,
 };
 
-const DEFAULT_SETTINGS_FORM: BlogSettingsForm = {
-  enabled: true,
-  navLabel: "Blog",
-  homeFeaturedCount: 3,
-};
-
 const EMPTY_PUBLISH_FIELDS: PublishFields = {
   slug: "",
   category: "",
   tags: [],
 };
 
-const DEFAULT_DRAFT_FORM: BlogItemForm = {
-  ...EMPTY_FORM,
-  title: "Untitled post",
-  contentMd: "# Untitled post\n\nStart writing your blog article here.",
-};
+function getBlogWorkspaceCopy(locale: Locale): BlogWorkspaceCopy {
+  if (locale === "zh") {
+    return {
+      defaultNavLabel: "\u535a\u5ba2",
+      untitledPost: "\u672a\u547d\u540d\u6587\u7ae0",
+      draftTemplate: "# \u672a\u547d\u540d\u6587\u7ae0\n\n\u5728\u8fd9\u91cc\u5f00\u59cb\u64b0\u5199\u535a\u5ba2\u5185\u5bb9\u3002",
+      statusPublished: "\u5df2\u53d1\u5e03",
+      statusScheduled: "\u5df2\u5b9a\u65f6",
+      statusDraft: "\u8349\u7a3f",
+      statusArchived: "\u5df2\u5f52\u6863",
+      loadPostsError: "\u52a0\u8f7d\u535a\u5ba2\u6587\u7ae0\u5931\u8d25\u3002",
+      loadAssetsError: "\u52a0\u8f7d\u535a\u5ba2\u8d44\u4ea7\u5931\u8d25\u3002",
+      emptySaveError: "\u8bf7\u5148\u586b\u5199\u6807\u9898\u6216\u5185\u5bb9\u518d\u4fdd\u5b58\u3002",
+      savePostError: "\u4fdd\u5b58\u535a\u5ba2\u6587\u7ae0\u5931\u8d25\u3002",
+      postPublished: "\u6587\u7ae0\u5df2\u53d1\u5e03\u3002",
+      postSaved: "\u6587\u7ae0\u5df2\u4fdd\u5b58\u3002",
+      previewPublishError: "\u751f\u6210\u53d1\u5e03\u9884\u89c8\u5931\u8d25\u3002",
+      creatingDraft: "\u6b63\u5728\u521b\u5efa\u8349\u7a3f...",
+      createDraftError: "\u521b\u5efa\u8349\u7a3f\u5931\u8d25\u3002",
+      createDraftRetryHint: "\u4f60\u53ef\u4ee5\u7ee7\u7eed\u7f16\u8f91\u5e76\u518d\u6b21\u4fdd\u5b58\u3002",
+      draftCreated: "\u8349\u7a3f\u5df2\u521b\u5efa\u3002",
+      confirmDeletePost: "\u786e\u8ba4\u5220\u9664\u8fd9\u7bc7\u535a\u5ba2\u6587\u7ae0\u5417\uff1f",
+      deletePostError: "\u5220\u9664\u535a\u5ba2\u6587\u7ae0\u5931\u8d25\u3002",
+      postDeleted: "\u6587\u7ae0\u5df2\u5220\u9664\u3002",
+      postUnpublished: "\u6587\u7ae0\u5df2\u53d6\u6d88\u53d1\u5e03\u3002",
+      uploadCoverBeforeSelect: "\u8bf7\u5148\u521b\u5efa\u6216\u9009\u62e9\u6587\u7ae0\uff0c\u518d\u4e0a\u4f20\u5c01\u9762\u56fe\u3002",
+      uploadCoverError: "\u4e0a\u4f20\u5c01\u9762\u56fe\u5931\u8d25\u3002",
+      coverUploaded: "\u5c01\u9762\u56fe\u5df2\u4e0a\u4f20\u5230 R2\u3002",
+      confirmDeleteAsset: "\u786e\u8ba4\u4ece R2 \u5220\u9664\u8fd9\u4e2a\u535a\u5ba2\u8d44\u4ea7\u5417\uff1f",
+      deleteAssetError: "\u5220\u9664\u535a\u5ba2\u8d44\u4ea7\u5931\u8d25\u3002",
+      assetDeleted: "\u535a\u5ba2\u8d44\u4ea7\u5df2\u5220\u9664\u3002",
+      saveSettingsError: "\u4fdd\u5b58\u535a\u5ba2\u8bbe\u7f6e\u5931\u8d25\u3002",
+      settingsSaved: "\u535a\u5ba2\u8bbe\u7f6e\u5df2\u4fdd\u5b58\u3002",
+      headerTitle: (projectTitle) => `${projectTitle} \u535a\u5ba2`,
+      headerDescription: "\u901a\u8fc7\u7b80\u5355\u7684\u7f16\u8f91\u6d41\u7a0b\u7ba1\u7406\u5bf9\u5916\u535a\u5ba2\uff1a\u5217\u8868\u3001\u7f16\u8f91\u3001\u53d1\u5e03\u3001\u53d6\u6d88\u53d1\u5e03\u3002",
+      refresh: "\u5237\u65b0",
+      newPost: "\u65b0\u5efa\u6587\u7ae0",
+      statsPosts: "\u6587\u7ae0\u6570",
+      statsPublished: "\u5df2\u53d1\u5e03",
+      statsFeeds: "RSS / Sitemap",
+      statsFeedsValue: "\u59cb\u7ec8\u5f00\u542f",
+      statsLocale: "\u8bed\u8a00",
+      viewPublishedPost: "\u67e5\u770b\u5df2\u53d1\u5e03\u6587\u7ae0",
+      settingsNavLabel: "\u5bfc\u822a\u6807\u7b7e",
+      settingsFeatured: "\u9996\u9875\u7cbe\u9009",
+      settingsEnabled: "\u542f\u7528",
+      settingsSave: "\u4fdd\u5b58\u8bbe\u7f6e",
+      settingsSaving: "\u4fdd\u5b58\u4e2d...",
+      settingsNote: "RSS \u548c sitemap \u9ed8\u8ba4\u4f1a\u4fdd\u6301\u542f\u7528\uff0c\u6b64\u5de5\u4f5c\u533a\u4e0d\u652f\u6301\u4fee\u6539\u3002",
+      searchPlaceholder: "\u641c\u7d22\u6587\u7ae0...",
+      noPosts: "\u6682\u65e0\u6587\u7ae0\u3002",
+      lastModified: "\u6700\u540e\u4fee\u6539",
+      edit: "\u7f16\u8f91",
+      publish: "\u53d1\u5e03",
+      unpublish: "\u53d6\u6d88\u53d1\u5e03",
+      backToList: "\u8fd4\u56de\u5217\u8868",
+      creatingDraftRecord: "\u6b63\u5728\u521b\u5efa\u8349\u7a3f\u8bb0\u5f55...",
+      unsavedDraft: "\u672a\u4fdd\u5b58\u7684\u8349\u7a3f\u3002\u4fdd\u5b58\u540e\u5373\u53ef\u5728\u670d\u52a1\u7aef\u521b\u5efa\u8bb0\u5f55\u3002",
+      saveChanges: "\u4fdd\u5b58\u4fee\u6539",
+      saveDraft: "\u4fdd\u5b58\u8349\u7a3f",
+      publishedChangesSaved: "\u5df2\u4fdd\u5b58\u5df2\u53d1\u5e03\u6587\u7ae0\u7684\u4fee\u6539\u3002",
+      draftSaved: "\u8349\u7a3f\u5df2\u4fdd\u5b58\u3002",
+      delete: "\u5220\u9664",
+      publishConfirmationTitle: "\u53d1\u5e03\u786e\u8ba4",
+      publishConfirmationBody: "\u5728\u6587\u7ae0\u516c\u5f00\u4e4b\u524d\uff0c\u8bf7\u786e\u8ba4 slug \u548c\u5206\u7c7b\u4fe1\u606f\u3002",
+      publishPreviewRefreshing: "\u5237\u65b0\u4e2d...",
+      publishPreviewReady: "\u670d\u52a1\u7aef\u53d1\u5e03\u9884\u89c8",
+      slug: "Slug",
+      slugPlaceholder: "article-slug",
+      category: "\u5206\u7c7b",
+      categoryPlaceholder: "\u5206\u7c7b\u540d\u79f0",
+      tags: "\u6807\u7b7e",
+      tagsPlaceholder: "tag-one, tag-two",
+      cancel: "\u53d6\u6d88",
+      confirmPublish: "\u786e\u8ba4\u53d1\u5e03",
+      title: "\u6807\u9898",
+      titlePlaceholder: "\u6587\u7ae0\u6807\u9898",
+      theme: "\u4e3b\u9898",
+      layout: "\u5e03\u5c40",
+      coverImage: "\u5c01\u9762\u56fe",
+      uploadCoverToR2: "\u4e0a\u4f20\u5c01\u9762\u5230 R2",
+      editorToolbarNote: "\u53ef\u4ee5\u5728\u7f16\u8f91\u5668\u5de5\u5177\u680f\u91cc\u76f4\u63a5\u4e0a\u4f20\u884c\u5185\u56fe\u7247\u3002Slug \u548c\u5206\u7c7b\u4ec5\u5728\u53d1\u5e03\u65f6\u786e\u8ba4\u3002",
+      blogCoverAlt: "\u535a\u5ba2\u5c01\u9762\u56fe",
+      coverImageAlt: "\u5c01\u9762\u56fe\u66ff\u4ee3\u6587\u672c",
+      coverImageAltPlaceholder: "\u63cf\u8ff0\u8fd9\u5f20\u5c01\u9762\u56fe",
+      markdownContent: "Markdown \u5185\u5bb9",
+      editorOnly: "\u4ec5\u7f16\u8f91\u5668\u6a21\u5f0f",
+      loadingSelectedPost: "\u6b63\u5728\u52a0\u8f7d\u6240\u9009\u6587\u7ae0...",
+      blogImageAlt: "\u535a\u5ba2\u56fe\u7247",
+      r2Assets: "R2 \u8d44\u4ea7",
+      loading: "\u52a0\u8f7d\u4e2d...",
+      noUploadedAssets: "\u8fd9\u7bc7\u6587\u7ae0\u8fd8\u6ca1\u6709\u4e0a\u4f20\u8d44\u4ea7\u3002",
+      selectPostForAssets: "\u8bf7\u5148\u521b\u5efa\u6216\u9009\u62e9\u4e00\u7bc7\u6587\u7ae0\u518d\u7ba1\u7406\u8d44\u4ea7\u3002",
+      assetUrlCopied: "\u8d44\u4ea7 URL \u5df2\u590d\u5236\u3002",
+      copyUrl: "\u590d\u5236 URL",
+      themeOptions: [
+        { value: "", label: "\u81ea\u52a8" },
+        { value: "editorial", label: "\u7f16\u8f91\u98ce" },
+        { value: "minimal", label: "\u6781\u7b80" },
+        { value: "immersive", label: "\u6c89\u6d78\u5f0f" },
+      ],
+      layoutOptions: [
+        { value: "", label: "\u81ea\u52a8" },
+        { value: "feature", label: "\u4e13\u9898" },
+        { value: "standard", label: "\u6807\u51c6" },
+        { value: "grid", label: "\u7f51\u683c" },
+      ],
+    };
+  }
 
-const THEME_OPTIONS = [
-  { value: "", label: "Auto" },
-  { value: "editorial", label: "Editorial" },
-  { value: "minimal", label: "Minimal" },
-  { value: "immersive", label: "Immersive" },
-];
-
-const LAYOUT_OPTIONS = [
-  { value: "", label: "Auto" },
-  { value: "feature", label: "Feature" },
-  { value: "standard", label: "Standard" },
-  { value: "grid", label: "Grid" },
-];
-
-function formatDateLabel(value: string) {
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value || "-";
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  return {
+    defaultNavLabel: "Blog",
+    untitledPost: "Untitled post",
+    draftTemplate: "# Untitled post\n\nStart writing your blog article here.",
+    statusPublished: "Published",
+    statusScheduled: "Scheduled",
+    statusDraft: "Draft",
+    statusArchived: "Archived",
+    loadPostsError: "Failed to load blog posts.",
+    loadAssetsError: "Failed to load blog assets.",
+    emptySaveError: "Add a title or content before saving.",
+    savePostError: "Failed to save blog post.",
+    postPublished: "Post published.",
+    postSaved: "Post saved.",
+    previewPublishError: "Failed to preview publish taxonomy.",
+    creatingDraft: "Creating draft...",
+    createDraftError: "Failed to create draft post.",
+    createDraftRetryHint: "You can keep editing and save again.",
+    draftCreated: "Draft created.",
+    confirmDeletePost: "Delete this blog post?",
+    deletePostError: "Failed to delete blog post.",
+    postDeleted: "Post deleted.",
+    postUnpublished: "Post unpublished.",
+    uploadCoverBeforeSelect: "Create or select a post before uploading a cover image.",
+    uploadCoverError: "Failed to upload cover image.",
+    coverUploaded: "Cover image uploaded to R2.",
+    confirmDeleteAsset: "Delete this blog asset from R2?",
+    deleteAssetError: "Failed to delete blog asset.",
+    assetDeleted: "Blog asset deleted.",
+    saveSettingsError: "Failed to save blog settings.",
+    settingsSaved: "Blog settings saved.",
+    headerTitle: (projectTitle) => `${projectTitle} Blog`,
+    headerDescription: "Manage the public blog with a simple editor flow: list, edit, publish, unpublish.",
+    refresh: "Refresh",
+    newPost: "New post",
+    statsPosts: "Posts",
+    statsPublished: "Published",
+    statsFeeds: "RSS / Sitemap",
+    statsFeedsValue: "Always on",
+    statsLocale: "Locale",
+    viewPublishedPost: "View published post",
+    settingsNavLabel: "Navigation label",
+    settingsFeatured: "Featured",
+    settingsEnabled: "Enabled",
+    settingsSave: "Save settings",
+    settingsSaving: "Saving...",
+    settingsNote: "RSS and sitemap stay enabled by default and are not user-editable in this workspace.",
+    searchPlaceholder: "Search posts...",
+    noPosts: "No posts found.",
+    lastModified: "Last modified",
+    edit: "Edit",
+    publish: "Publish",
+    unpublish: "Unpublish",
+    backToList: "Back to list",
+    creatingDraftRecord: "Creating draft record...",
+    unsavedDraft: "Unsaved draft. Save to create the server record.",
+    saveChanges: "Save changes",
+    saveDraft: "Save draft",
+    publishedChangesSaved: "Published changes saved.",
+    draftSaved: "Draft saved.",
+    delete: "Delete",
+    publishConfirmationTitle: "Publish confirmation",
+    publishConfirmationBody: "Confirm slug and article taxonomy before the post goes public.",
+    publishPreviewRefreshing: "Refreshing...",
+    publishPreviewReady: "Server-side publish preview",
+    slug: "Slug",
+    slugPlaceholder: "article-slug",
+    category: "Category",
+    categoryPlaceholder: "Category",
+    tags: "Tags",
+    tagsPlaceholder: "tag-one, tag-two",
+    cancel: "Cancel",
+    confirmPublish: "Confirm publish",
+    title: "Title",
+    titlePlaceholder: "Article title",
+    theme: "Theme",
+    layout: "Layout",
+    coverImage: "Cover image",
+    uploadCoverToR2: "Upload cover to R2",
+    editorToolbarNote: "Inline images can be uploaded directly from the editor toolbar. Slug and category are confirmed only at publish time.",
+    blogCoverAlt: "Blog cover",
+    coverImageAlt: "Cover image alt text",
+    coverImageAltPlaceholder: "Describe the cover image",
+    markdownContent: "Markdown content",
+    editorOnly: "Editor mode only",
+    loadingSelectedPost: "Loading selected post...",
+    blogImageAlt: "Blog image",
+    r2Assets: "R2 assets",
+    loading: "Loading...",
+    noUploadedAssets: "No uploaded assets for this post yet.",
+    selectPostForAssets: "Create or select a post to manage assets.",
+    assetUrlCopied: "Asset URL copied.",
+    copyUrl: "Copy URL",
+    themeOptions: [
+      { value: "", label: "Auto" },
+      { value: "editorial", label: "Editorial" },
+      { value: "minimal", label: "Minimal" },
+      { value: "immersive", label: "Immersive" },
+    ],
+    layoutOptions: [
+      { value: "", label: "Auto" },
+      { value: "feature", label: "Feature" },
+      { value: "standard", label: "Standard" },
+      { value: "grid", label: "Grid" },
+    ],
+  };
 }
 
-function formatDateTimeLabel(value: string) {
+function buildDefaultSettingsForm(copy: BlogWorkspaceCopy): BlogSettingsForm {
+  return {
+    enabled: true,
+    navLabel: copy.defaultNavLabel,
+    homeFeaturedCount: 3,
+  };
+}
+
+function buildDefaultDraftForm(copy: BlogWorkspaceCopy): BlogItemForm {
+  return {
+    ...EMPTY_FORM,
+    title: copy.untitledPost,
+    contentMd: copy.draftTemplate,
+  };
+}
+
+function formatDateLabel(value: string, locale: Locale) {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value || "-";
-  return d.toLocaleString();
+  return d.toLocaleDateString(locale === "zh" ? "zh-CN" : "en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function formatDateTimeLabel(value: string, locale: Locale) {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value || "-";
+  return d.toLocaleString(locale === "zh" ? "zh-CN" : "en-US");
 }
 
 function normalizeTagInput(value: string) {
@@ -197,15 +502,56 @@ function statusTone(status: BlogPostRecord["status"]) {
   return "border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_98%,var(--shp-bg)_2%)] text-[var(--shp-muted)]";
 }
 
+function statusLabel(status: BlogPostRecord["status"], copy: BlogWorkspaceCopy) {
+  if (status === "published") return copy.statusPublished;
+  if (status === "scheduled") return copy.statusScheduled;
+  if (status === "archived") return copy.statusArchived;
+  return copy.statusDraft;
+}
+
+function buildProjectPreviewBlogHref(projectId: string, slug?: string) {
+  const base = `/api/projects/${encodeURIComponent(projectId)}/preview/blog`;
+  return slug ? `${base}/${encodeURIComponent(slug)}/` : `${base}/`;
+}
+
+function buildPublishedBlogHref(projectId: string, previewUrl: string, slug?: string) {
+  const fallback = buildProjectPreviewBlogHref(projectId, slug);
+  const normalized = String(previewUrl || "").trim();
+  if (!normalized) return fallback;
+
+  const target = slug ? `blog/${encodeURIComponent(slug)}/` : "blog/";
+  const absoluteUrlPattern = /^[a-z][a-z0-9+.-]*:\/\//i;
+  const isAbsolute = absoluteUrlPattern.test(normalized);
+
+  try {
+    const base = new URL(normalized, "http://preview.local");
+    if (/\/index\.html$/i.test(base.pathname)) {
+      base.pathname = base.pathname.replace(/\/index\.html$/i, "/");
+    } else if (!base.pathname.endsWith("/")) {
+      base.pathname = `${base.pathname}/`;
+    }
+    base.search = "";
+    base.hash = "";
+
+    const resolved = new URL(target, base);
+    return isAbsolute ? resolved.toString() : `${resolved.pathname}${resolved.search}${resolved.hash}`;
+  } catch {
+    return fallback;
+  }
+}
+
 export function ProjectBlogWorkspace({
   projectId,
   projectTitle,
+  projectPreviewUrl = "",
   locale = "en",
 }: {
   projectId: string;
   projectTitle: string;
+  projectPreviewUrl?: string;
   locale?: Locale;
 }) {
+  const blogCopy = getBlogWorkspaceCopy(locale);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -218,8 +564,8 @@ export function ProjectBlogWorkspace({
   const [posts, setPosts] = useState<BlogPostRecord[]>([]);
   const [selectedPostId, setSelectedPostId] = useState("");
   const [formSourcePostId, setFormSourcePostId] = useState("");
-  const [form, setForm] = useState<BlogItemForm>(EMPTY_FORM);
-  const [settingsForm, setSettingsForm] = useState<BlogSettingsForm>(DEFAULT_SETTINGS_FORM);
+  const [form, setForm] = useState<BlogItemForm>(() => ({ ...EMPTY_FORM }));
+  const [settingsForm, setSettingsForm] = useState<BlogSettingsForm>(() => buildDefaultSettingsForm(blogCopy));
   const [assets, setAssets] = useState<BlogAssetListResponse["assets"]>([]);
   const [viewMode, setViewMode] = useState<"list" | "editor">("list");
   const [publishPanelOpen, setPublishPanelOpen] = useState(false);
@@ -277,14 +623,14 @@ export function ProjectBlogWorkspace({
       });
       const data = (await res.json()) as BlogListResponse;
       if (!res.ok || !data.ok || !Array.isArray(data.posts)) {
-        throw new Error(data.error || "Failed to load blog posts.");
+        throw new Error(data.error || blogCopy.loadPostsError);
       }
       const nextPosts = sortBlogPosts(data.posts);
       setPosts(nextPosts);
       if (data.settings) {
         setSettingsForm({
           enabled: data.settings.enabled !== false,
-          navLabel: data.settings.navLabel || "Blog",
+          navLabel: data.settings.navLabel || blogCopy.defaultNavLabel,
           homeFeaturedCount: Math.max(1, Number(data.settings.homeFeaturedCount || 3)),
         });
       }
@@ -295,11 +641,11 @@ export function ProjectBlogWorkspace({
     } catch (err: any) {
       setPosts([]);
       setSelectedPostId("");
-      setError(String(err?.message || err || "Failed to load blog posts."));
+      setError(String(err?.message || err || blogCopy.loadPostsError));
     } finally {
       setLoading(false);
     }
-  }, [projectId]);
+  }, [blogCopy.defaultNavLabel, blogCopy.loadPostsError, projectId]);
 
   const fetchAssets = useCallback(async () => {
     if (!projectId.trim() || !selectedPostId.trim()) {
@@ -316,7 +662,7 @@ export function ProjectBlogWorkspace({
       );
       const data = (await res.json()) as BlogAssetListResponse;
       if (!res.ok || !data.ok || !Array.isArray(data.assets)) {
-        throw new Error(data.error || "Failed to load blog assets.");
+        throw new Error(data.error || blogCopy.loadAssetsError);
       }
       setAssets(data.assets);
     } catch {
@@ -324,7 +670,7 @@ export function ProjectBlogWorkspace({
     } finally {
       setLoadingAssets(false);
     }
-  }, [projectId, selectedPostId]);
+  }, [blogCopy.loadAssetsError, projectId, selectedPostId]);
 
   useEffect(() => {
     void fetchPosts();
@@ -355,7 +701,7 @@ export function ProjectBlogWorkspace({
     return {
       ...baseForm,
       status: options?.nextStatus || baseForm.status || "draft",
-      title: baseForm.title || "Untitled post",
+      title: baseForm.title || blogCopy.untitledPost,
       slug: options?.publishFields?.slug ?? baseForm.slug ?? "",
       category: options?.publishFields?.category ?? baseForm.category ?? "",
       tags: nextTags,
@@ -377,7 +723,7 @@ export function ProjectBlogWorkspace({
     const baseForm = options?.baseForm || form;
     const postId = options?.postId || selectedPostId;
     if (!postId && !baseForm.title.trim() && !baseForm.contentMd.trim()) {
-      setError("Add a title or content before saving.");
+      setError(blogCopy.emptySaveError);
       return null;
     }
     setSaving(true);
@@ -402,10 +748,10 @@ export function ProjectBlogWorkspace({
       );
       const data = (await res.json()) as { ok: boolean; post?: BlogPostRecord; error?: string };
       if (!res.ok || !data.ok || !data.post) {
-        throw new Error(data.error || "Failed to save blog post.");
+        throw new Error(data.error || blogCopy.savePostError);
       }
       const nextPost = data.post;
-      setNotice(options?.successNotice || (options?.nextStatus === "published" ? "Post published." : "Post saved."));
+      setNotice(options?.successNotice || (options?.nextStatus === "published" ? blogCopy.postPublished : blogCopy.postSaved));
       setPosts((prev) => sortBlogPosts([nextPost, ...prev.filter((item) => item.id !== nextPost.id)]));
       setSelectedPostId(nextPost.id);
       if (viewMode === "editor" || selectedPostId === nextPost.id) {
@@ -413,7 +759,7 @@ export function ProjectBlogWorkspace({
       }
       return nextPost;
     } catch (err: any) {
-      setError(String(err?.message || err || "Failed to save blog post."));
+      setError(String(err?.message || err || blogCopy.savePostError));
       return null;
     } finally {
       setSaving(false);
@@ -446,7 +792,7 @@ export function ProjectBlogWorkspace({
       });
       const data = (await res.json()) as BlogPublishPreviewResponse;
       if (!res.ok || !data.ok || !data.preview) {
-        throw new Error(data.error || "Failed to preview publish taxonomy.");
+        throw new Error(data.error || blogCopy.previewPublishError);
       }
       setPublishPreview(data.preview);
       setPublishFields({
@@ -455,7 +801,7 @@ export function ProjectBlogWorkspace({
         tags: data.preview.tags || [],
       });
     } catch (err: any) {
-      setPublishPreviewError(String(err?.message || err || "Failed to preview publish taxonomy."));
+      setPublishPreviewError(String(err?.message || err || blogCopy.previewPublishError));
       setPublishFields({
         slug: sourcePost?.status === "published" || sourcePost?.status === "scheduled" ? sourceForm.slug || "" : "",
         category: sourceForm.category || "",
@@ -469,7 +815,7 @@ export function ProjectBlogWorkspace({
   async function handleCreateDraft() {
     if (saving) return;
     const draftForm: BlogItemForm = {
-      ...DEFAULT_DRAFT_FORM,
+      ...buildDefaultDraftForm(blogCopy),
     };
     setViewMode("editor");
     setSelectedPostId("");
@@ -477,7 +823,7 @@ export function ProjectBlogWorkspace({
     setFormSourcePostId("");
     resetPublishState();
     setSaving(true);
-    setNotice("Creating draft...");
+    setNotice(blogCopy.creatingDraft);
     setError("");
     try {
       const payload = {
@@ -490,15 +836,15 @@ export function ProjectBlogWorkspace({
       });
       const data = (await res.json()) as { ok: boolean; post?: BlogPostRecord; error?: string };
       if (!res.ok || !data.ok || !data.post) {
-        throw new Error(data.error || "Failed to create draft post.");
+        throw new Error(data.error || blogCopy.createDraftError);
       }
       const nextPost = data.post;
-      setNotice("Draft created.");
+      setNotice(blogCopy.draftCreated);
       setPosts((prev) => sortBlogPosts([nextPost, ...prev.filter((item) => item.id !== nextPost.id)]));
       setSelectedPostId(nextPost.id);
       syncFormFromPost(nextPost);
     } catch (err: any) {
-      setError(`${String(err?.message || err || "Failed to create draft post.")} You can keep editing and save again.`);
+      setError(`${String(err?.message || err || blogCopy.createDraftError)} ${blogCopy.createDraftRetryHint}`);
     } finally {
       setSaving(false);
     }
@@ -506,7 +852,7 @@ export function ProjectBlogWorkspace({
 
   async function handleDelete() {
     if (!selectedPostId || saving) return;
-    if (typeof window !== "undefined" && !window.confirm("Delete this blog post?")) return;
+    if (typeof window !== "undefined" && !window.confirm(blogCopy.confirmDeletePost)) return;
     setSaving(true);
     setNotice("");
     setError("");
@@ -517,9 +863,9 @@ export function ProjectBlogWorkspace({
       });
       const data = (await res.json()) as { ok: boolean; error?: string };
       if (!res.ok || !data.ok) {
-        throw new Error(data.error || "Failed to delete blog post.");
+        throw new Error(data.error || blogCopy.deletePostError);
       }
-      setNotice("Post deleted.");
+      setNotice(blogCopy.postDeleted);
       let nextSelectedPostId = "";
       setPosts((prev) => {
         const nextPosts = prev.filter((item) => item.id !== deletingId);
@@ -531,7 +877,7 @@ export function ProjectBlogWorkspace({
       syncFormFromPost(null);
       resetPublishState();
     } catch (err: any) {
-      setError(String(err?.message || err || "Failed to delete blog post."));
+      setError(String(err?.message || err || blogCopy.deletePostError));
     } finally {
       setSaving(false);
     }
@@ -542,7 +888,7 @@ export function ProjectBlogWorkspace({
       postId: post.id,
       baseForm: buildFormFromPost(post),
       nextStatus: "draft",
-      successNotice: "Post unpublished.",
+      successNotice: blogCopy.postUnpublished,
     });
   }
 
@@ -552,7 +898,7 @@ export function ProjectBlogWorkspace({
       baseForm: form,
       nextStatus: "published",
       publishFields,
-      successNotice: "Post published.",
+      successNotice: blogCopy.postPublished,
     });
     if (nextPost) {
       resetPublishState();
@@ -562,7 +908,7 @@ export function ProjectBlogWorkspace({
   async function handleCoverImageUpload(file: File | null) {
     if (!file || uploadingCover) return;
     if (!selectedPostId) {
-      setError("Create or select a post before uploading a cover image.");
+      setError(blogCopy.uploadCoverBeforeSelect);
       return;
     }
     setUploadingCover(true);
@@ -582,18 +928,18 @@ export function ProjectBlogWorkspace({
       );
       const data = (await res.json()) as BlogAssetUploadResponse;
       if (!res.ok || !data.ok || !data.asset?.url) {
-        throw new Error(data.error || "Failed to upload cover image.");
+        throw new Error(data.error || blogCopy.uploadCoverError);
       }
       setForm((prev) => ({
         ...prev,
         coverImageUrl: data.asset?.url || prev.coverImageUrl,
         coverImageAlt: data.asset?.alt || prev.coverImageAlt || prev.title,
       }));
-      setNotice("Cover image uploaded to R2.");
+      setNotice(blogCopy.coverUploaded);
       await fetchPosts();
       await fetchAssets();
     } catch (err: any) {
-      setError(String(err?.message || err || "Failed to upload cover image."));
+      setError(String(err?.message || err || blogCopy.uploadCoverError));
     } finally {
       setUploadingCover(false);
     }
@@ -601,7 +947,7 @@ export function ProjectBlogWorkspace({
 
   async function handleDeleteAsset(assetId: string) {
     if (!selectedPostId || !assetId || loadingAssets) return;
-    if (typeof window !== "undefined" && !window.confirm("Delete this blog asset from R2?")) return;
+    if (typeof window !== "undefined" && !window.confirm(blogCopy.confirmDeleteAsset)) return;
     setLoadingAssets(true);
     setNotice("");
     setError("");
@@ -614,12 +960,12 @@ export function ProjectBlogWorkspace({
       );
       const data = (await res.json()) as { ok: boolean; error?: string };
       if (!res.ok || !data.ok) {
-        throw new Error(data.error || "Failed to delete blog asset.");
+        throw new Error(data.error || blogCopy.deleteAssetError);
       }
-      setNotice("Blog asset deleted.");
+      setNotice(blogCopy.assetDeleted);
       await fetchAssets();
     } catch (err: any) {
-      setError(String(err?.message || err || "Failed to delete blog asset."));
+      setError(String(err?.message || err || blogCopy.deleteAssetError));
     } finally {
       setLoadingAssets(false);
     }
@@ -644,16 +990,16 @@ export function ProjectBlogWorkspace({
       });
       const data = (await res.json()) as { ok: boolean; settings?: BlogListResponse["settings"]; error?: string };
       if (!res.ok || !data.ok || !data.settings) {
-        throw new Error(data.error || "Failed to save blog settings.");
+        throw new Error(data.error || blogCopy.saveSettingsError);
       }
       setSettingsForm({
         enabled: data.settings.enabled !== false,
-        navLabel: data.settings.navLabel || "Blog",
+        navLabel: data.settings.navLabel || blogCopy.defaultNavLabel,
         homeFeaturedCount: Math.max(1, Number(data.settings.homeFeaturedCount || 3)),
       });
-      setNotice("Blog settings saved.");
+      setNotice(blogCopy.settingsSaved);
     } catch (err: any) {
-      setError(String(err?.message || err || "Failed to save blog settings."));
+      setError(String(err?.message || err || blogCopy.saveSettingsError));
     } finally {
       setSavingSettings(false);
     }
@@ -664,9 +1010,9 @@ export function ProjectBlogWorkspace({
       <div className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] p-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h3 className="text-2xl font-semibold text-[var(--shp-text)]">{projectTitle} Blog</h3>
+            <h3 className="text-2xl font-semibold text-[var(--shp-text)]">{blogCopy.headerTitle(projectTitle)}</h3>
             <p className="mt-1 text-sm text-[var(--shp-muted)]">
-              Manage the public blog with a simple editor flow: list, edit, publish, unpublish.
+              {blogCopy.headerDescription}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -676,7 +1022,7 @@ export function ProjectBlogWorkspace({
               className="inline-flex items-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-3 py-2 text-sm text-[var(--shp-muted)] hover:text-[var(--shp-text)]"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
-              Refresh
+              {blogCopy.refresh}
             </button>
             <button
               type="button"
@@ -684,26 +1030,26 @@ export function ProjectBlogWorkspace({
               className="inline-flex items-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,var(--shp-surface)_86%)] px-3 py-2 text-sm font-semibold text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_22%,var(--shp-surface)_78%)]"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-              New post
+              {blogCopy.newPost}
             </button>
           </div>
         </div>
 
         <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] p-3">
-            <p className="text-xs uppercase tracking-[0.18em] text-[var(--shp-muted)]">Posts</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-[var(--shp-muted)]">{blogCopy.statsPosts}</p>
             <p className="mt-1 text-2xl font-semibold text-[var(--shp-text)]">{posts.length}</p>
           </div>
           <div className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] p-3">
-            <p className="text-xs uppercase tracking-[0.18em] text-[var(--shp-muted)]">Published</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-[var(--shp-muted)]">{blogCopy.statsPublished}</p>
             <p className="mt-1 text-2xl font-semibold text-[var(--shp-text)]">{featuredCount}</p>
           </div>
           <div className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] p-3">
-            <p className="text-xs uppercase tracking-[0.18em] text-[var(--shp-muted)]">RSS / Sitemap</p>
-            <p className="mt-1 text-sm text-[var(--shp-text)]">Always on</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-[var(--shp-muted)]">{blogCopy.statsFeeds}</p>
+            <p className="mt-1 text-sm text-[var(--shp-text)]">{blogCopy.statsFeedsValue}</p>
           </div>
           <div className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] p-3">
-            <p className="text-xs uppercase tracking-[0.18em] text-[var(--shp-muted)]">Locale</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-[var(--shp-muted)]">{blogCopy.statsLocale}</p>
             <p className="mt-1 text-sm text-[var(--shp-text)]">{locale.toUpperCase()}</p>
           </div>
         </div>
@@ -711,16 +1057,16 @@ export function ProjectBlogWorkspace({
         <div className="mt-4 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] p-3">
           <div className="grid gap-3 md:grid-cols-[1fr_120px_auto_auto]">
             <label className="space-y-1 text-xs">
-              <span className="text-[var(--shp-muted)]">Navigation label</span>
+              <span className="text-[var(--shp-muted)]">{blogCopy.settingsNavLabel}</span>
               <input
                 value={settingsForm.navLabel}
                 onChange={(event) => setSettingsForm((prev) => ({ ...prev, navLabel: event.target.value }))}
                 className="h-9 w-full rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_66%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_40%,transparent)] px-3 text-sm text-[var(--shp-text)] outline-none"
-                placeholder="Blog"
+                placeholder={blogCopy.defaultNavLabel}
               />
             </label>
             <label className="space-y-1 text-xs">
-              <span className="text-[var(--shp-muted)]">Featured</span>
+              <span className="text-[var(--shp-muted)]">{blogCopy.settingsFeatured}</span>
               <input
                 type="number"
                 min={1}
@@ -736,7 +1082,7 @@ export function ProjectBlogWorkspace({
                 checked={settingsForm.enabled}
                 onChange={(event) => setSettingsForm((prev) => ({ ...prev, enabled: event.target.checked }))}
               />
-              Enabled
+              {blogCopy.settingsEnabled}
             </label>
             <button
               type="button"
@@ -744,11 +1090,11 @@ export function ProjectBlogWorkspace({
               disabled={savingSettings}
               className="self-end rounded-lg border border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] px-3 py-2 text-sm font-semibold text-[var(--shp-text)] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {savingSettings ? "Saving..." : "Save settings"}
+              {savingSettings ? blogCopy.settingsSaving : blogCopy.settingsSave}
             </button>
           </div>
           <p className="mt-3 text-xs text-[var(--shp-muted)]">
-            RSS and sitemap stay enabled by default and are not user-editable in this workspace.
+            {blogCopy.settingsNote}
           </p>
         </div>
 
@@ -771,7 +1117,7 @@ export function ProjectBlogWorkspace({
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search posts..."
+              placeholder={blogCopy.searchPlaceholder}
               className="h-10 w-full rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_66%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_40%,transparent)] px-3 text-sm text-[var(--shp-text)] outline-none focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)]"
             />
           </div>
@@ -779,7 +1125,7 @@ export function ProjectBlogWorkspace({
           <div className="mt-4 space-y-3">
             {filteredPosts.length === 0 ? (
               <div className="rounded-lg border border-dashed border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-4 py-8 text-center text-sm text-[var(--shp-muted)]">
-                No posts found.
+                {blogCopy.noPosts}
               </div>
             ) : (
               filteredPosts.map((post) => (
@@ -799,14 +1145,30 @@ export function ProjectBlogWorkspace({
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="truncate font-semibold text-[var(--shp-text)]">{post.title || "Untitled post"}</p>
+                        <p className="truncate font-semibold text-[var(--shp-text)]">{post.title || blogCopy.untitledPost}</p>
                         <span className={`rounded-md border px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${statusTone(post.status)}`}>
-                          {post.status}
+                          {statusLabel(post.status, blogCopy)}
                         </span>
                       </div>
-                      <p className="mt-1 text-xs text-[var(--shp-muted)]">Last modified {formatDateTimeLabel(post.updatedAt || post.createdAt)}</p>
+                      <p className="mt-1 text-xs text-[var(--shp-muted)]">
+                        {blogCopy.lastModified} {formatDateTimeLabel(post.updatedAt || post.createdAt, locale)}
+                      </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
+                      {post.status === "published" && post.slug ? (
+                        <a
+                          href={buildPublishedBlogHref(projectId, projectPreviewUrl, post.slug)}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                          }}
+                          className="inline-flex items-center gap-1 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-3 py-2 text-xs text-[var(--shp-text)]"
+                        >
+                          <RefreshCcw className="h-3.5 w-3.5" />
+                          {blogCopy.viewPublishedPost}
+                        </a>
+                      ) : null}
                       <button
                         type="button"
                         onClick={(event) => {
@@ -816,7 +1178,7 @@ export function ProjectBlogWorkspace({
                         className="inline-flex items-center gap-1 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-3 py-2 text-xs text-[var(--shp-text)]"
                       >
                         <PencilLine className="h-3.5 w-3.5" />
-                        Edit
+                        {blogCopy.edit}
                       </button>
                       {post.status === "published" || post.status === "scheduled" ? (
                         <button
@@ -828,7 +1190,7 @@ export function ProjectBlogWorkspace({
                           className="inline-flex items-center gap-1 rounded-lg border border-amber-400/40 px-3 py-2 text-xs text-amber-700"
                         >
                           <ArrowLeft className="h-3.5 w-3.5" />
-                          Unpublish
+                          {blogCopy.unpublish}
                         </button>
                       ) : (
                         <button
@@ -841,7 +1203,7 @@ export function ProjectBlogWorkspace({
                           className="inline-flex items-center gap-1 rounded-lg border border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_10%,var(--shp-surface)_90%)] px-3 py-2 text-xs font-semibold text-[var(--shp-text)]"
                         >
                           <Sparkles className="h-3.5 w-3.5" />
-                          Publish
+                          {blogCopy.publish}
                         </button>
                       )}
                     </div>
@@ -868,33 +1230,44 @@ export function ProjectBlogWorkspace({
                 className="inline-flex items-center gap-2 text-sm text-[var(--shp-primary)]"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Back to list
+                {blogCopy.backToList}
               </button>
               <h4 className="mt-3 text-xl font-semibold text-[var(--shp-text)]">
-                {selectedPost ? selectedPost.title || "Untitled post" : form.title || "Untitled post"}
+                {selectedPost ? selectedPost.title || blogCopy.untitledPost : form.title || blogCopy.untitledPost}
               </h4>
               <p className="mt-1 text-xs text-[var(--shp-muted)]">
                 {selectedPost
-                  ? `Last modified ${formatDateTimeLabel(selectedPost.updatedAt || selectedPost.createdAt)}`
+                  ? `${blogCopy.lastModified} ${formatDateTimeLabel(selectedPost.updatedAt || selectedPost.createdAt, locale)}`
                   : saving
-                    ? "Creating draft record..."
-                    : "Unsaved draft. Save to create the server record."}
+                    ? blogCopy.creatingDraftRecord
+                    : blogCopy.unsavedDraft}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              {selectedPost?.status === "published" && selectedPost.slug ? (
+                <a
+                  href={buildPublishedBlogHref(projectId, projectPreviewUrl, selectedPost.slug)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-3 py-2 text-sm text-[var(--shp-muted)] hover:text-[var(--shp-text)]"
+                >
+                  <RefreshCcw className="h-4 w-4" />
+                  {blogCopy.viewPublishedPost}
+                </a>
+              ) : null}
               <button
                 type="button"
                 onClick={() =>
                   void persistPost({
                     nextStatus: selectedPost?.status || form.status || "draft",
-                    successNotice: selectedPost?.status === "published" ? "Published changes saved." : "Draft saved.",
+                    successNotice: selectedPost?.status === "published" ? blogCopy.publishedChangesSaved : blogCopy.draftSaved,
                   })
                 }
                 disabled={saving}
                 className="inline-flex items-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-3 py-2 text-sm text-[var(--shp-muted)] hover:text-[var(--shp-text)] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                {selectedPost?.status === "published" ? "Save changes" : "Save draft"}
+                {selectedPost?.status === "published" ? blogCopy.saveChanges : blogCopy.saveDraft}
               </button>
               {selectedPost?.status === "published" || selectedPost?.status === "scheduled" ? (
                 <button
@@ -904,7 +1277,7 @@ export function ProjectBlogWorkspace({
                   className="inline-flex items-center gap-2 rounded-lg border border-amber-400/40 px-3 py-2 text-sm text-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  Unpublish
+                  {blogCopy.unpublish}
                 </button>
               ) : (
                 <button
@@ -914,7 +1287,7 @@ export function ProjectBlogWorkspace({
                   className="inline-flex items-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,var(--shp-surface)_86%)] px-3 py-2 text-sm font-semibold text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_22%,var(--shp-surface)_78%)] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Sparkles className="h-4 w-4" />
-                  Publish
+                  {blogCopy.publish}
                 </button>
               )}
               <button
@@ -924,7 +1297,7 @@ export function ProjectBlogWorkspace({
                 className="inline-flex items-center gap-2 rounded-lg border border-rose-400/40 px-3 py-2 text-sm text-rose-700 hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Trash2 className="h-4 w-4" />
-                Delete
+                {blogCopy.delete}
               </button>
             </div>
           </div>
@@ -933,13 +1306,13 @@ export function ProjectBlogWorkspace({
             <div className="rounded-xl border border-[color-mix(in_oklab,var(--shp-primary)_42%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_8%,var(--shp-surface)_92%)] p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <h5 className="text-sm font-semibold text-[var(--shp-text)]">Publish confirmation</h5>
+                  <h5 className="text-sm font-semibold text-[var(--shp-text)]">{blogCopy.publishConfirmationTitle}</h5>
                   <p className="mt-1 text-xs text-[var(--shp-muted)]">
-                    Confirm slug and article taxonomy before the post goes public.
+                    {blogCopy.publishConfirmationBody}
                   </p>
                 </div>
                 <span className="text-xs text-[var(--shp-muted)]">
-                  {loadingPublishPreview ? "Refreshing..." : "Server-side publish preview"}
+                  {loadingPublishPreview ? blogCopy.publishPreviewRefreshing : blogCopy.publishPreviewReady}
                 </span>
               </div>
 
@@ -951,37 +1324,37 @@ export function ProjectBlogWorkspace({
 
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <label className="space-y-2 text-sm">
-                  <span className="text-[var(--shp-muted)]">Slug</span>
+                  <span className="text-[var(--shp-muted)]">{blogCopy.slug}</span>
                   <input
                     value={publishFields.slug}
                     onChange={(event) => setPublishFields((prev) => ({ ...prev, slug: event.target.value }))}
                     className="h-11 w-full rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_66%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_40%,transparent)] px-3 text-sm text-[var(--shp-text)] outline-none focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)]"
-                    placeholder="article-slug"
+                    placeholder={blogCopy.slugPlaceholder}
                   />
                 </label>
                 <label className="space-y-2 text-sm">
-                  <span className="text-[var(--shp-muted)]">Category</span>
+                  <span className="text-[var(--shp-muted)]">{blogCopy.category}</span>
                   <input
                     value={publishFields.category}
                     onChange={(event) => setPublishFields((prev) => ({ ...prev, category: event.target.value }))}
                     className="h-11 w-full rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_66%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_40%,transparent)] px-3 text-sm text-[var(--shp-text)] outline-none focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)]"
-                    placeholder="Category"
+                    placeholder={blogCopy.categoryPlaceholder}
                   />
                 </label>
                 <label className="space-y-2 text-sm md:col-span-2">
-                  <span className="text-[var(--shp-muted)]">Tags</span>
+                  <span className="text-[var(--shp-muted)]">{blogCopy.tags}</span>
                   <input
                     value={publishFields.tags.join(", ")}
                     onChange={(event) => setPublishFields((prev) => ({ ...prev, tags: normalizeTagInput(event.target.value) }))}
                     className="h-11 w-full rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_66%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_40%,transparent)] px-3 text-sm text-[var(--shp-text)] outline-none focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)]"
-                    placeholder="tag-one, tag-two"
+                    placeholder={blogCopy.tagsPlaceholder}
                   />
                 </label>
               </div>
 
               {publishPreview ? (
                 <div className="mt-4 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] p-3 text-sm">
-                  <p className="font-medium text-[var(--shp-text)]">{publishPreview.seoTitle || form.title || "Untitled post"}</p>
+                  <p className="font-medium text-[var(--shp-text)]">{publishPreview.seoTitle || form.title || blogCopy.untitledPost}</p>
                   <p className="mt-1 text-xs text-[var(--shp-muted)]">{publishPreview.seoDescription || "-"}</p>
                 </div>
               ) : null}
@@ -992,7 +1365,7 @@ export function ProjectBlogWorkspace({
                   onClick={resetPublishState}
                   className="rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-3 py-2 text-sm text-[var(--shp-muted)]"
                 >
-                  Cancel
+                  {blogCopy.cancel}
                 </button>
                 <button
                   type="button"
@@ -1001,7 +1374,7 @@ export function ProjectBlogWorkspace({
                   className="inline-flex items-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,var(--shp-surface)_86%)] px-3 py-2 text-sm font-semibold text-[var(--shp-text)] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                  Confirm publish
+                  {blogCopy.confirmPublish}
                 </button>
               </div>
             </div>
@@ -1009,23 +1382,23 @@ export function ProjectBlogWorkspace({
 
           <div className="grid gap-4 md:grid-cols-2">
             <label className="space-y-2 text-sm md:col-span-2">
-              <span className="text-[var(--shp-muted)]">Title</span>
+              <span className="text-[var(--shp-muted)]">{blogCopy.title}</span>
               <input
                 value={form.title}
                 onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
                 className="h-11 w-full rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_66%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_40%,transparent)] px-3 text-sm text-[var(--shp-text)] outline-none focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)]"
-                placeholder="Article title"
+                placeholder={blogCopy.titlePlaceholder}
               />
             </label>
 
             <label className="space-y-2 text-sm">
-              <span className="text-[var(--shp-muted)]">Theme</span>
+              <span className="text-[var(--shp-muted)]">{blogCopy.theme}</span>
               <select
                 value={form.themeKey || ""}
                 onChange={(event) => setForm((prev) => ({ ...prev, themeKey: event.target.value }))}
                 className="h-11 w-full rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_66%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_40%,transparent)] px-3 text-sm text-[var(--shp-text)] outline-none focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)]"
               >
-                {THEME_OPTIONS.map((option) => (
+                {blogCopy.themeOptions.map((option) => (
                   <option key={option.value || "auto"} value={option.value}>
                     {option.label}
                   </option>
@@ -1034,13 +1407,13 @@ export function ProjectBlogWorkspace({
             </label>
 
             <label className="space-y-2 text-sm">
-              <span className="text-[var(--shp-muted)]">Layout</span>
+              <span className="text-[var(--shp-muted)]">{blogCopy.layout}</span>
               <select
                 value={form.layoutKey || ""}
                 onChange={(event) => setForm((prev) => ({ ...prev, layoutKey: event.target.value }))}
                 className="h-11 w-full rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_66%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_40%,transparent)] px-3 text-sm text-[var(--shp-text)] outline-none focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)]"
               >
-                {LAYOUT_OPTIONS.map((option) => (
+                {blogCopy.layoutOptions.map((option) => (
                   <option key={option.value || "auto"} value={option.value}>
                     {option.label}
                   </option>
@@ -1049,11 +1422,11 @@ export function ProjectBlogWorkspace({
             </label>
 
             <label className="space-y-2 text-sm md:col-span-2">
-              <span className="text-[var(--shp-muted)]">Cover image</span>
+              <span className="text-[var(--shp-muted)]">{blogCopy.coverImage}</span>
               <div className="flex flex-wrap items-center gap-3">
                 <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_10%,var(--shp-surface)_90%)] px-3 py-2 text-sm font-semibold text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_18%,var(--shp-surface)_82%)]">
                   {uploadingCover ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                  Upload cover to R2
+                  {blogCopy.uploadCoverToR2}
                   <input
                     type="file"
                     accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml,image/avif"
@@ -1067,35 +1440,35 @@ export function ProjectBlogWorkspace({
                   />
                 </label>
                 <span className="text-xs text-[var(--shp-muted)]">
-                  Inline images can be uploaded directly from the editor toolbar. Slug and category are confirmed only at publish time.
+                  {blogCopy.editorToolbarNote}
                 </span>
               </div>
               {form.coverImageUrl ? (
                 <div className="mt-3 overflow-hidden rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={form.coverImageUrl} alt={form.coverImageAlt || form.title || "Blog cover"} className="max-h-56 w-full object-cover" />
+                  <img src={form.coverImageUrl} alt={form.coverImageAlt || form.title || blogCopy.blogCoverAlt} className="max-h-56 w-full object-cover" />
                 </div>
               ) : null}
             </label>
 
             <label className="space-y-2 text-sm md:col-span-2">
-              <span className="text-[var(--shp-muted)]">Cover image alt text</span>
+              <span className="text-[var(--shp-muted)]">{blogCopy.coverImageAlt}</span>
               <input
                 value={form.coverImageAlt || ""}
                 onChange={(event) => setForm((prev) => ({ ...prev, coverImageAlt: event.target.value }))}
                 className="h-11 w-full rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_66%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_40%,transparent)] px-3 text-sm text-[var(--shp-text)] outline-none focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)]"
-                placeholder="Describe the cover image"
+                placeholder={blogCopy.coverImageAltPlaceholder}
               />
             </label>
 
             <div className="space-y-2 text-sm md:col-span-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-[var(--shp-muted)]">Markdown content</span>
-                <span className="text-xs text-[var(--shp-muted)]">Editor mode only</span>
+                <span className="text-[var(--shp-muted)]">{blogCopy.markdownContent}</span>
+                <span className="text-xs text-[var(--shp-muted)]">{blogCopy.editorOnly}</span>
               </div>
               {editorIsSyncing ? (
                 <div className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_66%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_54%,transparent)] px-4 py-12 text-center text-sm text-[var(--shp-muted)]">
-                  Loading selected post...
+                  {blogCopy.loadingSelectedPost}
                 </div>
               ) : (
                 <BlogMilkdownEditor
@@ -1107,7 +1480,7 @@ export function ProjectBlogWorkspace({
                       ? `/api/projects/${encodeURIComponent(projectId)}/blog/${encodeURIComponent(selectedPostId)}/assets`
                       : undefined
                   }
-                  imageAltText={form.title || form.coverImageAlt || "Blog image"}
+                  imageAltText={form.title || form.coverImageAlt || blogCopy.blogImageAlt}
                   onChange={(contentMd) => {
                     setForm((prev) => (prev.contentMd === contentMd ? prev : { ...prev, contentMd }));
                   }}
@@ -1118,20 +1491,20 @@ export function ProjectBlogWorkspace({
 
           <article className="rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_92%,var(--shp-bg)_8%)] p-4">
             <div className="flex items-center justify-between gap-2">
-              <h5 className="text-sm font-semibold text-[var(--shp-text)]">R2 assets</h5>
+              <h5 className="text-sm font-semibold text-[var(--shp-text)]">{blogCopy.r2Assets}</h5>
               <button
                 type="button"
                 onClick={() => void fetchAssets()}
                 disabled={loadingAssets || !selectedPostId}
                 className="text-xs text-[var(--shp-primary)] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loadingAssets ? "Loading..." : "Refresh"}
+                {loadingAssets ? blogCopy.loading : blogCopy.refresh}
               </button>
             </div>
             <div className="mt-3 space-y-2">
               {(assets || []).length === 0 ? (
                 <p className="text-xs text-[var(--shp-muted)]">
-                  {selectedPostId ? "No uploaded assets for this post yet." : "Create or select a post to manage assets."}
+                  {selectedPostId ? blogCopy.noUploadedAssets : blogCopy.selectPostForAssets}
                 </p>
               ) : (
                 (assets || []).map((asset) => (
@@ -1146,18 +1519,18 @@ export function ProjectBlogWorkspace({
                         type="button"
                         onClick={() => {
                           void navigator.clipboard?.writeText(asset.url);
-                          setNotice("Asset URL copied.");
+                          setNotice(blogCopy.assetUrlCopied);
                         }}
                         className="rounded border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] px-2 py-1 text-[11px] text-[var(--shp-muted)]"
                       >
-                        Copy URL
+                        {blogCopy.copyUrl}
                       </button>
                       <button
                         type="button"
                         onClick={() => void handleDeleteAsset(asset.id)}
                         className="rounded border border-rose-400/40 px-2 py-1 text-[11px] text-rose-700"
                       >
-                        Delete
+                        {blogCopy.delete}
                       </button>
                     </div>
                   </div>
