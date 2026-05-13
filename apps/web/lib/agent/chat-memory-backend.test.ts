@@ -170,6 +170,50 @@ describe("chat-memory backend", () => {
     expect(saved?.secondaryVisualTags).toEqual(["trustworthy", "blue"]);
   });
 
+  it("falls back to in-memory snapshots when file persistence is unavailable", async () => {
+    vi.stubEnv("CHAT_MEMORY_BACKEND", "file");
+    vi.doMock("node:fs/promises", async () => {
+      const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+      return {
+        ...actual,
+        mkdir: vi.fn(async () => {
+          const error = new Error("no such file or directory, mkdir '/var/task/apps/web/.tmp'") as NodeJS.ErrnoException;
+          error.code = "ENOENT";
+          throw error;
+        }),
+      };
+    });
+
+    const memory = await import("./chat-memory");
+    await memory.resetChatLangGraphMemoryForTests();
+
+    await expect(
+      memory.writeChatShortTermMemory({
+        threadId: "thread-readonly",
+        stage: "drafting",
+        recentSummary: "still available in memory",
+        revisionPointer: {
+          revisionId: "rev-readonly",
+          mode: "generate",
+          updatedAt: "2026-05-14T00:00:00.000Z",
+        },
+        requirementState: {
+          slots: [],
+          conflicts: [],
+          missingCriticalSlots: [],
+          readyScore: 0,
+          assumptions: [],
+          currentValues: createRequirementSpec(),
+        },
+        updatedAt: "2026-05-14T00:00:00.000Z",
+      }),
+    ).resolves.toBeUndefined();
+
+    const saved = await memory.readChatShortTermMemory("thread-readonly");
+    expect(saved?.recentSummary).toBe("still available in memory");
+    expect(saved?.revisionPointer.revisionId).toBe("rev-readonly");
+  });
+
   it("retries shared thread-memory writes on optimistic concurrency miss", async () => {
     vi.stubEnv("CHAT_MEMORY_BACKEND", "supabase");
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");

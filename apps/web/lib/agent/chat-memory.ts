@@ -119,6 +119,7 @@ let cachedBackendKind: ChatMemoryBackendKind | undefined;
 let cachedBackend: ChatMemoryBackend | undefined;
 let supabaseClient: any;
 let supabaseClientKey = "";
+let filePersistenceDisabledReason: string | undefined;
 
 function checkpointConfig(threadId: string): RunnableConfig {
   return {
@@ -238,18 +239,33 @@ function cloneDiskState(): ChatMemoryDiskState {
 }
 
 async function persistDiskState(): Promise<void> {
+  if (filePersistenceDisabledReason) return;
   const snapshot = cloneDiskState();
   persistQueue = persistQueue.then(async () => {
-    await fs.mkdir(MEMORY_DIR, { recursive: true });
     try {
-      await fs.writeFile(MEMORY_FILE, JSON.stringify(snapshot, null, 2), "utf8");
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException)?.code !== "ENOENT") throw error;
       await fs.mkdir(MEMORY_DIR, { recursive: true });
       await fs.writeFile(MEMORY_FILE, JSON.stringify(snapshot, null, 2), "utf8");
+    } catch (error) {
+      if (!isIgnorableFilePersistenceError(error)) throw error;
+      filePersistenceDisabledReason = formatFilePersistenceError(error);
+      console.warn(
+        `[chat-memory] local file persistence disabled; continuing with in-memory snapshots only (${filePersistenceDisabledReason}).`,
+      );
     }
   });
   await persistQueue;
+}
+
+function isIgnorableFilePersistenceError(error: unknown): boolean {
+  const code = String((error as NodeJS.ErrnoException | undefined)?.code || "").trim().toUpperCase();
+  return code === "ENOENT" || code === "EACCES" || code === "EPERM" || code === "EROFS";
+}
+
+function formatFilePersistenceError(error: unknown): string {
+  const err = error as NodeJS.ErrnoException | undefined;
+  const code = String(err?.code || "ERR").trim();
+  const message = String(err?.message || error || "").trim();
+  return [code, message].filter(Boolean).join(": ");
 }
 
 async function ensureFileHydrated(): Promise<void> {
@@ -483,6 +499,7 @@ const fileBackend: ChatMemoryBackend = {
     await persistDiskState();
   },
   async resetForTests() {
+    filePersistenceDisabledReason = undefined;
     hydrated = false;
     hydratePromise = undefined;
     diskState = { threads: {}, preferences: {} };
