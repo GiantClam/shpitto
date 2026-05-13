@@ -171,9 +171,11 @@ export async function GET(
     /^text\/html/i.test(mime)
       ? repairBrokenProjectAssetDirectoryUrls(
           rewriteProjectAssetLogicalUrls(rewriteHtmlForPreview(virtualFile.content, previewBase), ""),
+          "",
+          [],
         )
       : /^(text\/css|application\/javascript|text\/javascript|application\/json|text\/plain|text\/markdown)/i.test(mime)
-        ? repairBrokenProjectAssetDirectoryUrls(rewriteProjectAssetLogicalUrls(virtualFile.content, ""))
+        ? repairBrokenProjectAssetDirectoryUrls(rewriteProjectAssetLogicalUrls(virtualFile.content, ""), "", [])
         : virtualFile.content;
 
   return new NextResponse(content, {
