@@ -34,6 +34,7 @@ describe("supabase middleware", () => {
 
   it("allows public paths without an auth cache", async () => {
     const rootResponse = await updateSession(new NextRequest("http://localhost/"));
+    const pricingResponse = await updateSession(new NextRequest("http://localhost/pricing"));
     const authResponse = await updateSession(new NextRequest("http://localhost/auth/password"));
     const signupResponse = await updateSession(new NextRequest("http://localhost/auth/signup"));
     const registerResponse = await updateSession(new NextRequest("http://localhost/register"));
@@ -44,6 +45,7 @@ describe("supabase middleware", () => {
     const launchResponse = await updateSession(new NextRequest("http://localhost/launch-center"));
 
     expect(rootResponse.status).toBe(200);
+    expect(pricingResponse.status).toBe(200);
     expect(authResponse.status).toBe(200);
     expect(signupResponse.status).toBe(200);
     expect(registerResponse.status).toBe(200);

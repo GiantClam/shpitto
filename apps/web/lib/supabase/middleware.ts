@@ -6,6 +6,7 @@ const PUBLIC_EXACT_PATHS = new Set<string>([
   '/',
   '/login',
   '/register',
+  '/pricing',
   '/launch-center',
   '/auth/callback',
   '/auth/password',

@@ -18,8 +18,9 @@ function estimateReadTime(markdown: string) {
   return Math.max(1, Math.round(words / 220));
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const slug = decodeURIComponent(String(params.slug || "").trim());
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const resolvedParams = await params;
+  const slug = decodeURIComponent(String(resolvedParams.slug || "").trim());
   const post = await getPublicBlogPost(process.env.SHPITTO_PUBLIC_BLOG_PROJECT_ID || "", slug);
   if (!post) {
     return {
@@ -56,8 +57,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-export default async function BlogPostPage({ params }: { params: { slug: string } }) {
-  const slug = decodeURIComponent(String(params.slug || "").trim());
+export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const resolvedParams = await params;
+  const slug = decodeURIComponent(String(resolvedParams.slug || "").trim());
   const post = await getPublicBlogPost(process.env.SHPITTO_PUBLIC_BLOG_PROJECT_ID || "", slug);
   if (!post) {
     notFound();
