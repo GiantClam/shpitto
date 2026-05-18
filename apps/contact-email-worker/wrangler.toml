@@ -1,0 +1,22 @@
+name = "shpitto-contact-email-worker"
+main = "src/index.ts"
+compatibility_date = "2026-05-18"
+workers_dev = true
+
+[vars]
+CLOUDFLARE_ACCOUNT_ID = "9630806d5a588fc350ee64c395005cfa"
+CLOUDFLARE_EMAIL_FROM = "Shpitto <noreply@shpitto.com>"
+CONTACT_EMAIL_BATCH_SIZE = "10"
+SHPITTO_CONTACT_EMAIL_MAX_RETRIES = "3"
+
+[triggers]
+crons = ["*/1 * * * *"]
+
+[[routes]]
+pattern = "email.shpitto.com"
+custom_domain = true
+
+[[d1_databases]]
+binding = "EMAIL_QUEUE_DB"
+database_name = "shpitto-prod"
+database_id = "73af9ace-6d29-42f2-a109-dd65cf473cc7"

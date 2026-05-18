@@ -4,6 +4,7 @@ import {
   buildRequirementSpec,
   composeStructuredPrompt,
   decideChatIntent,
+  deriveAutoProjectContactSettings,
   validateRequiredRequirementSlots,
   type ConversationStage,
 } from "./chat-orchestrator";
@@ -194,6 +195,51 @@ describe("chat orchestrator intent", () => {
     const spec = buildRequirementSpec("Build a company website for example.com with uploaded files and industry research.");
 
     expect(spec.contentSources).toEqual(["existing_domain", "uploaded_files", "industry_research"]);
+  });
+
+  it("extracts explicit forwarding email settings from freeform requirement text", () => {
+    const spec = buildRequirementSpec(
+      "Build a company website with contact form and CTA. Forward submissions to official@casux.org.cn and ops@casux.org.cn.",
+    );
+
+    expect(spec.contactSettings?.forwardTo).toEqual(["official@casux.org.cn", "ops@casux.org.cn"]);
+    expect(spec.functionalRequirements).toContain("contact_form");
+  });
+
+  it("extracts forwarding email settings from requirement form JSON", () => {
+    const spec = buildRequirementSpec(
+      [
+        "[Requirement Form]",
+        "```json",
+        JSON.stringify({
+          siteType: "company",
+          contentSources: ["new_site"],
+          pageStructure: { mode: "multi", pages: ["home", "contact"] },
+          functionalRequirements: ["contact_form"],
+          contactSettings: {
+            forwardTo: ["official@casux.org.cn"],
+            sendUserAck: false,
+          },
+        }),
+        "```",
+      ].join("\n"),
+    );
+
+    expect(spec.contactSettings?.forwardTo).toEqual(["official@casux.org.cn"]);
+    expect(spec.contactSettings?.sendUserAck).toBe(false);
+  });
+
+  it("derives auto project contact settings only when forwarding emails and lead capture both exist", () => {
+    const enabled = deriveAutoProjectContactSettings(
+      buildRequirementSpec("Add a contact form and forward submissions to official@casux.org.cn."),
+    );
+    const disabled = deriveAutoProjectContactSettings(
+      buildRequirementSpec("Use official@casux.org.cn as the public contact email on the site."),
+    );
+
+    expect(enabled?.forwardTo).toEqual(["official@casux.org.cn"]);
+    expect(enabled?.sendUserAck).toBe(true);
+    expect(disabled).toBeNull();
   });
 
   it("provides localized option labels without combined bilingual display text", () => {

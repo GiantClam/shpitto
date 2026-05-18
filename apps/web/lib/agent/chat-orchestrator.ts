@@ -64,6 +64,10 @@ export type RequirementFormValues = {
   brandLogo?: BrandLogoRequirement;
   designSystemInspiration?: DesignSystemInspiration;
   contentSources?: string[];
+  contactSettings?: {
+    forwardTo?: string[];
+    sendUserAck?: boolean;
+  };
   customNotes?: string;
 };
 
@@ -88,6 +92,10 @@ export type RequirementSpec = {
   brandLogo?: BrandLogoRequirement;
   designSystemInspiration?: DesignSystemInspiration;
   contentSources?: string[];
+  contactSettings?: {
+    forwardTo: string[];
+    sendUserAck: boolean;
+  };
   customNotes?: string;
   deployment?: {
     provider?: string;
@@ -229,6 +237,42 @@ function toStringArray(value: unknown): string[] {
   if (Array.isArray(value)) return unique(value.map((item) => normalizeText(String(item))));
   if (typeof value === "string") return unique(splitList(value));
   return [];
+}
+
+function normalizeEmailList(value: unknown): string[] {
+  const rawValues = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? value.split(/[\n,;]+/g)
+      : [];
+  const emailPattern = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
+  const deduped = new Set<string>();
+  for (const item of rawValues) {
+    const matches = normalizeText(String(item || "")).match(emailPattern) || [];
+    for (const match of matches) deduped.add(match.trim().toLowerCase());
+  }
+  return Array.from(deduped);
+}
+
+function extractForwardToEmails(text: string): string[] {
+  const source = String(text || "");
+  if (!source) return [];
+  const lines = source.split(/\r?\n+/g);
+  const directHits: string[] = [];
+  for (const line of lines) {
+    if (!/(?:转发|收件|通知|发到|发送到|forward|notify|send to|submission|inquiry|lead)/i.test(line)) continue;
+    directHits.push(...normalizeEmailList(line));
+  }
+  if (directHits.length > 0) return unique(directHits, 12);
+
+  const inlineMatches = Array.from(
+    source.matchAll(
+      /(?:转发到|转发邮箱|收件邮箱|通知邮箱|发送到|发到邮箱|forward(?:\s+submissions?)?\s+to|send(?:\s+submissions?)?\s+to|notify\s+at)\s*[:：]?\s*([^\n]+)/gi,
+    ),
+  );
+  const extracted: string[] = [];
+  for (const match of inlineMatches) extracted.push(...normalizeEmailList(match[1] || ""));
+  return unique(extracted, 12);
 }
 
 function normalizeFormLanguage(value: unknown): RequirementFormValues["language"] | undefined {
@@ -386,6 +430,38 @@ function normalizeRequirementFormValues(value: unknown): RequirementFormValues |
     raw.designSystemInspiration || raw.designSystem || raw.inspiration,
   );
   const contentSources = normalizeContentSources(toStringArray(raw.contentSources || raw.contentSource));
+  const rawContactSettings =
+    raw.contactSettings && typeof raw.contactSettings === "object" && !Array.isArray(raw.contactSettings)
+      ? (raw.contactSettings as Record<string, unknown>)
+      : undefined;
+  const nestedSettings =
+    raw.settings && typeof raw.settings === "object" && !Array.isArray(raw.settings)
+      ? ((raw.settings as Record<string, unknown>).contact as Record<string, unknown> | undefined)
+      : undefined;
+  const contactForwardTo = normalizeEmailList(
+    raw.contactForwardTo ||
+      rawContactSettings?.forwardTo ||
+      rawContactSettings?.forward_to ||
+      raw.forwardTo ||
+      raw.forward_to ||
+      nestedSettings?.forwardTo ||
+      nestedSettings?.forward_to ||
+      [],
+  );
+  const contactSendUserAckRaw =
+    rawContactSettings?.sendUserAck ??
+    rawContactSettings?.send_user_ack ??
+    raw.sendUserAck ??
+    raw.send_user_ack ??
+    nestedSettings?.sendUserAck ??
+    nestedSettings?.send_user_ack;
+  const contactSettings =
+    contactForwardTo.length > 0 || contactSendUserAckRaw != null
+      ? {
+          ...(contactForwardTo.length > 0 ? { forwardTo: contactForwardTo } : {}),
+          ...(contactSendUserAckRaw != null ? { sendUserAck: Boolean(contactSendUserAckRaw) } : {}),
+        }
+      : undefined;
   const customNotes = normalizeText(String(raw.customNotes || raw.notes || ""));
 
   if (
@@ -400,6 +476,7 @@ function normalizeRequirementFormValues(value: unknown): RequirementFormValues |
     !brandLogo &&
     !designSystemInspiration &&
     contentSources.length === 0 &&
+    !contactSettings &&
     !customNotes
   ) {
     return undefined;
@@ -417,6 +494,7 @@ function normalizeRequirementFormValues(value: unknown): RequirementFormValues |
     ...(brandLogo ? { brandLogo } : {}),
     ...(designSystemInspiration ? { designSystemInspiration } : {}),
     ...(contentSources.length > 0 ? { contentSources } : {}),
+    ...(contactSettings ? { contactSettings } : {}),
     ...(customNotes ? { customNotes } : {}),
   };
 }
@@ -582,6 +660,7 @@ type ExtractedRequirementFields = {
   brandLogo?: BrandLogoRequirement;
   designSystemInspiration?: DesignSystemInspiration;
   contentSources?: string[];
+  contactSettings?: RequirementSpec["contactSettings"];
   customNotes?: string;
   deployment?: RequirementSpec["deployment"];
 };
@@ -715,6 +794,18 @@ function extractRequirementFieldsFromText(text: string): ExtractedRequirementFie
     domain,
     requested: /cloudflare|vercel|deploy|部署|发布|上线|pages\.dev/i.test(raw),
   };
+  const contactForwardTo = unique([
+    ...(form?.contactSettings?.forwardTo || []),
+    ...extractForwardToEmails(raw),
+  ]);
+  const contactSendUserAck =
+    form?.contactSettings?.sendUserAck != null
+      ? Boolean(form.contactSettings.sendUserAck)
+      : /(?:send|发送|寄送).*(?:confirmation|ack|回执|确认邮件)/i.test(raw)
+        ? true
+        : /(?:不要|无需|don't|do not).*(?:confirmation|ack|回执|确认邮件)/i.test(raw)
+          ? false
+          : undefined;
 
   return {
     siteType,
@@ -732,6 +823,13 @@ function extractRequirementFieldsFromText(text: string): ExtractedRequirementFie
     tone: extractLabelValue(raw, ["tone", "语气", "口吻"]),
     brandLogo: form?.brandLogo,
     contentSources,
+    contactSettings:
+      contactForwardTo.length > 0 || contactSendUserAck != null
+        ? {
+            forwardTo: contactForwardTo,
+            sendUserAck: contactSendUserAck !== false,
+          }
+        : undefined,
     customNotes: form?.customNotes || extractLabelValue(raw, ["content notes", "business details", "资料说明", "业务细节", "补充说明"]),
     deployment: deployment.requested || deployment.provider || deployment.domain ? deployment : undefined,
   };
@@ -897,6 +995,7 @@ function mergeRequirementFieldsFromSources(sourceMessages: string[]): {
     apply("tone", "tone");
     apply("brandLogo", "text");
     apply("contentSources", "contentModules");
+    apply("contactSettings", "ctas");
     apply("customNotes", "businessContext");
     apply("deployment", "deployment");
   });
@@ -957,11 +1056,47 @@ export function buildRequirementSpec(text: string, sourceMessages?: string[]): R
     brandLogo: merged.values.brandLogo,
     designSystemInspiration: merged.values.designSystemInspiration || parsedInput.formValues?.designSystemInspiration,
     contentSources: merged.values.contentSources || [],
+    contactSettings:
+      merged.values.contactSettings && (merged.values.contactSettings.forwardTo?.length || merged.values.contactSettings.sendUserAck != null)
+        ? {
+            forwardTo: unique(merged.values.contactSettings.forwardTo || [], 12),
+            sendUserAck: merged.values.contactSettings.sendUserAck !== false,
+          }
+        : undefined,
     customNotes: resolvedCustomNotes,
     deployment: merged.values.deployment || { requested: false },
     explicitConstraints,
     source: "structured-parser",
     fields: merged.fields,
+  };
+}
+
+function hasLeadCaptureSignals(spec: Pick<RequirementSpec, "functionalRequirements" | "primaryGoal" | "ctas" | "pages" | "pageStructure">) {
+  const functionalRequirements = spec.functionalRequirements || [];
+  if (functionalRequirements.includes("contact_form") || functionalRequirements.includes("customer_inquiry_form")) {
+    return true;
+  }
+  const primaryGoals = (spec.primaryGoal || []).map((value) => toLower(String(value)));
+  if (primaryGoals.some((value) => value.includes("lead") || value.includes("contact") || value.includes("咨询"))) {
+    return true;
+  }
+  const ctas = (spec.ctas || []).map((value) => toLower(String(value)));
+  if (ctas.some((value) => /(contact|quote|consult|inquiry|询价|咨询|联系)/i.test(value))) {
+    return true;
+  }
+  const pages = [...(spec.pages || []), ...(spec.pageStructure?.pages || [])].map((value) => toLower(String(value)));
+  return pages.some((value) => value === "contact" || value.includes("/contact") || value.includes("联系"));
+}
+
+export function deriveAutoProjectContactSettings(
+  spec?: Pick<RequirementSpec, "brand" | "functionalRequirements" | "primaryGoal" | "ctas" | "pages" | "pageStructure" | "contactSettings"> | null,
+) {
+  if (!spec?.contactSettings?.forwardTo?.length) return null;
+  if (!hasLeadCaptureSignals(spec)) return null;
+  return {
+    forwardTo: unique(spec.contactSettings.forwardTo, 12).map((email) => email.toLowerCase()),
+    sendUserAck: spec.contactSettings.sendUserAck !== false,
+    brandName: normalizeText(String(spec.brand || "")) || undefined,
   };
 }
 

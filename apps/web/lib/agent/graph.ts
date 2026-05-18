@@ -22,11 +22,12 @@ import { getR2Client } from "../r2";
 import { assertCanMutatePublishedSite } from "../billing/enforcement";
 import { injectOrganizationJsonLd, normalizeComponentType, stitchTracks } from "./engine";
 import { loadWorkflowSkillContext, type DesignSkillHit } from "./website-workflow";
-import type { RequirementSpec } from "./chat-orchestrator";
+import { deriveAutoProjectContactSettings, type RequirementSpec } from "./chat-orchestrator";
 import { configureUndiciProxyFromEnv, createHttpsProxyAgentFromEnv, isRegionDeniedError } from "./network";
 import { CloudflareClient } from "../cloudflare";
 import { Bundler } from "../bundler";
 import { resolveRunProviderLocks } from "../skill-runtime/provider-lock.ts";
+import { applyProjectContactSettingsToProjectJson } from "../project-settings";
 
 // Load environment variables from .env file at project root
 const __filename = fileURLToPath(import.meta.url);
@@ -1811,7 +1812,17 @@ const getProjectContentQualityIssues = (projectJson: any) => {
 
 const deployNode = async (state: AgentState): Promise<Partial<AgentState>> => {
     console.log("--- Deploy Node Started ---");
-    const sourceProject = (state.project_json || (state as any).site_artifacts) as any;
+    const rawSourceProject = (state.project_json || (state as any).site_artifacts) as any;
+    const autoContactSettings = deriveAutoProjectContactSettings(state.workflow_context?.requirementSpec);
+    const sourceProject = autoContactSettings
+        ? applyProjectContactSettingsToProjectJson(rawSourceProject, {
+            ...autoContactSettings,
+            brandName:
+              autoContactSettings.brandName ||
+              String(rawSourceProject?.branding?.name || state.workflow_context?.requirementSpec?.brand || "").trim() ||
+              "Shpitto",
+          })
+        : rawSourceProject;
     
     if (!sourceProject) {
         return {

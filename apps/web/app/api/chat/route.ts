@@ -23,6 +23,7 @@ import {
   buildRequirementSpec,
   buildRequirementSlots,
   decideChatIntent,
+  deriveAutoProjectContactSettings,
   deriveConversationStage,
   hydrateRequirementSlotsFromSpec,
   isDeployIntent,
@@ -60,6 +61,7 @@ import {
 } from "../../../lib/billing/store";
 import { saveProjectState } from "../../../lib/agent/db";
 import { fallbackProjectTitle } from "../../../lib/agent/project-title";
+import { applyProjectContactSettingsToProjectJson } from "../../../lib/project-settings";
 
 export const runtime = "nodejs";
 
@@ -2128,6 +2130,7 @@ export async function POST(req: Request) {
   try {
     if (ownerUserId && executionMode === "generate") {
       const queuedProjectTitle = fallbackProjectTitle(chatId);
+      const autoContactSettings = deriveAutoProjectContactSettings(requirementSpec);
       const hadBillableProject = await hasBillableProject(ownerUserId, chatId);
       await assertCanCreateProject(ownerUserId, chatId);
       if (!hadBillableProject) {
@@ -2138,12 +2141,21 @@ export async function POST(req: Request) {
         });
         usageReservedForThisRequest = { ownerUserId, sourceProjectId: chatId };
       }
-      await saveProjectState(
-        ownerUserId,
+      const queuedProjectJson = applyProjectContactSettingsToProjectJson(
         {
           branding: { name: queuedProjectTitle },
           billing: { reservedAt: new Date().toISOString(), status: "generation_queued" },
         },
+        autoContactSettings
+          ? {
+              ...autoContactSettings,
+              brandName: autoContactSettings.brandName || queuedProjectTitle,
+            }
+          : null,
+      );
+      await saveProjectState(
+        ownerUserId,
+        queuedProjectJson,
         body.access_token || previousState.access_token,
         chatId,
       ).catch((error) => {

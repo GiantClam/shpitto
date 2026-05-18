@@ -1,58 +1,102 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-export default function PrivacyPolicy() {
+export default function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans">
-      <header className="sticky top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b border-slate-100">
-        <div className="max-w-3xl mx-auto px-6 h-20 flex items-center gap-4">
-          <Link href="/" className="p-2 -ml-2 hover:bg-slate-100 rounded-full transition-colors">
-            <ArrowLeft className="w-5 h-5 text-slate-500" />
+      <header className="sticky top-0 z-50 w-full border-b border-slate-100 bg-white/80 backdrop-blur-md">
+        <div className="mx-auto flex h-20 max-w-3xl items-center gap-4 px-6">
+          <Link href="/" className="-ml-2 rounded-full p-2 transition-colors hover:bg-slate-100">
+            <ArrowLeft className="h-5 w-5 text-slate-500" />
           </Link>
-          <span className="font-bold text-xl tracking-tight">Privacy Policy</span>
+          <span className="text-xl font-bold tracking-tight">Privacy Policy</span>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-6 py-12">
-        <h1 className="text-4xl font-bold mb-8">Privacy Policy</h1>
+      <main className="mx-auto max-w-3xl px-6 py-12">
+        <h1 className="mb-8 text-4xl font-bold">Privacy Policy</h1>
         <div className="prose prose-slate max-w-none">
-          <p className="lead">Last updated: January 18, 2026</p>
-          
+          <p className="lead">Last updated: May 18, 2026</p>
+
           <p>
-            At Shpitto, accessible from https://shpitto.com, one of our main priorities is the privacy of our visitors. 
-            This Privacy Policy document contains types of information that is collected and recorded by Shpitto and how we use it.
+            This Privacy Policy applies to Shpitto, including shpitto.com, related product pages, account areas,
+            hosted application surfaces, and associated support flows. It describes how Shpitto collects, uses, stores,
+            and shares information when you visit our website, create an account, use our AI website generation
+            platform, submit forms, or otherwise interact with our services.
+          </p>
+          <p>
+            Shpitto is operated by huangbei as an independent developer.
           </p>
 
-          <h2>1. Information We Collect</h2>
-          <p>
-            The personal information that you are asked to provide, and the reasons why you are asked to provide it, 
-            will be made clear to you at the point we ask you to provide your personal information.
-          </p>
+          <h2>1. Information we collect</h2>
+          <p>We may collect the following categories of information:</p>
           <ul>
-            <li>Account information (Name, Email, Company Name)</li>
-            <li>Usage data (How you interact with our AI builder)</li>
-            <li>Generated content data (The websites you build)</li>
+            <li>Account information, such as name, email address, company name, and authentication details.</li>
+            <li>Project and content information, such as prompts, uploaded files, generated pages, blog content, and related assets.</li>
+            <li>Usage and device data, such as browser type, IP address, approximate location, analytics events, and feature interactions.</li>
+            <li>Contact and lead information, such as form submissions, inquiry details, and related follow-up records.</li>
+            <li>Billing and subscription information, such as plan selections and payment status. Payment processing is handled by our payment partners and we do not store full card numbers.</li>
           </ul>
 
-          <h2>2. How We Use Your Information</h2>
-          <p>We use the information we collect in various ways, including to:</p>
+          <h2>2. How we use information</h2>
+          <p>We use collected information to:</p>
           <ul>
-            <li>Provide, operate, and maintain our website</li>
-            <li>Improve, personalize, and expand our website</li>
-            <li>Understand and analyze how you use our website</li>
-            <li>Develop new products, services, features, and functionality</li>
+            <li>Provide, operate, secure, and improve the Shpitto platform.</li>
+            <li>Create, refine, deploy, and host generated website experiences and related assets.</li>
+            <li>Authenticate users, manage accounts, and support password reset or verification flows.</li>
+            <li>Process inquiries, send service messages, and respond to support requests.</li>
+            <li>Measure product usage, prevent abuse, detect fraud, and enforce our policies.</li>
+            <li>Support billing, subscriptions, renewals, and account management.</li>
           </ul>
 
-          <h2>3. AI Processing</h2>
+          <h2>3. AI processing</h2>
           <p>
-            Shpitto uses advanced Artificial Intelligence to generate website content. 
-            Data you input into the builder (prompts, company descriptions) is processed by our AI models to generate results.
-            We do not use your private proprietary data to train our public models without explicit consent.
+            Shpitto uses AI-assisted systems to help generate website structure, copy, and related content. Information
+            you submit to the platform, including prompts, uploaded material, and project content, may be processed for
+            generation, refinement, moderation, safety review, and service improvement. You should not submit sensitive
+            personal data or regulated data unless you are authorized to do so and it is necessary for your use case.
           </p>
 
-          <h2>4. Contact Us</h2>
+          <h2>4. Sharing of information</h2>
+          <p>We may share information with service providers and infrastructure partners that help us operate the platform, such as hosting, authentication, analytics, payment, storage, email, and AI processing providers. We may also disclose information when required by law, to protect our rights, or to prevent fraud, abuse, or security issues.</p>
+
+          <h2>5. Data retention</h2>
           <p>
-            If you have additional questions or require more information about our Privacy Policy, do not hesitate to contact us at support@shpitto.com.
+            We retain information for as long as needed to provide the service, comply with legal obligations, resolve
+            disputes, enforce agreements, and maintain reasonable business records. Retention periods may vary depending
+            on the type of data and your account status.
+          </p>
+
+          <h2>6. Your choices</h2>
+          <p>
+            You may update account information, manage project content, or request support by contacting us. Depending
+            on your jurisdiction, you may also have rights to request access, correction, deletion, or restriction of
+            certain personal data, subject to applicable law and our legal obligations.
+          </p>
+
+          <h2>7. Security</h2>
+          <p>
+            We use reasonable administrative, technical, and organizational measures to protect data. No method of
+            storage or transmission is completely secure, and we cannot guarantee absolute security.
+          </p>
+
+          <h2>8. International processing</h2>
+          <p>
+            Your information may be processed in jurisdictions other than your own, depending on where our providers
+            and infrastructure operate.
+          </p>
+
+          <h2>9. Changes to this Privacy Policy</h2>
+          <p>
+            We may update this Privacy Policy from time to time to reflect changes in the service, legal requirements,
+            or operational practices. When we do, we will update the &quot;Last updated&quot; date on this page. Material changes
+            will take effect when posted unless a different effective date is stated.
+          </p>
+
+          <h2>10. Contact</h2>
+          <p>
+            If you have questions about this Privacy Policy or want to make a privacy-related request, contact us at{" "}
+            <a href="mailto:support@shpitto.com">support@shpitto.com</a>.
           </p>
         </div>
       </main>

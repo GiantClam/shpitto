@@ -130,7 +130,13 @@ function buildPasswordResetEmailContent(resetUrl: string) {
   return { subject, html, text };
 }
 
-async function sendCloudflareEmail(options: { to: string; subject: string; html: string; text: string }) {
+export async function sendCloudflareEmail(options: {
+  to: string | string[];
+  subject: string;
+  html: string;
+  text: string;
+  replyTo?: string;
+}) {
   const config = getCloudflareEmailConfig();
   if (!config) throw new Error("cloudflare_email_service_not_configured");
 
@@ -143,6 +149,7 @@ async function sendCloudflareEmail(options: { to: string; subject: string; html:
     body: JSON.stringify({
       to: options.to,
       from: config.from,
+      reply_to: options.replyTo || undefined,
       subject: options.subject,
       html: options.html,
       text: options.text,

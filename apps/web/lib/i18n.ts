@@ -202,7 +202,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
       product: "Product",
       resources: "Resources",
       company: "Company",
-      copyright: "(c) 2026 Shpitto Inc. All rights reserved.",
+      copyright: "(c) 2026 Shpitto. All rights reserved.",
       links: {
         features: "Features",
         pricing: "Pricing",
@@ -218,6 +218,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
         contact: "Contact",
         privacy: "Privacy Policy",
         terms: "Terms of Service",
+        acceptableUse: "Acceptable Use",
       },
     },
     launch: {
@@ -265,7 +266,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
       emailConfirmation: "Check your email for the confirmation link.",
       oauthMissing: "Google OAuth URL not returned by Supabase SDK.",
       oauthFailed: "Failed to open Google OAuth",
-      legal: "By continuing, you agree to Shpitto's Terms of Service and Privacy Policy.",
+      legal: "By continuing, you agree to Shpitto's Terms of Service, Privacy Policy, and Acceptable Use Policy.",
     },
   },
   zh: {
@@ -357,7 +358,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
       product: "产品",
       resources: "资源",
       company: "公司",
-      copyright: "(c) 2026 Shpitto Inc. 保留所有权利。",
+      copyright: "(c) 2026 Shpitto. 保留所有权利。",
       links: {
         features: "功能",
         pricing: "价格",
@@ -373,6 +374,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
         contact: "联系",
         privacy: "隐私政策",
         terms: "服务条款",
+        acceptableUse: "可接受使用政策",
       },
     },
     launch: {
@@ -420,7 +422,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
       emailConfirmation: "请查看邮箱中的确认链接。",
       oauthMissing: "Supabase SDK 未返回 Google OAuth 地址。",
       oauthFailed: "无法打开 Google OAuth",
-      legal: "继续即表示你同意 Shpitto 的服务条款和隐私政策。",
+      legal: "继续即表示你同意 Shpitto 的服务条款、隐私政策和可接受使用政策。",
     },
   },
 };

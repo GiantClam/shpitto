@@ -6,7 +6,11 @@
     "dev:all": "pnpm --filter web dev:all",
     "dev:all:turbo": "turbo run dev",
     "lint:all": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "typecheck:contact-email-worker": "pnpm -C apps/contact-email-worker exec tsc --noEmit",
+    "preflight:contact-email-worker": "pnpm -C apps/contact-email-worker run preflight",
+    "sync-secrets:contact-email-worker": "pnpm -C apps/contact-email-worker run sync:secrets",
+    "deploy:contact-email-worker": "pnpm -C apps/contact-email-worker run deploy"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",

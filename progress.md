@@ -1,59 +1,41 @@
-# Progress Log: Shpitto Pricing Billing PayPal
+# Progress Log: Payload CMS Evaluation For Shpitto
 
-## Session: 2026-04-30
+## Session: 2026-05-15
 
-### Phase 1: Discovery And Boundaries
+### Phase 1: Local Product And Architecture Discovery
 - **Status:** complete
 - Actions taken:
-  - Loaded `planning-with-files` workflow instructions.
-  - Captured current worktree status and noted unrelated dirty files.
-  - Reset planning files for the billing implementation task.
-  - Located generation, deployment, project persistence, and custom domain enforcement points.
+  - Loaded the `planning-with-files` workflow instructions.
+  - Reviewed existing planning files and reset them from an unrelated billing task to this Payload evaluation task.
+  - Read root and package manifests to understand the monorepo structure and main runtime choices.
+  - Confirmed that `shpitto` already contains a non-trivial self-built blog/content subsystem with editor, APIs, D1 schema, R2 media, and SSR public pages.
+  - Confirmed that the app is architecturally mixed: Supabase for auth/selected operational data, Cloudflare D1/R2 for project/blog storage and deployment artifacts.
 
-### Phase 2: Billing Domain Logic
+### Phase 2: Payload Capability And Fit Research
 - **Status:** complete
 - Actions taken:
-  - Added pricing, plan, upgrade quote, entitlement, quota, and retention pure-domain modules.
-  - Added regression coverage for 7 折 annual pricing, fixed Experience pricing, unsupported durations, upgrade quote, quota blocking, and 15-day retention cleanup eligibility.
+  - Prepared the local-fit baseline needed to evaluate overlap vs. genuine product gap.
+  - Confirmed that Shpitto's existing editor surface is broader than simple markdown editing: it already includes project-scoped blog management plus a Puck-compatible page data model.
+  - Reviewed Payload official installation, admin, Local API, database, storage, deployment, Cloudflare template, and release materials.
+  - Captured the main adoption advantages, runtime constraints, and Cloudflare-specific tradeoffs.
 
-### Phase 3: Persistence, API, Enforcement, UI
+### Phase 3: Community Best Practices
 - **Status:** complete
 - Actions taken:
-  - Added D1/Supabase billing tables and project lifecycle cleanup columns.
-  - Added D1-backed billing store for free trials, checkout sessions, paid entitlements, ledger entries, PayPal events, and created-project counting.
-  - Added PayPal Orders/capture/webhook client and API routes for plans, entitlement, checkout, PayPal order create/capture/webhook, upgrade quote/checkout, and cancel-renewal MVP response.
-  - Added quota enforcement to chat generation, deploy flow, legacy graph deploy flow, and custom domain binding.
-  - Added `/pricing` and `/account/billing` pages.
-  - Added retention cleanup module and CLI script.
+  - Collected maintainer-facing guidance and template conventions around App Router route groups, generated file handling, custom admin location, and Next.js version compatibility.
+  - Collected deployment best practices from official storage/deployment/template docs, including R2 adapter selection, Worker caveats, and Cloudflare template constraints.
 
-### Phase 4: Verification
+### Phase 4: Recommendation And Integration Plan
 - **Status:** complete
 - Actions taken:
-  - Ran focused billing regression tests.
-  - Ran TypeScript project check.
-  - Ran full web Vitest suite.
-  - Ran ESLint.
-  - Ran production Next build.
+  - Reached a recommendation to defer full Payload adoption for the current Shpitto core product.
+  - Defined the trigger conditions under which Payload would become justified.
+  - Drafted an incremental adoption path that keeps Payload bounded to future editorial/admin domains instead of replacing Shpitto's core generation and deploy stack.
 
-## Test Results
-| Test | Expected | Actual | Status |
-|------|----------|--------|--------|
-| `pnpm --filter web test -- lib/billing/pricing.test.ts lib/billing/entitlements.test.ts` | Billing domain tests pass | 2 files / 7 tests passed | Pass |
-| `pnpm --filter web test -- lib/billing/pricing.test.ts lib/billing/entitlements.test.ts lib/billing/enforcement.test.ts lib/billing/cleanup.test.ts lib/billing/paypal.test.ts` | Billing-focused regression tests pass | 5 files / 12 tests passed | Pass |
-| `pnpm --filter web exec tsc --noEmit` | TypeScript passes | Passed | Pass |
-| `pnpm --filter web test` | Full web test suite passes | 54 files passed, 1 skipped; 243 tests passed, 1 skipped | Pass |
-| `pnpm --filter web lint` | No lint errors | 0 errors, 6 existing `<img>` warnings | Pass |
-| `pnpm --filter web build` | Production build succeeds | Build succeeded; existing middleware and `.tmp/chat-tasks` tracing warnings | Pass |
+## Research Log
+- Initial hypothesis: Payload is most likely relevant only if Shpitto needs structured editorial content and admin operations beyond its current AI generation/product workflows.
+- Updated hypothesis: a full Payload adoption is unlikely to be justified for the existing blog stack alone; a narrow adoption may only make sense for future multi-model editorial/admin use cases.
 
 ## Error Log
 | Timestamp | Error | Attempt | Resolution |
 |-----------|-------|---------|------------|
-
-## 5-Question Reboot Check
-| Question | Answer |
-|----------|--------|
-| Where am I? | Implementation and verification complete. |
-| Where am I going? | Final report. |
-| What's the goal? | Implement the pricing/billing/PayPal solution with regression tests. |
-| What have I learned? | Billing rules, persistence, APIs, pages, and build all pass verification. |
-| What have I done? | See phase logs above. |

@@ -252,6 +252,27 @@ export class CloudflareD1Client {
           );
           `,
           `
+          CREATE TABLE IF NOT EXISTS shpitto_outbound_emails (
+            id TEXT PRIMARY KEY,
+            project_id TEXT NOT NULL REFERENCES shpitto_projects(id) ON DELETE CASCADE,
+            account_id TEXT NOT NULL REFERENCES shpitto_accounts(id) ON DELETE CASCADE,
+            owner_user_id TEXT NOT NULL REFERENCES shpitto_users(id) ON DELETE CASCADE,
+            source_app TEXT NOT NULL DEFAULT '${SOURCE_APP}',
+            submission_id TEXT REFERENCES shpitto_contact_submissions(id) ON DELETE CASCADE,
+            site_key TEXT REFERENCES shpitto_project_sites(site_key),
+            kind TEXT NOT NULL,
+            to_email TEXT NOT NULL,
+            subject TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'queued',
+            retry_count INTEGER NOT NULL DEFAULT 0,
+            last_error TEXT,
+            sent_at TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+          );
+          `,
+          `
           CREATE TABLE IF NOT EXISTS shpitto_blog_posts (
             id TEXT PRIMARY KEY,
             project_id TEXT NOT NULL REFERENCES shpitto_projects(id) ON DELETE CASCADE,
@@ -337,6 +358,9 @@ export class CloudflareD1Client {
           "CREATE INDEX IF NOT EXISTS idx_shpitto_project_auth_users_owner ON shpitto_project_auth_users(owner_user_id, last_seen_at DESC);",
           "CREATE INDEX IF NOT EXISTS idx_shpitto_contact_submissions_owner ON shpitto_contact_submissions(owner_user_id, created_at DESC);",
           "CREATE INDEX IF NOT EXISTS idx_shpitto_contact_submissions_site ON shpitto_contact_submissions(site_key, created_at DESC);",
+          "CREATE INDEX IF NOT EXISTS idx_shpitto_outbound_emails_status ON shpitto_outbound_emails(status, created_at);",
+          "CREATE INDEX IF NOT EXISTS idx_shpitto_outbound_emails_project ON shpitto_outbound_emails(project_id, created_at DESC);",
+          "CREATE INDEX IF NOT EXISTS idx_shpitto_outbound_emails_submission ON shpitto_outbound_emails(submission_id, created_at DESC);",
           "CREATE INDEX IF NOT EXISTS idx_shpitto_blog_posts_project ON shpitto_blog_posts(project_id, status, published_at DESC, updated_at DESC);",
           "CREATE INDEX IF NOT EXISTS idx_shpitto_blog_posts_owner ON shpitto_blog_posts(owner_user_id, updated_at DESC);",
           "CREATE INDEX IF NOT EXISTS idx_shpitto_blog_post_revisions_post ON shpitto_blog_post_revisions(post_id, version DESC);",
@@ -399,6 +423,19 @@ export class CloudflareD1Client {
           { name: "default_theme_key", definition: "default_theme_key TEXT NOT NULL DEFAULT ''" },
           { name: "rss_enabled", definition: "rss_enabled INTEGER NOT NULL DEFAULT 1" },
           { name: "sitemap_enabled", definition: "sitemap_enabled INTEGER NOT NULL DEFAULT 1" },
+        ]);
+        await this.ensureTableColumns("shpitto_outbound_emails", [
+          { name: "submission_id", definition: "submission_id TEXT REFERENCES shpitto_contact_submissions(id) ON DELETE CASCADE" },
+          { name: "site_key", definition: "site_key TEXT REFERENCES shpitto_project_sites(site_key)" },
+          { name: "kind", definition: "kind TEXT NOT NULL DEFAULT 'contact_owner_forward'" },
+          { name: "to_email", definition: "to_email TEXT NOT NULL DEFAULT ''" },
+          { name: "subject", definition: "subject TEXT NOT NULL DEFAULT ''" },
+          { name: "payload_json", definition: "payload_json TEXT NOT NULL DEFAULT '{}'" },
+          { name: "status", definition: "status TEXT NOT NULL DEFAULT 'queued'" },
+          { name: "retry_count", definition: "retry_count INTEGER NOT NULL DEFAULT 0" },
+          { name: "last_error", definition: "last_error TEXT" },
+          { name: "sent_at", definition: "sent_at TEXT" },
+          { name: "updated_at", definition: "updated_at TEXT NOT NULL DEFAULT ''" },
         ]);
 
         const accountKey = process.env.SHPITTO_ACCOUNT_KEY || SOURCE_APP;

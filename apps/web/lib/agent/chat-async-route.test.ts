@@ -55,6 +55,33 @@ describe("chat api async mode", () => {
     expect(task?.result?.internal?.inputState).toBeTruthy();
   });
 
+  it("carries auto contact-email settings into queued generation workflow context", async () => {
+    const chatId = `chat-contact-settings-${Date.now()}`;
+    const canonicalPrompt = [
+      "# Canonical Website Generation Prompt",
+      "",
+      "Generate a company website with a contact form and lead CTA.",
+      "",
+      "Forward submissions to official@casux.org.cn.",
+    ].join("\n");
+    const { POST } = await import("../../app/api/chat/route");
+    const res = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: chatId,
+          messages: [{ role: "user", parts: [{ type: "text", text: confirmPayload(canonicalPrompt) }] }],
+        }),
+      }),
+    );
+
+    expect(res.status).toBe(202);
+    const task = await getLatestChatTaskForChat(chatId);
+    const workflow = (task?.result?.internal?.inputState as any)?.workflow_context || {};
+    expect(workflow.requirementSpec?.contactSettings?.forwardTo).toEqual(["official@casux.org.cn"]);
+  });
+
   it("returns existing active task instead of creating duplicate", async () => {
     const chatId = `chat-active-${Date.now()}`;
     const { POST } = await import("../../app/api/chat/route");

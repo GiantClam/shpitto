@@ -51,6 +51,9 @@ export default async function LandingPage() {
             <p className="mb-6 leading-relaxed">
               {copy.footer.description}
             </p>
+            <p className="mb-6 text-xs uppercase tracking-[0.16em] text-[var(--shp-muted)]">
+              Operated by huangbei
+            </p>
             <div className="flex gap-4">
               <div className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--shp-surface)_86%,transparent)] hover:bg-[var(--shp-primary)] hover:text-white">
                 X
@@ -86,8 +89,8 @@ export default async function LandingPage() {
             <ul className="space-y-4">
               <li><a href="#" className="hover:text-[var(--shp-primary)]">{copy.footer.links.about}</a></li>
               <li><a href="#" className="hover:text-[var(--shp-primary)]">{copy.footer.links.careers}</a></li>
-              <li><a href="#" className="hover:text-[var(--shp-primary)]">{copy.footer.links.legal}</a></li>
-              <li><a href="#" className="hover:text-[var(--shp-primary)]">{copy.footer.links.contact}</a></li>
+              <li><Link href="/legal/terms" className="hover:text-[var(--shp-primary)]">{copy.footer.links.legal}</Link></li>
+              <li><a href="mailto:support@shpitto.com" className="hover:text-[var(--shp-primary)]">support@shpitto.com</a></li>
             </ul>
           </div>
         </div>
@@ -97,6 +100,7 @@ export default async function LandingPage() {
           <div className="flex gap-8">
             <Link href="/legal/privacy" className="hover:text-[var(--shp-text)]">{copy.footer.links.privacy}</Link>
             <Link href="/legal/terms" className="hover:text-[var(--shp-text)]">{copy.footer.links.terms}</Link>
+            <Link href="/legal/acceptable-use" className="hover:text-[var(--shp-text)]">{copy.footer.links.acceptableUse}</Link>
           </div>
         </div>
       </footer>

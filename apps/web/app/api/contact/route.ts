@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { submitContactForm } from "@/lib/agent/db";
+import { queueContactEmailJobs } from "@/lib/contact-email";
 
 export const dynamic = "force-dynamic";
 
@@ -76,6 +77,16 @@ export async function POST(request: NextRequest) {
     };
 
     const result = await submitContactForm(payload.siteKey, payload.data, meta);
+    await queueContactEmailJobs({
+      projectId: result.projectId,
+      accountId: result.accountId,
+      ownerUserId: result.ownerUserId,
+      siteKey: payload.siteKey,
+      submissionId: result.submissionId,
+      submissionData: payload.data,
+    }).catch((error) => {
+      console.warn(`[contact] queueContactEmailJobs failed: ${String((error as Error)?.message || error || "unknown error")}`);
+    });
 
     if (payload.shouldRedirect) {
       return NextResponse.redirect(buildSuccessRedirect(request), 303);

@@ -51,6 +51,21 @@ importers:
         specifier: latest
         version: 2.7.5
 
+  apps/contact-email-worker:
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20260405.0
+        version: 4.20260423.1
+      '@types/node':
+        specifier: ^20
+        version: 20.19.27
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      wrangler:
+        specifier: ^4.15.2
+        version: 4.84.1(@cloudflare/workers-types@4.20260423.1)
+
   apps/saas-router:
     devDependencies:
       '@cloudflare/workers-types':

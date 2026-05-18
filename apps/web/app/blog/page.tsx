@@ -126,7 +126,8 @@ export default async function BlogIndexPage() {
       </main>
 
       <footer className="mt-20 border-t border-slate-200 bg-slate-50 py-12 text-center text-sm text-slate-500">
-        <p>(c) {new Date().getFullYear()} Shpitto Inc. All rights reserved.</p>
+        <p className="mb-2 text-xs uppercase tracking-[0.16em] text-slate-400">Operated by huangbei</p>
+        <p>(c) {new Date().getFullYear()} Shpitto. All rights reserved.</p>
       </footer>
     </div>
   );

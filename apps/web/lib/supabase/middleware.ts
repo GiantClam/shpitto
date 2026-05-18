@@ -24,6 +24,7 @@ const PUBLIC_EXACT_PATHS = new Set<string>([
   '/sitemap.xml',
   '/legal/privacy',
   '/legal/terms',
+  '/legal/acceptable-use',
 ])
 const PUBLIC_PREFIXES = ['/blog/']
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SignOutButton } from "@/components/auth/SignOutButton";
@@ -37,6 +37,15 @@ function formatVersionLabel(updatedAt?: number): string {
   return `v${yy}.${mm}.${dd}`;
 }
 
+type ContactSettingsResponse = {
+  ok: boolean;
+  settings?: {
+    forwardTo?: string[];
+    sendUserAck?: boolean;
+  } | null;
+  error?: string;
+};
+
 export function ProjectSettingsWorkspace({ projectId, locale = "en" }: { projectId: string; locale?: Locale }) {
   const router = useRouter();
   const workspaceCopy = getProjectWorkspaceCopy(locale);
@@ -55,18 +64,28 @@ export function ProjectSettingsWorkspace({ projectId, locale = "en" }: { project
     locale === "zh"
       ? {
           title: "项目设置",
-          subtitle: "在这里管理项目绑定域名。支持新增域名、修改已绑定域名，以及删除不再使用的域名。",
+          subtitle: "在这里管理项目域名绑定和联系邮件转发设置。",
           cardTitle: "域名绑定与 DNS 配置",
-          cardSummary: "提交域名后，系统会直接展示对应 DNS 记录。你也可以在这里随时修改或删除已有绑定。",
+          cardSummary: "提交域名后可直接查看需要配置的 DNS 记录，也可以随时修改或删除已有绑定。",
           cardSteps: [
-            "先填写你要绑定的域名并提交。",
-            "如果要修改已有域名，先点“修改域名”，再保存新值。",
-            "如果某个域名不再使用，可以直接删除绑定。",
+            "先填写要绑定的域名并提交。",
+            "若要修改已有域名，请先编辑再保存新值。",
+            "不再使用的域名可直接从列表移除。",
           ],
+          contactTitle: "联系邮件设置",
+          contactSummary: "配置 CTA 表单提交后的转发邮箱。多个邮箱可用逗号或换行分隔。",
+          forwardToLabel: "转发邮箱",
+          forwardToHint: "例如 official@casux.org.cn, ops@casux.org.cn",
+          sendAckLabel: "给提交用户发送确认邮件",
+          saveButton: "保存邮件设置",
+          savingButton: "保存中...",
+          loadingLabel: "加载中...",
+          savedNotice: "邮件设置已保存。",
+          saveError: "保存邮件设置失败。",
         }
       : {
           title: "Project Settings",
-          subtitle: "Manage your bound domains here. Add new domains, rename existing bindings, or remove domains you no longer use.",
+          subtitle: "Manage your domain bindings and contact email forwarding settings here.",
           cardTitle: "Domain Binding and DNS Setup",
           cardSummary: "Submit a domain to see the exact DNS records right away. You can also update or remove existing bindings here at any time.",
           cardSteps: [
@@ -74,12 +93,57 @@ export function ProjectSettingsWorkspace({ projectId, locale = "en" }: { project
             "To rename an existing domain, choose edit on that row and save the new value.",
             "If a domain is no longer needed, remove the binding directly from the list.",
           ],
+          contactTitle: "Contact Email Settings",
+          contactSummary: "Choose where CTA submissions are forwarded. Separate multiple email addresses with commas or new lines.",
+          forwardToLabel: "Forward To",
+          forwardToHint: "For example: official@casux.org.cn, ops@casux.org.cn",
+          sendAckLabel: "Send a confirmation email to the submitter",
+          saveButton: "Save Email Settings",
+          savingButton: "Saving...",
+          loadingLabel: "Loading...",
+          savedNotice: "Email settings saved.",
+          saveError: "Failed to save email settings.",
         };
 
   const [creatingProject, setCreatingProject] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [error, setError] = useState("");
+  const [loadingContactSettings, setLoadingContactSettings] = useState(true);
+  const [savingContactSettings, setSavingContactSettings] = useState(false);
+  const [forwardToInput, setForwardToInput] = useState("");
+  const [sendUserAck, setSendUserAck] = useState(true);
+  const [settingsNotice, setSettingsNotice] = useState("");
   const accountLabel = formatWorkspaceAccountLabel(userEmail, userId, workspaceCopy.guest);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadContactSettings() {
+      setLoadingContactSettings(true);
+      setSettingsNotice("");
+      try {
+        const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/settings`, { cache: "no-store" });
+        const data = (await res.json()) as ContactSettingsResponse;
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Failed to load project settings.");
+        }
+        if (cancelled) return;
+        const forwardTo = Array.isArray(data.settings?.forwardTo) ? data.settings?.forwardTo || [] : [];
+        setForwardToInput(forwardTo.join("\n"));
+        setSendUserAck(data.settings?.sendUserAck !== false);
+      } catch (err: any) {
+        if (cancelled) return;
+        setSettingsNotice(String(err?.message || err || "Failed to load project settings."));
+      } finally {
+        if (!cancelled) setLoadingContactSettings(false);
+      }
+    }
+
+    void loadContactSettings();
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
 
   async function handleCreateProject() {
     if (creatingProject) return;
@@ -117,6 +181,37 @@ export function ProjectSettingsWorkspace({ projectId, locale = "en" }: { project
     const normalized = String(nextProjectId || "").trim();
     if (!normalized || normalized === chatId) return;
     router.push(`/projects/${encodeURIComponent(normalized)}/settings`);
+  }
+
+  async function handleSaveContactSettings() {
+    if (savingContactSettings) return;
+    setSavingContactSettings(true);
+    setSettingsNotice("");
+    try {
+      const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/settings`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          input: {
+            forwardTo: forwardToInput,
+            sendUserAck,
+          },
+        }),
+      });
+      const data = (await res.json()) as ContactSettingsResponse;
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || settingsCopy.saveError);
+      }
+      const forwardTo = Array.isArray(data.settings?.forwardTo) ? data.settings?.forwardTo || [] : [];
+      setForwardToInput(forwardTo.join("\n"));
+      setSendUserAck(data.settings?.sendUserAck !== false);
+      setSettingsNotice(settingsCopy.savedNotice);
+      await refreshProjectMeta();
+    } catch (err: any) {
+      setSettingsNotice(String(err?.message || err || settingsCopy.saveError));
+    } finally {
+      setSavingContactSettings(false);
+    }
   }
 
   const navItems: Array<{
@@ -209,6 +304,7 @@ export function ProjectSettingsWorkspace({ projectId, locale = "en" }: { project
                 </button>
               </div>
             </div>
+
             <div className="mt-4 space-y-2">
               {navItems.map((item) => {
                 const classes = [
@@ -277,6 +373,54 @@ export function ProjectSettingsWorkspace({ projectId, locale = "en" }: { project
                 </div>
               </div>
               {error ? <p className="mt-4 text-sm text-rose-700">{error}</p> : null}
+            </div>
+
+            <div className="shp-shell rounded-2xl p-5">
+              <h3 className="text-lg font-semibold text-[var(--shp-text)]">{settingsCopy.contactTitle}</h3>
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[var(--shp-muted)]">{settingsCopy.contactSummary}</p>
+
+              <div className="mt-4 grid gap-4">
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-[var(--shp-text)]">{settingsCopy.forwardToLabel}</span>
+                  <textarea
+                    value={forwardToInput}
+                    onChange={(event) => setForwardToInput(event.target.value)}
+                    placeholder={settingsCopy.forwardToHint}
+                    rows={4}
+                    disabled={loadingContactSettings || savingContactSettings}
+                    className="w-full rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_94%,var(--shp-bg)_6%)] px-3 py-2 text-sm text-[var(--shp-text)] outline-none focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] disabled:cursor-not-allowed disabled:opacity-60"
+                  />
+                </label>
+
+                <label className="inline-flex items-center gap-3 text-sm text-[var(--shp-text)]">
+                  <input
+                    type="checkbox"
+                    checked={sendUserAck}
+                    onChange={(event) => setSendUserAck(event.target.checked)}
+                    disabled={loadingContactSettings || savingContactSettings}
+                    className="h-4 w-4 rounded border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)]"
+                  />
+                  <span>{settingsCopy.sendAckLabel}</span>
+                </label>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveContactSettings()}
+                    disabled={loadingContactSettings || savingContactSettings}
+                    className="inline-flex items-center gap-2 rounded-lg border border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_16%,transparent)] px-4 py-2 text-sm font-semibold text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_24%,transparent)] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {savingContactSettings ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                    <span>{savingContactSettings ? settingsCopy.savingButton : settingsCopy.saveButton}</span>
+                  </button>
+                  {loadingContactSettings ? (
+                    <span className="text-sm text-[var(--shp-muted)]">{settingsCopy.loadingLabel}</span>
+                  ) : null}
+                  {settingsNotice ? (
+                    <span className="text-sm text-[var(--shp-muted)]">{settingsNotice}</span>
+                  ) : null}
+                </div>
+              </div>
             </div>
 
             <DomainBindingPromptCard projectId={projectId} metadata={cardMetadata} disabled={false} />
