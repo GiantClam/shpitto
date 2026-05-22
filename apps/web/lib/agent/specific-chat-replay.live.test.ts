@@ -356,6 +356,10 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
           inputState: (queuedGenerate?.result?.internal?.inputState || {}) as any,
         });
         const generated = await getLatestChatTaskForChat(replayChatId);
+        expect(generated).toBeTruthy();
+        if (!generated) {
+          throw new Error(`Expected generated task for chat ${replayChatId}`);
+        }
         expect(generated.status).toBe("succeeded");
         expect(generated.result?.progress?.stage).toBe("done");
 
@@ -654,6 +658,10 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
           inputState: (queuedGenerate?.result?.internal?.inputState || {}) as any,
         });
         const generated = await getChatTask(queuedGenerate!.id);
+        expect(generated).toBeTruthy();
+        if (!generated) {
+          throw new Error(`Expected generated task ${queuedGenerate!.id}`);
+        }
         expect(generated.status).toBe("succeeded");
         expect(generated.result?.progress?.stage).toBe("done");
         expect(String(generated.result?.timelineMetadata?.cardType || "")).toBe("confirm_blog_content_deploy");
@@ -769,6 +777,10 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         inputState: (queuedDeploy?.result?.internal?.inputState || {}) as any,
       });
       const deployed = await getChatTask(queuedDeploy!.id);
+      expect(deployed).toBeTruthy();
+      if (!deployed) {
+        throw new Error(`Expected deployed task ${queuedDeploy!.id}`);
+      }
       const deployedUrl = normalizePagesUrl(String(deployed.result?.deployedUrl || ""));
       const progress = (deployed.result?.progress || {}) as Record<string, any>;
       const deployInternal = (deployed.result?.internal || {}) as Record<string, any>;

@@ -2987,7 +2987,13 @@ describe("skill-tool-executor", () => {
       "</body></html>",
     ].join("\n");
 
-    expect(findCorporateB2BHomepageContractIssuesForTesting(html)).toEqual([]);
+    expect(
+      findCorporateB2BHomepageContractIssuesForTesting(
+        html,
+        "/index.html",
+        "Build a bilingual corporate homepage for enterprise buyers.",
+      ),
+    ).toEqual([]);
   });
 
   it("injects curated stock/library imagery into towel-export pages that otherwise render as text-only media frames", () => {

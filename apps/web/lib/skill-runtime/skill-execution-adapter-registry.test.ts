@@ -16,6 +16,21 @@ import {
   assertCorporateSharedShellValidationForTesting,
 } from "./corporate-b2b-skill-adapter";
 
+function createDecisionPlan(overrides: Partial<LocalDecisionPlan> & Pick<LocalDecisionPlan, "routes">): LocalDecisionPlan {
+  const pageBlueprints = overrides.pageBlueprints || [];
+  return {
+    requirementText: overrides.requirementText || "Official company website for enterprise buyers.",
+    locale: overrides.locale || "en",
+    routes: overrides.routes,
+    navLabels:
+      overrides.navLabels || overrides.routes.map((route) => (route === "/" ? "Home" : route.replace(/^\//, "") || "Home")),
+    pageIntents: overrides.pageIntents || pageBlueprints,
+    pageBlueprints,
+    brandHint: overrides.brandHint,
+    routeAuthorityMode: overrides.routeAuthorityMode,
+  };
+}
+
 describe("skill-execution-adapter-registry", () => {
   it("maps corporate-b2b-site to its dedicated execution adapter", async () => {
     const adapter = await getSkillExecutionAdapter("corporate-b2b-site");
@@ -25,7 +40,7 @@ describe("skill-execution-adapter-registry", () => {
 
   it("adds corporate shell consistency contract to the corporate execution prompt", async () => {
     const adapter = await getSkillExecutionAdapter("corporate-b2b-site");
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/products", "/contact"],
       pageBlueprints: [
@@ -33,7 +48,7 @@ describe("skill-execution-adapter-registry", () => {
           route: "/",
           navLabel: "Home",
           purpose: "Company overview and primary offer.",
-          source: "test",
+          source: "workflow_contract",
           constraints: [],
           pageKind: "intent",
           responsibility: "Overview",
@@ -41,7 +56,7 @@ describe("skill-execution-adapter-registry", () => {
           componentMix: { hero: 1, feature: 1, grid: 0, proof: 1, form: 0, cta: 1 },
         },
       ],
-    } as LocalDecisionPlan;
+    });
     const params: SkillExecutionRoundPromptParams = {
       round: 1,
       totalRounds: 4,
@@ -74,7 +89,7 @@ describe("skill-execution-adapter-registry", () => {
 
   it("adds route-specific products contract to the corporate target page contract", async () => {
     const adapter = await getSkillExecutionAdapter("corporate-b2b-site");
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/products", "/contact"],
       pageBlueprints: [
@@ -82,7 +97,7 @@ describe("skill-execution-adapter-registry", () => {
           route: "/products",
           navLabel: "Products",
           purpose: "Product families and sourcing fit.",
-          source: "test",
+          source: "workflow_contract",
           constraints: [],
           pageKind: "intent",
           responsibility: "Catalog",
@@ -90,7 +105,7 @@ describe("skill-execution-adapter-registry", () => {
           componentMix: { hero: 0, feature: 1, grid: 1, proof: 1, form: 0, cta: 1 },
         },
       ],
-    } as LocalDecisionPlan;
+    });
 
     const contract = adapter.formatTargetPageContract(
       decision,
@@ -106,12 +121,12 @@ describe("skill-execution-adapter-registry", () => {
 
   it("builds a corporate-specific required file checklist including bilingual resources when requested", async () => {
     const adapter = await getSkillExecutionAdapter("corporate-b2b-site");
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/products", "/contact"],
       navLabels: ["Home", "Products", "Contact"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     const required = adapter.buildRequiredFileChecklist(decision, {
       requirementText: "Official bilingual company website for enterprise buyers and procurement teams.",
@@ -129,12 +144,12 @@ describe("skill-execution-adapter-registry", () => {
   });
 
   it("rejects missing corporate required files before shared helper validation", () => {
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/products", "/contact"],
       navLabels: ["Home", "Products", "Contact"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     expect(() =>
       assertCorporateRequiredFilesPresentForTesting(
@@ -188,12 +203,12 @@ describe("skill-execution-adapter-registry", () => {
 
   it("resolves corporate max rounds from the corporate-specific round model", async () => {
     const adapter = await getSkillExecutionAdapter("corporate-b2b-site");
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/products", "/custom-solutions", "/cases", "/about", "/contact"],
       navLabels: ["Home", "Products", "Solutions", "Cases", "About", "Contact"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     expect(
       adapter.resolveMaxToolRounds(decision, "Bilingual corporate website for enterprise buyers and procurement teams."),
@@ -230,12 +245,12 @@ describe("skill-execution-adapter-registry", () => {
   });
 
   it("rejects locale controls nested inside nav or paired with an empty utility wrapper", async () => {
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/products"],
       navLabels: ["Home", "Products"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     expect(() =>
       assertCorporateSharedShellValidationForTesting(decision, [
@@ -256,12 +271,12 @@ describe("skill-execution-adapter-registry", () => {
   });
 
   it("rejects inline style attributes on visible corporate media and layout blocks", () => {
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/contact"],
       navLabels: ["Home", "Contact"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     expect(() =>
       assertCorporateSourceQualityForTesting(decision, [
@@ -282,12 +297,12 @@ describe("skill-execution-adapter-registry", () => {
   });
 
   it("rejects mojibake or encoding-corrupted visible copy in corporate pages", () => {
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/custom-solutions"],
       navLabels: ["Home", "Custom Solutions"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     expect(() =>
       assertCorporateSourceQualityForTesting(decision, [
@@ -308,12 +323,12 @@ describe("skill-execution-adapter-registry", () => {
   });
 
   it("rejects mojibake locale button labels in corporate shell output", () => {
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/contact"],
       navLabels: ["Home", "Contact"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     expect(() =>
       assertCorporateSourceQualityForTesting(decision, [
@@ -334,12 +349,12 @@ describe("skill-execution-adapter-registry", () => {
   });
 
   it("rejects non-EN/ZH locale button labels in the corporate header switch", () => {
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/contact"],
       navLabels: ["Home", "Contact"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     expect(() =>
       assertCorporateSharedShellValidationForTesting(decision, [
@@ -360,12 +375,12 @@ describe("skill-execution-adapter-registry", () => {
   });
 
   it("rejects corrupted or English-only zh-CN dictionaries for corporate bilingual pages", () => {
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/products"],
       navLabels: ["Home", "Products"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     expect(() =>
       assertCorporateI18nResourceQualityForTesting(
@@ -422,12 +437,12 @@ describe("skill-execution-adapter-registry", () => {
   });
 
   it("rejects homepage direction-label copy that leaks internal art direction", () => {
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/products"],
       navLabels: ["Home", "Products"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     expect(() =>
       assertCorporateSourceQualityForTesting(decision, [
@@ -448,12 +463,12 @@ describe("skill-execution-adapter-registry", () => {
   });
 
   it("rejects homepage heritage value language unless the brief explicitly asks for history/heritage storytelling", () => {
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/products"],
       navLabels: ["Home", "Products"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     expect(() =>
       assertCorporateSourceQualityForTesting(
@@ -478,12 +493,12 @@ describe("skill-execution-adapter-registry", () => {
   });
 
   it("accepts homepage heritage wording only when the brief explicitly asks for heritage storytelling", () => {
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/products"],
       navLabels: ["Home", "Products"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     expect(() =>
       assertCorporateSourceQualityForTesting(
@@ -508,12 +523,12 @@ describe("skill-execution-adapter-registry", () => {
   });
 
   it("rejects legacy hero action classes and inline-styled section heads", () => {
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/contact"],
       navLabels: ["Home", "Contact"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     expect(() =>
       assertCorporateSourceQualityForTesting(decision, [
@@ -534,12 +549,12 @@ describe("skill-execution-adapter-registry", () => {
   });
 
   it("rejects products, solutions, and cases pages that delay the first meaningful image past the opening-adjacent band", () => {
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/products", "/custom-solutions", "/cases"],
       navLabels: ["Home", "Products", "Custom Solutions", "Cases"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     expect(() =>
       assertCorporateSourceQualityForTesting(decision, [
@@ -572,12 +587,12 @@ describe("skill-execution-adapter-registry", () => {
   });
 
   it("accepts products, solutions, and cases pages with real opening or opening-adjacent media", () => {
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/products", "/custom-solutions", "/cases"],
       navLabels: ["Home", "Products", "Custom Solutions", "Cases"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     expect(() =>
       assertCorporateSourceQualityForTesting(decision, [
@@ -610,12 +625,12 @@ describe("skill-execution-adapter-registry", () => {
   });
 
   it("rejects meta-design figcaptions in products, solutions, and cases openings", () => {
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/products", "/custom-solutions", "/cases"],
       navLabels: ["Home", "Products", "Custom Solutions", "Cases"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     expect(() =>
       assertCorporateSourceQualityForTesting(decision, [
@@ -648,12 +663,12 @@ describe("skill-execution-adapter-registry", () => {
   });
 
   it("rejects missing nav or footer in the corporate shared shell", () => {
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/products"],
       navLabels: ["Home", "Products"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     expect(() =>
       assertCorporateSharedShellStructureForTesting(decision, [
@@ -674,12 +689,12 @@ describe("skill-execution-adapter-registry", () => {
   });
 
   it("rejects corporate pages that omit shared asset references", () => {
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/products"],
       navLabels: ["Home", "Products"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     expect(() =>
       assertCorporateRouteAssetRefsForTesting(decision, [
@@ -700,12 +715,12 @@ describe("skill-execution-adapter-registry", () => {
   });
 
   it("rejects corporate routes that do not read like their owned page role", () => {
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/products", "/contact"],
       navLabels: ["Home", "Products", "Contact"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     expect(() =>
       assertCorporateRouteRoleValidationForTesting(decision, [
@@ -732,12 +747,12 @@ describe("skill-execution-adapter-registry", () => {
   });
 
   it("rejects corporate interior routes that reuse generic opening section shells", () => {
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/products", "/custom-solutions", "/cases", "/about", "/contact"],
       navLabels: ["Home", "Products", "Solutions", "Cases", "About", "Contact"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     expect(() =>
       assertCorporateRouteOpeningValidationForTesting(decision, [
@@ -782,12 +797,12 @@ describe("skill-execution-adapter-registry", () => {
   });
 
   it("accepts distinct route-owned opening section classes across core corporate interior pages", () => {
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/products", "/custom-solutions", "/cases", "/about", "/contact"],
       navLabels: ["Home", "Products", "Solutions", "Cases", "About", "Contact"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     expect(() =>
       assertCorporateRouteOpeningValidationForTesting(decision, [
@@ -832,12 +847,12 @@ describe("skill-execution-adapter-registry", () => {
   });
 
   it("accepts a generic spacing section when the first visible opening band contains a route-owned class", () => {
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/products", "/custom-solutions", "/cases", "/about", "/contact"],
       navLabels: ["Home", "Products", "Solutions", "Cases", "About", "Contact"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     expect(() =>
       assertCorporateRouteOpeningValidationForTesting(decision, [
@@ -882,12 +897,12 @@ describe("skill-execution-adapter-registry", () => {
   });
 
   it("rejects interior pages that drift from the homepage corporate nav/footer destinations", () => {
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/products", "/contact"],
       navLabels: ["Home", "Products", "Contact"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     expect(() =>
       assertCorporateSharedShellRouteConsistencyForTesting(decision, [
@@ -914,12 +929,12 @@ describe("skill-execution-adapter-registry", () => {
   });
 
   it("rejects implementation-oriented shell copy in the corporate shared shell", async () => {
-    const decision: LocalDecisionPlan = {
+    const decision = createDecisionPlan({
       locale: "en",
       routes: ["/", "/products"],
       navLabels: ["Home", "Products"],
       pageBlueprints: [],
-    } as LocalDecisionPlan;
+    });
 
     expect(() =>
       assertCorporateSharedShellValidationForTesting(decision, [
@@ -939,5 +954,6 @@ describe("skill-execution-adapter-registry", () => {
     ).toThrow(/implementation\/i18n shell copy/i);
   });
 });
+
 
 

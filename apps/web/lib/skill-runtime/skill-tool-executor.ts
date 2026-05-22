@@ -5012,7 +5012,7 @@ function buildToolRoundPrompt(params: {
     ...(!sharedAssetRound
       ? [
           "- Visitor-facing content must be final site content. Do not show explanatory scaffolding such as reading method, what you'll find, article collection, this page collects, each article includes date/read time/tags, launch articles, three launch articles, 首发文章, 三篇首发文章, or their Chinese equivalents.",
-          ...(focusedBlogTarget || (!singleHtmlTargetRound && requestedContentCount > 0)
+          ...(focusedBlogTarget || (!singleHtmlTargetRound && (requestedContentCount || 0) > 0)
             ? [
                 "- If the brief asks for three articles, present the actual three article cards and complete article bodies; do not write a site-structure explanation that says the page has three launch/first articles.",
                 "- Blog/content-index hero text must express a real thesis or value proposition about the topic. Never use hero or section lead sentences that merely tell the visitor how to browse, read, or start the list.",
@@ -5083,7 +5083,7 @@ export async function invokeWebsiteSkillRoundWithProviderFallbackForTesting(para
     lock: {
       provider: attempt.config.provider,
       model: attempt.config.modelName,
-      order: index,
+      reason: `test-attempt-${index + 1}`,
     } as RunProviderLock,
     config: attempt.config,
   }));

@@ -86,6 +86,10 @@ describe.skipIf(!runEnterpriseReplay)("enterprise existing chat live replay", ()
           inputState: (queuedGenerate?.result?.internal?.inputState || {}) as any,
         });
         const generated = await getLatestChatTaskForChat(replayChatId);
+        expect(generated).toBeTruthy();
+        if (!generated) {
+          throw new Error(`Expected generated task for chat ${replayChatId}`);
+        }
         expect(generated.status).toBe("succeeded");
         expect(generated.result?.progress?.stage).toBe("done");
 

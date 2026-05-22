@@ -61,6 +61,7 @@ export async function invokeModelWithIdleTimeout(params: {
   if (typeof model.stream !== "function") {
     return await invokeWithAbsoluteTimeout();
   }
+  const streamMethod = model.stream;
 
   const controller = new AbortController();
   let timer: NodeJS.Timeout | null = null;
@@ -104,7 +105,7 @@ export async function invokeModelWithIdleTimeout(params: {
   const consumePromise = (async (): Promise<AIMessage> => {
     try {
       resetTimer();
-      const stream = await model.stream(messages, { signal: controller.signal });
+      const stream = await streamMethod(messages, { signal: controller.signal });
       for await (const chunk of stream as any) {
         // Idle timeout is based on last token/chunk arrival, not initial request time.
         resetTimer();

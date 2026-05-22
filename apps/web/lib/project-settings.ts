@@ -14,6 +14,10 @@ export type ProjectContactSettingsState = {
   hasStoredSendUserAck: boolean;
 };
 
+type ProjectContactSettingsInput = Partial<Omit<ProjectContactSettings, "forwardTo">> & {
+  forwardTo?: string[] | string;
+};
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
@@ -68,7 +72,7 @@ function readRawContactSettings(projectJson: unknown) {
 
 export function applyProjectContactSettingsToProjectJson(
   projectJson: unknown,
-  settingsInput?: Partial<ProjectContactSettings> | null,
+  settingsInput?: ProjectContactSettingsInput | null,
 ) {
   if (!settingsInput) return projectJson;
 
