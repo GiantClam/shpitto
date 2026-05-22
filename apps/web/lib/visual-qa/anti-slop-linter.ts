@@ -18,11 +18,12 @@ export type WebsiteRouteLintContext = {
 
 const PLACEHOLDER_PATTERNS = [
   /\blorem ipsum\b/i,
-  /\b(your company|your brand|company name)\b/i,
+  /\b(company name)\b/i,
   /\b(feature|service|benefit)\s+[123]\b/i,
   /\b(tbd|todo|placeholder|insert (copy|text|image))\b/i,
   /https?:\/\/(?:example\.com|placeholder\.com)/i,
 ];
+const GENERIC_PLACEHOLDER_TITLE_PATTERN = /^\s*(?:your company|your brand|company name)\s*$/i;
 
 const NAV_SCAFFOLD_TOKENS = new Set(["menu", "navigation", "nav", "quick", "links", "quicklinks", "more", "pages", "site"]);
 const FOOTER_SCAFFOLD_TOKENS = new Set(["footer", "copyright", "copy", "rights", "reserved", "powered", "quick", "links", "quicklinks", "navigation", "menu", "legal"]);
@@ -173,6 +174,8 @@ export function lintGeneratedWebsiteHtml(html: string): AntiSlopLintResult {
   const text = stripTags(source);
   const issues: AntiSlopIssue[] = [];
   const hasExternalStylesheet = /<link\b[^>]*rel=["']stylesheet["'][^>]*>/i.test(source);
+  const titleText = extractTagText(source, "title");
+  const h1Text = extractTagText(source, "h1");
 
   if (!/<meta\s+name=["']viewport["']/i.test(source)) {
     pushIssue(issues, {
@@ -191,6 +194,13 @@ export function lintGeneratedWebsiteHtml(html: string): AntiSlopLintResult {
       });
       break;
     }
+  }
+  if (GENERIC_PLACEHOLDER_TITLE_PATTERN.test(titleText) || GENERIC_PLACEHOLDER_TITLE_PATTERN.test(h1Text)) {
+    pushIssue(issues, {
+      code: "placeholder-copy",
+      severity: "error",
+      message: "Placeholder or generic template copy detected; replace it with project-specific content.",
+    });
   }
 
   const sectionCount = (lower.match(/<section\b/g) || []).length;

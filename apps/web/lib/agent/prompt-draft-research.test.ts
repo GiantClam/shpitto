@@ -2,6 +2,7 @@
 import { buildRequirementSlots } from "./chat-orchestrator";
 import { afterEach, vi } from "vitest";
 import {
+  buildSourceEnrichmentPlanForTesting,
   buildPromptControlManifestFromKnowledgeProfileForTesting,
   buildPromptControlManifestForTesting,
   buildPromptDraftWithResearch,
@@ -419,6 +420,209 @@ describe("prompt draft research", () => {
     expect(result.canonicalPrompt).not.toContain("/custom-solutions/index.html");
   });
 
+  it("replays the vbuy session input and uses the explicit URL as a source without inventing a /www route", async () => {
+    const prevNodeEnv = process.env.NODE_ENV;
+    const prevSerperKey = process.env.SERPER_API_KEY;
+    const prevLlmEnabled = process.env.CHAT_DRAFT_LLM_ENABLED;
+    const requirement = "提取https://www.vbuytextile.com/网站的信息、页面结构和图片，做一个毛巾的渠道外贸电商公司的官网";
+    const pageHtml = [
+      "<!doctype html>",
+      "<html><body>",
+      "<nav>",
+      '<a href="/">Home</a>',
+      '<a href="/about-us">About Us</a>',
+      '<a href="/products">Products</a>',
+      '<a href="/contact-us">Contact Us</a>',
+      "</nav>",
+      "<main>",
+      "<h1>VBuy Textile</h1>",
+      "<h2>Wholesale Towels for Global Distribution</h2>",
+      "<p>Channel-focused foreign trade textile supplier for hotel, retail, and promotional towel programs.</p>",
+      "</main>",
+      "</body></html>",
+    ].join("");
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("google.serper.dev/search")) {
+        return new Response(JSON.stringify({ organic: [] }), {
+          headers: { "content-type": "application/json" },
+        });
+      }
+      if (url === "https://www.vbuytextile.com/") {
+        return new Response(pageHtml, {
+          headers: { "content-type": "text/html; charset=utf-8" },
+        });
+      }
+      throw new Error(`unexpected fetch url: ${url}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      (process.env as any).NODE_ENV = "development";
+      process.env.SERPER_API_KEY = "test-serper-key";
+      process.env.CHAT_DRAFT_LLM_ENABLED = "0";
+
+      const result = await buildPromptDraftWithResearch({
+        requirementText: requirement,
+        slots: buildRequirementSlots(requirement),
+      });
+
+      expect(result.usedWebSearch).toBe(true);
+      expect(result.promptControlManifest.routeSource).toBe("uploaded_source_page_plan");
+      expect(result.promptControlManifest.routes).toEqual(["/", "/about-us", "/products", "/contact-us"]);
+      expect(result.promptControlManifest.routes).not.toContain("/www");
+      expect(result.promptControlManifest.navLabels).toEqual(["Home", "About Us", "Products", "Contact Us"]);
+      expect(result.knowledgeProfile?.sources.some((source) => source.type === "url_page")).toBe(true);
+      expect(result.knowledgeProfile?.sources.some((source) => source.type === "domain")).toBe(true);
+      expect(result.knowledgeProfile?.suggestedPages.map((page) => page.route)).toEqual([
+        "/",
+        "/about-us",
+        "/products",
+        "/contact-us",
+      ]);
+      expect(result.canonicalPrompt).toContain("/about-us/index.html");
+      expect(result.canonicalPrompt).toContain("/contact-us/index.html");
+      expect(result.canonicalPrompt).not.toContain("/www/index.html");
+      expect(result.canonicalPrompt).not.toContain('"navLabel": "Www"');
+      expect(fetchMock).toHaveBeenCalled();
+    } finally {
+      (process.env as any).NODE_ENV = prevNodeEnv;
+      if (prevSerperKey === undefined) {
+        delete process.env.SERPER_API_KEY;
+      } else {
+        process.env.SERPER_API_KEY = prevSerperKey;
+      }
+      if (prevLlmEnabled === undefined) {
+        delete process.env.CHAT_DRAFT_LLM_ENABLED;
+      } else {
+        process.env.CHAT_DRAFT_LLM_ENABLED = prevLlmEnabled;
+      }
+    }
+  });
+
+  it("uses only high-confidence source-defined pages when url navigation contains utility tokens", async () => {
+    const prevNodeEnv = process.env.NODE_ENV;
+    const prevSerperKey = process.env.SERPER_API_KEY;
+    const prevLlmEnabled = process.env.CHAT_DRAFT_LLM_ENABLED;
+    const requirement = "Use https://www.vbuytextile.com/ as the main source to generate the company website.";
+    const pageHtml = [
+      "<!doctype html>",
+      "<html><body>",
+      "<nav>",
+      '<a href="/">Home</a>',
+      '<a href="/products">Products</a>',
+      '<a href="/whatsapp">WhatsApp</a>',
+      '<a href="/odm">ODM</a>',
+      '<a href="/contact-us">Contact Us</a>',
+      "</nav>",
+      "<main>",
+      "<h1>VBuy Textile</h1>",
+      "<p>Channel-focused foreign trade textile supplier.</p>",
+      "</main>",
+      "</body></html>",
+    ].join("");
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("google.serper.dev/search")) {
+        return new Response(JSON.stringify({ organic: [] }), {
+          headers: { "content-type": "application/json" },
+        });
+      }
+      if (url === "https://www.vbuytextile.com/") {
+        return new Response(pageHtml, {
+          headers: { "content-type": "text/html; charset=utf-8" },
+        });
+      }
+      throw new Error(`unexpected fetch url: ${url}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      (process.env as any).NODE_ENV = "development";
+      process.env.SERPER_API_KEY = "test-serper-key";
+      process.env.CHAT_DRAFT_LLM_ENABLED = "0";
+
+      const result = await buildPromptDraftWithResearch({
+        requirementText: requirement,
+        slots: buildRequirementSlots(requirement),
+      });
+
+      expect(result.promptControlManifest.routeSource).toBe("uploaded_source_page_plan");
+      expect(result.promptControlManifest.routes).toEqual(["/", "/products", "/contact-us"]);
+      expect(result.promptControlManifest.routes).not.toContain("/whatsapp");
+      expect(result.promptControlManifest.routes).not.toContain("/odm");
+      expect(result.knowledgeProfile?.suggestedPages.some((page) => page.route === "/whatsapp")).toBe(false);
+    } finally {
+      (process.env as any).NODE_ENV = prevNodeEnv;
+      if (prevSerperKey === undefined) delete process.env.SERPER_API_KEY;
+      else process.env.SERPER_API_KEY = prevSerperKey;
+      if (prevLlmEnabled === undefined) delete process.env.CHAT_DRAFT_LLM_ENABLED;
+      else process.env.CHAT_DRAFT_LLM_ENABLED = prevLlmEnabled;
+    }
+  });
+
+  it("does not auto-extract URL or web-search when user input is already sufficient", async () => {
+    const prevNodeEnv = process.env.NODE_ENV;
+    const prevSerperKey = process.env.SERPER_API_KEY;
+    const prevLlmEnabled = process.env.CHAT_DRAFT_LLM_ENABLED;
+    const requirement = [
+      "Brand: Northstar Robotics",
+      "Audience: procurement teams, factory buyers",
+      "Pages: Home | Products | Case Studies | Contact",
+      "Primary goal: lead generation",
+      "Style: industrial, blue-gray, trustworthy",
+      "Language: English",
+      "Content source: existing domain",
+      "Reference URL: https://example.com",
+    ].join("\n");
+    const fetchMock = vi.fn(async () => {
+      throw new Error("fetch should not be called when input is sufficient");
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      (process.env as any).NODE_ENV = "development";
+      process.env.SERPER_API_KEY = "test-serper-key";
+      process.env.CHAT_DRAFT_LLM_ENABLED = "0";
+
+      const result = await buildPromptDraftWithResearch({
+        requirementText: requirement,
+        slots: buildRequirementSlots(requirement),
+      });
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(result.knowledgeProfile).toBeUndefined();
+      expect(result.promptControlManifest.routeSource).toBe("prompt_draft_page_plan");
+      expect(result.promptControlManifest.routes).not.toContain("/www");
+      expect(result.canonicalPrompt).not.toContain("/www/index.html");
+    } finally {
+      (process.env as any).NODE_ENV = prevNodeEnv;
+      if (prevSerperKey === undefined) delete process.env.SERPER_API_KEY;
+      else process.env.SERPER_API_KEY = prevSerperKey;
+      if (prevLlmEnabled === undefined) delete process.env.CHAT_DRAFT_LLM_ENABLED;
+      else process.env.CHAT_DRAFT_LLM_ENABLED = prevLlmEnabled;
+    }
+  });
+
+  it("builds a source enrichment plan that defers URL/search when input is sufficient", () => {
+    const requirement = [
+      "Brand: Northstar Robotics",
+      "Audience: procurement teams, factory buyers",
+      "Pages: Home | Products | Case Studies | Contact",
+      "Primary goal: lead generation",
+      "Style: industrial, blue-gray, trustworthy",
+      "Language: English",
+      "Content source: existing domain",
+      "Reference URL: https://example.com",
+    ].join("\n");
+
+    const plan = buildSourceEnrichmentPlanForTesting({ requirementText: requirement });
+
+    expect(plan.shouldUseUrlExtraction).toBe(false);
+    expect(plan.shouldUseDomainSources).toBe(false);
+    expect(plan.shouldUseWebSearch).toBe(false);
+  });
+
   it("includes confirmed functional requirements in the prompt draft", async () => {
     const requirement = [
       "需求表单已提交：",
@@ -480,11 +684,14 @@ describe("prompt draft research", () => {
     });
 
     expect(result.canonicalPrompt).toContain("## 7.35 Bilingual Experience Contract");
-    expect(result.canonicalPrompt).toContain("Requested site locale: bilingual EN/ZH");
-    expect(result.canonicalPrompt).toContain("Default visible language: Chinese (zh-CN)");
-    expect(result.canonicalPrompt).toContain("`data-i18n-*`");
-    expect(result.canonicalPrompt).toContain("language switch");
+    expect(result.canonicalPrompt).toContain("English-first i18n-ready generation strategy");
+    expect(result.canonicalPrompt).toContain("/i18n/messages.en.json");
+    expect(result.canonicalPrompt).toContain("/i18n/messages.zh-CN.json");
+    expect(result.canonicalPrompt).toContain("English visible copy only");
     expect(result.canonicalPrompt).toContain("Blog/content workflows stay single-language");
+    expect(result.promptControlManifest.files).toEqual(
+      expect.arrayContaining(["/i18n/messages.en.json", "/i18n/messages.zh-CN.json"]),
+    );
   });
 
   it("can inject a bilingual contract into an existing English workflow draft", () => {
@@ -492,8 +699,9 @@ describe("prompt draft research", () => {
     const enriched = ensureCanonicalPromptHasBilingualContractForTesting(draft, "bilingual", "zh");
 
     expect(enriched).toContain("## 7.35 Bilingual Experience Contract");
-    expect(enriched).toContain("Default visible language: Chinese (zh-CN)");
-    expect(enriched).toContain("exactly one active language at a time");
+    expect(enriched).toContain("English-first i18n-ready generation strategy");
+    expect(enriched).toContain("render English visible copy only");
+    expect(enriched).toContain("/i18n/messages.zh-CN.json");
     expect(containsWorkflowCjk(enriched)).toBe(false);
   });
 

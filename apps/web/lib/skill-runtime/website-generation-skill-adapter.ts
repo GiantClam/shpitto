@@ -17,40 +17,44 @@ import {
   validateWebsiteRequiredFilesWithQaForAdapter,
 } from "./skill-tool-executor.ts";
 
-const WEBSITE_GENERATION_ADAPTER: SkillExecutionAdapter = {
-  skillId: "website-generation-workflow",
-  resolveChatAction(params) {
-    return resolveWebsiteChatAction(params);
-  },
-  buildRequiredFileChecklist(
-    decision: LocalDecisionPlan,
-    params: { files?: RuntimeWorkflowFile[]; requirementText?: string } = {},
-  ): string[] {
-    return requiredWebsiteFileChecklistForAdapter(decision, params);
-  },
-  resolveMaxToolRounds(decision: LocalDecisionPlan, requirementText = ""): number {
-    return resolveWebsiteSkillMaxToolRoundsForAdapter(decision, requirementText);
-  },
-  sanitizeEmittedHtml(filePath: string, html: string, requirementText: string): string {
-    return sanitizeWebsiteSkillHtmlOutputForAdapter(filePath, html, requirementText);
-  },
-  planRoundObjective(round: number, missingFiles: string[]): SkillExecutionRoundObjective {
-    return planWebsiteSkillRoundObjectiveForAdapter(round, missingFiles);
-  },
-  formatTargetPageContract(plan: LocalDecisionPlan, targetFile: string, requirementText = ""): string {
-    return formatWebsiteTargetPageContractForAdapter(plan, targetFile, requirementText);
-  },
-  buildToolRoundPrompt(params: SkillExecutionRoundPromptParams): string {
-    return buildWebsiteSkillToolRoundPromptForAdapter(params);
-  },
-  validateAndNormalizeRequiredFilesWithQa(params: {
-    decision: LocalDecisionPlan;
-    files: RuntimeWorkflowFile[];
-    requirementText?: string;
-  }): SkillExecutionValidationResult {
-    return validateWebsiteRequiredFilesWithQaForAdapter(params);
-  },
-};
+export function createWebsiteGenerationSkillAdapter(skillId: string): SkillExecutionAdapter {
+  return {
+    skillId,
+    resolveChatAction(params) {
+      return resolveWebsiteChatAction(params);
+    },
+    buildRequiredFileChecklist(
+      decision: LocalDecisionPlan,
+      params: { files?: RuntimeWorkflowFile[]; requirementText?: string } = {},
+    ): string[] {
+      return requiredWebsiteFileChecklistForAdapter(decision, params);
+    },
+    resolveMaxToolRounds(decision: LocalDecisionPlan, requirementText = ""): number {
+      return resolveWebsiteSkillMaxToolRoundsForAdapter(decision, requirementText);
+    },
+    sanitizeEmittedHtml(filePath: string, html: string, requirementText: string): string {
+      return sanitizeWebsiteSkillHtmlOutputForAdapter(filePath, html, requirementText);
+    },
+    planRoundObjective(round: number, missingFiles: string[]): SkillExecutionRoundObjective {
+      return planWebsiteSkillRoundObjectiveForAdapter(round, missingFiles);
+    },
+    formatTargetPageContract(plan: LocalDecisionPlan, targetFile: string, requirementText = ""): string {
+      return formatWebsiteTargetPageContractForAdapter(plan, targetFile, requirementText);
+    },
+    buildToolRoundPrompt(params: SkillExecutionRoundPromptParams): string {
+      return buildWebsiteSkillToolRoundPromptForAdapter(params);
+    },
+    validateAndNormalizeRequiredFilesWithQa(params: {
+      decision: LocalDecisionPlan;
+      files: RuntimeWorkflowFile[];
+      requirementText?: string;
+    }): SkillExecutionValidationResult {
+      return validateWebsiteRequiredFilesWithQaForAdapter(params);
+    },
+  };
+}
+
+const WEBSITE_GENERATION_ADAPTER = createWebsiteGenerationSkillAdapter("website-generation-workflow");
 
 export function getWebsiteGenerationSkillAdapter(): SkillExecutionAdapter {
   return WEBSITE_GENERATION_ADAPTER;

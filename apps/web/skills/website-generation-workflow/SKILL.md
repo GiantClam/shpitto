@@ -114,10 +114,265 @@ Quality gate: A Canonical Website Prompt generated from researched material must
 3. If source material lacks a detail, do not explain the gap to visitors. Omit the detail, use a conservative generic CTA, or route the user to contact/download/consultation.
 4. Transform source-backed facts into concrete headings, value propositions, cards, comparison rows, process steps, and CTAs. Do not copy analysis notes verbatim.
 5. Each route must use a distinct hero composition and section rhythm. Shared header, footer, tokens, and navigation are allowed; repeated hero/body skeletons with swapped text are not.
+
+#### Interior Page Differentiation Contract (Mandatory)
+
+1. Language switching belongs to the shared shell. Do not add a repeated locale explainer, second EN/ZH toggle block, menu-like utility rail, or language-card panel inside the opening section of every interior page unless the brief explicitly asks for a route-level localization explainer.
+2. Products, custom solutions, cases, contact, and about pages must not all open with the same `hero + side panel + generic grid` arrangement. Route role must change the opening module topology, section cadence, and component emphasis.
+3. Use route-native opening modules:
+   - `products`: assortment/category framing, buyer comparison, material/spec orientation
+   - `custom-solutions`: scenario fit, customization path, delivery/collaboration model; default to a process intro or capability timeline rather than a full promotional hero
+   - `cases`: evidence library, scenario/outcome framing, method/proof
+   - `contact`: conversion-first contact surface, channels, response expectation
+   - `about`: identity, operating model, trust/process proof; default to a company masthead, operating profile, or proof slab rather than a campaign hero
+4. Shared shell consistency must not flatten the body layout. Reuse header/footer/tokens, but vary the first visible module, section rhythm, and component hierarchy by route so the site reads like a company website rather than one reusable personal-page template.
+5. If a route starts to resemble a personal essay page, editorial note, archive explainer, or profile microsite rather than a company/B2B page, rewrite it toward capability, proof, procurement clarity, and business next actions.
+6. Homepage may use a full promotional hero. Interior routes should default to compact lead bands, evidence headers, catalog intros, form-first starts, or profile mastheads instead of repeating a full homepage-style hero on every page.
+6a. `products`, `custom-solutions`, and `cases` must not open as large white text slabs with delayed imagery. Each of those routes needs a real route-owned image in the opening band or the first opening-adjacent proof/capability band.
+7. Language switching is utility UI only. Do not create visible section headings or major body sections whose topic is "Switch between English and Chinese", "Choose language", "Read in both languages", or equivalent wording. The locale control lives in the shared header/footer, not in the page body content model.
+
+#### Brand Representation Contract (Mandatory)
+
+1. If the logo strategy is `Text wordmark` / `text_mark`, the default brand treatment is text-only.
+2. Do not automatically prepend a standalone initial, monogram, crest, badge, or icon chip to the company name unless source materials explicitly provide such a mark.
+3. Do not invent a brand subtitle, slogan, or positioning line beneath the wordmark unless it is source-backed.
+4. If the brand area needs visual structure, use spacing, typography, or a neutral divider rather than fabricating a logo system.
+5. Header/footer branding on company websites should read like the company name itself, not `letter badge + company name`, unless the user or source explicitly requested that format.
+6. Do not emit empty decorative brand-mark placeholders such as empty circles, empty squares, empty badge spans, or unlabeled logo chips when no real mark exists.
+7. When the logo strategy is text wordmark and the chosen system is IBM / Carbon or another enterprise technology system, do not invent a two-letter badge, monogram chip, or initials block beside the company name. The brand should render as a clean text wordmark only.
+
+#### Enterprise Tone Contract (Mandatory)
+
+When the site type is `company` and the audience includes enterprise buyers, procurement teams, distributors, importers, or export customers:
+
+1. The visible website tone must read as a company website first. Mood keywords such as `heritage`, `craft`, `warm`, `artisan`, `human`, or `material-led` may influence palette and texture, but they must not become the headline premise of the homepage or shared shell.
+2. Do not place those mood words in the default `<title>`, meta description, H1, hero kicker, footer note, footer credit, or the first sentence of key interior pages unless the source material explicitly uses them as the company's own public positioning.
+2a. Do not reuse the selected design-direction label itself as visible UI copy. Direction names such as `heritage manufacturing`, `warm`, `craft`, or similar are internal art-direction metadata, not visitor-facing eyebrow text.
+2b. Unless the brief explicitly asks for company history or legacy storytelling, do not turn words such as `heritage`, `craft tradition`, or similar legacy-positioning language into homepage value claims. Use buyer-facing claims about sourcing clarity, quality control, responsiveness, and production discipline instead.
+2c. Treat plain `heritage` as blocked homepage value language by default. Only use it when the brief explicitly requests heritage/history storytelling.
+3. Prefer company-facing language such as:
+   - export-ready textile manufacturing
+   - procurement-ready product presentation
+   - sourcing support
+   - production coordination
+   - custom development
+   - buyer documentation / case evidence / inquiry flow
+4. For company/manufacturer sites, capability, proof, product clarity, sourcing process, and response readiness outrank atmosphere in visible copy.
+5. If the user-selected visual direction contains `heritage` or `warm`, reinterpret them as restrained confidence in visual styling only. Do not let them dominate visitor-facing copy or make the company sound like a boutique studio, maker profile, or personal essay brand.
+
+#### Explicit Design-System Override Contract (Mandatory)
+
+When the user explicitly names a design system or brand reference in later dialogue, treat that as a stronger visual instruction than any previously recommended or auto-selected visual direction.
+
+1. An explicit system override such as `IBM`, `Carbon`, `Stripe`, `Apple`, or equivalent must supersede an earlier recommended/open-design default for visible layout language, component treatment, and homepage topology.
+2. Keep source-backed business content and sitemap intent, but restyle the page architecture to match the explicit system.
+3. Do not preserve a previous default's hero pattern, badge treatment, or editorial pacing once an explicit enterprise system override has been requested.
+
+#### Corporate-B2B Enterprise Homepage Contract (Mandatory for company / manufacturer / enterprise-buyer sites)
+
+If the site is a company/manufacturer/procurement-facing B2B website, apply this homepage structure by default. If the user explicitly asks for IBM or Carbon, keep this structure and layer the IBM/Carbon visual language on top:
+
+1. The homepage must read as an enterprise technology/company homepage, not a lifestyle landing page, founder page, or boutique brand page.
+2. Do not use a soft split-marketing hero with a decorative side card/panel as the main opening.
+2a. Do not use a `hero-copy + hero-panel`, `hero-grid + aside`, lifestyle split hero, floating statistic card cluster, or campaign-style promo rail as the homepage opening topology.
+3. Prefer:
+   - an image-backed enterprise hero with readable overlay copy
+   - a structured company masthead embedded in that hero
+   - modular proof rows
+   - disciplined grid-aligned capability bands
+   - a concise enterprise CTA strip
+   - a procurement-facing opening sequence such as `image-backed enterprise hero -> proof row -> capability band -> primary action`
+3a. The first visible homepage band must be a single enterprise hero:
+   - one image-backed lead band or company masthead
+   - overlay copy remains primary and readable
+   - no right-column promo rail
+   - no `aside` stacked beside the opening copy
+   - no first-screen image block acting as a decorative split-hero side panel
+   - no side media card, side image frame, or right-column visual box competing with the overlay copy
+   - no opening KPI/signals panel or quick-summary card sitting beside the masthead copy in the first band
+3b. If a real stock/library image is used on the homepage, use it as the opening hero background/support visual rather than pushing the first meaningful image below the fold.
+4. Avoid:
+   - floating lifestyle-stat cards
+   - warm craft-note framing
+   - boutique/editorial art direction
+   - soft campaign-hero language
+   - badge-like initials next to a text wordmark
+   - founder-profile composition
+   - personal-site opening cadence
+   - decorative side summaries that behave like a personal landing page sidebar
+   - first-band structures such as `hero__grid`, `hero-grid`, `hero-panel`, `visual-rail`, or `hero-copy + aside`
+5. Buttons, spacing, and layout rhythm should feel systematic and enterprise-grade rather than promotional or personal-brand styled.
+6. Product/context imagery may remain, but it should support enterprise proof and procurement understanding rather than acting like a decorative lifestyle hero.
+7. If the logo strategy is text-only, the header brand must render as text-only. Do not fabricate a `VB`, `V`, or other initial badge beside the company name.
+8. The first screen must establish company scope, buyer relevance, and operational proof before any secondary supporting panel or visual callout.
+9. Homepage section labels and opening modules should sound like enterprise information architecture: company overview, sourcing support, capability proof, product range, response process. They must not sound like personal branding, editorial storytelling, or lifestyle campaign framing.
+10. Do not surface legacy direction labels or mood labels such as `heritage`, `heritage craft`, `warm palette`, `craft`, or similar in the eyebrow, hero, section labels, footer meta, footer chips, or trust rows. Those are internal styling cues, not visitor-facing company copy.
+10c. Do not write homepage eyebrow/kicker text such as `Heritage textile manufacturing`, `heritage textile production`, or similar heritage-led taglines unless the brief explicitly asks for history/heritage storytelling. Prefer operational business framing instead.
+10a. Do not surface implementation or brand-system mechanics in visible header/footer/shared-shell copy. Phrases such as `text wordmark`, `wordmark brand presentation`, `brand system`, `site experience`, `language strategy`, `English-first`, `i18n`, `locale`, or similar implementation notes are not visitor-facing enterprise copy.
+10b. The same ban applies to compact tags, chips, or trust-signal rows. Do not emit visitor-facing tags such as `Text wordmark brand`, `Bilingual experience`, or similar implementation shorthand inside homepage proof rows, buyer-signal rows, or CTA support blocks.
+11. Treat homepage imagery as a planned module, not a decorative afterthought.
+    - The homepage opens with an image-backed enterprise hero.
+    - The hero image sits behind or beneath the masthead copy with a readable overlay scrim.
+    - The hero image should carry strong first-screen visual weight so buyers grasp product and use context immediately instead of seeing a mostly text-led banner.
+    - On desktop, the hero image should contribute roughly 55-65% of the first-screen visual emphasis while the copy remains readable in a disciplined 35-45% overlay zone.
+    - On mobile, preserve enough vertical image depth that the product/environment scene still reads before scroll; do not collapse the image into a shallow decorative strip.
+    - The image must support procurement proof, product context, or manufacturing trust rather than acting like a lifestyle campaign.
+    - If stock/library imagery is available, that first homepage image must be a real photographic asset. Do not substitute an inline SVG scene, abstract illustration, or data-URI placeholder as the primary enterprise proof image.
+    - The first image must not be rendered as an empty right rail or detached proof block that leaves the opening hero visually hollow.
+    - The opening hero must contain a real `<img>` or `<picture>` media node inside the hero media slot. Do not rely on a CSS-only background-image as the sole enterprise hero visual when a real photographic asset is available.
+    - Do not replace that hero visual with a text-only placeholder box such as `enterprise-hero-visual`, `visual-content`, `visual-note`, `media-panel`, or other pseudo-image scaffolding.
+    - If the route design spec provides `suggested_asset_url`, `suggested_asset_alt`, or `suggested_asset_caption`, use that real asset in the opening hero instead of inventing a placeholder block or empty `media-frame`.
+    - Treat `suggested_asset_caption` as buyer-facing support copy only. Never copy generator/spec instruction wording such as `should`, `must`, `use`, `explain`, or `layout intent` into visible text.
+    - For enterprise heroes, keep the copy layer transparent. Do not assign `background`, `border`, `box-shadow`, or `backdrop-filter` to `.enterprise-hero__content` or any equivalent hero copy wrapper.
+    - For route-owned proof media on `products`, `custom-solutions`, and `cases`, use reusable semantic classes in `/styles.css` instead of inline `style=` attributes on `<img>`, `<figure>`, or proof panels.
+    - For the `contact` opening support panel, use a dedicated route-owned class rather than inline `max-width`, `justify-self`, or other layout styles.
+    - For enterprise homepage heroes, do not use legacy inner utility classes such as `hero-title`, `hero-copy`, `hero-actions`, or `page-section` inside the hero subtree.
+    - Do not use generic action-group classes such as `hero-actions` on homepage or interior CTA clusters. Use enterprise- or route-owned action classes instead.
+    - For enterprise homepage heroes, do not use generic opening wrappers such as `hero`, `section hero`, or other marketing-landing hero shells. The opening wrapper itself must be enterprise-specific, such as `enterprise-hero`.
+    - For `products`, `custom-solutions`, and `cases`, the first opening section should foreground the route-owned opening class itself (for example `catalog-lead`, `process-intro`, `evidence-header`) rather than leading with a generic shell token such as `route-band`.
+    - For interior routes and CTA bands, do not use inline-styled generic utility blocks such as `section-title`, `cta-actions`, `muted`, `spec-grid`, `card-grid`, or `media-frame` to control spacing/sizing. Use reusable route-owned classes in `/styles.css`.
+    - Do not place inline `style=` attributes on `section__head`, `section-header`, or equivalent section-heading wrappers. Section-head spacing and alignment must stay class-owned.
+    - Do not emit inline `margin-top` fixes on footer support notes, helper paragraphs, or footer action groups. Footer spacing must also come from reusable shell classes.
+    - Preferred implementation shape:
+      - one opening hero section
+      - one real photographic hero asset bound to that opening section
+      - overlay headline, lead, and CTA inside the same hero surface
+      - exactly one homepage H1, and it must live inside that opening hero
+      - the hero image should remain visually dominant enough to grab attention before the supporting proof row
+      - the hero should begin close to the shared header; avoid a large blank band created by stacking top shell padding and full section padding before the first meaningful content
+      - no blank right side waiting for a later proof image
+      - no text-only box pretending to be the hero visual
+      - no split-panel implementation where `.enterprise-hero__content` becomes an independent card or gradient slab beside a separate image card
+      - the hero media layer should fill the hero container; the copy layer should sit above it with a readable scrim rather than owning its own standalone background surface
+      - enterprise-specific class semantics such as `enterprise-hero`, `enterprise-hero__media`, and `enterprise-hero__content`
+      - avoid legacy split-hero class naming like `hero-grid`, `hero__grid`, `hero-panel`, `media-frame`, or `hero-copy + aside`
+      - do not mix legacy hero utility classes such as `hero__body`, `hero__content`, or `hero__actions` into the corporate-b2b homepage opening; use enterprise-specific hero class names consistently
+      - the final homepage HTML must actually use the enterprise hero class family for the opening section rather than only matching the layout visually
+      - the final homepage CSS must style the opening through `.enterprise-hero`, `.enterprise-hero__media`, `.enterprise-hero__content`, and `.enterprise-proof-row` rather than relying on `.hero-grid`, `.hero-copy`, `.hero-panel`, or similar legacy homepage classes
+      - final corporate-b2b HTML should not depend on inline `style="..."` presentation for visible media or layout blocks; move hero, card, grid, and support-layout styling into shared classes in `/styles.css`
+      - visible copy, placeholders, and CTA labels must be free of mojibake or encoding-corrupted punctuation such as broken apostrophes, broken dashes, or replacement characters
+      - the capability band that follows the hero must not introduce a second H1 or another hero-scale heading; use H2/section-title semantics there
+      - homepage shell spacing must stay controlled and enterprise-like: the first section should usually begin within roughly a 20-36px transition below the header, and major section transitions should usually land in roughly the 40-72px range rather than collapsing into dashboard-tight spacing or drifting into 96px+ marketing whitespace
+      - interior pages should keep the same theme but breathe a little more than the homepage proof row; major interior section bands should generally stay in the 40-72px range
+      - nested proof rows, capability grids, card stacks, CTA action groups, and support clusters should still feel comfortably spaced, usually in the 28-44px range rather than 8-16px dashboard density
+12. Homepage shell layout should be expressed through reusable classes and design tokens, not ad-hoc inline layout styles. Do not hardcode visible `max-width`, `background`, spacing, or image-sizing rules directly on masthead, proof-strip, capability-band, or CTA shell nodes unless the executor explicitly requires a one-off fix.
+12. Prefer restrained enterprise media treatment:
+    - contained `figure` or media card inside the shell/grid
+    - rectangular aspect ratio such as `5:3` or `4:3`
+    - optional short caption that improves buyer understanding
+    - if a caption is used, it must describe product/use context, sourcing relevance, or material proof; it must not explain the media module itself with phrases like `proof image`, `visual cue`, `this image supports`, or other meta-design wording
+    - do not use imperative or coaching captions such as `Use contextual visuals`, `should show`, `should feel`, or `rather than abstract blocks`
+    - do not let visible leads, captions, support lines, or CTA labels repeat generator/spec instruction verbs such as `should`, `must`, `use`, or `explain`
+13. Do not emit a hard-inserted full-width image that simply expands to fill available width without regard to module ownership, enterprise rhythm, or the surrounding shell.
+14. If the homepage includes buyer signals, metrics, or operational highlights, place them in a proof strip or follow-on capability row beneath the masthead. Do not render them as a competing right-column opening panel.
+15. Buyer signals on a corporate-b2b homepage should default to a compact horizontal proof row:
+    - short chips, compact metrics, or brief evidence cells
+    - low vertical height
+    - shell-aligned row treatment
+    - no oversized summary card, no stacked spotlight panel, no second hero-like block directly under the masthead
+    - do not label this block as `snapshot`, `company snapshot`, `overview panel`, or similar panel-style framing
+    - do not wrap the whole proof row inside one large bordered card/panel container
+16. Footer and shared-shell copy must read like company/trust/support language:
+    - allowed: company summary, sourcing support, export readiness, route labels, contact/helpful trust notes
+    - banned: implementation descriptors, brand-system descriptors, language-toggle explanations, or visitor-facing references to text-wordmark mode
+16a. Header utility structure must remain clean:
+    - primary nav links stay inside the nav list/cluster only
+    - locale switch lives in a separate utility container beside the nav, not appended directly into the last nav link run
+    - do not output malformed header HTML where the locale switch is concatenated into the nav link stream without a separate wrapper
+    - do not emit an empty `header-utility` / `locale-utility` shell while the locale buttons remain inside `<nav>`
+17. Homepage CTA treatment on a corporate-b2b company site must remain single-primary-block:
+    - one main CTA narrative block is preferred
+    - secondary support, if needed, should be a short inline checklist, brief trust line, or compact meta row
+    - do not render a split CTA section with a second bordered panel/card that repeats instructions, form hints, or inquiry-prep notes beside the main CTA block
+17a. CTA and section shells should not rely on one-off inline layout styles for final output. Prefer dedicated classes such as `cta-band`, `section__header`, `section__actions`, or equivalent reusable shell classes instead of `style="..."` spacing fixes.
+17b. Do not use generic action-cluster classes such as `hero-actions` in CTA bands, route openings, or footer callouts; use route-owned or shell-owned action classes instead.
+18. The homepage capability zone must be a unified enterprise capability band:
+   - use one shell-aligned band with a heading block plus a capability grid/list underneath
+   - do not render the capability zone as a left content column plus a right `aside`, `detail`, `proof-rail`, or buyer-help sidebar
+   - do not use class or layout patterns such as `content-band--split`, `detail`, `proof-rail`, or `split-grid` for the homepage capability zone
+   - buyer guidance for that zone should appear as short inline support notes, compact subcopy, or capability-card microcopy, not as a separate sidebar container
+19. Header locale controls must be structurally clean:
+   - the primary nav contains route links only
+   - locale controls render once, inside a dedicated adjacent utility wrapper
+   - do not place locale buttons inside the nav and then emit a second empty utility wrapper beside it
+   - do not emit an empty locale utility shell
+   - for corporate-b2b sites, keep locale button labels literal `EN` / `ZH`
+     and place full language strings in the JSON dictionaries, not in the
+     switch control itself
+
+#### Towel / Home-Textile Export Variant (Mandatory when signals match)
+
+Apply this variant when the company site clearly centers on towels, home textiles, hospitality textiles, pool/beach textile contexts, or export-oriented textile sourcing:
+
+1. Theme:
+   - Use an ocean-blue + white company shell.
+   - Preferred palette direction:
+     - primary blue: `#1276C2` to `#1E88D8`
+     - support blue: `#67B7E8`
+     - white: `#FFFFFF`
+     - light surface blue: `#F3FAFF`
+     - border blue: `#D4E8F5`
+     - optional sand neutral accent: `#E8D9C5`
+   - Do not default to parchment, sepia, brass, beige-heavy, or brown-led shells for this profile.
+2. Typography:
+   - Use a clean corporate sans-first system.
+   - Avoid serif-led editorial display type for homepage and key interior headings.
+3. Visual association:
+   - The site should suggest cleanliness, softness, hospitality, pool/beach freshness, and export-ready reliability.
+   - The site must not feel like a craft journal, boutique atelier, or heritage essay.
+4. Images:
+   - Homepage must include at least one real photographic visual tied to towels, textiles, pool/beach/hospitality use, folded product ranges, or textile close-up texture.
+   - Products should include supporting product/category/material imagery.
+   - Custom solutions should include process/application/support imagery.
+   - About should include company/material/process imagery.
+   - Prefer stock/library retrieval before AI illustration when source images are missing.
+5. Hard bans:
+   - No abstract-only hero rail when a real product/context image is available.
+   - No decorative SVG-only fabric scene as the main hero visual when stock/library imagery is available.
+   - No serif editorial masthead treatment.
+   - No beige-paper mood board look.
+6. For towel, home-textile, pool-textile, or beach-adjacent export manufacturers, default the visual system toward ocean blue and white with restrained sand or light-neutral support unless source-backed brand colors clearly conflict. The visual association should suggest water, cleanliness, softness, and export-ready product clarity rather than craft nostalgia.
+7. For that same towel/home-textile exporter profile, typography should default to a clean corporate sans-first system. Do not use a literary/editorial serif display treatment as the dominant brand feel unless the source explicitly asks for it.
+8. The visible shell should feel crisp, export-ready, and product-led: marine blue, pool blue, white, light neutral surfaces, and restrained sand accents are allowed; beige-heavy, sepia, parchment, or artisanal-brown-dominant palettes are not the default.
+9. For this exporter profile, a homepage proof image is mandatory when stock/library imagery is available, and it must read as a real product or usage photograph. Inline SVG mock scenes, abstract enterprise diagrams, or fabricated placeholder illustrations are not acceptable substitutes for the primary proof image.
+
+#### Image And Product Visualization Contract (Mandatory)
+
+When the site is a company/manufacturer/export site and the source material does not already provide a complete image set:
+
+1. Do not ship a text-only corporate website when page goals, product categories, specifications, or sourcing claims would benefit from visual support.
+2. Prefer real photographic support over abstract decorative fills. Prioritize stock/library retrieval before AI illustration when a believable product or contextual image is needed.
+3. Use images intentionally:
+   - homepage: one strong category/production/context visual
+   - products: category/supporting product images that help buyers understand range
+   - custom solutions: process, application, or production-support imagery
+   - cases: application or outcome support imagery
+   - about: company/process/material image, not a lifestyle collage
+   - towel/home-textile export sites: favor ocean, pool, beach, towel texture, folded product, hospitality, and clean-use context imagery that reinforces softness, cleanliness, and application clarity
+   - these visuals must appear as actual image-bearing modules (`img`, `picture`, `figure`, or equivalent rendered media block), not only as text panels or abstract decorative backgrounds
+4. Specification or capability sections should be paired with restrained supporting visuals, swatches, product detail crops, or environment photos where that increases comprehension.
+5. Avoid pages that feel like pure wireframe copy blocks. The site should read as a real company presentation with selective imagery, not as a text-first prototype.
+6. Keep image use disciplined. Do not turn the company site into a gallery or marketing collage; images should support procurement understanding, product confidence, and application clarity.
+7. Abstract gradient blocks or empty decorative rails are not an acceptable substitute when the page clearly calls for a product/context image and stock/library imagery is available.
+8. Before writing the final page, define a `media plan` for each route:
+   - `slot owner` (homepage hero background, proof strip, capability band, product support block, process support block, company profile block)
+   - `image purpose` (proof, product-support, process-support, company-support)
+   - `preferred aspect ratio`
+   - `caption rule` (if any)
+   - `media source rule` (`curated stock/library photo first`; only fall back to illustration if no believable stock/library image exists)
+9. Do not search for images after the layout is already composed. The page structure itself must reserve a media-bearing module so the selected image belongs to that module.
+10. Image placement must follow route role:
+    - homepage: opening enterprise hero background/support visual first, then proof/capability support only if needed
+   - products: beside range/specification or shortlist context
+   - custom solutions: beside process/collaboration/application context
+   - about: beside company/process/material trust content
+11. If a selected image would overpower the route or force a campaign-style hero composition, reduce its prominence or move it to a later module instead of stretching it across the opening band.
+12. A real photographic slot and a synthetic placeholder are not equivalent. If the route calls for enterprise proof imagery and stock/library media is available, do not emit inline SVG fabric tableaux, abstract geometric placeholders, browser-generated diagram art, or `data:image/svg+xml` images as the final visitor-facing media module.
+
 6. If the Canonical Website Prompt includes a `Source Material Appendix`, treat it as internal generation input for preserving page content depth, not as a visitor-facing section to render.
 7. If the website is centered on one named person such as an author, founder, consultant, or executive, the homepage must first function as that person's public introduction. The hero, H1, title, and first screen should establish identity, expertise, and positioning before directing visitors into `/blog`, archives, or content categories. The blog/content route is a downstream publishing surface, not the homepage identity itself.
 8. Every page, including the homepage, must deliver substantive visitor-facing content rather than explaining the site's route choreography. Do not write copy that tells visitors where to start browsing, which route comes next, what the page's "task" is, or that one page leads into deeper content.
-9. Ban visible scaffold phrases and equivalents such as `从首页开始`, `接下来看博客`, `循序进入深内容`, `阅读入口`, `站点入口`, `首页路径`, `继续了解`, `下一步`, `this page provides`, `homepage job`, `where to start`, `start from home`, or `next step` when they explain navigation order rather than a concrete offer or action.
+9. Ban visible scaffold phrases and equivalents such as `start from the homepage`, `next read the blog`, `follow the reading path`, `reading entry`, `site entry`, `homepage route`, `continue exploring`, `next step`, `this page provides`, `homepage job`, `where to start`, or `start from home` when they explain navigation order rather than a concrete offer or action.
 10. Fallback/no-JS/deployment compatibility content is a rendering safety net only, not a content source chain. Generate visitor copy from the confirmed Canonical Website Prompt, uploaded/source material, Evidence Brief, or explicit user content. Do not reuse previously generated HTML, placeholder cards, route summaries, or template examples as source text for new homepage, Blog, or detail-page copy.
 
 #### Verified Specifics Guard (Mandatory)
@@ -281,7 +536,7 @@ Minimum deliverable priority before polish:
 6. Route aliases belong in the workflow skill policy (`skill.json`) and should be consumed by the runtime. Do not hardcode brand-specific alias tables in decision-layer TS.
 7. Formal content gate: reject generated pages whose prominent headings, hero panels, sidebars, or helper blocks explain the page structure instead of delivering visitor-facing substance. Examples of failures include "reading method", "three launch articles", "article overview", "each article has tags/read time/detail links", "this collection contains...", "fallback resources", or equivalent process/meta copy. Replace them with editorial thesis, source-backed insight, real article/resource content, or remove the block.
    - Treat reading-order and guide-the-reader phrasing as failures too, including "reading path", "start with these three articles", "what you'll find here", and "this page collects".
-8. Global page-mechanics gate: reject any page, not only Blog pages, whose visible copy explains route order or page responsibilities instead of offering content. Homepage failures include "从首页开始，循序进入深内容", "接下来看博客，内容会更具体", "阅读入口", "站点入口", "首页路径", "the homepage's job is...", "where to start", or "start from home, then read the blog".
+8. Global page-mechanics gate: reject any page, not only Blog pages, whose visible copy explains route order or page responsibilities instead of offering content. Homepage failures include "start from the homepage, then move into deeper content", "next read the blog for more detail", "reading entry", "site entry", "homepage route", "the homepage's job is...", "where to start", or "start from home, then read the blog".
    - CTA labels such as "view cases", "book a consultation", or equivalent localized actions are valid only when they point to a concrete offer, service, case, resource, or contact action. They are invalid when used as generic guide-the-reader copy.
 9. Requested-content completeness gate: if the prompt asks for a fixed number of articles/posts/resources, validate that the generated output contains the same number of readable detail targets. Each target must include full body prose with multiple paragraphs or sections. A card with only title, tags, date, excerpt, or "read more" is not a completed content item.
 10. Count-led editorial framing gate: if the prompt asks for a fixed number of articles/posts/resources, the generated page may contain that number of cards and details, but it must not turn the count itself into visitor-facing scaffold copy such as "three articles, three ways" or equivalent count-announcement prose.
@@ -417,6 +672,10 @@ i18n requirements:
 1. An EN/ZH language switch is valid only if it changes visible core copy, not merely `document.documentElement.lang` or button state.
    - A bilingual implementation is invalid if alternate-language copy or switch JavaScript exists but the visible switch control is missing.
 2. Every translatable text node in nav, heroes, CTAs, form labels, footer, and major section headings must have a stable i18n key or explicit bilingual data mapping using the exact attributes `data-i18n`, `data-i18n-zh`, and `data-i18n-en`.
+   - Corporate-b2b override: prefer stable `data-i18n` keys plus
+     `/i18n/messages.en.json` and `/i18n/messages.zh-CN.json`; do not emit
+     inline `data-i18n-zh` / `data-i18n-en` values across the final corporate
+     HTML unless a route-specific exception is explicitly required.
 3. The default language must render without JavaScript. JavaScript may enhance switching by replacing text from an in-page dictionary or generated i18n files.
 4. Switching language must preserve the current route, active nav state, form accessibility labels, and persisted language preference.
    - The shared `/script.js` must bind click handlers to the same selector used by the header control, update active/pressed state, update `html[lang]`, and persist preference.

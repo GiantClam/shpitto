@@ -34,6 +34,16 @@ describe("project-skill-loader", () => {
     expect(skill.config?.routePlanningPolicy).toBeTruthy();
   });
 
+  it("loads first-stage orchestrator and type-specific website skills", async () => {
+    const orchestrator = await loadProjectSkill("website-orchestrator");
+    const corporate = await loadProjectSkill("corporate-b2b-site");
+
+    expect(orchestrator.id).toBe("website-orchestrator");
+    expect(orchestrator.content).toContain("matching type-specific website generator skill");
+    expect(corporate.id).toBe("corporate-b2b-site");
+    expect(corporate.content).toContain("official company presence");
+  });
+
   it("loads project skills when the deployment root is apps/web", async () => {
     const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "shpitto-skill-root-"));
     const skillRoot = path.join(tmpRoot, "skills", "website-generation-workflow");
@@ -68,6 +78,7 @@ describe("project-skill-loader", () => {
     const skillIds = await getWebsiteGenerationSkillBundle();
     const bundle = await loadProjectSkillBundle(skillIds);
     expect(bundle.skills.length).toBeGreaterThanOrEqual(8);
+    expect(bundle.resolvedIds).toContain("website-orchestrator");
     expect(bundle.resolvedIds).toContain("website-generation-workflow");
     expect(bundle.resolvedIds).toContain("superpowers-brainstorming");
     expect(bundle.resolvedIds).toContain("superpowers-writing-plans");

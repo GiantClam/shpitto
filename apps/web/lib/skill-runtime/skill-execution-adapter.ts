@@ -35,6 +35,7 @@ export type SkillExecutionRoundPromptParams = {
   requiredMissing: string[];
   objective: SkillExecutionRoundObjective;
   requirementText: string;
+  analysisRequirementText?: string;
 };
 
 export type SkillExecutionValidationResult = {

@@ -1,5 +1,6 @@
 ﻿import type { AgentState } from "../agent/graph.ts";
 import { parseReferencedAssetsFromText } from "../agent/referenced-assets.ts";
+import { isBilingualRequirementText } from "./bilingual-copy-guard.ts";
 import { routePlanningPolicy } from "./route-planning-policy.ts";
 
 export type PageIntentSource =
@@ -42,9 +43,14 @@ export type LocalDecisionPlan = {
   pageIntents: PageBlueprint[];
   pageBlueprints: PageBlueprint[];
   brandHint?: string;
+  routeAuthorityMode?: RouteAuthorityMode;
 };
 
+type RouteAuthorityMode = "workflow_manifest" | "prompt_manifest" | "heuristic";
+type IntentBlueprintArchetype = "products" | "solutions" | "cases" | "contact" | "about" | "generic";
+
 function detectLocale(text: string): "zh-CN" | "en" {
+  if (isBilingualRequirementText(text)) return "en";
   return /[\u4e00-\u9fff]/.test(text) ? "zh-CN" : "en";
 }
 
@@ -68,6 +74,114 @@ function normalizeRoute(route: string): string {
     .replace(/[^a-zA-Z0-9/_-]/g, "")
     .replace(/\/$/, "")
     .toLowerCase();
+}
+
+function classifyIntentBlueprintArchetype(route: string, navLabel = ""): IntentBlueprintArchetype {
+  const normalizedRoute = normalizeRoute(route);
+  const routeOrLabel = (pattern: RegExp) => pattern.test(normalizedRoute) || pattern.test(navLabel);
+  if (routeOrLabel(/(?:^|\/)(products?|catalog|collection)(?:\/|$)|\bproducts?\b|\bcatalog\b|\bcollection\b/i)) return "products";
+  if (routeOrLabel(/(?:^|\/)(solutions?|services?|custom-solutions?)(?:\/|$)|\bsolutions?\b|\bservices?\b/i)) return "solutions";
+  if (routeOrLabel(/(?:^|\/)(cases?|portfolio|projects?)(?:\/|$)|\bcases?\b|\bportfolio\b|\bprojects?\b/i)) return "cases";
+  if (routeOrLabel(/(?:^|\/)(contact|inquiry|get-in-touch)(?:\/|$)|\bcontact\b|\binquiry\b/i)) return "contact";
+  if (routeOrLabel(/(?:^|\/)(about|company|team|profile)(?:\/|$)|\babout\b|\bcompany\b|\bteam\b|\bprofile\b/i)) return "about";
+  return "generic";
+}
+
+function buildIntentPageBlueprintPreset(
+  archetype: IntentBlueprintArchetype,
+  resolvedLabel: string,
+): Pick<PageBlueprint, "responsibility" | "contentSkeleton" | "componentMix" | "constraints"> {
+  switch (archetype) {
+    case "products":
+      return {
+        responsibility: `Product page for "${resolvedLabel}". Help visitors compare product families, shortlist relevant options, and understand what to ask for next.`,
+        contentSkeleton: [],
+        componentMix: { hero: 18, feature: 16, grid: 18, proof: 16, form: 8, cta: 24 },
+        constraints: [],
+      };
+    case "solutions":
+      return {
+        responsibility: `Solutions page for "${resolvedLabel}". Organize the page around scenarios, needs, and engagement paths rather than a generic product catalog.`,
+        contentSkeleton: [],
+        componentMix: { hero: 18, feature: 16, grid: 18, proof: 16, form: 8, cta: 24 },
+        constraints: [],
+      };
+    case "cases":
+      return {
+        responsibility: `Cases page for "${resolvedLabel}". Show evidence-shaped examples, scenario context, and outcomes without collapsing into testimonials or a generic gallery.`,
+        contentSkeleton: [],
+        componentMix: { hero: 18, feature: 16, grid: 18, proof: 16, form: 8, cta: 24 },
+        constraints: [],
+      };
+    case "contact":
+      return {
+        responsibility: `Contact page for "${resolvedLabel}". Create a conversion-focused contact surface that clarifies channels, expectations, and the next step after outreach.`,
+        contentSkeleton: [],
+        componentMix: { hero: 18, feature: 16, grid: 18, proof: 16, form: 8, cta: 24 },
+        constraints: [],
+      };
+    case "about":
+      return {
+        responsibility: `About page for "${resolvedLabel}". Establish organizational identity, operating model, process credibility, and why the team is trustworthy.`,
+        contentSkeleton: [],
+        componentMix: { hero: 18, feature: 16, grid: 18, proof: 16, form: 8, cta: 24 },
+        constraints: [],
+      };
+    default:
+      return {
+        responsibility: `Dedicated page for "${resolvedLabel}". Derive a route-specific content architecture from the confirmed prompt and source material.`,
+        contentSkeleton: [
+          "Route-specific hero introducing the page's visitor purpose",
+          "Primary content section unique to the route",
+          "Supporting proof, detail, or framework section",
+          "CTA or transition section aligned to the route's job",
+        ],
+        componentMix: { hero: 18, feature: 16, grid: 18, proof: 16, form: 8, cta: 24 },
+        constraints: [
+          "This route must not reuse a sibling page's section order or module rhythm without a clear content reason.",
+        ],
+      };
+  }
+}
+
+const BUILTIN_SEMANTIC_ROUTE_ALIASES: Array<{ route: string; keys: string[] }> = [
+  { route: "/custom-solutions", keys: ["service", "services", "capability", "capabilities", "offering", "offerings"] },
+];
+
+const GENERIC_CANONICAL_ROUTES = new Set([
+  "/",
+  "/products",
+  "/custom-solutions",
+  "/cases",
+  "/about",
+  "/contact",
+  "/blog",
+  "/news",
+  "/downloads",
+]);
+
+function getPlanningRouteAliasEntries() {
+  return [...routePlanningPolicy.routeAliases, ...BUILTIN_SEMANTIC_ROUTE_ALIASES];
+}
+
+function getCanonicalSemanticRouteAliases() {
+  return getPlanningRouteAliasEntries().filter((entry) => GENERIC_CANONICAL_ROUTES.has(normalizeRoute(entry.route)));
+}
+
+function canonicalizeSemanticRoute(route: string): string {
+  const normalized = normalizeRoute(route);
+  if (!normalized || normalized === "/") return normalized || "/";
+  const segments = normalized.replace(/^\/+|\/+$/g, "").split("/").filter(Boolean);
+  if (segments.length !== 1) return normalized;
+  const leaf = segments[0] || "";
+  const normalizedLeaf = normalizeLabelForMatching(leaf);
+  if (!normalizedLeaf) return normalized;
+
+  const aliasEntries = getCanonicalSemanticRouteAliases();
+  const matchedAlias = aliasEntries.find((entry) =>
+    entry.keys.some((key) => normalizeLabelForMatching(key) === normalizedLeaf),
+  );
+  return matchedAlias ? normalizeRoute(matchedAlias.route) : normalized;
 }
 
 function isSyntheticLocaleMirrorRoute(route: string, baseRoutes: string[]): boolean {
@@ -373,6 +487,12 @@ function extractNumberedPageLabels(requirementText: string): string[] {
   return Array.from(new Set(labels));
 }
 
+function stripUrlLikeSegments(text: string): string {
+  return String(text || "")
+    .replace(/\bhttps?:\/\/[^\s<>"')\]]+/gi, " ")
+    .replace(/\bwww\.[^\s<>"')\]]+/gi, " ");
+}
+
 function extractExplicitRoutes(requirementText: string): string[] {
   const routes: string[] = [];
   const lines = requirementText.split(/\r?\n/).map((line) => String(line || ""));
@@ -384,7 +504,8 @@ function extractExplicitRoutes(requirementText: string): string[] {
   for (const line of lines) {
     if (!lineHint.test(line)) continue;
     if (blockedLine.test(line)) continue;
-    for (const match of line.matchAll(routeRegex)) {
+    const lineWithoutUrls = stripUrlLikeSegments(line);
+    for (const match of lineWithoutUrls.matchAll(routeRegex)) {
       const route = normalizeRoute(String(match[0] || "").trim());
       if (!route || route === "/") {
         routes.push("/");
@@ -455,7 +576,7 @@ function inferDefaultAutoRoutes(requirementText: string): string[] {
 function normalizeStructuredRoutes(routes: unknown[]): string[] {
   return uniqueRoutes(
     routes
-      .map((route) => normalizeRoute(String(route || "")))
+      .map((route) => canonicalizeSemanticRoute(String(route || "")))
       .filter((route) => route && !isRoutePlanningArtifact(route)),
   );
 }
@@ -503,8 +624,12 @@ function extractPromptControlManifestRoutePlan(
   const source = String(requirementText || "");
   if (!source.includes("Prompt Control Manifest")) return extractFixedOutputFileRoutePlan(source);
 
-  const contractBlock = source.match(/Prompt Control Manifest[^\n]*[\s\S]*?```(?:json)?\s*([\s\S]*?)```/i);
-  const rawJson = String(contractBlock?.[1] || "").trim();
+  const headingMatches = Array.from(
+    source.matchAll(
+      /^###\s+Prompt Control Manifest(?:\s*\(Machine Readable\))?[^\n]*\s*(?:\r?\n)+```(?:json)?\s*([\s\S]*?)```/gim,
+    ),
+  );
+  const rawJson = String(headingMatches.at(-1)?.[1] || "").trim();
   if (!rawJson) return extractFixedOutputFileRoutePlan(source);
 
   let parsed: any;
@@ -576,15 +701,15 @@ function labelToRoute(label: string, index: number): string {
   const normalizedLabel = normalizeLabelForMatching(label);
   if (!normalizedLabel) return index === 1 ? "/" : `/page-${index}`;
 
-  const matchedAlias = routePlanningPolicy.routeAliases.find((entry) =>
+  const matchedAlias = getPlanningRouteAliasEntries().find((entry) =>
     entry.keys.some((key) => normalizedLabel.includes(normalizeLabelForMatching(key))),
   );
-  if (matchedAlias) return matchedAlias.route;
+  if (matchedAlias) return canonicalizeSemanticRoute(matchedAlias.route);
   if (normalizedLabel === "home") return "/";
 
   const slug = slugifyLabel(label);
   if (!slug) return `/page-${index}`;
-  return normalizeRoute(`/${slug}`);
+  return canonicalizeSemanticRoute(`/${slug}`);
 }
 
 function labelsToRoutes(labels: string[]): string[] {
@@ -596,7 +721,7 @@ function uniqueRoutes(routes: string[]): string[] {
   const seen = new Set<string>();
 
   for (const route of routes) {
-    const normalized = normalizeRoute(route);
+    const normalized = canonicalizeSemanticRoute(route);
     if (!normalized) continue;
     if (isRoutePlanningArtifact(normalized)) continue;
     if (isImplementationMechanicsRoute(normalized)) continue;
@@ -622,7 +747,7 @@ function routeToNavLabel(route: string, locale: "zh-CN" | "en" = "en"): string {
   const knownLabels: Record<string, { zh: string; en: string }> = {
     "/": { zh: "\u9996\u9875", en: "Home" },
     "/products": { zh: "\u4ea7\u54c1", en: "Products" },
-    "/custom-solutions": { zh: "\u65b9\u6848", en: "Solutions" },
+    "/custom-solutions": { zh: "\u65b9\u6848", en: "Custom Solutions" },
     "/cases": { zh: "\u6848\u4f8b", en: "Cases" },
     "/blog": { zh: "\u535a\u5ba2", en: "Blog" },
     "/news": { zh: "\u65b0\u95fb", en: "News" },
@@ -645,6 +770,35 @@ function routeToNavLabel(route: string, locale: "zh-CN" | "en" = "en"): string {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+function scoreNavLabelForRoute(route: string, label: string, locale: "zh-CN" | "en"): number {
+  const cleaned = cleanLabel(label);
+  const normalizedLabel = normalizeLabelForMatching(cleaned);
+  if (!normalizedLabel) return 0;
+
+  const canonicalLabel = routeToNavLabel(route, locale);
+  const normalizedCanonicalLabel = normalizeLabelForMatching(canonicalLabel);
+  const routeLeaf = normalizeLabelForMatching(String(route || "").replace(/^\/+|\/+$/g, "").split("/").pop() || "");
+
+  let score = 1;
+  if (normalizedLabel === normalizedCanonicalLabel) score += 6;
+  if (routeLeaf && normalizedLabel === routeLeaf) score += 4;
+  if (routeLeaf && normalizedLabel.includes(routeLeaf)) score += 2;
+  if (cleaned.length > canonicalLabel.length) score -= 1;
+  return score;
+}
+
+function choosePreferredNavLabel(
+  route: string,
+  existingLabel: string | undefined,
+  candidateLabel: string,
+  locale: "zh-CN" | "en",
+): string {
+  if (!existingLabel) return candidateLabel;
+  const existingScore = scoreNavLabelForRoute(route, existingLabel, locale);
+  const candidateScore = scoreNavLabelForRoute(route, candidateLabel, locale);
+  return candidateScore > existingScore ? candidateLabel : existingLabel;
 }
 
 function orderNavigationRoutes(routes: string[]): string[] {
@@ -902,6 +1056,12 @@ function findPageBriefStart(text: string, index: number, sourceStart: number): n
   return Math.max(sourceStart, Math.max(0, index - 120));
 }
 
+function hasExplicitIbmCarbonHomepageIntent(text: string): boolean {
+  const normalized = String(text || "");
+  if (!normalized) return false;
+  return /(?:\bIBM\b|\bCarbon\b)/i.test(normalized);
+}
+
 export function extractRouteSourceBrief(
   requirementText: string,
   route: string,
@@ -1031,6 +1191,7 @@ function buildPageBlueprint(
   }
   if (normalizedRoute === "/") {
     const purpose = "Homepage. Establish the brand overview, core value, primary route entry, and next action while preserving site home-entry semantics.";
+    const prefersIbmCarbonEnterpriseHome = hasExplicitIbmCarbonHomepageIntent(evidence || "");
     return {
       route: normalizedRoute,
       navLabel: resolvedLabel,
@@ -1040,17 +1201,28 @@ function buildPageBlueprint(
       constraints: [
         "Canonical Website Prompt remains authoritative for brand voice, audience, language, and visual direction.",
         "Do not reframe the homepage as a downloads hub, certification portal, or login page.",
-        "Use a clear hero, overview, proof, and CTA rhythm; do not copy a downstream inner page layout.",
+        prefersIbmCarbonEnterpriseHome
+          ? "Use an enterprise homepage rhythm: image-backed enterprise hero, compact proof row, capability band, and direct CTA. Do not default to a split hero, empty right rail, lifestyle rail, founder landing page, or editorial promo layout."
+          : "Use a clear hero, overview, proof, and CTA rhythm; do not copy a downstream inner page layout.",
       ],
       pageKind: "home",
       responsibility: purpose,
-      contentSkeleton: [
-        "Brand-led hero establishing the site home entry",
-        "Core value or capability overview with distinct supporting cards",
-        "Evidence, standards, or proof section that reinforces the site mission",
-        "Primary CTA to the most important next step",
-      ],
-      componentMix: { hero: 30, feature: 25, grid: 15, proof: 20, form: 0, cta: 10 },
+      contentSkeleton: prefersIbmCarbonEnterpriseHome
+        ? [
+            "Image-backed enterprise hero with overlay copy establishing the company offer, buyer relevance, and a direct action without a split hero or empty side rail",
+            "Compact proof row with standards, export readiness, or buyer-facing trust signals",
+            "Capability band or modular overview that frames products, service model, or manufacturing strengths",
+            "Primary CTA strip to the most important next step",
+          ]
+        : [
+            "Brand-led hero establishing the site home entry",
+            "Core value or capability overview with distinct supporting cards",
+            "Evidence, standards, or proof section that reinforces the site mission",
+            "Primary CTA to the most important next step",
+          ],
+      componentMix: prefersIbmCarbonEnterpriseHome
+        ? { hero: 10, feature: 20, grid: 30, proof: 30, form: 0, cta: 10 }
+        : { hero: 30, feature: 25, grid: 15, proof: 20, form: 0, cta: 10 },
     };
   }
   if (isSearchDirectoryRoute(normalizedRoute, resolvedLabel)) {
@@ -1087,6 +1259,7 @@ function buildPageBlueprint(
     "The page must be meaningfully distinct from sibling pages in section purpose, headings, content, and layout.",
     "Navigation links must stay within the fixed route list and preserve the configured navigation order.",
   ];
+  const intentPreset = buildIntentPageBlueprintPreset(classifyIntentBlueprintArchetype(normalizedRoute, resolvedLabel), resolvedLabel);
 
   return {
     route: normalizedRoute,
@@ -1094,11 +1267,11 @@ function buildPageBlueprint(
     purpose,
     source,
     evidence,
-    constraints,
+    constraints: [...constraints, ...intentPreset.constraints],
     pageKind: "intent",
-    responsibility: purpose,
-    contentSkeleton: [],
-    componentMix: { ...EMPTY_COMPONENT_MIX },
+    responsibility: intentPreset.responsibility,
+    contentSkeleton: intentPreset.contentSkeleton,
+    componentMix: intentPreset.componentMix,
   };
 }
 
@@ -1112,12 +1285,19 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
     workflowContractPlan.routes.length > 0 ? { routes: [], navLabels: [] } : extractPromptControlManifestRoutePlan(requirementText, locale);
   const workflowContractRoutes = workflowContractPlan.routes;
   const contractRoutes = workflowContractRoutes.length > 0 ? workflowContractRoutes : promptContractPlan.routes;
+  const routeAuthorityMode: RouteAuthorityMode =
+    workflowContractRoutes.length > 0
+      ? "workflow_manifest"
+      : promptContractPlan.routes.length > 0
+        ? "prompt_manifest"
+        : "heuristic";
+  const hasAuthoritativeRoutePlan = routeAuthorityMode !== "heuristic";
   const explicitRoutes = extractExplicitRoutes(requirementText).filter((route) => !isRoutePlanningArtifact(route));
   const hasExplicitRoutePlan = explicitRoutes.length > 0;
   const singlePageRoutes =
-    contractRoutes.length > 0 || hasExplicitRoutePlan ? [] : hasExplicitSinglePageIntent(requirementText) ? ["/"] : [];
+    hasAuthoritativeRoutePlan || hasExplicitRoutePlan ? [] : hasExplicitSinglePageIntent(requirementText) ? ["/"] : [];
   const specRoutes =
-    contractRoutes.length > 0 || hasExplicitRoutePlan || singlePageRoutes.length > 0
+    hasAuthoritativeRoutePlan || hasExplicitRoutePlan || singlePageRoutes.length > 0
       ? []
       : extractRequirementSpecRoutes(state, requirementText);
   const navLabels = extractNavLabels(requirementText);
@@ -1144,7 +1324,7 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
   const candidates = hasExplicitRoutePlan ? explicitRoutes : [...stateRoutes, ...labelRoutes, ...explicitRoutes];
   const plannedFallback = candidates.length === 0 && hasAutoPagePlanningIntent(requirementText) ? inferDefaultAutoRoutes(requirementText) : [];
   const baseRoutes =
-    contractRoutes.length > 0
+    hasAuthoritativeRoutePlan
       ? contractRoutes
       : hasExplicitRoutePlan
           ? explicitRoutes
@@ -1155,12 +1335,14 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
             : candidates.length > 0
               ? candidates
               : plannedFallback;
-  const withHome = baseRoutes.some((route) => normalizeRoute(route) === "/") ? baseRoutes : ["/", ...baseRoutes];
-  const withSystemRoutes = ensureBlogRoute(withHome.length > 0 ? withHome : ["/"], {
-    singlePage: singlePageRoutes.length > 0,
-    requirementText,
-  });
-  const routes = orderNavigationRoutes(withSystemRoutes).slice(0, 16);
+  const homeAnchoredRoutes = baseRoutes.some((route) => normalizeRoute(route) === "/") ? baseRoutes : ["/", ...baseRoutes];
+  const preOrderedRoutes = hasAuthoritativeRoutePlan
+    ? baseRoutes
+    : ensureBlogRoute(homeAnchoredRoutes.length > 0 ? homeAnchoredRoutes : ["/"], {
+        singlePage: singlePageRoutes.length > 0,
+        requirementText,
+      });
+  const routes = orderNavigationRoutes(preOrderedRoutes).slice(0, 16);
 
   const labelMap = new Map<string, string>();
   const structuredNavLabels =
@@ -1170,28 +1352,31 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
         ? promptContractPlan.navLabels
         : [];
   const structuredRoutes = workflowContractRoutes.length > 0 ? workflowContractRoutes : promptContractPlan.routes;
+  const structuredLabelRoutes = new Set<string>();
   for (let i = 0; i < structuredRoutes.length; i += 1) {
-    const route = normalizeRoute(structuredRoutes[i]);
+    const route = canonicalizeSemanticRoute(structuredRoutes[i]);
     const label = String(structuredNavLabels[i] || "").trim();
-    if (route && label && !labelMap.has(route)) {
-      labelMap.set(route, label);
+    if (route && label) {
+      labelMap.set(route, choosePreferredNavLabel(route, labelMap.get(route), label, locale));
+      structuredLabelRoutes.add(route);
     }
   }
   if (!hasExplicitRoutePlan) {
     for (let i = 0; i < mergedLabels.length; i += 1) {
       const label = String(mergedLabels[i] || "").trim();
-      const mappedRoute = normalizeRoute(labelToRoute(label, i + 1));
-      if (label && mappedRoute && !labelMap.has(mappedRoute)) {
-        labelMap.set(mappedRoute, label);
+      const mappedRoute = canonicalizeSemanticRoute(labelToRoute(label, i + 1));
+      if (structuredLabelRoutes.has(mappedRoute)) continue;
+      if (label && mappedRoute) {
+        labelMap.set(mappedRoute, choosePreferredNavLabel(mappedRoute, labelMap.get(mappedRoute), label, locale));
       }
     }
   }
 
   const normalizedNavLabels = routes.map((route) => labelMap.get(route) || routeToNavLabel(route, locale));
   const pageIntentSource: PageIntentSource =
-    workflowContractRoutes.length > 0
+    routeAuthorityMode === "workflow_manifest"
       ? "workflow_contract"
-      : contractRoutes.length > 0
+      : routeAuthorityMode === "prompt_manifest"
         ? "prompt_contract"
         : hasExplicitRoutePlan
             ? "explicit_route"
@@ -1209,7 +1394,7 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
                       ? "auto_plan"
                       : "default";
   const pageBlueprints = routes.map((route, index) =>
-    buildPageBlueprint(route, locale, normalizedNavLabels[index], pageIntentSource, requirementText.slice(0, 800)),
+    buildPageBlueprint(route, locale, normalizedNavLabels[index], pageIntentSource, requirementText),
   );
 
   return {
@@ -1220,6 +1405,7 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
     pageIntents: pageBlueprints,
     pageBlueprints,
     brandHint: extractBrandHint(requirementText),
+    routeAuthorityMode,
   };
 }
 

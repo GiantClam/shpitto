@@ -4,6 +4,7 @@ import {
   renderProjectSkillResourceIndex,
   resolveProjectSkillAlias,
   WEBSITE_GENERATION_SKILL_BUNDLE,
+  WEBSITE_GENERATION_TYPE_SKILL_IDS,
   type ProjectSkillDescriptor,
 } from "./project-skill-loader.ts";
 import { renderWebsiteSkillMetadataPrompt } from "./od-skill-metadata.ts";
@@ -207,7 +208,12 @@ function assertValidOutputPath(rawPath: string): string {
 
 async function loadAllowedWebsiteSkill(skillId: string): Promise<ProjectSkillDescriptor> {
   const skill = await loadProjectSkill(skillId);
-  const allowSet = new Set((await getWebsiteGenerationSkillBundle()).map((id) => resolveProjectSkillAlias(id)));
+  const allowSet = new Set(
+    [
+      ...(await getWebsiteGenerationSkillBundle()),
+      ...WEBSITE_GENERATION_TYPE_SKILL_IDS,
+    ].map((id) => resolveProjectSkillAlias(id)),
+  );
   if (!allowSet.has(skill.id) && skill.websiteMetadata?.mode !== "website") {
     throw new Error(`skill "${skill.id}" is not allowed in website generation bundle.`);
   }

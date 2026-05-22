@@ -31,6 +31,19 @@ describe("skill-tool-registry", () => {
     }
   });
 
+  it("loads first-stage type-specific website skill content", async () => {
+    const result = await handleSkillToolCall(
+      { name: "load_skill", args: { skill_id: "corporate-b2b-site" } },
+      { loadedSkills: new Map(), maxSkillChars: 1200 },
+    );
+
+    expect(result.kind).toBe("skill");
+    if (result.kind === "skill") {
+      expect(result.skillId).toBe("corporate-b2b-site");
+      expect(result.toolResult).toContain("Corporate B2B Site");
+    }
+  });
+
   it("locks the workflow load_skill payload prefix with a snapshot", async () => {
     const result = await handleSkillToolCall(
       { name: "load_skill", args: { skill_id: "website-generation-workflow" } },

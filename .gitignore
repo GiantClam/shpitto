@@ -63,5 +63,5 @@ docs
 .gstack/*
 .playwright-cli/
 output/
-docs/
+docs/*
 test-results/

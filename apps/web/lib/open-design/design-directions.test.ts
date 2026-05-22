@@ -54,6 +54,21 @@ describe("recommendWebsiteDesignDirections", () => {
     expect(results.slice(0, 2).map((item) => item.direction.id)).not.toContain("modern-minimal");
   });
 
+  it("prefers industrial b2b over warm heritage defaults for company procurement sites", () => {
+    const results = recommendWebsiteDesignDirections({
+      siteType: "company",
+      targetAudience: ["enterprise_buyers", "manufacturer", "buyers"],
+      primaryGoal: ["brand_trust", "product_showcase", "lead_generation"],
+      contentSources: ["existing_domain"],
+      designTheme: ["warm"],
+      customNotes:
+        "Textile B2B supplier for procurement teams with ISO9001, ISO14001, SMETA, BSCI, OEKO-TEX, GRS, catalog comparison, and custom production support.",
+    });
+
+    expect(results[0]?.direction.id).toBe("industrial-b2b");
+    expect(results.slice(0, 2).map((item) => item.direction.id)).not.toContain("warm-soft");
+  });
+
   it("suppresses warm brand themes when technical utility signals dominate", () => {
     const results = recommendWebsiteDesignDirections({
       siteType: "landing",

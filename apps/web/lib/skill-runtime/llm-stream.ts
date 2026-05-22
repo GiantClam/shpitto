@@ -65,6 +65,10 @@ export async function invokeModelWithIdleTimeout(params: {
   const controller = new AbortController();
   let timer: NodeJS.Timeout | null = null;
   let timedOut = false;
+  let timeoutReject: ((error: Error) => void) | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutReject = (error) => reject(error);
+  });
   const resetTimer = () => {
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => {
@@ -72,6 +76,7 @@ export async function invokeModelWithIdleTimeout(params: {
       try {
         controller.abort(timeoutErrorText);
       } catch {}
+      timeoutReject?.(new Error(timeoutErrorText));
     }, idleTimeoutMs);
   };
 
@@ -96,48 +101,55 @@ export async function invokeModelWithIdleTimeout(params: {
   let mergedAdditional: Record<string, any> | undefined;
   let mergedToolCalls: any[] = [];
 
-  try {
-    resetTimer();
-    const stream = await model.stream(messages, { signal: controller.signal });
-    for await (const chunk of stream as any) {
-      // Idle timeout is based on last token/chunk arrival, not initial request time.
+  const consumePromise = (async (): Promise<AIMessage> => {
+    try {
       resetTimer();
-      const piece = toChunkText((chunk as any)?.content);
-      if (piece) textParts.push(piece);
-      if ((chunk as any)?.response_metadata) {
-        mergedResponseMeta = {
-          ...(mergedResponseMeta || {}),
-          ...((chunk as any).response_metadata || {}),
-        };
+      const stream = await model.stream(messages, { signal: controller.signal });
+      for await (const chunk of stream as any) {
+        // Idle timeout is based on last token/chunk arrival, not initial request time.
+        resetTimer();
+        const piece = toChunkText((chunk as any)?.content);
+        if (piece) textParts.push(piece);
+        if ((chunk as any)?.response_metadata) {
+          mergedResponseMeta = {
+            ...(mergedResponseMeta || {}),
+            ...((chunk as any).response_metadata || {}),
+          };
+        }
+        if ((chunk as any)?.additional_kwargs) {
+          mergedAdditional = mergeAdditionalKwargs(mergedAdditional, (chunk as any).additional_kwargs);
+        }
+        if (Array.isArray((chunk as any)?.tool_calls) && (chunk as any).tool_calls.length > 0) {
+          mergedToolCalls = dedupeToolCalls([...mergedToolCalls, ...(chunk as any).tool_calls]);
+        }
+        if (Array.isArray((chunk as any)?.additional_kwargs?.tool_calls) && (chunk as any).additional_kwargs.tool_calls.length > 0) {
+          mergedToolCalls = dedupeToolCalls([...mergedToolCalls, ...(chunk as any).additional_kwargs.tool_calls]);
+        }
       }
-      if ((chunk as any)?.additional_kwargs) {
-        mergedAdditional = mergeAdditionalKwargs(mergedAdditional, (chunk as any).additional_kwargs);
+    } catch (error: any) {
+      if (timedOut) throw new Error(timeoutErrorText);
+      const msg = String(error?.message || error || "");
+      if (/aborted|aborterror|signal/i.test(msg) && timedOut) {
+        throw new Error(timeoutErrorText);
       }
-      if (Array.isArray((chunk as any)?.tool_calls) && (chunk as any).tool_calls.length > 0) {
-        mergedToolCalls = dedupeToolCalls([...mergedToolCalls, ...(chunk as any).tool_calls]);
-      }
-      if (Array.isArray((chunk as any)?.additional_kwargs?.tool_calls) && (chunk as any).additional_kwargs.tool_calls.length > 0) {
-        mergedToolCalls = dedupeToolCalls([...mergedToolCalls, ...(chunk as any).additional_kwargs.tool_calls]);
-      }
+      throw error;
     }
-  } catch (error: any) {
-    if (timedOut) throw new Error(timeoutErrorText);
-    const msg = String(error?.message || error || "");
-    if (/aborted|aborterror|signal/i.test(msg) && timedOut) {
-      throw new Error(timeoutErrorText);
+
+    const messagePayload: any = {
+      content: textParts.join(""),
+      ...(mergedResponseMeta ? { response_metadata: mergedResponseMeta } : {}),
+      ...(mergedAdditional ? { additional_kwargs: mergedAdditional } : {}),
+    };
+    if (mergedToolCalls.length > 0) {
+      messagePayload.tool_calls = mergedToolCalls;
     }
-    throw error;
+    return new AIMessage(messagePayload);
+  })();
+
+  try {
+    return await Promise.race([consumePromise, timeoutPromise]);
   } finally {
     if (timer) clearTimeout(timer);
+    void consumePromise.catch(() => undefined);
   }
-
-  const messagePayload: any = {
-    content: textParts.join(""),
-    ...(mergedResponseMeta ? { response_metadata: mergedResponseMeta } : {}),
-    ...(mergedAdditional ? { additional_kwargs: mergedAdditional } : {}),
-  };
-  if (mergedToolCalls.length > 0) {
-    messagePayload.tool_calls = mergedToolCalls;
-  }
-  return new AIMessage(messagePayload);
 }

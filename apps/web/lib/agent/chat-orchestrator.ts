@@ -156,6 +156,17 @@ export type RequiredSlotValidation = {
   nextSlot?: RequirementSlot;
 };
 
+export type UserInputSufficiency = {
+  score: number;
+  sufficient: boolean;
+  missing: Array<
+    "site_type" | "audience" | "primary_goal" | "page_structure" | "business_facts" | "content_source"
+  >;
+  hasExplicitUrl: boolean;
+  hasUploadedAssets: boolean;
+  canAutoPlanPages: boolean;
+};
+
 export const REQUIREMENT_FORM_HEADER = "[Requirement Form]";
 
 const SUPPORTED_FUNCTIONAL_REQUIREMENT_LABELS: Record<string, string> = {
@@ -181,6 +192,24 @@ const UNSUPPORTED_FUNCTIONAL_REQUIREMENT_PATTERN =
 
 function normalizeText(value: string): string {
   return String(value || "").trim();
+}
+
+function stripUrlLikeSegments(text: string): string {
+  return String(text || "")
+    .replace(/\bhttps?:\/\/[^\s<>"')\]]+/gi, " ")
+    .replace(/\bwww\.[^\s<>"')\]]+/gi, " ");
+}
+
+function isInvalidBrandCandidate(value: string): boolean {
+  const normalized = normalizeText(value)
+    .replace(/^["'`]+|["'`]+$/g, "")
+    .trim()
+    .toLowerCase();
+  if (!normalized) return true;
+  if (/^(?:https?|www|httpwww|httpswww)$/i.test(normalized)) return true;
+  if (/^(?:https?:\/\/|www\.)/i.test(normalized)) return true;
+  if (/[/.]/.test(normalized) && /\.[a-z]{2,}$/i.test(normalized)) return true;
+  return false;
 }
 
 function containsCjk(text: string): boolean {
@@ -209,6 +238,66 @@ function containsAny(text: string, patterns: RegExp[]): string | undefined {
 
 function toLower(value: string): string {
   return normalizeText(value).toLowerCase();
+}
+
+function hasExplicitUrlSignal(text: string): boolean {
+  return /\bhttps?:\/\/[^\s<>"')\]]+|\bwww\.[^\s<>"')\]]+/i.test(String(text || ""));
+}
+
+function hasBusinessFactsSignal(spec: RequirementSpec, text: string): boolean {
+  if (normalizeText(spec.brand || "")) return true;
+  if (normalizeText(spec.businessContext || "").length >= 24) return true;
+  if (normalizeText(spec.customNotes || "").length >= 24) return true;
+  if ((spec.contentModules || []).length >= 2) return true;
+  const raw = normalizeText(text);
+  if (!raw) return false;
+  const significantTokens =
+    raw.match(/\b[A-Z][A-Z0-9&+/-]{1,}\b/g) ||
+    raw.match(/\b(?:product|products|service|services|solution|solutions|factory|manufacturer|certification|industry|brand|company)\b/gi) ||
+    [];
+  return significantTokens.length >= 3 || raw.length >= 160;
+}
+
+export function assessUserInputSufficiency(
+  text: string,
+  spec: RequirementSpec,
+  referencedAssets?: string[],
+): UserInputSufficiency {
+  const missing: UserInputSufficiency["missing"] = [];
+  const hasExplicitUrl = hasExplicitUrlSignal(text);
+  const hasUploadedAssets = (referencedAssets || []).length > 0;
+  const pageCount = new Set([...(spec.pages || []), ...(spec.pageStructure?.pages || [])].filter(Boolean)).size;
+  const canAutoPlanPages = Boolean(spec.pageStructure?.mode === "multi" && spec.pageStructure?.planning === "auto");
+  const hasPageStructure = pageCount > 0 || canAutoPlanPages;
+  const hasBusinessFacts = hasBusinessFactsSignal(spec, text);
+  const hasContentSource =
+    hasExplicitUrl ||
+    hasUploadedAssets ||
+    (spec.contentSources || []).length > 0 ||
+    /(?:existing[_ -]?domain|uploaded[_ -]?files|industry[_ -]?research)/i.test(String(text || ""));
+
+  let score = 0;
+  if (spec.siteType) score += 1;
+  else missing.push("site_type");
+  if ((spec.targetAudience || []).length > 0) score += 1;
+  else missing.push("audience");
+  if ((spec.primaryGoal || []).length > 0) score += 1;
+  else missing.push("primary_goal");
+  if (hasPageStructure) score += 1;
+  else missing.push("page_structure");
+  if (hasBusinessFacts) score += 1;
+  else missing.push("business_facts");
+  if (hasContentSource) score += 1;
+  else missing.push("content_source");
+
+  return {
+    score,
+    sufficient: score >= 5,
+    missing,
+    hasExplicitUrl,
+    hasUploadedAssets,
+    canAutoPlanPages,
+  };
 }
 
 function unique(values: string[], limit = 12): string[] {
@@ -686,8 +775,31 @@ function extractStandaloneChinesePageKeywords(text: string): string[] {
   return matches;
 }
 
+function isUrlArtifactPageToken(value: string): boolean {
+  const normalized = normalizeText(value)
+    .replace(/^\/+|\/+$/g, "")
+    .trim()
+    .toLowerCase();
+  if (!normalized) return false;
+  return /^(?:www|http|https)$/i.test(normalized) || /^(?:www\.)/.test(normalized);
+}
+
+function extractLabeledSlashRoutes(text: string): string[] {
+  const lines = String(text || "")
+    .split(/\r?\n/)
+    .map((line) => normalizeText(line))
+    .filter(Boolean);
+  const routeLines = lines.filter((line) =>
+    /^(?:pages?|page list|routes?|sitemap|页面|导航|页面结构)\s*[:：]/i.test(line),
+  );
+  return routeLines.flatMap((line) =>
+    Array.from(line.matchAll(/\/[a-zA-Z0-9][a-zA-Z0-9/_-]{0,60}/g)).map((match) => match[0]),
+  );
+}
+
 function extractRequirementFieldsFromText(text: string): ExtractedRequirementFields {
   const raw = normalizeText(text);
+  const rawWithoutUrls = stripUrlLikeSegments(raw);
   const form = parseRequirementFormFromText(raw).formValues;
   const startsWithNonBrandLabel = /^\s*(?:pages?|page list|routes?|sitemap|页面|导航|audience|target audience|客户|目标受众|用户|style|visual|视觉|风格|配色|cta|actions|按钮|转化动作|language|语言|tone|语气|modules?|sections?|内容模块|模块)\s*[:：]/i.test(
     raw,
@@ -705,30 +817,35 @@ function extractRequirementFieldsFromText(text: string): ExtractedRequirementFie
             : /活动页|event/i.test(raw)
               ? "event"
               : undefined);
-  const brand =
+  const brandCandidate =
     extractLabelValue(raw, ["brand", "品牌", "公司", "company", "name", "名称"]) ||
     raw.match(/(?:for|给|为)\s*([A-Za-z][A-Za-z0-9 _-]{1,48})\s*(?:build|create|generate|做|生成|官网|网站)/i)?.[1]?.trim() ||
     (!startsWithNonBrandLabel
       ? raw.match(/\b([A-Z][A-Z0-9-]{2,32})\b(?:\s+(?:website|site|官网|网站))?/i)?.[1]?.trim()
       : undefined);
+  const brand = brandCandidate && !isInvalidBrandCandidate(brandCandidate) ? brandCandidate : undefined;
   const pages = unique([
     ...(form?.pageStructure?.pages || []),
     ...extractDelimitedList(raw, ["pages", "page list", "routes", "sitemap", "页面", "导航", "页面结构"]),
-    ...Array.from(raw.matchAll(/\/[a-zA-Z0-9][a-zA-Z0-9/_-]{0,60}/g)).map((match) => match[0]),
+    ...extractLabeledSlashRoutes(rawWithoutUrls),
     ...Array.from(
-      raw.matchAll(
+      rawWithoutUrls.matchAll(
         /\b(home|about|products?|services?|solutions?|cases?|contact|news|blog|downloads?|pricing)\b/gi,
       ),
     ).map((match) => match[1]),
-    ...extractStandaloneChinesePageKeywords(raw),
+    ...extractStandaloneChinesePageKeywords(rawWithoutUrls),
   ]);
   const wantsAutoPageStructure = /自动生成页面结构|自动规划页面|自动页面结构|帮我规划页面|auto(?:matically)? generate (?:the )?(?:page structure|sitemap)|auto(?:matic)? sitemap/i.test(raw);
   const pageStructure =
     form?.pageStructure ||
     (wantsAutoPageStructure
       ? { mode: "multi" as const, planning: "auto" as const }
-      : pages.length > 0
-        ? { mode: pages.length > 1 ? "multi" as const : "single" as const, planning: "manual" as const, pages }
+      : unique(pages.filter((page) => !isUrlArtifactPageToken(page))).length > 0
+        ? {
+            mode: unique(pages.filter((page) => !isUrlArtifactPageToken(page))).length > 1 ? "multi" as const : "single" as const,
+            planning: "manual" as const,
+            pages: unique(pages.filter((page) => !isUrlArtifactPageToken(page))),
+          }
         : undefined);
   const visualStyle = unique([
     ...(form?.secondaryVisualTags || []),
@@ -838,7 +955,14 @@ function extractRequirementFieldsFromText(text: string): ExtractedRequirementFie
 function resolveVisualDirectionDecision(
   spec: Pick<
     RequirementSpec,
-    "siteType" | "targetAudience" | "primaryGoal" | "contentSources" | "visualStyle" | "functionalRequirements" | "customNotes"
+    | "siteType"
+    | "targetAudience"
+    | "primaryGoal"
+    | "contentSources"
+    | "visualStyle"
+    | "functionalRequirements"
+    | "customNotes"
+    | "businessContext"
   >,
   formValues?: RequirementFormValues,
 ): VisualDirectionDecision {
@@ -863,7 +987,7 @@ function resolveVisualDirectionDecision(
     contentSources: spec.contentSources,
     designTheme: nonDirectionalTags,
     functionalRequirements: spec.functionalRequirements,
-    customNotes: spec.customNotes,
+    customNotes: [spec.businessContext, spec.customNotes].filter(Boolean).join(" | "),
   });
   const recommendation = recommendations[0];
   if (recommendation) {

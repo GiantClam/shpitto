@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import path from "node:path";
 
 export function confirmGenerate(text: string) {
   return `__SHP_CONFIRM_GENERATE__\n${text}`;
@@ -43,6 +44,116 @@ export function parsePromptControlManifest(prompt: string): { routes: string[]; 
     }
   }
   return null;
+}
+
+export function rewriteCanonicalPromptToHomepageOnly(prompt: string) {
+  const normalized = String(prompt || "").trim();
+  if (!normalized) return normalized;
+  const homepageManifest = {
+    schemaVersion: 1,
+    promptKind: "canonical_website_prompt",
+    routeSource: "prompt_draft_page_plan",
+    routes: ["/"],
+    navLabels: ["Home"],
+    files: ["/styles.css", "/script.js", "/index.html", "/i18n/messages.en.json", "/i18n/messages.zh-CN.json"],
+  };
+
+  return normalized.replace(/```json\s*([\s\S]*?)```/i, () => `\`\`\`json\n${JSON.stringify(homepageManifest, null, 2)}\n\`\`\``);
+}
+
+export function rewriteCanonicalPromptWithForcedDesignTemplate(prompt: string, templateSlug: string) {
+  const normalized = String(prompt || "").trim();
+  const slug = String(templateSlug || "").trim().toLowerCase();
+  if (!normalized || !slug) return normalized;
+
+  const styleInstructionBySlug: Record<string, { instruction: string; replacements: Array<[RegExp, string]> }> = {
+    ibm: {
+      instruction: [
+        "Visual style override: Use the IBM enterprise technology design language as the primary template reference.",
+        "Follow a Carbon-like layout posture: structured enterprise masthead, modular content bands, restrained motion, data-forward hierarchy, and a trustworthy blue/white technology palette.",
+        "Do not use editorial, artisan, lifestyle, boutique, or personal-site hero treatments.",
+      ].join("\n"),
+      replacements: [
+        [
+          /(^|\n)(-\s*Primary visual direction:\s*).+?(?=\n|$)/i,
+          `$1$2IBM enterprise technology / Carbon`,
+        ],
+        [
+          /(^|\n)(-\s*Secondary visual tags:\s*).+?(?=\n|$)/i,
+          `$1$2structured, precise, trustworthy, procurement-ready`,
+        ],
+        [
+          /(^|\n)(-\s*Design theme:\s*).+?(?=\n|$)/i,
+          `$1$2IBM enterprise technology / Carbon`,
+        ],
+      ],
+    },
+  };
+
+  const config = styleInstructionBySlug[slug];
+  if (!config) return normalized;
+
+  let rewritten = normalized;
+  for (const [pattern, replacement] of config.replacements) {
+    rewritten = rewritten.replace(pattern, replacement);
+  }
+  if (!rewritten.includes(config.instruction)) {
+    rewritten = `${rewritten}\n\n## Forced Design Template\n${config.instruction}`;
+  }
+  return rewritten;
+}
+
+export function applyForcedDesignTemplateToReplayInputState(inputState: any, templateSlug: string, canonicalPrompt?: string) {
+  const slug = String(templateSlug || "").trim().toLowerCase();
+  if (!inputState || !slug) return inputState;
+
+  const nextState = JSON.parse(JSON.stringify(inputState || {}));
+  const canonical = String(canonicalPrompt || "").trim();
+  const workflow = ((nextState.workflow_context || {}) as Record<string, any>);
+
+  if (slug === "ibm") {
+    workflow.templateStyleId = "ibm";
+    delete workflow.primaryVisualDirection;
+    delete workflow.secondaryVisualTags;
+    delete workflow.visualDecisionSource;
+    delete workflow.lockPrimaryVisualDirection;
+
+    if (workflow.requirementSpec && typeof workflow.requirementSpec === "object") {
+      delete workflow.requirementSpec.primaryVisualDirection;
+      delete workflow.requirementSpec.secondaryVisualTags;
+      delete workflow.requirementSpec.visualDecisionSource;
+    }
+
+    workflow.preferredLocale = "en";
+    workflow.latestUserText = String(canonical || workflow.latestUserText || "").trim();
+    workflow.latestUserTextRaw = String(canonical || workflow.latestUserTextRaw || "").trim();
+    workflow.sourceRequirement = String(canonical || workflow.sourceRequirement || "").trim();
+    workflow.canonicalPrompt = String(canonical || workflow.canonicalPrompt || "").trim();
+    workflow.requirementAggregatedText = String(canonical || workflow.requirementAggregatedText || "").trim();
+    delete workflow.selectionCriteria;
+    delete workflow.sequentialWorkflow;
+    delete workflow.workflowGuide;
+    delete workflow.rulesSummary;
+    delete workflow.designMd;
+    delete workflow.stylePreset;
+    delete workflow.designSystemId;
+    delete workflow.designSystemName;
+    delete workflow.designSelectionReason;
+    delete nextState.design_hit;
+
+    if (canonical) {
+      nextState.messages = [
+        {
+          role: "user",
+          content: canonical,
+          type: "human",
+        },
+      ];
+    }
+  }
+
+  nextState.workflow_context = workflow;
+  return nextState;
 }
 
 function isPollutedReplayCanonicalPrompt(text: string) {
@@ -171,4 +282,43 @@ export async function loadGeneratedProject(task: any) {
     source: "task-artifact-snapshot",
     checkpointProjectPath,
   };
+}
+
+function extractCanonicalPromptFromFindings(text: string) {
+  const normalized = String(text || "").trim();
+  const marker = "# Canonical Website Generation Prompt";
+  const index = normalized.indexOf(marker);
+  if (index < 0) return "";
+  return normalized.slice(index).trim();
+}
+
+export async function loadLatestLocalReplayCanonicalPrompt(prefix: string) {
+  const root = path.resolve(process.cwd(), ".tmp", "chat-tasks");
+  const entries = await fs.readdir(root, { withFileTypes: true }).catch(() => []);
+  const candidates = entries
+    .filter((entry) => entry.isDirectory() && entry.name.startsWith(prefix))
+    .map((entry) => entry.name)
+    .sort()
+    .reverse();
+
+  for (const candidate of candidates) {
+    const candidateRoot = path.join(root, candidate);
+    const taskDirs = await fs.readdir(candidateRoot, { withFileTypes: true }).catch(() => []);
+    for (const taskDir of taskDirs.filter((entry) => entry.isDirectory()).map((entry) => entry.name)) {
+      const findingsPath = path.join(candidateRoot, taskDir, "latest", "workflow", "findings.md");
+      const findingsText = await fs.readFile(findingsPath, "utf8").catch(() => "");
+      const canonicalPrompt = extractCanonicalPromptFromFindings(findingsText);
+      if (canonicalPrompt) {
+        return {
+          canonicalPrompt,
+          findingsPath,
+          replayRoot: candidateRoot,
+          taskId: taskDir,
+          source: "local-replay-artifact" as const,
+        };
+      }
+    }
+  }
+
+  return null;
 }

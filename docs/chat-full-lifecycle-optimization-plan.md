@@ -748,3 +748,71 @@
 3. 用户未选主主题时，系统可用推荐器或 `prompt-adaptive` 推断默认方向。
 4. 同一请求的最终模板来源必须可解释：是用户显式选定、系统推荐默认，还是 runtime 自适应推断。
 5. 整个收敛方案不新增确认步骤，不新增中间卡片，不改变当前轻量交互节奏。
+
+### 17.11 Harness 治理补充：这层约束是给 Codex 的，不是给 runtime 的
+
+这里补充的 harness 目标，是约束 **Codex 打开当前仓库后的行为**，而不是把一套新机制继续塞进 `apps/web/lib/skill-runtime/**`。
+
+也就是说：
+
+1. harness 的主要载体应是仓库级 `AGENTS.md`
+2. 必要时配合 `.codex/skills/**` 和项目文档
+3. 它负责约束“先看哪一层、先改哪一层、何时禁止直接补 runtime”
+4. 它不应该默认演化成 runtime 内部的 root-cause router、repair registry 或额外执行器逻辑
+
+### 17.12 Codex 打开项目时必须遵守的 source-first 顺序
+
+当 Codex 处理网站生成问题时，默认修复顺序应为：
+
+1. `Requirement / canonical prompt / website_design_spec`
+2. `apps/web/skills/**` 下的 skill contract、prompt、`skill.json`
+3. orchestrator / selector / policy
+4. `apps/web/lib/skill-runtime/**`
+5. 生成产物级局部 tweak
+
+这条顺序的目的，是避免把本应由 skill/spec/policy 解决的问题，长期沉到底层 runtime。
+
+### 17.13 默认视为“上游合同问题”的问题类型
+
+以下问题，Codex 默认应先检查 skill/spec/policy，而不是直接改 runtime：
+
+1. 网站类型判断错误
+2. 首页 opening topology 错误
+3. route intent / section cadence 不对
+4. shared shell / nav / footer 漂移
+5. bilingual visible copy 泄漏
+6. content mechanics leak（把 fallback / implementation 术语暴露给访客）
+
+只有当问题明确属于以下范围时，才应优先视为 runtime 缺陷：
+
+1. preview / deploy 路径解析
+2. 文件物化与路径写入
+3. script/style 注入
+4. executor round control / retry / tool wiring
+5. checkpoint / replay 装载缺陷
+
+### 17.14 仓库级落点
+
+这套 Codex harness 的落点建议固定为：
+
+1. `AGENTS.md`
+   - 项目打开时的第一层约束入口
+2. `.codex/skills/project-harness/SKILL.md`
+   - 显式 source-first 工作流说明
+3. `docs/codex-harness-engineering.md`
+   - 详细规则与 owner 判断参考
+
+这样做的好处是：
+
+1. 约束直接作用于 Codex
+2. 规则与应用 runtime 解耦
+3. 后续换模型或换 CLI，也仍能复用同一套仓库级治理语义
+
+### 17.15 验收标准
+
+这层 harness 是否生效，不看 runtime 里多了多少 repair 逻辑，而看 Codex 是否做到：
+
+1. 修问题前先判断 owner layer
+2. 修改 runtime 前先检查 skill/spec/policy
+3. 报告里能说明为什么这次该改源头，还是该改执行器
+4. 对一次性页面 tweak，能明确收敛在 artifact scope，不污染长期合同

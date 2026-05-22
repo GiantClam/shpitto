@@ -208,6 +208,32 @@ type AssetListResponse = {
   error?: string;
 };
 
+type BillingQuotaSnapshot = {
+  allowed?: boolean;
+  reason?: string;
+  usedSites?: number;
+  siteLimit?: number;
+};
+
+type BillingEntitlementSnapshot = {
+  status?: string;
+  siteLimit?: number;
+};
+
+type BillingEntitlementResponse = {
+  ok: boolean;
+  paidBillingEnabled?: boolean;
+  entitlement?: BillingEntitlementSnapshot | null;
+  usedSites?: number;
+  quota?: BillingQuotaSnapshot;
+  error?: string;
+};
+
+type BillingCtaState = {
+  href: string;
+  label: string;
+};
+
 type ProjectDomainRecord = {
   id: string;
   projectId: string;
@@ -426,6 +452,11 @@ const CHAT_CARD_COPY: Record<RequirementFormLocale, Record<string, string>> = {
     deploying: "正在部署网站",
     generatingPrefix: "正在生成",
     processingPrefix: "正在处理",
+    billingBlocked: "当前账号额度不足或套餐不可用，请前往付费页面查看额度并升级后再继续。",
+    billingQuotaExceeded: "当前账号的网站额度已用完（{usedSites}/{siteLimit}）。请前往付费页面升级后再继续生成。",
+    billingExpired: "当前套餐已过期、欠费或处于保留期。请前往付费页面续费或升级后再继续。",
+    billingCancelled: "当前套餐已取消。请前往付费页面购买或升级后再继续。",
+    billingCta: "前往付费页面",
   },
   en: {
     promptDraftExpand: "Prompt Draft (click to expand)",
@@ -481,8 +512,63 @@ const CHAT_CARD_COPY: Record<RequirementFormLocale, Record<string, string>> = {
     deploying: "Deploying website",
     generatingPrefix: "Generating ",
     processingPrefix: "Processing ",
+    billingBlocked: "This account cannot continue because its quota or billing status blocks new work. Visit billing to review quota and upgrade.",
+    billingQuotaExceeded: "This account has reached its website quota ({usedSites}/{siteLimit}). Visit billing to upgrade before generating again.",
+    billingExpired: "This plan is expired, past due, or in retention. Visit billing to renew or upgrade before continuing.",
+    billingCancelled: "This plan is cancelled. Visit billing to purchase or upgrade before continuing.",
+    billingCta: "Open Billing",
   },
 };
+
+function formatCopyTemplate(template: string, values: Record<string, string | number>) {
+  return Object.entries(values).reduce(
+    (text, [key, value]) => text.replace(new RegExp(`\\{${key}\\}`, "g"), String(value)),
+    template,
+  );
+}
+
+function extractStreamErrorText(responseText: string): string | null {
+  const trimmed = String(responseText || "").trim();
+  if (!trimmed) return null;
+
+  const match = trimmed.match(/"errorText"\s*:\s*"((?:\\.|[^"])*)"/);
+  if (!match) return null;
+
+  try {
+    const parsed = JSON.parse(`"${match[1]}"`);
+    return String(parsed || "").trim() || null;
+  } catch {
+    return String(match[1] || "").trim() || null;
+  }
+}
+
+async function resolveBillingBlockedMessage(locale: RequirementFormLocale): Promise<string> {
+  const copy = CHAT_CARD_COPY[locale];
+
+  try {
+    const res = await fetch("/api/billing/entitlement", { cache: "no-store" });
+    const data = (await res.json()) as BillingEntitlementResponse;
+    if (!res.ok || !data.ok) return copy.billingBlocked;
+
+    const quota = data.quota || {};
+    const usedSites = Number(data.usedSites ?? quota.usedSites ?? 0);
+    const siteLimit = Number(data.entitlement?.siteLimit ?? quota.siteLimit ?? 0);
+
+    if (quota.reason === "quota_exceeded" && siteLimit > 0) {
+      return formatCopyTemplate(copy.billingQuotaExceeded, { usedSites, siteLimit });
+    }
+    if (quota.reason === "past_due" || quota.reason === "expired" || data.entitlement?.status === "past_due" || data.entitlement?.status === "expired") {
+      return copy.billingExpired;
+    }
+    if (quota.reason === "cancelled" || data.entitlement?.status === "cancelled") {
+      return copy.billingCancelled;
+    }
+  } catch {
+    // Fall back to a generic billing message if the snapshot cannot be loaded.
+  }
+
+  return copy.billingBlocked;
+}
 
 const REQUIREMENT_FORM_COPY: Record<RequirementFormLocale, Record<string, string>> = {
   zh: {
@@ -2840,6 +2926,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
   const [submitting, setSubmitting] = useState(false);
   const [loadingTask, setLoadingTask] = useState(false);
   const [error, setError] = useState("");
+  const [billingCta, setBillingCta] = useState<BillingCtaState | null>(null);
   const [task, setTask] = useState<TaskPayload | null>(null);
   const [previewTask, setPreviewTask] = useState<TaskPayload | null>(null);
   const [taskEvents, setTaskEvents] = useState<TaskEvent[]>([]);
@@ -3144,6 +3231,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
     let cancelled = false;
     setLoadingTask(true);
     setError("");
+    setBillingCta(null);
     setTask(null);
     setPreviewTask(null);
     setTaskEvents([]);
@@ -3360,6 +3448,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
       }
 
       setError("");
+      setBillingCta(null);
       setSubmitting(true);
       setLoadingTask(true);
       setAssetPickerOpen(false);
@@ -3397,9 +3486,15 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
             }),
           });
 
-        await res.text();
+        const responseText = await res.text();
         if (!res.ok && res.status !== 202 && res.status !== 200) {
-          throw new Error(`Chat API request failed with status ${res.status}`);
+          if (res.status === 402) {
+            setBillingCta({ href: "/account/billing", label: submitCopy.billingCta });
+            throw new Error(await resolveBillingBlockedMessage(submitLocale));
+          }
+
+          const responseMessage = extractStreamErrorText(responseText);
+          throw new Error(responseMessage || `Chat API request failed with status ${res.status}`);
         }
 
         const latestHistory = await fetchHistoryByChatId(chatId);
@@ -3479,6 +3574,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
     if (creatingProject) return;
     setCreatingProject(true);
     setError("");
+    setBillingCta(null);
     try {
       const res = await fetch("/api/chat/sessions", {
         method: "POST",
@@ -3529,6 +3625,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
     if (!selected.length) return [];
     if (addToPending) setAssetPickerOpen(true);
     setError("");
+    setBillingCta(null);
     try {
       const form = new FormData();
       form.append("source", "chat_upload");
@@ -4081,7 +4178,19 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
               </div>
               <p className="text-[11px] text-[var(--shp-muted)]">{workspaceCopy.chat.sendHint}</p>
               {loadingTask ? <p className="text-xs text-[var(--shp-primary)]">{workspaceCopy.chat.syncing}</p> : null}
-              {error ? <p className="text-xs text-rose-700">{error}</p> : null}
+              {error ? (
+                <div className="flex flex-wrap items-center gap-3">
+                  <p className="text-xs text-rose-700">{error}</p>
+                  {billingCta ? (
+                    <Link
+                      href={billingCta.href}
+                      className="inline-flex items-center rounded-full border border-[color-mix(in_oklab,var(--shp-primary)_48%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_12%,transparent)] px-3 py-1 text-[11px] font-semibold text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_18%,transparent)]"
+                    >
+                      {billingCta.label}
+                    </Link>
+                  ) : null}
+                </div>
+              ) : null}
             </form>
           </aside>
 

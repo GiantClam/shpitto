@@ -10,9 +10,11 @@ import {
 
 describe("workflow artifact language sanitizer", () => {
   it("keeps normalized Unicode punctuation in English-safe workflow text", () => {
-    const input = "Apple’s design — precise, confident, and unapologetically direct… Layout flow: desktop → mobile.";
+    const input = "Apple’s design — precise, confident, and unapologetically direct. Layout flow: desktop → mobile.";
     const normalized = normalizeWorkflowArtifactToEnglishSafe(input);
-    expect(normalized).toBe("Apple’s design — precise, confident, and unapologetically direct… Layout flow: desktop → mobile.");
+    expect(normalized).toBe(
+      "Apple’s design — precise, confident, and unapologetically direct. Layout flow: desktop → mobile.",
+    );
     expect(isWorkflowArtifactEnglishSafe(normalized)).toBe(true);
     expect(containsWorkflowCjk(normalized)).toBe(false);
     expect(containsWorkflowEncodingNoise(normalized)).toBe(false);
@@ -20,7 +22,7 @@ describe("workflow artifact language sanitizer", () => {
   });
 
   it("repairs common mojibake punctuation into canonical Unicode punctuation", () => {
-    const input = "dark sections feel immersive 鈥?light sections feel open";
+    const input = "dark sections feel immersive â€” light sections feel open";
     expect(containsWorkflowEncodingNoise(input)).toBe(true);
     expect(isWorkflowArtifactEnglishSafe(input)).toBe(false);
     const normalized = normalizeWorkflowArtifactToEnglishSafe(input);
@@ -35,8 +37,10 @@ describe("workflow artifact language sanitizer", () => {
   });
 
   it("rejects arbitrary non-whitelisted Unicode symbols", () => {
-    expect(isWorkflowArtifactEnglishSafe("Launch status ✓")).toBe(false);
-    expect(containsWorkflowUnknownUnsafeChars("Launch status ✓")).toBe(true);
-    expect(sanitizeWorkflowArtifactText("Launch status ✓", "Launch status available.")).toBe("Launch status available.");
+    expect(isWorkflowArtifactEnglishSafe("Launch status ✅")).toBe(false);
+    expect(containsWorkflowUnknownUnsafeChars("Launch status ✅")).toBe(true);
+    expect(sanitizeWorkflowArtifactText("Launch status ✅", "Launch status available.")).toBe(
+      "Launch status available.",
+    );
   });
 });

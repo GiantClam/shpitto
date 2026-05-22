@@ -4,6 +4,7 @@ This repository bundles project-local skills under `.codex/skills`.
 
 Installed:
 - planning-with-files
+- project-harness
 - superpowers (aggregated entrypoint)
 - superpowers-brainstorming
 - superpowers-writing-plans

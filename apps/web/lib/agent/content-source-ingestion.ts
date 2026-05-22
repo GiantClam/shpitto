@@ -20,9 +20,16 @@ import {
   sanitizeWorkflowArtifactList,
   sanitizeWorkflowArtifactText,
 } from "../workflow-artifact-language.ts";
+import {
+  CONTENT_INGESTION_AUDIENCE_RE,
+  CONTENT_INGESTION_DIFFERENTIATOR_RE,
+  CONTENT_INGESTION_FALLBACK_SIGNAL_RE,
+  CONTENT_INGESTION_OFFERING_RE,
+  CONTENT_INGESTION_PROOF_RE,
+} from "./content-source-ingestion-keywords.ts";
 
 export type WebsiteKnowledgeSource = {
-  type: "domain" | "web_search" | "uploaded_file" | "user_input";
+  type: "domain" | "url_page" | "web_search" | "uploaded_file" | "user_input";
   title: string;
   url?: string;
   fileName?: string;
@@ -48,6 +55,9 @@ export type WebsiteKnowledgeProfile = {
     title: string;
     purpose: string;
     contentInputs: string[];
+    sourceKind?: "structural_source" | "requirement_spec" | "fallback";
+    confidence?: number;
+    extractionReason?: string;
   }>;
   contentGaps: string[];
   summary: string;
@@ -78,6 +88,13 @@ export type WebsiteEvidenceBrief = {
   assumptions: string[];
 };
 
+export type KnowledgeProfileEnrichmentOptions = {
+  useDomainSources?: boolean;
+  useExplicitUrlSources?: boolean;
+  useUploadedSources?: boolean;
+  useWebSearch?: boolean;
+};
+
 type AssetReference = {
   key?: string;
   fileName?: string;
@@ -96,7 +113,7 @@ function normalizeText(value: unknown): string {
 
 function isPlaceholderBrandValue(value: string): boolean {
   const normalized = normalizeText(value)
-    .replace(/^[:：-]+|[:：-]+$/g, "")
+    .replace(/^[:锛?]+|[:锛?]+$/g, "")
     .trim()
     .toLowerCase();
   if (!normalized) return true;
@@ -190,7 +207,7 @@ function buildFallbackBusinessSignals(text: string, limit: number): string[] {
   const patterns = [
     /\b(?:AI|DevOps|SaaS|K12|CTO|CEO|CPO|VP|GM|Huawei|WeChat|HelloTalk)\b/gi,
     /(?:\d+\+?\s*(?:schools?|countries?|users?)|\d+%\s*(?:-|to)\s*\d+%|\d+%-\d+%)/gi,
-    /(?:个人简历网站|个人经历|职业履历亮点|全球化进程奠基者|研发体系变革专家|科技创业生态建设者|数字人创作平台|商业价值跃升)/gu,
+    CONTENT_INGESTION_FALLBACK_SIGNAL_RE,
   ];
   for (const pattern of patterns) {
     for (const match of source.matchAll(pattern)) {
@@ -265,6 +282,9 @@ function buildSuggestedPagesFromRequirementSpec(spec: RequirementSpec, facts: st
         title: derivePageTitleFromSpecToken(page),
         purpose: derivePagePurposeFromSpec(page, spec),
         contentInputs,
+        sourceKind: "requirement_spec",
+        confidence: 0.78,
+        extractionReason: "Derived from explicit page structure supplied in the confirmed requirement.",
       };
     });
   }
@@ -276,12 +296,18 @@ function buildSuggestedPagesFromRequirementSpec(spec: RequirementSpec, facts: st
         title: "Home",
         purpose: "Introduce the founder's positioning, key leadership chapters, AI direction, and concrete proof signals.",
         contentInputs,
+        sourceKind: "fallback",
+        confidence: 0.68,
+        extractionReason: "Default portfolio home page inferred from site type.",
       },
       {
         route: "/blog",
         title: "Blog",
         purpose: "Publish three opinionated blog entries distilled from the founder's career experience and operating principles.",
         contentInputs,
+        sourceKind: "fallback",
+        confidence: 0.68,
+        extractionReason: "Default portfolio blog page inferred from site type.",
       },
     ];
   }
@@ -295,14 +321,14 @@ function inferBrandFromText(text: string): string | undefined {
   if (leadingVerb) {
     return undefined;
   }
-  if (/(?:logo\s+source|logo\s+strategy|brandlogo|text wordmark|generated temporary text logo|品牌文字标识|暂无\s*logo)/i.test(source)) {
+  if (/(?:logo\s+source|logo\s+strategy|brandlogo|text wordmark|generated temporary text logo|\u54c1\u724c\u6587\u5b57\u6807\u8bc6|\u6682\u65e0\s*logo)/i.test(source)) {
     return undefined;
   }
   const blockedBrand = /^(?:logo|text[_ -]?mark|wordmark|site|website|blog)$/i;
   const patterns = [
-    /(?:named|called|brand(?:\s+name)?|company(?:\s+name)?|organization(?:\s+name)?)\s*[:：]?\s*["“”']?([A-Z][A-Z0-9_-]{2,30})["“”']?/i,
-    /(?:名为|名称为|品牌名为|机构名为|公司名为|一个名为)\s*["“”']?([A-Z][A-Z0-9_-]{2,30})["“”']?/u,
-    /["“”']([A-Z][A-Z0-9_-]{2,30})["“”']\s*[（(][^）)]{0,80}[）)]/u,
+    /(?:named|called|brand(?:\s+name)?|company(?:\s+name)?|organization(?:\s+name)?)\s*[:\uFF1A]?\s*["\u201C\u201D']?([A-Z][A-Z0-9_-]{2,30})["\u201C\u201D']?/i,
+    /(?:\u540d\u4e3a|\u540d\u79f0\u4e3a|\u54c1\u724c\u540d\u4e3a|\u673a\u6784\u540d\u4e3a|\u516c\u53f8\u540d\u4e3a|\u4e00\u4e2a\u540d\u4e3a)\s*["\u201C\u201D']?([A-Z][A-Z0-9_-]{2,30})["\u201C\u201D']?/u,
+    /["\u201C\u201D']([A-Z][A-Z0-9_-]{2,30})["\u201C\u201D']\s*[\uFF08(][^\uFF09)]{0,80}[\uFF09)]/u,
   ];
   for (const pattern of patterns) {
     const match = source.match(pattern);
@@ -335,11 +361,11 @@ function normalizeLabelForMatching(label: string): string {
 
 function cleanPageLabel(raw: string): string {
   return String(raw || "")
-    .replace(/^\s*(?:[-*•+]|\d+[.)])\s+/, "")
+    .replace(/^\s*(?:[-*?+]|\d+[.)])\s+/, "")
     .replace(/\s*(?:page|\u9875\u9762)\s*$/iu, "")
-    .replace(/\s*[（(][^）)]*[）)]\s*$/g, "")
-    .replace(/[.,;:!?。！？；：]+$/g, "")
-    .replace(/^["“”'`]+|["“”'`]+$/g, "")
+    .replace(/\s*[?(][^?)]*[?)]\s*$/g, "")
+    .replace(/[.,;:!??????]+$/g, "")
+    .replace(/^["??'`]+|["??'`]+$/g, "")
     .trim();
 }
 
@@ -437,6 +463,88 @@ function isUnsupportedGeneratedPageLabel(label: string): boolean {
   return /(authcodeerror|autherror|\u8ba4\u8bc1\u9519\u8bef)/iu.test(normalized);
 }
 
+function isKnownShortPageLabel(normalized: string): boolean {
+  return [
+    "home",
+    "about",
+    "contact",
+    "blog",
+    "news",
+    "faq",
+    "pricing",
+    "login",
+    "register",
+  ].includes(normalized);
+}
+
+function scoreSuggestedPageCandidate(page: SuggestedPage): number {
+  const normalizedTitle = normalizeLabelForMatching(page.title);
+  const routeLeaf = String(page.route || "/")
+    .replace(/^\/+|\/+$/g, "")
+    .split("/")
+    .filter(Boolean)
+    .pop() || "";
+  const normalizedRouteLeaf = normalizeLabelForMatching(routeLeaf);
+
+  if (page.route === "/") return 10;
+
+  let score = 0;
+
+  const matchesKnownAlias = DOCUMENT_PAGE_ROUTE_ALIASES.some((entry) =>
+    entry.keys.some((key) => {
+      const normalizedKey = normalizeLabelForMatching(key);
+      return normalizedTitle === normalizedKey || normalizedRouteLeaf === normalizedKey;
+    }),
+  );
+  if (matchesKnownAlias) score += 4;
+
+  if (/[\u4e00-\u9fff]/.test(page.title) || /\s/.test(page.title)) score += 2;
+  if (normalizedRouteLeaf.length >= 5) score += 2;
+  if (normalizedTitle.length >= 5) score += 1;
+
+  if (/[\\/]/.test(page.title)) score -= 3;
+  if (/^(?:\d+|[a-z]{1,2})$/i.test(normalizedRouteLeaf) && !isKnownShortPageLabel(normalizedTitle)) score -= 4;
+  if (/^(?:\d+|[a-z]{1,2})$/i.test(normalizedTitle) && !isKnownShortPageLabel(normalizedTitle)) score -= 4;
+  if (/(?:whatsapp|wechat|telegram|line|email|phone|qq|skype|odm|oem|tt|payment|quote)$/i.test(normalizedRouteLeaf)) score -= 5;
+  if (/(?:whatsapp|wechat|telegram|line|email|phone|qq|skype|odm|oem|tt|payment|quote)$/i.test(normalizedTitle)) score -= 5;
+
+  return score;
+}
+
+function confidenceFromSuggestedPageScore(score: number): number {
+  if (score >= 10) return 0.99;
+  if (score >= 8) return 0.95;
+  if (score >= 6) return 0.9;
+  if (score >= 4) return 0.82;
+  if (score >= 2) return 0.72;
+  return 0.4;
+}
+
+function filterStructuredSuggestedPages(pages: SuggestedPage[]): { pages: SuggestedPage[]; gaps: string[] } {
+  const accepted: SuggestedPage[] = [];
+  const gaps: string[] = [];
+
+  for (const page of pages) {
+    const score = scoreSuggestedPageCandidate(page);
+    if (score < 2) {
+      gaps.push(
+        `Ignored low-confidence source page candidate "${page.title}" (${page.route}) because it did not look like a stable visitor-facing page.`,
+      );
+      continue;
+    }
+    accepted.push({
+      ...page,
+      sourceKind: page.sourceKind || "structural_source",
+      confidence: page.confidence ?? confidenceFromSuggestedPageScore(score),
+      extractionReason:
+        page.extractionReason ||
+        "Derived from explicit navigation or stable structural labels in uploaded/domain source material.",
+    });
+  }
+
+  return { pages: accepted, gaps };
+}
+
 function splitExplicitNavLabels(line: string): string[] {
   const source = String(line || "").trim();
   if (!source.includes("|")) return [];
@@ -455,7 +563,7 @@ function extractDocumentSuggestedPages(text: string): { pages: SuggestedPage[]; 
   const navHint =
     /(nav|navigation|\u4e3b\u5bfc\u822a|\u9876\u90e8\u5bfc\u822a|\u5bfc\u822a\u83dc\u5355|\u4e3b\u5bfc\u822a\u83dc\u5355)/iu;
   const inlineNavMatch = source.match(
-    /(?:nav|navigation|\u4e3b\u5bfc\u822a|\u9876\u90e8\u5bfc\u822a|\u5bfc\u822a\u83dc\u5355|\u4e3b\u5bfc\u822a\u83dc\u5355)[^:：]{0,40}[:：]\s*([\s\S]{1,800}?)(?:\s+-\s*(?:\u53f3\u4e0a\u89d2|right)|\s+【|\n|$)/iu,
+    /(?:nav|navigation|\u4e3b\u5bfc\u822a|\u9876\u90e8\u5bfc\u822a|\u5bfc\u822a\u83dc\u5355|\u4e3b\u5bfc\u822a\u83dc\u5355)[^:?]{0,40}[:?]\s*([\s\S]{1,800}?)(?:\s+-\s*(?:\u53f3\u4e0a\u89d2|right)|\s+?|\n|$)/iu,
   );
   if (inlineNavMatch?.[1]?.includes("|")) {
     labels.push(...splitExplicitNavLabels(inlineNavMatch[1]));
@@ -489,17 +597,52 @@ function extractDocumentSuggestedPages(text: string): { pages: SuggestedPage[]; 
     }
     const route = dedupeDocumentRoute(routeFromDocumentPageLabel(label, pages.length), pages.length, seenRoutes);
     if (!route) continue;
-    pages.push({
+    const candidate = {
       route,
       title: label,
       purpose: `Build the ${label} page from the uploaded source document, preserving its source-defined role and content modules.`,
       contentInputs: [label, "uploaded source document"],
-    });
+      sourceKind: "structural_source" as const,
+    };
+    if (scoreSuggestedPageCandidate(candidate) < 2) {
+      gaps.push(
+        `Ignored low-confidence source page candidate "${candidate.title}" (${candidate.route}) because it did not look like a stable visitor-facing page.`,
+      );
+      continue;
+    }
+    pages.push(candidate);
   }
 
   return {
     pages: pages.length >= 2 ? pages.slice(0, 16) : [],
     gaps,
+  };
+}
+
+function extractSuggestedPagesFromStructuralSources(
+  sources: WebsiteKnowledgeSource[],
+): { pages: SuggestedPage[]; gaps: string[] } {
+  const gaps: string[] = [];
+  const mergedPages: SuggestedPage[] = [];
+  const usedRoutes = new Set<string>();
+
+  for (const source of sources) {
+    const extracted = extractDocumentSuggestedPages(source.snippet || "");
+    gaps.push(...extracted.gaps);
+    for (const page of extracted.pages) {
+      const route = dedupeDocumentRoute(page.route, mergedPages.length, usedRoutes);
+      if (!route) continue;
+      mergedPages.push({
+        ...page,
+        route,
+      });
+    }
+  }
+
+  const filtered = filterStructuredSuggestedPages(mergedPages);
+  return {
+    pages: filtered.pages.slice(0, 16),
+    gaps: [...gaps, ...filtered.gaps],
   };
 }
 
@@ -539,6 +682,109 @@ export function extractDomainsFromRequirement(requirementText: string): string[]
   return domains.slice(0, 3);
 }
 
+function trimUrlTrailingPunctuation(value: string): string {
+  return String(value || "").replace(/[),.;:!?]+$/g, "");
+}
+
+function trimLikelyNaturalLanguageSuffixFromUrl(value: string): string {
+  const normalized = trimUrlTrailingPunctuation(value);
+  const firstCjkIndex = normalized.search(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u);
+  if (firstCjkIndex <= 0) return normalized;
+  const candidate = trimUrlTrailingPunctuation(normalized.slice(0, firstCjkIndex));
+  if (!candidate) return normalized;
+  const reparsed = safeUrl(/^https?:\/\//i.test(candidate) ? candidate : `https://${candidate}`);
+  return reparsed ? candidate : normalized;
+}
+
+function looksLikeHtmlPageUrl(url: URL): boolean {
+  if (!/^https?:$/i.test(url.protocol)) return false;
+  const blockedExtensions = /\.(?:pdf|docx?|pptx?|xlsx?|zip|rar|7z|png|jpe?g|gif|svg|webp|css|js|json|xml|txt)$/i;
+  return !blockedExtensions.test(url.pathname || "");
+}
+
+export function extractExplicitUrlsFromRequirement(requirementText: string): string[] {
+  const matches =
+    String(requirementText || "").match(/\bhttps?:\/\/[^\s<>"')\]]+|\bwww\.[^\s<>"')\]]+/gi) || [];
+  const seen = new Set<string>();
+  const urls: string[] = [];
+  for (const match of matches) {
+    const raw = trimLikelyNaturalLanguageSuffixFromUrl(match);
+    const normalized = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    const parsed = safeUrl(normalized);
+    if (!parsed || !looksLikeHtmlPageUrl(parsed)) continue;
+    const key = parsed.toString().toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    urls.push(parsed.toString());
+  }
+  return urls.slice(0, 4);
+}
+
+function extractVisibleNavLabels(html: string): string[] {
+  const labels = new Set<string>();
+  for (const match of String(html || "").matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/gi)) {
+    const label = normalizeText(String(match[1] || "").replace(/<[^>]+>/g, " "));
+    if (!label || label.length > 36) continue;
+    if (/^(?:learn more|read more|contact|quote|download|next|prev|more)$/i.test(label)) continue;
+    labels.add(label);
+    if (labels.size >= 8) break;
+  }
+  return Array.from(labels);
+}
+
+function extractVisibleHeadingOutline(html: string): string[] {
+  const headings = new Set<string>();
+  for (const match of String(html || "").matchAll(/<(h1|h2|h3)\b[^>]*>([\s\S]*?)<\/\1>/gi)) {
+    const heading = normalizeText(String(match[2] || "").replace(/<[^>]+>/g, " "));
+    if (!heading || heading.length > 120) continue;
+    headings.add(heading);
+    if (headings.size >= 6) break;
+  }
+  return Array.from(headings);
+}
+
+function buildUrlPageSnippet(url: string, html: string): string {
+  const parsed = htmlToText(html);
+  const navLabels = extractVisibleNavLabels(html);
+  const headings = extractVisibleHeadingOutline(html);
+  const urlObj = safeUrl(url);
+  const routeLabel = urlObj?.pathname && urlObj.pathname !== "/" ? `Source page: ${urlObj.pathname}` : "Source page: homepage";
+  return [
+    routeLabel,
+    parsed.title ? `Title: ${parsed.title}` : "",
+    parsed.description ? `Description: ${parsed.description}` : "",
+    navLabels.length > 0 ? `Main navigation: ${navLabels.join(" | ")}` : "",
+    headings.length > 0 ? `Heading outline: ${headings.join(" > ")}` : "",
+    parsed.text,
+  ]
+    .filter(Boolean)
+    .join("\n")
+    .trim()
+    .slice(0, 1600);
+}
+
+async function collectExplicitUrlPageSources(params: {
+  urls: string[];
+  timeoutMs: number;
+}): Promise<WebsiteKnowledgeSource[]> {
+  const sources: WebsiteKnowledgeSource[] = [];
+  for (const url of params.urls) {
+    const html = await fetchTextWithTimeout(url, Math.max(3000, Math.min(8000, params.timeoutMs)));
+    if (!html) continue;
+    const parsed = htmlToText(html);
+    const snippet = buildUrlPageSnippet(url, html);
+    if (!snippet) continue;
+    sources.push({
+      type: "url_page",
+      title: parsed.title || safeUrl(url)?.hostname || url,
+      url,
+      snippet,
+      confidence: 0.96,
+    });
+  }
+  return sources;
+}
+
 function stripFencedBlocks(text: string): string {
   return String(text || "").replace(/```[\s\S]*?```/g, " ");
 }
@@ -561,7 +807,7 @@ export function resolveWebSearchQueryBudget(requirementText: string, configured?
   }
   const domains = extractDomainsFromRequirement(requirementText);
   if (domains.length > 0) return 6;
-  if (/行业资料|industry research|竞品|competitor|同类机构|research/i.test(requirementText)) return 5;
+  if (/琛屼笟璧勬枡|industry research|绔炲搧|competitor|鍚岀被鏈烘瀯|research/i.test(requirementText)) return 5;
   return 3;
 }
 
@@ -890,7 +1136,7 @@ async function collectUploadedFileSources(params: {
 
 function extractBulletCandidates(text: string, patterns: RegExp[], limit: number): string[] {
   const sentences = normalizeText(text)
-    .split(/(?<=[.!?。！？；;])\s+|[。！？；;]\s*/g)
+    .split(/(?<=[.!?銆傦紒锛燂紱;])\s+|[銆傦紒锛燂紱;]\s*/g)
     .map((item) => normalizeText(item))
     .filter(Boolean);
   const hits = sentences.filter((sentence) => patterns.some((pattern) => pattern.test(sentence)));
@@ -924,7 +1170,7 @@ function buildUserInputSource(requirementText: string): WebsiteKnowledgeSource |
 }
 
 function inferSourceMode(domains: string[], uploadedCount: number, requirementText: string): WebsiteKnowledgeProfile["sourceMode"] {
-  const newSite = /new website|new site|新建站|没有资料|暂无内容|from scratch/i.test(requirementText);
+  const newSite = /new website|new site|鏂板缓绔檤娌℃湁璧勬枡|鏆傛棤鍐呭|from scratch/i.test(requirementText);
   if (domains.length > 0 && uploadedCount > 0) return "mixed";
   if (domains.length > 0) return "domain";
   if (uploadedCount > 0) return "uploaded_files";
@@ -949,18 +1195,17 @@ function buildKnowledgeProfileLegacy(params: {
   const brand =
     uploadedTextBrand ||
     inferBrandFromText(params.requirementText) ||
-    params.requirementText.match(/(?:brand|company|name|品牌|公司|机构|名称)\s*[:：]\s*([^\n,，。]+)/i)?.[1] ||
+    params.requirementText.match(/(?:brand|company|name|\u54c1\u724c|\u516c\u53f8|\u673a\u6784|\u540d\u79f0)\s*[:\uFF1A=]?\s*([^\n,\uFF0C\u3002]+)/i)?.[1] ||
     uploadedBrand ||
     reliableSources.find((source) => source.type === "domain" || source.type === "uploaded_file")?.title ||
     params.domains[0];
-  const audience = extractBulletCandidates(combined, [/audience|customer|parent|buyer|用户|客户|家长|受众/i], 5);
-  const offerings = extractBulletCandidates(combined, [/service|product|solution|course|assessment|research|服务|产品|课程|评估|研究/i], 6);
-  const differentiators = extractBulletCandidates(combined, [/unique|advantage|differenti|certif|expert|优势|差异|认证|专业|可信/i], 5);
-  const proofPoints = extractBulletCandidates(combined, [/case|client|data|sample|certif|result|案例|客户|数据|样本|资质|成果/i], 5);
+  const audience = extractBulletCandidates(combined, [CONTENT_INGESTION_AUDIENCE_RE], 5);
+  const offerings = extractBulletCandidates(combined, [CONTENT_INGESTION_OFFERING_RE], 6);
+  const differentiators = extractBulletCandidates(combined, [CONTENT_INGESTION_DIFFERENTIATOR_RE], 5);
+  const proofPoints = extractBulletCandidates(combined, [CONTENT_INGESTION_PROOF_RE], 5);
   const gaps = [...params.contentGaps];
-  const explicitPagePlan = extractDocumentSuggestedPages(
-    [params.requirementText, ...uploadedSources.map((source) => source.snippet || "")].join("\n"),
-  );
+  const structuralSources = params.sources.filter((source) => source.type === "uploaded_file" || source.type === "url_page");
+  const explicitPagePlan = extractSuggestedPagesFromStructuralSources(structuralSources);
   gaps.push(...explicitPagePlan.gaps);
   if (params.sources.length === 0) gaps.push("No external or uploaded content source was available; prompt draft must mark business details as assumptions.");
   if (offerings.length === 0) gaps.push("Offerings/services are still thin; ask the user for 3-5 concrete products or services.");
@@ -987,11 +1232,11 @@ function buildKnowledgeProfileLegacy(params: {
       explicitPagePlan.pages.length > 0
         ? explicitPagePlan.pages
         : [
-            { route: "/", title: "Home", purpose: "Explain positioning and route visitors to proof, offerings, and contact.", contentInputs: offerings.slice(0, 3) },
-            { route: "/about", title: "About", purpose: "Build trust with organization background and credentials.", contentInputs: differentiators.slice(0, 3) },
-            { route: "/products", title: "Products or Services", purpose: "Present concrete offerings with scannable details.", contentInputs: offerings.slice(0, 5) },
-            { route: "/cases", title: "Cases or Insights", purpose: "Show proof, outcomes, research, and stories.", contentInputs: proofPoints.slice(0, 5) },
-            { route: "/contact", title: "Contact", purpose: "Capture leads and inquiries.", contentInputs: audience.slice(0, 3) },
+            { route: "/", title: "Home", purpose: "Explain positioning and route visitors to proof, offerings, and contact.", contentInputs: offerings.slice(0, 3), sourceKind: "fallback", confidence: 0.66, extractionReason: "Default company page inferred because no stronger source-defined plan was available." },
+            { route: "/about", title: "About", purpose: "Build trust with organization background and credentials.", contentInputs: differentiators.slice(0, 3), sourceKind: "fallback", confidence: 0.66, extractionReason: "Default company page inferred because no stronger source-defined plan was available." },
+            { route: "/products", title: "Products or Services", purpose: "Present concrete offerings with scannable details.", contentInputs: offerings.slice(0, 5), sourceKind: "fallback", confidence: 0.66, extractionReason: "Default company page inferred because no stronger source-defined plan was available." },
+            { route: "/cases", title: "Cases or Insights", purpose: "Show proof, outcomes, research, and stories.", contentInputs: proofPoints.slice(0, 5), sourceKind: "fallback", confidence: 0.66, extractionReason: "Default company page inferred because no stronger source-defined plan was available." },
+            { route: "/contact", title: "Contact", purpose: "Capture leads and inquiries.", contentInputs: audience.slice(0, 3), sourceKind: "fallback", confidence: 0.66, extractionReason: "Default company page inferred because no stronger source-defined plan was available." },
           ],
     contentGaps: Array.from(new Set(gaps)).slice(0, 8),
     summary: summarySources
@@ -1038,35 +1283,34 @@ function buildKnowledgeProfile(params: {
   const audience = uniqueBriefItems(
     [
       ...(requirementSpec.targetAudience || []),
-      ...extractBulletCandidates(combined, [/audience|customer|parent|buyer|鐢ㄦ埛|瀹㈡埛|瀹堕暱|鍙椾紬/i], 5),
+      ...extractBulletCandidates(combined, [CONTENT_INGESTION_AUDIENCE_RE], 5),
     ],
     5,
   );
   const offerings = uniqueBriefItems(
     [
-      ...extractBulletCandidates(combined, [/service|product|solution|course|assessment|research|鏈嶅姟|浜у搧|璇剧▼|璇勪及|鐮旂┒/i], 6),
+      ...extractBulletCandidates(combined, [CONTENT_INGESTION_OFFERING_RE], 6),
       ...inferredSignals,
     ],
     6,
   );
   const differentiators = uniqueBriefItems(
     [
-      ...extractBulletCandidates(combined, [/unique|advantage|differenti|certif|expert|浼樺娍|宸紓|璁よ瘉|涓撲笟|鍙俊/i], 5),
+      ...extractBulletCandidates(combined, [CONTENT_INGESTION_DIFFERENTIATOR_RE], 5),
       ...inferredSignals,
     ],
     5,
   );
   const proofPoints = uniqueBriefItems(
     [
-      ...extractBulletCandidates(combined, [/case|client|data|sample|certif|result|妗堜緥|瀹㈡埛|鏁版嵁|鏍锋湰|璧勮川|鎴愭灉/i], 5),
+      ...extractBulletCandidates(combined, [CONTENT_INGESTION_PROOF_RE], 5),
       ...buildFallbackBusinessSignals([params.requirementText, requirementSpec.customNotes].filter(Boolean).join(" "), 5),
     ],
     5,
   );
   const gaps = [...params.contentGaps];
-  const explicitPagePlan = extractDocumentSuggestedPages(
-    [params.requirementText, ...uploadedSources.map((source) => source.snippet || "")].join("\n"),
-  );
+  const structuralSources = params.sources.filter((source) => source.type === "uploaded_file" || source.type === "url_page");
+  const explicitPagePlan = extractSuggestedPagesFromStructuralSources(structuralSources);
   const requirementDrivenPages = buildSuggestedPagesFromRequirementSpec(
     requirementSpec,
     uniqueBriefItems([...offerings, ...differentiators, ...proofPoints], 8),
@@ -1099,11 +1343,11 @@ function buildKnowledgeProfile(params: {
         : requirementDrivenPages.length > 0
           ? requirementDrivenPages
           : [
-              { route: "/", title: "Home", purpose: "Explain positioning and route visitors to proof, offerings, and contact.", contentInputs: offerings.slice(0, 3) },
-              { route: "/about", title: "About", purpose: "Build trust with organization background and credentials.", contentInputs: differentiators.slice(0, 3) },
-              { route: "/products", title: "Products or Services", purpose: "Present concrete offerings with scannable details.", contentInputs: offerings.slice(0, 5) },
-              { route: "/cases", title: "Cases or Insights", purpose: "Show proof, outcomes, research, and stories.", contentInputs: proofPoints.slice(0, 5) },
-              { route: "/contact", title: "Contact", purpose: "Capture leads and inquiries.", contentInputs: audience.slice(0, 3) },
+              { route: "/", title: "Home", purpose: "Explain positioning and route visitors to proof, offerings, and contact.", contentInputs: offerings.slice(0, 3), sourceKind: "fallback", confidence: 0.66, extractionReason: "Default company page inferred because no stronger source-defined plan was available." },
+              { route: "/about", title: "About", purpose: "Build trust with organization background and credentials.", contentInputs: differentiators.slice(0, 3), sourceKind: "fallback", confidence: 0.66, extractionReason: "Default company page inferred because no stronger source-defined plan was available." },
+              { route: "/products", title: "Products or Services", purpose: "Present concrete offerings with scannable details.", contentInputs: offerings.slice(0, 5), sourceKind: "fallback", confidence: 0.66, extractionReason: "Default company page inferred because no stronger source-defined plan was available." },
+              { route: "/cases", title: "Cases or Insights", purpose: "Show proof, outcomes, research, and stories.", contentInputs: proofPoints.slice(0, 5), sourceKind: "fallback", confidence: 0.66, extractionReason: "Default company page inferred because no stronger source-defined plan was available." },
+              { route: "/contact", title: "Contact", purpose: "Capture leads and inquiries.", contentInputs: audience.slice(0, 3), sourceKind: "fallback", confidence: 0.66, extractionReason: "Default company page inferred because no stronger source-defined plan was available." },
             ],
     contentGaps: Array.from(new Set(gaps)).slice(0, 8),
     summary: summarySources
@@ -1191,9 +1435,16 @@ export async function buildWebsiteKnowledgeProfile(params: {
   referencedAssets?: string[];
   ownerUserId?: string;
   projectId?: string;
+  enrichment?: KnowledgeProfileEnrichmentOptions;
 }): Promise<WebsiteKnowledgeProfile> {
   const domains = extractDomainsFromRequirement(params.requirementText);
+  const explicitUrls = extractExplicitUrlsFromRequirement(params.requirementText);
   const queries = buildWebsiteSearchQueries(params.requirementText, params.maxQueries);
+  const enrichment = params.enrichment || {};
+  const useDomainSources = enrichment.useDomainSources !== false;
+  const useExplicitUrlSources = enrichment.useExplicitUrlSources !== false;
+  const useUploadedSources = enrichment.useUploadedSources !== false;
+  const useWebSearch = enrichment.useWebSearch !== false;
   const webSources: WebsiteKnowledgeSource[] = [];
   const sources: WebsiteKnowledgeSource[] = [];
   const contentGaps: string[] = [];
@@ -1204,14 +1455,26 @@ export async function buildWebsiteKnowledgeProfile(params: {
     referencedAssets: params.referencedAssets,
   });
 
-  const uploaded = await collectUploadedFileSources({
-    ownerUserId: params.ownerUserId,
-    projectId: params.projectId,
-    referencedAssets: params.referencedAssets,
-  });
+  const uploaded = useUploadedSources
+    ? await collectUploadedFileSources({
+        ownerUserId: params.ownerUserId,
+        projectId: params.projectId,
+        referencedAssets: params.referencedAssets,
+      })
+    : { sources: [], gaps: [] as string[] };
   contentGaps.push(...uploaded.gaps);
 
-  if (params.searchConfig && queries.length > 0 && !skipGenericSearch) {
+  const explicitUrlSources = useExplicitUrlSources && explicitUrls.length
+    ? await collectExplicitUrlPageSources({
+        urls: explicitUrls,
+        timeoutMs: params.timeoutMs,
+      })
+    : [];
+  if (useExplicitUrlSources && explicitUrls.length > 0 && explicitUrlSources.length === 0) {
+    contentGaps.push(`Explicit URL source was provided (${explicitUrls.join(", ")}) but readable page extraction returned no HTML summary.`);
+  }
+
+  if (useWebSearch && params.searchConfig && queries.length > 0 && !skipGenericSearch) {
     const batch = await searchSerperBatch(queries, {
       config: params.searchConfig,
       timeoutMs: Math.max(4000, params.timeoutMs),
@@ -1221,7 +1484,7 @@ export async function buildWebsiteKnowledgeProfile(params: {
     }
   }
 
-  if (domains.length > 0) {
+  if (useDomainSources && domains.length > 0) {
     const domainSources = await collectDomainPageSources({
       domains,
       searchSources: webSources,
@@ -1233,6 +1496,7 @@ export async function buildWebsiteKnowledgeProfile(params: {
     }
   }
 
+  sources.push(...explicitUrlSources);
   sources.push(...uploaded.sources);
   sources.push(...webSources);
   if (userInputSource) sources.unshift(userInputSource);
@@ -1345,6 +1609,7 @@ export function formatWebsiteKnowledgeProfile(profile: WebsiteKnowledgeProfile):
 export const __contentSourceIngestionForTesting = {
   buildWebsiteEvidenceBrief,
   buildKnowledgeProfile,
+  extractExplicitUrlsFromRequirement,
   extractDocumentSuggestedPages,
   extractTextFromUploadedBytes,
   formatWebsiteEvidenceBrief,

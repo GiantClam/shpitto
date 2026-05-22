@@ -26,6 +26,7 @@ describe.skipIf(!runEnterpriseReplay)("enterprise existing chat live replay", ()
     "replays generation for the existing enterprise chat and prints a preview link",
     async () => {
       const prevUseSupabase = process.env.CHAT_TASKS_USE_SUPABASE;
+      const prevSupabaseProxy = process.env.SUPABASE_TASK_PROXY_URL;
       const prevAsyncTaskTimeoutMs = process.env.CHAT_ASYNC_TASK_TIMEOUT_MS;
       const prevStageBudgetPerFileMs = process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS;
       const prevRoundAbsoluteTimeoutMs = process.env.SKILL_TOOL_ROUND_ABSOLUTE_TIMEOUT_MS;
@@ -36,6 +37,7 @@ describe.skipIf(!runEnterpriseReplay)("enterprise existing chat live replay", ()
       try {
         expect(replayChatId).toBeTruthy();
 
+        process.env.SUPABASE_TASK_PROXY_URL = "direct";
         process.env.CHAT_ASYNC_TASK_TIMEOUT_MS = "1800000";
         process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS = "420000";
         process.env.SKILL_TOOL_ROUND_IDLE_TIMEOUT_MS = "420000";
@@ -145,6 +147,8 @@ describe.skipIf(!runEnterpriseReplay)("enterprise existing chat live replay", ()
         );
       } finally {
         process.env.CHAT_TASKS_USE_SUPABASE = prevUseSupabase;
+        if (prevSupabaseProxy === undefined) delete process.env.SUPABASE_TASK_PROXY_URL;
+        else process.env.SUPABASE_TASK_PROXY_URL = prevSupabaseProxy;
         process.env.CHAT_ASYNC_TASK_TIMEOUT_MS = prevAsyncTaskTimeoutMs;
         process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS = prevStageBudgetPerFileMs;
         if (prevRoundIdleTimeoutMs === undefined) delete process.env.SKILL_TOOL_ROUND_IDLE_TIMEOUT_MS;

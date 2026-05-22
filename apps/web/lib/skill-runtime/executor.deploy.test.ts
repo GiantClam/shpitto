@@ -1,15 +1,19 @@
 ﻿import { describe, expect, it } from "vitest";
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { createChatTask, getChatTask } from "../agent/chat-task-store";
 import {
   buildBlogContentWorkflowPreview,
   buildGeneratedBlogSeedPostsForTesting,
   finalizeGeneratedProjectArtifactForTesting,
+  materializeSiteDirectoryFromProjectForTesting,
   materializeGeneratedBlogDetailPagesForTesting,
+  resolveWebsiteRuntimeSkillForTesting,
   runPostDeploySmoke,
   SkillRuntimeExecutor,
 } from "./executor";
+import { buildLocalDecisionPlan } from "./decision-layer";
 
 function buildStaticSiteProject() {
   return {
@@ -29,6 +33,81 @@ function buildStaticSiteProject() {
 }
 
 describe("SkillRuntimeExecutor deploy-only path", () => {
+  it("recomputes cached design guidance when later dialogue changes the visual direction intent", async () => {
+    const result = await resolveWebsiteRuntimeSkillForTesting({
+      state: {
+        messages: [
+          {
+            role: "user",
+            content: "Generate a homepage for VBUY Textile. Use the IBM Carbon design system and enterprise technology styling.",
+          },
+        ] as any,
+        workflow_context: {
+          skillId: "website-generation-workflow",
+          primaryVisualDirection: "heritage-manufacturing",
+          visualDecisionSource: "user_recommended_default",
+          selectionCriteria: "stale criteria",
+          sequentialWorkflow: "stale workflow",
+          workflowGuide: "stale guide",
+          rulesSummary: "stale rules",
+          designMd: "# stale design",
+          designGuidanceRequirementHash: "outdated",
+          designGuidanceTemplateStyleId: "",
+          designGuidancePrimaryVisualDirection: "heritage-manufacturing",
+          designGuidanceSecondaryVisualTags: "",
+        } as any,
+        design_hit: {
+          id: "open-design-heritage-manufacturing",
+          name: "Heritage Manufacturing",
+          design_desc: "stale design hit",
+          score: 100,
+          matched_keywords: ["heritage"],
+          source: "website-generation-workflow",
+        } as any,
+      } as any,
+    });
+
+    expect(result.state.design_hit?.id).toBe("ibm");
+    expect((result.state.workflow_context as any)?.designSystemId).toBe("ibm");
+    expect(String((result.state.workflow_context as any)?.designMd || "")).toMatch(/IBM|Carbon/i);
+    expect(String((result.state.workflow_context as any)?.designGuidanceRequirementHash || "")).toHaveLength(40);
+  });
+
+  it("keeps website-generation-workflow as compatibility root while selecting corporate-b2b-site as execution skill", async () => {
+    const result = await resolveWebsiteRuntimeSkillForTesting({
+      state: {
+        messages: [
+          {
+            role: "user",
+            content:
+              "Build an official company website for an export manufacturer serving enterprise buyers and procurement teams. Include products, custom solutions, cases, about, and contact.",
+          },
+        ] as any,
+        workflow_context: {
+          skillId: "website-generation-workflow",
+          requirementSpec: {
+            siteType: "company",
+            targetAudience: ["enterprise buyers", "procurement teams"],
+            primaryGoal: ["inquiries"],
+          },
+        } as any,
+        sitemap: {
+          routes: ["/", "/products", "/custom-solutions", "/cases", "/about", "/contact"],
+        } as any,
+      } as any,
+    });
+
+    const workflow = (result.state.workflow_context || {}) as any;
+    expect(workflow.skillId).toBe("website-generation-workflow");
+    expect(workflow.executionSkillId).toBe("corporate-b2b-site");
+    expect(workflow.websiteOrchestratorSkillId).toBe("website-orchestrator");
+    expect(workflow.websiteTypeSkillId).toBe("corporate-b2b-site");
+    expect(workflow.websiteTypeKind).toBe("corporate-b2b");
+    expect(workflow.loadedSkillIds).toEqual(
+      expect.arrayContaining(["website-generation-workflow", "website-orchestrator", "corporate-b2b-site"]),
+    );
+  });
+
   it("builds three source-derived Blog seed posts from the provided website content", () => {
     const posts = buildGeneratedBlogSeedPostsForTesting({
       locale: "zh-CN",
@@ -227,6 +306,45 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
     expect(preview.posts).toHaveLength(3);
   });
 
+  it("extracts a source-aligned Blog preview from canonical prompt narrative when no raw user source survives", () => {
+    const preview = buildBlogContentWorkflowPreview({
+      locale: "zh-CN",
+      inputState: {
+        messages: [] as any,
+        phase: "end",
+        current_page_index: 0,
+        attempt_count: 0,
+        workflow_context: {
+          sourceRequirement: [
+            "# Canonical Website Generation Prompt",
+            "## 1. Product Brief",
+            "这是一个个人 AI Blog，围绕 Bays Wong 在华为、微信、HelloTalk、来画科技与云领天下的经历，生成 3 篇文章展示 AI、DevOps、K12 与 SaaS 判断。",
+            "文章需要体现全球化实时音视频、研发体系变革、AI 商业化与学习交流产品的长期观察。",
+            "## 3.5 Prompt Control Manifest (Machine Readable)",
+            "```json",
+            JSON.stringify({ routes: ["/", "/blog"], files: ["/index.html", "/blog/index.html"] }),
+            "```",
+          ].join("\n"),
+        },
+      } as any,
+      project: {
+        staticSite: {
+          files: [
+            {
+              path: "/blog/index.html",
+              content:
+                '<!doctype html><html><body><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><h1>博客</h1><div data-shpitto-blog-list></div></section></body></html>',
+            },
+          ],
+        },
+      },
+    });
+
+    expect(preview.required).toBe(true);
+    expect(preview.posts).toHaveLength(3);
+    expect(preview.posts.map((post) => `${post.title} ${post.excerpt}`).join(" ")).toMatch(/Bays Wong|华为|微信|HelloTalk|DevOps|SaaS|K12|AI/);
+  });
+
   it("does not synthesize blog posts from generated site html when explicit source text is missing", () => {
     const preview = buildBlogContentWorkflowPreview({
       locale: "zh-CN",
@@ -318,6 +436,7 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
   it("materializes missing static blog detail pages for native generation artifacts", () => {
     const project = materializeGeneratedBlogDetailPagesForTesting({
       locale: "zh-CN",
+      mode: "content",
       inputState: {
         messages: [] as any,
         phase: "end",
@@ -465,11 +584,77 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
         "/blog/ai-saas-commercialization-cto-practice/index.html",
       ]),
     );
+    const detail = files.find((file: any) => file.path === "/blog/agile-devops-system-design/index.html");
+    const html = String(detail?.content || "");
+    expect(html).toContain('data-shpitto-blog-detail-shell="true"');
+    expect(html).toContain("Topic map");
+    expect(html).not.toContain('<div class="prose"');
+  });
+
+  it("materializes normalized final artifacts with curated media and no empty brand-mark shell", async () => {
+    const siteDir = await fs.mkdtemp(path.join(os.tmpdir(), "shpitto-materialize-"));
+    try {
+      const decision = buildLocalDecisionPlan({
+        messages: [] as any,
+        phase: "end",
+        current_page_index: 0,
+        attempt_count: 0,
+        workflow_context: {
+          sourceRequirement:
+            "Build a bilingual towel and textile export company site with pool, beach, and hospitality references.",
+        },
+      } as any);
+
+      const materialized = await materializeSiteDirectoryFromProjectForTesting({
+        siteDir,
+        decision,
+        requirementText: decision.requirementText,
+        project: {
+          pages: [
+            {
+              path: "/",
+              html: [
+                "<!doctype html><html><head><title>Vbuy Textile</title></head><body>",
+                '<header><a class="brand" href="/" aria-label="Vbuy Textile home"><span class="brand-mark" aria-hidden="true"></span><span>Vbuy Textile</span></a></header>',
+                '<main><section class="hero section"><aside class="hero-panel panel"><div class="media-frame"><div class="media-top"><span>Manufacturing focus</span></div></div></aside></section></main>',
+                "</body></html>",
+              ].join(""),
+            },
+          ],
+          staticSite: {
+            mode: "skill-direct",
+            files: [
+              {
+                path: "/index.html",
+                type: "text/html",
+                content: [
+                  "<!doctype html><html><head><title>Vbuy Textile</title></head><body>",
+                  '<header><a class="brand" href="/" aria-label="Vbuy Textile home"><span class="brand-mark" aria-hidden="true"></span><span>Vbuy Textile</span></a></header>',
+                  '<main><section class="hero section"><aside class="hero-panel panel"><div class="media-frame"><div class="media-top"><span>Manufacturing focus</span></div></div></aside></section></main>',
+                  "</body></html>",
+                ].join(""),
+              },
+              { path: "/styles.css", type: "text/css", content: "body{font-family:sans-serif}" },
+              { path: "/script.js", type: "text/javascript", content: "console.log('ok')" },
+            ],
+          },
+        },
+      });
+
+      const html = await fs.readFile(path.join(siteDir, "index.html"), "utf8");
+      expect(materialized.project.staticSite.files.some((file: any) => file.path === "/index.html")).toBe(true);
+      expect(html).toContain('data-stock-source="curated-library"');
+      expect(html).toContain("<img ");
+      expect(html).not.toContain("brand-mark");
+    } finally {
+      await fs.rm(siteDir, { recursive: true, force: true });
+    }
   });
 
   it("keeps blog detail generation single-language even when the site locale is bilingual", () => {
     const project = materializeGeneratedBlogDetailPagesForTesting({
       locale: "bilingual",
+      mode: "content",
       inputState: {
         messages: [] as any,
         phase: "end",
@@ -534,7 +719,7 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
     const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
     const detail = files.find((file: any) => file.path === "/blog/agile-devops-system-design/index.html");
     const html = String(detail?.content || "");
-    expect(html).toContain('lang="zh"');
+    expect(html).toContain('lang="en"');
     expect(html).not.toContain("data-i18n");
     expect(html).not.toContain("data-locale-toggle");
     expect(html).not.toContain("data-article-body-zh");
@@ -544,6 +729,7 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
   it("preserves existing blog detail pages when the site locale is bilingual", () => {
     const project = materializeGeneratedBlogDetailPagesForTesting({
       locale: "bilingual",
+      mode: "content",
       inputState: {
         messages: [] as any,
         phase: "end",
@@ -607,6 +793,7 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
   it("sanitizes editorial scaffold wording in an existing blog index page without adding bilingual switch markup", () => {
     const project = materializeGeneratedBlogDetailPagesForTesting({
       locale: "bilingual",
+      mode: "content",
       inputState: {
         messages: [] as any,
         phase: "end",
@@ -660,6 +847,60 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
     expect(html).not.toContain("data-locale-toggle");
     expect(html).not.toContain("data-i18n");
     expect(html).toContain('data-shpitto-blog-api="/api/blog/posts"');
+  });
+
+  it("does not treat generated blog detail shells as finished static article bodies during preview extraction", () => {
+    const preview = buildBlogContentWorkflowPreview({
+      locale: "zh-CN",
+      inputState: {
+        messages: [] as any,
+        phase: "end",
+        current_page_index: 0,
+        attempt_count: 0,
+        workflow_context: {
+          sourceRequirement: "CASUX 适儿空间标准 研究报告 认证查询 政策法规 资料下载 信息平台",
+        },
+      } as any,
+      project: finalizeGeneratedProjectArtifactForTesting({
+        locale: "zh-CN",
+        inputState: {
+          messages: [] as any,
+          phase: "end",
+          current_page_index: 0,
+          attempt_count: 0,
+          workflow_context: {
+            sourceRequirement: "CASUX 适儿空间标准 研究报告 认证查询 政策法规 资料下载 信息平台",
+          },
+        } as any,
+        project: {
+          branding: { name: "CASUX" },
+          staticSite: {
+            mode: "skill-direct",
+            files: [
+              {
+                path: "/blog/index.html",
+                content: [
+                  '<!doctype html><html><body><main><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list>',
+                  '<article><a href="/blog/casux-standards-resources/">A</a></article>',
+                  '<article><a href="/blog/casux-research-cases/">B</a></article>',
+                  '<article><a href="/blog/casux-certification-actions/">C</a></article>',
+                  "</div></section></main></body></html>",
+                ].join(""),
+                type: "text/html",
+              },
+              { path: "/styles.css", type: "text/css", content: "body{}" },
+              { path: "/script.js", type: "text/javascript", content: "console.log('ok')" },
+            ],
+          },
+        },
+      }),
+    });
+
+    expect(preview.required).toBe(true);
+    expect(preview.posts).toHaveLength(3);
+    const combined = preview.posts.map((post) => `${post.title} ${post.excerpt} ${post.contentMd}`).join(" ");
+    expect(combined).toMatch(/CASUX|标准|研究|认证|政策|资料/);
+    expect(combined).not.toMatch(/Topic map|Article outline|Back to blog/i);
   });
 
   it("prefers current static blog detail pages over stale workflow preview posts", () => {
@@ -736,6 +977,51 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
     ]);
     expect(preview.posts[0]?.title).toContain("华为研发体系");
     expect(preview.posts.map((post) => post.title).join(" ")).not.toContain("K12");
+  });
+
+  it("supplements a single current static blog detail with source-aligned drafts for deploy confirmation", () => {
+    const preview = buildBlogContentWorkflowPreview({
+      locale: "zh-CN",
+      inputState: {
+        messages: [] as any,
+        phase: "end",
+        current_page_index: 0,
+        attempt_count: 0,
+        workflow_context: {
+          sourceRequirement:
+            "Bays Wong 华为 研发体系 DevOps 敏捷转型 组织效能升级。微信 HelloTalk 来画科技 云领天下 AI SaaS。",
+        },
+      } as any,
+      project: {
+        staticSite: {
+          files: [
+            {
+              path: "/blog/index.html",
+              content: [
+                '<!doctype html><html><body><main>',
+                '<section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list>',
+                '<article><a href="/blog/agile-devops-transformation/">A</a></article>',
+                "</div></section></main></body></html>",
+              ].join(""),
+            },
+            {
+              path: "/blog/agile-devops-transformation/index.html",
+              content: [
+                '<!doctype html><html><head><title>从敏捷到 DevOps：华为研发体系如何真正升级｜Bays Wong</title><meta name="description" content="华为研发体系变革的实践复盘：敏捷转型、DevOps 落地与组织效能升级的关键做法。" /></head><body><main>',
+                '<article><h1>从敏捷到 DevOps：华为研发体系如何真正升级</h1><div class="article-meta"><span>2024-12-18</span><span>组织实践</span><span>研发效能</span></div>',
+                '<p class="section-lead">大型研发组织的升级，从来不是把一套新名词贴到旧流程上。</p><h2>判断起点</h2><p>第一段正文足够长，用于模拟完整文章内容与部署提取。</p><p>第二段正文继续展开工程实践与组织协同。</p><p>第三段正文说明反馈闭环和持续改进。</p></article>',
+                "</main></body></html>",
+              ].join(""),
+            },
+          ],
+        },
+      },
+    });
+
+    expect(preview.required).toBe(true);
+    expect(preview.posts).toHaveLength(3);
+    expect(preview.posts[0]?.slug).toBe("agile-devops-transformation");
+    expect(preview.posts.map((post) => `${post.title} ${post.excerpt}`).join(" ")).toMatch(/华为|微信|AI|HelloTalk|DevOps/);
   });
 
   it("falls back to source-aligned blog posts when static detail pages drift away from a CASUX source", () => {

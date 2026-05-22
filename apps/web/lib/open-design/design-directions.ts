@@ -260,34 +260,34 @@ export const WEBSITE_DESIGN_DIRECTIONS: WebsiteDesignDirection[] = [
     label: "Heritage manufacturing / craft",
     zhLabel: "传承制造 / 匠心工厂",
     mood:
-      "Mature manufacturing brand with warm neutrals, deep ink, brass accents, and story-led trust building.",
+      "High-trust export manufacturer with marine blues, white surfaces, calm graphite, and proof-led product presentation.",
     zhMood: "成熟制造品牌，暖中性色、深墨色、黄铜强调和故事化信任表达。",
-    references: ["Bang & Olufsen", "Patek Philippe", "Muji", "industrial editorial catalogs"],
+    references: ["industrial export catalogs", "hospitality textile suppliers", "Muji", "clean B2B manufacturer sites"],
     pageArchetypes: [
-      "Heritage homepage with a narrative opening and measured pacing",
-      "Craft story page focused on process, materials, and origin",
-      "Product story page with restrained luxury and tactile detail",
+      "Enterprise homepage with a clean marine shell, proof rail, and direct route entry",
+      "Process and quality page focused on materials, QA, factory workflow, and export readiness",
+      "Product or capability page that balances grouped specs, product imagery, and procurement cues",
     ],
     contentPosture: [
-      "Editorial storytelling that builds trust through history and craft",
-      "Use warm proof, material language, and tactile detail over hype",
-      "Avoid startup SaaS tropes; let maturity and discipline carry the tone",
+      "Lead with product capability, export experience, sampling discipline, and certifications; storytelling should support proof, not replace it",
+      "Use material language, process detail, application context, and factory evidence to signal maturity and quality",
+      "Avoid startup SaaS tropes, lifestyle editorial pacing, personal-founder diary tone, and beige craft-journal presentation",
     ],
-    displayFont: "'Iowan Old Style', 'Noto Serif SC', Georgia, serif",
+    displayFont: "'Space Grotesk', 'IBM Plex Sans', system-ui, sans-serif",
     bodyFont: "'IBM Plex Sans', 'Noto Sans SC', system-ui, sans-serif",
     palette: {
-      bg: "oklch(96% 0.018 80)",
-      surface: "oklch(99% 0.008 85)",
-      fg: "oklch(18% 0.018 65)",
-      muted: "oklch(46% 0.018 65)",
-      border: "oklch(86% 0.018 80)",
-      accent: "oklch(62% 0.12 75)",
+      bg: "oklch(98% 0.01 235)",
+      surface: "oklch(100% 0 0)",
+      fg: "oklch(22% 0.02 248)",
+      muted: "oklch(50% 0.015 245)",
+      border: "oklch(90% 0.015 235)",
+      accent: "oklch(58% 0.16 240)",
     },
     posture: [
-      "Use editorial storytelling for history, craft, process, and quality.",
-      "Use warm neutral surfaces and measured brass accents.",
-      "Use product photography or honest manufacturing placeholders.",
-      "Avoid startup-SaaS gradients and generic icon rows.",
+      "Use structured proof rails, grouped capability cards, and restrained spec tables before long-form storytelling.",
+      "Use marine-blue and white surfaces with calm graphite typography and only restrained warm accenting when needed.",
+      "Use product, factory, towel/material, pool/beach/hospitality, and application imagery that reads as export-ready manufacturing, not lifestyle portraiture or abstract placeholder art.",
+      "Avoid startup-SaaS gradients, magazine-style essay pacing, serif-editorial hero treatments, and beige paper moods.",
     ],
   },
 ];
@@ -394,6 +394,23 @@ export function recommendWebsiteDesignDirections(
   ]
     .join(" ")
     .toLowerCase();
+  const combinedSignals = [
+    siteType,
+    ...audiences,
+    ...goals,
+    ...contentSources,
+    freeText,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const enterpriseManufacturingSignals =
+    siteType === "company" &&
+    /(?:enterprise_buyers|government|overseas_customers|manufacturer|manufactur|factory|industrial|supplier|procurement|buyer|b2b|catalog|spec|specification|certification|iso\d*|smeta|bsci|oeko|grs|textile|cnc)/i.test(
+      combinedSignals,
+    );
+  const explicitHeritageCraftSignals = /(?:heritage|craft|artisan|timeless|legacy|premium|luxury|materials|storytelling)/i.test(
+    freeText,
+  );
 
   const recommendations = WEBSITE_DESIGN_DIRECTIONS.map((direction) => {
     const signalMap = WEBSITE_DESIGN_DIRECTION_SIGNAL_MAP[direction.id] || {};
@@ -430,6 +447,28 @@ export function recommendWebsiteDesignDirections(
 
     for (const match of collectKeywordMatches(freeText, signalMap.negativeKeywords)) {
       score -= 3;
+    }
+
+    if (enterpriseManufacturingSignals) {
+      if (direction.id === "industrial-b2b") {
+        const boost = explicitHeritageCraftSignals ? 3 : 7;
+        score += boost;
+        pushUniqueReason(reasons, { kind: "keyword", matched: "enterprise-b2b-default" });
+      }
+      if (direction.id === "heritage-manufacturing" && explicitHeritageCraftSignals) {
+        score += 7;
+        pushUniqueReason(reasons, { kind: "keyword", matched: "heritage-craft-explicit" });
+      }
+      if (direction.id === "tech-utility") {
+        score += 2;
+        pushUniqueReason(reasons, { kind: "keyword", matched: "technical-proof" });
+      }
+      if (direction.id === "warm-soft" || direction.id === "editorial-monocle") {
+        score -= 4;
+      }
+      if (direction.id === "heritage-manufacturing" && !explicitHeritageCraftSignals) {
+        score -= 5;
+      }
     }
 
     return {

@@ -35,7 +35,15 @@ const SKILL_ALIAS_MAP: Record<string, string> = {
   "static-site-shared-assets": "website-generation-workflow",
 };
 
+export const WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID = "website-orchestrator";
+export const WEBSITE_GENERATION_TYPE_SKILL_IDS = [
+  "corporate-b2b-site",
+  "marketing-landing-site",
+  "portfolio-blog-site",
+] as const;
+
 export const WEBSITE_GENERATION_SKILL_BUNDLE: string[] = [
+  WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID,
   "website-generation-workflow",
   "brainstorming",
   "writing-plans",

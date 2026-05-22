@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  appendExplicitTemplateOverrideToCanonicalPrompt,
+  detectExplicitTemplateStyleIdFromText,
   loadWorkflowSkillContext,
   normalizeWorkflowVisualDecisionContext,
+  resolveWorkflowProviderConfigForTesting,
   resolveDesignSkillHit,
 } from "./website-workflow";
 import {
@@ -76,6 +79,77 @@ describe("website-workflow local awesome-design templates", () => {
       if (prevUseLlm === undefined) delete process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
       else process.env.WORKFLOW_STYLE_SELECT_USE_LLM = prevUseLlm;
     }
+  });
+
+  it("honors explicit short style names like IBM when design intent is explicit", async () => {
+    const prevUseLlm = process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
+    process.env.WORKFLOW_STYLE_SELECT_USE_LLM = "0";
+
+    try {
+      const hit = await resolveDesignSkillHit("Use the IBM design system for this website homepage.");
+
+      expect(hit.selection_mode).toBe("explicit_match");
+      expect(hit.id).toBe("ibm");
+      expect(hit.selection_candidates?.some((candidate) => candidate.id === hit.id)).toBe(true);
+    } finally {
+      if (prevUseLlm === undefined) delete process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
+      else process.env.WORKFLOW_STYLE_SELECT_USE_LLM = prevUseLlm;
+    }
+  });
+
+  it("detects explicit template overrides from follow-up dialogue text", async () => {
+    await expect(
+      detectExplicitTemplateStyleIdFromText(
+        "Please change the visual direction. Use the IBM Carbon enterprise design system with a blue-and-white corporate technology homepage.",
+      ),
+    ).resolves.toBe("ibm");
+  });
+
+  it("defaults workflow style selection to a lightweight model instead of inheriting heavyweight global locks", () => {
+    const prevWorkflowSelectModel = process.env.WORKFLOW_STYLE_SELECT_MODEL;
+    const prevLlmWorkflowSelectModel = process.env.LLM_MODEL_WORKFLOW_STYLE_SELECT;
+
+    delete process.env.WORKFLOW_STYLE_SELECT_MODEL;
+    delete process.env.LLM_MODEL_WORKFLOW_STYLE_SELECT;
+
+    try {
+      const config = resolveWorkflowProviderConfigForTesting({
+        provider: "pptoken",
+        model: "gpt-5.4",
+      });
+      expect(config.modelName).toBe("gpt-5.4-mini");
+    } finally {
+      if (prevWorkflowSelectModel === undefined) delete process.env.WORKFLOW_STYLE_SELECT_MODEL;
+      else process.env.WORKFLOW_STYLE_SELECT_MODEL = prevWorkflowSelectModel;
+      if (prevLlmWorkflowSelectModel === undefined) delete process.env.LLM_MODEL_WORKFLOW_STYLE_SELECT;
+      else process.env.LLM_MODEL_WORKFLOW_STYLE_SELECT = prevLlmWorkflowSelectModel;
+    }
+  });
+
+  it("honors explicit workflow style selector model overrides when configured", () => {
+    const prevWorkflowSelectModel = process.env.WORKFLOW_STYLE_SELECT_MODEL;
+    process.env.WORKFLOW_STYLE_SELECT_MODEL = "gpt-5.4";
+
+    try {
+      const config = resolveWorkflowProviderConfigForTesting({
+        provider: "pptoken",
+        model: "gpt-5.4-mini",
+      });
+      expect(config.modelName).toBe("gpt-5.4");
+    } finally {
+      if (prevWorkflowSelectModel === undefined) delete process.env.WORKFLOW_STYLE_SELECT_MODEL;
+      else process.env.WORKFLOW_STYLE_SELECT_MODEL = prevWorkflowSelectModel;
+    }
+  });
+
+  it("appends a canonical prompt override block for explicit IBM template requests", () => {
+    const rewritten = appendExplicitTemplateOverrideToCanonicalPrompt(
+      "# Canonical Website Generation Prompt\n\n## 0. Confirmed Generation Parameters\n- Website type: Company website",
+      "ibm",
+    );
+
+    expect(rewritten).toContain("## Explicit Design System Override");
+    expect(rewritten).toContain("IBM Carbon enterprise design language");
   });
 
   it("uses prompt-adaptive design when the canonical prompt contains explicit visual requirements", async () => {
@@ -179,6 +253,57 @@ describe("website-workflow local awesome-design templates", () => {
       expect(hit.id).toBe("open-design-industrial-b2b");
       expect(hit.design_md_inline).toContain("Open Design Direction: Industrial B2B / precision");
       expect(hit.design_md_inline).not.toContain("Prompt-Adaptive Design System");
+    } finally {
+      if (prevUseLlm === undefined) delete process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
+      else process.env.WORKFLOW_STYLE_SELECT_USE_LLM = prevUseLlm;
+    }
+  });
+
+  it("honors explicit templateStyleId overrides before prompt-adaptive guessing", async () => {
+    const prevUseLlm = process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
+    process.env.WORKFLOW_STYLE_SELECT_USE_LLM = "0";
+
+    try {
+      const prompt = [
+        "# Canonical Website Generation Prompt",
+        "Visual style: fresh green #2E8B57 and white as the main palette, warm orange accents.",
+        "The mood must feel natural, safe, warm, child-friendly, and professionally institutional.",
+      ].join("\n");
+      const hit = await resolveDesignSkillHit(prompt, {
+        templateStyleId: "ibm",
+      });
+
+      expect(hit.selection_mode).toBe("explicit_match");
+      expect(hit.id).toBe("ibm");
+      expect(hit.design_md_path).toContain("design-md/ibm");
+    } finally {
+      if (prevUseLlm === undefined) delete process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
+      else process.env.WORKFLOW_STYLE_SELECT_USE_LLM = prevUseLlm;
+    }
+  });
+
+  it("does not treat incidental source-signal style names as explicit visual references", async () => {
+    const prevUseLlm = process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
+    process.env.WORKFLOW_STYLE_SELECT_USE_LLM = "0";
+
+    try {
+      const prompt = [
+        "# Canonical Website Generation Prompt",
+        "- Website type: Company website",
+        "- Target audience: Enterprise buyers, manufacturer, procurement",
+        "- Primary visual direction: Heritage manufacturing / craft",
+        "- Secondary visual tags: warm",
+        "- Business/content details: Key source signals: Shpitto, Claude, GPT, AI, VBUY, Textile, B2B, ISO9001.",
+      ].join("\n");
+      const hit = await resolveDesignSkillHit(prompt, {
+        primaryVisualDirection: "heritage-manufacturing",
+        visualDecisionSource: "user_recommended_default",
+        lockPrimaryVisualDirection: false,
+      });
+
+      expect(hit.selection_mode).toBe("open_design_context");
+      expect(hit.id).toBe("open-design-heritage-manufacturing");
+      expect(hit.design_md_inline).toContain("Open Design Direction: Heritage manufacturing / craft");
     } finally {
       if (prevUseLlm === undefined) delete process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
       else process.env.WORKFLOW_STYLE_SELECT_USE_LLM = prevUseLlm;

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  assessUserInputSufficiency,
   buildRequirementSlots,
   buildRequirementSpec,
   composeStructuredPrompt,
@@ -138,6 +139,44 @@ describe("chat orchestrator intent", () => {
     expect(slots.find((slot) => slot.key === "target-audience")?.filled).toBe(true);
   });
 
+  it("marks a well-specified requirement with a reference URL as sufficient without requiring enrichment", () => {
+    const text = [
+      "Brand: Northstar Robotics",
+      "Audience: procurement teams, factory buyers",
+      "Pages: Home | Products | Case Studies | Contact",
+      "Primary goal: lead generation",
+      "Style: industrial, blue-gray, trustworthy",
+      "Language: English",
+      "Content source: existing domain",
+      "Reference URL: https://example.com",
+    ].join("\n");
+    const spec = buildRequirementSpec(text);
+    const sufficiency = assessUserInputSufficiency(text, spec);
+
+    expect(sufficiency.sufficient).toBe(true);
+    expect(sufficiency.hasExplicitUrl).toBe(true);
+    expect(sufficiency.missing).not.toContain("business_facts");
+  });
+
+  it("marks a bare URL-led request as insufficient before external enrichment", () => {
+    const text = "提取https://www.vbuytextile.com/网站的信息，做一个官网";
+    const spec = buildRequirementSpec(text);
+    const sufficiency = assessUserInputSufficiency(text, spec);
+
+    expect(sufficiency.sufficient).toBe(false);
+    expect(sufficiency.hasExplicitUrl).toBe(true);
+    expect(sufficiency.missing).toContain("audience");
+    expect(sufficiency.missing).toContain("primary_goal");
+  });
+
+  it("does not treat URL fragments as explicit sitemap pages or brand names", () => {
+    const spec = buildRequirementSpec("提取https://www.vbuytextile.com/网站的信息、页面结构和图片，做一个毛巾的渠道外贸电商公司的官网");
+
+    expect(spec.brand).not.toBe("https");
+    expect(spec.pages || []).not.toContain("/www");
+    expect(spec.pageStructure?.pages || []).not.toContain("/www");
+  });
+
   it("does not treat 解决方案 prose as an explicit 方案 page", () => {
     const text = [
       "为 K12 学校提供全场景解决方案。",
@@ -149,6 +188,22 @@ describe("chat orchestrator intent", () => {
     expect(spec.pages).toContain("blog");
     expect(spec.pages).not.toContain("方案");
     expect(spec.pageStructure?.pages || []).not.toContain("方案");
+  });
+
+  it("does not infer sitemap pages from arbitrary slash tokens outside labeled page fields", () => {
+    const text = [
+      "Use the copied source text below as inspiration for business context only.",
+      "Payment terms: T/T. Contact via /whatsapp. Capability notes mention /odm and /oem workflows.",
+      "Audience: wholesale buyers",
+      "Primary goal: lead generation",
+    ].join("\n");
+
+    const spec = buildRequirementSpec(text);
+
+    expect(spec.pages || []).not.toContain("/whatsapp");
+    expect(spec.pages || []).not.toContain("/odm");
+    expect(spec.pages || []).not.toContain("/oem");
+    expect(spec.pageStructure?.pages || []).not.toContain("/whatsapp");
   });
 
   it("filters function options to currently supported website capabilities", () => {

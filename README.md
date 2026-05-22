@@ -47,6 +47,13 @@ The core protocol is defined in `packages/schema/src/project-schema.ts`. This en
 - All skill, prompt, and process-related files must be authored and output in English.
 - Any derived summaries, instructions, or workflow notes based on those files must also be written in English.
 
+## Codex Harness
+
+- Repository-level agent constraints live in [AGENTS.md](AGENTS.md).
+- The website-generation repair discipline is defined in `docs/codex-harness-engineering.md`.
+- Project-specific ownership examples live in `docs/codex-harness-cases.md`.
+- This harness is for Codex behavior when opening the project; it is not part of the generated website runtime.
+
 ## Infrastructure
 
 - D1 schema: `packages/db/d1_schema.sql`

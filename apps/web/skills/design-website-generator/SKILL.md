@@ -4,273 +4,360 @@ version: "2.0.0"
 author: "shpitto-tools"
 license: "MIT"
 description: |
-  基于 awesome-design-md 的网站生成技能。采用串行页面生成模式，确保设计和内容连贯性。
-  
-  **核心价值:**
-  - SKILL 是定义者（工作流、标准、选择逻辑）
-  - TS 是工具（加载器、执行器）
-  - 串行页面生成确保设计和内容连贯
-  
-  **触发条件:**
-  - 用户要求创建网站
-  - 用户提到参考某网站风格
-  - 用户要求使用现成设计系统
+  Website generation skill built on top of the awesome-design-md design library.
+  This skill uses sequential page generation so design language, terminology,
+  and navigation stay coherent across the whole site.
+
+  Core value:
+  - SKILL defines workflow, standards, and selection logic
+  - TypeScript provides execution tools, loaders, and validators
+  - Sequential generation preserves cross-page coherence
+
+  Trigger conditions:
+  - The user asks to create a website
+  - The user asks to reference an existing website style
+  - The user asks to use an existing design system
 ---
 
 # Design Website Generator Skill
 
 ## Responsibility Boundary (Authoritative)
 
-- This skill is the **execution skill** for website generation (design loading, context building, prompt execution, QA checks).
-- It **must not** act as top-level workflow orchestrator when `website-generation-workflow` is active.
-- `website-generation-workflow` owns phase orchestration, enrichment, and cross-phase quality gates.
-- This skill receives already-scoped tasks and executes them with deterministic tooling.
+- This skill is the execution skill for website generation.
+- It loads design context, builds page prompts, enforces source contracts, and
+  coordinates QA checks.
+- It must not become the top-level workflow orchestrator when
+  `website-generation-workflow` is active.
+- `website-generation-workflow` owns phase orchestration, enrichment, and
+  cross-phase gates. This skill executes already-scoped generation work.
 
 ## Core Philosophy
 
-**SKILL 是定义者，TS 是工具**
+**The skill defines the contract. TypeScript executes the contract.**
 
-| 职责 | SKILL.md | TypeScript Tools |
-|------|----------|------------------|
-| 工作流定义 | ✅ 完整流程 | ❌ 不实现流程 |
-| 选择标准 | ✅ 详细规则 | ❌ 仅为执行 |
-| 确认流程 | ✅ 用户交互 | ❌ 不主导 |
-| 设计规范 | ✅ rules/ 目录 | ❌ 仅验证 |
-| 加载器 | ❌ 文档引用 | ✅ loadDesignSystem() |
-| LLM 执行 | ❌ prompt 模板 | ✅ executeLLM() |
-| 预览生成 | ❌ 截图标准 | ✅ renderPreview() |
+| Responsibility | SKILL.md | TypeScript tools |
+| --- | --- | --- |
+| Workflow definition | Full owner | Not the source of truth |
+| Selection criteria | Full owner | Execution only |
+| Confirmation flow | Full owner | Support only |
+| Design standards | Full owner | Validation only |
+| Loader behavior | Documented contract | `loadDesignSystem()` |
+| LLM execution | Prompt contract | `executeLLM()` |
+| Preview generation | Output requirements | `renderPreview()` |
 
 ## Sequential Page Generation Workflow
 
-不同于并行生成，本技能采用 **串行页面生成**，确保页面间的设计和内容连贯。
+Sequential generation is mandatory for multi-page websites when terminology,
+design tokens, and navigation must remain coherent.
 
-### 核心理念
+### Core idea
 
-```
-用户需求
-    ↓
-┌─────────────────────────────────────────────────────────────┐
-│  Page 1: 主页 (Hero + 品牌调性)                               │
-│  - 建立品牌调性、核心术语、设计 token 使用模式                   │
-│  - 输出: page1_context (内容摘要 + 设计应用记录)                │
-└─────────────────────────────────────────────────────────────┘
-    ↓ 继承 page1_context
-┌─────────────────────────────────────────────────────────────┐
-│  Page 2: 功能页 (Features)                                  │
-│  - 使用 Page 1 的术语和设计模式                               │
-│  - 保持视觉一致性                                            │
-│  - 输出: page2_context                                       │
-└─────────────────────────────────────────────────────────────┘
-    ↓ 继承 page2_context
-┌─────────────────────────────────────────────────────────────┐
-│  Page 3: 定价页 (Pricing)                                   │
-│  - 延续术语体系                                              │
-│  - 复用 Page 1-2 的设计组件                                  │
-│  - 输出: page3_context                                       │
-└─────────────────────────────────────────────────────────────┘
-    ↓ ...
-┌─────────────────────────────────────────────────────────────┐
-│  Page N: 最终页                                             │
-└─────────────────────────────────────────────────────────────┘
-    ↓
-┌─────────────────────────────────────────────────────────────┐
-│  全局 QA: 验证页面间一致性                                    │
-│  - 术语一致性                                                │
-│  - 设计 token 一致性                                          │
-│  - 链接可达性                                                │
-└─────────────────────────────────────────────────────────────┘
-```
+1. Generate the homepage first so it establishes:
+   - brand tone
+   - terminology
+   - token usage
+   - route hierarchy
+2. Carry that context into each later page.
+3. Let sections within the same page run in parallel only after the page-level
+   context is defined.
+4. Run page-level and site-level QA before finalizing artifacts.
 
-### 为什么串行生成？
+### Why sequential generation
 
-| 并行生成问题 | 串行生成优势 |
-|--------------|--------------|
-| 术语不一致（Page 1 用"功能"，Page 2 用"特性"） | Page 2 继承 Page 1 的术语 |
-| 设计 token 用法分散 | 统一的设计 token 应用模式 |
-| 导航结构冲突 | 基于前页链接结构逐步构建 |
-| 返工率高（30%+） | 返工率低（< 20%） |
+| Parallel generation problem | Sequential generation advantage |
+| --- | --- |
+| Terminology drifts across pages | Later pages inherit approved terms |
+| Token usage becomes inconsistent | Later pages reuse the same token logic |
+| Navigation structure conflicts | The route chain grows from earlier pages |
+| Rework rate is high | Rework rate drops after context inheritance |
 
 ## Phase 1: Design System Selection
 
-### 1.1 Selection Criteria（SKILL 定义）
+### 1.1 Selection Criteria (owned by the skill)
 
-**设计系统选择规则**（由 SKILL 定义，TS 仅执行）：
+Choose the design system using the following dimensions:
 
-```
-选择维度:
-├── 1. 行业匹配度
-│   ├── AI/ML 产品 → Claude, Cohere, Replicate
-│   ├── 开发者工具 → Vercel, Linear, Cursor
-│   ├── 金融/区块链 → Coinbase, Kraken, Stripe
-│   └── 电商/SaaS → Shopify, Stripe, Notion
-│
-├── 2. 设计风格
-│   ├── 暗色主题 → Claude, Linear, Vercel
-│   ├── 亮色主题 → Notion, Figma, Airbnb
-│   └── 高对比度 → Apple, Tesla, NVIDIA
-│
-├── 3. 复杂度适配
-│   ├── 简单落地页 → Framer, Webflow
-│   ├── 中等企业站 → Vercel, Stripe
-│   └── 复杂多页 → Figma, Notion, Linear
-│
-└── 4. 内容类型
-    ├── 文本为主 → Notion, Linear
-    ├── 图片为主 → Unsplash, Pinterest
-    └── 数据为主 → Stripe, Vercel
-```
+1. Industry fit
+   - AI / ML products -> Claude, Cohere, Replicate
+   - Developer tools -> Vercel, Linear, Cursor
+   - Finance / crypto -> Coinbase, Kraken, Stripe
+   - Ecommerce / SaaS -> Shopify, Stripe, Notion
+2. Design tone
+   - Dark-first -> Claude, Linear, Vercel
+   - Light-first -> Notion, Figma, Airbnb
+   - High contrast -> Apple, Tesla, NVIDIA
+3. Complexity fit
+   - Simple landing page -> Framer, Webflow
+   - Corporate multi-page site -> Vercel, Stripe, IBM
+   - Complex multi-page content system -> Figma, Notion, Linear
+4. Content mix
+   - Text-led -> Notion, Linear
+   - Image-led -> Pinterest, Unsplash-inspired directions
+   - Data-led -> Stripe, Vercel
 
 ### 1.2 Selection Workflow
 
-```
-Step 1: 分析用户需求
-    ├── 提取: 行业、产品类型、目标受众
-    ├── 标记: 缺失信息
-    └── 输出: requirements_summary
+1. Analyze the user brief
+   - extract industry, product type, audience, and missing information
+2. Generate the top design-system candidates
+   - use the selection criteria above
+3. Confirm direction
+   - show brand + key visual traits
+   - record explicit user overrides
+4. Initialize the design spec
+   - load the chosen `DESIGN.md`
+   - resolve colors, typography, shadows, layout, and component tone
 
-Step 2: 候选列表生成
-    ├── 使用 selection-criteria.md 规则
-    ├── 按匹配度排序 (top 5)
-    └── 输出: candidates[]
+### 1.3 TypeScript Tool Responsibilities
 
-Step 3: 用户确认
-    ├── 展示: 品牌 + 关键设计特征
-    ├── 预览: 颜色/字体/阴影样本
-    └── 确认: 用户选择或 SKILL 推荐
-
-Step 4: Design Spec 初始化
-    ├── 加载: selected_brand/DESIGN.md
-    ├── 解析: colors/typography/shadows/layout
-    └── 输出: design_spec (passed to TS tools)
-```
-
-### 1.3 TS 工具职责
-
-```typescript
-// SKILL 定义规则，TS 仅执行
+```ts
 interface DesignSystemLoader {
-  loadDesignSystem(brand: string): Promise<DesignSystem>;  // 加载
-  listBrands(category?: string): Promise<BrandInfo[]>;       // 列表
-  getDesignSummary(ds: DesignSystem): string;                 // 摘要
+  loadDesignSystem(brand: string): Promise<DesignSystem>;
+  listBrands(category?: string): Promise<BrandInfo[]>;
+  getDesignSummary(system: DesignSystem): string;
 }
 ```
 
 ## Phase 2: Design Confirmation
 
-### 2.1 Confirmation Items（8 项）
+### 2.1 Confirmation Items (8 required checks)
 
-**必须确认的设计元素**（由 SKILL 定义检查规则）：
-
-| # | 元素 | 检查规则 | TS 验证 |
-|---|------|----------|---------|
-| 1 | Primary Color | 确认主色值，用于 CTA/按钮 | validateColor(primary) |
-| 2 | Accent Color | 确认强调色，用于 hover/链接 | validateColor(accent) |
-| 3 | Neutral Palette | 确认背景/边框色 | validateColor(neutral) |
-| 4 | Typography | 确认字体家族和层级表 | validateTypography() |
-| 5 | Shadow Tokens | 确认 shadow-as-border 技术 | validateShadow() |
-| 6 | Spacing Scale | 确认 8px 基准单位 | validateSpacing() |
-| 7 | Border Radius | 确认圆角值 | validateBorderRadius() |
-| 8 | Component Style | 确认按钮/卡片/输入框样式 | validateComponents() |
+| Item | What must be confirmed | Example validator |
+| --- | --- | --- |
+| Primary color | CTA / action color | `validateColor(primary)` |
+| Accent color | Hover / link emphasis | `validateColor(accent)` |
+| Neutral palette | Background / border system | `validateColor(neutral)` |
+| Typography | Families and hierarchy | `validateTypography()` |
+| Shadow tokens | Shadow-as-border strategy | `validateShadow()` |
+| Spacing scale | Base spacing rhythm | `validateSpacing()` |
+| Border radius | Rounding scale | `validateBorderRadius()` |
+| Component style | Button, card, input language | `validateComponents()` |
 
 ### 2.2 Confirmation Workflow
 
-```
-Step 1: 展示 Design Spec
-    ├── 显示: 8 项元素的实际值
-    ├── 对比: 与用户需求的匹配度
-    └── 输出: confirmation_status
-
-Step 2: 用户确认/调整
-    ├── 确认: 全部通过 → 进入 Phase 3
-    ├── 调整: 某些项需要修改 → 记录 overrides
-    └── 拒绝: 设计系统不合适 → 返回 Phase 1
-
-Step 3: 生成 Design Context
-    ├── 合并: design_spec + overrides
-    └── 输出: design_context (TS 工具使用)
-```
+1. Show the resolved design spec.
+2. Let the user confirm or adjust any of the eight items.
+3. Merge confirmed values with explicit overrides.
+4. Produce `design_context` for generation.
 
 ## Phase 3: Sequential Page Generation
 
+### 3.0 Opening Topology Matrix (Mandatory)
+
+Do not let every interior route inherit the same full marketing hero.
+The shell may stay shared, but the first visible module after the header must
+match the job of the route.
+
+Required opening patterns:
+
+- `Homepage`
+  - May use a full brand hero.
+  - Must establish company positioning, buyer relevance, and the primary
+    business path.
+- `Products`
+  - Start with a catalog lead, assortment map, comparison frame, or buyer
+    decision aid.
+  - Do not reuse a homepage-style billboard hero.
+- `Custom Solutions`
+  - Start with scenario fit, process, delivery model, or collaboration logic.
+- `Cases`
+  - Start with evidence, scenario/outcome framing, or a case ledger.
+- `Contact`
+  - Start form-first or channel-first.
+- `About`
+  - Start with company identity, operating model, proof, or trust posture.
+
+Hard bans:
+
+- No repeated `hero + side card/panel + generic grid` opening across products,
+  solutions, cases, contact, and about.
+- No locale/language explainer section inside route bodies.
+- No menu-like utility blocks disguised as content.
+- No personal-blog/editorial-note opening on company routes unless the brief
+  explicitly requests it.
+
+### 3.0.25 Corporate-B2B Homepage Execution Contract (Mandatory for company / manufacturer / enterprise-buyer sites)
+
+- Treat the corporate-b2b homepage structure as generic. IBM/Carbon may be a
+  visual override, but it does not own the structural rules.
+- The homepage must read as an enterprise company homepage, not a lifestyle
+  landing page or personal site.
+- Default opening sequence:
+  - image-backed enterprise hero
+  - proof / procurement-value strip
+  - capability band
+  - enterprise CTA band
+- The first visible homepage section must be a single image-backed enterprise
+  hero, not a split hero.
+- The opening hero must not contain:
+  - an `aside` rail
+  - a detached side card
+  - a visual rail
+  - a side media card
+  - a founder-profile cadence
+  - floating stat cards
+- The opening hero must contain a real `<img>` or `<picture>` inside
+  `enterprise-hero__media` when stock/library imagery is available.
+- Do not fake the hero visual with text-only pseudo-media such as
+  `enterprise-hero-visual`, `visual-content`, `visual-note`, or `media-panel`.
+- Use the route design spec asset fields when provided.
+- The hero must not render as `copy on the left + empty box on the right`.
+- Required homepage class family:
+  - `enterprise-hero`
+  - `enterprise-hero__media`
+  - `enterprise-hero__content`
+  - optional `enterprise-hero__actions`
+  - optional `enterprise-proof-row`
+- The hero content must overlay the image rather than live in a detached card.
+- Keep the hero close to the shared header. Do not create a large blank gap by
+  stacking header padding and first-section padding.
+- Use breathable corporate spacing:
+  - 20-36px shell transition below header
+  - 40-72px major section rhythm
+  - 28-44px comfortable spacing inside proof rows, capability grids, and CTA
+    bands
+- The next capability band must not become a second hero.
+- Locale controls must live in a dedicated utility wrapper adjacent to nav.
+- Do not put locale buttons inside `<nav>` and then leave an empty utility
+  wrapper beside it.
+- CTA bands must stay class-owned. Avoid ad-hoc inline spacing styles.
+
+### 3.0.5 Company Theme Interpretation (Mandatory)
+
+For `company` websites aimed at enterprise buyers, procurement teams,
+distributors, or export customers:
+
+- The output must read as a company website first, not a personal site,
+  boutique editorial page, or founder essay surface.
+- If the direction includes `heritage`, `craft`, or `warm`, reinterpret those
+  cues as restrained material confidence inside a B2B company shell.
+- Capability, proof, product clarity, process reliability, and inquiry
+  readiness outrank atmosphere.
+- Warmth may affect palette and texture, but it must not dominate the site
+  structure.
+- Do not surface direction labels such as `heritage`, `craft`, `warm`, or
+  `artisan` in visible copy unless the source material explicitly uses them.
+- Rewrite visible copy toward export readiness, sourcing clarity, manufacturing
+  capability, proof, delivery discipline, and inquiry readiness.
+- For towel / home-textile / pool-textile / beach-adjacent exporters, default
+  to marine blue + white with restrained light-neutral support unless the brand
+  explicitly overrides it.
+
+### 3.0.7 Image Usage For Company/Product Sites (Mandatory)
+
+- Prefer selective real-photo support over purely typographic pages when
+  products, materials, specs, or sourcing use cases are central to
+  understanding.
+- Prefer stock/library retrieval before AI illustration.
+- Homepage must contain at least one meaningful company/product/context image.
+- On an enterprise homepage, the first meaningful image should normally belong
+  to the opening hero itself.
+- `.enterprise-hero__media` acts as the shared hero background/support layer.
+- `.enterprise-hero__content` remains the readable overlay text layer.
+- Do not give `.enterprise-hero__content` an opaque card background or another
+  treatment that visually splits the hero into two sibling surfaces.
+- Products pages should use assortment, specification, texture, or material
+  support imagery.
+- About and custom-solutions pages should use company, process, material, or
+  production-proof imagery rather than lifestyle collage.
+- Keep the site disciplined: enough imagery to avoid a text prototype, but not
+  so much that the site becomes a gallery.
+- Each image must belong to a deliberate module with a defined ratio and job.
+- Final visible media and layout blocks should be class-owned, not inline-style
+  owned.
+- Visible copy, placeholders, and CTA labels must be free of mojibake or
+  encoding-corrupted punctuation.
+
+### 3.0.8 Towel / Home-Textile Export Visual Variant (Mandatory when signals match)
+
+If the brief clearly targets towels, home textiles, hospitality textiles, pool
+textiles, beach textiles, or export textile sourcing:
+
+- Use a corporate marine palette, not a warm heritage palette.
+- Preferred direction:
+  - primary: `#1276C2` to `#1E88D8`
+  - support: `#67B7E8`
+  - white: `#FFFFFF`
+  - light blue surfaces: `#F3FAFF`
+  - light border blue: `#D4E8F5`
+  - optional sand accent only as a minor secondary note
+- Keep typography sans-led and crisp.
+- Do not surface internal direction labels as visitor-facing copy.
+- Do not surface implementation mechanics such as `text wordmark`, `locale`,
+  `site experience`, or `i18n` in visible shared-shell copy.
+- Preferred hero/support visuals:
+  - folded towels
+  - towel stacks
+  - poolside / beach / spa / hospitality scenes
+  - textile close-ups
+  - factory or process proof when relevant
+- Real stock/library imagery outranks synthetic illustration.
+
+### 3.0.6 Text Wordmark Handling (Mandatory)
+
+When the brief indicates `Text wordmark` or `text_mark`:
+
+- Render the company name as text-only branding by default.
+- Do not fabricate a monogram, badge, crest, or icon chip unless source-backed.
+- Do not invent a brand subtitle or slogan unless source-backed.
+- Do not emit empty decorative brand-mark placeholders.
+- Do not tell visitors that the site is using a text wordmark.
+
 ### 3.1 Page Generation Order
 
-**必须按此顺序生成**（确保连贯性）：
+Generate pages in order so each page inherits approved context:
 
-| Order | Page Type | Purpose | Context Required |
-|-------|-----------|---------|------------------|
-| 1 | Homepage | 建立品牌调性 | design_context |
-| 2 | Features | 详细内容 | homepage_context |
-| 3 | Pricing | 转化 | features_context |
-| 4 | About | 信任建立 | pricing_context |
-| 5 | Contact | 行动召唤 | all_previous_context |
+| Order | Page type | Purpose | Context required |
+| --- | --- | --- | --- |
+| 1 | Homepage | Establish brand and navigation | `design_context` |
+| 2 | Features / Products | Expand the offer | `homepage_context` |
+| 3 | Pricing / Solutions | Clarify conversion path | previous page context |
+| 4 | About | Build trust | all earlier context |
+| 5 | Contact | Drive action | all earlier context |
 
 ### 3.2 Page Context Structure
 
-```typescript
-// 每个页面生成后输出 context，供下页使用
+```ts
 interface PageContext {
   pageName: string;
   generatedAt: string;
-  
-  // 内容摘要
   contentSummary: {
-    headings: string[];      // 使用的标题术语
-    keyTerms: string[];      // 关键术语
-    featureList: string[];   // 功能列表
-    pricingTiers?: string[]; // 定价层级
+    headings: string[];
+    keyTerms: string[];
+    featureList: string[];
+    pricingTiers?: string[];
   };
-  
-  // 设计应用记录
   designUsage: {
-    colorsUsed: string[];    // 实际使用的颜色
-    typographyUsed: string[];// 实际使用的字体
-    componentsUsed: string[];// 使用的组件
+    colorsUsed: string[];
+    typographyUsed: string[];
+    componentsUsed: string[];
   };
-  
-  // 链接结构
   navigation: {
-    internalLinks: string[]; // 内链
-    sectionRefs: string[];   // 区块引用
+    internalLinks: string[];
+    sectionRefs: string[];
   };
 }
 ```
 
 ### 3.3 Intra-Page Section Generation
 
-**同一页面内 sections 可以并发**（3 个并发）：
+- Page-level context is sequential.
+- Section-level generation inside the same page may run in parallel with a
+  bounded concurrency level, typically `3`.
+- Hero/opening sections should be planned first so later sections inherit the
+  correct terminology and media plan.
 
-```
-Page 1 生成流程:
-    ↓
-┌─────────────────────────────────────┐
-│  Section 1 (Hero) - 串行开始        │
-│  - 生成后输出: hero_context          │
-└─────────────────────────────────────┘
-    ↓ 继承 hero_context
-┌─────────────────────────────────────┐
-│  Section 2 (Features) - 并发开始     │
-│  Section 3 (Testimonials) - 并发     │
-│  Section 4 (CTA) - 并发              │
-│  (concurrency = 3)                   │
-└─────────────────────────────────────┘
-    ↓ 合并所有 section contexts
-┌─────────────────────────────────────┐
-│  Page 1 Context 汇总                 │
-└─────────────────────────────────────┘
-```
+### 3.4 TypeScript Tool Responsibilities
 
-### 3.4 TS 工具职责
-
-```typescript
-// SKILL 定义生成逻辑，TS 仅执行
+```ts
 interface PageGenerator {
   generatePage(
     pageOrder: number,
     pageType: string,
     designContext: DesignContext,
-    previousPageContext?: PageContext  // 关键：继承前一页
+    previousPageContext?: PageContext
   ): Promise<PageResult>;
-  
+
   generateSection(
     sectionType: string,
     pageContext: PageContext,
@@ -279,10 +366,7 @@ interface PageGenerator {
 }
 
 interface LLMTool {
-  executePrompt(
-    prompt: string,
-    systemContext: string
-  ): Promise<LLMResponse>;
+  executePrompt(prompt: string, systemContext: string): Promise<LLMResponse>;
 }
 ```
 
@@ -290,115 +374,96 @@ interface LLMTool {
 
 ### 4.1 QA Checkpoints
 
-**每个页面生成后必须通过 QA**：
+Every generated page must pass:
 
-| Checkpoint | Timing | TS 验证 | SKILL 标准 |
-|------------|--------|---------|------------|
-| Color Compliance | 每 section | ✅ | rules/design-color-compliance.md |
-| Typography Hierarchy | 每 section | ✅ | rules/design-typography-hierarchy.md |
-| Shadow Technique | 每 section | ✅ | rules/design-shadow-technique.md |
-| Spacing & Grid | 每 section | ✅ | rules/design-spacing-grid.md |
-| Accessibility | 每 section | ✅ | rules/design-accessibility.md |
+| Checkpoint | Timing | TypeScript validator | Skill standard |
+| --- | --- | --- | --- |
+| Color compliance | Per section | Yes | `rules/design-color-compliance.md` |
+| Typography hierarchy | Per section | Yes | `rules/design-typography-hierarchy.md` |
+| Shadow technique | Per section | Yes | `rules/design-shadow-technique.md` |
+| Spacing and grid | Per section | Yes | `rules/design-spacing-grid.md` |
+| Accessibility | Per section | Yes | `rules/design-accessibility.md` |
 
 ### 4.2 Page-Level QA
 
-```
-每个页面生成后:
-    ↓
-┌─────────────────────────────────────┐
-│  run-design-qa (TS 工具)            │
-│  - 验证设计规范符合度                │
-│  - 检查 color/typography/shadow     │
-└─────────────────────────────────────┘
-    ↓
-    ├─ 通过 → 记录到 page_context
-    └─ 失败 → 返回修复 (最多 2 次)
-```
+After each page:
 
-### 4.3 Site-Level QA（最终）
+1. Run design QA.
+2. Verify color, typography, shadow, spacing, and accessibility rules.
+3. Verify terminology coherence against previous pages.
+4. Repair up to two times if the page fails.
 
-```
-所有页面生成后:
-    ↓
-┌─────────────────────────────────────┐
-│  术语一致性检查                       │
-│  - Page 1-2-3... 的 heading 对比    │
-└─────────────────────────────────────┘
-    ↓
-┌─────────────────────────────────────┐
-│  链接可达性检查                       │
-│  - 所有 internalLinks 验证           │
-└─────────────────────────────────────┘
-    ↓
-┌─────────────────────────────────────┐
-│  视觉一致性检查                       │
-│  - 跨页面 design token 使用对比      │
-└─────────────────────────────────────┘
-```
+### 4.3 Site-Level QA
+
+After all pages:
+
+1. Compare headings and terminology across pages.
+2. Verify internal links.
+3. Verify cross-page token usage and shell coherence.
 
 ## Core Principles
 
-1. **SKILL 是定义者** - 工作流、标准、选择逻辑都在 SKILL 中定义
-2. **TS 是执行者** - 只提供 loadDesignSystem, executeLLM 等工具函数
-3. **串行页面生成** - 每页基于前一页的 context，确保连贯性
-4. **设计规范驱动** - rules/ 目录是设计合规性的最终标准
-5. **QA Gate 强制** - 每个页面必须通过设计规范检查
+1. The skill defines workflow, standards, and selection logic.
+2. TypeScript executes and validates the agreed contract.
+3. Sequential page generation protects coherence.
+4. Design rules under `rules/` remain the final compliance source.
+5. QA gates are mandatory.
 
 ## Success Metrics
 
-| Metric | Target | 说明 |
-|--------|--------|------|
-| Design Compliance | ≥ 90% | QA 检查通过率 |
-| Content Coherence | ≥ 95% | 术语跨页面一致性 |
-| Revision Rate | < 20% | 需要重大修改的比例 |
-| Generation Speed | < 2min/page | 平均每页面生成时间 |
+| Metric | Target | Meaning |
+| --- | --- | --- |
+| Design compliance | >= 90% | QA pass rate |
+| Content coherence | >= 95% | Cross-page term consistency |
+| Revision rate | < 20% | Pages requiring major rework |
+| Generation speed | < 2 min / page | Average generation time |
 
 ## Design Compliance Rules
 
-生成组件时必须遵循（位于 `rules/` 目录）：
+Generated components must follow:
 
-| 规则 | 文件 | 检查项 |
-|------|------|--------|
-| 颜色合规 | `rules/design-color-compliance.md` | primary/accent/neutral/semantic 颜色 |
-| 字体层级 | `rules/design-typography-hierarchy.md` | 字体、字号、粗细、行高、字间距 |
-| 阴影技术 | `rules/design-shadow-technique.md` | shadow-as-border 技术 |
-| 间距网格 | `rules/design-spacing-grid.md` | 8px 间距系统 + maxWidth |
-| 无障碍 | `rules/design-accessibility.md` | WCAG AA 标准 |
+| Rule | File | Scope |
+| --- | --- | --- |
+| Color compliance | `rules/design-color-compliance.md` | Primary/accent/neutral/semantic color use |
+| Typography hierarchy | `rules/design-typography-hierarchy.md` | Font family, size, weight, line height |
+| Shadow technique | `rules/design-shadow-technique.md` | Shadow-as-border usage |
+| Spacing grid | `rules/design-spacing-grid.md` | Spacing system and max width |
+| Accessibility | `rules/design-accessibility.md` | WCAG AA expectations |
 
 ## References
 
-| 类型 | 路径 | 说明 |
-|------|------|------|
-| 工作流详细 | `prompts/sequential-workflow.md` | 串行生成的具体步骤 |
-| 选择标准 | `prompts/selection-criteria.md` | 设计系统选择规则 |
-| 命令参考 | `references/command-reference.md` | 命令参数 |
-| 故障排除 | `references/troubleshooting.md` | 常见问题 |
-| 设计系统结构 | `references/design-system-structure.md` | DESIGN.md 详解 |
+| Type | Path | Purpose |
+| --- | --- | --- |
+| Workflow details | `prompts/sequential-workflow.md` | Step-by-step sequential generation |
+| Selection criteria | `prompts/selection-criteria.md` | Design-system selection policy |
+| Command reference | `references/command-reference.md` | Tool and command notes |
+| Troubleshooting | `references/troubleshooting.md` | Common issues |
+| Design system structure | `references/design-system-structure.md` | `DESIGN.md` interpretation |
 
 ## Available Design Systems (58+)
 
-| 类别 | 品牌 |
-|------|------|
-| **AI & ML** | Claude, Cohere, ElevenLabs, Minimax, Mistral AI, Ollama, OpenCode AI, Replicate, RunwayML, Together AI, VoltAgent, x.ai |
-| **Developer Tools** | Cursor, Expo, Linear, Lovable, Mintlify, PostHog, Raycast, Resend, Sentry, Supabase, Superhuman, Vercel, Warp, Zapier |
-| **Infrastructure** | ClickHouse, Composio, HashiCorp, MongoDB, Sanity, Stripe |
-| **Design & Productivity** | Airtable, Cal.com, Clay, Figma, Framer, Intercom, Miro, Notion, Pinterest, Webflow |
-| **Fintech** | Coinbase, Kraken, Revolut, Wise |
-| **Enterprise** | Airbnb, Apple, IBM, NVIDIA, SpaceX, Spotify, Uber |
-| **Automotive** | BMW, Ferrari, Lamborghini, Renault, Tesla |
+| Category | Brands |
+| --- | --- |
+| AI and ML | Claude, Cohere, ElevenLabs, Minimax, Mistral AI, Ollama, OpenCode AI, Replicate, RunwayML, Together AI, VoltAgent, x.ai |
+| Developer tools | Cursor, Expo, Linear, Lovable, Mintlify, PostHog, Raycast, Resend, Sentry, Supabase, Superhuman, Vercel, Warp, Zapier |
+| Infrastructure | ClickHouse, Composio, HashiCorp, MongoDB, Sanity, Stripe |
+| Design and productivity | Airtable, Cal.com, Clay, Figma, Framer, Intercom, Miro, Notion, Pinterest, Webflow |
+| Fintech | Coinbase, Kraken, Revolut, Wise |
+| Enterprise | Airbnb, Apple, IBM, NVIDIA, SpaceX, Spotify, Uber |
+| Automotive | BMW, Ferrari, Lamborghini, Renault, Tesla |
 
 ## Magic UI Components
 
-可选择的动效组件（需在 generation 前确认）：
+Use only when they support the brief and the chosen visual system:
 
-| 类别 | 组件 |
-|------|------|
-| **Animation** | AnimatedBeam, Marquee, NumberTicker, TextReveal |
-| **Effect** | BorderBeam, GlowCard, GradientText, Particles |
-| **Interactive** | Carousel, ComparisonSlider, Magnifier, SceneSwitcher |
-| **Layout** | BentoCard, BentoGrid |
+| Category | Components |
+| --- | --- |
+| Animation | AnimatedBeam, Marquee, NumberTicker, TextReveal |
+| Effect | BorderBeam, GlowCard, GradientText, Particles |
+| Interactive | Carousel, ComparisonSlider, Magnifier, SceneSwitcher |
+| Layout | BentoCard, BentoGrid |
 
 ---
 
-**最后更新**: 2026-04-08
-**版本**: 2.0.0 (重写以 SKILL 为核心)
+Last updated: 2026-05-22
+Version: 2.0.0

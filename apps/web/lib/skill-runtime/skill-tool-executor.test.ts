@@ -1,13 +1,20 @@
 ﻿import { describe, expect, it } from "vitest";
 import { HumanMessage } from "@langchain/core/messages";
 import {
+  applyStateSitemapToDecisionForTesting,
+  buildSkeletonPromptRequirementContextForTesting,
+  buildQaRepairGuidanceForTesting,
   buildWebsiteSkillToolRoundPromptForAdapter,
   collapseVisibleBilingualPairsForTesting,
   didRoundMateriallyChangeFilesForTesting,
   extractQaRepairTargetsForTesting,
+  findCorporateB2BHomepageContractIssuesForTesting,
   formatTargetPageContract,
   enforceNavigationOrder,
+  findVisibleSimultaneousBilingualCopyForTesting,
   htmlPathToRoute,
+  injectCuratedMediaIntoHtmlForTesting,
+  invokeWebsiteSkillRoundWithProviderFallbackForTesting,
   invokeModelWithRetry,
   isRetryableProviderError,
   normalizeToolChoiceForProvider,
@@ -15,12 +22,19 @@ import {
   normalizeGeneratedCssForTesting,
   planRoundObjectiveForTesting,
   requiredFileChecklistForTesting,
+  normalizeEnterpriseHomepageInlineStylesForTesting,
+  normalizeCorporateHomepageOpeningRuntimePassThroughForTesting,
+  normalizeEnterpriseTechLegacyDirectionCopyForTesting,
+  normalizeEnterpriseTechTextWordmarkShellForTesting,
   resolveExpectedRequiredFileCountForTesting,
   resolveRoundTimeoutsForTesting,
+  resolveWebsiteSkillRoundProviderConfigForTesting,
   resolveWebsiteSkillMaxToolRoundsForAdapter,
   resolveToolProtocolForProvider,
   runSkillToolExecutor,
   sanitizeRequirementForGenerationForTesting,
+  stripEmptyBrandMarkPlaceholdersForTesting,
+  stripEmptyLocaleGroupPlaceholdersForTesting,
   validateAndNormalizeRequiredFiles,
   validateAndNormalizeRequiredFilesWithQa,
 } from "./skill-tool-executor";
@@ -243,6 +257,110 @@ describe("skill-tool-executor", () => {
     expect(normalized.indexOf('href="/about"')).toBeGreaterThan(normalized.indexOf('href="/cases"'));
   });
 
+  it("does not let state sitemap override an authoritative prompt manifest route plan", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          [
+            "# Canonical Website Generation Prompt",
+            "",
+            "### Prompt Control Manifest (Machine Readable)",
+            "```json",
+            JSON.stringify({
+              routes: ["/"],
+              navLabels: ["Home"],
+              files: ["/styles.css", "/script.js", "/index.html"],
+            }),
+            "```",
+          ].join("\n"),
+        ),
+      ],
+      phase: "conversation",
+      sitemap: ["/accessibility", "/file", "/source", "/english", "/zh", "/blog"],
+    };
+
+    const decision = buildLocalDecisionPlan(state);
+    const merged = applyStateSitemapToDecisionForTesting(decision, state.sitemap);
+
+    expect(decision.routeAuthorityMode).toBe("prompt_manifest");
+    expect(merged.routes).toEqual(["/"]);
+    expect(merged.navLabels).toEqual(["Home"]);
+  });
+
+  it("still allows sitemap seeding when route planning is heuristic", () => {
+    const state: any = {
+      messages: [new HumanMessage("Build a simple site for a company.")],
+      phase: "conversation",
+      sitemap: ["/products", "/contact"],
+    };
+
+    const decision = buildLocalDecisionPlan(state);
+    const merged = applyStateSitemapToDecisionForTesting(decision, state.sitemap);
+
+    expect(decision.routeAuthorityMode).toBe("heuristic");
+    expect(merged.routes).toEqual(["/", "/products", "/contact"]);
+  });
+
+  it("restores missing footer destinations from the confirmed route plan", () => {
+    const state: any = {
+      messages: [new HumanMessage("Build site. Nav: Home | Products | Cases | Contact | About")],
+      phase: "conversation",
+    };
+    const decision = buildLocalDecisionPlan(state);
+    const html = [
+      "<!doctype html><html><body>",
+      "<footer>",
+      '<a href="/contact">Contact</a>',
+      '<a href="/about">About</a>',
+      "</footer>",
+      "</body></html>",
+    ].join("");
+
+    const normalized = enforceNavigationOrder(html, decision);
+    expect(normalized).toContain('href="/products"');
+    expect(normalized).toContain('href="/cases"');
+  });
+
+  it("preserves the brand anchor and dedupes duplicated footer routes", () => {
+    const state: any = {
+      messages: [new HumanMessage("Build site. Nav: Home | Products | Cases | Contact | About")],
+      phase: "conversation",
+    };
+    const decision = buildLocalDecisionPlan(state);
+    const html = [
+      "<!doctype html><html><body>",
+      "<footer>",
+      '<a class="brand" href="/" aria-label="Vbuy Textile home">Vbuy Textile</a>',
+      '<a href="/products">Products</a>',
+      '<a href="/products/">Products</a>',
+      '<a href="/contact">Contact</a>',
+      "</footer>",
+      "</body></html>",
+    ].join("");
+
+    const normalized = enforceNavigationOrder(html, decision);
+    expect(normalized).toContain('class="brand"');
+    expect(normalized).toContain(">Vbuy Textile</a>");
+    expect((normalized.match(/href="\/products\/?"/g) || []).length).toBe(1);
+  });
+
+  it("localizes known route anchors into switchable locale labels", () => {
+    const html = [
+      "<!doctype html><html><body>",
+      "<footer>",
+      '<p><a href="/products/">Products</a></p>',
+      '<p><a href="/contact/">Contact</a></p>',
+      "</footer>",
+      "</body></html>",
+    ].join("");
+
+    const normalized = collapseVisibleBilingualPairsForTesting(html, "zh-CN");
+    expect(normalized).toContain('data-i18n-zh="产品"');
+    expect(normalized).toContain('data-i18n-en="Products"');
+    expect(normalized).toContain(">产品</a>");
+    expect(normalized).toContain('data-i18n-zh="联系"');
+  });
+
   it("classifies wrapped upstream body timeout errors as retryable", () => {
     const error = new TypeError("terminated") as TypeError & { cause?: Error & { code?: string } };
     error.cause = Object.assign(new Error("Body Timeout Error"), {
@@ -286,6 +404,66 @@ describe("skill-tool-executor", () => {
     expect(seenMessages).toEqual([messages, messages]);
   });
 
+  it("falls back to the next provider when a round exhausts retryable timeouts", async () => {
+    const timeoutError = Object.assign(new Error("terminated"), {
+      name: "TypeError",
+    }) as Error & { cause?: Error & { code?: string } };
+    timeoutError.cause = Object.assign(new Error("Body Timeout Error"), {
+      name: "BodyTimeoutError",
+      code: "UND_ERR_BODY_TIMEOUT",
+    });
+    const seenProviders: string[] = [];
+    const seenToolChoices: any[] = [];
+
+    const result = await invokeWebsiteSkillRoundWithProviderFallbackForTesting({
+      preferredProvider: "pptoken",
+      attempts: [
+        {
+          config: {
+            provider: "pptoken",
+            apiKey: "pptoken-key",
+            baseURL: "https://pptoken.example/v1",
+            defaultHeaders: {},
+            modelName: "gpt-5.4",
+          },
+        },
+        {
+          config: {
+            provider: "aiberm",
+            apiKey: "aiberm-key",
+            baseURL: "https://aiberm.example/v1",
+            defaultHeaders: {},
+            modelName: "gpt-5.4",
+          },
+        },
+      ],
+      objective: {
+        targetFiles: ["/products/index.html"],
+        instruction: "Emit the products page.",
+        strictSingleTarget: true,
+      },
+      invokeRound: async ({ config, toolChoice }) => {
+        seenProviders.push(`${config.provider}/${config.modelName}`);
+        seenToolChoices.push(toolChoice);
+        if (config.provider === "pptoken") {
+          throw timeoutError;
+        }
+        return {
+          assistant: "ok",
+          tool_calls: [{ name: "finish", args: {} }],
+        };
+      },
+    });
+
+    expect(seenProviders).toEqual(["pptoken/gpt-5.4-mini", "aiberm/gpt-5.4-mini"]);
+    expect(seenToolChoices).toEqual(["required", "required"]);
+    expect(result.provider).toBe("aiberm");
+    expect(result.model).toBe("gpt-5.4-mini");
+    expect(result.notes).toEqual([
+      expect.stringContaining("provider_round_fallback:pptoken/gpt-5.4-mini"),
+    ]);
+  });
+
   it("builds page-specific contracts for distinct HTML generation", () => {
     const plan = buildLocalDecisionPlan({
       messages: [
@@ -307,6 +485,23 @@ describe("skill-tool-executor", () => {
     const contactContract = formatTargetPageContract(plan, "/contact/index.html");
     expect(contactContract).toContain('Dedicated page for "Contact"');
     expect(contactContract).toContain("Sibling page intents");
+  });
+
+  it("adds page-type-specific guidance for focused product rounds", () => {
+    const plan = buildLocalDecisionPlan({
+      messages: [
+        new HumanMessage(
+          "Build a 6-page industrial-style English website for LC-CNC: Home, Products, Custom Solutions, Cases, About, Contact.",
+        ),
+      ],
+      phase: "conversation",
+    } as any);
+
+    const productsContract = formatTargetPageContract(plan, "/products/index.html", "", { focused: true });
+    expect(productsContract).toContain("Product page gate");
+    expect(productsContract).toContain("grouped offers");
+    expect(productsContract).toContain("Primary sibling contrast routes:");
+    expect(productsContract).not.toContain("Sibling page intents to stay visually distinct from:");
   });
 
   it("keeps the website quality contract aligned with concrete anti-slop rules", () => {
@@ -425,7 +620,7 @@ describe("skill-tool-executor", () => {
       sitemap: ["/", "/blog"],
     } as any);
 
-    expect(resolveWebsiteSkillMaxToolRoundsForAdapter(decision, "我想做个个人简历网站，需要3篇blog体现我的价值。")).toBe(11);
+    expect(resolveWebsiteSkillMaxToolRoundsForAdapter(decision, "我想做个个人简历网站，需要3篇blog体现我的价值。")).toBe(13);
   });
 
   it("derives expected required file count from actual requested content count before detail slugs exist", () => {
@@ -533,8 +728,34 @@ describe("skill-tool-executor", () => {
     } as any);
 
     const detailContract = formatTargetPageContract(plan, "/blog/agile-devops-system-design/index.html", requirement);
-    expect(detailContract).toContain("Render exactly one visible article language body in this file.");
+    expect(detailContract).toContain("initial visible article language should stay English");
     expect(detailContract).toContain("alternating zh/en paragraphs in the initial HTML");
+  });
+
+  it("forces non-blog destination pages to lead with visitor-facing value instead of page mechanics", () => {
+    const plan = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a manufacturing company website with Home, Custom Solutions, About, and Contact.")],
+      phase: "conversation",
+    } as any);
+
+    const contract = formatTargetPageContract(plan, "/custom-solutions/index.html");
+    expect(contract).toContain("Destination page gate");
+    expect(contract).toContain("this page provides");
+    expect(contract).toContain("the next step is");
+    expect(contract).toContain("visitor benefit, capability, proof point, or concrete CTA");
+  });
+
+  it("forces generated blog detail routes to be structure-correct shells during the first website pass", () => {
+    const plan = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a personal blog and generate 3 complete articles.")],
+      phase: "conversation",
+    } as any);
+
+    const contract = formatTargetPageContract(plan, "/blog/gift-box-structure/index.html");
+    expect(contract).toContain("structure-correct article shell");
+    expect(contract).toContain('data-shpitto-blog-detail-shell="true"');
+    expect(contract).toContain("at least two substantive <h2> sections");
+    expect(contract).toContain("topic map");
   });
 
   it("treats requested bilingual blog detail pages as required skill outputs instead of runtime-only completions", () => {
@@ -595,6 +816,106 @@ describe("skill-tool-executor", () => {
     ]);
     expect(objective.strictSingleTarget).toBe(true);
     expect(objective.instruction).toContain("Emit this complete Blog/detail page in this round");
+  });
+
+  it("serializes shared asset generation before any HTML work", () => {
+    const objective = planRoundObjectiveForTesting(0, [
+      "/styles.css",
+      "/script.js",
+      "/index.html",
+      "/about/index.html",
+    ]);
+
+    expect(objective.targetFiles).toEqual(["/styles.css"]);
+    expect(objective.strictSingleTarget).toBe(true);
+    expect(objective.instruction).toContain("/styles.css shared design tokens");
+  });
+
+  it("routes shared-asset rounds to a lighter model by default", () => {
+    const resolved = resolveWebsiteSkillRoundProviderConfigForTesting(
+      {
+        provider: "pptoken",
+        apiKey: "test-key",
+        baseURL: "https://example.test/v1",
+        defaultHeaders: {},
+        modelName: "gpt-5.4",
+      },
+      {
+        targetFiles: ["/styles.css"],
+        instruction: "Emit shared CSS.",
+        strictSingleTarget: true,
+      },
+    );
+
+    expect(resolved.modelName).toBe("gpt-5.4-mini");
+  });
+
+  it("routes an isolated homepage round to a lighter model by default", () => {
+    const resolved = resolveWebsiteSkillRoundProviderConfigForTesting(
+      {
+        provider: "pptoken",
+        apiKey: "test-key",
+        baseURL: "https://example.test/v1",
+        defaultHeaders: {},
+        modelName: "gpt-5.4",
+      },
+      {
+        targetFiles: ["/index.html"],
+        instruction: "Emit the homepage first.",
+        strictSingleTarget: false,
+      },
+    );
+
+    expect(resolved.modelName).toBe("gpt-5.4-mini");
+  });
+
+  it("routes an isolated interior HTML round to a lighter model by default", () => {
+    const resolved = resolveWebsiteSkillRoundProviderConfigForTesting(
+      {
+        provider: "pptoken",
+        apiKey: "test-key",
+        baseURL: "https://example.test/v1",
+        defaultHeaders: {},
+        modelName: "gpt-5.4",
+      },
+      {
+        targetFiles: ["/products/index.html"],
+        instruction: "Emit the products page.",
+        strictSingleTarget: true,
+      },
+    );
+
+    expect(resolved.modelName).toBe("gpt-5.4-mini");
+  });
+
+  it("uses a smaller route batch when a blog index is part of the current round", () => {
+    const objective = planRoundObjectiveForTesting(0, [
+      "/index.html",
+      "/blog/index.html",
+      "/about/index.html",
+      "/contact/index.html",
+      "/products/index.html",
+      "/custom-solutions/index.html",
+    ]);
+
+    expect(objective.targetFiles).toEqual(["/index.html"]);
+    expect(objective.instruction).toContain("Emit the homepage first in this round");
+    expect(objective.strictSingleTarget).toBe(false);
+  });
+
+  it("splits non-home interior HTML routes into smaller batches after the homepage", () => {
+    const objective = planRoundObjectiveForTesting(1, [
+      "/blog/index.html",
+      "/about/index.html",
+      "/contact/index.html",
+      "/products/index.html",
+      "/custom-solutions/index.html",
+    ]);
+
+    expect(objective.targetFiles).toEqual([
+      "/blog/index.html",
+    ]);
+    expect(objective.strictSingleTarget).toBe(true);
   });
 
   it("skips bilingual body-copy guard for blog detail pages while keeping detail completeness checks", () => {
@@ -786,12 +1107,23 @@ describe("skill-tool-executor", () => {
         - Do not use hardcoded industry templates, product assumptions, or generic replacement text when the Canonical Website Prompt provides source content.
         - The page must be meaningfully distinct from sibling pages in section purpose, headings, content, and layout.
         - Navigation links must stay within the fixed route list and preserve the configured navigation order.
+        - This route must not reuse a sibling page's section order or module rhythm without a clear content reason.
+      - Required page skeleton:
+        - Route-specific hero introducing the page's visitor purpose
+        - Primary content section unique to the route
+        - Supporting proof, detail, or framework section
+        - CTA or transition section aligned to the route's job
+      - Skeleton mapping gate: each skeleton bullet must become its own visible major section or clearly distinct zone. Do not collapse multiple bullets into one generic card grid or one catch-all detail section.
       - No route-specific source excerpt was found; derive a unique page architecture from the complete Canonical Website Prompt.
       - Derive route-specific sections, headings, card types, and interactions from the Canonical Website Prompt and source content.
       - Use a page-specific body architecture. Shared header/footer/design tokens are allowed; the main content section order, visual modules, and primary components must differ from sibling routes.
       - Do not apply a hardcoded industry skeleton or copy the previous page layout and only swap text.
       - Visitor-facing copy must be substantive content for the audience, not a description of site mechanics. Do not tell visitors what the page's task is, where to start browsing, which route comes next, or that one page leads into deeper content.
       - Ban visible scaffold phrases and equivalents such as 从首页开始, 接下来看博客, 循序进入深内容, 阅读入口, 站点入口, 首页路径, 继续了解, 下一步, this page provides, homepage job, where to start, start from home, or next step when they explain navigation order rather than a concrete offer or action.
+      - Destination page gate: the first visible section must immediately communicate a visitor benefit, capability, proof point, or concrete CTA. Do not open with page-purpose notes like 'this page provides', 'the next step is', 'continue to', 'what this page is for', or any explanation of route order.
+      - Destination page gate: headings such as 继续了解, 下一步, Start here, Where to start, or similar are only acceptable when they introduce a real offer/action for the visitor. They are invalid if they merely choreograph browsing between pages.
+      - Interior page gate: make the first visible modules specific to the route's purpose and audience. Avoid generic hero plus filler-card repetition from sibling pages.
+      - Interior page topology: the post-hero structure must contain at least three distinct major zones with different jobs. Do not compress the page into the same repeated section pattern used elsewhere.
       - Follow the workflow skill's Shared Shell/Footer Contract for header, main, and footer requirements.
       Sibling page intents to stay visually distinct from:
       /: Homepage. Establish the brand overview, core value, primary route entry, and next action while preserving site home-entry semantics.
@@ -823,6 +1155,44 @@ describe("skill-tool-executor", () => {
     expect(sanitized).toContain("## 4. design direction");
     expect(sanitized).not.toContain("page differentiation blueprint");
     expect(sanitized).not.toContain("quote-form");
+  });
+
+  it("builds a compact skeleton execution context while preserving manifest and evidence sections", () => {
+    const verbosePrompt = [
+      "# Canonical Website Generation Prompt",
+      "## 0. Confirmed Generation Parameters",
+      "- Website type: Company website",
+      "- Language: Chinese and English",
+      "## 0.5 Brand Assets",
+      "- Logo source: Text wordmark",
+      "## 1.5 Explicit User Constraints",
+      "- Keep the site bilingual and trust-led.",
+      "## 1.6 Content Source Instructions",
+      "- Prioritize same-domain research before generic web search.",
+      "## 2. Website Overall Positioning Prompt",
+      "FILLER ".repeat(1400),
+      "## 3.5 Prompt Control Manifest (Mandatory)",
+      "```json",
+      JSON.stringify({
+        routes: ["/", "/products", "/contact"],
+        files: ["/styles.css", "/script.js", "/index.html", "/products/index.html", "/contact/index.html"],
+      }),
+      "```",
+      "## 4. General Design Specification Prompt",
+      "DESIGN ".repeat(1800),
+      "## 7. Evidence Brief",
+      "- Priority Facts: VBUY Textile is a B2B towel manufacturer.",
+      "- Page Briefs: Products page should emphasize MOQ, materials, and certification proof.",
+      "SOURCE ".repeat(1200),
+    ].join("\n");
+
+    const compact = buildSkeletonPromptRequirementContextForTesting(verbosePrompt);
+
+    expect(compact.length).toBeLessThan(verbosePrompt.length);
+    expect(compact).toContain("## 0. Confirmed Generation Parameters");
+    expect(compact).toContain("## 3.5 Prompt Control Manifest");
+    expect(compact).toContain("## 7. Evidence Brief");
+    expect(compact).not.toContain("## 4. General Design Specification Prompt");
   });
 
   it("fails fast without a configured provider key instead of generating local files", async () => {
@@ -1108,7 +1478,7 @@ describe("skill-tool-executor", () => {
     ).toThrow("exposes editorial scaffold/explanatory wording");
   });
 
-  it("blocks Blog-backed list cards whose outer runtime item has zero padding", () => {
+  it("normalizes Blog-backed list cards whose outer runtime item has zero padding", () => {
     const decision = buildLocalDecisionPlan({
       messages: [new HumanMessage("Build a personal blog with three posts.")],
       phase: "conversation",
@@ -1150,7 +1520,7 @@ describe("skill-tool-executor", () => {
         decision,
         files,
       }),
-    ).toThrow("Blog list item outer class lacks runtime-safe padding");
+    ).not.toThrow();
   });
 
   it("blocks bilingual output that shows Chinese and English simultaneously", () => {
@@ -1312,7 +1682,17 @@ describe("skill-tool-executor", () => {
       },
     } as any);
     const files = validGeneratedFiles(decision.routes).map((file) =>
-      file.path === "/index.html"
+      file.path === "/styles.css"
+        ? {
+            ...file,
+            content: [
+              ".enterprise-hero { position: relative; overflow: hidden; min-height: 42rem; }",
+              ".enterprise-hero__media { position: absolute; inset: 0; }",
+              ".enterprise-hero__media img { width: 100%; height: 100%; object-fit: cover; }",
+              ".enterprise-hero__content { position: relative; z-index: 2; max-width: 44rem; }",
+            ].join("\n"),
+          }
+        : file.path === "/index.html"
         ? {
             ...file,
             content: String(file.content).replace(
@@ -1358,24 +1738,36 @@ describe("skill-tool-executor", () => {
       },
     } as any);
     const files = validGeneratedFiles(decision.routes).map((file) =>
-      file.path === "/index.html"
+      file.path === "/styles.css"
         ? {
             ...file,
-            content: String(file.content).replace(
-              /<main>[\s\S]*<\/main>/,
-              [
-                "<main>",
-                '<section aria-label="Language switch"><button type="button">中文</button><button type="button">English</button></section>',
-                "<section>",
-                '<h1><span class="lang-zh">工业自动化合作伙伴</span><span class="lang-en">Industrial automation partner</span></h1>',
-                '<p><span class="lang-zh">我们为学校和机构提供完整的部署支持与内容服务。</span><span class="lang-en">We provide full deployment support and editorial services for schools and institutions.</span></p>',
-                '<div class="feature-card"><h2><span class="lang-zh">实施路径</span><span class="lang-en">Implementation roadmap</span></h2><p><span class="lang-zh">每个阶段都有明确负责人和交付物。</span><span class="lang-en">Each phase has a named owner and explicit deliverables.</span></p></div>',
-                "</section>",
-                "</main>",
-              ].join(""),
-            ),
+            content: [
+              ".enterprise-hero { position: relative; overflow: hidden; min-height: 42rem; }",
+              ".enterprise-hero__media { position: absolute; inset: 0; }",
+              ".enterprise-hero__media img { width: 100%; height: 100%; object-fit: cover; }",
+              ".enterprise-hero__content { position: relative; z-index: 2; max-width: 44rem; }",
+            ].join("\n"),
           }
-        : file,
+        : file.path === "/index.html"
+          ? {
+              ...file,
+              content: String(file.content).replace(
+                /<main>[\s\S]*<\/main>/,
+                [
+                  "<main>",
+                  '<section class="enterprise-hero" aria-labelledby="home-title">',
+                  '  <div class="enterprise-hero__content">',
+                  '    <h1 id="home-title"><span class="lang-zh">工业自动化合作伙伴</span><span class="lang-en">Industrial automation partner</span></h1>',
+                  '    <p><span class="lang-zh">我们为学校和机构提供完整的部署支持与内容服务。</span><span class="lang-en">We provide full deployment support and editorial services for schools and institutions.</span></p>',
+                  "  </div>",
+                  '  <div class="enterprise-hero__media"><img src="https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&q=80&w=1600" alt="Factory process" /></div>',
+                  "</section>",
+                  '<section class="section"><div class="feature-card"><h2><span class="lang-zh">实施路径</span><span class="lang-en">Implementation roadmap</span></h2><p><span class="lang-zh">每个阶段都有明确负责人和交付物。</span><span class="lang-en">Each phase has a named owner and explicit deliverables.</span></p></div></section>',
+                  "</main>",
+                ].join(""),
+              ),
+            }
+          : file,
     );
 
     expect(() =>
@@ -1532,8 +1924,10 @@ describe("skill-tool-executor", () => {
   });
 
   it("allows substantive blog framing that mentions three essays without turning it into scaffold copy", () => {
+    const requirement =
+      "Generate a personal blog with three articles that reflect the author's methods and judgment. Generate 3 complete articles.";
     const decision = buildLocalDecisionPlan({
-      messages: [new HumanMessage("Generate a personal blog with three articles that reflect the author's methods and judgment.")],
+      messages: [new HumanMessage(requirement)],
       phase: "conversation",
       workflow_context: {
         promptControlManifest: {
@@ -1562,14 +1956,16 @@ describe("skill-tool-executor", () => {
       validateAndNormalizeRequiredFiles({
         decision,
         files,
-        requirementText: "Generate a personal blog with three articles that reflect the author's methods and judgment.",
+        requirementText: requirement,
       }),
     ).not.toThrow();
   });
 
   it("does not misclassify topical prose about reading signals as a blog reading-method explainer", () => {
+    const requirement =
+      "Generate a practical editorial blog for engineering teams. Generate 3 complete articles.";
     const decision = buildLocalDecisionPlan({
-      messages: [new HumanMessage("Generate a practical editorial blog for engineering teams.")],
+      messages: [new HumanMessage(requirement)],
       phase: "conversation",
       workflow_context: {
         promptControlManifest: {
@@ -1598,12 +1994,12 @@ describe("skill-tool-executor", () => {
       validateAndNormalizeRequiredFiles({
         decision,
         files,
-        requirementText: "Generate a practical editorial blog for engineering teams.",
+        requirementText: requirement,
       }),
     ).not.toThrow();
   });
 
-  it("requires bilingual non-blog pages to expose real i18n mappings and a language switch", () => {
+  it("auto-normalizes bilingual non-blog pages with a real language switch and i18n resource files", () => {
     const decision = buildLocalDecisionPlan({
       messages: [new HumanMessage("Build a bilingual Chinese and English AI blog with a language switch.")],
       phase: "conversation",
@@ -1619,13 +2015,46 @@ describe("skill-tool-executor", () => {
       },
     } as any);
 
-    expect(() =>
-      validateAndNormalizeRequiredFiles({
-        decision,
-        files: validGeneratedFiles(decision.routes),
-        requirementText: "Build a bilingual Chinese and English AI blog with a language switch.",
-      }),
-    ).toThrow("missing bilingual i18n mappings");
+    const files = [
+      ...validGeneratedFiles(decision.routes),
+      {
+        path: "/i18n/messages.en.json",
+        type: "application/json",
+        content: JSON.stringify({
+          "nav.home": "Home",
+          "nav.blog": "Blog",
+          "locale.en": "EN",
+          "locale.zh": "ZH",
+          "home.hero.title": "Thoughtful AI notes for everyday readers.",
+          "home.hero.lead": "This page explains how AI enters everyday life in a calm editorial voice.",
+        }),
+      },
+      {
+        path: "/i18n/messages.zh-CN.json",
+        type: "application/json",
+        content: JSON.stringify({
+          "nav.home": "首页",
+          "nav.blog": "博客",
+          "locale.en": "EN",
+          "locale.zh": "ZH",
+          "home.hero.title": "写给每个人的 AI 小笔记。",
+          "home.hero.lead": "这里用轻松的中文解释 AI 如何进入生活。",
+        }),
+      },
+    ];
+
+    const validated = validateAndNormalizeRequiredFiles({
+      decision,
+      files,
+      requirementText: "Build a bilingual Chinese and English AI blog with a language switch.",
+    });
+
+    const byPath = new Map(validated.map((file) => [String(file.path || ""), String(file.content || "")] as const));
+    expect(byPath.get("/index.html")).not.toContain("data-locale-toggle");
+    expect(byPath.get("/script.js")).toContain("/i18n/messages.en.json");
+    expect(byPath.get("/script.js")).toContain("/i18n/messages.zh-CN.json");
+    expect(byPath.get("/i18n/messages.en.json")).toContain('"locale.zh"');
+    expect(byPath.get("/i18n/messages.zh-CN.json")).toContain('"locale.en"');
   });
 
   it("accepts bilingual site output when the homepage includes a real i18n mapping and toggle", () => {
@@ -1676,7 +2105,7 @@ describe("skill-tool-executor", () => {
     ).not.toThrow();
   });
 
-  it("requires requested Blog articles to have complete static detail bodies", () => {
+  it("accepts structure-correct Blog detail shells during the first generation pass", () => {
     const decision = buildLocalDecisionPlan({
       messages: [new HumanMessage("我要一个个人blog，主要是ai blog，帮我生成3篇文章")],
       phase: "conversation",
@@ -1693,10 +2122,23 @@ describe("skill-tool-executor", () => {
     } as any);
     const blogMain =
       '<main><h1>AI Blog</h1><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><h2>AI reading desk</h2><p>Practical essays for everyday readers who want to understand AI with concrete decisions and calm examples.</p><div data-shpitto-blog-list><article><a href="/blog/ai-one/">AI one</a></article><article><a href="/blog/ai-two/">AI two</a></article><article><a href="/blog/ai-three/">AI three</a></article></div></section><section><h2>Reader path</h2><p>Start with concepts, move into daily tools, then evaluate trust and safety.</p></section></main>';
-    const thinDetail = (path: string, title: string) => ({
+    const shellDetail = (path: string, title: string) => ({
       path,
       type: "text/html",
-      content: `<!doctype html><html><head><title>${title}</title></head><body><main><article><h1>${title}</h1><p>Short excerpt only.</p></article></main></body></html>`,
+      content: [
+        "<!doctype html>",
+        "<html><head>",
+        `<title>${title}</title>`,
+        '<meta charset="utf-8" />',
+        '<meta name="viewport" content="width=device-width, initial-scale=1" />',
+        '<link rel="stylesheet" href="/styles.css" />',
+        "</head><body><main>",
+        `<article data-shpitto-blog-detail-shell="true"><h1>${title}</h1>`,
+        "<p>This route-complete article shell fixes the topic, summary, and reading intent before the full Blog body is generated later.</p>",
+        "<section><h2>What this article will cover</h2><p>The later article pass will expand the main argument, examples, and operational detail tied to the route topic.</p></section>",
+        "<section><h2>Why this topic matters</h2><p>The shell already gives the reader a stable destination with clear scope instead of a broken link or title-only placeholder.</p></section>",
+        "</article></main><script src=\"/script.js\"></script></body></html>",
+      ].join(""),
     });
     const files = [
       ...validGeneratedFiles(decision.routes).map((file) =>
@@ -1737,9 +2179,9 @@ describe("skill-tool-executor", () => {
               }
             : file,
       ),
-      thinDetail("/blog/ai-one/index.html", "AI one"),
-      thinDetail("/blog/ai-two/index.html", "AI two"),
-      thinDetail("/blog/ai-three/index.html", "AI three"),
+      shellDetail("/blog/ai-one/index.html", "AI one"),
+      shellDetail("/blog/ai-two/index.html", "AI two"),
+      shellDetail("/blog/ai-three/index.html", "AI three"),
     ];
 
     expect(() =>
@@ -1748,7 +2190,7 @@ describe("skill-tool-executor", () => {
         files,
         requirementText: "我要一个个人blog，主要是ai blog，帮我生成3篇文章",
       }),
-    ).toThrow("must contain a complete article/detail body");
+    ).not.toThrow();
   });
 
   it("keeps blog-detail validation focused on completeness instead of semantic topic matching", () => {
@@ -1975,7 +2417,7 @@ describe("skill-tool-executor", () => {
     ).toContain("/blog/demo/index.html");
   });
 
-  it("caps unrequested Blog fallback detail outputs to three entries", () => {
+  it("caps unrequested Blog fallback detail outputs to a single entry by default", () => {
     const decision = buildLocalDecisionPlan({
       messages: [new HumanMessage("Build a personal blog with Home and Blog.")],
       phase: "conversation",
@@ -2041,8 +2483,6 @@ describe("skill-tool-executor", () => {
     });
     expect(required.filter((file) => file.startsWith("/blog/") && file !== "/blog/index.html")).toEqual([
       "/blog/ai-as-a-system/index.html",
-      "/blog/ai-is-not-the-answer-process-is/index.html",
-      "/blog/devops-for-long-running-teams/index.html",
     ]);
 
     expect(() =>
@@ -2092,6 +2532,70 @@ describe("skill-tool-executor", () => {
     expect(required).not.toContain("/blog/third-post/index.html");
   });
 
+  it("does not expand blog detail pages from /blog/index.html when the confirmed manifest does not include a blog data-source route", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a company website with Home, Products, Cases, Contact, About.")],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/products", "/custom-solutions", "/cases", "/contact", "/about"],
+          navLabels: ["Home", "Products", "Custom Solutions", "Cases", "Contact", "About"],
+          files: [
+            "/styles.css",
+            "/script.js",
+            "/index.html",
+            "/products/index.html",
+            "/custom-solutions/index.html",
+            "/cases/index.html",
+            "/contact/index.html",
+            "/about/index.html",
+          ],
+        },
+      },
+    } as any);
+    const files = [
+      { path: "/styles.css", type: "text/css", content: "body{}" },
+      { path: "/script.js", type: "text/javascript", content: "console.log('ok')" },
+      { path: "/index.html", type: "text/html", content: "<!doctype html><html><body><h1>Home</h1></body></html>" },
+      { path: "/products/index.html", type: "text/html", content: "<!doctype html><html><body><h1>Products</h1></body></html>" },
+      { path: "/custom-solutions/index.html", type: "text/html", content: "<!doctype html><html><body><h1>Solutions</h1></body></html>" },
+      { path: "/cases/index.html", type: "text/html", content: "<!doctype html><html><body><h1>Cases</h1></body></html>" },
+      { path: "/contact/index.html", type: "text/html", content: "<!doctype html><html><body><h1>Contact</h1></body></html>" },
+      { path: "/about/index.html", type: "text/html", content: "<!doctype html><html><body><h1>About</h1></body></html>" },
+      {
+        path: "/blog/index.html",
+        type: "text/html",
+        content:
+          '<!doctype html><html><body><main><a href="/blog/gift-box-material-balance/">A</a><a href="/blog/towel-handfeel-checklist/">B</a><a href="/blog/sports-textile-color-consistency/">C</a></main></body></html>',
+      },
+    ];
+
+    const required = requiredFileChecklistForTesting(decision, {
+      files,
+      requirementText: "Build a bilingual company website for a textile manufacturer.",
+    });
+
+    expect(required).not.toContain("/blog/index.html");
+    expect(required).not.toContain("/blog/gift-box-material-balance/index.html");
+    expect(required).not.toContain("/blog/towel-handfeel-checklist/index.html");
+    expect(required).not.toContain("/blog/sports-textile-color-consistency/index.html");
+    expect(required).toEqual(
+      expect.arrayContaining([
+        "/styles.css",
+        "/script.js",
+        "/index.html",
+        "/products/index.html",
+        "/custom-solutions/index.html",
+        "/cases/index.html",
+        "/contact/index.html",
+        "/about/index.html",
+      ]),
+    );
+  });
+
   it("does not treat identical re-emits for the same target file as material progress", () => {
     const previousFiles = [
       { path: "/index.html", content: "<html><body><h1>Home</h1></body></html>", type: "text/html" },
@@ -2134,6 +2638,70 @@ describe("skill-tool-executor", () => {
     ]);
   });
 
+  it("builds targeted QA repair guidance for bilingual leaks and thin blog detail pages", () => {
+    const feedback = [
+      "skill_tool_invalid_required_file: /index.html renders obvious simultaneous bilingual visible copy instead of language-switched content",
+      "skill_tool_invalid_required_file: /blog/custom-towel-brief/index.html must contain a structure-correct Blog detail shell or a complete article/detail body",
+      "skill_tool_invalid_required_file: /blog/certification-logic/index.html body depth too thin (3 substantial paragraphs)",
+    ].join("\n");
+
+    expect(
+      buildQaRepairGuidanceForTesting(feedback, "Build a bilingual Chinese and English manufacturing site with a language switch.", [
+        "/index.html",
+        "/blog/custom-towel-brief/index.html",
+        "/blog/certification-logic/index.html",
+      ]),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("show exactly one visible language at a time"),
+        expect.stringContaining("data-i18n"),
+        expect.stringContaining("data-locale-toggle"),
+        expect.stringContaining("hero title, lead, badges, and proof rows"),
+        expect.stringContaining("/blog/custom-towel-brief/index.html"),
+        expect.stringContaining("at least four substantial body paragraphs"),
+        expect.stringContaining("exact visible list-card topic"),
+      ]),
+    );
+  });
+
+  it("builds targeted QA repair guidance for page-mechanics and blog editorial scaffold failures", () => {
+    const feedback = [
+      "skill_tool_invalid_required_file: /custom-solutions/index.html exposes page mechanics/scaffold wording instead of visitor-facing content: mechanical next step",
+      "skill_tool_invalid_required_file: /blog/gift-box-structure/index.html exposes editorial scaffold/explanatory wording instead of final article content: page contents explainer",
+    ].join("\n");
+
+    expect(
+      buildQaRepairGuidanceForTesting(feedback, "Build a manufacturing site with blog.", [
+        "/custom-solutions/index.html",
+        "/blog/gift-box-structure/index.html",
+      ]),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("delete route-choreography copy"),
+        expect.stringContaining("audience problem, concrete offer, proof, capability, or direct CTA"),
+        expect.stringContaining("/blog/gift-box-structure/index.html"),
+        expect.stringContaining("remove editorial explainer phrases"),
+        expect.stringContaining("Replace that scaffolding with article-specific analysis"),
+      ]),
+    );
+  });
+
+  it("builds targeted QA repair guidance for shared footer destination drift", () => {
+    const feedback =
+      "skill_tool_invalid_required_file: /products/index.html must preserve the shared footer destinations from /index.html; missing /products";
+
+    expect(
+      buildQaRepairGuidanceForTesting(feedback, "Build a bilingual manufacturing site.", [
+        "/products/index.html",
+      ]),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("same footer destination set as `/index.html`"),
+        expect.stringContaining("copy the active shared footer shell first"),
+      ]),
+    );
+  });
+
   it("collapses duplicated visible zh/en sibling nodes into one i18n-aware node", () => {
     const html = [
       '<h2 class="module-title" data-i18n-zh>继续阅读</h2>',
@@ -2156,6 +2724,635 @@ describe("skill-tool-executor", () => {
     );
   });
 
+  it("normalizes inline bilingual form labels to a single visible locale", () => {
+    const html = [
+      '<label for="name" data-i18n="contact.form.name" data-i18n-zh="姓名 / Name" data-i18n-en="Name">姓名 / Name</label>',
+      '<option value="gift" data-i18n="contact.form.topic.gift" data-i18n-zh="礼品 / Gift" data-i18n-en="Gift">礼品 / Gift</option>',
+    ].join("\n");
+
+    const normalized = collapseVisibleBilingualPairsForTesting(html, "zh-CN");
+    expect(normalized).toContain(
+      '<label for="name" data-i18n="contact.form.name" data-i18n-zh="姓名" data-i18n-en="Name">姓名</label>',
+    );
+    expect(normalized).toContain(
+      '<option value="gift" data-i18n="contact.form.topic.gift" data-i18n-zh="礼品" data-i18n-en="Gift">礼品</option>',
+    );
+  });
+
+  it("normalizes known shared-shell English snippets into switchable locale copy", () => {
+    const html = [
+      "<footer>",
+      '<small>Textile manufacturing</small>',
+      '<p data-i18n="footer.focus.copy" data-i18n-zh="B2B textile, OEM/ODM, certified sourcing, gift packaging, and brand-ready merchandising." data-i18n-en="B2B textile, OEM/ODM, certified sourcing, gift packaging, and brand-ready merchandising.">B2B textile, OEM/ODM, certified sourcing, gift packaging, and brand-ready merchandising.</p>',
+      '<span>Text wordmark brand system · warm editorial presentation</span>',
+      "</footer>",
+    ].join("");
+
+    const normalized = collapseVisibleBilingualPairsForTesting(html, "zh-CN");
+    expect(normalized).toContain('data-i18n-zh="纺织制造"');
+    expect(normalized).toContain(">纺织制造</small>");
+    expect(normalized).toContain('data-i18n-zh="B2B 纺织、OEM/ODM、认证采购、礼盒包装与品牌陈列支持。"');
+    expect(normalized).toContain(">B2B 纺织、OEM/ODM、认证采购、礼盒包装与品牌陈列支持。</p>");
+    expect(normalized).toContain('data-i18n-zh="文字标识品牌系统 · 温暖编辑感呈现"');
+  });
+
+  it("normalizes footer implementation wording into visitor-facing enterprise support copy", () => {
+    const html = [
+      "<footer>",
+      "<span>Text wordmark brand presentation</span>",
+      "<span>English / Chinese site experience</span>",
+      "</footer>",
+    ].join("");
+
+    const normalized = collapseVisibleBilingualPairsForTesting(html, "en");
+    expect(normalized).toContain('data-i18n-en="Buyer-ready textile supply"');
+    expect(normalized).toContain(">Buyer-ready textile supply</span>");
+    expect(normalized).toContain('data-i18n-en="Global sourcing communication support"');
+    expect(normalized).toContain(">Global sourcing communication support</span>");
+  });
+
+  it("normalizes mixed English business terms inside Chinese-default visible text", () => {
+    const html = [
+      "<section>",
+      "<span>Operating model</span>",
+      "<span>Scenario / Intervention / Evidence</span>",
+      "<span>Case Library</span>",
+      "<span>Repeatability</span>",
+      "<span>Comparable brief</span>",
+      "<span>Heritage manufacturing / craft</span>",
+      "<span>Shpitto Textile</span>",
+      "<span>Textile · B2B · Heritage Craft</span>",
+      "<strong>1. Understand</strong>",
+      "<strong>Gifting</strong>",
+      "<strong>Retail</strong>",
+      "<strong>Gift box and textile pairing</strong>",
+      "<p>Products、Custom Solutions、Cases 和 Contact 页面共同构成品牌入口。</p>",
+      "<p>适用对象包括 manufacturer 与 enterprise buyers。</p>",
+      "</section>",
+    ].join("");
+
+    const normalized = collapseVisibleBilingualPairsForTesting(html, "zh-CN");
+    expect(normalized).toContain(">工作方式</span>");
+    expect(normalized).toContain(">场景 / 介入 / 证据</span>");
+    expect(normalized).toContain(">案例库</span>");
+    expect(normalized).toContain(">可复用性</span>");
+    expect(normalized).toContain(">相似项目咨询</span>");
+    expect(normalized).toContain(">传承工艺制造</span>");
+    expect(normalized).toContain(">Shpitto 纺织</span>");
+    expect(normalized).toContain(">纺织 · B2B · 传承工艺</span>");
+    expect(normalized).toContain(">1. 理解需求</strong>");
+    expect(normalized).toContain(">礼赠</strong>");
+    expect(normalized).toContain(">零售</strong>");
+    expect(normalized).toContain(">礼盒与纺织组合</strong>");
+    expect(normalized).toContain("产品、定制方案、案例 和 联系 页面共同构成品牌入口。");
+    expect(normalized).toContain("适用对象包括 制造伙伴 与 企业买家。");
+  });
+
+  it("rewrites known mechanical next-step phrasing into visitor-facing copy", () => {
+    const html = '<p>我们会围绕产品、定制和工厂协同，提供清晰的回复路径与下一步信息。</p>';
+    const normalized = collapseVisibleBilingualPairsForTesting(html, "zh-CN");
+    expect(normalized).toContain("合作回应与后续安排");
+    expect(normalized).not.toContain("下一步信息");
+  });
+
+  it("strips empty decorative brand-mark placeholders from shared brand shells", () => {
+    const html = [
+      '<a class="brand" href="/" aria-label="Vbuy Textile home">',
+      '  <span class="brand-mark" aria-hidden="true"></span>',
+      "  <span>Vbuy Textile</span>",
+      "</a>",
+    ].join("\n");
+
+    const normalized = stripEmptyBrandMarkPlaceholdersForTesting(html);
+    expect(normalized).not.toContain("brand-mark");
+    expect(normalized).toContain("Vbuy Textile");
+  });
+
+  it("normalizes text-only brand shells under enterprise-tech visual overrides", () => {
+    const html = '<a class="brand" href="/"><span class="brand-mark">VBUY <strong>Textile</strong></span></a>';
+
+    const normalized = normalizeEnterpriseTechTextWordmarkShellForTesting(
+      html,
+      "Use the IBM Carbon enterprise design system homepage.",
+    );
+
+    expect(normalized).toContain("brand__wordmark");
+    expect(normalized).not.toContain("brand-mark");
+  });
+
+  it("removes legacy heritage/warm direction copy under enterprise-tech visual overrides", () => {
+    const html = [
+      "<div>Heritage textile manufacturing</div>",
+      "<div>Heritage manufacturing · warm, structured presentation</div>",
+    ].join("\n");
+
+    const normalized = normalizeEnterpriseTechLegacyDirectionCopyForTesting(
+      html,
+      "Use IBM Carbon with a blue-and-white corporate technology homepage.",
+    );
+
+    expect(normalized).not.toContain("Heritage");
+    expect(normalized).not.toContain("warm, structured presentation");
+    expect(normalized).toContain("Enterprise textile manufacturing");
+    expect(normalized).toContain("structured enterprise presentation");
+  });
+
+  it("does not rewrite corporate-b2b homepage openings at runtime", () => {
+    const html = [
+      '<!doctype html><html><body>',
+      '<section class="hero">',
+      '  <div class="hero__grid">',
+      '    <div class="hero-copy"><h1>Enterprise sourcing</h1></div>',
+      '    <aside class="hero-panel">',
+      '      <figure class="shpitto-stock-media"><img src="https://example.com/a.jpg" alt="demo" /></figure>',
+      '      <div class="panel">Proof content</div>',
+      '    </aside>',
+      '  </div>',
+      '</section>',
+      '<section class="section"><div class="shell-inner"><p>Second section</p></div></section>',
+      '</body></html>',
+    ].join("\n");
+
+    const normalized = normalizeCorporateHomepageOpeningRuntimePassThroughForTesting(
+      html,
+      "/index.html",
+      "Use the IBM Carbon enterprise design system with a blue-and-white corporate technology homepage.",
+    );
+
+    expect(normalized).toBe(html);
+  });
+
+  it("does not mutate corporate-b2b homepage attributes at runtime", () => {
+    const html = [
+      '<section class="hero is-split">',
+      '  <div class="hero__grid">',
+      '    <div class="hero-copy">',
+      '      <h1 data-i18n="home.hero.title">Title</h1>',
+      "    </div>",
+      "  </div>",
+      "</section>",
+    ].join("\n");
+
+    const normalized = normalizeCorporateHomepageOpeningRuntimePassThroughForTesting(
+      html,
+      "/index.html",
+      "Use the IBM Carbon enterprise design system with a blue-and-white corporate technology homepage.",
+    );
+
+    expect(normalized).toBe(html);
+  });
+
+  it("leaves inner hero-grid homepage markup unchanged at runtime", () => {
+    const html = [
+      '<section class="section">',
+      '  <div class="hero reveal">',
+      '    <div class="hero-grid">',
+      '      <div><h1>Title</h1></div>',
+      '      <aside class="hero-aside"><p>Aside</p></aside>',
+      "    </div>",
+      "  </div>",
+      "</section>",
+    ].join("\n");
+
+    const normalized = normalizeCorporateHomepageOpeningRuntimePassThroughForTesting(
+      html,
+      "/index.html",
+      "Use the IBM Carbon enterprise design system with a blue-and-white corporate technology homepage.",
+    );
+
+    expect(normalized).toBe(html);
+  });
+
+  it("does not convert homepage media panels at runtime", () => {
+    const html = [
+      '<section class="hero is-split">',
+      '  <div class="hero__grid">',
+      '    <div class="hero-copy"><h1>Title</h1><p>Lead</p></div>',
+      '    <div class="media-panel" aria-label="Procurement-focused textile overview">',
+      '      <div class="media-cover">',
+      '        <img src="https://images.unsplash.com/photo-1520903074185-8eca362b3d73?auto=format&fit=crop&w=1400&q=80" alt="Towels" loading="eager">',
+      '        <div class="media-overlay"><p class="caption">Overlay note</p></div>',
+      "      </div>",
+      "    </div>",
+      "  </div>",
+      "</section>",
+    ].join("\n");
+
+    const normalized = normalizeCorporateHomepageOpeningRuntimePassThroughForTesting(
+      html,
+      "/index.html",
+      "Use the IBM Carbon enterprise design system with a blue-and-white corporate technology homepage.",
+    );
+
+    expect(normalized).toBe(html);
+  });
+
+  it("does not convert enterprise hero media frames at runtime", () => {
+    const html = [
+      '<section class="section"><div class="shell-inner hero">',
+      '  <div class="hero-copy"><h1>Title</h1><p>Lead</p></div>',
+      '  <div class="enterprise-hero-media media-frame">',
+      '    <img src="https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=1400&q=80" alt="Towels">',
+      '    <div class="media-caption"><strong>Procurement-ready presentation</strong></div>',
+      "  </div>",
+      "</div></section>",
+    ].join("\n");
+
+    const normalized = normalizeCorporateHomepageOpeningRuntimePassThroughForTesting(
+      html,
+      "/index.html",
+      "Use the IBM Carbon enterprise design system with a blue-and-white corporate technology homepage.",
+    );
+
+    expect(normalized).toBe(html);
+  });
+
+  it("does not flag locale utility attributes as implementation wording in a valid corporate homepage hero", () => {
+    const html = [
+      '<!doctype html><html lang="en" data-locale="en"><body>',
+      '<header class="site-header">',
+      '  <nav class="site-nav"><div class="utility-shell" aria-label="Language switch">',
+      '    <button data-locale-toggle data-locale="en">EN</button>',
+      '    <button data-locale-toggle data-locale="zh-CN">ZH</button>',
+      "  </div></nav>",
+      "</header>",
+      '<main><section class="hero"><article class="enterprise-hero">',
+      '  <div class="enterprise-hero__media"><img src="https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&q=80&w=1600" alt="Towels by a pool"></div>',
+      '  <div class="enterprise-hero__content">',
+      '    <span class="kicker">Textile export partner</span>',
+      '    <h1>Dependable textile supply for buyers who value clarity, consistency, and service.</h1>',
+      '    <p>Vbuy Textile helps sourcing teams compare product options, request samples, and move orders forward with practical support.</p>',
+      "  </div>",
+      "</article></section></main>",
+      "</body></html>",
+    ].join("\n");
+
+    expect(findCorporateB2BHomepageContractIssuesForTesting(html)).toEqual([]);
+  });
+
+  it("injects curated stock/library imagery into towel-export pages that otherwise render as text-only media frames", () => {
+    const html = [
+      "<!doctype html><html><body>",
+      '<section class="hero section">',
+      '  <aside class="hero-panel panel" aria-label="Product and manufacturing summary">',
+      '    <div class="media-frame">',
+      '      <div class="media-top"><span>Manufacturing focus</span></div>',
+      "    </div>",
+      "  </aside>",
+      "</section>",
+      "</body></html>",
+    ].join("\n");
+
+    const normalized = injectCuratedMediaIntoHtmlForTesting(
+      html,
+      "/products/index.html",
+      "Build a bilingual towel and textile export company site with pool, beach, and hospitality references.",
+    );
+
+    expect(normalized).toContain('data-stock-source="curated-library"');
+    expect(normalized).toContain("<img ");
+    expect(normalized).toContain("images.unsplash.com");
+    expect(normalized).toContain("Folded assortments and material detail help buyers compare colorways");
+  });
+
+  it("does not replace explicit IBM homepage media at runtime", () => {
+    const html = [
+      "<!doctype html><html><body>",
+      '<section class="section" aria-labelledby="proof-title">',
+      '  <div class="section-inner proof-strip">',
+      '    <div class="proof-copy"><h2 id="proof-title">Built for sourcing confidence</h2></div>',
+      '    <figure class="proof-media">',
+      '      <img src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22/%3E" alt="Stylized enterprise textile presentation" />',
+      "      <figcaption>Contained visual cue for procurement confidence and product clarity.</figcaption>",
+      "    </figure>",
+      "  </div>",
+      "</section>",
+      "</body></html>",
+    ].join("\n");
+
+    const normalized = injectCuratedMediaIntoHtmlForTesting(
+      html,
+      "/index.html",
+      "Build a bilingual towel and textile export company site with pool, beach, and hospitality references. Use the IBM Carbon enterprise design system with a blue-and-white corporate technology homepage.",
+    );
+
+    expect(normalized).toBe(html);
+  });
+
+  it("does not normalize IBM enterprise homepage inline styles at runtime", () => {
+    const html = [
+      "<!doctype html><html><body>",
+      '<section class="section" aria-labelledby="hero-title">',
+      '  <div class="section-inner masthead masthead--single-column">',
+      '    <div class="section-row" style="align-items:end; margin-bottom:1rem;"><h2 class="page-title" style="font-size:clamp(2.5rem, 4vw, 4.5rem); max-width: 18ch;">Export-ready textile manufacturing</h2></div>',
+      '    <div style="display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:1.25rem;"><span class="badge">Hospitality</span><span class="badge">Pool</span></div>',
+      '    <figure class="surface-card" style="margin:0; overflow:hidden;">',
+      '      <img src="https://images.unsplash.com/photo-1582582494700-7c6b6b2d7d6f?auto=format&fit=crop&w=1200&q=80" alt="Folded beach towels beside a bright pool" style="width:100%; height:100%; aspect-ratio:16/9; object-fit:cover;">',
+      "      <figcaption style=\"padding:var(--space-4); color:var(--text-subtle); font-size:0.95rem;\">Poolside and resort use contexts.</figcaption>",
+      "    </figure>",
+      '    <div class="stack" style="max-width: 760px;"><p>Measured copy band.</p></div>',
+      '    <div class="stack" style="margin-bottom:var(--space-5);"><p>Section intro.</p></div>',
+      '    <div class="section-row" style="flex-wrap:wrap; align-items:center;"><a class="button" href="/contact/">Contact sales</a></div>',
+      '    <div class="card stack" style="background: var(--surface);"><p>CTA surface.</p></div>',
+      "  </div>",
+      "</section>",
+      "</body></html>",
+    ].join("\n");
+
+    const normalized = normalizeEnterpriseHomepageInlineStylesForTesting(
+      html,
+      "/index.html",
+      "Use the IBM Carbon enterprise design system with a blue-and-white corporate technology homepage.",
+    );
+
+    expect(normalized).toBe(html);
+  });
+
+  it("flags IBM homepage opening placeholder media and split-hero fallback as invalid", () => {
+    const html = [
+      '<section class="hero">',
+      '  <div class="hero-grid">',
+      '    <div class="hero-copy"><h1>Export-ready textile manufacturing</h1></div>',
+      '    <div class="media-frame" role="img" aria-label="Procurement confidence visual placeholder"></div>',
+      "  </div>",
+      "</section>",
+    ].join("\n");
+
+    const issues = findCorporateB2BHomepageContractIssuesForTesting(
+      html,
+      "/index.html",
+      "Use the IBM Carbon enterprise design system with a blue-and-white corporate technology homepage.",
+    );
+
+    const issueText = issues.join(" | ");
+    expect(issueText).toContain("opening hero must include a real image node or background image");
+    expect(issueText).toContain("opening hero must use enterprise-hero markup");
+    expect(issueText).toContain("enterprise-hero__content");
+    expect(issueText).toContain("placeholder media scaffolding");
+    expect(issueText).toContain("legacy split-hero markup");
+  });
+
+  it("flags corporate homepage CSS when the hero is styled as split panels instead of one overlay surface", () => {
+    const html = [
+      "<!doctype html><html><body>",
+      '<section class="enterprise-hero">',
+      '  <div class="enterprise-hero__content"><h1>Reliable textile supply</h1><p>Overlay copy</p></div>',
+      '  <div class="enterprise-hero__media"><img src="https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&q=80&w=1600" alt="Towels by a resort pool" /></div>',
+      "</section>",
+      "</body></html>",
+    ].join("\n");
+    const css = [
+      ".enterprise-hero {",
+      "  display: grid;",
+      "  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);",
+      "}",
+      ".enterprise-hero__content {",
+      "  background: linear-gradient(120deg, #647c96 0%, #31465f 48%, #1f2a36 100%);",
+      "  box-shadow: 0 18px 50px rgba(31,42,54,0.08);",
+      "}",
+      ".enterprise-hero__media {",
+      "  position: relative;",
+      "}",
+    ].join("\n");
+
+    const issues = findCorporateB2BHomepageContractIssuesForTesting(
+      html,
+      "/index.html",
+      "Build a company website for enterprise buyers with products, custom solutions, cases, about, and contact.",
+      css,
+    );
+
+    const issueText = issues.join(" | ");
+    expect(issueText).toContain("split-panel grid-template-columns");
+    expect(issueText).toContain("background surface instead of transparent overlay text");
+    expect(issueText).toContain("card shadow/panel styling");
+    expect(issueText).toContain("underlying media layer");
+  });
+
+  it("does not flag transparent or none-valued enterprise hero overlay styles as panel surfaces", () => {
+    const html = [
+      "<!doctype html><html><body>",
+      '<section class="enterprise-hero">',
+      '  <div class="enterprise-hero__media"><img src="https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&q=80&w=1600" alt="Towels by a resort pool" /></div>',
+      '  <div class="enterprise-hero__content"><h1>Reliable textile supply</h1><p>Overlay copy</p></div>',
+      "</section>",
+      "</body></html>",
+    ].join("\n");
+    const css = [
+      ".enterprise-hero__content {",
+      "  position: absolute;",
+      "  inset: auto 2rem 2rem 2rem;",
+      "  color: white;",
+      "  background: transparent;",
+      "  border: 0;",
+      "  box-shadow: none;",
+      "  backdrop-filter: none;",
+      "}",
+      ".enterprise-hero__media {",
+      "  position: absolute;",
+      "  inset: 0;",
+      "}",
+    ].join("\n");
+
+    const issues = findCorporateB2BHomepageContractIssuesForTesting(
+      html,
+      "/index.html",
+      "Build a company website for enterprise buyers with products, custom solutions, cases, about, and contact.",
+      css,
+    );
+
+    expect(issues.join(" | ")).not.toContain("background surface instead of transparent overlay text");
+    expect(issues.join(" | ")).not.toContain("card shadow/panel styling");
+  });
+
+  it("flags IBM homepage capability split layouts and malformed locale utility structure", () => {
+    const html = [
+      "<!doctype html><html><body>",
+      '<header class="site-header">',
+      '  <div class="nav-row">',
+      '    <nav class="nav"><a href="/">Home</a><div class="locale-switch"><button>EN</button></div></nav>',
+      '    <div class="utility language-switch"></div>',
+      "  </div>",
+      "</header>",
+      '<section class="enterprise-hero">',
+      '  <div class="enterprise-hero__media"><img src="https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&q=80&w=1600" alt="Towels" /></div>',
+      '  <div class="enterprise-hero__content"><h1>Enterprise textiles</h1></div>',
+      "</section>",
+      '<section class="section">',
+      '  <div class="shell-inner content-band content-band--split">',
+      '    <div class="stack"><h2>Capabilities</h2></div>',
+      '    <aside class="detail"><p>Sidebar help</p></aside>',
+      "  </div>",
+      "</section>",
+      "</body></html>",
+    ].join("\n");
+
+    const issues = findCorporateB2BHomepageContractIssuesForTesting(
+      html,
+      "/index.html",
+      "Use the IBM Carbon enterprise design system with a blue-and-white corporate technology homepage.",
+    );
+
+    const issueText = issues.join(" | ");
+    expect(issueText).toContain("homepage capability zone fell back to split content + sidebar");
+    expect(issueText).toContain("header locale controls leaked into the primary nav");
+    expect(issueText).toContain("empty locale utility shell");
+  });
+
+  it("flags IBM homepage when the opening hero has no real img media and the capability band adds a second H1", () => {
+    const html = [
+      "<!doctype html><html><body>",
+      '<section class="enterprise-hero hero-panel">',
+      '  <div class="enterprise-hero__media" style="background-image:url(https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&q=80&w=1600)">',
+      '    <div class="hero-media__overlay"><p>Lead</p></div>',
+      "  </div>",
+      "</section>",
+      '<section class="band"><div class="section-heading"><h1 class="hero-title">Second hero headline</h1></div></section>',
+      "</body></html>",
+    ].join("\n");
+
+    const issues = findCorporateB2BHomepageContractIssuesForTesting(
+      html,
+      "/index.html",
+      "Use the IBM Carbon enterprise design system with a blue-and-white corporate technology homepage.",
+    );
+
+    const issueText = issues.join(" | ");
+    expect(issueText).toContain("opening hero must place a real img/picture node inside enterprise-hero__media");
+    expect(issueText).toContain("opening hero must contain the homepage H1 inside enterprise-hero__content");
+    expect(issueText).toContain("second hero-scale H1");
+  });
+
+  it("does not flag a valid corporate homepage that keeps a single H1 in the opening hero and H2 in the capability band", () => {
+    const html = [
+      "<!doctype html><html><body>",
+      "<main>",
+      '<section class="enterprise-hero">',
+      '  <div class="enterprise-hero__media"><img src="https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&q=80&w=1600" alt="Towels by a resort pool" /></div>',
+      '  <div class="enterprise-hero__content"><h1 class="hero-title">Reliable textile supply</h1></div>',
+      "</section>",
+      '<section class="section band">',
+      '  <header class="band__header"><h2 class="section-title">Capability overview</h2></header>',
+      "  <div class=\"band__body\"><p>Proof and product selection guidance.</p></div>",
+      "</section>",
+      "</main>",
+      "</body></html>",
+    ].join("\n");
+
+    const issues = findCorporateB2BHomepageContractIssuesForTesting(
+      html,
+      "/index.html",
+      "Build a company website for enterprise buyers with products, custom solutions, cases, about, and contact.",
+      [
+        ".enterprise-hero { position: relative; overflow: hidden; min-height: 42rem; }",
+        ".enterprise-hero__media { position: absolute; inset: 0; }",
+        ".enterprise-hero__content { position: relative; z-index: 2; max-width: 44rem; }",
+      ].join("\n"),
+    );
+
+    expect(issues.join(" | ")).not.toContain("second hero-scale H1");
+  });
+
+  it("applies the enterprise homepage validator to generic corporate-b2b homepages even without explicit IBM wording", () => {
+    const html = [
+      "<!doctype html><html><body>",
+      '<section class="hero-grid">',
+      '  <div class="hero-copy"><h1>Export-ready textile manufacturing</h1></div>',
+      '  <div class="media-frame" role="img" aria-label="Procurement confidence visual placeholder"></div>',
+      "</section>",
+      "</body></html>",
+    ].join("\n");
+
+    const issues = findCorporateB2BHomepageContractIssuesForTesting(
+      html,
+      "/index.html",
+      "Build a company website for enterprise buyers with products, custom solutions, cases, about, and contact.",
+    );
+
+    const issueText = issues.join(" | ");
+    expect(issueText).toContain("opening hero must use enterprise-hero markup");
+    expect(issueText).toContain("opening hero must place a real img/picture node inside enterprise-hero__media");
+  });
+
+  it("strips empty locale-group placeholders so the header only keeps the real locale switch", () => {
+    const html = [
+      "<header>",
+      '  <nav class="nav">',
+      '    <div class="locale-group" aria-label="Language switcher"></div>',
+      '    <div class="locale-switch" aria-label="Language switch"><button type="button">ZH</button></div>',
+      "  </nav>",
+      "</header>",
+    ].join("\n");
+
+    const normalized = stripEmptyLocaleGroupPlaceholdersForTesting(html);
+
+    expect(normalized).not.toContain('class="locale-group"');
+    expect(normalized).toContain('class="locale-switch"');
+  });
+
+  it("injects curated stock/library imagery into current enterprise page shells that use detail-layout instead of media-frame", () => {
+    const html = [
+      "<!doctype html><html><body>",
+      '<main id="main" class="page">',
+      '  <section class="section shell">',
+      '    <div class="detail-layout">',
+      '      <article class="detail-card">',
+      "        <h1>Textile families organized for fast shortlist and comparison.</h1>",
+      "      </article>",
+      '      <aside class="proof-rail">',
+      "        <p>Source-fit clues</p>",
+      "      </aside>",
+      "    </div>",
+      "  </section>",
+      "</main>",
+      "</body></html>",
+    ].join("\n");
+
+    const normalized = injectCuratedMediaIntoHtmlForTesting(
+      html,
+      "/products/index.html",
+      "Build an English-first textile export company site with pool, beach, and hospitality cues.",
+    );
+
+    expect(normalized).toContain('data-stock-source="curated-library"');
+    expect(normalized).toContain("<img ");
+    expect(normalized).toContain("images.unsplash.com");
+    expect(normalized).toContain("Folded assortments and material detail help buyers compare colorways");
+  });
+
+  it("places IBM homepage curated proof imagery after the masthead when no explicit media slot exists yet", () => {
+    const html = [
+      "<!doctype html><html><body>",
+      '<main id="main" class="main">',
+      '  <section class="masthead masthead--single-column">',
+      "    <div><h1>Enterprise textiles for procurement teams.</h1></div>",
+      "  </section>",
+      '  <section class="section"><div class="container"><p>Capability content.</p></div></section>',
+      "</main>",
+      "</body></html>",
+    ].join("\n");
+
+    const normalized = injectCuratedMediaIntoHtmlForTesting(
+      html,
+      "/index.html",
+      "Use the IBM Carbon enterprise design system with a blue-and-white corporate technology homepage for a towel and textile exporter.",
+    );
+
+    expect(normalized).toBe(html);
+  });
+
+  it("does not flag Chinese standards lists as simultaneous bilingual leakage", () => {
+    const html = [
+      "<section>",
+      "  <h2>质量与责任</h2>",
+      "  <p>把常见采购标准变成可执行的日常动作。</p>",
+      "  <p>ISO9001、ISO14001、SMETA、BSCI、OEKO-TEX、GRS 等要求不仅是证书，也是流程、材料与沟通方式的参照。</p>",
+      "</section>",
+    ].join("\n");
+
+    expect(findVisibleSimultaneousBilingualCopyForTesting(html)).toEqual([]);
+  });
+
   it("injects data-i18n toggle support into bilingual runtime scripts", () => {
     const script = [
       "(() => {",
@@ -2169,6 +3366,8 @@ describe("skill-tool-executor", () => {
     expect(normalized).toContain("document.querySelectorAll('[data-locale-toggle]')");
     expect(normalized).toContain("localStorage.getItem(STORAGE_KEY)");
     expect(normalized).toContain("attributeFilter: ['data-lang']");
+    expect(normalized).toContain("window.__shpittoPreviewBase");
+    expect(normalized).toContain("const path = resolveMessagePath(lang);");
   });
 
   it("adds a concrete bilingual protocol scaffold to round prompts", () => {
@@ -2196,18 +3395,70 @@ describe("skill-tool-executor", () => {
       styleReason: "Test rationale",
       loadedSkillIds: [],
       emittedFiles: [],
-      requiredMissing: ["/styles.css", "/script.js", "/index.html", "/blog/index.html"],
+      requiredMissing: ["/styles.css", "/script.js"],
       objective: {
-        targetFiles: ["/styles.css", "/script.js", "/index.html", "/blog/index.html"],
-        instruction: "Emit the initial shared shell and bilingual routes.",
+        targetFiles: ["/styles.css", "/script.js"],
+        instruction: "Emit the initial shared assets for the bilingual shell.",
         strictSingleTarget: false,
       },
       requirementText: "Build a bilingual Chinese and English personal blog with a language switch.",
     });
 
-    expect(prompt).toContain("Bilingual reference scaffold");
+    expect(prompt).toContain("English-first i18n-ready reference scaffold");
     expect(prompt).toContain('data-locale-toggle data-locale="zh-CN"');
     expect(prompt).toContain('data-i18n="home.hero.title"');
+    expect(prompt).toContain("/i18n/messages.en.json");
+    expect(prompt).toContain("/i18n/messages.zh-CN.json");
+    expect(prompt).toContain("Shared asset contract:");
+    expect(prompt).not.toContain("Target page contracts:");
+    expect(prompt).not.toContain("Requested publishable content gate:");
+    expect(prompt).toContain("prioritize the common CSS/JS layer only");
+  });
+
+  it("uses a focused contract for single interior-page rounds without unrelated blog/home prompt bloat", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a bilingual Chinese and English company website with Home, Products, Cases, Contact, About.")],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/products", "/cases", "/contact", "/about"],
+          navLabels: ["首页", "产品", "案例", "联系", "关于"],
+          files: ["/styles.css", "/script.js", "/index.html", "/products/index.html", "/cases/index.html", "/contact/index.html", "/about/index.html"],
+        },
+      },
+    } as any);
+
+    const prompt = buildWebsiteSkillToolRoundPromptForAdapter({
+      round: 5,
+      totalRounds: 12,
+      decision,
+      stylePreset: { id: "industrial", label: "Industrial", rationale: "test" } as any,
+      styleName: "Industrial",
+      styleReason: "Focused interior route test",
+      loadedSkillIds: [],
+      emittedFiles: [
+        { path: "/styles.css", type: "text/css", content: "body{}" },
+        { path: "/script.js", type: "text/javascript", content: "console.log('ok')" },
+        { path: "/index.html", type: "text/html", content: "<!doctype html><html></html>" },
+      ],
+      requiredMissing: ["/products/index.html"],
+      objective: {
+        targetFiles: ["/products/index.html"],
+        instruction: "Emit the products page.",
+        strictSingleTarget: true,
+      },
+      requirementText: "Build a bilingual Chinese and English company website with Home, Products, Cases, Contact, About.",
+    });
+
+    expect(prompt).toContain("Focused page contract:");
+    expect(prompt).toContain("Target page contracts:");
+    expect(prompt).not.toContain("Content-binding route(s):");
+    expect(prompt).not.toContain("Requested publishable content gate:");
+    expect(prompt).not.toContain("English-first i18n-ready reference scaffold");
+    expect(prompt).not.toContain("the blog currently has three recent articles");
   });
 
   it("blocks a homepage that reads like a downloads or certification portal", () => {

@@ -1,18 +1,22 @@
 ﻿import OpenAI from "openai";
 import {
+  assessUserInputSufficiency,
   buildRequirementSpec,
   composeStructuredPrompt,
   parseRequirementFormFromText,
+  type RequirementSpec,
   type RequirementSlot,
 } from "./chat-orchestrator";
 import {
   buildWebsiteEvidenceBrief,
   buildWebsiteKnowledgeProfile,
+  extractExplicitUrlsFromRequirement,
   buildWebsiteSearchQueries,
   formatWebsiteEvidenceBrief,
   formatWebsiteKnowledgeProfile,
   resolveWebSearchQueryBudget,
   type WebsiteEvidenceBrief,
+  type KnowledgeProfileEnrichmentOptions,
   type WebsiteKnowledgeProfile,
 } from "./content-source-ingestion.ts";
 import {
@@ -67,6 +71,17 @@ export type PromptControlManifest = {
     purpose: string;
     source: string;
   }>;
+};
+
+const I18N_MESSAGE_EN_PATH = "/i18n/messages.en.json";
+const I18N_MESSAGE_ZH_CN_PATH = "/i18n/messages.zh-CN.json";
+
+export type SourceEnrichmentPlan = {
+  shouldUseUrlExtraction: boolean;
+  shouldUseDomainSources: boolean;
+  shouldUseUploadedAssets: boolean;
+  shouldUseWebSearch: boolean;
+  reasons: string[];
 };
 
 type DraftProviderConfig = {
@@ -173,15 +188,18 @@ function routeToHtmlPath(route: string): string {
 function buildPromptControlManifest(
   plan: LocalDecisionPlan,
   routeSource: PromptControlManifest["routeSource"] = "prompt_draft_page_plan",
+  requestedSiteLocale: RequestedSiteLocale = "en",
 ): PromptControlManifest {
   const htmlPaths = plan.pageBlueprints.map((page) => routeToHtmlPath(page.route));
+  const i18nPaths =
+    requestedSiteLocale === "bilingual" ? [I18N_MESSAGE_EN_PATH, I18N_MESSAGE_ZH_CN_PATH] : [];
   return {
     schemaVersion: 1,
     promptKind: "canonical_website_prompt",
     routeSource,
     routes: [...plan.routes],
     navLabels: plan.pageBlueprints.map((page) => internalNavLabelForRoute(page.route, page.navLabel)),
-    files: Array.from(new Set(["/styles.css", "/script.js", ...htmlPaths])),
+    files: Array.from(new Set(["/styles.css", "/script.js", ...i18nPaths, ...htmlPaths])),
     pageIntents: plan.pageBlueprints.map((page) => ({
       route: page.route,
       navLabel: internalNavLabelForRoute(page.route, page.navLabel),
@@ -209,17 +227,16 @@ function ensureCanonicalPromptHasBilingualContract(
   if (/##\s*7\.35\s+Bilingual Experience Contract\b/i.test(normalizedDraft)) {
     return normalizedDraft;
   }
-  const defaultVisibleLanguage = displayLocale === "zh" ? "Chinese (zh-CN)" : "English (en)";
   const section = [
     "## 7.35 Bilingual Experience Contract",
     "",
-    `- Requested site locale: bilingual EN/ZH. Default visible language: ${defaultVisibleLanguage}.`,
-    "- The generated site must show exactly one active language at a time. Do not render visible Chinese/English pairs in the same heading, paragraph, card, CTA, nav item, footer, or article body.",
-    "- Store inactive-language copy in explicit i18n structures such as `data-i18n-*`, an in-page messages dictionary, generated `i18n/messages.*.json`, or hidden templates.",
-    "- Add a working EN/ZH language switch only when switching replaces visible core copy. The switch must preserve the current route and persist language preference.",
-    "- Critical bilingual coverage is mandatory for nav, hero copy, CTAs, footer, and core non-blog site sections.",
-    "- Blog/content workflows stay single-language and follow the default visible language only. Do not require EN/ZH switching inside blog cards, blog index pages, or blog/article detail pages.",
-    "- If a real bilingual switch cannot be implemented, fall back to a single-language site. Do not fake bilingual support with visible `Chinese / English` copy pairs.",
+    "- Requested site locale: bilingual EN/ZH using an English-first i18n-ready generation strategy.",
+    "- Initial visible-language contract: the first generated website pass must render English visible copy only across nav, hero, CTAs, footer, and core non-blog site sections. Do not emit visible Chinese/English pairs in the same heading, paragraph, card, CTA, nav item, footer, or article body.",
+    "- Initial implementation contract: generate stable `data-i18n` keys on translatable nodes plus `/i18n/messages.en.json` and `/i18n/messages.zh-CN.json` resource files. The zh-CN file may start as an untranslated key-complete draft that can be translated later without regenerating HTML.",
+    "- Keep the initial HTML shell English-first and lightweight. Alternate-language delivery should come from i18n resource files rather than duplicating page content inside HTML attributes or sibling DOM nodes.",
+    "- Add EN/ZH switch controls only when the runtime is prepared to swap visible copy via the i18n resource files while preserving the current route and language preference.",
+    "- Blog/content workflows stay single-language in the first pass. Do not require EN/ZH switching inside blog cards, blog index pages, or blog/article detail pages during initial generation.",
+    "- If a real i18n-backed language switch cannot be completed, keep the initial website English-only with the i18n resource files in place. Do not fake bilingual support with visible `Chinese / English` copy pairs.",
   ].join("\n");
   const addendumIndex = normalizedDraft.search(/\n##\s*7\.5\s+External Research Addendum/i);
   if (addendumIndex >= 0) {
@@ -233,8 +250,18 @@ function isGenericFallbackSuggestedPages(profile?: WebsiteKnowledgeProfile): boo
   return routes === "/|/about|/products|/cases|/contact";
 }
 
+function selectHighConfidenceSuggestedPages(profile?: WebsiteKnowledgeProfile) {
+  return (profile?.suggestedPages || []).filter((page) => {
+    const sourceKind = page.sourceKind || "structural_source";
+    const confidence = page.confidence ?? (sourceKind === "fallback" ? 0.5 : 0.8);
+    if (sourceKind === "fallback") return false;
+    return confidence >= 0.72;
+  });
+}
+
 function shouldUseKnowledgeSuggestedPages(profile?: WebsiteKnowledgeProfile): boolean {
-  if (!profile || profile.suggestedPages.length < 2) return false;
+  const candidatePages = selectHighConfidenceSuggestedPages(profile);
+  if (!profile || candidatePages.length < 2) return false;
   if (isGenericFallbackSuggestedPages(profile)) return false;
   return profile.sourceMode === "uploaded_files" || profile.sourceMode === "domain" || profile.sourceMode === "mixed";
 }
@@ -247,18 +274,19 @@ function buildPromptDecisionPlanFromKnowledgeProfile(
     return { plan: buildPromptDecisionPlan(requirementText), routeSource: "prompt_draft_page_plan" };
   }
 
-  const nav = knowledgeProfile!.suggestedPages.map((page) => internalNavLabelForRoute(page.route, page.title)).join(" | ");
-  const routeLines = knowledgeProfile!.suggestedPages
+  const candidatePages = selectHighConfidenceSuggestedPages(knowledgeProfile);
+  const nav = candidatePages.map((page) => internalNavLabelForRoute(page.route, page.title)).join(" | ");
+  const routeLines = candidatePages
     .map((page) => `- ${internalNavLabelForRoute(page.route, page.title)}: ${page.route}. ${internalPurposeForRoute(page.route, page.purpose)}`)
     .join("\n");
   const routeManifest = JSON.stringify(
     {
-      routes: knowledgeProfile!.suggestedPages.map((page) => page.route),
-      navLabels: knowledgeProfile!.suggestedPages.map((page) => internalNavLabelForRoute(page.route, page.title)),
+      routes: candidatePages.map((page) => page.route),
+      navLabels: candidatePages.map((page) => internalNavLabelForRoute(page.route, page.title)),
       files: [
         "/styles.css",
         "/script.js",
-        ...knowledgeProfile!.suggestedPages.map((page) => routeToHtmlPath(page.route)),
+        ...candidatePages.map((page) => routeToHtmlPath(page.route)),
       ],
     },
     null,
@@ -279,11 +307,11 @@ function buildPromptDecisionPlanFromKnowledgeProfile(
     "```",
   ].join("\n");
   const plan = buildPromptDecisionPlan(sourcePlannedText);
-  const suggestedRoutes = knowledgeProfile!.suggestedPages.map((page) => page.route);
+  const suggestedRoutes = candidatePages.map((page) => page.route);
   const existingByRoute = new Map(plan.pageBlueprints.map((page) => [page.route, page]));
   plan.routes = [...suggestedRoutes];
-  plan.navLabels = knowledgeProfile!.suggestedPages.map((page) => internalNavLabelForRoute(page.route, page.title));
-  plan.pageBlueprints = knowledgeProfile!.suggestedPages.map((page) => {
+  plan.navLabels = candidatePages.map((page) => internalNavLabelForRoute(page.route, page.title));
+  plan.pageBlueprints = candidatePages.map((page) => {
     const existing = existingByRoute.get(page.route);
     if (existing) {
       return {
@@ -343,7 +371,8 @@ function buildPromptControlManifestSection(
   plan = buildPromptDecisionPlan(requirementText),
   routeSource: PromptControlManifest["routeSource"] = "prompt_draft_page_plan",
 ): string {
-  const promptControlManifest = buildPromptControlManifest(plan, routeSource);
+  const requestedSiteLocale = resolveRequestedSiteLocale(requirementText);
+  const promptControlManifest = buildPromptControlManifest(plan, routeSource, requestedSiteLocale);
   const fixedFileLines = promptControlManifest.files.map((file) => `- ${file}`);
   const pageLines = plan.pageBlueprints.flatMap((page, index) => [
     `${index + 1}. ${internalNavLabelForRoute(page.route, page.navLabel)} (${page.route} -> ${routeToHtmlPath(page.route)})`,
@@ -617,6 +646,56 @@ function buildSearchableRequirementText(requirementText: string): string {
   return normalized || normalizeText(requirementText).replace(/\s+/g, " ");
 }
 
+function hasExplicitUrlExtractionIntent(text: string): boolean {
+  const normalized = String(text || "");
+  return /(?:提取|抓取|读取|参考|按.*网站|extract|crawl|scrape|use .* as (?:the )?(?:main )?source|based on .*website|reference .*website)/i.test(
+    normalized,
+  );
+}
+
+function hasExplicitUploadedSourceIntent(text: string): boolean {
+  const normalized = String(text || "");
+  return /(?:附件|上传|文档|PDF|材料|根据附件|根据上传|uploaded|upload|attachment|document|materials?)/i.test(
+    normalized,
+  );
+}
+
+function buildSourceEnrichmentPlan(params: {
+  requirementText: string;
+  spec: RequirementSpec;
+  referencedAssets?: string[];
+}): SourceEnrichmentPlan {
+  const sufficiency = assessUserInputSufficiency(params.requirementText, params.spec, params.referencedAssets);
+  const explicitUrls = extractExplicitUrlsFromRequirement(params.requirementText);
+  const hasUploadedAssets = (params.referencedAssets || []).length > 0;
+  const contentSources = new Set((params.spec.contentSources || []).map((item) => String(item || "").trim()));
+  const explicitUrlIntent = explicitUrls.length > 0 && hasExplicitUrlExtractionIntent(params.requirementText);
+  const explicitUploadIntent = hasUploadedAssets && hasExplicitUploadedSourceIntent(params.requirementText);
+  const shouldUseUploadedAssets = hasUploadedAssets && (explicitUploadIntent || !sufficiency.sufficient);
+  const shouldUseUrlExtraction = explicitUrls.length > 0 && (explicitUrlIntent || !sufficiency.sufficient);
+  const shouldUseDomainSources =
+    (contentSources.has("existing_domain") || explicitUrls.length > 0) &&
+    (explicitUrlIntent || !sufficiency.sufficient);
+  const shouldUseWebSearch = !sufficiency.sufficient;
+
+  const reasons: string[] = [];
+  if (!sufficiency.sufficient) {
+    reasons.push(`input_insufficient:${sufficiency.missing.join(",") || "unknown"}`);
+  }
+  if (shouldUseUploadedAssets) reasons.push(explicitUploadIntent ? "explicit_uploaded_source_reference" : "uploaded_assets_fill_gaps");
+  if (shouldUseUrlExtraction) reasons.push(explicitUrlIntent ? "explicit_url_extraction_request" : "url_fill_gaps");
+  if (shouldUseDomainSources) reasons.push(explicitUrlIntent ? "explicit_domain_source_request" : "domain_fill_gaps");
+  if (shouldUseWebSearch) reasons.push("web_search_fill_gaps");
+
+  return {
+    shouldUseUrlExtraction,
+    shouldUseDomainSources,
+    shouldUseUploadedAssets,
+    shouldUseWebSearch,
+    reasons,
+  };
+}
+
 function buildSerperQueries(requirementText: string, slots: RequirementSlot[], maxQueries: number): string[] {
   const suggestions: string[] = buildWebsiteSearchQueries(requirementText, maxQueries);
   const hasVisual = slots.some((slot) => slot.key === "visual-system" && slot.filled);
@@ -648,7 +727,7 @@ export function buildSerperQueriesForTesting(
 }
 
 export function buildPromptControlManifestForTesting(requirementText: string): PromptControlManifest {
-  return buildPromptControlManifest(buildPromptDecisionPlan(requirementText));
+  return buildPromptControlManifest(buildPromptDecisionPlan(requirementText), "prompt_draft_page_plan", resolveRequestedSiteLocale(requirementText));
 }
 
 export function buildPromptControlManifestFromKnowledgeProfileForTesting(
@@ -656,7 +735,7 @@ export function buildPromptControlManifestFromKnowledgeProfileForTesting(
   knowledgeProfile: WebsiteKnowledgeProfile,
 ): PromptControlManifest {
   const decision = buildPromptDecisionPlanFromKnowledgeProfile(requirementText, knowledgeProfile);
-  return buildPromptControlManifest(decision.plan, decision.routeSource);
+  return buildPromptControlManifest(decision.plan, decision.routeSource, resolveRequestedSiteLocale(requirementText));
 }
 
 export function enrichCanonicalPromptWithControlManifestForTesting(draft: string, requirementText: string): string {
@@ -683,6 +762,17 @@ export function mergeTemplateWithKnowledgeProfileForTesting(
     knowledgeProfile,
     evidenceBrief,
   );
+}
+
+export function buildSourceEnrichmentPlanForTesting(params: {
+  requirementText: string;
+  referencedAssets?: string[];
+}): SourceEnrichmentPlan {
+  return buildSourceEnrichmentPlan({
+    requirementText: params.requirementText,
+    spec: buildRequirementSpec(params.requirementText, [params.requirementText]),
+    referencedAssets: params.referencedAssets,
+  });
 }
 
 async function collectSerperResearch(params: {
@@ -875,7 +965,7 @@ async function requestPromptDraftWithLlm(params: {
     "- Write the entire canonical prompt, workflow instructions, assumptions, page descriptions, and process notes in English only.",
     "- Do not mirror the user's preferred website locale into the language of the internal prompt artifact.",
     requestedSiteLocale === "bilingual"
-      ? `- Express the final website locale requirement explicitly as bilingual EN/ZH site output with ${displayLocale === "zh" ? "Chinese" : "English"} as the default visible language, while keeping the planning artifact itself in English.`
+      ? `- Express the final website locale requirement explicitly as bilingual EN/ZH site output with English as the default visible language, while keeping the planning artifact itself in English.`
       : `- Express the final website locale requirement explicitly as ${displayLocale === "zh" ? "Chinese-facing site output" : "English-facing site output"} while keeping the planning artifact itself in English.`,
     "- Keep filenames, routes, CSS/JS identifiers, code-like tokens, and product/brand names unchanged.",
   ].join(" ");
@@ -1050,7 +1140,7 @@ async function requestPromptDraftWithLlm(params: {
       "English-normalized research summary unavailable; rely on the evidence brief and source-backed profile.",
     ),
     sources: mergedSources,
-    promptControlManifest: buildPromptControlManifest(params.decisionPlan, params.routeSource),
+    promptControlManifest: buildPromptControlManifest(params.decisionPlan, params.routeSource, resolveRequestedSiteLocale(params.requirementText)),
     evidenceBrief,
     knowledgeProfile: params.knowledgeProfile,
     model: usedModel,
@@ -1085,7 +1175,7 @@ function applyKnowledgeProfileToPromptPlan(params: {
   localDraft: string;
 } {
   const knowledgeDecision = buildPromptDecisionPlanFromKnowledgeProfile(params.requirementText, params.knowledgeProfile);
-  const promptControlManifest = buildPromptControlManifest(knowledgeDecision.plan, knowledgeDecision.routeSource);
+  const promptControlManifest = buildPromptControlManifest(knowledgeDecision.plan, knowledgeDecision.routeSource, resolveRequestedSiteLocale(params.requirementText));
   const localDraft = enrichCanonicalPromptWithControlManifest(
     composeStructuredPrompt(params.requirementText, params.slots),
     params.requirementText,
@@ -1112,9 +1202,15 @@ export async function buildPromptDraftWithResearch(params: {
 }): Promise<PromptDraftBuildResult> {
   const workflowContractSummary = await loadWebsiteWorkflowContractSummary();
   const requestedSiteLocale = resolveRequestedSiteLocale(params.requirementText);
+  const requirementSpec = buildRequirementSpec(params.requirementText, [params.requirementText]);
+  const sourceEnrichmentPlan = buildSourceEnrichmentPlan({
+    requirementText: params.requirementText,
+    spec: requirementSpec,
+    referencedAssets: params.referencedAssets,
+  });
   let decisionPlan = buildPromptDecisionPlan(params.requirementText);
   let routeSource: PromptControlManifest["routeSource"] = "prompt_draft_page_plan";
-  let promptControlManifest = buildPromptControlManifest(decisionPlan, routeSource);
+  let promptControlManifest = buildPromptControlManifest(decisionPlan, routeSource, resolveRequestedSiteLocale(params.requirementText));
   let localDraft = enrichCanonicalPromptWithControlManifest(
     composeStructuredPrompt(params.requirementText, params.slots),
     params.requirementText,
@@ -1130,6 +1226,15 @@ export async function buildPromptDraftWithResearch(params: {
   let webSearchFailureReason = "";
   let evidenceBrief: WebsiteEvidenceBrief | undefined;
   let knowledgeProfile: WebsiteKnowledgeProfile | undefined;
+  const buildEnrichmentOptions = (overrides?: Partial<KnowledgeProfileEnrichmentOptions>): KnowledgeProfileEnrichmentOptions => ({
+    useDomainSources: sourceEnrichmentPlan.shouldUseDomainSources,
+    useExplicitUrlSources: sourceEnrichmentPlan.shouldUseUrlExtraction,
+    useUploadedSources: sourceEnrichmentPlan.shouldUseUploadedAssets,
+    useWebSearch: sourceEnrichmentPlan.shouldUseWebSearch,
+    ...(overrides || {}),
+  });
+  const hasAnyEnabledEnrichment = (options: KnowledgeProfileEnrichmentOptions) =>
+    Boolean(options.useDomainSources || options.useExplicitUrlSources || options.useUploadedSources || options.useWebSearch);
   const getSafeResearchSummary = () =>
     sanitizeWorkflowArtifactText(
       researchSummary,
@@ -1151,22 +1256,33 @@ export async function buildPromptDraftWithResearch(params: {
     promptControlManifest = next.promptControlManifest;
     localDraft = ensureCanonicalPromptHasBilingualContract(next.localDraft, requestedSiteLocale, params.displayLocale);
   };
-  const buildUploadedOnlyKnowledgeProfile = async () => {
-    if (!params.referencedAssets?.length) return undefined;
+  const buildKnowledgeProfileForSelectedSources = async (overrides?: Partial<KnowledgeProfileEnrichmentOptions>) => {
+    const enrichment = buildEnrichmentOptions(overrides);
+    if (!hasAnyEnabledEnrichment(enrichment)) return undefined;
     return buildWebsiteKnowledgeProfile({
       requirementText: params.requirementText,
       timeoutMs: searchTimeoutMs,
-      referencedAssets: params.referencedAssets,
+      maxQueries: enrichment.useWebSearch
+        ? resolveWebSearchQueryBudget(
+            params.requirementText,
+            Number(process.env.CHAT_DRAFT_WEB_SEARCH_MAX_QUERIES || 0),
+          )
+        : 0,
+      searchConfig: enrichment.useWebSearch ? resolveSerperSearchConfigFromEnv().config : undefined,
+      referencedAssets: enrichment.useUploadedSources ? params.referencedAssets : undefined,
       ownerUserId: params.ownerUserId,
       projectId: params.projectId,
+      enrichment,
     });
   };
   const networkGate = shouldSkipNetworkInCurrentEnv();
   if (networkGate.skip) {
-    if (params.referencedAssets?.length) {
-      const uploadedOnlyProfile = await buildUploadedOnlyKnowledgeProfile();
-      if (uploadedOnlyProfile) applyResolvedKnowledgeProfile(uploadedOnlyProfile);
-    }
+    const uploadedOnlyProfile = await buildKnowledgeProfileForSelectedSources({
+      useDomainSources: false,
+      useExplicitUrlSources: false,
+      useWebSearch: false,
+    });
+    if (uploadedOnlyProfile) applyResolvedKnowledgeProfile(uploadedOnlyProfile);
     const canonicalPrompt = mergeTemplateWithResearch(
       localDraft,
       sources,
@@ -1189,35 +1305,41 @@ export async function buildPromptDraftWithResearch(params: {
     };
   }
 
-  if (shouldEnableWebSearch()) {
+  if (
+    sourceEnrichmentPlan.shouldUseDomainSources ||
+    sourceEnrichmentPlan.shouldUseUrlExtraction ||
+    sourceEnrichmentPlan.shouldUseUploadedAssets ||
+    sourceEnrichmentPlan.shouldUseWebSearch
+  ) {
+    const webSearchEnabled = shouldEnableWebSearch();
     const serper = resolveSerperSearchConfigFromEnv();
-    if (!serper.config && !params.referencedAssets?.length) {
+    if (sourceEnrichmentPlan.shouldUseWebSearch && webSearchEnabled && !serper.config) {
       webSearchFailureReason = serper.reason || "missing_serper_config";
     } else {
       try {
-        knowledgeProfile = await buildWebsiteKnowledgeProfile({
-          requirementText: params.requirementText,
-          timeoutMs: searchTimeoutMs,
-          maxQueries: resolveWebSearchQueryBudget(
-            params.requirementText,
-            Number(process.env.CHAT_DRAFT_WEB_SEARCH_MAX_QUERIES || 0),
-          ),
-          searchConfig: serper.config,
-          referencedAssets: params.referencedAssets,
-          ownerUserId: params.ownerUserId,
-          projectId: params.projectId,
+        knowledgeProfile = await buildKnowledgeProfileForSelectedSources({
+          useWebSearch: sourceEnrichmentPlan.shouldUseWebSearch && webSearchEnabled,
         });
-        applyResolvedKnowledgeProfile(knowledgeProfile);
+        if (knowledgeProfile) {
+          applyResolvedKnowledgeProfile(knowledgeProfile);
+        }
         if (
+          sourceEnrichmentPlan.shouldUseWebSearch &&
+          webSearchEnabled &&
+          knowledgeProfile &&
           !hasWebEvidence(knowledgeProfile) &&
-          !knowledgeProfile.sources.some((source) => source.type === "uploaded_file")
+          !knowledgeProfile.sources.some((source) => source.type === "uploaded_file" || source.type === "url_page" || source.type === "domain")
         ) {
           webSearchFailureReason = "serper_no_results";
         }
       } catch (error) {
         const searchFailureReason = normalizeText((error as any)?.message || error) || "serper_search_failed";
         try {
-          const uploadedOnlyProfile = await buildUploadedOnlyKnowledgeProfile();
+          const uploadedOnlyProfile = await buildKnowledgeProfileForSelectedSources({
+            useDomainSources: false,
+            useExplicitUrlSources: false,
+            useWebSearch: false,
+          });
           if (uploadedOnlyProfile) {
             applyResolvedKnowledgeProfile(uploadedOnlyProfile);
             webSearchFailureReason = `web_search_failed:${searchFailureReason};uploaded_sources_used`;
@@ -1230,12 +1352,14 @@ export async function buildPromptDraftWithResearch(params: {
         }
       }
     }
-  } else {
+  } else if (sourceEnrichmentPlan.shouldUseWebSearch && !shouldEnableWebSearch()) {
     webSearchFailureReason = "chat_draft_web_search_disabled";
-    if (params.referencedAssets?.length) {
-      const uploadedOnlyProfile = await buildUploadedOnlyKnowledgeProfile();
-      if (uploadedOnlyProfile) applyResolvedKnowledgeProfile(uploadedOnlyProfile);
-    }
+    const uploadedOnlyProfile = await buildKnowledgeProfileForSelectedSources({
+      useDomainSources: false,
+      useExplicitUrlSources: false,
+      useWebSearch: false,
+    });
+    if (uploadedOnlyProfile) applyResolvedKnowledgeProfile(uploadedOnlyProfile);
   }
 
   const provider = resolveDraftProviderConfig();

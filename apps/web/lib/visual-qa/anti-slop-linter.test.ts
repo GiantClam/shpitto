@@ -87,6 +87,48 @@ describe("anti-slop-linter", () => {
     expect(result.issues.map((issue) => issue.code)).not.toContain("placeholder-copy");
   });
 
+  it("does not treat normal contact-form phrasing about a buyer's company as placeholder copy", () => {
+    const result = lintGeneratedWebsiteHtml(`<!doctype html>
+<html>
+  <head>
+    <title>Contact | Vbuy Textile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <section><h1>Start an inquiry with the details that matter most.</h1><p>Use the form to share your company, product interest, target market, and timeline so the team can respond with a focused next step.</p></section>
+      <section><h2>Channels</h2><p>Choose the contact path that fits your procurement workflow.</p></section>
+      <section><h2>Inquiry form</h2><p>A short brief helps the team prepare a useful quotation or follow-up question.</p></section>
+      <section><h2>Follow-up</h2><p>The response usually confirms product fit, asks for any missing detail, and outlines the next exchange.</p></section>
+    </main>
+  </body>
+</html>`);
+
+    expect(result.issues.map((issue) => issue.code)).not.toContain("placeholder-copy");
+  });
+
+  it("does not treat route-specific buyer copy about a client's brand as placeholder copy", () => {
+    const result = lintGeneratedWebsiteHtml(`<!doctype html>
+<html>
+  <head>
+    <title>Custom Solutions | Vbuy Textile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <section><h1>Programs shaped around your brand, usage scenario, and delivery plan.</h1><p>For private label, hospitality, and contract buyers, the textile specification aligns with the visual standard, packaging needs, and rollout rhythm of the program.</p></section>
+      <section><h2>Audience fit</h2><p>Brand teams, hospitality buyers, and distributors each need different implementation support.</p></section>
+      <section><h2>Process</h2><p>A focused first conversation helps determine whether the project needs a minor adaptation or a full program build.</p></section>
+      <section><h2>Next step</h2><p>Even a simple outline is enough to identify the most practical development path.</p></section>
+    </main>
+  </body>
+</html>`);
+
+    expect(result.issues.map((issue) => issue.code)).not.toContain("placeholder-copy");
+  });
+
   it("warns on footer and navigation shells that add no real site content", () => {
     const result = lintGeneratedWebsiteHtml(`<!doctype html>
 <html>

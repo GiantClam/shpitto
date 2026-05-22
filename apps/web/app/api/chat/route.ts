@@ -45,6 +45,10 @@ import {
   collectReferencedAssetsFromTexts,
   parseReferencedAssetsFromText,
 } from "../../../lib/agent/referenced-assets";
+import {
+  appendExplicitTemplateOverrideToCanonicalPrompt,
+  detectExplicitTemplateStyleIdFromText,
+} from "../../../lib/agent/website-workflow";
 import { buildBlogContentWorkflowPreview } from "../../../lib/skill-runtime/executor";
 import { getSkillExecutionAdapter } from "../../../lib/skill-runtime/skill-execution-adapter-registry";
 import { loadProjectSkill } from "../../../lib/skill-runtime/project-skill-loader";
@@ -202,6 +206,25 @@ function uniqueStrings(values: Array<string | undefined>): string[] {
     output.push(normalized);
   }
   return output;
+}
+
+function sanitizeRequirementTextForExplicitTemplateOverride(text: string, templateStyleId?: string): string {
+  const styleId = String(templateStyleId || "").trim().toLowerCase();
+  let next = String(text || "");
+  if (!next || !styleId) return next;
+
+  next = next
+    .replace(
+      /^[ \t>*-]*(?:设计主题|视觉方向|visual direction|primaryVisualDirection|secondaryVisualTags|secondary visual tags)\s*[:：].*$/gim,
+      "",
+    )
+    .replace(/"primaryVisualDirection"\s*:\s*"[^"]*"\s*,?/g, "")
+    .replace(/"secondaryVisualTags"\s*:\s*\[[^\]]*\]\s*,?/g, "")
+    .replace(/,\s*([}\]])/g, "$1")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  return next;
 }
 
 function buildWorkflowContextFromLongTermPreferences(
@@ -1761,9 +1784,22 @@ export async function POST(req: Request) {
     ((!confirmedPrompt && (decision.intent === "clarify" || decision.intent === "generate")) ||
       rebuildConfirmedPromptForUploadedSources ||
       rebuildConfirmedPromptForCanonicalExecution);
+  const explicitTemplateStyleId =
+    (await detectExplicitTemplateStyleIdFromText(normalizedUserText)) ||
+    (await detectExplicitTemplateStyleIdFromText(currentUserRequirementText)) ||
+    (await detectExplicitTemplateStyleIdFromText(effectiveRequirementText)) ||
+    String((existingWorkflow as any)?.templateStyleId || "").trim() ||
+    undefined;
+  const promptDraftRequirementTextBase = sanitizeRequirementTextForExplicitTemplateOverride(
+    effectiveRequirementText,
+    explicitTemplateStyleId,
+  );
+  const promptDraftRequirementText = explicitTemplateStyleId
+    ? appendExplicitTemplateOverrideToCanonicalPrompt(promptDraftRequirementTextBase, explicitTemplateStyleId)
+    : promptDraftRequirementTextBase;
   const promptDraftResult = shouldBuildPromptDraft
     ? await buildPromptDraftWithResearch({
-        requirementText: effectiveRequirementText,
+        requirementText: promptDraftRequirementText,
         slots,
         referencedAssets,
         ownerUserId: body.user_id || previousState.user_id,
@@ -1782,7 +1818,10 @@ export async function POST(req: Request) {
         provider: undefined,
         model: undefined,
       };
-  const canonicalPromptBase = String(promptDraftResult.canonicalPrompt || "").trim();
+  const canonicalPromptBase = appendExplicitTemplateOverrideToCanonicalPrompt(
+    String(promptDraftResult.canonicalPrompt || "").trim(),
+    explicitTemplateStyleId || "",
+  );
   const canonicalPrompt = confirmedPrompt ? canonicalPromptBase : appendReferencedAssetsBlock(canonicalPromptBase, referencedAssets);
   const promptControlManifest =
     promptDraftResult.promptControlManifest ||
@@ -1987,6 +2026,7 @@ export async function POST(req: Request) {
         canonicalPrompt,
         requirementAggregatedText: effectiveRequirementText,
         promptControlManifest,
+        templateStyleId: explicitTemplateStyleId,
       },
       recentSummary: canonicalPrompt || effectiveRequirementText,
       correctionSummary: aggregated.correctionSummary,
@@ -2100,6 +2140,7 @@ export async function POST(req: Request) {
       secondaryVisualTags: requirementSpec.secondaryVisualTags || [],
       visualDecisionSource: requirementSpec.visualDecisionSource,
       lockPrimaryVisualDirection: requirementSpec.visualDecisionSource === "user_explicit",
+      templateStyleId: explicitTemplateStyleId,
       requirementPatchPlan,
       requirementRevision: aggregated.revision,
       supersededMessages: aggregated.supersededMessages,

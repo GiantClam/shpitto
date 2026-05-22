@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getChatTask, getRememberedChatTask } from "../../../../../../../lib/agent/chat-task-store";
+import { buildLocalDecisionPlan } from "../../../../../../../lib/skill-runtime/decision-layer";
+import {
+  injectCuratedMediaIntoHtmlForPreview,
+  normalizeWebsiteStaticFilesForPreview,
+} from "../../../../../../../lib/skill-runtime/skill-tool-executor";
 import {
   extractProjectAssetPreviewScopeFromContent,
   listProjectAssets,
@@ -257,6 +262,34 @@ function shouldRewriteAssetLogicalUrls(mime: string) {
   return /^(text\/html|text\/css|application\/javascript|text\/javascript|application\/json|text\/plain|text\/markdown)/i.test(
     String(mime || ""),
   );
+}
+
+function normalizeWebsitePreviewHtmlForTask(task: any, filePath: string, html: string): string {
+  const internal = (task?.result?.internal || {}) as Record<string, any>;
+  const state = internal.sessionState || internal.inputState;
+  const fallbackRequirementText =
+    String(state?.workflow_context?.sourceRequirement || "").trim() ||
+    String(state?.workflow_context?.canonicalPrompt || "").trim() ||
+    html;
+  if (!state || typeof state !== "object") {
+    return injectCuratedMediaIntoHtmlForPreview(html, filePath, fallbackRequirementText);
+  }
+  try {
+    const decision = buildLocalDecisionPlan(state as any);
+    const requirementText =
+      String((state as any)?.workflow_context?.sourceRequirement || "").trim() ||
+      String((state as any)?.workflow_context?.canonicalPrompt || "").trim() ||
+      String(decision.requirementText || "").trim();
+    const [normalized] = normalizeWebsiteStaticFilesForPreview({
+      decision,
+      files: [{ path: filePath, content: html, type: "text/html" }],
+      requirementText,
+    });
+    const normalizedHtml = String(normalized?.content || html);
+    return injectCuratedMediaIntoHtmlForPreview(normalizedHtml, filePath, requirementText);
+  } catch {
+    return injectCuratedMediaIntoHtmlForPreview(html, filePath, fallbackRequirementText);
+  }
 }
 
 function normalizePreviewFilePath(value: string): string {
@@ -701,7 +734,7 @@ export async function GET(
 
   const mime = detectMime(filePath);
   if (mime.startsWith("text/html")) {
-    const rawContent = content.toString("utf-8");
+    const rawContent = normalizeWebsitePreviewHtmlForTask(task, filePath, content.toString("utf-8"));
     const assetContext = await ensureAssetRewriteContextForContent(rawContent);
     const previewBase = `/api/chat/tasks/${encodeURIComponent(taskId)}/preview`;
     const html = rewriteHtmlForPreview(

@@ -185,7 +185,9 @@ describe.skipIf(process.env.RUN_REAL_ASSET_REPLAY !== "1")("project asset real-s
     } = await import("../project-assets");
 
     const previousTaskStoreMode = process.env.CHAT_TASKS_USE_SUPABASE;
+    const previousSupabaseProxy = process.env.SUPABASE_TASK_PROXY_URL;
     try {
+      process.env.SUPABASE_TASK_PROXY_URL = "direct";
       process.env.CHAT_TASKS_USE_SUPABASE = "1";
 
       const sourceTask = await withRetry(() => getChatTask(REAL_REPLAY_TASK_ID));
@@ -277,6 +279,8 @@ describe.skipIf(process.env.RUN_REAL_ASSET_REPLAY !== "1")("project asset real-s
       expect(releaseCss).toContain(`${releasePrefix}/${imageAsset?.path}`);
       expect(releaseHtml).not.toContain(logicalPath);
     } finally {
+      if (previousSupabaseProxy === undefined) delete process.env.SUPABASE_TASK_PROXY_URL;
+      else process.env.SUPABASE_TASK_PROXY_URL = previousSupabaseProxy;
       if (previousTaskStoreMode === undefined) delete process.env.CHAT_TASKS_USE_SUPABASE;
       else process.env.CHAT_TASKS_USE_SUPABASE = previousTaskStoreMode;
     }
@@ -297,6 +301,7 @@ describe.skipIf(process.env.RUN_REAL_ASSET_REPLAY !== "1")("project asset real-s
       const { SkillRuntimeExecutor } = await import("../skill-runtime/executor");
 
       const previousTaskStoreMode = process.env.CHAT_TASKS_USE_SUPABASE;
+      const previousSupabaseProxy = process.env.SUPABASE_TASK_PROXY_URL;
       const marker = Date.now().toString(36);
       const deployChatId = safeToken(`asset-replay-${marker}`);
       const keepDeployment = process.env.SHPITTO_REAL_ASSET_REPLAY_KEEP_DEPLOYMENT === "1";
@@ -305,6 +310,7 @@ describe.skipIf(process.env.RUN_REAL_ASSET_REPLAY !== "1")("project asset real-s
       let liveUrl = "";
 
       try {
+        process.env.SUPABASE_TASK_PROXY_URL = "direct";
         process.env.CHAT_TASKS_USE_SUPABASE = "1";
         const sourceTask = await withRetry(() => getChatTask(REAL_REPLAY_TASK_ID));
         expect(sourceTask).toBeTruthy();
@@ -415,6 +421,8 @@ describe.skipIf(process.env.RUN_REAL_ASSET_REPLAY !== "1")("project asset real-s
           ),
         );
       } finally {
+        if (previousSupabaseProxy === undefined) delete process.env.SUPABASE_TASK_PROXY_URL;
+        else process.env.SUPABASE_TASK_PROXY_URL = previousSupabaseProxy;
         if (seed) await cleanupReplayBlogData(deployChatId, seed.accountId, seed.userId);
         if (!keepDeployment && projectName) {
           const { CloudflareClient } = await import("../cloudflare");

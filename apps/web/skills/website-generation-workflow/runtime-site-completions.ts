@@ -263,6 +263,118 @@ export function renderGeneratedBlogDetailPage(params: {
 </html>`);
 }
 
+function renderGeneratedBlogDetailShellPage(params: {
+  post: BlogPostUpsertInput;
+  locale: VisibleLocale;
+  brandName: string;
+  navLabel: string;
+  deps: CompletionDeps;
+}): string {
+  const { post, locale, brandName, navLabel, deps } = params;
+  const lang = locale === "en" ? "en" : "zh";
+  const title = String(post.title || "").trim();
+  const excerpt = String(post.excerpt || "").trim();
+  const category = String(post.category || "").trim();
+  const tags = Array.isArray(post.tags) ? post.tags.map((tag) => String(tag || "").trim()).filter(Boolean) : [];
+  const metaText = [category, ...tags.slice(0, 2)].filter(Boolean).join(" · ");
+  const backToBlogLabel = locale === "en" ? "Back to blog" : "返回博客";
+  const backHomeLabel = locale === "en" ? "See home" : "返回首页";
+  const shellEyebrow = locale === "en" ? "Article outline" : "文章提纲";
+  const shellTitle = locale === "en" ? "Topic map" : "主题导览";
+  const shellIntro =
+    locale === "en"
+      ? "This detail page is prepared as a route-complete article shell. The full long-form article will be generated later from the confirmed source material and stored in the project Blog data."
+      : "当前详情页先交付为结构完整的文章壳页，后续会根据确认后的来源材料生成正式长文，并写入项目的 Blog 数据。";
+  const keyQuestionTitle = locale === "en" ? "What this article will cover" : "这篇文章将展开什么";
+  const readerContextTitle = locale === "en" ? "Why this topic matters" : "为什么这个主题值得阅读";
+  const nextStepTitle = locale === "en" ? "When to generate the full article" : "什么时候生成正式正文";
+  const keyQuestionBody = excerpt
+    ? excerpt
+    : locale === "en"
+      ? "The article shell already fixes the route, title, summary, and content intent so the later content pass can focus on depth instead of rebuilding structure."
+      : "文章壳页会先固定路由、标题、摘要和内容方向，让后续正文生成只关注深度，而不需要重新组织结构。";
+  const readerContextBody =
+    locale === "en"
+      ? `${brandName} uses this Blog route to keep subject-specific insight attached to a stable reader-facing URL, even before the full editorial body is generated.`
+      : `${brandName} 会先把主题内容绑定到稳定的访客路由上，即使正式正文还未生成，读者也能先看到清晰的主题入口与摘要。`;
+  const nextStepBody =
+    locale === "en"
+      ? "Send a follow-up message to generate the final Blog content when you are ready to turn this outline into a full article stored in the Blog database."
+      : "当你准备把这篇提纲扩展成正式文章时，可以再发送一条消息生成最终 Blog 正文，并写入 Blog 数据库。";
+
+  return deps.ensureHtmlDocument(`<!doctype html>
+<html lang="${lang}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <title>${deps.escapeHtml(String(post.seoTitle || title || `${brandName} ${navLabel}`).trim())}</title>
+  <meta name="description" content="${deps.escapeHtml(String(post.seoDescription || excerpt || "").trim())}" />
+  <link rel="stylesheet" href="../../styles.css" />
+  <script src="../../script.js" defer></script>
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <div class="site-header__inner">
+      <a class="brand" href="/" aria-label="${deps.escapeHtml(brandName)}">
+        <span class="brand__mark" aria-hidden="true">${deps.escapeHtml(String(brandName || "S").trim().charAt(0) || "S")}</span>
+        <span class="brand__text">${deps.escapeHtml(brandName)}</span>
+      </a>
+      <nav class="topnav" aria-label="${deps.escapeHtml(locale === "en" ? "Primary navigation" : "主导航")}">
+        <a href="/">${deps.escapeHtml(locale === "en" ? "Home" : "首页")}</a>
+        <a href="/blog" aria-current="page">${deps.escapeHtml(navLabel)}</a>
+      </nav>
+    </div>
+  </header>
+  <main id="main">
+    <article class="site-shell" data-shpitto-blog-detail-shell="true" data-shpitto-blog-detail-slug="${deps.escapeHtml(String(post.slug || "").trim())}">
+      <header class="page-hero" aria-labelledby="post-title">
+        <div class="page-hero__grid">
+          <div>
+            <p class="hero__lede">${deps.escapeHtml(shellEyebrow)}</p>
+            <h1 id="post-title">${deps.escapeHtml(title)}</h1>
+            ${excerpt ? `<p class="page-hero__intro">${deps.escapeHtml(excerpt)}</p>` : ""}
+            ${metaText ? `<div class="article-card__meta" style="margin-top:1.2rem;"><span>${deps.escapeHtml(metaText)}</span></div>` : ""}
+          </div>
+        </div>
+      </header>
+      <section class="section">
+        <div class="section__head">
+          <div>
+            <p class="hero__lede">${deps.escapeHtml(navLabel)}</p>
+            <h2 class="section__title">${deps.escapeHtml(shellTitle)}</h2>
+          </div>
+        </div>
+        <div class="feature-grid">
+          <article class="feature-card">
+            <h3>${deps.escapeHtml(keyQuestionTitle)}</h3>
+            <p>${deps.escapeHtml(keyQuestionBody)}</p>
+          </article>
+          <article class="feature-card">
+            <h3>${deps.escapeHtml(readerContextTitle)}</h3>
+            <p>${deps.escapeHtml(readerContextBody)}</p>
+          </article>
+          <article class="feature-card">
+            <h3>${deps.escapeHtml(nextStepTitle)}</h3>
+            <p>${deps.escapeHtml(nextStepBody)}</p>
+          </article>
+        </div>
+      </section>
+      <section class="section">
+        <div class="panel">
+          <p>${deps.escapeHtml(shellIntro)}</p>
+          <div class="page-hero__actions">
+            <a class="button--accent" href="/blog">${deps.escapeHtml(backToBlogLabel)}</a>
+            <a class="button--ghost" href="/">${deps.escapeHtml(backHomeLabel)}</a>
+          </div>
+        </div>
+      </section>
+    </article>
+  </main>
+</body>
+</html>`);
+}
+
 function slugToken(input: string, fallback: string): string {
   const normalized = String(input || "")
     .normalize("NFKD")
@@ -426,6 +538,7 @@ export function materializeWebsiteBlogDetailPages(params: {
   project: any;
   inputState: AgentState;
   locale: Locale;
+  mode?: "shell" | "content";
   deps: CompletionDeps;
 }): any {
   const baseProject = sanitizeBlogIndexEditorialScaffold(
@@ -470,18 +583,28 @@ export function materializeWebsiteBlogDetailPages(params: {
   );
 
   const generatedFiles: RuntimeFile[] = [];
+  const renderMode = params.mode === "shell" ? "shell" : "content";
   posts.forEach((post, index) => {
     const route = postRoutes[index] || `/blog/${post.slug}`;
     if (projectHasStaticBlogDetailFile({ staticSite: { files } }, route, params.deps)) return;
     const relatedPosts = posts.filter((item) => item.slug !== post.slug);
-    const html = renderGeneratedBlogDetailPage({
-      post,
-      locale: visibleLocale,
-      brandName,
-      navLabel,
-      relatedPosts,
-      deps: params.deps,
-    });
+    const html =
+      renderMode === "shell"
+        ? renderGeneratedBlogDetailShellPage({
+            post,
+            locale: visibleLocale,
+            brandName,
+            navLabel,
+            deps: params.deps,
+          })
+        : renderGeneratedBlogDetailPage({
+            post,
+            locale: visibleLocale,
+            brandName,
+            navLabel,
+            relatedPosts,
+            deps: params.deps,
+          });
     generatedFiles.push({
       path: `${params.deps.normalizePath(route)}/index.html`,
       content: html,

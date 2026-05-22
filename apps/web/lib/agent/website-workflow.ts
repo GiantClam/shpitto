@@ -98,6 +98,7 @@ export type WorkflowVisualDecisionContext = {
   secondaryVisualTags?: string[];
   visualDecisionSource?: "user_explicit" | "user_recommended_default" | "prompt_adaptive" | "fallback";
   lockPrimaryVisualDirection?: boolean;
+  templateStyleId?: string;
 };
 
 type AwesomeIndexStyle = {
@@ -225,9 +226,10 @@ export function normalizeWorkflowVisualDecisionContext(
 ): WorkflowVisualDecisionContext | undefined {
   if (!input) return undefined;
   const primaryVisualDirection = getWebsiteDesignDirection(input.primaryVisualDirection || "")?.id;
-  if (!primaryVisualDirection) return undefined;
-  return {
-    primaryVisualDirection,
+  const templateStyleId = normalizeWorkflowStyleId(input.templateStyleId || "");
+  if (!primaryVisualDirection && !templateStyleId) return undefined;
+
+  const normalized: WorkflowVisualDecisionContext = {
     secondaryVisualTags: Array.isArray(input.secondaryVisualTags)
       ? input.secondaryVisualTags.filter(
           (value): value is string =>
@@ -240,6 +242,9 @@ export function normalizeWorkflowVisualDecisionContext(
     lockPrimaryVisualDirection:
       Boolean(input.lockPrimaryVisualDirection) || input.visualDecisionSource === "user_explicit",
   };
+  if (primaryVisualDirection) normalized.primaryVisualDirection = primaryVisualDirection;
+  if (templateStyleId) normalized.templateStyleId = templateStyleId;
+  return normalized;
 }
 
 function pathExists(p: string) {
@@ -479,11 +484,34 @@ function hasExplicitStyleReference(
 
   const escapedSlug = slug.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const hasExplicitDesignIntent = (candidate: string) => {
+    if (!candidate || candidate.length < 3) return false;
+    const escaped = candidate.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const contextualPatterns = [
+      new RegExp(
+        `(?:use|adopt|follow|match|mirror|apply|reference|inspired by|based on|modeled on|similar to)\\s+(?:the\\s+)?${escaped}(?:\\s+(?:design|style|aesthetic|visual|language|system|look))?`,
+        "i",
+      ),
+      new RegExp(`${escaped}\\s+(?:design|style|aesthetic|visual|language|system|look)`, "i"),
+      new RegExp(
+        `(?:design|style|aesthetic|visual|language|system|look)(?:\\s+(?:reference|direction))?\\s+(?:of|from|like|for)?\\s*(?:the\\s+)?${escaped}`,
+        "i",
+      ),
+    ];
+    return contextualPatterns.some((pattern) => pattern.test(queryLower));
+  };
   const boundarySlug =
-    slug.length >= 4 ? new RegExp(`(?:^|[^a-z0-9])${escapedSlug}(?:$|[^a-z0-9])`, "i").test(queryLower) : false;
+    slug.length >= 3 ? new RegExp(`(?:^|[^a-z0-9])${escapedSlug}(?:$|[^a-z0-9])`, "i").test(queryLower) : false;
   const boundaryName =
-    name.length >= 4 ? new RegExp(`(?:^|[^a-z0-9])${escapedName}(?:$|[^a-z0-9])`, "i").test(queryLower) : false;
-  if (boundarySlug || boundaryName) return true;
+    name.length >= 3 ? new RegExp(`(?:^|[^a-z0-9])${escapedName}(?:$|[^a-z0-9])`, "i").test(queryLower) : false;
+  if (
+    (boundarySlug && hasExplicitDesignIntent(slug)) ||
+    (boundaryName && hasExplicitDesignIntent(name)) ||
+    (boundarySlug && hasExplicitDesignIntent(name)) ||
+    (boundaryName && hasExplicitDesignIntent(slug))
+  ) {
+    return true;
+  }
 
   const slugTokens = tokenize(slug, ignoredTokens);
   const nameTokens = tokenize(name, ignoredTokens);
@@ -492,7 +520,7 @@ function hasExplicitStyleReference(
   return tokenGroups.some((tokens) => {
     if (tokens.length !== 1) return false;
     const [token] = tokens;
-    return token.length >= 4 && queryTokens.has(token);
+    return token.length >= 3 && queryTokens.has(token) && hasExplicitDesignIntent(token);
   });
 }
 
@@ -808,19 +836,28 @@ function buildStylePresetFromOpenDesignDirection(directionId: string): Partial<D
       border: "#CBD5E1",
     },
     "heritage-manufacturing": {
-      primary: "#B8893E",
-      accent: "#B8893E",
-      background: "#F7F2E8",
-      surface: "#FFFDF8",
-      panel: "#FFFDF8",
-      text: "#2B211C",
-      muted: "#6C5A4E",
-      border: "#DCCDB8",
+      primary: "#3F5D7D",
+      accent: "#A47A3A",
+      background: "#F6F3ED",
+      surface: "#FFFDF9",
+      panel: "#FFFDF9",
+      text: "#1F2937",
+      muted: "#5B6472",
+      border: "#D7DCE4",
     },
   };
 
-  const isSharp = directionId === "brutalist-experimental" || directionId === "industrial-b2b" || directionId === "tech-utility";
-  const isDarkFooter = directionId === "industrial-b2b" || directionId === "tech-utility" || directionId === "brutalist-experimental";
+  const isWarmEnterprise = directionId === "heritage-manufacturing";
+  const isSharp =
+    directionId === "brutalist-experimental" ||
+    directionId === "industrial-b2b" ||
+    directionId === "tech-utility" ||
+    isWarmEnterprise;
+  const isDarkFooter =
+    directionId === "industrial-b2b" ||
+    directionId === "tech-utility" ||
+    directionId === "brutalist-experimental" ||
+    isWarmEnterprise;
 
   return {
     mode: "light",
@@ -830,7 +867,7 @@ function buildStylePresetFromOpenDesignDirection(directionId: string): Partial<D
     headerVariant: "solid",
     footerVariant: isDarkFooter ? "dark" : "light",
     buttonVariant: "solid",
-    heroTheme: isDarkFooter ? "dark" : "light",
+    heroTheme: isWarmEnterprise ? "light" : isDarkFooter ? "dark" : "light",
     heroEffect: "none",
     navLabelMaxChars: 12,
     colors: colorMap[directionId] || {},
@@ -980,7 +1017,7 @@ async function loadRulesSummary(rulesDir: string): Promise<string> {
   }
 }
 
-function normalizeWorkflowStyleId(raw: unknown): string {
+export function normalizeWorkflowStyleId(raw: unknown): string {
   return String(raw || "")
     .trim()
     .toLowerCase()
@@ -988,15 +1025,88 @@ function normalizeWorkflowStyleId(raw: unknown): string {
     .replace(/^-+|-+$/g, "");
 }
 
-function resolveWorkflowProviderConfig(): WorkflowProviderConfig {
-  const lock = resolveRunProviderLocks()[0];
+export async function detectExplicitTemplateStyleIdFromText(query: string): Promise<string | undefined> {
+  const source = String(query || "").trim();
+  if (!source) return undefined;
+  const stylePolicy = await loadStyleSelectionPolicy();
+  const ignoredStyleTokens = new Set(
+    (stylePolicy.explicitStyleReferenceIgnoredTokens || []).map((token) => String(token).toLowerCase()),
+  );
+  const queryLower = source.toLowerCase();
+  const queryTokens = new Set(tokenize(queryLower, ignoredStyleTokens));
+  const index = await loadAwesomeIndex();
+  const styles = index?.styles || [];
+  const explicit = styles.find((style) => hasExplicitStyleReference(style, queryLower, queryTokens, ignoredStyleTokens));
+  return explicit ? normalizeWorkflowStyleId(explicit.slug) : undefined;
+}
+
+export function appendExplicitTemplateOverrideToCanonicalPrompt(prompt: string, templateStyleId: string): string {
+  const normalizedPrompt = String(prompt || "").trim();
+  const styleId = normalizeWorkflowStyleId(templateStyleId);
+  if (!normalizedPrompt || !styleId) return normalizedPrompt;
+
+  const styleInstructions: Record<string, string[]> = {
+    ibm: [
+      "Explicit template style: IBM.",
+      "Use the IBM Carbon enterprise design language as the primary template reference for layout, hierarchy, spacing, components, and page rhythm.",
+      "Prefer a strict enterprise homepage opening sequence: company masthead or rectangular lead band, procurement/proof strip, capability matrix, and concise enterprise CTA strip.",
+      "Use restrained blue-and-white enterprise surfaces, modular content bands, systematic spacing, and data-forward/proof-led composition.",
+      "Do not render a split hero, hero-grid with side rail, hero-copy plus aside card, floating stat cards, lifestyle promo panel, or founder/personal-brand opening cadence.",
+      "If logo strategy is text-only, render the brand as text-only. Do not generate a VB/V initials badge, monogram chip, crest, or decorative brand-mark beside the company name.",
+      "Do not expose legacy direction words such as heritage, craft, warm, or warm palette in visible copy, eyebrow text, footer meta, support chips, or trust badges.",
+      "Do not use editorial, boutique, artisan, lifestyle, personal-brand, or soft campaign-hero treatments.",
+    ],
+  };
+
+  const instructions = styleInstructions[styleId];
+  if (!instructions) return normalizedPrompt;
+  if (/##\s+Explicit Design System Override\b/i.test(normalizedPrompt)) return normalizedPrompt;
+
+  return [
+    normalizedPrompt,
+    "",
+    "## Explicit Design System Override",
+    ...instructions.map((line) => `- ${line}`),
+  ].join("\n");
+}
+
+function resolveWorkflowSelectorModelName(lock: { provider?: string; model?: string } | undefined): string {
+  const provider = String(lock?.provider || "").trim().toUpperCase();
+  const providerScopedKeys = [
+    `WORKFLOW_STYLE_SELECT_MODEL_${provider}`,
+    `LLM_MODEL_WORKFLOW_STYLE_SELECT_${provider}`,
+  ];
+  for (const key of providerScopedKeys) {
+    const value = String((process.env as Record<string, string | undefined>)[key] || "").trim();
+    if (value) return value;
+  }
+
+  const genericKeys = [
+    "WORKFLOW_STYLE_SELECT_MODEL",
+    "LLM_MODEL_WORKFLOW_STYLE_SELECT",
+  ];
+  for (const key of genericKeys) {
+    const value = String((process.env as Record<string, string | undefined>)[key] || "").trim();
+    if (value) return value;
+  }
+
+  const inherited = String(lock?.model || "").trim();
+  if (/mini/i.test(inherited)) return inherited;
+  return "gpt-5.4-mini";
+}
+
+export function resolveWorkflowProviderConfigForTesting(
+  lockOverride?: { provider?: string; model?: string },
+): WorkflowProviderConfig {
+  const lock = lockOverride || resolveRunProviderLocks()[0];
+  const modelName = resolveWorkflowSelectorModelName(lock);
   const provider = (lock?.provider || "pptoken") as ProviderName;
   if (provider === "pptoken") {
     return {
       provider: "pptoken",
       apiKey: process.env.PPTOKEN_API_KEY,
       baseURL: process.env.PPTOKEN_BASE_URL || "https://api.pptoken.org/v1",
-      modelName: lock.model,
+      modelName,
     };
   }
   if (provider === "aiberm") {
@@ -1004,7 +1114,7 @@ function resolveWorkflowProviderConfig(): WorkflowProviderConfig {
       provider: "aiberm",
       apiKey: process.env.AIBERM_API_KEY,
       baseURL: process.env.AIBERM_BASE_URL || "https://aiberm.com/v1",
-      modelName: lock.model,
+      modelName,
     };
   }
   return {
@@ -1018,8 +1128,12 @@ function resolveWorkflowProviderConfig(): WorkflowProviderConfig {
       process.env.CRAZYROUTER_BASE_URL ||
       process.env.CRAZYREOUTE_BASE_URL ||
       "https://crazyrouter.com/v1",
-    modelName: lock.model,
+    modelName,
   };
+}
+
+function resolveWorkflowProviderConfig(): WorkflowProviderConfig {
+  return resolveWorkflowProviderConfigForTesting();
 }
 
 function parseJsonFromLlmText(raw: string): any | null {
@@ -1407,6 +1521,26 @@ export async function resolveDesignSkillHit(
       matched_keywords: [],
       source: "website-generation-workflow",
     };
+  }
+
+  const forcedTemplateStyleId = normalizeWorkflowStyleId(normalizedVisualDecision?.templateStyleId || "");
+  if (forcedTemplateStyleId) {
+    const forcedStyle = styles.find((style) => normalizeWorkflowStyleId(style.slug) === forcedTemplateStyleId);
+    if (forcedStyle) {
+      return {
+        id: forcedStyle.slug,
+        name: forcedStyle.name,
+        design_desc: forcedStyle.description || `Explicit template style override selected upstream: ${forcedStyle.name}.`,
+        score: 10_000,
+        matched_keywords: [forcedTemplateStyleId],
+        source: "website-generation-workflow",
+        category: forcedStyle.category,
+        design_md_url: forcedStyle.designMdUrl,
+        design_md_path: forcedStyle.designMdPath,
+        index_generated_at: index?.generatedAt,
+        selection_mode: "explicit_match",
+      };
+    }
   }
 
   const scored = styles

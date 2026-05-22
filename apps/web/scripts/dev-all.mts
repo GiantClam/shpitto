@@ -140,6 +140,41 @@ async function findStaleWorkerPids(): Promise<number[]> {
     .filter((pid) => Number.isFinite(pid) && pid !== process.pid);
 }
 
+async function findStaleDevAllInvocationPids(): Promise<number[]> {
+  if (process.platform === "win32") {
+    const command =
+      "$project = [Regex]::Escape((Resolve-Path '.').Path); " +
+      "$current = " + process.pid + "; " +
+      "Get-CimInstance Win32_Process | " +
+      "Where-Object { " +
+      "  ($_.Name -eq 'node.exe' -or $_.Name -eq 'cmd.exe') -and " +
+      "  $_.ProcessId -ne $current -and " +
+      "  $_.CommandLine -match $project -and " +
+      "  ($_.CommandLine -match 'dev:all' -or $_.CommandLine -match 'scripts\\\\dev-all\\.mts')" +
+      "} | Select-Object -ExpandProperty ProcessId";
+    const { stdout } = await execFileAsync("powershell", ["-NoProfile", "-Command", command], {
+      cwd: PROJECT_ROOT,
+      windowsHide: true,
+    });
+    return parsePidList(stdout).filter((pid) => pid !== process.pid);
+  }
+
+  const { stdout } = await execFileAsync("pgrep", ["-af", "dev:all|scripts/dev-all.mts"], {
+    cwd: PROJECT_ROOT,
+  });
+  return String(stdout)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [pidText, ...rest] = line.split(/\s+/);
+      const pid = Number.parseInt(pidText, 10);
+      const command = rest.join(" ");
+      return Number.isFinite(pid) && pid !== process.pid && command.includes(PROJECT_ROOT) ? pid : NaN;
+    })
+    .filter((pid) => Number.isFinite(pid));
+}
+
 async function findProjectNextDevPidOnPort(port: number): Promise<number | undefined> {
   if (process.platform === "win32") {
     const command = [
@@ -179,6 +214,9 @@ async function cleanupStaleManagedProcesses() {
   if (recorded.webPid) stalePids.add(recorded.webPid);
   if (recorded.workerPid) stalePids.add(recorded.workerPid);
 
+  for (const pid of await findStaleDevAllInvocationPids()) {
+    stalePids.add(pid);
+  }
   for (const pid of await findStaleWorkerPids()) {
     stalePids.add(pid);
   }

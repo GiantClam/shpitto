@@ -69,10 +69,42 @@ function latinLetterCount(text: string): number {
   return latinContentWords(text).join("").length;
 }
 
+function meaningfulLatinWords(text: string): string[] {
+  return latinContentWords(text).filter((word) => {
+    const normalized = String(word || "").trim();
+    if (!normalized) return false;
+    if (/^[A-Z0-9-]+$/.test(normalized)) return false;
+    if (/^(?:iso\d*|grs|bsci|smeta|oeko(?:-tex)?|sa\d+|sedex)$/i.test(normalized)) return false;
+    return true;
+  });
+}
+
+function hasSentenceLikeLatinSpan(text: string): boolean {
+  return /[A-Z][a-z]{2,}(?:\s+[A-Za-z][A-Za-z'-]{2,}){2,}/.test(String(text || ""));
+}
+
+function isStandardsListHybrid(text: string): boolean {
+  const source = String(text || "");
+  const standardHits = [
+    /\bISO\s*9001\b/i,
+    /\bISO\s*14001\b/i,
+    /\bSMETA\b/i,
+    /\bBSCI\b/i,
+    /\bOEKO(?:-TEX)?\b/i,
+    /\bGRS\b/i,
+  ].filter((pattern) => pattern.test(source)).length;
+  return cjkCount(source) >= 4 && standardHits >= 3 && meaningfulLatinWords(source).length === 0;
+}
+
 function hasSubstantialCjkAndLatin(text: string): boolean {
   const source = String(text || "");
-  const words = latinContentWords(source);
-  return cjkCount(source) >= 4 && (words.length >= 5 || latinLetterCount(source) >= 36);
+  if (isStandardsListHybrid(source)) return false;
+  const words = meaningfulLatinWords(source);
+  const distinctWordCount = new Set(words.map((word) => word.toLowerCase())).size;
+  return (
+    cjkCount(source) >= 4 &&
+    ((words.length >= 3 && distinctWordCount >= 2) || (words.join("").length >= 24 && hasSentenceLikeLatinSpan(source)))
+  );
 }
 
 function normalizeBilingualLeakSample(text: string): string {
@@ -115,6 +147,7 @@ export function findVisibleSimultaneousBilingualCopy(html: string): string[] {
   for (const pattern of patterns) {
     for (const match of compact.matchAll(pattern)) {
       const sample = normalizeBilingualLeakSample(match[0] || "");
+      if (isStandardsListHybrid(sample)) continue;
       if (looksLikeDesignLabelOrBrandHybrid(sample)) continue;
       if (sample && (hasSubstantialCjkAndLatin(sample) || isExplicitBilingualPairSample(sample))) {
         samples.add(sample);

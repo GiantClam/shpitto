@@ -1,0 +1,5 @@
+{
+  "name": "website-orchestrator",
+  "version": "0.1.0",
+  "description": "Top-level website generation orchestration contract for site-type selection and spec-first execution."
+}

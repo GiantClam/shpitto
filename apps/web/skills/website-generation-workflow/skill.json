@@ -198,7 +198,24 @@
         ],
         "layoutRules": [
           "Use generous whitespace, clear section rhythm, and source-specific content modules rather than a preset generic shell.",
-          "Visual inspiration from external templates is allowed only as structure; prompt-defined colors, mood, audience, and brand semantics remain authoritative."
+          "Visual inspiration from external templates is allowed only as structure; prompt-defined colors, mood, audience, and brand semantics remain authoritative.",
+          "Do not let products, custom solutions, cases, contact, and about all reuse the same hero-plus-side-panel opening or the same generic body cadence. Route role must change the opening topology and section rhythm.",
+          "Keep language switching in the shared shell. Do not add repeated locale explainer panels, duplicate EN/ZH utility rails, or menu-like language blocks inside every interior page body.",
+          "When the site serves enterprise buyers or export/procurement audiences, treat warm or heritage cues as restrained material confidence inside a company shell, not as boutique editorial softness or personal-brand composition.",
+          "When logo strategy is text wordmark, default to a text-only company brand treatment. Do not invent a monogram, badge, or unsupported subtitle.",
+          "For company sites aimed at enterprise buyers, procurement teams, distributors, or export customers, do not use heritage/craft/warm/artisan language as the visible headline premise or shared-shell trust line unless source-backed. Keep those cues visual, while visible copy emphasizes manufacturing capability, sourcing clarity, proof, delivery discipline, and inquiry readiness.",
+          "For towel, home-textile, pool-textile, or beach-adjacent export manufacturers, prefer an ocean-blue and white system with restrained sand/light-neutral accents unless explicit source-backed brand colors override it.",
+          "For products, custom-solutions, cases, contact, and about, do not repeat a homepage-style hero. Prefer company mastheads, process intros, catalog leads, evidence headers, and conversion-first openings according to route role.",
+          "Prefer selective real-photo support over purely typographic presentation for product/specification/manufacturing pages. Use stock/library imagery first when source images are missing, and avoid turning the site into a text-only prototype.",
+          "For towel/home-textile export manufacturers, use a clean corporate sans-forward system rather than editorial serif-led art direction.",
+          "For towel/home-textile export manufacturers, decorative gradient-only visual rails are not enough; use real product, material, process, or application imagery when stock/library images are available.",
+          "For towel/home-textile export manufacturers, preferred palette tokens are marine blue, pool blue, white, light-sky surfaces, and cool light borders; do not default to beige-, parchment-, sepia-, or brown-led shells.",
+          "For towel/home-textile export manufacturers, homepage/about/custom-solutions/products should each carry at least one meaningful real-photo or stock-photo context image rather than abstract-only art.",
+          "Plan media as named module-owned slots during composition. Do not add a generic full-width image after the page structure already exists.",
+          "For explicit IBM/Carbon company homepages, use an image-backed enterprise hero with readable overlay copy and place the first real image inside that opening hero rather than a split hero rail or detached proof image.",
+          "When a route needs imagery, define the module owner, purpose, ratio, and caption policy before writing the final layout so the image reinforces the shell instead of breaking it.",
+          "For explicit IBM/Carbon company homepages, buyer signals and operational proof should render as a compact horizontal proof row beneath the masthead, not as a large stacked panel or a second hero-like summary block.",
+          "Do not label that buyer-signals block as a snapshot/overview panel or wrap it in one large bordered card; use small inline evidence cells or chips instead."
         ]
       }
     }

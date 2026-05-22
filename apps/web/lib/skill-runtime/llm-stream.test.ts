@@ -69,5 +69,25 @@ describe("invokeModelWithIdleTimeout", () => {
     expect(directCalls.length).toBeGreaterThanOrEqual(2);
     expect(kwargCalls.length).toBeGreaterThanOrEqual(1);
   });
-});
 
+  it("rejects on idle timeout even when the stream ignores abort", async () => {
+    const model = {
+      invoke: async () => ({ content: "" }),
+      stream: async () => ({
+        async *[Symbol.asyncIterator]() {
+          yield { content: "partial" };
+          await new Promise(() => undefined);
+        },
+      }),
+    };
+
+    await expect(
+      invokeModelWithIdleTimeout({
+        model,
+        messages: [new HumanMessage("test")],
+        timeoutMs: 50,
+        operation: "unit-test-stalled-stream",
+      }),
+    ).rejects.toThrow("Request timed out. [operation=unit-test-stalled-stream]");
+  });
+});

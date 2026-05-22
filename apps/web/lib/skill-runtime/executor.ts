@@ -73,6 +73,8 @@ import {
   selectDocumentContentSkillsForIntent,
   selectWebsiteSeedSkillsForIntent,
   WEBSITE_GENERATION_SKILL_BUNDLE,
+  WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID,
+  WEBSITE_GENERATION_TYPE_SKILL_IDS,
   type ProjectSkillDescriptor,
 } from "./project-skill-loader.ts";
 import {
@@ -82,7 +84,9 @@ import {
   renderAntiSlopFeedback,
   type AntiSlopLintResult,
 } from "../visual-qa/anti-slop-linter.ts";
-import { runSkillToolExecutor } from "./skill-tool-executor.ts";
+import { normalizeWebsiteStaticFilesForPreview, runSkillToolExecutor } from "./skill-tool-executor.ts";
+import { buildWebsiteDesignSpecMarkdown, buildWebsiteDesignSpecRouteExcerpt } from "./website-design-spec.ts";
+import { selectWebsiteGenerationTypeSkill } from "./website-type-selector.ts";
 import { renderWebsiteQualityContract } from "./website-quality-contract.ts";
 import type { QaSummary } from "./qa-summary.ts";
 import {
@@ -195,11 +199,11 @@ export type SkillRuntimeTaskParams = {
 
 const WEBSITE_MAIN_SKILL_ID = "website-generation-workflow";
 const STAGE_SKILL_SCOPES = {
-  workflow: [WEBSITE_MAIN_SKILL_ID, "brainstorming", "writing-plans"],
-  styles: [WEBSITE_MAIN_SKILL_ID, "responsive-by-default", "web-image-generator", "web-icon-library"],
-  script: [WEBSITE_MAIN_SKILL_ID, "responsive-by-default"],
-  page: [WEBSITE_MAIN_SKILL_ID, "responsive-by-default", "section-quality-checklist", "web-image-generator", "web-icon-library"],
-  repair: [WEBSITE_MAIN_SKILL_ID, "end-to-end-validation", "verification-before-completion", "visual-qa-mandatory"],
+  workflow: [WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID, WEBSITE_MAIN_SKILL_ID, "brainstorming", "writing-plans"],
+  styles: [WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID, WEBSITE_MAIN_SKILL_ID, "responsive-by-default", "web-image-generator", "web-icon-library"],
+  script: [WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID, WEBSITE_MAIN_SKILL_ID, "responsive-by-default"],
+  page: [WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID, WEBSITE_MAIN_SKILL_ID, "responsive-by-default", "section-quality-checklist", "web-image-generator", "web-icon-library"],
+  repair: [WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID, WEBSITE_MAIN_SKILL_ID, "end-to-end-validation", "verification-before-completion", "visual-qa-mandatory"],
 } as const;
 type StageSkillScope = keyof typeof STAGE_SKILL_SCOPES;
 
@@ -209,6 +213,14 @@ type WorkflowGuidancePack = {
   workflowGuide: string;
   rulesSummary: string;
   designMd: string;
+  websiteDesignSpec: string;
+};
+
+type DesignGuidanceCacheSnapshot = {
+  requirementHash: string;
+  templateStyleId: string;
+  primaryVisualDirection: string;
+  secondaryVisualTags: string;
 };
 
 type DesignConfirmSnapshot = {
@@ -827,6 +839,27 @@ function syncPagesFromStaticFiles(project: any): any {
     return a.path.localeCompare(b.path);
   });
   return next;
+}
+
+function normalizeGeneratedProjectArtifactPreview(params: {
+  project: any;
+  decision: LocalDecisionPlan;
+  requirementText: string;
+}): any {
+  const next = ensureSkillDirectStaticProject(params.project);
+  const normalizedFiles = normalizeWebsiteStaticFilesForPreview({
+    decision: params.decision,
+    files: dedupeFiles((next?.staticSite?.files || []) as any[]),
+    requirementText: params.requirementText,
+  });
+  return syncPagesFromStaticFiles({
+    ...next,
+    staticSite: {
+      ...(next?.staticSite || {}),
+      mode: "skill-direct",
+      files: normalizedFiles,
+    },
+  });
 }
 
 function hasRouteRemovalIntent(instruction: string): boolean {
@@ -1480,11 +1513,39 @@ async function applyRefineInstructionWithSkill(params: {
   };
 }
 
-async function materializeSiteDirectoryFromProject(project: any, siteDir: string): Promise<{
+function normalizeProjectArtifactForMaterialization(params: {
+  project: any;
+  decision?: LocalDecisionPlan;
+  requirementText?: string;
+}): any {
+  if (params.decision) {
+    return normalizeGeneratedProjectArtifactPreview({
+      project: params.project,
+      decision: params.decision,
+      requirementText: String(params.requirementText || params.decision.requirementText || "").trim(),
+    });
+  }
+  return ensureSkillDirectStaticProject(params.project);
+}
+
+async function materializeSiteDirectoryFromProject(
+  project: any,
+  siteDir: string,
+  options?: {
+    decision?: LocalDecisionPlan;
+    requirementText?: string;
+  },
+): Promise<{
   fileCount: number;
   generatedFiles: string[];
+  project: any;
 }> {
-  const bundle = await Bundler.createBundle(project);
+  const normalizedProject = normalizeProjectArtifactForMaterialization({
+    project,
+    decision: options?.decision,
+    requirementText: options?.requirementText,
+  });
+  const bundle = await Bundler.createBundle(normalizedProject);
   await fs.mkdir(siteDir, { recursive: true });
   for (const entry of bundle.fileEntries) {
     const normalizedPath = normalizePath(String(entry.path || ""));
@@ -1500,6 +1561,7 @@ async function materializeSiteDirectoryFromProject(project: any, siteDir: string
   return {
     fileCount: bundle.fileEntries.length,
     generatedFiles: bundle.fileEntries.map((entry) => normalizePath(entry.path)),
+    project: normalizedProject,
   };
 }
 
@@ -1727,7 +1789,7 @@ function detectRuntimeLocale(text: string, preferred?: string): "zh-CN" | "en" |
 }
 
 function toVisibleLocale(locale: "zh-CN" | "en" | "bilingual"): "zh-CN" | "en" {
-  return locale === "bilingual" ? "zh-CN" : locale;
+  return locale === "bilingual" ? "en" : locale;
 }
 
 function extractStateMessageText(messages: unknown): string {
@@ -2200,13 +2262,27 @@ async function resolveWebsiteRuntimeSkill(params: {
   const requestedSkillId = String(
     params.explicitSkillId || (params.state.workflow_context as any)?.skillId || WEBSITE_MAIN_SKILL_ID,
   ).trim();
-  const loadedSkill = await loadProjectSkill(requestedSkillId);
-  if (loadedSkill.id !== WEBSITE_MAIN_SKILL_ID) {
+  const requestedExecutionSkillId = String((params.state.workflow_context as any)?.executionSkillId || "").trim();
+  const requestedWebsiteSkillId =
+    requestedSkillId && requestedSkillId !== WEBSITE_MAIN_SKILL_ID ? requestedSkillId : requestedExecutionSkillId || requestedSkillId;
+  const loadedSkill = await loadProjectSkill(requestedWebsiteSkillId || WEBSITE_MAIN_SKILL_ID);
+  if (loadedSkill.id !== WEBSITE_MAIN_SKILL_ID && !WEBSITE_GENERATION_TYPE_SKILL_IDS.includes(loadedSkill.id as any)) {
     throw new Error(
-      `skill "${loadedSkill.id}" is not supported by website runtime. supported: ${WEBSITE_MAIN_SKILL_ID}`,
+      `skill "${loadedSkill.id}" is not supported by website runtime. supported: ${WEBSITE_MAIN_SKILL_ID}, ${WEBSITE_GENERATION_TYPE_SKILL_IDS.join(", ")}`,
     );
   }
   const requirementText = extractRequirementText(params.state);
+  const existingWorkflow = ((params.state as any)?.workflow_context || {}) as Record<string, unknown>;
+  const requirementSpec = (existingWorkflow.requirementSpec || {}) as Record<string, unknown>;
+  const selectedWebsiteType = selectWebsiteGenerationTypeSkill({
+    requirementText,
+    siteType: String(requirementSpec.siteType || ""),
+    routes: ((params.state as any)?.sitemap?.routes || []) as string[],
+    targetAudience: Array.isArray(requirementSpec.targetAudience)
+      ? (requirementSpec.targetAudience as string[])
+      : undefined,
+    primaryGoal: Array.isArray(requirementSpec.primaryGoal) ? (requirementSpec.primaryGoal as string[]) : undefined,
+  });
   const selectedSeedSkills = await selectWebsiteSeedSkillsForIntent({
     requirementText,
     routes: ((params.state as any)?.sitemap?.routes || []) as string[],
@@ -2220,16 +2296,19 @@ async function resolveWebsiteRuntimeSkill(params: {
   const loadedSkillIds = Array.from(
     new Set([
       ...WEBSITE_GENERATION_SKILL_BUNDLE.map((id) => resolveProjectSkillAlias(id)),
+      resolveProjectSkillAlias(selectedWebsiteType.skillId),
       ...selectedSeedSkills.map((item) => item.id),
       ...selectedDocumentSkills.map((item) => item.id),
     ]),
   );
   const skillDirective = extractSkillDirectiveSnippet(loadedSkill);
-  const existingWorkflow = ((params.state as any)?.workflow_context || {}) as Record<string, unknown>;
+  const normalizedVisualDecision = normalizeWorkflowVisualDecisionContext(existingWorkflow as any);
+  const currentGuidanceCache = buildDesignGuidanceCacheSnapshot(requirementText, normalizedVisualDecision);
   const hasExistingGuidance =
     String(existingWorkflow.selectionCriteria || "").trim().length > 0 &&
     String(existingWorkflow.sequentialWorkflow || "").trim().length > 0 &&
-    String(existingWorkflow.designMd || "").trim().length > 0;
+    String(existingWorkflow.designMd || "").trim().length > 0 &&
+    matchesDesignGuidanceCacheSnapshot(existingWorkflow, currentGuidanceCache);
 
   let styleHit = ((params.state as any)?.design_hit || undefined) as DesignSkillHit | undefined;
   let stylePreset = normalizeStylePreset(existingWorkflow.stylePreset as Partial<DesignStylePreset>, {});
@@ -2239,11 +2318,12 @@ async function resolveWebsiteRuntimeSkill(params: {
     workflowGuide: String(existingWorkflow.workflowGuide || ""),
     rulesSummary: String(existingWorkflow.rulesSummary || ""),
     designMd: String(existingWorkflow.designMd || ""),
+    websiteDesignSpec: String(existingWorkflow.websiteDesignSpec || ""),
   };
   if (!hasExistingGuidance || !styleHit) {
     const workflowContext = await loadWorkflowSkillContext(
       requirementText,
-      normalizeWorkflowVisualDecisionContext(existingWorkflow as any),
+      normalizedVisualDecision,
     );
     stylePreset = normalizeStylePreset(workflowContext.stylePreset, {});
     styleHit = workflowContext.hit;
@@ -2253,28 +2333,41 @@ async function resolveWebsiteRuntimeSkill(params: {
       workflowGuide: workflowContext.workflowGuide,
       rulesSummary: workflowContext.rulesSummary,
       designMd: workflowContext.designMd,
+      websiteDesignSpec: "",
     };
   }
+
+  const executionSkillId = loadedSkill.id === WEBSITE_MAIN_SKILL_ID ? selectedWebsiteType.skillId : loadedSkill.id;
 
   const stateWithSkill: AgentState = {
     ...params.state,
     design_hit: styleHit,
     workflow_context: {
       ...(params.state.workflow_context || {}),
-      skillId: loadedSkill.id,
+      skillId: WEBSITE_MAIN_SKILL_ID,
+      executionSkillId,
       skillDirective,
       loadedSkillIds,
       selectedSeedSkillIds: selectedSeedSkills.map((item) => item.id),
       selectedSeedSkillReasons: selectedSeedSkills,
       selectedDocumentSkillIds: selectedDocumentSkills.map((item) => item.id),
       selectedDocumentSkillReasons: selectedDocumentSkills,
+      websiteOrchestratorSkillId: WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID,
+      websiteTypeSkillId: selectedWebsiteType.skillId,
+      websiteTypeKind: selectedWebsiteType.siteType,
+      websiteTypeSelectionReason: selectedWebsiteType.reason,
       skillMdPath: loadedSkill.skillMdPath,
       selectionCriteria: guidance.selectionCriteria,
       sequentialWorkflow: guidance.sequentialWorkflow,
       workflowGuide: guidance.workflowGuide,
       rulesSummary: guidance.rulesSummary,
       designMd: guidance.designMd,
+      websiteDesignSpec: guidance.websiteDesignSpec,
       stylePreset,
+      designGuidanceRequirementHash: currentGuidanceCache.requirementHash,
+      designGuidanceTemplateStyleId: currentGuidanceCache.templateStyleId,
+      designGuidancePrimaryVisualDirection: currentGuidanceCache.primaryVisualDirection,
+      designGuidanceSecondaryVisualTags: currentGuidanceCache.secondaryVisualTags,
       designSystemId: styleHit?.id,
       designSystemName: styleHit?.name,
       designSelectionReason:
@@ -2574,11 +2667,12 @@ function renderLocalTaskPlan(params: {
     "1. task_plan.md",
     "2. findings.md",
     "3. DESIGN.md",
-    "4. styles.css",
-    "5. script.js",
-    "6. index.html",
-    "7. remaining pages",
-    "8. repair",
+    "4. website_design_spec.md",
+    "5. styles.css",
+    "6. script.js",
+    "7. index.html",
+    "8. remaining pages",
+    "9. repair",
   ];
   return lines.join("\n");
 }
@@ -2620,6 +2714,20 @@ function renderLocalDesign(
     "## Page Blueprints",
     blueprintDigest(decision),
   ].join("\n");
+}
+
+function renderLocalWebsiteDesignSpec(params: {
+  requirementText: string;
+  decision: LocalDecisionPlan;
+  stylePreset: DesignStylePreset;
+  designHit?: DesignSkillHit;
+}): string {
+  return buildWebsiteDesignSpecMarkdown({
+    decision: params.decision,
+    requirementText: params.requirementText,
+    stylePreset: params.stylePreset,
+    designHit: params.designHit,
+  });
 }
 
 function escapeHtml(value: string): string {
@@ -3316,6 +3424,7 @@ type RuntimeContext = {
   providerLock: RunProviderLock;
   providerConfig: ProviderConfig;
   skillId: string;
+  websiteTypeSkillId: string;
   enabledSkillIds: string[];
   stylePreset: DesignStylePreset;
   designHit?: DesignSkillHit;
@@ -3323,6 +3432,7 @@ type RuntimeContext = {
   designConfirm: DesignConfirmSnapshot;
   designSpec: DesignSpec;
   designContext: DesignContext;
+  websiteDesignSpec: string;
 };
 
 function toRecord(value: unknown): Record<string, unknown> {
@@ -3440,13 +3550,13 @@ class NativeSkillRuntime {
     });
     const providerLock = providerAttempts[0].lock;
     const providerConfig = providerAttempts[0].config;
+    const workflowContext = toRecord((params.state as any)?.workflow_context);
     const skillId = resolveProjectSkillAlias(
-      String((params.state as any)?.workflow_context?.skillId || WEBSITE_MAIN_SKILL_ID),
+      String(workflowContext.executionSkillId || workflowContext.skillId || WEBSITE_MAIN_SKILL_ID),
     );
     const enabledSkillIds = Array.isArray((params.state as any)?.workflow_context?.loadedSkillIds)
       ? ((params.state as any)?.workflow_context?.loadedSkillIds || []).map((id: string) => String(id).trim()).filter(Boolean)
       : [skillId];
-    const workflowContext = toRecord((params.state as any)?.workflow_context);
     const stylePreset = normalizeStylePreset(
       (workflowContext.stylePreset as Partial<DesignStylePreset>) || (params.state as any)?.design_hit?.style_preset,
       {},
@@ -3459,6 +3569,7 @@ class NativeSkillRuntime {
       workflowGuide: String(workflowContext.workflowGuide || ""),
       rulesSummary: String(workflowContext.rulesSummary || ""),
       designMd: String(workflowContext.designMd || ""),
+      websiteDesignSpec: String(workflowContext.websiteDesignSpec || ""),
     };
     const designConfirm: DesignConfirmSnapshot = {
       selectedStyleId: String(workflowContext.designSystemId || designHit?.id || "runtime-selected-style"),
@@ -3482,6 +3593,14 @@ class NativeSkillRuntime {
       overrides: designOverrides,
     });
     const designContext = buildDesignContext(designSpec);
+    const websiteDesignSpec =
+      guidance.websiteDesignSpec.trim() ||
+      renderLocalWebsiteDesignSpec({
+        requirementText,
+        decision,
+        stylePreset,
+        designHit,
+      });
     const existingStatic = dedupeFiles((params.state as any)?.site_artifacts?.staticSite?.files || []);
     const existingWorkflow = dedupeFiles((params.state as any)?.site_artifacts?.workflowArtifacts?.files || []);
     const existingPages = Array.isArray((params.state as any)?.site_artifacts?.pages)
@@ -3498,6 +3617,7 @@ class NativeSkillRuntime {
       providerLock,
       providerConfig,
       skillId,
+      websiteTypeSkillId: String(workflowContext.websiteTypeSkillId || ""),
       enabledSkillIds,
       stylePreset,
       designHit,
@@ -3505,6 +3625,7 @@ class NativeSkillRuntime {
       designConfirm,
       designSpec,
       designContext,
+      websiteDesignSpec,
     };
     this.requirementText = requirementText;
     this.files = existingStatic;
@@ -3644,11 +3765,16 @@ class NativeSkillRuntime {
 
   private async buildStageSkillDirective(stage: StageSkillScope): Promise<{ ids: string[]; text: string }> {
     const coreSet = new Set(WEBSITE_GENERATION_SKILL_BUNDLE.map((id) => resolveProjectSkillAlias(id)));
+    const websiteTypeSkillId = resolveProjectSkillAlias(this.context.websiteTypeSkillId || "");
     const seedSkillIds =
       stage === "styles" || stage === "page"
         ? this.context.enabledSkillIds.filter((id) => !coreSet.has(resolveProjectSkillAlias(id)))
         : [];
-    const stageIds = [...(STAGE_SKILL_SCOPES[stage] || [WEBSITE_MAIN_SKILL_ID]), ...seedSkillIds];
+    const stageIds = [
+      ...(STAGE_SKILL_SCOPES[stage] || [WEBSITE_MAIN_SKILL_ID]),
+      ...(websiteTypeSkillId ? [websiteTypeSkillId] : []),
+      ...seedSkillIds,
+    ];
     const allowSet = new Set(this.context.enabledSkillIds.map((id) => resolveProjectSkillAlias(id)));
     const selectedIds = Array.from(
       new Set(stageIds.map((id) => resolveProjectSkillAlias(id)).filter((id) => !!id && allowSet.has(id))),
@@ -3674,8 +3800,13 @@ class NativeSkillRuntime {
     const designBudget = Math.max(4000, Number(process.env.SKILL_RUNTIME_DESIGN_MD_MAX_CHARS || 30_000));
     const rulesBudget = Math.max(2500, Number(process.env.SKILL_RUNTIME_RULES_MAX_CHARS || 10_000));
     const workflowBudget = Math.max(1000, Number(process.env.SKILL_RUNTIME_WORKFLOW_GUIDE_MAX_CHARS || 4000));
+    const specBudget = Math.max(2500, Number(process.env.SKILL_RUNTIME_WEBSITE_SPEC_MAX_CHARS || 12000));
 
     const entries: Array<{ title: string; content: string }> = [
+      {
+        title: "website-design-spec",
+        content: clipTextWithBudget(this.context.websiteDesignSpec, specBudget),
+      },
       {
         title: "sequential-workflow",
         content: clipTextWithBudget(this.context.guidance.sequentialWorkflow, sequentialBudget),
@@ -3942,13 +4073,17 @@ class NativeSkillRuntime {
   }
 
   private async ensureDesign() {
-    const existing = this.workflowFiles.find((f) => normalizePath(f.path).toLowerCase() === "/design.md");
-    if (existing?.content?.trim()) return;
     await this.writeWorkflow(
       "/DESIGN.md",
       renderLocalDesign(this.requirementText, this.context.locale, this.context.decision, this.context.stylePreset),
       "design",
     );
+  }
+
+  private async ensureWebsiteDesignSpec() {
+    const existing = this.workflowFiles.find((f) => normalizePath(f.path).toLowerCase() === "/website_design_spec.md");
+    if (existing?.content?.trim()) return;
+    await this.writeWorkflow("/website_design_spec.md", this.context.websiteDesignSpec, "website_design_spec");
   }
 
   private async ensureStyles() {
@@ -4079,6 +4214,12 @@ ${this.context.routes.some((route) => normalizePath(route) === "/blog") ? 'Blog 
         pageSourceBrief && isWorkflowArtifactEnglishSafe(pageSourceBrief)
           ? normalizeWorkflowArtifactText(pageSourceBrief)
           : "Route-specific source notes are multilingual; preserve the source-backed page structure and visitor intent without copying raw multilingual excerpts into this internal prompt.";
+      const routeDesignSpecExcerpt = buildWebsiteDesignSpecRouteExcerpt({
+        decision: this.context.decision,
+        requirementText: this.requirementText,
+        stylePreset: this.context.stylePreset,
+        designHit: this.context.designHit,
+      }, normalizedRoute);
       const systemPrompt = [
         "You are a staff frontend engineer generating complete static HTML pages.",
         "Only output raw HTML. No markdown, no commentary.",
@@ -4111,6 +4252,8 @@ Page skeleton: ${blueprint.contentSkeleton.join(" -> ")}
 Component mix: ${formatComponentMix(blueprint.componentMix)}
 Page-specific source brief excerpt (authoritative for this file):
 ${internalPageSourceBrief || "No route-specific source excerpt found. Derive a unique page architecture from the complete requirement below."}
+Route design spec excerpt (authoritative for layout/media decisions):
+${routeDesignSpecExcerpt || "No route design spec excerpt found. Derive route layout from the full website design specification."}
 Requirement:
 ${internalRequirementSummary}
 ${sequentialContext ? `\n${sequentialContext}` : ""}
@@ -4259,6 +4402,7 @@ ${qaFeedback ? `\nQA fix instructions (attempt ${attempt}):\n${qaFeedback}` : ""
     await this.ensureFindings();
     await this.ensureDesignConfirm();
     await this.ensureDesign();
+    await this.ensureWebsiteDesignSpec();
     await this.ensureStyles();
     await this.ensureScript();
     await this.ensurePage("/");
@@ -4283,6 +4427,7 @@ ${qaFeedback ? `\nQA fix instructions (attempt ${attempt}):\n${qaFeedback}` : ""
         genMode: "skill_native",
         lockedProvider: this.context.providerLock.provider,
         lockedModel: this.context.providerLock.model,
+        websiteDesignSpec: this.context.websiteDesignSpec,
       } as any,
       messages: [
         ...(baseState.messages || []),
@@ -4418,6 +4563,7 @@ function buildSessionSnapshot(state: AgentState): Partial<AgentState> {
       designSelectionReason: workflow.designSelectionReason,
       stylePreset: workflow.stylePreset,
       designOverrides: workflow.designOverrides,
+      websiteDesignSpec: workflow.websiteDesignSpec,
       conversationStage: workflow.conversationStage,
       executionMode: workflow.executionMode,
       intent: workflow.intent,
@@ -4664,11 +4810,13 @@ export function materializeGeneratedBlogDetailPagesForTesting(params: {
   project: any;
   inputState: AgentState;
   locale: "zh-CN" | "en" | "bilingual";
+  mode?: "shell" | "content";
 }): any {
   const visibleLocale = toVisibleLocale(params.locale);
   return materializeWebsiteBlogDetailPages({
     ...params,
     locale: visibleLocale,
+    mode: params.mode,
     deps: getWebsiteCompletionDeps(),
   });
 }
@@ -4681,15 +4829,36 @@ export function finalizeGeneratedProjectArtifactForTesting(params: {
   return finalizeGeneratedProjectArtifact(params);
 }
 
+export async function materializeSiteDirectoryFromProjectForTesting(params: {
+  project: any;
+  siteDir: string;
+  decision?: LocalDecisionPlan;
+  requirementText?: string;
+}) {
+  return materializeSiteDirectoryFromProject(params.project, params.siteDir, {
+    decision: params.decision,
+    requirementText: params.requirementText,
+  });
+}
+
+export async function resolveWebsiteRuntimeSkillForTesting(params: {
+  state: AgentState;
+  explicitSkillId?: string;
+}) {
+  return resolveWebsiteRuntimeSkill(params);
+}
+
 function materializeGeneratedBlogDetailPages(params: {
   project: any;
   inputState: AgentState;
   locale: "zh-CN" | "en" | "bilingual";
+  mode?: "shell" | "content";
 }): any {
   const visibleLocale = toVisibleLocale(params.locale);
   return materializeWebsiteBlogDetailPages({
     ...params,
     locale: visibleLocale,
+    mode: params.mode,
     deps: getWebsiteCompletionDeps(),
   });
 }
@@ -4699,7 +4868,10 @@ function finalizeGeneratedProjectArtifact(params: {
   inputState: AgentState;
   locale: "zh-CN" | "en" | "bilingual";
 }): any {
-  return materializeGeneratedBlogDetailPages(params);
+  return materializeGeneratedBlogDetailPages({
+    ...params,
+    mode: "shell",
+  });
 }
 
 function collectPrimaryBlogSourceText(inputState: AgentState): string {
@@ -4819,6 +4991,11 @@ function buildBlogContentConfirmTimelineMetadata(params: {
       toVisibleLocale,
     },
   });
+}
+
+function isBlogContentRegenerationAction(inputState: AgentState): boolean {
+  return String((inputState.workflow_context as any)?.skillActionDomain || "").trim() === "blog_content" &&
+    String((inputState.workflow_context as any)?.skillAction || "").trim() === "regenerate_posts";
 }
 
 function resolveBlogNavLabelFromProject(project: any, locale: "zh-CN" | "en") {
@@ -5074,6 +5251,32 @@ function buildStaticBlogSnapshotFilesForDeploy(params: {
     }),
     postCount: posts.length,
   };
+}
+
+function buildDesignGuidanceCacheSnapshot(
+  requirementText: string,
+  visualDecision?: ReturnType<typeof normalizeWorkflowVisualDecisionContext>,
+): DesignGuidanceCacheSnapshot {
+  return {
+    requirementHash: crypto.createHash("sha1").update(String(requirementText || "").trim()).digest("hex"),
+    templateStyleId: String(visualDecision?.templateStyleId || "").trim(),
+    primaryVisualDirection: String(visualDecision?.primaryVisualDirection || "").trim(),
+    secondaryVisualTags: Array.isArray(visualDecision?.secondaryVisualTags)
+      ? visualDecision.secondaryVisualTags.map((item) => String(item || "").trim()).filter(Boolean).join("|")
+      : "",
+  };
+}
+
+function matchesDesignGuidanceCacheSnapshot(
+  workflowContext: Record<string, unknown>,
+  expected: DesignGuidanceCacheSnapshot,
+): boolean {
+  return (
+    String(workflowContext.designGuidanceRequirementHash || "").trim() === expected.requirementHash &&
+    String(workflowContext.designGuidanceTemplateStyleId || "").trim() === expected.templateStyleId &&
+    String(workflowContext.designGuidancePrimaryVisualDirection || "").trim() === expected.primaryVisualDirection &&
+    String(workflowContext.designGuidanceSecondaryVisualTags || "").trim() === expected.secondaryVisualTags
+  );
 }
 
 function getSnapshotPostCount(files: Array<{ path?: string; content?: string }>) {
@@ -5733,7 +5936,15 @@ async function runRefineTask(params: {
 
   await fs.mkdir(checkpointRoot, { recursive: true });
   await fs.mkdir(checkpointWorkflowDir, { recursive: true });
-  const materialized = await materializeSiteDirectoryFromProject(refined.project, checkpointSiteDir);
+  const refineDecision = buildLocalDecisionPlan(inputState);
+  const materialized = await materializeSiteDirectoryFromProject(refined.project, checkpointSiteDir, {
+    decision: refineDecision,
+    requirementText: requirementText || refineDecision.requirementText,
+  });
+  refined = {
+    ...refined,
+    project: materialized.project,
+  };
   await fs.writeFile(checkpointProjectPath, JSON.stringify(refined.project, null, 2), "utf8");
   await fs.writeFile(
     path.join(checkpointWorkflowDir, "refine_report.md"),
@@ -5774,12 +5985,60 @@ async function runRefineTask(params: {
     project: refined.project,
     locale: refineBlogLocale,
   });
-  const refinedBlogWorkflowState = refinedBlogPreview.required
-    ? {
-        blogContentPreviewPosts: refinedBlogPreview.posts,
-        blogContentPreviewStatus: "pending_confirmation",
-        blogContentConfirmed: false,
+  const isBlogContentRefine = isBlogContentRegenerationAction(inputState);
+  let generatedBlogContentStatus = "";
+  let refinedDbProjectId = String((inputState as any)?.db_project_id || "").trim();
+  if (isBlogContentRefine && refinedBlogPreview.required) {
+    const ownerUserId = String(inputState.user_id || "").trim();
+    if (ownerUserId) {
+      try {
+        refinedDbProjectId = await saveProjectState(
+          ownerUserId,
+          refined.project,
+          inputState.access_token,
+          refinedDbProjectId || chatId,
+        );
+      } catch (error) {
+        console.warn(
+          `[SkillRuntimeExecutor] saveProjectState failed during Blog content refine: ${String((error as any)?.message || error)}`,
+        );
       }
+    }
+    try {
+      const blogPersistResult = await ensureGeneratedBlogContentForDeploy({
+        projectId: refinedDbProjectId || chatId,
+        userId: ownerUserId || undefined,
+        inputState: {
+          ...inputState,
+          workflow_context: {
+            ...(inputState.workflow_context || {}),
+            blogContentPreviewPosts: refinedBlogPreview.posts,
+            blogContentConfirmed: true,
+          },
+        } as AgentState,
+        project: refined.project,
+        locale: refineLocale,
+      });
+      generatedBlogContentStatus = String(blogPersistResult?.status || "").trim();
+    } catch (error) {
+      generatedBlogContentStatus = `error:${String((error as any)?.message || error || "unknown")}`;
+      console.warn(
+        `[SkillRuntimeExecutor] ensureGeneratedBlogContentForDeploy failed during Blog content refine: ${String((error as any)?.message || error)}`,
+      );
+    }
+  }
+  const refinedBlogWorkflowState = refinedBlogPreview.required
+    ? isBlogContentRefine
+      ? {
+          blogContentPreviewPosts: refinedBlogPreview.posts,
+          blogContentPreviewStatus: "confirmed",
+          blogContentConfirmed: true,
+        }
+      : {
+          blogContentPreviewPosts: refinedBlogPreview.posts,
+          blogContentPreviewStatus: "pending_confirmation",
+          blogContentConfirmed: false,
+        }
     : {
         blogContentPreviewPosts: [],
         blogContentPreviewStatus: refinedBlogPreview.reason,
@@ -5791,6 +6050,7 @@ async function runRefineTask(params: {
     phase: "end",
     project_json: refined.project,
     site_artifacts: refined.project,
+    db_project_id: refinedDbProjectId || (inputState as any)?.db_project_id,
     workflow_context: {
       ...(inputState.workflow_context || {}),
       executionMode: "generate",
@@ -5799,6 +6059,7 @@ async function runRefineTask(params: {
       checkpointProjectPath,
       deploySourceProjectPath: checkpointProjectPath,
       deploySourceTaskId: taskId,
+      ...(generatedBlogContentStatus ? { generatedBlogContentStatus } : {}),
       ...refinedBlogWorkflowState,
     } as any,
     messages: [
@@ -5830,13 +6091,17 @@ async function runRefineTask(params: {
   );
   const pendingEdits = await readPendingEditsForTask(taskId);
   await completeChatTask(taskId, {
-    assistantText: refinedBlogPreview.required
+    assistantText: isBlogContentRefine
       ? refineLocale === "zh-CN"
+        ? `Blog 内容已生成，已更新 ${refinedBlogPreview.posts.length} 篇文章正文，并同步到项目 Blog 数据。`
+        : `Blog content is generated. ${refinedBlogPreview.posts.length} article bodies were updated and synced into the project Blog data.`
+      : refinedBlogPreview.required
+        ? refineLocale === "zh-CN"
         ? `修改已完成，并已生成 ${refinedBlogPreview.posts.length} 篇 Blog 文章草案。确认后即可部署。`
         : `Refinement completed. ${refinedBlogPreview.posts.length} Blog article drafts are ready for confirmation before deploy.`
       : `Refinement completed. Updated ${refined.changedFiles.length} files.`,
     phase: "end",
-    timelineMetadata: refinedBlogPreview.required
+    timelineMetadata: refinedBlogPreview.required && !isBlogContentRefine
       ? buildBlogContentConfirmTimelineMetadata({
           locale: refineLocale,
           navLabel: refinedBlogPreview.navLabel,
@@ -5867,6 +6132,7 @@ async function runRefineTask(params: {
       checkpointWorkflowDir,
       nextStep: "preview",
       pendingEditsCount: pendingEdits.length,
+      ...(generatedBlogContentStatus ? { generatedBlogContentStatus } : {}),
     } as any,
   });
   await syncChatMemoryFromState({
@@ -6038,7 +6304,7 @@ export class SkillRuntimeExecutor {
       };
 
       const checkpointProjectPath = path.join(checkpointRoot, "project.json");
-      const generatedProjectArtifact = finalizeGeneratedProjectArtifact({
+      const finalizedProjectArtifact = finalizeGeneratedProjectArtifact({
         project:
           (summary.state as any)?.site_artifacts ||
           (summary.state as any)?.project_json ||
@@ -6052,6 +6318,14 @@ export class SkillRuntimeExecutor {
           },
         inputState: summary.state as AgentState,
         locale: decision.locale,
+      });
+      const generatedProjectArtifact = normalizeGeneratedProjectArtifactPreview({
+        project: finalizedProjectArtifact,
+        decision,
+        requirementText:
+          String((summary.state as any)?.workflow_context?.sourceRequirement || "").trim() ||
+          String((summary.state as any)?.workflow_context?.canonicalPrompt || "").trim() ||
+          decision.requirementText,
       });
       const generatedBlogPreview = buildBlogContentWorkflowPreview({
         inputState: summary.state as AgentState,
@@ -6097,6 +6371,24 @@ export class SkillRuntimeExecutor {
 
       if (setSessionState) setSessionState(sessionStateForNext);
       await fs.mkdir(checkpointRoot, { recursive: true });
+      await materializeSiteDirectoryFromProject(
+        generatedProjectArtifact,
+        latestCheckpointSiteDir || path.join(checkpointRoot, "latest", "site"),
+        {
+          decision,
+          requirementText:
+            String((summary.state as any)?.workflow_context?.sourceRequirement || "").trim() ||
+            String((summary.state as any)?.workflow_context?.canonicalPrompt || "").trim() ||
+            decision.requirementText,
+        },
+      );
+      await materializeSiteDirectoryFromProject(generatedProjectArtifact, path.join(checkpointRoot, "site"), {
+        decision,
+        requirementText:
+          String((summary.state as any)?.workflow_context?.sourceRequirement || "").trim() ||
+          String((summary.state as any)?.workflow_context?.canonicalPrompt || "").trim() ||
+          decision.requirementText,
+      });
       await fs.writeFile(path.join(checkpointRoot, "state.json"), JSON.stringify({
         savedAt: nowIso(),
         phase: summary.phase,

@@ -21,8 +21,28 @@ describe("decision-layer", () => {
     expect(contact).toBeTruthy();
     expect(contact?.purpose).toContain('Dedicated page for "Contact"');
     expect(contact?.source).toBe("nav_label");
+    expect(contact?.responsibility).toContain('Contact page for "Contact"');
     expect(contact?.contentSkeleton).toEqual([]);
     expect(contact?.constraints.join(" ")).toContain("Canonical Website Prompt is the authoritative source");
+  });
+
+  it("switches homepage blueprint to enterprise masthead mode when IBM Carbon is explicitly requested", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          "Generate a bilingual company homepage. Use the IBM Carbon enterprise design system with a blue-and-white corporate technology homepage. Nav: Home",
+        ),
+      ],
+      phase: "conversation",
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+    const home = plan.pageBlueprints.find((page) => page.route === "/");
+
+    expect(home).toBeTruthy();
+    expect(home?.contentSkeleton.join(" ")).toContain("Image-backed enterprise hero with overlay copy");
+    expect(home?.contentSkeleton.join(" ")).not.toContain("Brand-led hero establishing the site home entry");
+    expect(home?.constraints.join(" ")).toContain("enterprise homepage rhythm");
   });
 
   it("treats Blog as a data-source page at the blueprint layer", () => {
@@ -113,6 +133,52 @@ describe("decision-layer", () => {
     expect(plan.routes).toEqual(["/", "/products", "/cases", "/news", "/contact", "/about"]);
     expect(plan.navLabels.slice(-2)).toEqual(["Contact", "About"]);
     expect(plan.pageBlueprints.find((page) => page.route === "/news")?.pageKind).toBe("blog-data-index");
+  });
+
+  it("collapses duplicate and near-synonym page concepts during planning instead of carrying both routes forward", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          "Build a multi-page industrial site. Pages: Home | Products | Product | Services | Custom Solutions | News | Contact | About",
+        ),
+      ],
+      phase: "conversation",
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+
+    expect(plan.routes).toEqual(["/", "/products", "/custom-solutions", "/news", "/contact", "/about"]);
+    expect(plan.routes).not.toContain("/product");
+    expect(plan.routes).not.toContain("/service");
+    expect(plan.navLabels).toEqual(["Home", "Products", "Custom Solutions", "News", "Contact", "About"]);
+  });
+
+  it("canonicalizes explicit requirement-spec pages before route planning finalizes", () => {
+    const state: any = {
+      messages: [new HumanMessage("Generate the website from the confirmed requirement form.")],
+      phase: "conversation",
+      workflow_context: {
+        requirementSpec: {
+          siteType: "company",
+          contentSources: ["existing_domain"],
+          targetAudience: ["enterprise_buyers"],
+          primaryGoal: ["lead_generation"],
+          pageStructure: {
+            mode: "multi",
+            planning: "manual",
+            pages: ["Home", "Products", "Product", "Solutions", "Service", "Downloads", "Download", "Contact"],
+          },
+        },
+      },
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+
+    expect(plan.routes).toEqual(["/", "/products", "/custom-solutions", "/downloads", "/contact"]);
+    expect(plan.routes).not.toContain("/product");
+    expect(plan.routes).not.toContain("/service");
+    expect(plan.routes).not.toContain("/solution");
+    expect(plan.navLabels).toEqual(["Home", "Products", "Custom Solutions", "Downloads", "Contact"]);
   });
 
   it("derives CASUX routes from Chinese prompt without forcing LC-CNC defaults", () => {
@@ -647,6 +713,80 @@ describe("decision-layer", () => {
     expect(plan.routes).not.toEqual(expect.arrayContaining(["/email", "/phone", "/spec-cards", "/quote-form"]));
   });
 
+  it("treats workflow promptControlManifest routes as authoritative and does not auto-inject blog from polluted requirement text", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          [
+            "# Canonical Website Generation Prompt",
+            "- Primary goal: 联系, Quote, Build brand trust",
+            "- Page structure notes mention blog and downloads in legacy source text.",
+            "### Page-Level Intent Contract",
+            '1. Home (/ -> /index.html)',
+            '2. Contact (/contact -> /contact/index.html)',
+          ].join("\n"),
+        ),
+      ],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/contact"],
+          navLabels: ["Home", "Contact"],
+          files: ["/styles.css", "/script.js", "/index.html", "/contact/index.html"],
+        },
+        requirementSpec: {
+          pageStructure: {
+            mode: "multi",
+            planning: "manual",
+            pages: ["Contact", "Product", "Home", "downloads", "download", "solution", "service", "blog", "联系"],
+          },
+        },
+      },
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+
+    expect(plan.routes).toEqual(["/", "/contact"]);
+    expect(plan.navLabels).toEqual(["Home", "Contact"]);
+    expect(plan.routes).not.toContain("/blog");
+    expect(plan.routes).not.toContain("/downloads");
+    expect(plan.routes).not.toContain("/products");
+  });
+
+  it("treats inline prompt control manifest routes as authoritative and does not expand them with system routes", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          [
+            "# Canonical Website Generation Prompt",
+            "The source materials mention blog, article archive, and downloadable assets.",
+            "### Prompt Control Manifest (Machine Readable)",
+            "```json",
+            JSON.stringify({
+              schemaVersion: 1,
+              promptKind: "canonical_website_prompt",
+              routeSource: "prompt_draft_page_plan",
+              routes: ["/", "/contact"],
+              navLabels: ["Home", "Contact"],
+              files: ["/styles.css", "/script.js", "/index.html", "/contact/index.html"],
+            }),
+            "```",
+          ].join("\n"),
+        ),
+      ],
+      phase: "conversation",
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+
+    expect(plan.routes).toEqual(["/", "/contact"]);
+    expect(plan.navLabels).toEqual(["Home", "Contact"]);
+    expect(plan.routes).not.toContain("/blog");
+  });
+
   it("does not inject /blog for a standard multipage site without explicit content-stream intent", () => {
     const state: any = {
       messages: [
@@ -776,6 +916,26 @@ describe("decision-layer", () => {
     expect(plan.pageBlueprints.every((page) => page.source === "explicit_route")).toBe(true);
   });
 
+  it("does not turn domain URLs inside page-structure prose into explicit /www routes", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          [
+            "提取https://www.vbuytextile.com/网站的信息、页面结构和图片，做一个毛巾的渠道外贸电商公司的官网。",
+            "页面数与页面结构: 多页网站: 自动规划页面结构",
+            "目标受众: 企业采购",
+          ].join("\n"),
+        ),
+      ],
+      phase: "conversation",
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+
+    expect(plan.routes).not.toContain("/www");
+    expect(plan.navLabels).not.toContain("Www");
+  });
+
   it("adds /blog when natural-language requirement asks for multiple blog posts without structured page planning", () => {
     const state: any = {
       messages: [
@@ -828,5 +988,46 @@ describe("decision-layer", () => {
     expect(plan.routes).not.toEqual(
       expect.arrayContaining(["/english", "/zh", "/resource", "/documents", "/list/database", "/storage/runtime/hydration/fallback"]),
     );
+  });
+
+  it("parses the actual machine-readable manifest instead of an earlier prose code fence mention", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          [
+            "# Canonical Website Generation Prompt",
+            "",
+            "This section is a thin machine-readable Prompt Control Manifest. It is not the website content plan.",
+            "",
+            "## 2. Website Overall Positioning Prompt",
+            "```",
+            "Generate a complete website from this canonical prompt.",
+            "```",
+            "",
+            "### Fixed Pages And File Output",
+            "- /styles.css",
+            "- /script.js",
+            "- /index.html",
+            "- /products/index.html",
+            "",
+            "### Prompt Control Manifest (Machine Readable)",
+            "```json",
+            JSON.stringify({
+              routes: ["/"],
+              navLabels: ["Home"],
+              files: ["/styles.css", "/script.js", "/index.html"],
+            }),
+            "```",
+          ].join("\n"),
+        ),
+      ],
+      phase: "conversation",
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+
+    expect(plan.routeAuthorityMode).toBe("prompt_manifest");
+    expect(plan.routes).toEqual(["/"]);
+    expect(plan.navLabels).toEqual(["Home"]);
   });
 });

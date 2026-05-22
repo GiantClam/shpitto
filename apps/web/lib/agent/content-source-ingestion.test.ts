@@ -1,5 +1,15 @@
-import { describe, expect, it } from "vitest";
-import { __contentSourceIngestionForTesting, formatWebsiteKnowledgeProfile } from "./content-source-ingestion";
+import { describe, expect, it, vi } from "vitest";
+import {
+  __contentSourceIngestionForTesting,
+  buildWebsiteKnowledgeProfile,
+  formatWebsiteKnowledgeProfile,
+} from "./content-source-ingestion";
+import {
+  CONTENT_INGESTION_AUDIENCE_RE,
+  CONTENT_INGESTION_DIFFERENTIATOR_RE,
+  CONTENT_INGESTION_OFFERING_RE,
+  CONTENT_INGESTION_PROOF_RE,
+} from "./content-source-ingestion-keywords";
 import { __documentIngestionForTesting, extractDocumentContentFromBytes } from "./document-ingestion";
 import { containsWorkflowCjk, isWorkflowArtifactEnglishSafe } from "../workflow-artifact-language.ts";
 
@@ -195,6 +205,14 @@ describe("content source ingestion", () => {
     expect(profile.contentGaps.join(" ")).toMatch(/user registration\/login|Proof points are missing/i);
   });
 
+  it("extracts explicit homepage URLs even when chinese copy is attached without whitespace", () => {
+    const urls = __contentSourceIngestionForTesting.extractExplicitUrlsFromRequirement(
+      "提取https://www.vbuytextile.com/网站的信息、页面结构和图片，做一个毛巾的渠道外贸电商公司的官网",
+    );
+
+    expect(urls).toEqual(["https://www.vbuytextile.com/"]);
+  });
+
   it("uses readable uploaded PDF content before file-name metadata", () => {
     const profile = __contentSourceIngestionForTesting.buildKnowledgeProfile({
       requirementText: "根据上传的 CASUX_.md.pdf 生成网站。",
@@ -257,6 +275,111 @@ describe("content source ingestion", () => {
       "/resources",
       "/contact-us",
     ]);
+  });
+
+  it("keeps bilingual ingestion keywords in a separate dictionary", () => {
+    expect(CONTENT_INGESTION_AUDIENCE_RE.test("目标受众包括学校采购和家长")).toBe(true);
+    expect(CONTENT_INGESTION_OFFERING_RE.test("提供产品方案和评估服务")).toBe(true);
+    expect(CONTENT_INGESTION_DIFFERENTIATOR_RE.test("核心优势是资质完整且专家团队稳定")).toBe(true);
+    expect(CONTENT_INGESTION_PROOF_RE.test("案例成果覆盖客户数据与样本验证")).toBe(true);
+  });
+
+  it("does not let raw requirement prose inject extra routes into source-derived page plans", () => {
+    const profile = __contentSourceIngestionForTesting.buildKnowledgeProfile({
+      requirementText: [
+        "Use the uploaded planning document as the source of truth.",
+        "The pasted notes mention /whatsapp, /odm, /oem, and T/T payment terms, but these are not sitemap pages.",
+        "Build a company website for wholesale buyers.",
+      ].join("\n"),
+      domains: [],
+      contentGaps: [],
+      sources: [
+        {
+          type: "uploaded_file",
+          title: "planning.pdf",
+          fileName: "planning.pdf",
+          confidence: 0.96,
+          snippet: [
+            "Main navigation: Home | About Us | Products | Contact Us",
+            "Keep all source pages distinct in the generated sitemap.",
+          ].join("\n"),
+        },
+      ],
+    });
+
+    expect(profile.suggestedPages.map((page) => page.route)).toEqual([
+      "/",
+      "/about-us",
+      "/products",
+      "/contact-us",
+    ]);
+    expect(profile.suggestedPages.map((page) => page.route)).not.toContain("/whatsapp");
+    expect(profile.suggestedPages.map((page) => page.route)).not.toContain("/odm");
+  });
+
+  it("filters low-confidence utility tokens out of structured source navigation", () => {
+    const profile = __contentSourceIngestionForTesting.buildKnowledgeProfile({
+      requirementText: "Use the uploaded planning document as the source of truth.",
+      domains: [],
+      contentGaps: [],
+      sources: [
+        {
+          type: "uploaded_file",
+          title: "planning.pdf",
+          fileName: "planning.pdf",
+          confidence: 0.96,
+          snippet: [
+            "Main navigation: Home | WhatsApp | T/T | ODM | Contact Us",
+            "Only stable visitor-facing pages should appear in the generated sitemap.",
+          ].join("\n"),
+        },
+      ],
+    });
+
+    expect(profile.suggestedPages.map((page) => page.route)).toEqual(["/", "/contact-us"]);
+    expect(profile.contentGaps.join(" ")).toContain("Ignored low-confidence source page candidate");
+  });
+
+  it("treats explicit URLs as source pages and extracts visible structure into the knowledge profile", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn(async () =>
+      new Response(
+        [
+          "<!doctype html>",
+          "<html><head><title>Vbuy Textile</title><meta name=\"description\" content=\"OEM towel manufacturer\"></head>",
+          "<body>",
+          "<nav>",
+          '<a href=\"/\">Home</a>',
+          '<a href=\"/about\">About Us</a>',
+          '<a href=\"/products\">Products</a>',
+          '<a href=\"/contact\">Contact Us</a>',
+          "</nav>",
+          "<main>",
+          "<h1>Premium Towels For Global Buyers</h1>",
+          "<h2>OEM & ODM Manufacturing</h2>",
+          "<p>We build bath towels, beach towels, and sports towels for hotels, brands, and wholesale programs.</p>",
+          "</main>",
+          "</body></html>",
+        ].join(""),
+        { status: 200, headers: { "content-type": "text/html; charset=utf-8" } },
+      ),
+    ) as any;
+
+    try {
+      const profile = await buildWebsiteKnowledgeProfile({
+        requirementText: "Use https://www.vbuytextile.com/ as the main source to generate the company website.",
+        timeoutMs: 5000,
+      });
+
+      const urlSource = profile.sources.find((source) => source.type === "url_page");
+      expect(urlSource?.url).toBe("https://www.vbuytextile.com/");
+      expect(String(urlSource?.snippet || "")).toContain("Main navigation: Home | About Us | Products | Contact Us");
+      expect(profile.suggestedPages.map((page) => page.route)).toEqual(["/", "/about-us", "/products", "/contact-us"]);
+      expect(profile.suggestedPages.every((page) => page.sourceKind === "structural_source")).toBe(true);
+      expect(profile.suggestedPages.every((page) => (page.confidence || 0) >= 0.72)).toBe(true);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 
   it("dedupes repeated source page labels into stable sequential slugs", () => {

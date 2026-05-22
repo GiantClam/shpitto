@@ -1,41 +1,83 @@
-# Progress Log: Payload CMS Evaluation For Shpitto
+# Progress Log: Website Multi-Skill Phase 2 Corporate Execution Split
 
-## Session: 2026-05-15
+## Session: 2026-05-22
 
-### Phase 1: Local Product And Architecture Discovery
+### Phase 1: Execution Split Discovery
 - **Status:** complete
 - Actions taken:
-  - Loaded the `planning-with-files` workflow instructions.
-  - Reviewed existing planning files and reset them from an unrelated billing task to this Payload evaluation task.
-  - Read root and package manifests to understand the monorepo structure and main runtime choices.
-  - Confirmed that `shpitto` already contains a non-trivial self-built blog/content subsystem with editor, APIs, D1 schema, R2 media, and SSR public pages.
-  - Confirmed that the app is architecturally mixed: Supabase for auth/selected operational data, Cloudflare D1/R2 for project/blog storage and deployment artifacts.
+  - Confirmed runtime now distinguishes `skillId` and `executionSkillId`.
+  - Confirmed adapter lookup is the cleanest seam for the first true type-specific execution lane.
 
-### Phase 2: Payload Capability And Fit Research
+### Phase 2: Dedicated Corporate Adapter
 - **Status:** complete
 - Actions taken:
-  - Prepared the local-fit baseline needed to evaluate overlap vs. genuine product gap.
-  - Confirmed that Shpitto's existing editor surface is broader than simple markdown editing: it already includes project-scoped blog management plus a Puck-compatible page data model.
-  - Reviewed Payload official installation, admin, Local API, database, storage, deployment, Cloudflare template, and release materials.
-  - Captured the main adoption advantages, runtime constraints, and Cloudflare-specific tradeoffs.
+  - Extracted `apps/web/lib/skill-runtime/corporate-b2b-skill-adapter.ts`.
+  - Refactored `website-generation-skill-adapter.ts` to expose `createWebsiteGenerationSkillAdapter(...)`.
+  - Kept shared website execution helpers intact to preserve current behavior.
+  - Added the first corporate-specific execution contract to the dedicated adapter:
+    - shared theme consistency
+    - shared nav/footer consistency
+    - route differentiation limited to main-content topology
+  - Added the first corporate route-specific target page contract layer for:
+    - `/products`
+    - `/custom-solutions`
+    - `/cases`
+    - `/about`
+    - `/contact`
+  - Added the first corporate media/shell QA contract layer in skill + adapter:
+    - route-owned media requirements
+    - nav/footer drift treated as invalid output
+    - single adjacent locale utility slot
+    - no implementation/i18n shell leakage
+  - Added the first adapter-level corporate validation rules:
+    - reject duplicated locale controls in the shared shell
+    - reject implementation/i18n shell-copy leakage
+    - scan visible shell text instead of raw markup to avoid class-name false positives
+  - Added corporate-owned shared-shell inheritance validation:
+    - reject interior pages whose nav destinations drift from `/index.html`
+    - reject interior pages whose footer destinations drift from `/index.html`
+  - Replaced the corporate adapter's emitted-HTML sanitize pass-through with a corporate-owned sanitize hook that retains only the minimal blog-index editorial scaffold cleanup needed for explicit article-count briefs.
+  - Wrapped shared website QA with a corporate-owned `validateCorporateRequiredFilesWithQa(...)` pipeline so post-QA normalization and shell validation now belong to the corporate adapter surface.
+  - Switched the active corporate blog-index sanitize path to a clean `Safe` publishable-content counter, avoiding the old mojibake-prone local parser on the execution path.
+  - Moved the remaining execution entry points behind corporate-owned wrappers:
+    - required-file checklist
+    - max-round resolution
+    - round-objective planning
+  - Replaced those three wrappers with corporate-owned implementations instead of shared-helper pass-throughs.
+  - Added corporate-owned route asset-reference validation so enterprise route HTML must explicitly reference `/styles.css` and `/script.js`.
+  - Added corporate-owned route page-role validation so `products / solutions / cases / about / contact` must read like their enterprise route responsibilities instead of only passing the shared generic route QA.
+  - Fixed full-site replay preview persistence by merging `steps/*/site` snapshots into one stable local `site/` artifact when no complete checkpoint site directory exists yet.
 
-### Phase 3: Community Best Practices
+### Phase 3: Registry Wiring
 - **Status:** complete
 - Actions taken:
-  - Collected maintainer-facing guidance and template conventions around App Router route groups, generated file handling, custom admin location, and Next.js version compatibility.
-  - Collected deployment best practices from official storage/deployment/template docs, including R2 adapter selection, Worker caveats, and Cloudflare template constraints.
+  - Routed `corporate-b2b-site` through its dedicated adapter in `skill-execution-adapter-registry.ts`.
+  - Left other type skills on generated website adapters for now.
 
-### Phase 4: Recommendation And Integration Plan
+### Phase 4: Verification
 - **Status:** complete
 - Actions taken:
-  - Reached a recommendation to defer full Payload adoption for the current Shpitto core product.
-  - Defined the trigger conditions under which Payload would become justified.
-  - Drafted an incremental adoption path that keeps Payload bounded to future editorial/admin domains instead of replacing Shpitto's core generation and deploy stack.
+  - Updated `skill-execution-adapter-registry.test.ts` to assert dedicated adapter ownership.
+  - Ran:
+    - `pnpm -C apps/web exec vitest run lib/skill-runtime/skill-execution-adapter-registry.test.ts lib/skill-runtime/executor.deploy.test.ts lib/agent/chat-canonical-replay.test.ts --testTimeout=30000 --maxWorkers=1 --reporter=dot`
+    - `pnpm -C apps/web exec vitest run lib/skill-runtime/website-type-selector.test.ts lib/skill-runtime/project-skill-loader.test.ts lib/skill-runtime/skill-tool-registry.test.ts lib/skill-runtime/skill-execution-adapter-registry.test.ts lib/skill-runtime/executor.deploy.test.ts lib/agent/chat-canonical-replay.test.ts --testTimeout=30000 --maxWorkers=1 --reporter=dot`
+    - `pnpm -C apps/web exec vitest run lib/skill-runtime/skill-execution-adapter-registry.test.ts lib/skill-runtime/website-type-selector.test.ts lib/skill-runtime/project-skill-loader.test.ts lib/skill-runtime/executor.deploy.test.ts lib/agent/chat-canonical-replay.test.ts --testTimeout=30000 --maxWorkers=1 --reporter=dot`
+    - `pnpm -C apps/web exec vitest run lib/skill-runtime/skill-execution-adapter-registry.test.ts lib/skill-runtime/executor.deploy.test.ts lib/agent/chat-canonical-replay.test.ts --testTimeout=30000 --maxWorkers=1 --reporter=dot`
 
-## Research Log
-- Initial hypothesis: Payload is most likely relevant only if Shpitto needs structured editorial content and admin operations beyond its current AI generation/product workflows.
-- Updated hypothesis: a full Payload adoption is unlikely to be justified for the existing blog stack alone; a narrow adoption may only make sense for future multi-model editorial/admin use cases.
+## Verification Summary
+- Targeted integration suite result: `61 passed`
+- Focused corporate adapter slice: `42 passed`
+- Focused corporate adapter slice after shell inheritance extraction: `45 passed`
+- Focused corporate adapter slice after sanitize extraction: `46 passed`
+- Focused corporate adapter slice after QA pipeline wrapper extraction: `47 passed`
+- Focused corporate adapter slice after route asset/page-role validation extraction: `49 passed`
+- Real full-site VBUY replay after preview persistence fix: `1 passed`
+- TypeScript diagnostics:
+  - `corporate-b2b-skill-adapter.ts`: `0 error`
+  - `website-generation-skill-adapter.ts`: `0 error`
+  - `skill-execution-adapter-registry.ts`: `0 error`
 
 ## Error Log
 | Timestamp | Error | Attempt | Resolution |
 |-----------|-------|---------|------------|
+| 2026-05-22 | No dedicated execution adapter existed for `corporate-b2b-site`; registry aliasing hid type ownership | 1 | Extracted a dedicated adapter object while preserving shared execution helpers. |

@@ -316,8 +316,12 @@ let supabaseTaskClient: any;
 let supabaseTaskClientKey = "";
 
 function resolveSupabaseTaskProxyUrl(): string {
+  const explicit = String(process.env.SUPABASE_TASK_PROXY_URL || "").trim();
+  if (/^(?:direct|none|off|false|0)$/i.test(explicit)) {
+    return "";
+  }
   return String(
-    process.env.SUPABASE_TASK_PROXY_URL ||
+    explicit ||
       process.env.HTTPS_PROXY ||
       process.env.https_proxy ||
       process.env.HTTP_PROXY ||

@@ -1,8 +1,8 @@
 const MOJIBAKE_PUNCTUATION_REPLACEMENTS: Array<[RegExp, string]> = [
   [/â€™|â€˜|鈥檚|鈥榮|鈥汢|鈥橾/g, "’"],
-  [/â€œ|â€�/g, "”"],
+  [/â€œ|â€�/g, '"'],
   [/â€”|â€“|鈥[?]?/g, " — "],
-  [/â€¦/g, "…"],
+  [/â€¦/g, "..."],
   [/Â/g, " "],
 ];
 
@@ -23,13 +23,14 @@ const WORKFLOW_DISALLOWED_CHARS_GLOBAL_RE = new RegExp(
 );
 
 function normalizeWorkflowPunctuation(value: string): string {
-  let next = String(value || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+  let next = String(value || "");
   for (const [pattern, replacement] of MOJIBAKE_PUNCTUATION_REPLACEMENTS) {
     next = next.replace(pattern, replacement);
   }
+  next = next.normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
   return next
     .replace(/[\u201A\u2032]/g, "’")
-    .replace(/[\u201E\u2033]/g, "”")
+    .replace(/[\u201E\u2033]/g, '"')
     .replace(/[\u2000-\u200B\u202F\u205F\u3000]/g, " ")
     .replace(/\u00A0/g, " ");
 }

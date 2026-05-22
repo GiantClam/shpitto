@@ -292,6 +292,7 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
     "replays generation for the existing chat and keeps source-specific IA/content instead of a generic template",
     async () => {
       const prevUseSupabase = process.env.CHAT_TASKS_USE_SUPABASE;
+      const prevSupabaseProxy = process.env.SUPABASE_TASK_PROXY_URL;
       const prevAsyncTaskTimeoutMs = process.env.CHAT_ASYNC_TASK_TIMEOUT_MS;
       const prevStageBudgetPerFileMs = process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS;
       const prevRoundAbsoluteTimeoutMs = process.env.SKILL_TOOL_ROUND_ABSOLUTE_TIMEOUT_MS;
@@ -303,6 +304,7 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
       const prevProviderOrder = process.env.LLM_PROVIDER_ORDER;
 
       try {
+        process.env.SUPABASE_TASK_PROXY_URL = "direct";
         process.env.CHAT_ASYNC_TASK_TIMEOUT_MS = "1800000";
         process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS = "420000";
         process.env.SKILL_TOOL_ROUND_IDLE_TIMEOUT_MS = "420000";
@@ -375,7 +377,11 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         });
         const previewUrlPath = String(previewRootRes.headers.get("location") || "");
         const previewBaseUrl = String(process.env.SHPITTO_PREVIEW_BASE_URL || "http://localhost:3000").replace(/\/+$/, "");
-        const previewUrl = previewUrlPath ? `${previewBaseUrl}${previewUrlPath}` : "";
+        const previewUrl = !previewUrlPath
+          ? ""
+          : /^https?:\/\//i.test(previewUrlPath)
+            ? previewUrlPath
+            : `${previewBaseUrl}${previewUrlPath}`;
         expect(previewRootRes.status).toBe(307);
         expect(previewUrlPath).toContain(`/api/chat/tasks/${encodeURIComponent(generated.id)}/preview/index.html`);
 
@@ -418,6 +424,8 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
             ),
         );
       } finally {
+        if (prevSupabaseProxy === undefined) delete process.env.SUPABASE_TASK_PROXY_URL;
+        else process.env.SUPABASE_TASK_PROXY_URL = prevSupabaseProxy;
         process.env.CHAT_TASKS_USE_SUPABASE = prevUseSupabase;
         process.env.CHAT_ASYNC_TASK_TIMEOUT_MS = prevAsyncTaskTimeoutMs;
         process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS = prevStageBudgetPerFileMs;
@@ -443,6 +451,7 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
     "forces pptoken preflight fallback and proves fresh-stage retry is attempted before succeeding",
     async () => {
       const prevUseSupabase = process.env.CHAT_TASKS_USE_SUPABASE;
+      const prevSupabaseProxy = process.env.SUPABASE_TASK_PROXY_URL;
       const prevAsyncTaskTimeoutMs = process.env.CHAT_ASYNC_TASK_TIMEOUT_MS;
       const prevStageBudgetPerFileMs = process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS;
       const prevRoundAbsoluteTimeoutMs = process.env.SKILL_TOOL_ROUND_ABSOLUTE_TIMEOUT_MS;
@@ -456,6 +465,7 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
       const originalWarn = console.warn;
 
       try {
+        process.env.SUPABASE_TASK_PROXY_URL = "direct";
         const { getLatestChatTaskForChat, listChatTimelineMessages } = await import("./chat-task-store");
         const beforeLatest = await getLatestChatTaskForChat(replayChatId);
         const ownerUserId = String(beforeLatest?.ownerUserId || "").trim() || undefined;
@@ -545,6 +555,8 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         ).toBe(true);
       } finally {
         console.warn = originalWarn;
+        if (prevSupabaseProxy === undefined) delete process.env.SUPABASE_TASK_PROXY_URL;
+        else process.env.SUPABASE_TASK_PROXY_URL = prevSupabaseProxy;
         process.env.CHAT_TASKS_USE_SUPABASE = prevUseSupabase;
         process.env.CHAT_ASYNC_TASK_TIMEOUT_MS = prevAsyncTaskTimeoutMs;
         process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS = prevStageBudgetPerFileMs;
@@ -564,6 +576,7 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
     "replays generation for the existing chat, deploys with Wrangler, and verifies local artifacts plus deployed Blog runtime",
     async () => {
       const prevUseSupabase = process.env.CHAT_TASKS_USE_SUPABASE;
+      const prevSupabaseProxy = process.env.SUPABASE_TASK_PROXY_URL;
       const prevAsyncTaskTimeoutMs = process.env.CHAT_ASYNC_TASK_TIMEOUT_MS;
       const prevStageBudgetPerFileMs = process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS;
       const prevRoundAbsoluteTimeoutMs = process.env.SKILL_TOOL_ROUND_ABSOLUTE_TIMEOUT_MS;
@@ -575,6 +588,7 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
       const prevProviderOrder = process.env.LLM_PROVIDER_ORDER;
 
       try {
+        process.env.SUPABASE_TASK_PROXY_URL = "direct";
         process.env.CHAT_ASYNC_TASK_TIMEOUT_MS = "1800000";
         process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS = "420000";
         process.env.SKILL_TOOL_ROUND_IDLE_TIMEOUT_MS = "420000";
@@ -904,6 +918,8 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         expect(finalTask?.status).toBe("succeeded");
         console.log(JSON.stringify({ SPECIFIC_CHAT_REPLAY_RESULT: report }, null, 2));
       } finally {
+        if (prevSupabaseProxy === undefined) delete process.env.SUPABASE_TASK_PROXY_URL;
+        else process.env.SUPABASE_TASK_PROXY_URL = prevSupabaseProxy;
         if (prevUseSupabase === undefined) delete process.env.CHAT_TASKS_USE_SUPABASE;
         else process.env.CHAT_TASKS_USE_SUPABASE = prevUseSupabase;
         if (prevAsyncTaskTimeoutMs === undefined) delete process.env.CHAT_ASYNC_TASK_TIMEOUT_MS;

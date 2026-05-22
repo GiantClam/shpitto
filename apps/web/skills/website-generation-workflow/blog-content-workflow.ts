@@ -117,6 +117,7 @@ function extractStaticBlogPostsFromProject(params: {
     const slug = String(route.split("/").filter(Boolean).pop() || "").trim();
     const html = byPath.get(`${route}/index.html`) || "";
     if (!slug || !html) continue;
+    if (/data-shpitto-blog-detail-shell\s*=\s*["']true["']/i.test(html)) continue;
     const mainHtml = extractMainHtml(html);
     const title =
       params.deps.htmlToReadableText(String(mainHtml.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || "")) ||
@@ -197,6 +198,21 @@ function normalizeWorkflowSourceText(text: string) {
     .trim();
 }
 
+function extractCanonicalPromptNarrativeText(text: string) {
+  const normalized = normalizeWorkflowSourceText(text);
+  if (!/Canonical Website Generation Prompt/i.test(normalized)) return "";
+  const lines = normalized
+    .split(/\n+/)
+    .map((line) => normalizeSourceLine(line))
+    .filter(Boolean)
+    .filter((line) => line.length >= 24)
+    .filter((line) => !/^#{1,6}\s/.test(line))
+    .filter((line) => !/^(?:##?\s*)?(?:Route|Routes|File|Files|Manifest|Machine Readable|Page-Level Intent Contract|Workflow Skill Contract)\b/i.test(line))
+    .filter((line) => !isLikelyStructuredRequirementConfigLine(line))
+    .filter((line) => !isBlockedSourceContent(line));
+  return Array.from(new Set(lines)).slice(0, 12).join("\n");
+}
+
 function isLikelyBlogFactSource(text: string, deps: BlogWorkflowDeps) {
   const normalized = normalizeWorkflowSourceText(text);
   if (!normalized || normalized.length < 24) return false;
@@ -241,7 +257,7 @@ function collectPrimaryBlogSourceText(inputState: AgentState, deps: BlogWorkflow
     .map((content) => normalizeWorkflowSourceText(content))
     .filter(Boolean);
 
-  return [
+  const preferredSegments = [
     ...structuredSourceSegments,
     messageText,
     normalizeWorkflowSourceText(String(workflow.latestUserText || "")),
@@ -249,6 +265,16 @@ function collectPrimaryBlogSourceText(inputState: AgentState, deps: BlogWorkflow
     normalizeWorkflowSourceText(String(workflow.sourceRequirement || "")),
   ]
     .filter((content) => isLikelyBlogFactSource(content, deps))
+    .filter(Boolean);
+
+  if (preferredSegments.length > 0) {
+    return preferredSegments.join("\n\n");
+  }
+
+  return [
+    extractCanonicalPromptNarrativeText(String(workflow.requirementAggregatedText || "")),
+    extractCanonicalPromptNarrativeText(String(workflow.sourceRequirement || "")),
+  ]
     .filter(Boolean)
     .join("\n\n");
 }
@@ -725,17 +751,39 @@ function resolveBlogWorkflowPosts(params: {
     fallbackAuthorName: params.fallbackAuthorName,
     deps: params.deps,
   });
+  const generatedPosts =
+    sourceText.length >= 12
+      ? buildGeneratedBlogSeedPosts({
+          sourceText,
+          locale: params.locale,
+          brandOverride,
+          deps: params.deps,
+        })
+      : [];
+
+  const mergeStaticAndGeneratedPosts = (preferredPosts: BlogPostUpsertInput[], supplementalPosts: BlogPostUpsertInput[]) => {
+    const merged: BlogPostUpsertInput[] = [];
+    const seenKeys = new Set<string>();
+    for (const post of [...preferredPosts, ...supplementalPosts]) {
+      const slug = String(post?.slug || "").trim().toLowerCase();
+      const title = String(post?.title || "").trim().toLowerCase();
+      const key = slug || `title:${title}`;
+      if (!key || seenKeys.has(key)) continue;
+      seenKeys.add(key);
+      merged.push(post);
+    }
+    return merged;
+  };
+
   if (staticPosts.length > 0) {
     if (sourceText.length < 12) return staticPosts;
-    if (!staticBlogPostsNeedSourceAlignedFallback({ sourceText, staticPosts })) return staticPosts;
+    if (!staticBlogPostsNeedSourceAlignedFallback({ sourceText, staticPosts })) {
+      if (staticPosts.length >= 3 || generatedPosts.length === 0) return staticPosts;
+      return mergeStaticAndGeneratedPosts(staticPosts, generatedPosts).slice(0, 3);
+    }
   }
   if (sourceText.length < 12) return [];
-  return buildGeneratedBlogSeedPosts({
-    sourceText,
-    locale: params.locale,
-    brandOverride,
-    deps: params.deps,
-  });
+  return generatedPosts;
 }
 
 export function projectHasGeneratedBlogContentMount(project: any, deps: BlogWorkflowDeps) {
