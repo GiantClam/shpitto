@@ -1,101 +1,28 @@
-# Findings: Website Multi-Skill Phase 2 Corporate Execution Split
+# Findings: QA Report Fixes for Chat Flow and Studio Routing
 
-## Current Workspace Findings
-- The current website runtime can now distinguish between:
-  - compatibility root: `workflow_context.skillId`
-  - execution lane: `workflow_context.executionSkillId`
-- `design-website-generator` remains the executor layer beneath website generation, so changing adapter identity does not require changing underlying prompt helpers yet.
-- Adapter lookup in `skill-execution-adapter-registry.ts` is the cleanest seam for introducing real type-specific execution without breaking workflow assembly.
-- Prompt-time stage directives already consume the selected type skill content, so the remaining gap was adapter identity, not prompt injection.
+## Current Root Cause Findings
+- `/api/chat` reads and writes LangGraph-style memory through `apps/web/lib/agent/chat-memory.ts`.
+- When `CHAT_MEMORY_BACKEND=supabase`, the code assumes `shpitto_chat_thread_memory` and `shpitto_chat_user_preferences` already exist.
+- If those tables are missing in production, the read/write path throws immediately and bubbles into `/api/chat` as a 500 instead of degrading to the file backend.
 
-## Phase 2 Implementation Decisions
-- Keep `website-generation-workflow` as the compatibility root in persisted workflow context.
-- Introduce a dedicated `corporate-b2b-site` adapter object instead of only aliasing the skill id back to the main website adapter.
-- Reuse the shared website execution helper functions for Phase 2, so the new adapter changes ownership and extension seams before behavior diverges.
-- Leave `marketing-landing-site` and `portfolio-blog-site` on generated generic website adapters until their contracts are ready to specialize.
+- The visible workspace components currently generate project links correctly as `/projects/{projectId}/{section}`.
+- The attached QA failure around `analysis-* / settings-* / assets-* / data-*` therefore appears to be a malformed route/input compatibility problem rather than the current visible nav builder generating new bad URLs.
+- Several server routes (`/api/projects/[projectId]/analysis`, `/domains`, `/settings`, assets/data surfaces) trust the raw `[projectId]` param directly, so malformed prefixed IDs fail with `Project not found or access denied`.
 
-## Integration Findings
-- The execution split is now real in two places:
-  - runtime chooses `executionSkillId = corporate-b2b-site`
-  - adapter registry returns an adapter whose own `skillId` is also `corporate-b2b-site`
-- This makes later corporate-only route/media/shell logic easy to hang off the dedicated adapter without perturbing `website-generation-workflow`.
-- The compatibility root is still necessary because replay/deploy/runtime tests still assume the historic workflow id in persisted context.
-- The dedicated corporate adapter now owns its first execution-layer contract additions:
-  - shared theme consistency across routes
-  - one authoritative nav/footer contract across routes
-  - per-page variation limited to route-owned main-content topology instead of shell drift
-- The dedicated corporate adapter now also owns its first route-specific page contracts:
-  - `/products` => product families + spec/comparison clarity
-  - `/custom-solutions` => buyer scenario + customization/process clarity
-  - `/cases` => scenario -> intervention -> result proof
-  - `/about` => operating model + trust + production discipline
-  - `/contact` => inquiry channels + response expectations
-- The dedicated corporate adapter and skill now also own the first corporate media + shell QA contract layer:
-  - route-owned business-proof imagery requirements
-  - nav/footer drift treated as generation failure
-  - locale controls restricted to one adjacent utility slot
-  - implementation/i18n mechanics prohibited from replacing buyer-facing shell copy
-- The dedicated corporate adapter now owns its first adapter-level validation rules rather than only prompt contracts:
-  - duplicate locale controls in the shared shell are rejected
-  - implementation/i18n shell copy leakage is rejected
-  - shell-copy scanning now correctly checks visible text instead of raw markup attributes
-- The dedicated corporate adapter now owns wrapper entry points for all execution surfaces:
-  - required-file checklist
-  - max-round resolution
-  - round-objective planning
-  - target page contract
-  - round prompt
-  - adapter-level validation
-- The dedicated corporate adapter now also owns independent implementations for:
-  - required-file checklist construction
-  - max-round budgeting
-  - round-objective planning
-  These no longer merely forward to the shared website helper.
-- The dedicated corporate adapter now owns the first shared-shell destination inheritance check as well:
-  - homepage nav destinations become the canonical nav contract for interior routes
-  - homepage footer destinations become the canonical footer contract for interior routes
-  - interior route drift is now rejected by the corporate adapter itself instead of only by shared helper internals
-- The dedicated corporate adapter now owns its own sanitize hook:
-  - corporate emitted HTML no longer forwards through the generic adapter sanitize entry point
-  - the only retained sanitize behavior is the minimal blog-index editorial scaffold cleanup when a corporate brief explicitly requests publishable article counts
-- The dedicated corporate adapter now also owns an explicit QA pipeline wrapper:
-  - shared website QA still supplies the generic normalization core
-  - corporate post-QA normalization now runs through an adapter-owned helper before shell validation
-  - this creates a stable seam for later moving more QA normalize logic off the shared website helper
-- The corporate adapter execution path no longer depends on the mojibake-prone legacy article-count parser inside its local sanitize flow:
-  - a clean `Safe` count parser now drives the corporate blog-index scaffold cleanup path
-  - this reduces the risk that Chinese or full-width digit briefs silently bypass corporate sanitize behavior
-- The corporate adapter now owns its first route-level page-role validation pass:
-  - `/products` must read like a product-family/specification page
-  - `/contact` must expose a form, direct channel, or inquiry/response path
-  - other enterprise routes now have adapter-owned role heuristics instead of relying only on shared route QA
-- The corporate adapter now also owns explicit page asset-reference validation for route HTML:
-  - every corporate route must reference `/styles.css`
-  - every corporate route must reference `/script.js`
-  - this keeps route-level execution ownership moving out of the shared helper
-- Full-site replay preview persistence previously copied only the first checkpoint site directory that exposed `index.html`.
-  - homepage preview looked healthy because the chosen directory contained `/index.html`
-  - interior route previews failed because later step-local route files never got merged into one stable site snapshot
-- Replay persistence now merges `steps/*/site` into one local `site/` + `latest/site/` snapshot when a direct checkpoint site directory is unavailable.
+## Repair Direction
+- Treat missing chat-memory tables as an infrastructure gap, not a reason to hard-fail the user-facing chat route.
+- Add a safe backend fallback in `chat-memory.ts` so Supabase-memory table absence degrades to the file backend for the current process.
+- Add a narrow workspace-project-ID compatibility helper so old malformed paths like `analysis-<id>` can resolve back to the canonical project/chat id without polluting normal generation logic.
 
-## Verification Findings
-- Dedicated adapter extraction passed targeted registry, deploy-runtime, and canonical replay coverage.
-- The focused corporate adapter slice now covers:
-  - missing corporate required-file precheck
-  - shared shell structure validation
-  - shared shell destination inheritance validation
-  - visible shell copy/locale validation
-  - corporate-owned sanitize hook coverage
-  - corporate-owned post-QA normalization helper coverage
-  - cleaned corporate article-count parsing on the active sanitize path
-  - corporate-owned route asset-reference validation
-  - corporate-owned route page-role validation
-- Full-site VBUY replay now reconstructs a complete local previewable site snapshot containing:
-  - `/index.html`
-  - `/products/index.html`
-  - `/custom-solutions/index.html`
-  - `/cases/index.html`
-  - `/about/index.html`
-  - `/contact/index.html`
-- TypeScript diagnostics for the new/changed adapter files remained clean.
-- No replay or deploy contract had to change to support the new execution lane, which confirms the compatibility-root strategy is holding.
+## Follow-up Findings From Live Smoke
+- Production no longer reproduces the original `/api/chat` 500. New-project and existing-project chat submissions now return `200` and enter the conversation flow.
+- Production no longer rewrites project routes to malformed `analysis-* / settings-* / assets-* / data-*` IDs. The browser stays on canonical `chat-*` project paths.
+- Remaining production breakage is now narrower:
+  - `GET /api/projects/{chatId}/analysis` still returns `404` for session-backed legacy projects that exist in chat storage but do not yet have a D1-backed project summary/binding.
+  - `GET /api/projects/{chatId}/domains` still returns `404` for the same class of session-backed legacy projects.
+  - The `Data` page identity drift observed during smoke is transient and disappears after hydration; it is not the primary root cause compared with the hard 404s above.
+
+## Current Repair Direction
+- Add a shared runtime-summary fallback that resolves project ownership from chat sessions when D1 project rows are missing.
+- Use that fallback in `analysis` and `domains` GET flows so session-backed legacy projects return an empty/pending payload instead of `Project not found or access denied.`
+- Keep domain mutations gated by real deployment host availability; do not fake bindability for undeployed projects.

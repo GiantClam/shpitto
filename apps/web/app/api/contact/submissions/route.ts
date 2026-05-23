@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listContactSubmissionsByOwner, listContactSubmissionsByProject } from "@/lib/agent/db";
+import { normalizePreferredWorkspaceProjectRouteId } from "@/lib/project-route-id";
 import { getAuthenticatedRouteUserId } from "@/lib/supabase/route-user";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
     }
 
     const limitParam = Number(request.nextUrl.searchParams.get("limit") || "100");
-    const projectId = String(request.nextUrl.searchParams.get("projectId") || "").trim();
+    const projectId = normalizePreferredWorkspaceProjectRouteId(request.nextUrl.searchParams.get("projectId") || "");
     const offsetParam = Number(request.nextUrl.searchParams.get("offset") || "0");
     const safeLimit = Number.isFinite(limitParam) ? limitParam : 100;
     const safeOffset = Number.isFinite(offsetParam) ? Math.max(0, Math.floor(offsetParam)) : 0;

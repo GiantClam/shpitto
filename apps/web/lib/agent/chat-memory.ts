@@ -103,6 +103,7 @@ const MEMORY_DIR = path.resolve(process.cwd(), ".tmp", "chat-memory");
 const MEMORY_FILE = path.join(MEMORY_DIR, "langgraph-chat-memory.json");
 const THREAD_MEMORY_TABLE = "shpitto_chat_thread_memory";
 const USER_PREFERENCE_TABLE = "shpitto_chat_user_preferences";
+const MISSING_TABLE_CODES = new Set(["42P01", "PGRST205"]);
 
 let memorySaver = new MemorySaver();
 let preferenceStore = new InMemoryStore();
@@ -120,6 +121,7 @@ let cachedBackend: ChatMemoryBackend | undefined;
 let supabaseClient: any;
 let supabaseClientKey = "";
 let filePersistenceDisabledReason: string | undefined;
+let supabaseMemoryFallbackReason: string | undefined;
 
 function checkpointConfig(threadId: string): RunnableConfig {
   return {
@@ -338,6 +340,46 @@ function isUniqueViolation(error: unknown): boolean {
   return anyError.code === "23505" || anyError.status === 409;
 }
 
+function isMissingTableError(error: unknown, tableName: string): boolean {
+  const anyError = (error || {}) as { code?: string; message?: string; details?: string; hint?: string };
+  const code = String(anyError.code || "").trim().toUpperCase();
+  if (MISSING_TABLE_CODES.has(code)) return true;
+  const text = `${anyError.message || ""} ${anyError.details || ""} ${anyError.hint || ""}`.toLowerCase();
+  if (!text) return false;
+  const table = String(tableName || "").trim().toLowerCase();
+  return (
+    text.includes(table) &&
+    (text.includes("does not exist") ||
+      text.includes("not exist") ||
+      text.includes("not found") ||
+      text.includes("schema cache"))
+  );
+}
+
+function activateSupabaseMemoryFallback(error: unknown, tableName: string) {
+  const reason = `${String(tableName || "chat-memory-table").trim()}: ${String((error as Error | undefined)?.message || error || "missing table").trim()}`;
+  if (supabaseMemoryFallbackReason === reason) return;
+  supabaseMemoryFallbackReason = reason;
+  console.warn(
+    `[chat-memory] shared supabase memory disabled; falling back to file backend for this process (${reason}).`,
+  );
+}
+
+async function withSupabaseMemoryFallback<T>(
+  tableName: string,
+  action: () => Promise<T>,
+  fallback: () => Promise<T>,
+): Promise<T> {
+  if (supabaseMemoryFallbackReason) return fallback();
+  try {
+    return await action();
+  } catch (error) {
+    if (!isMissingTableError(error, tableName)) throw error;
+    activateSupabaseMemoryFallback(error, tableName);
+    return fallback();
+  }
+}
+
 function fromThreadRow(row: SupabaseThreadMemoryRow): ChatShortTermMemorySnapshot {
   return normalizeShortTermSnapshot({
     threadId: row.thread_id,
@@ -516,75 +558,100 @@ const supabaseBackend: ChatMemoryBackend = {
   async readShortTerm(threadId) {
     const normalized = String(threadId || "").trim();
     if (!normalized) return undefined;
-    const { snapshot } = await readSupabaseThreadMemory(normalized);
-    return snapshot;
+    return withSupabaseMemoryFallback(
+      THREAD_MEMORY_TABLE,
+      async () => {
+        const { snapshot } = await readSupabaseThreadMemory(normalized);
+        return snapshot;
+      },
+      () => fileBackend.readShortTerm(normalized),
+    );
   },
   async writeShortTerm(snapshot) {
     const normalizedSnapshot = normalizeShortTermSnapshot(snapshot);
     if (!normalizedSnapshot.threadId) return;
-    const client = getSupabaseClient();
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      const current = await readSupabaseThreadMemory(normalizedSnapshot.threadId);
-      if (!current.snapshot) {
-        const { error } = await client
-          .from(THREAD_MEMORY_TABLE)
-          .insert(toThreadInsertRow(normalizedSnapshot, 1))
-          .select("*")
-          .single();
-        if (!error) return;
-        if (isUniqueViolation(error)) continue;
-        throw error;
-      }
+    await withSupabaseMemoryFallback(
+      THREAD_MEMORY_TABLE,
+      async () => {
+        const client = getSupabaseClient();
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          const current = await readSupabaseThreadMemory(normalizedSnapshot.threadId);
+          if (!current.snapshot) {
+            const { error } = await client
+              .from(THREAD_MEMORY_TABLE)
+              .insert(toThreadInsertRow(normalizedSnapshot, 1))
+              .select("*")
+              .single();
+            if (!error) return;
+            if (isUniqueViolation(error)) continue;
+            throw error;
+          }
 
-      const { data, error } = await client
-        .from(THREAD_MEMORY_TABLE)
-        .update(toThreadUpdateRow(normalizedSnapshot, (current.version || 0) + 1))
-        .eq("thread_id", normalizedSnapshot.threadId)
-        .eq("version", current.version || 0)
-        .select("*");
-      if (error) throw error;
-      if (Array.isArray(data) && data.length > 0) return;
-    }
-    throw new Error(`Failed to write shared chat thread memory for ${normalizedSnapshot.threadId} after retries.`);
+          const { data, error } = await client
+            .from(THREAD_MEMORY_TABLE)
+            .update(toThreadUpdateRow(normalizedSnapshot, (current.version || 0) + 1))
+            .eq("thread_id", normalizedSnapshot.threadId)
+            .eq("version", current.version || 0)
+            .select("*");
+          if (error) throw error;
+          if (Array.isArray(data) && data.length > 0) return;
+        }
+        throw new Error(`Failed to write shared chat thread memory for ${normalizedSnapshot.threadId} after retries.`);
+      },
+      () => fileBackend.writeShortTerm(normalizedSnapshot),
+    );
   },
   async readLongTerm(ownerUserId) {
     const normalized = String(ownerUserId || "").trim();
     if (!normalized) return undefined;
-    const { snapshot } = await readSupabaseLongTermPreferences(normalized);
-    return snapshot;
+    return withSupabaseMemoryFallback(
+      USER_PREFERENCE_TABLE,
+      async () => {
+        const { snapshot } = await readSupabaseLongTermPreferences(normalized);
+        return snapshot;
+      },
+      () => fileBackend.readLongTerm(normalized),
+    );
   },
   async writeLongTerm(snapshot) {
     const ownerUserId = String(snapshot.ownerUserId || "").trim();
     if (!ownerUserId) return;
-    const client = getSupabaseClient();
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      const current = await readSupabaseLongTermPreferences(ownerUserId);
-      const merged = normalizeLongTermSnapshot(snapshot, current.snapshot);
-      if (!current.snapshot) {
-        const { error } = await client
-          .from(USER_PREFERENCE_TABLE)
-          .insert(toPreferenceInsertRow(merged, 1))
-          .select("*")
-          .single();
-        if (!error) return;
-        if (isUniqueViolation(error)) continue;
-        throw error;
-      }
+    await withSupabaseMemoryFallback(
+      USER_PREFERENCE_TABLE,
+      async () => {
+        const client = getSupabaseClient();
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          const current = await readSupabaseLongTermPreferences(ownerUserId);
+          const merged = normalizeLongTermSnapshot(snapshot, current.snapshot);
+          if (!current.snapshot) {
+            const { error } = await client
+              .from(USER_PREFERENCE_TABLE)
+              .insert(toPreferenceInsertRow(merged, 1))
+              .select("*")
+              .single();
+            if (!error) return;
+            if (isUniqueViolation(error)) continue;
+            throw error;
+          }
 
-      const { data, error } = await client
-        .from(USER_PREFERENCE_TABLE)
-        .update(toPreferenceUpdateRow(merged, (current.version || 0) + 1))
-        .eq("owner_user_id", ownerUserId)
-        .eq("version", current.version || 0)
-        .select("*");
-      if (error) throw error;
-      if (Array.isArray(data) && data.length > 0) return;
-    }
-    throw new Error(`Failed to write shared chat preferences for ${ownerUserId} after retries.`);
+          const { data, error } = await client
+            .from(USER_PREFERENCE_TABLE)
+            .update(toPreferenceUpdateRow(merged, (current.version || 0) + 1))
+            .eq("owner_user_id", ownerUserId)
+            .eq("version", current.version || 0)
+            .select("*");
+          if (error) throw error;
+          if (Array.isArray(data) && data.length > 0) return;
+        }
+        throw new Error(`Failed to write shared chat preferences for ${ownerUserId} after retries.`);
+      },
+      () => fileBackend.writeLongTerm(snapshot),
+    );
   },
   async resetForTests() {
     supabaseClient = undefined;
     supabaseClientKey = "";
+    supabaseMemoryFallbackReason = undefined;
     memorySaver = new MemorySaver();
     preferenceStore = new InMemoryStore();
     hydrated = false;

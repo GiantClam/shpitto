@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { normalizePreferredWorkspaceProjectRouteId } from "@/lib/project-route-id";
 
 export type ProjectWorkspaceSessionPayload = {
   id: string;
@@ -34,6 +35,7 @@ export function ProjectWorkspaceMetaProvider({
   projectId: string;
   children: ReactNode;
 }) {
+  const normalizedProjectId = normalizePreferredWorkspaceProjectRouteId(projectId);
   const [userEmail, setUserEmail] = useState("");
   const [userId, setUserId] = useState("");
   const [projectTitle, setProjectTitle] = useState("");
@@ -53,7 +55,7 @@ export function ProjectWorkspaceMetaProvider({
     setProjectTitle("");
     setProjectUpdatedAt(undefined);
     setProjectPreviewUrl("");
-  }, [projectId]);
+  }, [normalizedProjectId]);
 
   const refreshProjectMeta = useCallback(async () => {
     const requestId = requestIdRef.current + 1;
@@ -80,14 +82,14 @@ export function ProjectWorkspaceMetaProvider({
       const sessions = payload.ok && payload.data.ok && Array.isArray(payload.data.sessions) ? payload.data.sessions : [];
       const visibleProjects = sessions.filter((session) => !session.archived);
       setProjects(visibleProjects);
-      const hit = sessions.find((session) => session.id === projectId);
+      const hit = sessions.find((session) => session.id === normalizedProjectId);
       if (hit) {
         setProjectTitle(String(hit.title || "").trim());
         setProjectUpdatedAt(Number(hit.updatedAt || Date.now()));
         setProjectPreviewUrl(String(hit.previewUrl || "").trim());
       }
     }
-  }, [projectId]);
+  }, [normalizedProjectId]);
 
   useEffect(() => {
     void refreshProjectMeta();

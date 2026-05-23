@@ -3,12 +3,13 @@ import { getAuthenticatedRouteUserId } from "@/lib/supabase/route-user";
 import { CloudflareClient, type CloudflarePagesDomain } from "@/lib/cloudflare";
 import {
   deleteProjectCustomDomain,
-  getOwnedProjectSummary,
   listProjectCustomDomains,
   upsertProjectCustomDomain,
 } from "@/lib/agent/db";
 import { provisionProjectWebAnalyticsSite } from "@/lib/project-web-analytics";
 import { BillingAccessError, assertCanMutatePublishedSite } from "@/lib/billing/enforcement";
+import { normalizePreferredWorkspaceProjectRouteId } from "@/lib/project-route-id";
+import { resolveOwnedProjectRuntimeSummary } from "@/lib/project-runtime-summary";
 
 export const runtime = "nodejs";
 
@@ -57,7 +58,7 @@ function isIgnorablePagesDomainMissingError(error: unknown): boolean {
 }
 
 async function requireOwnedProject(projectId: string, userId: string) {
-  const project = await getOwnedProjectSummary(projectId, userId);
+  const project = await resolveOwnedProjectRuntimeSummary(projectId, userId);
   if (!project) {
     return {
       error: NextResponse.json({ ok: false, error: "Project not found or access denied." }, { status: 404 }),
@@ -88,7 +89,7 @@ export async function GET(
     if (!userId) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
     const { projectId: rawProjectId } = await ctx.params;
-    const projectId = decodeURIComponent(String(rawProjectId || "").trim());
+    const projectId = normalizePreferredWorkspaceProjectRouteId(rawProjectId);
     if (!projectId) return NextResponse.json({ ok: false, error: "Missing projectId." }, { status: 400 });
 
     const owned = await requireOwnedProject(projectId, userId);
@@ -149,7 +150,7 @@ export async function POST(
     if (!userId) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
     const { projectId: rawProjectId } = await ctx.params;
-    const projectId = decodeURIComponent(String(rawProjectId || "").trim());
+    const projectId = normalizePreferredWorkspaceProjectRouteId(rawProjectId);
     if (!projectId) return NextResponse.json({ ok: false, error: "Missing projectId." }, { status: 400 });
 
     const owned = await requireOwnedProject(projectId, userId);
@@ -250,7 +251,7 @@ export async function PATCH(
     if (!userId) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
     const { projectId: rawProjectId } = await ctx.params;
-    const projectId = decodeURIComponent(String(rawProjectId || "").trim());
+    const projectId = normalizePreferredWorkspaceProjectRouteId(rawProjectId);
     if (!projectId) return NextResponse.json({ ok: false, error: "Missing projectId." }, { status: 400 });
 
     const owned = await requireOwnedProject(projectId, userId);
@@ -362,7 +363,7 @@ export async function DELETE(
     if (!userId) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
     const { projectId: rawProjectId } = await ctx.params;
-    const projectId = decodeURIComponent(String(rawProjectId || "").trim());
+    const projectId = normalizePreferredWorkspaceProjectRouteId(rawProjectId);
     if (!projectId) return NextResponse.json({ ok: false, error: "Missing projectId." }, { status: 400 });
 
     const owned = await requireOwnedProject(projectId, userId);

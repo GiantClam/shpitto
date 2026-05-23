@@ -1,4 +1,5 @@
 import { ProjectWorkspaceMetaProvider } from "@/components/chat/project-workspace-context";
+import { normalizePreferredWorkspaceProjectRouteId } from "@/lib/project-route-id";
 import type { ReactNode } from "react";
 
 export default async function ProjectWorkspaceLayout({
@@ -9,7 +10,7 @@ export default async function ProjectWorkspaceLayout({
   params: Promise<{ projectId: string }>;
 }) {
   const { projectId } = await params;
-  const normalizedProjectId = decodeURIComponent(String(projectId || "").trim());
+  const normalizedProjectId = normalizePreferredWorkspaceProjectRouteId(projectId);
 
   return <ProjectWorkspaceMetaProvider projectId={normalizedProjectId}>{children}</ProjectWorkspaceMetaProvider>;
 }

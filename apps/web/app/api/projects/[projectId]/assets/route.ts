@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedRouteUserId } from "@/lib/supabase/route-user";
 import { getR2Client } from "@/lib/r2";
 import { getLatestChatTaskForChat } from "@/lib/agent/chat-task-store";
+import { normalizePreferredWorkspaceProjectRouteId } from "@/lib/project-route-id";
 import {
   deleteProjectAsset,
   filterAssets,
@@ -43,7 +44,7 @@ export async function GET(
     if (!userId) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
     const { projectId: rawProjectId } = await ctx.params;
-    const projectId = decodeURIComponent(String(rawProjectId || "").trim());
+    const projectId = normalizePreferredWorkspaceProjectRouteId(rawProjectId);
     if (!projectId) return NextResponse.json({ ok: false, error: "Missing projectId." }, { status: 400 });
 
     const r2 = getR2Client();
@@ -123,7 +124,7 @@ export async function POST(
     }
 
     const { projectId: rawProjectId } = await ctx.params;
-    const projectId = decodeURIComponent(String(rawProjectId || "").trim());
+    const projectId = normalizePreferredWorkspaceProjectRouteId(rawProjectId);
     if (!projectId) return NextResponse.json({ ok: false, error: "Missing projectId." }, { status: 400 });
 
     const formData = await request.formData();
@@ -186,7 +187,7 @@ export async function DELETE(
     if (!userId) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
     const { projectId: rawProjectId } = await ctx.params;
-    const projectId = decodeURIComponent(String(rawProjectId || "").trim());
+    const projectId = normalizePreferredWorkspaceProjectRouteId(rawProjectId);
     if (!projectId) return NextResponse.json({ ok: false, error: "Missing projectId." }, { status: 400 });
 
     const body = (await request.json().catch(() => ({}))) as { key?: string };

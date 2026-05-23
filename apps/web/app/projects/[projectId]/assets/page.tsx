@@ -1,5 +1,6 @@
 import { ProjectAssetsWorkspace } from "@/components/chat/ProjectAssetsWorkspace";
 import { getServerLocale } from "@/lib/i18n-server";
+import { normalizePreferredWorkspaceProjectRouteId } from "@/lib/project-route-id";
 
 export default async function ProjectAssetsPage({
   params,
@@ -8,5 +9,5 @@ export default async function ProjectAssetsPage({
 }) {
   const { projectId } = await params;
   const locale = await getServerLocale();
-  return <ProjectAssetsWorkspace projectId={decodeURIComponent(String(projectId || "").trim())} locale={locale} />;
+  return <ProjectAssetsWorkspace projectId={normalizePreferredWorkspaceProjectRouteId(projectId)} locale={locale} />;
 }

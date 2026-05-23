@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listProjectAuthUsersByProject } from "@/lib/agent/db";
+import { normalizePreferredWorkspaceProjectRouteId } from "@/lib/project-route-id";
 import { getAuthenticatedRouteUserId } from "@/lib/supabase/route-user";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ export async function GET(
     }
 
     const { projectId: rawProjectId } = await ctx.params;
-    const projectId = decodeURIComponent(String(rawProjectId || "").trim());
+    const projectId = normalizePreferredWorkspaceProjectRouteId(rawProjectId);
     if (!projectId) {
       return NextResponse.json({ ok: false, error: "Missing projectId." }, { status: 400 });
     }

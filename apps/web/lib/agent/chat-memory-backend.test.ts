@@ -304,4 +304,62 @@ describe("chat-memory backend", () => {
     expect(saved?.secondaryVisualTags).toEqual(["blue"]);
     expect(Number(mock.state.preferenceRows.get("user-supabase")?.version || 0)).toBe(3);
   });
+
+  it("falls back to file-backed memory when shared supabase tables are missing", async () => {
+    vi.stubEnv("CHAT_MEMORY_BACKEND", "supabase");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role-key");
+
+    const missingTableError = {
+      code: "42P01",
+      message: 'relation "public.shpitto_chat_thread_memory" does not exist',
+    };
+    vi.doMock("@supabase/supabase-js", () => ({
+      createClient: () => ({
+        from() {
+          return {
+            select() {
+              return {
+                eq() {
+                  return this;
+                },
+                async maybeSingle() {
+                  return { data: null, error: missingTableError };
+                },
+              };
+            },
+          };
+        },
+      }),
+    }));
+
+    const memory = await import("./chat-memory");
+    await memory.resetChatLangGraphMemoryForTests();
+
+    await expect(
+      memory.writeChatShortTermMemory({
+        threadId: "thread-fallback",
+        stage: "drafting",
+        recentSummary: "fallback snapshot",
+        revisionPointer: {
+          revisionId: "rev-fallback",
+          mode: "generate",
+          updatedAt: "2026-05-23T00:00:00.000Z",
+        },
+        requirementState: {
+          slots: [],
+          conflicts: [],
+          missingCriticalSlots: [],
+          readyScore: 0,
+          assumptions: [],
+          currentValues: createRequirementSpec(),
+        },
+        updatedAt: "2026-05-23T00:00:00.000Z",
+      }),
+    ).resolves.toBeUndefined();
+
+    const saved = await memory.readChatShortTermMemory("thread-fallback");
+    expect(saved?.recentSummary).toBe("fallback snapshot");
+    expect(saved?.revisionPointer.revisionId).toBe("rev-fallback");
+  });
 });

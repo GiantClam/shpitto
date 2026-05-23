@@ -4,6 +4,8 @@ import { CloudflareClient } from "@/lib/cloudflare";
 import { getD1Client } from "@/lib/d1";
 import { getProjectAnalyticsBinding, upsertProjectSiteBinding } from "@/lib/agent/db";
 import { shouldProvisionWebAnalytics } from "@/lib/project-web-analytics";
+import { normalizePreferredWorkspaceProjectRouteId } from "@/lib/project-route-id";
+import { resolveOwnedProjectRuntimeSummary } from "@/lib/project-runtime-summary";
 
 export const runtime = "nodejs";
 
@@ -80,7 +82,7 @@ export async function GET(
     if (!userId) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
     const { projectId: rawProjectId } = await ctx.params;
-    const projectId = decodeURIComponent(String(rawProjectId || "").trim());
+    const projectId = normalizePreferredWorkspaceProjectRouteId(rawProjectId);
     if (!projectId) {
       return NextResponse.json({ ok: false, error: "Missing projectId." }, { status: 400 });
     }
@@ -103,17 +105,33 @@ export async function GET(
       );
     }
 
-    const binding = await getProjectAnalyticsBinding(projectId, userId);
-    if (!binding) {
+    const runtimeProject = await resolveOwnedProjectRuntimeSummary(projectId, userId);
+    if (!runtimeProject) {
       return NextResponse.json({ ok: false, error: "Project not found or access denied." }, { status: 404 });
     }
 
+    const binding = await getProjectAnalyticsBinding(projectId, userId);
+
     const project = {
-      id: binding.projectId,
-      name: binding.projectName,
-      latestDeploymentUrl: binding.latestDeploymentUrl,
-      deploymentHost: binding.deploymentHost || binding.cfWaHost,
+      id: binding?.projectId || runtimeProject.projectId,
+      name: binding?.projectName || runtimeProject.projectName,
+      latestDeploymentUrl: binding?.latestDeploymentUrl || runtimeProject.latestDeploymentUrl,
+      deploymentHost: binding?.deploymentHost || binding?.cfWaHost || runtimeProject.deploymentHost,
     };
+
+    if (!binding) {
+      return NextResponse.json({
+        ok: true,
+        project,
+        analytics: {
+          ...emptyAnalytics({ startAt, endAt }, "pending"),
+          status: "pending",
+          siteTag: "",
+          syncedAt: null,
+        },
+        warning: "Analytics will become available after the project has a saved deployment or analytics binding.",
+      });
+    }
 
     const deploymentHost = String(binding.cfWaHost || binding.deploymentHost || "").trim();
     let siteTag = String(binding.cfWaSiteTag || "").trim();

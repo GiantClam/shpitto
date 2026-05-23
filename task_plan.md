@@ -1,3 +1,7 @@
-﻿1. Replace mojibake regex literals and replacement strings in workflow-artifact-language.ts with clean, intended ASCII/Unicode-safe equivalents.
-2. Rewrite workflow-artifact-language.test.ts fixtures/expectations to clean literals that match the repaired sanitizer behavior.
-3. Run focused Vitest coverage for workflow-artifact-language and report any remaining risk.
+1. Reproduce and isolate the two blockers from the attached QA report: `/api/chat` 500 caused by missing chat-memory tables, and studio subpage failures caused by malformed workspace project IDs.
+2. Add regression coverage before behavior changes where feasible:
+   - chat-memory backend fallback when Supabase memory tables are missing
+   - workspace/project route ID normalization for malformed `analysis-* / settings-* / assets-* / data-*` paths
+3. Implement the smallest source/runtime fixes that restore the production flow without adding scenario-specific design patches.
+4. Run focused tests, typecheck/build-relevant verification, and record remaining risk.
+5. Follow up with a live production smoke pass, compare real responses with the attached QA report, and close the remaining runtime gaps around project-backed analysis/domain routes.

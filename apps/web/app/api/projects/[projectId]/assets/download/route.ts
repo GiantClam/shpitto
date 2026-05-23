@@ -12,6 +12,7 @@ import {
   listProjectAssets,
   type ProjectAssetRecord,
 } from "@/lib/project-assets";
+import { normalizePreferredWorkspaceProjectRouteId } from "@/lib/project-route-id";
 
 export const runtime = "nodejs";
 
@@ -75,7 +76,7 @@ export async function GET(
     if (!userId) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
     const { projectId: rawProjectId } = await ctx.params;
-    const projectId = decodeURIComponent(String(rawProjectId || "").trim());
+    const projectId = normalizePreferredWorkspaceProjectRouteId(rawProjectId);
     if (!projectId) return NextResponse.json({ ok: false, error: "Missing projectId." }, { status: 400 });
 
     const assets = await listProjectAssets({ ownerUserId: userId, projectId });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedRouteUserId } from "@/lib/supabase/route-user";
 import { getProjectAssetObject } from "@/lib/project-assets";
+import { normalizePreferredWorkspaceProjectRouteId } from "@/lib/project-route-id";
 
 export const runtime = "nodejs";
 
@@ -13,7 +14,7 @@ export async function GET(
     if (!userId) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
     const { projectId: rawProjectId } = await ctx.params;
-    const projectId = decodeURIComponent(String(rawProjectId || "").trim());
+    const projectId = normalizePreferredWorkspaceProjectRouteId(rawProjectId);
     if (!projectId) return NextResponse.json({ ok: false, error: "Missing projectId." }, { status: 400 });
 
     const key = String(request.nextUrl.searchParams.get("key") || "").trim();

@@ -1,5 +1,6 @@
 import { ProjectChatWorkspace } from "@/components/chat/ProjectChatWorkspace";
 import { getServerLocale } from "@/lib/i18n-server";
+import { normalizePreferredWorkspaceProjectRouteId } from "@/lib/project-route-id";
 
 export default async function ProjectChatPage({
   params,
@@ -8,5 +9,5 @@ export default async function ProjectChatPage({
 }) {
   const { projectId } = await params;
   const locale = await getServerLocale();
-  return <ProjectChatWorkspace projectId={decodeURIComponent(String(projectId || "").trim())} locale={locale} />;
+  return <ProjectChatWorkspace projectId={normalizePreferredWorkspaceProjectRouteId(projectId)} locale={locale} />;
 }

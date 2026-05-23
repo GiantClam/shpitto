@@ -55,6 +55,23 @@ describe("project settings route", () => {
     expect(mocks.getProjectContactSettings).toHaveBeenCalledWith("demo", "user-1");
   });
 
+  it("normalizes malformed workspace-prefixed project ids", async () => {
+    mocks.getAuthenticatedRouteUserId.mockResolvedValue("user-1");
+    mocks.getProjectContactSettings.mockResolvedValue({
+      forwardTo: ["official@example.com"],
+      sendUserAck: true,
+      replyToField: "email",
+      brandName: "CASUX",
+    });
+
+    const response = await GET(new NextRequest("http://localhost/api/projects/analysis-1779331037521/settings"), {
+      params: Promise.resolve({ projectId: "analysis-1779331037521" }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.getProjectContactSettings).toHaveBeenCalledWith("1779331037521", "user-1");
+  });
+
   it("updates project contact settings", async () => {
     mocks.getAuthenticatedRouteUserId.mockResolvedValue("user-1");
     mocks.updateProjectContactSettings.mockResolvedValue({
