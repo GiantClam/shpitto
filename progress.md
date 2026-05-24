@@ -64,3 +64,27 @@ Phase 5 update:
 - Current-route project now remains visible in workspace selectors even before session lists fully hydrate.
 - Chat preview empty state now distinguishes requirement collection vs prompt-draft confirmation instead of showing Current stage: -.
 - Deploy call-to-action stays explanatory until the first preview exists instead of showing a misleading gray button.
+Phase 6: Post-deploy regression for the 2026-05-24 QA cleanup
+- Validate the deployed workspace-shell fixes on production.
+- Re-check login, project chat, analysis, settings/domains, and assets after deployment.
+Post-deploy production regression (2026-05-24):
+- Confirmed login, new-project shell load, analysis, assets, and settings all remain reachable after deployment.
+- Confirmed malformed project-id regressions did not return.
+- Confirmed the new-project workspace no longer shows "No projects"; it now shows the current project selector immediately.
+- Confirmed pre-preview deploy CTA now explains why deploy is unavailable instead of only showing a disabled button.
+- Remaining regression gap: the empty-preview status chip still renders "Current stage: -" even though the new explanatory preview hint is live.
+Phase 6 follow-up:
+- Root-caused the remaining stage-chip gap to a local UI helper bug, not a runtime/task-store problem.
+- `toReadableStage(undefined)` still returned `"-"`, which masked the already-correct requirement-collection fallback stage text.
+- Tightened the stage label resolution so missing stages return an empty string and raw placeholder `"-"` task statuses no longer override requirement/prompt-draft shell copy.
+- Added a focused regression test to lock the no-stage behavior.
+Post-release online regression (2026-05-24, second pass):
+- Pulled production `/api/chat/history?chatId=chat-1779603784668-6mayw0` after login and confirmed the requirement project currently returns:
+  - `task: null`
+  - `previewTask: null`
+  - recent message card types: `requirement_progress`, `requirement_form`, `intent_decision(required-slots-incomplete)`
+- Re-ran browser smoke on the deployed chat page and confirmed:
+  - preview hint uses the new requirement-collection copy
+  - deploy-disabled explanation uses the new copy
+  - `Current stage: -` still renders
+- This deployed combination is inconsistent with the current source logic, which would render `Collecting required information` for the same message/task payload.

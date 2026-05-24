@@ -40,3 +40,13 @@
 Additional finding:
 - The report's "20-minute blank preview" and "No projects" symptoms were amplified by shell-state UX gaps, not just backend failures.
 - The generation path can intentionally be in requirement collection or prompt-draft confirmation with no task yet; the old shell rendered that as '-' and a generic preview placeholder.
+Post-deploy finding:
+- The deployed shell picked up the current-project fallback and deploy-unavailable explanation, but the stage badge still falls through to '-'. This likely means the requirement-form card state and the preview-stage chip are not reading the same source of truth in production.
+Resolved follow-up:
+- The requirement-form card state and preview empty hint were already correct.
+- The actual bug was narrower: `toReadableStage(undefined)` returned a literal `"-"`, so the stage badge resolved to that placeholder before it could fall back to the requirement/prompt-draft pre-task state.
+- This is a workspace-UI helper issue, not a chat-orchestrator, task-store, or preview-materialization failure.
+Latest online verification:
+- Production `chat-1779603784668-6mayw0` currently returns no task object at all (`task=null`, `previewTask=null`) while the message stream clearly contains requirement-collection cards.
+- Under the current source code, that payload must render the requirement-collection stage copy, not `Current stage: -`.
+- Therefore the remaining online `Current stage: -` is most likely a deployment artifact/version skew problem rather than a live API/state-shape problem.

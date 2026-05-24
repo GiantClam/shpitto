@@ -1902,8 +1902,8 @@ function DomainGuidanceCard({ metadata }: { metadata: Record<string, unknown> })
   );
 }
 
-function toReadableStage(stage?: string, locale: RequirementFormLocale = "en") {
-  if (!stage) return "-";
+export function toReadableStage(stage?: string, locale: RequirementFormLocale = "en") {
+  if (!stage) return "";
   if (stage.startsWith("generating:")) {
     const fileLabel = friendlyFileLabel(stage.replace("generating:", ""), locale);
     return `${CHAT_CARD_COPY[locale].generatingPrefix}${fileLabel || stage.replace("generating:", "")}`;
@@ -3421,10 +3421,11 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
   }, [generatedFiles, hasGeneratedHtml, previewTask?.id, previewTask?.status, previewTask?.updatedAt, previewUrl]);
 
   const stageText = useMemo(() => {
+    const normalizedTaskStatus = typeof task?.status === "string" && task.status.trim() !== "-" ? task.status : "";
     return (
       task?.result?.progress?.stageMessage ||
       toReadableStage(task?.result?.progress?.stage, conversationLocale) ||
-      task?.status ||
+      normalizedTaskStatus ||
       preTaskState.stageText
     );
   }, [conversationLocale, preTaskState.stageText, task]);

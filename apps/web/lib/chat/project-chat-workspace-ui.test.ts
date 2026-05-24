@@ -7,6 +7,7 @@ import {
   shouldSuppressOptimisticTimelineEcho,
   summarizePromptDraftCard,
   summarizeRequirementCardDesignLine,
+  toReadableStage,
 } from "../../components/chat/ProjectChatWorkspace";
 
 describe("ProjectChatWorkspace timeline actions", () => {
@@ -177,6 +178,10 @@ describe("ProjectChatWorkspace timeline actions", () => {
 
     expect(state.stageText).toBe("Waiting for Prompt Draft confirmation");
     expect(state.previewHint).toContain("Confirm the Prompt Draft");
+  });
+
+  it("does not emit a placeholder stage label when no task stage exists", () => {
+    expect(toReadableStage(undefined, "en")).toBe("");
   });
 
   it("builds reusable domain guidance metadata from a bound domain and deployment host", () => {
