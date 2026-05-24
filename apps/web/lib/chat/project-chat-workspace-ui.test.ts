@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { ensureVisibleWorkspaceProjects } from "../../components/chat/project-workspace-context";
 import { buildDomainGuidanceCardMetadata } from "../../components/chat/project-domain-ui";
 import {
+  deriveWorkspacePreTaskState,
   formatQaSummaryDetail,
   shouldSuppressOptimisticTimelineEcho,
   summarizePromptDraftCard,
@@ -132,6 +134,49 @@ describe("ProjectChatWorkspace timeline actions", () => {
     expect(summary).toContain("Deployment target: shpitto server");
     expect(summary).not.toContain("cloudflare");
     expect(summary).not.toContain("Canonical Website Generation Prompt");
+  });
+
+  it("uses a current-project fallback instead of an empty project list", () => {
+    const visible = ensureVisibleWorkspaceProjects([], "chat-123", "Current Project");
+
+    expect(visible).toEqual([
+      expect.objectContaining({
+        id: "chat-123",
+        title: "Current Project",
+      }),
+    ]);
+  });
+
+  it("describes requirement collection before any task has started", () => {
+    const state = deriveWorkspacePreTaskState(
+      [
+        {
+          metadata: {
+            cardType: "requirement_form",
+          },
+        },
+      ],
+      "en",
+    );
+
+    expect(state.stageText).toBe("Collecting required information");
+    expect(state.previewHint).toContain("Prompt Draft");
+  });
+
+  it("describes prompt confirmation before the first preview exists", () => {
+    const state = deriveWorkspacePreTaskState(
+      [
+        {
+          metadata: {
+            cardType: "confirm_generate",
+          },
+        },
+      ],
+      "en",
+    );
+
+    expect(state.stageText).toBe("Waiting for Prompt Draft confirmation");
+    expect(state.previewHint).toContain("Confirm the Prompt Draft");
   });
 
   it("builds reusable domain guidance metadata from a bound domain and deployment host", () => {

@@ -58,6 +58,7 @@ import {
 } from "@/lib/open-design/design-directions";
 import { buildPreviewDeviceUrl } from "@/lib/preview-frame";
 import type { QaSummary } from "@/lib/skill-runtime/qa-summary";
+import { ensureVisibleWorkspaceProjects } from "./project-workspace-context";
 import { formatWorkspaceAccountLabel, getProjectWorkspaceCopy } from "./project-workspace-copy";
 
 type TaskStatus = "queued" | "running" | "succeeded" | "failed";
@@ -276,6 +277,64 @@ type ChatMessage = {
   timestamp: number;
   taskId?: string;
 };
+
+type WorkspacePreTaskState = {
+  stageText: string;
+  previewHint: string;
+};
+
+const WORKSPACE_PRE_TASK_COPY: Record<RequirementFormLocale, Record<"requirements" | "prompt" | "idleStage" | "idleHint", string>> = {
+  en: {
+    requirements: "Collecting required information",
+    prompt: "Waiting for Prompt Draft confirmation",
+    idleStage: "-",
+    idleHint: "Your live preview will appear here once the first HTML page is generated.",
+  },
+  zh: {
+    requirements: "正在收集必填需求",
+    prompt: "等待确认 Prompt Draft",
+    idleStage: "-",
+    idleHint: "完成首轮生成后，这里会显示网站实时预览。",
+  },
+};
+
+export function deriveWorkspacePreTaskState(
+  messages: Array<{ metadata?: Record<string, unknown> | null }>,
+  locale: RequirementFormLocale,
+): WorkspacePreTaskState {
+  const copy = WORKSPACE_PRE_TASK_COPY[locale] || WORKSPACE_PRE_TASK_COPY.en;
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const metadata = messages[index]?.metadata || {};
+    const cardType = String(metadata.cardType || "").trim().toLowerCase();
+    const reason = String(metadata.reason || "").trim().toLowerCase();
+    if (
+      cardType === "requirement_form" ||
+      cardType === "requirement_progress" ||
+      (cardType === "intent_decision" && reason === "required-slots-incomplete")
+    ) {
+      return {
+        stageText: copy.requirements,
+        previewHint:
+          locale === "zh"
+            ? "请先完成必填信息，系统会先生成 Prompt Draft，再开始生成首个预览页面。"
+            : "Complete the required information first. The app will generate a Prompt Draft before starting the first preview.",
+      };
+    }
+    if (cardType === "prompt_draft" || cardType === "confirm_generate") {
+      return {
+        stageText: copy.prompt,
+        previewHint:
+          locale === "zh"
+            ? "请先确认 Prompt Draft。确认后系统才会创建后台生成任务，并解锁首个预览。"
+            : "Confirm the Prompt Draft first. Generation starts only after confirmation, and the first preview will appear after that task begins.",
+      };
+    }
+  }
+  return {
+    stageText: copy.idleStage,
+    previewHint: copy.idleHint,
+  };
+}
 
 function isTaskProgressCardMetadata(metadata: Record<string, unknown> | null | undefined): boolean {
   return String(metadata?.cardType || "").trim() === "task_progress";
@@ -2967,6 +3026,10 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
       }) as CSSProperties,
     [chatPanelWidth],
   );
+  const visibleProjects = useMemo(
+    () => ensureVisibleWorkspaceProjects(projects, chatId, projectTitle || workspaceCopy.currentProject),
+    [chatId, projectTitle, projects, workspaceCopy.currentProject],
+  );
   const browserLocale = useMemo<RequirementFormLocale>(() => {
     if (locale === "zh") return "zh";
     if (typeof document === "undefined") return "en";
@@ -2986,6 +3049,10 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
     }
     return browserLocale;
   }, [browserLocale, messages]);
+  const preTaskState = useMemo(
+    () => deriveWorkspacePreTaskState(messages, conversationLocale),
+    [conversationLocale, messages],
+  );
 
   const appendMessage = useCallback((role: ChatMessage["role"], text: string, metadata?: Record<string, unknown>) => {
     const normalized = text.trim();
@@ -3354,8 +3421,28 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
   }, [generatedFiles, hasGeneratedHtml, previewTask?.id, previewTask?.status, previewTask?.updatedAt, previewUrl]);
 
   const stageText = useMemo(() => {
-    return task?.result?.progress?.stageMessage || toReadableStage(task?.result?.progress?.stage, conversationLocale) || task?.status || "-";
-  }, [conversationLocale, task]);
+    return (
+      task?.result?.progress?.stageMessage ||
+      toReadableStage(task?.result?.progress?.stage, conversationLocale) ||
+      task?.status ||
+      preTaskState.stageText
+    );
+  }, [conversationLocale, preTaskState.stageText, task]);
+  const previewEmptyHint = useMemo(() => {
+    if (task?.status === "queued" || task?.status === "running" || task?.status === "failed" || task?.status === "succeeded") {
+      return WORKSPACE_PRE_TASK_COPY[conversationLocale]?.idleHint || WORKSPACE_PRE_TASK_COPY.en.idleHint;
+    }
+    return preTaskState.previewHint;
+  }, [conversationLocale, preTaskState.previewHint, task]);
+  const deployDisabledReason = useMemo(() => {
+    if (isDeploying) return conversationLocale === "zh" ? "部署正在进行中。" : "Deployment is already in progress.";
+    if (!previewUrl) {
+      return conversationLocale === "zh"
+        ? "先完成首个预览生成后，才能解锁部署。"
+        : "Generate the first preview before deployment is available.";
+    }
+    return "";
+  }, [conversationLocale, isDeploying, previewUrl]);
 
   const progressEvents = useMemo(() => {
     const sourceEvents = taskEvents.length > 0 ? taskEvents : [];
@@ -3737,8 +3824,8 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
             </button>
             <div className="ml-auto flex items-center gap-2">
               <LanguageSwitcher locale={locale} compact />
-              {projects.length === 0 ? (
-                <span className="px-2 text-xs text-[var(--shp-muted)]">{workspaceCopy.noProjects}</span>
+              {visibleProjects.length === 0 ? (
+                <span className="px-2 text-xs text-[var(--shp-muted)]">{workspaceCopy.currentProject}</span>
               ) : (
                 <label className="relative flex items-center">
                   <select
@@ -3747,7 +3834,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
                     className="h-9 w-[220px] max-w-[42vw] appearance-none rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] px-3 pr-8 text-xs font-medium text-[var(--shp-text)] outline-none transition-colors focus:border-[color-mix(in_oklab,var(--shp-primary)_46%,transparent)] focus:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)]"
                     aria-label={workspaceCopy.selectProject}
                   >
-                    {projects.map((project) => (
+                    {visibleProjects.map((project) => (
                       <option key={project.id} value={project.id}>
                         {project.title}
                       </option>
@@ -4230,21 +4317,30 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
                   </select>
                   <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--shp-muted)]" />
                 </label>
-                <button
-                  type="button"
-                  onClick={() => void submitPromptText(conversationLocale === "zh" ? "部署到 shpitto 服务器" : "deploy to shpitto server")}
-                  disabled={deployDisabled}
-                  className={[
-                    "inline-flex items-center gap-1 rounded-md border px-2 py-1 font-medium",
-                    deployDisabled
-                      ? "cursor-not-allowed border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] text-[color-mix(in_oklab,var(--shp-muted)_64%,transparent)] opacity-70"
-                    : "border-[color-mix(in_oklab,var(--shp-primary)_56%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,var(--shp-surface)_86%)] text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_22%,var(--shp-surface)_78%)]",
-                  ].join(" ")}
-                  title={deployedUrl ? "Redeploy latest site to shpitto server" : "Deploy latest preview to shpitto server"}
-                >
-                  {isDeploying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-                  <span>{isDeploying ? "Deploying" : deployedUrl ? "Redeploy" : "Deploy"}</span>
-                </button>
+                {previewUrl ? (
+                  <button
+                    type="button"
+                    onClick={() => void submitPromptText(conversationLocale === "zh" ? "部署到 shpitto 服务器" : "deploy to shpitto server")}
+                    disabled={deployDisabled}
+                    className={[
+                      "inline-flex items-center gap-1 rounded-md border px-2 py-1 font-medium",
+                      deployDisabled
+                        ? "cursor-not-allowed border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] text-[color-mix(in_oklab,var(--shp-muted)_64%,transparent)] opacity-70"
+                        : "border-[color-mix(in_oklab,var(--shp-primary)_56%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,var(--shp-surface)_86%)] text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_22%,var(--shp-surface)_78%)]",
+                    ].join(" ")}
+                    title={deployedUrl ? "Redeploy latest site to shpitto server" : "Deploy latest preview to shpitto server"}
+                  >
+                    {isDeploying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                    <span>{isDeploying ? "Deploying" : deployedUrl ? "Redeploy" : "Deploy"}</span>
+                  </button>
+                ) : (
+                  <span
+                    className="inline-flex items-center rounded-md border border-[color-mix(in_oklab,var(--shp-border)_58%,transparent)] px-2 py-1 text-[11px] text-[color-mix(in_oklab,var(--shp-muted)_80%,transparent)]"
+                    title={deployDisabledReason}
+                  >
+                    {deployDisabledReason}
+                  </span>
+                )}
                 {previewUrl ? (
                   <button
                     type="button"
@@ -4288,7 +4384,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
                 </div>
               ) : (
                 <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-[var(--shp-muted)]">
-                  <p>Your live preview will appear here once the first HTML page is generated.</p>
+                  <p>{previewEmptyHint}</p>
                   <p className="text-xs">Current stage: {stageText}</p>
                 </div>
               )}

@@ -11,6 +11,27 @@ export type ProjectWorkspaceSessionPayload = {
   previewUrl?: string;
 };
 
+export function ensureVisibleWorkspaceProjects(
+  sessions: ProjectWorkspaceSessionPayload[],
+  currentProjectId: string,
+  fallbackTitle: string,
+): ProjectWorkspaceSessionPayload[] {
+  const normalizedCurrentProjectId = normalizePreferredWorkspaceProjectRouteId(currentProjectId);
+  const visibleSessions = Array.isArray(sessions) ? sessions.filter((session) => !session.archived) : [];
+  if (!normalizedCurrentProjectId) return visibleSessions;
+  if (visibleSessions.some((session) => normalizePreferredWorkspaceProjectRouteId(session.id) === normalizedCurrentProjectId)) {
+    return visibleSessions;
+  }
+  return [
+    {
+      id: normalizedCurrentProjectId,
+      title: String(fallbackTitle || "").trim() || "Current Project",
+      updatedAt: Date.now(),
+    },
+    ...visibleSessions,
+  ];
+}
+
 type SessionsResponse = {
   ok: boolean;
   sessions?: ProjectWorkspaceSessionPayload[];
@@ -80,16 +101,22 @@ export function ProjectWorkspaceMetaProvider({
     if (sessionsResult.status === "fulfilled") {
       const payload = sessionsResult.value;
       const sessions = payload.ok && payload.data.ok && Array.isArray(payload.data.sessions) ? payload.data.sessions : [];
-      const visibleProjects = sessions.filter((session) => !session.archived);
+      const visibleProjects = ensureVisibleWorkspaceProjects(
+        sessions,
+        normalizedProjectId,
+        projectTitle || "Current Project",
+      );
       setProjects(visibleProjects);
-      const hit = sessions.find((session) => session.id === normalizedProjectId);
+      const hit = visibleProjects.find(
+        (session) => normalizePreferredWorkspaceProjectRouteId(session.id) === normalizedProjectId,
+      );
       if (hit) {
         setProjectTitle(String(hit.title || "").trim());
         setProjectUpdatedAt(Number(hit.updatedAt || Date.now()));
         setProjectPreviewUrl(String(hit.previewUrl || "").trim());
       }
     }
-  }, [normalizedProjectId]);
+  }, [normalizedProjectId, projectTitle]);
 
   useEffect(() => {
     void refreshProjectMeta();

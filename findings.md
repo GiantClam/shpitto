@@ -26,3 +26,17 @@
 - Add a shared runtime-summary fallback that resolves project ownership from chat sessions when D1 project rows are missing.
 - Use that fallback in `analysis` and `domains` GET flows so session-backed legacy projects return an empty/pending payload instead of `Project not found or access denied.`
 - Keep domain mutations gated by real deployment host availability; do not fake bindability for undeployed projects.
+
+## New QA Report Reconciliation (2026-05-24)
+- The fresh deep QA report mixes current blockers with already-fixed symptoms:
+  - `/api/chat` 500 is no longer reproducible.
+  - malformed `analysis-* / settings-* / assets-* / data-*` route IDs are no longer reproducible on the latest deployment.
+  - `analysis` / `domains` 404s were fixed after the prior deploy and should be treated as stale unless reproduced again.
+- The still-credible product blockers are now concentrated around the generation flow itself:
+  - new project request enters requirement collection but does not obviously progress to a prompt draft / generated preview in the QA report
+  - existing project edit requests appear not to produce user-visible side effects
+  - deploy remains disabled because no artifact reaches a deployable/generated state
+- That means the active owner layer has likely shifted from pure routing/runtime failures toward project-state orchestration, requirement-completion gating, task-status propagation, or preview materialization.
+Additional finding:
+- The report's "20-minute blank preview" and "No projects" symptoms were amplified by shell-state UX gaps, not just backend failures.
+- The generation path can intentionally be in requirement collection or prompt-draft confirmation with no task yet; the old shell rendered that as '-' and a generic preview placeholder.

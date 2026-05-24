@@ -49,3 +49,18 @@
     - `app/api/projects/[projectId]/analysis/route.ts`
     - `app/api/projects/[projectId]/domains/route.ts`
   - Added focused regression coverage for the new fallback behavior and reran `tsc --noEmit`.
+
+### Phase 5: New QA Report Reconciliation
+- **Status:** in progress
+- Actions taken:
+  - Read the new 2026-05-24 deep QA report and compared it against the later production smoke results already gathered in this session.
+  - Identified that several reported failures are stale relative to the current deployment (`/api/chat` 500, malformed `analysis-*` routing, `analysis/domains` 404s).
+  - Narrowed the active investigation scope to the remaining generation/product-state blockers:
+    - requirement collection not advancing to prompt draft / preview
+    - existing-project edit requests lacking visible side effects
+    - deploy staying disabled because the project never reaches a generated artifact state
+Phase 5 update:
+- Fixed workspace shell false-negative states from the 2026-05-24 QA report.
+- Current-route project now remains visible in workspace selectors even before session lists fully hydrate.
+- Chat preview empty state now distinguishes requirement collection vs prompt-draft confirmation instead of showing Current stage: -.
+- Deploy call-to-action stays explanatory until the first preview exists instead of showing a misleading gray button.
