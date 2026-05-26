@@ -1,3 +1,9 @@
+import type {
+  ImportedWebsiteSkillActivationMode,
+  ImportedWebsiteSkillRolloutStatus,
+  WebsiteSurfaceMode,
+} from "./open-design-adoption.ts";
+
 export type WebsiteSkillMetadata = {
   id: string;
   name: string;
@@ -13,6 +19,13 @@ export type WebsiteSkillMetadata = {
   designSystem?: {
     requires?: boolean;
     sections?: string[];
+  };
+  activation?: {
+    mode?: ImportedWebsiteSkillActivationMode;
+    rolloutStatus?: ImportedWebsiteSkillRolloutStatus;
+    websiteOnly?: boolean;
+    ownershipLayer?: string;
+    compatibleSurfaceModes?: WebsiteSurfaceMode[];
   };
 };
 
@@ -135,6 +148,19 @@ export function parseWebsiteSkillMetadata(skillId: string, content: string): Web
   const previewEntry = readNestedScalar(odBlock, "preview", "entry");
   const requiresDesignSystem = readNestedBoolean(odBlock, "design_system", "requires");
   const designSystemSections = readNestedInlineList(odBlock, "design_system", "sections");
+  const activationMode = readNestedScalar(odBlock, "activation", "mode") as ImportedWebsiteSkillActivationMode;
+  const rolloutStatus = readNestedScalar(
+    odBlock,
+    "activation",
+    "rollout_status",
+  ) as ImportedWebsiteSkillRolloutStatus;
+  const websiteOnly = readNestedBoolean(odBlock, "activation", "website_only");
+  const ownershipLayer = readNestedScalar(odBlock, "activation", "ownership_layer");
+  const compatibleSurfaceModes = readNestedInlineList(
+    odBlock,
+    "activation",
+    "compatible_surface_modes",
+  ) as WebsiteSurfaceMode[];
 
   return {
     id: skillId,
@@ -156,6 +182,16 @@ export function parseWebsiteSkillMetadata(skillId: string, content: string): Web
         ? {
             requires: requiresDesignSystem,
             sections: designSystemSections,
+          }
+        : undefined,
+    activation:
+      activationMode || rolloutStatus || typeof websiteOnly === "boolean" || ownershipLayer || compatibleSurfaceModes.length > 0
+        ? {
+            mode: activationMode || undefined,
+            rolloutStatus: rolloutStatus || undefined,
+            websiteOnly,
+            ownershipLayer: ownershipLayer || undefined,
+            compatibleSurfaceModes,
           }
         : undefined,
   };

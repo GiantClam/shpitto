@@ -2070,7 +2070,7 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
     spec.pageStructure?.mode === "single"
         ? "Single-page website"
         : spec.pageStructure?.mode === "multi" && spec.pageStructure.planning === "auto"
-          ? "Multi-page website (automatically plan first-level navigation, second-level detail pages, and necessary third-level content pages)"
+          ? "Multi-page website (automatically plan navigation depth and supporting routes from the confirmed audience, goals, and source material)"
           : spec.pageStructure?.mode === "multi"
           ? `Multi-page website (${englishPageStructureLabels.length > 0 ? englishPageStructureLabels.join(" / ") : "use the confirmed page list from the prompt control manifest"})`
           : "";

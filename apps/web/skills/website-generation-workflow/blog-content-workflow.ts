@@ -5,10 +5,12 @@ import type { BlogPostUpsertInput } from "../../lib/blog-types.ts";
 type VisibleLocale = "zh-CN" | "en";
 type RuntimeLocale = VisibleLocale | "bilingual";
 type WorkflowFile = { path?: string; content?: string; type?: string };
+export type BlogWorkflowSurfaceKind = "blog-archive" | "content-collection";
 type BlogPreview = {
   required: boolean;
   reason: string;
   navLabel: string;
+  surfaceKind: BlogWorkflowSurfaceKind;
   posts: BlogPostUpsertInput[];
 };
 
@@ -727,6 +729,33 @@ export function buildGeneratedBlogSeedPosts(params: {
   });
 }
 
+function normalizeMountRouteFromFilePath(filePath: string, deps: BlogWorkflowDeps): string {
+  const normalized = deps.normalizePath(String(filePath || ""));
+  if (!normalized) return "/";
+  if (normalized === "/index.html") return "/";
+  if (/\/index\.html$/i.test(normalized)) {
+    return deps.normalizePath(normalized.replace(/\/index\.html$/i, "")) || "/";
+  }
+  return normalized;
+}
+
+function isArchiveSemanticRoute(route: string): boolean {
+  const normalized = String(route || "").trim().toLowerCase();
+  return ["/blog", "/blogs", "/news", "/articles", "/posts", "/insights"].includes(normalized);
+}
+
+function resolveWorkflowSurfaceKindFromProject(project: any, deps: BlogWorkflowDeps): BlogWorkflowSurfaceKind {
+  const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
+  const mountedFile = files.find((file: any) => /data-shpitto-blog-root/i.test(String(file?.content || "")));
+  if (mountedFile) {
+    const mountedRoute = normalizeMountRouteFromFilePath(String(mountedFile?.path || ""), deps);
+    return isArchiveSemanticRoute(mountedRoute) ? "blog-archive" : "content-collection";
+  }
+  return files.some((file: any) => deps.normalizePath(String(file?.path || "")) === "/blog/index.html")
+    ? "blog-archive"
+    : "content-collection";
+}
+
 function resolveBlogNavLabelFromProject(project: any, locale: VisibleLocale, deps: BlogWorkflowDeps) {
   const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
   const blogFile = files.find((file: any) => /data-shpitto-blog-root/i.test(String(file?.content || "")));
@@ -734,6 +763,17 @@ function resolveBlogNavLabelFromProject(project: any, locale: VisibleLocale, dep
   const title = content.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || content.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "";
   const cleaned = deps.htmlToReadableText(title).replace(/[|–—].*$/, "").trim();
   return cleaned || (locale === "zh-CN" ? "博客" : "Blog");
+}
+
+function resolveContentNavLabelFromProject(project: any, locale: VisibleLocale, deps: BlogWorkflowDeps) {
+  const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
+  const blogFile = files.find((file: any) => /data-shpitto-blog-root/i.test(String(file?.content || "")));
+  const content = String(blogFile?.content || "");
+  const title = content.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || content.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "";
+  const cleaned = deps.htmlToReadableText(title).split("|")[0]?.trim() || "";
+  if (cleaned) return cleaned;
+  void locale;
+  return resolveWorkflowSurfaceKindFromProject(project, deps) === "blog-archive" ? "Blog" : "Content Collection";
 }
 
 function resolveBlogWorkflowPosts(params: {
@@ -801,8 +841,9 @@ export function buildBlogContentWorkflowPreview(params: {
   locale: RuntimeLocale;
   deps: BlogWorkflowDeps;
 }): BlogPreview {
+  const surfaceKind = resolveWorkflowSurfaceKindFromProject(params.project, params.deps);
   if (!projectHasGeneratedBlogContentMount(params.project, params.deps)) {
-    return { required: false, reason: "no_content_mount", navLabel: "", posts: [] };
+    return { required: false, reason: "no_content_mount", navLabel: "", surfaceKind, posts: [] };
   }
   const visibleLocale = params.deps.toVisibleLocale(params.locale);
   const sourceText = collectPrimaryBlogSourceText(params.inputState, params.deps);
@@ -817,7 +858,8 @@ export function buildBlogContentWorkflowPreview(params: {
     return {
       required: true,
       reason: "ready",
-      navLabel: resolveBlogNavLabelFromProject(params.project, visibleLocale, params.deps),
+      navLabel: resolveContentNavLabelFromProject(params.project, visibleLocale, params.deps),
+      surfaceKind,
       posts: posts.slice(0, 6),
     };
   }
@@ -825,14 +867,16 @@ export function buildBlogContentWorkflowPreview(params: {
     return {
       required: false,
       reason: "no_source",
-      navLabel: resolveBlogNavLabelFromProject(params.project, visibleLocale, params.deps),
+      navLabel: resolveContentNavLabelFromProject(params.project, visibleLocale, params.deps),
+      surfaceKind,
       posts: [],
     };
   }
   return {
     required: true,
     reason: "ready",
-    navLabel: resolveBlogNavLabelFromProject(params.project, visibleLocale, params.deps),
+    navLabel: resolveContentNavLabelFromProject(params.project, visibleLocale, params.deps),
+    surfaceKind,
     posts: buildGeneratedBlogSeedPosts({ sourceText, locale: visibleLocale, deps: params.deps }),
   };
 }
@@ -851,7 +895,7 @@ export function inferBlogBrandForWorkflow(text: string, locale: VisibleLocale) {
 }
 
 export function resolveBlogNavLabelForWorkflow(project: any, locale: VisibleLocale, deps: BlogWorkflowDeps) {
-  return resolveBlogNavLabelFromProject(project, locale, deps);
+  return resolveContentNavLabelFromProject(project, locale, deps);
 }
 
 export function buildBlogContentConfirmTimelineMetadataForWorkflow(params: {
@@ -864,8 +908,8 @@ export function buildBlogContentConfirmTimelineMetadataForWorkflow(params: {
   return {
     cardType: "confirm_blog_content_deploy",
     locale,
-    title: params.locale === "zh-CN" ? "Blog 文章已生成，确认后再部署上线" : "Blog articles are ready. Confirm before deployment.",
-    label: params.locale === "zh-CN" ? "确认 Blog 文章并部署" : "Confirm Blog Articles and Deploy",
+    title: params.locale === "zh-CN" ? "Blog 鏂囩珷宸茬敓鎴愶紝纭鍚庡啀閮ㄧ讲涓婄嚎" : "Blog articles are ready. Confirm before deployment.",
+    label: params.locale === "zh-CN" ? "纭 Blog 鏂囩珷骞堕儴缃?" : "Confirm Blog Articles and Deploy",
     payload: "__SHP_CONFIRM_BLOG_CONTENT_DEPLOY__",
     navLabel: params.navLabel,
     posts: params.posts.map((post) => ({
@@ -875,5 +919,28 @@ export function buildBlogContentConfirmTimelineMetadataForWorkflow(params: {
       category: String(post.category || "").trim(),
       tags: Array.isArray(post.tags) ? post.tags.map((tag) => String(tag || "").trim()).filter(Boolean) : [],
     })),
-  } as Record<string, unknown>;
+  } satisfies Record<string, unknown>;
+}
+
+export function buildContentWorkflowConfirmTimelineMetadataForWorkflow(params: {
+  locale: RuntimeLocale;
+  navLabel: string;
+  posts: BlogPostUpsertInput[];
+  surfaceKind?: BlogWorkflowSurfaceKind;
+  deps: Pick<BlogWorkflowDeps, "toVisibleLocale">;
+}) {
+  const card = buildBlogContentConfirmTimelineMetadataForWorkflow({
+    locale: params.locale,
+    navLabel: params.navLabel,
+    posts: params.posts,
+    deps: params.deps,
+  });
+  if ((params.surfaceKind || "blog-archive") === "blog-archive") return card;
+  return {
+    ...card,
+    cardType: "confirm_content_preview_deploy",
+    title: "Content entries are ready. Confirm before deployment.",
+    label: "Confirm Content Entries and Deploy",
+    payload: "__SHP_CONFIRM_CONTENT_DEPLOY__",
+  } satisfies Record<string, unknown>;
 }

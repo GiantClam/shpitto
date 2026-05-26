@@ -85,24 +85,36 @@ import {
   type AntiSlopLintResult,
 } from "../visual-qa/anti-slop-linter.ts";
 import { normalizeWebsiteStaticFilesForPreview, runSkillToolExecutor } from "./skill-tool-executor.ts";
-import { buildWebsiteDesignSpecMarkdown, buildWebsiteDesignSpecRouteExcerpt } from "./website-design-spec.ts";
+import {
+  buildRouteUnitContractSummary,
+  buildWebsiteDesignSpecMarkdown,
+  buildWebsiteDesignSpecRouteExcerpt,
+  type RouteUnitContractSummary,
+} from "./website-design-spec.ts";
+import {
+  inferWebsiteSurfaceModeFromSkillId,
+  type WebsiteDiscoveryBrief,
+  type WebsiteSurfaceMode,
+} from "./open-design-adoption.ts";
 import { selectWebsiteGenerationTypeSkill } from "./website-type-selector.ts";
 import { renderWebsiteQualityContract } from "./website-quality-contract.ts";
 import type { QaSummary } from "./qa-summary.ts";
 import {
   containsWorkflowCjk,
   isWorkflowArtifactEnglishSafe,
+  listWorkflowArtifactLanguageIssues,
   normalizeWorkflowArtifactText,
 } from "../workflow-artifact-language.ts";
 import { isBilingualRequirementText } from "./bilingual-copy-guard.ts";
 import { validateComponent, type DesignSpec, type ValidationResult } from "../../skills/design-website-generator/tools/component-validator.ts";
 import {
   buildBlogContentWorkflowPreview as buildWebsiteBlogContentWorkflowPreview,
-  buildBlogContentConfirmTimelineMetadataForWorkflow,
+  buildContentWorkflowConfirmTimelineMetadataForWorkflow,
   buildGeneratedBlogSeedPosts as buildWebsiteGeneratedBlogSeedPosts,
   collectBlogWorkflowSourceText,
   inferBlogBrandForWorkflow,
   projectHasGeneratedBlogContentMount as projectHasWebsiteGeneratedBlogContentMount,
+  type BlogWorkflowSurfaceKind,
   resolveBlogNavLabelForWorkflow,
 } from "../../skills/website-generation-workflow/blog-content-workflow.ts";
 import {
@@ -165,6 +177,18 @@ export type SkillRuntimeStepSnapshot = {
   qaSummary?: QaSummary;
   provider?: string;
   model?: string;
+  websiteSurfaceMode?: WebsiteSurfaceMode;
+  routeUnits?: Array<
+    RouteUnitContractSummary & {
+      generatedFiles: string[];
+      validationStatus: "pending" | "passed";
+      validationResult: {
+        status: "pending" | "passed";
+        checkedFiles: string[];
+        issues: string[];
+      };
+    }
+  >;
 };
 
 export type SkillRuntimeExecutionSummary = {
@@ -1774,22 +1798,77 @@ export async function runPostDeploySmoke(
 }
 
 function detectLocale(text: string, preferred?: string): "zh-CN" | "en" {
+  const normalized = String(text || "");
+  if (
+    /(?:Final website locale requirement|Language|Locale|Requested site locale)\s*:\s*Chinese\b(?!\s*(?:and|\/|,|&))/i.test(
+      normalized,
+    ) ||
+    /single-language\s+Chinese-first/i.test(normalized) ||
+    /Chinese-only/i.test(normalized) ||
+    /Chinese-facing site output/i.test(normalized) ||
+    /Keep all visible copy in Chinese/i.test(normalized) ||
+    /Keep the site in Chinese/i.test(normalized)
+  ) {
+    return "zh-CN";
+  }
+  if (
+    /(?:Final website locale requirement|Language|Locale|Requested site locale)\s*:\s*English\b(?!\s*(?:and|\/|,|&))/i.test(
+      normalized,
+    ) ||
+    /single-language\s+English-first/i.test(normalized) ||
+    /English-only/i.test(normalized) ||
+    /English-facing site output/i.test(normalized) ||
+    /Keep all visible copy in English/i.test(normalized) ||
+    /Keep the site in English/i.test(normalized)
+  ) {
+    return "en";
+  }
   const override = String(preferred || "").trim().toLowerCase();
   if (override.startsWith("zh")) return "zh-CN";
   if (override.startsWith("en")) return "en";
-  return /[\u4e00-\u9fff]/.test(text) ? "zh-CN" : "en";
+  return /[\u4e00-\u9fff]/.test(normalized) ? "zh-CN" : "en";
 }
 
 function detectRuntimeLocale(text: string, preferred?: string): "zh-CN" | "en" | "bilingual" {
+  const normalized = String(text || "");
+  if (isBilingualRequirementText(normalized)) return "bilingual";
+  if (
+    /(?:Final website locale requirement|Language|Locale|Requested site locale)\s*:\s*(?:Chinese|English)\b(?!\s*(?:and|\/|,|&))/i.test(
+      normalized,
+    ) ||
+    /single-language\s+(?:Chinese-first|English-first)/i.test(normalized) ||
+    /(?:Chinese-only|English-only)/i.test(normalized) ||
+    /Keep all visible copy in (?:Chinese|English)/i.test(normalized) ||
+    /Keep the site in (?:Chinese|English)/i.test(normalized)
+  ) {
+    return detectLocale(normalized);
+  }
   const override = String(preferred || "").trim().toLowerCase();
-  if (override === "bilingual" || override === "both" || /中英双语|双语/.test(override)) return "bilingual";
+  if (override === "bilingual" || override === "both") return "bilingual";
   if (override.startsWith("zh")) return "zh-CN";
   if (override.startsWith("en")) return "en";
-  return isBilingualRequirementText(text) ? "bilingual" : detectLocale(text, preferred);
+  return detectLocale(normalized, preferred);
 }
-
 function toVisibleLocale(locale: "zh-CN" | "en" | "bilingual"): "zh-CN" | "en" {
   return locale === "bilingual" ? "en" : locale;
+}
+
+function shouldReuseWebsiteDesignSpec(
+  existingSpec: string,
+  locale: "zh-CN" | "en" | "bilingual",
+): boolean {
+  const normalized = String(existingSpec || "").trim();
+  if (!normalized) return false;
+  if (locale === "bilingual") return /locale_strategy:\s*English-first with i18n resources for other locales/i.test(normalized);
+  if (locale === "zh-CN") return /locale_strategy:\s*Chinese-first single-language shell/i.test(normalized);
+  return /locale_strategy:\s*English-first single-language shell/i.test(normalized);
+}
+
+export function detectRuntimeLocaleForTesting(
+  text: string,
+  preferred?: string,
+): "zh-CN" | "en" | "bilingual" {
+  return detectRuntimeLocale(text, preferred);
 }
 
 function extractStateMessageText(messages: unknown): string {
@@ -2274,15 +2353,27 @@ async function resolveWebsiteRuntimeSkill(params: {
   const requirementText = extractRequirementText(params.state);
   const existingWorkflow = ((params.state as any)?.workflow_context || {}) as Record<string, unknown>;
   const requirementSpec = (existingWorkflow.requirementSpec || {}) as Record<string, unknown>;
-  const selectedWebsiteType = selectWebsiteGenerationTypeSkill({
-    requirementText,
-    siteType: String(requirementSpec.siteType || ""),
-    routes: ((params.state as any)?.sitemap?.routes || []) as string[],
-    targetAudience: Array.isArray(requirementSpec.targetAudience)
-      ? (requirementSpec.targetAudience as string[])
-      : undefined,
-    primaryGoal: Array.isArray(requirementSpec.primaryGoal) ? (requirementSpec.primaryGoal as string[]) : undefined,
-  });
+  const persistedWebsiteTypeSkillId = String(existingWorkflow.websiteTypeSkillId || "").trim();
+  const selectedWebsiteType = persistedWebsiteTypeSkillId
+    ? {
+        skillId: persistedWebsiteTypeSkillId as (typeof WEBSITE_GENERATION_TYPE_SKILL_IDS)[number],
+        siteType: String(existingWorkflow.websiteSiteType || "").trim() as any,
+        surfaceMode:
+          inferWebsiteSurfaceModeFromSkillId(String(existingWorkflow.websiteSurfaceMode || "")) ||
+          inferWebsiteSurfaceModeFromSkillId(persistedWebsiteTypeSkillId) ||
+          "portfolio-blog-site",
+        reason: "workflow-context-persisted surface selection",
+      }
+    : selectWebsiteGenerationTypeSkill({
+        requirementText,
+        siteType: String(requirementSpec.siteType || ""),
+        routes:
+          (((existingWorkflow.promptControlManifest as any)?.routes || (params.state as any)?.sitemap?.routes || []) as string[]),
+        targetAudience: Array.isArray(requirementSpec.targetAudience)
+          ? (requirementSpec.targetAudience as string[])
+          : undefined,
+        primaryGoal: Array.isArray(requirementSpec.primaryGoal) ? (requirementSpec.primaryGoal as string[]) : undefined,
+      });
   const selectedSeedSkills = await selectWebsiteSeedSkillsForIntent({
     requirementText,
     routes: ((params.state as any)?.sitemap?.routes || []) as string[],
@@ -2721,12 +2812,20 @@ function renderLocalWebsiteDesignSpec(params: {
   decision: LocalDecisionPlan;
   stylePreset: DesignStylePreset;
   designHit?: DesignSkillHit;
+  websiteSurfaceMode?: WebsiteSurfaceMode;
+  discoveryBrief?: WebsiteDiscoveryBrief;
+  designSystemId?: string;
+  designSystemName?: string;
 }): string {
   return buildWebsiteDesignSpecMarkdown({
     decision: params.decision,
     requirementText: params.requirementText,
     stylePreset: params.stylePreset,
     designHit: params.designHit,
+    websiteSurfaceMode: params.websiteSurfaceMode,
+    discoveryBrief: params.discoveryBrief,
+    designSystemId: params.designSystemId,
+    designSystemName: params.designSystemName,
   });
 }
 
@@ -3301,6 +3400,8 @@ async function persistStepArtifacts(params: {
     workflowFileCount: snapshot.workflowArtifacts.length,
     pageCount: snapshot.pages.length,
     checkpointMode: "incremental",
+    websiteSurfaceMode: snapshot.websiteSurfaceMode,
+    routeUnitCount: snapshot.routeUnits?.length || 0,
   };
   await fs.writeFile(path.join(baseDir, "manifest.json"), JSON.stringify(manifest, null, 2), "utf8");
   await fs.mkdir(path.join(baseDir, "site"), { recursive: true });
@@ -3339,6 +3440,8 @@ async function persistStepArtifacts(params: {
         latestDir,
         latestSiteDir,
         latestWorkflowDir,
+        websiteSurfaceMode: snapshot.websiteSurfaceMode,
+        routeUnits: snapshot.routeUnits || [],
       },
       null,
       2,
@@ -3354,6 +3457,7 @@ async function persistStepArtifacts(params: {
         latestDir,
         latestSiteDir,
         latestWorkflowDir,
+        routeUnits: snapshot.routeUnits || [],
       },
       null,
       2,
@@ -3433,6 +3537,10 @@ type RuntimeContext = {
   designSpec: DesignSpec;
   designContext: DesignContext;
   websiteDesignSpec: string;
+  websiteSurfaceMode?: WebsiteSurfaceMode;
+  discoveryBrief?: WebsiteDiscoveryBrief;
+  designSystemId?: string;
+  designSystemName?: string;
 };
 
 function toRecord(value: unknown): Record<string, unknown> {
@@ -3563,6 +3671,11 @@ class NativeSkillRuntime {
     );
     const designHit = ((params.state as any)?.design_hit || undefined) as DesignSkillHit | undefined;
     const designOverrides = toRecord(workflowContext.designOverrides);
+    const websiteSurfaceMode =
+      inferWebsiteSurfaceModeFromSkillId(String(workflowContext.websiteSurfaceMode || "")) ||
+      inferWebsiteSurfaceModeFromSkillId(String(workflowContext.websiteTypeSkillId || "")) ||
+      inferWebsiteSurfaceModeFromSkillId(skillId);
+    const discoveryBrief = ((workflowContext.websiteDiscoveryBrief || undefined) as WebsiteDiscoveryBrief | undefined);
     const guidance: WorkflowGuidancePack = {
       selectionCriteria: String(workflowContext.selectionCriteria || ""),
       sequentialWorkflow: String(workflowContext.sequentialWorkflow || ""),
@@ -3593,14 +3706,19 @@ class NativeSkillRuntime {
       overrides: designOverrides,
     });
     const designContext = buildDesignContext(designSpec);
-    const websiteDesignSpec =
-      guidance.websiteDesignSpec.trim() ||
-      renderLocalWebsiteDesignSpec({
-        requirementText,
-        decision,
-        stylePreset,
-        designHit,
-      });
+    const generatedWebsiteDesignSpec = renderLocalWebsiteDesignSpec({
+      requirementText,
+      decision,
+      stylePreset,
+      designHit,
+      websiteSurfaceMode,
+      discoveryBrief,
+      designSystemId: String(workflowContext.designSystemId || "").trim() || undefined,
+      designSystemName: String(workflowContext.designSystemName || "").trim() || undefined,
+    });
+    const websiteDesignSpec = shouldReuseWebsiteDesignSpec(guidance.websiteDesignSpec, locale)
+      ? guidance.websiteDesignSpec.trim()
+      : generatedWebsiteDesignSpec;
     const existingStatic = dedupeFiles((params.state as any)?.site_artifacts?.staticSite?.files || []);
     const existingWorkflow = dedupeFiles((params.state as any)?.site_artifacts?.workflowArtifacts?.files || []);
     const existingPages = Array.isArray((params.state as any)?.site_artifacts?.pages)
@@ -3626,6 +3744,10 @@ class NativeSkillRuntime {
       designSpec,
       designContext,
       websiteDesignSpec,
+      websiteSurfaceMode,
+      discoveryBrief,
+      designSystemId: String(workflowContext.designSystemId || "").trim() || undefined,
+      designSystemName: String(workflowContext.designSystemName || "").trim() || undefined,
     };
     this.requirementText = requirementText;
     this.files = existingStatic;
@@ -3665,6 +3787,70 @@ class NativeSkillRuntime {
     this.setFile(routeToHtmlPath(normalizedRoute), next.html, "text/html");
   }
 
+  private buildRouteUnitSnapshots(): Array<
+    RouteUnitContractSummary & {
+      generatedFiles: string[];
+      validationStatus: "pending" | "passed";
+      validationResult: {
+        status: "pending" | "passed";
+        checkedFiles: string[];
+        issues: string[];
+      };
+    }
+  > {
+    return this.context.decision.pageBlueprints.map((page) => {
+      const summary = buildRouteUnitContractSummary(
+        {
+          decision: this.context.decision,
+          requirementText: this.requirementText,
+          stylePreset: this.context.stylePreset,
+          designHit: this.context.designHit,
+          websiteSurfaceMode: this.context.websiteSurfaceMode,
+          discoveryBrief: this.context.discoveryBrief,
+          designSystemId: this.context.designSystemId,
+          designSystemName: this.context.designSystemName,
+        },
+        page.route,
+      ) || {
+        route: page.route,
+        navLabel: page.navLabel,
+        pageKind: page.pageKind,
+        routeContract: [
+          `route=${page.route}`,
+          `navLabel=${page.navLabel}`,
+          `pageKind=${page.pageKind}`,
+          `purpose=${page.purpose}`,
+        ],
+        inheritedTerminology: [this.context.decision.brandHint || "", this.context.websiteSurfaceMode || ""].filter(Boolean),
+        inheritedTokens: [
+          this.context.stylePreset.colors.primary,
+          this.context.stylePreset.colors.accent,
+          this.context.stylePreset.colors.background,
+          this.context.stylePreset.typography,
+        ].filter(Boolean),
+        openingFamily: "route-owned",
+        openingTopology: "route-specific lead band",
+        mediaPlan: [],
+      };
+      const htmlPath = routeToHtmlPath(page.route);
+      const generatedFiles = this.files
+        .map((file) => normalizePath(file.path))
+        .filter((filePath) => filePath === htmlPath || filePath === "/styles.css" || filePath === "/script.js");
+      const routeQa = this.qaRecords.find((record) => normalizePath(record.route) === normalizePath(page.route));
+      const validationStatus = routeQa?.passed ? "passed" : "pending";
+      return {
+        ...summary,
+        generatedFiles,
+        validationStatus,
+        validationResult: {
+          status: validationStatus,
+          checkedFiles: generatedFiles,
+          issues: (routeQa?.antiSlopIssues || []).map((issue) => `${issue.severity}:${issue.code}`),
+        },
+      };
+    });
+  }
+
   private async emit(stepKey: string, status: string) {
     if (!this.onStep) return;
     await this.onStep({
@@ -3677,10 +3863,18 @@ class NativeSkillRuntime {
       pages: [...this.pages],
       preferredLocale: this.context.locale,
       qaSummary: this.qaRecords.length > 0 ? buildQaSummaryFromPageRecords(this.qaRecords, QA_MAX_RETRIES) : undefined,
+      websiteSurfaceMode: this.context.websiteSurfaceMode,
+      routeUnits: this.buildRouteUnitSnapshots(),
     });
   }
 
   private async writeWorkflow(pathName: string, content: string, stageLabel: string) {
+    const languageIssues = listWorkflowArtifactLanguageIssues(content);
+    if (languageIssues.length > 0) {
+      throw new Error(
+        `skill_tool_workflow_artifact_language_gate_failed: ${normalizePath(pathName)} ${languageIssues.join("; ")}`,
+      );
+    }
     this.setWorkflowFile(pathName, content);
     this.stepIndex += 1;
     await this.emit(pathName, `generating:${stageLabel}`);
@@ -4219,6 +4413,10 @@ ${this.context.routes.some((route) => normalizePath(route) === "/blog") ? 'Blog 
         requirementText: this.requirementText,
         stylePreset: this.context.stylePreset,
         designHit: this.context.designHit,
+        websiteSurfaceMode: this.context.websiteSurfaceMode,
+        discoveryBrief: this.context.discoveryBrief,
+        designSystemId: this.context.designSystemId,
+        designSystemName: this.context.designSystemName,
       }, normalizedRoute);
       const systemPrompt = [
         "You are a staff frontend engineer generating complete static HTML pages.",
@@ -4246,7 +4444,7 @@ Design tokens:
 - overrides: ${JSON.stringify(this.context.designConfirm.overrides)}
 Locale: ${this.context.locale}
 Navigation links: ${navLinks}
-Internal content binding contract, not visitor copy: when the current page kind is blog-data-index, include data-shpitto-blog-root, data-shpitto-blog-list, and data-shpitto-blog-api="/api/blog/posts" inside the selected page's collection/list/database module; use source-aligned preview resource cards only. Never expose backend names, API/storage/runtime/hydration/fallback jargon, data-source mechanics, English design jargon, policy wording, or deployment mechanics in visible copy unless this route is explicitly Blog. Do not generate database credentials, D1 binding code, Cloudflare Worker code, or secrets.
+Internal content binding contract, not visitor copy: when the current page kind is blog-data-index or content-collection-index, include data-shpitto-blog-root, data-shpitto-blog-list, and data-shpitto-blog-api="/api/blog/posts" inside the selected page's collection/list/database module; use source-aligned preview resource cards only. Never expose backend names, API/storage/runtime/hydration/fallback jargon, data-source mechanics, English design jargon, policy wording, or deployment mechanics in visible copy unless this route is explicitly Blog. Do not generate database credentials, D1 binding code, Cloudflare Worker code, or secrets.
 Page responsibility: ${blueprint.responsibility}
 Page skeleton: ${blueprint.contentSkeleton.join(" -> ")}
 Component mix: ${formatComponentMix(blueprint.componentMix)}
@@ -4774,6 +4972,7 @@ export type BlogContentWorkflowPreview = {
   required: boolean;
   reason: string;
   navLabel: string;
+  surfaceKind: BlogWorkflowSurfaceKind;
   posts: BlogPostUpsertInput[];
 };
 
@@ -4804,6 +5003,34 @@ export function buildBlogContentWorkflowPreview(params: {
     locale: visibleLocale,
     deps: getWebsiteBlogWorkflowDeps(),
   });
+}
+
+function renderPendingContentConfirmationAssistantText(params: {
+  locale: "zh-CN" | "en" | "bilingual";
+  postCount: number;
+  surfaceKind: BlogWorkflowSurfaceKind;
+  phase: "generate" | "refine";
+}): string {
+  const locale = toVisibleLocale(params.locale);
+  const { postCount, surfaceKind, phase } = params;
+  if (surfaceKind === "blog-archive") {
+    if (phase === "generate") {
+      return locale === "zh-CN"
+        ? `网站已生成，并已准备 ${postCount} 篇 Blog 文章草案。请先确认文章内容，再继续部署上线。`
+        : `The website is generated and ${postCount} Blog article drafts are ready. Confirm the articles before deployment.`;
+    }
+    return locale === "zh-CN"
+      ? `修改已完成，并已生成 ${postCount} 篇 Blog 文章草案。确认后即可部署。`
+      : `Refinement completed. ${postCount} Blog article drafts are ready for confirmation before deploy.`;
+  }
+  if (phase === "generate") {
+    return locale === "zh-CN"
+      ? `网站已生成，并已准备 ${postCount} 条内容条目草案。请先确认内容，再继续部署上线。`
+      : `The website is generated and ${postCount} content entry drafts are ready. Confirm the entries before deployment.`;
+  }
+  return locale === "zh-CN"
+    ? `修改已完成，并已生成 ${postCount} 条内容条目草案。确认后即可部署。`
+    : `Refinement completed. ${postCount} content entry drafts are ready for confirmation before deploy.`;
 }
 
 export function materializeGeneratedBlogDetailPagesForTesting(params: {
@@ -4982,15 +5209,63 @@ function buildBlogContentConfirmTimelineMetadata(params: {
   locale: "zh-CN" | "en" | "bilingual";
   navLabel: string;
   posts: BlogPostUpsertInput[];
+  surfaceKind?: BlogWorkflowSurfaceKind;
 }) {
   const visibleLocale = toVisibleLocale(params.locale);
-  return buildBlogContentConfirmTimelineMetadataForWorkflow({
+  return buildContentWorkflowConfirmTimelineMetadataForWorkflow({
     ...params,
     locale: visibleLocale,
     deps: {
       toVisibleLocale,
     },
   });
+}
+
+function buildWebsiteGenerationTimelineMetadata(summary: SkillRuntimeExecutionSummary): Record<string, unknown> {
+  const qaSummary = summary.qaSummary;
+  return {
+    websiteGeneration: {
+      pageCount: summary.pageCount,
+      fileCount: summary.fileCount,
+      generatedFiles: summary.generatedFiles,
+      provider: summary.provider,
+      model: summary.model,
+      qa: qaSummary
+        ? {
+            averageScore: qaSummary.averageScore,
+            totalRoutes: qaSummary.totalRoutes,
+            passedRoutes: qaSummary.passedRoutes,
+            totalRetries: qaSummary.totalRetries,
+            categories: qaSummary.categories,
+            observations: qaSummary.observations || [],
+          }
+        : undefined,
+      routeRepairEvidence: {
+        status: qaSummary && qaSummary.totalRetries > 0 ? "route_repairs_applied" : "no_route_repair_needed",
+        failedRoute: null,
+        repairedFiles: [],
+        fullRegenerationAvoided: qaSummary && qaSummary.totalRetries > 0 ? true : null,
+      },
+    },
+  };
+}
+
+function getWorkflowContentPreviewPosts(workflowContext: Record<string, unknown>): BlogPostUpsertInput[] {
+  if (Array.isArray((workflowContext as any)?.contentPreviewPosts)) {
+    return (((workflowContext as any)?.contentPreviewPosts || []) as BlogPostUpsertInput[]).filter((post) => post && typeof post === "object");
+  }
+  if (Array.isArray((workflowContext as any)?.blogContentPreviewPosts)) {
+    return (((workflowContext as any)?.blogContentPreviewPosts || []) as BlogPostUpsertInput[]).filter((post) => post && typeof post === "object");
+  }
+  return [];
+}
+
+function getWorkflowContentPreviewConfirmed(workflowContext: Record<string, unknown>): boolean {
+  return Boolean((workflowContext as any)?.contentPreviewConfirmed ?? (workflowContext as any)?.blogContentConfirmed);
+}
+
+function getWorkflowContentPreviewStatus(workflowContext: Record<string, unknown>): string {
+  return String((workflowContext as any)?.contentPreviewStatus || (workflowContext as any)?.blogContentPreviewStatus || "").trim();
 }
 
 function isBlogContentRegenerationAction(inputState: AgentState): boolean {
@@ -5064,11 +5339,8 @@ async function ensureGeneratedBlogContentForDeploy(params: {
     `,
     [params.projectId, accountId, ownerUserId, resolveBlogNavLabelFromProject(params.project, visibleLocale), now, now],
   );
-  const confirmedWorkflowPosts = Boolean((params.inputState.workflow_context as any)?.blogContentConfirmed);
-  const workflowPosts = Array.isArray((params.inputState.workflow_context as any)?.blogContentPreviewPosts)
-    ? (((params.inputState.workflow_context as any)?.blogContentPreviewPosts || []) as BlogPostUpsertInput[])
-        .filter((post) => post && typeof post === "object")
-    : [];
+  const confirmedWorkflowPosts = getWorkflowContentPreviewConfirmed((params.inputState.workflow_context as any) || {});
+  const workflowPosts = getWorkflowContentPreviewPosts((params.inputState.workflow_context as any) || {});
   const previewPosts = buildBlogContentWorkflowPreview({
     inputState: params.inputState,
     project: params.project,
@@ -5158,11 +5430,8 @@ function buildStaticBlogSnapshotPostsForDeploy(params: {
   project: any;
   locale: "zh-CN" | "en";
 }): BlogPostRecord[] {
-  const confirmedWorkflowPosts = Boolean((params.inputState.workflow_context as any)?.blogContentConfirmed);
-  const workflowPosts = Array.isArray((params.inputState.workflow_context as any)?.blogContentPreviewPosts)
-    ? (((params.inputState.workflow_context as any)?.blogContentPreviewPosts || []) as BlogPostUpsertInput[])
-        .filter((post) => post && typeof post === "object")
-    : [];
+  const confirmedWorkflowPosts = getWorkflowContentPreviewConfirmed((params.inputState.workflow_context as any) || {});
+  const workflowPosts = getWorkflowContentPreviewPosts((params.inputState.workflow_context as any) || {});
   const previewPosts = buildBlogContentWorkflowPreview({
     inputState: params.inputState,
     project: params.project,
@@ -5220,7 +5489,7 @@ function buildStaticBlogSnapshotFilesForDeploy(params: {
   project: any;
   locale: "zh-CN" | "en";
 }) {
-  if (!(params.inputState.workflow_context as any)?.blogContentConfirmed) {
+  if (!getWorkflowContentPreviewConfirmed((params.inputState.workflow_context as any) || {})) {
     return { files: [], postCount: 0 };
   }
   if (!projectHasGeneratedBlogContentMount(params.project)) {
@@ -5332,7 +5601,7 @@ async function runDeployOnlyTask(params: {
     project: sourceProject,
     locale: deployBlogLocale,
   });
-  if (blogPreview.required && !(inputState.workflow_context as any)?.blogContentConfirmed) {
+  if (blogPreview.required && !getWorkflowContentPreviewConfirmed((inputState.workflow_context as any) || {})) {
     await failChatTask(
       taskId,
       deployLocale === "zh-CN"
@@ -5693,9 +5962,13 @@ async function runDeployOnlyTask(params: {
         blogRuntimeStatus,
         generatedBlogContentStatus,
         blogContentPreviewStatus:
-          blogPreview.required && (inputState.workflow_context as any)?.blogContentConfirmed
+          blogPreview.required && getWorkflowContentPreviewConfirmed((inputState.workflow_context as any) || {})
             ? "confirmed"
-            : String((inputState.workflow_context as any)?.blogContentPreviewStatus || ""),
+            : getWorkflowContentPreviewStatus((inputState.workflow_context as any) || {}),
+        contentPreviewStatus:
+          blogPreview.required && getWorkflowContentPreviewConfirmed((inputState.workflow_context as any) || {})
+            ? "confirmed"
+            : getWorkflowContentPreviewStatus((inputState.workflow_context as any) || {}),
         deploymentStrategy,
         wranglerDeploymentUrl: wranglerDeployment?.deploymentUrl || "",
         productionUrl: liveUrl,
@@ -6012,6 +6285,8 @@ async function runRefineTask(params: {
           ...inputState,
           workflow_context: {
             ...(inputState.workflow_context || {}),
+            contentPreviewPosts: refinedBlogPreview.posts,
+            contentPreviewConfirmed: true,
             blogContentPreviewPosts: refinedBlogPreview.posts,
             blogContentConfirmed: true,
           },
@@ -6028,18 +6303,27 @@ async function runRefineTask(params: {
     }
   }
   const refinedBlogWorkflowState = refinedBlogPreview.required
-    ? isBlogContentRefine
-      ? {
+      ? isBlogContentRefine
+        ? {
+          contentPreviewPosts: refinedBlogPreview.posts,
+          contentPreviewStatus: "confirmed",
+          contentPreviewConfirmed: true,
           blogContentPreviewPosts: refinedBlogPreview.posts,
           blogContentPreviewStatus: "confirmed",
           blogContentConfirmed: true,
         }
       : {
+          contentPreviewPosts: refinedBlogPreview.posts,
+          contentPreviewStatus: "pending_confirmation",
+          contentPreviewConfirmed: false,
           blogContentPreviewPosts: refinedBlogPreview.posts,
           blogContentPreviewStatus: "pending_confirmation",
           blogContentConfirmed: false,
         }
     : {
+        contentPreviewPosts: [],
+        contentPreviewStatus: refinedBlogPreview.reason,
+        contentPreviewConfirmed: false,
         blogContentPreviewPosts: [],
         blogContentPreviewStatus: refinedBlogPreview.reason,
         blogContentConfirmed: false,
@@ -6092,13 +6376,14 @@ async function runRefineTask(params: {
   const pendingEdits = await readPendingEditsForTask(taskId);
   await completeChatTask(taskId, {
     assistantText: isBlogContentRefine
-      ? refineLocale === "zh-CN"
-        ? `Blog 内容已生成，已更新 ${refinedBlogPreview.posts.length} 篇文章正文，并同步到项目 Blog 数据。`
-        : `Blog content is generated. ${refinedBlogPreview.posts.length} article bodies were updated and synced into the project Blog data.`
+      ? `Blog content is generated. ${refinedBlogPreview.posts.length} article bodies were updated and synced into the project Blog data.`
       : refinedBlogPreview.required
-        ? refineLocale === "zh-CN"
-        ? `修改已完成，并已生成 ${refinedBlogPreview.posts.length} 篇 Blog 文章草案。确认后即可部署。`
-        : `Refinement completed. ${refinedBlogPreview.posts.length} Blog article drafts are ready for confirmation before deploy.`
+        ? renderPendingContentConfirmationAssistantText({
+            locale: refineLocale,
+            postCount: refinedBlogPreview.posts.length,
+            surfaceKind: refinedBlogPreview.surfaceKind,
+            phase: "refine",
+          })
       : `Refinement completed. Updated ${refined.changedFiles.length} files.`,
     phase: "end",
     timelineMetadata: refinedBlogPreview.required && !isBlogContentRefine
@@ -6106,6 +6391,7 @@ async function runRefineTask(params: {
           locale: refineLocale,
           navLabel: refinedBlogPreview.navLabel,
           posts: refinedBlogPreview.posts,
+          surfaceKind: refinedBlogPreview.surfaceKind,
         })
       : undefined,
     internal: {
@@ -6340,11 +6626,17 @@ export class SkillRuntimeExecutor {
       );
       const generatedBlogWorkflowState = generatedBlogPreview.required
         ? {
+            contentPreviewPosts: generatedBlogPreview.posts,
+            contentPreviewStatus: "pending_confirmation",
+            contentPreviewConfirmed: false,
             blogContentPreviewPosts: generatedBlogPreview.posts,
             blogContentPreviewStatus: "pending_confirmation",
             blogContentConfirmed: false,
           }
         : {
+            contentPreviewPosts: [],
+            contentPreviewStatus: generatedBlogPreview.reason,
+            contentPreviewConfirmed: false,
             blogContentPreviewPosts: [],
             blogContentPreviewStatus: generatedBlogPreview.reason,
             blogContentConfirmed: false,
@@ -6400,22 +6692,30 @@ export class SkillRuntimeExecutor {
 
       const elapsedMs = Date.now() - startedAt;
       const pendingEdits = await readPendingEditsForTask(taskId);
+      const websiteGenerationTimelineMetadata = buildWebsiteGenerationTimelineMetadata(summary);
       const mergedResult: ChatTaskResult = {
         assistantText: generatedBlogPreview.required
-          ? decision.locale === "zh-CN"
-            ? `网站已生成，并已准备 ${generatedBlogPreview.posts.length} 篇 Blog 文章草案。请先确认文章内容，再继续部署上线。`
-            : `The website is generated and ${generatedBlogPreview.posts.length} Blog article drafts are ready. Confirm the articles before deployment.`
+          ? renderPendingContentConfirmationAssistantText({
+              locale: decision.locale,
+              postCount: generatedBlogPreview.posts.length,
+              surfaceKind: generatedBlogPreview.surfaceKind,
+              phase: "generate",
+            })
           : summary.assistantText,
         actions: summary.actions,
         phase: summary.phase,
         deployedUrl: summary.deployedUrl,
         timelineMetadata: generatedBlogPreview.required
-          ? buildBlogContentConfirmTimelineMetadata({
-              locale: decision.locale,
-              navLabel: generatedBlogPreview.navLabel,
-              posts: generatedBlogPreview.posts,
-            })
-          : undefined,
+          ? {
+              ...buildBlogContentConfirmTimelineMetadata({
+                locale: decision.locale,
+                navLabel: generatedBlogPreview.navLabel,
+                posts: generatedBlogPreview.posts,
+                surfaceKind: generatedBlogPreview.surfaceKind,
+              }),
+              ...websiteGenerationTimelineMetadata,
+            }
+          : websiteGenerationTimelineMetadata,
         internal: {
           skillId: loadedSkill.id,
           workerId,

@@ -39,6 +39,16 @@ Use this skill when the website is an official company presence serving enterpri
   `hero`, `section hero`, or similar marketing-landing hero shells.
 - Do not default to founder-story, editorial, boutique, or diary-style framing.
 
+## Visual identity contract
+
+- Corporate B2B sites must not share the same visual system as docs/knowledge sites or content hubs.
+- Prefer an industrial enterprise, procurement, operations, or institutional-trust aesthetic with a steel/graphite/navy or similarly grounded base and one restrained high-contrast accent.
+- Do not default to a generic green-white rounded-card dashboard theme when the surface is corporate B2B.
+- Preferred CSS token family: dark steel or graphite base, light enterprise text,
+  blue/cyan primary, and amber operational accent.
+- The dominant composition should be an image-backed enterprise masthead, wide proof bands, capability/process modules, and concrete operational media.
+- Avoid documentation workspace chrome, editorial archive shelves, and repeated floating-card grids as the dominant corporate template.
+
 ## Route contract
 
 Common route roles:
@@ -129,16 +139,19 @@ Common route roles:
 ## Copy exclusions
 
 - Do not expose internal design-direction labels in visitor-facing copy.
+- Do not expose internal layout, responsive-review, or QA labels such as
+  `Responsive layout`, `Shared shell`, `Desktop and mobile review`,
+  `homepage groups`, `homepage frames`, or `visual system keeps`.
 - Banned visible direction labels include examples such as `heritage manufacturing`, `heritage craft`, `warm palette`, and similar internal art-direction metadata.
 - These phrases must not appear in homepage eyebrows, hero kickers, trust rows, proof rows, footer copy, or other public-facing text.
 - Unless the brief explicitly asks for company history or heritage storytelling, do not use `heritage`, `craft tradition`, or similar legacy-positioning words as homepage value claims. Prefer sourcing clarity, quality control, responsiveness, and production discipline.
 - Unless the brief explicitly asks for company history or heritage storytelling,
   treat plain `heritage` as internal direction metadata rather than homepage
   value language.
-- Specifically do not use homepage eyebrow/kicker lines such as `Heritage
-  textile manufacturing`, `heritage textile production`, or similar
-  heritage-led positioning. Homepage kickers should describe business offer,
-  buyer fit, or sourcing reliability instead.
+- Specifically do not use homepage eyebrow/kicker lines that expose a hidden
+  product vertical or art-direction preset. Homepage kickers should describe
+  business offer, buyer fit, operating trust, or sourcing reliability
+  instead.
 - Shared-shell bilingual resources must be clean:
   - `messages.zh-CN.json` must contain real Chinese translations for core nav
     and locale keys rather than copied English text

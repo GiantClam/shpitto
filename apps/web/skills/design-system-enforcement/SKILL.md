@@ -1,44 +1,34 @@
 ---
 name: "design-system-enforcement"
-description: "Enforces design system tokens and prohibits hardcoded styles. Invoke when generating UI sections or components."
+description: "Design-system enforcement contract for generated website UI. Use when creating or refining sections, pages, shells, forms, cards, tables, and navigation."
 ---
 
-# 设计系统强制规范
+# Design System Enforcement
 
-## 适用场景
+The selected visual direction or design-system inspiration is a contract. Generated files must reuse it consistently instead of inventing a new visual language per route.
 
-任何 Section、组件、页面生成与重构。
+## Token Rules
 
-## 强制规则
+- Define core colors in `:root` and reuse them with `var(...)` or derived `color-mix(...)` values.
+- Avoid repeated raw hex colors outside the token block.
+- Use one typography hierarchy across all routes.
+- Use a documented spacing scale for sections, cards, grids, forms, and footers.
+- Keep radius, border, shadow, and motion choices consistent across components.
 
-### 间距
+## Route Consistency Rules
 
-只允许使用定义的间距刻度（4px 体系）。
+1. Header, navigation, footer, language switch, and CTA wording must remain stable unless the confirmed manifest changes.
+2. Interior pages may vary layout and opening family, but they must inherit the same shell, color system, typography, and component grammar.
+3. Do not create one-off inline style patches for spacing, object-fit, or alignment when a reusable class belongs in `/styles.css`.
+4. Do not leak internal direction labels, template names, design-system labels, or route-planning rationale into visitor copy.
+5. Accent color should be used sparingly for primary action, selected state, or one key emphasis. Do not flood the page with accent variants.
 
-### 颜色
+## Validation
 
-只允许使用 CSS 变量或主题 token。
+Before completion:
 
-### 排版
-
-只允许使用定义的字号与字重尺度。
-
-### 圆角与阴影
-
-只允许使用预设值。
-
-## 生成前检查
-
-1. 读取设计系统
-2. 准备 token 映射
-3. 明确容器与栅格规则
-
-## 生成后检查
-
-1. 扫描硬编码值
-2. 替换为最接近的 token
-3. 合规率必须 > 90%
-
-## 自动修复
-
-若低于阈值，先修复再进入下一阶段。
+- scan CSS for raw color drift,
+- scan HTML for inline style workarounds on major layout blocks,
+- confirm every route uses the same shell tokens,
+- confirm footer destinations match the route plan,
+- confirm visitor-facing copy contains no internal design labels.

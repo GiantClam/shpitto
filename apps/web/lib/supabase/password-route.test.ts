@@ -84,4 +84,52 @@ describe("password auth route", () => {
     expect(response.cookies.get("sb-example-auth-token")).toBeUndefined();
     expect(response.cookies.get(AUTH_CACHE_COOKIE_NAME)).toBeUndefined();
   });
+
+  it("maps transient Supabase connectivity failures to a retryable 503", async () => {
+    mocks.createServerClient.mockReturnValue({
+      auth: {
+        signInWithPassword: vi.fn(async () => ({
+          error: {
+            message: "TypeError: fetch failed",
+            cause: { code: "ECONNRESET", message: "Client network socket disconnected before secure TLS connection was established" },
+          },
+        })),
+      },
+    });
+
+    const response = await POST(passwordRequest({ email: "qa@example.com", password: "secret" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(body).toEqual({
+      ok: false,
+      error: "Authentication service is temporarily unavailable. Please try again.",
+      retryable: true,
+    });
+  });
+
+  it("maps thrown transient Supabase connectivity failures to a retryable 503", async () => {
+    const networkError = new TypeError("fetch failed") as TypeError & { cause?: { code: string; message: string } };
+    networkError.cause = {
+      code: "ECONNRESET",
+      message: "Client network socket disconnected before secure TLS connection was established",
+    };
+    mocks.createServerClient.mockReturnValue({
+      auth: {
+        signInWithPassword: vi.fn(async () => {
+          throw networkError;
+        }),
+      },
+    });
+
+    const response = await POST(passwordRequest({ email: "qa@example.com", password: "secret" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(body).toEqual({
+      ok: false,
+      error: "Authentication service is temporarily unavailable. Please try again.",
+      retryable: true,
+    });
+  });
 });

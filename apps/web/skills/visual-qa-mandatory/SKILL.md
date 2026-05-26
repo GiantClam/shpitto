@@ -1,28 +1,41 @@
 ---
 name: "visual-qa-mandatory"
-description: "Requires visual QA checkpoints at key milestones. Invoke when generating multiple sections or full pages."
+description: "Mandatory visual QA contract for generated websites and refinements. Use before finalizing a page, route unit, or full site."
 ---
 
-# 视觉 QA 强制规则
+# Visual QA Mandatory
 
-## 适用场景
+Visual QA is part of generation, not a cosmetic afterthought. Each emitted file must pass bounded checks before the task is considered complete.
 
-批量生成或完成页面时必须执行。
+## QA Checkpoints
 
-## QA 节点
+- Run section-level review after major sections are generated.
+- Run route-level review after each HTML route is emitted.
+- Run shared CSS review after `/styles.css` changes.
+- Run final site review before `finish`.
+- For refine tasks, review only changed routes and shared files unless the shell or token layer changed.
 
-- 每 3 个 Section 做一次视觉巡检
-- 页面完成后做一次全局巡检
+## Blocking Checks
 
-## 检查维度
+1. Manifest completeness: every required route and shared file exists.
+2. No unrequested core routes when the manifest is locked.
+3. No placeholder copy, lorem ipsum, demo image URLs, or unfinished scaffold text.
+4. No visitor-facing workflow, prompt, design-system, route-planning, or implementation rationale.
+5. No text overflow, heading break risk, clipped table columns, or compressed hero stat cards.
+6. No shell drift: nav, footer, language switch, and shared CTA destinations stay consistent.
+7. No unsupported fake metrics, fake testimonials, fake clients, fake prices, or fake compliance claims.
+8. No mojibake or encoding-corrupted visible copy.
 
-1. 对齐：栅格、基线、按钮列对齐一致
-2. 层级：标题/正文/辅助信息层级清晰
-3. 节奏：区块间距有规律，重轻缓急明确
-4. 对比：文字与背景对比符合可读性
-5. 溢出：图片/文字不截断，不穿透容器
-6. 动效：动效轻量、节奏统一、无干扰
+## Observation-Only Checks
 
-## 输出
+These should be reported but should not block the first rollout unless replay data proves they are reliable:
 
-- 记录问题与修复建议到 progress.md
+- visual monotony,
+- repeated section rhythm,
+- weak hero,
+- inconsistent image style,
+- absence of a decisive visual flourish.
+
+## Output Expectations
+
+When QA fails, repair the smallest affected route or shared file. Full-site regeneration is allowed only when shared shell, token, or manifest state is damaged.

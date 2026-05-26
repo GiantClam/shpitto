@@ -126,6 +126,16 @@ function confirmBlogDeploy() {
   return "__SHP_CONFIRM_BLOG_CONTENT_DEPLOY__";
 }
 
+function isContentDeployConfirmCardType(value: string) {
+  return value === "confirm_blog_content_deploy" || value === "confirm_content_preview_deploy";
+}
+
+function expectedContentDeployPayload(cardType: string) {
+  return cardType === "confirm_content_preview_deploy"
+    ? "__SHP_CONFIRM_CONTENT_DEPLOY__"
+    : "__SHP_CONFIRM_BLOG_CONTENT_DEPLOY__";
+}
+
 function isDeploymentSnapshotWithMarker(text: string, expectedTitle: string) {
   try {
     const parsed = JSON.parse(text) as {
@@ -311,7 +321,7 @@ describe("chat entry full website flow", () => {
         });
         expect(previewRootRes.status).toBe(307);
         expect(String(previewRootRes.headers.get("location") || "")).toContain(
-          `/api/chat/tasks/${encodeURIComponent(queuedGenerateTask!.id)}/preview/index.html`,
+          `/api/chat/tasks/${encodeURIComponent(queuedGenerateTask!.id)}/preview/__default__`,
         );
 
         const previewIndexRes = await getPreviewFile(new Request("http://localhost"), {
@@ -340,8 +350,10 @@ describe("chat entry full website flow", () => {
         const deployGateTimeline = await listChatTimelineMessages(chatId, 500);
         const deployConfirm = [...deployGateTimeline]
           .reverse()
-          .find((message) => String(message.metadata?.cardType || "") === "confirm_blog_content_deploy");
+          .find((message) => isContentDeployConfirmCardType(String(message.metadata?.cardType || "")));
         expect(deployConfirm).toBeTruthy();
+        const deployConfirmCardType = String(deployConfirm?.metadata?.cardType || "");
+        expect(String(deployConfirm?.metadata?.payload || "")).toBe(expectedContentDeployPayload(deployConfirmCardType));
         expect(Array.isArray((deployConfirm?.metadata as any)?.posts)).toBe(true);
         expect((((deployConfirm?.metadata as any)?.posts || []) as unknown[]).length).toBeGreaterThan(0);
 
@@ -368,7 +380,9 @@ describe("chat entry full website flow", () => {
         expect((queuedDeployTask?.result?.internal?.inputState as any)?.workflow_context?.deploySourceProjectPath).toBe(
           checkpointProjectPath,
         );
+        expect((queuedDeployTask?.result?.internal?.inputState as any)?.workflow_context?.contentPreviewConfirmed).toBe(true);
         expect((queuedDeployTask?.result?.internal?.inputState as any)?.workflow_context?.blogContentConfirmed).toBe(true);
+        expect(Array.isArray((queuedDeployTask?.result?.internal?.inputState as any)?.workflow_context?.contentPreviewPosts)).toBe(true);
         expect(Array.isArray((queuedDeployTask?.result?.internal?.inputState as any)?.workflow_context?.blogContentPreviewPosts)).toBe(true);
         expect((((queuedDeployTask?.result?.internal?.inputState as any)?.workflow_context?.blogContentPreviewPosts || []) as unknown[]).length)
           .toBeGreaterThan(0);

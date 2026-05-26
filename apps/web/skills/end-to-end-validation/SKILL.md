@@ -1,19 +1,28 @@
 ---
 name: "end-to-end-validation"
-description: "Defines final validation gates before delivery. Invoke when finishing a full page or site."
+description: "Final delivery validation contract for generated websites, route units, and preview refinements."
 ---
 
-# 端到端验证
+# End-To-End Validation
 
-## 交付前必须执行
+Run final validation before presenting a generated or refined website as complete.
 
-1. 断点检查（320/768/1440）
-2. 视觉一致性复核
-3. 交互可用性检查
-4. 内容质量复核
+## Required Final Gates
 
-## 通过标准
+1. Route/file gate: all required HTML, CSS, JS, locale, and content files are present.
+2. Preview gate: the homepage and changed routes return valid HTML and load shared assets.
+3. Responsive gate: mobile, tablet, and desktop layouts remain readable and navigable.
+4. Content gate: visitor copy is topic-specific, source-aligned, and free of workflow/design/process leakage.
+5. Shell gate: header, navigation, footer, CTA destinations, and locale controls are consistent across routes.
+6. Placeholder gate: no placeholder copy, placeholder URLs, demo image services, or unfinished content labels remain.
+7. Accessibility gate: semantic landmarks, form labels, alt text, focus states, and color contrast are acceptable.
+8. Refine gate: preview/deployed follow-up tasks edit only the necessary files and preserve the current baseline unless the user asks for a full rebuild.
 
-- 所有关键问题已修复
-- 样式与组件一致
-- 无明显可用性阻断
+## Passing Standard
+
+A site passes only when:
+
+- blocking QA issues are fixed,
+- route-unit repairs are scoped to the failed route whenever possible,
+- changed files are recorded,
+- remaining observation-only issues are reported separately from blockers.

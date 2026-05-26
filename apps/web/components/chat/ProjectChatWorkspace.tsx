@@ -4118,7 +4118,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
                           {String(metadata.label || CHAT_CARD_COPY[messageLocale].confirmAndGenerate)}
                         </button>
                       ) : null}
-                      {cardType === "confirm_blog_content_deploy" && confirmPayload ? (
+                      {(cardType === "confirm_blog_content_deploy" || cardType === "confirm_content_preview_deploy") && confirmPayload ? (
                         <BlogContentDeployCard
                           metadata={metadata}
                           locale={messageLocale}

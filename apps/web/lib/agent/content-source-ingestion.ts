@@ -124,10 +124,101 @@ function containsCjk(text: string): boolean {
   return containsWorkflowCjk(text);
 }
 
+const ROUTE_LABEL_CONTAINER_WORDS = new Set([
+  "center",
+  "hub",
+  "page",
+  "pages",
+  "platform",
+  "portal",
+  "site",
+  "system",
+  "website",
+]);
+
+const COMMON_ROUTE_PREFIX_WORDS = new Set([
+  "about",
+  "blog",
+  "case",
+  "cases",
+  "contact",
+  "custom",
+  "download",
+  "downloads",
+  "home",
+  "information",
+  "platform",
+  "product",
+  "products",
+  "research",
+  "service",
+  "services",
+  "solution",
+  "solutions",
+  "standard",
+  "standards",
+]);
+
+function looksLikeRouteBrandPrefixToken(token: string, route = ""): boolean {
+  const normalized = String(token || "").trim();
+  if (/^[A-Z0-9]{4,}$/.test(normalized)) return true;
+  const routeLead = String(route || "")
+    .replace(/^\/+|\/+$/g, "")
+    .split("/")
+    .filter(Boolean)[0]
+    ?.split(/[-_]+/g)
+    .filter(Boolean)[0]
+    ?.toLowerCase();
+  return (
+    !!routeLead &&
+    normalized.toLowerCase() === routeLead &&
+    normalized.length >= 4 &&
+    !COMMON_ROUTE_PREFIX_WORDS.has(routeLead)
+  );
+}
+
+function compressRouteLabel(label: string, route = ""): string {
+  const normalized = normalizeWorkflowArtifactText(label);
+  if (!normalized) return "";
+
+  const originalWords = String(label || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  let words = normalized.split(/\s+/).filter(Boolean);
+  let strippedBrandPrefix = false;
+
+  if (words.length > 1 && looksLikeRouteBrandPrefixToken(originalWords[0] || "", route)) {
+    words = words.slice(1);
+    strippedBrandPrefix = true;
+  }
+
+  const normalizedPhrase = words.join(" ").toLowerCase();
+  if (normalizedPhrase === "case studies") return "Cases";
+
+  if (words.length > 1 && ROUTE_LABEL_CONTAINER_WORDS.has(words[words.length - 1].toLowerCase())) {
+    words = words.slice(0, -1);
+  }
+
+  if (words.length === 0) {
+    words = normalized.split(/\s+/).filter(Boolean);
+  }
+
+  if (strippedBrandPrefix && words.length > 1) {
+    return words[0];
+  }
+
+  if (words.length === 2 && ROUTE_LABEL_CONTAINER_WORDS.has(words[1].toLowerCase())) {
+    return words[0];
+  }
+
+  return words.join(" ");
+}
+
 function internalNavLabelForRoute(route: string, fallback = ""): string {
   const normalized = String(route || "/").trim() || "/";
   if (normalized === "/") return "Home";
-  if (isWorkflowArtifactEnglishSafe(fallback)) return normalizeWorkflowArtifactText(fallback);
+  if (isWorkflowArtifactEnglishSafe(fallback)) return compressRouteLabel(fallback, normalized);
   const leaf = normalized.replace(/^\/+|\/+$/g, "").split("/").filter(Boolean).pop() || "page";
   return leaf
     .split(/[-_]+/g)
@@ -136,12 +227,93 @@ function internalNavLabelForRoute(route: string, fallback = ""): string {
     .join(" ");
 }
 
+const WORKFLOW_MULTILINGUAL_SUMMARY_REPLACEMENTS: Array<[RegExp, string]> = [
+  [/\u4e3b\u5bfc\u822a\u83dc\u5355|\u4e3b\u5bfc\u822a|\u5bfc\u822a\u83dc\u5355/gu, "Main navigation"],
+  [/\u7f51\u7ad9\u5b9a\u4f4d/gu, "Website positioning"],
+  [/\u89c6\u89c9\u98ce\u683c/gu, "Visual style"],
+  [/\u9996\u9875/gu, "Home"],
+  [/\u8d44\u6599\u4e0b\u8f7d/gu, "Downloads"],
+  [/\u7814\u7a76\u4e2d\u5fc3/gu, "Research Center"],
+  [/\u4fe1\u606f\u5e73\u53f0/gu, "Information Platform"],
+  [/\u6807\u51c6\u4f53\u7cfb|\u6807\u51c6\u7cfb\u7edf/gu, "Standards System"],
+  [/\u6848\u4f8b\u7814\u7a76|\u6848\u4f8b/gu, "Case Studies"],
+  [/\u521b\u8bbe|\u521b\u5efa/gu, "Creation"],
+  [/\u5efa\u8bbe/gu, "Construction"],
+  [/\u4f18\u6807|\u8ba4\u8bc1/gu, "Certification"],
+  [/\u5021\u5bfc/gu, "Advocacy"],
+  [/\u4e13\u4e1a\u6807\u51c6\u5236\u5b9a\u673a\u6784/gu, "professional standards institution"],
+  [/\u7814\u7a76\u4e2d\u5fc3/gu, "research center"],
+  [/\u4fe1\u606f\u5e73\u53f0/gu, "information platform"],
+  [/\u751f\u6210/gu, "Include"],
+  [/\u6807\u51c6\u6587\u4ef6\u5c55\u793a\u5361\u7247\u7ec4\u4ef6/gu, "standards document card component"],
+  [/\u5de6\u4fa7\s*PDF\s*\u56fe\u6807/giu, "left PDF icon"],
+  [/\u4e2d\u95f4\u6807\u51c6\u540d\u79f0/gu, "standard name"],
+  [/\u6807\u51c6\u7f16\u53f7/gu, "standard ID"],
+  [/\u53d1\u5e03\u673a\u6784/gu, "issuing body"],
+  [/\u53d1\u5e03\u65e5\u671f/gu, "release date"],
+  [/\u53f3\u4fa7\u4e0b\u8f7d\u6309\u94ae/gu, "right-aligned download button"],
+  [/\u8bc4\u5206\u53ef\u89c6\u5316\u7ec4\u4ef6/gu, "scoring visualization component"],
+  [/\u603b\u5206/gu, "total score"],
+  [/\u5706\u5f62\u8fdb\u5ea6\u6761/gu, "circular progress chart"],
+  [/\u4e94\u7ef4\u5ea6\u96f7\u8fbe\u56fe/gu, "five-dimension radar chart"],
+  [/\u8ba4\u8bc1\u7b49\u7ea7\u5fbd\u7ae0/gu, "certification badge"],
+  [/\u751f\u6001\u7eff/gu, "ecological green"],
+  [/\u6696\u6a59\u8272/gu, "warm orange"],
+  [/\u4e3a\u4e3b\u8272\u8c03/gu, "as the primary palette"],
+  [/\u642d\u914d/gu, "paired with"],
+  [/\u4f5c\u4e3a\s*CTA\s*\u70b9\u7f00/giu, "as a CTA accent"],
+];
+
+export function summarizeWorkflowSourceText(text: string, fallback: string): string {
+  const source = normalizeText(text);
+  if (!source) return fallback;
+  const safe = sanitizeWorkflowArtifactText(source, "");
+  if (safe && !/^\.[a-z0-9]{1,6}$/i.test(safe) && /[a-z0-9]/i.test(safe)) return safe;
+
+  let summarized = source
+    .replace(/```/g, " ")
+    .replace(/[\u201c\u201d\u300c\u300d\u300e\u300f]/g, '"')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u3001\u3002\u3001\u00b7]/g, ", ")
+    .replace(/[\uFF1A:]+/g, ": ")
+    .replace(/[\uFF08]/g, " (")
+    .replace(/[\uFF09]/g, ") ")
+    .replace(/[|｜]/g, " | ")
+    .replace(/[，；]/g, ", ")
+    .replace(/[【】\[\]<>]/g, " ");
+
+  for (const [pattern, replacement] of WORKFLOW_MULTILINGUAL_SUMMARY_REPLACEMENTS) {
+    summarized = summarized.replace(pattern, replacement);
+  }
+
+  summarized = summarized
+    .replace(/\b(CASUX)(Creation|Construction|Certification|Advocacy|Research Center|Information Platform)\b/g, "$1 $2")
+    .replace(/\bInclude([A-Za-z])/g, "Include $1")
+    .replace(/\bwith([A-Za-z])/g, "with $1")
+    .replace(/[\u4e00-\u9fff]+/gu, " ")
+    .replace(/\s+\|\s+/g, " | ")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+,/g, ",")
+    .replace(/,+/g, ",")
+    .replace(/,\s*\|/g, " |")
+    .trim();
+
+  const normalized = sanitizeWorkflowArtifactText(summarized, "");
+  if (!normalized) return fallback;
+  if (/^\.[a-z0-9]{1,6}$/i.test(normalized)) return fallback;
+  if (!/[a-z0-9]/i.test(normalized)) return fallback;
+  return normalized;
+}
+
 function englishOnlyList(items: string[], fallback: string): string {
-  return sanitizeWorkflowArtifactList(items, fallback);
+  const normalized = items
+    .map((item) => summarizeWorkflowSourceText(item, ""))
+    .filter((item) => isWorkflowArtifactEnglishSafe(item));
+  return normalized.length ? normalized.join(" | ") : sanitizeWorkflowArtifactList(items, fallback);
 }
 
 function englishOnlyText(text: string, fallback: string): string {
-  return sanitizeWorkflowArtifactText(text, fallback);
+  return summarizeWorkflowSourceText(text, fallback);
 }
 
 function hasUploadedMaterialSignal(text: string): boolean {
@@ -520,6 +692,58 @@ function confidenceFromSuggestedPageScore(score: number): number {
   return 0.4;
 }
 
+function isGenericDocumentPagePlaceholder(page: SuggestedPage): boolean {
+  const normalizedTitle = normalizeLabelForMatching(page.title);
+  const routeLeaf = String(page.route || "/")
+    .replace(/^\/+|\/+$/g, "")
+    .split("/")
+    .filter(Boolean)
+    .pop() || "";
+  const normalizedRouteLeaf = normalizeLabelForMatching(routeLeaf);
+  return /^page\d+$/i.test(normalizedTitle) || /^page\d+$/i.test(normalizedRouteLeaf);
+}
+
+function synthesizeStructuredHomePage(pages: SuggestedPage[]): SuggestedPage {
+  const featuredInputs = uniqueBriefItems(
+    [...pages.map((page) => page.title), "uploaded source document"],
+    4,
+  );
+  return {
+    route: "/",
+    title: "Home",
+    purpose: "Provide the primary landing page that introduces the organization and routes visitors into the source-defined sections.",
+    contentInputs: featuredInputs,
+    sourceKind: "structural_source",
+    confidence: 0.84,
+    extractionReason:
+      "Synthesized from a degraded structural page plan that contained stable first-level routes but lost the root landing page during source extraction.",
+  };
+}
+
+function repairStructuredSuggestedPages(pages: SuggestedPage[]): { pages: SuggestedPage[]; gaps: string[] } {
+  const gaps: string[] = [];
+  const stablePages = pages.filter((page) => !isGenericDocumentPagePlaceholder(page));
+  const placeholderPages = pages.filter((page) => isGenericDocumentPagePlaceholder(page));
+
+  let repairedPages = pages;
+  if (stablePages.length >= 4 && placeholderPages.length > 0) {
+    repairedPages = stablePages;
+    gaps.push(
+      `Dropped generic source page placeholders (${placeholderPages.map((page) => `${page.title} (${page.route})`).join(", ")}) because the structural page plan already contained stable visitor-facing routes.`,
+    );
+  }
+
+  const hasHome = repairedPages.some((page) => page.route === "/");
+  if (!hasHome && stablePages.length >= 4 && placeholderPages.length > 0) {
+    repairedPages = [synthesizeStructuredHomePage(stablePages), ...repairedPages];
+    gaps.push(
+      "Synthesized a Home route because the structural page plan lost its root entry while retaining multiple stable first-level routes.",
+    );
+  }
+
+  return { pages: repairedPages, gaps };
+}
+
 function filterStructuredSuggestedPages(pages: SuggestedPage[]): { pages: SuggestedPage[]; gaps: string[] } {
   const accepted: SuggestedPage[] = [];
   const gaps: string[] = [];
@@ -542,7 +766,8 @@ function filterStructuredSuggestedPages(pages: SuggestedPage[]): { pages: Sugges
     });
   }
 
-  return { pages: accepted, gaps };
+  const repaired = repairStructuredSuggestedPages(accepted);
+  return { pages: repaired.pages, gaps: [...gaps, ...repaired.gaps] };
 }
 
 function splitExplicitNavLabels(line: string): string[] {
@@ -1524,16 +1749,19 @@ export function formatWebsiteEvidenceBrief(brief: WebsiteEvidenceBrief): string 
     : ["- No source-backed priority facts were extracted; the prompt must keep business claims conservative."];
   const sourceLines = brief.sourcePriorities.length
     ? brief.sourcePriorities.flatMap((source) =>
-        [
+        (() => {
+          const summarizedSnippet = summarizeWorkflowSourceText(source.snippet || "", "");
+          return [
           `${source.rank}. [${source.type}] ${englishOnlyText(source.title, `Source ${source.rank}`)}${
             source.location && (isWorkflowArtifactEnglishSafe(source.location) || /^https?:\/\//i.test(source.location))
               ? ` | ${source.location}`
               : ""
           } | confidence ${source.confidence.toFixed(2)}`,
-          isWorkflowArtifactEnglishSafe(source.snippet || "")
-            ? `   - Evidence: ${normalizeWorkflowArtifactText(source.snippet)}`
-            : "   - Evidence: multilingual source excerpt available; use the extracted source artifact directly when needed.",
-        ].filter(Boolean),
+          summarizedSnippet
+            ? `   - Evidence: ${summarizedSnippet}`
+            : "   - Evidence: source-backed multilingual excerpt exists but still requires a conservative English summary.",
+        ].filter(Boolean);
+        })(),
       )
     : ["- No readable source priorities available."];
   const pageLines = brief.pageBriefs.length
@@ -1577,10 +1805,9 @@ export function formatWebsiteKnowledgeProfile(profile: WebsiteKnowledgeProfile):
       const rawLocation = source.url || source.fileName || "";
       const location = isWorkflowArtifactEnglishSafe(rawLocation) || /^https?:\/\//i.test(rawLocation) ? rawLocation : "";
       const title = englishOnlyText(source.title, `Source ${index + 1}`);
+      const summarizedSnippet = summarizeWorkflowSourceText(source.snippet || "", "");
       return `${index + 1}. [${source.type}] ${title}${location ? ` | ${location}` : ""}${
-        isWorkflowArtifactEnglishSafe(source.snippet || "")
-          ? ` | ${normalizeWorkflowArtifactText(source.snippet).slice(0, 260)}`
-          : " | multilingual source text stored in extracted source artifacts"
+        summarizedSnippet ? ` | ${summarizedSnippet.slice(0, 260)}` : " | source-backed multilingual text still requires an English-safe summary"
       }`;
     })
     .join("\n");

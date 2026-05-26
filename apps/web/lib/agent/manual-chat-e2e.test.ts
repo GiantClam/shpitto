@@ -57,7 +57,7 @@ describe("manual real chat e2e", () => {
       });
       const previewLocation = String(previewRootRes.headers.get("location") || "");
       expect(previewRootRes.status).toBe(307);
-      expect(previewLocation).toContain(`/api/chat/tasks/${encodeURIComponent(queuedGenerateTask!.id)}/preview/index.html`);
+      expect(previewLocation).toContain(`/api/chat/tasks/${encodeURIComponent(queuedGenerateTask!.id)}/preview/__default__`);
 
       const previewIndexRes = await getPreviewFile(new Request("http://localhost"), {
         params: Promise.resolve({ taskId: queuedGenerateTask!.id, path: ["index.html"] }),

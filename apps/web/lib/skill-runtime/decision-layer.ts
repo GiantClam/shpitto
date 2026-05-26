@@ -29,7 +29,7 @@ export type PageBlueprint = {
   source: PageIntentSource;
   evidence?: string;
   constraints: string[];
-  pageKind: "intent" | "home" | "search-directory" | "blog-data-index" | "auth";
+  pageKind: "intent" | "home" | "search-directory" | "blog-data-index" | "content-collection-index" | "auth";
   responsibility: string;
   contentSkeleton: string[];
   componentMix: ComponentMix;
@@ -50,8 +50,33 @@ type RouteAuthorityMode = "workflow_manifest" | "prompt_manifest" | "heuristic";
 type IntentBlueprintArchetype = "products" | "solutions" | "cases" | "contact" | "about" | "generic";
 
 function detectLocale(text: string): "zh-CN" | "en" {
-  if (isBilingualRequirementText(text)) return "en";
-  return /[\u4e00-\u9fff]/.test(text) ? "zh-CN" : "en";
+  const normalized = String(text || "");
+  if (isBilingualRequirementText(normalized)) return "en";
+  if (
+    /(?:Final website locale requirement|Language|Locale|Requested site locale)\s*:\s*Chinese\b(?!\s*(?:and|\/|,|&))/i.test(
+      normalized,
+    ) ||
+    /single-language\s+Chinese-first/i.test(normalized) ||
+    /Chinese-only/i.test(normalized) ||
+    /Chinese-facing site output/i.test(normalized) ||
+    /Keep all visible copy in Chinese/i.test(normalized) ||
+    /Keep the site in Chinese/i.test(normalized)
+  ) {
+    return "zh-CN";
+  }
+  if (
+    /(?:Final website locale requirement|Language|Locale|Requested site locale)\s*:\s*English\b(?!\s*(?:and|\/|,|&))/i.test(
+      normalized,
+    ) ||
+    /single-language\s+English-first/i.test(normalized) ||
+    /English-only/i.test(normalized) ||
+    /English-facing site output/i.test(normalized) ||
+    /Keep all visible copy in English/i.test(normalized) ||
+    /Keep the site in English/i.test(normalized)
+  ) {
+    return "en";
+  }
+  return /[\u4e00-\u9fff]/.test(normalized) ? "zh-CN" : "en";
 }
 
 function normalizeLabelForMatching(label: string): string {
@@ -868,6 +893,46 @@ function isBlogSemanticRoute(route: string, navLabel: string): boolean {
   return result.score >= threshold;
 }
 
+function routeActsAsPublishableArchive(route: string, navLabel: string): boolean {
+  const text = `${normalizeRoute(route)} ${String(navLabel || "")}`.trim().toLowerCase();
+  return /(?:^|[\s/-])(blog|blogs|news|article|articles|post|posts|insight|insights|journal|story|stories)(?:$|[\s/-])/i.test(
+    text,
+  );
+}
+
+function routeDefaultsToCollectionSurface(route: string, navLabel: string): boolean {
+  const text = `${normalizeRoute(route)} ${String(navLabel || "")}`.trim().toLowerCase();
+  return /(?:information[-\s]?platform|knowledge[-\s]?(?:platform|hub)|resource(?:s)?[-\s]?hub|resource[-\s]?library|resource[-\s]?center|research[-\s]?center|standards[-\s]?system|standards[-\s]?library|policy[-\s]?library|documentation[-\s]?portal|downloads?[-\s]?hub|repository|archive[-\s]?center|case[-\s]?library)/i.test(
+    text,
+  );
+}
+
+function requirementRequestsPublishableDetailPages(requirementText: string): boolean {
+  const text = String(requirementText || "").trim();
+  if (!text) return false;
+  return /(?:\b(?:add|build|create|generate|include|need|publish|seed|write|require)\b.{0,48}\b(?:blog|blogs|article|articles|post|posts|news|insight|insights|journal|story|stories)\b|\b(?:blog|blogs|article|articles|post|posts|news|insight|insights|journal|story|stories)\b.{0,32}\b(?:detail page|detail pages|archive|archives|route|routes|slug|slugs)\b|(?:新增|创建|生成|提供|包含|发布|需要).{0,24}(?:博客|文章|帖子|博文|资讯|快讯|洞察)(?:页|详情页|归档)?|(?:博客|文章|帖子|博文|资讯|快讯|洞察).{0,16}(?:详情页|归档|列表|路由))/iu.test(
+    text,
+  );
+}
+
+function requestedPublishableDetailCount(requirementText: string): number | undefined {
+  const text = String(requirementText || "").trim();
+  if (!text) return undefined;
+  const match = text.match(
+    /\b(?:create|write|generate|publish|seed|add|produce)\s+([0-9]+)\s+(?:complete\s+|generated\s+)?(?:articles?|posts?|blog\s+posts?|news\s+updates?|insights?|stories?)\b/i,
+  ) || text.match(/\b([0-9]+)\s+(?:complete\s+|generated\s+)?(?:articles?|posts?|blog\s+posts?|news\s+updates?|insights?|stories?)\b/i);
+  const count = Number(match?.[1] || "");
+  return Number.isFinite(count) && count > 0 ? count : undefined;
+}
+
+function shouldRequireBlogDetailPagesForRoute(route: string, navLabel: string, requirementText: string): boolean {
+  if (normalizeRoute(route) === "/blog") return true;
+  if (requestedPublishableDetailCount(requirementText)) return true;
+  if (routeDefaultsToCollectionSurface(route, navLabel)) return false;
+  if (routeActsAsPublishableArchive(route, navLabel)) return true;
+  return requirementRequestsPublishableDetailPages(requirementText);
+}
+
 function findBlogSemanticRoute(routes: string[], navLabels?: string[]): string | undefined {
   const candidates = routes.map((route, index) => {
     const normalizedRoute = normalizeRoute(route);
@@ -890,11 +955,37 @@ function requirementRequestsBlogSurface(text: string): boolean {
   const negative = [
     /(?:不要|不需要|无需|仅首页|只做首页).{0,12}(?:blog|博客|博文)/i,
     /(?:do not|don't|no need|without|home only|single page).{0,20}(?:blog|post archive|article archive)/i,
+    /(?:do not|don't|no need|without|avoid|no)\s+(?:a\s+)?(?:blog|blogs?|blog\/archive|blog or archive)\b/i,
+    /\bno\s+blog\/archive\s+assumptions\b/i,
   ];
   if (negative.some((pattern) => pattern.test(normalized))) return false;
   return /(?:\bblog\b|博客|博文|blog页面|blog route|文章列表|文章归档|内容归档|3篇\s*blog|\d+\s*篇\s*(?:blog|博客|文章))/i.test(
     normalized,
   );
+}
+
+function suppressedContentRoutes(requirementText: string): Set<string> {
+  const normalized = String(requirementText || "").trim();
+  const suppressed = new Set<string>();
+  if (
+    /(?:do not|don't|no need|without|avoid|no)\s+(?:a\s+)?(?:blog|blogs?|blog\/archive|blog or archive)\b/i.test(
+      normalized,
+    ) ||
+    /\bno\s+blog\/archive\s+assumptions\b/i.test(normalized) ||
+    /(?:不要|不需要|无需|避免).{0,16}(?:blog|博客|博文)/i.test(normalized)
+  ) {
+    suppressed.add("/blog");
+  }
+  if (
+    /(?:do not|don't|no need|without|avoid|no)\s+(?:an?\s+)?(?:archive|archives?|blog\/archive|blog or archive)\b/i.test(
+      normalized,
+    ) ||
+    /\bno\s+blog\/archive\s+assumptions\b/i.test(normalized) ||
+    /(?:不要|不需要|无需|避免).{0,16}(?:归档|内容归档|文章归档)/i.test(normalized)
+  ) {
+    suppressed.add("/archive");
+  }
+  return suppressed;
 }
 
 function ensureBlogRoute(routes: string[], options: { singlePage: boolean; requirementText: string }): string[] {
@@ -907,17 +998,39 @@ function ensureBlogRoute(routes: string[], options: { singlePage: boolean; requi
 
 const EMPTY_COMPONENT_MIX: ComponentMix = { hero: 0, feature: 0, grid: 0, proof: 0, form: 0, cta: 0 };
 
-const BLOG_DATA_SOURCE_CONSTRAINTS = [
-  "Treat the selected Blog-capable navigation route as a first-class page-specific content surface, not a generic article mockup, detached landing page, or visible backend implementation block.",
+const CONTENT_DATA_SOURCE_CONSTRAINTS = [
   'The generated page for that route must include data-shpitto-blog-root and data-shpitto-blog-api="/api/blog/posts" inside the page collection/list/database module.',
   "Inside that section, include a data-shpitto-blog-list container with polished fallback resource cards that match the route taxonomy, language, typography, spacing, and visual system.",
   "Implementation mechanics are invisible infrastructure. Do not expose backend names, API/storage/runtime/hydration/fallback jargon, data-source mechanics, English design jargon, or policy wording in visitor-facing copy unless the route itself is explicitly Blog.",
   "Do not mention deployment refresh, fallback behavior, data hydration, API mechanics, data attributes, backend storage, or internal prompt terminology in visitor-facing copy.",
   "Use source-aligned fallback resource titles/excerpts only as preview fallbacks; deployment replaces or refreshes them from the project-scoped Blog D1 Worker API.",
-  "Detail links must use /blog/{slug}/ so deployment-time static detail pages and sitemap output are SEO-addressable.",
-  "Dynamic /blog/{slug}/ detail pages should inherit the selected route's detail grammar, such as resource, report, standard, case, news, insight, or blog article according to route semantics.",
   "Do not generate D1 credentials, Cloudflare binding code, worker code, or database secrets in static HTML.",
 ];
+
+function buildBlogDataSourceConstraints(
+  route: string,
+  navLabel: string,
+  requirementText: string,
+  pageKind: "blog-data-index" | "content-collection-index",
+): string[] {
+  const constraints = [
+    pageKind === "blog-data-index"
+      ? "Treat the selected blog/archive navigation route as a first-class page-specific editorial surface, not a detached generic article mockup or visible backend implementation block."
+      : "Treat the selected content-backed navigation route as a first-class page-specific collection surface, not a generic article mockup, detached landing page, or visible backend implementation block.",
+    ...CONTENT_DATA_SOURCE_CONSTRAINTS,
+  ];
+  if (shouldRequireBlogDetailPagesForRoute(route, navLabel, requirementText)) {
+    constraints.push("Detail links must use /blog/{slug}/ so deployment-time static detail pages and sitemap output are SEO-addressable.");
+    constraints.push(
+      "Dynamic /blog/{slug}/ detail pages should inherit the selected route's detail grammar, such as resource, report, standard, case, news, insight, or blog article according to route semantics.",
+    );
+  } else {
+    constraints.push(
+      "Do not invent /blog/{slug}/ article detail pages for generic information-platform, standards, or resource-hub routes unless the prompt, route identity, or source material explicitly asks for publishable article/news details.",
+    );
+  }
+  return constraints;
+}
 
 function allIndexesOf(input: string, needle: string): number[] {
   const text = String(input || "");
@@ -1164,6 +1277,9 @@ function buildPageBlueprint(
   }
   if (isBlogSemanticRoute(normalizedRoute, resolvedLabel)) {
     const semanticScore = scoreBlogSemanticRoute(normalizedRoute, resolvedLabel);
+    const pageKind = routeDefaultsToCollectionSurface(normalizedRoute, resolvedLabel)
+      ? "content-collection-index"
+      : "blog-data-index";
     const purpose = `Content collection page for "${resolvedLabel}". The visible page must follow this route's own information architecture; implementation capability must not become a visitor-facing topic.`;
     return {
       route: normalizedRoute,
@@ -1173,16 +1289,21 @@ function buildPageBlueprint(
       evidence,
       constraints: [
         "Canonical Website Prompt remains authoritative for brand voice, audience, language, and visual direction.",
-        `Blog backend route confidence: ${semanticScore.score}/100${semanticScore.reasons.length ? ` (${semanticScore.reasons.join("; ")})` : ""}.`,
-        ...BLOG_DATA_SOURCE_CONSTRAINTS,
+        `${pageKind === "blog-data-index" ? "Content archive route" : "Content collection route"} confidence: ${semanticScore.score}/100${semanticScore.reasons.length ? ` (${semanticScore.reasons.join("; ")})` : ""}.`,
+        ...buildBlogDataSourceConstraints(normalizedRoute, resolvedLabel, evidence || "", pageKind),
       ],
-      pageKind: "blog-data-index",
+      pageKind,
       responsibility: purpose,
       contentSkeleton: [
         "Site-matched hero explaining the value of this route's content/resource system",
         'Page-specific data-backed collection surface: <section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts">',
-        "Fallback resource cards inside [data-shpitto-blog-list] using the selected route taxonomy, categories, excerpts, dates, tags, and /blog/{slug}/ detail links",
+        pageKind === "blog-data-index"
+          ? "Fallback editorial/resource cards inside [data-shpitto-blog-list] using the selected route taxonomy, categories, excerpts, dates, tags, and any explicitly requested detail-link behavior"
+          : "Fallback collection/resource cards inside [data-shpitto-blog-list] using the selected route taxonomy, categories, excerpts, dates, tags, scope labels, and any explicitly requested detail-link behavior",
         "For information-platform or knowledge-hub routes, structure the visible list around page collections such as case library, standards/documents, research reports, policy updates, or product database entries when supported by the prompt",
+        shouldRequireBlogDetailPagesForRoute(normalizedRoute, resolvedLabel, evidence || "")
+          ? "Because this route behaves like a publishable archive, the visible cards should link to matching /blog/{slug}/ detail pages with route-appropriate detail grammar"
+          : "Because this route is a generic content/resource hub, keep the first pass focused on the collection/index surface unless the prompt explicitly asks for publishable article/news details",
         "Optional category/filter controls only if they are styled, page-specific, and usable with the static HTML content",
         "Contextual CTA that connects readers back to the site's primary conversion path",
       ],
@@ -1342,7 +1463,10 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
         singlePage: singlePageRoutes.length > 0,
         requirementText,
       });
-  const routes = orderNavigationRoutes(preOrderedRoutes).slice(0, 16);
+  const suppressedRoutes = suppressedContentRoutes(requirementText);
+  const routes = orderNavigationRoutes(
+    preOrderedRoutes.filter((route) => !suppressedRoutes.has(normalizeRoute(route))),
+  ).slice(0, 16);
 
   const labelMap = new Map<string, string>();
   const structuredNavLabels =

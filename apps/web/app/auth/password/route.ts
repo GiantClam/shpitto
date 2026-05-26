@@ -27,6 +27,58 @@ function jsonResponse(body: unknown, init?: ResponseInit) {
   });
 }
 
+function isTransientSupabaseAuthError(error: unknown): boolean {
+  const anyError = (error || {}) as {
+    code?: string;
+    cause?: { code?: string; message?: string };
+    message?: string;
+    name?: string;
+  };
+  const code = String(anyError.code || anyError.cause?.code || "").toUpperCase();
+  if (
+    [
+      "UND_ERR_CONNECT_TIMEOUT",
+      "UND_ERR_HEADERS_TIMEOUT",
+      "ETIMEDOUT",
+      "ECONNRESET",
+      "ECONNREFUSED",
+      "ENOTFOUND",
+      "EAI_AGAIN",
+    ].includes(code)
+  ) {
+    return true;
+  }
+
+  const text = `${anyError.name || ""} ${anyError.message || ""} ${anyError.cause?.message || ""}`.toLowerCase();
+  return [
+    "fetch failed",
+    "connect timeout",
+    "timed out",
+    "timeout",
+    "network",
+    "socket",
+    "connection reset",
+    "temporarily unavailable",
+    "service unavailable",
+    "tls",
+  ].some((token) => text.includes(token));
+}
+
+function authErrorResponse(error: unknown) {
+  const transient = isTransientSupabaseAuthError(error);
+  const message = transient
+    ? "Authentication service is temporarily unavailable. Please try again."
+    : String((error as { message?: unknown })?.message || "Invalid login credentials");
+  return jsonResponse(
+    {
+      ok: false,
+      error: message,
+      retryable: transient || undefined,
+    },
+    { status: transient ? 503 : 400 },
+  );
+}
+
 export async function POST(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -60,9 +112,18 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  let data;
+  let error;
+  try {
+    const result = await supabase.auth.signInWithPassword({ email, password });
+    data = result.data;
+    error = result.error;
+  } catch (caughtError) {
+    return authErrorResponse(caughtError);
+  }
+
   if (error) {
-    return jsonResponse({ ok: false, error: error.message }, { status: 400 });
+    return authErrorResponse(error);
   }
 
   if (data.user?.id) {

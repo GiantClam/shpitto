@@ -1,5 +1,5 @@
 const MOJIBAKE_PUNCTUATION_REPLACEMENTS: Array<[RegExp, string]> = [
-  [/â€™|â€˜|鈥檚|鈥榮|鈥汢|鈥橾/g, "’"],
+  [/â€™|â€˜/g, "’"],
   [/â€œ|â€�/g, '"'],
   [/â€”|â€“|鈥[?]?/g, " — "],
   [/â€¦/g, "..."],
@@ -68,6 +68,16 @@ export function isWorkflowArtifactEnglishSafe(text: string): boolean {
   if (containsWorkflowCjk(normalized)) return false;
   if (containsWorkflowEncodingNoise(normalized)) return false;
   return WORKFLOW_ALLOWED_CHARS_RE.test(normalized);
+}
+
+export function listWorkflowArtifactLanguageIssues(text: string): string[] {
+  const normalized = normalizeWorkflowArtifactText(text);
+  if (!normalized) return [];
+  const issues: string[] = [];
+  if (containsWorkflowCjk(normalized)) issues.push("contains CJK content");
+  if (containsWorkflowEncodingNoise(normalized)) issues.push("contains encoding noise");
+  if (containsWorkflowUnknownUnsafeChars(normalized)) issues.push("contains non-whitelisted characters");
+  return issues;
 }
 
 export function normalizeWorkflowArtifactToEnglishSafe(text: string): string {

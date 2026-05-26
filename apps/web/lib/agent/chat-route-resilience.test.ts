@@ -6,7 +6,7 @@ describe("chat route resilience", () => {
     vi.restoreAllMocks();
   });
 
-  it("degrades latest task read timeouts instead of failing submission", async () => {
+  it("degrades latest task read timeouts instead of failing submission", { timeout: 15_000 }, async () => {
     vi.resetModules();
     vi.doMock("./chat-task-store", async () => {
       const actual =

@@ -1,29 +1,35 @@
 ---
 name: "responsive-by-default"
-description: "Forces responsive checks across breakpoints and prevents fixed layouts. Invoke when building UI layout."
+description: "Responsive layout contract for generated websites. Use when creating or refining any page, route, section, table, navigation shell, media block, or form."
 ---
 
-# 默认响应式
+# Responsive By Default
 
-## 适用场景
+Generated websites must be usable at mobile, tablet, and desktop widths without relying on a later visual repair pass.
 
-生成布局与组件结构时必须启用响应式约束。
+## Required Breakpoints
 
-## 强制规则
+- Validate layout behavior at 320px, 768px, and 1440px.
+- Every multi-column grid must collapse or reflow before text, cards, tables, or media clip.
+- Touch targets must remain reachable and readable on small screens.
+- Fixed-width media and fixed-height containers are allowed only when paired with responsive `max-width`, `aspect-ratio`, or overflow rules.
 
-- 必须覆盖 320 / 768 / 1440 断点的布局逻辑
-- 禁止硬编码容器宽度，使用相对单位或栅格
-- 文字与按钮在小屏不溢出、不遮挡、不截断
-- 媒体元素保持自适应比例与可视区安全
+## Hard Rules
 
-## 检查清单
+1. Do not hard-code page, section, card, table, or media widths that exceed the viewport.
+2. Do not let button text, headings, nav labels, stat labels, or table cells overflow their container.
+3. Do not use heading CSS that causes arbitrary word breaks, automatic hyphenation, or cramped negative letter spacing.
+4. Tables and comparison matrices must either be wrapped in a responsive scroll shell or rendered as stacked cards on mobile.
+5. Hero side panels, stat cards, and summary cards must use short labels and compact facts. Long explanatory copy belongs in full-width sections.
+6. Images, video, and visual placeholders must preserve aspect ratio and must not cover important text.
 
-1. 栅格在小屏合并列数
-2. 间距与字号可缩放
-3. 关键交互在移动端可达
-4. 不存在横向滚动条
+## Completion Check
 
-## 禁止事项
+Before finishing a generated route, confirm:
 
-- 固定宽高导致裁切
-- 只适配桌面尺寸
+- no horizontal scroll at 320px,
+- primary navigation remains available,
+- all calls to action fit,
+- tables are responsive,
+- media crops remain meaningful,
+- footer links wrap cleanly.

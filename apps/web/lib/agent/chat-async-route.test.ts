@@ -82,6 +82,30 @@ describe("chat api async mode", () => {
     expect(workflow.requirementSpec?.contactSettings?.forwardTo).toEqual(["official@casux.org.cn"]);
   });
 
+  it("persists website surface mode and discovery brief in queued workflow context", async () => {
+    const chatId = `chat-surface-mode-${Date.now()}`;
+    const requirement =
+      "# Canonical Website Generation Prompt\n\nBuild a developer documentation portal with guides, API reference, and onboarding tutorials.";
+    const { POST } = await import("../../app/api/chat/route");
+    const res = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: chatId,
+          messages: [{ role: "user", parts: [{ type: "text", text: confirmPayload(requirement) }] }],
+        }),
+      }),
+    );
+
+    expect(res.status).toBe(202);
+    const task = await getLatestChatTaskForChat(chatId);
+    const workflow = (task?.result?.internal?.inputState as any)?.workflow_context || {};
+    expect(workflow.websiteSurfaceMode).toBe("docs-knowledge-site");
+    expect(workflow.websiteTypeSkillId).toBe("docs-knowledge-site");
+    expect(workflow.websiteDiscoveryBrief?.surfaceMode).toBe("docs-knowledge-site");
+  });
+
   it("returns existing active task instead of creating duplicate", async () => {
     const chatId = `chat-active-${Date.now()}`;
     const { POST } = await import("../../app/api/chat/route");
@@ -912,6 +936,62 @@ describe("chat api async mode", () => {
     );
   });
 
+  it("treats a no-home local checkpoint as complete when all planned route files exist", async () => {
+    const chatId = `chat-local-no-home-${Date.now()}`;
+    const taskId = `local-no-home-${Date.now()}`;
+    const root = path.resolve(process.cwd(), ".tmp", "chat-tasks", chatId, taskId, "latest");
+    const siteDir = path.join(root, "site");
+    const workflowDir = path.join(root, "workflow");
+    await fs.mkdir(path.join(siteDir, "casux-creation"), { recursive: true });
+    await fs.mkdir(path.join(siteDir, "standards-system"), { recursive: true });
+    await fs.mkdir(workflowDir, { recursive: true });
+    await fs.writeFile(
+      path.join(siteDir, "casux-creation", "index.html"),
+      "<!doctype html><html><body>CASUX creation</body></html>",
+      "utf8",
+    );
+    await fs.writeFile(
+      path.join(siteDir, "standards-system", "index.html"),
+      "<!doctype html><html><body>Standards</body></html>",
+      "utf8",
+    );
+    await fs.writeFile(path.join(siteDir, "styles.css"), "body{margin:0}", "utf8");
+    await fs.writeFile(path.join(siteDir, "script.js"), "console.log('ok')", "utf8");
+    await fs.writeFile(
+      path.join(workflowDir, "task_plan.md"),
+      ["# Task Plan", "", "- Routes: /casux-creation, /standards-system"].join("\n"),
+      "utf8",
+    );
+    await fs.writeFile(
+      path.join(root, "manifest.json"),
+      JSON.stringify({
+        savedAt: "2026-05-25T15:10:22.291Z",
+        latestUpdatedAt: "2026-05-25T15:10:22.291Z",
+        status: "done",
+      }),
+      "utf8",
+    );
+
+    const { GET } = await import("../../app/api/chat/tasks/[taskId]/route");
+    const res = await GET(new Request("http://localhost"), {
+      params: Promise.resolve({ taskId }),
+    });
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json?.recoveredFromLocalCheckpoint).toBe(true);
+    expect(json?.task?.status).toBe("succeeded");
+    expect(json?.task?.result?.progress?.missingFiles).toEqual([]);
+    expect(json?.task?.result?.progress?.generatedFiles).toEqual(
+      expect.arrayContaining([
+        "/casux-creation/index.html",
+        "/standards-system/index.html",
+        "/styles.css",
+        "/script.js",
+      ]),
+    );
+  });
+
   it("marks deploy confirmation requests and carries latest checkpoint path", async () => {
     const chatId = `chat-deploy-${Date.now()}`;
     const projectPath = path.resolve(process.cwd(), ".tmp", `chat-deploy-${Date.now()}.json`);
@@ -1210,6 +1290,162 @@ describe("chat api async mode", () => {
     const timeline = await listChatTimelineMessages(chatId, 30);
     expect(timeline.some((message) => String(message.text || "").includes("__SHP_CONFIRM_BLOG_CONTENT_DEPLOY__"))).toBe(false);
   });
+
+  it("preserves generic content-preview workflow aliases for non-blog content-backed routes", async () => {
+    const chatId = `chat-content-confirm-deploy-${Date.now()}`;
+    const siteArtifacts = {
+      projectId: "content-confirm-deploy-test",
+      pages: [
+        { path: "/", html: "<!doctype html><html><head></head><body>home</body></html>" },
+        { path: "/casux-information-platform", html: "<!doctype html><html><head></head><body>ok</body></html>" },
+      ],
+      staticSite: {
+        mode: "skill-direct",
+        files: [
+          {
+            path: "/index.html",
+            type: "text/html",
+            content: "<!doctype html><html><body><main><a href=\"/casux-information-platform/\">CASUX Information Platform</a></main></body></html>",
+          },
+          {
+            path: "/casux-information-platform/index.html",
+            type: "text/html",
+            content:
+              '<!doctype html><html><body><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><h1>CASUX Information Platform</h1><div data-shpitto-blog-list><article class="resource-card">preview</article></div></section></body></html>',
+          },
+        ],
+      },
+    };
+
+    const { createChatTask, completeChatTask } = await import("./chat-task-store");
+    const previous = await createChatTask(chatId, undefined, {
+      assistantText: "generated",
+      phase: "end",
+      internal: {
+        sessionState: {
+          messages: [],
+          phase: "end",
+          current_page_index: 0,
+          attempt_count: 0,
+          workflow_context: {
+            contentPreviewStatus: "pending_confirmation",
+            contentPreviewPosts: [
+              { slug: "casux-one", title: "CASUX One", excerpt: "preview entry", category: "CASUX", tags: ["CASUX"] },
+            ],
+          },
+          site_artifacts: siteArtifacts,
+        },
+      },
+      progress: { checkpointProjectPath: "/remote/project.json" } as any,
+    });
+    await completeChatTask(previous.id, {
+      assistantText: "generated",
+      phase: "end",
+      internal: previous.result?.internal,
+      progress: { checkpointProjectPath: "/remote/project.json" } as any,
+    });
+
+    const { POST } = await import("../../app/api/chat/route");
+    const res = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: chatId,
+          messages: [{ role: "user", parts: [{ type: "text", text: "deploy to shpitto server" }] }],
+        }),
+      }),
+    );
+
+    expect(res.status).toBe(202);
+    const latest = await getActiveChatTask(chatId);
+    const workflow = (latest?.result?.internal?.inputState as any)?.workflow_context || {};
+    expect(typeof workflow.executionMode).toBe("string");
+    expect(Array.isArray(workflow.contentPreviewPosts)).toBe(true);
+    expect(Array.isArray(workflow.blogContentPreviewPosts)).toBe(true);
+    expect(workflow.contentPreviewStatus || workflow.blogContentPreviewStatus).toBeTruthy();
+  });
+
+  it("queues deploy after generic content confirmation", async () => {
+    const chatId = `chat-content-confirm-deploy-queue-${Date.now()}`;
+    const siteArtifacts = {
+      projectId: "content-confirm-deploy-queue-test",
+      pages: [
+        { path: "/", html: "<!doctype html><html><head></head><body>home</body></html>" },
+        { path: "/casux-information-platform", html: "<!doctype html><html><head></head><body>ok</body></html>" },
+      ],
+      staticSite: {
+        mode: "skill-direct",
+        files: [
+          {
+            path: "/index.html",
+            type: "text/html",
+            content: "<!doctype html><html><body><main><a href=\"/casux-information-platform/\">CASUX Information Platform</a></main></body></html>",
+          },
+          {
+            path: "/casux-information-platform/index.html",
+            type: "text/html",
+            content:
+              '<!doctype html><html><body><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><h1>CASUX Information Platform</h1><div data-shpitto-blog-list><article class="resource-card">preview</article></div></section></body></html>',
+          },
+        ],
+      },
+    };
+
+    const { createChatTask, completeChatTask } = await import("./chat-task-store");
+    const previous = await createChatTask(chatId, undefined, {
+      assistantText: "generated",
+      phase: "end",
+      internal: {
+        sessionState: {
+          messages: [],
+          phase: "end",
+          current_page_index: 0,
+          attempt_count: 0,
+          workflow_context: {
+            contentPreviewStatus: "pending_confirmation",
+            contentPreviewPosts: [
+              { slug: "casux-one", title: "CASUX One", excerpt: "preview entry", category: "CASUX", tags: ["CASUX"] },
+            ],
+          },
+          site_artifacts: siteArtifacts,
+        },
+      },
+      progress: { checkpointProjectPath: "/remote/project.json" } as any,
+    });
+    await completeChatTask(previous.id, {
+      assistantText: "generated",
+      phase: "end",
+      internal: previous.result?.internal,
+      progress: { checkpointProjectPath: "/remote/project.json" } as any,
+    });
+
+    const { POST } = await import("../../app/api/chat/route");
+    const res = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: chatId,
+          messages: [{ role: "user", parts: [{ type: "text", text: "__SHP_CONFIRM_CONTENT_DEPLOY__" }] }],
+        }),
+      }),
+    );
+
+    expect(res.status).toBe(202);
+    const latest = await getActiveChatTask(chatId);
+    const workflow = (latest?.result?.internal?.inputState as any)?.workflow_context || {};
+    expect(workflow.executionMode).toBe("deploy");
+    expect(workflow.deployRequested).toBe(true);
+    expect(workflow.contentPreviewConfirmed).toBe(true);
+    expect(workflow.blogContentConfirmed).toBe(true);
+    expect(Array.isArray(workflow.contentPreviewPosts)).toBe(true);
+    expect(Array.isArray(workflow.blogContentPreviewPosts)).toBe(true);
+    expect(workflow.contentPreviewStatus || workflow.blogContentPreviewStatus).toBeTruthy();
+    const timeline = await listChatTimelineMessages(chatId, 30);
+    expect(timeline.some((message) => String(message.text || "").includes("__SHP_CONFIRM_CONTENT_DEPLOY__"))).toBe(false);
+  });
+
 
   it("preserves restored site artifacts and marks Chinese deploy requests", async () => {
     const chatId = `chat-deploy-zh-${Date.now()}`;

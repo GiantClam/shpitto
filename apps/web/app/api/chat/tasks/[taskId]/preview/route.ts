@@ -12,6 +12,6 @@ export async function GET(
     return NextResponse.json({ ok: false, error: "Missing taskId." }, { status: 400 });
   }
 
-  const target = new URL(`/api/chat/tasks/${encodeURIComponent(taskId)}/preview/index.html`, req.url);
+  const target = new URL(`/api/chat/tasks/${encodeURIComponent(taskId)}/preview/__default__`, req.url);
   return NextResponse.redirect(target, 307);
 }

@@ -30,6 +30,8 @@ This skill does not own page-by-page HTML generation. It owns the upstream contr
 1. `corporate-b2b-site`
 2. `marketing-landing-site`
 3. `portfolio-blog-site`
+4. `docs-knowledge-site`
+5. `content-hub-site`
 
 ## Orchestration rules
 
@@ -59,6 +61,25 @@ Choose `portfolio-blog-site` when the request centers on:
 - creator / consultant / resume presence
 - portfolio + blog
 - writing / insights / articles as first-class content
+
+### Docs / Knowledge
+
+Choose `docs-knowledge-site` when the request centers on:
+
+- documentation
+- guides / manuals / handbooks
+- developer portal / API reference
+- knowledge base / help center / implementation playbook
+
+### Content Hub
+
+Choose `content-hub-site` when the request centers on:
+
+- research center
+- information platform
+- standards system
+- downloads / resource hub / institutional collection
+- collection-first informational surfaces that should not default to corporate-b2b or explicit blog/archive behavior
 
 ## Shared output contract
 

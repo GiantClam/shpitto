@@ -49,7 +49,10 @@ export function createWebsiteGenerationSkillAdapter(skillId: string): SkillExecu
       files: RuntimeWorkflowFile[];
       requirementText?: string;
     }): SkillExecutionValidationResult {
-      return validateWebsiteRequiredFilesWithQaForAdapter(params);
+      return validateWebsiteRequiredFilesWithQaForAdapter({
+        ...params,
+        enforceCorporateHomepageContract: false,
+      });
     },
   };
 }

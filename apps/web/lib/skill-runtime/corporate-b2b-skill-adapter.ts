@@ -370,9 +370,12 @@ function resolveCorporateMaxToolRounds(decision: LocalDecisionPlan, requirementT
   const hasHome = decision.routes.some((route) => normalizeCorporatePath(route) === "/");
   const nonHomeCount = decision.routes.filter((route) => normalizeCorporatePath(route) !== "/").length;
   const routeRounds = (hasHome ? 1 : 0) + Math.ceil(nonHomeCount / CORPORATE_INTERIOR_TARGETS_PER_ROUND);
+  const routeSlackRounds = Math.max(1, Math.ceil(nonHomeCount / 5));
+  const noHomeSlackRounds = hasHome ? 0 : 1;
   return Math.min(
     CORPORATE_MAX_TOOL_ROUNDS,
-    Math.max(4, sharedAssetRounds + i18nRounds + routeRounds + 2) + CORPORATE_MAX_TOOL_QA_REPAIR_ROUNDS,
+    Math.max(4, sharedAssetRounds + i18nRounds + routeRounds + routeSlackRounds + noHomeSlackRounds + 2) +
+      CORPORATE_MAX_TOOL_QA_REPAIR_ROUNDS,
   );
 }
 

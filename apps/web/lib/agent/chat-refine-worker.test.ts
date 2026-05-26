@@ -161,7 +161,7 @@ describe("chat refine worker", () => {
     );
 
     const inputState: any = {
-      messages: [new HumanMessage({ content: "三篇blog缺少内容页面，请补充" })],
+      messages: [new HumanMessage({ content: "请为当前 blog 列表里已有的每篇文章补齐缺少的详情页。" })],
       phase: "end",
       current_page_index: 0,
       attempt_count: 0,

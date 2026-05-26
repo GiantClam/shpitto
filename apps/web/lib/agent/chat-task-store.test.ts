@@ -18,6 +18,7 @@ import {
   updateChatSessionForOwner,
   createSupabaseTaskFetch,
   updateChatTaskProgress,
+  withSupabaseTaskReadRetryForTesting,
 } from "./chat-task-store";
 
 describe("chat-task-store", () => {
@@ -239,6 +240,141 @@ describe("chat-task-store", () => {
       taskFetch("https://example.supabase.co/rest/v1/shpitto_chat_tasks", { method: "POST" }),
     ).rejects.toThrow("fetch failed");
     expect(calls).toBe(1);
+  });
+
+  it("retries transient Supabase task read queries before surfacing the failure", async () => {
+    const originalRetries = process.env.SUPABASE_TASK_READ_RETRIES;
+    const originalBase = process.env.SUPABASE_TASK_RETRY_BASE_MS;
+    process.env.SUPABASE_TASK_READ_RETRIES = "1";
+    process.env.SUPABASE_TASK_RETRY_BASE_MS = "0";
+
+    let calls = 0;
+    const readOnceThenRecover = async () => {
+      calls += 1;
+      if (calls === 1) {
+        const error = new Error("TypeError: fetch failed");
+        (error as any).cause = {
+          code: "ECONNRESET",
+          message: "Client network socket disconnected before secure TLS connection was established",
+        };
+        throw error;
+      }
+      return "ok";
+    };
+
+    try {
+      await expect(withSupabaseTaskReadRetryForTesting("test-read", readOnceThenRecover)).resolves.toBe("ok");
+      expect(calls).toBe(2);
+    } finally {
+      if (originalRetries === undefined) delete process.env.SUPABASE_TASK_READ_RETRIES;
+      else process.env.SUPABASE_TASK_READ_RETRIES = originalRetries;
+      if (originalBase === undefined) delete process.env.SUPABASE_TASK_RETRY_BASE_MS;
+      else process.env.SUPABASE_TASK_RETRY_BASE_MS = originalBase;
+    }
+  });
+
+  it("retries transient timeline reads instead of returning an empty prompt history", async () => {
+    const originalUseSupabase = process.env.CHAT_TASKS_USE_SUPABASE;
+    const originalUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const originalKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const originalRetries = process.env.SUPABASE_TASK_READ_RETRIES;
+    const originalBase = process.env.SUPABASE_TASK_RETRY_BASE_MS;
+    const originalClient = (globalThis as any).__shpittoSupabaseAdminClient;
+    const originalFetch = globalThis.fetch;
+
+    process.env.CHAT_TASKS_USE_SUPABASE = "1";
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
+    process.env.SUPABASE_TASK_READ_RETRIES = "1";
+    process.env.SUPABASE_TASK_RETRY_BASE_MS = "0";
+    (globalThis as any).__shpittoSupabaseAdminClient = undefined;
+
+    const chatId = `timeline-supabase-retry-${Date.now()}`;
+    let calls = 0;
+
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(typeof input === "string" || input instanceof URL ? input : input.url);
+      if (!url.includes("shpitto_chat_messages")) {
+        return originalFetch(input as any, init as any);
+      }
+      calls += 1;
+      if (calls === 1) {
+        const error = new Error("TypeError: fetch failed");
+        (error as any).cause = {
+          code: "ECONNRESET",
+          message: "Client network socket disconnected before secure TLS connection was established",
+        };
+        throw error;
+      }
+      return new Response(
+        JSON.stringify([
+          {
+            id: "msg-retry-1",
+            chat_id: chatId,
+            task_id: null,
+            role: "user",
+            text: "CASUX replay prompt",
+            metadata: null,
+            created_at: new Date().toISOString(),
+          },
+        ]),
+        {
+          status: 200,
+          headers: {
+            "content-type": "application/json",
+            apikey: "test-service-role-key",
+            authorization: "Bearer test-service-role-key",
+          },
+        },
+      );
+    }) as typeof globalThis.fetch;
+
+    try {
+      const timeline = await listChatTimelineMessages(chatId, 10);
+      expect(calls).toBe(2);
+      expect(timeline).toHaveLength(1);
+      expect(timeline[0]?.text).toBe("CASUX replay prompt");
+    } finally {
+      globalThis.fetch = originalFetch;
+      if (originalUseSupabase === undefined) delete process.env.CHAT_TASKS_USE_SUPABASE;
+      else process.env.CHAT_TASKS_USE_SUPABASE = originalUseSupabase;
+      if (originalUrl === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+      else process.env.NEXT_PUBLIC_SUPABASE_URL = originalUrl;
+      if (originalKey === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+      else process.env.SUPABASE_SERVICE_ROLE_KEY = originalKey;
+      if (originalRetries === undefined) delete process.env.SUPABASE_TASK_READ_RETRIES;
+      else process.env.SUPABASE_TASK_READ_RETRIES = originalRetries;
+      if (originalBase === undefined) delete process.env.SUPABASE_TASK_RETRY_BASE_MS;
+      else process.env.SUPABASE_TASK_RETRY_BASE_MS = originalBase;
+      (globalThis as any).__shpittoSupabaseAdminClient = originalClient;
+    }
+  });
+
+  it("does not retry non-transient Supabase task read query failures", async () => {
+    const originalRetries = process.env.SUPABASE_TASK_READ_RETRIES;
+    const originalBase = process.env.SUPABASE_TASK_RETRY_BASE_MS;
+    process.env.SUPABASE_TASK_READ_RETRIES = "1";
+    process.env.SUPABASE_TASK_RETRY_BASE_MS = "0";
+
+    let calls = 0;
+    const failValidation = async () => {
+      calls += 1;
+      const error = new Error("invalid request payload");
+      (error as any).code = "23514";
+      throw error;
+    };
+
+    try {
+      await expect(withSupabaseTaskReadRetryForTesting("test-read", failValidation)).rejects.toThrow(
+        "invalid request payload",
+      );
+      expect(calls).toBe(1);
+    } finally {
+      if (originalRetries === undefined) delete process.env.SUPABASE_TASK_READ_RETRIES;
+      else process.env.SUPABASE_TASK_READ_RETRIES = originalRetries;
+      if (originalBase === undefined) delete process.env.SUPABASE_TASK_RETRY_BASE_MS;
+      else process.env.SUPABASE_TASK_RETRY_BASE_MS = originalBase;
+    }
   });
 
   it("requeues stale running task for worker recovery", async () => {

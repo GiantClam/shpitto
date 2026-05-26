@@ -215,6 +215,40 @@ describe("skill-execution-adapter-registry", () => {
     ).toBeGreaterThanOrEqual(10);
   });
 
+  it("adds slack rounds for route-heavy corporate sites without a homepage", async () => {
+    const adapter = await getSkillExecutionAdapter("corporate-b2b-site");
+    const decision = createDecisionPlan({
+      locale: "zh-CN",
+      routes: [
+        "/casux-creation",
+        "/casux-construction",
+        "/casux-certification",
+        "/casux-advocacy",
+        "/casux-research-center",
+        "/casux-information-platform",
+        "/standards-system",
+        "/page-8",
+        "/case-studies",
+        "/page-10",
+      ],
+      navLabels: [
+        "Casux Creation",
+        "Casux Construction",
+        "Casux Certification",
+        "Casux Advocacy",
+        "Casux Research Center",
+        "Casux Information Platform",
+        "Standards System",
+        "Page 8",
+        "Case Studies",
+        "Page 10",
+      ],
+      pageBlueprints: [],
+    });
+
+    expect(adapter.resolveMaxToolRounds(decision, "Chinese standards and information platform site.")).toBe(20);
+  });
+
   it("owns a corporate-specific sanitize hook instead of forwarding emitted HTML sanitization", async () => {
     const adapter = await getSkillExecutionAdapter("corporate-b2b-site");
 

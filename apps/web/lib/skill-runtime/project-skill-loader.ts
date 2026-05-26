@@ -6,6 +6,8 @@ import {
   type SkillFrontmatterSummary,
   type WebsiteSkillMetadata,
 } from "./od-skill-metadata.ts";
+import { shouldSelectImportedWebsiteSkill, type WebsiteSurfaceMode } from "./open-design-adoption.ts";
+import { selectWebsiteGenerationTypeSkill } from "./website-type-selector.ts";
 
 export type ProjectSkillDescriptor = {
   id: string;
@@ -40,6 +42,8 @@ export const WEBSITE_GENERATION_TYPE_SKILL_IDS = [
   "corporate-b2b-site",
   "marketing-landing-site",
   "portfolio-blog-site",
+  "docs-knowledge-site",
+  "content-hub-site",
 ] as const;
 
 export const WEBSITE_GENERATION_SKILL_BUNDLE: string[] = [
@@ -99,6 +103,7 @@ type ProjectSkillIndexEntry = {
   name: string;
   description: string;
   triggers: string[];
+  rootDir: string;
   skillMdPath: string;
   websiteMetadata?: WebsiteSkillMetadata;
 };
@@ -120,6 +125,7 @@ export type ProjectSkillChecklistSummary = {
 
 export type ProjectSkillResourceIndex = {
   templateHtml?: ProjectSkillTemplateSummary;
+  exampleHtml?: ProjectSkillTemplateSummary;
   checklist?: ProjectSkillChecklistSummary;
 };
 
@@ -201,6 +207,7 @@ function summarizeChecklist(content: string, filePath: string): ProjectSkillChec
 async function buildProjectSkillResourceIndex(rootDir: string): Promise<ProjectSkillResourceIndex | undefined> {
   const fs = await import("node:fs/promises");
   const templatePath = path.join(rootDir, "assets", "template.html");
+  const examplePath = path.join(rootDir, "example.html");
   const checklistPath = path.join(rootDir, "references", "checklist.md");
   const resourceIndex: ProjectSkillResourceIndex = {};
 
@@ -208,12 +215,16 @@ async function buildProjectSkillResourceIndex(rootDir: string): Promise<ProjectS
     const template = summarizeTemplateHtml(await fs.readFile(templatePath, "utf8"), "assets/template.html");
     if (template) resourceIndex.templateHtml = template;
   }
+  if (await pathExists(examplePath)) {
+    const example = summarizeTemplateHtml(await fs.readFile(examplePath, "utf8"), "example.html");
+    if (example) resourceIndex.exampleHtml = example;
+  }
   if (await pathExists(checklistPath)) {
     const checklist = summarizeChecklist(await fs.readFile(checklistPath, "utf8"), "references/checklist.md");
     if (checklist) resourceIndex.checklist = checklist;
   }
 
-  return resourceIndex.templateHtml || resourceIndex.checklist ? resourceIndex : undefined;
+  return resourceIndex.templateHtml || resourceIndex.exampleHtml || resourceIndex.checklist ? resourceIndex : undefined;
 }
 
 export function renderProjectSkillResourceIndex(index?: ProjectSkillResourceIndex): string {
@@ -226,6 +237,18 @@ export function renderProjectSkillResourceIndex(index?: ProjectSkillResourceInde
         index.templateHtml.tokenNames.length > 0 ? `tokens ${index.templateHtml.tokenNames.join(", ")}` : "",
         index.templateHtml.keyClasses.length > 0 ? `key classes ${index.templateHtml.keyClasses.join(", ")}` : "",
         index.templateHtml.responsiveBreakpoint ? `responsive collapse at ${index.templateHtml.responsiveBreakpoint}` : "",
+      ]
+        .filter(Boolean)
+        .join("; "),
+    );
+  }
+  if (index.exampleHtml) {
+    lines.push(
+      [
+        `- ${index.exampleHtml.path}: example-backed HTML contract`,
+        index.exampleHtml.tokenNames.length > 0 ? `tokens ${index.exampleHtml.tokenNames.join(", ")}` : "",
+        index.exampleHtml.keyClasses.length > 0 ? `key classes ${index.exampleHtml.keyClasses.join(", ")}` : "",
+        index.exampleHtml.responsiveBreakpoint ? `responsive collapse at ${index.exampleHtml.responsiveBreakpoint}` : "",
       ]
         .filter(Boolean)
         .join("; "),
@@ -248,44 +271,61 @@ export function renderProjectSkillResourceIndex(index?: ProjectSkillResourceInde
 }
 
 export async function listProjectSkills(start?: string): Promise<string[]> {
+  const index = await readProjectSkillIndex(start);
+  return Array.from(new Set(index.map((entry) => entry.id))).sort();
+}
+
+type SkillDirectoryEntry = {
+  id: string;
+  rootDir: string;
+  skillMdPath: string;
+};
+
+async function collectSkillDirectories(
+  skillsRoot: string,
+  relativePath = "",
+  depth = 0,
+  maxDepth = 3,
+): Promise<SkillDirectoryEntry[]> {
   const fs = await import("node:fs/promises");
-  const skillsRoot = await getProjectSkillsRoot(start);
+  const currentDir = relativePath ? path.join(skillsRoot, relativePath) : skillsRoot;
   let entries: Array<{ name: string; isDirectory: () => boolean }> = [];
   try {
-    entries = await fs.readdir(skillsRoot, { withFileTypes: true });
+    entries = await fs.readdir(currentDir, { withFileTypes: true });
   } catch {
     return [];
   }
 
-  const ids: string[] = [];
+  const found: SkillDirectoryEntry[] = [];
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
-    const id = toSkillId(entry.name);
-    if (!id) continue;
-    const skillMdPath = path.join(skillsRoot, entry.name, "SKILL.md");
-    if (!(await pathExists(skillMdPath))) continue;
-    ids.push(id);
+    const nextRelative = relativePath ? path.join(relativePath, entry.name) : entry.name;
+    const skillMdPath = path.join(skillsRoot, nextRelative, "SKILL.md");
+    if (await pathExists(skillMdPath)) {
+      const id = toSkillId(entry.name);
+      if (id) {
+        found.push({
+          id,
+          rootDir: path.join(skillsRoot, nextRelative),
+          skillMdPath,
+        });
+      }
+      continue;
+    }
+    if (depth >= maxDepth) continue;
+    found.push(...(await collectSkillDirectories(skillsRoot, nextRelative, depth + 1, maxDepth)));
   }
-  return ids.sort();
+
+  return found;
 }
 
 async function readProjectSkillIndex(start?: string): Promise<ProjectSkillIndexEntry[]> {
   const fs = await import("node:fs/promises");
   const skillsRoot = await getProjectSkillsRoot(start);
-  let entries: Array<{ name: string; isDirectory: () => boolean }> = [];
-  try {
-    entries = await fs.readdir(skillsRoot, { withFileTypes: true });
-  } catch {
-    return [];
-  }
-
+  const directories = await collectSkillDirectories(skillsRoot);
   const index: ProjectSkillIndexEntry[] = [];
-  for (const entry of entries) {
-    if (!entry.isDirectory()) continue;
-    const id = toSkillId(entry.name);
-    if (!id) continue;
-    const skillMdPath = path.join(skillsRoot, entry.name, "SKILL.md");
-    if (!(await pathExists(skillMdPath))) continue;
+  for (const directory of directories) {
+    const { id, rootDir, skillMdPath } = directory;
     const content = await fs.readFile(skillMdPath, "utf8");
     const frontmatter = parseSkillFrontmatterSummary(id, content);
     let websiteMetadata: WebsiteSkillMetadata | undefined;
@@ -299,6 +339,7 @@ async function readProjectSkillIndex(start?: string): Promise<ProjectSkillIndexE
       name: frontmatter.name,
       description: frontmatter.description,
       triggers: frontmatter.triggers,
+      rootDir,
       skillMdPath,
       websiteMetadata,
     });
@@ -340,9 +381,14 @@ function normalizeIntentText(parts: string[]): string {
     .trim();
 }
 
-function scoreWebsiteSeedSkill(entry: ProjectSkillIndexEntry, intentText: string): WebsiteSeedSkillSelection {
+function scoreWebsiteSeedSkill(
+  entry: ProjectSkillIndexEntry,
+  intentText: string,
+  surfaceMode?: WebsiteSurfaceMode,
+): WebsiteSeedSkillSelection {
   const name = toSkillId(entry.name).replace(/[-_.]+/g, " ");
   const scenario = String(entry.websiteMetadata?.scenario || "").toLowerCase();
+  const compatibleSurfaceModes = entry.websiteMetadata?.activation?.compatibleSurfaceModes || [];
   const triggerHits = entry.triggers
     .map((trigger) => trigger.trim())
     .filter(Boolean)
@@ -357,6 +403,11 @@ function scoreWebsiteSeedSkill(entry: ProjectSkillIndexEntry, intentText: string
   if (scenario && intentText.includes(scenario)) {
     score += 5;
     reasons.push(`scenario:${scenario}`);
+  }
+  if (surfaceMode && compatibleSurfaceModes.includes(surfaceMode)) {
+    const surfaceBonus = entry.websiteMetadata?.activation?.rolloutStatus === "staged" ? 24 : 6;
+    score += surfaceBonus;
+    reasons.push(`surface:${surfaceMode}`);
   }
   for (const trigger of triggerHits) {
     score += Math.min(16, 8 + Math.floor(trigger.length / 4));
@@ -378,13 +429,23 @@ export async function selectWebsiteSeedSkillsForIntent(params: {
   maxSkills?: number;
   start?: string;
 }): Promise<WebsiteSeedSkillSelection[]> {
-  const index = (await readProjectSkillIndex(params.start)).filter((entry) => entry.websiteMetadata?.mode === "website");
+  const index = (await readProjectSkillIndex(params.start)).filter((entry) => {
+    if (entry.websiteMetadata?.mode !== "website") return false;
+    return shouldSelectImportedWebsiteSkill({
+      activationMode: entry.websiteMetadata.activation?.mode,
+      rolloutStatus: entry.websiteMetadata.activation?.rolloutStatus,
+    });
+  });
   if (index.length === 0) return [];
 
   const intentText = normalizeIntentText([params.requirementText || "", ...(params.routes || [])]);
   const maxSkills = Math.max(1, Number(params.maxSkills || 2));
+  const surfaceMode = selectWebsiteGenerationTypeSkill({
+    requirementText: params.requirementText,
+    routes: params.routes,
+  }).surfaceMode;
   const scored = index
-    .map((entry) => scoreWebsiteSeedSkill(entry, intentText))
+    .map((entry) => scoreWebsiteSeedSkill(entry, intentText, surfaceMode))
     .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
 
@@ -481,15 +542,22 @@ async function resolveProjectSkillId(skillId: string, start?: string): Promise<s
   return match?.id || normalized;
 }
 
-export async function loadProjectSkill(skillId: string, start?: string): Promise<ProjectSkillDescriptor> {
+async function resolveProjectSkillIndexEntry(skillId: string, start?: string): Promise<ProjectSkillIndexEntry | undefined> {
   const normalized = await resolveProjectSkillId(skillId, start);
-  if (!normalized) {
+  if (!normalized) return undefined;
+  const index = await readProjectSkillIndex(start);
+  return index.find((entry) => entry.id === normalized);
+}
+
+export async function loadProjectSkill(skillId: string, start?: string): Promise<ProjectSkillDescriptor> {
+  const entry = await resolveProjectSkillIndexEntry(skillId, start);
+  if (!entry?.id) {
     throw new Error("skill_id is required");
   }
 
   const fs = await import("node:fs/promises");
-  const skillsRoot = await getProjectSkillsRoot(start);
-  const targetRoot = path.join(skillsRoot, normalized);
+  const normalized = entry.id;
+  const targetRoot = entry.rootDir;
   const skillMdPath = path.join(targetRoot, "SKILL.md");
   const skillJsonPath = path.join(targetRoot, "skill.json");
 

@@ -1,23 +1,30 @@
 ---
 name: "section-quality-checklist"
-description: "Defines a mandatory quality checklist for each section. Invoke after generating any section."
+description: "Section-level quality contract for generated website pages. Use after creating or refining any visible section."
 ---
 
-# 区块质量检查清单
+# Section Quality Checklist
 
-## 适用场景
+Every visible section must earn its place in the site. A polished page is built from route-specific sections, not generic modules with swapped text.
 
-每次生成 Section 后立即执行。
+## Mandatory Checks
 
-## 必查项
+1. Structure: the section has a clear role, heading hierarchy, body copy, and next action when an action is needed.
+2. Copy: headings and body text speak about the website subject, not the page layout, workflow, route plan, or design system.
+3. Specificity: avoid generic labels such as `Feature One`, `Learn More`, `Get Started`, placeholder testimonials, invented metrics, and unsupported claims.
+4. Design system: colors, spacing, radius, shadows, and typography come from the active token system or documented design direction.
+5. Rhythm: the section does not repeat the same card row, stat row, quote block, or opening pattern used immediately before it.
+6. Accessibility: semantic tags, labels, focus order, contrast, and link purposes are understandable without visual context.
+7. Responsiveness: the section fits at 320px, 768px, and 1440px without clipping or awkward text wrapping.
+8. Route ownership: interior routes must use openings and modules that fit their route purpose, not a repeated homepage hero.
 
-1. 结构：标题、描述、主操作、次操作是否齐全
-2. 文案：标题聚焦收益，正文清晰，无术语堆砌
-3. 设计系统：颜色/间距/圆角/阴影均来自 tokens
-4. 交互：按钮状态完整（默认/悬停/禁用/加载）
-5. 可达性：对比度、语义标签、可聚焦顺序正确
-6. 响应式：移动端无溢出，栅格合理折叠
+## Fail Fast
 
-## 记录
+Regenerate or repair the section before moving on if it contains:
 
-- 在 progress.md 中记录通过/不通过与修复项
+- visitor-facing implementation notes or design rationale,
+- placeholder copy, placeholder image URLs, or demo assets,
+- fake numbers or fake social proof,
+- overflowing text,
+- duplicated route openings,
+- footer/nav drift from the planned route set.

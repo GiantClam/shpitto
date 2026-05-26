@@ -69,6 +69,32 @@ describe("recommendWebsiteDesignDirections", () => {
     expect(results.slice(0, 2).map((item) => item.direction.id)).not.toContain("warm-soft");
   });
 
+  it("suppresses heritage-manufacturing for institutional knowledge-platform company signals", () => {
+    const results = recommendWebsiteDesignDirections({
+      siteType: "company",
+      targetAudience: ["government"],
+      primaryGoal: ["brand_trust"],
+      contentSources: ["uploaded_files"],
+      customNotes:
+        "Standards system, CASUX research center, information platform, certification hub, advocacy resources, and public-interest documentation portal.",
+    });
+
+    expect(results.map((item) => item.direction.id)).not.toContain("heritage-manufacturing");
+  });
+
+  it("does not treat generic materials language alone as an explicit heritage-manufacturing request", () => {
+    const results = recommendWebsiteDesignDirections({
+      siteType: "company",
+      targetAudience: ["government"],
+      primaryGoal: ["brand_trust"],
+      contentSources: ["uploaded_files"],
+      customNotes:
+        "CASUX information platform for standards, research materials, certification references, and advocacy resources.",
+    });
+
+    expect(results[0]?.direction.id).not.toBe("heritage-manufacturing");
+  });
+
   it("suppresses warm brand themes when technical utility signals dominate", () => {
     const results = recommendWebsiteDesignDirections({
       siteType: "landing",

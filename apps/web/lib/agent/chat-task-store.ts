@@ -204,6 +204,7 @@ const TASK_TABLE = "shpitto_chat_tasks";
 const TASK_EVENTS_TABLE = "shpitto_chat_task_events";
 const TASK_MESSAGES_TABLE = "shpitto_chat_messages";
 const TASK_SESSIONS_TABLE = "shpitto_chat_sessions";
+const SUPABASE_TIMEOUT_SLACK_MULTIPLIER = 1.2;
 
 type TaskStore = {
   tasks: Map<string, ChatTaskRecord>;
@@ -237,16 +238,28 @@ function clampNumber(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+function scaleDefaultTimeoutMs(value: number): number {
+  return Math.round(Number(value || 0) * SUPABASE_TIMEOUT_SLACK_MULTIPLIER);
+}
+
 function resolveSupabaseTaskFetchTimeoutMs(): number {
-  return clampNumber(readNumberEnv("SUPABASE_TASK_FETCH_TIMEOUT_MS", 30_000), 5_000, 120_000);
+  return clampNumber(readNumberEnv("SUPABASE_TASK_FETCH_TIMEOUT_MS", scaleDefaultTimeoutMs(30_000)), 5_000, 120_000);
 }
 
 function resolveSupabaseTaskConnectTimeoutMs(timeoutMs: number): number {
-  return clampNumber(readNumberEnv("SUPABASE_TASK_CONNECT_TIMEOUT_MS", Math.min(timeoutMs, 30_000)), 5_000, timeoutMs);
+  return clampNumber(
+    readNumberEnv("SUPABASE_TASK_CONNECT_TIMEOUT_MS", Math.min(timeoutMs, scaleDefaultTimeoutMs(30_000))),
+    5_000,
+    timeoutMs,
+  );
 }
 
 function resolveSupabaseTaskFetchRetries(): number {
   return clampNumber(readNumberEnv("SUPABASE_TASK_FETCH_RETRIES", 2), 0, 4);
+}
+
+function resolveSupabaseTaskReadRetries(): number {
+  return clampNumber(readNumberEnv("SUPABASE_TASK_READ_RETRIES", 2), 0, 2);
 }
 
 function resolveSupabaseTaskRetryBaseMs(): number {
@@ -1182,16 +1195,18 @@ export async function getLatestPreviewableChatTaskForChat(
   }
 
   try {
-    const supabase = mustGetSupabaseClient();
-    let query = supabase.from(TASK_TABLE).select("*").eq("chat_id", chatId);
-    if (statuses?.length) {
-      query = query.in("status", statuses);
-    }
-    const { data, error } = await query.order("created_at", { ascending: false }).limit(20);
-    if (error) throw error;
-    const rows = Array.isArray(data) ? data : [];
-    const tasks = rows.map((row) => rememberSupabaseTask(fromRow(row as SupabaseTaskRow))!);
-    return tasks.find((task) => taskHasLocalPreviewBaseline(task));
+    return await withSupabaseTaskReadRetry(`getLatestPreviewableChatTaskForChat(${chatId})`, async () => {
+      const supabase = mustGetSupabaseClient();
+      let query = supabase.from(TASK_TABLE).select("*").eq("chat_id", chatId);
+      if (statuses?.length) {
+        query = query.in("status", statuses);
+      }
+      const { data, error } = await query.order("created_at", { ascending: false }).limit(20);
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      const tasks = rows.map((row) => rememberSupabaseTask(fromRow(row as SupabaseTaskRow))!);
+      return tasks.find((task) => taskHasLocalPreviewBaseline(task));
+    });
   } catch (error) {
     cleanupTasks();
     const allowedStatuses = statuses?.length ? new Set(statuses) : undefined;
@@ -1208,6 +1223,31 @@ export async function getLatestPreviewableChatTaskForChat(
 
 function isTransientTaskStoreError(error: unknown): boolean {
   return isTransientSupabaseTaskFetchError(error);
+}
+
+async function withSupabaseTaskReadRetry<T>(scope: string, read: () => Promise<T>): Promise<T> {
+  const maxAttempts = Math.max(1, resolveSupabaseTaskReadRetries() + 1);
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      return await read();
+    } catch (error) {
+      if (attempt >= maxAttempts || !isTransientTaskStoreError(error)) {
+        throw error;
+      }
+      const delayMs = Math.min(5_000, resolveSupabaseTaskRetryBaseMs() * attempt);
+      console.warn(
+        `[chat-task-store] ${scope} transient Supabase read failure (attempt ${attempt}/${maxAttempts}), retrying in ${delayMs}ms: ${formatUnknownError(error)}`,
+      );
+      await sleepMs(delayMs);
+    }
+  }
+
+  throw new Error(`Supabase task read failed for ${scope}.`);
+}
+
+export async function withSupabaseTaskReadRetryForTesting<T>(scope: string, read: () => Promise<T>): Promise<T> {
+  return withSupabaseTaskReadRetry(scope, read);
 }
 
 function isRetryableSupabaseTaskWriteError(error: unknown): boolean {
@@ -2027,11 +2067,13 @@ export async function getChatTask(taskId: string): Promise<ChatTaskRecord | unde
   }
 
   try {
-    const supabase = mustGetSupabaseClient();
-    const { data, error } = await supabase.from(TASK_TABLE).select("*").eq("id", taskId).maybeSingle();
-    if (error) throw error;
-    if (!data) return undefined;
-    return rememberSupabaseTask(fromRow(data as SupabaseTaskRow));
+    return await withSupabaseTaskReadRetry(`getChatTask(${taskId})`, async () => {
+      const supabase = mustGetSupabaseClient();
+      const { data, error } = await supabase.from(TASK_TABLE).select("*").eq("id", taskId).maybeSingle();
+      if (error) throw error;
+      if (!data) return undefined;
+      return rememberSupabaseTask(fromRow(data as SupabaseTaskRow));
+    });
   } catch (error) {
     const remembered = getRememberedTask(taskId);
     if (remembered && isTransientTaskStoreError(error)) {
@@ -2100,19 +2142,21 @@ export async function getActiveChatTask(chatId: string): Promise<ChatTaskRecord 
   }
 
   try {
-    const supabase = mustGetSupabaseClient();
-    const { data, error } = await supabase
-      .from(TASK_TABLE)
-      .select("*")
-      .eq("chat_id", chatId)
-      .order("created_at", { ascending: false })
-      .limit(5);
-    if (error) throw error;
-    const rows = Array.isArray(data) ? (data as SupabaseTaskRow[]) : data ? [data as SupabaseTaskRow] : [];
-    const task = rows
-      .map((row) => rememberSupabaseTask(fromRow(row))!)
-      .find((item) => item.status === "queued" || item.status === "running");
-    return task;
+    return await withSupabaseTaskReadRetry(`getActiveChatTask(${chatId})`, async () => {
+      const supabase = mustGetSupabaseClient();
+      const { data, error } = await supabase
+        .from(TASK_TABLE)
+        .select("*")
+        .eq("chat_id", chatId)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      const rows = Array.isArray(data) ? (data as SupabaseTaskRow[]) : data ? [data as SupabaseTaskRow] : [];
+      const task = rows
+        .map((row) => rememberSupabaseTask(fromRow(row))!)
+        .find((item) => item.status === "queued" || item.status === "running");
+      return task;
+    });
   } catch (error) {
     const remembered = getRememberedActiveTask(chatId);
     if (remembered && isTransientTaskStoreError(error)) {
@@ -2133,17 +2177,19 @@ export async function getLatestChatTaskForChat(chatId: string): Promise<ChatTask
   }
 
   try {
-    const supabase = mustGetSupabaseClient();
-    const { data, error } = await supabase
-      .from(TASK_TABLE)
-      .select("*")
-      .eq("chat_id", chatId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (error) throw error;
-    if (!data) return undefined;
-    return rememberSupabaseTask(fromRow(data as SupabaseTaskRow));
+    return await withSupabaseTaskReadRetry(`getLatestChatTaskForChat(${chatId})`, async () => {
+      const supabase = mustGetSupabaseClient();
+      const { data, error } = await supabase
+        .from(TASK_TABLE)
+        .select("*")
+        .eq("chat_id", chatId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return undefined;
+      return rememberSupabaseTask(fromRow(data as SupabaseTaskRow));
+    });
   } catch (error) {
     const remembered = getRememberedLatestTask(chatId);
     if (remembered && isTransientTaskStoreError(error)) {
@@ -2164,19 +2210,21 @@ export async function getLatestDeployableChatTaskForChat(
   }
 
   try {
-    const supabase = mustGetSupabaseClient();
-    let query = supabase
-      .from(TASK_TABLE)
-      .select("*")
-      .eq("chat_id", chatId);
-    if (statuses?.length) {
-      query = query.in("status", statuses);
-    }
-    const { data, error } = await query.order("created_at", { ascending: false }).limit(20);
-    if (error) throw error;
-    const rows = Array.isArray(data) ? data : [];
-    const tasks = rows.map((row) => rememberSupabaseTask(fromRow(row as SupabaseTaskRow))!);
-    return tasks.find((task) => taskHasDeployableBaseline(task));
+    return await withSupabaseTaskReadRetry(`getLatestDeployableChatTaskForChat(${chatId})`, async () => {
+      const supabase = mustGetSupabaseClient();
+      let query = supabase
+        .from(TASK_TABLE)
+        .select("*")
+        .eq("chat_id", chatId);
+      if (statuses?.length) {
+        query = query.in("status", statuses);
+      }
+      const { data, error } = await query.order("created_at", { ascending: false }).limit(20);
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      const tasks = rows.map((row) => rememberSupabaseTask(fromRow(row as SupabaseTaskRow))!);
+      return tasks.find((task) => taskHasDeployableBaseline(task));
+    });
   } catch (error) {
     const remembered = getRememberedLatestBaselineTask(chatId, statuses);
     if (remembered && isTransientTaskStoreError(error)) {
@@ -2362,25 +2410,32 @@ async function upsertTaskProgressTimelineMessageBestEffort(
 export async function listChatTimelineMessages(chatId: string, limit = 300): Promise<ChatTimelineMessage[]> {
   const normalizedChatId = String(chatId || "").trim();
   if (!normalizedChatId) return [];
+  const safeLimit = Math.max(1, Math.min(1000, limit));
 
   if (!isSupabaseTaskStoreEnabled()) {
     cleanupTasks();
     const existing = getStore().messagesByChat.get(normalizedChatId) || [];
-    return existing.slice(-Math.max(1, Math.min(1000, limit)));
+    return existing.slice(-safeLimit);
   }
 
   try {
-    const supabase = mustGetSupabaseClient();
-    const safeLimit = Math.max(1, Math.min(1000, limit));
-    const { data, error } = await supabase
-      .from(TASK_MESSAGES_TABLE)
-      .select("*")
-      .eq("chat_id", normalizedChatId)
-      .order("created_at", { ascending: true })
-      .limit(safeLimit);
-    if (error) return [];
-    return Array.isArray(data) ? (data as SupabaseChatMessageRow[]).map(fromMessageRow) : [];
-  } catch {
+    return await withSupabaseTaskReadRetry(`listChatTimelineMessages(${normalizedChatId})`, async () => {
+      const supabase = mustGetSupabaseClient();
+      const { data, error } = await supabase
+        .from(TASK_MESSAGES_TABLE)
+        .select("*")
+        .eq("chat_id", normalizedChatId)
+        .order("created_at", { ascending: true })
+        .limit(safeLimit);
+      if (error) throw error;
+      return Array.isArray(data) ? (data as SupabaseChatMessageRow[]).map(fromMessageRow) : [];
+    });
+  } catch (error) {
+    const remembered = (getStore().messagesByChat.get(normalizedChatId) || []).slice(-safeLimit);
+    if (remembered.length > 0 && isTransientTaskStoreError(error)) {
+      warnTaskStoreFallback(`listChatTimelineMessages(${normalizedChatId})`, error);
+      return remembered;
+    }
     return [];
   }
 }

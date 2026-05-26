@@ -191,9 +191,9 @@ following inputs.
     proof row, or footer copy
   - unless the brief explicitly asks for company history or heritage
     storytelling, do not use plain `heritage` as homepage value language
-  - specifically do not write homepage kickers such as `Heritage textile
-    manufacturing` or `heritage textile production`; use business offer,
-    sourcing reliability, or buyer-fit language instead
+  - specifically do not write homepage kickers that expose hidden vertical
+    presets or art-direction metadata; use business offer, sourcing
+    reliability, operating trust, or buyer-fit language instead
   - on `products`, `custom-solutions`, and `cases`, make the route-owned
     opening class explicit in the first section wrapper itself (for example
     `catalog-lead`, `process-intro`, `evidence-header`) rather than leading

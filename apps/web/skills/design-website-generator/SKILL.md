@@ -239,9 +239,6 @@ distributors, or export customers:
   `artisan` in visible copy unless the source material explicitly uses them.
 - Rewrite visible copy toward export readiness, sourcing clarity, manufacturing
   capability, proof, delivery discipline, and inquiry readiness.
-- For towel / home-textile / pool-textile / beach-adjacent exporters, default
-  to marine blue + white with restrained light-neutral support unless the brand
-  explicitly overrides it.
 
 ### 3.0.7 Image Usage For Company/Product Sites (Mandatory)
 
@@ -268,30 +265,18 @@ distributors, or export customers:
 - Visible copy, placeholders, and CTA labels must be free of mojibake or
   encoding-corrupted punctuation.
 
-### 3.0.8 Towel / Home-Textile Export Visual Variant (Mandatory when signals match)
+### 3.0.8 Industry-Neutral Company Visual Rule (Mandatory)
 
-If the brief clearly targets towels, home textiles, hospitality textiles, pool
-textiles, beach textiles, or export textile sourcing:
+The generic company generator must not encode one specific product vertical as
+its default visual grammar.
 
-- Use a corporate marine palette, not a warm heritage palette.
-- Preferred direction:
-  - primary: `#1276C2` to `#1E88D8`
-  - support: `#67B7E8`
-  - white: `#FFFFFF`
-  - light blue surfaces: `#F3FAFF`
-  - light border blue: `#D4E8F5`
-  - optional sand accent only as a minor secondary note
-- Keep typography sans-led and crisp.
-- Do not surface internal direction labels as visitor-facing copy.
-- Do not surface implementation mechanics such as `text wordmark`, `locale`,
-  `site experience`, or `i18n` in visible shared-shell copy.
-- Preferred hero/support visuals:
-  - folded towels
-  - towel stacks
-  - poolside / beach / spa / hospitality scenes
-  - textile close-ups
-  - factory or process proof when relevant
-- Real stock/library imagery outranks synthetic illustration.
+- Do not hardcode towels, home textiles, hospitality, pool/beach scenes, or
+  any other sector-specific palette/image bundle into the generic company flow.
+- Choose palette, media, and surface tone from the confirmed prompt, source
+  material, and selected visual direction.
+- Real stock/library imagery may still outrank synthetic illustration, but the
+  subject matter must be justified by the source material rather than by a
+  hidden vertical preset.
 
 ### 3.0.6 Text Wordmark Handling (Mandatory)
 

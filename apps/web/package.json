@@ -14,6 +14,8 @@
     "deploy-worker:once": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/deploy-task-worker.mts --once",
     "deploy-worker:preflight": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/deploy-worker-preflight.mts",
     "ops:wa:cleanup": "node --experimental-strip-types scripts/wa-site-cleanup.ts",
+    "smoke:open-design-adoption": "vitest run lib/agent/open-design-adoption-smoke.test.ts --reporter=dot",
+    "smoke:open-design-homepage:live": "vitest run lib/agent/open-design-homepage-live.test.ts --reporter=dot",
     "smoke:blog-runtime": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/blog-runtime-smoke.mts",
     "smoke:blog-runtime:wrangler": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/blog-runtime-wrangler-smoke.mts",
     "build": "next build",

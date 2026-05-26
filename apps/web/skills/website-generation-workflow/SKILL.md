@@ -151,7 +151,7 @@ When the site type is `company` and the audience includes enterprise buyers, pro
 2b. Unless the brief explicitly asks for company history or legacy storytelling, do not turn words such as `heritage`, `craft tradition`, or similar legacy-positioning language into homepage value claims. Use buyer-facing claims about sourcing clarity, quality control, responsiveness, and production discipline instead.
 2c. Treat plain `heritage` as blocked homepage value language by default. Only use it when the brief explicitly requests heritage/history storytelling.
 3. Prefer company-facing language such as:
-   - export-ready textile manufacturing
+   - enterprise manufacturing capability
    - procurement-ready product presentation
    - sourcing support
    - production coordination
@@ -207,7 +207,7 @@ If the site is a company/manufacturer/procurement-facing B2B website, apply this
 8. The first screen must establish company scope, buyer relevance, and operational proof before any secondary supporting panel or visual callout.
 9. Homepage section labels and opening modules should sound like enterprise information architecture: company overview, sourcing support, capability proof, product range, response process. They must not sound like personal branding, editorial storytelling, or lifestyle campaign framing.
 10. Do not surface legacy direction labels or mood labels such as `heritage`, `heritage craft`, `warm palette`, `craft`, or similar in the eyebrow, hero, section labels, footer meta, footer chips, or trust rows. Those are internal styling cues, not visitor-facing company copy.
-10c. Do not write homepage eyebrow/kicker text such as `Heritage textile manufacturing`, `heritage textile production`, or similar heritage-led taglines unless the brief explicitly asks for history/heritage storytelling. Prefer operational business framing instead.
+10c. Do not write homepage eyebrow/kicker text that exposes a hidden product vertical or heritage-led art-direction preset unless the brief explicitly asks for that exact public positioning. Prefer operational business framing instead.
 10a. Do not surface implementation or brand-system mechanics in visible header/footer/shared-shell copy. Phrases such as `text wordmark`, `wordmark brand presentation`, `brand system`, `site experience`, `language strategy`, `English-first`, `i18n`, `locale`, or similar implementation notes are not visitor-facing enterprise copy.
 10b. The same ban applies to compact tags, chips, or trust-signal rows. Do not emit visitor-facing tags such as `Text wordmark brand`, `Bilingual experience`, or similar implementation shorthand inside homepage proof rows, buyer-signal rows, or CTA support blocks.
 11. Treat homepage imagery as a planned module, not a decorative afterthought.
@@ -300,41 +300,34 @@ If the site is a company/manufacturer/procurement-facing B2B website, apply this
      and place full language strings in the JSON dictionaries, not in the
      switch control itself
 
-#### Towel / Home-Textile Export Variant (Mandatory when signals match)
+#### Industry-Neutral Company Variant (Mandatory)
 
-Apply this variant when the company site clearly centers on towels, home textiles, hospitality textiles, pool/beach textile contexts, or export-oriented textile sourcing:
+The generic company workflow must stay industry-neutral unless the source
+material explicitly names a product vertical and asks for that vertical's
+language, imagery, or palette.
 
 1. Theme:
-   - Use an ocean-blue + white company shell.
-   - Preferred palette direction:
-     - primary blue: `#1276C2` to `#1E88D8`
-     - support blue: `#67B7E8`
-     - white: `#FFFFFF`
-     - light surface blue: `#F3FAFF`
-     - border blue: `#D4E8F5`
-     - optional sand neutral accent: `#E8D9C5`
-   - Do not default to parchment, sepia, brass, beige-heavy, or brown-led shells for this profile.
+   - Use a calm, professional company shell derived from the confirmed prompt,
+     not from a hardcoded industry palette.
+   - Do not inject ocean-blue, hospitality, export-textile, pool/beach, or
+     any other vertical-coded palette by default.
 2. Typography:
-   - Use a clean corporate sans-first system.
-   - Avoid serif-led editorial display type for homepage and key interior headings.
-3. Visual association:
-   - The site should suggest cleanliness, softness, hospitality, pool/beach freshness, and export-ready reliability.
-   - The site must not feel like a craft journal, boutique atelier, or heritage essay.
-4. Images:
-   - Homepage must include at least one real photographic visual tied to towels, textiles, pool/beach/hospitality use, folded product ranges, or textile close-up texture.
-   - Products should include supporting product/category/material imagery.
-   - Custom solutions should include process/application/support imagery.
-   - About should include company/material/process imagery.
-   - Prefer stock/library retrieval before AI illustration when source images are missing.
-5. Hard bans:
-   - No abstract-only hero rail when a real product/context image is available.
-   - No decorative SVG-only fabric scene as the main hero visual when stock/library imagery is available.
-   - No serif editorial masthead treatment.
-   - No beige-paper mood board look.
-6. For towel, home-textile, pool-textile, or beach-adjacent export manufacturers, default the visual system toward ocean blue and white with restrained sand or light-neutral support unless source-backed brand colors clearly conflict. The visual association should suggest water, cleanliness, softness, and export-ready product clarity rather than craft nostalgia.
-7. For that same towel/home-textile exporter profile, typography should default to a clean corporate sans-first system. Do not use a literary/editorial serif display treatment as the dominant brand feel unless the source explicitly asks for it.
-8. The visible shell should feel crisp, export-ready, and product-led: marine blue, pool blue, white, light neutral surfaces, and restrained sand accents are allowed; beige-heavy, sepia, parchment, or artisanal-brown-dominant palettes are not the default.
-9. For this exporter profile, a homepage proof image is mandatory when stock/library imagery is available, and it must read as a real product or usage photograph. Inline SVG mock scenes, abstract enterprise diagrams, or fabricated placeholder illustrations are not acceptable substitutes for the primary proof image.
+   - Use a clean company-appropriate type system chosen from the confirmed
+     visual direction.
+   - Do not force serif-editorial or sector-specific typography unless the
+     source material explicitly asks for it.
+3. Images:
+   - Homepage, products/services, process, about, and contact routes may use
+     real photographic support when it improves understanding.
+   - Image choice must follow the confirmed route contract and source
+     material, not a hardcoded product vertical.
+4. Hard bans:
+   - No scenario-specific image grammar in the generic path.
+   - No hardcoded product families, export sectors, resort/hospitality scenes,
+     towel stacks, pool/beach visuals, or other vertical assumptions unless the
+     source material explicitly requires them.
+   - No synthetic placeholder art when a real product/process/context image is
+     available and relevant.
 
 #### Image And Product Visualization Contract (Mandatory)
 
@@ -348,7 +341,6 @@ When the site is a company/manufacturer/export site and the source material does
    - custom solutions: process, application, or production-support imagery
    - cases: application or outcome support imagery
    - about: company/process/material image, not a lifestyle collage
-   - towel/home-textile export sites: favor ocean, pool, beach, towel texture, folded product, hospitality, and clean-use context imagery that reinforces softness, cleanliness, and application clarity
    - these visuals must appear as actual image-bearing modules (`img`, `picture`, `figure`, or equivalent rendered media block), not only as text panels or abstract decorative backgrounds
 4. Specification or capability sections should be paired with restrained supporting visuals, swatches, product detail crops, or environment photos where that increases comprehension.
 5. Avoid pages that feel like pure wireframe copy blocks. The site should read as a real company presentation with selective imagery, not as a text-first prototype.
@@ -429,8 +421,8 @@ Visible IA rule:
 2. The selected route's own information architecture must define the visible content model. For an information platform or knowledge hub, present API-backed posts as the page's own collections such as case library, standards/documents, research reports, policy/regulation updates, product database entries, publication cards, or insight records according to the prompt and source evidence.
 3. The data attributes are invisible integration hooks only. `data-shpitto-blog-root`, `data-shpitto-blog-api`, and `data-shpitto-blog-list` must be attached to page-specific sections, lists, cards, or database surfaces without becoming visible copy.
 4. Fallback content must read like the selected route's real resource collection. Use native fields such as resource type, document/category label, publication date, scope, summary, tags, status, CTA, or detail link. Do not dump a generic chronological blog feed into an unrelated page.
-5. Dynamic `/blog/{slug}/` detail pages must inherit the selected route's detail grammar. If the selected route is an information platform, the detail shell should feel like a resource/report/case/standard detail page, while still using `/blog/{slug}/` for SEO-addressable runtime routing.
-6. Do not place article/resource cards that link to `/blog/{slug}/` outside `[data-shpitto-blog-list]`. Static explanatory cards may describe categories, but every readable article row/card must come from the same Blog-backed list surface so deployed data and fallback content share one visual component.
+5. When `/blog/{slug}/` detail pages are required, they must inherit the selected route's detail grammar. If the selected route is an information platform, the detail shell should feel like a resource/report/case/standard detail page while still using `/blog/{slug}/` for SEO-addressable runtime routing.
+6. Do not place article/resource cards that link to `/blog/{slug}/` outside `[data-shpitto-blog-list]`. Static explanatory cards may describe categories, but every readable article row/card that promises a detail page must come from the same content-backed list surface so deployed data and fallback content share one visual component.
 7. Visitor-facing copy must be final content, not an explanation of the content model. Do not use headings or helper copy such as "three launch articles", "reading method", "how to read", "each article includes date/read time/tags", "this page collects...", "the list is backed by...", or any copy that describes the page mechanics instead of delivering the article/resource content itself. Route heroes may introduce the editorial point of view, but they must make a substantive claim or thesis for readers, not explain the site structure.
    - Also reject softer editorial-scaffold variants such as "reading path", "start with these three articles", "what you'll find here", or "this collection helps you...". These are still page-mechanics or reading-order explanations, not formal visitor-facing content.
    - Replace those phrases with a real editorial thesis, decision lens, or source-backed claim. Example: instead of announcing a reading path, write a claim that explains the core editorial viewpoint behind the collection.
@@ -448,10 +440,10 @@ Generation responsibilities:
    - `data-shpitto-blog-api="/api/blog/posts"`
    - a child container with `data-shpitto-blog-list`
 3. Render polished fallback resource cards inside the data-backed list. If the user did not ask for a specific article/resource count, render exactly 3 substantial entries by default. Render more than 3 only when the user, prompt manifest, or source material explicitly asks for that count. They must match the site's brand, locale, category language, taxonomy, and content strategy. These cards are preview/no-JS fallback content.
-   - `data-fallback-posts`, inline JSON, or hidden templates may support hydration, but they are not a substitute for visible fallback cards. The initial HTML inside `[data-shpitto-blog-list]` must already contain readable article/resource items with direct `/blog/{slug}/` links.
-4. Detail links must use SEO-addressable paths: `/blog/{slug}/`.
-   - Same-page anchors such as `#article-detail`, accordions, hidden panels, or inline detail sections inside the index are not detail deliverables and must not be used as substitutes.
-   - The generated output must include the corresponding static `/blog/{slug}/index.html` file for every visible fallback/detail link required by the prompt.
+   - `data-fallback-posts`, inline JSON, or hidden templates may support hydration, but they are not a substitute for visible fallback cards. The initial HTML inside `[data-shpitto-blog-list]` must already contain readable article/resource items.
+4. Use SEO-addressable detail links (`/blog/{slug}/`) only when the route is an explicit Blog/News/Articles archive or when the prompt/source explicitly asks for publishable detail pages.
+   - Same-page anchors such as `#article-detail`, accordions, hidden panels, or inline detail sections inside the index are not valid substitutes when detail deliverables are required.
+   - When detail links are required, the generated output must include the corresponding static `/blog/{slug}/index.html` file for every visible fallback/detail link required by the prompt.
 5. Shared `/script.js` must include a small Blog hydrator that:
    - detects `[data-shpitto-blog-root]`,
    - fetches `/api/blog/posts`,
@@ -463,13 +455,14 @@ Generation responsibilities:
 7. The generated content-backend page must have a clear, site-native detail region style. Deployment derives `/shpitto-blog-post-shell.html` from the generated site, preserving the same `<html lang>`, header, footer, CSS, typography, taxonomy language, and CTA language for dynamic `/blog/{slug}/` rendering. Dynamic `/blog/{slug}/`, `/blog/tag/{tag}/`, `/blog/category/{category}/`, and search-result collection pages must never fall back to a generic light-theme runtime template when the generated site uses a distinct visual theme.
 8. Do not generate Cloudflare D1 credentials, Worker source, binding names, secrets, or server code in static HTML/JS. The deployed runtime owns `/api/blog/*`, `/blog/{slug}/`, RSS, sitemap, and D1 access.
 9. Deployment may inject or refresh Blog data, but that is a compatibility fallback. The generated selected page itself must already expose a coherent page-specific content surface without mentioning deployment, runtime refresh, hydration, fallback, backend, API, or data-source mechanics to visitors.
-10. When deploying a generated site with a selected content-backend route, create or update exactly 3 published Blog records derived from the user's provided requirements, uploaded/source material, Evidence Brief, and generated page copy. Prefer concrete source titles first: if the user's material names specific policies, standards, guides, reports, case studies, databases, manuals, or compilations, use those names as Blog post titles before falling back to synthesized guide titles. These records must be strongly related to the user's content, use page-appropriate categories/tags, and must not be generic verification posts, lorem ipsum, template news, or unrelated filler.
-11. Blog article generation is an explicit workflow stage between site preview and deployment, not a hidden deploy-time side effect. After the site preview is ready and a Blog/content-backed route exists, generate the article set, show the titles/excerpts/categories/tags to the user for confirmation, and only then proceed to deployment.
-12. Generation and deployment are separate actions. The generation action stops at preview artifacts, Blog list/detail deliverables, and any confirmation card. It must never silently deploy, auto-confirm deployment, combine generate+deploy into one completion step, or claim the site is deployed unless the user triggers a later explicit deploy action.
+10. When deploying a generated site with an explicit Blog route or another content-backed route that explicitly asks for publishable detail pages, create or update exactly 3 published Blog records derived from the user's provided requirements, uploaded/source material, Evidence Brief, and generated page copy. Prefer concrete source titles first: if the user's material names specific policies, standards, guides, reports, case studies, databases, manuals, or compilations, use those names as Blog post titles before falling back to synthesized guide titles. These records must be strongly related to the user's content, use page-appropriate categories/tags, and must not be generic verification posts, lorem ipsum, template news, or unrelated filler.
+11. Blog article generation is an explicit workflow stage between site preview and deployment, not a hidden deploy-time side effect. After the site preview is ready and the confirmed plan includes an explicit Blog route or explicitly requested publishable detail pages, generate the article set, show the titles/excerpts/categories/tags to the user for confirmation, and only then proceed to deployment.
+12. Generation and deployment are separate actions. The generation action stops at preview artifacts, content-backed list/detail deliverables, and any confirmation card. It must never silently deploy, auto-confirm deployment, combine generate+deploy into one completion step, or claim the site is deployed unless the user triggers a later explicit deploy action.
 13. Deployment/runtime hydration must preserve the generated list's article/card class and visual rhythm. It may replace list data, but it must not replace a site-specific resource card layout with a generic Blog card style.
-14. Any generated Blog/content-backed route implies Blog detail deliverables even when the user did not state a numeric article count. At minimum, every visible Blog/resource card rendered inside `[data-shpitto-blog-list]` must link to a corresponding `/blog/{slug}/` detail target, and each linked target must contain a complete readable body page in the generated output. Without an explicit requested count, keep the initial fallback/detail set to 3 entries instead of expanding every inferred topic into a separate article.
+14. Explicit Blog routes and explicitly requested publishable detail pages imply detail deliverables. For those cases, every visible resource card rendered inside `[data-shpitto-blog-list]` that promises a detail page must link to a corresponding `/blog/{slug}/` target, and each linked target must contain a complete readable body page in the generated output. Without an explicit requested count, keep the initial fallback/detail set to 3 entries instead of expanding every inferred topic into a separate article.
     - This is a generation responsibility first. Use the user's supplied topics, named entities, source materials, and visible card promise to write the detail page at generation time instead of relying on runtime QA to infer direction later.
     - Each detail page must expand the exact list-card topic and the user's source direction rather than drifting into generic blog filler, website-process commentary, or reusable placeholder prose.
+    - For generic information-platform, knowledge-hub, standards, research, or resource-collection routes, the default is collection-first. Do not invent `/blog/{slug}/` detail pages unless the prompt, route identity, or source material explicitly asks for publishable article/news details.
 15. If the user requests a specific number of articles/posts/reports/guides, generate that exact number of complete content items. Each item must have:
     - a stable slug and `/blog/{slug}/` detail link,
     - title, date or publish state, category/tags, reading time or scope,
@@ -482,13 +475,13 @@ Generation responsibilities:
     - This is a same-run generation requirement. Once `/blog/index.html` contains visible `/blog/{slug}/` cards, the same generated artifact batch must already include the matching `/blog/{slug}/index.html` files; do not leave detail pages for a later retry, deploy step, or QA repair pass.
 17. Use web search or uploaded/source material enrichment when the user's requested article content needs facts, examples, current context, named tools, policies, standards, reports, or nontrivial domain knowledge. For broad personal-opinion or conceptual posts, LLM drafting may fill the prose, but it must still produce complete publishable body content. Generic web search may inform framing and examples; explicit user-provided content remains the highest-priority source.
 18. When web search is used for article generation, distill facts into the Evidence Brief and write original article prose. Do not paste source excerpts, do not expose "web search says" copy to visitors, and do not cite unsupported claims as if they came from the site owner.
-19. Regeneration is not a partial repaint. When the user asks to regenerate, rebuild, re-run, or restart generation for a site whose confirmed route plan includes `/blog` or another selected content-backed route, rerun the full content workflow for that route:
+19. Regeneration is not a partial repaint. When the user asks to regenerate, rebuild, re-run, or restart generation for a site whose confirmed route plan includes `/blog` or another selected content-backed route with explicit detail deliverables, rerun the full content workflow for that route:
    - regenerate the site preview,
    - regenerate the Blog/content-backed index surface,
    - regenerate the matching `/blog/{slug}/` detail deliverables,
    - regenerate the Blog article confirmation artifact/card,
    - and reopen the deployment handoff stage.
-20. A regenerate request must not stop after a fresh `/blog/index.html` preview if the site still contains a Blog/content-backed route. The regenerated run is incomplete unless the updated Blog article set and its detail pages are ready for confirmation again.
+20. A regenerate request must not stop after a fresh `/blog/index.html` preview if the site still contains an explicit Blog route or another content-backed route with explicit detail deliverables. The regenerated run is incomplete unless the updated article set and its detail pages are ready for confirmation again.
 21. Regeneration does not collapse deployment into generation. It must reopen the Blog-and-deploy handoff, but deployment still requires a later explicit user action after the regenerated article set is shown again.
 
 ### Phase 0.375: Refinement Semantics Contract (Mandatory)
@@ -507,6 +500,8 @@ Treat refinement as non-full-site incremental evolution from the current website
 7. Route-level regeneration must preserve the rest of the site's shell, navigation, style system, and unaffected routes unless the user explicitly asks to change them too.
 8. Refinement is site-baseline-aware. It should prefer editing or completing the existing project over restarting planning from scratch.
 9. Deployment remains a separate action. A refinement may reopen preview confirmation or Blog confirmation, but it must not auto-deploy unless the user later asks to deploy.
+10. Preview-stage visual and copy feedback should use `website-refinement-workflow` as the targeted patch skill by default. Do not route ordinary preview feedback back into full generation unless the user explicitly asks for a full rebuild.
+11. A refinement report must record the active refine skill, changed files, and whether a deterministic fallback was used, so failed edits can be replayed without losing the generated baseline.
 
 Blog-backed list structure resilience:
 
@@ -531,8 +526,8 @@ Minimum deliverable priority before polish:
 1. Route `/` must read as the site home entry. Its title, meta description, H1, and first lead paragraph must establish brand mission, audience, scope, and navigation overview. Do not include download, certification, query/search, login, or registration wording in those fields; place those downstream functions only in later cards, navigation, or CTA modules.
 2. If a hero visual rail is tall, it must contain real media, chart, or data-viz content. A large empty right rail with only bottom-aligned text is a generation failure.
 3. Dense result cards rendered inside a 12-column grid must span the full available row unless the prompt explicitly calls for a narrower card pattern.
-4. The selected content-backend route must still use `/blog/{slug}/` detail links and preserve the hidden data-source mount contract from Phase 0.35.
-5. Express these checks as page-type rules in the Canonical Website Prompt and tool contract. Do not encode brand-specific exceptions in TS; if a page belongs to the `home`, `search-directory`, `blog-data-index`, or `auth` class, apply the corresponding generic gate.
+4. Any selected content-backed route with explicit detail deliverables must use `/blog/{slug}/` detail links and preserve the hidden data-source mount contract from Phase 0.35.
+5. Express these checks as page-type rules in the Canonical Website Prompt and tool contract. Do not encode brand-specific exceptions in TS; if a page belongs to the `home`, `search-directory`, `blog-data-index`, `content-collection-index`, or `auth` class, apply the corresponding generic gate.
 6. Route aliases belong in the workflow skill policy (`skill.json`) and should be consumed by the runtime. Do not hardcode brand-specific alias tables in decision-layer TS.
 7. Formal content gate: reject generated pages whose prominent headings, hero panels, sidebars, or helper blocks explain the page structure instead of delivering visitor-facing substance. Examples of failures include "reading method", "three launch articles", "article overview", "each article has tags/read time/detail links", "this collection contains...", "fallback resources", or equivalent process/meta copy. Replace them with editorial thesis, source-backed insight, real article/resource content, or remove the block.
    - Treat reading-order and guide-the-reader phrasing as failures too, including "reading path", "start with these three articles", "what you'll find here", and "this page collects".
@@ -541,9 +536,9 @@ Minimum deliverable priority before polish:
 9. Requested-content completeness gate: if the prompt asks for a fixed number of articles/posts/resources, validate that the generated output contains the same number of readable detail targets. Each target must include full body prose with multiple paragraphs or sections. A card with only title, tags, date, excerpt, or "read more" is not a completed content item.
 10. Count-led editorial framing gate: if the prompt asks for a fixed number of articles/posts/resources, the generated page may contain that number of cards and details, but it must not turn the count itself into visitor-facing scaffold copy such as "three articles, three ways" or equivalent count-announcement prose.
 11. Homepage entry gate: the home page may point visitors to the Blog/content route, but it must do so with site-positioning or topical CTA language. Do not explain the site by saying the blog currently has three articles, by summarizing those three articles in sequence, or by telling readers to start from those three pieces.
-12. Blog-detail inevitability gate: if the route plan includes `/blog` or another Blog/content-backed route, the generated list surface must expose at least one visible `/blog/{slug}/` detail entry and must include matching readable detail output. A Blog index without detail targets is a generation failure even when the prompt did not request a numeric article count.
+12. Blog-detail inevitability gate: if the route plan includes `/blog` or another content-backed route with explicit detail deliverables, the generated list surface must expose at least one visible `/blog/{slug}/` detail entry and must include matching readable detail output. A Blog archive that promises detail targets without readable detail output is a generation failure.
 13. Action-separation gate: generation and deployment must remain distinct workflow actions. The generation stage may produce preview files, Blog cards, Blog detail pages, and confirmation artifacts, but it must not claim deployment success, auto-trigger deployment, or collapse "generate site" and "deploy site" into one step unless the user explicitly asks for deployment later.
-14. Regeneration continuity gate: if a prior or current confirmed route plan includes `/blog` or another Blog/content-backed route, then a regenerate/rebuild request must re-enter the Blog workflow instead of ending at plain site preview. The regenerated output must again produce:
+14. Regeneration continuity gate: if a prior or current confirmed route plan includes `/blog` or another content-backed route with explicit detail deliverables, then a regenerate/rebuild request must re-enter the Blog workflow instead of ending at plain site preview. The regenerated output must again produce:
    - the Blog/content-backed list surface,
    - the corresponding `/blog/{slug}/` detail pages,
    - and a renewed pre-deploy Blog confirmation artifact.

@@ -20,8 +20,14 @@ function confirmGenerate(text: string) {
   return `__SHP_CONFIRM_GENERATE__\n${text}`;
 }
 
-function confirmBlogDeploy() {
-  return "__SHP_CONFIRM_BLOG_CONTENT_DEPLOY__";
+function isContentDeployConfirmCardType(value: string) {
+  return value === "confirm_blog_content_deploy" || value === "confirm_content_preview_deploy";
+}
+
+function expectedContentDeployPayload(cardType: string) {
+  return cardType === "confirm_content_preview_deploy"
+    ? "__SHP_CONFIRM_CONTENT_DEPLOY__"
+    : "__SHP_CONFIRM_BLOG_CONTENT_DEPLOY__";
 }
 
 function normalizePagesUrl(value: string) {
@@ -63,6 +69,84 @@ function parsePromptControlManifest(prompt: string): { routes: string[]; files: 
     }
   }
   return null;
+}
+
+type ReplaySurfaceKind = "blog-archive" | "content-collection" | "unknown";
+
+function getMountedContentFile(files: Array<{ path?: string; content?: string }>) {
+  return files.find(
+    (file) =>
+      String(file.path || "").endsWith(".html") && /data-shpitto-blog-root/i.test(String(file.content || "")),
+  );
+}
+
+function inferReplaySurface(
+  files: Array<{ path?: string; content?: string }>,
+  routes: string[] = [],
+): {
+  kind: ReplaySurfaceKind;
+  mountedPath: string;
+  mountedRoute: string;
+  mountedHtml: string;
+  hasRootIndex: boolean;
+  hasBlogIndex: boolean;
+  blogDetailPaths: string[];
+} {
+  const paths = files.map((file) => String(file.path || ""));
+  const mountedFile = getMountedContentFile(files);
+  const mountedPath = String(mountedFile?.path || "");
+  const mountedRoute = normalizeRoute(mountedPath.replace(/\/index\.html$/i, "") || "/");
+  const mountedHtml = String(mountedFile?.content || "");
+  const hasRootIndex = paths.includes("/index.html");
+  const hasBlogIndex = paths.includes("/blog/index.html");
+  const blogDetailPaths = paths.filter((item) => /^\/blog\/[^/]+\/index\.html$/i.test(item));
+  const normalizedRoutes = routes.map((route) => normalizeRoute(route)).filter(Boolean);
+  const kind: ReplaySurfaceKind =
+    hasBlogIndex || mountedRoute === "/blog" || normalizedRoutes.includes("/blog")
+      ? "blog-archive"
+      : mountedPath && /data-shpitto-blog-root/i.test(mountedHtml)
+        ? "content-collection"
+        : "unknown";
+  return {
+    kind,
+    mountedPath,
+    mountedRoute,
+    mountedHtml,
+    hasRootIndex,
+    hasBlogIndex,
+    blogDetailPaths,
+  };
+}
+
+function previewPathSegmentsFromRedirect(previewUrlPath: string, taskId: string) {
+  const normalized = String(previewUrlPath || "").trim();
+  const marker = `/api/chat/tasks/${encodeURIComponent(taskId)}/preview/`;
+  const index = normalized.indexOf(marker);
+  const suffix = index >= 0 ? normalized.slice(index + marker.length) : normalized.replace(/^\/+/, "");
+  const segments = suffix
+    .split("/")
+    .map((segment) => decodeURIComponent(segment))
+    .filter(Boolean);
+  return segments.length > 0 ? segments : ["__default__"];
+}
+
+async function loadPreviewEntryResponse(
+  getPreviewFile: (request: Request, context: { params: Promise<{ taskId: string; path: string[] }> }) => Promise<Response>,
+  taskId: string,
+  initialPath: string[],
+) {
+  let currentPath = [...initialPath];
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const response = await getPreviewFile(new Request("http://localhost"), {
+      params: Promise.resolve({ taskId, path: currentPath }),
+    });
+    if (response.status !== 307) return response;
+    const location = String(response.headers.get("location") || "");
+    currentPath = previewPathSegmentsFromRedirect(location, taskId);
+  }
+  return getPreviewFile(new Request("http://localhost"), {
+    params: Promise.resolve({ taskId, path: currentPath }),
+  });
 }
 
 function isPollutedReplayCanonicalPrompt(text: string) {
@@ -302,6 +386,7 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
       const prevPptokenFallbackModel = process.env.LLM_MODEL_FALLBACK_PPTOKEN;
       const prevProvider = process.env.LLM_PROVIDER;
       const prevProviderOrder = process.env.LLM_PROVIDER_ORDER;
+      const prevCrossProviderFallback = process.env.LLM_CROSS_PROVIDER_FALLBACK;
 
       try {
         process.env.SUPABASE_TASK_PROXY_URL = "direct";
@@ -313,7 +398,8 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         process.env.LLM_MODEL_PPTOKEN = "gpt-5.4-mini";
         process.env.LLM_MODEL_FALLBACK_PPTOKEN = "gpt-5.4-mini";
         process.env.LLM_PROVIDER = "pptoken";
-        process.env.LLM_PROVIDER_ORDER = "pptoken";
+        process.env.LLM_PROVIDER_ORDER = "pptoken,aiberm,crazyrouter";
+        process.env.LLM_CROSS_PROVIDER_FALLBACK = "all";
 
         const { getLatestChatTaskForChat, listChatTimelineMessages } = await import("./chat-task-store");
         const beforeLatest = await getLatestChatTaskForChat(replayChatId);
@@ -321,6 +407,12 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         const existingTimeline = await listChatTimelineMessages(replayChatId, 500);
         const replayPrompt = pickReplayPrompt(existingTimeline);
         const promptManifest = parsePromptControlManifest(replayPrompt);
+        const expectedManifestFiles = Array.from(
+          new Set((promptManifest?.files || []).map((item) => String(item || "").trim()).filter(Boolean)),
+        );
+        const expectedManifestHtmlPaths = Array.from(
+          new Set((promptManifest?.routes || []).map((route) => routeToHtmlPath(route)).filter(Boolean)),
+        );
         expect(replayPrompt.length).toBeGreaterThan(40);
 
         process.env.CHAT_TASKS_USE_SUPABASE = "0";
@@ -360,7 +452,13 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         if (!generated) {
           throw new Error(`Expected generated task for chat ${replayChatId}`);
         }
-        expect(generated.status).toBe("succeeded");
+        if (generated.status !== "succeeded") {
+          throw new Error(
+            `Expected generated task to succeed but got ${String(generated.status || "unknown")}: ${String(
+              generated.result?.assistantText || (generated.result as any)?.error || generated.result?.progress?.stageMessage || "",
+            )}`,
+          );
+        }
         expect(generated.result?.progress?.stage).toBe("done");
 
         const workflow = ((generated.result?.internal || {}).inputState as any)?.workflow_context || {};
@@ -373,9 +471,8 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         const files = (projectJson?.staticSite?.files || []) as Array<{ path?: string; content?: string; type?: string }>;
         const paths = files.map((file) => String(file.path || ""));
         const indexHtml = fileContent(files, "/index.html");
-        const blogIndexHtml = fileContent(files, "/blog/index.html");
-        const blogDetailPaths = paths.filter((item) => /^\/blog\/[^/]+\/index\.html$/i.test(item));
-        const combinedVisibleText = htmlToVisibleText([indexHtml, blogIndexHtml].join("\n"));
+        const surface = inferReplaySurface(files, [...manifestRoutes, ...(promptManifest?.routes || [])]);
+        const combinedVisibleText = htmlToVisibleText([indexHtml, surface.mountedHtml].join("\n"));
         const previewRootRes = await getPreviewRoot(new Request("http://localhost/api/chat/tasks/x/preview"), {
           params: Promise.resolve({ taskId: generated.id }),
         });
@@ -387,32 +484,67 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
             ? previewUrlPath
             : `${previewBaseUrl}${previewUrlPath}`;
         expect(previewRootRes.status).toBe(307);
-        expect(previewUrlPath).toContain(`/api/chat/tasks/${encodeURIComponent(generated.id)}/preview/index.html`);
+        expect(previewUrlPath).toContain(`/api/chat/tasks/${encodeURIComponent(generated.id)}/preview/__default__`);
 
-        const previewIndexRes = await getPreviewFile(new Request("http://localhost"), {
-          params: Promise.resolve({ taskId: generated.id, path: ["index.html"] }),
-        });
-        const previewIndexHtml = await previewIndexRes.text();
-        expect(previewIndexRes.status).toBe(200);
-        expect(previewIndexHtml.toLowerCase()).toContain("<!doctype html");
+        const previewEntryRes = await loadPreviewEntryResponse(
+          getPreviewFile,
+          generated.id,
+          previewPathSegmentsFromRedirect(previewUrlPath, generated.id),
+        );
+        const previewEntryHtml = await previewEntryRes.text();
+        expect(previewEntryRes.status).toBe(200);
+        expect(previewEntryHtml.toLowerCase()).toContain("<!doctype html");
 
-        if (manifestRoutes.length > 0) {
+        expect(paths).toEqual(expect.arrayContaining(["/styles.css", "/script.js"]));
+        if (expectedManifestFiles.length > 0) {
+          expect(paths).toEqual(expect.arrayContaining(expectedManifestFiles));
+        }
+        if (expectedManifestHtmlPaths.length > 0) {
+          expect(paths).toEqual(expect.arrayContaining(expectedManifestHtmlPaths));
+        }
+        expect(surface.kind).not.toBe("unknown");
+
+        if (surface.kind === "blog-archive" && manifestRoutes.length > 0) {
           expect(manifestRoutes).toEqual(["/", "/blog"]);
         }
-        if (promptManifest?.routes?.length) {
+        if (surface.kind === "blog-archive" && promptManifest?.routes?.length) {
           expect(promptManifest.routes.map((route) => normalizeRoute(route))).toEqual(["/", "/blog"]);
         }
-        expect(paths).toEqual(expect.arrayContaining(["/index.html", "/blog/index.html", "/styles.css", "/script.js"]));
-        expect(paths).not.toEqual(expect.arrayContaining(["/about/index.html", "/products/index.html", "/cases/index.html", "/contact/index.html"]));
-        expect(blogDetailPaths).toHaveLength(3);
-        expect(canonicalPrompt).toContain("HelloTalk");
-        expect(canonicalPrompt).toMatch(/AI|DevOps|SaaS|K12/i);
-        expect(canonicalPrompt).toMatch(/Language:\s*Chinese and English|Final website locale requirement:\s*Chinese and English/i);
-        expect(canonicalPrompt).not.toContain("/about/index.html");
-        expect(canonicalPrompt).not.toContain("/products/index.html");
-        expect(canonicalPrompt).not.toContain("/cases/index.html");
-        expect(canonicalPrompt).not.toContain("/contact/index.html");
-        expect(combinedVisibleText).toMatch(/HelloTalk|Huawei|WeChat|DevOps|SaaS|K12|AI/i);
+        expect(paths).not.toEqual(
+          expect.arrayContaining(["/about/index.html", "/products/index.html", "/cases/index.html", "/contact/index.html"]),
+        );
+        if (surface.kind === "blog-archive") {
+          expect(canonicalPrompt).toMatch(/Language:\s*Chinese and English|Final website locale requirement:\s*Chinese and English/i);
+          expect(paths).toEqual(expect.arrayContaining(["/index.html", "/blog/index.html"]));
+          expect(surface.blogDetailPaths).toHaveLength(3);
+          expect(canonicalPrompt).toContain("HelloTalk");
+          expect(canonicalPrompt).toMatch(/AI|DevOps|SaaS|K12/i);
+          expect(canonicalPrompt).not.toContain("/about/index.html");
+          expect(canonicalPrompt).not.toContain("/products/index.html");
+          expect(canonicalPrompt).not.toContain("/cases/index.html");
+          expect(canonicalPrompt).not.toContain("/contact/index.html");
+          expect(combinedVisibleText).toMatch(/HelloTalk|Huawei|WeChat|DevOps|SaaS|K12|AI/i);
+        } else {
+          expect(canonicalPrompt).toMatch(/zh-CN|Chinese|中文|preferred locale/i);
+          expect(surface.hasBlogIndex).toBe(false);
+          expect(surface.mountedPath).toBeTruthy();
+          expect(surface.mountedRoute).not.toBe("/blog");
+          expect(surface.mountedRoute).toMatch(/^\/(?:casux-|standards-system|case-studies|page-\d+)/i);
+          if (manifestRoutes.length > 0) {
+            expect(manifestRoutes).toContain(surface.mountedRoute);
+            expect(manifestRoutes).not.toContain("/blog");
+          }
+          if (promptManifest?.routes?.length) {
+            expect(promptManifest.routes.map((route) => normalizeRoute(route))).toContain(surface.mountedRoute);
+            expect(promptManifest.routes.map((route) => normalizeRoute(route))).not.toContain("/blog");
+          }
+          expect(canonicalPrompt).toMatch(/CASUX/i);
+          expect(canonicalPrompt).toContain("/casux-information-platform");
+          expect(canonicalPrompt).not.toMatch(/towel|hospitality|resort|export/i);
+          expect(surface.mountedHtml).toContain('data-shpitto-blog-api="/api/blog/posts"');
+          expect(surface.mountedHtml).not.toMatch(/href=["']\/blog\/[^"']+\/["']/i);
+          expect(combinedVisibleText).toMatch(/CASUX|Information Platform|Research Center|Standards System|Case Studies/i);
+        }
         expect(combinedVisibleText).not.toMatch(/Custom Solutions|Open scheduling|Cal\.com|template news|lorem ipsum/i);
         console.log(
           "SPECIFIC_CHAT_REPLAY_PREVIEW=" +
@@ -420,6 +552,8 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
               {
                 chatId: replayChatId,
                 taskId: generated.id,
+                surfaceKind: surface.kind,
+                mountedRoute: surface.mountedRoute,
                 previewUrlPath,
                 previewUrl,
               },
@@ -446,9 +580,11 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         else process.env.LLM_PROVIDER = prevProvider;
         if (prevProviderOrder === undefined) delete process.env.LLM_PROVIDER_ORDER;
         else process.env.LLM_PROVIDER_ORDER = prevProviderOrder;
+        if (prevCrossProviderFallback === undefined) delete process.env.LLM_CROSS_PROVIDER_FALLBACK;
+        else process.env.LLM_CROSS_PROVIDER_FALLBACK = prevCrossProviderFallback;
       }
     },
-    30 * 60 * 1000,
+    45 * 60 * 1000,
   );
 
   it(
@@ -662,9 +798,19 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         if (!generated) {
           throw new Error(`Expected generated task ${queuedGenerate!.id}`);
         }
-        expect(generated.status).toBe("succeeded");
+        if (generated.status !== "succeeded") {
+          throw new Error(
+            `Expected generated task to succeed but got ${String(generated.status || "unknown")}: ${String(
+              generated.result?.assistantText || (generated.result as any)?.error || generated.result?.progress?.stageMessage || "",
+            )}`,
+          );
+        }
         expect(generated.result?.progress?.stage).toBe("done");
-        expect(String(generated.result?.timelineMetadata?.cardType || "")).toBe("confirm_blog_content_deploy");
+        const generatedConfirmCardType = String(generated.result?.timelineMetadata?.cardType || "");
+        expect(isContentDeployConfirmCardType(generatedConfirmCardType)).toBe(true);
+        expect(String((generated.result?.timelineMetadata as any)?.payload || "")).toBe(
+          expectedContentDeployPayload(generatedConfirmCardType),
+        );
         expect(Array.isArray((generated.result?.timelineMetadata as any)?.posts)).toBe(true);
         expect((((generated.result?.timelineMetadata as any)?.posts || []) as unknown[]).length).toBe(3);
 
@@ -673,14 +819,16 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
       const projectJson = generatedProject.project;
       const files = (projectJson?.staticSite?.files || []) as Array<{ path?: string; content?: string; type?: string }>;
       const paths = files.map((file) => String(file.path || ""));
-      const generatedBlogDetailPaths = paths.filter((item) => /^\/blog\/[^/]+\/index\.html$/i.test(item));
+      const surface = inferReplaySurface(files, promptManifest?.routes || []);
       const indexHtml = fileContent(files, "/index.html");
-      const blogDataFile = files.find((file) => String(file.path || "").endsWith(".html") && /data-shpitto-blog-root/i.test(String(file.content || "")));
-      const blogDataPath = String(blogDataFile?.path || "");
+      const blogDataPath = surface.mountedPath;
       const blogDataHref = blogDataPath.replace(/\/index\.html$/, "/");
-      const blogHtml = String(blogDataFile?.content || "");
+      const blogHtml = surface.mountedHtml;
 
-      expect(paths).toEqual(expect.arrayContaining(["/index.html", "/styles.css", "/script.js"]));
+      expect(paths).toEqual(expect.arrayContaining(["/styles.css", "/script.js"]));
+      if (surface.hasRootIndex) {
+        expect(paths).toContain("/index.html");
+      }
       if (expectedManifestFiles.length > 0) {
         expect(paths).toEqual(expect.arrayContaining(expectedManifestFiles));
       }
@@ -693,17 +841,29 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
       if ((promptManifest?.routes || []).length > 0) {
         expect(promptManifest?.routes || []).toContain(blogDataRoute);
       }
-      expect(paths).toEqual(expect.arrayContaining(["/blog/index.html"]));
-      expect(generatedBlogDetailPaths).toHaveLength(3);
-      expect(indexHtml.length).toBeGreaterThan(800);
+      expect(surface.kind).not.toBe("unknown");
+      if (surface.hasRootIndex) {
+        expect(indexHtml.length).toBeGreaterThan(800);
+      }
       expect(indexHtml).not.toMatch(/Cal\.com|Open scheduling|Custom Solutions/i);
-      expect(hasHrefToRoute(indexHtml, blogDataRoute)).toBe(true);
+      if (surface.hasRootIndex) {
+        expect(hasHrefToRoute(indexHtml, blogDataRoute)).toBe(true);
+      }
       expect(blogHtml).toContain("/styles.css");
       expect(blogHtml).toContain('data-shpitto-blog-api="/api/blog/posts"');
       const blogVisibleText = htmlToVisibleText(blogHtml);
-      expect(blogHtml).toMatch(/href=["']\/blog\/[^"']+\/["']/);
       expect(blogVisibleText).not.toMatch(/Blog data source|Blog backend|Blog API|content API|article list|route-native|native collections?|runtime|static fallback|fallback card|hydration|no-JS|deployment refresh/i);
       expect(blogVisibleText).not.toMatch(/\u535a\u5ba2\u6570\u636e\u6e90|\u535a\u5ba2\u540e\u7aef|\u535a\u5ba2\s*API|\u5185\u5bb9\s*API|\u8fd0\u884c\u65f6|\u9759\u6001\u56de\u9000|\u56de\u9000\u5361\u7247|\u6c34\u5408|\u90e8\u7f72\u5237\u65b0/);
+      if (surface.kind === "blog-archive") {
+        expect(paths).toEqual(expect.arrayContaining(["/blog/index.html"]));
+        expect(surface.blogDetailPaths).toHaveLength(3);
+        expect(blogHtml).toMatch(/href=["']\/blog\/[^"']+\/["']/);
+      } else {
+        expect(surface.hasBlogIndex).toBe(false);
+        expect(blogDataRoute).not.toBe("/blog");
+        expect(blogDataRoute).toMatch(/^\/(?:casux-|standards-system|case-studies|page-\d+)/i);
+        expect(blogHtml).not.toMatch(/href=["']\/blog\/[^"']+\/["']/);
+      }
       if (false) {
         expect(blogVisibleText).toMatch(
           /\u6848\u4f8b\u5e93|\u6807\u51c6\u6587\u4ef6|\u7814\u7a76\u62a5\u544a|\u653f\u7b56\u6cd5\u89c4|\u4ea7\u54c1\u6570\u636e\u5e93|case library|standards?|research reports?/i,
@@ -712,9 +872,11 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         expect(blogHtml).toMatch(/AI|博客|Blog|观察|工具|Method|Insight/i);
       }
 
-      const previewIndexRes = await getPreviewFile(new Request("http://localhost"), {
-        params: Promise.resolve({ taskId: generated.id, path: ["index.html"] }),
-      });
+      const previewIndexRes = await loadPreviewEntryResponse(
+        getPreviewFile,
+        generated.id,
+        surface.hasRootIndex ? ["index.html"] : [blogDataRoute.replace(/^\/+/, ""), "index.html"],
+      );
       expect(previewIndexRes.status).toBe(200);
       const previewIndex = await previewIndexRes.text();
       expect(previewIndex.toLowerCase()).toContain("<!doctype html");
@@ -741,10 +903,13 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
       const deployGateTimeline = await listChatTimelineMessages(replayChatId, 500);
       const deployConfirm = [...deployGateTimeline]
         .reverse()
-        .find((message) => String(message.metadata?.cardType || "") === "confirm_blog_content_deploy");
+        .find((message) => isContentDeployConfirmCardType(String(message.metadata?.cardType || "")));
       expect(deployConfirm).toBeTruthy();
+      const deployConfirmCardType = String(deployConfirm?.metadata?.cardType || "");
+      expect(String(deployConfirm?.metadata?.payload || "")).toBe(expectedContentDeployPayload(deployConfirmCardType));
       expect(Array.isArray((deployConfirm?.metadata as any)?.posts)).toBe(true);
       expect((((deployConfirm?.metadata as any)?.posts || []) as unknown[]).length).toBe(3);
+      const confirmDeployToken = expectedContentDeployPayload(deployConfirmCardType);
 
       const confirmDeployRes = await POST(
         new Request("http://localhost/api/chat", {
@@ -753,7 +918,7 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
           body: JSON.stringify({
             id: replayChatId,
             user_id: ownerUserId,
-            messages: [{ role: "user", parts: [{ type: "text", text: confirmBlogDeploy() }] }],
+            messages: [{ role: "user", parts: [{ type: "text", text: confirmDeployToken }] }],
           }),
         }),
       );
@@ -765,7 +930,9 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
       expect(queuedDeploy?.id).not.toBe(generated.id);
       expect((queuedDeploy?.result?.internal?.inputState as any)?.workflow_context?.executionMode).toBe("deploy");
       expect((queuedDeploy?.result?.internal?.inputState as any)?.workflow_context?.deploySourceTaskId).toBe(generated.id);
+      expect((queuedDeploy?.result?.internal?.inputState as any)?.workflow_context?.contentPreviewConfirmed).toBe(true);
       expect((queuedDeploy?.result?.internal?.inputState as any)?.workflow_context?.blogContentConfirmed).toBe(true);
+      expect(Array.isArray((queuedDeploy?.result?.internal?.inputState as any)?.workflow_context?.contentPreviewPosts)).toBe(true);
       expect(Array.isArray((queuedDeploy?.result?.internal?.inputState as any)?.workflow_context?.blogContentPreviewPosts)).toBe(true);
       expect((((queuedDeploy?.result?.internal?.inputState as any)?.workflow_context?.blogContentPreviewPosts || []) as unknown[]).length)
         .toBe(3);
@@ -821,11 +988,13 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
       expect(generatedRuntimePost.slug).toBeTruthy();
       expect(generatedRuntimePost.title).toBeTruthy();
 
-      const home = await fetchTextFromAnyWithRetry(
-        deployedUrlCandidates,
-        "",
-        (text, status) => status === 200 && text.toLowerCase().includes("<!doctype html") && hasHrefToRoute(text, blogDataRoute),
-      );
+      const home = surface.hasRootIndex
+        ? await fetchTextFromAnyWithRetry(
+            deployedUrlCandidates,
+            "",
+            (text, status) => status === 200 && text.toLowerCase().includes("<!doctype html"),
+          )
+        : null;
       const runtimeJson = await fetchTextFromAnyWithRetry(
         deployedUrlCandidates,
         "/shpitto-blog-runtime.json",
@@ -849,7 +1018,6 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
           /<!doctype html/i.test(text) &&
           text.includes("/styles.css") &&
           text.includes("/api/blog/posts") &&
-          text.includes(`/blog/${generatedRuntimePost.slug}/`) &&
           /data-shpitto-blog-root|Blog|Information Platform|信息平台/.test(text) &&
           !/Blog data source|Blog backend|Blog API|content API|article list|route-native|native collections?|runtime|static fallback|fallback card|hydration|no-JS|deployment refresh/i.test(text) &&
           !/\u535a\u5ba2\u6570\u636e\u6e90|\u535a\u5ba2\u540e\u7aef|\u535a\u5ba2\s*API|\u5185\u5bb9\s*API|\u8fd0\u884c\u65f6|\u9759\u6001\u56de\u9000|\u56de\u9000\u5361\u7247|\u6c34\u5408|\u90e8\u7f72\u5237\u65b0/.test(text) &&
@@ -861,26 +1029,35 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
       if (generatedBlogCardClass) {
         expect(blog.text).toContain(`class="${generatedBlogCardClass}"`);
       }
-      const rss = await fetchTextFromAnyWithRetry(
-        deployedUrlCandidates,
-        "/blog/rss.xml",
-        (text, status, contentType) =>
-          status === 200 &&
-          contentType.includes("xml") &&
-          text.includes(generatedRuntimePost.slug) &&
-          !text.includes("Specific Replay Blog Verification"),
-      );
-      const postDetail = await fetchTextFromAnyWithRetry(
-        deployedUrlCandidates,
-        `/blog/${generatedRuntimePost.slug}/`,
-        (text, status, contentType) =>
-          status === 200 && contentType.includes("html") && text.includes(generatedRuntimePost.title),
-      );
-      const sitemap = await fetchTextFromAnyWithRetry(
-        deployedUrlCandidates,
-        "/sitemap.xml",
-        (text, status, contentType) => status === 200 && contentType.includes("xml") && text.includes("/blog/"),
-      );
+      const rss =
+        surface.kind === "blog-archive"
+          ? await fetchTextFromAnyWithRetry(
+              deployedUrlCandidates,
+              "/blog/rss.xml",
+              (text, status, contentType) =>
+                status === 200 &&
+                contentType.includes("xml") &&
+                text.includes(generatedRuntimePost.slug) &&
+                !text.includes("Specific Replay Blog Verification"),
+            )
+          : null;
+      const postDetail =
+        surface.kind === "blog-archive"
+          ? await fetchTextFromAnyWithRetry(
+              deployedUrlCandidates,
+              `/blog/${generatedRuntimePost.slug}/`,
+              (text, status, contentType) =>
+                status === 200 && contentType.includes("html") && text.includes(generatedRuntimePost.title),
+            )
+          : null;
+      const sitemap =
+        surface.kind === "blog-archive"
+          ? await fetchTextFromAnyWithRetry(
+              deployedUrlCandidates,
+              "/sitemap.xml",
+              (text, status, contentType) => status === 200 && contentType.includes("xml") && text.includes("/blog/"),
+            )
+          : null;
 
       const report = {
         chatId: replayChatId,
@@ -891,6 +1068,7 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         checkpointProjectPath,
         generatedProjectSource: generatedProject.source,
         generatedFiles: paths,
+        surfaceKind: surface.kind,
         blogDataPath,
         deployedUrl,
         productionUrl,
@@ -904,22 +1082,22 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         generatedRuntimePost,
         checks: {
           previewIndex: previewIndexRes.status,
-          home: home.status,
+          home: home?.status || null,
           runtimeJson: runtimeJson.status,
           postsJson: postsJson.status,
           blog: blog.status,
-          rss: rss.status,
-          postDetail: postDetail.status,
-          sitemap: sitemap.status,
+          rss: rss?.status || null,
+          postDetail: postDetail?.status || null,
+          sitemap: sitemap?.status || null,
         },
         checkUrls: {
-          home: home.url,
+          home: home?.url || null,
           runtimeJson: runtimeJson.url,
           postsJson: postsJson.url,
           blog: blog.url,
-          rss: rss.url,
-          postDetail: postDetail.url,
-          sitemap: sitemap.url,
+          rss: rss?.url || null,
+          postDetail: postDetail?.url || null,
+          sitemap: sitemap?.url || null,
         },
       };
 

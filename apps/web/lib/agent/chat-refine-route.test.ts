@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createChatTask, completeChatTask, getChatTask, getLatestChatTaskForChat } from "./chat-task-store";
@@ -78,7 +78,7 @@ describe("chat refine routing", () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         id: chatId,
-        messages: [{ role: "user", parts: [{ type: "text", text: "把主色改成蓝色并微调按钮样式" }] }],
+        messages: [{ role: "user", parts: [{ type: "text", text: "Change the primary color to blue and lightly refine the button styling." }] }],
       }),
     });
     const res = await POST(req);
@@ -155,7 +155,7 @@ describe("chat refine routing", () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         id: chatId,
-        messages: [{ role: "user", parts: [{ type: "text", text: "三篇blog缺少内容页面，请补充" }] }],
+        messages: [{ role: "user", parts: [{ type: "text", text: "Please add the missing detail pages for each existing entry in the current blog list." }] }],
       }),
     });
     const res = await POST(req);
@@ -229,7 +229,7 @@ describe("chat refine routing", () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         id: chatId,
-        messages: [{ role: "user", parts: [{ type: "text", text: "新增一个 pricing 页面，其他页面不动" }] }],
+        messages: [{ role: "user", parts: [{ type: "text", text: "Add a pricing page and leave the other pages unchanged." }] }],
       }),
     });
     const res = await POST(req);
@@ -346,7 +346,7 @@ describe("chat refine routing", () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         id: chatId,
-        messages: [{ role: "user", parts: [{ type: "text", text: "新增一个 pricing 页面，其他页面不动" }] }],
+        messages: [{ role: "user", parts: [{ type: "text", text: "Add a pricing page and leave the other pages unchanged." }] }],
       }),
     });
     const res = await POST(req);
@@ -481,7 +481,7 @@ describe("chat refine routing", () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         id: chatId,
-        messages: [{ role: "user", parts: [{ type: "text", text: "三篇blog缺少内容页面，请补充" }] }],
+        messages: [{ role: "user", parts: [{ type: "text", text: "Please add the missing detail pages for each existing entry in the current blog list." }] }],
       }),
     });
     const res = await POST(req);

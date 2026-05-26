@@ -204,13 +204,12 @@
           "When the site serves enterprise buyers or export/procurement audiences, treat warm or heritage cues as restrained material confidence inside a company shell, not as boutique editorial softness or personal-brand composition.",
           "When logo strategy is text wordmark, default to a text-only company brand treatment. Do not invent a monogram, badge, or unsupported subtitle.",
           "For company sites aimed at enterprise buyers, procurement teams, distributors, or export customers, do not use heritage/craft/warm/artisan language as the visible headline premise or shared-shell trust line unless source-backed. Keep those cues visual, while visible copy emphasizes manufacturing capability, sourcing clarity, proof, delivery discipline, and inquiry readiness.",
-          "For towel, home-textile, pool-textile, or beach-adjacent export manufacturers, prefer an ocean-blue and white system with restrained sand/light-neutral accents unless explicit source-backed brand colors override it.",
           "For products, custom-solutions, cases, contact, and about, do not repeat a homepage-style hero. Prefer company mastheads, process intros, catalog leads, evidence headers, and conversion-first openings according to route role.",
           "Prefer selective real-photo support over purely typographic presentation for product/specification/manufacturing pages. Use stock/library imagery first when source images are missing, and avoid turning the site into a text-only prototype.",
-          "For towel/home-textile export manufacturers, use a clean corporate sans-forward system rather than editorial serif-led art direction.",
-          "For towel/home-textile export manufacturers, decorative gradient-only visual rails are not enough; use real product, material, process, or application imagery when stock/library images are available.",
-          "For towel/home-textile export manufacturers, preferred palette tokens are marine blue, pool blue, white, light-sky surfaces, and cool light borders; do not default to beige-, parchment-, sepia-, or brown-led shells.",
-          "For towel/home-textile export manufacturers, homepage/about/custom-solutions/products should each carry at least one meaningful real-photo or stock-photo context image rather than abstract-only art.",
+          "Keep the generic company workflow industry-neutral. Do not inject hidden towel, hospitality, pool/beach, export-textile, or other sector-specific palette and image defaults unless the source material explicitly requires them.",
+          "Choose palette, typography, and media from the confirmed prompt, source material, and selected visual direction rather than from a hardcoded product vertical preset.",
+          "Decorative gradient-only visual rails are not enough when the route clearly needs product, process, company, or application imagery and stock/library images are available.",
+          "Homepage/about/custom-solutions/products should each carry at least one meaningful real-photo or stock-photo context image when that improves understanding, but the subject matter must stay source-justified rather than scenario-hardcoded.",
           "Plan media as named module-owned slots during composition. Do not add a generic full-width image after the page structure already exists.",
           "For explicit IBM/Carbon company homepages, use an image-backed enterprise hero with readable overlay copy and place the first real image inside that opening hero rather than a split hero rail or detached proof image.",
           "When a route needs imagery, define the module owner, purpose, ratio, and caption policy before writing the final layout so the image reinforces the shell instead of breaking it.",
@@ -551,8 +550,8 @@
     "apiAttribute": "data-shpitto-blog-api",
     "detailPathPattern": "/blog/{slug}/",
     "allowImplicitFallbackRoute": false,
-    "generationRequiresDetailForAnyBlogRoute": true,
-    "previewRequiresStaticOrReadableDetailOutput": true,
+    "generationRequiresDetailForAnyBlogRoute": false,
+    "previewRequiresStaticOrReadableDetailOutput": false,
     "generationAndDeploymentAreSeparateActions": true,
     "deploymentRequiresExplicitUserAction": true,
     "regenerationRestartsBlogWorkflow": true,
@@ -608,8 +607,8 @@
             "resources?",
             "library"
           ],
-          "score": 52,
-          "reason": "Route may contain content but needs another content-stream signal to own the blog backend."
+          "score": 78,
+          "reason": "Existing navigation route represents a structured research or resource collection."
         }
       ],
       "negativeSignals": [
@@ -758,8 +757,8 @@
       "Generation must write every /blog/{slug}/ detail page from the user's supplied topics, named entities, source materials, and visible card promise so the page expands the intended subject instead of drifting into generic implementation filler.",
       "Fallback article cards are required for preview, no-JS rendering, and SEO-safe first paint.",
       "Static code must not include D1 credentials, Cloudflare binding code, worker source, or secrets.",
-      "A regenerate or rebuild request for any site with an explicit blog or selected content-backed route restarts the full blog workflow rather than refreshing only shell pages.",
-      "Regeneration must re-emit the blog article preview or confirmation artifact and matching /blog/{slug}/ detail deliverables before deployment is offered again.",
+      "A regenerate or rebuild request for any site with an explicit blog or selected content-backed route that already promises publishable detail pages restarts the full blog workflow rather than refreshing only shell pages.",
+      "Regeneration must re-emit the blog article preview or confirmation artifact and any explicitly required matching /blog/{slug}/ detail deliverables before deployment is offered again.",
       "Regeneration reopens the deploy handoff stage, but deployment still requires a later explicit user action."
     ]
   }

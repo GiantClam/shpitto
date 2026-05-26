@@ -4,13 +4,13 @@ import path from "node:path";
 import { createChatTask, completeChatTask } from "./chat-task-store";
 
 describe("chat task preview routes", () => {
-  it("redirects preview root to index.html", async () => {
+  it("redirects preview root to the default preview sentinel", async () => {
     const { GET } = await import("../../app/api/chat/tasks/[taskId]/preview/route");
     const res = await GET(new Request("http://localhost/api/chat/tasks/t1/preview"), {
       params: Promise.resolve({ taskId: "t1" }),
     });
     expect(res.status).toBe(307);
-    expect(String(res.headers.get("location") || "")).toContain("/preview/index.html");
+    expect(String(res.headers.get("location") || "")).toContain("/preview/__default__");
   });
 
   it("serves preview html via checkpoint project fallback site directory", async () => {
@@ -63,6 +63,50 @@ describe("chat task preview routes", () => {
     expect(res.status).toBe(200);
     const html = await res.text();
     expect(html).toContain("local-preview-ok");
+  });
+
+  it("redirects the default preview request to the first available route when a site has no root index", async () => {
+    const chatId = `chat-preview-no-home-${Date.now()}`;
+    const taskId = `local-no-home-${Date.now()}`;
+    const latestRoot = path.resolve(process.cwd(), ".tmp", "chat-tasks", chatId, taskId, "latest");
+    const siteDir = path.join(latestRoot, "site");
+    const workflowDir = path.join(latestRoot, "workflow");
+    await fs.mkdir(path.join(siteDir, "casux-creation"), { recursive: true });
+    await fs.mkdir(path.join(siteDir, "standards-system"), { recursive: true });
+    await fs.mkdir(workflowDir, { recursive: true });
+    await fs.writeFile(
+      path.join(siteDir, "casux-creation", "index.html"),
+      "<!doctype html><html><body>CASUX creation</body></html>",
+      "utf8",
+    );
+    await fs.writeFile(
+      path.join(siteDir, "standards-system", "index.html"),
+      "<!doctype html><html><body>Standards</body></html>",
+      "utf8",
+    );
+    await fs.writeFile(path.join(siteDir, "styles.css"), "body{margin:0}", "utf8");
+    await fs.writeFile(path.join(siteDir, "script.js"), "console.log('ok')", "utf8");
+    await fs.writeFile(
+      path.join(workflowDir, "task_plan.md"),
+      ["# Task Plan", "", "- Routes: /casux-creation, /standards-system"].join("\n"),
+      "utf8",
+    );
+
+    const { GET } = await import("../../app/api/chat/tasks/[taskId]/preview/[...path]/route");
+    const redirectRes = await GET(new Request("http://localhost"), {
+      params: Promise.resolve({ taskId, path: ["__default__"] }),
+    });
+
+    expect(redirectRes.status).toBe(307);
+    expect(String(redirectRes.headers.get("location") || "")).toContain(
+      `/api/chat/tasks/${encodeURIComponent(taskId)}/preview/casux-creation/index.html`,
+    );
+
+    const htmlRes = await GET(new Request("http://localhost"), {
+      params: Promise.resolve({ taskId, path: ["casux-creation", "index.html"] }),
+    });
+    expect(htmlRes.status).toBe(200);
+    expect(await htmlRes.text()).toContain("CASUX creation");
   });
 
   it("does not inject a base tag that breaks nested page relative assets", async () => {

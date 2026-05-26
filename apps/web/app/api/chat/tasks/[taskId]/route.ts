@@ -7,10 +7,15 @@ import {
   getRememberedChatTask,
   sanitizeTaskResultForClient,
 } from "../../../../../lib/agent/chat-task-store";
+import {
+  listPreviewSiteFiles,
+  resolveRequiredFilesFromTaskPlanText,
+  siteHasPreviewEntrypoint,
+} from "../../../../../lib/agent/chat-preview-site";
 
 export const runtime = "nodejs";
 
-const TASK_STORE_LOOKUP_TIMEOUT_MS = Math.max(1_000, Number(process.env.CHAT_TASK_ROUTE_STORE_TIMEOUT_MS || 20_000));
+const TASK_STORE_LOOKUP_TIMEOUT_MS = Math.max(1_000, Number(process.env.CHAT_TASK_ROUTE_STORE_TIMEOUT_MS || 24_000));
 
 type LocalTaskCheckpoint = {
   chatId: string;
@@ -34,37 +39,6 @@ function getLocalTaskRoots(): string[] {
       path.resolve(/* turbopackIgnore: true */ process.cwd(), "apps", "web", ".tmp", "chat-tasks"),
     ]),
   );
-}
-
-async function hasIndexHtml(siteDir: string): Promise<boolean> {
-  try {
-    const stat = await fs.stat(path.join(siteDir, "index.html"));
-    return stat.isFile();
-  } catch {
-    return false;
-  }
-}
-
-async function listSiteFiles(siteDir: string): Promise<string[]> {
-  const output: string[] = [];
-  async function walk(dir: string) {
-    const entries = await fs.readdir(dir, { withFileTypes: true });
-    for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        await walk(fullPath);
-        continue;
-      }
-      if (!entry.isFile()) continue;
-      output.push(path.relative(siteDir, fullPath).replace(/\\/g, "/"));
-    }
-  }
-  try {
-    await walk(siteDir);
-  } catch {
-    return [];
-  }
-  return output.sort();
 }
 
 async function readJsonFile(filePath: string): Promise<Record<string, any> | undefined> {
@@ -97,40 +71,9 @@ async function readTextFile(filePath: string): Promise<string> {
   }
 }
 
-function normalizeRoutePath(route: string): string {
-  const raw = String(route || "").trim();
-  if (!raw) return "";
-  const withoutQuery = raw.split(/[?#]/)[0] || "";
-  const withSlash = withoutQuery.startsWith("/") ? withoutQuery : `/${withoutQuery}`;
-  const compact = withSlash.replace(/\/+/g, "/").replace(/\/$/, "") || "/";
-  return compact === "/index" ? "/" : compact;
-}
-
-function routeToHtmlFile(route: string): string {
-  const normalized = normalizeRoutePath(route);
-  if (!normalized || normalized === "/") return "index.html";
-  return `${normalized.replace(/^\//, "")}/index.html`;
-}
-
-function parseRequiredRoutesFromTaskPlan(taskPlan: string): string[] {
-  const routeLine = String(taskPlan || "").match(/^\s*-\s*Routes:\s*(.+)$/im)?.[1] || "";
-  if (!routeLine.trim()) return [];
-  return Array.from(
-    new Set(
-      routeLine
-        .split(",")
-        .map((item) => normalizeRoutePath(item))
-        .filter(Boolean),
-    ),
-  );
-}
-
 async function resolveRequiredFiles(latestDir: string): Promise<string[]> {
   const taskPlan = await readTextFile(path.join(latestDir, "workflow", "task_plan.md"));
-  const routes = parseRequiredRoutesFromTaskPlan(taskPlan);
-  const required = new Set(["index.html", "styles.css", "script.js"]);
-  for (const route of routes) required.add(routeToHtmlFile(route));
-  return Array.from(required).sort();
+  return resolveRequiredFilesFromTaskPlanText(taskPlan);
 }
 
 async function resolveLocalTaskCheckpointFromRoot(params: {
@@ -141,8 +84,8 @@ async function resolveLocalTaskCheckpointFromRoot(params: {
   const latestDir = path.join(params.taskRoot, "latest");
   const candidates = [path.join(latestDir, "site"), path.join(params.taskRoot, "site")];
   for (const siteDir of candidates) {
-    if (!(await hasIndexHtml(siteDir))) continue;
-    const files = await listSiteFiles(siteDir);
+    if (!(await siteHasPreviewEntrypoint(siteDir))) continue;
+    const files = await listPreviewSiteFiles(siteDir);
     const requiredFiles = await resolveRequiredFiles(latestDir);
     const fileSet = new Set(files);
     return {

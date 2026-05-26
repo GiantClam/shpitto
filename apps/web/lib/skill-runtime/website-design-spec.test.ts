@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildWebsiteDesignSpecMarkdown, buildWebsiteDesignSpecRouteExcerpt } from "./website-design-spec.ts";
+import {
+  buildRouteUnitContractSummary,
+  buildWebsiteDesignSpecMarkdown,
+  buildWebsiteDesignSpecRouteExcerpt,
+} from "./website-design-spec.ts";
 import type { LocalDecisionPlan } from "./decision-layer.ts";
 import { DEFAULT_STYLE_PRESET } from "../design-style-preset.ts";
 
@@ -104,6 +108,7 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
     });
 
     expect(markdown).toContain("homepage_mode: enterprise_masthead");
+    expect(markdown).toContain("website_surface_mode: corporate-b2b-site");
     expect(markdown).toContain("image-backed enterprise hero -> compact proof row -> unified capability band -> concise CTA strip");
     expect(markdown).toContain("prohibit: split hero / hero-grid / aside rail / snapshot panel / floating stat cards in the opening band");
     expect(markdown).toContain("placement_band: inside the opening hero as a background-supported visual layer behind copy");
@@ -121,10 +126,9 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
     expect(markdown).toContain("homepage_markup_contract: prefer `enterprise-hero` / `enterprise-hero__media` / `enterprise-hero__content`");
     expect(markdown).toContain("homepage_css_contract: styles.css must style the opening hero through `.enterprise-hero`, `.enterprise-hero__media`, `.enterprise-hero__content`, and `.enterprise-proof-row`.");
     expect(markdown).toContain("homepage_header_rule: keep locale controls outside the primary nav link stream");
-    expect(markdown).toContain("header_utility_rule: render locale/language controls in a dedicated utility shell adjacent to navigation");
+    expect(markdown).toContain("header_utility_rule: this shell is single-language English-first.");
     expect(markdown).toContain("homepage_capability_rule: render the homepage capability zone as one unified capability band");
-    expect(markdown).toContain("suggested_asset_url: https://images.unsplash.com/photo-1519046904884-53103b34b206");
-    expect(markdown).toContain("suggested_asset_alt: Folded beach towels beside a bright pool and sea-toned resort deck");
+    expect(markdown).not.toContain("Folded beach towels beside a bright pool and sea-toned resort deck");
     expect(markdown).toContain("homepage_cta_rule: keep the CTA zone single-primary-block; avoid a second bordered side panel with inquiry instructions or support notes.");
     expect(markdown).toContain("source_validation_rule: when curated stock/library imagery is available for this slot, use a real photographic asset; do not substitute inline SVG, abstract illustration, or data-URI placeholder media");
     expect(markdown).toContain("caption_policy: homepage hero visual normally carries no caption");
@@ -182,16 +186,161 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
     expect(excerpt).toContain("markup_contract: do not reuse legacy split-hero class names such as `hero-grid`");
     expect(excerpt).toContain("markup_contract: do not mix legacy hero utility classes such as `hero__body`, `hero__content`, or `hero__actions`");
     expect(excerpt).toContain("css_contract: styles.css must define the homepage opening through `.enterprise-hero`, `.enterprise-hero__media`, `.enterprise-hero__content`, and `.enterprise-proof-row`");
-    expect(excerpt).toContain("header_contract: locale switch must live in a dedicated utility wrapper beside the primary nav");
     expect(excerpt).toContain("header_contract: the primary nav cluster should contain route links only.");
+    expect(excerpt).toContain("header_contract: this route is single-language English-first.");
     expect(excerpt).toContain("spacing_contract: keep the opening hero visually close to the shared header, but allow a measured shell transition of roughly 20-36px");
     expect(excerpt).toContain("spacing_contract: homepage shell rhythm should stay controlled and enterprise-like");
     expect(excerpt).toContain("section_spacing_contract: major route-owned section bands should usually breathe in roughly the 40-72px range");
     expect(excerpt).toContain("capability_contract: homepage capability content must render as one unified capability band");
     expect(excerpt).toContain("cta_contract: CTA and section shells should use reusable class-owned layout instead of inline style spacing/alignment fixes.");
     expect(excerpt).toContain("hero_visual_balance: the image should carry roughly 55-65% of the first-screen visual emphasis");
-    expect(excerpt).toContain("suggested_asset_url: https://images.unsplash.com/photo-1519046904884-53103b34b206");
+    expect(excerpt).not.toContain("Folded beach towels beside a bright pool and sea-toned resort deck");
     expect(excerpt).toContain("caption_policy: homepage hero visual normally carries no caption");
+  });
+
+  it("renders discovery-brief and design-system lock metadata in the design spec", () => {
+    const decision = buildMockDecision();
+    decision.pageBlueprints = decision.pageIntents;
+
+    const markdown = buildWebsiteDesignSpecMarkdown({
+      decision,
+      requirementText: decision.requirementText,
+      stylePreset: DEFAULT_STYLE_PRESET,
+      websiteSurfaceMode: "docs-knowledge-site",
+      discoveryBrief: {
+        surfaceMode: "docs-knowledge-site",
+        audience: ["developers"],
+        primaryGoal: "reference clarity",
+        routes: ["/", "/guides", "/reference"],
+        sourcePriority: "uploaded_files",
+        localeMode: "en",
+        visualDirectionId: "tech-utility",
+        designSystemId: "ibm-carbon",
+        immutableConstraints: ["brand:Vbuy Textile"],
+      },
+      designSystemId: "ibm-carbon",
+      designSystemName: "IBM Carbon",
+      designHit: { id: "ibm", slug: "ibm", name: "IBM", design_desc: "IBM Carbon enterprise system" } as any,
+    });
+
+    expect(markdown).toContain("website_surface_mode: docs-knowledge-site");
+    expect(markdown).toContain("discovery_source_priority: uploaded_files");
+    expect(markdown).toContain("design_system_lock_id: ibm-carbon");
+    expect(markdown).toContain("design_system_lock_name: IBM Carbon");
+  });
+
+  it("locks distinct visual identities for corporate, docs, and content-hub surfaces", () => {
+    const decision = buildMockDecision();
+    decision.pageBlueprints = decision.pageIntents;
+
+    const corporate = buildWebsiteDesignSpecMarkdown({
+      decision,
+      requirementText: "Create a corporate B2B website for enterprise buyers.",
+      stylePreset: DEFAULT_STYLE_PRESET,
+      websiteSurfaceMode: "corporate-b2b-site",
+    });
+    const docs = buildWebsiteDesignSpecRouteExcerpt(
+      {
+        decision,
+        requirementText: "Create a developer documentation and API reference website.",
+        stylePreset: DEFAULT_STYLE_PRESET,
+        websiteSurfaceMode: "docs-knowledge-site",
+      },
+      "/",
+    );
+    const hub = buildWebsiteDesignSpecMarkdown({
+      decision,
+      requirementText: "Create an institutional standards and resource hub.",
+      stylePreset: DEFAULT_STYLE_PRESET,
+      websiteSurfaceMode: "content-hub-site",
+    });
+
+    expect(corporate).toContain("surface_visual_identity");
+    expect(corporate).toContain("industrial enterprise, procurement, operations, and institutional trust");
+    expect(corporate).toContain("Do not reuse the same green/white rounded-card system");
+    expect(corporate).toContain("surface_copy_exclusion");
+    expect(corporate).toContain("`Responsive layout`, `Shared shell`, `Desktop and mobile review`");
+    expect(corporate).toContain("surface_css_tokens: --bg #0B1220");
+    expect(corporate).toContain("--primary #4F8EF7; --accent #F5A524");
+    expect(corporate).toContain("image-backed enterprise masthead, wide proof bands");
+
+    expect(docs).toContain("website_surface_mode: docs-knowledge-site");
+    expect(docs).toContain("documentation/reference workspace");
+    expect(docs).toContain("code/reference panels");
+    expect(docs).toContain("Do not reuse the same green/white rounded-card system");
+    expect(docs).toContain("surface_css_tokens: --bg #F7F8FB");
+    expect(docs).toContain("--primary #2454D8; --accent #00A7B5");
+
+    expect(hub).toContain("website_surface_mode: content-hub-site");
+    expect(hub).toContain("editorial/institutional archive");
+    expect(hub).toContain("collection shelves, ledger rows, archive grids");
+    expect(hub).toContain("Do not reuse the same green/white rounded-card system");
+    expect(hub).toContain("surface_css_tokens: --bg #F5EFE6");
+    expect(hub).toContain("--primary #7A3524; --accent #B6813B");
+  });
+
+  it("uses different homepage archetypes for docs and content-hub surfaces", () => {
+    const decision = buildMockDecision();
+    decision.routes = ["/"];
+    decision.navLabels = ["Home"];
+    decision.pageIntents = [decision.pageIntents[0]];
+    decision.pageBlueprints = decision.pageIntents;
+
+    const docs = buildWebsiteDesignSpecMarkdown({
+      decision,
+      requirementText: "Create a developer documentation homepage for API guides and reference.",
+      stylePreset: DEFAULT_STYLE_PRESET,
+      websiteSurfaceMode: "docs-knowledge-site",
+    });
+    const hub = buildWebsiteDesignSpecMarkdown({
+      decision,
+      requirementText: "Create an institutional resource hub homepage for standards and research.",
+      stylePreset: DEFAULT_STYLE_PRESET,
+      websiteSurfaceMode: "content-hub-site",
+    });
+
+    expect(docs).toContain("homepage_mode: docs_workspace_homepage");
+    expect(docs).toContain("docs workspace masthead -> search/index rail -> quickstart strip -> reference matrix -> compact support CTA");
+    expect(docs).toContain("section_cadence: documentation workspace lead -> search/index rail -> quickstart strip -> guide stack -> reference matrix -> compact support CTA");
+    expect(docs).toContain("surface_homepage_archetype: docs workspace/reference index");
+    expect(docs).toContain("geometry_contract: the docs homepage opening must not use marketing hero utility geometry");
+    expect(docs).toContain("docs-index-rail");
+    expect(docs).toContain("docs homepage visuals should support wayfinding");
+    expect(docs).not.toContain("homepage_mode: enterprise_masthead");
+    expect(docs).not.toContain("section_cadence: Brand-led hero establishing the site home entry");
+
+    expect(hub).toContain("homepage_mode: collection_index_homepage");
+    expect(hub).toContain("editorial archive masthead -> collection shelves -> resource ledger -> institutional CTA");
+    expect(hub).toContain("section_cadence: editorial archive masthead -> topic/collection shelves -> standards/research ledger -> resource index rows -> institutional CTA");
+    expect(hub).toContain("surface_homepage_archetype: editorial/institutional collection index");
+    expect(hub).toContain("geometry_contract: the content-hub homepage opening must not use marketing hero utility geometry");
+    expect(hub).toContain("standards-ledger");
+    expect(hub).toContain("content-hub homepage visuals should support collection context");
+    expect(hub).not.toContain("homepage_mode: enterprise_masthead");
+    expect(hub).not.toContain("section_cadence: Brand-led hero establishing the site home entry");
+  });
+
+  it("builds a route-unit contract summary for checkpoint metadata", () => {
+    const decision = buildMockDecision();
+    decision.pageBlueprints = decision.pageIntents;
+
+    const summary = buildRouteUnitContractSummary(
+      {
+        decision,
+        requirementText: decision.requirementText,
+        stylePreset: DEFAULT_STYLE_PRESET,
+        websiteSurfaceMode: "corporate-b2b-site",
+      },
+      "/products",
+    );
+
+    expect(summary?.route).toBe("/products");
+    expect(summary?.routeContract.join("\n")).toContain("route=/products");
+    expect(summary?.openingFamily).toBe("catalog");
+    expect(summary?.inheritedTokens).toEqual(expect.arrayContaining(["#2563EB", "#22C55E"]));
+    expect(summary?.inheritedTerminology).toContain("corporate-b2b-site");
+    expect(summary?.openingTopology).toContain("catalog lead band");
+    expect(summary?.mediaPlan.join("\n")).toContain("slot_owner: catalog-lead proof slot");
   });
 
   it("assigns distinct interior opening topologies for core corporate-b2b routes", () => {
@@ -241,5 +390,340 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
     expect(about).toContain("opening_topology: company masthead -> operating profile slab -> trust/process strip");
     expect(contact).toContain("opening_topology: conversion-first inquiry block -> contact channels -> response expectation row");
     expect(products).toContain("prohibit: repeated interior hero skeleton across products, custom-solutions, cases, about, and contact");
+  });
+
+  it("assigns specialized opening families to creation, construction, advocacy, and case routes", () => {
+    const decision = buildMockDecision();
+    decision.routes = ["/", "/casux-creation", "/casux-construction", "/casux-advocacy", "/case-studies"];
+    decision.navLabels = ["Home", "Creation", "Construction", "Advocacy", "Cases"];
+    decision.pageIntents = [
+      decision.pageIntents[0],
+      {
+        route: "/casux-creation",
+        navLabel: "Creation",
+        purpose: "Creation route for narrative architecture and content structure.",
+        source: "prompt_contract",
+        pageKind: "intent",
+        responsibility: "Creation",
+        contentSkeleton: ["Creation masthead", "Narrative framework grid", "Proof CTA"],
+        componentMix: { hero: 10, feature: 16, grid: 12, proof: 12, form: 4, cta: 10 },
+        constraints: [],
+      },
+      {
+        route: "/casux-construction",
+        navLabel: "Construction",
+        purpose: "Construction route for implementation and execution.",
+        source: "prompt_contract",
+        pageKind: "intent",
+        responsibility: "Construction",
+        contentSkeleton: ["Process lead", "Execution roadmap", "Implementation proof"],
+        componentMix: { hero: 10, feature: 16, grid: 12, proof: 12, form: 4, cta: 10 },
+        constraints: [],
+      },
+      {
+        route: "/casux-advocacy",
+        navLabel: "Advocacy",
+        purpose: "Advocacy route for participation and coalition work.",
+        source: "prompt_contract",
+        pageKind: "intent",
+        responsibility: "Advocacy",
+        contentSkeleton: ["Advocacy lead", "Participation network", "Action framework"],
+        componentMix: { hero: 10, feature: 16, grid: 12, proof: 12, form: 4, cta: 10 },
+        constraints: [],
+      },
+      {
+        route: "/case-studies",
+        navLabel: "Cases",
+        purpose: "Case studies route for evidence and outcomes.",
+        source: "prompt_contract",
+        pageKind: "intent",
+        responsibility: "Cases",
+        contentSkeleton: ["Evidence header", "Case ledger", "Outcome strip"],
+        componentMix: { hero: 10, feature: 16, grid: 12, proof: 12, form: 4, cta: 10 },
+        constraints: [],
+      },
+    ] as any;
+    decision.pageBlueprints = decision.pageIntents;
+
+    const creation = buildWebsiteDesignSpecRouteExcerpt({
+      decision,
+      requirementText: decision.requirementText,
+      stylePreset: DEFAULT_STYLE_PRESET,
+      designHit: { id: "modern-minimal", slug: "modern-minimal", name: "Modern minimal / Linear", design_desc: "Institutional content system" } as any,
+    }, "/casux-creation");
+    const construction = buildWebsiteDesignSpecRouteExcerpt({
+      decision,
+      requirementText: decision.requirementText,
+      stylePreset: DEFAULT_STYLE_PRESET,
+      designHit: { id: "modern-minimal", slug: "modern-minimal", name: "Modern minimal / Linear", design_desc: "Institutional content system" } as any,
+    }, "/casux-construction");
+    const advocacy = buildWebsiteDesignSpecRouteExcerpt({
+      decision,
+      requirementText: decision.requirementText,
+      stylePreset: DEFAULT_STYLE_PRESET,
+      designHit: { id: "modern-minimal", slug: "modern-minimal", name: "Modern minimal / Linear", design_desc: "Institutional content system" } as any,
+    }, "/casux-advocacy");
+    const cases = buildWebsiteDesignSpecRouteExcerpt({
+      decision,
+      requirementText: decision.requirementText,
+      stylePreset: DEFAULT_STYLE_PRESET,
+      designHit: { id: "modern-minimal", slug: "modern-minimal", name: "Modern minimal / Linear", design_desc: "Institutional content system" } as any,
+    }, "/case-studies");
+
+    expect(creation).toContain("opening_topology: creation masthead -> narrative framework grid -> proof/CTA");
+    expect(creation).toContain("creation-masthead");
+    expect(creation).toContain("rather than a generic `detail-grid` with an `aside` surface");
+    expect(construction).toContain("opening_topology: process lead band -> execution roadmap -> implementation proof row");
+    expect(construction).toContain("construction-intro");
+    expect(advocacy).toContain("opening_topology: advocacy lead band -> participation network -> action framework");
+    expect(advocacy).toContain("advocacy-lead");
+    expect(cases).toContain("opening_topology: evidence header -> case ledger -> outcome/proof strip");
+    expect(cases).toContain("rather than a generic `detail-grid` with an `aside` surface");
+  });
+
+  it("keeps knowledge-platform content indexes out of product-catalog topology", () => {
+    const decision = buildMockDecision();
+    decision.routes = ["/", "/casux-information-platform"];
+    decision.navLabels = ["Home", "Casux Information Platform"];
+    decision.pageIntents = [
+      decision.pageIntents[0],
+      {
+        route: "/casux-information-platform",
+        navLabel: "Casux Information Platform",
+        purpose: 'Content collection page for "Casux Information Platform".',
+        source: "prompt_contract",
+        pageKind: "content-collection-index",
+        responsibility: "Content collection page",
+        contentSkeleton: [
+          "Knowledge-hub lead",
+          "Collection/index surface",
+          "Resource cards",
+          "Contextual CTA",
+        ],
+        componentMix: { hero: 12, feature: 12, grid: 30, proof: 8, form: 0, cta: 18 },
+        constraints: [],
+      },
+    ] as any;
+    decision.pageBlueprints = decision.pageIntents;
+
+    const excerpt = buildWebsiteDesignSpecRouteExcerpt({
+      decision,
+      requirementText:
+        "Build a CASUX information platform for standards, research materials, and policy resources.",
+      stylePreset: DEFAULT_STYLE_PRESET,
+      designHit: {
+        id: "industrial-b2b",
+        slug: "industrial-b2b",
+        name: "Industrial B2B",
+        design_desc: "Structured institutional system",
+      } as any,
+    }, "/casux-information-platform");
+
+    expect(excerpt).toContain("opening_topology: knowledge-hub lead band -> collection navigator -> resource/result stack");
+    expect(excerpt).toContain("Knowledge-hub lead explaining how visitors should use the collection");
+    expect(excerpt).toContain("knowledge-hub-lead");
+    expect(excerpt).toContain("do not wrap a content-collection opening in generic hero shells such as `hero`, `hero--split`, `hero-grid`, `hero__grid`, or `hero-panel`");
+    expect(excerpt).toContain("do not mix legacy hero utility classes such as `hero__content`, `hero__actions`, `hero-title`, or `hero-lead`");
+    expect(excerpt).not.toContain("catalog lead band -> assortment navigator -> comparison/specification row");
+    expect(excerpt).not.toContain("the products page must include a real product/material image");
+    expect(excerpt).not.toContain("opening_markup_contract: the first products opening section");
+  });
+
+  it("writes Chinese-first locale strategy and single-language collection contracts for Chinese sites", () => {
+    const decision = buildMockDecision();
+    decision.locale = "zh-CN";
+    decision.routes = ["/", "/casux-information-platform"];
+    decision.navLabels = ["首页", "信息"];
+    decision.pageIntents = [
+      {
+        route: "/",
+        navLabel: "首页",
+        purpose: "Homepage.",
+        source: "prompt_contract",
+        pageKind: "home",
+        responsibility: "Homepage",
+        contentSkeleton: ["Brand-led hero", "Proof band", "Capability band", "CTA"],
+        componentMix: { hero: 20, feature: 18, grid: 12, proof: 20, form: 6, cta: 12 },
+        constraints: [],
+      },
+      {
+        route: "/casux-information-platform",
+        navLabel: "信息",
+        purpose: 'Content collection page for "Casux Information Platform".',
+        source: "prompt_contract",
+        pageKind: "content-collection-index",
+        responsibility: "Content collection page",
+        contentSkeleton: ["Knowledge-hub lead", "Collection/index surface", "Resource cards", "Contextual CTA"],
+        componentMix: { hero: 12, feature: 12, grid: 30, proof: 8, form: 0, cta: 18 },
+        constraints: [],
+      },
+    ] as any;
+    decision.pageBlueprints = decision.pageIntents;
+
+    const markdown = buildWebsiteDesignSpecMarkdown({
+      decision,
+      requirementText: [
+        "# Canonical Website Generation Prompt",
+        "- Language: Chinese",
+        "- Final website locale requirement: Chinese.",
+        "- Locale contract: this site is single-language Chinese-first.",
+      ].join("\n"),
+      stylePreset: DEFAULT_STYLE_PRESET,
+      designHit: {
+        id: "modern-minimal",
+        slug: "modern-minimal",
+        name: "Modern minimal / Linear",
+        design_desc: "Institutional content collection style",
+      } as any,
+    });
+    const excerpt = buildWebsiteDesignSpecRouteExcerpt({
+      decision,
+      requirementText: [
+        "# Canonical Website Generation Prompt",
+        "- Language: Chinese",
+        "- Final website locale requirement: Chinese.",
+        "- Locale contract: this site is single-language Chinese-first.",
+      ].join("\n"),
+      stylePreset: DEFAULT_STYLE_PRESET,
+      designHit: {
+        id: "modern-minimal",
+        slug: "modern-minimal",
+        name: "Modern minimal / Linear",
+        design_desc: "Institutional content collection style",
+      } as any,
+    }, "/casux-information-platform");
+
+    expect(markdown).toContain("locale_strategy: Chinese-first single-language shell");
+    expect(excerpt).toContain("single-language Chinese-first");
+    expect(excerpt).toContain("Do not emit `/i18n/messages.en.json`");
+    expect(excerpt).not.toContain("route HTML should rely on stable `data-i18n` keys plus `/i18n/messages.en.json`");
+    expect(excerpt).toContain("collection-title");
+  });
+
+  it("derives Chinese-first shell contracts from the canonical prompt even when decision.locale is missing", () => {
+    const decision = buildMockDecision();
+    decision.locale = undefined as any;
+    decision.routes = ["/", "/casux-creation"];
+    decision.navLabels = ["首页", "创建"];
+    decision.pageIntents = [
+      {
+        route: "/",
+        navLabel: "首页",
+        purpose: "Homepage.",
+        source: "prompt_contract",
+        pageKind: "home",
+        responsibility: "Homepage",
+        contentSkeleton: ["Brand-led hero", "Proof band", "Capability band", "CTA"],
+        componentMix: { hero: 20, feature: 18, grid: 12, proof: 20, form: 6, cta: 12 },
+        constraints: [],
+      },
+      {
+        route: "/casux-creation",
+        navLabel: "创建",
+        purpose: 'Dedicated page for "Creation".',
+        source: "prompt_contract",
+        pageKind: "intent",
+        responsibility: "Creation page",
+        contentSkeleton: ["Route lead", "Primary content", "Supporting proof", "CTA"],
+        componentMix: { hero: 10, feature: 18, grid: 12, proof: 16, form: 6, cta: 12 },
+        constraints: [],
+      },
+    ] as any;
+    decision.pageBlueprints = decision.pageIntents;
+
+    const requirementText = [
+      "# Canonical Website Generation Prompt",
+      "- Language: Chinese",
+      "- Final website locale requirement: Chinese.",
+      "- Locale contract: this site is single-language Chinese-first.",
+    ].join("\n");
+
+    const markdown = buildWebsiteDesignSpecMarkdown({
+      decision,
+      requirementText,
+      stylePreset: DEFAULT_STYLE_PRESET,
+      designHit: {
+        id: "modern-minimal",
+        slug: "modern-minimal",
+        name: "Modern minimal / Linear",
+        design_desc: "Institutional content collection style",
+      } as any,
+    });
+    const excerpt = buildWebsiteDesignSpecRouteExcerpt(
+      {
+        decision,
+        requirementText,
+        stylePreset: DEFAULT_STYLE_PRESET,
+        designHit: {
+          id: "modern-minimal",
+          slug: "modern-minimal",
+          name: "Modern minimal / Linear",
+          design_desc: "Institutional content collection style",
+        } as any,
+      },
+      "/casux-creation",
+    );
+
+    expect(markdown).toContain("locale_strategy: Chinese-first single-language shell");
+    expect(markdown).toContain("this shell is single-language Chinese-first");
+    expect(excerpt).toContain("this route is single-language Chinese-first");
+    expect(excerpt).not.toContain("keep locale button labels literal `EN` and `ZH`");
+    expect(excerpt).not.toContain("route HTML should rely on stable `data-i18n` keys plus `/i18n/messages.en.json`");
+  });
+
+  it("lets explicit Chinese-first locale contracts beat bilingual-looking workflow noise", () => {
+    const decision = buildMockDecision();
+    decision.locale = undefined as any;
+    decision.routes = ["/", "/casux-information-platform"];
+    decision.navLabels = ["Home", "Information"];
+    decision.pageIntents = [
+      {
+        route: "/",
+        navLabel: "Home",
+        purpose: "Homepage.",
+        source: "prompt_contract",
+        pageKind: "home",
+        responsibility: "Homepage",
+        contentSkeleton: ["Brand-led hero", "Proof band", "Capability band", "CTA"],
+        componentMix: { hero: 20, feature: 18, grid: 12, proof: 20, form: 6, cta: 12 },
+        constraints: [],
+      },
+      {
+        route: "/casux-information-platform",
+        navLabel: "Information",
+        purpose: "Content collection page.",
+        source: "prompt_contract",
+        pageKind: "content-collection-index",
+        responsibility: "Collection page",
+        contentSkeleton: ["Knowledge lead", "Collection surface", "Cards", "CTA"],
+        componentMix: { hero: 20, feature: 15, grid: 35, proof: 5, form: 0, cta: 25 },
+        constraints: [],
+      },
+    ] as any;
+    decision.pageBlueprints = decision.pageIntents;
+
+    const requirementText = [
+      "# Canonical Website Generation Prompt",
+      "- Internal prompt language: English only.",
+      "- Final website locale requirement: Chinese.",
+      "- Language: Chinese",
+      "- Locale contract: this site is single-language Chinese-first.",
+      "- Do not emit an EN/ZH switch or bilingual resource files.",
+    ].join("\n");
+
+    const markdown = buildWebsiteDesignSpecMarkdown({
+      decision,
+      requirementText,
+      stylePreset: DEFAULT_STYLE_PRESET,
+      designHit: {
+        id: "modern-minimal",
+        slug: "modern-minimal",
+        name: "Modern minimal / Linear",
+        design_desc: "Institutional content collection style",
+      } as any,
+    });
+
+    expect(markdown).toContain("locale_strategy: Chinese-first single-language shell");
+    expect(markdown).not.toContain("locale_strategy: English-first with i18n resources for other locales");
   });
 });

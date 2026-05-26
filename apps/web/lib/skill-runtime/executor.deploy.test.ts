@@ -2,9 +2,11 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { buildContentWorkflowConfirmTimelineMetadataForWorkflow } from "../../skills/website-generation-workflow/blog-content-workflow";
 import { createChatTask, getChatTask } from "../agent/chat-task-store";
 import {
   buildBlogContentWorkflowPreview,
+  detectRuntimeLocaleForTesting,
   buildGeneratedBlogSeedPostsForTesting,
   finalizeGeneratedProjectArtifactForTesting,
   materializeSiteDirectoryFromProjectForTesting,
@@ -33,6 +35,33 @@ function buildStaticSiteProject() {
 }
 
 describe("SkillRuntimeExecutor deploy-only path", () => {
+  it("detects Chinese-first locale contracts from canonical prompts written in English", () => {
+    const locale = detectRuntimeLocaleForTesting(
+      [
+        "# Canonical Website Generation Prompt",
+        "- Language: Chinese",
+        "- Final website locale requirement: Chinese.",
+        "- Locale contract: this site is single-language Chinese-first.",
+      ].join("\n"),
+    );
+
+    expect(locale).toBe("zh-CN");
+  });
+
+  it("lets explicit Chinese-first canonical prompt contracts override stale preferred English locale", () => {
+    const locale = detectRuntimeLocaleForTesting(
+      [
+        "# Canonical Website Generation Prompt",
+        "- Language: Chinese",
+        "- Final website locale requirement: Chinese.",
+        "- Locale contract: this site is single-language Chinese-first.",
+      ].join("\n"),
+      "en",
+    );
+
+    expect(locale).toBe("zh-CN");
+  });
+
   it("recomputes cached design guidance when later dialogue changes the visual direction intent", async () => {
     const result = await resolveWebsiteRuntimeSkillForTesting({
       state: {
@@ -304,6 +333,56 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
     expect(preview.reason).toBe("ready");
     expect(preview.navLabel).toBeTruthy();
     expect(preview.posts).toHaveLength(3);
+  });
+
+  it("marks a non-archive content-backed route as content-collection instead of Blog", () => {
+    const preview = buildBlogContentWorkflowPreview({
+      locale: "en",
+      inputState: {
+        messages: [] as any,
+        phase: "end",
+        current_page_index: 0,
+        attempt_count: 0,
+        workflow_context: {
+          sourceRequirement: "CASUX standards system research reports certification lookup policy updates resource collection",
+        },
+      } as any,
+      project: {
+        staticSite: {
+          files: [
+            {
+              path: "/casux-information-platform/index.html",
+              content: '<!doctype html><html><body><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><h1>CASUX Information Platform</h1><div data-shpitto-blog-list></div></section></body></html>',
+            },
+          ],
+        },
+      },
+    });
+
+    expect(preview.required).toBe(true);
+    expect(preview.surfaceKind).toBe("content-collection");
+    expect(preview.navLabel).toBe("CASUX Information Platform");
+  });
+
+  it("renders content-entry confirmation copy for content-collection routes", () => {
+    const card = buildContentWorkflowConfirmTimelineMetadataForWorkflow({
+      locale: "en",
+      navLabel: "CASUX Information Platform",
+      posts: [
+        { slug: "one", title: "One", excerpt: "Excerpt", contentMd: "# One" },
+        { slug: "two", title: "Two", excerpt: "Excerpt", contentMd: "# Two" },
+        { slug: "three", title: "Three", excerpt: "Excerpt", contentMd: "# Three" },
+      ],
+      surfaceKind: "content-collection",
+      deps: {
+        toVisibleLocale: (locale) => (locale === "bilingual" ? "en" : locale),
+      },
+    });
+
+    expect(card.title).toBe("Content entries are ready. Confirm before deployment.");
+    expect(card.label).toBe("Confirm Content Entries and Deploy");
+    expect(card.cardType).toBe("confirm_content_preview_deploy");
+    expect(card.payload).toBe("__SHP_CONFIRM_CONTENT_DEPLOY__");
   });
 
   it("extracts a source-aligned Blog preview from canonical prompt narrative when no raw user source survives", () => {
@@ -591,7 +670,7 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
     expect(html).not.toContain('<div class="prose"');
   });
 
-  it("materializes normalized final artifacts with curated media and no empty brand-mark shell", async () => {
+  it("materializes normalized final artifacts without leaving an empty brand-mark shell", async () => {
     const siteDir = await fs.mkdtemp(path.join(os.tmpdir(), "shpitto-materialize-"));
     try {
       const decision = buildLocalDecisionPlan({
@@ -643,8 +722,6 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
 
       const html = await fs.readFile(path.join(siteDir, "index.html"), "utf8");
       expect(materialized.project.staticSite.files.some((file: any) => file.path === "/index.html")).toBe(true);
-      expect(html).toContain('data-stock-source="curated-library"');
-      expect(html).toContain("<img ");
       expect(html).not.toContain("brand-mark");
     } finally {
       await fs.rm(siteDir, { recursive: true, force: true });

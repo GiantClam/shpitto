@@ -15,6 +15,12 @@ import {
   rewriteProjectAssetLogicalUrls,
   rewriteProjectAssetLogicalUrlsWithAssetMap,
 } from "../../../../../../../lib/project-assets";
+import {
+  normalizePreviewSiteRelativePath,
+  pickDefaultPreviewRelativePath,
+  resolveDefaultPreviewRelativePathFromSiteDir,
+  siteHasPreviewEntrypoint,
+} from "../../../../../../../lib/agent/chat-preview-site";
 
 export const runtime = "nodejs";
 
@@ -43,8 +49,9 @@ const PREVIEW_SITE_DIR_CACHE_TTL_MS = 60_000;
 const PREVIEW_RESPONSE_CACHE_TTL_MS = 10 * 60_000;
 const PREVIEW_TASK_STORE_LOOKUP_TIMEOUT_MS = Math.max(
   1_000,
-  Number(process.env.CHAT_PREVIEW_TASK_STORE_TIMEOUT_MS || 20_000),
+  Number(process.env.CHAT_PREVIEW_TASK_STORE_TIMEOUT_MS || 24_000),
 );
+const DEFAULT_PREVIEW_ENTRY_TOKEN = "__default__";
 
 type PreviewResponseCacheEntry = {
   body: string | Uint8Array;
@@ -81,7 +88,7 @@ function getPreviewResponseCache(): Map<string, PreviewResponseCacheEntry> {
 }
 
 function previewResponseCacheKey(taskId: string, parts: string[]): string {
-  return `${taskId}:${parts.map(normalizePreviewFilePath).filter(Boolean).join("/") || "index.html"}`;
+  return `${taskId}:${parts.map(normalizePreviewFilePath).filter(Boolean).join("/") || DEFAULT_PREVIEW_ENTRY_TOKEN}`;
 }
 
 function rememberPreviewResponse(taskId: string, parts: string[], body: string | Uint8Array, contentType: string) {
@@ -292,8 +299,18 @@ function normalizeWebsitePreviewHtmlForTask(task: any, filePath: string, html: s
   }
 }
 
-function normalizePreviewFilePath(value: string): string {
-  return String(value || "").trim().replace(/\\/g, "/").replace(/^\/+/, "");
+const normalizePreviewFilePath = normalizePreviewSiteRelativePath;
+
+function isDefaultPreviewRequest(parts: string[]): boolean {
+  const safeParts = parts.map(normalizePreviewFilePath).filter(Boolean);
+  return safeParts.length === 0 || (safeParts.length === 1 && safeParts[0] === DEFAULT_PREVIEW_ENTRY_TOKEN);
+}
+
+function buildPreviewFileRedirect(req: Request, taskId: string, relativePath: string): NextResponse {
+  const normalized = normalizePreviewFilePath(relativePath);
+  const segments = normalized.split("/").filter(Boolean).map(encodeURIComponent).join("/");
+  const target = new URL(`/api/chat/tasks/${encodeURIComponent(taskId)}/preview/${segments}`, req.url);
+  return NextResponse.redirect(target, 307);
 }
 
 function getArtifactFilesFromTask(task: any): VirtualPreviewFile[] {
@@ -322,7 +339,16 @@ function getArtifactFilesFromTask(task: any): VirtualPreviewFile[] {
   return [...byPath.values()];
 }
 
+function resolveDefaultVirtualPreviewFile(task: any): VirtualPreviewFile | undefined {
+  const files = getArtifactFilesFromTask(task);
+  const defaultPath = pickDefaultPreviewRelativePath(files.map((file) => file.path));
+  if (!defaultPath) return undefined;
+  return files.find((file) => file.path === defaultPath);
+}
+
 function resolveVirtualPreviewFile(task: any, parts: string[]): VirtualPreviewFile | undefined {
+  if (isDefaultPreviewRequest(parts)) return resolveDefaultVirtualPreviewFile(task);
+
   const files = getArtifactFilesFromTask(task);
   if (files.length === 0) return undefined;
 
@@ -331,7 +357,7 @@ function resolveVirtualPreviewFile(task: any, parts: string[]): VirtualPreviewFi
   const target = normalizePreviewFilePath(safeParts.join("/"));
   const candidates = target
     ? [target, `${target}/index.html`]
-    : ["index.html"];
+    : [];
 
   for (const candidate of candidates) {
     const file = byPath.get(candidate);
@@ -380,23 +406,6 @@ async function resolveTargetFile(siteDir: string, parts: string[]): Promise<stri
   return candidate;
 }
 
-async function hasIndexHtml(siteDir: string): Promise<boolean> {
-  const normalized = String(siteDir || "").trim();
-  if (!normalized) return false;
-  try {
-    const stat = await fs.stat(normalized);
-    if (!stat.isDirectory()) return false;
-  } catch {
-    return false;
-  }
-  try {
-    const indexStat = await fs.stat(path.join(normalized, "index.html"));
-    return indexStat.isFile();
-  } catch {
-    return false;
-  }
-}
-
 function rememberPreviewSiteDir(taskId: string, siteDir: string) {
   const normalizedTaskId = String(taskId || "").trim();
   const normalizedSiteDir = String(siteDir || "").trim();
@@ -415,7 +424,7 @@ async function getCachedPreviewSiteDir(taskId: string): Promise<string> {
     cache.delete(taskId);
     return "";
   }
-  if (await hasIndexHtml(entry.siteDir)) return entry.siteDir;
+  if (await siteHasPreviewEntrypoint(entry.siteDir)) return entry.siteDir;
   cache.delete(taskId);
   return "";
 }
@@ -463,7 +472,7 @@ async function resolveSiteDirFromLocalTaskRoot(taskRoot: string): Promise<string
   }
 
   for (const candidate of candidates) {
-    if (await hasIndexHtml(candidate)) return candidate;
+    if (await siteHasPreviewEntrypoint(candidate)) return candidate;
   }
   return "";
 }
@@ -504,7 +513,7 @@ async function resolveSiteDirFromTask(task: any): Promise<string> {
   const progress = task?.result?.progress || {};
   const explicit = String(progress?.checkpointSiteDir || "").trim();
   for (const candidate of resolvePreviewPathCandidates(explicit)) {
-    if (await hasIndexHtml(candidate)) return candidate;
+    if (await siteHasPreviewEntrypoint(candidate)) return candidate;
   }
 
   const candidates: string[] = [];
@@ -543,7 +552,7 @@ async function resolveSiteDirFromTask(task: any): Promise<string> {
     const resolved = path.resolve(candidate);
     if (seen.has(resolved)) continue;
     seen.add(resolved);
-    if (await hasIndexHtml(resolved)) return resolved;
+    if (await siteHasPreviewEntrypoint(resolved)) return resolved;
   }
 
   return "";
@@ -556,6 +565,7 @@ export async function GET(
   const params = await ctx.params;
   const taskId = String(params?.taskId || "").trim();
   const parts = Array.isArray(params?.path) ? params.path : [];
+  const defaultPreviewRequest = isDefaultPreviewRequest(parts);
   if (!taskId) {
     return NextResponse.json({ ok: false, error: "Missing taskId." }, { status: 400 });
   }
@@ -609,6 +619,9 @@ export async function GET(
   if (!siteDir) {
     const virtualFile = resolveVirtualPreviewFile(task, parts);
     if (virtualFile) {
+      if (defaultPreviewRequest) {
+        return buildPreviewFileRedirect(_req, taskId, virtualFile.path);
+      }
       const mime = virtualFile.type || detectMime(virtualFile.path);
       if (mime.startsWith("text/html")) {
         const assetContext = await ensureAssetRewriteContextForContent(virtualFile.content);
@@ -696,6 +709,13 @@ export async function GET(
       );
     }
     return NextResponse.json({ ok: false, error: "No preview directory for this task yet." }, { status: 404 });
+  }
+
+  if (defaultPreviewRequest) {
+    const defaultRelativePath = await resolveDefaultPreviewRelativePathFromSiteDir(siteDir);
+    if (defaultRelativePath) {
+      return buildPreviewFileRedirect(_req, taskId, defaultRelativePath);
+    }
   }
 
   let filePath = "";

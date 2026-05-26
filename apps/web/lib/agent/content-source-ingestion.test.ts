@@ -426,6 +426,62 @@ describe("content source ingestion", () => {
     ]);
   });
 
+  it("repairs degraded structural page plans by dropping generic Page N placeholders and restoring Home", () => {
+    const profile = __contentSourceIngestionForTesting.buildKnowledgeProfile({
+      requirementText: "Generate the website from the uploaded planning material.",
+      domains: [],
+      contentGaps: [],
+      sources: [
+        {
+          type: "uploaded_file",
+          title: "CASUX planning.pdf",
+          fileName: "CASUX planning.pdf",
+          confidence: 0.93,
+          snippet:
+            "Main navigation: CASUX Creation | CASUX Construction | CASUX Certification | CASUX Advocacy | CASUX Research Center | CASUX Information Platform | Standards System | Page 8 | Case Studies | Page 10",
+        },
+      ],
+    });
+
+    expect(profile.suggestedPages.map((page) => page.route)).toEqual([
+      "/",
+      "/casux-creation",
+      "/casux-construction",
+      "/casux-certification",
+      "/casux-advocacy",
+      "/casux-research-center",
+      "/casux-information-platform",
+      "/standards-system",
+      "/case-studies",
+    ]);
+    expect(profile.contentGaps.join(" ")).toContain("Dropped generic source page placeholders");
+    expect(profile.contentGaps.join(" ")).toContain("Synthesized a Home route");
+  });
+
+  it("does not inject Home into a clean explicit route list that simply omits it", () => {
+    const profile = __contentSourceIngestionForTesting.buildKnowledgeProfile({
+      requirementText: "Generate the website from the uploaded planning material.",
+      domains: [],
+      contentGaps: [],
+      sources: [
+        {
+          type: "uploaded_file",
+          title: "planning.pdf",
+          fileName: "planning.pdf",
+          confidence: 0.96,
+          snippet: "Main navigation: Solutions | Case Studies | Resources | Contact Us",
+        },
+      ],
+    });
+
+    expect(profile.suggestedPages.map((page) => page.route)).toEqual([
+      "/solutions",
+      "/case-studies",
+      "/resources",
+      "/contact-us",
+    ]);
+  });
+
   it("keeps knowledge profile artifacts English-safe when source titles and snippets are multilingual", () => {
     const rendered = formatWebsiteKnowledgeProfile({
       sourceMode: "uploaded_files",
@@ -459,7 +515,9 @@ describe("content source ingestion", () => {
     expect(rendered).toContain("## Website Knowledge Profile");
     expect(rendered).toContain("Brand: source-defined brand available in uploaded/domain material");
     expect(rendered).toContain("[uploaded_file] Source 1");
-    expect(rendered).toContain("multilingual source text stored in extracted source artifacts");
+    expect(rendered).toContain("Research Center");
+    expect(rendered).toContain("Downloads");
+    expect(rendered).not.toContain("multilingual source text stored in extracted source artifacts");
     expect(containsWorkflowCjk(rendered)).toBe(false);
     expect(isWorkflowArtifactEnglishSafe(rendered)).toBe(true);
   });

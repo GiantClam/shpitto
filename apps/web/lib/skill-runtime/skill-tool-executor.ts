@@ -11,6 +11,7 @@ import {
 } from "../agent/referenced-assets.ts";
 import { loadWorkflowSkillContext, normalizeWorkflowVisualDecisionContext } from "../agent/website-workflow.ts";
 import { DEFAULT_STYLE_PRESET, normalizeStylePreset, type DesignStylePreset } from "../design-style-preset.ts";
+import { selectWebsiteGenerationTypeSkill } from "./website-type-selector.ts";
 import {
   buildLocalDecisionPlan,
   extractRouteSourceBrief,
@@ -18,6 +19,7 @@ import {
   type PageBlueprint,
 } from "./decision-layer.ts";
 import { buildWebsiteDesignSpecMarkdown, buildWebsiteDesignSpecRouteExcerpt } from "./website-design-spec.ts";
+import { inferWebsiteSurfaceModeFromSkillId, type WebsiteDiscoveryBrief, type WebsiteSurfaceMode } from "./open-design-adoption.ts";
 import { invokeModelWithIdleTimeout } from "./llm-stream.ts";
 import { collectCompletedPhases, getGeneratedFilePaths, getPages, getStaticArtifactFiles } from "./artifacts.ts";
 import { resolveRunProviderRunnerLock, resolveRunProviderRunnerLocks, type RunProviderLock } from "./provider-runner.ts";
@@ -25,8 +27,11 @@ import {
   getWebsiteGenerationSkillBundle,
   listDocumentContentSkillIds,
   listWebsiteSeedSkillIds,
+  loadProjectSkill,
+  renderProjectSkillResourceIndex,
   selectDocumentContentSkillsForIntent,
   selectWebsiteSeedSkillsForIntent,
+  type WebsiteSeedSkillSelection,
 } from "./project-skill-loader.ts";
 import {
   SKILL_TOOL_DEFINITIONS,
@@ -47,7 +52,6 @@ import {
 import {
   findDuplicatedBilingualDomCopy,
   findVisibleSimultaneousBilingualCopy as sharedFindVisibleSimultaneousBilingualCopy,
-  isBilingualRequirementText as sharedIsBilingualRequirementText,
 } from "./bilingual-copy-guard.ts";
 import { sanitizeBlogIndexEditorialScaffoldText } from "../../skills/website-generation-workflow/runtime-site-completions.ts";
 import { getSkillExecutionAdapter } from "./skill-execution-adapter-registry.ts";
@@ -233,6 +237,10 @@ const DEFAULT_INITIAL_DESIGN_CHARS = Math.max(800, Number(process.env.SKILL_TOOL
 const DEFAULT_INITIAL_WORKFLOW_SKILL_CHARS = Math.max(
   1200,
   Number(process.env.SKILL_TOOL_INITIAL_WORKFLOW_SKILL_CHARS || 7000),
+);
+const DEFAULT_INITIAL_SEED_GUIDANCE_CHARS = Math.max(
+  2_000,
+  Number(process.env.SKILL_TOOL_INITIAL_SEED_GUIDANCE_CHARS || 10_000),
 );
 const DEFAULT_SKELETON_PROMPT_CONTEXT_CHARS = Math.max(
   4_000,
@@ -567,8 +575,83 @@ function findBlogDetailQualityIssues(html: string): string[] {
   return issues;
 }
 
+function hasExplicitChineseOnlyLocaleContract(text = ""): boolean {
+  const normalized = String(text || "");
+  return (
+    /\bLanguage:\s*Chinese\b(?!\s*(?:and|\/|,|&))/i.test(normalized) ||
+    /Final website locale requirement:\s*Chinese\b(?!\s*(?:and|\/|,|&))/i.test(normalized) ||
+    /\bLocale:\s*(?:zh-CN|zh)\b/i.test(normalized) ||
+    /single-language\s+Chinese-first/i.test(normalized) ||
+    /\bChinese-only\b/i.test(normalized) ||
+    /\bKeep all visible copy in Chinese\b/i.test(normalized) ||
+    /\bKeep the site in Chinese\b/i.test(normalized)
+  );
+}
+
+function hasExplicitEnglishOnlyLocaleContract(text = ""): boolean {
+  const normalized = String(text || "");
+  return (
+    /\bLanguage:\s*English\b(?!\s*(?:and|\/|,|&))/i.test(normalized) ||
+    /Final website locale requirement:\s*English\b(?!\s*(?:and|\/|,|&))/i.test(normalized) ||
+    /\bLocale:\s*en\b/i.test(normalized) ||
+    /single-language\s+English-first/i.test(normalized) ||
+    /\bEnglish-only\b/i.test(normalized) ||
+    /\bKeep all visible copy in English\b/i.test(normalized) ||
+    /\bKeep the site in English\b/i.test(normalized)
+  );
+}
+
+function hasExplicitBilingualLocaleContract(text = ""): boolean {
+  const normalized = String(text || "");
+  return (
+    /\b(?:build|create|generate|make|need|want|launch)\b[^\n]{0,120}\bbilingual\b/i.test(normalized) ||
+    /\bChinese\s+and\s+English\b/i.test(normalized) ||
+    /\bEnglish\s+and\s+Chinese\b/i.test(normalized) ||
+    /\bboth\s+Chinese\s+and\s+English\b/i.test(normalized) ||
+    /\bswitch\s+between\s+English\s+and\s+Chinese\b/i.test(normalized)
+  );
+}
+
+function prefersSingleLanguageShell(text = ""): boolean {
+  const normalized = String(text || "");
+  return (
+    /Do not emit an EN\/ZH switch/i.test(normalized) ||
+    /Do not emit .*bilingual resource files/i.test(normalized) ||
+    /Prefer a single-language site over a fake language toggle/i.test(normalized)
+  );
+}
+
 function isBilingualRequirementText(text = ""): boolean {
-  return sharedIsBilingualRequirementText(text);
+  if (
+    hasExplicitChineseOnlyLocaleContract(text) ||
+    hasExplicitEnglishOnlyLocaleContract(text) ||
+    prefersSingleLanguageShell(text)
+  ) {
+    return false;
+  }
+  return hasExplicitBilingualLocaleContract(text);
+}
+
+function resolveRequestedExperienceLocale(
+  requirementText = "",
+  locale?: string,
+): "zh-CN" | "en" | "bilingual" | undefined {
+  if (hasExplicitChineseOnlyLocaleContract(requirementText)) return "zh-CN";
+  if (hasExplicitEnglishOnlyLocaleContract(requirementText)) return "en";
+  if (hasExplicitBilingualLocaleContract(requirementText) && !prefersSingleLanguageShell(requirementText)) {
+    return "bilingual";
+  }
+  const normalizedLocale = String(locale || "")
+    .trim()
+    .toLowerCase();
+  if (normalizedLocale === "bilingual") return "bilingual";
+  if (normalizedLocale === "zh-cn" || normalizedLocale === "zh") return "zh-CN";
+  if (normalizedLocale === "en") return "en";
+  return undefined;
+}
+
+function shouldUseBilingualExperience(requirementText = "", locale?: string): boolean {
+  return resolveRequestedExperienceLocale(requirementText, locale) === "bilingual";
 }
 
 function cjkCount(text: string): number {
@@ -738,22 +821,207 @@ function findVisibleBlogEditorialScaffold(html: string): string[] {
 function findVisiblePageMechanicsScaffold(html: string): string[] {
   const text = htmlVisibleText(html);
   const terms: Array<[string, RegExp]> = [
-    ["site entry label", /(?:阅读入口|站点入口|首页路径|内容路径|浏览路径|访问路径)/],
+    ["site entry label", /(?:阅读入口|站点入口|首页路径|浏览路径|站点路径)/],
     ["homepage-to-content sequence", /从(?:首页|主页)开始.{0,40}(?:循序|进入|接下来|博客|深内容)/i],
     ["next-blog sequence", /接下来看(?:博客|文章|内容).{0,40}(?:具体|更具体|深入|完整)/i],
     ["deep-content pathway", /(?:循序进入深内容|进入深内容)/i],
     ["page role explainer", /(?:首页|主页|博客页|页面|本页|这个页面).{0,18}(?:任务|职责|作用|目的|定位)(?:是|为|在于)/i],
     [
       "mechanical next step",
-      /(?:(?:首页|主页|博客|页面|站点|入口|路径|角色|目标).{0,60}(?:下一步|继续了解|接下来)|(?:下一步|继续了解|接下来).{0,60}(?:首页|主页|博客|页面|站点|入口|路径|角色|目标))/i,
+      /(?:(?:首页|主页|博客页?|本页|这个页面).{0,60}(?:下一步|继续了解|接下来)|(?:下一步|继续了解|接下来).{0,60}(?:首页|主页|博客页?|本页|这个页面))/i,
     ],
     ["role-target routing", /按角色和目标快速进入下一步/i],
     ["from-to browsing path", /从.{0,24}到.{0,24}(?:形成|构成|串成).{0,16}(?:路径|动线|浏览|阅读)/i],
     ["homepage job explainer", /(?:homepage|home page|home route).{0,40}(?:job|task|purpose|role).{0,20}(?:is|:)/i],
     ["start-from-home sequence", /(?:start from|begin with).{0,24}(?:home|homepage|the home page).{0,60}(?:then|next|continue|blog|archive|deeper)/i],
     ["site browsing path", /(?:site|page|homepage|blog).{0,40}(?:browsing path|reading path|content path|where to start)/i],
+    ["page grouping explainer", /(?:the\s+)?page\s+(?:groups|organizes|arranges|frames)\s+.{0,120}\b(?:questions|sections|areas|routes|content|platform)\b/i],
+    ["homepage framing explainer", /(?:the\s+)?homepage\s+(?:groups|organizes|arranges|frames|foregrounds|reflects|shows|presents|uses)\s+.{0,120}\b(?:questions|sections|areas|routes|content|platform|clarity|proof|signals?|buyers?|needs?|topics|materials|reality|points?)\b/i],
+    ["home page framing explainer", /(?:the\s+)?home\s+page\s+(?:groups|organizes|arranges|frames|foregrounds|reflects|shows|presents|uses)\s+.{0,120}\b(?:questions|sections|areas|routes|content|platform|clarity|proof|signals?|buyers?|needs?|topics|materials|reality|points?)\b/i],
+    ["visual-system explainer", /(?:the\s+)?visual\s+system\s+(?:keeps|uses|shows|creates|makes)\s+.{0,120}\b(?:headings|cards|blocks|content|copy|system)\b/i],
+    ["responsive-layout explainer", /\bresponsive\s+layout\b.{0,80}\b(?:desktop|mobile|viewport|review)\b/i],
+    ["implementation-mechanics label", /\b(?:responsive layout|shared shell|desktop and mobile review)\b/i],
+    ["responsive-page mechanics", /\b(?:layout|page|site)\s+(?:stays|remains|is|feels)\s+.{0,80}\bresponsive\b/i],
+    ["homepage-construction explainer", /\bhomepage\s+(?:built|designed|made)\s+for\b/i],
   ];
   return terms.filter(([, pattern]) => pattern.test(text)).map(([term]) => term);
+}
+
+function findSurfaceVisualTokenContractIssues(params: {
+  css: string;
+  decision: LocalDecisionPlan;
+  requirementText: string;
+}): string[] {
+  const surfaceMode = selectWebsiteGenerationTypeSkill({
+    requirementText: params.requirementText,
+    routes: params.decision.routes,
+  }).surfaceMode;
+  const css = String(params.css || "").toLowerCase();
+  const issues: string[] = [];
+  const usesDefaultGreenWhite =
+    /#2e8b57|#8bc34a|#22c55e/i.test(css) &&
+    /#f5fbf7|#ffffff|#fff\b/i.test(css) &&
+    /--primary|--accent|--surface|--bg|--background/i.test(css);
+  if (!usesDefaultGreenWhite) return issues;
+
+  if (surfaceMode === "corporate-b2b-site") {
+    issues.push(
+      "corporate-b2b-site CSS still uses the generic green/white rounded-card token family instead of a distinct industrial enterprise token system",
+    );
+  } else if (surfaceMode === "docs-knowledge-site") {
+    issues.push(
+      "docs-knowledge-site CSS still uses the generic green/white rounded-card token family instead of a documentation/reference token system",
+    );
+  } else if (surfaceMode === "content-hub-site") {
+    issues.push(
+      "content-hub-site CSS still uses the generic green/white rounded-card token family instead of an editorial/institutional archive token system",
+    );
+  }
+  return issues;
+}
+
+function firstMeaningfulSectionHtml(html: string): string {
+  const body = /<body\b[^>]*>([\s\S]*?)<\/body>/i.exec(html)?.[1] || html;
+  const main = /<main\b[^>]*>([\s\S]*?)<\/main>/i.exec(body)?.[1] || body;
+  return /<section\b[^>]*>[\s\S]*?<\/section>/i.exec(main)?.[0] || main.slice(0, 4000);
+}
+
+function hasGenericTwoColumnHomepageHeroGeometry(html: string): boolean {
+  const opening = firstMeaningfulSectionHtml(html);
+  const hasHeroWrapper = /\b(?:hero|hero-wrap|hero-home|hero-shell|hero-grid|hero__grid)\b/i.test(opening);
+  const hasHeroGrid = /\b(?:hero-grid|hero__grid|hero-shell)\b/i.test(opening);
+  const hasHeroCopy = /\b(?:hero-copy|hero__copy|hero__body)\b/i.test(opening);
+  const hasSidePanel =
+    /<aside\b/i.test(opening) ||
+    /\b(?:hero-panel|hero__panel|hero-visual|hero-aside|visual-panel|side-panel|right-rail|aside-rail)\b/i.test(
+      opening,
+    );
+  return hasHeroCopy && hasSidePanel && (hasHeroGrid || hasHeroWrapper);
+}
+
+function findSurfaceHomepageArchetypeIssues(params: {
+  html: string;
+  pagePath: string;
+  decision: LocalDecisionPlan;
+  requirementText: string;
+  force?: boolean;
+}): string[] {
+  if (
+    !params.force &&
+    String(process.env.SHPITTO_OD_SURFACE_MODE || "").trim() !== "1" &&
+    String(process.env.SHPITTO_OD_HOMEPAGE_ARCHETYPE_GATE || "").trim() !== "1"
+  ) {
+    return [];
+  }
+  if (normalizePath(params.pagePath) !== "/index.html") return [];
+  const surfaceMode = selectWebsiteGenerationTypeSkill({
+    requirementText: params.requirementText,
+    routes: params.decision.routes,
+  }).surfaceMode;
+  const html = String(params.html || "");
+  const issues: string[] = [];
+  if (surfaceMode === "docs-knowledge-site") {
+    const hasDocsOwnedHomepage =
+      /\b(?:docs-home|docs-workspace|docs-index-rail|docs-search|quickstart-strip|guide-stack|reference-matrix|reference-index|docs-lead|documentation-lead)\b/i.test(
+        html,
+      );
+    if (!hasDocsOwnedHomepage) {
+      issues.push(
+        "docs-knowledge-site homepage lacks route-owned docs workspace/reference-index classes such as docs-workspace, docs-index-rail, quickstart-strip, guide-stack, or reference-matrix",
+      );
+    }
+    if (/\b(?:enterprise-hero|enterprise-proof-row|archive-masthead|resource-shelf|standards-ledger)\b/i.test(html)) {
+      issues.push("docs-knowledge-site homepage reused corporate or content-hub homepage modules");
+    }
+    if (hasGenericTwoColumnHomepageHeroGeometry(html)) {
+      issues.push(
+        "docs-knowledge-site homepage still uses generic marketing hero utility geometry instead of docs workspace/reference-index geometry",
+      );
+    }
+  } else if (surfaceMode === "content-hub-site") {
+    const hasHubOwnedHomepage =
+      /\b(?:collection-home|archive-masthead|resource-shelf|standards-ledger|research-index|issue-map|institutional-context|collection-lead|collection-title|resource-collection-lead|collection-surface)\b/i.test(
+        html,
+      );
+    if (!hasHubOwnedHomepage) {
+      issues.push(
+        "content-hub-site homepage lacks route-owned collection/index classes such as collection-home, archive-masthead, resource-shelf, standards-ledger, research-index, or institutional-context",
+      );
+    }
+    if (/\b(?:enterprise-hero|enterprise-proof-row|docs-workspace|docs-index-rail|quickstart-strip|reference-matrix)\b/i.test(html)) {
+      issues.push("content-hub-site homepage reused corporate or docs homepage modules");
+    }
+    if (hasGenericTwoColumnHomepageHeroGeometry(html)) {
+      issues.push(
+        "content-hub-site homepage still uses generic marketing hero utility geometry instead of editorial collection-index geometry",
+      );
+    }
+  }
+  return issues;
+}
+
+function findHiddenRevealCssIssues(css: string): string[] {
+  const text = String(css || "");
+  const issues: string[] = [];
+  if (/\[[^\]]*data-reveal[^\]]*\][^{]*\{[^}]*\bopacity\s*:\s*0(?:\.0+)?\b/i.test(text)) {
+    issues.push(
+      "CSS hides `[data-reveal]` content by default with opacity:0, which makes static/full-page previews show blank sections before scroll-driven JavaScript runs",
+    );
+  }
+  if (/\.reveal[^{]*\{[^}]*\bopacity\s*:\s*0(?:\.0+)?\b/i.test(text)) {
+    issues.push(
+      "CSS hides reveal content by default with opacity:0, which can make generated static pages look empty in previews and screenshots",
+    );
+  }
+  return issues;
+}
+
+function cssSelectorForClassPattern(className: string): RegExp {
+  const escaped = className.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`\\.${escaped}(?:\\b|[:.#\\s,{>+~[])`);
+}
+
+function extractHtmlClassNamesForCssCoverage(htmlByPath: Map<string, string>): string[] {
+  const names = new Set<string>();
+  for (const [pathName, html] of htmlByPath.entries()) {
+    if (!pathName.endsWith(".html")) continue;
+    const text = String(html || "");
+    for (const match of text.matchAll(/\bclass=(["'])([^"']+)\1/gi)) {
+      for (const token of String(match[2] || "").split(/\s+/)) {
+        const name = token.trim();
+        if (!name || name.length < 3) continue;
+        if (/^(active|current|open|closed|hidden|visible|selected|disabled|loading|ready|js|no-js)$/i.test(name)) {
+          continue;
+        }
+        names.add(name);
+      }
+    }
+  }
+  return Array.from(names);
+}
+
+function findCssCompletenessIssues(css: string, htmlByPath?: Map<string, string>): string[] {
+  const text = String(css || "");
+  const issues: string[] = [];
+  if (/\/\*\s*placeholder\s*\*\//i.test(text)) {
+    issues.push("CSS still contains a placeholder marker");
+  }
+  if (/placeholder to satisfy immediate emit requirement/i.test(text)) {
+    issues.push("CSS still contains the immediate-emission placeholder comment");
+  }
+  if (htmlByPath) {
+    const classNames = extractHtmlClassNamesForCssCoverage(htmlByPath);
+    if (classNames.length >= 12) {
+      const covered = classNames.filter((className) => cssSelectorForClassPattern(className).test(text));
+      const requiredCoverage = Math.max(4, Math.ceil(classNames.length * 0.2));
+      if (covered.length < requiredCoverage) {
+        issues.push(
+          `CSS styles only ${covered.length}/${classNames.length} emitted HTML classes; shared CSS does not cover the generated page structure`,
+        );
+      }
+    }
+  }
+  return issues;
 }
 
 function findVisibleBlogDetailEditorialScaffold(html: string): string[] {
@@ -867,9 +1135,42 @@ function isStructuredBlogDetailShellHtml(html: string): boolean {
   return /<h1\b[^>]*>[\s\S]{4,}<\/h1>/i.test(source) && /<article\b/i.test(source) && paragraphs.length >= 2 && sectionHeadings.length >= 2 && text.length >= 280;
 }
 
+function findSingleLanguageLocaleContractIssues(
+  html: string,
+  locale: "zh-CN" | "en",
+  pagePath: string,
+  requirementText = "",
+): string[] {
+  const issues: string[] = [];
+  const text = String(requirementText || "");
+  const expectedLocale = hasExplicitChineseOnlyLocaleContract(text)
+    ? "zh-CN"
+    : hasExplicitEnglishOnlyLocaleContract(text)
+      ? "en"
+      : undefined;
+  if (!expectedLocale) return issues;
+  const mainHtml = html.match(/<main\b[^>]*>([\s\S]*?)<\/main>/i)?.[1] || html;
+  const visible = htmlVisibleText(mainHtml);
+  if (!visible.trim()) return issues;
+
+  if (expectedLocale === "zh-CN") {
+    const cjk = cjkCount(visible);
+    const latin = latinLetterCount(visible);
+    if (cjk < 20 && latin > 60) {
+      issues.push(`${pagePath} is tagged zh-CN but still renders mostly English visitor-facing copy`);
+    }
+  }
+
+  return issues;
+}
+
+function isContentBackedPageKind(pageKind: string | undefined): boolean {
+  return pageKind === "blog-data-index" || pageKind === "content-collection-index";
+}
+
 function getBlogDataSourceRoutes(decision: LocalDecisionPlan): string[] {
   return decision.pageBlueprints
-    .filter((page) => page.pageKind === "blog-data-index")
+    .filter((page) => isContentBackedPageKind(page.pageKind))
     .map((page) => normalizePath(page.route));
 }
 
@@ -936,8 +1237,12 @@ function collectI18nMessagesFromHtml(files: RuntimeWorkflowFile[]): { en: Record
   return { en, zh };
 }
 
-function ensureEnglishFirstI18nResourceFiles(files: RuntimeWorkflowFile[], requirementText = ""): RuntimeWorkflowFile[] {
-  if (!sharedIsBilingualRequirementText(requirementText)) return files;
+function ensureEnglishFirstI18nResourceFiles(
+  files: RuntimeWorkflowFile[],
+  requirementText = "",
+  locale?: string,
+): RuntimeWorkflowFile[] {
+  if (!shouldUseBilingualExperience(requirementText, locale)) return files;
   const next = [...files];
   const byPath = new Map(next.map((file) => [normalizePath(file.path), file] as const));
   const harvested = collectI18nMessagesFromHtml(next);
@@ -977,7 +1282,20 @@ function removeLocaleSwitchMarkup(rawHtml: string): string {
       /<([a-zA-Z][\w:-]*)\b[^>]*class=(["'])[^"']*\blocale-switch\b[^"']*\2[^>]*>[\s\S]*?<\/\1>/gi,
       "",
     )
-    .replace(/\s*<button\b[^>]*data-locale-toggle[^>]*>[\s\S]*?<\/button>\s*/gi, "");
+    .replace(
+      /<([a-zA-Z][\w:-]*)\b[^>]*(?:data-locale-switch|class=(["'])[^"']*\blang-switch\b[^"']*\2)[^>]*>[\s\S]*?<\/\1>/gi,
+      "",
+    )
+    .replace(/\s*<button\b[^>]*(?:data-locale-toggle|data-lang)[^>]*>[\s\S]*?<\/button>\s*/gi, "")
+    .replace(
+      /<([a-zA-Z][\w:-]*)\b[^>]*class=(["'])[^"']*\b(?:header-utility|utility-shell|locale-group)\b[^"']*\2[^>]*>[\s\S]*?(?:data-locale-toggle|data-lang|data-locale=|utility-chip)[\s\S]*?<\/\1>/gi,
+      "",
+    )
+    .replace(/\s*<button\b[^>]*(?:data-locale-toggle|data-lang|data-locale|class=(["'])[^"']*\butility-chip\b[^"']*\1)[^>]*>[\s\S]*?<\/button>\s*/gi, "")
+    .replace(
+      /<([a-zA-Z][\w:-]*)\b[^>]*class=(["'])[^"']*\b(?:header-utility|utility-shell|locale-group)\b[^"']*\2[^>]*>\s*<\/\1>/gi,
+      "",
+    );
 }
 
 function hasMeaningfullyTranslatedAlternateLocale(
@@ -1004,10 +1322,24 @@ function hasMeaningfullyTranslatedAlternateLocale(
   return distinctCount >= Math.max(3, Math.ceil(keys.length * 0.12));
 }
 
-function suppressLocaleSwitchUntilTranslationsExist(files: RuntimeWorkflowFile[], requirementText = ""): RuntimeWorkflowFile[] {
-  if (!sharedIsBilingualRequirementText(requirementText)) return files;
+function suppressLocaleSwitchUntilTranslationsExist(
+  files: RuntimeWorkflowFile[],
+  requirementText = "",
+  locale?: string,
+): RuntimeWorkflowFile[] {
   const next = [...files];
   const byPath = new Map(next.map((file) => [normalizePath(file.path), file] as const));
+  const hasI18nDictionaries = byPath.has(I18N_MESSAGE_EN_PATH) && byPath.has(I18N_MESSAGE_ZH_CN_PATH);
+
+  if (!shouldUseBilingualExperience(requirementText, locale) || !hasI18nDictionaries) {
+    return files.map((file) => {
+      if (!normalizePath(file.path).endsWith(".html")) return file;
+      return {
+        ...file,
+        content: removeLocaleSwitchMarkup(String(file.content || "")),
+      };
+    });
+  }
   const enMessages = tryParseJsonObject(String(byPath.get(I18N_MESSAGE_EN_PATH)?.content || "")) || {};
   const zhMessages = tryParseJsonObject(String(byPath.get(I18N_MESSAGE_ZH_CN_PATH)?.content || "")) || {};
   if (hasMeaningfullyTranslatedAlternateLocale(enMessages, zhMessages)) return next;
@@ -1079,6 +1411,26 @@ function extractQaRepairTargets(feedback: string): string[] {
       targets.add(candidate);
     }
   }
+  if (
+    /(?:blog list item outer class lacks runtime-safe padding|outer class lacks runtime-safe padding|missing padding|padding\s+0(?:\b|[^0-9]))/i.test(
+      text,
+    )
+  ) {
+    targets.add("/styles.css");
+  }
+  if (/flat link row instead of a structured footer shell/i.test(text)) {
+    targets.add("/styles.css");
+  }
+  const repeatedLegacySplitHeroMatch = text.match(
+    /repeated primary routes fell back to the same legacy split-hero opening template \(([^)]+)\)/i,
+  );
+  if (repeatedLegacySplitHeroMatch?.[1]) {
+    for (const route of repeatedLegacySplitHeroMatch[1].split(",")) {
+      const normalizedRoute = normalizePath(String(route || "").trim());
+      if (!normalizedRoute.startsWith("/")) continue;
+      targets.add(routeToHtmlPath(normalizedRoute));
+    }
+  }
   return Array.from(targets);
 }
 
@@ -1102,6 +1454,22 @@ function buildQaRepairGuidance(
   const hasBlogEditorialScaffold = /exposes editorial scaffold\/explanatory wording/i.test(text);
   const hasBlogBodyGap = /must contain a complete article\/detail body/i.test(text);
   const hasBlogDepthGap = /body depth too thin|body structure too thin/i.test(text);
+  const hasContentListPaddingGap = /blog list item outer class lacks runtime-safe padding|outer class lacks runtime-safe padding/i.test(
+    text,
+  );
+  const hasUnexpectedContentBackendMount =
+    /applies the Blog\/content collection data-source contract on a non-content route/i.test(text);
+  const hasFlatFooterShell = /flat link row instead of a structured footer shell/i.test(text);
+  const hasWorkflowMetaLeak = /exposes workflow\/process\/meta wording instead of visitor-facing content/i.test(text);
+  const hasRepeatedLegacySplitHero = /repeated primary routes fell back to the same legacy split-hero opening template/i.test(text);
+  const hasSurfaceTokenContractGap = /violates surface visual token contract/i.test(text);
+  const hasSurfaceHomepageArchetypeGap = /violates the surface homepage archetype contract/i.test(text);
+  const hasHiddenRevealCss = /hides route content before preview interaction/i.test(text);
+  const hasIncompleteSharedCss = /is incomplete shared site CSS/i.test(text);
+  const hasCollectionOpeningFallback =
+    /reuses the legacy split-hero template instead of a route-owned (?:content collection|directory) opening/i.test(text);
+  const hasSingleLanguageLocaleMismatch =
+    /is tagged zh-CN but still renders mostly English visitor-facing copy/i.test(text);
 
   if (hasBilingualLeak || hasBilingualProtocolGap) {
     guidance.push(
@@ -1132,6 +1500,69 @@ function buildQaRepairGuidance(
     );
   }
 
+  if (hasSingleLanguageLocaleMismatch) {
+    guidance.push(
+      "Single-language locale repair: rewrite all visible visitor-facing copy in the affected route into Chinese. Keep brand names and route slugs as proper nouns only; nav labels, headings, body text, CTA labels, and footer copy must read as a complete Chinese-first page.",
+      "Single-language locale repair: remove EN/ZH switch controls, utility chips, and bilingual shell payloads from the affected route. Do not keep English-only hero/body/footer copy on a zh-CN page.",
+    );
+  }
+
+  if (hasFlatFooterShell) {
+    guidance.push(
+      "Shared-shell repair: rebuild the footer as a structured shell, not a flat stream of bare anchors. Use grouped footer wrappers such as brand/copy, link list, and meta/action rows that match the shared CSS footer utilities.",
+      "Shared-shell repair: preserve the shared route destinations, but wrap them inside the footer layout classes defined in `/styles.css` so the footer renders as a designed block instead of one collapsed link row.",
+      "Shared-shell repair: `/styles.css` must style `footer`, `.site-footer`, or `.footer` itself with visible band chrome such as padding plus background, border-top, or margin-top. Footer cards may sit inside that band, but the top-level footer cannot look like ordinary body cards.",
+    );
+  }
+
+  if (hasWorkflowMetaLeak) {
+    guidance.push(
+      "Visitor-copy repair: remove workflow/process/meta vocabulary from all visible HTML, including headings, eyebrow labels, badges, cards, CTAs, meta descriptions, alt text, and footer copy.",
+      "Visitor-copy repair: never render terms such as assumption, assumptions, content gap, Prompt Control Manifest, source priorities, page brief, source material appendix, internal prompt, or requirement completion. These are internal planning artifacts only.",
+      "Visitor-copy repair: rewrite the affected sentence around the website subject itself. For example, replace no blog/archive assumptions with concrete documentation scope, reference coverage, standards guidance, implementation notes, or visitor outcomes.",
+    );
+  }
+
+  if (hasRepeatedLegacySplitHero || hasCollectionOpeningFallback) {
+    guidance.push(
+      "Route-opening repair: replace legacy `hero-grid` / `hero-panel` / `hero-copy + aside` openings with route-owned lead bands. Sibling pages must not share the same split-hero shell with swapped copy.",
+      "Route-opening repair: content collection and directory routes should foreground their own collection/filter/result surface instead of opening with a generic two-column hero plus sidebar panel.",
+      "Route-opening repair: for non-home pages, do not reopen the page with `route-hero`, `hero-grid`, `hero-copy`, `action-row`, and `aside.panel` as the repeated sibling template. Use one dominant route-owned opening band instead.",
+      "Route-opening repair: directory pages should use a compact directory intro plus inline filters/results framing. Do not pair `hero__title` / `hero__lead` with a right-rail `aside` or a `detail-grid` split opening.",
+      "Route-opening repair: content collection openings must replace legacy `hero-title`, `hero-lead`, `hero__actions`, and `hero__content` utilities with route-owned collection classes such as `collection-title`, `collection-lead`, `collection-actions`, `knowledge-hub-title`, or `knowledge-hub-actions`.",
+    );
+  }
+
+  if (hasSurfaceTokenContractGap) {
+    guidance.push(
+      "Surface-token repair: re-emit `/styles.css` and replace the generic green/white rounded-card token family with the `surface_css_tokens` and `surface_typography_tokens` from `/website_design_spec.md`.",
+      "Surface-token repair: preserve existing content and shell structure, but change root CSS variables, typography, background treatment, section rhythm, and module chrome so corporate, docs, and content-hub surfaces no longer look like the same template.",
+    );
+  }
+
+  if (hasSurfaceHomepageArchetypeGap) {
+    guidance.push(
+      "Surface-homepage repair: rebuild `/index.html` from the `homepage_archetype_contract` and `opening_topology` in `/website_design_spec.md`, not from a generic hero/cards/CTA homepage template.",
+      "Surface-homepage repair: do not keep `hero`, `hero-wrap`, `hero-grid`, `hero__grid`, `hero-copy`, `hero__copy`, `hero__body`, `hero-panel`, `hero__panel`, or `hero-aside` opening utilities and only rename the outer wrapper. The opening geometry itself must change.",
+      "Surface-homepage repair: docs/knowledge homepages need route-owned docs workspace modules such as docs-workspace, docs-index-rail, quickstart-strip, guide-stack, and reference-matrix.",
+      "Surface-homepage repair: content-hub homepages need route-owned collection modules such as collection-home, archive-masthead, resource-shelf, standards-ledger, research-index, and institutional-context.",
+    );
+  }
+
+  if (hasHiddenRevealCss) {
+    guidance.push(
+      "Static preview repair: re-emit `/styles.css` so all route content is visible by default. Do not set `[data-reveal]`, `.reveal`, section blocks, cards, or footer areas to `opacity:0` before JavaScript or scrolling runs.",
+      "Static preview repair: reveal animations may use subtle transform/transition only after content remains visible, or may add an enhancement class from JavaScript. The baseline CSS must render every section in full-page screenshots without user scrolling.",
+    );
+  }
+
+  if (hasIncompleteSharedCss) {
+    guidance.push(
+      "Shared CSS repair: re-emit `/styles.css` as complete site CSS, not a placeholder or partial media patch. It must include root tokens, body typography/background, header/nav, buttons/CTAs, layout grids, cards/sections, footer, and responsive breakpoints.",
+      "Shared CSS repair: preserve generated HTML class names and style the actual classes already present in the route pages so the preview does not render as unstyled browser-default HTML.",
+    );
+  }
+
   if (hasBlogBodyGap || hasBlogDepthGap) {
     guidance.push(
       blogDetailTargets.length > 0
@@ -1146,6 +1577,7 @@ function buildQaRepairGuidance(
     guidance.push(
       "Visitor-facing page repair: delete route-choreography copy such as 下一步, 继续了解, 从首页开始, where to start, this page provides, the page's role, or next step when they explain how to browse the site instead of what the visitor gets.",
       "Visitor-facing page repair: rewrite the first visible sections around audience problem, concrete offer, proof, capability, or direct CTA. The page must read like a finished destination, not a sitemap explainer or page-purpose note.",
+      "Visitor-facing page repair: remove implementation-review wording such as responsive layout, shared shell, browser previews, internal reviews, working sessions, or homepage built/designed for. Replace it with subject matter such as research scope, standards coverage, evidence quality, API reference behavior, operational proof, or visitor outcomes.",
     );
   }
 
@@ -1155,6 +1587,20 @@ function buildQaRepairGuidance(
         ? `Blog detail repair: remove editorial explainer phrases from these article pages: ${blogDetailTargets.join(", ")}.`
         : "Blog detail repair: remove editorial explainer phrases from each affected `/blog/{slug}/index.html`.",
       "Blog detail repair: do not describe how to read the article, what this page collects, or what the article will cover in abstract terms. Replace that scaffolding with article-specific analysis, examples, and conclusions.",
+    );
+  }
+
+  if (hasContentListPaddingGap) {
+    guidance.push(
+      "Shared-style repair: this is a `/styles.css` contract issue first. Re-emit the shared CSS so the direct child card/row class under `[data-shpitto-blog-list]` owns visible inner padding on its outer shell.",
+      "Shared-style repair: if the list uses classes such as `.download-card`, `.resource-card`, `.article-card`, `.blog-card`, `.case-card`, or similar outer shells, that exact class must define non-zero padding itself instead of relying only on nested `__body` wrappers.",
+    );
+  }
+
+  if (hasUnexpectedContentBackendMount) {
+    guidance.push(
+      "Route-contract repair: this page is not the selected content-backed collection route. Remove `data-shpitto-blog-root`, `data-shpitto-blog-list`, and `/api/blog/posts` integration hooks from the affected page instead of inventing `/blog/{slug}/` detail links.",
+      "Route-contract repair: rebuild the page as a normal route-owned destination using its own sections, proof, and CTA grammar. Keep content/resource collection mounts only on the intended information-platform, research-center, standards, or explicit Blog/archive route.",
     );
   }
 
@@ -1590,8 +2036,8 @@ function normalizeKnownSharedShellCopy(
     [
       "B2B textile, OEM/ODM, certified sourcing, gift packaging, and brand-ready merchandising.",
       {
-        zh: "B2B 纺织、OEM/ODM、认证采购、礼盒包装与品牌陈列支持。",
-        en: "B2B textile, OEM/ODM, certified sourcing, gift packaging, and brand-ready merchandising.",
+        zh: "B2B 制造、OEM/ODM、认证采购、包装支持与品牌交付协同。",
+        en: "B2B manufacturing, OEM/ODM, certified sourcing, packaging support, and brand-ready delivery.",
       },
     ],
     [
@@ -1618,8 +2064,8 @@ function normalizeKnownSharedShellCopy(
     [
       "Text wordmark brand presentation",
       {
-        zh: "采购导向纺织供应",
-        en: "Buyer-ready textile supply",
+        zh: "采购导向企业呈现",
+        en: "Buyer-ready company presentation",
       },
     ],
     [
@@ -1646,36 +2092,36 @@ function normalizeKnownSharedShellCopy(
     [
       "Industrial home textiles 路 procurement-ready supply",
       {
-        zh: "工业家纺 · 采购导向供应",
-        en: "Industrial home textiles · procurement-ready supply",
+        zh: "工业制造 · 采购导向供应",
+        en: "Industrial manufacturing · procurement-ready supply",
       },
     ],
     [
       "Textile & packaging",
       {
-        zh: "纺织与包装",
-        en: "Textile & packaging",
+        zh: "制造与包装",
+        en: "Manufacturing & packaging",
       },
     ],
     [
       "Textile · Gift · Bath",
       {
-        zh: "纺织 · 礼赠 · 浴室",
-        en: "Textile · Gift · Bath",
+        zh: "产品 · 包装 · 应用",
+        en: "Products · Packaging · Application",
       },
     ],
     [
       "Textile B2B brand · warm editorial identity",
       {
-        zh: "纺织 B2B 品牌 · 温暖编辑气质",
-        en: "Textile B2B brand · warm editorial identity",
+        zh: "制造业 B2B 品牌 · 温暖编辑气质",
+        en: "Manufacturing B2B brand · warm editorial identity",
       },
     ],
     [
       "Textile B2B brand 路 warm editorial identity",
       {
-        zh: "纺织 B2B 品牌 · 温暖编辑气质",
-        en: "Textile B2B brand · warm editorial identity",
+        zh: "制造业 B2B 品牌 · 温暖编辑气质",
+        en: "Manufacturing B2B brand · warm editorial identity",
       },
     ],
     [
@@ -1695,29 +2141,29 @@ function normalizeKnownSharedShellCopy(
     [
       "Shpitto Textile",
       {
-        zh: "Shpitto 纺织",
-        en: "Shpitto Textile",
+        zh: "Shpitto 制造",
+        en: "Shpitto Manufacturing",
       },
     ],
     [
       "Textile · B2B · Heritage Craft",
       {
-        zh: "纺织 · B2B · 传承工艺",
-        en: "Textile · B2B · Heritage Craft",
+        zh: "制造 · B2B · 传承工艺",
+        en: "Manufacturing · B2B · Heritage Craft",
       },
     ],
     [
       "Textile B2B Heritage manufacturing / craft",
       {
-        zh: "纺织 B2B · 传承工艺制造",
-        en: "Textile B2B Heritage manufacturing / craft",
+        zh: "制造业 B2B · 传承工艺制造",
+        en: "Manufacturing B2B Heritage manufacturing / craft",
       },
     ],
     [
       "Textile Heritage manufacturing / craft",
       {
-        zh: "纺织 · 传承工艺制造",
-        en: "Textile Heritage manufacturing / craft",
+        zh: "制造 · 传承工艺制造",
+        en: "Manufacturing Heritage manufacturing / craft",
       },
     ],
   ]);
@@ -1780,15 +2226,16 @@ function normalizeKnownMixedBusinessTerms(
     [/\bCase Library\b/g, "案例库"],
     [/\bRepeatability\b/g, "可复用性"],
     [/\bComparable brief\b/g, "相似项目咨询"],
-    [/\bGift box and textile pairing\b/g, "礼盒与纺织组合"],
+    [/\bGift box and textile pairing\b/g, "礼盒与产品组合"],
+    [/\bGift box and product pairing\b/g, "礼盒与产品组合"],
     [/\bHeritage manufacturing \/ craft\b/g, "传承工艺制造"],
     [/\bHeritage manufacturing · craft\b/g, "传承工艺制造"],
     [/\bHeritage manufacturing\b/g, "传承制造"],
     [/\bHeritage Craft\b/g, "传承工艺"],
-    [/\bTextile B2B Heritage manufacturing \/ craft\b/g, "纺织 B2B · 传承工艺制造"],
-    [/\bTextile Heritage manufacturing \/ craft\b/g, "纺织 · 传承工艺制造"],
-    [/\bShpitto Textile\b/g, "Shpitto 纺织"],
-    [/\bTextile\b/g, "纺织"],
+    [/\bTextile B2B Heritage manufacturing \/ craft\b/g, "制造业 B2B · 传承工艺制造"],
+    [/\bTextile Heritage manufacturing \/ craft\b/g, "制造 · 传承工艺制造"],
+    [/\bShpitto Textile\b/g, "Shpitto 制造"],
+    [/\bManufacturing\b/g, "制造"],
     [/\bScenario \/ Intervention \/ Evidence\b/g, "场景 / 介入 / 证据"],
     [/\bGifting\b/g, "礼赠"],
     [/\bRetail\b/g, "零售"],
@@ -1808,14 +2255,14 @@ function normalizeKnownMixedBusinessTerms(
     [/\bsports\b/g, "运动"],
     [/\bmanufacturer\b/g, "制造伙伴"],
     [/\benterprise buyers\b/g, "企业买家"],
-    [/\bCraft-led textile and packaging manufacturing\./g, "工艺导向的纺织与包装制造。"],
+    [/\bCraft-led manufacturing and packaging delivery\./g, "工艺导向的制造与包装交付。"],
   ];
   const tagPattern = /<([a-zA-Z][\w:-]*)([^>]*)>([^<>]+)<\/\1>/g;
   return String(rawHtml || "").replace(tagPattern, (match, tagName, rawAttrs, innerText) => {
     const attrs = String(rawAttrs || "");
     if (/\sdata-i18n(?:\s|=|>)/i.test(attrs)) return match;
     const decoded = decodeHtmlAttributeValue(innerText);
-    if (cjkCount(decoded) < 1 && !/\b(?:Products|Custom Solutions|Cases|Contact|Operating model|Understand|Shape|Deliver|Case Library|Repeatability|Comparable brief|Scenario|Intervention|Evidence|Gifting|Retail|Gift box and textile pairing|textile|gift box|towel|bath|sports|manufacturer|enterprise buyers)\b/i.test(decoded)) {
+    if (cjkCount(decoded) < 1 && !/\b(?:Products|Custom Solutions|Cases|Contact|Operating model|Understand|Shape|Deliver|Case Library|Repeatability|Comparable brief|Scenario|Intervention|Evidence|Gifting|Retail|Gift box and textile pairing|manufacturing|gift box|towel|bath|sports|manufacturer|enterprise buyers)\b/i.test(decoded)) {
       return match;
     }
     let nextText = decoded;
@@ -1906,10 +2353,10 @@ function collapseVisibleBilingualPairs(rawHtml: string, defaultVisibleLanguage: 
   return html;
 }
 
-function normalizeGeneratedJs(rawJs: string, requirementText = ""): string {
+function normalizeGeneratedJs(rawJs: string, requirementText = "", locale?: string): string {
   const js = stripMarkdownCodeFences(rawJs).trim();
   if (!js) return "";
-  if (!isBilingualRequirementText(requirementText)) return js;
+  if (!shouldUseBilingualExperience(requirementText, locale)) return js;
   if (/__shpitto_apply_i18n/i.test(js)) return js;
   return [
     js,
@@ -2095,9 +2542,9 @@ function normalizeEnterpriseTechLegacyDirectionCopy(rawHtml: string, requirement
   if (!html || !hasExplicitEnterpriseTechVisualOverride(requirementText)) return html;
 
   const replacements: Array<[RegExp, string]> = [
-    [/\bHeritage textile manufacturing\b/gi, "Enterprise textile manufacturing"],
+    [/\bHeritage textile manufacturing\b/gi, "Enterprise manufacturing"],
     [/\bHeritage manufacturing\b/gi, "Enterprise manufacturing"],
-    [/\bheritage craft\b/gi, "enterprise textile"],
+    [/\bheritage craft\b/gi, "enterprise manufacturing"],
     [/\bwarm,\s*structured presentation\b/gi, "structured enterprise presentation"],
     [/\bwarm palette\b/gi, "blue-and-white enterprise palette"],
   ];
@@ -2186,6 +2633,55 @@ function extractFirstHomepageSectionHtml(rawHtml: string): string {
   const sectionMatch = html.match(/<section\b[\s\S]*?<\/section>/i);
   if (sectionMatch?.[0]) return sectionMatch[0];
   return html.slice(0, 5000);
+}
+
+function extractFirstMainSectionHtml(rawHtml: string): string {
+  const html = String(rawHtml || "");
+  const mainMatch = html.match(/<main\b[^>]*>([\s\S]*?)<\/main>/i);
+  const mainHtml = String(mainMatch?.[1] || html);
+  const sectionMatch = mainHtml.match(/<section\b[\s\S]*?<\/section>/i);
+  if (sectionMatch?.[0]) return sectionMatch[0];
+  return mainHtml.slice(0, 5000);
+}
+
+function openingUsesLegacySplitHero(openingHtml: string): boolean {
+  const opening = String(openingHtml || "");
+  if (/\b(?:hero-grid|hero__grid|hero-panel|hero--split)\b/i.test(opening) || /<aside\b/i.test(opening)) {
+    return true;
+  }
+  const routeOwnedCollectionLead =
+    /\b(?:knowledge-hub-lead|resource-collection-lead|information-platform-lead|research-index-lead|collection-surface|research-open)\b/i.test(
+      opening,
+    );
+  const legacyHeroUtilityInsideCollectionLead =
+    /\b(?:hero__content|hero__actions|hero-title|hero-lead)\b/i.test(opening);
+  return routeOwnedCollectionLead && legacyHeroUtilityInsideCollectionLead;
+}
+
+function footerNeedsStructuredShell(footerHtml: string, stylesCss = ""): boolean {
+  const footer = String(footerHtml || "");
+  if (!footer) return false;
+  const sharedFooterUtilitiesDefined =
+    /\.(?:site-footer__inner|footer(?:-|__)(?:inner|top|grid|brand|links|nav|meta|actions|bottom|panel|col|notes|title))\b/i.test(
+      String(stylesCss || ""),
+    );
+  if (!sharedFooterUtilitiesDefined) return false;
+  const hasLayoutShell =
+    /\b(?:site-footer__inner|footer(?:-|__)(?:inner|grid|top|bottom|panel|col))\b/i.test(footer);
+  const hasIdentityZone =
+    /\bfooter(?:-|__)brand\b/i.test(footer) ||
+    /<a\b[^>]*class=(["'])[^"']*\bbrand\b/i.test(footer) ||
+    (/\bfooter(?:-|__)col\b/i.test(footer) && /<a\b[^>]*class=(["'])[^"']*\bbrand\b/i.test(footer));
+  const hasNavigationZone =
+    /\bfooter(?:-|__)(?:links|nav)\b/i.test(footer) ||
+    (/<h[23]\b[\s\S]*?<\/h[23]>\s*<ul\b/i.test(footer) && /<li>\s*<a\b/gi.test(footer)) ||
+    (/<ul\b[\s\S]*?<li>\s*<a\b/gi.test(footer) && (footer.match(/<li>\s*<a\b/gi) || []).length >= 3);
+  const hasSupportZone =
+    /\bfooter(?:-|__)(?:meta|actions|top|bottom|notes)\b/i.test(footer) ||
+    /\bfineprint\b/i.test(footer);
+  if (!hasFooterBandStyle(stylesCss)) return true;
+  const structuredZoneCount = [hasLayoutShell, hasIdentityZone, hasNavigationZone, hasSupportZone].filter(Boolean).length;
+  return structuredZoneCount < 3;
 }
 
 function findCorporateB2BHomepageContractIssues(
@@ -2455,6 +2951,19 @@ export function findCorporateB2BHomepageContractIssuesForTesting(
   return findCorporateB2BHomepageContractIssues(rawHtml, filePath, requirementText, stylesCss);
 }
 
+export function findSurfaceHomepageArchetypeIssuesForTesting(params: {
+  html: string;
+  pagePath: string;
+  decision: LocalDecisionPlan;
+  requirementText: string;
+}): string[] {
+  return findSurfaceHomepageArchetypeIssues({ ...params, force: true });
+}
+
+export function findVisiblePageMechanicsScaffoldForTesting(html: string): string[] {
+  return findVisiblePageMechanicsScaffold(html);
+}
+
 export function normalizeWebsiteStaticFilesForPreview(params: {
   decision: LocalDecisionPlan;
   files: RuntimeWorkflowFile[];
@@ -2462,6 +2971,7 @@ export function normalizeWebsiteStaticFilesForPreview(params: {
 }): RuntimeWorkflowFile[] {
   const requirementText = String(params.requirementText || params.decision?.requirementText || "");
   const defaultVisibleLanguage = bilingualDefaultVisibleLanguage(requirementText);
+  const wantsBilingualExperience = shouldUseBilingualExperience(requirementText, params.decision.locale);
   return dedupeFiles(
     (params.files || []).map((file) => {
       const filePath = normalizePath(String(file?.path || ""));
@@ -2477,7 +2987,7 @@ export function normalizeWebsiteStaticFilesForPreview(params: {
       if (filePath === "/script.js") {
         return {
           path: filePath,
-          content: normalizeGeneratedJs(content, requirementText),
+          content: normalizeGeneratedJs(content, requirementText, params.decision.locale),
           type,
         };
       }
@@ -2490,13 +3000,15 @@ export function normalizeWebsiteStaticFilesForPreview(params: {
       }
 
       const sanitized = sanitizeWebsiteSkillHtmlOutputForAdapter(filePath, content, requirementText);
-      const withDocument = ensureBilingualHtmlShell(sanitized, defaultVisibleLanguage);
+      const withDocument = wantsBilingualExperience
+        ? ensureBilingualHtmlShell(sanitized, defaultVisibleLanguage)
+        : ensureHtmlDocument(sanitized);
       const routeScopedHtml = rewriteAbsoluteSiteLinksToRelative(withDocument, filePath);
       const html = injectCuratedMediaIntoHtml(
         normalizeEnterpriseTechLegacyDirectionCopy(
           normalizeEnterpriseTechTextWordmarkShell(
             stripEmptyLocaleGroupPlaceholders(
-              stripEmptyBrandMarkPlaceholders(enforceNavigationOrder(routeScopedHtml, params.decision)),
+              stripEmptyBrandMarkPlaceholders(enforceNavigationOrder(routeScopedHtml, params.decision, requirementText)),
             ),
             requirementText,
           ),
@@ -2601,6 +3113,18 @@ function localizedKnownRouteLabel(route: string, locale: "zh-CN" | "en"): string
   ]);
   const mapped = known.get(normalized);
   if (mapped) return locale === "zh-CN" ? mapped.zh : mapped.en;
+  const suffixKnown = [
+    { pattern: /(?:^|\/)(?:[^/]+-)?creation$/i, zh: "创建", en: "Creation" },
+    { pattern: /(?:^|\/)(?:[^/]+-)?construction$/i, zh: "建设", en: "Construction" },
+    { pattern: /(?:^|\/)(?:[^/]+-)?certification$/i, zh: "认证", en: "Certification" },
+    { pattern: /(?:^|\/)(?:[^/]+-)?advocacy$/i, zh: "倡议", en: "Advocacy" },
+    { pattern: /(?:^|\/)(?:[^/]+-)?research(?:-center)?$/i, zh: "研究", en: "Research" },
+    { pattern: /(?:^|\/)(?:[^/]+-)?information(?:-platform)?$/i, zh: "信息", en: "Information" },
+    { pattern: /(?:^|\/)standards(?:-system|-library)?$/i, zh: "标准", en: "Standards" },
+    { pattern: /(?:^|\/)case(?:-studies|-study)?$/i, zh: "案例", en: "Cases" },
+  ];
+  const suffixMatch = suffixKnown.find((item) => item.pattern.test(normalized));
+  if (suffixMatch) return locale === "zh-CN" ? suffixMatch.zh : suffixMatch.en;
   return extractPageTitleForRoute(normalized, locale);
 }
 
@@ -2835,6 +3359,7 @@ function buildInteriorArchetypeGuidance(archetype: InteriorPageArchetype): strin
     default:
       return [
         "- Interior page gate: make the first visible modules specific to the route's purpose and audience. Avoid generic hero plus filler-card repetition from sibling pages.",
+        "- Interior page gate: do not open with a repeated split-hero shell such as `route-hero` + `hero-grid` + `hero-copy` + `aside.panel` / `detail-card`. Use a route-owned intro band, masthead, framework slab, or evidence header instead.",
         "- Interior page topology: the post-hero structure must contain at least three distinct major zones with different jobs. Do not compress the page into the same repeated section pattern used elsewhere.",
       ];
   }
@@ -2866,6 +3391,7 @@ export function formatTargetPageContract(
   const page = findPageBlueprint(plan, route);
   const focused = options.focused === true;
   const requestedContentCount = requestedPublishableContentCount(requirementText);
+  const requiresBlogDetailPages = shouldRequireBlogDetailPagesForRoute(page, requirementText);
   const isGeneratedBlogDetailRoute = /^\/blog\/[^/]+$/i.test(route) && !plan.routes.map(normalizePath).includes(route);
   const pageArchetype =
     !isGeneratedBlogDetailRoute && page.pageKind === "intent" ? classifyInteriorPageArchetype(page) : "generic";
@@ -2894,8 +3420,9 @@ export function formatTargetPageContract(
     focused ? Math.min(DEFAULT_TARGET_SOURCE_BRIEF_CHARS, 900) : DEFAULT_TARGET_SOURCE_BRIEF_CHARS,
   );
   const siblingIntents = buildSiblingContrastBlock(plan, route, focused);
+  const requestedLocale = resolveRequestedExperienceLocale(requirementText, plan.locale);
   const blogContentBackendGate =
-    page.pageKind === "blog-data-index"
+    isContentBackedPageKind(page.pageKind)
       ? [...renderedTargetBlogIndexGate, ...renderedTargetBlogCountGate].join("\n")
       : "";
   const generatedBlogDetailGate =
@@ -2924,6 +3451,15 @@ export function formatTargetPageContract(
     `- Page intent: ${page.purpose}`,
     `- Intent source: ${page.source}`,
     `- Page kind: ${page.pageKind}`,
+    requestedLocale === "zh-CN"
+      ? "- Locale contract: this route is Chinese-first. All visible visitor-facing copy must be written directly in Chinese, including nav labels, headings, body text, CTA labels, filter labels, and footer copy. Keep English only for brand names, proper nouns, or unavoidable acronyms."
+      : "",
+    requestedLocale === "zh-CN"
+      ? "- Locale contract: do not emit EN/ZH toggles, header language chips, bilingual shell payloads, or English-first body copy on this page."
+      : "",
+    requestedLocale === "en"
+      ? "- Locale contract: keep the visible reading path in English only unless this route is explicitly marked bilingual."
+      : "",
     "- The confirmed Canonical Website Prompt is authoritative for page structure, content depth, audience, and design direction.",
     page.constraints.length ? `- Page constraints:\n${page.constraints.map((item) => `  - ${item}`).join("\n")}` : "",
     page.contentSkeleton.length ? `- Required page skeleton:\n${page.contentSkeleton.map((item) => `  - ${item}`).join("\n")}` : "",
@@ -2938,11 +3474,17 @@ export function formatTargetPageContract(
     "- Do not apply a hardcoded industry skeleton or copy the previous page layout and only swap text.",
     "- Visitor-facing copy must be substantive content for the audience, not a description of site mechanics. Do not tell visitors what the page's task is, where to start browsing, which route comes next, or that one page leads into deeper content.",
     "- Ban visible scaffold phrases and equivalents such as 从首页开始, 接下来看博客, 循序进入深内容, 阅读入口, 站点入口, 首页路径, 继续了解, 下一步, this page provides, homepage job, where to start, start from home, or next step when they explain navigation order rather than a concrete offer or action.",
-    !isGeneratedBlogDetailRoute && page.pageKind !== "blog-data-index"
+    !isGeneratedBlogDetailRoute && !isContentBackedPageKind(page.pageKind)
       ? "- Destination page gate: the first visible section must immediately communicate a visitor benefit, capability, proof point, or concrete CTA. Do not open with page-purpose notes like 'this page provides', 'the next step is', 'continue to', 'what this page is for', or any explanation of route order."
       : "",
-    !isGeneratedBlogDetailRoute && page.pageKind !== "blog-data-index"
+    !isGeneratedBlogDetailRoute && !isContentBackedPageKind(page.pageKind)
       ? "- Destination page gate: headings such as 继续了解, 下一步, Start here, Where to start, or similar are only acceptable when they introduce a real offer/action for the visitor. They are invalid if they merely choreograph browsing between pages."
+      : "",
+    page.pageKind === "search-directory"
+      ? "- Directory opening gate: use one route-owned directory intro surface such as `route-intro`, `directory-intro`, `query-intro`, or `certification-entry`, and keep query/filter framing inside that same opening band."
+      : "",
+    page.pageKind === "search-directory"
+      ? "- Directory opening gate: do not reopen the page with split-hero mechanics such as `hero__title`, `hero__lead`, `detail-grid`, or a right-rail `<aside>` filter panel. The opening should read like a directory/search surface, not a marketing hero."
       : "",
     ...(!isGeneratedBlogDetailRoute && page.pageKind === "intent" ? buildInteriorArchetypeGuidance(pageArchetype) : []),
     page.route === "/"
@@ -2966,16 +3508,19 @@ export function formatTargetPageContract(
     page.pageKind === "home"
       ? "- Home page feature-card gate: decorative numerals, step numbers, watermarks, or corner badges must have explicit inset positioning and must not crowd the title or body copy. Titles and paragraphs should align to one padded text column with stable top/right/bottom/left gutters."
       : "",
-    page.pageKind === "blog-data-index"
+    isContentBackedPageKind(page.pageKind)
       ? "- Blog/content index gate: visible chips, pills, eyebrow labels, hero leads, and section intros must describe the subject, editorial stance, or archive value itself. They must never tell the visitor how to read, where to start, which order to follow, or that this page collects a certain number of articles."
       : "",
-    page.pageKind === "blog-data-index"
+    isContentBackedPageKind(page.pageKind)
       ? "- Blog/content index gate: ban visible phrases like reading path, reading method, suggested reading order, how to read, this page collects, what you'll find here, start with these three articles, launch articles, 首发文章, 阅读路径, 阅读方式, 推荐阅读顺序, 如何阅读, 本页内容, or equivalent wording even inside pills/badges."
       : "",
-    page.pageKind === "blog-data-index"
+    isContentBackedPageKind(page.pageKind) && requiresBlogDetailPages
       ? "- Blog/content index gate: do not satisfy article details with same-page anchors such as #article-detail, accordion panels, or detail sections embedded below the index. Every visible article/resource card must link to a stable /blog/{slug}/ route, and the generated output must include the matching /blog/{slug}/index.html file."
       : "",
-    page.pageKind === "blog-data-index" && !requestedContentCount
+    isContentBackedPageKind(page.pageKind) && !requiresBlogDetailPages
+      ? "- Blog/content index gate: if this route is a generic information platform, standards hub, or resource collection, keep the first pass focused on the collection surface. Do not invent /blog/{slug}/ article detail pages unless the prompt, route identity, or source material explicitly asks for publishable article/news details."
+      : "",
+    isContentBackedPageKind(page.pageKind) && requiresBlogDetailPages && !requestedContentCount
       ? `- Blog/content index gate: without an explicit requested article count, emit exactly one substantial initial /blog/{slug}/ card and matching detail page by default. Do not seed multiple launch articles unless the prompt or source material explicitly asks for them.`
       : "",
     page.pageKind === "search-directory"
@@ -3116,17 +3661,36 @@ function buildSharedAssetRoundContract(params: {
     : [
         "- Locale switch contract: no bilingual runtime is required unless the emitted HTML later proves otherwise.",
       ];
+  const requestedLocale = resolveRequestedExperienceLocale(params.decision.requirementText || "", params.decision.locale);
 
   return [
     "Shared asset contract:",
     `- Routes supported by the shared shell: ${routeSummary}`,
     `- Visual direction: ${params.styleName}`,
     `- Visual rationale: ${params.styleReason}`,
+    requestedLocale === "zh-CN"
+      ? "- Single-language locale contract: the shared shell must be Chinese-first. Do not generate language switches, locale chips, or English-first nav/footer copy for the confirmed routes."
+      : "",
     cssRequested
       ? "- /styles.css must define the shared design tokens, spacing scale, responsive shell, nav/footer/header system, card rhythm, and page-safe defaults for all confirmed routes. Keep it production-ready and compact."
       : "",
     cssRequested
       ? "- /styles.css must optimize for resilient layout primitives first: variables, typography, grids, stacks, hero spacing, card padding, footer layout, and breakpoint behavior. Do not include page-by-page decorative overfitting."
+      : "",
+    cssRequested
+      ? "- Heading typography must preserve polished words and names: do not use `overflow-wrap:anywhere` or `word-break:break-all` on h1/h2/h3, `.section-title`, `.hero h1`, or display heading selectors. Use normal wrapping, balanced measures, and responsive clamps instead."
+      : "",
+    cssRequested
+      ? "- Generated UI text must use `letter-spacing: 0` for body, buttons, cards, and headings. Do not use negative letter-spacing. Do not set `hyphens:auto` on headings; tune font size and measure instead."
+      : "",
+    cssRequested
+      ? "- Responsive data/table contract: prefer stacked cards or compact definition rows for homepage/docs-hub comparisons. If a real `<table>` is necessary, CSS must provide a `.table-wrap`, `.responsive-table`, or equivalent shell with horizontal overflow and readable cell padding so mobile screenshots do not clip columns."
+      : "",
+    cssRequested
+      ? "- Color token contract: define core colors in `:root` and reuse them through `var(...)` or `color-mix(...)`. Do not scatter repeated raw hex colors across component selectors."
+      : "",
+    cssRequested
+      ? "- Hero metric/stat cards must not become narrow text columns. Do not use `.stat-list { grid-template-columns: repeat(3, minmax(0, 1fr)) }` inside a hero rail; use roomy horizontal cards, one-column stacks, or `minmax(12rem, 1fr)` with short labels only."
       : "",
     scriptRequested
       ? "- /script.js must define only shared behavior: nav active-state handling, locale toggle when required, lightweight form helpers, and minimal progressive enhancement. Do not embed page copy, article bodies, or route-specific prose."
@@ -3201,11 +3765,16 @@ function buildWorkflowFiles(params: {
   model: string;
   stylePreset: DesignStylePreset;
   designHit?: any;
+  websiteSurfaceMode?: WebsiteSurfaceMode;
+  discoveryBrief?: WebsiteDiscoveryBrief;
+  designSystemId?: string;
+  designSystemName?: string;
 }): RuntimeWorkflowFile[] {
+  const workflowLocale = resolveRequestedExperienceLocale(params.requirementText, params.locale) || params.locale;
   const taskPlan = [
     "# Task Plan",
     "",
-    `- Locale: ${params.locale}`,
+    `- Locale: ${workflowLocale}`,
     `- Provider: ${params.provider}`,
     `- Model: ${params.model}`,
     `- Routes: ${params.decision.routes.join(", ")}`,
@@ -3243,6 +3812,10 @@ function buildWorkflowFiles(params: {
     requirementText: params.requirementText,
     stylePreset: params.stylePreset,
     designHit: params.designHit,
+    websiteSurfaceMode: params.websiteSurfaceMode,
+    discoveryBrief: params.discoveryBrief,
+    designSystemId: params.designSystemId,
+    designSystemName: params.designSystemName,
   });
 
   return [
@@ -3586,6 +4159,114 @@ function clampTimeout(taskTimeoutMs: number, candidateMs: number, minMs: number)
   return Math.max(minMs, Math.min(safeCandidate, safeTask));
 }
 
+const VISITOR_COPY_WORKFLOW_META_LEAK_PATTERNS: Array<[RegExp, string]> = [
+  [/\bcontent gap\b/i, "content gap"],
+  [/\bassumption(?:s)?\b/i, "assumption"],
+  [/\bprompt control manifest\b/i, "prompt control manifest"],
+  [/\bsource priorities\b/i, "source priorities"],
+  [/\bpage briefs?\b/i, "page briefs"],
+  [/\bsource material appendix\b/i, "source material appendix"],
+  [/\bwebsite knowledge profile\b/i, "website knowledge profile"],
+  [/\brequirement completion\b/i, "requirement completion"],
+  [/\binternal prompt\b/i, "internal prompt"],
+  [/内容缺口|内容空缺/u, "content gap"],
+  [/假设(?:项)?/u, "assumption"],
+  [/提示词控制清单/u, "prompt control manifest"],
+  [/来源优先级|来源优先顺序/u, "source priorities"],
+  [/页面简报|页面摘要/u, "page briefs"],
+  [/来源材料附录|素材附录/u, "source material appendix"],
+];
+
+function findVisibleWorkflowMetaLeak(html: string): string[] {
+  const visible = htmlVisibleText(html);
+  if (!visible) return [];
+  const issues: string[] = [];
+  for (const [pattern, label] of VISITOR_COPY_WORKFLOW_META_LEAK_PATTERNS) {
+    if (pattern.test(visible) && !issues.includes(label)) issues.push(label);
+  }
+  return issues;
+}
+
+function extractPlaceholderGateIssues(lint: {
+  issues: Array<{ code: string; severity: "error" | "warning"; message?: string }>;
+}): string[] {
+  return Array.from(
+    new Set(
+      (lint.issues || [])
+        .filter((issue) => issue.code === "placeholder-copy" || issue.code === "external-placeholder-image")
+        .map((issue) => issue.message || issue.code),
+    ),
+  );
+}
+
+function listUnexpectedManifestHtmlFiles(params: {
+  decision: LocalDecisionPlan;
+  files: RuntimeWorkflowFile[];
+  requirementText?: string;
+}): string[] {
+  if (
+    params.decision.routeAuthorityMode !== "prompt_manifest" &&
+    params.decision.routeAuthorityMode !== "workflow_manifest"
+  ) {
+    return [];
+  }
+  const expected = new Set(
+    requiredFileChecklist(params.decision, {
+      files: params.files,
+      requirementText: params.requirementText || "",
+    }).map((filePath) => normalizePath(filePath)),
+  );
+  return dedupeFiles(params.files)
+    .map((file) => normalizePath(file.path))
+    .filter((filePath) => filePath.endsWith(".html"))
+    .filter((filePath) => {
+      const route = htmlPathToRoute(filePath);
+      if (!route) return false;
+      if (route === "/") return true;
+      return route.split("/").filter(Boolean).length === 1;
+    })
+    .filter((filePath) => !expected.has(filePath))
+    .sort();
+}
+
+function leadingSectionSignature(html: string): string {
+  const main = String(html || "").match(/<main\b[^>]*>([\s\S]*?)<\/main>/i)?.[1] || String(html || "");
+  const section = main.match(/<(section|article|div)\b([^>]*)>/i);
+  if (!section) return "";
+  const className = String(section[2] || "").match(/\bclass=["']([^"']+)["']/i)?.[1] || "";
+  return className
+    .split(/\s+/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 3)
+    .join(" ");
+}
+
+function collectObservationOnlyVisualFindings(params: {
+  decision: LocalDecisionPlan;
+  byPath: Map<string, RuntimeWorkflowFile>;
+}): QaSummary["observations"] {
+  const signatures = new Map<string, string[]>();
+  for (const route of params.decision.routes.filter((route) => normalizePath(route) !== "/")) {
+    const html = String(params.byPath.get(routeToHtmlPath(route))?.content || "");
+    const signature = leadingSectionSignature(html);
+    if (!signature) continue;
+    signatures.set(signature, [...(signatures.get(signature) || []), route]);
+  }
+  const observations: NonNullable<QaSummary["observations"]> = [];
+  for (const [signature, routes] of signatures.entries()) {
+    if (routes.length >= 3) {
+      observations.push({
+        code: "repeated-opening-family",
+        severity: "observation",
+        message: `Observation only: ${routes.length} interior routes start with the same opening class signature (${signature}).`,
+        routes,
+      });
+    }
+  }
+  return observations;
+}
+
 function countBlogDetailFiles(filePaths: string[]): number {
   return filePaths.filter((filePath) => /^\/blog\/.+\/index\.html$/i.test(normalizePath(filePath))).length;
 }
@@ -3680,6 +4361,18 @@ export function isRetryableProviderError(error: unknown): boolean {
   return false;
 }
 
+function isProviderAccessError(error: unknown): boolean {
+  const text = errorText(error).toLowerCase();
+  if (!text) return false;
+  return /(401|403|forbidden|unauthorized|invalid api key|authentication failed)/i.test(text);
+}
+
+function isProviderConfigurationError(error: unknown): boolean {
+  const text = errorText(error).toLowerCase();
+  if (!text) return false;
+  return /(bad port|invalid url|failed to parse url|unknown scheme|invalid base url|malformed url)/i.test(text);
+}
+
 function retryBackoffMs(attempt: number): number {
   const exp = SKILL_TOOL_PROVIDER_RETRY_BASE_MS * Math.pow(2, Math.max(0, attempt - 1));
   const jitter = SKILL_TOOL_PROVIDER_RETRY_JITTER_MS > 0
@@ -3742,7 +4435,7 @@ export async function invokeModelWithRetry(params: {
       });
     } catch (error) {
       lastError = error;
-      if (attempt >= retries || !isRetryableProviderError(error)) {
+      if (attempt >= retries || !isRetryableProviderError(error) || isProviderConfigurationError(error)) {
         throw error;
       }
       await sleepMs(retryBackoffMs(attempt + 1));
@@ -3811,9 +4504,10 @@ async function selectProviderAttempt(params: {
   attempts: ProviderAttempt[];
   taskTimeoutMs: number;
   requestTimeoutMs: number;
-}): Promise<{ attempt: ProviderAttempt; notes: string[] }> {
+}): Promise<{ attempt: ProviderAttempt; notes: string[]; excludedProviders: LlmProvider[] }> {
   let lastError: unknown;
   const notes: string[] = [];
+  const excludedProviders = new Set<LlmProvider>();
   for (let index = 0; index < params.attempts.length; index += 1) {
     const attempt = params.attempts[index];
     const preflightModel = createToolProtocolModel({
@@ -3830,18 +4524,25 @@ async function selectProviderAttempt(params: {
         config: attempt.config,
         taskTimeoutMs: params.taskTimeoutMs,
       });
-      return { attempt, notes };
+      return {
+        attempt,
+        notes,
+        excludedProviders: Array.from(excludedProviders).filter((provider) => provider !== attempt.config.provider),
+      };
     } catch (error) {
       lastError = error;
       const isLast = index >= params.attempts.length - 1;
       const canFallback =
         isRetryableProviderError(error) ||
+        isProviderAccessError(error) ||
+        isProviderConfigurationError(error) ||
         /provider_tool_protocol_mismatch|native tool_calls|empty response without native tool_calls/i.test(
           errorText(error),
         );
       if (!canFallback || isLast) {
         throw error;
       }
+      excludedProviders.add(attempt.config.provider);
       notes.push(
         `provider_preflight_fallback:${attempt.config.provider}/${attempt.config.modelName}:${errorText(error).slice(0, 320)}`,
       );
@@ -3890,6 +4591,8 @@ async function invokeRoundWithTimeout(params: {
 
 function canFallbackRoundProvider(error: unknown): boolean {
   if (isRetryableProviderError(error)) return true;
+  if (isProviderAccessError(error)) return true;
+  if (isProviderConfigurationError(error)) return true;
   return /provider_tool_protocol_mismatch|native tool_calls|empty response without native tool_calls/i.test(
     errorText(error),
   );
@@ -3898,10 +4601,13 @@ function canFallbackRoundProvider(error: unknown): boolean {
 function prioritizeProviderAttempts(
   attempts: ProviderAttempt[],
   preferredAttempt: ProviderAttempt,
+  excludedProviders: Set<LlmProvider> = new Set(),
 ): ProviderAttempt[] {
+  const eligibleAttempts = attempts.filter((attempt) => !excludedProviders.has(attempt.config.provider));
+  const baseAttempts = eligibleAttempts.length > 0 ? eligibleAttempts : attempts;
   const preferredKey = `${preferredAttempt.config.provider}:${preferredAttempt.config.modelName}`;
   const ordered = [preferredAttempt];
-  for (const attempt of attempts) {
+  for (const attempt of baseAttempts) {
     const key = `${attempt.config.provider}:${attempt.config.modelName}`;
     if (key === preferredKey) continue;
     ordered.push(attempt);
@@ -3912,6 +4618,7 @@ function prioritizeProviderAttempts(
 async function invokeRoundWithProviderFallback(params: {
   attempts: ProviderAttempt[];
   preferredAttempt: ProviderAttempt;
+  excludedProviders?: Set<LlmProvider>;
   objective: RoundObjective;
   messages: BaseMessage[];
   idleTimeoutMs: number;
@@ -3927,7 +4634,11 @@ async function invokeRoundWithProviderFallback(params: {
     operation: string;
   }) => Promise<ToolRoundOutput>;
 }): Promise<{ output: ToolRoundOutput; attempt: ProviderAttempt; notes: string[] }> {
-  const orderedAttempts = prioritizeProviderAttempts(params.attempts, params.preferredAttempt);
+  const orderedAttempts = prioritizeProviderAttempts(
+    params.attempts,
+    params.preferredAttempt,
+    params.excludedProviders || new Set(),
+  );
   const notes: string[] = [];
   let lastError: unknown;
   for (let index = 0; index < orderedAttempts.length; index += 1) {
@@ -3980,6 +4691,7 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
   decision: LocalDecisionPlan;
   files: RuntimeWorkflowFile[];
   requirementText?: string;
+  enforceCorporateHomepageContract?: boolean;
 }): { files: RuntimeWorkflowFile[]; qaSummary: QaSummary; qaRecords: SkillToolQaRecord[] } {
   const files = dedupeFiles(params.files);
   const normalizedFiles = suppressLocaleSwitchUntilTranslationsExist(
@@ -4010,8 +4722,10 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
         requirementText: params.requirementText || "",
       }),
       params.requirementText || "",
+      params.decision.locale,
     ),
     params.requirementText || "",
+    params.decision.locale,
   );
   const byPath = new Map(normalizedFiles.map((file) => [normalizePath(file.path), file]));
   const categories = new Map<string, { code: string; severity: "error" | "warning"; count: number }>();
@@ -4035,6 +4749,16 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
   if (missing.length > 0) {
     throw new Error(`skill_tool_missing_required_files: ${missing.join(", ")}`);
   }
+  const unexpectedManifestHtmlFiles = listUnexpectedManifestHtmlFiles({
+    decision: params.decision,
+    files: normalizedFiles,
+    requirementText: params.requirementText || "",
+  });
+  if (unexpectedManifestHtmlFiles.length > 0) {
+    throw new Error(
+      `skill_tool_manifest_gate_failed: generated unrequested page files outside the Prompt Control Manifest: ${unexpectedManifestHtmlFiles.join(", ")}`,
+    );
+  }
 
   const styles = byPath.get("/styles.css");
   if (!styles || !isLikelyValidCss(styles.content)) {
@@ -4051,13 +4775,45 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
   if (!stylesLint.passed) {
     throw new Error(`skill_tool_invalid_required_file: /styles.css failed layout QA\n${renderAntiSlopFeedback(stylesLint)}`);
   }
+  const htmlByPathForCssCoverage = new Map<string, string>();
+  for (const [filePath, file] of byPath.entries()) {
+    if (filePath.endsWith(".html")) {
+      htmlByPathForCssCoverage.set(filePath, String(file.content || ""));
+    }
+  }
+  const cssCompletenessIssues = findCssCompletenessIssues(String(styles.content || ""), htmlByPathForCssCoverage);
+  if (cssCompletenessIssues.length > 0) {
+    throw new Error(
+      `skill_tool_invalid_required_file: /styles.css is incomplete shared site CSS: ${cssCompletenessIssues.join("; ")}`,
+    );
+  }
+  const hiddenRevealCssIssues = findHiddenRevealCssIssues(String(styles.content || ""));
+  if (hiddenRevealCssIssues.length > 0) {
+    throw new Error(
+      `skill_tool_invalid_required_file: /styles.css hides route content before preview interaction: ${hiddenRevealCssIssues.join("; ")}`,
+    );
+  }
+  const surfaceVisualTokenIssues = findSurfaceVisualTokenContractIssues({
+    css: String(styles.content || ""),
+    decision: params.decision,
+    requirementText: params.requirementText || "",
+  });
+  if (surfaceVisualTokenIssues.length > 0) {
+    throw new Error(
+      `skill_tool_invalid_required_file: /styles.css violates surface visual token contract: ${surfaceVisualTokenIssues.join("; ")}`,
+    );
+  }
 
   assertSharedShellConsistency(params.decision, byPath);
+  assertGenericRouteShapeQuality(params.decision, byPath);
 
   for (const route of params.decision.routes) {
     totalRoutes += 1;
     const pagePath = routeToHtmlPath(route);
     const page = byPath.get(pagePath);
+    const pageBlueprint =
+      params.decision.pageBlueprints.find((item) => normalizePath(item.route) === normalizePath(route)) ||
+      findPageBlueprint(params.decision, route);
     const html = ensureHtmlDocument(String(page?.content || ""));
     if (!page || !html || containsToolTranscriptNoise(html)) {
       throw new Error(`skill_tool_invalid_required_file: ${pagePath} is missing or invalid HTML`);
@@ -4079,6 +4835,14 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
         pagePurpose: params.decision.pageBlueprints.find((item) => normalizePath(item.route) === normalizePath(route))?.purpose,
       }),
     );
+    const placeholderGateIssues = extractPlaceholderGateIssues(routeLint);
+    if (placeholderGateIssues.length > 0) {
+      throw new Error(
+        `skill_tool_placeholder_gate_failed: ${pagePath} exposes placeholder/demo content instead of final visitor-facing material: ${placeholderGateIssues.join(
+          "; ",
+        )}`,
+      );
+    }
     collectLint(routeLint);
     if (!routeLint.passed) {
       throw new Error(`skill_tool_invalid_required_file: ${pagePath} failed route QA\n${renderAntiSlopFeedback(routeLint)}`);
@@ -4096,16 +4860,44 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
         `skill_tool_invalid_required_file: ${pagePath} exposes page mechanics/scaffold wording instead of visitor-facing content: ${pageMechanicsTerms.join(", ")}`,
       );
     }
-    const corporateB2BHomepageIssues = findCorporateB2BHomepageContractIssues(
+    const workflowMetaLeaks = findVisibleWorkflowMetaLeak(html);
+    if (workflowMetaLeaks.length > 0) {
+      throw new Error(
+        `skill_tool_invalid_required_file: ${pagePath} exposes workflow/process/meta wording instead of visitor-facing content: ${workflowMetaLeaks.join(", ")}`,
+      );
+    }
+    const surfaceHomepageArchetypeIssues = findSurfaceHomepageArchetypeIssues({
       html,
       pagePath,
-      params.requirementText || "",
-      String(styles.content || ""),
-    );
-    if (corporateB2BHomepageIssues.length > 0) {
+      decision: params.decision,
+      requirementText: params.requirementText || "",
+    });
+    if (surfaceHomepageArchetypeIssues.length > 0) {
       throw new Error(
-        `skill_tool_invalid_required_file: ${pagePath} violates the corporate-b2b homepage contract: ${corporateB2BHomepageIssues.join("; ")}`,
+        `skill_tool_invalid_required_file: ${pagePath} violates the surface homepage archetype contract: ${surfaceHomepageArchetypeIssues.join("; ")}`,
       );
+    }
+    const singleLanguageLocaleIssues = findSingleLanguageLocaleContractIssues(
+      html,
+      params.decision.locale,
+      pagePath,
+      params.requirementText || "",
+    );
+    if (singleLanguageLocaleIssues.length > 0) {
+      throw new Error(`skill_tool_invalid_required_file: ${singleLanguageLocaleIssues.join("; ")}`);
+    }
+    if (params.enforceCorporateHomepageContract !== false) {
+      const corporateB2BHomepageIssues = findCorporateB2BHomepageContractIssues(
+        html,
+        pagePath,
+        params.requirementText || "",
+        String(styles.content || ""),
+      );
+      if (corporateB2BHomepageIssues.length > 0) {
+        throw new Error(
+          `skill_tool_invalid_required_file: ${pagePath} violates the corporate-b2b homepage contract: ${corporateB2BHomepageIssues.join("; ")}`,
+        );
+      }
     }
     const requestedSiteContentCount = requestedPublishableContentCount(params.requirementText || "");
     if (requestedSiteContentCount) {
@@ -4122,7 +4914,13 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
     if ((isPlannedBlogDataRoute || isExplicitBlogIndexRoute) && !hasBlogContract) {
       throw new Error(`skill_tool_invalid_required_file: ${pagePath} does not include the Blog data-source contract`);
     }
+    if (hasBlogContract && !isPlannedBlogDataRoute && !isExplicitBlogIndexRoute) {
+      throw new Error(
+        `skill_tool_invalid_required_file: ${pagePath} applies the Blog/content collection data-source contract on a non-content route`,
+      );
+    }
     if (isPlannedBlogDataRoute || isExplicitBlogIndexRoute || hasBlogContract) {
+      const requiresDetailPages = shouldRequireBlogDetailPagesForRoute(pageBlueprint, params.requirementText || "");
       const leakedTerms = findVisibleBlogImplementationLeak(html);
       if (leakedTerms.length > 0) {
         throw new Error(
@@ -4148,9 +4946,9 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
             detailExpectations.set(routeKey, expectation);
           }
         }
-        if (detailRoutes.length === 0) {
+        if (requiresDetailPages && detailRoutes.length === 0) {
           throw new Error(
-            `skill_tool_invalid_required_file: ${pagePath} must expose at least one /blog/{slug}/ detail link because Blog/content-backed generation always includes detail pages`,
+            `skill_tool_invalid_required_file: ${pagePath} must expose at least one /blog/{slug}/ detail link because this route behaves like a publishable Blog/article archive`,
           );
         }
       const requestedCount = requestedPublishableContentCount(params.requirementText || "");
@@ -4161,6 +4959,7 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
           );
         }
       } else if (
+        requiresDetailPages &&
         !shouldRequireAllDiscoveredBlogDetails(params.requirementText || "") &&
         detailRoutes.length > DEFAULT_UNREQUESTED_BLOG_DETAIL_LIMIT
       ) {
@@ -4243,17 +5042,16 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
       }
     }
 
-  if (sharedIsBilingualRequirementText(params.requirementText || "")) {
-    const enMessages = byPath.get(I18N_MESSAGE_EN_PATH);
-    const zhMessages = byPath.get(I18N_MESSAGE_ZH_CN_PATH);
-    const parsedEnMessages = tryParseJsonObject(String(enMessages?.content || ""));
-    const parsedZhMessages = tryParseJsonObject(String(zhMessages?.content || ""));
-    const hasTranslatedAltLocale = Boolean(
-      parsedEnMessages &&
-      parsedZhMessages &&
-      hasMeaningfullyTranslatedAlternateLocale(parsedEnMessages, parsedZhMessages),
-    );
+  const enMessages = byPath.get(I18N_MESSAGE_EN_PATH);
+  const zhMessages = byPath.get(I18N_MESSAGE_ZH_CN_PATH);
+  const hasI18nDictionaries = Boolean(
+    enMessages &&
+    zhMessages &&
+    isLikelyValidI18nJson(String(enMessages.content || "")) &&
+    isLikelyValidI18nJson(String(zhMessages.content || "")),
+  );
 
+  if (isBilingualRequirementText(params.requirementText || "")) {
     const allHtml = files
       .filter((item) => normalizePath(item.path).endsWith(".html"))
       .map((item) => String(item.content || ""))
@@ -4274,34 +5072,37 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
       }
     }
 
-    const plannedNonBlogRoutes = params.decision.routes.filter((route) => {
-      const normalizedRoute = normalizePath(route);
-      if (normalizedRoute === "/blog") return false;
-      if (isBlogDataSourceRoute(params.decision, normalizedRoute)) return false;
-      return true;
-    });
-    for (const route of plannedNonBlogRoutes) {
-      const pagePath = routeToHtmlPath(route);
-      const page = byPath.get(pagePath);
-      const html = ensureHtmlDocument(String(page?.content || ""));
-      if (!html) continue;
-      if (!hasBilingualI18nMapping(html)) {
-        throw new Error(
-          `skill_tool_invalid_required_file: ${pagePath} is missing i18n mappings for visible core copy; add stable data-i18n keys so locale resources can translate the page without regenerating HTML`,
-        );
-      }
-      if (hasTranslatedAltLocale && !hasBilingualLocaleToggle(html)) {
-        throw new Error(
-          `skill_tool_invalid_required_file: ${pagePath} is missing a real bilingual language switch; add a data-locale-toggle control that swaps visible copy via the i18n resource files`,
-        );
-      }
-    }
+    if (hasI18nDictionaries) {
+      const parsedEnMessages = tryParseJsonObject(String(enMessages?.content || ""));
+      const parsedZhMessages = tryParseJsonObject(String(zhMessages?.content || ""));
+      const hasTranslatedAltLocale = Boolean(
+        parsedEnMessages &&
+        parsedZhMessages &&
+        hasMeaningfullyTranslatedAlternateLocale(parsedEnMessages, parsedZhMessages),
+      );
 
-    if (!enMessages || !isLikelyValidI18nJson(String(enMessages.content || ""))) {
-      throw new Error(`skill_tool_invalid_required_file: ${I18N_MESSAGE_EN_PATH} is missing or invalid JSON`);
-    }
-    if (!zhMessages || !isLikelyValidI18nJson(String(zhMessages.content || ""))) {
-      throw new Error(`skill_tool_invalid_required_file: ${I18N_MESSAGE_ZH_CN_PATH} is missing or invalid JSON`);
+      const plannedNonBlogRoutes = params.decision.routes.filter((route) => {
+        const normalizedRoute = normalizePath(route);
+        if (normalizedRoute === "/blog") return false;
+        if (isBlogDataSourceRoute(params.decision, normalizedRoute)) return false;
+        return true;
+      });
+      for (const route of plannedNonBlogRoutes) {
+        const pagePath = routeToHtmlPath(route);
+        const page = byPath.get(pagePath);
+        const html = ensureHtmlDocument(String(page?.content || ""));
+        if (!html) continue;
+        if (!hasBilingualI18nMapping(html)) {
+          throw new Error(
+            `skill_tool_invalid_required_file: ${pagePath} is missing i18n mappings for visible core copy; add stable data-i18n keys so locale resources can translate the page without regenerating HTML`,
+          );
+        }
+        if (hasTranslatedAltLocale && !hasBilingualLocaleToggle(html)) {
+          throw new Error(
+            `skill_tool_invalid_required_file: ${pagePath} is missing a real bilingual language switch; add a data-locale-toggle control that swaps visible copy via the i18n resource files`,
+          );
+        }
+      }
     }
   }
   if (!requestedSiteContentCount && !shouldRequireAllDiscoveredBlogDetails(params.requirementText || "")) {
@@ -4351,6 +5152,7 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
     retriesAllowed: 0,
     antiSlopIssueCount: Array.from(categories.values()).reduce((sum, item) => sum + item.count, 0),
     categories: Array.from(categories.values()).sort((left, right) => right.count - left.count || left.code.localeCompare(right.code)),
+    observations: collectObservationOnlyVisualFindings({ decision: params.decision, byPath }),
   };
   return { files: normalizedFiles, qaSummary, qaRecords };
 }
@@ -4359,6 +5161,7 @@ export function validateWebsiteRequiredFilesWithQaForAdapter(params: {
   decision: LocalDecisionPlan;
   files: RuntimeWorkflowFile[];
   requirementText?: string;
+  enforceCorporateHomepageContract?: boolean;
 }): SkillExecutionValidationResult {
   return validateAndNormalizeRequiredFilesWithQa(params);
 }
@@ -4379,6 +5182,28 @@ function normalizeHrefRoute(href: string): string {
   return normalizeRouteKey(value || "/");
 }
 
+function hasStructuredFooterShellMarkup(html: string): boolean {
+  const footer = String(html || "");
+  return (
+    /\b(?:site-footer__inner|footer(?:-|__)(?:inner|top|grid|brand|links|nav|meta|actions|bottom|panel|col|notes|section))\b/i.test(
+      footer,
+    ) ||
+    (/<h[23]\b[\s\S]*?<\/h[23]>\s*<ul\b/i.test(footer) && (footer.match(/<li>\s*<a\b/gi) || []).length >= 3)
+  );
+}
+
+function hasFooterBandStyle(stylesCss: string): boolean {
+  const styles = String(stylesCss || "");
+  return Array.from(styles.matchAll(/([^{}]+)\{([^{}]*)\}/g)).some((match) => {
+    const selector = String(match[1] || "");
+    const declarations = String(match[2] || "");
+    const targetsFooterBand = /(?:^|[,\s])(?:footer|\.site-footer|\.footer)(?:[#.:\s,{]|$)/i.test(selector);
+    const givesVisibleBand =
+      /\b(?:padding(?:-[\w-]+)?|background(?:-[\w-]+)?|border-top|margin-top)\s*:/i.test(declarations);
+    return targetsFooterBand && givesVisibleBand;
+  });
+}
+
 function extractTagBlock(html: string, tagName: string): string {
   const match = String(html || "").match(new RegExp(`<${tagName}\\b[^>]*>[\\s\\S]*?<\\/${tagName}>`, "i"));
   return String(match?.[0] || "");
@@ -4395,11 +5220,17 @@ function assertSharedShellConsistency(decision: LocalDecisionPlan, byPath: Map<s
   const plannedRoutes = new Set(decision.routes.map((route) => normalizePath(route)));
   const homeHtml = ensureHtmlDocument(String(byPath.get("/index.html")?.content || ""));
   if (!homeHtml) return;
+  const stylesCss = String(byPath.get("/styles.css")?.content || "");
 
   const canonicalNavBlock = extractTagBlock(homeHtml, "nav");
   const canonicalFooterBlock = extractTagBlock(homeHtml, "footer");
   const canonicalNavRoutes = extractPlannedRoutesFromHtmlBlock(canonicalNavBlock, plannedRoutes);
   const canonicalFooterRoutes = extractPlannedRoutesFromHtmlBlock(canonicalFooterBlock, plannedRoutes);
+  if (canonicalFooterBlock && footerNeedsStructuredShell(canonicalFooterBlock, stylesCss)) {
+    throw new Error(
+      "skill_tool_invalid_required_file: /index.html collapses the shared footer into a flat link row instead of a structured footer shell",
+    );
+  }
 
   for (const route of decision.routes) {
     const normalizedRoute = normalizePath(route);
@@ -4429,6 +5260,11 @@ function assertSharedShellConsistency(decision: LocalDecisionPlan, byPath: Map<s
       if (!pageFooterBlock) {
         throw new Error(`skill_tool_invalid_required_file: ${pagePath} must preserve the shared footer shell defined on /index.html`);
       }
+      if (footerNeedsStructuredShell(pageFooterBlock, stylesCss)) {
+        throw new Error(
+          `skill_tool_invalid_required_file: ${pagePath} collapses the shared footer into a flat link row instead of a structured footer shell`,
+        );
+      }
       if (canonicalFooterRoutes.length > 0) {
         const pageFooterRoutes = extractPlannedRoutesFromHtmlBlock(pageFooterBlock, plannedRoutes);
         const missingFooterRoutes = canonicalFooterRoutes.filter((item) => !pageFooterRoutes.includes(item));
@@ -4442,7 +5278,44 @@ function assertSharedShellConsistency(decision: LocalDecisionPlan, byPath: Map<s
   }
 }
 
-export function enforceNavigationOrder(html: string, decision: LocalDecisionPlan): string {
+function assertGenericRouteShapeQuality(decision: LocalDecisionPlan, byPath: Map<string, RuntimeWorkflowFile>) {
+  const plannedPrimaryRoutes = decision.pageBlueprints.filter((page) => {
+    const normalizedRoute = normalizePath(page.route);
+    return normalizedRoute !== "/" && page.pageKind !== "auth" && !/^\/blog\/[^/]+$/i.test(normalizedRoute);
+  });
+
+  const legacySplitHeroRoutes: string[] = [];
+  for (const page of plannedPrimaryRoutes) {
+    const pagePath = routeToHtmlPath(page.route);
+    const html = ensureHtmlDocument(String(byPath.get(pagePath)?.content || ""));
+    if (!html) continue;
+    const opening = extractFirstMainSectionHtml(html);
+    const usesLegacySplitHero = openingUsesLegacySplitHero(opening);
+    if (usesLegacySplitHero) {
+      legacySplitHeroRoutes.push(page.route);
+    }
+    if ((page.pageKind === "content-collection-index" || page.pageKind === "search-directory") && usesLegacySplitHero) {
+      throw new Error(
+        `skill_tool_invalid_required_file: ${pagePath} reuses the legacy split-hero template instead of a route-owned ${page.pageKind === "content-collection-index" ? "content collection" : "directory"} opening`,
+      );
+    }
+  }
+
+  const repeatedSplitHeroAcrossMajority =
+    legacySplitHeroRoutes.length >= 3 &&
+    legacySplitHeroRoutes.length >= Math.ceil(Math.max(1, plannedPrimaryRoutes.length) * 0.6);
+  const repeatedSplitHeroAcrossRouteHeavySite =
+    plannedPrimaryRoutes.length >= 6 &&
+    legacySplitHeroRoutes.length >= 4 &&
+    legacySplitHeroRoutes.length >= Math.ceil(plannedPrimaryRoutes.length * 0.5);
+  if (repeatedSplitHeroAcrossMajority || repeatedSplitHeroAcrossRouteHeavySite) {
+    throw new Error(
+      `skill_tool_invalid_required_file: repeated primary routes fell back to the same legacy split-hero opening template (${legacySplitHeroRoutes.join(", ")}); give sibling routes distinct opening structures`,
+    );
+  }
+}
+
+export function enforceNavigationOrder(html: string, decision: LocalDecisionPlan, requirementText = ""): string {
   const routeOrder = new Map(
     decision.routes.map((route, index) => [normalizeRouteKey(route), index]),
   );
@@ -4457,6 +5330,8 @@ export function enforceNavigationOrder(html: string, decision: LocalDecisionPlan
   const enRouteLabel = new Map(
     decision.routes.map((route) => [normalizeRouteKey(route), localizedKnownRouteLabel(route, "en")]),
   );
+  const requestedLocale = resolveRequestedExperienceLocale(requirementText, decision.locale);
+  const visibleLocale: "zh-CN" | "en" = requestedLocale === "zh-CN" ? "zh-CN" : "en";
 
   const localizeKnownRouteAnchor = (anchorHtml: string, route: string): string => {
     if (/\bclass=(["'])[^"']*\bbrand\b[^"']*\1/i.test(String(anchorHtml || ""))) {
@@ -4464,13 +5339,17 @@ export function enforceNavigationOrder(html: string, decision: LocalDecisionPlan
     }
     const normalizedRoute = normalizeRouteKey(route);
     const zhLabel = zhRouteLabel.get(normalizedRoute);
-    const enLabel = enRouteLabel.get(normalizedRoute) || routeLabel.get(normalizedRoute);
-    const visibleLabel = decision.locale === "en" ? enLabel : zhLabel;
+    const enLabel = routeLabel.get(normalizedRoute) || enRouteLabel.get(normalizedRoute);
+    const visibleLabel = visibleLocale === "en" ? enLabel : zhLabel;
     if (!zhLabel || !enLabel || !visibleLabel) return anchorHtml;
+    const keepBilingualNavPayload = shouldUseBilingualExperience(requirementText, decision.locale);
     return String(anchorHtml || "").replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/i, (_anchorFull, attrs) => {
       const cleanedAttrs = String(attrs || "")
         .replace(/\sdata-i18n(?:-zh|-en)?(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?/gi, "")
         .trim();
+      if (!keepBilingualNavPayload) {
+        return `<a${cleanedAttrs ? ` ${cleanedAttrs}` : ""}>${visibleLabel}</a>`;
+      }
       return `<a${cleanedAttrs ? ` ${cleanedAttrs}` : ""} data-i18n data-i18n-zh="${escapeHtmlAttribute(zhLabel)}" data-i18n-en="${escapeHtmlAttribute(enLabel)}">${visibleLabel}</a>`;
     });
   };
@@ -4494,64 +5373,88 @@ export function enforceNavigationOrder(html: string, decision: LocalDecisionPlan
     return `<div class="locale-switch" aria-label="Language switch">${buttons.join("")}</div>`;
   };
 
-  const reorderKnownRouteBlock = (tagName: "nav" | "footer", sourceHtml: string): string =>
-    String(sourceHtml || "").replace(new RegExp(`<${tagName}\\b([^>]*)>([\\s\\S]*?)<\\/${tagName}>`, "gi"), (full, attrs, inner) => {
-      const anchors = Array.from(String(inner || "").matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>[\s\S]*?<\/a>/gi));
-      const localeToggleMarkup = extractLocaleToggleMarkup(String(inner || ""));
-      const brandAnchors = anchors
-        .map((match, originalIndex) => ({
-          tag: String(match[0] || ""),
-          route: normalizeHrefRoute(match[1]),
-          originalIndex,
-        }))
-        .filter((item) => /\bclass=(["'])[^"']*\bbrand\b[^"']*\1/i.test(item.tag));
-      const known = anchors
-        .map((match, originalIndex) => ({
+  const buildOrderedKnownAnchorMarkup = (innerHtml: string, includeLocaleToggle: boolean): string => {
+    const anchors = Array.from(String(innerHtml || "").matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>[\s\S]*?<\/a>/gi));
+    const keepBilingualNavPayload = shouldUseBilingualExperience(requirementText, decision.locale);
+    const localeToggleMarkup =
+      includeLocaleToggle && keepBilingualNavPayload ? extractLocaleToggleMarkup(String(innerHtml || "")) : "";
+    const brandAnchors = anchors
+      .map((match, originalIndex) => ({
+        tag: String(match[0] || ""),
+        route: normalizeHrefRoute(match[1]),
+        originalIndex,
+      }))
+      .filter((item) => /\bclass=(["'])[^"']*\bbrand\b[^"']*\1/i.test(item.tag));
+    const known = anchors
+      .map((match, originalIndex) => ({
         tag: localizeKnownRouteAnchor(String(match[0] || ""), normalizeHrefRoute(match[1])),
         route: normalizeHrefRoute(match[1]),
         originalIndex,
       }))
       .filter((item) => routeOrder.has(item.route) && !/\bclass=(["'])[^"']*\bbrand\b[^"']*\1/i.test(item.tag));
-      if (known.length < 1) return full;
+    if (known.length < 1) {
+      return String(innerHtml || "");
+    }
 
-      const sortedKnown = [...known].sort((left, right) => {
-        const leftOrder = routeOrder.get(left.route) ?? Number.MAX_SAFE_INTEGER;
-        const rightOrder = routeOrder.get(right.route) ?? Number.MAX_SAFE_INTEGER;
-        return leftOrder - rightOrder || left.originalIndex - right.originalIndex;
-      });
-      const dedupedKnown = sortedKnown.filter(
-        (item, index, items) => items.findIndex((candidate) => candidate.route === item.route) === index,
+    const sortedKnown = [...known].sort((left, right) => {
+      const leftOrder = routeOrder.get(left.route) ?? Number.MAX_SAFE_INTEGER;
+      const rightOrder = routeOrder.get(right.route) ?? Number.MAX_SAFE_INTEGER;
+      return leftOrder - rightOrder || left.originalIndex - right.originalIndex;
+    });
+    const dedupedKnown = sortedKnown.filter(
+      (item, index, items) => items.findIndex((candidate) => candidate.route === item.route) === index,
+    );
+    const unknown = anchors
+      .map((match, originalIndex) => ({
+        tag: match[0],
+        route: normalizeHrefRoute(match[1]),
+        originalIndex,
+      }))
+      .filter(
+        (item) =>
+          !routeOrder.has(item.route) && !/\bclass=(["'])[^"']*\bbrand\b[^"']*\1/i.test(String(item.tag || "")),
       );
-      const unknown = anchors
-        .map((match, originalIndex) => ({
-          tag: match[0],
-          route: normalizeHrefRoute(match[1]),
-          originalIndex,
-        }))
-        .filter(
-          (item) =>
-            !routeOrder.has(item.route) && !/\bclass=(["'])[^"']*\bbrand\b[^"']*\1/i.test(String(item.tag || "")),
+
+    const seenKnownRoutes = new Set(dedupedKnown.map((item) => item.route));
+    const missingKnown = decision.routes
+      .map((route) => normalizePath(route))
+      .map((route) => normalizeRouteKey(route))
+      .filter((route) => route !== "/" && !seenKnownRoutes.has(route))
+      .map((route) => {
+        const zhLabel = zhRouteLabel.get(route) || localizedKnownRouteLabel(route, "zh-CN");
+        const enLabel = routeLabel.get(route) || enRouteLabel.get(route) || localizedKnownRouteLabel(route, "en");
+        const visibleLabel = visibleLocale === "en" ? enLabel : zhLabel;
+        if (!keepBilingualNavPayload) {
+          return `<a href="${route}">${visibleLabel}</a>`;
+        }
+        return `<a href="${route}" data-i18n data-i18n-zh="${escapeHtmlAttribute(zhLabel)}" data-i18n-en="${escapeHtmlAttribute(enLabel)}">${visibleLabel}</a>`;
+      });
+
+    return [
+      ...brandAnchors.map((item) => item.tag),
+      ...dedupedKnown.map((item) => item.tag),
+      ...missingKnown,
+      ...unknown.map((item) => item.tag),
+      ...(localeToggleMarkup ? [localeToggleMarkup] : []),
+    ].join("\n          ");
+  };
+
+  const reorderKnownRouteBlock = (tagName: "nav" | "footer", sourceHtml: string): string =>
+    String(sourceHtml || "").replace(new RegExp(`<${tagName}\\b([^>]*)>([\\s\\S]*?)<\\/${tagName}>`, "gi"), (full, attrs, inner) => {
+      const innerHtml = String(inner || "");
+      if (tagName === "footer" && hasStructuredFooterShellMarkup(innerHtml)) {
+        const rewrittenInner = innerHtml.replace(
+          /<([a-zA-Z][\w:-]*)\b([^>]*)class=(["'])([^"']*\bfooter(?:-|__)(?:nav|links)\b[^"']*)\3([^>]*)>([\s\S]*?)<\/\1>/gi,
+          (_match, elementName: string, beforeClassAttrs: string, quote: string, classValue: string, afterClassAttrs: string, blockInner: string) => {
+            const reorderedInner = buildOrderedKnownAnchorMarkup(String(blockInner || ""), false);
+            return `<${elementName}${beforeClassAttrs}class=${quote}${classValue}${quote}${afterClassAttrs}>${reorderedInner}</${elementName}>`;
+          },
         );
+        return `<${tagName}${attrs}>${rewrittenInner}</${tagName}>`;
+      }
 
-      const seenKnownRoutes = new Set(dedupedKnown.map((item) => item.route));
-      const missingKnown = decision.routes
-        .map((route) => normalizePath(route))
-        .map((route) => normalizeRouteKey(route))
-        .filter((route) => route !== "/" && !seenKnownRoutes.has(route))
-        .map((route) => {
-          const zhLabel = zhRouteLabel.get(route) || localizedKnownRouteLabel(route, "zh-CN");
-          const enLabel = enRouteLabel.get(route) || routeLabel.get(route) || localizedKnownRouteLabel(route, "en");
-          const visibleLabel = decision.locale === "en" ? enLabel : zhLabel;
-          return `<a href="${route}" data-i18n data-i18n-zh="${escapeHtmlAttribute(zhLabel)}" data-i18n-en="${escapeHtmlAttribute(enLabel)}">${visibleLabel}</a>`;
-        });
-
-      const reordered = [
-        ...brandAnchors.map((item) => item.tag),
-        ...dedupedKnown.map((item) => item.tag),
-        ...missingKnown,
-        ...unknown.map((item) => item.tag),
-        ...(localeToggleMarkup ? [localeToggleMarkup] : []),
-      ].join("\n          ");
+      const reordered = buildOrderedKnownAnchorMarkup(innerHtml, tagName === "nav");
+      if (reordered === innerHtml) return full;
       return `<${tagName}${attrs}>${reordered}</${tagName}>`;
     });
 
@@ -4660,6 +5563,37 @@ function hasBlogIndexRoute(decision: LocalDecisionPlan): boolean {
   return getBlogDataSourceRoutes(decision).length > 0;
 }
 
+function routeActsAsPublishableArchive(route: string, navLabel = ""): boolean {
+  const text = `${normalizePath(route)} ${String(navLabel || "")}`.trim().toLowerCase();
+  return /(?:^|[\s/-])(blog|blogs|news|article|articles|post|posts|insight|insights|journal|story|stories)(?:$|[\s/-])/i.test(
+    text,
+  );
+}
+
+function routeDefaultsToCollectionSurface(route: string, navLabel = ""): boolean {
+  const text = `${normalizePath(route)} ${String(navLabel || "")}`.trim().toLowerCase();
+  return /(?:information-platform|information platform|knowledge platform|knowledge hub|resource(?:s)? hub|resource library|resource center|research center|standards system|standards library|policy library|documentation portal|downloads? hub|repository|archive center|case library)/i.test(
+    text,
+  );
+}
+
+function requirementRequestsPublishableDetailPages(requirementText = ""): boolean {
+  const text = String(requirementText || "").trim();
+  if (!text) return false;
+  return /(?:\b(?:add|build|create|generate|include|need|publish|seed|write|require)\b.{0,48}\b(?:blog|blogs|article|articles|post|posts|news|insight|insights|journal|story|stories)\b|\b(?:blog|blogs|article|articles|post|posts|news|insight|insights|journal|story|stories)\b.{0,32}\b(?:detail page|detail pages|archive|archives|route|routes|slug|slugs)\b|(?:新增|创建|生成|提供|包含|发布|需要).{0,24}(?:博客|文章|帖子|博文|资讯|快讯|洞察)(?:页|详情页|归档)?|(?:博客|文章|帖子|博文|资讯|快讯|洞察).{0,16}(?:详情页|归档|列表|路由))/iu.test(
+    text,
+  );
+}
+
+function shouldRequireBlogDetailPagesForRoute(page: PageBlueprint, requirementText = ""): boolean {
+  if (normalizePath(page.route) === "/blog") return true;
+  if (requestedPublishableContentCount(requirementText)) return true;
+  if (page.pageKind === "content-collection-index" || page.pageKind === "search-directory") return false;
+  if (routeDefaultsToCollectionSurface(page.route, page.navLabel)) return false;
+  if (routeActsAsPublishableArchive(page.route, page.navLabel)) return true;
+  return requirementRequestsPublishableDetailPages(requirementText);
+}
+
 function resolveHtmlTargetsPerRound(decision: LocalDecisionPlan, requirementText = ""): number {
   const requestedCount = requestedPublishableContentCount(requirementText) || 0;
   return hasBlogIndexRoute(decision) || requestedCount > 0 ? BLOG_HTML_TARGETS_PER_ROUND : HTML_TARGETS_PER_ROUND;
@@ -4676,18 +5610,31 @@ function resolveMaxToolRounds(decision: LocalDecisionPlan, requirementText = "")
   const requestedCount = requestedPublishableContentCount(requirementText) || 0;
   const sharedRounds = Math.ceil(2 / SHARED_ASSET_TARGETS_PER_ROUND);
   const htmlTargetsPerRound = resolveHtmlTargetsPerRound(decision, requirementText);
+  const hasHome = decision.routes.some((route) => normalizePath(route) === "/");
   const nonHomeRouteCount = decision.routes.filter((route) => normalizePath(route) !== "/").length;
-  const homeRound = decision.routes.some((route) => normalizePath(route) === "/") ? 1 : 0;
+  const homeRound = hasHome ? 1 : 0;
   const routeRounds = Math.max(
     1,
     homeRound + Math.ceil(nonHomeRouteCount / Math.max(1, Math.min(INNER_HTML_TARGETS_PER_ROUND, htmlTargetsPerRound))),
   );
   const detailRounds = requestedCount > 0 ? Math.ceil(requestedCount / DETAIL_TARGETS_PER_ROUND) : 0;
+  const routeSlackRounds = nonHomeRouteCount >= 5 ? Math.ceil(nonHomeRouteCount / 5) : 0;
+  const collectionSlackRounds =
+    hasHome &&
+    decision.pageBlueprints.filter((page) => {
+      const normalizedRoute = normalizePath(page.route);
+      return (
+        normalizedRoute !== "/" &&
+        (page.pageKind === "content-collection-index" || page.pageKind === "search-directory")
+      );
+    }).length >= 2
+      ? 1
+      : 0;
   const batchedEmissionRounds = Math.min(
     MAX_TOOL_ROUNDS,
     Math.max(
       4,
-      sharedRounds + routeRounds + detailRounds + 2,
+      sharedRounds + routeRounds + detailRounds + routeSlackRounds + collectionSlackRounds + 2,
     ),
   );
   return batchedEmissionRounds + MAX_TOOL_QA_REPAIR_ROUNDS;
@@ -4909,14 +5856,26 @@ function buildToolRoundPrompt(params: {
     firstTarget.endsWith(".html");
   const focusedPage = singleHtmlTargetRound ? findPageBlueprint(params.decision, htmlPathToRoute(firstTarget) || "/") : undefined;
   const focusedPageKind = focusedPage?.pageKind || "";
-  const focusedBlogTarget = focusedPageKind === "blog-data-index" || /^\/blog\/[^/]+\/?$/.test(htmlPathToRoute(firstTarget) || "");
+  const focusedBlogTarget = isContentBackedPageKind(focusedPageKind) || /^\/blog\/[^/]+\/?$/.test(htmlPathToRoute(firstTarget) || "");
+  const focusedRequiresBlogDetailPages = focusedPage ? shouldRequireBlogDetailPagesForRoute(focusedPage, analysisRequirementText) : false;
   const focusedHomeTarget = focusedPageKind === "home" || firstTarget === "/index.html";
   const includeFullContract =
     !sharedAssetRound &&
     !singleHtmlTargetRound &&
     (firstTarget.endsWith(".html") || params.round >= 3 || !params.objective.strictSingleTarget);
   const blogDataRoutes = getBlogDataSourceRoutes(params.decision);
+  const plannedContentRoutesRequireDetails = params.decision.pageBlueprints.some(
+    (page) => isContentBackedPageKind(page.pageKind) && shouldRequireBlogDetailPagesForRoute(page, analysisRequirementText),
+  );
   const requestedContentCount = requestedPublishableContentCount(analysisRequirementText);
+  const requestedContentGate =
+    !sharedAssetRound && (!singleHtmlTargetRound || focusedBlogTarget)
+      ? requestedContentCount
+        ? `Requested publishable content gate: the brief asks for ${requestedContentCount} complete content item(s). Blog/content-backed output must provide ${requestedContentCount} full article/detail targets with body prose, not title-only cards or explanatory list mechanics.`
+        : focusedRequiresBlogDetailPages || (!singleHtmlTargetRound && plannedContentRoutesRequireDetails)
+          ? `Requested publishable content gate: no explicit article count was requested. If an explicit Blog/content archive is present, keep the initial fallback to at most ${DEFAULT_UNREQUESTED_BLOG_DETAIL_LIMIT} substantial /blog/{slug}/ detail target so the site stays lightweight unless the brief asks for more.`
+          : "Requested publishable content gate: no explicit article count was requested. For generic information-platform, research, standards, and resource-collection routes, keep the first pass collection-first and do not invent /blog/{slug}/ detail targets."
+      : "";
   const requiresLanguageSwitch = isBilingualRequirementText(analysisRequirementText);
   const defaultVisibleLanguage = bilingualDefaultVisibleLanguage(analysisRequirementText);
   const bilingualPromptGuidance = loadBilingualPromptGuidance();
@@ -4941,6 +5900,16 @@ function buildToolRoundPrompt(params: {
   const currentFileSummary = singleHtmlTargetRound
     ? `- Current target: ${firstTarget}\n- Shared shell must remain consistent with: ${params.decision.routes.join(", ")}`
     : currentFiles || "(none)";
+  const footerShellContract = !sharedAssetRound
+    ? [
+        "Structured footer shell minimum:",
+        '- Every HTML page footer must use a structured shell such as `<footer class="site-footer"><div class="site-footer__inner">...</div></footer>`.',
+        "- `/styles.css` must style the top-level `footer`, `.site-footer`, or `.footer` selector with visible footer-band chrome: padding plus at least one of background, border-top, or margin-top.",
+        "- Include at least three footer zones with recognizable classes: `footer-brand` or `site-footer__brand`, `footer-nav` or `footer-links`, and `footer-meta`, `footer-actions`, `footer-notes`, or `footer-bottom`.",
+        "- Footer cards or columns may sit inside the band, but do not make the footer read as ordinary body cards. The top-level footer must be visually distinct from the main content.",
+        "- Do not emit a footer that is only a flat stream of anchors or one copyright line. If /styles.css defines footer shell utilities, the HTML must use those same utilities.",
+      ].join("\n")
+    : "";
   const focusedRouteDesignSpec = singleHtmlTargetRound
     ? buildWebsiteDesignSpecRouteExcerpt({
         decision: params.decision,
@@ -4981,17 +5950,14 @@ function buildToolRoundPrompt(params: {
       : "",
     targetContracts.length > 0 ? ["", "Target page contracts:", targetContracts.join("\n\n")].join("\n") : "",
     focusedRouteDesignSpec ? ["", "Focused route design spec:", focusedRouteDesignSpec].join("\n") : "",
+    footerShellContract ? ["", footerShellContract].join("\n") : "",
     "",
     `Loaded skills: ${params.loadedSkillIds.join(", ") || "(none)"}`,
     `Missing required files: ${params.requiredMissing.join(", ") || "(none)"}`,
     !sharedAssetRound && !singleHtmlTargetRound
       ? `Content-binding route(s): ${blogDataRoutes.join(", ") || "(none; emit fallback route only if the route plan has no confident content-capable page)"}. This is internal implementation context; visible headings and cards must follow each route's own taxonomy and must not mention backend/runtime/fallback mechanics.`
       : "",
-    !sharedAssetRound && (!singleHtmlTargetRound || focusedBlogTarget)
-      ? requestedContentCount
-        ? `Requested publishable content gate: the brief asks for ${requestedContentCount} complete content item(s). Blog/content-backed output must provide ${requestedContentCount} full article/detail targets with body prose, not title-only cards or explanatory list mechanics.`
-        : `Requested publishable content gate: no explicit article count was requested. If a Blog/content index is present, keep the initial fallback to at most ${DEFAULT_UNREQUESTED_BLOG_DETAIL_LIMIT} substantial /blog/{slug}/ detail target so the site stays lightweight unless the brief asks for more.`
-      : "",
+    requestedContentGate,
     ...(requiresLanguageSwitch ? renderedRoundLanguageGuidance : []),
     ...(requiresLanguageSwitch && !singleHtmlTargetRound ? ["", buildBilingualProtocolReference(defaultVisibleLanguage)] : []),
     "",
@@ -5006,20 +5972,30 @@ function buildToolRoundPrompt(params: {
     sharedAssetRound
       ? "- For shared-asset rounds, prioritize the common CSS/JS layer only. Do not restate or solve route-specific content architecture inside /styles.css or /script.js."
       : "- Follow the website-generation-workflow skill contract for Canonical Website Prompt adherence, page differentiation, and shared shell/footer rules.",
+    sharedAssetRound
+      ? "- CSS surface-token rule: when emitting /styles.css, read `/website_design_spec.md` and honor its `surface_css_tokens` / `surface_typography_tokens`. These surface tokens override generic style preset colors; do not reuse one green-white rounded-card theme for corporate, docs, and content-hub surfaces."
+      : "",
     "- Follow the Website Quality Contract: website-only scope, multi-device WYSIWYG preview, strong visual direction, responsive CSS, and no placeholder/template slop.",
     "- Multi-page generation must be coherent, not fragile: keep one shared HTML shell contract, one shared navigation order, one shared footer, one shared CSS system, one shared JS behavior layer, one shared bilingual switch behavior when requested, and pass the same QA gate across every emitted page.",
     "- When this round targets multiple files, emit every target file in the same round unless a provider error prevents it. Do not split one straightforward multi-page website into one model round per file.",
     ...(!sharedAssetRound
       ? [
           "- Visitor-facing content must be final site content. Do not show explanatory scaffolding such as reading method, what you'll find, article collection, this page collects, each article includes date/read time/tags, launch articles, three launch articles, 首发文章, 三篇首发文章, or their Chinese equivalents.",
+          "- Visitor-facing content must not reuse internal planning vocabulary. Never render words such as assumption, assumptions, content gap, Prompt Control Manifest, source priorities, page brief, source material appendix, internal prompt, or requirement completion.",
+          "- Visitor-facing copy must talk about the site's subject, not the page mechanics. Do not write sentences like 'the page groups...', 'the homepage frames...', 'the home page foregrounds...', or 'the visual system keeps...'. Replace them with concrete subject matter, proof, docs topics, product capabilities, or user outcomes.",
+          "- Follow Open Design copy discipline: concise H1/H2 headlines, one-to-two-sentence leads, and CTA labels that say what happens next. Avoid generic CTAs like Learn More, Read More, Get Started, or Click Here.",
           ...(focusedBlogTarget || (!singleHtmlTargetRound && (requestedContentCount || 0) > 0)
             ? [
                 "- If the brief asks for three articles, present the actual three article cards and complete article bodies; do not write a site-structure explanation that says the page has three launch/first articles.",
                 "- Blog/content-index hero text must express a real thesis or value proposition about the topic. Never use hero or section lead sentences that merely tell the visitor how to browse, read, or start the list.",
                 "- If the brief asks for three articles, present the actual three article cards and complete article bodies; do not write a site-structure explanation that gives the reader an order for consuming them.",
                 "- Treat requested article count as invisible production logic. The page may contain exactly three cards, but visible copy must not announce the count with slogans like three articles, three launch articles, three ways, here are three complete articles, or 持续更新三篇首发文章.",
-                "- Do not rely on data-fallback-posts, hidden templates, or script-only rendering to satisfy Blog detail-link requirements. The initial HTML in [data-shpitto-blog-list] must visibly contain the article cards and /blog/{slug}/ links.",
-                "- Do not use same-page anchors such as #article-detail, accordions, hidden panels, or inline sections as substitutes for Blog detail pages. Blog cards must link to /blog/{slug}/ and each linked detail must be emitted as /blog/{slug}/index.html.",
+                focusedRequiresBlogDetailPages || (!singleHtmlTargetRound && plannedContentRoutesRequireDetails)
+                  ? "- Do not rely on data-fallback-posts, hidden templates, or script-only rendering to satisfy Blog detail-link requirements. The initial HTML in [data-shpitto-blog-list] must visibly contain the article cards and /blog/{slug}/ links."
+                  : "- For generic information-platform, research, standards, and resource-collection routes, fallback cards may stay collection cards without /blog/{slug}/ links unless the brief explicitly asks for publishable detail pages.",
+                focusedRequiresBlogDetailPages || (!singleHtmlTargetRound && plannedContentRoutesRequireDetails)
+                  ? "- Do not use same-page anchors such as #article-detail, accordions, hidden panels, or inline sections as substitutes for Blog detail pages. Blog cards must link to /blog/{slug}/ and each linked detail must be emitted as /blog/{slug}/index.html."
+                  : "- For generic collection routes, do not emit hidden or orphaned /blog/{slug}/ shells that are not promised by visible cards or explicit article/archive requirements.",
                 "- If a Blog/content list uses an outer card class like .article-card or .blog-card, that exact class must carry the essential padding itself. Do not put all gutters only on nested wrappers such as __body or __content, because runtime hydration may replace inner markup.",
               ]
             : []),
@@ -5027,6 +6003,7 @@ function buildToolRoundPrompt(params: {
             ? [
                 "- On the home page, do not explain the site by summarizing or sequencing the current Blog articles. Link to the Blog with a topical CTA, not with copy like 'the blog currently has three recent articles' or 'start from these three'.",
                 "- On the home page, if you render a 2-4 card row for themes, strengths, coverage areas, or editorial pillars, make each item a spacious feature card with explicit four-side padding and parent-controlled gap. Avoid compressed border-only shells.",
+                "- On the home page, small hero-side stat cards should be labels plus short facts, not paragraph containers. If the card copy needs a sentence, use a full-width list item or roomy feature card instead of a narrow stat column.",
                 "- Decorative numerals, step numbers, watermarks, or corner badges inside those home feature cards must be visibly inset from the edge and must not steal the text gutter from the title/body column.",
               ]
             : []),
@@ -5058,6 +6035,59 @@ export function buildWebsiteSkillToolRoundPromptForAdapter(params: {
   return buildToolRoundPrompt(params);
 }
 
+export async function renderWebsiteSeedSkillSidecarGuidance(
+  selections: WebsiteSeedSkillSelection[],
+  maxChars = DEFAULT_INITIAL_SEED_GUIDANCE_CHARS,
+): Promise<string> {
+  const uniqueSelections = Array.from(
+    new Map((selections || []).filter((item) => item?.id).map((item) => [item.id, item])).values(),
+  ).slice(0, 4);
+  if (uniqueSelections.length === 0) return "";
+
+  const blocks: string[] = [];
+  for (const selection of uniqueSelections) {
+    try {
+      const skill = await loadProjectSkill(selection.id);
+      const resourceIndex = renderProjectSkillResourceIndex(skill.resourceIndex);
+      blocks.push(
+        [
+          `## seed:${skill.id}`,
+          `- selection_reason: ${selection.reason || "surface/intent match"}`,
+          skill.websiteMetadata?.activation?.mode ? `- activation_mode: ${skill.websiteMetadata.activation.mode}` : "",
+          skill.websiteMetadata?.activation?.rolloutStatus
+            ? `- rollout_status: ${skill.websiteMetadata.activation.rolloutStatus}`
+            : "",
+          resourceIndex,
+          "### Contract excerpt",
+          clipRuntimeRequirement(skill.content, Math.max(900, Math.floor(maxChars / Math.max(1, uniqueSelections.length)))),
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      );
+    } catch (error) {
+      blocks.push(
+        [
+          `## seed:${selection.id}`,
+          `- selection_reason: ${selection.reason || "surface/intent match"}`,
+          `- load_status: unavailable (${String((error as Error)?.message || error || "unknown error")})`,
+        ].join("\n"),
+      );
+    }
+  }
+
+  const guidance = [
+    "# Recommended Website Seed / Sidecar Guidance",
+    "",
+    "Use these selected seed skills as compact source-of-truth guidance for visual structure, route openings, and content consistency.",
+    "When a listed seed has an example-backed HTML contract, preserve its discipline without copying placeholder text.",
+    "Call load_skill for the full skill before expanding a route family or shared design system from it.",
+    "",
+    ...blocks,
+  ].join("\n");
+
+  return clipRuntimeRequirement(guidance, maxChars);
+}
+
 export function resolveWebsiteSkillRoundProviderConfigForTesting(
   config: ProviderConfig,
   objective: SkillExecutionRoundObjective,
@@ -5068,6 +6098,7 @@ export function resolveWebsiteSkillRoundProviderConfigForTesting(
 export async function invokeWebsiteSkillRoundWithProviderFallbackForTesting(params: {
   attempts: Array<{ config: ProviderConfig }>;
   preferredProvider?: LlmProvider;
+  excludedProviders?: LlmProvider[];
   objective: SkillExecutionRoundObjective;
   forceEmitFile?: boolean;
   invokeRound: (args: {
@@ -5092,6 +6123,7 @@ export async function invokeWebsiteSkillRoundWithProviderFallbackForTesting(para
   const result = await invokeRoundWithProviderFallback({
     attempts,
     preferredAttempt,
+    excludedProviders: new Set(params.excludedProviders || []),
     objective: params.objective as RoundObjective,
     messages: [new HumanMessage("test")],
     idleTimeoutMs: 5_000,
@@ -5161,6 +6193,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     routes: decision.routes,
     maxSkills: Number(process.env.SKILL_TOOL_MAX_SEED_SKILLS || 2),
   });
+  const selectedSeedSkillGuidance = await renderWebsiteSeedSkillSidecarGuidance(selectedSeedSkills);
   const selectedDocumentSkills = await selectDocumentContentSkillsForIntent({
     requirementText: sanitizedRequirementWithReferences,
     routes: decision.routes,
@@ -5168,6 +6201,9 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     maxSkills: Number(process.env.SKILL_TOOL_MAX_DOCUMENT_SKILLS || 3),
   });
   const stylePreset = normalizeStylePreset(workflow.stylePreset, {});
+  const selectedWebsiteSurfaceMode =
+    inferWebsiteSurfaceModeFromSkillId(String((workflowContext as any).websiteSurfaceMode || "")) ||
+    inferWebsiteSurfaceModeFromSkillId(String((workflowContext as any).websiteTypeSkillId || ""));
   const providerAttempts = resolveProviderAttempts({
     provider: (params.state as any)?.workflow_context?.lockedProvider,
     model: (params.state as any)?.workflow_context?.lockedModel,
@@ -5197,6 +6233,10 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     model: lock.model,
     stylePreset,
     designHit: workflow.hit,
+    websiteSurfaceMode: selectedWebsiteSurfaceMode,
+    discoveryBrief: ((workflowContext as any).websiteDiscoveryBrief || undefined) as WebsiteDiscoveryBrief | undefined,
+    designSystemId: String((workflowContext as any).designSystemId || "").trim() || undefined,
+    designSystemName: String((workflowContext as any).designSystemName || "").trim() || undefined,
   });
   let assistantNotes: string[] = [];
   let completedStaticFiles: RuntimeWorkflowFile[] | undefined;
@@ -5218,6 +6258,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
   for (let stageRetry = 0; stageRetry <= SKILL_TOOL_STAGE_BUDGET_RETRY_LIMIT; stageRetry += 1) {
     const emittedFiles: RuntimeWorkflowFile[] = [];
     const loadedSkills = new Map<string, string>();
+    const stageExcludedProviders = new Set<LlmProvider>();
     assistantNotes = [];
     const toolHistoryMessages: BaseMessage[] = [
       new SystemMessage(
@@ -5247,6 +6288,9 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
           `- Available website skills: ${availableSkillIds.join(", ")}`,
           `- Website seed skills discovered from frontmatter: ${websiteSeedSkillIds.join(", ") || "(none)"}`,
           `- Recommended seed skills for this brief: ${selectedSeedSkills.map((item) => `${item.id} (${item.reason})`).join(", ") || "(none)"}`,
+          selectedSeedSkillGuidance
+            ? "- Recommended seed/sidecar guidance is already injected below; still call load_skill for full details when expanding a matching route family."
+            : "- No seed/sidecar guidance was injected for this brief.",
           `- Document content skills available: ${documentSkillIds.join(", ") || "(none)"}`,
           `- Recommended document skills for uploaded/source files: ${
             selectedDocumentSkills.map((item) => `${item.id} (${item.reason})`).join(", ") || "(none)"
@@ -5263,6 +6307,9 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
           "Design excerpt:",
           String(workflow.designMd || "").slice(0, DEFAULT_INITIAL_DESIGN_CHARS) || "(no design.md)",
           "",
+          "Recommended seed/sidecar guidance:",
+          selectedSeedSkillGuidance || "(none)",
+          "",
           "Website design specification:",
           workflowFiles.find((file) => normalizePath(file.path) === "/website_design_spec.md")?.content.slice(0, 10_000) ||
             "(no website design spec)",
@@ -5275,8 +6322,12 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
           "Required files:",
           adapter.buildRequiredFileChecklist(decision).join(", "),
           requestedPublishableContentCount(fullRequirementContext)
-            ? `- The requested content count is ${requestedPublishableContentCount(fullRequirementContext)}. After the Blog/content index emits its /blog/{slug}/ card links, the same number of static /blog/{slug}/index.html detail files becomes required. Do not finish with only the index page or same-page anchors.`
-            : `- If a Blog/content index is planned, its visible fallback cards must expose /blog/{slug}/ links; matching static detail files become required as soon as those links exist. Without an explicit requested article count, cap the initial fallback to ${DEFAULT_UNREQUESTED_BLOG_DETAIL_LIMIT} substantial detail page.`,
+            ? `- The requested content count is ${requestedPublishableContentCount(fullRequirementContext)}. After an explicit Blog/content archive emits its /blog/{slug}/ card links, the same number of static /blog/{slug}/index.html detail files becomes required. Do not finish with only the index page or same-page anchors.`
+            : decision.pageBlueprints.some(
+                (page) => isContentBackedPageKind(page.pageKind) && shouldRequireBlogDetailPagesForRoute(page, fullRequirementContext),
+              )
+              ? `- If an explicit Blog/content archive is planned, its visible fallback cards must expose /blog/{slug}/ links; matching static detail files become required as soon as those links exist. Without an explicit requested article count, cap the initial fallback to ${DEFAULT_UNREQUESTED_BLOG_DETAIL_LIMIT} substantial detail page.`
+              : "- If a generic content-backed collection route is planned, keep the initial pass collection-first. Do not emit /blog/{slug}/ detail files unless the prompt, route identity, or source material explicitly asks for publishable article/news details.",
           stageRetry > 0
             ? `- Fresh-stage retry: ${stageRetry}/${SKILL_TOOL_STAGE_BUDGET_RETRY_LIMIT}. Avoid repeating previous repair loops; converge faster.`
             : "",
@@ -5294,6 +6345,11 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
         requestTimeoutMs: providerSelectionTimeoutConfig.absoluteTimeoutMs,
       });
       activeAttempt = selectedProviderAttempt.attempt;
+      for (const provider of selectedProviderAttempt.excludedProviders) {
+        if (provider !== activeAttempt.config.provider) {
+          stageExcludedProviders.add(provider);
+        }
+      }
       assistantNotes.push(...selectedProviderAttempt.notes);
       lock = activeAttempt.lock;
       providerConfig = activeAttempt.config;
@@ -5401,6 +6457,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
           const roundResult = await invokeRoundWithProviderFallback({
             attempts: providerAttempts,
             preferredAttempt: activeAttempt,
+            excludedProviders: stageExcludedProviders,
             objective,
             messages: toolHistoryMessages,
             idleTimeoutMs: timeoutConfig.idleTimeoutMs,

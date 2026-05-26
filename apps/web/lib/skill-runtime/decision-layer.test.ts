@@ -89,11 +89,68 @@ describe("decision-layer", () => {
 
     expect(plan.routes).toEqual(["/", "/products", "/information-platform", "/contact"]);
     expect(plan.routes).not.toContain("/blog");
-    expect(informationPlatform?.pageKind).toBe("blog-data-index");
-    expect(informationPlatform?.constraints.join(" ")).toContain("Blog backend route confidence");
+    expect(informationPlatform?.pageKind).toBe("content-collection-index");
+    expect(informationPlatform?.constraints.join(" ")).toContain("Content collection route confidence");
     expect(informationPlatform?.contentSkeleton.join(" ")).toContain("data-shpitto-blog-root");
     expect(informationPlatform?.contentSkeleton.join(" ")).toContain("case library");
     expect(informationPlatform?.constraints.join(" ")).toContain("English design jargon");
+    expect(informationPlatform?.constraints.join(" ")).not.toContain("Detail links must use /blog/{slug}/");
+  });
+
+  it("keeps generic information-platform routes collection-first unless article/news detail pages were explicitly requested", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          "Build a multi-page website for CASUX. The information platform is a standards, research, and download hub.",
+        ),
+      ],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/casux-information-platform", "/downloads"],
+          navLabels: ["Home", "CASUX Information Platform", "Downloads"],
+          files: ["/styles.css", "/script.js", "/index.html", "/casux-information-platform/index.html", "/downloads/index.html"],
+        },
+      },
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+    const informationPlatform = plan.pageBlueprints.find((page) => page.route === "/casux-information-platform");
+
+    expect(informationPlatform?.pageKind).toBe("content-collection-index");
+    expect(informationPlatform?.constraints.join(" ")).not.toContain("Detail links must use /blog/{slug}/");
+    expect(informationPlatform?.constraints.join(" ")).toContain("Do not invent /blog/{slug}/ article detail pages");
+    expect(informationPlatform?.contentSkeleton.join(" ")).toContain("collection/index surface");
+  });
+
+  it("does not force publishable detail pages when a knowledge hub merely mentions articles as source material", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          "Build a multi-page website for CASUX. The information platform collects standards articles, research materials, and policy updates in one searchable hub.",
+        ),
+      ],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/casux-information-platform"],
+          navLabels: ["Home", "CASUX Information Platform"],
+          files: ["/styles.css", "/script.js", "/index.html", "/casux-information-platform/index.html"],
+        },
+      },
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+    const informationPlatform = plan.pageBlueprints.find((page) => page.route === "/casux-information-platform");
+
+    expect(informationPlatform?.constraints.join(" ")).not.toContain("Detail links must use /blog/{slug}/");
+    expect(informationPlatform?.contentSkeleton.join(" ")).not.toContain("publishable archive");
   });
 
   it("keeps the final comma-delimited page when another sentence follows", () => {
@@ -213,7 +270,7 @@ describe("decision-layer", () => {
       ]),
     );
     expect(plan.routes).not.toContain("/blog");
-    expect(plan.pageBlueprints.find((page) => page.route === "/casux-information-platform")?.pageKind).toBe("blog-data-index");
+    expect(plan.pageBlueprints.find((page) => page.route === "/casux-information-platform")?.pageKind).toBe("content-collection-index");
     expect(plan.routes).not.toEqual(expect.arrayContaining(["/3c-machines", "/custom-solutions"]));
   });
 
@@ -344,6 +401,28 @@ describe("decision-layer", () => {
     expect(plan.requirementText).toContain("Requirement completion: 12/12");
     expect(plan.requirementText).toContain("Bilingual Experience Contract");
     expect(plan.routes).toEqual(["/", "/blog"]);
+  });
+
+  it("detects explicit Chinese locale contracts even when the planning artifact stays English", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          [
+            "# Canonical Website Generation Prompt",
+            "- Language: Chinese",
+            "- Final website locale requirement: Chinese.",
+            "Nav: Home | Contact",
+          ].join("\n"),
+        ),
+      ],
+      phase: "conversation",
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+
+    expect(plan.locale).toBe("zh-CN");
+    expect(plan.routes).toEqual(["/", "/contact"]);
+    expect(plan.pageBlueprints[0]?.route).toBe("/");
   });
 
   it("still lets refine mode prioritize the latest user instruction over generation baseline", () => {
@@ -525,12 +604,12 @@ describe("decision-layer", () => {
             "# Complete Website Generation Prompt",
             "- Website type: Company website",
             "- Target audience: infer_from_uploaded_materials",
-            "- Site structure: Multi-page website (automatically plan first-level navigation, second-level detail pages, and necessary third-level content pages)",
+            "- Site structure: Multi-page website (automatically plan navigation depth and supporting routes from the confirmed audience, goals, and source material)",
             "- Primary goal: Build brand trust, Lead generation",
             "- Language: Chinese",
             "- Content source: Uploaded materials: CASUX_.md.pdf",
             "",
-            "Pages and structure: automatically plan first-level navigation, second-level detail pages, and necessary third-level content pages from website type, target audience, primary goal, and business context.",
+            "Pages and structure: automatically plan navigation depth and supporting routes from website type, target audience, primary goal, and business context.",
             "Generate detailed content and section structure for the relevant pages.",
           ].join("\n"),
         ),

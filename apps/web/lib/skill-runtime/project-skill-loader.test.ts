@@ -31,6 +31,8 @@ describe("project-skill-loader", () => {
     expect(skill.content).toContain("Page Differentiation Contract");
     expect(skill.content).toContain("Shared Shell/Footer Contract");
     expect(skill.content).toContain("Generation must not start from the raw user request alone");
+    expect(skill.content).toContain("website-refinement-workflow");
+    expect(skill.content).toContain("Preview-stage visual and copy feedback");
     expect(skill.config?.routePlanningPolicy).toBeTruthy();
   });
 
@@ -132,6 +134,60 @@ describe("project-skill-loader", () => {
     expect(skill.websiteMetadata?.designSystem?.requires).toBe(true);
   });
 
+  it("discovers staged imported website skills from nested namespaces without TS aliases", async () => {
+    const seedIds = await listWebsiteSeedSkillIds();
+
+    expect(seedIds).toEqual(
+      expect.arrayContaining([
+        "docs-knowledge-foundation",
+        "content-hub-foundation",
+        "docs-reference-template",
+        "content-resource-template",
+      ]),
+    );
+
+    const skill = await loadProjectSkill("docs-knowledge-foundation");
+    expect(skill.skillMdPath.replace(/\\/g, "/")).toContain(
+      "/apps/web/skills/imported-open-design/docs-knowledge-foundation/SKILL.md",
+    );
+    expect(skill.websiteMetadata?.activation?.rolloutStatus).toBe("staged");
+    expect(skill.websiteMetadata?.activation?.mode).toBe("sidecar");
+    expect(skill.resourceIndex?.exampleHtml?.path).toBe("example.html");
+    expect(renderProjectSkillResourceIndex(skill.resourceIndex)).toContain("example.html: example-backed HTML contract");
+  });
+
+  it("discovers staged imported HTML Anything website skills from nested namespaces", async () => {
+    const docsSkill = await loadProjectSkill("docs-reference-template");
+    const contentSkill = await loadProjectSkill("content-resource-template");
+
+    expect(docsSkill.skillMdPath.replace(/\\/g, "/")).toContain(
+      "/apps/web/skills/imported-html-anything/docs-reference-template/SKILL.md",
+    );
+    expect(docsSkill.websiteMetadata?.activation?.compatibleSurfaceModes).toContain("docs-knowledge-site");
+    expect(contentSkill.websiteMetadata?.activation?.compatibleSurfaceModes).toContain("content-hub-site");
+  });
+
+  it("keeps staged imported website skills out of default seed selection until the rollout flag is enabled", async () => {
+    const previous = process.env.SHPITTO_OD_IMPORTED_SKILLS;
+    delete process.env.SHPITTO_OD_IMPORTED_SKILLS;
+
+    const defaultSelected = await selectWebsiteSeedSkillsForIntent({
+      requirementText: "Build a documentation knowledge base with implementation guides and references.",
+      maxSkills: 3,
+    });
+    expect(defaultSelected.map((item) => item.id)).not.toContain("docs-knowledge-foundation");
+
+    process.env.SHPITTO_OD_IMPORTED_SKILLS = "1";
+    const enabledSelected = await selectWebsiteSeedSkillsForIntent({
+      requirementText: "Build a documentation knowledge base with implementation guides and references.",
+      maxSkills: 3,
+    });
+    expect(enabledSelected.map((item) => item.id)).toContain("docs-knowledge-foundation");
+
+    if (previous === undefined) delete process.env.SHPITTO_OD_IMPORTED_SKILLS;
+    else process.env.SHPITTO_OD_IMPORTED_SKILLS = previous;
+  });
+
   it("indexes seed template and checklist resources into a compact summary", async () => {
     const skill = await loadProjectSkill("web-prototype");
 
@@ -162,6 +218,39 @@ describe("project-skill-loader", () => {
       maxSkills: 1,
     });
     expect(pricing[0]?.id).toBe("open-design-pricing-page");
+  });
+
+  it("selects the pricing seed as a controlled sidecar for pricing routes on supported surfaces", async () => {
+    const selected = await selectWebsiteSeedSkillsForIntent({
+      requirementText: "Create a corporate B2B website for an enterprise software vendor.",
+      routes: ["/", "/solutions", "/pricing", "/contact"],
+      maxSkills: 2,
+    });
+
+    const pricing = selected.find((item) => item.id === "open-design-pricing-page");
+    expect(pricing?.reason).toContain("surface:corporate-b2b-site");
+
+    const skill = await loadProjectSkill("open-design-pricing-page");
+    expect(skill.websiteMetadata?.activation?.compatibleSurfaceModes).toEqual(
+      expect.arrayContaining(["marketing-landing-site", "corporate-b2b-site"]),
+    );
+  });
+
+  it("keeps reusable quality skills as English executable website contracts", async () => {
+    const skillIds = [
+      "responsive-by-default",
+      "section-quality-checklist",
+      "design-system-enforcement",
+      "visual-qa-mandatory",
+      "end-to-end-validation",
+    ];
+    const skills = await Promise.all(skillIds.map((id) => loadProjectSkill(id)));
+
+    for (const skill of skills) {
+      expect(skill.content).toContain("contract");
+      expect(skill.content).not.toMatch(/[\u4e00-\u9fff]/);
+      expect(skill.content).not.toMatch(/�|鈥|涓|绔|瑙|闇|鐢|鍝/);
+    }
   });
 
   it("selects document content skills from referenced assets", async () => {

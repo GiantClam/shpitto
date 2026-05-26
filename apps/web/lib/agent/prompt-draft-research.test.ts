@@ -74,6 +74,9 @@ describe("prompt draft research", () => {
     expect(result.canonicalPrompt).not.toContain("quote-form");
     expect(result.canonicalPrompt).toContain("Do not add unlisted pages");
     expect(result.canonicalPrompt).toContain("Workflow Skill Contract");
+    expect(result.canonicalPrompt).toContain("Discovery Brief Lock");
+    expect(result.promptControlManifest.websiteSurfaceMode).toBe("corporate-b2b-site");
+    expect(result.discoveryBrief.surfaceMode).toBe("corporate-b2b-site");
     expect(result.canonicalPrompt).toContain("Evidence Brief Contract");
     expect(result.canonicalPrompt).toContain("Shared Shell/Footer Contract");
     expect(result.canonicalPrompt).toContain("Do not reduce inner-page footers to a single copyright line");
@@ -196,7 +199,80 @@ describe("prompt draft research", () => {
       "/casux-information-platform",
       "/downloads",
     ]);
+    expect(contract.navLabels).toEqual([
+      "Home",
+      "Creation",
+      "Construction",
+      "Certification",
+      "Advocacy",
+      "Research",
+      "Information",
+      "Downloads",
+    ]);
     expect(contract.routes).not.toContain("/custom-solutions");
+    expect(
+      contract.pageIntents.find((page) => page.route === "/casux-research-center")?.purpose,
+    ).toContain("source-backed content collection route");
+    expect(
+      contract.pageIntents.find((page) => page.route === "/casux-information-platform")?.purpose,
+    ).toContain("route-owned collection opening");
+    expect(
+      contract.pageIntents.find((page) => page.route === "/downloads")?.purpose,
+    ).toContain("Do not default to a legacy split-hero template");
+    expect(contract.websiteSurfaceMode).toBe("content-hub-site");
+    expect(contract.discoveryBrief?.surfaceMode).toBe("content-hub-site");
+  });
+
+  it("specializes source-derived primary route intents so sibling pages do not collapse into one split-hero family", () => {
+    const contract = buildPromptControlManifestFromKnowledgeProfileForTesting("Generate from uploaded planning materials.", {
+      sourceMode: "uploaded_files",
+      domains: [],
+      sources: [],
+      brand: { name: "CASUX" },
+      audience: [],
+      offerings: [],
+      differentiators: [],
+      proofPoints: [],
+      suggestedPages: [
+        { route: "/", title: "Home", purpose: "Homepage", contentInputs: [] },
+        { route: "/casux-creation", title: "CASUX Creation", purpose: "Creation", contentInputs: [] },
+        { route: "/casux-construction", title: "CASUX Construction", purpose: "Construction", contentInputs: [] },
+        { route: "/casux-advocacy", title: "CASUX Advocacy", purpose: "Advocacy", contentInputs: [] },
+        { route: "/case-studies", title: "Case Studies", purpose: "Case Studies", contentInputs: [] },
+      ],
+      contentGaps: [],
+      summary: "",
+    });
+
+    expect(contract.pageIntents.find((page) => page.route === "/casux-creation")?.purpose).toContain(
+      "narrative and content-architecture route",
+    );
+    expect(contract.pageIntents.find((page) => page.route === "/casux-construction")?.purpose).toContain(
+      "implementation and execution route",
+    );
+    expect(contract.pageIntents.find((page) => page.route === "/casux-advocacy")?.purpose).toContain(
+      "coalition, participation, or action-framework route",
+    );
+    expect(contract.pageIntents.find((page) => page.route === "/case-studies")?.purpose).toContain(
+      "evidence-led case route",
+    );
+  });
+
+  it("persists docs-knowledge discovery brief data for documentation-style prompts", async () => {
+    const requirement = "Create a developer documentation portal with guides, API reference, tutorials, and FAQs.";
+    const result = await buildPromptDraftWithResearch({
+      requirementText: requirement,
+      slots: buildRequirementSlots(requirement),
+    });
+
+    expect(result.websiteSurfaceMode).toBe("docs-knowledge-site");
+    expect(result.discoveryBrief.surfaceMode).toBe("docs-knowledge-site");
+    expect(result.discoveryBrief.routes).toContain("/");
+    expect(result.discoveryBrief.confirmationStatus).toBe("needs_confirmation");
+    expect(result.discoveryBrief.missingFields).toContain("visualDirectionId");
+    expect(result.discoveryBrief.assumptions?.join("\n")).toContain("prompt-adaptive");
+    expect(result.canonicalPrompt).toContain("websiteSurfaceMode: docs-knowledge-site");
+    expect(result.canonicalPrompt).toContain("confirmationStatus: needs_confirmation");
   });
 
   it("keeps generic uploaded-source multi-page IA in the prompt control manifest", () => {
@@ -246,6 +322,92 @@ describe("prompt draft research", () => {
         "/contact/index.html",
       ]),
     );
+    expect(contract.pageIntents.find((page) => page.route === "/resources")?.purpose).toContain(
+      "source-backed content collection route",
+    );
+  });
+
+  it("keeps collection route purposes stable without nested legacy wording", () => {
+    const contract = buildPromptControlManifestFromKnowledgeProfileForTesting("Generate from uploaded materials.", {
+      sourceMode: "uploaded_files",
+      domains: [],
+      sources: [],
+      brand: { name: "CASUX" },
+      audience: [],
+      offerings: [],
+      differentiators: [],
+      proofPoints: [],
+      suggestedPages: [
+        { route: "/", title: "Home", purpose: "Homepage", contentInputs: [] },
+        {
+          route: "/casux-research-center",
+          title: "CASUX Research Center",
+          purpose:
+            "Treat Research as a source-backed content collection route with a route-owned collection opening, curated summaries or entries, and clear onward paths. Do not default to a legacy split-hero template or invent /blog/{slug}/ detail pages unless the source material explicitly requires them.",
+          contentInputs: [],
+        },
+      ],
+      contentGaps: [],
+      summary: "",
+    });
+
+    const purpose = contract.pageIntents.find((page) => page.route === "/casux-research-center")?.purpose || "";
+    expect(purpose).toContain("source-backed content collection route");
+    expect(purpose).not.toContain("Treat Treat");
+    expect(purpose).not.toContain("Deliver a route-specific page for Deliver");
+  });
+
+  it("adds route-owned collection copy classes when generating a fresh collection purpose", () => {
+    const contract = buildPromptControlManifestFromKnowledgeProfileForTesting("Generate from uploaded materials.", {
+      sourceMode: "uploaded_files",
+      domains: [],
+      sources: [],
+      brand: { name: "CASUX" },
+      audience: [],
+      offerings: [],
+      differentiators: [],
+      proofPoints: [],
+      suggestedPages: [
+        { route: "/", title: "Home", purpose: "Homepage", contentInputs: [] },
+        { route: "/casux-information-platform", title: "CASUX Information Platform", purpose: "Information hub", contentInputs: [] },
+      ],
+      contentGaps: [],
+      summary: "",
+    });
+
+    const purpose = contract.pageIntents.find((page) => page.route === "/casux-information-platform")?.purpose || "";
+    expect(purpose).toContain("collection-title");
+    expect(purpose).toContain("hero-title");
+  });
+
+  it("keeps specialized route purposes stable without duplicated Treat prefixes", () => {
+    const contract = buildPromptControlManifestFromKnowledgeProfileForTesting("Generate from uploaded materials.", {
+      sourceMode: "uploaded_files",
+      domains: [],
+      sources: [],
+      brand: { name: "CASUX" },
+      audience: [],
+      offerings: [],
+      differentiators: [],
+      proofPoints: [],
+      suggestedPages: [
+        { route: "/", title: "Home", purpose: "Homepage", contentInputs: [] },
+        {
+          route: "/casux-creation",
+          title: "CASUX Creation",
+          purpose:
+            "Treat Casux Creation as a narrative and content-architecture route. Open with a route-owned creation masthead, explain how messaging or content structure is shaped, then move into reusable frameworks, proof, and a clear next action. Do not fall back to a generic split hero with an aside panel.",
+          contentInputs: [],
+        },
+      ],
+      contentGaps: [],
+      summary: "",
+    });
+
+    const purpose = contract.pageIntents.find((page) => page.route === "/casux-creation")?.purpose || "";
+    expect(purpose).toContain("Treat Casux Creation as a narrative and content-architecture route.");
+    expect(purpose).not.toContain("Treat Treat");
+    expect((purpose.match(/Treat Casux Creation/gi) || []).length).toBe(1);
   });
 
   it("keeps source-derived deduped sibling routes in the prompt control manifest", () => {
@@ -369,8 +531,9 @@ describe("prompt draft research", () => {
 
     expect(prompt).toContain("## 7.25 Source Material Appendix");
     expect(prompt).toContain("Internal Generation Input");
-    expect(prompt).toContain("multilingual source excerpt available");
-    expect(prompt).toContain("multilingual source text stored in extracted source artifacts");
+    expect(prompt).toContain("standards document card component");
+    expect(prompt).toContain("scoring visualization component");
+    expect(prompt).not.toContain("multilingual source excerpt available");
     expect(containsWorkflowCjk(prompt)).toBe(false);
     expect(isWorkflowArtifactEnglishSafe(prompt)).toBe(true);
     expect(prompt.indexOf("## 7.25 Source Material Appendix")).toBeLessThan(
@@ -412,9 +575,12 @@ describe("prompt draft research", () => {
       "/casux-research-center",
       "/casux-information-platform",
     ]);
+    expect(result.promptControlManifest.navLabels.every((label) => !/\s/.test(label))).toBe(true);
     expect(result.canonicalPrompt).toContain("## 7.25 Source Material Appendix");
     expect(result.canonicalPrompt).toContain("CASUX");
-    expect(result.canonicalPrompt).toContain("multilingual source excerpt available");
+    expect(result.canonicalPrompt).toContain("Main navigation");
+    expect(result.canonicalPrompt).toContain("scoring visualization component");
+    expect(result.canonicalPrompt).not.toContain("multilingual source excerpt available");
     expect(containsWorkflowCjk(result.canonicalPrompt)).toBe(false);
     expect(isWorkflowArtifactEnglishSafe(result.canonicalPrompt)).toBe(true);
     expect(result.canonicalPrompt).not.toContain("/custom-solutions/index.html");
@@ -692,6 +858,38 @@ describe("prompt draft research", () => {
     expect(result.promptControlManifest.files).toEqual(
       expect.arrayContaining(["/i18n/messages.en.json", "/i18n/messages.zh-CN.json"]),
     );
+  });
+
+  it("keeps Chinese-first single-language sites free of bilingual shell requirements", async () => {
+    const requirement = [
+      "生成前必填信息已提交：",
+      "[Requirement Form]",
+      "```json",
+      JSON.stringify(
+        {
+          siteType: "company",
+          pageStructure: { mode: "multi", pages: ["home", "contact"] },
+          functionalRequirements: ["contact_form"],
+          primaryGoal: ["brand_trust"],
+          language: "zh-CN",
+        },
+        null,
+        2,
+      ),
+      "```",
+      "做一个中文官网，不要双语，不要语言切换。",
+    ].join("\n");
+
+    const result = await buildPromptDraftWithResearch({
+      requirementText: requirement,
+      slots: buildRequirementSlots(requirement),
+      displayLocale: "zh",
+    });
+
+    expect(result.promptControlManifest.files).not.toContain("/i18n/messages.en.json");
+    expect(result.promptControlManifest.files).not.toContain("/i18n/messages.zh-CN.json");
+    expect(result.canonicalPrompt).toContain("single-language Chinese-first");
+    expect(result.canonicalPrompt).toContain("Do not emit an EN/ZH switch");
   });
 
   it("can inject a bilingual contract into an existing English workflow draft", () => {

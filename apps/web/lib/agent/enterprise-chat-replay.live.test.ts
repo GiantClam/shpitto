@@ -33,6 +33,7 @@ describe.skipIf(!runEnterpriseReplay)("enterprise existing chat live replay", ()
       const prevRoundIdleTimeoutMs = process.env.SKILL_TOOL_ROUND_IDLE_TIMEOUT_MS;
       const prevProvider = process.env.LLM_PROVIDER;
       const prevProviderOrder = process.env.LLM_PROVIDER_ORDER;
+      const prevCrossProviderFallback = process.env.LLM_CROSS_PROVIDER_FALLBACK;
 
       try {
         expect(replayChatId).toBeTruthy();
@@ -43,7 +44,8 @@ describe.skipIf(!runEnterpriseReplay)("enterprise existing chat live replay", ()
         process.env.SKILL_TOOL_ROUND_IDLE_TIMEOUT_MS = "420000";
         process.env.SKILL_TOOL_ROUND_ABSOLUTE_TIMEOUT_MS = "480000";
         process.env.LLM_PROVIDER = "pptoken";
-        process.env.LLM_PROVIDER_ORDER = "pptoken";
+        process.env.LLM_PROVIDER_ORDER = "pptoken,aiberm,crazyrouter";
+        process.env.LLM_CROSS_PROVIDER_FALLBACK = "all";
 
         const { getLatestChatTaskForChat, listChatTimelineMessages } = await import("./chat-task-store");
         const beforeLatest = await getLatestChatTaskForChat(replayChatId);
@@ -114,7 +116,7 @@ describe.skipIf(!runEnterpriseReplay)("enterprise existing chat live replay", ()
         const previewBaseUrl = String(process.env.SHPITTO_PREVIEW_BASE_URL || "http://localhost:3000").replace(/\/+$/, "");
         const previewUrl = previewUrlPath ? `${previewBaseUrl}${previewUrlPath}` : "";
         expect(previewRootRes.status).toBe(307);
-        expect(previewUrlPath).toContain(`/api/chat/tasks/${encodeURIComponent(generated.id)}/preview/index.html`);
+        expect(previewUrlPath).toContain(`/api/chat/tasks/${encodeURIComponent(generated.id)}/preview/__default__`);
 
         const previewIndexRes = await getPreviewFile(new Request("http://localhost"), {
           params: Promise.resolve({ taskId: generated.id, path: ["index.html"] }),
@@ -162,6 +164,8 @@ describe.skipIf(!runEnterpriseReplay)("enterprise existing chat live replay", ()
         else process.env.LLM_PROVIDER = prevProvider;
         if (prevProviderOrder === undefined) delete process.env.LLM_PROVIDER_ORDER;
         else process.env.LLM_PROVIDER_ORDER = prevProviderOrder;
+        if (prevCrossProviderFallback === undefined) delete process.env.LLM_CROSS_PROVIDER_FALLBACK;
+        else process.env.LLM_CROSS_PROVIDER_FALLBACK = prevCrossProviderFallback;
       }
     },
     20 * 60 * 1000,

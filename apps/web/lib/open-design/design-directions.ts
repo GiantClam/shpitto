@@ -260,16 +260,16 @@ export const WEBSITE_DESIGN_DIRECTIONS: WebsiteDesignDirection[] = [
     label: "Heritage manufacturing / craft",
     zhLabel: "传承制造 / 匠心工厂",
     mood:
-      "High-trust export manufacturer with marine blues, white surfaces, calm graphite, and proof-led product presentation.",
+      "High-trust manufacturing and craft brand with calm blue-grey structure, bright surfaces, restrained accents, and proof-led product presentation.",
     zhMood: "成熟制造品牌，暖中性色、深墨色、黄铜强调和故事化信任表达。",
-    references: ["industrial export catalogs", "hospitality textile suppliers", "Muji", "clean B2B manufacturer sites"],
+    references: ["industrial manufacturing catalogs", "craft-led product brands", "Muji", "clean B2B manufacturer sites"],
     pageArchetypes: [
-      "Enterprise homepage with a clean marine shell, proof rail, and direct route entry",
-      "Process and quality page focused on materials, QA, factory workflow, and export readiness",
+      "Enterprise homepage with a calm proof-led shell and direct route entry",
+      "Process and quality page focused on materials, QA, factory workflow, and operating discipline",
       "Product or capability page that balances grouped specs, product imagery, and procurement cues",
     ],
     contentPosture: [
-      "Lead with product capability, export experience, sampling discipline, and certifications; storytelling should support proof, not replace it",
+      "Lead with product capability, operating discipline, sampling rigor, and certifications; storytelling should support proof, not replace it",
       "Use material language, process detail, application context, and factory evidence to signal maturity and quality",
       "Avoid startup SaaS tropes, lifestyle editorial pacing, personal-founder diary tone, and beige craft-journal presentation",
     ],
@@ -285,8 +285,8 @@ export const WEBSITE_DESIGN_DIRECTIONS: WebsiteDesignDirection[] = [
     },
     posture: [
       "Use structured proof rails, grouped capability cards, and restrained spec tables before long-form storytelling.",
-      "Use marine-blue and white surfaces with calm graphite typography and only restrained warm accenting when needed.",
-      "Use product, factory, towel/material, pool/beach/hospitality, and application imagery that reads as export-ready manufacturing, not lifestyle portraiture or abstract placeholder art.",
+      "Use calm blue-grey and white surfaces with measured contrast and only restrained warm accenting when needed.",
+      "Use product, factory, workshop, process, and application imagery that reads as credible manufacturing or craft capability, not lifestyle portraiture or abstract placeholder art.",
       "Avoid startup-SaaS gradients, magazine-style essay pacing, serif-editorial hero treatments, and beige paper moods.",
     ],
   },
@@ -353,8 +353,11 @@ const WEBSITE_DESIGN_DIRECTION_SIGNAL_MAP: Record<
     audiences: ["enterprise_buyers", "overseas_customers", "investors"],
     goals: ["brand_trust", "product_showcase"],
     contentSources: ["existing_domain", "uploaded_files"],
-    keywords: [/heritage|craft|premium|luxury|timeless|legacy|materials|quality|artisan/i],
-    negativeKeywords: [/api|dashboard|docs|infra|brutalist|poster|edgy|saas|linear/i],
+    keywords: [/heritage|craft|premium|luxury|timeless|legacy|quality|artisan/i],
+    negativeKeywords: [
+      /api|dashboard|docs|infra|brutalist|poster|edgy|saas|linear/i,
+      /research center|information platform|knowledge platform|standards system|certification hub|advocacy/i,
+    ],
   },
 };
 
@@ -408,7 +411,7 @@ export function recommendWebsiteDesignDirections(
     /(?:enterprise_buyers|government|overseas_customers|manufacturer|manufactur|factory|industrial|supplier|procurement|buyer|b2b|catalog|spec|specification|certification|iso\d*|smeta|bsci|oeko|grs|textile|cnc)/i.test(
       combinedSignals,
     );
-  const explicitHeritageCraftSignals = /(?:heritage|craft|artisan|timeless|legacy|premium|luxury|materials|storytelling)/i.test(
+  const explicitHeritageCraftSignals = /(?:heritage|craft|artisan|timeless|legacy|premium|luxury|storytelling)/i.test(
     freeText,
   );
 

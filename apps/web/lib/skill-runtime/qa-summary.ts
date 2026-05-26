@@ -12,4 +12,10 @@ export type QaSummary = {
   retriesAllowed: number;
   antiSlopIssueCount: number;
   categories: QaIssueSummary[];
+  observations?: Array<{
+    code: "repeated-opening-family" | "visual-monotony" | "weak-hero";
+    severity: "observation";
+    message: string;
+    routes: string[];
+  }>;
 };

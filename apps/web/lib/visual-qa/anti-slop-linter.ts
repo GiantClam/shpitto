@@ -29,6 +29,7 @@ const NAV_SCAFFOLD_TOKENS = new Set(["menu", "navigation", "nav", "quick", "link
 const FOOTER_SCAFFOLD_TOKENS = new Set(["footer", "copyright", "copy", "rights", "reserved", "powered", "quick", "links", "quicklinks", "navigation", "menu", "legal"]);
 const PLACEHOLDER_IMAGE_URL_PATTERN =
   /https?:\/\/(?:[\w-]+\.)?(?:example\.com|placeholder\.com|placehold\.co|via\.placeholder\.com|dummyimage\.com|picsum\.photos|source\.unsplash\.com|loremflickr\.com|placekitten\.com|fillmurray\.com)\b[^\s"'<>)]*/i;
+const MOJIBAKE_PATTERN = /(?:\u9225|\u9219|\u6d93|\u6e1a|\u95c1|\u70bd|\u941b|\u00c2|\u00e2\u20ac|\ufffd|[A-Za-z][\u4e00-\u9fff]{2,}\?|[\u4e00-\u9fff]{2,}\?[A-Za-z])/;
 const SOURCE_CONTEXT_PATTERN =
   /\b(?:according to|based on|source|cited|citation|report|study|survey|benchmark|measured|measure|internal data|our data|customer data|pilot|case study|analysis|research|audit|observed|tracked|results from|from the)\b/i;
 const METRIC_TOKEN_PATTERN = /\b(?:\d+(?:\.\d+)?%|\d+(?:\.\d+)?x|\d+\+)\b/i;
@@ -36,6 +37,8 @@ const INVENTED_METRIC_CONTEXT_PATTERN =
   /\b(?:faster|boost|increase|improve|reduce|save|hours saved|growth|conversion lift|revenue|roi|engagement|traffic|uplift|outperform|scale)\b/i;
 
 const HEX_COLOR_PATTERN = /#[0-9a-fA-F]{3,8}\b/g;
+const GENERIC_CTA_LABEL_PATTERN = /^(?:learn more|get started|read more|click here|submit|more|start now)$/i;
+const LEAD_CLASS_PATTERN = /\b(?:hero-lead|section-lead|lead)\b/i;
 
 function stripTags(html: string): string {
   return html
@@ -107,6 +110,30 @@ function extractAnchorTexts(source: string): string[] {
     .filter(Boolean);
 }
 
+function extractActionLabels(source: string): string[] {
+  return Array.from(String(source || "").matchAll(/<(a|button)\b[^>]*>([\s\S]*?)<\/\1>/gi))
+    .map((match) => stripTags(String(match[2] || "")))
+    .filter(Boolean);
+}
+
+function extractClassedParagraphTexts(source: string, classPattern: RegExp): string[] {
+  return Array.from(String(source || "").matchAll(/<p\b([^>]*)>([\s\S]*?)<\/p>/gi))
+    .filter((match) => classPattern.test(String(match[1] || "")))
+    .map((match) => stripTags(String(match[2] || "")))
+    .filter(Boolean);
+}
+
+function sentenceCount(text: string): number {
+  return String(text || "")
+    .split(/[.!?\u3002\uff01\uff1f]+/g)
+    .map((part) => part.trim())
+    .filter(Boolean).length;
+}
+
+function latinWordCount(text: string): number {
+  return (String(text || "").match(/[A-Za-z][A-Za-z'-]*/g) || []).length;
+}
+
 function extractMetaDescription(source: string): string {
   const match = String(source || "").match(/<meta\b[^>]*name=["']description["'][^>]*content=["']([^"']*)["'][^>]*>/i);
   return String(match?.[1] || "").replace(/\s+/g, " ").trim();
@@ -176,6 +203,13 @@ export function lintGeneratedWebsiteHtml(html: string): AntiSlopLintResult {
   const hasExternalStylesheet = /<link\b[^>]*rel=["']stylesheet["'][^>]*>/i.test(source);
   const titleText = extractTagText(source, "title");
   const h1Text = extractTagText(source, "h1");
+  const hasTable = /<table\b/i.test(source);
+  const hasResponsiveTableShell =
+    /<(?:div|section|figure)\b[^>]*(?:class|id)=["'][^"']*(?:table-wrap|table-wrapper|responsive-table|scroll-table|data-table|comparison-table)[^"']*["'][^>]*>\s*<table\b/i.test(
+      source,
+    ) ||
+    /<table\b[^>]*(?:class|id)=["'][^"']*(?:responsive|stacked|comparison|data-table)[^"']*["']/i.test(source) ||
+    /<(?:div|section|figure)\b[^>]*style=["'][^"']*overflow-x\s*:\s*auto[^"']*["'][^>]*>\s*<table\b/i.test(source);
 
   if (!/<meta\s+name=["']viewport["']/i.test(source)) {
     pushIssue(issues, {
@@ -200,6 +234,53 @@ export function lintGeneratedWebsiteHtml(html: string): AntiSlopLintResult {
       code: "placeholder-copy",
       severity: "error",
       message: "Placeholder or generic template copy detected; replace it with project-specific content.",
+    });
+  }
+
+  if (MOJIBAKE_PATTERN.test(text)) {
+    pushIssue(issues, {
+      code: "mojibake-visible-copy",
+      severity: "error",
+      message: "Visible copy contains mojibake or encoding-corrupted punctuation; replace it with clean final text.",
+    });
+  }
+
+  if (hasTable && !hasResponsiveTableShell) {
+    pushIssue(issues, {
+      code: "table-responsive-risk",
+      severity: "error",
+      message: "Table markup is missing a responsive shell or stacked-table contract, which can clip content on mobile.",
+    });
+  }
+
+  for (const label of extractActionLabels(source)) {
+    if (GENERIC_CTA_LABEL_PATTERN.test(label)) {
+      pushIssue(issues, {
+        code: "generic-cta-label",
+        severity: "warning",
+        message: "CTA label is generic; use action-specific wording that tells visitors what happens next.",
+      });
+      break;
+    }
+  }
+
+  const longHeadline = [h1Text, ...Array.from(source.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/gi)).map((match) => stripTags(match[1] || ""))]
+    .filter(Boolean)
+    .find((heading) => latinWordCount(heading) > 16);
+  if (longHeadline) {
+    pushIssue(issues, {
+      code: "overlong-headline",
+      severity: "warning",
+      message: "A major headline is doing too much work; keep generated H1/H2 copy closer to Open Design's concise headline discipline.",
+    });
+  }
+
+  const overlongLead = extractClassedParagraphTexts(source, LEAD_CLASS_PATTERN).find((lead) => lead.length > 170 || sentenceCount(lead) > 2);
+  if (overlongLead) {
+    pushIssue(issues, {
+      code: "overlong-lead-copy",
+      severity: "warning",
+      message: "Lead copy is too long; keep hero and section leads short enough to scan before deeper body content.",
     });
   }
 
@@ -295,7 +376,7 @@ export function lintGeneratedWebsiteHtml(html: string): AntiSlopLintResult {
     const footerHasScaffoldOnly =
       footerMeaningfulTokens === 0 &&
       (/\b(?:footer|copyright|all rights reserved|powered by|quick\s*links?|navigation|menu)\b/i.test(footerText) ||
-        /©/.test(footerText));
+        /\u00a9/.test(footerText));
     const footerLooksLikePlaceholder =
       footerMeaningfulTokens <= 1 &&
       /\b(?:copyright|all rights reserved|footer)\b/i.test(footerText) &&
@@ -318,7 +399,7 @@ export function lintGeneratedWebsiteHtml(html: string): AntiSlopLintResult {
   }
 
   for (const sentence of text
-    .split(/[.!?。！？]+/g)
+    .split(/[.!?\u3002\uff01\uff1f]+/g)
     .map((part) => part.trim())
     .filter(Boolean)) {
     if (hasInventedMetricClaim(sentence)) {
@@ -364,8 +445,8 @@ export function lintGeneratedWebsiteRouteHtml(html: string, context: WebsiteRout
       .filter(Boolean)
       .join(" ");
     const homepageLeadText = extractLeadText(stripElements(source, ["nav", "footer"]));
-    const blockedRoleTerms = [/资料下载/, /下载/, /认证入口/, /认证查询/, /查询/, /申请系统/, /login/i, /register/i];
-    const blockedLeadTerms = [/资料下载/, /认证入口/, /认证查询/, /申请系统/, /登录/, /注册/, /login/i, /register/i];
+    const blockedRoleTerms = [/\u8d44\u6599\u4e0b\u8f7d/, /\u8ba4\u8bc1/, /\u4e0b\u8f7d/, /download/i, /certification/i, /login/i, /register/i];
+    const blockedLeadTerms = [/\u8d44\u6599\u4e0b\u8f7d/, /\u8ba4\u8bc1/, /\u4e0b\u8f7d/, /download/i, /certification/i, /login/i, /register/i];
     const leadHomeSignals = [/CASUX/i, /\u9996\u9875/, /Home/i, /homepage/i, /\u54c1\u724c/, /\u603b\u89c8/, /\u6807\u51c6\u4f53\u7cfb/, /\u4e13\u4e1a\u673a\u6784/, /\u7edf\u4e00\u5165\u53e3/];
     if (
       blockedRoleTerms.some((pattern) => pattern.test(homepageRoleText)) ||
@@ -382,7 +463,7 @@ export function lintGeneratedWebsiteRouteHtml(html: string, context: WebsiteRout
       );
     }
 
-    const homeSignals = [/首页/, /Home/i, /homepage/i, /\bhome page\b/i, /主站/, /统一入口/, /总览/, /平台/];
+    const homeSignals = [/Home/i, /homepage/i, /\bhome page\b/i, /\u9996\u9875/, /\u4e3b\u7ad9/, /\u7edf\u4e00\u5165\u53e3/, /CASUX/i];
     if (!homeSignals.some((pattern) => pattern.test(body))) {
       pushIssue(
         issues,
@@ -396,7 +477,7 @@ export function lintGeneratedWebsiteRouteHtml(html: string, context: WebsiteRout
   }
 
   if (route === "/blog") {
-    const blogSignals = [/博客/, /Blog/i, /文章/, /资讯/, /data-shpitto-blog-root/i];
+    const blogSignals = [/Blog/i, /blog/i, /\u535a\u5ba2/, /\u6587\u7ae0/, /data-shpitto-blog-root/i];
     if (!blogSignals.some((pattern) => pattern.test(body))) {
       pushIssue(
         issues,
@@ -431,6 +512,14 @@ export function lintGeneratedWebsiteStyles(css: string): AntiSlopLintResult {
   const visualCardBlock = source.match(/\.visual-card--main\b[^{]*\{([\s\S]*?)\}/i)?.[1] || "";
   const cardGridBlock = source.match(/\.card-grid\b[^{]*\{([\s\S]*?)\}/i)?.[1] || "";
   const searchResultBlock = source.match(/\.search-result\b[^{]*\{([\s\S]*?)\}/i)?.[1] || "";
+  const headingWrapBlockPattern =
+    /(?:h[1-3]\b|\.section-title\b|\.hero\s+h1\b|\.hero-title\b|\.page-title\b)[^{]*\{[^}]*?(?:overflow-wrap\s*:\s*anywhere|word-break\s*:\s*break-all)/i;
+  const headingHyphenationPattern =
+    /(?:h[1-3]\b|\.section-title\b|\.hero\s+h1\b|\.hero-title\b|\.page-title\b)[^{]*\{[^}]*?hyphens\s*:\s*auto/i;
+  const compressedHeroStatGridPattern =
+    /\.hero[_\s-]*rail\b[\s\S]*?\.stat-list\b|\.\s*stat-list\b[\s\S]*?\.hero[_\s-]*rail\b/i;
+  const narrowStatListPattern = /\.stat-list\b[^{]*\{[^}]*grid-template-columns\s*:\s*repeat\(\s*3\s*,\s*minmax\(\s*0\s*,\s*1fr\s*\)\s*\)/i;
+  const rawHexOutsideRootCount = (source.replace(/:root\b[^{]*\{[^}]*\}/gi, "").match(HEX_COLOR_PATTERN) || []).length;
 
   const parseMinHeight = (block: string) => {
     const match = block.match(/min-height\s*:\s*(\d+)px/i);
@@ -474,6 +563,61 @@ export function lintGeneratedWebsiteStyles(css: string): AntiSlopLintResult {
     );
   }
 
+  if (headingWrapBlockPattern.test(source)) {
+    pushIssue(
+      issues,
+      createIssue(
+        "heading-copy-break-risk",
+        "error",
+        "Major heading styles allow arbitrary word breaks, which can split names or possessives in polished homepage copy.",
+      ),
+    );
+  }
+
+  if (/letter-spacing\s*:\s*-\s*(?:\d|\.)/i.test(source)) {
+    pushIssue(
+      issues,
+      createIssue(
+        "negative-letter-spacing",
+        "error",
+        "Negative letter spacing creates fragile heading and button rendering across generated responsive pages.",
+      ),
+    );
+  }
+
+  if (headingHyphenationPattern.test(source)) {
+    pushIssue(
+      issues,
+      createIssue(
+        "heading-hyphenation-risk",
+        "error",
+        "Major heading styles enable automatic hyphenation, which can split key terms in mobile screenshots.",
+      ),
+    );
+  }
+
+  if (compressedHeroStatGridPattern.test(source) && narrowStatListPattern.test(source)) {
+    pushIssue(
+      issues,
+      createIssue(
+        "compressed-hero-stat-grid",
+        "error",
+        "Hero stat cards use three equal narrow columns, which can turn short facts into cramped vertical text blocks.",
+      ),
+    );
+  }
+
+  if (rawHexOutsideRootCount > 2) {
+    pushIssue(
+      issues,
+      createIssue(
+        "raw-hex-outside-root",
+        "warning",
+        "Generated CSS uses repeated raw hex colors outside the token block; Open Design keeps colors bound to root tokens or derived color-mix values.",
+      ),
+    );
+  }
+
   const score = Math.max(
     0,
     100 -
@@ -495,7 +639,7 @@ export function renderAntiSlopFeedback(result: AntiSlopLintResult): string {
     "root-route-semantic-mismatch":
       "Rewrite route / so title, meta description, H1, and the first lead paragraph present the site home entry; move download, certification, query, and login wording into secondary navigation/cards only.",
     "root-route-home-signal-missing":
-      "Add an explicit home signal such as Home, Homepage, 首页, 主站, or 统一入口 to the title, H1, or lead copy.",
+      "Add an explicit home signal such as Home, Homepage, 濠碘槅鍋撶徊楣冩偋閻樿违? 濠电偞鍨堕幑浣哥暦閻㈠憡鍋? or 缂傚倸鍊烽懗鍫曞窗瀹ュ洨鍗氶柟缁㈠枛缁€鍌炴煏婢跺牆鍔氱紓?to the title, H1, or lead copy.",
     "weak-responsive-css":
       "Add at least one @media block and one clamp() or container query so typography, spacing, or layout adapts on mobile.",
     "nav-scaffold-copy":
@@ -512,6 +656,26 @@ export function renderAntiSlopFeedback(result: AntiSlopLintResult): string {
       "Either reduce the hero visual rail height or put real media, chart, or data-viz content inside it instead of leaving a large empty block.",
     "search-result-width-mismatch":
       "Make .search-result span the full grid row, for example grid-column: 1 / -1, so 12-column results stay readable.",
+    "heading-copy-break-risk":
+      "Remove overflow-wrap:anywhere or word-break:break-all from h1/h2/h3 and display heading selectors; use normal wrapping, balanced max-widths, and responsive font clamps instead.",
+    "negative-letter-spacing":
+      "Set letter-spacing to 0 for generated UI text unless a non-negative token is explicitly required for small uppercase labels.",
+    "heading-hyphenation-risk":
+      "Remove hyphens:auto from h1/h2/h3 and display heading selectors; let headings wrap at spaces and tune max-width or font-size instead.",
+    "table-responsive-risk":
+      "Wrap each table in a responsive table shell such as .table-wrap/.responsive-table with horizontal overflow, or render the same information as stacked cards on mobile.",
+    "mojibake-visible-copy":
+      "Replace corrupted sequences such as 闂?or 闂佽偐鍎ょ敮锟犲春閳?with clean ASCII punctuation or valid UTF-8 characters before shipping the page.",
+    "compressed-hero-stat-grid":
+      "Use one-column stat stacks, roomy horizontal cards, or minmax(12rem, 1fr) tracks, and keep each hero-side stat to a short label/fact.",
+    "raw-hex-outside-root":
+      "Move repeated raw colors into :root tokens and reference them with var(...) or color-mix(...) so the visual system stays coherent.",
+    "generic-cta-label":
+      "Replace generic CTA labels with concrete actions such as Explore documentation areas, Review standards, Request demo, or Open the guide.",
+    "overlong-headline":
+      "Shorten major H1/H2 copy to a sharp subject statement; move qualifiers into the lead or body copy.",
+    "overlong-lead-copy":
+      "Keep hero and section lead paragraphs to one or two concise sentences, then move supporting detail into cards or body sections.",
   };
 
   return result.issues

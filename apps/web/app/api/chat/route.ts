@@ -50,8 +50,13 @@ import {
   detectExplicitTemplateStyleIdFromText,
 } from "../../../lib/agent/website-workflow";
 import { buildBlogContentWorkflowPreview } from "../../../lib/skill-runtime/executor";
+import {
+  assessWebsiteDiscoveryBrief,
+  inferWebsiteSurfaceModeFromSkillId,
+} from "../../../lib/skill-runtime/open-design-adoption";
 import { getSkillExecutionAdapter } from "../../../lib/skill-runtime/skill-execution-adapter-registry";
 import { loadProjectSkill } from "../../../lib/skill-runtime/project-skill-loader";
+import { selectWebsiteGenerationTypeSkill } from "../../../lib/skill-runtime/website-type-selector";
 import { invalidateLaunchCenterRecentProjectsCache } from "../../../lib/launch-center/cache";
 import {
   BillingAccessError,
@@ -82,11 +87,12 @@ type ChatRequestBody = {
 
 const CONFIRM_GENERATE_PREFIX = "__SHP_CONFIRM_GENERATE__";
 const CONFIRM_BLOG_CONTENT_DEPLOY_PREFIX = "__SHP_CONFIRM_BLOG_CONTENT_DEPLOY__";
+const CONFIRM_CONTENT_PREVIEW_DEPLOY_PREFIX = "__SHP_CONFIRM_CONTENT_DEPLOY__";
 const CONTINUE_STALE_RUNNING_TASK_MS = Math.max(
   30_000,
   Number(process.env.CHAT_CONTINUE_STALE_RUNNING_TASK_MS || 120_000),
 );
-const CHAT_ROUTE_STORE_TIMEOUT_MS = Math.max(1_000, Number(process.env.CHAT_ROUTE_STORE_TIMEOUT_MS || 8_000));
+const CHAT_ROUTE_STORE_TIMEOUT_MS = Math.max(1_000, Number(process.env.CHAT_ROUTE_STORE_TIMEOUT_MS || 9_600));
 type ChatDisplayLocale = "zh" | "en";
 
 const CHAT_COPY: Record<ChatDisplayLocale, Record<string, string>> = {
@@ -118,6 +124,8 @@ const CHAT_COPY: Record<ChatDisplayLocale, Record<string, string>> = {
     generateBeforeDeploy: "This chat does not have a completed generated site yet. Generate the site first, then confirm deployment.",
     blogConfirmBeforeDeploy: "Review and confirm the generated Blog articles before deployment.",
     blogConfirmLabel: "Confirm Blog Articles and Deploy to shpitto server",
+    contentConfirmBeforeDeploy: "Review and confirm the generated content entries before deployment.",
+    contentConfirmLabel: "Confirm Content Entries and Deploy to shpitto server",
     requestFailed: "Failed to process chat request.",
   },
   zh: {
@@ -148,6 +156,8 @@ const CHAT_COPY: Record<ChatDisplayLocale, Record<string, string>> = {
     generateBeforeDeploy: "\u5f53\u524d\u4f1a\u8bdd\u8fd8\u6ca1\u6709\u5df2\u5b8c\u6210\u7684\u7f51\u7ad9\u751f\u6210\u7ed3\u679c\uff0c\u8bf7\u5148\u5b8c\u6210\u751f\u6210\uff0c\u518d\u786e\u8ba4\u90e8\u7f72\u3002",
     blogConfirmBeforeDeploy: "\u8bf7\u5148\u67e5\u770b\u5e76\u786e\u8ba4\u751f\u6210\u7684 Blog \u6587\u7ae0\uff0c\u7136\u540e\u518d\u90e8\u7f72\u4e0a\u7ebf\u3002",
     blogConfirmLabel: "\u786e\u8ba4 Blog \u6587\u7ae0\u5e76\u90e8\u7f72\u5230 shpitto \u670d\u52a1\u5668",
+    contentConfirmBeforeDeploy: "\u8bf7\u5148\u67e5\u770b\u5e76\u786e\u8ba4\u751f\u6210\u7684\u5185\u5bb9\u6761\u76ee\uff0c\u7136\u540e\u518d\u90e8\u7f72\u4e0a\u7ebf\u3002",
+    contentConfirmLabel: "\u786e\u8ba4\u5185\u5bb9\u6761\u76ee\u5e76\u90e8\u7f72\u5230 shpitto \u670d\u52a1\u5668",
     requestFailed: "\u5904\u7406\u804a\u5929\u8bf7\u6c42\u5931\u8d25\u3002",
   },
 };
@@ -800,13 +810,16 @@ function extractConfirmedPrompt(raw: string): string | null {
 }
 
 function isBlogContentDeployConfirmation(raw: string): boolean {
-  return String(raw || "").trim().startsWith(CONFIRM_BLOG_CONTENT_DEPLOY_PREFIX);
+  const text = String(raw || "").trim();
+  return text.startsWith(CONFIRM_BLOG_CONTENT_DEPLOY_PREFIX) || text.startsWith(CONFIRM_CONTENT_PREVIEW_DEPLOY_PREFIX);
 }
 
 function isInternalTimelineActionPayload(raw: string): boolean {
   const text = String(raw || "").trim();
   if (!text) return false;
-  return text.startsWith(CONFIRM_GENERATE_PREFIX) || text.startsWith(CONFIRM_BLOG_CONTENT_DEPLOY_PREFIX);
+  return text.startsWith(CONFIRM_GENERATE_PREFIX) ||
+    text.startsWith(CONFIRM_BLOG_CONTENT_DEPLOY_PREFIX) ||
+    text.startsWith(CONFIRM_CONTENT_PREVIEW_DEPLOY_PREFIX);
 }
 
 function rewriteDeployDisplayText(text: string): string {
@@ -842,21 +855,39 @@ function normalizeBlogPreviewPostsForCard(posts: unknown[]) {
     .filter((post) => post.slug || post.title);
 }
 
+function normalizeContentPreviewPosts(workflow: Record<string, unknown>): unknown[] {
+  if (Array.isArray((workflow as any)?.contentPreviewPosts)) return ((workflow as any)?.contentPreviewPosts as unknown[]);
+  if (Array.isArray((workflow as any)?.blogContentPreviewPosts)) return ((workflow as any)?.blogContentPreviewPosts as unknown[]);
+  return [];
+}
+
+function normalizeContentPreviewStatus(workflow: Record<string, unknown>): string {
+  return String((workflow as any)?.contentPreviewStatus || (workflow as any)?.blogContentPreviewStatus || "").trim();
+}
+
+function normalizeContentPreviewConfirmed(workflow: Record<string, unknown>): boolean {
+  return Boolean((workflow as any)?.contentPreviewConfirmed ?? (workflow as any)?.blogContentConfirmed);
+}
+
 function buildBlogContentConfirmationMetadata(params: {
   locale: ChatDisplayLocale;
   navLabel?: string;
   posts: unknown[];
+  surfaceKind?: string;
 }) {
+  const isCollection = String(params.surfaceKind || "").trim() === "content-collection";
   return {
-    cardType: "confirm_blog_content_deploy",
+    cardType: isCollection ? "confirm_content_preview_deploy" : "confirm_blog_content_deploy",
     locale: params.locale,
-    title:
-      params.locale === "zh"
-        ? "Blog 文章已生成，确认后再部署上线"
+    title: isCollection
+      ? chatCopy(params.locale, "contentConfirmBeforeDeploy")
+      : params.locale === "zh"
+        ? "Blog ?????????????????????"
         : "Blog articles are ready. Confirm before deployment.",
-    label: chatCopy(params.locale, "blogConfirmLabel"),
-    payload: CONFIRM_BLOG_CONTENT_DEPLOY_PREFIX,
+    label: isCollection ? chatCopy(params.locale, "contentConfirmLabel") : chatCopy(params.locale, "blogConfirmLabel"),
+    payload: isCollection ? CONFIRM_CONTENT_PREVIEW_DEPLOY_PREFIX : CONFIRM_BLOG_CONTENT_DEPLOY_PREFIX,
     navLabel: String(params.navLabel || "").trim(),
+    surfaceKind: isCollection ? "content-collection" : "blog-archive",
     posts: normalizeBlogPreviewPostsForCard(params.posts),
   } as Record<string, unknown>;
 }
@@ -1700,11 +1731,9 @@ export async function POST(req: Request) {
     ...taskWorkflowContext(deployableTask || latestTask),
     ...memoryWorkflowContext,
   } as Record<string, unknown>;
-  const workflowBlogPreviewPosts = Array.isArray((existingWorkflow as any)?.blogContentPreviewPosts)
-    ? ((existingWorkflow as any)?.blogContentPreviewPosts as unknown[])
-    : [];
-  const workflowBlogPreviewStatus = String((existingWorkflow as any)?.blogContentPreviewStatus || "").trim();
-  const workflowBlogConfirmed = Boolean((existingWorkflow as any)?.blogContentConfirmed);
+  const workflowBlogPreviewPosts = normalizeContentPreviewPosts(existingWorkflow);
+  const workflowBlogPreviewStatus = normalizeContentPreviewStatus(existingWorkflow);
+  const workflowBlogConfirmed = normalizeContentPreviewConfirmed(existingWorkflow);
   const deployBlogPreview =
     deployIntentRequested && hasCompletedGenerationBaseline && isStaticSiteProjectLike(deployArtifact)
       ? buildBlogContentWorkflowPreview({
@@ -1721,6 +1750,11 @@ export async function POST(req: Request) {
     !workflowBlogConfirmed;
   if (needsBlogContentConfirmation) {
     const previewPosts = workflowBlogPreviewPosts.length > 0 ? workflowBlogPreviewPosts : deployBlogPreview.posts;
+    const previewSurfaceKind = String((deployBlogPreview as any)?.surfaceKind || "").trim();
+    const confirmInfoText =
+      previewSurfaceKind === "content-collection"
+        ? chatCopy(displayLocale, "contentConfirmBeforeDeploy")
+        : chatCopy(displayLocale, "blogConfirmBeforeDeploy");
     await appendTimelineMessageBestEffort({
       chatId,
       role: "user",
@@ -1730,12 +1764,13 @@ export async function POST(req: Request) {
     await appendTimelineMessageBestEffort({
       chatId,
       role: "assistant",
-      text: chatCopy(displayLocale, "blogConfirmBeforeDeploy"),
+      text: confirmInfoText,
       ownerUserId: body.user_id || previousState.user_id,
       metadata: buildBlogContentConfirmationMetadata({
         locale: displayLocale,
         navLabel: String((existingWorkflow as any)?.blogNavLabel || deployBlogPreview.navLabel || "").trim(),
         posts: previewPosts,
+        surfaceKind: previewSurfaceKind,
       }),
     });
     await persistRouteMemorySnapshot({
@@ -1756,15 +1791,19 @@ export async function POST(req: Request) {
         intentConfidence: decision.confidence,
         requirementSpec,
         requirementRevision: aggregated.revision,
+        contentPreviewPosts: previewPosts,
+        contentPreviewStatus: "pending_confirmation",
+        contentPreviewConfirmed: false,
         blogContentPreviewPosts: previewPosts,
         blogContentPreviewStatus: "pending_confirmation",
+        blogContentConfirmed: false,
       },
       recentSummary: effectiveRequirementText,
       correctionSummary: aggregated.correctionSummary,
       explicitLongTermPreferences,
     });
     await invalidateLaunchCenterRecentProjectsCacheBestEffort();
-    return createInfoStreamResponse(chatCopy(displayLocale, "blogConfirmBeforeDeploy"), 200);
+    return createInfoStreamResponse(confirmInfoText, 200);
   }
   const rebuildConfirmedPromptForUploadedSources = shouldRebuildConfirmedPromptForUploadedSources({
     explicitConfirmedPrompt: confirmedPromptExplicitlyProvided,
@@ -1813,6 +1852,31 @@ export async function POST(req: Request) {
         researchSummary: "",
         knowledgeProfile: undefined,
         promptControlManifest: confirmedPromptControlManifest,
+        websiteSurfaceMode:
+          inferWebsiteSurfaceModeFromSkillId(String((existingWorkflow as any)?.websiteSurfaceMode || "")) ||
+          inferWebsiteSurfaceModeFromSkillId(String((existingWorkflow as any)?.websiteTypeSkillId || "")) ||
+          "portfolio-blog-site",
+        discoveryBrief:
+          (existingWorkflow as any)?.websiteDiscoveryBrief ||
+          (() => {
+            const brief = {
+              surfaceMode:
+                inferWebsiteSurfaceModeFromSkillId(String((existingWorkflow as any)?.websiteSurfaceMode || "")) ||
+                "portfolio-blog-site",
+              audience: [],
+              primaryGoal: "",
+              routes: confirmedPromptControlManifest?.routes || [],
+              sourcePriority: "user" as const,
+              localeMode: requirementSpec.locale || "en",
+              visualDirectionId: requirementSpec.primaryVisualDirection || "prompt-adaptive",
+              designSystemId: undefined,
+              immutableConstraints: [],
+            };
+            return {
+              ...brief,
+              ...assessWebsiteDiscoveryBrief(brief),
+            };
+          })(),
         draftMode: "template" as const,
         fallbackReason: `skipped_for_intent:${decision.intent}`,
         provider: undefined,
@@ -1827,6 +1891,36 @@ export async function POST(req: Request) {
     promptDraftResult.promptControlManifest ||
     confirmedPromptControlManifest ||
     (previousState.workflow_context as any)?.promptControlManifest;
+  const selectedWebsiteType = isWebsiteSkill(requestedSkillId)
+    ? selectWebsiteGenerationTypeSkill({
+        requirementText: promptDraftRequirementText,
+        siteType: requirementSpec.siteType,
+        routes: promptControlManifest?.routes || requirementSpec.pageStructure?.pages || [],
+        targetAudience: requirementSpec.targetAudience,
+        primaryGoal: requirementSpec.primaryGoal,
+      })
+    : undefined;
+  const resolvedWebsiteSurfaceMode =
+    selectedWebsiteType?.surfaceMode ||
+    promptDraftResult.websiteSurfaceMode ||
+    inferWebsiteSurfaceModeFromSkillId(String((previousState.workflow_context as any)?.websiteSurfaceMode || ""));
+  const resolvedWebsiteDiscoveryBrief =
+    promptDraftResult.discoveryBrief && resolvedWebsiteSurfaceMode
+      ? (() => {
+          const brief = {
+            ...promptDraftResult.discoveryBrief,
+            surfaceMode: resolvedWebsiteSurfaceMode,
+            routes:
+              promptDraftResult.discoveryBrief.routes?.length > 0
+                ? promptDraftResult.discoveryBrief.routes
+                : promptControlManifest?.routes || [],
+          };
+          return {
+            ...brief,
+            ...assessWebsiteDiscoveryBrief(brief),
+          };
+        })()
+      : promptDraftResult.discoveryBrief || (previousState.workflow_context as any)?.websiteDiscoveryBrief;
   const requiresPromptDraftConfirmation =
     isWebsiteSkill(requestedSkillId) &&
     stage === "drafting" &&
@@ -2113,6 +2207,12 @@ export async function POST(req: Request) {
       refineRequested,
       blogContentConfirmed:
         blogContentDeployConfirmed || (deployRequested ? Boolean((previousState.workflow_context as any)?.blogContentConfirmed) : false),
+      contentPreviewConfirmed:
+        blogContentDeployConfirmed || (deployRequested ? normalizeContentPreviewConfirmed(previousState.workflow_context as any) : false),
+      contentPreviewPosts:
+        workflowBlogPreviewPosts.length > 0 ? workflowBlogPreviewPosts : deployBlogPreview.posts,
+      contentPreviewStatus:
+        workflowBlogPreviewStatus || (deployBlogPreview.required ? "pending_confirmation" : deployBlogPreview.reason || "skipped"),
       blogContentPreviewPosts:
         workflowBlogPreviewPosts.length > 0 ? workflowBlogPreviewPosts : deployBlogPreview.posts,
       blogContentPreviewStatus:
@@ -2136,6 +2236,11 @@ export async function POST(req: Request) {
       requirementCompletionPercent: decision.completionPercent,
       requirementSlots: slots,
       requirementSpec,
+      websiteSurfaceMode: resolvedWebsiteSurfaceMode,
+      websiteTypeSkillId:
+        selectedWebsiteType?.skillId ||
+        String((previousState.workflow_context as any)?.websiteTypeSkillId || ""),
+      websiteDiscoveryBrief: resolvedWebsiteDiscoveryBrief,
       primaryVisualDirection: requirementSpec.primaryVisualDirection,
       secondaryVisualTags: requirementSpec.secondaryVisualTags || [],
       visualDecisionSource: requirementSpec.visualDecisionSource,
@@ -2148,6 +2253,13 @@ export async function POST(req: Request) {
       canonicalPrompt: canonicalPromptForExecution,
       requirementAggregatedText: requirementAggregatedTextForExecution,
       promptControlManifest,
+      designSystemId:
+        String((promptDraftResult.discoveryBrief as any)?.designSystemId || "") ||
+        String((requirementSpec.designSystemInspiration as any)?.id || "") ||
+        String((previousState.workflow_context as any)?.designSystemId || ""),
+      designSystemName:
+        String((requirementSpec.designSystemInspiration as any)?.title || "") ||
+        String((previousState.workflow_context as any)?.designSystemName || ""),
       latestUserText: currentUserRequirementText,
       latestUserTextRaw: normalizedUserText,
       referencedAssets,

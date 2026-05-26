@@ -27,6 +27,12 @@ od:
   design_system:
     requires: true
     sections: [color, typography, layout, components]
+  activation:
+    mode: default
+    rollout_status: active
+    website_only: true
+    ownership_layer: skill
+    compatible_surface_modes: [marketing-landing-site, corporate-b2b-site]
 ---
 
 # Pricing Page Skill

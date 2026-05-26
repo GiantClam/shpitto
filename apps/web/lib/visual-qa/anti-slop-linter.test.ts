@@ -66,6 +66,156 @@ describe("anti-slop-linter", () => {
     expect(result.issues.map((issue) => issue.code)).not.toContain("flat-visual-system");
   });
 
+  it("blocks arbitrary word breaking on major heading styles", () => {
+    const result = lintGeneratedWebsiteStyles(`
+      .section-title, .hero h1 {
+        font-size: clamp(2rem, 4vw, 4rem);
+        overflow-wrap: anywhere;
+      }
+      @media (max-width: 720px) { .section-title { font-size: 2rem; } }
+    `);
+
+    expect(result.passed).toBe(false);
+    expect(result.issues.map((issue) => issue.code)).toContain("heading-copy-break-risk");
+    expect(renderAntiSlopFeedback(result)).toContain("Remove overflow-wrap:anywhere");
+  });
+
+  it("blocks negative tracking and automatic hyphenation in generated display text", () => {
+    const result = lintGeneratedWebsiteStyles(`
+      .hero h1 {
+        font-size: clamp(2rem, 4vw, 4rem);
+        letter-spacing: -0.03em;
+        hyphens: auto;
+      }
+    `);
+
+    expect(result.passed).toBe(false);
+    expect(result.issues.map((issue) => issue.code)).toEqual(
+      expect.arrayContaining(["negative-letter-spacing", "heading-hyphenation-risk"]),
+    );
+    expect(renderAntiSlopFeedback(result)).toContain("Set letter-spacing to 0");
+    expect(renderAntiSlopFeedback(result)).toContain("Remove hyphens:auto");
+  });
+
+  it("blocks compressed hero stat grids that create narrow text columns", () => {
+    const result = lintGeneratedWebsiteStyles(`
+      .hero__rail {
+        display: grid;
+        gap: 1rem;
+      }
+      .stat-list {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      @media (max-width: 920px) { .stat-list { grid-template-columns: 1fr; } }
+    `);
+
+    expect(result.passed).toBe(false);
+    expect(result.issues.map((issue) => issue.code)).toContain("compressed-hero-stat-grid");
+    expect(renderAntiSlopFeedback(result)).toContain("roomy horizontal cards");
+  });
+
+  it("warns when repeated raw colors bypass root tokens", () => {
+    const result = lintGeneratedWebsiteStyles(`
+      :root { --bg: #ffffff; --text: #10231f; --accent: #2e8b57; }
+      .hero { background: #f7fbf8; color: #10231f; border-color: #d7e7dd; }
+      .card { background: #ffffff; box-shadow: 0 10px 24px #d7e7dd; }
+    `);
+
+    expect(result.issues.map((issue) => issue.code)).toContain("raw-hex-outside-root");
+    expect(renderAntiSlopFeedback(result)).toContain("Move repeated raw colors into :root tokens");
+  });
+
+  it("blocks bare tables that can clip on mobile", () => {
+    const bare = lintGeneratedWebsiteHtml(`<!doctype html>
+<html>
+  <head>
+    <title>Reference</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <section><h1>Reference matrix</h1><p>Teams compare ownership, endpoint behavior, and support states before rollout.</p></section>
+      <section><h2>Coverage areas</h2><p>The reference keeps platform language aligned across onboarding, implementation, and maintenance.</p></section>
+      <section><h2>Matrix</h2><table><tr><th>Zone</th><th>Purpose</th></tr><tr><td>Reference</td><td>Endpoint behavior and usage conventions</td></tr></table></section>
+      <section><h2>Next actions</h2><p>Every row maps to concrete documentation destinations and support ownership.</p></section>
+    </main>
+  </body>
+</html>`);
+    const wrapped = lintGeneratedWebsiteHtml(`<!doctype html>
+<html>
+  <head>
+    <title>Reference</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <section><h1>Reference matrix</h1><p>Teams compare ownership, endpoint behavior, and support states before rollout.</p></section>
+      <section><h2>Coverage areas</h2><p>The reference keeps platform language aligned across onboarding, implementation, and maintenance.</p></section>
+      <section><h2>Matrix</h2><div class="table-wrap"><table><tr><th>Zone</th><th>Purpose</th></tr><tr><td>Reference</td><td>Endpoint behavior and usage conventions</td></tr></table></div></section>
+      <section><h2>Next actions</h2><p>Every row maps to concrete documentation destinations and support ownership.</p></section>
+    </main>
+  </body>
+</html>`);
+
+    expect(bare.passed).toBe(false);
+    expect(bare.issues.map((issue) => issue.code)).toContain("table-responsive-risk");
+    expect(renderAntiSlopFeedback(bare)).toContain("responsive table shell");
+    expect(wrapped.issues.map((issue) => issue.code)).not.toContain("table-responsive-risk");
+  });
+
+  it("blocks mojibake in visible generated copy", () => {
+    const result = lintGeneratedWebsiteHtml(`<!doctype html>
+<html>
+  <head>
+    <title>Meridian API Platform</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <section><h1>Meridian API Platform</h1><p>Meridian\u9225s knowledge base keeps platform behavior clear for implementation teams.</p></section>
+      <section><h2>Reference</h2><p>Stable endpoint language helps teams compare request behavior and response expectations.</p></section>
+      <section><h2>Guidance</h2><p>Implementation notes connect overview material with concrete usage patterns.</p></section>
+      <section><h2>Support</h2><p>Support paths keep technical reviewers aligned during integration work.</p></section>
+    </main>
+  </body>
+</html>`);
+
+    expect(result.passed).toBe(false);
+    expect(result.issues.map((issue) => issue.code)).toContain("mojibake-visible-copy");
+  });
+
+  it("warns on generic CTAs and overlong Open Design copy slots", () => {
+    const result = lintGeneratedWebsiteHtml(`<!doctype html>
+<html>
+  <head>
+    <title>Meridian API Platform</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <section>
+        <h1>A very long generated headline about Meridian API Platform documentation reference behavior implementation support and technical team confidence</h1>
+        <p class="hero-lead">Meridian gives developers a stable place to understand API concepts, endpoint behavior, implementation patterns, release expectations, operational guidance, and support ownership before committing integration work. The docs stay aligned across product teams. Reviewers keep one shared reference.</p>
+        <a href="/docs">Learn More</a>
+      </section>
+      <section><h2>Reference</h2><p>Stable endpoint language helps teams compare request behavior and response expectations.</p></section>
+      <section><h2>Guidance</h2><p>Implementation notes connect overview material with concrete usage patterns.</p></section>
+      <section><h2>Support</h2><p>Support paths keep technical reviewers aligned during integration work.</p></section>
+    </main>
+  </body>
+</html>`);
+
+    expect(result.issues.map((issue) => issue.code)).toEqual(
+      expect.arrayContaining(["generic-cta-label", "overlong-headline", "overlong-lead-copy"]),
+    );
+    expect(renderAntiSlopFeedback(result)).toContain("Replace generic CTA labels");
+  });
+
   it("does not treat implementation class names as placeholder copy", () => {
     const result = lintGeneratedWebsiteHtml(`<!doctype html>
 <html>
@@ -233,7 +383,7 @@ describe("anti-slop-linter", () => {
 
   it("blocks homepage semantics that read like a download or certification portal", () => {
     const result = lintGeneratedWebsiteRouteHtml(
-      `<!doctype html><html><head><title>CASUX | 资料下载与认证入口</title></head><body><h1>沉淀标准、研究与实践资料的统一入口</h1></body></html>`,
+      `<!doctype html><html><head><title>CASUX | \u8d44\u6599\u4e0b\u8f7d\u4e0e\u8ba4\u8bc1\u5165\u53e3</title></head><body><h1>\u8d44\u6599\u4e0b\u8f7d\u4e0e\u8ba4\u8bc1\u5165\u53e3</h1></body></html>`,
       { route: "/" },
     );
 
@@ -246,10 +396,10 @@ describe("anti-slop-linter", () => {
     const result = lintGeneratedWebsiteRouteHtml(
       `<!doctype html>
 <html>
-  <head><title>CASUX 首页</title><meta name="description" content="CASUX 主站总览" /></head>
+  <head><title>CASUX 妫ｆ牠銆?/title><meta name="description" content="CASUX 娑撹崵鐝幀鏄忣潔" /></head>
   <body>
-    <nav><a href="/casux-certification/">CASUX 优标认证</a><a href="/downloads/">资料下载</a></nav>
-    <main><h1>CASUX 首页</h1><p>面向儿童友好空间建设的标准体系、研究实践与协作入口。</p></main>
+    <nav><a href="/casux-certification/">CASUX 娴兼ɑ鐖ｇ拋銈堢槈</a><a href="/downloads/">鐠у嫭鏋℃稉瀣祰</a></nav>
+    <main><h1>CASUX 妫ｆ牠銆?/h1><p>闂堛垹鎮滈崕璺仮閸欏銈界粚娲？瀵ら缚顔曢惃鍕垼閸戝棔缍嬬化姹団偓浣虹埡缁岃泛鐤勭捄鍏哥瑢閸楀繋缍旈崗銉ュ經閵?/p></main>
   </body>
 </html>`,
       { route: "/" },
