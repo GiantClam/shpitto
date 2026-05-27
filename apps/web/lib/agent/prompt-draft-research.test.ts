@@ -850,10 +850,10 @@ describe("prompt draft research", () => {
     });
 
     expect(result.canonicalPrompt).toContain("## 7.35 Bilingual Experience Contract");
-    expect(result.canonicalPrompt).toContain("English-first i18n-ready generation strategy");
+    expect(result.canonicalPrompt).toContain("Chinese-first i18n-ready generation strategy");
     expect(result.canonicalPrompt).toContain("/i18n/messages.en.json");
     expect(result.canonicalPrompt).toContain("/i18n/messages.zh-CN.json");
-    expect(result.canonicalPrompt).toContain("English visible copy only");
+    expect(result.canonicalPrompt).toContain("Chinese visible copy only");
     expect(result.canonicalPrompt).toContain("Blog/content workflows stay single-language");
     expect(result.promptControlManifest.files).toEqual(
       expect.arrayContaining(["/i18n/messages.en.json", "/i18n/messages.zh-CN.json"]),
@@ -897,8 +897,8 @@ describe("prompt draft research", () => {
     const enriched = ensureCanonicalPromptHasBilingualContractForTesting(draft, "bilingual", "zh");
 
     expect(enriched).toContain("## 7.35 Bilingual Experience Contract");
-    expect(enriched).toContain("English-first i18n-ready generation strategy");
-    expect(enriched).toContain("render English visible copy only");
+    expect(enriched).toContain("Chinese-first i18n-ready generation strategy");
+    expect(enriched).toContain("render Chinese visible copy only");
     expect(enriched).toContain("/i18n/messages.zh-CN.json");
     expect(containsWorkflowCjk(enriched)).toBe(false);
   });

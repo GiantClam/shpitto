@@ -48,6 +48,7 @@ export function createWebsiteGenerationSkillAdapter(skillId: string): SkillExecu
       decision: LocalDecisionPlan;
       files: RuntimeWorkflowFile[];
       requirementText?: string;
+      websiteSurfaceMode?: string;
     }): SkillExecutionValidationResult {
       return validateWebsiteRequiredFilesWithQaForAdapter({
         ...params,

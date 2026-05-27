@@ -78,6 +78,7 @@ export type SkillExecutionAdapter = {
     decision: LocalDecisionPlan;
     files: RuntimeWorkflowFile[];
     requirementText?: string;
+    websiteSurfaceMode?: string;
   }) => SkillExecutionValidationResult;
 };
 

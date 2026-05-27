@@ -1318,6 +1318,78 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
     }
   });
 
+  it("bypasses post-deploy live fetch failure when Cloudflare API confirms deployment success", async () => {
+    const prevFetch = globalThis.fetch;
+    const prevAccountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+    const prevToken = process.env.CLOUDFLARE_API_TOKEN;
+    const prevAttempts = process.env.DEPLOY_SMOKE_MAX_ATTEMPTS;
+    const prevRetryMs = process.env.DEPLOY_SMOKE_RETRY_MS;
+    const calls: string[] = [];
+
+    try {
+      process.env.CLOUDFLARE_ACCOUNT_ID = "account";
+      process.env.CLOUDFLARE_API_TOKEN = "token";
+      process.env.DEPLOY_SMOKE_MAX_ATTEMPTS = "1";
+      process.env.DEPLOY_SMOKE_RETRY_MS = "1";
+      globalThis.fetch = (async (input: RequestInfo | URL) => {
+        const url = String(input);
+        calls.push(url);
+        if (url === "https://deploy-example.pages.dev/") {
+          throw new Error("Client network socket disconnected before secure TLS connection was established");
+        }
+        if (url.includes("/accounts/account/pages/projects/deploy-example")) {
+          return new Response(
+            JSON.stringify({
+              result: {
+                id: "project-id",
+                name: "deploy-example",
+                subdomain: "deploy-example.pages.dev",
+                domains: ["deploy-example.pages.dev"],
+                latest_deployment: {
+                  id: "dep-id",
+                  short_id: "dep-id",
+                  project_id: "project-id",
+                  project_name: "deploy-example",
+                  environment: "production",
+                  url: "https://abc.deploy-example.pages.dev",
+                  latest_stage: { name: "deploy", status: "success" },
+                  stages: [{ name: "deploy", status: "success" }],
+                },
+              },
+            }),
+            { status: 200, headers: { "content-type": "application/json" } },
+          );
+        }
+        throw new Error(`Unexpected fetch ${url}`);
+      }) as typeof fetch;
+
+      const result = await runPostDeploySmoke("https://deploy-example.pages.dev/");
+
+      expect(result.status).toBe("skipped");
+      expect(result.url).toBe("https://deploy-example.pages.dev/");
+      expect(result.checks).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: "cloudflare_api_latest_deployment", passed: true }),
+          expect.objectContaining({ name: "remote_fetch_unreachable", passed: true }),
+        ]),
+      );
+      expect(calls).toEqual([
+        "https://deploy-example.pages.dev/",
+        "https://api.cloudflare.com/client/v4/accounts/account/pages/projects/deploy-example",
+      ]);
+    } finally {
+      globalThis.fetch = prevFetch;
+      if (prevAccountId === undefined) delete process.env.CLOUDFLARE_ACCOUNT_ID;
+      else process.env.CLOUDFLARE_ACCOUNT_ID = prevAccountId;
+      if (prevToken === undefined) delete process.env.CLOUDFLARE_API_TOKEN;
+      else process.env.CLOUDFLARE_API_TOKEN = prevToken;
+      if (prevAttempts === undefined) delete process.env.DEPLOY_SMOKE_MAX_ATTEMPTS;
+      else process.env.DEPLOY_SMOKE_MAX_ATTEMPTS = prevAttempts;
+      if (prevRetryMs === undefined) delete process.env.DEPLOY_SMOKE_RETRY_MS;
+      else process.env.DEPLOY_SMOKE_RETRY_MS = prevRetryMs;
+    }
+  });
+
   it("runs deploy when confirmation intent is present in workflow context", async () => {
     process.env.CHAT_TASKS_USE_SUPABASE = "0";
     process.env.CLOUDFLARE_ACCOUNT_ID = "";
@@ -1469,6 +1541,72 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
     const home = String(files.find((file: any) => file.path === "/index.html")?.content || "");
     expect((home.match(/href="\/blog"/g) || []).length).toBe(1);
     expect(home).not.toContain('href="/blog/"');
+  });
+
+  it("does not inject blog runtime files for deploys without a content mount", async () => {
+    const prevRuntime = process.env.SHPITTO_DEPLOY_BLOG_RUNTIME;
+    try {
+      process.env.CHAT_TASKS_USE_SUPABASE = "0";
+      process.env.CLOUDFLARE_ACCOUNT_ID = "";
+      process.env.CLOUDFLARE_API_TOKEN = "";
+      process.env.SHPITTO_DEPLOY_BLOG_RUNTIME = "1";
+
+      const chatId = `deploy-no-blog-mount-${Date.now()}`;
+      const task = await createChatTask(chatId);
+      let nextState: any;
+      await SkillRuntimeExecutor.runTask({
+        taskId: task.id,
+        chatId,
+        workerId: "test-worker",
+        inputState: {
+          messages: [{ role: "user", content: "deploy to cloudflare" }] as any,
+          phase: "end",
+          current_page_index: 0,
+          attempt_count: 0,
+          workflow_context: {
+            skillId: "website-generation-workflow",
+            deployRequested: true,
+          } as any,
+          site_artifacts: {
+            projectId: "deploy-no-blog-mount-project",
+            pages: [],
+            staticSite: {
+              mode: "skill-direct",
+              files: [
+                {
+                  path: "/index.html",
+                  type: "text/html",
+                  content:
+                    '<!doctype html><html><head><title>CASUX</title></head><body><main><section><h1>CASUX</h1><p>Institutional overview.</p></section></main></body></html>',
+                },
+                {
+                  path: "/casux-information-platform/index.html",
+                  type: "text/html",
+                  content:
+                    '<!doctype html><html><head><title>Information</title></head><body><main><section><h1>Information Platform</h1><p>Resource directory without blog runtime mount.</p></section></main></body></html>',
+                },
+              ],
+            },
+          } as any,
+        } as any,
+        setSessionState: (state) => {
+          nextState = state;
+        },
+      });
+
+      const files = Array.isArray(nextState?.site_artifacts?.staticSite?.files)
+        ? nextState.site_artifacts.staticSite.files
+        : [];
+      const paths = files.map((file: any) => String(file.path || ""));
+      expect(paths).not.toContain("/_worker.js");
+      expect(paths).not.toContain("/shpitto-blog-runtime.json");
+      expect(nextState?.workflow_context?.generatedBlogContentStatus).toEqual({ status: "skipped:no_content_mount", postCount: 0 });
+      expect(String(nextState?.workflow_context?.blogRuntimeStatus || "")).not.toMatch(/^active:/);
+      expect(nextState?.workflow_context?.smoke?.blogRuntime).toBeUndefined();
+    } finally {
+      if (prevRuntime === undefined) delete process.env.SHPITTO_DEPLOY_BLOG_RUNTIME;
+      else process.env.SHPITTO_DEPLOY_BLOG_RUNTIME = prevRuntime;
+    }
   });
 
   it("skips Web Analytics provisioning for pages.dev deployments by default", async () => {

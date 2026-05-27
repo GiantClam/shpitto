@@ -85,9 +85,32 @@ export function selectWebsiteGenerationTypeSkill(params: {
     intentText,
   );
   const hasDocsKnowledgeSignal = hasDocsKnowledgeSignals(normalizedSiteType, normalizedRoutes, intentText);
+  const hasExplicitBlogRoute = normalizedRoutes.some((route) => route === "/blog" || /^\/blog\//i.test(route));
+  const hasBlogNegation =
+    /\b(?:do not|don't|without|no|never)\s+(?:generate\s+|add\s+|include\s+|invent\s+|create\s+)?(?:a\s+)?(?:blog|archive|articles?|posts?|essays?)\b/i.test(
+      intentText,
+    ) ||
+    /\b(?:blog|archive|articles?|posts?|essays?)\s+(?:routes?|behavior|assumptions?)\s+(?:are\s+)?(?:not\s+)?(?:allowed|forbidden|unwanted)\b/i.test(
+      intentText,
+    );
+  const hasPersonalBlogSignal =
+    normalizedSiteType === "portfolio" ||
+    normalizedSiteType === "blog" ||
+    /(?:personal|portfolio|blog|writer|writing|articles?|posts?|essays?|technical blog|个人|作品集|博客|文章)/i.test(
+      intentText,
+    ) ||
+    hasExplicitBlogRoute;
+  const hasPersonalIdentitySignal =
+    normalizedSiteType === "portfolio" ||
+    normalizedSiteType === "blog" ||
+    /\b(?:personal|portfolio|writer|writing)\b/i.test(intentText);
+  const hasPublishableWritingSignal =
+    !hasBlogNegation && /\b(?:blog|technical blog|articles?|posts?|essays?)\b/i.test(intentText);
+  const hasPositivePersonalBlogSignal =
+    hasExplicitBlogRoute || hasPersonalIdentitySignal || hasPublishableWritingSignal || (!hasBlogNegation && hasPersonalBlogSignal);
 
   const hasCorporateSignal =
-    /(company|corporate|official website|enterprise|b2b|manufacturer|factory|supplier|export|exporter|procurement|sourcing|distributor|wholesale|浼佷笟瀹樼綉|鍏徃瀹樼綉|鏈烘瀯瀹樼綉|鍒堕€犲晢|宸ュ巶|渚涘簲鍟唡澶栬锤|鍑哄彛|閲囪喘|娓犻亾)/i.test(
+    /(company|corporate|official website|enterprise|b2b|manufacturer|factory|supplier|export|exporter|procurement|sourcing|distributor|wholesale|企业官网|公司官网|机构官网|制造商|工厂|供应商|外贸|出口|采购|渠道)/i.test(
       intentText,
     ) ||
     normalizedSiteType === "company" ||
@@ -114,6 +137,15 @@ export function selectWebsiteGenerationTypeSkill(params: {
     };
   }
 
+  if (hasPositivePersonalBlogSignal) {
+    return {
+      skillId: "portfolio-blog-site",
+      siteType: "portfolio-blog",
+      surfaceMode: "portfolio-blog-site",
+      reason: "Matched personal profile, portfolio, writing, article, or Blog route signals.",
+    };
+  }
+
   if (hasCorporateSignal) {
     return {
       skillId: "corporate-b2b-site",
@@ -124,7 +156,7 @@ export function selectWebsiteGenerationTypeSkill(params: {
   }
 
   const hasLandingSignal =
-    /(landing|campaign|pricing|signup|sign up|demo request|free trial|conversion|saas|product launch|钀藉湴椤祙娲诲姩椤祙瀹氫环|娉ㄥ唽|璇曠敤|杞寲)/i.test(
+    /(landing|campaign|pricing|signup|sign up|demo request|free trial|conversion|saas|product launch|落地页|活动页|定价|注册|试用|转化)/i.test(
       intentText,
     ) || normalizedSiteType === "landing";
 

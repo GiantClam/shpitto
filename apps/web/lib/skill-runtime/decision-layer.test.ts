@@ -126,6 +126,64 @@ describe("decision-layer", () => {
     expect(informationPlatform?.contentSkeleton.join(" ")).toContain("collection/index surface");
   });
 
+  it("does not attach Blog runtime hooks when a manifest route explicitly forbids blog/archive behavior", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          "Build a multi-page resource and research hub. Generate Home, Research, Standards, Resources, and About with no blog or archive behavior.",
+        ),
+      ],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/research", "/standards", "/resources", "/about"],
+          navLabels: ["Home", "Research", "Standards", "Resources", "About"],
+          files: ["/styles.css", "/script.js", "/index.html", "/research/index.html", "/standards/index.html", "/resources/index.html", "/about/index.html"],
+        },
+      },
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+    const resources = plan.pageBlueprints.find((page) => page.route === "/resources");
+
+    expect(resources?.pageKind).toBe("search-directory");
+    expect(resources?.constraints.join(" ")).toContain("explicitly forbids blog/archive behavior");
+    expect(resources?.constraints.join(" ")).toContain("resource-index-header");
+    expect(resources?.constraints.join(" ")).toContain("no hero-grid");
+    expect(resources?.contentSkeleton.join(" ")).not.toContain("data-shpitto-blog-root");
+  });
+
+  it("keeps explicit Blog manifest routes when publishable articles are requested", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          "Build a personal technical blog. The Blog route must publish 3 complete article detail pages. Do not invent archive category routes beyond the Blog route and its three requested detail pages.",
+        ),
+      ],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/blog", "/about", "/contact"],
+          navLabels: ["Home", "Blog", "About", "Contact"],
+          files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html", "/about/index.html", "/contact/index.html"],
+        },
+      },
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+    const blog = plan.pageBlueprints.find((page) => page.route === "/blog");
+
+    expect(plan.routes).toContain("/blog");
+    expect(blog?.pageKind).toBe("blog-data-index");
+    expect(blog?.constraints.join(" ")).toContain("Detail links must use /blog/{slug}/");
+  });
+
   it("does not force publishable detail pages when a knowledge hub merely mentions articles as source material", () => {
     const state: any = {
       messages: [
@@ -864,6 +922,46 @@ describe("decision-layer", () => {
     expect(plan.routes).toEqual(["/", "/contact"]);
     expect(plan.navLabels).toEqual(["Home", "Contact"]);
     expect(plan.routes).not.toContain("/blog");
+  });
+
+  it("preserves exact structured manifest routes instead of canonicalizing them to generic aliases", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          [
+            "# Canonical Website Generation Prompt",
+            "Generate a B2B website. The exact route contract uses /solutions, not /custom-solutions.",
+            "### Prompt Control Manifest (Machine Readable)",
+            "```json",
+            JSON.stringify({
+              schemaVersion: 1,
+              promptKind: "canonical_website_prompt",
+              routeSource: "prompt_draft_page_plan",
+              routes: ["/", "/solutions", "/cases", "/about", "/contact"],
+              navLabels: ["Home", "Solutions", "Cases", "About", "Contact"],
+              files: [
+                "/styles.css",
+                "/script.js",
+                "/index.html",
+                "/solutions/index.html",
+                "/cases/index.html",
+                "/about/index.html",
+                "/contact/index.html",
+              ],
+            }),
+            "```",
+          ].join("\n"),
+        ),
+      ],
+      phase: "conversation",
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+
+    expect(plan.routeAuthorityMode).toBe("prompt_manifest");
+    expect(plan.routes).toEqual(["/", "/solutions", "/cases", "/about", "/contact"]);
+    expect(plan.navLabels).toEqual(["Home", "Solutions", "Cases", "About", "Contact"]);
+    expect(plan.routes).not.toContain("/custom-solutions");
   });
 
   it("does not inject /blog for a standard multipage site without explicit content-stream intent", () => {

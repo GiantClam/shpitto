@@ -14,7 +14,6 @@ dotenv.config({ path: path.resolve(process.cwd(), "../../.env"), override: false
 
 process.env.SHPITTO_OD_SURFACE_MODE ||= "1";
 process.env.SHPITTO_OD_DISCOVERY_BRIEF ||= "1";
-process.env.SHPITTO_OD_IMPORTED_SKILLS ||= "1";
 process.env.SHPITTO_OD_ROUTE_UNITS ||= "1";
 process.env.SKILL_TOOL_MAX_SEED_SKILLS ||= "4";
 process.env.CHAT_DRAFT_WEB_SEARCH_ENABLED ||= "0";
@@ -98,10 +97,13 @@ function rewriteHomepageOnlyPromptSections(prompt: string, manifest: PromptContr
             "- Required module: Quickstart strip, guide stack, and reference matrix with in-page anchors only.",
             "- Required module: Compact support CTA that links to `#support`, `#reference`, or `/` only.",
           ]
-        : [
+      : [
             "- Constraint: This is a homepage-only corporate smoke. Do not create or link interior routes.",
-            "- Required module: Enterprise masthead and procurement proof on the homepage.",
+            "- Required module: Enterprise masthead with a real image-backed hero, a compact procurement proof row, and one decisive buyer-facing value proposition.",
             "- Required module: Capability/process band and concise contact CTA with in-page anchors only.",
+            "- Required module: A distinct top-level footer band with brand summary, buyer-relevant navigation, contact CTA, and copyright.",
+            "- Footer copy rule: do not label footer groups with route-choreography or shell terms such as `site browsing path`, `where to start`, `shared shell`, `responsive layout`, or similar implementation labels.",
+            "- Copy rule: visible homepage copy must speak about capabilities, outcomes, proof, or contact paths. It must not explain how to browse the site or describe the page's implementation mechanics.",
           ];
   const pageIntent = [
     "### Page-Level Intent Contract",
@@ -133,6 +135,8 @@ function rewriteHomepageOnlyPromptSections(prompt: string, manifest: PromptContr
     "- This homepage-only smoke has no interior shared-shell destinations.",
     "- Header, footer, buttons, and CTAs must link only to `/` or in-page anchors.",
     "- Do not expose Archive, Blog, Downloads, Research, Standards, or other unlisted destinations in nav, body CTAs, or footer.",
+    "- The footer must render as a visually distinct top-level site footer band, not as a flat row of pills or a minimal legal line.",
+    "- Do not use footer labels or helper copy such as `site browsing path`, `reading path`, `where to start`, `shared shell`, `responsive layout`, or other implementation-review wording.",
     "",
   ].join("\n");
   const layoutSafety = [
@@ -160,7 +164,7 @@ function appendHomepageOnlyRouteOverride(prompt: string, scenarioKey: string): s
       ? "Use editorial collection-index geometry with institutional collection masthead, shelves, ledgers, and resource rows. Do not use blog/archive behavior, `/archive` links, `/blog` links, or a right-side hero panel."
       : scenarioKey === "docs"
         ? "Use docs workspace/reference-index geometry with search/index rail, quickstart strip, guide stack, and reference matrix. Do not use blog/archive behavior, `/archive` links, `/blog` links, or a right-side hero panel."
-        : "Use corporate enterprise masthead geometry with procurement proof and a concise contact path.";
+        : "Use corporate enterprise masthead geometry with a real image-backed hero, procurement proof, a capability band, and a concise contact path. Keep the footer as a distinct site-footer band, and never use route-choreography or implementation labels such as `site browsing path`, `where to start`, `shared shell`, or `responsive layout`.";
   return `${prompt.trim()}
 
 ## Homepage-Only Route Override
@@ -185,13 +189,42 @@ async function materializeProject(project: any, siteDir: string) {
   }
 }
 
+async function writeHomepageLiveOutputs(params: {
+  scenario: string;
+  project: any;
+  canonicalPrompt: string;
+  report: Record<string, unknown>;
+}) {
+  const scenarioRoot = path.resolve(process.cwd(), ".tmp", "open-design-homepage-live", params.scenario);
+  const latestRoot = path.resolve(process.cwd(), ".tmp", "open-design-homepage-live", "latest");
+  const roots = [scenarioRoot, latestRoot];
+
+  for (const root of roots) {
+    const siteDir = path.join(root, "site");
+    await fs.rm(root, { recursive: true, force: true });
+    await fs.mkdir(root, { recursive: true });
+    await materializeProject(params.project, siteDir);
+    const report = {
+      ...params.report,
+      output: {
+        ...(params.report.output as Record<string, unknown>),
+        projectJson: path.join(root, "project.json"),
+        canonicalPrompt: path.join(root, "canonical-prompt.md"),
+        siteDir,
+        indexHtml: path.join(siteDir, "index.html"),
+      },
+    };
+    await Promise.all([
+      fs.writeFile(path.join(root, "project.json"), JSON.stringify(params.project, null, 2), "utf8"),
+      fs.writeFile(path.join(root, "canonical-prompt.md"), params.canonicalPrompt, "utf8"),
+      fs.writeFile(path.join(root, "report.json"), JSON.stringify(report, null, 2), "utf8"),
+    ]);
+  }
+}
+
 describe.skipIf(!shouldRun)("Open Design homepage live generation", () => {
   it("generates and materializes a provider-backed homepage", async () => {
     const requirementText = requirements[scenario] || requirements.docs!;
-    const outputRoot = path.resolve(process.cwd(), ".tmp", "open-design-homepage-live", "latest");
-    const siteDir = path.join(outputRoot, "site");
-    await fs.rm(outputRoot, { recursive: true, force: true });
-    await fs.mkdir(outputRoot, { recursive: true });
 
     const draft = await buildPromptDraftWithResearch({
       requirementText,
@@ -246,10 +279,9 @@ describe.skipIf(!shouldRun)("Open Design homepage live generation", () => {
 
     const project = (summary.state as any)?.site_artifacts;
     expect(project?.staticSite?.files?.length).toBeGreaterThan(0);
-    await materializeProject(project, siteDir);
-
-    const html = await fs.readFile(path.join(siteDir, "index.html"), "utf8");
-    const css = await fs.readFile(path.join(siteDir, "styles.css"), "utf8");
+    const staticFiles = project?.staticSite?.files || [];
+    const html = String(staticFiles.find((file: any) => String(file?.path || "") === "/index.html")?.content || "");
+    const css = String(staticFiles.find((file: any) => String(file?.path || "") === "/styles.css")?.content || "");
     expect(html).toMatch(/<!doctype html>/i);
     expect(html).toContain(expectedBrandSignals[scenario] || expectedBrandSignals.docs);
     expect(html).not.toMatch(/\bLorem ipsum\b|TODO|<template\b/i);
@@ -269,17 +301,18 @@ describe.skipIf(!shouldRun)("Open Design homepage live generation", () => {
       generatedFiles: summary.generatedFiles,
       qaSummary: summary.qaSummary || null,
       output: {
-        projectJson: path.join(outputRoot, "project.json"),
-        canonicalPrompt: path.join(outputRoot, "canonical-prompt.md"),
-        siteDir,
-        indexHtml: path.join(siteDir, "index.html"),
+        projectJson: null,
+        canonicalPrompt: null,
+        siteDir: null,
+        indexHtml: null,
       },
     };
-    await Promise.all([
-      fs.writeFile(path.join(outputRoot, "project.json"), JSON.stringify(project, null, 2), "utf8"),
-      fs.writeFile(path.join(outputRoot, "canonical-prompt.md"), canonicalPrompt, "utf8"),
-      fs.writeFile(path.join(outputRoot, "report.json"), JSON.stringify(report, null, 2), "utf8"),
-    ]);
+    await writeHomepageLiveOutputs({
+      scenario,
+      project,
+      canonicalPrompt,
+      report,
+    });
 
     expect(summary.phase).toBe("end");
     expect(summary.pageCount).toBe(1);

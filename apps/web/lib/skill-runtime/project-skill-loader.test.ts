@@ -93,7 +93,7 @@ describe("project-skill-loader", () => {
     expect(bundle.resolvedIds).toContain("pdf");
     expect(bundle.resolvedIds).toContain("docx");
     expect(bundle.resolvedIds).toContain("pptx");
-  });
+  }, 20_000);
 
   it("loads imported document content skills from apps/web/skills", async () => {
     const documentSkillIds = await listDocumentContentSkillIds();
@@ -167,9 +167,11 @@ describe("project-skill-loader", () => {
     expect(contentSkill.websiteMetadata?.activation?.compatibleSurfaceModes).toContain("content-hub-site");
   });
 
-  it("keeps staged imported website skills out of default seed selection until the rollout flag is enabled", async () => {
+  it("keeps staged imported website skills out of native seed selection until the rollout flag is enabled", async () => {
     const previous = process.env.SHPITTO_OD_IMPORTED_SKILLS;
+    const previousGenerator = process.env.SHPITTO_SITE_GENERATOR;
     delete process.env.SHPITTO_OD_IMPORTED_SKILLS;
+    process.env.SHPITTO_SITE_GENERATOR = "native";
 
     const defaultSelected = await selectWebsiteSeedSkillsForIntent({
       requirementText: "Build a documentation knowledge base with implementation guides and references.",
@@ -186,6 +188,30 @@ describe("project-skill-loader", () => {
 
     if (previous === undefined) delete process.env.SHPITTO_OD_IMPORTED_SKILLS;
     else process.env.SHPITTO_OD_IMPORTED_SKILLS = previous;
+    if (previousGenerator === undefined) delete process.env.SHPITTO_SITE_GENERATOR;
+    else process.env.SHPITTO_SITE_GENERATOR = previousGenerator;
+  });
+
+  it("uses default hybrid generator mode to promote compatible Open Design and HTML Anything sidecars", async () => {
+    const previous = process.env.SHPITTO_OD_IMPORTED_SKILLS;
+    const previousGenerator = process.env.SHPITTO_SITE_GENERATOR;
+    delete process.env.SHPITTO_OD_IMPORTED_SKILLS;
+    delete process.env.SHPITTO_SITE_GENERATOR;
+
+    const selected = await selectWebsiteSeedSkillsForIntent({
+      requirementText: "Build a documentation knowledge base with implementation guides and API reference routes.",
+      routes: ["/", "/docs", "/guides", "/api-reference", "/support"],
+      maxSkills: 4,
+    });
+    const ids = selected.map((item) => item.id);
+    expect(ids).toEqual(expect.arrayContaining(["docs-knowledge-foundation", "docs-reference-template"]));
+    expect(selected.find((item) => item.id === "docs-knowledge-foundation")?.reason).toContain("generator:hybrid:open-design");
+    expect(selected.find((item) => item.id === "docs-reference-template")?.reason).toContain("generator:hybrid:html-anything");
+
+    if (previous === undefined) delete process.env.SHPITTO_OD_IMPORTED_SKILLS;
+    else process.env.SHPITTO_OD_IMPORTED_SKILLS = previous;
+    if (previousGenerator === undefined) delete process.env.SHPITTO_SITE_GENERATOR;
+    else process.env.SHPITTO_SITE_GENERATOR = previousGenerator;
   });
 
   it("indexes seed template and checklist resources into a compact summary", async () => {

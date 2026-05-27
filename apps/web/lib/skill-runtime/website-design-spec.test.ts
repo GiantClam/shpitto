@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildRouteUnitContractSummary,
+  buildWebsiteMediaResourceList,
   buildWebsiteDesignSpecMarkdown,
   buildWebsiteDesignSpecRouteExcerpt,
 } from "./website-design-spec.ts";
@@ -133,6 +134,47 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
     expect(markdown).toContain("source_validation_rule: when curated stock/library imagery is available for this slot, use a real photographic asset; do not substitute inline SVG, abstract illustration, or data-URI placeholder media");
     expect(markdown).toContain("caption_policy: homepage hero visual normally carries no caption");
     expect(markdown).toContain("copy_contract: do not surface internal art-direction or mood labels such as `heritage manufacturing`, `heritage craft`, `warm palette`");
+    expect(markdown).toContain("site_generator_mode: hybrid");
+    expect(markdown).toContain("shpitto_platform_boundary:");
+  });
+
+  it("can explicitly opt the design spec back to native generation", () => {
+    const decision = buildMockDecision();
+    decision.pageBlueprints = decision.pageIntents;
+
+    const markdown = buildWebsiteDesignSpecMarkdown({
+      decision,
+      requirementText: decision.requirementText,
+      stylePreset: DEFAULT_STYLE_PRESET,
+      siteGeneratorMode: "native",
+    });
+
+    expect(markdown).toContain("site_generator_mode: native");
+    expect(markdown).toContain("functionality_port_scope: no external frontend generator is active for this run.");
+  });
+
+  it("records the hybrid frontend generator boundary in the design spec", () => {
+    const decision = buildMockDecision();
+    decision.pageBlueprints = decision.pageIntents;
+
+    const markdown = buildWebsiteDesignSpecMarkdown({
+      decision,
+      requirementText: decision.requirementText,
+      stylePreset: DEFAULT_STYLE_PRESET,
+      websiteSurfaceMode: "corporate-b2b-site",
+      siteGeneratorMode: "hybrid",
+      selectedSeedSkillIds: ["open-design-web-prototype", "docs-reference-template"],
+    });
+
+    expect(markdown).toContain("site_generator_mode: hybrid");
+    expect(markdown).toContain("Open Design owns visual direction and module rhythm");
+    expect(markdown).toContain("HTML Anything owns concrete HTML/CSS template discipline");
+    expect(markdown).toContain("functionality_port_scope: port generation functionality, template discipline");
+    expect(markdown).toContain("shpitto_ui_theme_boundary: Shpitto Studio and platform UI keep the app theme");
+    expect(markdown).toContain("`--shp-*` tokens and `.shp-*` shell classes");
+    expect(markdown).toContain("generated_site_theme_boundary: generated customer websites may use their own route-level design tokens");
+    expect(markdown).toContain("Shpitto remains responsible for Blog/content hooks, Contact/API wiring");
+    expect(markdown).toContain("selected_frontend_seed_skills: open-design-web-prototype, docs-reference-template");
   });
 
   it("applies the enterprise homepage contract to generic corporate-b2b sites even without an explicit IBM override", () => {
@@ -341,6 +383,36 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
     expect(summary?.inheritedTerminology).toContain("corporate-b2b-site");
     expect(summary?.openingTopology).toContain("catalog lead band");
     expect(summary?.mediaPlan.join("\n")).toContain("slot_owner: catalog-lead proof slot");
+    expect(summary?.mediaResources?.[0]).toMatchObject({
+      route: "/products",
+      slotOwner: "catalog-lead proof slot",
+      preferredRatio: "4:3, 5:4, or square",
+    });
+  });
+
+  it("exposes the media resource list as structured contract data", () => {
+    const decision = buildMockDecision();
+    decision.pageBlueprints = decision.pageIntents;
+
+    const resources = buildWebsiteMediaResourceList({
+      decision,
+      requirementText: decision.requirementText,
+      stylePreset: DEFAULT_STYLE_PRESET,
+      websiteSurfaceMode: "corporate-b2b-site",
+    });
+
+    expect(resources.map((resource) => resource.route)).toEqual(decision.routes);
+    expect(resources[0]).toMatchObject({
+      resourceId: "home-hero-01",
+      route: "/",
+      slotOwner: "opening-hero-background",
+      sourcePriority: "curated stock/library first",
+    });
+    expect(resources.find((resource) => resource.route === "/products")).toMatchObject({
+      resourceId: "products-media-01",
+      imagePurpose: expect.stringContaining("product-family"),
+      desktopImageArea: expect.stringContaining("520px max-width"),
+    });
   });
 
   it("assigns distinct interior opening topologies for core corporate-b2b routes", () => {

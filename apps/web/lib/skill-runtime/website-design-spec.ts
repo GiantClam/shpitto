@@ -5,6 +5,17 @@ import { selectCuratedLibraryImage } from "./curated-media-library.ts";
 import { isBilingualRequirementText } from "./bilingual-copy-guard.ts";
 import type { WebsiteDiscoveryBrief, WebsiteSurfaceMode } from "./open-design-adoption.ts";
 import { selectWebsiteGenerationTypeSkill } from "./website-type-selector.ts";
+import {
+  renderWebsiteArtifactGeneratorContract,
+  resolveWebsiteArtifactGeneratorMode,
+  type WebsiteArtifactGeneratorMode,
+} from "./website-artifact-generator.ts";
+import {
+  mediaPlanLinesFromResource,
+  mediaResourceContractLines,
+  mediaResourceMarkdownSection,
+  type WebsiteMediaResource,
+} from "./website-media-plan.ts";
 
 type WebsiteDesignSpecParams = {
   decision: LocalDecisionPlan;
@@ -15,6 +26,8 @@ type WebsiteDesignSpecParams = {
   discoveryBrief?: WebsiteDiscoveryBrief;
   designSystemId?: string;
   designSystemName?: string;
+  siteGeneratorMode?: WebsiteArtifactGeneratorMode;
+  selectedSeedSkillIds?: string[];
 };
 
 type DesignSpecLocaleMode = "zh-CN" | "en" | "bilingual";
@@ -29,6 +42,7 @@ export type RouteUnitContractSummary = {
   openingFamily: string;
   openingTopology: string;
   mediaPlan: string[];
+  mediaResources: WebsiteMediaResource[];
 };
 
 function summarizeInheritedTerminology(params: WebsiteDesignSpecParams): string[] {
@@ -48,9 +62,14 @@ function summarizeInheritedTerminology(params: WebsiteDesignSpecParams): string[
 }
 
 function summarizeInheritedTokens(params: WebsiteDesignSpecParams): string[] {
+  const surfaceMode = resolveWebsiteSurfaceMode(params);
+  const surfaceTokenLines = buildSurfaceTokenContractLines(surfaceMode)
+    .filter((line) => /surface_(?:css|typography)_tokens/i.test(line))
+    .map((line) => line.replace(/^-\s*/, "").trim());
   return Array.from(
     new Set(
       [
+        ...surfaceTokenLines,
         params.stylePreset.colors.primary,
         params.stylePreset.colors.accent,
         params.stylePreset.colors.background,
@@ -125,7 +144,7 @@ function buildLocaleShellContractLines(localeMode: DesignSpecLocaleMode): string
 }
 
 function describeLocaleStrategy(localeMode: DesignSpecLocaleMode): string {
-  if (localeMode === "bilingual") return "English-first with i18n resources for other locales";
+  if (localeMode === "bilingual") return "Bilingual with the prompt-defined default visible locale and i18n resources for the inactive locale";
   if (localeMode === "zh-CN") return "Chinese-first single-language shell";
   return "English-first single-language shell";
 }
@@ -314,87 +333,127 @@ function routeOpeningTopology(
   return "route-specific lead band -> primary content band -> supporting proof/CTA";
 }
 
+function buildRouteMediaResource(
+  page: PageBlueprint,
+  enterpriseHomepage: boolean,
+  surfaceMode: WebsiteSurfaceMode,
+): WebsiteMediaResource {
+  const resourceId = page.route === "/" ? "home-hero-01" : normalizeStyleToken(`${page.route}-media-01`);
+  if (page.route === "/") {
+    if (enterpriseHomepage || surfaceMode === "corporate-b2b-site") {
+      return {
+        resourceId,
+        route: page.route,
+        slotOwner: "opening-hero-background",
+        imagePurpose:
+          "procurement-confidence environmental cue that reinforces product, capability, or operating trust behind the enterprise masthead",
+        placementBand: "inside the opening hero as a background-supported visual layer behind copy",
+        preferredRatio: "21:9 cinematic landscape or 16:9 wide landscape with strong subject readability",
+        displayMode:
+          "image-backed enterprise hero with overlay copy; the image should carry the majority of first-screen visual weight, with no empty side rail, detached proof image, or hard-inserted width:100% inline image",
+        sourcePriority: "curated stock/library first",
+        mediaSourceRule:
+          "when stock/library imagery is available, use a real photographic asset; do not use inline SVG, abstract illustration, or data-URI placeholder media for the primary hero visual",
+      };
+    }
+    if (surfaceMode === "docs-knowledge-site") {
+      return {
+        resourceId,
+        route: page.route,
+        slotOwner: "docs-reference-workspace",
+        imagePurpose:
+          "compact product/reference context such as search, API surface, version cues, or implementation examples; it should support wayfinding rather than act as a campaign hero",
+        placementBand:
+          "inside a docs workspace panel, quickstart/reference strip, or index rail adjacent to the opening; do not make it a full-bleed hero background",
+        preferredRatio: "16:10, 4:3, or disciplined code/reference panel",
+        displayMode: "compact reference surface, search/index module, or code/reference panel with readable labels",
+      };
+    }
+    if (surfaceMode === "content-hub-site") {
+      return {
+        resourceId,
+        route: page.route,
+        slotOwner: "archive-context-surface",
+        imagePurpose:
+          "institutional, research, standards, or collection context that supports the archive/index surface without dominating it like a campaign hero",
+        placementBand:
+          "within an archive masthead, collection shelf, resource ledger, or institutional context band; do not use a docs code panel or enterprise hero background",
+        preferredRatio: "4:3, 3:2, or disciplined publication thumbnail",
+        displayMode: "editorial/institutional support visual, document cover cluster, ledger thumbnail, or collection-context panel",
+      };
+    }
+    return {
+      resourceId,
+      route: page.route,
+      slotOwner: "homepage-supporting-band",
+      imagePurpose: "brand/product context",
+      placementBand: "supporting band after the opening section",
+      preferredRatio: "landscape",
+      displayMode: "contained supporting media",
+    };
+  }
+  if (isContentCollectionPage(page)) {
+    return {
+      resourceId,
+      route: page.route,
+      slotOwner: "knowledge-hub supporting proof slot",
+      imagePurpose:
+        "institutional, research, standards, policy, or documentation context that helps visitors understand the collection surface without implying publishable editorial archive semantics",
+      placementBand:
+        "supporting proof band adjacent to the collection navigator or result stack; do not force a product-catalog hero image treatment",
+      preferredRatio: "16:9, 4:3, or disciplined landscape",
+    };
+  }
+  const text = `${page.route} ${page.navLabel} ${page.purpose}`.toLowerCase();
+  if (/products?|catalog|collection/.test(text)) {
+    return {
+      resourceId,
+      route: page.route,
+      slotOwner: "catalog-lead proof slot",
+      imagePurpose: "product-family, material, texture, or folded-pack proof that helps buyers understand assortment immediately",
+      placementBand:
+        "inside the opening catalog lead or the immediately following assortment/specification proof band; the first meaningful product image must appear in the opening zone or the first opening-adjacent proof row",
+      preferredRatio: "4:3, 5:4, or square",
+    };
+  }
+  if (/solutions?|services?|custom-solutions?/.test(text)) {
+    return {
+      resourceId,
+      route: page.route,
+      slotOwner: "process-intro proof slot",
+      imagePurpose: "environment, process, delivery, or collaboration-context proof that makes the solution path legible at first glance",
+      placementBand:
+        "inside the opening process intro or the immediately following process/capability band; the first meaningful image must appear in the opening zone or first opening-adjacent proof row",
+      preferredRatio: "16:9, 5:3, or disciplined landscape",
+    };
+  }
+  if (/cases?|portfolio|projects?/.test(text)) {
+    return {
+      resourceId,
+      route: page.route,
+      slotOwner: "evidence-header proof slot",
+      imagePurpose: "application, scenario, or result proof that makes the case outcome concrete before deeper reading",
+      placementBand:
+        "inside the opening evidence header or the immediately following case evidence/outcome strip; the first meaningful case image must appear in the opening zone or first opening-adjacent proof row",
+      preferredRatio: "16:9, 4:3, or square",
+    };
+  }
+  return {
+    resourceId,
+    route: page.route,
+    slotOwner: "supporting content band",
+    imagePurpose: "route-specific contextual proof",
+    placementBand: "supporting band, never hard-inserted into the opening by default",
+    preferredRatio: "contextual",
+  };
+}
+
 function routeMediaPlan(
   page: PageBlueprint,
   enterpriseHomepage: boolean,
   surfaceMode: WebsiteSurfaceMode,
 ): string[] {
-  if (page.route === "/") {
-    if (enterpriseHomepage || surfaceMode === "corporate-b2b-site") {
-      return [
-        "- slot_owner: opening-hero-background",
-        "- image_purpose: procurement-confidence environmental cue that reinforces product, capability, or operating trust behind the enterprise masthead",
-        "- placement_band: inside the opening hero as a background-supported visual layer behind copy",
-        "- preferred_ratio: 21:9 cinematic landscape or 16:9 wide landscape with strong subject readability",
-        "- display_mode: image-backed enterprise hero with overlay copy; the image should carry the majority of first-screen visual weight, with no empty side rail, detached proof image, or hard-inserted width:100% inline image",
-        "- source_priority: curated stock/library first",
-        "- media_source_rule: when stock/library imagery is available, use a real photographic asset; do not use inline SVG, abstract illustration, or data-URI placeholder media for the primary hero visual",
-      ];
-    }
-    if (surfaceMode === "docs-knowledge-site") {
-      return [
-        "- slot_owner: docs-reference-workspace",
-        "- image_purpose: compact product/reference context such as search, API surface, version cues, or implementation examples; it should support wayfinding rather than act as a campaign hero",
-        "- placement_band: inside a docs workspace panel, quickstart/reference strip, or index rail adjacent to the opening; do not make it a full-bleed hero background",
-        "- preferred_ratio: 16:10, 4:3, or disciplined code/reference panel",
-        "- display_mode: compact reference surface, search/index module, or code/reference panel with readable labels",
-      ];
-    }
-    if (surfaceMode === "content-hub-site") {
-      return [
-        "- slot_owner: archive-context-surface",
-        "- image_purpose: institutional, research, standards, or collection context that supports the archive/index surface without dominating it like a campaign hero",
-        "- placement_band: within an archive masthead, collection shelf, resource ledger, or institutional context band; do not use a docs code panel or enterprise hero background",
-        "- preferred_ratio: 4:3, 3:2, or disciplined publication thumbnail",
-        "- display_mode: editorial/institutional support visual, document cover cluster, ledger thumbnail, or collection-context panel",
-      ];
-    }
-    return [
-      "- slot_owner: homepage-supporting-band",
-      "- image_purpose: brand/product context",
-      "- placement_band: supporting band after the opening section",
-      "- preferred_ratio: landscape",
-      "- display_mode: contained supporting media",
-    ];
-  }
-  if (isContentCollectionPage(page)) {
-    return [
-      "- slot_owner: knowledge-hub supporting proof slot",
-      "- image_purpose: institutional, research, standards, policy, or documentation context that helps visitors understand the collection surface without implying publishable editorial archive semantics",
-      "- placement_band: supporting proof band adjacent to the collection navigator or result stack; do not force a product-catalog hero image treatment",
-      "- preferred_ratio: 16:9, 4:3, or disciplined landscape",
-    ];
-  }
-  const text = `${page.route} ${page.navLabel} ${page.purpose}`.toLowerCase();
-  if (/products?|catalog|collection/.test(text)) {
-    return [
-      "- slot_owner: catalog-lead proof slot",
-      "- image_purpose: product-family, material, texture, or folded-pack proof that helps buyers understand assortment immediately",
-      "- placement_band: inside the opening catalog lead or the immediately following assortment/specification proof band; the first meaningful product image must appear in the opening zone or the first opening-adjacent proof row",
-      "- preferred_ratio: 4:3, 5:4, or square",
-    ];
-  }
-  if (/solutions?|services?|custom-solutions?/.test(text)) {
-    return [
-      "- slot_owner: process-intro proof slot",
-      "- image_purpose: environment, process, delivery, or collaboration-context proof that makes the solution path legible at first glance",
-      "- placement_band: inside the opening process intro or the immediately following process/capability band; the first meaningful image must appear in the opening zone or first opening-adjacent proof row",
-      "- preferred_ratio: 16:9, 5:3, or disciplined landscape",
-    ];
-  }
-  if (/cases?|portfolio|projects?/.test(text)) {
-    return [
-      "- slot_owner: evidence-header proof slot",
-      "- image_purpose: application, scenario, or result proof that makes the case outcome concrete before deeper reading",
-      "- placement_band: inside the opening evidence header or the immediately following case evidence/outcome strip; the first meaningful case image must appear in the opening zone or first opening-adjacent proof row",
-      "- preferred_ratio: 16:9, 4:3, or square",
-    ];
-  }
-  return [
-    "- slot_owner: supporting content band",
-    "- image_purpose: route-specific contextual proof",
-    "- placement_band: supporting band, never hard-inserted into the opening by default",
-  ];
+  return mediaPlanLinesFromResource(buildRouteMediaResource(page, enterpriseHomepage, surfaceMode));
 }
 
 export function buildRouteUnitContractSummary(
@@ -425,6 +484,7 @@ export function buildRouteUnitContractSummary(
     openingFamily: routeOpeningFamily(page),
     openingTopology,
     mediaPlan: routeMediaPlan(page, enterpriseHomepage, websiteSurfaceMode),
+    mediaResources: [buildRouteMediaResource(page, enterpriseHomepage, websiteSurfaceMode)],
   };
 }
 
@@ -664,100 +724,99 @@ function buildRouteSpecLines(
   ];
 }
 
+function buildExpandedMediaResource(
+  page: PageBlueprint,
+  enterpriseHomepage: boolean,
+  surfaceMode: WebsiteSurfaceMode,
+): WebsiteMediaResource {
+  const curatedImage = selectCuratedLibraryImage(page.route, page.evidence || page.purpose || "");
+  const resource = buildRouteMediaResource(page, enterpriseHomepage, surfaceMode);
+  const desktopImageArea =
+    page.route === "/" && (enterpriseHomepage || surfaceMode === "corporate-b2b-site")
+      ? "full-width hero background layer with a protected center-right focal zone, at least 680px visual depth behind the masthead, and enough visible subject area to dominate the first screen"
+      : page.route === "/" && surfaceMode === "docs-knowledge-site"
+        ? "compact docs/reference panel or search-index surface, roughly 420-560px wide, visually secondary to wayfinding clarity"
+        : page.route === "/" && surfaceMode === "content-hub-site"
+          ? "archive thumbnail, document-cover cluster, or institutional context panel, roughly 360-520px wide, visually secondary to collection shelves and ledgers"
+      : /products?|catalog|collection/i.test(`${page.route} ${page.navLabel}`)
+        ? "520px max-width x 420px visual box within the opening or first proof/specification band"
+        : /solutions?|services?|custom-solutions?/i.test(`${page.route} ${page.navLabel}`)
+          ? "560px max-width x 340px visual box within the opening or first process/capability band"
+          : /cases?|portfolio|projects?/i.test(`${page.route} ${page.navLabel}`)
+            ? "560px max-width x 340px visual box within the opening or first evidence/outcome band"
+            : "420px max-width visual box";
+  const mobileImageArea =
+    page.route === "/" && (enterpriseHomepage || surfaceMode === "corporate-b2b-site")
+      ? "full-width hero background layer with copy-first overlay and a 420px minimum visible visual depth"
+      : page.route === "/" && surfaceMode === "docs-knowledge-site"
+        ? "full-width compact reference panel below the docs opening, capped around 260px height"
+        : page.route === "/" && surfaceMode === "content-hub-site"
+          ? "full-width archive/resource thumbnail cluster below the collection masthead, capped around 260px height"
+      : "full available shell width, max 280px height";
+  const textCompanionArea =
+    page.route === "/" && (enterpriseHomepage || surfaceMode === "corporate-b2b-site")
+      ? "overlay content zone stays left/center-left, limited to roughly 35-45% of the visual emphasis, while the image remains the main first-screen attention anchor"
+      : page.route === "/" && surfaceMode === "docs-knowledge-site"
+        ? "docs opening copy should stay compact and pair with search/index/reference controls rather than overlaying a large hero image"
+        : page.route === "/" && surfaceMode === "content-hub-site"
+          ? "collection opening copy should pair with shelves, ledgers, and topic navigation rather than overlaying a large hero image"
+      : "preserve a readable adjacent text column; do not let the image consume the entire band";
+  const visualBalance =
+    page.route === "/" && surfaceMode === "docs-knowledge-site"
+      ? "docs homepage visuals should support wayfinding; search/index/reference content carries the primary first-screen emphasis"
+      : page.route === "/" && surfaceMode === "content-hub-site"
+        ? "content-hub homepage visuals should support collection context; shelves, ledgers, and topic navigation carry the primary first-screen emphasis"
+        : "the image should carry roughly 55-65% of the first-screen visual emphasis while the overlay copy remains crisp and readable";
+  const displayMode =
+    page.route === "/" && surfaceMode === "docs-knowledge-site"
+      ? "compact docs workspace panel, reference matrix, or search/index support slot only; never a full-bleed campaign hero"
+      : page.route === "/" && surfaceMode === "content-hub-site"
+        ? "archive/context panel, document-cover cluster, or ledger thumbnail system only; never a full-bleed campaign hero or docs code panel"
+        : "image-backed hero or contained route-owned media slot only; never hard-insert as a generic full-width image outside its planned module";
+  const captionPolicy =
+    page.route === "/" && surfaceMode === "docs-knowledge-site"
+      ? "visible docs visual labels may name APIs, versions, guides, or reference areas, but must not explain layout intent"
+      : page.route === "/" && surfaceMode === "content-hub-site"
+        ? "visible hub visual labels may name standards, research scopes, resource categories, or institutional context, but must not explain layout intent"
+        : "homepage hero visual normally carries no caption; if a supporting line is used later, it must reinforce buyer trust through product/use context and never describe layout intent";
+  return {
+    ...resource,
+    sourcePriority: resource.sourcePriority || "curated stock/library first",
+    desktopImageArea,
+    mobileImageArea,
+    desktopTextCompanionArea: textCompanionArea,
+    heroVisualBalance: visualBalance,
+    objectFitRule:
+      "preserve the key product/environment subject with center-weighted cropping and a readable overlay scrim; never crop the image so tightly that the hero loses its contextual proof value",
+    displayMode,
+    sourceValidationRule:
+      "when curated stock/library imagery is available for this slot, use a real photographic asset; do not substitute inline SVG, abstract illustration, or data-URI placeholder media",
+    suggestedAsset: curatedImage
+      ? {
+          url: curatedImage.src,
+          alt: curatedImage.alt,
+          caption: curatedImage.caption,
+        }
+      : undefined,
+    captionPolicy,
+  };
+}
+
 function buildMediaResourceLines(
   page: PageBlueprint,
   enterpriseHomepage: boolean,
   surfaceMode: WebsiteSurfaceMode,
 ): string[] {
-  const curatedImage = selectCuratedLibraryImage(page.route, page.evidence || page.purpose || "");
-  const mediaPlan = routeMediaPlan(page, enterpriseHomepage, surfaceMode);
-  const ratio = mediaPlan.find((line) => line.includes("preferred_ratio"))?.replace(/^- /, "") || "preferred_ratio: contextual";
-  const placement = mediaPlan.find((line) => line.includes("placement_band"))?.replace(/^- /, "") || "placement_band: contextual";
-  const purpose = mediaPlan.find((line) => line.includes("image_purpose"))?.replace(/^- /, "") || "image_purpose: contextual proof";
-  const desktopImageArea =
-    page.route === "/" && (enterpriseHomepage || surfaceMode === "corporate-b2b-site")
-      ? "desktop_image_area: full-width hero background layer with a protected center-right focal zone, at least 680px visual depth behind the masthead, and enough visible subject area to dominate the first screen"
-      : page.route === "/" && surfaceMode === "docs-knowledge-site"
-        ? "desktop_image_area: compact docs/reference panel or search-index surface, roughly 420-560px wide, visually secondary to wayfinding clarity"
-        : page.route === "/" && surfaceMode === "content-hub-site"
-          ? "desktop_image_area: archive thumbnail, document-cover cluster, or institutional context panel, roughly 360-520px wide, visually secondary to collection shelves and ledgers"
-      : /products?|catalog|collection/i.test(`${page.route} ${page.navLabel}`)
-        ? "desktop_image_area: 520px max-width x 420px visual box within the opening or first proof/specification band"
-        : /solutions?|services?|custom-solutions?/i.test(`${page.route} ${page.navLabel}`)
-          ? "desktop_image_area: 560px max-width x 340px visual box within the opening or first process/capability band"
-          : /cases?|portfolio|projects?/i.test(`${page.route} ${page.navLabel}`)
-            ? "desktop_image_area: 560px max-width x 340px visual box within the opening or first evidence/outcome band"
-            : "desktop_image_area: 420px max-width visual box";
-  const mobileImageArea =
-    page.route === "/" && (enterpriseHomepage || surfaceMode === "corporate-b2b-site")
-      ? "mobile_image_area: full-width hero background layer with copy-first overlay and a 420px minimum visible visual depth"
-      : page.route === "/" && surfaceMode === "docs-knowledge-site"
-        ? "mobile_image_area: full-width compact reference panel below the docs opening, capped around 260px height"
-        : page.route === "/" && surfaceMode === "content-hub-site"
-          ? "mobile_image_area: full-width archive/resource thumbnail cluster below the collection masthead, capped around 260px height"
-      : "mobile_image_area: full available shell width, max 280px height";
-  const textCompanionArea =
-    page.route === "/" && (enterpriseHomepage || surfaceMode === "corporate-b2b-site")
-      ? "desktop_text_companion_area: overlay content zone stays left/center-left, limited to roughly 35-45% of the visual emphasis, while the image remains the main first-screen attention anchor"
-      : page.route === "/" && surfaceMode === "docs-knowledge-site"
-        ? "desktop_text_companion_area: docs opening copy should stay compact and pair with search/index/reference controls rather than overlaying a large hero image"
-        : page.route === "/" && surfaceMode === "content-hub-site"
-          ? "desktop_text_companion_area: collection opening copy should pair with shelves, ledgers, and topic navigation rather than overlaying a large hero image"
-      : "desktop_text_companion_area: preserve a readable adjacent text column; do not let the image consume the entire band";
-  const visualBalance =
-    page.route === "/" && surfaceMode === "docs-knowledge-site"
-      ? "- hero_visual_balance: docs homepage visuals should support wayfinding; search/index/reference content carries the primary first-screen emphasis"
-      : page.route === "/" && surfaceMode === "content-hub-site"
-        ? "- hero_visual_balance: content-hub homepage visuals should support collection context; shelves, ledgers, and topic navigation carry the primary first-screen emphasis"
-        : "- hero_visual_balance: the image should carry roughly 55-65% of the first-screen visual emphasis while the overlay copy remains crisp and readable";
-  const displayMode =
-    page.route === "/" && surfaceMode === "docs-knowledge-site"
-      ? "- display_mode: compact docs workspace panel, reference matrix, or search/index support slot only; never a full-bleed campaign hero"
-      : page.route === "/" && surfaceMode === "content-hub-site"
-        ? "- display_mode: archive/context panel, document-cover cluster, or ledger thumbnail system only; never a full-bleed campaign hero or docs code panel"
-        : "- display_mode: image-backed hero or contained route-owned media slot only; never hard-insert as a generic full-width image outside its planned module";
-  const captionPolicy =
-    page.route === "/" && surfaceMode === "docs-knowledge-site"
-      ? "- caption_policy: visible docs visual labels may name APIs, versions, guides, or reference areas, but must not explain layout intent"
-      : page.route === "/" && surfaceMode === "content-hub-site"
-        ? "- caption_policy: visible hub visual labels may name standards, research scopes, resource categories, or institutional context, but must not explain layout intent"
-        : "- caption_policy: homepage hero visual normally carries no caption; if a supporting line is used later, it must reinforce buyer trust through product/use context and never describe layout intent";
-  return [
-    `- resource_id: ${page.route === "/" ? "home-hero-01" : normalizeStyleToken(`${page.route}-media-01`)}`,
-    "- source_priority: curated stock/library first",
-    `- ${purpose}`,
-    `- ${placement}`,
-    `- ${ratio}`,
-    `- ${desktopImageArea}`,
-    `- ${mobileImageArea}`,
-    `- ${textCompanionArea}`,
-    visualBalance,
-    "- object_fit_rule: preserve the key product/environment subject with center-weighted cropping and a readable overlay scrim; never crop the image so tightly that the hero loses its contextual proof value",
-    displayMode,
-    "- source_validation_rule: when curated stock/library imagery is available for this slot, use a real photographic asset; do not substitute inline SVG, abstract illustration, or data-URI placeholder media",
-    ...(curatedImage
-      ? [
-          `- suggested_asset_url: ${curatedImage.src}`,
-          `- suggested_asset_alt: ${curatedImage.alt}`,
-          `- suggested_asset_caption: ${curatedImage.caption}`,
-        ]
-      : []),
-    captionPolicy,
-  ];
+  return mediaResourceContractLines(buildExpandedMediaResource(page, enterpriseHomepage, surfaceMode));
 }
 
-function buildMediaResourceList(
+export function buildWebsiteMediaResourceList(
   params: WebsiteDesignSpecParams,
-  enterpriseHomepage: boolean,
-  surfaceMode: WebsiteSurfaceMode,
-): string[] {
-  return params.decision.pageBlueprints.map((page) => {
-    return [
-      `### resource:${page.route}`,
-      `- route: ${page.route}`,
-      ...buildMediaResourceLines(page, enterpriseHomepage, surfaceMode),
-    ].join("\n");
-  });
+): WebsiteMediaResource[] {
+  const surfaceMode = resolveWebsiteSurfaceMode(params);
+  const enterpriseHomepage =
+    surfaceMode === "corporate-b2b-site" && isCorporateB2BEnterpriseHomepage(params);
+  return params.decision.pageBlueprints.map((page) => buildExpandedMediaResource(page, enterpriseHomepage, surfaceMode));
 }
 
 export function buildWebsiteDesignSpecRouteExcerpt(params: WebsiteDesignSpecParams, route: string): string {
@@ -790,6 +849,7 @@ export function buildWebsiteDesignSpecMarkdown(params: WebsiteDesignSpecParams):
   const styleId = String(params.designHit?.id || "runtime-selected-style").trim() || "runtime-selected-style";
   const styleName = String(params.designHit?.name || styleId).trim() || styleId;
   const styleReason = String(params.designHit?.design_desc || "runtime-selected-style").trim() || "runtime-selected-style";
+  const siteGeneratorMode = params.siteGeneratorMode || resolveWebsiteArtifactGeneratorMode();
   const routeLines = params.decision.routes.map((route, index) => {
     const page = params.decision.pageBlueprints[index];
     return `- ${route} (${page?.navLabel || route})`;
@@ -798,7 +858,7 @@ export function buildWebsiteDesignSpecMarkdown(params: WebsiteDesignSpecParams):
   const routeSections = params.decision.pageBlueprints.map((page) =>
     [`### ${page.route}`, ...buildRouteSpecLines(page, enterpriseHomepage, localeMode, websiteSurfaceMode)].join("\n"),
   );
-  const mediaResources = buildMediaResourceList(params, enterpriseHomepage, websiteSurfaceMode);
+  const mediaResources = buildWebsiteMediaResourceList(params).map(mediaResourceMarkdownSection);
 
   return [
     "# Website Design Specification",
@@ -829,6 +889,12 @@ export function buildWebsiteDesignSpecMarkdown(params: WebsiteDesignSpecParams):
     `- background_color: ${params.stylePreset.colors.background}`,
     `- typography: ${params.stylePreset.typography}`,
     ...buildSurfaceVisualIdentityLines(websiteSurfaceMode),
+    "",
+    renderWebsiteArtifactGeneratorContract({
+      mode: siteGeneratorMode,
+      surfaceMode: websiteSurfaceMode,
+      selectedSeedSkillIds: params.selectedSeedSkillIds,
+    }),
     "",
     "## 3. Shell Contract",
     `- confirmed_routes: ${params.decision.routes.join(", ")}`,

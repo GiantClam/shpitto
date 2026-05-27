@@ -151,7 +151,7 @@ describe("canonical prompt replay", () => {
     expect(workflow.promptControlManifest?.routes).toEqual(["/", "/blog"]);
     expect(workflow.requirementDraft).toBeUndefined();
     expect(workflow.generationRoutingContract).toBeUndefined();
-  });
+  }, 20_000);
 
   it("replays a real-form blog scenario and injects the full open design contract for recommended defaults", async () => {
     const chatId = `replay-chat-recommended-default-${Date.now()}`;

@@ -36,6 +36,7 @@ import {
   renderWebsiteSeedSkillSidecarGuidance,
   runSkillToolExecutor,
   sanitizeRequirementForGenerationForTesting,
+  shouldUseRouteUnitProviderBridgeForTesting,
   stripEmptyBrandMarkPlaceholdersForTesting,
   stripEmptyLocaleGroupPlaceholdersForTesting,
   validateAndNormalizeRequiredFiles,
@@ -44,6 +45,13 @@ import {
 } from "./skill-tool-executor";
 import { renderWebsiteQualityContract } from "./website-quality-contract";
 import { buildLocalDecisionPlan } from "./decision-layer";
+import { DEFAULT_STYLE_PRESET } from "../design-style-preset";
+import {
+  buildGenerationUnitInputFromRouteContract,
+  createSkillExecutionGenerationWorkerAdapter,
+} from "./generation-worker-adapter";
+import { createWebsiteGenerationSkillAdapter } from "./website-generation-skill-adapter";
+import type { RouteUnitContractSummary } from "./website-design-spec";
 
 async function* streamFrom(chunks: any[]) {
   for (const chunk of chunks) {
@@ -70,6 +78,13 @@ function injectChineseMainFixture(html: string, title = "首页") {
 }
 
 function validGeneratedFiles(routes: string[]) {
+  const navLinks = routes
+    .map((route) => {
+      const href = route === "/" ? "/" : `${route}/`;
+      const label = route === "/" ? "Home" : route.replace(/^\//, "").replace(/[-/]+/g, " ") || "Home";
+      return `    <a href="${href}">${label}</a>`;
+    })
+    .join("\n");
   const richHomeSections = [
     "CASUX organizes standards, research, practice, and certification materials into one clear entry point.",
     "The home page is the gateway for site identity, navigation, downloads, and service paths.",
@@ -161,8 +176,7 @@ main { display: grid; gap: 24px; }
           "</head>",
           "<body>",
           "  <nav>",
-          '    <a href="/">Home</a>',
-          '    <a href="/contact/">Contact</a>',
+          navLinks,
           "  </nav>",
           `  ${main}`,
           '  <script src="/script.js"></script>',
@@ -277,6 +291,34 @@ describe("skill-tool-executor", () => {
     const normalized = enforceNavigationOrder(html, decision);
     expect(normalized.indexOf('href="/contact"')).toBeLessThan(normalized.indexOf('href="/about"'));
     expect(normalized.indexOf('href="/about"')).toBeGreaterThan(normalized.indexOf('href="/cases"'));
+  });
+
+  it("uses the requested bilingual default visible language when normalizing navigation labels", () => {
+    const state: any = {
+      messages: [new HumanMessage("Build a bilingual Chinese and English CASUX site. Default visible language is Chinese. Nav: Home | CASUX Research Center | CASUX Information Platform")],
+      phase: "conversation",
+    };
+    const decision = buildLocalDecisionPlan(state);
+    const html = [
+      "<!doctype html><html><body>",
+      "<nav>",
+      '<a href="/casux-information-platform">CASUX Information Platform</a>',
+      '<a href="/casux-research-center">CASUX Research Center</a>',
+      '<a href="/">Home</a>',
+      "</nav>",
+      "</body></html>",
+    ].join("");
+
+    const normalized = enforceNavigationOrder(
+      html,
+      decision,
+      "Build a bilingual Chinese and English CASUX site. Default visible language is Chinese.",
+    );
+    expect(normalized).toContain(">首页</a>");
+    expect(normalized).toContain(">研究</a>");
+    expect(normalized).toContain(">信息</a>");
+    expect(normalized).toContain('data-i18n-zh="首页"');
+    expect(normalized).toContain('data-i18n-en="Home"');
   });
 
   it("does not let state sitemap override an authoritative prompt manifest route plan", () => {
@@ -678,6 +720,125 @@ describe("skill-tool-executor", () => {
     ).toThrow("flat link row instead of a structured footer shell");
   });
 
+  it("rejects duplicated footer route groups", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build site. Nav: Home | Products | Cases | Contact")],
+      phase: "conversation",
+    } as any);
+    const duplicateLinks =
+      '<a href="/products">Products</a><a href="/cases">Cases</a><a href="/contact">Contact</a>';
+    const files = [
+      {
+        path: "/styles.css",
+        content:
+          ".site-footer{padding:3rem 0;background:#f8fafc;border-top:1px solid #d8dee8}.footer-grid{display:grid}.footer-brand{display:grid}.footer-links{display:grid}.footer-meta{display:flex}",
+        type: "text/css",
+      },
+      { path: "/script.js", content: "(() => {})();", type: "text/javascript" },
+      ...decision.routes.map((route) => ({
+        path: route === "/" ? "/index.html" : `${route}/index.html`,
+        type: "text/html",
+        content: [
+          "<!doctype html>",
+          "<html><head>",
+          '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+          '  <link rel="stylesheet" href="/styles.css" />',
+          '  <script src="/script.js"></script>',
+          "</head><body>",
+          '  <header><nav><a href="/">Home</a><a href="/products">Products</a><a href="/cases">Cases</a><a href="/contact">Contact</a></nav></header>',
+          `  <main>
+            <section><h1>${route === "/" ? "Home" : route}</h1><p>This page has finished route copy so footer grouping is the focused validation concern.</p></section>
+            <section><h2>Context</h2><p>The page explains a concrete visitor value, enough surrounding detail, and a clear path into the related route without relying on placeholder copy.</p></section>
+            <section><h2>Proof</h2><p>Supporting context keeps the page valid while the shared footer contract rejects duplicate link taxonomy.</p></section>
+          </main>`,
+          `<footer class="site-footer"><div class="footer-grid"><div class="footer-brand"><a class="brand" href="/">Brand</a><p>Institutional summary.</p></div><div><h3>Routes</h3><div class="footer-links">${duplicateLinks}</div></div><div><h3>Resources</h3><div class="footer-links">${duplicateLinks}</div></div><div class="footer-meta"><a href="/contact">Contact</a></div></div></footer>`,
+          "</body></html>",
+        ].join("\n"),
+      })),
+    ];
+
+    expect(() =>
+      validateWebsiteRequiredFilesWithQaForAdapter({
+        decision,
+        files,
+        requirementText: "Company site with shared footer shell.",
+        enforceCorporateHomepageContract: false,
+      }),
+    ).toThrow("duplicates the same footer link set across multiple groups");
+  });
+
+  it("rejects missing consultation intake forms when the source contract requires one", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a CASUX information website with Home and CASUX Information Platform.")],
+      phase: "conversation",
+    } as any);
+    const files = validGeneratedFiles(["/", "/casux-information-platform"]);
+
+    expect(() =>
+      validateWebsiteRequiredFilesWithQaForAdapter({
+        decision: {
+          ...decision,
+          routes: ["/", "/casux-information-platform"],
+          navLabels: ["Home", "CASUX Information Platform"],
+          pageBlueprints: [],
+        },
+        files,
+        requirementText:
+          "Information platform route source notes: include consultation intake for institutions that need document clarification. Consultation form requirement: include a real form with name, organization, email, topic, and message fields.",
+        enforceCorporateHomepageContract: false,
+      }),
+    ).toThrow("missing a required consultation/intake form");
+  });
+
+  it("rejects blog detail pages that do not inherit the shared stylesheet", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a site with Home and Blog.")],
+      phase: "conversation",
+    } as any);
+    const files = validGeneratedFiles(["/", "/blog"]).map((file) =>
+      file.path === "/blog/demo/index.html"
+        ? { ...file, content: String(file.content).replace(/\s*<link rel="stylesheet" href="\/styles\.css" \/>\n/, "") }
+        : file,
+    );
+
+    expect(() =>
+      validateWebsiteRequiredFilesWithQaForAdapter({
+        decision: {
+          ...decision,
+          routes: ["/", "/blog"],
+          navLabels: ["Home", "Blog"],
+          pageBlueprints: [
+            {
+              route: "/",
+              navLabel: "Home",
+              purpose: "Home page.",
+              source: "default",
+              constraints: [],
+              pageKind: "home",
+              responsibility: "Home page.",
+              contentSkeleton: [],
+              componentMix: { hero: 20, feature: 20, grid: 20, proof: 20, form: 0, cta: 20 },
+            },
+            {
+              route: "/blog",
+              navLabel: "Blog",
+              purpose: "Publishable article archive.",
+              source: "explicit_route",
+              constraints: [],
+              pageKind: "blog-data-index",
+              responsibility: "Publishable article archive.",
+              contentSkeleton: [],
+              componentMix: { hero: 12, feature: 18, grid: 34, proof: 12, form: 0, cta: 24 },
+            },
+          ],
+        },
+        files,
+        requirementText: "Build a site with Home and Blog.",
+        enforceCorporateHomepageContract: false,
+      }),
+    ).toThrow("/blog/demo/index.html does not reference /styles.css");
+  });
+
   it("rejects card-only footers without a visible top-level footer band", () => {
     const decision = buildLocalDecisionPlan({
       messages: [new HumanMessage("Build site. Nav: Home | Products | Cases | Contact")],
@@ -1025,6 +1186,164 @@ describe("skill-tool-executor", () => {
     expect(result.notes).toHaveLength(1);
     expect(result.notes[0]).toContain("provider_round_fallback:pptoken/gpt-5.4-mini");
     expect(result.notes[0]).toContain("403 status code");
+  });
+
+  it("routes a generation unit bridge through provider fallback", async () => {
+    const state: any = {
+      messages: [new HumanMessage("Build a website with Home and Products routes.")],
+      phase: "conversation",
+    };
+    const decision = buildLocalDecisionPlan(state);
+    const routeSummary: RouteUnitContractSummary = {
+      route: "/products",
+      navLabel: "Products",
+      pageKind: "intent",
+      routeContract: ["route=/products", "navLabel=Products", "purpose=Products route"],
+      inheritedTerminology: ["corporate-b2b-site"],
+      inheritedTokens: ["#2563EB"],
+      openingFamily: "catalog",
+      openingTopology: "catalog lead band -> assortment navigator",
+      mediaPlan: ["- slot_owner: catalog-lead proof slot"],
+      mediaResources: [
+        {
+          resourceId: "products-media-01",
+          route: "/products",
+          slotOwner: "catalog-lead proof slot",
+          imagePurpose: "product proof",
+          placementBand: "inside the opening catalog lead",
+          preferredRatio: "4:3",
+        },
+      ],
+    };
+    const timeoutError = Object.assign(new Error("terminated"), {
+      name: "TypeError",
+    }) as Error & { cause?: Error & { code?: string } };
+    timeoutError.cause = Object.assign(new Error("Body Timeout Error"), {
+      name: "BodyTimeoutError",
+      code: "UND_ERR_BODY_TIMEOUT",
+    });
+    const seenProviders: string[] = [];
+    const adapter = createSkillExecutionGenerationWorkerAdapter({
+      skillAdapter: createWebsiteGenerationSkillAdapter("website-generation-workflow"),
+      decision,
+      stylePreset: DEFAULT_STYLE_PRESET,
+      styleName: "Provider Bridge Smoke",
+      styleReason: "Route-unit provider fallback bridge test.",
+      requirementText: "Build Products.",
+      totalRounds: 1,
+      invokeRound: async ({ input, prompt, objective }) => {
+        const fallbackResult = await invokeWebsiteSkillRoundWithProviderFallbackForTesting({
+          preferredProvider: "pptoken",
+          attempts: [
+            {
+              config: {
+                provider: "pptoken",
+                apiKey: "pptoken-key",
+                baseURL: "https://pptoken.example/v1",
+                defaultHeaders: {},
+                modelName: "gpt-5.4",
+              },
+            },
+            {
+              config: {
+                provider: "aiberm",
+                apiKey: "aiberm-key",
+                baseURL: "https://aiberm.example/v1",
+                defaultHeaders: {},
+                modelName: "gpt-5.4",
+              },
+            },
+          ],
+          objective,
+          invokeRound: async ({ config, messages }) => {
+            seenProviders.push(`${config.provider}/${config.modelName}`);
+            expect(String(messages[0]?.content || "")).toContain("test");
+            expect(prompt).toContain("Round objective:");
+            expect(prompt).toContain("/products/index.html");
+            if (config.provider === "pptoken") throw timeoutError;
+            return {
+              assistant: "ok",
+              tool_calls: [{ name: "finish", args: {} }],
+            };
+          },
+        });
+        return {
+          unitId: input.unitId,
+          status: "passed",
+          files: objective.targetFiles.map((targetFile) => ({
+            path: targetFile,
+            content: `provider=${fallbackResult.provider}; model=${fallbackResult.model}`,
+            type: "text/html",
+          })),
+          summary: fallbackResult.notes.join("\n"),
+        };
+      },
+    });
+    const result = await adapter.runUnit(
+      buildGenerationUnitInputFromRouteContract({
+        summary: routeSummary,
+        targetFiles: ["/products/index.html"],
+      }),
+    );
+
+    expect(seenProviders).toEqual(["pptoken/gpt-5.4-mini", "aiberm/gpt-5.4-mini"]);
+    expect(result.status).toBe("passed");
+    expect(result.files[0]?.content).toContain("provider=aiberm");
+    expect(result.summary).toContain("provider_round_fallback:pptoken/gpt-5.4-mini");
+  });
+
+  it("gates provider route-unit bridge to hybrid isolated interior HTML rounds with explicit opt-out", () => {
+    const previousBridge = process.env.SHPITTO_ROUTE_UNIT_PROVIDER_BRIDGE;
+    const previousGenerator = process.env.SHPITTO_SITE_GENERATOR;
+    try {
+      delete process.env.SHPITTO_ROUTE_UNIT_PROVIDER_BRIDGE;
+      delete process.env.SHPITTO_SITE_GENERATOR;
+      expect(
+        shouldUseRouteUnitProviderBridgeForTesting({
+          targetFiles: ["/products/index.html"],
+          instruction: "Products",
+          strictSingleTarget: true,
+        }),
+      ).toBe(true);
+
+      process.env.SHPITTO_ROUTE_UNIT_PROVIDER_BRIDGE = "0";
+      expect(
+        shouldUseRouteUnitProviderBridgeForTesting({
+          targetFiles: ["/products/index.html"],
+          instruction: "Products",
+          strictSingleTarget: true,
+        }),
+      ).toBe(false);
+
+      process.env.SHPITTO_ROUTE_UNIT_PROVIDER_BRIDGE = "1";
+      process.env.SHPITTO_SITE_GENERATOR = "native";
+      expect(
+        shouldUseRouteUnitProviderBridgeForTesting({
+          targetFiles: ["/products/index.html"],
+          instruction: "Products",
+          strictSingleTarget: true,
+        }),
+      ).toBe(true);
+      expect(
+        shouldUseRouteUnitProviderBridgeForTesting({
+          targetFiles: ["/index.html"],
+          instruction: "Home",
+          strictSingleTarget: true,
+        }),
+      ).toBe(false);
+      expect(
+        shouldUseRouteUnitProviderBridgeForTesting({
+          targetFiles: ["/products/index.html", "/styles.css"],
+          instruction: "Mixed",
+          strictSingleTarget: false,
+        }),
+      ).toBe(false);
+    } finally {
+      if (previousBridge === undefined) delete process.env.SHPITTO_ROUTE_UNIT_PROVIDER_BRIDGE;
+      else process.env.SHPITTO_ROUTE_UNIT_PROVIDER_BRIDGE = previousBridge;
+      if (previousGenerator === undefined) delete process.env.SHPITTO_SITE_GENERATOR;
+      else process.env.SHPITTO_SITE_GENERATOR = previousGenerator;
+    }
   });
 
   it("does not retry malformed provider URL errors before surfacing the failure", async () => {
@@ -1650,7 +1969,7 @@ describe("skill-tool-executor", () => {
     } as any);
 
     const detailContract = formatTargetPageContract(plan, "/blog/agile-devops-system-design/index.html", requirement);
-    expect(detailContract).toContain("initial visible article language should stay English");
+    expect(detailContract).toContain("initial visible article language should stay `zh-CN`");
     expect(detailContract).toContain("alternating zh/en paragraphs in the initial HTML");
   });
 
@@ -2120,15 +2439,32 @@ describe("skill-tool-executor", () => {
   });
 
   it("fails fast without a configured provider key instead of generating local files", async () => {
-    await expect(runSkillToolExecutor({
-      state: {
-        messages: [new HumanMessage("Generate website routes / and /contact with industrial style.")],
-        phase: "conversation",
-        current_page_index: 0,
-        attempt_count: 0,
-      } as any,
-      timeoutMs: 60_000,
-    })).rejects.toThrow("skill_tool_provider_api_key_missing");
+    const keys = [
+      "PPTOKEN_API_KEY",
+      "AIBERM_API_KEY",
+      "CRAZYROUTE_API_KEY",
+      "CRAZYROUTER_API_KEY",
+      "CRAZYREOUTE_API_KEY",
+    ] as const;
+    const previous = new Map<string, string | undefined>(keys.map((key) => [key, process.env[key]]));
+    try {
+      for (const key of keys) delete process.env[key];
+      await expect(runSkillToolExecutor({
+        state: {
+          messages: [new HumanMessage("Generate website routes / and /contact with industrial style.")],
+          phase: "conversation",
+          current_page_index: 0,
+          attempt_count: 0,
+        } as any,
+        timeoutMs: 60_000,
+      })).rejects.toThrow("skill_tool_provider_api_key_missing");
+    } finally {
+      for (const key of keys) {
+        const value = previous.get(key);
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
+    }
   });
 
   it("does not repair missing pages during final validation", () => {
@@ -2193,6 +2529,61 @@ describe("skill-tool-executor", () => {
         requirementText: "Build routes / and /contact.",
       }),
     ).toThrow(/skill_tool_manifest_gate_failed: generated unrequested page files/i);
+  });
+
+  it("fails the manifest gate for unrequested nested blog detail pages when no blog route was declared", () => {
+    const decision = {
+      ...buildLocalDecisionPlan({
+        messages: [new HumanMessage("Build a resource hub with Home, Research, Standards, Resources, and About.")],
+        phase: "conversation",
+        workflow_context: {
+          promptControlManifest: {
+            schemaVersion: 1,
+            promptKind: "canonical_website_prompt",
+            routeSource: "prompt_draft_page_plan",
+            routes: ["/", "/research", "/standards", "/resources", "/about"],
+            navLabels: ["Home", "Research", "Standards", "Resources", "About"],
+            files: [
+              "/styles.css",
+              "/script.js",
+              "/index.html",
+              "/research/index.html",
+              "/standards/index.html",
+              "/resources/index.html",
+              "/about/index.html",
+            ],
+          },
+        },
+      } as any),
+      routeAuthorityMode: "prompt_manifest" as const,
+    };
+    const files = [
+      ...validGeneratedFiles(decision.routes).map((file) =>
+        file.path === "/resources/index.html"
+          ? {
+              ...file,
+              content: String(file.content).replace(
+                "</main>",
+                '<p><a href="/blog/implementation-brief-template/">Implementation brief template</a></p></main>',
+              ),
+            }
+          : file,
+      ),
+      {
+        path: "/blog/implementation-brief-template/index.html",
+        type: "text/html",
+        content:
+          '<!doctype html><html><head><link rel="stylesheet" href="/styles.css" /></head><body><main><h1>Implementation brief template</h1></main><script src="/script.js"></script></body></html>',
+      },
+    ];
+
+    expect(() =>
+      validateAndNormalizeRequiredFiles({
+        decision,
+        files,
+        requirementText: "Build a resource hub. Do not generate blog or archive routes.",
+      }),
+    ).toThrow(/links to unrequested route\(s\) outside the Prompt Control Manifest/i);
   });
 
   it("reports repeated route openings as observation-only QA findings", () => {
@@ -2575,6 +2966,55 @@ describe("skill-tool-executor", () => {
         requirementText: "Build a site. CASUX information platform is a standards, research, and download hub.",
       }),
     ).not.toThrow();
+  });
+
+  it("rejects Blog runtime hooks when the closed manifest explicitly forbids blog/archive behavior", () => {
+    const requirementText =
+      "Build a multi-page resource and research hub for Civic Standards Lab. Generate Home, Research, Standards, Resources, and About with no blog or archive behavior.";
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage(requirementText)],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/research", "/standards", "/resources", "/about"],
+          navLabels: ["Home", "Research", "Standards", "Resources", "About"],
+          files: ["/styles.css", "/script.js", "/index.html", "/research/index.html", "/standards/index.html", "/resources/index.html", "/about/index.html"],
+        },
+      },
+    } as any);
+
+    const files = validGeneratedFiles(decision.routes).map((file) =>
+      file.path === "/resources/index.html"
+        ? {
+            ...file,
+            content: String(file.content).replace(
+              /<main>[\s\S]*<\/main>/,
+              [
+                "<main>",
+                "<h1>Resources</h1>",
+                '<section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts">',
+                "<h2>Resource index</h2>",
+                '<div data-shpitto-blog-list><article class="resource-card"><h3>Research memo template</h3><p>Static preview item.</p></article></div>',
+                "</section>",
+                "</main>",
+              ].join(""),
+            ),
+          }
+        : file.path === "/styles.css"
+          ? { ...file, content: `${String(file.content || "")}\n.resource-card { padding: 24px; }` }
+          : file,
+    );
+
+    expect(() =>
+      validateAndNormalizeRequiredFiles({
+        decision,
+        files,
+        requirementText,
+      }),
+    ).toThrow("applies the Blog/content collection data-source contract despite explicit no blog/archive behavior");
   });
 
   it("accepts route-owned collection openings that use neutral lead-copy helpers instead of legacy split-hero utilities", () => {
@@ -3669,6 +4109,83 @@ describe("skill-tool-executor", () => {
     ).not.toThrow();
   });
 
+  it("removes the bilingual toggle when locale resource files still mirror the same language", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("做一个中英双语机构网站，默认中文，并且需要语言切换。")],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/"],
+          navLabels: ["首页"],
+          files: ["/styles.css", "/script.js", "/index.html", "/i18n/messages.en.json", "/i18n/messages.zh-CN.json"],
+        },
+      },
+    } as any);
+
+    const files = [
+      {
+        path: "/styles.css",
+        type: "text/css",
+        content: "body{font-family:system-ui,sans-serif;} .locale-switch{display:flex;gap:.5rem;}",
+      },
+      {
+        path: "/script.js",
+        type: "text/javascript",
+        content: "document.documentElement.dataset.ready='true';",
+      },
+      {
+        path: "/index.html",
+        type: "text/html",
+        content: [
+          "<!doctype html>",
+          '<html lang="zh-CN" data-lang="zh-CN">',
+          "<head>",
+          '  <meta charset="utf-8" />',
+          '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+          '  <link rel="stylesheet" href="/styles.css" />',
+          "</head>",
+          "<body>",
+          '  <header><nav><a href="/" data-i18n="nav.home">首页</a><div class="locale-switch"><button type="button" data-locale-toggle data-locale="zh-CN">ZH</button><button type="button" data-locale-toggle data-locale="en">EN</button></div></nav></header>',
+          "  <main>",
+          '    <section class="hero"><h1 data-i18n="home.hero.title">儿童友好空间标准体系</h1><p data-i18n="home.hero.lead">面向机构合作的标准、研究与实施平台。</p></section>',
+          "  </main>",
+          '  <script src="/script.js"></script>',
+          "</body>",
+          "</html>",
+        ].join("\n"),
+      },
+      {
+        path: "/i18n/messages.en.json",
+        type: "application/json",
+        content: JSON.stringify({
+          "nav.home": "Home",
+          "home.hero.title": "Child-friendly space standards system",
+          "home.hero.lead": "A standards, research, and implementation platform for institutional partners.",
+        }),
+      },
+      {
+        path: "/i18n/messages.zh-CN.json",
+        type: "application/json",
+        content: JSON.stringify({
+          "nav.home": "Home",
+          "home.hero.title": "Child-friendly space standards system",
+          "home.hero.lead": "A standards, research, and implementation platform for institutional partners.",
+        }),
+      },
+    ];
+
+    const validated = validateAndNormalizeRequiredFiles({
+      decision,
+      files,
+      requirementText: "做一个中英双语机构网站，默认中文，并且需要语言切换。",
+    });
+    const byPath = new Map(validated.map((file) => [String(file.path || ""), String(file.content || "")] as const));
+    expect(byPath.get("/index.html")).not.toContain("data-locale-toggle");
+  });
+
   it("accepts structure-correct Blog detail shells during the first generation pass", () => {
     const decision = buildLocalDecisionPlan({
       messages: [new HumanMessage("我要一个个人blog，主要是ai blog，帮我生成3篇文章")],
@@ -4272,7 +4789,7 @@ describe("skill-tool-executor", () => {
     ).toEqual(
       expect.arrayContaining([
         expect.stringContaining("remove workflow/process/meta vocabulary"),
-        expect.stringContaining("assumption, assumptions, content gap"),
+        expect.stringContaining("assumption notes, content gap"),
         expect.stringContaining("documentation scope, reference coverage"),
       ]),
     );
@@ -4341,6 +4858,8 @@ describe("skill-tool-executor", () => {
       expect.arrayContaining([
         expect.stringContaining("content collection openings must replace legacy `hero-title`, `hero-lead`, `hero__actions`, and `hero__content`"),
         expect.stringContaining("`collection-title`, `collection-lead`, `collection-actions`"),
+        expect.stringContaining("resource-index-header"),
+        expect.stringContaining("delete the split opening scaffold entirely"),
       ]),
     );
   });
@@ -5123,7 +5642,7 @@ describe("skill-tool-executor", () => {
     expect(prompt).toContain("Follow Open Design copy discipline:");
     expect(prompt).toContain("site-footer__inner");
     expect(prompt).toContain("top-level `footer`, `.site-footer`, or `.footer` selector");
-    expect(prompt).toContain("Never render words such as assumption");
+    expect(prompt).toContain("Never render phrases such as assumption notes");
     expect(prompt).toContain("footer-brand");
     expect(prompt).toContain("footer-nav");
     expect(prompt).toContain("footer-meta");

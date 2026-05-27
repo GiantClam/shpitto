@@ -7,6 +7,12 @@ import {
   type WebsiteSkillMetadata,
 } from "./od-skill-metadata.ts";
 import { shouldSelectImportedWebsiteSkill, type WebsiteSurfaceMode } from "./open-design-adoption.ts";
+import {
+  classifyWebsiteSeedOrigin,
+  resolveWebsiteArtifactGeneratorMode,
+  scoreWebsiteSeedOriginForGenerator,
+  type WebsiteArtifactGeneratorMode,
+} from "./website-artifact-generator.ts";
 import { selectWebsiteGenerationTypeSkill } from "./website-type-selector.ts";
 
 export type ProjectSkillDescriptor = {
@@ -385,6 +391,7 @@ function scoreWebsiteSeedSkill(
   entry: ProjectSkillIndexEntry,
   intentText: string,
   surfaceMode?: WebsiteSurfaceMode,
+  generatorMode: WebsiteArtifactGeneratorMode = resolveWebsiteArtifactGeneratorMode(),
 ): WebsiteSeedSkillSelection {
   const name = toSkillId(entry.name).replace(/[-_.]+/g, " ");
   const scenario = String(entry.websiteMetadata?.scenario || "").toLowerCase();
@@ -396,18 +403,36 @@ function scoreWebsiteSeedSkill(
   let score = 0;
   const reasons: string[] = [];
 
-  if (name && intentText.includes(name)) {
+  const hasNameMatch = Boolean(name && intentText.includes(name));
+  const scenarioMatchesIntent = Boolean(scenario && intentText.includes(scenario));
+  const scenarioMatchAllowed =
+    entry.id !== "open-design-dashboard" ||
+    triggerHits.length > 0 ||
+    /\b(?:dashboard|admin|analytics|control panel|ops panel|operations dashboard)\b/i.test(intentText);
+  const hasScenarioMatch = scenarioMatchesIntent && scenarioMatchAllowed;
+  const hasPricingIntent = /(?:^|\s|\/)(?:pricing|price|plans?|tiers?|subscriptions?)(?:\s|\/|$)/i.test(intentText);
+  const surfaceMatchAllowed = entry.id !== "open-design-pricing-page" || hasPricingIntent;
+  const hasSurfaceMatch = Boolean(surfaceMatchAllowed && surfaceMode && compatibleSurfaceModes.includes(surfaceMode));
+
+  if (hasNameMatch) {
     score += 8;
     reasons.push(`name:${entry.name}`);
   }
-  if (scenario && intentText.includes(scenario)) {
+  if (hasScenarioMatch) {
     score += 5;
     reasons.push(`scenario:${scenario}`);
   }
-  if (surfaceMode && compatibleSurfaceModes.includes(surfaceMode)) {
+  if (hasSurfaceMatch) {
     const surfaceBonus = entry.websiteMetadata?.activation?.rolloutStatus === "staged" ? 24 : 6;
     score += surfaceBonus;
     reasons.push(`surface:${surfaceMode}`);
+  }
+  const origin = classifyWebsiteSeedOrigin(entry);
+  const generatorBonus = scoreWebsiteSeedOriginForGenerator({ mode: generatorMode, origin });
+  const hasDirectGeneratorMatch = hasSurfaceMatch || hasNameMatch || hasScenarioMatch || triggerHits.length > 0;
+  if (generatorBonus > 0 && hasDirectGeneratorMatch) {
+    score += generatorBonus;
+    reasons.push(`generator:${generatorMode}:${origin}`);
   }
   for (const trigger of triggerHits) {
     score += Math.min(16, 8 + Math.floor(trigger.length / 4));
@@ -428,6 +453,7 @@ export async function selectWebsiteSeedSkillsForIntent(params: {
   routes?: string[];
   maxSkills?: number;
   start?: string;
+  generatorMode?: WebsiteArtifactGeneratorMode;
 }): Promise<WebsiteSeedSkillSelection[]> {
   const index = (await readProjectSkillIndex(params.start)).filter((entry) => {
     if (entry.websiteMetadata?.mode !== "website") return false;
@@ -444,8 +470,9 @@ export async function selectWebsiteSeedSkillsForIntent(params: {
     requirementText: params.requirementText,
     routes: params.routes,
   }).surfaceMode;
+  const generatorMode = params.generatorMode || resolveWebsiteArtifactGeneratorMode();
   const scored = index
-    .map((entry) => scoreWebsiteSeedSkill(entry, intentText, surfaceMode))
+    .map((entry) => scoreWebsiteSeedSkill(entry, intentText, surfaceMode, generatorMode))
     .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
 

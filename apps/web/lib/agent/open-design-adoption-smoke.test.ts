@@ -12,13 +12,18 @@ import {
 import {
   buildRouteUnitContractSummary,
   buildWebsiteDesignSpecMarkdown,
+  type RouteUnitContractSummary,
 } from "../skill-runtime/website-design-spec";
+import {
+  buildGenerationUnitInputFromRouteContract,
+  createRouteUnitSmokeAdapter,
+  runGenerationUnitsWithAdapter,
+} from "../skill-runtime/generation-worker-adapter";
 
 process.env.CHAT_DRAFT_WEB_SEARCH_ENABLED ||= "0";
 process.env.CHAT_DRAFT_LLM_ENABLED ||= "0";
 process.env.SHPITTO_OD_SURFACE_MODE ||= "1";
 process.env.SHPITTO_OD_DISCOVERY_BRIEF ||= "1";
-process.env.SHPITTO_OD_IMPORTED_SKILLS ||= "1";
 process.env.SHPITTO_OD_ROUTE_UNITS ||= "1";
 process.env.SKILL_TOOL_MAX_SEED_SKILLS ||= "4";
 
@@ -106,6 +111,7 @@ describe("Open Design adoption smoke", () => {
         stylePreset: DEFAULT_STYLE_PRESET,
         websiteSurfaceMode: draft.websiteSurfaceMode,
         discoveryBrief: draft.discoveryBrief,
+        selectedSeedSkillIds: selectedSeedSkills.map((item) => item.id),
         designHit: {
           id: "open-design-adoption-smoke",
           name: "Open Design Adoption Smoke",
@@ -125,7 +131,16 @@ describe("Open Design adoption smoke", () => {
             route,
           ),
         )
-        .filter(Boolean);
+        .filter((unit): unit is RouteUnitContractSummary => Boolean(unit));
+      const routeUnitDispatch = await runGenerationUnitsWithAdapter(
+        createRouteUnitSmokeAdapter(),
+        routeUnits.map((summary) =>
+          buildGenerationUnitInputFromRouteContract({
+            summary,
+            context: { websiteSurfaceMode: draft.websiteSurfaceMode },
+          }),
+        ),
+      );
       const roundPrompt = buildWebsiteSkillToolRoundPromptForAdapter({
         round: 0,
         totalRounds: Math.max(4, routes.length + 2),
@@ -152,6 +167,7 @@ describe("Open Design adoption smoke", () => {
         fs.writeFile(path.join(scenarioDir, "sidecar-guidance.md"), sidecarGuidance || "(none)\n", "utf8"),
         fs.writeFile(path.join(scenarioDir, "round-01-prompt.md"), roundPrompt, "utf8"),
         fs.writeFile(path.join(scenarioDir, "route-units.json"), JSON.stringify(routeUnits, null, 2), "utf8"),
+        fs.writeFile(path.join(scenarioDir, "route-unit-dispatch.json"), JSON.stringify(routeUnitDispatch, null, 2), "utf8"),
       ]);
 
       const requiredHtmlFiles = routes.map(routeToHtmlPath);
@@ -165,12 +181,27 @@ describe("Open Design adoption smoke", () => {
           draft.discoveryBrief.routes.length > 0,
         designSpec:
           designSpec.includes(`website_surface_mode: ${scenario.expectedSurfaceMode}`) &&
+          designSpec.includes("site_generator_mode: hybrid") &&
+          designSpec.includes("Open Design owns visual direction and module rhythm") &&
+          designSpec.includes("HTML Anything owns concrete HTML/CSS template discipline") &&
+          designSpec.includes("shpitto_ui_theme_boundary: Shpitto Studio and platform UI keep the app theme") &&
+          designSpec.includes(`selected_frontend_seed_skills: ${selectedIds.join(", ")}`) &&
           designSpec.includes("## 6. Route Specifications"),
         routeUnits: routeUnits.length === routes.length && routeUnits.every((unit: any) => unit.routeContract?.length > 0),
+        routeUnitDispatch:
+          routeUnitDispatch.passed &&
+          routeUnitDispatch.results.length === routes.length &&
+          routeUnitDispatch.results.every((result, index) => result.unitId === `route-${routes[index] === "/" ? "home" : routes[index].replace(/^\/+/, "").replace(/[^a-z0-9]+/gi, "-")}`),
         noForbiddenRoutes: (scenario.forbiddenRoutes || []).every((route) => !routes.includes(route)),
         sidecarGuidance: scenario.expectedSeedId
           ? selectedIds.includes(scenario.expectedSeedId) && sidecarGuidance.includes("example-backed HTML contract")
           : sidecarGuidance.length > 0,
+        hybridSeedCoverage:
+          scenario.expectedSeedId === "docs-knowledge-foundation"
+            ? selectedIds.includes("docs-reference-template")
+            : scenario.expectedSeedId === "content-hub-foundation"
+              ? selectedIds.includes("content-resource-template")
+              : true,
       };
 
       report.push({
@@ -180,6 +211,12 @@ describe("Open Design adoption smoke", () => {
         routes,
         files,
         selectedSeedSkills: selectedIds,
+        routeUnitDispatch: {
+          adapterId: routeUnitDispatch.adapterId,
+          passed: routeUnitDispatch.passed,
+          unitCount: routeUnitDispatch.results.length,
+          issues: routeUnitDispatch.issues,
+        },
         outputDir: scenarioDir,
         checks,
       });
@@ -190,8 +227,10 @@ describe("Open Design adoption smoke", () => {
         discoveryBrief: true,
         designSpec: true,
         routeUnits: true,
+        routeUnitDispatch: true,
         noForbiddenRoutes: true,
         sidecarGuidance: true,
+        hybridSeedCoverage: true,
       });
     }
 

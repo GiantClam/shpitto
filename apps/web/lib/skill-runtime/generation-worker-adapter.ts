@@ -1,3 +1,12 @@
+import type { RouteUnitContractSummary } from "./website-design-spec";
+import type { DesignStylePreset } from "../design-style-preset";
+import type { LocalDecisionPlan } from "./decision-layer";
+import type {
+  RuntimeWorkflowFile,
+  SkillExecutionAdapter,
+  SkillExecutionRoundObjective,
+} from "./skill-execution-adapter";
+
 export type GenerationUnitInput = {
   unitId: string;
   route?: string;
@@ -20,6 +29,21 @@ export type GenerationWorkerAdapter = {
   runUnit(input: GenerationUnitInput): Promise<GenerationUnitResult>;
 };
 
+export type SkillExecutionGenerationRound = {
+  input: GenerationUnitInput;
+  prompt: string;
+  objective: SkillExecutionRoundObjective;
+  emittedFiles: RuntimeWorkflowFile[];
+};
+
+export type GenerationUnitDispatchReport = {
+  adapterId: string;
+  capabilities: string[];
+  passed: boolean;
+  results: GenerationUnitResult[];
+  issues: string[];
+};
+
 export function createStaticGenerationWorkerAdapter(params: {
   id: GenerationWorkerAdapter["id"];
   capabilities: string[];
@@ -30,4 +54,164 @@ export function createStaticGenerationWorkerAdapter(params: {
     capabilities: Array.from(new Set(params.capabilities.map((item) => String(item || "").trim()).filter(Boolean))),
     runUnit: params.runUnit,
   };
+}
+
+function normalizeRoute(route: string): string {
+  const trimmed = String(route || "/").trim();
+  if (!trimmed || trimmed === "/") return "/";
+  return `/${trimmed.replace(/^\/+|\/+$/g, "")}`;
+}
+
+function routeToHtmlPath(route: string): string {
+  const normalized = normalizeRoute(route);
+  if (normalized === "/") return "/index.html";
+  return `${normalized}/index.html`;
+}
+
+function routeToUnitId(route: string): string {
+  const normalized = normalizeRoute(route);
+  return normalized === "/" ? "route-home" : `route-${normalized.replace(/^\/+/, "").replace(/[^a-z0-9]+/gi, "-")}`;
+}
+
+export function buildGenerationUnitInputFromRouteContract(params: {
+  summary: RouteUnitContractSummary;
+  prompt?: string;
+  targetFiles?: string[];
+  context?: Record<string, unknown>;
+}): GenerationUnitInput {
+  const route = normalizeRoute(params.summary.route);
+  const targetFiles = params.targetFiles?.length ? params.targetFiles : [routeToHtmlPath(route), "/styles.css", "/script.js"];
+  return {
+    unitId: routeToUnitId(route),
+    route,
+    targetFiles,
+    prompt:
+      params.prompt ||
+      [
+        `Generate the ${route} route unit.`,
+        "Follow the supplied route contract, opening topology, inherited tokens, and media resources.",
+        "Return only files listed in targetFiles unless the orchestrator explicitly widens the unit scope.",
+      ].join("\n"),
+    context: {
+      routeContract: params.summary.routeContract,
+      navLabel: params.summary.navLabel,
+      pageKind: params.summary.pageKind,
+      inheritedTerminology: params.summary.inheritedTerminology,
+      inheritedTokens: params.summary.inheritedTokens,
+      openingFamily: params.summary.openingFamily,
+      openingTopology: params.summary.openingTopology,
+      mediaPlan: params.summary.mediaPlan,
+      mediaResources: params.summary.mediaResources,
+      ...(params.context || {}),
+    },
+  };
+}
+
+function smokeFileContent(path: string, input: GenerationUnitInput): string {
+  const normalizedPath = String(path || "").trim();
+  if (normalizedPath.endsWith(".html")) {
+    return [
+      "<!doctype html>",
+      '<html lang="en">',
+      "<head>",
+      '  <meta charset="utf-8">',
+      `  <title>${input.route || input.unitId}</title>`,
+      '  <link rel="stylesheet" href="/styles.css">',
+      "</head>",
+      "<body>",
+      "  <main>",
+      `    <h1>${input.route || input.unitId}</h1>`,
+      `    <p>Static route-unit smoke output for ${input.unitId}.</p>`,
+      "  </main>",
+      '  <script src="/script.js"></script>',
+      "</body>",
+      "</html>",
+    ].join("\n");
+  }
+  if (normalizedPath.endsWith(".css")) return ":root { color-scheme: light; }\nbody { margin: 0; font-family: system-ui; }\n";
+  if (normalizedPath.endsWith(".js")) return "document.documentElement.dataset.routeUnitSmoke = 'ready';\n";
+  return `route-unit-smoke:${input.unitId}\n`;
+}
+
+export function createRouteUnitSmokeAdapter(): GenerationWorkerAdapter {
+  return createStaticGenerationWorkerAdapter({
+    id: "shpitto-route-unit-smoke",
+    capabilities: ["route-unit", "static-smoke", "html"],
+    runUnit: async (input) => ({
+      unitId: input.unitId,
+      status: "passed",
+      files: input.targetFiles.map((targetFile) => ({
+        path: targetFile,
+        content: smokeFileContent(targetFile, input),
+        type: targetFile.endsWith(".html")
+          ? "text/html"
+          : targetFile.endsWith(".css")
+            ? "text/css"
+            : targetFile.endsWith(".js")
+              ? "application/javascript"
+              : "text/plain",
+      })),
+      summary: `static smoke dispatched ${input.unitId} to ${input.targetFiles.join(", ")}`,
+    }),
+  });
+}
+
+export async function runGenerationUnitsWithAdapter(
+  adapter: GenerationWorkerAdapter,
+  inputs: GenerationUnitInput[],
+): Promise<GenerationUnitDispatchReport> {
+  const results = await Promise.all(inputs.map((input) => adapter.runUnit(input)));
+  const issues = results.flatMap((result) =>
+    result.status === "passed"
+      ? []
+      : [`${result.unitId}: ${result.issues?.join("; ") || result.summary || "unit failed"}`],
+  );
+  return {
+    adapterId: adapter.id,
+    capabilities: adapter.capabilities,
+    passed: issues.length === 0 && results.every((result) => result.status === "passed"),
+    results,
+    issues,
+  };
+}
+
+export function createSkillExecutionGenerationWorkerAdapter(params: {
+  id?: GenerationWorkerAdapter["id"];
+  skillAdapter: SkillExecutionAdapter;
+  decision: LocalDecisionPlan;
+  stylePreset: DesignStylePreset;
+  styleName: string;
+  styleReason: string;
+  requirementText: string;
+  totalRounds: number;
+  loadedSkillIds?: string[];
+  emittedFiles?: RuntimeWorkflowFile[];
+  invokeRound: (round: SkillExecutionGenerationRound) => Promise<GenerationUnitResult>;
+}): GenerationWorkerAdapter {
+  return createStaticGenerationWorkerAdapter({
+    id: params.id || `skill-execution:${params.skillAdapter.skillId}`,
+    capabilities: ["route-unit", "skill-execution-adapter", params.skillAdapter.skillId],
+    runUnit: async (input) => {
+      const objective: SkillExecutionRoundObjective = {
+        targetFiles: input.targetFiles,
+        instruction: `Generate route unit ${input.route || input.unitId} using the adapter-provided route contract.`,
+        strictSingleTarget: input.targetFiles.length === 1,
+      };
+      const emittedFiles = params.emittedFiles || [];
+      const prompt = params.skillAdapter.buildToolRoundPrompt({
+        round: 0,
+        totalRounds: params.totalRounds,
+        decision: params.decision,
+        stylePreset: params.stylePreset,
+        styleName: params.styleName,
+        styleReason: params.styleReason,
+        loadedSkillIds: params.loadedSkillIds || [],
+        emittedFiles,
+        requiredMissing: input.targetFiles,
+        objective,
+        requirementText: params.requirementText,
+      });
+      return params.invokeRound({ input, prompt, objective, emittedFiles });
+    },
+  });
 }

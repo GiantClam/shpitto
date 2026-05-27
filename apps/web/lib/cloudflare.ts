@@ -167,6 +167,62 @@ export type CloudflarePagesDomain = {
   txtValue: string | null;
 };
 
+type CloudflarePagesDeploymentStageRecord = {
+  name?: string;
+  status?: string;
+  started_on?: string | null;
+  ended_on?: string | null;
+};
+
+type CloudflarePagesDeploymentRecord = {
+  id?: string;
+  short_id?: string;
+  project_id?: string;
+  project_name?: string;
+  environment?: string;
+  url?: string;
+  created_on?: string | null;
+  modified_on?: string | null;
+  latest_stage?: CloudflarePagesDeploymentStageRecord | null;
+  stages?: CloudflarePagesDeploymentStageRecord[] | null;
+};
+
+type CloudflarePagesProjectRecord = {
+  id?: string;
+  name?: string;
+  subdomain?: string;
+  domains?: string[] | null;
+  latest_deployment?: CloudflarePagesDeploymentRecord | null;
+};
+
+export type CloudflarePagesDeploymentStage = {
+  name: string;
+  status: string;
+  startedOn: string | null;
+  endedOn: string | null;
+};
+
+export type CloudflarePagesDeployment = {
+  id: string;
+  shortId: string;
+  projectId: string;
+  projectName: string;
+  environment: string;
+  url: string;
+  createdOn: string | null;
+  modifiedOn: string | null;
+  latestStage: CloudflarePagesDeploymentStage | null;
+  stages: CloudflarePagesDeploymentStage[];
+};
+
+export type CloudflarePagesProject = {
+  id: string;
+  name: string;
+  subdomain: string;
+  domains: string[];
+  latestDeployment: CloudflarePagesDeployment | null;
+};
+
 function toIso(value: unknown): string | null {
   const raw = String(value || "").trim();
   if (!raw) return null;
@@ -264,6 +320,36 @@ function classifyTrafficChannel(host: string): "direct" | "search" | "social" | 
 export function buildCloudflareBeaconSnippet(siteTag: string): string {
   const safeTag = JSON.stringify(String(siteTag || "").trim() || "missing-site-tag");
   return `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":${safeTag}}'></script>`;
+}
+
+function mapCloudflarePagesDeploymentStage(record: CloudflarePagesDeploymentStageRecord | null | undefined): CloudflarePagesDeploymentStage | null {
+  if (!record) return null;
+  return {
+    name: String(record.name || "").trim(),
+    status: String(record.status || "").trim(),
+    startedOn: toIso(record.started_on),
+    endedOn: toIso(record.ended_on),
+  };
+}
+
+function mapCloudflarePagesDeployment(record: CloudflarePagesDeploymentRecord | null | undefined): CloudflarePagesDeployment | null {
+  if (!record) return null;
+  return {
+    id: String(record.id || "").trim(),
+    shortId: String(record.short_id || "").trim(),
+    projectId: String(record.project_id || "").trim(),
+    projectName: String(record.project_name || "").trim(),
+    environment: String(record.environment || "").trim(),
+    url: String(record.url || "").trim(),
+    createdOn: toIso(record.created_on),
+    modifiedOn: toIso(record.modified_on),
+    latestStage: mapCloudflarePagesDeploymentStage(record.latest_stage),
+    stages: Array.isArray(record.stages)
+      ? record.stages
+          .map((stage) => mapCloudflarePagesDeploymentStage(stage))
+          .filter((stage): stage is CloudflarePagesDeploymentStage => Boolean(stage))
+      : [],
+  };
 }
 
 function gqlLiteral(value: string): string {
@@ -1364,6 +1450,39 @@ export class CloudflareClient {
       console.error("[Cloudflare] Create Project Error:", e);
       throw e;
     }
+  }
+
+  async getPagesProject(projectName: string): Promise<CloudflarePagesProject | null> {
+    this.assertRealConfigured("getPagesProject");
+    const normalizedProject = String(projectName || "").trim();
+    if (!normalizedProject) throw new Error("getPagesProject requires projectName.");
+    if (this.shouldUseMock()) {
+      return {
+        id: normalizedProject,
+        name: normalizedProject,
+        subdomain: `${normalizedProject}.pages.dev`,
+        domains: [`${normalizedProject}.pages.dev`],
+        latestDeployment: null,
+      };
+    }
+
+    const data = await this.readCloudflareJson<CloudflarePagesProjectRecord | null>(
+      `${this.baseUrl}/accounts/${this.accountId}/pages/projects/${encodeURIComponent(normalizedProject)}`,
+      () => ({
+        method: "GET",
+        headers: this.headers,
+      }),
+      `pages:get-project:${normalizedProject}`,
+    );
+    const record = data?.result;
+    if (!record) return null;
+    return {
+      id: String(record.id || "").trim(),
+      name: String(record.name || "").trim() || normalizedProject,
+      subdomain: String(record.subdomain || "").trim(),
+      domains: Array.isArray(record.domains) ? record.domains.map((item) => String(item || "").trim()).filter(Boolean) : [],
+      latestDeployment: mapCloudflarePagesDeployment(record.latest_deployment),
+    };
   }
 
   async uploadDeployment(projectName: string, bundle: { manifest: Record<string, string>, fileEntries: any[] }) {

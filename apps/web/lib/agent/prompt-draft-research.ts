@@ -24,6 +24,13 @@ import {
   buildLocalDecisionPlan,
   type LocalDecisionPlan,
 } from "../skill-runtime/decision-layer.ts";
+import {
+  buildLocalePlan,
+  getLocaleMessagePath,
+  I18N_LOCALE_REGISTRY_PATH,
+  I18N_MESSAGE_EN_PATH,
+  I18N_MESSAGE_ZH_CN_PATH,
+} from "../skill-runtime/locale-plan.ts";
 import { loadProjectSkill } from "../skill-runtime/project-skill-loader.ts";
 import {
   assessWebsiteDiscoveryBrief,
@@ -77,6 +84,14 @@ export type PromptControlManifest = {
   routes: string[];
   navLabels: string[];
   files: string[];
+  localeConfig?: {
+    mode: "single" | "bilingual" | "multilingual";
+    defaultLocale: string;
+    locales: string[];
+    translationDriven: boolean;
+    sourceCatalogPath?: string;
+    registryPath?: string;
+  };
   discoveryBrief?: WebsiteDiscoveryBrief;
   pageIntents: Array<{
     route: string;
@@ -85,9 +100,6 @@ export type PromptControlManifest = {
     source: string;
   }>;
 };
-
-const I18N_MESSAGE_EN_PATH = "/i18n/messages.en.json";
-const I18N_MESSAGE_ZH_CN_PATH = "/i18n/messages.zh-CN.json";
 
 export type SourceEnrichmentPlan = {
   shouldUseUrlExtraction: boolean;
@@ -106,7 +118,7 @@ type DraftProviderConfig = {
 };
 
 type PromptDraftDisplayLocale = "zh" | "en";
-type RequestedSiteLocale = "zh-CN" | "en" | "bilingual";
+type RequestedSiteLocale = "zh-CN" | "en" | "bilingual" | "multilingual";
 
 const SOURCE_MATERIAL_APPENDIX_PER_SOURCE_LIMIT = 12_000;
 const SOURCE_MATERIAL_APPENDIX_TOTAL_LIMIT = 24_000;
@@ -473,8 +485,13 @@ function buildPromptControlManifest(
   discoveryBrief?: WebsiteDiscoveryBrief,
 ): PromptControlManifest {
   const htmlPaths = plan.pageBlueprints.map((page) => routeToHtmlPath(page.route));
+  const localePlan = buildLocalePlan(plan.requirementText || "", requestedSiteLocale);
   const i18nPaths =
-    requestedSiteLocale === "bilingual" ? [I18N_MESSAGE_EN_PATH, I18N_MESSAGE_ZH_CN_PATH] : [];
+    requestedSiteLocale === "bilingual"
+      ? [I18N_MESSAGE_EN_PATH, I18N_MESSAGE_ZH_CN_PATH]
+      : requestedSiteLocale === "multilingual"
+        ? [I18N_LOCALE_REGISTRY_PATH, localePlan.sourceCatalogPath]
+        : [];
   return {
     schemaVersion: 1,
     promptKind: "canonical_website_prompt",
@@ -485,6 +502,17 @@ function buildPromptControlManifest(
     routes: [...plan.routes],
     navLabels: plan.pageBlueprints.map((page) => internalNavLabelForRoute(page.route, page.navLabel)),
     files: Array.from(new Set(["/styles.css", "/script.js", ...i18nPaths, ...htmlPaths])),
+    localeConfig:
+      requestedSiteLocale === "bilingual" || requestedSiteLocale === "multilingual"
+        ? {
+            mode: localePlan.mode,
+            defaultLocale: localePlan.defaultLocale,
+            locales: localePlan.locales,
+            translationDriven: localePlan.translationDriven,
+            sourceCatalogPath: localePlan.sourceCatalogPath,
+            registryPath: localePlan.translationDriven ? localePlan.registryPath : undefined,
+          }
+        : undefined,
     discoveryBrief,
     pageIntents: plan.pageBlueprints.map((page) => ({
       route: page.route,
@@ -517,6 +545,8 @@ function buildDiscoveryBriefSection(brief: WebsiteDiscoveryBrief): string {
 }
 
 function resolveRequestedSiteLocale(requirementText: string): RequestedSiteLocale {
+  const localePlan = buildLocalePlan(requirementText);
+  if (localePlan.mode === "multilingual") return "multilingual";
   const spec = buildRequirementSpec(requirementText, [requirementText]);
   if (spec.locale === "bilingual" || spec.locale === "zh-CN" || spec.locale === "en") {
     return spec.locale;
@@ -530,21 +560,44 @@ function ensureCanonicalPromptHasBilingualContract(
   displayLocale: PromptDraftDisplayLocale = "en",
 ): string {
   const normalizedDraft = normalizeText(draft);
-  if (!normalizedDraft || requestedSiteLocale !== "bilingual") return normalizedDraft;
-  if (/##\s*7\.35\s+Bilingual Experience Contract\b/i.test(normalizedDraft)) {
+  if (!normalizedDraft || (requestedSiteLocale !== "bilingual" && requestedSiteLocale !== "multilingual")) {
     return normalizedDraft;
   }
-  const section = [
-    "## 7.35 Bilingual Experience Contract",
-    "",
-    "- Requested site locale: bilingual EN/ZH using an English-first i18n-ready generation strategy.",
-    "- Initial visible-language contract: the first generated website pass must render English visible copy only across nav, hero, CTAs, footer, and core non-blog site sections. Do not emit visible Chinese/English pairs in the same heading, paragraph, card, CTA, nav item, footer, or article body.",
-    "- Initial implementation contract: generate stable `data-i18n` keys on translatable nodes plus `/i18n/messages.en.json` and `/i18n/messages.zh-CN.json` resource files. The zh-CN file may start as an untranslated key-complete draft that can be translated later without regenerating HTML.",
-    "- Keep the initial HTML shell English-first and lightweight. Alternate-language delivery should come from i18n resource files rather than duplicating page content inside HTML attributes or sibling DOM nodes.",
-    "- Add EN/ZH switch controls only when the runtime is prepared to swap visible copy via the i18n resource files while preserving the current route and language preference.",
-    "- Blog/content workflows stay single-language in the first pass. Do not require EN/ZH switching inside blog cards, blog index pages, or blog/article detail pages during initial generation.",
-    "- If a real i18n-backed language switch cannot be completed, keep the initial website English-only with the i18n resource files in place. Do not fake bilingual support with visible `Chinese / English` copy pairs.",
-  ].join("\n");
+  if (
+    /##\s*7\.35\s+(?:Bilingual Experience Contract|Locale & Translation Contract)\b/i.test(normalizedDraft)
+  ) {
+    return normalizedDraft;
+  }
+  const localePlan = buildLocalePlan(normalizedDraft, displayLocale === "zh" ? "zh-CN" : "en");
+  const chineseFirst =
+    displayLocale === "zh" ||
+    /(?:default visible language is Chinese|Chinese-first|中文优先|默认中文|默认可见语言.*中文)/i.test(normalizedDraft);
+  const visibleLanguageLabel = chineseFirst ? "Chinese" : "English";
+  const strategyLabel = chineseFirst ? "Chinese-first" : "English-first";
+  const section =
+    requestedSiteLocale === "multilingual"
+      ? [
+          "## 7.35 Locale & Translation Contract",
+          "",
+          `- Requested site locale: multilingual output using a ${strategyLabel} translation-driven locale registry.`,
+          `- Initial visible-language contract: the first generated website pass must render ${visibleLanguageLabel} visible copy only across nav, hero, CTAs, footer, forms, and core site sections.`,
+          `- Initial implementation contract: generate stable \`data-i18n\` keys on translatable nodes plus \`${I18N_LOCALE_REGISTRY_PATH}\` and \`${localePlan.sourceCatalogPath}\` as the source catalog. Do not emit one HTML copy per locale.`,
+          "- Translation contract: non-default locale JSON files belong to the translation pipeline. They should be generated from the source catalog without regenerating page structure, route HTML, or layout modules.",
+          `- Keep the initial HTML shell ${strategyLabel} and lightweight. Locale expansion should happen through message catalogs and the locale registry, not duplicated HTML siblings or per-locale route trees.`,
+          "- Locale-switch contract: only render a visible locale switch when the registry exists and at least one non-default locale has real translated copy for the shared-shell and page-core keys.",
+          "- Blog/content workflows stay source-language in the first pass. Do not require the initial generation round to author long-form article bodies in every locale.",
+        ].join("\n")
+      : [
+          "## 7.35 Bilingual Experience Contract",
+          "",
+          `- Requested site locale: bilingual EN/ZH using a ${strategyLabel} i18n-ready generation strategy.`,
+          `- Initial visible-language contract: the first generated website pass must render ${visibleLanguageLabel} visible copy only across nav, hero, CTAs, footer, forms, and core non-blog site sections. Do not emit visible Chinese/English pairs in the same heading, paragraph, card, CTA, nav item, footer, or article body.`,
+          "- Initial implementation contract: generate stable `data-i18n` keys on translatable nodes plus `/i18n/messages.en.json` and `/i18n/messages.zh-CN.json` resource files. The alternate-locale file may start as a key-complete draft, but do not ship a visible EN/ZH switch unless the alternate locale already contains real translated copy for the core keys used on the page.",
+          `- Keep the initial HTML shell ${strategyLabel} and lightweight. Alternate-language delivery should come from i18n resource files rather than duplicating page content inside HTML attributes or sibling DOM nodes.`,
+          "- Add EN/ZH switch controls only when the runtime is prepared to swap visible copy via the i18n resource files while preserving the current route and language preference.",
+          "- Blog/content workflows stay single-language in the first pass. Do not require EN/ZH switching inside blog cards, blog index pages, or blog/article detail pages during initial generation.",
+          `- If a real i18n-backed language switch cannot be completed, keep the initial website ${visibleLanguageLabel.toLowerCase()}-only with the i18n resource files in place. Do not fake bilingual support with visible \`Chinese / English\` copy pairs.`,
+        ].join("\n");
   const addendumIndex = normalizedDraft.search(/\n##\s*7\.5\s+External Research Addendum/i);
   if (addendumIndex >= 0) {
     return `${normalizedDraft.slice(0, addendumIndex).trimEnd()}\n\n${section}\n${normalizedDraft.slice(addendumIndex)}`;
@@ -1308,12 +1361,15 @@ async function requestPromptDraftWithLlm(params: {
   const missingLabels = params.slots.filter((slot) => !slot.filled).map((slot) => slot.label);
   const displayLocale = params.displayLocale === "zh" ? "zh" : "en";
   const requestedSiteLocale = params.requestedSiteLocale || "en";
+  const localePlan = buildLocalePlan(params.requirementText, requestedSiteLocale);
   const targetLanguage = "English for internal workflow artifacts";
   const languagePreservationRule = [
     "- Write the entire canonical prompt, workflow instructions, assumptions, page descriptions, and process notes in English only.",
     "- Do not mirror the user's preferred website locale into the language of the internal prompt artifact.",
-    requestedSiteLocale === "bilingual"
-      ? `- Express the final website locale requirement explicitly as bilingual EN/ZH site output with English as the default visible language, while keeping the planning artifact itself in English.`
+    requestedSiteLocale === "multilingual"
+      ? `- Express the final website locale requirement explicitly as translation-driven multilingual site output with ${localePlan.defaultLocale} as the default visible language, while keeping the planning artifact itself in English.`
+      : requestedSiteLocale === "bilingual"
+        ? `- Express the final website locale requirement explicitly as bilingual EN/ZH site output with ${localePlan.defaultLocale} as the default visible language, while keeping the planning artifact itself in English.`
       : `- Express the final website locale requirement explicitly as ${displayLocale === "zh" ? "Chinese-facing site output" : "English-facing site output"} while keeping the planning artifact itself in English.`,
     "- Keep filenames, routes, CSS/JS identifiers, code-like tokens, and product/brand names unchanged.",
   ].join(" ");
@@ -1399,7 +1455,9 @@ async function requestPromptDraftWithLlm(params: {
             "- Preserve the 'Prompt Control Manifest (Machine Readable)' JSON block exactly as the authoritative route/file handoff. Do not translate JSON keys, route values, or file paths.",
             "- Every page must keep a distinct body structure derived from the canonical prompt and source content. Shared header/footer/design language is allowed, repeated inner-page body templates are not.",
             "- Preserve the home hero responsive layout safety requirements so text, stats, CTA, and media cannot overlap.",
-            "- If the requested site locale is bilingual, preserve the bilingual experience contract and implement a real language switch with hidden alternate-language storage instead of visible translated duplicates.",
+            requestedSiteLocale === "multilingual"
+              ? "- If the requested site locale is multilingual, preserve the locale-and-translation contract: generate source-language HTML plus locale registry/catalog artifacts, and avoid per-locale page regeneration."
+              : "- If the requested site locale is bilingual, preserve the bilingual experience contract and implement a real language switch with hidden alternate-language storage instead of visible translated duplicates.",
             "- Keep planning assumptions and visitor-facing copy behavior aligned with the workflow skill.",
           ].join("\n"),
         },

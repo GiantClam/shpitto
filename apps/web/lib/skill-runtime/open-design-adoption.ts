@@ -1,3 +1,5 @@
+import { websiteArtifactGeneratorEnablesImportedSkills } from "./website-artifact-generator.ts";
+
 export type WebsiteSurfaceMode =
   | "corporate-b2b-site"
   | "marketing-landing-site"
@@ -41,7 +43,7 @@ export function getOpenDesignAdoptionFlags(): OpenDesignAdoptionFlags {
   return {
     surfaceMode: isEnabled(process.env.SHPITTO_OD_SURFACE_MODE, false),
     discoveryBrief: isEnabled(process.env.SHPITTO_OD_DISCOVERY_BRIEF, false),
-    importedSkills: isEnabled(process.env.SHPITTO_OD_IMPORTED_SKILLS, false),
+    importedSkills: isEnabled(process.env.SHPITTO_OD_IMPORTED_SKILLS, false) || websiteArtifactGeneratorEnablesImportedSkills(),
     routeUnits: isEnabled(process.env.SHPITTO_OD_ROUTE_UNITS, false),
   };
 }

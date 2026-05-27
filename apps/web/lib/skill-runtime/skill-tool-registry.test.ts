@@ -136,6 +136,7 @@ describe("skill-tool-registry", () => {
         
         ## Seed Resource Index
         - assets/template.html: reusable HTML seed; tokens --bg, --surface, --fg, --muted, --border, --accent, --accent-soft, --fg-soft, --font-display, --font-body, --font-mono, --fs-h1; key classes container, section, topnav, pagefoot, grid-2, grid-3, grid-4, card, btn, ph-img; responsive collapse at 920px
+        - example.html: example-backed HTML contract; tokens --bg, --fg, --muted, --border, --accent, --surface; key classes btn; responsive collapse at 720px
         - references/checklist.md: self-review gates; P0=10; P1=8; P2=4; critical checks No raw hex outside \`:root\` token block.; All headings use \`var(--font-display)\`.; Accent appears at most twice per screen.; No purple/violet gradient backgrounds.; No emoji used as feature icons.; No invented metrics.
         
         ---
@@ -145,8 +146,7 @@ describe("skill-tool-registry", () => {
           by copying the seed \`assets/template.html\` and pasting section layouts from
           \`references/layouts.md\`. Default for any landing / marketing / docs / SaaS
           page when no more specific skill matches.
-        triggers:
-          - "prototype""
+        triggers:"
       `);
     }
   });

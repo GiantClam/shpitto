@@ -598,11 +598,13 @@ function inferDefaultAutoRoutes(requirementText: string): string[] {
   return routes;
 }
 
-function normalizeStructuredRoutes(routes: unknown[]): string[] {
+function normalizeStructuredRoutes(routes: unknown[], options: { canonicalizeSemantic?: boolean } = {}): string[] {
+  const canonicalizeSemantic = options.canonicalizeSemantic !== false;
   return uniqueRoutes(
     routes
-      .map((route) => canonicalizeSemanticRoute(String(route || "")))
+      .map((route) => (canonicalizeSemantic ? canonicalizeSemanticRoute(String(route || "")) : normalizeRoute(String(route || ""))))
       .filter((route) => route && !isRoutePlanningArtifact(route)),
+    { canonicalizeSemantic },
   );
 }
 
@@ -632,7 +634,7 @@ function extractFixedOutputFileRoutePlan(requirementText: string): PromptControl
     .map((line) => line.replace(/^-+\s*/, "").trim())
     .map((file) => filePathToRoute(file))
     .filter(Boolean);
-  return { routes: normalizeStructuredRoutes(files), navLabels: [] };
+  return { routes: normalizeStructuredRoutes(files, { canonicalizeSemantic: false }), navLabels: [] };
 }
 
 function filePathToRoute(filePath: string): string {
@@ -664,7 +666,9 @@ function extractPromptControlManifestRoutePlan(
     return extractFixedOutputFileRoutePlan(source);
   }
 
-  const routes = Array.isArray(parsed?.routes) ? normalizeStructuredRoutes(parsed.routes) : [];
+  const routes = Array.isArray(parsed?.routes)
+    ? normalizeStructuredRoutes(parsed.routes, { canonicalizeSemantic: false })
+    : [];
   if (routes.length > 0) {
     return {
       routes,
@@ -675,7 +679,7 @@ function extractPromptControlManifestRoutePlan(
   const files = Array.isArray(parsed?.files)
     ? parsed.files.map((file: unknown) => filePathToRoute(String(file || ""))).filter(Boolean)
     : [];
-  const fileRoutes = normalizeStructuredRoutes(files);
+  const fileRoutes = normalizeStructuredRoutes(files, { canonicalizeSemantic: false });
   return fileRoutes.length > 0 ? { routes: fileRoutes, navLabels: [] } : extractFixedOutputFileRoutePlan(source);
 }
 
@@ -690,7 +694,9 @@ function extractWorkflowPromptControlManifestRoutePlan(
       : undefined;
   if (!contract) return { routes: [], navLabels: [] };
 
-  const routes = Array.isArray(contract.routes) ? normalizeStructuredRoutes(contract.routes) : [];
+  const routes = Array.isArray(contract.routes)
+    ? normalizeStructuredRoutes(contract.routes, { canonicalizeSemantic: false })
+    : [];
   if (routes.length > 0) {
     return {
       routes,
@@ -701,7 +707,7 @@ function extractWorkflowPromptControlManifestRoutePlan(
   const files = Array.isArray(contract.files)
     ? contract.files.map((file: unknown) => filePathToRoute(String(file || ""))).filter(Boolean)
     : [];
-  const fileRoutes = normalizeStructuredRoutes(files);
+  const fileRoutes = normalizeStructuredRoutes(files, { canonicalizeSemantic: false });
   return { routes: fileRoutes, navLabels: [] };
 }
 
@@ -741,12 +747,13 @@ function labelsToRoutes(labels: string[]): string[] {
   return labels.map((label, index) => labelToRoute(label, index + 1));
 }
 
-function uniqueRoutes(routes: string[]): string[] {
+function uniqueRoutes(routes: string[], options: { canonicalizeSemantic?: boolean } = {}): string[] {
+  const canonicalizeSemantic = options.canonicalizeSemantic !== false;
   const output: string[] = [];
   const seen = new Set<string>();
 
   for (const route of routes) {
-    const normalized = canonicalizeSemanticRoute(route);
+    const normalized = canonicalizeSemantic ? canonicalizeSemanticRoute(route) : normalizeRoute(route);
     if (!normalized) continue;
     if (isRoutePlanningArtifact(normalized)) continue;
     if (isImplementationMechanicsRoute(normalized)) continue;
@@ -826,8 +833,8 @@ function choosePreferredNavLabel(
   return candidateScore > existingScore ? candidateLabel : existingLabel;
 }
 
-function orderNavigationRoutes(routes: string[]): string[] {
-  const normalizedRoutes = uniqueRoutes(routes);
+function orderNavigationRoutes(routes: string[], options: { canonicalizeSemantic?: boolean } = {}): string[] {
+  const normalizedRoutes = uniqueRoutes(routes, options);
   const homeRoutes = normalizedRoutes.filter((route) => normalizeRoute(route) === "/");
   const aboutRoutes = normalizedRoutes.filter((route) => /^\/about(?:\/|$)/.test(normalizeRoute(route)));
   const contactRoutes = normalizedRoutes.filter((route) => /^\/contact(?:\/|$)/.test(normalizeRoute(route)));
@@ -910,6 +917,7 @@ function routeDefaultsToCollectionSurface(route: string, navLabel: string): bool
 function requirementRequestsPublishableDetailPages(requirementText: string): boolean {
   const text = String(requirementText || "").trim();
   if (!text) return false;
+  if (hasNegativeBlogArchiveBehaviorContract(text) && !requestedPublishableDetailCount(text)) return false;
   return /(?:\b(?:add|build|create|generate|include|need|publish|seed|write|require)\b.{0,48}\b(?:blog|blogs|article|articles|post|posts|news|insight|insights|journal|story|stories)\b|\b(?:blog|blogs|article|articles|post|posts|news|insight|insights|journal|story|stories)\b.{0,32}\b(?:detail page|detail pages|archive|archives|route|routes|slug|slugs)\b|(?:新增|创建|生成|提供|包含|发布|需要).{0,24}(?:博客|文章|帖子|博文|资讯|快讯|洞察)(?:页|详情页|归档)?|(?:博客|文章|帖子|博文|资讯|快讯|洞察).{0,16}(?:详情页|归档|列表|路由))/iu.test(
     text,
   );
@@ -952,6 +960,7 @@ function findBlogSemanticRoute(routes: string[], navLabels?: string[]): string |
 function requirementRequestsBlogSurface(text: string): boolean {
   const normalized = String(text || "").trim();
   if (!normalized) return false;
+  if (requestedPublishableDetailCount(normalized) || requirementRequestsPublishableDetailPages(normalized)) return true;
   const negative = [
     /(?:不要|不需要|无需|仅首页|只做首页).{0,12}(?:blog|博客|博文)/i,
     /(?:do not|don't|no need|without|home only|single page).{0,20}(?:blog|post archive|article archive)/i,
@@ -967,12 +976,15 @@ function requirementRequestsBlogSurface(text: string): boolean {
 function suppressedContentRoutes(requirementText: string): Set<string> {
   const normalized = String(requirementText || "").trim();
   const suppressed = new Set<string>();
+  const explicitPublishableRequest =
+    Boolean(requestedPublishableDetailCount(normalized)) || requirementRequestsPublishableDetailPages(normalized);
   if (
-    /(?:do not|don't|no need|without|avoid|no)\s+(?:a\s+)?(?:blog|blogs?|blog\/archive|blog or archive)\b/i.test(
+    !explicitPublishableRequest &&
+    (/(?:do not|don't|no need|without|avoid|no)\s+(?:a\s+)?(?:blog|blogs?|blog\/archive|blog or archive)\b/i.test(
       normalized,
     ) ||
-    /\bno\s+blog\/archive\s+assumptions\b/i.test(normalized) ||
-    /(?:不要|不需要|无需|避免).{0,16}(?:blog|博客|博文)/i.test(normalized)
+      /\bno\s+blog\/archive\s+assumptions\b/i.test(normalized) ||
+      /(?:不要|不需要|无需|避免).{0,16}(?:blog|博客|博文)/i.test(normalized))
   ) {
     suppressed.add("/blog");
   }
@@ -1006,6 +1018,12 @@ const CONTENT_DATA_SOURCE_CONSTRAINTS = [
   "Use source-aligned fallback resource titles/excerpts only as preview fallbacks; deployment replaces or refreshes them from the project-scoped Blog D1 Worker API.",
   "Do not generate D1 credentials, Cloudflare binding code, worker code, or database secrets in static HTML.",
 ];
+
+function hasNegativeBlogArchiveBehaviorContract(requirementText = ""): boolean {
+  return /(?:do\s+not|don't|without|no|avoid|exclude|不要|不得|禁止|不).{0,80}(?:blog|blogs|archive|archives|博客|归档).{0,60}(?:behavior|behaviour|routes?|links?|pages?|surface|archive|archives|行为|路由|链接|页面|归档)?/iu.test(
+    String(requirementText || ""),
+  );
+}
 
 function buildBlogDataSourceConstraints(
   route: string,
@@ -1277,9 +1295,16 @@ function buildPageBlueprint(
   }
   if (isBlogSemanticRoute(normalizedRoute, resolvedLabel)) {
     const semanticScore = scoreBlogSemanticRoute(normalizedRoute, resolvedLabel);
-    const pageKind = routeDefaultsToCollectionSurface(normalizedRoute, resolvedLabel)
+    const forbidsBlogArchiveBehavior =
+      hasNegativeBlogArchiveBehaviorContract(evidence || "") &&
+      !requestedPublishableDetailCount(evidence || "") &&
+      !requirementRequestsPublishableDetailPages(evidence || "");
+    const contentPageKind = routeDefaultsToCollectionSurface(normalizedRoute, resolvedLabel)
       ? "content-collection-index"
       : "blog-data-index";
+    const pageKind = forbidsBlogArchiveBehavior
+      ? "search-directory"
+      : contentPageKind;
     const purpose = `Content collection page for "${resolvedLabel}". The visible page must follow this route's own information architecture; implementation capability must not become a visitor-facing topic.`;
     return {
       route: normalizedRoute,
@@ -1290,23 +1315,38 @@ function buildPageBlueprint(
       constraints: [
         "Canonical Website Prompt remains authoritative for brand voice, audience, language, and visual direction.",
         `${pageKind === "blog-data-index" ? "Content archive route" : "Content collection route"} confidence: ${semanticScore.score}/100${semanticScore.reasons.length ? ` (${semanticScore.reasons.join("; ")})` : ""}.`,
-        ...buildBlogDataSourceConstraints(normalizedRoute, resolvedLabel, evidence || "", pageKind),
+        ...(forbidsBlogArchiveBehavior
+          ? [
+              "The prompt explicitly forbids blog/archive behavior. Do not include data-shpitto-blog-root, data-shpitto-blog-list, data-shpitto-blog-api, /api/blog/posts, /blog links, archive links, or publishable article detail behavior on this route.",
+              "Build this as a static route-owned collection, directory, or resource index using ordinary HTML sections and manifest-bounded links only.",
+              "Do not open this route with the legacy split-hero pattern: no hero-grid, hero-copy, hero-panel, aside.panel, detail-grid, or right-rail summary card as the first route module.",
+              "The first module must be a route-owned directory intro such as resource-index-header, directory-intro, collection-ledger, or standards-index-head with inline search/filter/category framing.",
+            ]
+          : buildBlogDataSourceConstraints(normalizedRoute, resolvedLabel, evidence || "", contentPageKind)),
       ],
       pageKind,
       responsibility: purpose,
-      contentSkeleton: [
-        "Site-matched hero explaining the value of this route's content/resource system",
-        'Page-specific data-backed collection surface: <section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts">',
-        pageKind === "blog-data-index"
-          ? "Fallback editorial/resource cards inside [data-shpitto-blog-list] using the selected route taxonomy, categories, excerpts, dates, tags, and any explicitly requested detail-link behavior"
-          : "Fallback collection/resource cards inside [data-shpitto-blog-list] using the selected route taxonomy, categories, excerpts, dates, tags, scope labels, and any explicitly requested detail-link behavior",
-        "For information-platform or knowledge-hub routes, structure the visible list around page collections such as case library, standards/documents, research reports, policy updates, or product database entries when supported by the prompt",
-        shouldRequireBlogDetailPagesForRoute(normalizedRoute, resolvedLabel, evidence || "")
-          ? "Because this route behaves like a publishable archive, the visible cards should link to matching /blog/{slug}/ detail pages with route-appropriate detail grammar"
-          : "Because this route is a generic content/resource hub, keep the first pass focused on the collection/index surface unless the prompt explicitly asks for publishable article/news details",
-        "Optional category/filter controls only if they are styled, page-specific, and usable with the static HTML content",
-        "Contextual CTA that connects readers back to the site's primary conversion path",
-      ],
+      contentSkeleton: forbidsBlogArchiveBehavior
+        ? [
+            "Site-matched hero explaining the value of this route's content/resource system",
+            "Static route-owned directory intro such as resource-index-header, directory-intro, collection-ledger, or standards-index-head with cards, rows, filters, and search controls that work without Blog runtime hooks",
+            "Visible resource cards using the selected route taxonomy, categories, excerpts, dates, tags, and scope labels without /blog detail behavior",
+            "Optional category/filter controls only if they are styled, page-specific, and usable with the static HTML content",
+            "Contextual CTA that connects readers back to the site's primary conversion path",
+          ]
+        : [
+            "Site-matched hero explaining the value of this route's content/resource system",
+            'Page-specific data-backed collection surface: <section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts">',
+            pageKind === "blog-data-index"
+              ? "Fallback editorial/resource cards inside [data-shpitto-blog-list] using the selected route taxonomy, categories, excerpts, dates, tags, and any explicitly requested detail-link behavior"
+              : "Fallback collection/resource cards inside [data-shpitto-blog-list] using the selected route taxonomy, categories, excerpts, dates, tags, scope labels, and any explicitly requested detail-link behavior",
+            "For information-platform or knowledge-hub routes, structure the visible list around page collections such as case library, standards/documents, research reports, policy updates, or product database entries when supported by the prompt",
+            shouldRequireBlogDetailPagesForRoute(normalizedRoute, resolvedLabel, evidence || "")
+              ? "Because this route behaves like a publishable archive, the visible cards should link to matching /blog/{slug}/ detail pages with route-appropriate detail grammar"
+              : "Because this route is a generic content/resource hub, keep the first pass focused on the collection/index surface unless the prompt explicitly asks for publishable article/news details",
+            "Optional category/filter controls only if they are styled, page-specific, and usable with the static HTML content",
+            "Contextual CTA that connects readers back to the site's primary conversion path",
+          ],
       componentMix: { hero: 20, feature: 15, grid: 35, proof: 5, form: 0, cta: 25 },
     };
   }
@@ -1464,9 +1504,14 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
         requirementText,
       });
   const suppressedRoutes = suppressedContentRoutes(requirementText);
-  const routes = orderNavigationRoutes(
-    preOrderedRoutes.filter((route) => !suppressedRoutes.has(normalizeRoute(route))),
-  ).slice(0, 16);
+  const routes = hasAuthoritativeRoutePlan
+    ? uniqueRoutes(
+        preOrderedRoutes.filter((route) => !suppressedRoutes.has(normalizeRoute(route))),
+        { canonicalizeSemantic: false },
+      ).slice(0, 16)
+    : orderNavigationRoutes(
+        preOrderedRoutes.filter((route) => !suppressedRoutes.has(normalizeRoute(route))),
+      ).slice(0, 16);
 
   const labelMap = new Map<string, string>();
   const structuredNavLabels =
@@ -1478,7 +1523,7 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
   const structuredRoutes = workflowContractRoutes.length > 0 ? workflowContractRoutes : promptContractPlan.routes;
   const structuredLabelRoutes = new Set<string>();
   for (let i = 0; i < structuredRoutes.length; i += 1) {
-    const route = canonicalizeSemanticRoute(structuredRoutes[i]);
+    const route = normalizeRoute(structuredRoutes[i]);
     const label = String(structuredNavLabels[i] || "").trim();
     if (route && label) {
       labelMap.set(route, choosePreferredNavLabel(route, labelMap.get(route), label, locale));

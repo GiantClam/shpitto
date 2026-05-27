@@ -410,6 +410,7 @@ export interface AgentState {
     designMd?: string;
     preferredLocale?: "zh-CN" | "en";
     generationMode?: "legacy" | "skill-direct" | "skill-native";
+    siteGeneratorMode?: "native" | "open-design" | "html-anything" | "hybrid";
     runMode?: "sync" | "async-task";
     genMode?: "skill_native" | "legacy";
     sourceRequirement?: string;

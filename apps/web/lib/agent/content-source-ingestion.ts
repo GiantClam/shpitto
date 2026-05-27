@@ -99,6 +99,7 @@ type AssetReference = {
   key?: string;
   fileName?: string;
   url?: string;
+  localProjectAssetUrl?: boolean;
   referenceText: string;
 };
 
@@ -1202,6 +1203,7 @@ function parseAssetReference(line: string): AssetReference {
     key: normalizeText(keyMatch || keyFromQuery || keyFromPublicUrl),
     fileName: normalizeText(fileName),
     url: normalizeText(urlMatch),
+    localProjectAssetUrl: Boolean(keyFromPublicUrl),
     referenceText,
   };
 }
@@ -1317,7 +1319,7 @@ async function collectUploadedFileSources(params: {
           }
         }
       }
-      if (!assetBytes && ref.url) {
+      if (!assetBytes && ref.url && !ref.localProjectAssetUrl) {
         const assetUrl = ref.url;
         assetBytes = await retryUploadedAssetRead(() => fetchAssetBytesFromUrl(assetUrl));
       }

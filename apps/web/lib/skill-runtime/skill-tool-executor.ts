@@ -18,7 +18,22 @@ import {
   type LocalDecisionPlan,
   type PageBlueprint,
 } from "./decision-layer.ts";
-import { buildWebsiteDesignSpecMarkdown, buildWebsiteDesignSpecRouteExcerpt } from "./website-design-spec.ts";
+import {
+  buildRouteUnitContractSummary,
+  buildWebsiteDesignSpecMarkdown,
+  buildWebsiteDesignSpecRouteExcerpt,
+  type RouteUnitContractSummary,
+} from "./website-design-spec.ts";
+import {
+  buildGenerationUnitInputFromRouteContract,
+  createSkillExecutionGenerationWorkerAdapter,
+  type GenerationUnitInput,
+} from "./generation-worker-adapter.ts";
+import {
+  renderWebsiteArtifactGeneratorContract,
+  resolveWebsiteArtifactGeneratorMode,
+  type WebsiteArtifactGeneratorMode,
+} from "./website-artifact-generator.ts";
 import { inferWebsiteSurfaceModeFromSkillId, type WebsiteDiscoveryBrief, type WebsiteSurfaceMode } from "./open-design-adoption.ts";
 import { invokeModelWithIdleTimeout } from "./llm-stream.ts";
 import { collectCompletedPhases, getGeneratedFilePaths, getPages, getStaticArtifactFiles } from "./artifacts.ts";
@@ -99,6 +114,19 @@ export type SkillToolExecutorStepSnapshot = {
   qaSummary?: QaSummary;
   provider?: LlmProvider;
   model?: string;
+  websiteSurfaceMode?: WebsiteSurfaceMode;
+  routeUnits?: Array<
+    RouteUnitContractSummary & {
+      generatedFiles: string[];
+      generationUnit: Pick<GenerationUnitInput, "unitId" | "route" | "targetFiles">;
+      validationStatus: "pending" | "passed";
+      validationResult: {
+        status: "pending" | "passed";
+        checkedFiles: string[];
+        issues: string[];
+      };
+    }
+  >;
 };
 
 export type SkillToolExecutorParams = {
@@ -120,6 +148,18 @@ export type SkillToolExecutorSummary = {
   qaSummary?: QaSummary;
   provider?: LlmProvider;
   model?: string;
+  siteGeneratorMode?: WebsiteArtifactGeneratorMode;
+  routeUnits?: SkillToolExecutorStepSnapshot["routeUnits"];
+  routeRepairEvidence?: SkillToolRouteRepairEvidence;
+  providerNotes?: string[];
+  routeUnitProviderBridgeNotes?: string[];
+};
+
+export type SkillToolRouteRepairEvidence = {
+  status: "no_route_repair_needed" | "route_repairs_applied";
+  repairAttemptCount: number;
+  repairedFiles: string[];
+  fullRegenerationAvoided: boolean | null;
 };
 
 type ValidatedQaSummary = {
@@ -733,8 +773,16 @@ function hasSubstantialCjkAndLatin(text: string): boolean {
 }
 
 function bilingualDefaultVisibleLanguage(text = ""): "zh-CN" | "en" {
-  if (isBilingualRequirementText(text)) return "en";
-  return cjkCount(String(text || "")) >= 4 ? "zh-CN" : "en";
+  const source = String(text || "");
+  if (
+    /default (?:visible )?language (?:is|:)\s*(?:Chinese|zh-CN|zh)\b|Chinese-first|Chinese-source|中文优先|默认中文|默认可见语言.*中文/i.test(
+      source,
+    )
+  ) {
+    return "zh-CN";
+  }
+  if (/default (?:visible )?language (?:is|:)\s*(?:English|en)\b|English-first|默认英文|默认可见语言.*英文/i.test(source)) return "en";
+  return cjkCount(source) >= 4 ? "zh-CN" : "en";
 }
 
 function normalizeBilingualLeakSample(text: string): string {
@@ -904,6 +952,7 @@ function findSurfaceHomepageArchetypeIssues(params: {
   pagePath: string;
   decision: LocalDecisionPlan;
   requirementText: string;
+  websiteSurfaceMode?: WebsiteSurfaceMode;
   force?: boolean;
 }): string[] {
   if (
@@ -914,10 +963,12 @@ function findSurfaceHomepageArchetypeIssues(params: {
     return [];
   }
   if (normalizePath(params.pagePath) !== "/index.html") return [];
-  const surfaceMode = selectWebsiteGenerationTypeSkill({
-    requirementText: params.requirementText,
-    routes: params.decision.routes,
-  }).surfaceMode;
+  const surfaceMode =
+    params.websiteSurfaceMode ||
+    selectWebsiteGenerationTypeSkill({
+      requirementText: params.requirementText,
+      routes: params.decision.routes,
+    }).surfaceMode;
   const html = String(params.html || "");
   const issues: string[] = [];
   if (surfaceMode === "docs-knowledge-site") {
@@ -1421,6 +1472,12 @@ function extractQaRepairTargets(feedback: string): string[] {
   if (/flat link row instead of a structured footer shell/i.test(text)) {
     targets.add("/styles.css");
   }
+  if (/duplicates the same footer link set across multiple groups/i.test(text)) {
+    targets.add("/styles.css");
+  }
+  if (/site is missing a required consultation\/intake form/i.test(text)) {
+    targets.add("/index.html");
+  }
   const repeatedLegacySplitHeroMatch = text.match(
     /repeated primary routes fell back to the same legacy split-hero opening template \(([^)]+)\)/i,
   );
@@ -1458,8 +1515,12 @@ function buildQaRepairGuidance(
     text,
   );
   const hasUnexpectedContentBackendMount =
-    /applies the Blog\/content collection data-source contract on a non-content route/i.test(text);
+    /applies the Blog\/content collection data-source contract on a non-content route|applies the Blog\/content collection data-source contract despite explicit no blog\/archive behavior/i.test(
+      text,
+    );
   const hasFlatFooterShell = /flat link row instead of a structured footer shell/i.test(text);
+  const hasDuplicateFooterGroups = /duplicates the same footer link set across multiple groups/i.test(text);
+  const hasMissingConsultationForm = /site is missing a required consultation\/intake form/i.test(text);
   const hasWorkflowMetaLeak = /exposes workflow\/process\/meta wording instead of visitor-facing content/i.test(text);
   const hasRepeatedLegacySplitHero = /repeated primary routes fell back to the same legacy split-hero opening template/i.test(text);
   const hasSurfaceTokenContractGap = /violates surface visual token contract/i.test(text);
@@ -1515,11 +1576,25 @@ function buildQaRepairGuidance(
     );
   }
 
+  if (hasDuplicateFooterGroups) {
+    guidance.push(
+      "Shared-shell repair: footer groups must have distinct jobs. Do not repeat the full route list under multiple headings such as Routes and Resources.",
+      "Shared-shell repair: keep primary route navigation in one group, and make resource/support groups contain genuinely different destinations such as downloads, consultation, contact, policy, or document actions.",
+    );
+  }
+
+  if (hasMissingConsultationForm) {
+    guidance.push(
+      "Consultation-form repair: add one real intake form on the most relevant conversion or information route. It must include name, organization/company, email, topic/subject, and message fields.",
+      "Consultation-form repair: keep the form visitor-facing and submit-ready with labels, inputs, textarea, and a clear submit CTA. Do not replace it with a mailto link, CTA card, or explanatory copy.",
+    );
+  }
+
   if (hasWorkflowMetaLeak) {
     guidance.push(
       "Visitor-copy repair: remove workflow/process/meta vocabulary from all visible HTML, including headings, eyebrow labels, badges, cards, CTAs, meta descriptions, alt text, and footer copy.",
-      "Visitor-copy repair: never render terms such as assumption, assumptions, content gap, Prompt Control Manifest, source priorities, page brief, source material appendix, internal prompt, or requirement completion. These are internal planning artifacts only.",
-      "Visitor-copy repair: rewrite the affected sentence around the website subject itself. For example, replace no blog/archive assumptions with concrete documentation scope, reference coverage, standards guidance, implementation notes, or visitor outcomes.",
+      "Visitor-copy repair: never render internal planning phrases such as assumption notes, content gap, Prompt Control Manifest, source priorities, page brief, source material appendix, internal prompt, or requirement completion.",
+      "Visitor-copy repair: rewrite the affected sentence around the website subject itself. For example, replace internal no-blog/archive assumption notes with concrete documentation scope, reference coverage, standards guidance, implementation notes, or visitor outcomes.",
     );
   }
 
@@ -1530,6 +1605,8 @@ function buildQaRepairGuidance(
       "Route-opening repair: for non-home pages, do not reopen the page with `route-hero`, `hero-grid`, `hero-copy`, `action-row`, and `aside.panel` as the repeated sibling template. Use one dominant route-owned opening band instead.",
       "Route-opening repair: directory pages should use a compact directory intro plus inline filters/results framing. Do not pair `hero__title` / `hero__lead` with a right-rail `aside` or a `detail-grid` split opening.",
       "Route-opening repair: content collection openings must replace legacy `hero-title`, `hero-lead`, `hero__actions`, and `hero__content` utilities with route-owned collection classes such as `collection-title`, `collection-lead`, `collection-actions`, `knowledge-hub-title`, or `knowledge-hub-actions`.",
+      "Route-opening repair: for `/resources`, `/research`, `/standards`, or directory routes, make the first `<main>` child a single route-owned band such as `<section class=\"resource-index-header\">`, `<section class=\"directory-intro\">`, or `<section class=\"collection-ledger\">` with the h1, lead, search/filter/category controls, and a short evidence row in that same band.",
+      "Route-opening repair: delete the split opening scaffold entirely from the affected route: no `hero-grid`, `hero-copy`, `hero-panel`, `hero__content`, `hero__actions`, `aside.panel`, or `detail-grid` before the directory cards/results.",
     );
   }
 
@@ -1599,8 +1676,8 @@ function buildQaRepairGuidance(
 
   if (hasUnexpectedContentBackendMount) {
     guidance.push(
-      "Route-contract repair: this page is not the selected content-backed collection route. Remove `data-shpitto-blog-root`, `data-shpitto-blog-list`, and `/api/blog/posts` integration hooks from the affected page instead of inventing `/blog/{slug}/` detail links.",
-      "Route-contract repair: rebuild the page as a normal route-owned destination using its own sections, proof, and CTA grammar. Keep content/resource collection mounts only on the intended information-platform, research-center, standards, or explicit Blog/archive route.",
+      "Route-contract repair: Remove `data-shpitto-blog-root`, `data-shpitto-blog-list`, `data-shpitto-blog-api`, and `/api/blog/posts` integration hooks from the affected page instead of inventing `/blog/{slug}/` detail links.",
+      "Route-contract repair: rebuild the page as a normal route-owned destination using its own sections, proof, cards, filters, search controls, and CTA grammar. Keep Blog/content runtime mounts only when the prompt explicitly allows Blog/archive behavior or publishable detail content.",
     );
   }
 
@@ -2478,7 +2555,7 @@ function ensureBilingualHtmlShell(rawHtml: string, defaultVisibleLanguage: "zh-C
   const toggleMarkup = buildBilingualLocaleToggleMarkup(defaultVisibleLanguage);
 
   if (/<nav\b[^>]*>/i.test(html)) {
-    return html.replace(/<\/nav>/i, `${toggleMarkup}\n</nav>`);
+    return html.replace(/<\/nav>/i, `</nav>\n${toggleMarkup}`);
   }
   if (/<header\b[^>]*>/i.test(html)) {
     return html.replace(/<header\b([^>]*)>/i, `<header$1>\n${toggleMarkup}`);
@@ -2956,6 +3033,7 @@ export function findSurfaceHomepageArchetypeIssuesForTesting(params: {
   pagePath: string;
   decision: LocalDecisionPlan;
   requirementText: string;
+  websiteSurfaceMode?: WebsiteSurfaceMode;
 }): string[] {
   return findSurfaceHomepageArchetypeIssues({ ...params, force: true });
 }
@@ -3607,6 +3685,16 @@ function isIsolatedInteriorHtmlRound(targetFiles: string[]): boolean {
   );
 }
 
+function isRouteUnitProviderBridgeEnabled(): boolean {
+  const raw = String(process.env.SHPITTO_ROUTE_UNIT_PROVIDER_BRIDGE || "").trim().toLowerCase();
+  if (raw) return raw === "1" || raw === "true" || raw === "yes" || raw === "on";
+  return resolveWebsiteArtifactGeneratorMode() !== "native";
+}
+
+export function shouldUseRouteUnitProviderBridgeForTesting(objective: SkillExecutionRoundObjective): boolean {
+  return isRouteUnitProviderBridgeEnabled() && objective.strictSingleTarget && isIsolatedInteriorHtmlRound(objective.targetFiles);
+}
+
 function resolveLightweightRoundModelName(config: ProviderConfig, envKeys: string[]): string {
   const providerKey = config.provider.toUpperCase();
   const providerScopedKey = envKeys
@@ -3699,7 +3787,7 @@ function buildSharedAssetRoundContract(params: {
       ? "- /script.js must stay framework-free and defensive. Prefer small DOM helpers over route-specific choreography."
       : "",
     i18nRequested
-      ? `- i18n resources must emit ${I18N_MESSAGE_EN_PATH} and ${I18N_MESSAGE_ZH_CN_PATH} as stable key/value JSON dictionaries. English should be fully populated; zh-CN may start as a key-complete draft that can be translated later without regenerating HTML.`
+      ? `- i18n resources must emit ${I18N_MESSAGE_EN_PATH} and ${I18N_MESSAGE_ZH_CN_PATH} as stable key/value JSON dictionaries. Both locales should be populated for shared-shell and visible core-copy keys; the default visible locale is ${params.defaultVisibleLanguage}.`
       : "",
     ...bilingualLines,
     "- Keep the shared shell coherent across all routes, but leave route-specific structure and content decisions to later HTML rounds.",
@@ -3769,6 +3857,8 @@ function buildWorkflowFiles(params: {
   discoveryBrief?: WebsiteDiscoveryBrief;
   designSystemId?: string;
   designSystemName?: string;
+  siteGeneratorMode?: WebsiteArtifactGeneratorMode;
+  selectedSeedSkillIds?: string[];
 }): RuntimeWorkflowFile[] {
   const workflowLocale = resolveRequestedExperienceLocale(params.requirementText, params.locale) || params.locale;
   const taskPlan = [
@@ -3816,6 +3906,8 @@ function buildWorkflowFiles(params: {
     discoveryBrief: params.discoveryBrief,
     designSystemId: params.designSystemId,
     designSystemName: params.designSystemName,
+    siteGeneratorMode: params.siteGeneratorMode,
+    selectedSeedSkillIds: params.selectedSeedSkillIds,
   });
 
   return [
@@ -3824,6 +3916,84 @@ function buildWorkflowFiles(params: {
     { path: "/design.md", content: design, type: "text/markdown" },
     { path: "/website_design_spec.md", content: designSpec, type: "text/markdown" },
   ];
+}
+
+function buildRouteUnitSnapshotsForToolFlow(params: {
+  decision: LocalDecisionPlan;
+  requirementText: string;
+  stylePreset: DesignStylePreset;
+  designHit?: any;
+  websiteSurfaceMode?: WebsiteSurfaceMode;
+  discoveryBrief?: WebsiteDiscoveryBrief;
+  designSystemId?: string;
+  designSystemName?: string;
+  files: RuntimeWorkflowFile[];
+  qaRecords?: SkillToolQaRecord[];
+}): NonNullable<SkillToolExecutorStepSnapshot["routeUnits"]> {
+  const files = dedupeFiles(params.files || []);
+  const qaRecords = params.qaRecords || [];
+  return params.decision.pageBlueprints.map((page) => {
+    const route = normalizePath(page.route);
+    const summary = buildRouteUnitContractSummary(
+      {
+        decision: params.decision,
+        requirementText: params.requirementText,
+        stylePreset: params.stylePreset,
+        designHit: params.designHit,
+        websiteSurfaceMode: params.websiteSurfaceMode,
+        discoveryBrief: params.discoveryBrief,
+        designSystemId: params.designSystemId,
+        designSystemName: params.designSystemName,
+      },
+      route,
+    ) || {
+      route,
+      navLabel: page.navLabel,
+      pageKind: page.pageKind,
+      routeContract: [
+        `route=${route}`,
+        `navLabel=${page.navLabel}`,
+        `pageKind=${page.pageKind}`,
+        `purpose=${page.purpose}`,
+      ],
+      inheritedTerminology: [params.decision.brandHint || "", params.websiteSurfaceMode || ""].filter(Boolean),
+      inheritedTokens: [
+        params.stylePreset.colors.primary,
+        params.stylePreset.colors.accent,
+        params.stylePreset.colors.background,
+        params.stylePreset.typography,
+      ].filter(Boolean),
+      openingFamily: "route-owned",
+      openingTopology: "route-specific lead band",
+      mediaPlan: [],
+      mediaResources: [],
+    };
+    const htmlPath = routeToHtmlPath(route);
+    const generatedFiles = files
+      .map((file) => normalizePath(file.path))
+      .filter((filePath) => filePath === htmlPath || filePath === "/styles.css" || filePath === "/script.js");
+    const generationUnitInput = buildGenerationUnitInputFromRouteContract({
+      summary,
+      context: { websiteSurfaceMode: params.websiteSurfaceMode },
+    });
+    const routeQa = qaRecords.find((record) => normalizePath(record.route) === route);
+    const validationStatus = routeQa?.passed ? "passed" : "pending";
+    return {
+      ...summary,
+      generatedFiles,
+      generationUnit: {
+        unitId: generationUnitInput.unitId,
+        route: generationUnitInput.route,
+        targetFiles: generationUnitInput.targetFiles,
+      },
+      validationStatus,
+      validationResult: {
+        status: validationStatus,
+        checkedFiles: generatedFiles,
+        issues: (routeQa?.antiSlopIssues || []).map((issue) => `${issue.severity}:${issue.code}`),
+      },
+    };
+  });
 }
 
 function resolveProviderConfig(lock: RunProviderLock): ProviderConfig {
@@ -4161,7 +4331,7 @@ function clampTimeout(taskTimeoutMs: number, candidateMs: number, minMs: number)
 
 const VISITOR_COPY_WORKFLOW_META_LEAK_PATTERNS: Array<[RegExp, string]> = [
   [/\bcontent gap\b/i, "content gap"],
-  [/\bassumption(?:s)?\b/i, "assumption"],
+  [/\b(?:assumption notes?|source assumptions?|prompt assumptions?|route assumptions?|no blog\/archive assumptions?|no blog or archive assumptions?)\b/i, "assumption"],
   [/\bprompt control manifest\b/i, "prompt control manifest"],
   [/\bsource priorities\b/i, "source priorities"],
   [/\bpage briefs?\b/i, "page briefs"],
@@ -4170,7 +4340,7 @@ const VISITOR_COPY_WORKFLOW_META_LEAK_PATTERNS: Array<[RegExp, string]> = [
   [/\brequirement completion\b/i, "requirement completion"],
   [/\binternal prompt\b/i, "internal prompt"],
   [/内容缺口|内容空缺/u, "content gap"],
-  [/假设(?:项)?/u, "assumption"],
+  [/假设(?:项|说明|备注)/u, "assumption"],
   [/提示词控制清单/u, "prompt control manifest"],
   [/来源优先级|来源优先顺序/u, "source priorities"],
   [/页面简报|页面摘要/u, "page briefs"],
@@ -4199,33 +4369,116 @@ function extractPlaceholderGateIssues(lint: {
   );
 }
 
+function isClosedManifestAuthority(decision: LocalDecisionPlan): boolean {
+  return decision.routeAuthorityMode === "prompt_manifest" || decision.routeAuthorityMode === "workflow_manifest";
+}
+
+function manifestAllowedRoutes(decision: LocalDecisionPlan): Set<string> {
+  return new Set(decision.routes.map((route) => normalizeRouteKey(route)));
+}
+
+function manifestAllowsRoute(decision: LocalDecisionPlan, route: string, requirementText = ""): boolean {
+  if (!isClosedManifestAuthority(decision)) return true;
+  const manifestRequirementText = requirementText || decision.requirementText || "";
+  const normalizedRoute = normalizeRouteKey(route);
+  if (manifestAllowedRoutes(decision).has(normalizedRoute)) return true;
+  const hasPublishableContentRoute = decision.pageBlueprints.some(
+    (page) => isContentBackedPageKind(page.pageKind) && shouldRequireBlogDetailPagesForRoute(page, manifestRequirementText),
+  );
+  const hasBlogDataIndexRoute =
+    !hasNegativePublishableDetailContract(manifestRequirementText) &&
+    decision.pageBlueprints.some((page) => page.pageKind === "blog-data-index");
+  const requestAllowsPublishableDetails = requirementRequestsPublishableDetailPages(manifestRequirementText);
+  if (
+    /^\/blog\/[^/]+\/?$/i.test(normalizedRoute) &&
+    (manifestAllowedRoutes(decision).has("/blog") ||
+      Boolean(requestedPublishableContentCount(manifestRequirementText)) ||
+      requestAllowsPublishableDetails ||
+      hasBlogDataIndexRoute ||
+      hasPublishableContentRoute)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function manifestAllowsOutputFile(decision: LocalDecisionPlan, filePath: string, requirementText = ""): boolean {
+  if (!isClosedManifestAuthority(decision)) return true;
+  const normalizedPath = normalizePath(filePath);
+  if (!normalizedPath.endsWith(".html")) return true;
+  const route = htmlPathToRoute(normalizedPath);
+  return Boolean(route && manifestAllowsRoute(decision, route, requirementText));
+}
+
+function collectInternalHtmlRoutes(html: string): string[] {
+  const routes: string[] = [];
+  for (const match of String(html || "").matchAll(/\bhref\s*=\s*["']([^"']+)["']/gi)) {
+    const href = String(match[1] || "").trim();
+    if (!href || href.startsWith("#") || /^[a-z][a-z0-9+.-]*:/i.test(href)) continue;
+    const route = normalizeRouteKey(href.split(/[?#]/)[0] || "/");
+    if (!route || /\.[a-z0-9]{2,8}$/i.test(route)) continue;
+    routes.push(route);
+  }
+  return Array.from(new Set(routes));
+}
+
+function listManifestRouteLinkViolations(params: {
+  decision: LocalDecisionPlan;
+  files: RuntimeWorkflowFile[];
+  requirementText?: string;
+}): Array<{ sourcePath: string; route: string }> {
+  if (!isClosedManifestAuthority(params.decision)) return [];
+  const expectedHtml = new Set(params.decision.routes.map((route) => routeToHtmlPath(route)));
+  const emittedHtmlRoutes = new Set(
+    dedupeFiles(params.files)
+      .map((file) => normalizePath(file.path))
+      .filter((filePath) => filePath.endsWith(".html"))
+      .map((filePath) => htmlPathToRoute(filePath))
+      .filter((route): route is string => Boolean(route)),
+  );
+  const violations: Array<{ sourcePath: string; route: string }> = [];
+  for (const file of dedupeFiles(params.files)) {
+    const sourcePath = normalizePath(file.path);
+    if (!expectedHtml.has(sourcePath)) continue;
+    for (const route of collectInternalHtmlRoutes(String(file.content || ""))) {
+      const generatedRouteFamily = /^\/(?:blog|archive)(?:\/|$)/i.test(route);
+      if (
+        (emittedHtmlRoutes.has(route) || generatedRouteFamily) &&
+        !manifestAllowsRoute(params.decision, route, params.requirementText || "")
+      ) {
+        violations.push({ sourcePath, route });
+      }
+    }
+  }
+  return violations;
+}
+
 function listUnexpectedManifestHtmlFiles(params: {
   decision: LocalDecisionPlan;
   files: RuntimeWorkflowFile[];
   requirementText?: string;
 }): string[] {
-  if (
-    params.decision.routeAuthorityMode !== "prompt_manifest" &&
-    params.decision.routeAuthorityMode !== "workflow_manifest"
-  ) {
-    return [];
+  if (!isClosedManifestAuthority(params.decision)) return [];
+  const expectedHtml = new Set(params.decision.routes.map((route) => routeToHtmlPath(route)));
+  const linkedInternalRoutes = new Set<string>();
+  for (const file of dedupeFiles(params.files)) {
+    const filePath = normalizePath(file.path);
+    if (!expectedHtml.has(filePath)) continue;
+    for (const route of collectInternalHtmlRoutes(String(file.content || ""))) {
+      linkedInternalRoutes.add(route);
+    }
   }
-  const expected = new Set(
-    requiredFileChecklist(params.decision, {
-      files: params.files,
-      requirementText: params.requirementText || "",
-    }).map((filePath) => normalizePath(filePath)),
-  );
   return dedupeFiles(params.files)
     .map((file) => normalizePath(file.path))
     .filter((filePath) => filePath.endsWith(".html"))
     .filter((filePath) => {
+      if (expectedHtml.has(filePath)) return false;
       const route = htmlPathToRoute(filePath);
       if (!route) return false;
-      if (route === "/") return true;
-      return route.split("/").filter(Boolean).length === 1;
+      if (manifestAllowsRoute(params.decision, route, params.requirementText || "")) return false;
+      if (route.split("/").filter(Boolean).length > 1 && !linkedInternalRoutes.has(route)) return false;
+      return true;
     })
-    .filter((filePath) => !expected.has(filePath))
     .sort();
 }
 
@@ -4679,6 +4932,112 @@ async function invokeRoundWithProviderFallback(params: {
   throw lastError instanceof Error ? lastError : new Error(errorText(lastError));
 }
 
+type RouteUnitProviderBridgeResult = {
+  output: ToolRoundOutput;
+  attempt: ProviderAttempt;
+  notes: string[];
+  prompt: string;
+};
+
+async function tryInvokeRouteUnitProviderBridgeRound(params: {
+  adapter: SkillExecutionAdapter;
+  decision: LocalDecisionPlan;
+  stylePreset: DesignStylePreset;
+  styleName: string;
+  styleReason: string;
+  loadedSkillIds: string[];
+  emittedFiles: RuntimeWorkflowFile[];
+  objective: SkillExecutionRoundObjective;
+  requirementText: string;
+  totalRounds: number;
+  providerAttempts: ProviderAttempt[];
+  activeAttempt: ProviderAttempt;
+  excludedProviders: Set<LlmProvider>;
+  toolHistoryMessages: BaseMessage[];
+  idleTimeoutMs: number;
+  absoluteTimeoutMs: number;
+  roundNumber: number;
+  forceEmitFile: boolean;
+}): Promise<RouteUnitProviderBridgeResult | undefined> {
+  if (!shouldUseRouteUnitProviderBridgeForTesting(params.objective)) return undefined;
+  const targetFile = normalizePath(params.objective.targetFiles[0] || "");
+  const route = htmlPathToRoute(targetFile);
+  if (!route) return undefined;
+  const summary = buildRouteUnitContractSummary(
+    {
+      decision: params.decision,
+      requirementText: params.requirementText,
+      stylePreset: params.stylePreset,
+    },
+    route,
+  );
+  if (!summary) return undefined;
+
+  let captured:
+    | {
+        output: ToolRoundOutput;
+        attempt: ProviderAttempt;
+        notes: string[];
+        prompt: string;
+      }
+    | undefined;
+  const generationAdapter = createSkillExecutionGenerationWorkerAdapter({
+    skillAdapter: params.adapter,
+    decision: params.decision,
+    stylePreset: params.stylePreset,
+    styleName: params.styleName,
+    styleReason: params.styleReason,
+    requirementText: params.requirementText,
+    totalRounds: params.totalRounds,
+    loadedSkillIds: params.loadedSkillIds,
+    emittedFiles: params.emittedFiles,
+    invokeRound: async ({ input, prompt, objective }) => {
+      const roundResult = await invokeRoundWithProviderFallback({
+        attempts: params.providerAttempts,
+        preferredAttempt: params.activeAttempt,
+        excludedProviders: params.excludedProviders,
+        objective: objective as RoundObjective,
+        messages: [...params.toolHistoryMessages, new HumanMessage(prompt)],
+        idleTimeoutMs: params.idleTimeoutMs,
+        absoluteTimeoutMs: params.absoluteTimeoutMs,
+        operation: `route-unit-provider-bridge-${params.roundNumber}`,
+        forceEmitFile: params.forceEmitFile,
+        createModel: ({ config, toolChoice, requestTimeoutMs }) =>
+          createToolProtocolModel({
+            config,
+            requestTimeoutMs,
+            toolChoice,
+          }) as ToolProtocolModel,
+        invokeRound: invokeRoundWithTimeout,
+      });
+      captured = {
+        output: roundResult.output,
+        attempt: roundResult.attempt,
+        notes: roundResult.notes,
+        prompt,
+      };
+      return {
+        unitId: input.unitId,
+        status: "passed",
+        files: [],
+        summary: `route-unit provider bridge dispatched ${input.unitId}`,
+      };
+    },
+  });
+  const input = buildGenerationUnitInputFromRouteContract({
+    summary,
+    targetFiles: params.objective.targetFiles,
+  });
+  await generationAdapter.runUnit(input);
+  if (!captured) return undefined;
+  return {
+    output: captured.output,
+    attempt: captured.attempt,
+    prompt: captured.prompt,
+    notes: [`route_unit_provider_bridge:${input.unitId}:${params.objective.targetFiles.join("|")}`, ...captured.notes],
+  };
+}
+
 export function validateAndNormalizeRequiredFiles(params: {
   decision: LocalDecisionPlan;
   files: RuntimeWorkflowFile[];
@@ -4691,6 +5050,7 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
   decision: LocalDecisionPlan;
   files: RuntimeWorkflowFile[];
   requirementText?: string;
+  websiteSurfaceMode?: WebsiteSurfaceMode;
   enforceCorporateHomepageContract?: boolean;
 }): { files: RuntimeWorkflowFile[]; qaSummary: QaSummary; qaRecords: SkillToolQaRecord[] } {
   const files = dedupeFiles(params.files);
@@ -4749,6 +5109,23 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
   if (missing.length > 0) {
     throw new Error(`skill_tool_missing_required_files: ${missing.join(", ")}`);
   }
+  const manifestRouteLinkViolations = listManifestRouteLinkViolations({
+    decision: params.decision,
+    files: normalizedFiles,
+    requirementText: params.requirementText || "",
+  });
+  if (manifestRouteLinkViolations.length > 0) {
+    const bySource = new Map<string, string[]>();
+    for (const violation of manifestRouteLinkViolations) {
+      bySource.set(violation.sourcePath, [...(bySource.get(violation.sourcePath) || []), violation.route]);
+    }
+    const [sourcePath, routes = []] = Array.from(bySource.entries())[0] || [];
+    throw new Error(
+      `skill_tool_invalid_required_file: ${sourcePath} links to unrequested route(s) outside the Prompt Control Manifest: ${Array.from(
+        new Set(routes),
+      ).join(", ")}`,
+    );
+  }
   const unexpectedManifestHtmlFiles = listUnexpectedManifestHtmlFiles({
     decision: params.decision,
     files: normalizedFiles,
@@ -4806,6 +5183,7 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
 
   assertSharedShellConsistency(params.decision, byPath);
   assertGenericRouteShapeQuality(params.decision, byPath);
+  assertConsultationFormRequirement(params.decision, byPath, params.requirementText || "");
 
   for (const route of params.decision.routes) {
     totalRoutes += 1;
@@ -4871,6 +5249,7 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
       pagePath,
       decision: params.decision,
       requirementText: params.requirementText || "",
+      websiteSurfaceMode: params.websiteSurfaceMode,
     });
     if (surfaceHomepageArchetypeIssues.length > 0) {
       throw new Error(
@@ -4911,6 +5290,15 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
     const isPlannedBlogDataRoute = isBlogDataSourceRoute(params.decision, route);
     const isExplicitBlogIndexRoute = normalizePath(route) === "/blog";
     const hasBlogContract = hasBlogDataSourceContract(html);
+    const forbidsBlogArchiveBehavior =
+      isClosedManifestAuthority(params.decision) &&
+      hasNegativeBlogArchiveBehaviorContract(params.requirementText || "") &&
+      !manifestAllowedRoutes(params.decision).has("/blog");
+    if (hasBlogContract && forbidsBlogArchiveBehavior) {
+      throw new Error(
+        `skill_tool_invalid_required_file: ${pagePath} applies the Blog/content collection data-source contract despite explicit no blog/archive behavior`,
+      );
+    }
     if ((isPlannedBlogDataRoute || isExplicitBlogIndexRoute) && !hasBlogContract) {
       throw new Error(`skill_tool_invalid_required_file: ${pagePath} does not include the Blog data-source contract`);
     }
@@ -5102,6 +5490,11 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
             `skill_tool_invalid_required_file: ${pagePath} is missing a real bilingual language switch; add a data-locale-toggle control that swaps visible copy via the i18n resource files`,
           );
         }
+        if (!hasTranslatedAltLocale && hasBilingualLocaleToggle(html)) {
+          throw new Error(
+            `skill_tool_invalid_required_file: ${pagePath} exposes an EN/ZH switch but the locale resources do not contain real alternate-language translations for the visible core copy; either provide translated locale resources or remove the switch and keep one visible language`,
+          );
+        }
       }
     }
   }
@@ -5118,6 +5511,18 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
       throw new Error(
         `skill_tool_invalid_required_file: Blog/content fallback exposes ${detailRoutes.length} detail links without an explicit requested content count; limit the initial Blog fallback to ${DEFAULT_UNREQUESTED_BLOG_DETAIL_LIMIT} substantial entries or ask for a specific article count`,
       );
+    }
+  }
+
+  for (const file of normalizedFiles.filter((item) => isBlogDetailHtmlPath(item.path))) {
+    const detailPath = normalizePath(file.path);
+    const detailHtml = ensureHtmlDocument(String(file.content || ""));
+    if (!detailHtml) continue;
+    if (!hasStylesheetRef(detailHtml)) {
+      throw new Error(`skill_tool_invalid_required_file: ${detailPath} does not reference /styles.css`);
+    }
+    if (!hasSharedScriptRef(detailHtml)) {
+      throw new Error(`skill_tool_invalid_required_file: ${detailPath} does not reference /script.js`);
     }
   }
 
@@ -5161,9 +5566,13 @@ export function validateWebsiteRequiredFilesWithQaForAdapter(params: {
   decision: LocalDecisionPlan;
   files: RuntimeWorkflowFile[];
   requirementText?: string;
+  websiteSurfaceMode?: string;
   enforceCorporateHomepageContract?: boolean;
 }): SkillExecutionValidationResult {
-  return validateAndNormalizeRequiredFilesWithQa(params);
+  return validateAndNormalizeRequiredFilesWithQa({
+    ...params,
+    websiteSurfaceMode: inferWebsiteSurfaceModeFromSkillId(String(params.websiteSurfaceMode || "")),
+  });
 }
 
 function normalizeHrefRoute(href: string): string {
@@ -5204,9 +5613,63 @@ function hasFooterBandStyle(stylesCss: string): boolean {
   });
 }
 
+function hasDuplicateFooterLinkGroups(html: string): boolean {
+  const footer = extractTagBlock(String(html || ""), "footer");
+  if (!footer) return false;
+  const groupPattern =
+    /<([a-zA-Z][\w:-]*)\b[^>]*class=(["'])[^"']*\bfooter(?:-|__)(?:links|nav)\b[^"']*\2[^>]*>([\s\S]*?)<\/\1>/gi;
+  const groups = Array.from(footer.matchAll(groupPattern))
+    .map((match) =>
+      Array.from(new Set(Array.from(String(match[3] || "").matchAll(/\bhref\s*=\s*["']([^"']+)["']/gi))
+        .map((hrefMatch) => normalizeHrefRoute(String(hrefMatch[1] || "")))
+        .filter((route) => Boolean(route) && route !== "/")
+        .sort())),
+    )
+    .filter((routes) => routes.length >= 3);
+  const fingerprints = groups.map((routes) => routes.join("|")).filter(Boolean);
+  return new Set(fingerprints).size !== fingerprints.length;
+}
+
 function extractTagBlock(html: string, tagName: string): string {
   const match = String(html || "").match(new RegExp(`<${tagName}\\b[^>]*>[\\s\\S]*?<\\/${tagName}>`, "i"));
   return String(match?.[0] || "");
+}
+
+function requirementNeedsConsultationForm(text = ""): boolean {
+  const source = String(text || "");
+  return /(?:consultation|intake|clarification)\s+form|form\s+with\s+name,\s*organization,\s*email,\s*topic,\s*and\s*message|咨询(?:表单|收集|入口|需求)|咨询.*(?:姓名|机构|单位|邮箱|主题|留言)/i.test(
+    source,
+  );
+}
+
+function hasConsultationForm(html: string): boolean {
+  const forms = Array.from(String(html || "").matchAll(/<form\b[\s\S]*?<\/form>/gi)).map((match) => String(match[0] || ""));
+  return forms.some((form) => {
+    const visible = htmlVisibleText(form).toLowerCase();
+    const source = `${form} ${visible}`.toLowerCase();
+    const hasName = /\bname\b|姓名|联系人|称呼/i.test(source);
+    const hasOrganization = /organization|organisation|company|institution|单位|机构|组织|公司/i.test(source);
+    const hasEmail = /\bemail\b|邮箱|电子邮件/i.test(source);
+    const hasTopic = /\b(topic|subject)\b|主题|议题|咨询事项|咨询类型/i.test(source);
+    const hasMessage = /<textarea\b/i.test(form) || /\bmessage\b|留言|说明|需求|备注/i.test(source);
+    return hasName && hasOrganization && hasEmail && hasTopic && hasMessage;
+  });
+}
+
+function assertConsultationFormRequirement(
+  decision: LocalDecisionPlan,
+  byPath: Map<string, RuntimeWorkflowFile>,
+  requirementText = "",
+) {
+  if (!requirementNeedsConsultationForm(requirementText)) return;
+  const plannedHtml = decision.routes
+    .map((route) => routeToHtmlPath(route))
+    .map((pagePath) => String(byPath.get(pagePath)?.content || ""))
+    .filter(Boolean);
+  if (plannedHtml.some(hasConsultationForm)) return;
+  throw new Error(
+    "skill_tool_invalid_required_file: site is missing a required consultation/intake form with name, organization, email, topic, and message fields",
+  );
 }
 
 function extractPlannedRoutesFromHtmlBlock(html: string, allowedRoutes: Set<string>): string[] {
@@ -5229,6 +5692,11 @@ function assertSharedShellConsistency(decision: LocalDecisionPlan, byPath: Map<s
   if (canonicalFooterBlock && footerNeedsStructuredShell(canonicalFooterBlock, stylesCss)) {
     throw new Error(
       "skill_tool_invalid_required_file: /index.html collapses the shared footer into a flat link row instead of a structured footer shell",
+    );
+  }
+  if (canonicalFooterBlock && hasDuplicateFooterLinkGroups(canonicalFooterBlock)) {
+    throw new Error(
+      "skill_tool_invalid_required_file: /index.html duplicates the same footer link set across multiple groups",
     );
   }
 
@@ -5263,6 +5731,11 @@ function assertSharedShellConsistency(decision: LocalDecisionPlan, byPath: Map<s
       if (footerNeedsStructuredShell(pageFooterBlock, stylesCss)) {
         throw new Error(
           `skill_tool_invalid_required_file: ${pagePath} collapses the shared footer into a flat link row instead of a structured footer shell`,
+        );
+      }
+      if (hasDuplicateFooterLinkGroups(pageFooterBlock)) {
+        throw new Error(
+          `skill_tool_invalid_required_file: ${pagePath} duplicates the same footer link set across multiple groups`,
         );
       }
       if (canonicalFooterRoutes.length > 0) {
@@ -5331,7 +5804,12 @@ export function enforceNavigationOrder(html: string, decision: LocalDecisionPlan
     decision.routes.map((route) => [normalizeRouteKey(route), localizedKnownRouteLabel(route, "en")]),
   );
   const requestedLocale = resolveRequestedExperienceLocale(requirementText, decision.locale);
-  const visibleLocale: "zh-CN" | "en" = requestedLocale === "zh-CN" ? "zh-CN" : "en";
+  const visibleLocale: "zh-CN" | "en" =
+    requestedLocale === "bilingual"
+      ? bilingualDefaultVisibleLanguage(requirementText)
+      : requestedLocale === "zh-CN"
+        ? "zh-CN"
+        : "en";
 
   const localizeKnownRouteAnchor = (anchorHtml: string, route: string): string => {
     if (/\bclass=(["'])[^"']*\bbrand\b[^"']*\1/i.test(String(anchorHtml || ""))) {
@@ -5373,7 +5851,7 @@ export function enforceNavigationOrder(html: string, decision: LocalDecisionPlan
     return `<div class="locale-switch" aria-label="Language switch">${buttons.join("")}</div>`;
   };
 
-  const buildOrderedKnownAnchorMarkup = (innerHtml: string, includeLocaleToggle: boolean): string => {
+  const buildOrderedKnownAnchorMarkup = (innerHtml: string, includeLocaleToggle: boolean, addMissingKnownRoutes = true): string => {
     const anchors = Array.from(String(innerHtml || "").matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>[\s\S]*?<\/a>/gi));
     const keepBilingualNavPayload = shouldUseBilingualExperience(requirementText, decision.locale);
     const localeToggleMarkup =
@@ -5416,19 +5894,21 @@ export function enforceNavigationOrder(html: string, decision: LocalDecisionPlan
       );
 
     const seenKnownRoutes = new Set(dedupedKnown.map((item) => item.route));
-    const missingKnown = decision.routes
-      .map((route) => normalizePath(route))
-      .map((route) => normalizeRouteKey(route))
-      .filter((route) => route !== "/" && !seenKnownRoutes.has(route))
-      .map((route) => {
-        const zhLabel = zhRouteLabel.get(route) || localizedKnownRouteLabel(route, "zh-CN");
-        const enLabel = routeLabel.get(route) || enRouteLabel.get(route) || localizedKnownRouteLabel(route, "en");
-        const visibleLabel = visibleLocale === "en" ? enLabel : zhLabel;
-        if (!keepBilingualNavPayload) {
-          return `<a href="${route}">${visibleLabel}</a>`;
-        }
-        return `<a href="${route}" data-i18n data-i18n-zh="${escapeHtmlAttribute(zhLabel)}" data-i18n-en="${escapeHtmlAttribute(enLabel)}">${visibleLabel}</a>`;
-      });
+    const missingKnown = addMissingKnownRoutes
+      ? decision.routes
+          .map((route) => normalizePath(route))
+          .map((route) => normalizeRouteKey(route))
+          .filter((route) => route !== "/" && !seenKnownRoutes.has(route))
+          .map((route) => {
+            const zhLabel = zhRouteLabel.get(route) || localizedKnownRouteLabel(route, "zh-CN");
+            const enLabel = routeLabel.get(route) || enRouteLabel.get(route) || localizedKnownRouteLabel(route, "en");
+            const visibleLabel = visibleLocale === "en" ? enLabel : zhLabel;
+            if (!keepBilingualNavPayload) {
+              return `<a href="${route}">${visibleLabel}</a>`;
+            }
+            return `<a href="${route}" data-i18n data-i18n-zh="${escapeHtmlAttribute(zhLabel)}" data-i18n-en="${escapeHtmlAttribute(enLabel)}">${visibleLabel}</a>`;
+          })
+      : [];
 
     return [
       ...brandAnchors.map((item) => item.tag),
@@ -5446,7 +5926,7 @@ export function enforceNavigationOrder(html: string, decision: LocalDecisionPlan
         const rewrittenInner = innerHtml.replace(
           /<([a-zA-Z][\w:-]*)\b([^>]*)class=(["'])([^"']*\bfooter(?:-|__)(?:nav|links)\b[^"']*)\3([^>]*)>([\s\S]*?)<\/\1>/gi,
           (_match, elementName: string, beforeClassAttrs: string, quote: string, classValue: string, afterClassAttrs: string, blockInner: string) => {
-            const reorderedInner = buildOrderedKnownAnchorMarkup(String(blockInner || ""), false);
+            const reorderedInner = buildOrderedKnownAnchorMarkup(String(blockInner || ""), false, false);
             return `<${elementName}${beforeClassAttrs}class=${quote}${classValue}${quote}${afterClassAttrs}>${reorderedInner}</${elementName}>`;
           },
         );
@@ -5551,11 +6031,14 @@ function requiredFileChecklist(decision: LocalDecisionPlan, params: { files?: Ru
     : shouldRequireAllDiscoveredBlogDetails(requirementText)
       ? discoveredDetails
       : discoveredDetails.slice(0, DEFAULT_UNREQUESTED_BLOG_DETAIL_LIMIT);
+  const manifestAllowedDetails = requiredDetails.filter((filePath) =>
+    manifestAllowsOutputFile(decision, filePath, requirementText),
+  );
   return Array.from(new Set([
     "/styles.css",
     "/script.js",
     ...decision.routes.map((route) => routeToHtmlPath(route)),
-    ...requiredDetails,
+    ...manifestAllowedDetails,
   ]));
 }
 
@@ -5577,10 +6060,23 @@ function routeDefaultsToCollectionSurface(route: string, navLabel = ""): boolean
   );
 }
 
+function hasNegativePublishableDetailContract(requirementText = ""): boolean {
+  return /(?:do\s+not|don't|without|unless\s+[^.]{0,40}\bexplicitly|不要|不得|禁止|除非).{0,80}(?:blog|blogs|article|articles|post|posts|news|insight|insights|journal|story|stories|publishable|博客|文章|帖子|博文|资讯|洞察).{0,80}(?:detail|details|route|routes|slug|slugs|archive|archives|详情|路由|归档)/iu.test(
+    String(requirementText || ""),
+  );
+}
+
+function hasNegativeBlogArchiveBehaviorContract(requirementText = ""): boolean {
+  return /(?:do\s+not|don't|without|no|avoid|exclude|不要|不得|禁止|不).{0,80}(?:blog|blogs|archive|archives|博客|归档).{0,60}(?:behavior|behaviour|routes?|links?|pages?|surface|archive|archives|行为|路由|链接|页面|归档)?/iu.test(
+    String(requirementText || ""),
+  );
+}
+
 function requirementRequestsPublishableDetailPages(requirementText = ""): boolean {
   const text = String(requirementText || "").trim();
   if (!text) return false;
-  return /(?:\b(?:add|build|create|generate|include|need|publish|seed|write|require)\b.{0,48}\b(?:blog|blogs|article|articles|post|posts|news|insight|insights|journal|story|stories)\b|\b(?:blog|blogs|article|articles|post|posts|news|insight|insights|journal|story|stories)\b.{0,32}\b(?:detail page|detail pages|archive|archives|route|routes|slug|slugs)\b|(?:新增|创建|生成|提供|包含|发布|需要).{0,24}(?:博客|文章|帖子|博文|资讯|快讯|洞察)(?:页|详情页|归档)?|(?:博客|文章|帖子|博文|资讯|快讯|洞察).{0,16}(?:详情页|归档|列表|路由))/iu.test(
+  if (hasNegativePublishableDetailContract(text)) return false;
+  return /(?:\b(?:add|build|create|generate|include|need|publish|publishes|seed|write|require)\b.{0,48}\b(?:blog|blogs|article|articles|post|posts|news|insight|insights|journal|story|stories|report|reports|standards|case\s+library)\b|\b(?:blog|blogs|article|articles|post|posts|news|insight|insights|journal|story|stories|report|reports|standards|case\s+library)\b.{0,32}\b(?:content|detail page|detail pages|archive|archives|route|routes|slug|slugs)\b|(?:新增|创建|生成|提供|包含|发布|需要).{0,24}(?:博客|文章|帖子|博文|资讯|快讯|洞察)(?:页|详情页|归档)?|(?:博客|文章|帖子|博文|资讯|快讯|洞察).{0,16}(?:详情页|归档|列表|路由))/iu.test(
     text,
   );
 }
@@ -5792,6 +6288,8 @@ function emitSnapshot(params: {
   qaSummary?: QaSummary;
   provider?: LlmProvider;
   model?: string;
+  websiteSurfaceMode?: WebsiteSurfaceMode;
+  routeUnits?: SkillToolExecutorStepSnapshot["routeUnits"];
   onStep?: (snapshot: SkillToolExecutorStepSnapshot) => Promise<void> | void;
 }): Promise<void> | void {
   if (!params.onStep) return;
@@ -5807,6 +6305,8 @@ function emitSnapshot(params: {
     qaSummary: params.qaSummary,
     provider: params.provider,
     model: params.model,
+    websiteSurfaceMode: params.websiteSurfaceMode,
+    routeUnits: params.routeUnits,
   });
 }
 
@@ -5972,6 +6472,9 @@ function buildToolRoundPrompt(params: {
     sharedAssetRound
       ? "- For shared-asset rounds, prioritize the common CSS/JS layer only. Do not restate or solve route-specific content architecture inside /styles.css or /script.js."
       : "- Follow the website-generation-workflow skill contract for Canonical Website Prompt adherence, page differentiation, and shared shell/footer rules.",
+    params.decision.routeAuthorityMode === "prompt_manifest" || params.decision.routeAuthorityMode === "workflow_manifest"
+      ? "- Prompt Control Manifest closed-set rule: emit only the manifest route HTML files plus shared assets. Do not create extra pages, /blog/{slug}/ detail files, archive pages, downloads pages, or alternate route aliases unless those exact routes are present in the manifest."
+      : "",
     sharedAssetRound
       ? "- CSS surface-token rule: when emitting /styles.css, read `/website_design_spec.md` and honor its `surface_css_tokens` / `surface_typography_tokens`. These surface tokens override generic style preset colors; do not reuse one green-white rounded-card theme for corporate, docs, and content-hub surfaces."
       : "",
@@ -5981,7 +6484,7 @@ function buildToolRoundPrompt(params: {
     ...(!sharedAssetRound
       ? [
           "- Visitor-facing content must be final site content. Do not show explanatory scaffolding such as reading method, what you'll find, article collection, this page collects, each article includes date/read time/tags, launch articles, three launch articles, 首发文章, 三篇首发文章, or their Chinese equivalents.",
-          "- Visitor-facing content must not reuse internal planning vocabulary. Never render words such as assumption, assumptions, content gap, Prompt Control Manifest, source priorities, page brief, source material appendix, internal prompt, or requirement completion.",
+          "- Visitor-facing content must not reuse internal planning vocabulary. Never render phrases such as assumption notes, content gap, Prompt Control Manifest, source priorities, page brief, source material appendix, internal prompt, or requirement completion.",
           "- Visitor-facing copy must talk about the site's subject, not the page mechanics. Do not write sentences like 'the page groups...', 'the homepage frames...', 'the home page foregrounds...', or 'the visual system keeps...'. Replace them with concrete subject matter, proof, docs topics, product capabilities, or user outcomes.",
           "- Follow Open Design copy discipline: concise H1/H2 headlines, one-to-two-sentence leads, and CTA labels that say what happens next. Avoid generic CTAs like Learn More, Read More, Get Started, or Click Here.",
           ...(focusedBlogTarget || (!singleHtmlTargetRound && (requestedContentCount || 0) > 0)
@@ -6188,10 +6691,12 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
   const availableSkillIds = await getWebsiteGenerationSkillBundle();
   const websiteSeedSkillIds = await listWebsiteSeedSkillIds();
   const documentSkillIds = await listDocumentContentSkillIds();
+  const siteGeneratorMode = resolveWebsiteArtifactGeneratorMode();
   const selectedSeedSkills = await selectWebsiteSeedSkillsForIntent({
     requirementText: sanitizedRequirementWithReferences,
     routes: decision.routes,
     maxSkills: Number(process.env.SKILL_TOOL_MAX_SEED_SKILLS || 2),
+    generatorMode: siteGeneratorMode,
   });
   const selectedSeedSkillGuidance = await renderWebsiteSeedSkillSidecarGuidance(selectedSeedSkills);
   const selectedDocumentSkills = await selectDocumentContentSkillsForIntent({
@@ -6204,6 +6709,11 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
   const selectedWebsiteSurfaceMode =
     inferWebsiteSurfaceModeFromSkillId(String((workflowContext as any).websiteSurfaceMode || "")) ||
     inferWebsiteSurfaceModeFromSkillId(String((workflowContext as any).websiteTypeSkillId || ""));
+  const selectedDiscoveryBrief = ((workflowContext as any).websiteDiscoveryBrief || undefined) as
+    | WebsiteDiscoveryBrief
+    | undefined;
+  const selectedDesignSystemId = String((workflowContext as any).designSystemId || "").trim() || undefined;
+  const selectedDesignSystemName = String((workflowContext as any).designSystemName || "").trim() || undefined;
   const providerAttempts = resolveProviderAttempts({
     provider: (params.state as any)?.workflow_context?.lockedProvider,
     model: (params.state as any)?.workflow_context?.lockedModel,
@@ -6234,15 +6744,19 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     stylePreset,
     designHit: workflow.hit,
     websiteSurfaceMode: selectedWebsiteSurfaceMode,
-    discoveryBrief: ((workflowContext as any).websiteDiscoveryBrief || undefined) as WebsiteDiscoveryBrief | undefined,
-    designSystemId: String((workflowContext as any).designSystemId || "").trim() || undefined,
-    designSystemName: String((workflowContext as any).designSystemName || "").trim() || undefined,
+    discoveryBrief: selectedDiscoveryBrief,
+    designSystemId: selectedDesignSystemId,
+    designSystemName: selectedDesignSystemName,
+    siteGeneratorMode,
+    selectedSeedSkillIds: selectedSeedSkills.map((item) => item.id),
   });
   let assistantNotes: string[] = [];
   let completedStaticFiles: RuntimeWorkflowFile[] | undefined;
   let completedQaSummary: QaSummary | undefined;
   let completedQaRecords: SkillToolQaRecord[] = [];
   let lastStageFiles: RuntimeWorkflowFile[] = [];
+  let qaRepairAttemptCount = 0;
+  const qaRepairFileTargets = new Set<string>();
   let stageMeta: StageAttemptMeta = {
     activeProvider: providerConfig.provider,
     activeModel: providerConfig.modelName,
@@ -6285,6 +6799,13 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
             : []),
           `- Locale: ${decision.locale}`,
           `- Preferred design system: ${workflow.hit?.name || workflow.hit?.id || "auto"}`,
+          "",
+          renderWebsiteArtifactGeneratorContract({
+            mode: siteGeneratorMode,
+            surfaceMode: selectedWebsiteSurfaceMode,
+            selectedSeedSkillIds: selectedSeedSkills.map((item) => item.id),
+          }),
+          "",
           `- Available website skills: ${availableSkillIds.join(", ")}`,
           `- Website seed skills discovered from frontmatter: ${websiteSeedSkillIds.join(", ") || "(none)"}`,
           `- Recommended seed skills for this brief: ${selectedSeedSkills.map((item) => `${item.id} (${item.reason})`).join(", ") || "(none)"}`,
@@ -6362,6 +6883,12 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
         model: lock.model,
         stylePreset,
         designHit: workflow.hit,
+        websiteSurfaceMode: selectedWebsiteSurfaceMode,
+        discoveryBrief: selectedDiscoveryBrief,
+        designSystemId: selectedDesignSystemId,
+        designSystemName: selectedDesignSystemName,
+        siteGeneratorMode,
+        selectedSeedSkillIds: selectedSeedSkills.map((item) => item.id),
       });
       stageMeta = {
         activeProvider: providerConfig.provider,
@@ -6387,6 +6914,19 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
         })),
         provider: stageMeta.activeProvider,
         model: stageMeta.activeModel,
+        websiteSurfaceMode: selectedWebsiteSurfaceMode,
+        routeUnits: buildRouteUnitSnapshotsForToolFlow({
+          decision,
+          requirementText: fullRequirementContext,
+          stylePreset,
+          designHit: workflow.hit,
+          websiteSurfaceMode: selectedWebsiteSurfaceMode,
+          discoveryBrief: selectedDiscoveryBrief,
+          designSystemId: selectedDesignSystemId,
+          designSystemName: selectedDesignSystemName,
+          files: dedupeFiles(emittedFiles),
+          qaRecords: completedQaRecords,
+        }),
         onStep: params.onStep,
       });
 
@@ -6433,7 +6973,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
           taskTimeoutMs: params.timeoutMs,
           targetFileCount: Math.max(1, objective.targetFiles.length || objectiveTargets.length || 1),
         });
-        const prompt = adapter.buildToolRoundPrompt({
+        const roundPromptParams = {
           round,
           totalRounds: totalToolRounds,
           decision,
@@ -6449,56 +6989,142 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
           objective,
           requirementText: promptRequirementContext,
           analysisRequirementText: fullRequirementContext,
-        });
-        toolHistoryMessages.push(new HumanMessage(prompt));
+        };
         const forceEmitFile = noProgressRounds > 0;
         let roundOutput: ToolRoundOutput;
         try {
-          const roundResult = await invokeRoundWithProviderFallback({
-            attempts: providerAttempts,
-            preferredAttempt: activeAttempt,
-            excludedProviders: stageExcludedProviders,
+          const bridgeResult = await tryInvokeRouteUnitProviderBridgeRound({
+            adapter,
+            decision,
+            stylePreset,
+            styleName: workflow.hit?.name || workflow.hit?.id || "selected-style",
+            styleReason:
+              workflow.hit?.selection_candidates?.find((item) => item.id === workflow.hit?.id)?.reason ||
+              workflow.hit?.design_desc ||
+              "Follow requirement semantics and conversion goals.",
+            loadedSkillIds: Array.from(loadedSkills.keys()),
+            emittedFiles,
             objective,
-            messages: toolHistoryMessages,
+            requirementText: promptRequirementContext,
+            totalRounds: totalToolRounds,
+            providerAttempts,
+            activeAttempt,
+            excludedProviders: stageExcludedProviders,
+            toolHistoryMessages,
             idleTimeoutMs: timeoutConfig.idleTimeoutMs,
             absoluteTimeoutMs: timeoutConfig.absoluteTimeoutMs,
-            operation: `skill-tool-round-${round + 1}`,
+            roundNumber: round + 1,
             forceEmitFile,
-            createModel: ({ config, toolChoice, requestTimeoutMs }) =>
-              createToolProtocolModel({
-                config,
-                requestTimeoutMs,
-                toolChoice,
-              }) as ToolProtocolModel,
-            invokeRound: invokeRoundWithTimeout,
           });
-          roundOutput = roundResult.output;
-          if (roundResult.notes.length > 0) {
-            assistantNotes.push(...roundResult.notes);
+          if (bridgeResult) {
+            toolHistoryMessages.push(new HumanMessage(bridgeResult.prompt));
+            roundOutput = bridgeResult.output;
+            if (bridgeResult.notes.length > 0) {
+              assistantNotes.push(...bridgeResult.notes);
+            }
+            activeAttempt = bridgeResult.attempt;
+            providerConfig = bridgeResult.attempt.config;
+            lock = bridgeResult.attempt.lock;
+            stageMeta = {
+              ...stageMeta,
+              activeProvider: providerConfig.provider,
+              activeModel: providerConfig.modelName,
+              fallbackEngaged:
+                stageMeta.fallbackEngaged ||
+                providerAttempts.findIndex((attempt) => attempt.config.provider === providerConfig.provider) > 0 ||
+                bridgeResult.notes.length > 0,
+              providerNotes: [...stageMeta.providerNotes, ...bridgeResult.notes],
+            };
+          } else {
+            const prompt = adapter.buildToolRoundPrompt(roundPromptParams);
+            toolHistoryMessages.push(new HumanMessage(prompt));
+            const roundResult = await invokeRoundWithProviderFallback({
+              attempts: providerAttempts,
+              preferredAttempt: activeAttempt,
+              excludedProviders: stageExcludedProviders,
+              objective,
+              messages: toolHistoryMessages,
+              idleTimeoutMs: timeoutConfig.idleTimeoutMs,
+              absoluteTimeoutMs: timeoutConfig.absoluteTimeoutMs,
+              operation: `skill-tool-round-${round + 1}`,
+              forceEmitFile,
+              createModel: ({ config, toolChoice, requestTimeoutMs }) =>
+                createToolProtocolModel({
+                  config,
+                  requestTimeoutMs,
+                  toolChoice,
+                }) as ToolProtocolModel,
+              invokeRound: invokeRoundWithTimeout,
+            });
+            roundOutput = roundResult.output;
+            if (roundResult.notes.length > 0) {
+              assistantNotes.push(...roundResult.notes);
+            }
+            activeAttempt = roundResult.attempt;
+            providerConfig = roundResult.attempt.config;
+            lock = roundResult.attempt.lock;
+            stageMeta = {
+              ...stageMeta,
+              activeProvider: providerConfig.provider,
+              activeModel: providerConfig.modelName,
+              fallbackEngaged:
+                stageMeta.fallbackEngaged ||
+                providerAttempts.findIndex((attempt) => attempt.config.provider === providerConfig.provider) > 0 ||
+                roundResult.notes.length > 0,
+              providerNotes: [...stageMeta.providerNotes, ...roundResult.notes],
+            };
           }
-          activeAttempt = roundResult.attempt;
-          providerConfig = roundResult.attempt.config;
-          lock = roundResult.attempt.lock;
-          stageMeta = {
-            ...stageMeta,
-            activeProvider: providerConfig.provider,
-            activeModel: providerConfig.modelName,
-            fallbackEngaged:
-              stageMeta.fallbackEngaged ||
-              providerAttempts.findIndex((attempt) => attempt.config.provider === providerConfig.provider) > 0 ||
-              roundResult.notes.length > 0,
-            providerNotes: [...stageMeta.providerNotes, ...roundResult.notes],
-          };
         } catch (error) {
-          if (!isRetryableProviderError(error)) {
-            throw error;
+          if (shouldUseRouteUnitProviderBridgeForTesting(objective)) {
+            assistantNotes.push(`route_unit_provider_bridge_legacy_fallback:${errorText(error).slice(0, 320)}`);
+            const prompt = adapter.buildToolRoundPrompt(roundPromptParams);
+            toolHistoryMessages.push(new HumanMessage(prompt));
+            const roundResult = await invokeRoundWithProviderFallback({
+              attempts: providerAttempts,
+              preferredAttempt: activeAttempt,
+              excludedProviders: stageExcludedProviders,
+              objective,
+              messages: toolHistoryMessages,
+              idleTimeoutMs: timeoutConfig.idleTimeoutMs,
+              absoluteTimeoutMs: timeoutConfig.absoluteTimeoutMs,
+              operation: `skill-tool-round-${round + 1}`,
+              forceEmitFile,
+              createModel: ({ config, toolChoice, requestTimeoutMs }) =>
+                createToolProtocolModel({
+                  config,
+                  requestTimeoutMs,
+                  toolChoice,
+                }) as ToolProtocolModel,
+              invokeRound: invokeRoundWithTimeout,
+            });
+            roundOutput = roundResult.output;
+            if (roundResult.notes.length > 0) {
+              assistantNotes.push(...roundResult.notes);
+            }
+            activeAttempt = roundResult.attempt;
+            providerConfig = roundResult.attempt.config;
+            lock = roundResult.attempt.lock;
+            stageMeta = {
+              ...stageMeta,
+              activeProvider: providerConfig.provider,
+              activeModel: providerConfig.modelName,
+              fallbackEngaged:
+                stageMeta.fallbackEngaged ||
+                providerAttempts.findIndex((attempt) => attempt.config.provider === providerConfig.provider) > 0 ||
+                roundResult.notes.length > 0,
+              providerNotes: [...stageMeta.providerNotes, ...roundResult.notes],
+            };
+          } else {
+            if (!isRetryableProviderError(error)) {
+              throw error;
+            }
+            const stillMissingAfterRetry = adapter
+              .buildRequiredFileChecklist(decision, { files: emittedFiles, requirementText: fullRequirementContext })
+              .filter((path) => !new Set(emittedFiles.map((file) => normalizePath(file.path))).has(normalizePath(path)));
+            throw new Error(
+              `skill_tool_provider_retry_exhausted: ${errorText(error)}; missing=${stillMissingAfterRetry.join(", ") || "(none)"}`,
+            );
           }
-          const stillMissingAfterRetry = adapter
-            .buildRequiredFileChecklist(decision, { files: emittedFiles, requirementText: fullRequirementContext })
-            .filter((path) => !new Set(emittedFiles.map((file) => normalizePath(file.path))).has(normalizePath(path)));
-          throw new Error(
-            `skill_tool_provider_retry_exhausted: ${errorText(error)}; missing=${stillMissingAfterRetry.join(", ") || "(none)"}`,
-          );
         }
         if (roundOutput.assistant) {
           assistantNotes.push(String(roundOutput.assistant).trim());
@@ -6545,6 +7171,11 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
             );
             if (result.kind === "file") {
               const normalizedPath = normalizePath(String(result.file.path || ""));
+              if (!manifestAllowsOutputFile(decision, normalizedPath, fullRequirementContext)) {
+                throw new Error(
+                  `skill_tool_manifest_gate_failed: ${normalizedPath} is outside the Prompt Control Manifest route set`,
+                );
+              }
               let normalizedFile = result.file;
               if (normalizedPath === "/styles.css") {
                 normalizedFile = { ...result.file, content: normalizeGeneratedCss(String(result.file.content || "")) };
@@ -6638,6 +7269,19 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
           })),
           provider: stageMeta.activeProvider,
           model: stageMeta.activeModel,
+          websiteSurfaceMode: selectedWebsiteSurfaceMode,
+          routeUnits: buildRouteUnitSnapshotsForToolFlow({
+            decision,
+            requirementText: fullRequirementContext,
+            stylePreset,
+            designHit: workflow.hit,
+            websiteSurfaceMode: selectedWebsiteSurfaceMode,
+            discoveryBrief: selectedDiscoveryBrief,
+            designSystemId: selectedDesignSystemId,
+            designSystemName: selectedDesignSystemName,
+            files: dedupedCurrent,
+            qaRecords: completedQaRecords,
+          }),
           onStep: params.onStep,
         });
 
@@ -6675,6 +7319,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
               decision,
               files: emittedFiles,
               requirementText: fullRequirementContext,
+              websiteSurfaceMode: selectedWebsiteSurfaceMode,
             });
             completedStaticFiles = validated.files;
             completedQaSummary = validated.qaSummary;
@@ -6687,6 +7332,10 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
             }
             assistantNotes.push(`tool_validation_repair:${feedback.slice(0, 500)}`);
             qaRepairTargets = extractQaRepairTargets(feedback);
+            qaRepairAttemptCount += 1;
+            for (const target of qaRepairTargets) {
+              qaRepairFileTargets.add(normalizePath(target));
+            }
             toolHistoryMessages.push(
               new HumanMessage(
                 [
@@ -6711,6 +7360,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
           decision,
           files: emittedFiles,
           requirementText: fullRequirementContext,
+          websiteSurfaceMode: selectedWebsiteSurfaceMode,
         });
         completedStaticFiles = validated.files;
         completedQaSummary = validated.qaSummary;
@@ -6738,11 +7388,24 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
       decision,
       files: lastStageFiles,
       requirementText: fullRequirementContext,
+      websiteSurfaceMode: selectedWebsiteSurfaceMode,
     });
     completedStaticFiles = validated.files;
     completedQaSummary = validated.qaSummary;
     completedQaRecords = validated.qaRecords;
   }
+  if (qaRepairAttemptCount > 0) {
+    completedQaSummary = {
+      ...completedQaSummary,
+      totalRetries: Math.max(Number(completedQaSummary.totalRetries || 0), qaRepairAttemptCount),
+    };
+  }
+  const routeRepairEvidence: SkillToolRouteRepairEvidence = {
+    status: qaRepairAttemptCount > 0 ? "route_repairs_applied" : "no_route_repair_needed",
+    repairAttemptCount: qaRepairAttemptCount,
+    repairedFiles: Array.from(qaRepairFileTargets).sort((a, b) => a.localeCompare(b)),
+    fullRegenerationAvoided: qaRepairAttemptCount > 0 ? true : null,
+  };
   const qaReportFile: RuntimeWorkflowFile = {
     path: "/qa-report.json",
     type: "application/json",
@@ -6754,6 +7417,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
         averageScore: completedQaSummary.averageScore,
         summary: completedQaSummary,
         records: completedQaRecords,
+        routeRepairEvidence,
       },
       null,
       2,
@@ -6798,6 +7462,18 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
       files: mergedWorkflowFiles,
     },
   };
+  const finalRouteUnits = buildRouteUnitSnapshotsForToolFlow({
+    decision,
+    requirementText: fullRequirementContext,
+    stylePreset,
+    designHit: workflow.hit,
+    websiteSurfaceMode: selectedWebsiteSurfaceMode,
+    discoveryBrief: selectedDiscoveryBrief,
+    designSystemId: selectedDesignSystemId,
+    designSystemName: selectedDesignSystemName,
+    files: staticFiles,
+    qaRecords: completedQaRecords,
+  });
 
   const finalState: AgentState = {
     ...params.state,
@@ -6820,6 +7496,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
       runMode: (params.state.workflow_context as any)?.runMode || "async-task",
       genMode: "skill_native",
       generationMode: "skill-native",
+      siteGeneratorMode,
       preferredLocale: decision.locale,
       sourceRequirement: sanitizedRequirementWithReferences,
       skillId: String((params.state.workflow_context as any)?.skillId || "website-generation-workflow"),
@@ -6831,6 +7508,10 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
       designSelectionReason:
         workflow.hit?.selection_candidates?.find((item) => item.id === workflow.hit?.id)?.reason ||
         workflow.hit?.design_desc,
+      websiteSurfaceMode: selectedWebsiteSurfaceMode,
+      websiteDiscoveryBrief: selectedDiscoveryBrief,
+      routeUnits: finalRouteUnits,
+      routeRepairEvidence,
       selectionCriteria: workflow.selectionCriteria,
       sequentialWorkflow: workflow.sequentialWorkflow,
       workflowGuide: workflow.workflowGuide,
@@ -6847,6 +7528,14 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
   const actions = [{ text: "Deploy to shpitto server", payload: "deploy", type: "button" as const }];
   const finalFiles = getStaticArtifactFiles(finalState);
   const finalPages = getPages(finalState);
+  const providerNotes = stageMeta.providerNotes.filter(Boolean);
+  const routeUnitProviderBridgeNotes = Array.from(
+    new Set(
+      [...assistantNotes, ...providerNotes]
+        .filter(Boolean)
+        .filter((note) => note.includes("route_unit_provider_bridge")),
+    ),
+  );
 
   await emitSnapshot({
     stepKey: "/qa-report.json",
@@ -6860,6 +7549,8 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     qaSummary: completedQaSummary,
     provider: stageMeta.activeProvider,
     model: stageMeta.activeModel,
+    websiteSurfaceMode: selectedWebsiteSurfaceMode,
+    routeUnits: finalRouteUnits,
     onStep: params.onStep,
   });
 
@@ -6876,5 +7567,10 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     qaSummary: completedQaSummary,
     provider: stageMeta.activeProvider,
     model: stageMeta.activeModel,
+    siteGeneratorMode,
+    routeUnits: finalRouteUnits,
+    routeRepairEvidence,
+    providerNotes,
+    routeUnitProviderBridgeNotes,
   };
 }

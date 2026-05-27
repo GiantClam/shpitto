@@ -16,6 +16,18 @@ describe("website-type-selector", () => {
     expect(result.surfaceMode).toBe("corporate-b2b-site");
   });
 
+  it("does not treat negative blog/archive wording as a portfolio-blog signal", () => {
+    const result = selectWebsiteGenerationTypeSkill({
+      requirementText:
+        "Build a polished multi-page B2B corporate website for AsterFlow Industrial AI. Audience: enterprise operations leaders evaluating automation partners. Generate Home, Solutions, Cases, About, and Contact. Use procurement-ready capabilities and customer evidence. Do not generate blog, archive, docs, or download routes.",
+      routes: ["/", "/solutions", "/cases", "/about", "/contact"],
+    });
+
+    expect(result.skillId).toBe("corporate-b2b-site");
+    expect(result.siteType).toBe("corporate-b2b");
+    expect(result.surfaceMode).toBe("corporate-b2b-site");
+  });
+
   it("selects marketing-landing for campaign and conversion-first signals", () => {
     const result = selectWebsiteGenerationTypeSkill({
       siteType: "landing",
@@ -34,6 +46,18 @@ describe("website-type-selector", () => {
       siteType: "portfolio",
       requirementText: "Build a personal portfolio and blog for an AI consultant with articles and resume highlights.",
       routes: ["/", "/blog"],
+    });
+
+    expect(result.skillId).toBe("portfolio-blog-site");
+    expect(result.siteType).toBe("portfolio-blog");
+    expect(result.surfaceMode).toBe("portfolio-blog-site");
+  });
+
+  it("keeps personal technical blogs out of corporate-b2b even with About and Contact routes", () => {
+    const result = selectWebsiteGenerationTypeSkill({
+      requirementText:
+        "Build a polished personal technical blog for Bays Wong with Home, Blog, About, and Contact. Publish 3 complete article detail pages.",
+      routes: ["/", "/blog", "/about", "/contact"],
     });
 
     expect(result.skillId).toBe("portfolio-blog-site");
