@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { buildLocalePlan } from "./locale-plan.ts";
-import fs from "node:fs";
-import path from "node:path";
 
 describe("buildLocalePlan", () => {
   it("classifies Chinese bilingual institution prompts as bilingual with a Chinese default", () => {
@@ -52,11 +50,31 @@ describe("buildLocalePlan", () => {
   });
 
   it("keeps aggregated findings prose out of multilingual mode when ordinary English includes 'it'", () => {
-    const findingsPath = path.resolve(
-      process.cwd(),
-      ".tmp/chat-tasks/chat-casux-fullflow-mppfyocz/1e9f1480-0b55-46ee-b657-521085164218/latest/workflow/findings.md",
-    );
-    const findings = fs.readFileSync(findingsPath, "utf8");
+    const findings = [
+      "# Findings",
+      "",
+      "The current draft should remain Chinese-first bilingual for the institutional site.",
+      "Keep one locale visible at a time and avoid rendering both languages in the same section.",
+      "The summary mentions that it should feel export-ready, but it does not introduce a multilingual requirement.",
+      "",
+      "### Prompt Control Manifest (Machine Readable)",
+      "```json",
+      JSON.stringify(
+        {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          websiteSurfaceMode: "content-hub-site",
+          discoveryBrief: {
+            localeMode: "bilingual",
+            supportedLocales: ["zh-CN", "en"],
+            defaultLocale: "zh-CN",
+          },
+        },
+        null,
+        2,
+      ),
+      "```",
+    ].join("\n");
 
     const plan = buildLocalePlan(findings, "bilingual");
     expect(plan.mode).toBe("bilingual");
