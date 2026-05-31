@@ -213,8 +213,13 @@ function hasBilingualSignal(text: string): boolean {
 }
 
 function hasMultilingualSignal(text: string): boolean {
+  const source = String(text || "");
+  const withoutNegatedMentions = source.replace(
+    /\b(?:not|no|without|avoid(?:ing)?|does\s+not|do\s+not|should\s+not|remain(?:s)?|stays?)\b[^.\n]{0,80}\bmultilingual\b/gi,
+    "",
+  );
   return /(?:\bmultilingual\b|\u591a\u8bed\u8a00|\u591a\u8bed\u79cd|internationalization|translation[-\s]driven|translation pipeline|dozens?\s+of\s+languages?|tens?\s+of\s+languages?|\u591a\u8fbe\d+\u79cd\u8bed\u8a00|\d+\s+(?:languages|locales))/i.test(
-    String(text || ""),
+    withoutNegatedMentions,
   );
 }
 
