@@ -2,6 +2,7 @@
 import { HumanMessage } from "@langchain/core/messages";
 import {
   applyStateSitemapToDecisionForTesting,
+  buildQaRepairMessageForTesting,
   buildSkeletonPromptRequirementContextForTesting,
   buildQaRepairGuidanceForTesting,
   buildWebsiteSkillToolRoundPromptForAdapter,
@@ -13,6 +14,7 @@ import {
   findVisiblePageMechanicsScaffoldForTesting,
   formatTargetPageContract,
   enforceNavigationOrder,
+  ensureEnglishFirstI18nResourceFilesForTesting,
   findVisibleSimultaneousBilingualCopyForTesting,
   htmlPathToRoute,
   injectCuratedMediaIntoHtmlForTesting,
@@ -22,6 +24,7 @@ import {
   normalizeToolChoiceForProvider,
   normalizeGeneratedJsForTesting,
   normalizeGeneratedCssForTesting,
+  normalizeWebsiteStaticFilesForPreview,
   planRoundObjectiveForTesting,
   requiredFileChecklistForTesting,
   normalizeEnterpriseHomepageInlineStylesForTesting,
@@ -30,6 +33,7 @@ import {
   normalizeEnterpriseTechTextWordmarkShellForTesting,
   resolveExpectedRequiredFileCountForTesting,
   resolveRoundTimeoutsForTesting,
+  resolveWorkflowSurfaceSelectionForTesting,
   resolveWebsiteSkillRoundProviderConfigForTesting,
   resolveWebsiteSkillMaxToolRoundsForAdapter,
   resolveToolProtocolForProvider,
@@ -560,6 +564,67 @@ describe("skill-tool-executor", () => {
     expect((normalized.match(/href="\/products\/?"/g) || []).length).toBe(1);
   });
 
+  it("does not expand each footer navigation group into the full route set", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          "Build site. Nav: Home | Creation | Construction | Certification | Advocacy | Research Center | Information Platform",
+        ),
+      ],
+      phase: "conversation",
+    };
+    const decision = buildLocalDecisionPlan(state);
+    const html = [
+      "<!doctype html><html><body>",
+      '<footer class="site-footer">',
+      '  <div class="footer-group"><h2>Primary</h2><nav class="footer-nav"><a href="/casux-creation">Creation</a><a href="/casux-construction">Construction</a><a href="/casux-certification">Certification</a></nav></div>',
+      '  <div class="footer-group"><h2>Secondary</h2><nav class="footer-nav"><a href="/casux-advocacy">Advocacy</a><a href="/casux-research-center">Research Center</a><a href="/casux-information-platform">Information Platform</a></nav></div>',
+      "</footer>",
+      "</body></html>",
+    ].join("");
+
+    const normalized = enforceNavigationOrder(html, decision, "Build a bilingual CASUX full-site.");
+    const footerNavMatches = Array.from(
+      normalized.matchAll(/<nav\b[^>]*class=(["'])[^"']*\bfooter-nav\b[^"']*\1[^>]*>([\s\S]*?)<\/nav>/gi),
+    );
+
+    expect(footerNavMatches).toHaveLength(2);
+    expect(footerNavMatches[0]?.[2] || "").toContain('href="/casux-creation"');
+    expect(footerNavMatches[0]?.[2] || "").not.toContain('href="/casux-advocacy"');
+    expect(footerNavMatches[1]?.[2] || "").toContain('href="/casux-advocacy"');
+    expect(footerNavMatches[1]?.[2] || "").not.toContain('href="/casux-creation"');
+  });
+
+  it("dedupes repeated footer route groups while preserving distinct footer jobs", () => {
+    const state: any = {
+      messages: [new HumanMessage("Build site. Nav: Home | Products | Cases | Contact | About")],
+      phase: "conversation",
+    };
+    const decision = buildLocalDecisionPlan(state);
+    const duplicateLinks =
+      '<a href="/products">Products</a><a href="/cases">Cases</a><a href="/contact">Contact</a>';
+    const html = [
+      "<!doctype html><html><body>",
+      '<footer class="site-footer"><div class="footer-grid">',
+      '<div class="footer-brand"><a class="brand" href="/">Brand</a><p>Summary.</p></div>',
+      `<div><h3>Routes</h3><div class="footer-links">${duplicateLinks}</div></div>`,
+      `<div><h3>Resources</h3><div class="footer-links">${duplicateLinks}<a href="mailto:team@example.org">Email</a></div></div>`,
+      '<div class="footer-meta"><a href="/about">About</a></div>',
+      "</div></footer>",
+      "</body></html>",
+    ].join("");
+
+    const normalized = enforceNavigationOrder(html, decision);
+    const footerLinkGroups = Array.from(
+      normalized.matchAll(/<div\b[^>]*class=(["'])[^"']*\bfooter-links\b[^"']*\1[^>]*>([\s\S]*?)<\/div>/gi),
+    );
+
+    expect(footerLinkGroups).toHaveLength(2);
+    expect((footerLinkGroups[0]?.[2] || "").match(/href="\/products"/g)?.length || 0).toBe(1);
+    expect(footerLinkGroups[1]?.[2] || "").not.toContain('href="/products"');
+    expect(footerLinkGroups[1]?.[2] || "").toContain('href="mailto:team@example.org"');
+  });
+
   it("prefers decision nav labels over route-derived multi-word labels in shared navigation", () => {
     const state: any = {
       messages: [
@@ -720,51 +785,70 @@ describe("skill-tool-executor", () => {
     ).toThrow("flat link row instead of a structured footer shell");
   });
 
-  it("rejects duplicated footer route groups", () => {
+  it("rejects undeclared internal routes leaked into the shared shell", () => {
     const decision = buildLocalDecisionPlan({
-      messages: [new HumanMessage("Build site. Nav: Home | Products | Cases | Contact")],
+      messages: [new HumanMessage("Build a CASUX institutional site with Home, Creation, Research, and Information only.")],
       phase: "conversation",
     } as any);
-    const duplicateLinks =
-      '<a href="/products">Products</a><a href="/cases">Cases</a><a href="/contact">Contact</a>';
-    const files = [
-      {
-        path: "/styles.css",
-        content:
-          ".site-footer{padding:3rem 0;background:#f8fafc;border-top:1px solid #d8dee8}.footer-grid{display:grid}.footer-brand{display:grid}.footer-links{display:grid}.footer-meta{display:flex}",
-        type: "text/css",
-      },
-      { path: "/script.js", content: "(() => {})();", type: "text/javascript" },
-      ...decision.routes.map((route) => ({
-        path: route === "/" ? "/index.html" : `${route}/index.html`,
-        type: "text/html",
-        content: [
-          "<!doctype html>",
-          "<html><head>",
-          '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
-          '  <link rel="stylesheet" href="/styles.css" />',
-          '  <script src="/script.js"></script>',
-          "</head><body>",
-          '  <header><nav><a href="/">Home</a><a href="/products">Products</a><a href="/cases">Cases</a><a href="/contact">Contact</a></nav></header>',
-          `  <main>
-            <section><h1>${route === "/" ? "Home" : route}</h1><p>This page has finished route copy so footer grouping is the focused validation concern.</p></section>
-            <section><h2>Context</h2><p>The page explains a concrete visitor value, enough surrounding detail, and a clear path into the related route without relying on placeholder copy.</p></section>
-            <section><h2>Proof</h2><p>Supporting context keeps the page valid while the shared footer contract rejects duplicate link taxonomy.</p></section>
-          </main>`,
-          `<footer class="site-footer"><div class="footer-grid"><div class="footer-brand"><a class="brand" href="/">Brand</a><p>Institutional summary.</p></div><div><h3>Routes</h3><div class="footer-links">${duplicateLinks}</div></div><div><h3>Resources</h3><div class="footer-links">${duplicateLinks}</div></div><div class="footer-meta"><a href="/contact">Contact</a></div></div></footer>`,
-          "</body></html>",
-        ].join("\n"),
-      })),
-    ];
+    const files = validGeneratedFiles(["/", "/casux-creation", "/casux-research-center", "/casux-information-platform"]).map(
+      (file) =>
+        file.path === "/index.html"
+          ? {
+              ...file,
+              content: String(file.content).replace(
+                "</nav>",
+                '<a href="/blog/">Blog</a></nav>',
+              ),
+            }
+          : file,
+    );
 
     expect(() =>
       validateWebsiteRequiredFilesWithQaForAdapter({
-        decision,
+        decision: {
+          ...decision,
+          routes: ["/", "/casux-creation", "/casux-research-center", "/casux-information-platform"],
+          navLabels: ["Home", "Creation", "Research", "Information"],
+          pageBlueprints: [],
+        },
         files,
-        requirementText: "Company site with shared footer shell.",
+        requirementText:
+          "Institutional site. Do not create blog or archive routes. Treat the information platform as a route-owned public resource directory.",
         enforceCorporateHomepageContract: false,
       }),
-    ).toThrow("duplicates the same footer link set across multiple groups");
+    ).toThrow("navigation exposes undeclared internal routes outside the confirmed route plan: /blog");
+  });
+
+  it("rejects reserved placeholder public contact details in publishable HTML", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a CASUX institutional site with Home and Information.")],
+      phase: "conversation",
+    } as any);
+    const files = validGeneratedFiles(["/", "/casux-information-platform"]).map((file) =>
+      file.path === "/index.html"
+        ? {
+            ...file,
+            content: String(file.content).replace(
+              "</main>",
+              '<section><h2>Contact</h2><p>Email: hello@casux.example</p></section></main>',
+            ),
+          }
+        : file,
+    );
+
+    expect(() =>
+      validateWebsiteRequiredFilesWithQaForAdapter({
+        decision: {
+          ...decision,
+          routes: ["/", "/casux-information-platform"],
+          navLabels: ["Home", "Information"],
+          pageBlueprints: [],
+        },
+        files,
+        requirementText: "Institutional site with a public information route and publishable contact details.",
+        enforceCorporateHomepageContract: false,
+      }),
+    ).toThrow("exposes reserved placeholder contact or URL tokens instead of publishable public details");
   });
 
   it("rejects missing consultation intake forms when the source contract requires one", () => {
@@ -1201,6 +1285,7 @@ describe("skill-tool-executor", () => {
       routeContract: ["route=/products", "navLabel=Products", "purpose=Products route"],
       inheritedTerminology: ["corporate-b2b-site"],
       inheritedTokens: ["#2563EB"],
+      inheritedSeedSkillIds: ["open-design-web-prototype"],
       openingFamily: "catalog",
       openingTopology: "catalog lead band -> assortment navigator",
       mediaPlan: ["- slot_owner: catalog-lead proof slot"],
@@ -1462,6 +1547,7 @@ describe("skill-tool-executor", () => {
     expect(contract).toContain("new page");
     expect(contract).toContain("External imagery must come from source-backed or project-owned assets");
     expect(contract).toContain("Metrics must be source-backed");
+    expect(contract).toContain("raw hex colors are allowed only inside the `:root` token block");
   });
 
   it("fails qa when a route page drops the shared shell defined on home", () => {
@@ -1532,6 +1618,72 @@ describe("skill-tool-executor", () => {
     expect(validated.qaSummary.passedRoutes).toBe(decision.routes.length);
     expect(validated.qaSummary.averageScore).toBeGreaterThan(0);
     expect(Array.isArray(validated.qaRecords)).toBe(true);
+  });
+
+  it("workflow adapter enforces the corporate homepage contract when surface mode is corporate-b2b-site", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a company website for enterprise buyers with cases.")],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          websiteSurfaceMode: "corporate-b2b-site",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/cases"],
+          navLabels: ["Home", "Cases"],
+          files: ["/styles.css", "/script.js", "/index.html", "/cases/index.html"],
+        },
+      },
+    } as any);
+
+    const files = [
+      {
+        path: "/styles.css",
+        type: "text/css",
+        content: ".media-frame{border:1px solid #ddd}.ph-img{min-height:280px;background:#eee}",
+      },
+      {
+        path: "/script.js",
+        type: "text/javascript",
+        content: "document.documentElement.dataset.ready='true';",
+      },
+      {
+        path: "/index.html",
+        type: "text/html",
+        content: [
+          "<!doctype html>",
+          '<html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/styles.css" /></head><body>',
+          "<header><nav><a href=\"/\">Home</a><a href=\"/cases/\">Cases</a></nav></header>",
+          "<main>",
+          '  <section class="hero"><div class="hero__grid"><div class="hero__content"><h1>Technical proof above the fold</h1></div><div class="media-frame"><div class="ph-img" role="img" aria-label="Placeholder visual"></div></div></div></section>',
+          "</main>",
+          "<footer><a href=\"/\">Home</a><a href=\"/cases/\">Cases</a><p>Footer summary</p></footer>",
+          '<script src="/script.js"></script></body></html>',
+        ].join(""),
+      },
+      {
+        path: "/cases/index.html",
+        type: "text/html",
+        content: [
+          "<!doctype html>",
+          '<html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><link rel="stylesheet" href="/styles.css" /></head><body>',
+          "<header><nav><a href=\"/\">Home</a><a href=\"/cases/\">Cases</a></nav></header>",
+          "<main><h1>Cases</h1><p>Evidence-led case studies.</p></main>",
+          "<footer><a href=\"/\">Home</a><a href=\"/cases/\">Cases</a><p>Footer summary</p></footer>",
+          '<script src="/script.js"></script></body></html>',
+        ].join(""),
+      },
+    ];
+
+    expect(() =>
+      createWebsiteGenerationSkillAdapter("website-generation-workflow").validateAndNormalizeRequiredFilesWithQa({
+        decision,
+        files,
+        requirementText: "Build homepage",
+        websiteSurfaceMode: "corporate-b2b-site",
+      }),
+    ).toThrow(/corporate-b2b homepage contract|placeholder media scaffolding|enterprise-hero markup/i);
   });
 
   it("blocks surface-specific sites that fall back to the shared green-white token family", () => {
@@ -1759,6 +1911,74 @@ describe("skill-tool-executor", () => {
     expect(required).not.toContain("/storage/runtime/hydration/fallback/index.html");
   });
 
+  it("keeps the default portfolio-blog first pass index-first without requiring blog detail files", () => {
+    const requirement =
+      "Build a polished personal technical blog for an AI consultant with Home, Blog, About, and Contact. The first pass only needs a strong blog index and profile-led homepage.";
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage(requirement)],
+      phase: "conversation",
+      sitemap: ["/", "/blog", "/about", "/contact"],
+    } as any);
+
+    const required = requiredFileChecklistForTesting(decision, {
+      requirementText: requirement,
+    });
+
+    expect(required).toEqual(
+      expect.arrayContaining([
+        "/styles.css",
+        "/script.js",
+        "/index.html",
+        "/blog/index.html",
+        "/about/index.html",
+        "/contact/index.html",
+      ]),
+    );
+    expect(required.filter((file) => file.startsWith("/blog/") && file !== "/blog/index.html")).toEqual([]);
+  });
+
+  it("strips live blog detail anchors from /blog/index.html during index-first portfolio-blog preview normalization", () => {
+    const requirement =
+      "Build a polished personal technical blog for an AI consultant with Home, Blog, About, and Contact. The first pass only needs a strong blog index and profile-led homepage. Do not generate blog detail pages yet. Blog details will be filled later by a separate workflow.";
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage(requirement)],
+      phase: "conversation",
+      sitemap: ["/", "/blog", "/about", "/contact"],
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          websiteSurfaceMode: "portfolio-blog-site",
+          routes: ["/", "/blog", "/about", "/contact"],
+          navLabels: ["Home", "Blog", "About", "Contact"],
+          files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html", "/about/index.html", "/contact/index.html"],
+        },
+      },
+    } as any);
+
+    const normalized = normalizeWebsiteStaticFilesForPreview({
+      decision,
+      requirementText: requirement,
+      files: validGeneratedFiles(decision.routes).map((file) =>
+        file.path === "/blog/index.html"
+          ? {
+              ...file,
+              content: String(file.content).replace(
+                /<main>[\s\S]*<\/main>/,
+                `<main><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list><article class="blog-card"><h2><a href="/blog/ai-opportunity-scan/">AI opportunity scan</a></h2><p>Summary.</p></article></div></section></main>`,
+              ),
+            }
+          : file,
+      ),
+    });
+
+    const blogHtml = String(normalized.find((file) => file.path === "/blog/index.html")?.content || "");
+    expect(blogHtml).not.toContain('href="/blog/ai-opportunity-scan/"');
+    expect(blogHtml).toContain("<span");
+    expect(blogHtml).toContain("AI opportunity scan");
+  });
+
   it("counts mixed-language Chinese blog requests when resolving round budgets", () => {
     const decision = buildLocalDecisionPlan({
       messages: [new HumanMessage("我想做个个人简历网站，需要3篇blog体现我的价值。")],
@@ -1842,6 +2062,32 @@ describe("skill-tool-executor", () => {
     expect(resolveWebsiteSkillMaxToolRoundsForAdapter(decision, "Chinese company website with collection surfaces.")).toBe(20);
   });
 
+  it("prefers prompt-control surface mode over stale workflow skill ids", () => {
+    const selection = resolveWorkflowSurfaceSelectionForTesting({
+      websiteTypeSkillId: "docs-knowledge-site",
+      websiteDiscoveryBrief: {
+        surfaceMode: "docs-knowledge-site",
+        audience: ["developers"],
+      },
+      promptControlManifest: {
+        websiteSurfaceMode: "content-hub-site",
+        discoveryBrief: {
+          surfaceMode: "content-hub-site",
+          audience: ["institutional_buyers"],
+          primaryGoal: "institutional_trust, resource_discovery, program_introduction",
+          routes: ["/", "/casux-information-platform"],
+          sourcePriority: "uploaded_files",
+          localeMode: "bilingual",
+          visualDirectionId: "institutional-child-friendly",
+          immutableConstraints: ["brand:CASUX"],
+        },
+      },
+    } as any);
+
+    expect(selection.websiteSurfaceMode).toBe("content-hub-site");
+    expect(selection.discoveryBrief?.surfaceMode).toBe("content-hub-site");
+  });
+
   it("routes flat footer shell repairs back through shared css", () => {
     const targets = extractQaRepairTargetsForTesting(
       "skill_tool_invalid_required_file: /index.html collapses the shared footer into a flat link row instead of a structured footer shell",
@@ -1906,16 +2152,20 @@ describe("skill-tool-executor", () => {
       - Use the selected local design system as the visual source of truth for color, typography, spacing, radius, shadows, motion, and component rhythm.
       - Avoid AI-slop defaults: no placeholder copy, no generic Feature 1/2/3 grids, no anonymous testimonials, no fake metrics, no repeated card modules across pages.
       - Navigation must use meaningful route labels; do not leave desktop or mobile nav shells as generic menu/navigation/quick links scaffolds.
+      - Navigation and footer must not expose undeclared internal routes; every visitor-facing site link in the shared shell must belong to the confirmed route plan unless it is an approved external destination or asset.
       - Footer must contribute real site content; avoid copyright-only placeholders, label-only footers, or generic legal shells that add no value.
+      - Footer must use a structured shell with a distinct footer band plus separate identity, navigation, and support/meta zones when the shared CSS defines footer-shell utilities; do not collapse the footer into a flat row of links.
       - Mobile nav may collapse visually, but it still needs the same meaningful destinations as desktop rather than a menu-only placeholder shell.
       - When refine or generation creates a new page, that page must reuse the current site's active theme and the same shared navigation/footer shell unless the brief explicitly requests a shell redesign.
       - External imagery must come from source-backed or project-owned assets; do not ship example.com, placeholder.com, or other demo/stock placeholder URLs.
+      - Public contact details and outbound URLs must be publishable; do not ship reserved placeholder domains such as \`.example\`, \`.test\`, \`.invalid\`, \`localhost\`, or \`example.com\` in visible copy or href/src attributes.
       - Metrics must be source-backed; do not invent percentages, multipliers, "hours saved", growth, or conversion-lift claims without brief or citation support.
       - Visual direction must be distinctive: expressive type pairing, intentional background system, layered sections, strong hero composition, and mobile-specific composition.
       - CSS must include responsive strategy using media queries, container queries, or clamp-based fluid sizing.
+      - CSS color discipline: raw hex colors are allowed only inside the \`:root\` token block. Outside \`:root\`, use \`var(...)\`, \`rgba(...)\`, or \`color-mix(...)\` from tokens; do not put hex fallbacks inside component selectors.
       - Every page must contain enough route-specific content depth to stand alone; sibling pages must not be superficial copies.
-      - Blog detail pages must be complete publishable articles: they need a real body, meaningful section structure, and enough route-specific substance to read as finished pages instead of shells, stubs, or metadata-only placeholders.
-      - Route / must always read as the site home entry, not as a downloads hub, certification portal, or login page.
+      - When the workflow explicitly requires Blog detail pages, each detail route must be a complete publishable article with a real body, meaningful section structure, and enough route-specific substance to read as finished content rather than a shell, stub, or metadata-only placeholder.
+      - Route / must always read as the official homepage and institutional overview, not as a downloads hub, certification portal, or login page.
       - If a hero visual rail is tall, it must contain real media, chart, or data-viz content; do not leave a large empty visual card with only bottom-aligned text.
       - Result cards rendered inside a 12-column grid must span the full available row unless the design explicitly calls for a narrower card layout.
       - Final HTML must include viewport meta, semantic landmarks, accessible labels, keyboard-safe interactions, and shared stylesheet/script references."
@@ -1939,6 +2189,38 @@ describe("skill-tool-executor", () => {
     const homeContract = formatTargetPageContract(plan, "/index.html");
     expect(homeContract).toContain("the home hero and first substantive section must introduce that person");
     expect(homeContract).toContain("The blog/content index is downstream distribution, not the homepage identity.");
+  });
+
+  it("forbids official homepages from enumerating sibling route families in the title or first lead", () => {
+    const plan = buildLocalDecisionPlan({
+      messages: [
+        new HumanMessage(
+          "Build the official CASUX website with Home, Creation, Construction, Certification, Advocacy, Research Center, and Information Platform. Route / must be the institutional overview rather than a route directory.",
+        ),
+      ],
+      phase: "conversation",
+    } as any);
+
+    const homeContract = formatTargetPageContract(plan, "/index.html");
+    expect(homeContract).toContain("must not enumerate sibling route families");
+    expect(homeContract).toContain("Creation, Construction, Certification, Advocacy, Research Center, Information Platform");
+    expect(homeContract).toContain("Summarize the institutional mission at a higher level");
+  });
+
+  it("forbids institution-led homepages from drifting into support-entry identity", () => {
+    const plan = buildLocalDecisionPlan({
+      messages: [
+        new HumanMessage(
+          "Build the official CASUX website with Home, Creation, Construction, Certification, Advocacy, Research Center, and Information Platform. Route / must be the institutional overview rather than a route directory.",
+        ),
+      ],
+      phase: "conversation",
+    } as any);
+
+    const homeContract = formatTargetPageContract(plan, "/index.html");
+    expect(homeContract).toContain("must still read like an umbrella-institution overview");
+    expect(homeContract).toContain("support-entry, consultation-entry, information-entry, certification-explainer, or contact-intake framing");
+    expect(homeContract).toContain("Do not compress the homepage into a thin overview followed immediately by support routing");
   });
 
   it("adds explicit home feature-card spacing guidance for three-up info rows", () => {
@@ -1973,6 +2255,24 @@ describe("skill-tool-executor", () => {
     expect(detailContract).toContain("alternating zh/en paragraphs in the initial HTML");
   });
 
+  it("forbids live blog detail links in index-first portfolio-blog route contracts", () => {
+    const requirement = [
+      "Build a polished personal technical blog for an AI consultant with Home, Blog, About, and Contact.",
+      "The first pass only needs a strong blog index and a profile-led homepage.",
+      "Do not generate blog detail pages yet. Blog details will be filled later by a separate workflow.",
+    ].join(" ");
+    const plan = buildLocalDecisionPlan({
+      messages: [new HumanMessage(requirement)],
+      phase: "conversation",
+      sitemap: ["/", "/blog", "/about", "/contact"],
+    } as any);
+
+    const contract = formatTargetPageContract(plan, "/blog/index.html", requirement);
+
+    expect(contract).toContain("starter cards must remain non-routing archive cards");
+    expect(contract).toContain("must not link to /blog/{slug}/ detail routes in this run");
+  });
+
   it("forces non-blog destination pages to lead with visitor-facing value instead of page mechanics", () => {
     const plan = buildLocalDecisionPlan({
       messages: [new HumanMessage("Build a manufacturing company website with Home, Custom Solutions, About, and Contact.")],
@@ -1984,6 +2284,145 @@ describe("skill-tool-executor", () => {
     expect(contract).toContain("this page provides");
     expect(contract).toContain("the next step is");
     expect(contract).toContain("visitor benefit, capability, proof point, or concrete CTA");
+  });
+
+  it("bans route-mechanics pathway phrasing on destination pages", () => {
+    const plan = buildLocalDecisionPlan({
+      messages: [
+        new HumanMessage(
+          "Build a construction implementation page for an institutional standards website with Home, Construction, Research, and Contact.",
+        ),
+      ],
+      phase: "conversation",
+    } as any);
+
+    const contract = formatTargetPageContract(plan, "/construction/index.html");
+    expect(contract).toContain("Ban route-mechanics phrasing");
+    expect(contract).toContain("从前期到落地形成清晰路径");
+    expect(contract).toContain("pathway explanation");
+    expect(contract).toContain("Rewrite them as concrete capabilities, deliverables, operational support, proof, or consultation outcomes.");
+  });
+
+  it("forces search-directory openings to avoid promo split-hero compositions", () => {
+    const plan = buildLocalDecisionPlan({
+      messages: [
+        new HumanMessage(
+          "Build the official CASUX website with routes Home, CASUX Certification, CASUX Research Center, and CASUX Information Platform. The CASUX Certification route is a directory page with filters, result rows, standards criteria, and consultation support.",
+        ),
+      ],
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/casux-certification", "/casux-research-center", "/casux-information-platform"],
+          navLabels: ["Home", "Certification", "Research Center", "Information Platform"],
+          files: [
+            "/styles.css",
+            "/script.js",
+            "/index.html",
+            "/casux-certification/index.html",
+            "/casux-research-center/index.html",
+            "/casux-information-platform/index.html",
+          ],
+        },
+      },
+      phase: "conversation",
+    } as any);
+
+    const contract = formatTargetPageContract(plan, "/casux-certification/index.html");
+    expect(contract).toContain("Directory opening gate");
+    expect(contract).toContain("hero-panel");
+    expect(contract).toContain("media-frame");
+    expect(contract).toContain("lead-stack");
+    expect(contract).toContain("query controls, result framing, criteria, or standards scope");
+  });
+
+  it("forces certification directory contracts to mention scoring and review substance", () => {
+    const plan = buildLocalDecisionPlan({
+      messages: [
+        new HumanMessage(
+          "Build the official CASUX website with routes Home and CASUX Certification. The CASUX Certification route must cover five-dimension scoring model, total score thresholds, assessor packet, quality-mark workflow, certification badge criteria, filters, result rows, and consultation support.",
+        ),
+      ],
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/casux-certification"],
+          navLabels: ["Home", "Certification"],
+          files: ["/styles.css", "/script.js", "/index.html", "/casux-certification/index.html"],
+        },
+      },
+      phase: "conversation",
+    } as any);
+
+    const contract = formatTargetPageContract(
+      plan,
+      "/casux-certification/index.html",
+      "Certification route source notes: cover five-dimension scoring model, total score thresholds, assessor packet, quality-mark workflow, and certification badge criteria.",
+    );
+    expect(contract).toContain("Directory opening gate");
+    expect(contract).toContain("criteria");
+    expect(contract).toContain("standards scope");
+  });
+
+  it("preserves distinct bilingual catalogs instead of collapsing zh content to en fallback", () => {
+    const files = ensureEnglishFirstI18nResourceFilesForTesting(
+      [
+        {
+          path: "/index.html",
+          type: "text/html",
+          content: [
+            "<!doctype html>",
+            '<html lang="zh-CN">',
+            "<body>",
+            '<h1 data-i18n="home.title" data-i18n-zh="儿童友好标准与研究入口" data-i18n-en="Child-friendly standards and research hub">儿童友好标准与研究入口</h1>',
+            '<p data-i18n="home.lead" data-i18n-zh="为教育运营者、研究伙伴与机构采购方提供统一入口。">为教育运营者、研究伙伴与机构采购方提供统一入口。</p>',
+            "</body>",
+            "</html>",
+          ].join("\n"),
+        },
+        {
+          path: "/i18n/messages.en.json",
+          type: "application/json",
+          content: JSON.stringify(
+            {
+              "home.title": "Child-friendly standards and research hub",
+              "home.lead": "A unified entry point for education operators, research partners, and institutional buyers.",
+            },
+            null,
+            2,
+          ),
+        },
+        {
+          path: "/i18n/messages.zh-CN.json",
+          type: "application/json",
+          content: JSON.stringify(
+            {
+              "home.title": "儿童友好标准与研究入口",
+              "home.lead": "为教育运营者、研究伙伴与机构采购方提供统一入口。",
+            },
+            null,
+            2,
+          ),
+        },
+      ],
+      "Build a bilingual Chinese and English institutional CASUX website. Default visible language is Chinese.",
+      "zh-CN",
+    );
+
+    const fileMap = new Map(files.map((file) => [file.path, file.content] as const));
+    const enMessages = JSON.parse(String(fileMap.get("/i18n/messages.en.json") || "{}"));
+    const zhMessages = JSON.parse(String(fileMap.get("/i18n/messages.zh-CN.json") || "{}"));
+
+    expect(enMessages["home.title"]).toBe("Child-friendly standards and research hub");
+    expect(enMessages["home.lead"]).toBe("A unified entry point for education operators, research partners, and institutional buyers.");
+    expect(zhMessages["home.title"]).toBe("儿童友好标准与研究入口");
+    expect(zhMessages["home.lead"]).toBe("为教育运营者、研究伙伴与机构采购方提供统一入口。");
+    expect(enMessages["home.title"]).not.toBe(zhMessages["home.title"]);
+    expect(enMessages["home.lead"]).not.toBe(zhMessages["home.lead"]);
   });
 
   it("forces generated blog detail routes to be structure-correct shells during the first website pass", () => {
@@ -1999,7 +2438,7 @@ describe("skill-tool-executor", () => {
     expect(contract).toContain("topic map");
   });
 
-  it("treats requested bilingual blog detail pages as required skill outputs instead of runtime-only completions", () => {
+  it("keeps requested bilingual blog detail pages in the dedicated fill lane instead of auto-expanding first-pass required files", () => {
     const requirement = [
       "Build a bilingual personal blog for Bays Wong with Home, Blog, About, Contact.",
       "Generate 3 complete articles.",
@@ -2026,11 +2465,15 @@ describe("skill-tool-executor", () => {
     const required = requiredFileChecklistForTesting(plan, { files, requirementText: requirement });
     expect(required).toEqual(
       expect.arrayContaining([
-        "/blog/agile-devops-system-design/index.html",
-        "/blog/wechat-real-time-media-global/index.html",
-        "/blog/ai-saas-commercialization-cto-practice/index.html",
+        "/styles.css",
+        "/script.js",
+        "/i18n/messages.en.json",
+        "/i18n/messages.zh-CN.json",
+        "/index.html",
+        "/blog/index.html",
       ]),
     );
+    expect(required.filter((file) => file.startsWith("/blog/") && file !== "/blog/index.html")).toEqual([]);
 
     const objective = planRoundObjectiveForTesting(0, [
       "/blog/agile-devops-system-design/index.html",
@@ -2362,6 +2805,7 @@ describe("skill-tool-executor", () => {
       - Do not apply a hardcoded industry skeleton or copy the previous page layout and only swap text.
       - Visitor-facing copy must be substantive content for the audience, not a description of site mechanics. Do not tell visitors what the page's task is, where to start browsing, which route comes next, or that one page leads into deeper content.
       - Ban visible scaffold phrases and equivalents such as 从首页开始, 接下来看博客, 循序进入深内容, 阅读入口, 站点入口, 首页路径, 继续了解, 下一步, this page provides, homepage job, where to start, start from home, or next step when they explain navigation order rather than a concrete offer or action.
+      - Ban route-mechanics phrasing such as 从前期到落地形成清晰路径, 从A到B形成浏览路径, 判断路径, 实施路径说明, 路径指引, 路线说明, or English equivalents like pathway explanation, browsing path, route path, or journey explanation when they merely narrate process choreography. Rewrite them as concrete capabilities, deliverables, operational support, proof, or consultation outcomes.
       - Destination page gate: the first visible section must immediately communicate a visitor benefit, capability, proof point, or concrete CTA. Do not open with page-purpose notes like 'this page provides', 'the next step is', 'continue to', 'what this page is for', or any explanation of route order.
       - Destination page gate: headings such as 继续了解, 下一步, Start here, Where to start, or similar are only acceptable when they introduce a real offer/action for the visitor. They are invalid if they merely choreograph browsing between pages.
       - Interior page gate: make the first visible modules specific to the route's purpose and audience. Avoid generic hero plus filler-card repetition from sibling pages.
@@ -2369,7 +2813,7 @@ describe("skill-tool-executor", () => {
       - Interior page topology: the post-hero structure must contain at least three distinct major zones with different jobs. Do not compress the page into the same repeated section pattern used elsewhere.
       - Follow the workflow skill's Shared Shell/Footer Contract for header, main, and footer requirements.
       Sibling page intents to stay visually distinct from:
-      /: Homepage. Establish the brand overview, core value, primary route entry, and next action while preserving site home-entry semantics.
+      /: Homepage. Establish the brand overview, core value, institutional scope, and next action while preserving a clear official-homepage identity.
       /custom-solutions: Dedicated page for "Custom Solutions". Derive its content depth, section structure, and interactions from the confirmed Canonical Website Prompt, source content, and route intent.
       /cases: Dedicated page for "Cases". Derive its content depth, section structure, and interactions from the confirmed Canonical Website Prompt, source content, and route intent.
       /contact: Dedicated page for "Contact". Derive its content depth, section structure, and interactions from the confirmed Canonical Website Prompt, source content, and route intent.
@@ -2692,6 +3136,36 @@ describe("skill-tool-executor", () => {
       validateAndNormalizeRequiredFiles({
         decision,
         files,
+        requirementText:
+          "Build an information platform with a publishable article archive and stable /blog/{slug}/ detail routes.",
+      }),
+    ).not.toThrow();
+  });
+
+  it("still allows portfolio blog detail output when the brief explicitly asks for publishable detail routes", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a personal AI consultant blog with Home and Blog.")],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/blog"],
+          navLabels: ["Home", "Blog"],
+          files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html"],
+          websiteSurfaceMode: "portfolio-blog-site",
+        },
+      },
+    } as any);
+
+    expect(() =>
+      validateWebsiteRequiredFilesWithQaForAdapter({
+        decision,
+        files: validGeneratedFiles(decision.routes),
+        requirementText: "Build a personal AI consultant blog with a publishable article archive and stable /blog/{slug}/ detail routes.",
+        websiteSurfaceMode: "portfolio-blog-site",
+        enforceCorporateHomepageContract: false,
       }),
     ).not.toThrow();
   });
@@ -3211,6 +3685,104 @@ describe("skill-tool-executor", () => {
     ).not.toThrow();
   });
 
+  it("normalizes portfolio-blog first-pass detail links into index-only cards when the brief explicitly defers detail generation", () => {
+    const requirementText = [
+      "Build a polished personal technical blog for an AI consultant with Home, Blog, About, and Contact.",
+      "The first pass only needs a strong blog index and a profile-led homepage.",
+      "Do not generate blog detail pages yet. Blog details will be filled later by a separate workflow.",
+    ].join(" ");
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage(requirementText)],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          websiteSurfaceMode: "portfolio-blog-site",
+          routes: ["/", "/blog", "/about", "/contact"],
+          navLabels: ["Home", "Blog", "About", "Contact"],
+          files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html", "/about/index.html", "/contact/index.html"],
+        },
+      },
+    } as any);
+
+    const files = validGeneratedFiles(decision.routes)
+      .filter((file) => !/^\/blog\/[^/]+\/index\.html$/i.test(String(file.path || "")))
+      .map((file) =>
+        file.path === "/styles.css"
+          ? {
+              ...file,
+              content: `${String(file.content || "")}\n.blog-card { padding: 24px; }`,
+            }
+          : file.path === "/blog/index.html"
+            ? {
+                ...file,
+                content: String(file.content).replace(
+                  /<main>[\s\S]*<\/main>/,
+                  `<main><h1>Blog</h1><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list><article class="blog-card"><h2><a href="/blog/ai-opportunity-scan/">AI opportunity scan</a></h2><p>Archive-ready summary.</p></article><article class="blog-card"><h2><a href="/blog/devops-operating-system/">DevOps operating system</a></h2><p>Archive-ready summary.</p></article><article class="blog-card"><h2><a href="/blog/ai-saas-commercialization/">AI SaaS commercialization</a></h2><p>Archive-ready summary.</p></article></div></section></main>`,
+                ),
+              }
+            : file,
+      );
+
+    const validated = validateAndNormalizeRequiredFilesWithQa({
+      decision,
+      files,
+      requirementText,
+      websiteSurfaceMode: "portfolio-blog-site",
+    });
+
+    const blogHtml = String(validated.files.find((file) => file.path === "/blog/index.html")?.content || "");
+    expect(blogHtml).not.toContain('href="/blog/ai-opportunity-scan/"');
+    expect(blogHtml).not.toContain('href="/blog/devops-operating-system/"');
+    expect(blogHtml).not.toContain('href="/blog/ai-saas-commercialization/"');
+    expect(blogHtml).toContain("<span");
+    expect(validated.files.some((file) => /^\/blog\/[^/]+\/index\.html$/i.test(file.path))).toBe(false);
+  });
+
+  it("does not treat deferred blog-detail wording as an immediate detail-fill request", () => {
+    const requirementText = [
+      "Build a polished personal technical blog for an AI consultant with Home, Blog, About, and Contact.",
+      "The first pass only needs a strong blog index and a profile-led homepage.",
+      "Do not generate blog detail pages yet. Blog details will be filled later by a separate workflow.",
+    ].join(" ");
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage(requirementText)],
+      phase: "conversation",
+      sitemap: ["/", "/blog", "/about", "/contact"],
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          websiteSurfaceMode: "portfolio-blog-site",
+          routes: ["/", "/blog", "/about", "/contact"],
+          navLabels: ["Home", "Blog", "About", "Contact"],
+          files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html", "/about/index.html", "/contact/index.html"],
+        },
+      },
+    } as any);
+
+    const files = [
+      { path: "/styles.css", content: "body{}", type: "text/css" },
+      { path: "/script.js", content: "console.log('ok')", type: "text/javascript" },
+      { path: "/index.html", content: "<!doctype html><html></html>", type: "text/html" },
+      {
+        path: "/blog/index.html",
+        content:
+          '<!doctype html><html><body><a href="/blog/ai-opportunity-scan/">A</a><a href="/blog/devops-operating-system/">B</a><a href="/blog/ai-saas-commercialization/">C</a></body></html>',
+        type: "text/html",
+      },
+      { path: "/about/index.html", content: "<!doctype html><html></html>", type: "text/html" },
+      { path: "/contact/index.html", content: "<!doctype html><html></html>", type: "text/html" },
+    ];
+
+    const required = requiredFileChecklistForTesting(decision, { files, requirementText });
+
+    expect(required.filter((file) => file.startsWith("/blog/") && file !== "/blog/index.html")).toEqual([]);
+  });
+
   it("instructs semantic Blog-backed routes to render native content models instead of visible backend labels", () => {
     const decision = buildLocalDecisionPlan({
       messages: [
@@ -3300,7 +3872,14 @@ describe("skill-tool-executor", () => {
         : file,
     );
 
-    expect(() => validateAndNormalizeRequiredFiles({ decision, files })).toThrow(
+    expect(() =>
+      validateAndNormalizeRequiredFiles({
+        decision,
+        files,
+        requirementText:
+          "Build an information platform with a publishable article archive and stable /blog/{slug}/ detail routes.",
+      }),
+    ).toThrow(
       "exposes internal Blog/content backend implementation wording",
     );
   });
@@ -4054,9 +4633,9 @@ describe("skill-tool-executor", () => {
     });
 
     const byPath = new Map(validated.map((file) => [String(file.path || ""), String(file.content || "")] as const));
-    expect(byPath.get("/index.html")).not.toContain("data-locale-toggle");
-    expect(byPath.get("/script.js")).toContain("/i18n/messages.en.json");
-    expect(byPath.get("/script.js")).toContain("/i18n/messages.zh-CN.json");
+    expect(byPath.get("/index.html")).toContain("data-locale-toggle");
+    expect(byPath.get("/script.js")).toContain("LOCALE_REGISTRY_PATH");
+    expect(byPath.get("/script.js")).toContain("`/i18n/messages.${lang}.json`");
     expect(byPath.get("/i18n/messages.en.json")).toContain('"locale.zh"');
     expect(byPath.get("/i18n/messages.zh-CN.json")).toContain('"locale.en"');
   });
@@ -4109,7 +4688,7 @@ describe("skill-tool-executor", () => {
     ).not.toThrow();
   });
 
-  it("removes the bilingual toggle when locale resource files still mirror the same language", () => {
+  it("removes the bilingual toggle when locale resource files mirror the same language and no recoverable alternate copy exists", () => {
     const decision = buildLocalDecisionPlan({
       messages: [new HumanMessage("做一个中英双语机构网站，默认中文，并且需要语言切换。")],
       phase: "conversation",
@@ -4148,9 +4727,9 @@ describe("skill-tool-executor", () => {
           '  <link rel="stylesheet" href="/styles.css" />',
           "</head>",
           "<body>",
-          '  <header><nav><a href="/" data-i18n="nav.home">首页</a><div class="locale-switch"><button type="button" data-locale-toggle data-locale="zh-CN">ZH</button><button type="button" data-locale-toggle data-locale="en">EN</button></div></nav></header>',
+          '  <header><nav><a href="/">首页</a><div class="locale-switch"><button type="button" data-locale-toggle data-locale="zh-CN">ZH</button><button type="button" data-locale-toggle data-locale="en">EN</button></div></nav></header>',
           "  <main>",
-          '    <section class="hero"><h1 data-i18n="home.hero.title">儿童友好空间标准体系</h1><p data-i18n="home.hero.lead">面向机构合作的标准、研究与实施平台。</p></section>',
+          '    <section class="hero"><h1>儿童友好空间标准体系</h1><p>面向机构合作的标准、研究与实施平台。</p></section>',
           "  </main>",
           '  <script src="/script.js"></script>',
           "</body>",
@@ -4184,6 +4763,137 @@ describe("skill-tool-executor", () => {
     });
     const byPath = new Map(validated.map((file) => [String(file.path || ""), String(file.content || "")] as const));
     expect(byPath.get("/index.html")).not.toContain("data-locale-toggle");
+  });
+
+  it("harvests real zh/en alternates from valueless data-i18n markup into distinct locale catalogs", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("做一个中英双语机构网站，默认中文，并且需要语言切换。")],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/"],
+          navLabels: ["首页"],
+          files: ["/styles.css", "/script.js", "/index.html", "/i18n/messages.en.json", "/i18n/messages.zh-CN.json"],
+        },
+      },
+    } as any);
+
+    const files = [
+      {
+        path: "/styles.css",
+        type: "text/css",
+        content: "body{font-family:system-ui,sans-serif;} .locale-switch{display:flex;gap:.5rem;}",
+      },
+      {
+        path: "/script.js",
+        type: "text/javascript",
+        content: "document.documentElement.dataset.ready='true';",
+      },
+      {
+        path: "/index.html",
+        type: "text/html",
+        content: [
+          "<!doctype html>",
+          '<html lang="zh-CN" data-lang="zh-CN">',
+          "<head>",
+          '  <meta charset="utf-8" />',
+          '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+          '  <link rel="stylesheet" href="/styles.css" />',
+          "</head>",
+          "<body>",
+          '  <header><nav><a href="/" id="nav.home" data-i18n data-i18n-zh="首页" data-i18n-en="Home">首页</a><div class="locale-switch"><button type="button" data-locale-toggle data-locale="zh-CN">ZH</button><button type="button" data-locale-toggle data-locale="en">EN</button></div></nav></header>',
+          "  <main>",
+          '    <section class="hero"><h1 id="home.hero.title" data-i18n data-i18n-zh="儿童友好空间标准体系" data-i18n-en="Child-friendly space standards system">儿童友好空间标准体系</h1><p id="home.hero.lead" data-i18n data-i18n-zh="面向机构合作的标准、研究与实施平台。" data-i18n-en="A standards, research, and implementation platform for institutional partners.">面向机构合作的标准、研究与实施平台。</p></section>',
+          "  </main>",
+          '  <script src="/script.js"></script>',
+          "</body>",
+          "</html>",
+        ].join("\n"),
+      },
+      {
+        path: "/i18n/messages.en.json",
+        type: "application/json",
+        content: "{}",
+      },
+      {
+        path: "/i18n/messages.zh-CN.json",
+        type: "application/json",
+        content: "{}",
+      },
+    ];
+
+    const validated = validateAndNormalizeRequiredFiles({
+      decision,
+      files,
+      requirementText: "做一个中英双语机构网站，默认中文，并且需要语言切换。",
+    });
+    const byPath = new Map(validated.map((file) => [String(file.path || ""), String(file.content || "")] as const));
+    const en = JSON.parse(byPath.get("/i18n/messages.en.json") || "{}");
+    const zh = JSON.parse(byPath.get("/i18n/messages.zh-CN.json") || "{}");
+
+    expect(en["nav.home"]).toBe("Home");
+    expect(zh["nav.home"]).toBe("首页");
+    expect(en["home.hero.title"]).toBe("Child-friendly space standards system");
+    expect(zh["home.hero.title"]).toBe("儿童友好空间标准体系");
+  });
+
+  it("repairs mirrored bilingual dictionaries by restoring distinct English values from HTML i18n attributes", () => {
+    const files = ensureEnglishFirstI18nResourceFilesForTesting(
+      [
+        {
+          path: "/index.html",
+          type: "text/html",
+          content: [
+            "<!doctype html>",
+            '<html lang="zh-CN" data-lang="zh-CN">',
+            "<head>",
+            '  <meta charset="utf-8" />',
+            '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+            "</head>",
+            "<body>",
+            '  <nav><a href="/" id="nav.home" data-i18n data-i18n-zh="首页" data-i18n-en="Home">首页</a></nav>',
+            '  <main><h1 id="home.hero.title" data-i18n data-i18n-zh="儿童友好空间标准体系" data-i18n-en="Child-friendly space standards system">儿童友好空间标准体系</h1></main>',
+            '  <p id="home.hero.lead" data-i18n data-i18n-zh="面向机构合作的标准、研究与实施平台。" data-i18n-en="A standards, research, and implementation platform for institutional partners.">面向机构合作的标准、研究与实施平台。</p>',
+            "</body>",
+            "</html>",
+          ].join("\n"),
+        },
+        {
+          path: "/i18n/messages.en.json",
+          type: "application/json",
+          content: JSON.stringify({
+            "nav.home": "首页",
+            "home.hero.title": "儿童友好空间标准体系",
+            "home.hero.lead": "面向机构合作的标准、研究与实施平台。",
+          }),
+        },
+        {
+          path: "/i18n/messages.zh-CN.json",
+          type: "application/json",
+          content: JSON.stringify({
+            "nav.home": "首页",
+            "home.hero.title": "儿童友好空间标准体系",
+            "home.hero.lead": "面向机构合作的标准、研究与实施平台。",
+          }),
+        },
+      ] as any,
+      "做一个中英双语机构网站，默认中文，并且需要语言切换。",
+      "zh-CN",
+    );
+
+    const byPath = new Map(files.map((file) => [String(file.path || ""), String(file.content || "")] as const));
+    const en = JSON.parse(byPath.get("/i18n/messages.en.json") || "{}");
+    const zh = JSON.parse(byPath.get("/i18n/messages.zh-CN.json") || "{}");
+
+    expect(en["nav.home"]).toBe("Home");
+    expect(en["home.hero.title"]).toBe("Child-friendly space standards system");
+    expect(en["home.hero.lead"]).toBe("A standards, research, and implementation platform for institutional partners.");
+    expect(zh["nav.home"]).toBe("首页");
+    expect(zh["home.hero.title"]).toBe("儿童友好空间标准体系");
+    expect(zh["home.hero.lead"]).toBe("面向机构合作的标准、研究与实施平台。");
   });
 
   it("accepts structure-correct Blog detail shells during the first generation pass", () => {
@@ -4378,7 +5088,7 @@ describe("skill-tool-executor", () => {
     ).not.toThrow();
   });
 
-  it("requires any explicit /blog route to expose detail links and matching detail pages even without a requested count", () => {
+  it("allows first-pass /blog routes to stay index-first when detail pages were not explicitly requested", () => {
     const decision = buildLocalDecisionPlan({
       messages: [new HumanMessage("Build a personal blog with Home and Blog.")],
       phase: "conversation",
@@ -4418,7 +5128,7 @@ describe("skill-tool-executor", () => {
         files,
         requirementText: "Build a personal blog with Home and Blog.",
       }),
-    ).toThrow("must expose at least one /blog/{slug}/ detail link");
+    ).not.toThrow();
   });
 
   it("rejects requested Blog articles implemented as same-page anchors instead of /blog/{slug}/ details", () => {
@@ -4473,7 +5183,7 @@ describe("skill-tool-executor", () => {
 
   it("treats discovered /blog/{slug}/ links as missing required files before final validation", () => {
     const decision = buildLocalDecisionPlan({
-      messages: [new HumanMessage("Build a personal blog with Home and Blog.")],
+      messages: [new HumanMessage("Build a personal blog with Home and Blog. Publish 1 complete article detail page.")],
       phase: "conversation",
       workflow_context: {
         promptControlManifest: {
@@ -4493,12 +5203,12 @@ describe("skill-tool-executor", () => {
     expect(
       requiredFileChecklistForTesting(decision, {
         files,
-        requirementText: "Build a personal blog with Home and Blog.",
+        requirementText: "Build a personal blog with Home and Blog. Publish 1 complete article detail page.",
       }),
     ).toContain("/blog/demo/index.html");
   });
 
-  it("caps unrequested Blog fallback detail outputs to a single entry by default", () => {
+  it("keeps the default first pass index-first even if the archive contains multiple starter blog links", () => {
     const decision = buildLocalDecisionPlan({
       messages: [new HumanMessage("Build a personal blog with Home and Blog.")],
       phase: "conversation",
@@ -4562,20 +5272,10 @@ describe("skill-tool-executor", () => {
       files,
       requirementText: "Build a personal blog with Home and Blog.",
     });
-    expect(required.filter((file) => file.startsWith("/blog/") && file !== "/blog/index.html")).toEqual([
-      "/blog/ai-as-a-system/index.html",
-    ]);
-
-    expect(() =>
-      validateAndNormalizeRequiredFiles({
-        decision,
-        files,
-        requirementText: "Build a personal blog with Home and Blog.",
-      }),
-    ).toThrow("without an explicit requested content count");
+    expect(required.filter((file) => file.startsWith("/blog/") && file !== "/blog/index.html")).toEqual([]);
   });
 
-  it("ignores /blog/{slug}/ links discovered only inside non-primary generated html routes", () => {
+  it("keeps first-pass required files index-first even when non-primary html contains extra blog detail links", () => {
     const decision = buildLocalDecisionPlan({
       messages: [new HumanMessage("Build a personal blog with Home and Blog.")],
       phase: "conversation",
@@ -4608,7 +5308,15 @@ describe("skill-tool-executor", () => {
       requirementText: "Build a personal blog with Home and Blog. Generate 1 complete article.",
     });
 
-    expect(required).toContain("/blog/primary-post/index.html");
+    expect(required).toEqual(
+      expect.arrayContaining([
+        "/styles.css",
+        "/script.js",
+        "/index.html",
+        "/blog/index.html",
+      ]),
+    );
+    expect(required).not.toContain("/blog/primary-post/index.html");
     expect(required).not.toContain("/blog/secondary-post/index.html");
     expect(required).not.toContain("/blog/third-post/index.html");
   });
@@ -4667,6 +5375,8 @@ describe("skill-tool-executor", () => {
       expect.arrayContaining([
         "/styles.css",
         "/script.js",
+        "/i18n/messages.en.json",
+        "/i18n/messages.zh-CN.json",
         "/index.html",
         "/products/index.html",
         "/custom-solutions/index.html",
@@ -4675,6 +5385,252 @@ describe("skill-tool-executor", () => {
         "/about/index.html",
       ]),
     );
+  });
+
+  it("requires bilingual locale dictionaries for bilingual website contracts", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a bilingual company website with Home, Products, Cases, Contact, About.")],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/products", "/cases", "/contact", "/about"],
+          navLabels: ["Home", "Products", "Cases", "Contact", "About"],
+          files: [
+            "/styles.css",
+            "/script.js",
+            "/index.html",
+            "/products/index.html",
+            "/cases/index.html",
+            "/contact/index.html",
+            "/about/index.html",
+          ],
+        },
+      },
+    } as any);
+
+    const required = requiredFileChecklistForTesting(decision, {
+      requirementText: "Build a bilingual company website with Home, Products, Cases, Contact, About.",
+    });
+
+    expect(required).toEqual(
+      expect.arrayContaining([
+        "/i18n/messages.en.json",
+        "/i18n/messages.zh-CN.json",
+      ]),
+    );
+  });
+
+  it("prefers manifest localeConfig bilingual mode over multilingual wording in requirement text", () => {
+    const requirement = [
+      "# Canonical Website Generation Prompt",
+      "",
+      "Build a Chinese-first bilingual editorial website.",
+      "Keep a locale registry and stable translation resource structure for the shared shell.",
+      "",
+      "### Prompt Control Manifest (Machine Readable)",
+      "```json",
+      JSON.stringify(
+        {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/blog"],
+          navLabels: ["Home", "Blog"],
+          files: ["/styles.css", "/script.js", "/i18n/locales.json", "/index.html", "/blog/index.html"],
+          localeConfig: {
+            mode: "bilingual",
+            defaultLocale: "zh-CN",
+            locales: ["zh-CN", "en"],
+            translationDriven: false,
+            sourceCatalogPath: "/i18n/messages.zh-CN.json",
+          },
+        },
+        null,
+        2,
+      ),
+      "```",
+    ].join("\n");
+
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage(requirement)],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/blog"],
+          navLabels: ["Home", "Blog"],
+          files: ["/styles.css", "/script.js", "/i18n/locales.json", "/index.html", "/blog/index.html"],
+          localeConfig: {
+            mode: "bilingual",
+            defaultLocale: "zh-CN",
+            locales: ["zh-CN", "en"],
+          },
+        },
+      },
+    } as any);
+
+    const required = requiredFileChecklistForTesting(decision, { requirementText: requirement });
+    expect(required).toEqual(
+      expect.arrayContaining([
+        "/i18n/messages.en.json",
+        "/i18n/messages.zh-CN.json",
+      ]),
+    );
+    expect(required).not.toContain("/i18n/locales.json");
+  });
+
+  it("keeps manifest-declared English-only sites out of locale scaffolding even when the prompt mentions shared locale mechanics", () => {
+    const requirement = [
+      "# Canonical Website Generation Prompt",
+      "",
+      "- Language: English",
+      "- Locale contract: this site is single-language English-first. Do not emit an EN/ZH switch, bilingual resource files, or hidden alternate-language shell payloads.",
+      "- Shared-shell validation may mention locale switch consistency and i18n mechanics as generic workflow guidance.",
+      "",
+      "### Prompt Control Manifest (Machine Readable)",
+      "```json",
+      JSON.stringify(
+        {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/cases"],
+          navLabels: ["Home", "Cases"],
+          files: ["/styles.css", "/script.js", "/index.html", "/cases/index.html"],
+          discoveryBrief: {
+            localeMode: "en",
+            defaultLocale: "en",
+            routes: ["/", "/cases"],
+          },
+        },
+        null,
+        2,
+      ),
+      "```",
+    ].join("\n");
+
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage(requirement)],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/cases"],
+          navLabels: ["Home", "Cases"],
+          files: ["/styles.css", "/script.js", "/index.html", "/cases/index.html"],
+          discoveryBrief: {
+            localeMode: "en",
+            defaultLocale: "en",
+          },
+        },
+      },
+    } as any);
+
+    const required = requiredFileChecklistForTesting(decision, { requirementText: requirement });
+    expect(required).not.toContain("/i18n/locales.json");
+    expect(required).not.toContain("/i18n/messages.en.json");
+    expect(required).not.toContain("/i18n/messages.zh-CN.json");
+
+    const normalizedJs = normalizeGeneratedJsForTesting("document.documentElement.dataset.ready = 'true';", requirement);
+    expect(normalizedJs).not.toContain("LOCALE_REGISTRY_PATH");
+    expect(normalizedJs).not.toContain("data-locale-select");
+
+    const files = [
+      { path: "/styles.css", type: "text/css", content: "body{font-family:system-ui,sans-serif;}" },
+      { path: "/script.js", type: "text/javascript", content: "document.documentElement.dataset.ready='true';" },
+      {
+        path: "/index.html",
+        type: "text/html",
+        content: [
+          "<!doctype html>",
+          '<html lang="en" data-lang="en">',
+          "<head>",
+          '  <meta charset="utf-8" />',
+          '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+          '  <link rel="stylesheet" href="/styles.css" />',
+          "</head>",
+          "<body>",
+          '  <header><nav><a href="/">Home</a><a href="/cases/">Cases</a></nav><label class="locale-switch"><select data-locale-select><option value="en" selected>en</option><option value="zh-CN">zh-CN</option></select></label></header>',
+          "  <main><section><h1>Precision components for production lines</h1><p>English-only conversion copy for buyers.</p></section></main>",
+          '  <script src="/script.js"></script>',
+          "</body>",
+          "</html>",
+        ].join("\n"),
+      },
+      {
+        path: "/cases/index.html",
+        type: "text/html",
+        content: [
+          "<!doctype html>",
+          '<html lang="en">',
+          "<head>",
+          '  <meta charset="utf-8" />',
+          '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+          '  <link rel="stylesheet" href="/styles.css" />',
+          "</head>",
+          "<body>",
+          "  <header><nav><a href=\"/\">Home</a><a href=\"/cases/\">Cases</a></nav></header>",
+          "  <main><section><h1>Case proof</h1><p>Production examples and measurable delivery evidence.</p></section></main>",
+          '  <script src="/script.js"></script>',
+          "</body>",
+          "</html>",
+        ].join("\n"),
+      },
+      { path: "/i18n/locales.json", type: "application/json", content: '{"defaultLocale":"en","locales":["en","zh-CN"],"translationDriven":true,"sourceCatalog":"/i18n/messages.en.json"}' },
+      { path: "/i18n/messages.en.json", type: "application/json", content: '{"nav.home":"Home"}' },
+    ];
+
+    const validated = validateAndNormalizeRequiredFiles({
+      decision,
+      files,
+      requirementText: requirement,
+    });
+    const byPath = new Map(validated.map((file) => [String(file.path || ""), String(file.content || "")] as const));
+    expect(byPath.has("/i18n/locales.json")).toBe(false);
+    expect(byPath.has("/i18n/messages.en.json")).toBe(false);
+    expect(String(byPath.get("/index.html") || "")).not.toContain("locale-switch");
+    expect(String(byPath.get("/index.html") || "")).not.toContain("data-locale-select");
+  });
+
+  it("requires locale registry and source catalog for multilingual translation-driven contracts", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [
+        new HumanMessage(
+          "Build a multilingual company website with supported locales: zh-CN, en, ja, fr. Default visible language is Chinese. Translation should come from catalogs instead of rebuilding pages.",
+        ),
+      ],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/about"],
+          navLabels: ["Home", "About"],
+          files: ["/styles.css", "/script.js", "/index.html", "/about/index.html"],
+        },
+      },
+    } as any);
+
+    const required = requiredFileChecklistForTesting(decision, {
+      requirementText:
+        "Build a multilingual company website with supported locales: zh-CN, en, ja, fr. Default visible language is Chinese. Translation should come from catalogs instead of rebuilding pages.",
+    });
+
+    expect(required).toEqual(
+      expect.arrayContaining([
+        "/i18n/locales.json",
+        "/i18n/messages.zh-CN.json",
+      ]),
+    );
+    expect(required).not.toContain("/i18n/messages.en.json");
   });
 
   it("does not treat identical re-emits for the same target file as material progress", () => {
@@ -4729,6 +5685,24 @@ describe("skill-tool-executor", () => {
     ]);
   });
 
+  it("adds /index.html as a repair target for homepage semantic mismatch findings", () => {
+    const feedback =
+      "skill_tool_invalid_required_file: /index.html failed route QA\nanti-slop/root-route-semantic-mismatch: Homepage route / is using downstream download or certification semantics; reframe it as the official homepage and institutional overview.";
+
+    expect(extractQaRepairTargetsForTesting(feedback)).toEqual(["/index.html"]);
+  });
+
+  it("adds leaked blog detail pages to QA repair targets for shared-shell route drift", () => {
+    const feedback =
+      "skill_tool_invalid_required_file: /index.html footer exposes undeclared internal routes outside the confirmed route plan: /blog/ai-notes-for-everyday-judgment, /blog/devops-as-team-rhythm";
+
+    expect(extractQaRepairTargetsForTesting(feedback)).toEqual([
+      "/index.html",
+      "/blog/ai-notes-for-everyday-judgment/index.html",
+      "/blog/devops-as-team-rhythm/index.html",
+    ]);
+  });
+
   it("builds targeted QA repair guidance for bilingual leaks and thin blog detail pages", () => {
     const feedback = [
       "skill_tool_invalid_required_file: /index.html renders obvious simultaneous bilingual visible copy instead of language-switched content",
@@ -4755,6 +5729,48 @@ describe("skill-tool-executor", () => {
     );
   });
 
+  it("builds targeted QA repair guidance for homepage semantic mismatch failures", () => {
+    const feedback = [
+      "skill_tool_invalid_required_file: /index.html failed route QA",
+      "anti-slop/root-route-semantic-mismatch: Homepage route / is using downstream download or certification semantics; reframe it as the official homepage and institutional overview.",
+    ].join("\n");
+
+    expect(
+      buildQaRepairGuidanceForTesting(
+        feedback,
+        "Build the official CASUX homepage and institutional overview.",
+        ["/index.html"],
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("re-emit `/index.html`"),
+        expect.stringContaining("title, meta description, H1, opening lead"),
+        expect.stringContaining("remove support-entry, consultation-entry, contact-entry"),
+        expect.stringContaining("secondary modules or later CTA bands"),
+      ]),
+    );
+  });
+
+  it("includes homepage semantic repair guidance in the QA repair message payload", () => {
+    const feedback = [
+      "skill_tool_invalid_required_file: /index.html failed route QA",
+      "anti-slop/root-route-semantic-mismatch: Homepage route / is using downstream download or certification semantics; reframe it as the official homepage and institutional overview.",
+    ].join("\n");
+
+    const repair = buildQaRepairMessageForTesting(
+      feedback,
+      "Build the official CASUX homepage and institutional overview.",
+    );
+
+    expect(repair.targets).toEqual(["/index.html"]);
+    expect(repair.guidance).toEqual(
+      expect.arrayContaining([expect.stringContaining("official homepage and institutional overview first")]),
+    );
+    expect(repair.message).toContain("QA repair targets: /index.html");
+    expect(repair.message).toContain("QA repair guidance:");
+    expect(repair.message).toContain("remove support-entry, consultation-entry, contact-entry");
+  });
+
   it("builds targeted QA repair guidance for page-mechanics and blog editorial scaffold failures", () => {
     const feedback = [
       "skill_tool_invalid_required_file: /custom-solutions/index.html exposes page mechanics/scaffold wording instead of visitor-facing content: mechanical next step",
@@ -4771,6 +5787,7 @@ describe("skill-tool-executor", () => {
         expect.stringContaining("delete route-choreography copy"),
         expect.stringContaining("audience problem, concrete offer, proof, capability, or direct CTA"),
         expect.stringContaining("browser previews, internal reviews, working sessions"),
+        expect.stringContaining("footer group labels must not read like route guidance"),
         expect.stringContaining("/blog/gift-box-structure/index.html"),
         expect.stringContaining("remove editorial explainer phrases"),
         expect.stringContaining("Replace that scaffolding with article-specific analysis"),
@@ -4811,6 +5828,27 @@ describe("skill-tool-executor", () => {
     );
   });
 
+  it("targets /index.html and route-distinct footer guidance for duplicate footer groups", () => {
+    const feedback =
+      "skill_tool_invalid_required_file: /index.html duplicates the same footer link set across multiple groups";
+
+    expect(extractQaRepairTargetsForTesting(feedback)).toEqual(
+      expect.arrayContaining(["/index.html", "/styles.css"]),
+    );
+    expect(
+      buildQaRepairGuidanceForTesting(feedback, "Build a polished personal technical blog with Home, Blog, About, and Contact.", [
+        "/index.html",
+        "/styles.css",
+      ]),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("rewrite `/index.html` first"),
+        expect.stringContaining("one canonical route-navigation group"),
+        expect.stringContaining("contact methods, service actions, proof, or support links"),
+      ]),
+    );
+  });
+
   it("builds targeted QA repair guidance for shared content-list card padding gaps", () => {
     const feedback =
       "skill_tool_invalid_required_file: /casux-information-platform/index.html Blog list item outer class lacks runtime-safe padding: download-card: missing padding";
@@ -4842,6 +5880,67 @@ describe("skill-tool-executor", () => {
         expect.stringContaining("Remove `data-shpitto-blog-root`, `data-shpitto-blog-list`"),
         expect.stringContaining("instead of inventing `/blog/{slug}/` detail links"),
         expect.stringContaining("normal route-owned destination"),
+      ]),
+    );
+  });
+
+  it("builds targeted QA repair guidance for explicit /blog routes missing the data-source contract", () => {
+    const feedback =
+      "skill_tool_invalid_required_file: /blog/index.html does not include the Blog data-source contract";
+
+    expect(
+      buildQaRepairGuidanceForTesting(feedback, "Build a polished personal technical blog with a real /blog archive.", [
+        "/blog/index.html",
+      ]),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("affected route is `/blog`"),
+        expect.stringContaining("data-shpitto-blog-root"),
+        expect.stringContaining('data-shpitto-blog-api="/api/blog/posts"'),
+        expect.stringContaining("data-shpitto-blog-list"),
+      ]),
+    );
+  });
+
+  it("builds targeted QA repair guidance for explicit /blog routes missing publishable detail links", () => {
+    const feedback =
+      "skill_tool_invalid_required_file: /blog/index.html must expose 3 /blog/{slug}/ detail links for the requested publishable content items; found 0";
+
+    expect(
+      buildQaRepairGuidanceForTesting(
+        feedback,
+        "Build a polished personal technical blog with 3 publishable article detail pages.",
+        ["/blog/index.html"],
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("every visible archive card"),
+        expect.stringContaining("/blog/{slug}/` detail link"),
+        expect.stringContaining("matching `/blog/{slug}/index.html` files"),
+        expect.stringContaining("Do not replace them with generic launch notes"),
+      ]),
+    );
+  });
+
+  it("routes index-first unexpected blog detail links back to /blog/index.html", () => {
+    const feedback =
+      "skill_tool_invalid_required_file: Blog/content fallback exposes 3 detail links without an explicit requested content count; do not expose any /blog/{slug}/ detail links or static detail pages in the initial pass unless the brief explicitly asks for them";
+
+    expect(extractQaRepairTargetsForTesting(feedback)).toEqual(
+      expect.arrayContaining(["/blog/index.html"]),
+    );
+    expect(
+      buildQaRepairGuidanceForTesting(
+        feedback,
+        "Build a polished personal technical blog for an AI consultant. The first pass only needs a strong blog index. Do not generate blog detail pages yet.",
+        ["/blog/index.html"],
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("re-emit `/blog/index.html` only"),
+        expect.stringContaining("remove all live `/blog/{slug}/` anchors"),
+        expect.stringContaining("keep exactly three substantial archive cards"),
+        expect.stringContaining("blog-detail-fill workflow"),
       ]),
     );
   });
@@ -5257,6 +6356,30 @@ describe("skill-tool-executor", () => {
     expect(issueText).toContain("legacy split-hero markup");
   });
 
+  it("applies the corporate homepage contract from surface mode even when requirement text is weak", () => {
+    const html = [
+      '<section class="hero">',
+      '  <div class="hero__grid">',
+      '    <div class="hero__content"><h1>Technical proof above the fold</h1></div>',
+      '    <div class="media-frame"><div class="ph-img" role="img" aria-label="Placeholder visual"></div></div>',
+      "  </div>",
+      "</section>",
+    ].join("\n");
+
+    const issues = findCorporateB2BHomepageContractIssuesForTesting(
+      html,
+      "/index.html",
+      "Build homepage",
+      "",
+      "corporate-b2b-site",
+    );
+
+    const issueText = issues.join(" | ");
+    expect(issueText).toContain("opening hero must use enterprise-hero markup");
+    expect(issueText).toContain("placeholder media scaffolding");
+    expect(issueText).toContain("legacy split-hero markup");
+  });
+
   it("flags corporate homepage CSS when the hero is styled as split panels instead of one overlay surface", () => {
     const html = [
       "<!doctype html><html><body>",
@@ -5503,6 +6626,122 @@ describe("skill-tool-executor", () => {
     expect(normalized).toBe(html);
   });
 
+  it("injects curated editorial imagery into a portfolio blog homepage rail", () => {
+    const html = [
+      "<!doctype html><html><body>",
+      '<main class="page">',
+      '  <section class="section">',
+      '    <div class="profile-masthead">',
+      '      <div class="stack"><h1>Practical AI systems advice.</h1></div>',
+      '      <aside class="profile-rail" aria-label="Profile summary and visual context">',
+      '        <div class="panel stack"><p>Profile copy.</p></div>',
+      "      </aside>",
+      "    </div>",
+      "  </section>",
+      "</main>",
+      "</body></html>",
+    ].join("\n");
+
+    const normalized = injectCuratedMediaIntoHtmlForTesting(
+      html,
+      "/index.html",
+      "Build a polished personal technical blog for an AI consultant with Home, Blog, About, and Contact.",
+    );
+
+    expect(normalized).toContain('data-stock-source="curated-library"');
+    expect(normalized).toContain("Working notes, implementation trade-offs, and product thinking in view.");
+    expect(normalized).toContain("profile-rail");
+  });
+
+  it("injects curated editorial imagery into a blog archive panel", () => {
+    const html = [
+      "<!doctype html><html><body>",
+      '<main class="page">',
+      '  <section data-shpitto-blog-root class="panel stack" aria-label="Blog collection">',
+      '    <div class="stack"><h1>Archive</h1><p>Recent essays and field notes.</p></div>',
+      '    <div data-shpitto-blog-list class="article-ledger"></div>',
+      "  </section>",
+      "</main>",
+      "</body></html>",
+    ].join("\n");
+
+    const normalized = injectCuratedMediaIntoHtmlForTesting(
+      html,
+      "/blog/index.html",
+      "Build a polished personal technical blog for an AI consultant with Home, Blog, About, and Contact.",
+    );
+
+    expect(normalized).toContain('data-stock-source="curated-library"');
+    expect(normalized).toContain("Field notes, drafts, and practical writing in progress.");
+  });
+
+  it("removes non-functional nav toggles when preview CSS does not implement responsive disclosure behavior", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a polished personal technical blog for an AI consultant.")],
+      phase: "conversation",
+    } as any);
+
+    const files = normalizeWebsiteStaticFilesForPreview({
+      decision,
+      requirementText: "Build a polished personal technical blog for an AI consultant with Home, Blog, About, and Contact.",
+      files: [
+        {
+          path: "/styles.css",
+          type: "text/css",
+          content: ".site-nav{display:flex;gap:0.5rem}.header-shell{display:flex;align-items:center}",
+        },
+        {
+          path: "/script.js",
+          type: "text/javascript",
+          content:
+            "(() => { const nav = document.querySelector('[data-site-nav]'); const navToggle = document.querySelector('[data-nav-toggle]'); if (navToggle) navToggle.addEventListener('click', () => nav.hidden = !nav.hidden); })();",
+        },
+        {
+          path: "/index.html",
+          type: "text/html",
+          content: [
+            "<!doctype html>",
+            "<html><body>",
+            '<header class="site-header"><div class="header-shell">',
+            '<button class="btn nav-toggle" type="button" data-nav-toggle aria-expanded="true">Menu</button>',
+            '<nav class="site-nav" data-site-nav><a href="/">Home</a><a href="/blog">Blog</a></nav>',
+            "</div></header>",
+            "</body></html>",
+          ].join("\n"),
+        },
+      ],
+    });
+
+    const indexHtml = String(files.find((file) => file.path === "/index.html")?.content || "");
+    expect(indexHtml).not.toContain("data-nav-toggle");
+    expect(indexHtml).not.toContain(">Menu<");
+  });
+
+  it("normalizes paired portfolio/blog media layouts so split bands align and media uses paired framing", () => {
+    const normalized = injectCuratedMediaIntoHtmlForTesting(
+      [
+        "<!doctype html><html><body>",
+        '<section class="section"><div class="split-grid">',
+        '<div class="story-band operator-proof"><h2>Essay context</h2><p>Longer editorial proof copy.</p></div>',
+        '<figure class="media-frame ph-img" aria-label="Editorial desk context"></figure>',
+        "</div></section>",
+        "</body></html>",
+      ].join("\n"),
+      "/blog/index.html",
+      "Build a polished personal technical blog for an AI consultant with Home, Blog, About, and Contact.",
+    );
+
+    expect(normalized).toContain("split-grid split-grid--aligned");
+    expect(normalized).toContain("media-frame media-frame--paired ph-img");
+  });
+
+  it("injects aligned paired-media runtime CSS for portfolio/blog layouts", () => {
+    const normalized = normalizeGeneratedCssForTesting(".split-grid{display:grid}.media-frame{position:relative}.article-ledger .article-item{display:grid}");
+    expect(normalized).toContain(".split-grid--aligned");
+    expect(normalized).toContain(".media-frame--paired");
+    expect(normalized).toContain(".article-item--with-media");
+  });
+
   it("does not flag Chinese standards lists as simultaneous bilingual leakage", () => {
     const html = [
       "<section>",
@@ -5529,7 +6768,96 @@ describe("skill-tool-executor", () => {
     expect(normalized).toContain("localStorage.getItem(STORAGE_KEY)");
     expect(normalized).toContain("attributeFilter: ['data-lang']");
     expect(normalized).toContain("window.__shpittoPreviewBase");
-    expect(normalized).toContain("const path = resolveMessagePath(lang);");
+    expect(normalized).toContain("const path = resolveMessagePath(normalizedLang);");
+  });
+
+  it("injects locale-registry runtime support for multilingual translation-driven sites", () => {
+    const script = [
+      "(() => {",
+      "  const root = document.documentElement;",
+      "  root.dataset.lang = 'zh-CN';",
+      "})();",
+    ].join("\n");
+
+    const normalized = normalizeGeneratedJsForTesting(
+      script,
+      'Build a multilingual company website with supported locales: zh-CN, en, ja, fr. Default visible language is Chinese. Translation should come from catalogs instead of rebuilding pages.',
+    );
+    expect(normalized).toContain("FALLBACK_LOCALE_REGISTRY");
+    expect(normalized).toContain("LOCALE_REGISTRY_PATH");
+    expect(normalized).toContain("document.querySelectorAll('[data-locale-select]')");
+    expect(normalized).toContain("resolveRegistryPath()");
+    expect(normalized).toContain("`/i18n/messages.${lang}.json`");
+  });
+
+  it("auto-materializes a locale registry and source catalog for multilingual sites", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [
+        new HumanMessage(
+          "Build a multilingual company website with supported locales: zh-CN, en, ja, fr. Default visible language is Chinese. Translation should come from catalogs instead of rebuilding pages.",
+        ),
+      ],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/"],
+          navLabels: ["首页"],
+          files: ["/styles.css", "/script.js", "/index.html", "/i18n/locales.json", "/i18n/messages.zh-CN.json"],
+        },
+      },
+    } as any);
+
+    const files = [
+      {
+        path: "/styles.css",
+        type: "text/css",
+        content: "body{font-family:system-ui,sans-serif;} .locale-switch{display:flex;gap:.5rem;}",
+      },
+      {
+        path: "/script.js",
+        type: "text/javascript",
+        content: "document.documentElement.dataset.ready='true';",
+      },
+      {
+        path: "/index.html",
+        type: "text/html",
+        content: [
+          "<!doctype html>",
+          '<html lang="zh-CN">',
+          "<head>",
+          '  <meta charset="utf-8" />',
+          '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+          '  <link rel="stylesheet" href="/styles.css" />',
+          "</head>",
+          "<body>",
+          "  <header><nav><a href=\"/\" data-i18n=\"nav.home\">首页</a></nav></header>",
+          "  <main>",
+          '    <section class="enterprise-hero">',
+          '      <div class="enterprise-hero__media"><img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1600&q=80" alt="Institutional planning workshop" /></div>',
+          '      <div class="enterprise-hero__content"><h1 data-i18n="home.hero.title">儿童友好空间标准体系</h1><p data-i18n="home.hero.lead">面向机构合作的标准、研究与实施平台。</p></div>',
+          "    </section>",
+          "  </main>",
+          '  <script src="/script.js"></script>',
+          "</body>",
+          "</html>",
+        ].join("\n"),
+      },
+    ];
+
+    const validated = validateAndNormalizeRequiredFiles({
+      decision,
+      files,
+      requirementText:
+        "Build a multilingual company website with supported locales: zh-CN, en, ja, fr. Default visible language is Chinese. Translation should come from catalogs instead of rebuilding pages.",
+    });
+    const byPath = new Map(validated.map((file) => [String(file.path || ""), String(file.content || "")] as const));
+    expect(byPath.get("/script.js")).toContain("LOCALE_REGISTRY_PATH");
+    expect(byPath.get("/i18n/locales.json")).toContain('"defaultLocale": "zh-CN"');
+    expect(byPath.get("/i18n/locales.json")).toContain('"ja"');
+    expect(byPath.get("/i18n/messages.zh-CN.json")).toContain('"home.hero.title"');
   });
 
   it("adds a concrete bilingual protocol scaffold to round prompts", () => {
@@ -5580,9 +6908,102 @@ describe("skill-tool-executor", () => {
     expect(prompt).toContain("prioritize the common CSS/JS layer only");
     expect(prompt).toContain("CSS surface-token rule:");
     expect(prompt).toContain("surface_css_tokens");
+    expect(prompt).toContain("Shared-asset completeness rule:");
+    expect(prompt).toContain("not a placeholder, bootstrap comment, partial patch");
   });
 
-  it("renders selected imported seed sidecar guidance before the model asks to load a skill", async () => {
+  it("keeps confirmed CASUX bilingual prompts on the EN/ZH scaffold instead of the translation-driven multilingual scaffold", () => {
+    const requirementText = [
+      "# Canonical Website Generation Prompt",
+      "",
+      "Generate the official CASUX website as an institutional standards and research hub.",
+      "- Language: Chinese-first bilingual Chinese and English",
+      "- Keep one locale visible at a time. Chinese is the default visible language for the first render on every route.",
+      "- If bilingual support is implemented with data attributes or resource files, do not duplicate both languages visibly in the same section.",
+      "",
+      "### Prompt Control Manifest (Machine Readable)",
+      "```json",
+      JSON.stringify(
+        {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "uploaded_source_page_plan",
+          websiteSurfaceMode: "content-hub-site",
+          routes: ["/", "/casux-information-platform"],
+          navLabels: ["Home", "Information"],
+          files: ["/styles.css", "/script.js", "/i18n/messages.en.json", "/i18n/messages.zh-CN.json", "/index.html", "/casux-information-platform/index.html"],
+          discoveryBrief: {
+            surfaceMode: "content-hub-site",
+            localeMode: "bilingual",
+            supportedLocales: ["zh-CN", "en"],
+            defaultLocale: "zh-CN",
+            routes: ["/", "/casux-information-platform"],
+          },
+        },
+        null,
+        2,
+      ),
+      "```",
+    ].join("\n");
+
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage(requirementText)],
+      phase: "conversation",
+      workflow_context: {
+        websiteSurfaceMode: "content-hub-site",
+        websiteDiscoveryBrief: {
+          surfaceMode: "content-hub-site",
+          localeMode: "bilingual",
+          supportedLocales: ["zh-CN", "en"],
+          defaultLocale: "zh-CN",
+          routes: ["/", "/casux-information-platform"],
+        },
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "uploaded_source_page_plan",
+          websiteSurfaceMode: "content-hub-site",
+          routes: ["/", "/casux-information-platform"],
+          navLabels: ["Home", "Information"],
+          files: ["/styles.css", "/script.js", "/i18n/messages.en.json", "/i18n/messages.zh-CN.json", "/index.html", "/casux-information-platform/index.html"],
+          discoveryBrief: {
+            surfaceMode: "content-hub-site",
+            localeMode: "bilingual",
+            supportedLocales: ["zh-CN", "en"],
+            defaultLocale: "zh-CN",
+            routes: ["/", "/casux-information-platform"],
+          },
+        },
+      },
+    } as any);
+
+    const prompt = buildWebsiteSkillToolRoundPromptForAdapter({
+      round: 0,
+      totalRounds: 10,
+      decision,
+      stylePreset: { id: "institutional", label: "Institutional", rationale: "test" } as any,
+      styleName: "Institutional",
+      styleReason: "CASUX bilingual regression",
+      loadedSkillIds: [],
+      emittedFiles: [],
+      requiredMissing: ["/styles.css", "/script.js", "/i18n/messages.en.json", "/i18n/messages.zh-CN.json"],
+      objective: {
+        targetFiles: ["/styles.css", "/script.js", "/i18n/messages.en.json", "/i18n/messages.zh-CN.json"],
+        instruction: "Emit the bilingual shared assets and locale resources.",
+        strictSingleTarget: false,
+      },
+      requirementText,
+    });
+
+    expect(prompt).toContain("English-first i18n-ready reference scaffold");
+    expect(prompt).toContain("/i18n/messages.en.json");
+    expect(prompt).toContain("/i18n/messages.zh-CN.json");
+    expect(prompt).not.toContain("Translation-driven locale reference scaffold");
+    expect(prompt).not.toContain("/i18n/locales.json");
+    expect(prompt).not.toContain('"locales":["zh-CN","en","it"]');
+  });
+
+  it("renders selected imported primary seed guidance before the model asks to load a skill", async () => {
     const guidance = await renderWebsiteSeedSkillSidecarGuidance([
       {
         id: "docs-knowledge-foundation",
@@ -5591,7 +7012,7 @@ describe("skill-tool-executor", () => {
       },
     ]);
 
-    expect(guidance).toContain("# Recommended Website Seed / Sidecar Guidance");
+    expect(guidance).toContain("# Recommended Website Primary Seed Guidance");
     expect(guidance).toContain("## seed:docs-knowledge-foundation");
     expect(guidance).toContain("example.html: example-backed HTML contract");
     expect(guidance).toContain("route-owned documentation openings");
@@ -5664,6 +7085,37 @@ describe("skill-tool-executor", () => {
             content: String(file.content)
               .replace("<title>Home</title>", "<title>CASUX | login and certification entry</title>")
               .replace("<h1>Home</h1>", "<h1>Login and register entry for standards, research, and practice materials</h1>"),
+          }
+        : file,
+    );
+
+    expect(() =>
+      validateAndNormalizeRequiredFiles({
+        decision,
+        files,
+      }),
+    ).toThrow("failed route QA");
+  });
+
+  it("blocks a homepage that presents support-entry identity instead of institutional overview", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build the official CASUX homepage and institutional overview.")],
+      phase: "conversation",
+    } as any);
+    const files = validGeneratedFiles(decision.routes).map((file) =>
+      file.path === "/index.html"
+        ? {
+            ...file,
+            content: String(file.content)
+              .replace("<title>Home</title>", "<title>CASUX｜机构标准、研究发现与项目支持</title>")
+              .replace(
+                "<h1>Home</h1>",
+                "<h1>CASUX 连接可信标准、研究发现与机构支持。</h1>",
+              )
+              .replace(
+                "CASUX organizes standards, research, practice, and certification materials into one clear entry point. The home page is the gateway for site identity, navigation, downloads, and service paths. The right-side hero area needs real media or chart content instead of empty visual shells. Search and directory results should span the full content width so cards remain readable and aligned.",
+                "面向教育运营者、研究合作方与机构采购方，整合项目参考、方法说明与咨询入口，帮助团队做出更稳妥的判断。",
+              ),
           }
         : file,
     );

@@ -5,6 +5,7 @@ import { selectCuratedLibraryImage } from "./curated-media-library.ts";
 import { isBilingualRequirementText } from "./bilingual-copy-guard.ts";
 import type { WebsiteDiscoveryBrief, WebsiteSurfaceMode } from "./open-design-adoption.ts";
 import { selectWebsiteGenerationTypeSkill } from "./website-type-selector.ts";
+import { buildLocalePlan, I18N_LOCALE_REGISTRY_PATH } from "./locale-plan.ts";
 import {
   renderWebsiteArtifactGeneratorContract,
   resolveWebsiteArtifactGeneratorMode,
@@ -30,7 +31,7 @@ type WebsiteDesignSpecParams = {
   selectedSeedSkillIds?: string[];
 };
 
-type DesignSpecLocaleMode = "zh-CN" | "en" | "bilingual";
+type DesignSpecLocaleMode = "zh-CN" | "en" | "bilingual" | "multilingual";
 
 export type RouteUnitContractSummary = {
   route: string;
@@ -39,11 +40,45 @@ export type RouteUnitContractSummary = {
   routeContract: string[];
   inheritedTerminology: string[];
   inheritedTokens: string[];
+  inheritedSeedSkillIds: string[];
   openingFamily: string;
   openingTopology: string;
   mediaPlan: string[];
   mediaResources: WebsiteMediaResource[];
 };
+
+function humanizeBlogDetailSlug(route: string): string {
+  const slug = String(route || "")
+    .trim()
+    .replace(/^\/blog\//i, "")
+    .replace(/\/+$/g, "");
+  const title = slug
+    .split(/[-_]+/g)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+  return title || "Article";
+}
+
+function buildSyntheticBlogDetailPage(route: string): PageBlueprint {
+  const normalizedRoute = String(route || "").trim() || "/";
+  const title = humanizeBlogDetailSlug(normalizedRoute);
+  return {
+    route: normalizedRoute,
+    navLabel: title,
+    purpose: `Publishable article detail page for ${title}.`,
+    source: "default",
+    pageKind: "intent",
+    responsibility: `Article detail page for ${title}.`,
+    contentSkeleton: ["Article hero", "Argument section", "Evidence section", "Conclusion / next action"],
+    componentMix: { hero: 8, feature: 8, grid: 0, proof: 18, form: 0, cta: 6 },
+    constraints: [
+      "This route is a blog/article detail destination, not a homepage or collection index.",
+      "Keep the page topic-specific to the linked article slug and preserve shared shell continuity.",
+    ],
+  };
+}
 
 function summarizeInheritedTerminology(params: WebsiteDesignSpecParams): string[] {
   return Array.from(
@@ -101,29 +136,68 @@ function isContentCollectionPage(page: PageBlueprint): boolean {
   return page.pageKind === "blog-data-index" || page.pageKind === "content-collection-index";
 }
 
+function isPortfolioBlogInteriorSurface(page: PageBlueprint, surfaceMode: WebsiteSurfaceMode): boolean {
+  if (surfaceMode !== "portfolio-blog-site") return false;
+  const route = String(page.route || "").trim().toLowerCase();
+  if (route === "/" || /^\/blog\/[^/]+$/i.test(route)) return false;
+  return route === "/blog" || route === "/about" || route === "/contact";
+}
+
 function hasExplicitChineseLocaleContract(text: string): boolean {
-  return /(?:final website locale requirement|requested site locale|language|locale)\s*:\s*chinese\b|single-language chinese-first|chinese-only|keep all visible copy in chinese|keep the site in chinese|locale contract:\s*this site is single-language chinese-first/i.test(
+  return /(?:final website locale requirement|requested site locale|language|locale)\s*:\s*chinese\b(?!\s*(?:and\b|\/|,|&|-first\b|first\b|bilingual\b|multilingual\b))|single-language chinese-first|chinese-only|keep all visible copy in chinese|keep the site in chinese|locale contract:\s*this site is single-language chinese-first/i.test(
     String(text || ""),
   );
 }
 
 function hasExplicitEnglishLocaleContract(text: string): boolean {
-  return /(?:final website locale requirement|requested site locale|language|locale)\s*:\s*english\b|single-language english-first|english-only|keep all visible copy in english|keep the site in english|locale contract:\s*this site is single-language english-first/i.test(
+  return /(?:final website locale requirement|requested site locale|language|locale)\s*:\s*english\b(?!\s*(?:and\b|\/|,|&|-first\b|first\b|bilingual\b|multilingual\b))|single-language english-first|english-only|keep all visible copy in english|keep the site in english|locale contract:\s*this site is single-language english-first/i.test(
     String(text || ""),
   );
 }
 
-function resolveDesignSpecLocaleMode(params: WebsiteDesignSpecParams): DesignSpecLocaleMode {
-  return params.decision.locale === "zh-CN" || hasExplicitChineseLocaleContract(params.requirementText)
-    ? "zh-CN"
-    : params.decision.locale === "en" || hasExplicitEnglishLocaleContract(params.requirementText)
-      ? "en"
-      : isBilingualRequirementText(params.requirementText)
-        ? "bilingual"
-        : "en";
+function hasExplicitBilingualLocaleContract(text: string): boolean {
+  return /(?:final website locale requirement|requested site locale|language|locale)\s*:\s*(?:chinese-first\s+|english-first\s+)?bilingual\b|(?:final website locale requirement|requested site locale|language|locale)\s*:\s*(?:chinese|english)\s+(?:and|&)\s+(?:english|chinese)\b|bilingual output must be locale-switchable|keep one locale visible at a time/i.test(
+    String(text || ""),
+  );
 }
 
-function buildLocaleShellContractLines(localeMode: DesignSpecLocaleMode): string[] {
+function requirementNeedsConsultationForm(text: string): boolean {
+  return /(?:consultation|intake|clarification|contact|inquiry)\s+form|form\s+with\s+name,\s*organization,\s*email,\s*topic,\s*and\s*message|咨询(?:表单|收集|入口|需求)|咨询.*(?:姓名|机构|单位|邮箱|主题|留言)|customer_inquiry_form|contact_form/i.test(
+    String(text || ""),
+  );
+}
+
+function routeShouldHostConsultationForm(page: PageBlueprint): boolean {
+  const route = String(page.route || "").trim().toLowerCase();
+  const text = `${route} ${String(page.navLabel || "").trim().toLowerCase()}`;
+  if (/(?:^|\/)(contact|inquiry|get-in-touch)(?:\/|$)|\bcontact\b|\binquiry\b/i.test(text)) return true;
+  if (/(?:information-platform|information|resource|resources|downloads?|support|help|library)/i.test(text)) return true;
+  return route === "/";
+}
+
+function resolveDesignSpecLocaleMode(params: WebsiteDesignSpecParams): DesignSpecLocaleMode {
+  const localePlan = buildLocalePlan(params.requirementText, params.decision.locale);
+  if (localePlan.mode === "multilingual") return "multilingual";
+  if (hasExplicitChineseLocaleContract(params.requirementText)) return "zh-CN";
+  if (hasExplicitEnglishLocaleContract(params.requirementText)) return "en";
+  if (localePlan.mode === "bilingual" || hasExplicitBilingualLocaleContract(params.requirementText) || isBilingualRequirementText(params.requirementText)) {
+    return "bilingual";
+  }
+  if (params.decision.locale === "zh-CN") return "zh-CN";
+  if (params.decision.locale === "en") return "en";
+  return "en";
+}
+
+function buildLocaleShellContractLines(localeMode: DesignSpecLocaleMode, requirementText = ""): string[] {
+  const localePlan = buildLocalePlan(requirementText, localeMode === "zh-CN" || localeMode === "en" ? localeMode : undefined);
+  if (localeMode === "multilingual") {
+    return [
+      "- header_contract: multilingual sites must keep locale controls in one dedicated utility wrapper beside the primary nav, not inside `<nav>`, and that utility wrapper must not be left empty.",
+      "- header_contract: when the locale set is larger than EN/ZH, prefer a compact selector/menu pattern over a long row of locale pills in the header.",
+      `- i18n_contract: route HTML should rely on stable \`data-i18n\` keys plus \`${I18N_LOCALE_REGISTRY_PATH}\` and a source catalog such as \`${localePlan.sourceCatalogPath}\`. Do not emit one HTML route tree per locale or duplicate visible copy for every locale in the initial page render.`,
+      "- translation_contract: non-default locale dictionaries belong to the translation pipeline and should be generated from the source catalog without regenerating layout, route HTML, or article structure.",
+    ];
+  }
   if (localeMode === "bilingual") {
     return [
       "- header_contract: locale switch must live in one dedicated utility wrapper beside the primary nav, not inside `<nav>`, and that utility wrapper must not be left empty.",
@@ -144,12 +218,21 @@ function buildLocaleShellContractLines(localeMode: DesignSpecLocaleMode): string
 }
 
 function describeLocaleStrategy(localeMode: DesignSpecLocaleMode): string {
+  if (localeMode === "multilingual") return "Translation-driven multilingual shell with one default visible locale, a locale registry, and source-catalog-first message generation";
   if (localeMode === "bilingual") return "Bilingual with the prompt-defined default visible locale and i18n resources for the inactive locale";
   if (localeMode === "zh-CN") return "Chinese-first single-language shell";
   return "English-first single-language shell";
 }
 
-function buildShellLocaleLines(localeMode: DesignSpecLocaleMode): string[] {
+function buildShellLocaleLines(localeMode: DesignSpecLocaleMode, requirementText = ""): string[] {
+  const localePlan = buildLocalePlan(requirementText, localeMode === "zh-CN" || localeMode === "en" ? localeMode : undefined);
+  if (localeMode === "multilingual") {
+    return [
+      "- header_utility_rule: render locale/language controls in a dedicated utility shell adjacent to navigation, not inside the primary nav link stream.",
+      "- header_utility_rule: for multi-locale sites, use one compact selector/menu in that utility shell instead of a long run of locale buttons when the locale count grows beyond two.",
+      `- header_utility_rule: the locale shell may stay hidden in the first pass if only the source catalog \`${localePlan.sourceCatalogPath}\` exists and translated non-default locale dictionaries have not been generated yet.`,
+    ];
+  }
   if (localeMode === "bilingual") {
     return [
       "- header_utility_rule: render locale/language controls in a dedicated utility shell adjacent to navigation, not inside the primary nav link stream.",
@@ -233,6 +316,13 @@ function buildSurfaceTokenContractLines(surfaceMode: WebsiteSurfaceMode): string
       "- surface_typography_tokens: editorial or institutional serif-forward pairing such as Georgia/Source Serif with a restrained sans; avoid docs-style monospace and corporate dark enterprise dominance.",
     ];
   }
+  if (surfaceMode === "portfolio-blog-site") {
+    return [
+      ...shared,
+      "- surface_css_tokens: --bg #F4EFE7; --surface #FFFDF9; --panel #FFFFFF; --text #1F1A17; --muted #625650; --border #D8CDC1; --primary #1E6B8F; --accent #C86B3C.",
+      "- surface_typography_tokens: editorial long-form pairing such as Source Serif, Charter, or Georgia with a restrained sans for UI chrome; prioritize readable article rhythm over enterprise density or docs monospace dominance.",
+    ];
+  }
   return [
     ...shared,
     "- surface_css_tokens: choose a palette that is visibly distinct from the default green-white card theme and appropriate for the selected website surface.",
@@ -269,6 +359,14 @@ function buildSurfaceVisualIdentityLines(surfaceMode: WebsiteSurfaceMode): strin
       "- surface_module_vocabulary: use collection-home, standards-ledger, research-index, resource-shelf, download-row, issue-map, and institutional-context modules. Avoid corporate sales modules and docs workspace chrome as the dominant template.",
     ];
   }
+  if (surfaceMode === "portfolio-blog-site") {
+    return [
+      ...shared,
+      "- surface_aesthetic: editorial technical journal or operator portfolio. Prefer paper/ink/copper/slate or another publication-led palette with long-form readability, measured contrast, and an intentional personal point of view rather than corporate dark enterprise chrome or docs workspace UI.",
+      "- surface_layout_rhythm: profile-led masthead, expertise or editorial-pillars band, article cards, essay leads, and concise contact strips should define the cadence instead of enterprise proof bands, docs rails, or institutional shelves.",
+      "- surface_module_vocabulary: use profile-masthead, editorial-pillar-grid, article-ledger, writing-spotlight, article-meta, and operator-proof modules. Avoid generic hero/card/CTA loops and avoid collection-home or enterprise-masthead semantics as the dominant pattern.",
+    ];
+  }
   return [
     ...shared,
     "- surface_aesthetic: choose a visual language that matches this surface and differs from adjacent website types in color, typography, opening composition, and section cadence.",
@@ -285,11 +383,58 @@ function routeRoleSummary(page: PageBlueprint): string {
   return "Interior route";
 }
 
+function routePageArchetype(page: PageBlueprint, surfaceMode: WebsiteSurfaceMode): string {
+  if (page.route === "/") {
+    if (surfaceMode === "docs-knowledge-site") return "home/docs-reference: establish the reference workspace, search/index path, and primary guide destinations.";
+    if (surfaceMode === "content-hub-site") return "home/content-hub: establish institution or editorial scope before resource shelves and collection rows.";
+    if (surfaceMode === "portfolio-blog-site") return "home/profile-editorial: establish the named operator or publication identity before article/archive mechanics.";
+    return "home/identity: establish brand, audience, offer, and primary visitor path before proof or CTA modules.";
+  }
+  if (isContentCollectionPage(page)) return "content-collection: organize resources, articles, standards, or knowledge items with route-specific context and discovery aids.";
+
+  const text = `${page.route} ${page.navLabel} ${page.purpose} ${page.responsibility}`.toLowerCase();
+  if (/docs?|documentation|guide|manual|reference|api|handbook|playbook|faq|tutorial/.test(text)) {
+    return "docs-reference: prioritize wayfinding, usage context, and readable reference groupings over campaign copy.";
+  }
+  if (/products?|catalog|collection/.test(text)) {
+    return "products-catalog: support comparison, specification, assortment, or buyer decision logic.";
+  }
+  if (/solutions?|services?|custom-solutions?/.test(text)) {
+    return "solutions-services: explain scenario fit, process, operating model, and engagement path.";
+  }
+  if (/cases?|portfolio|projects?/.test(text)) {
+    return "cases-proof: show evidence, scenario context, outcomes, and credible proof structure.";
+  }
+  if (/about|company|team|profile/.test(text)) {
+    return "about-identity: build trust through organization, operating model, credentials, process, or person profile.";
+  }
+  if (/contact|inquiry|get-in-touch/.test(text)) {
+    return "contact-conversion: clarify channels, response expectations, required inputs, and next step after outreach.";
+  }
+  if (/blog|article|writing|editorial|journal|insight/.test(text)) {
+    return "blog-editorial: foreground writing value, topic scope, article access, and editorial credibility.";
+  }
+  return "route-owned: derive a route-specific visitor job from the confirmed brief and avoid generic hero-card-CTA repetition.";
+}
+
+function isInstitutionLedContentHubHomepage(page: PageBlueprint, surfaceMode: WebsiteSurfaceMode): boolean {
+  if (surfaceMode !== "content-hub-site" || page.route !== "/") return false;
+  const text = [page.purpose, page.responsibility, ...(page.contentSkeleton || []), page.source]
+    .filter(Boolean)
+    .join(" ");
+  return /official homepage overview|official-homepage identity|official homepage|institutional overview|brand overview|umbrella/i.test(
+    text,
+  );
+}
+
 function routeOpeningTopology(
   page: PageBlueprint,
   enterpriseHomepage: boolean,
   surfaceMode: WebsiteSurfaceMode,
 ): string {
+  if (/^\/blog\/[^/]+$/i.test(String(page.route || "").trim())) {
+    return "article lead band -> argument section -> evidence section -> conclusion / related reading";
+  }
   if (page.route === "/") {
     if (enterpriseHomepage || surfaceMode === "corporate-b2b-site") {
       return "image-backed enterprise hero -> compact proof row -> unified capability band -> concise CTA strip";
@@ -297,12 +442,21 @@ function routeOpeningTopology(
     if (surfaceMode === "docs-knowledge-site") {
       return "docs workspace masthead -> search/index rail -> quickstart strip -> reference matrix -> compact support CTA";
     }
+    if (surfaceMode === "portfolio-blog-site") {
+      return "profile-led editorial masthead -> expertise/pillars band -> selected writing or proof band -> concise contact CTA";
+    }
     if (surfaceMode === "content-hub-site") {
+      if (isInstitutionLedContentHubHomepage(page, surfaceMode)) {
+        return "brand-led institutional masthead -> capability overview shelves -> standards/research proof band -> consultation or route CTA";
+      }
       return "editorial archive masthead -> collection shelves -> resource ledger -> institutional CTA";
     }
     return "single-column homepage hero -> proof band -> capability/CTA";
   }
   if (isContentCollectionPage(page)) {
+    if (surfaceMode === "portfolio-blog-site" && String(page.route || "").trim().toLowerCase() === "/blog") {
+      return "editorial archive masthead -> featured writing band -> article ledger";
+    }
     return "knowledge-hub lead band -> collection navigator -> resource/result stack";
   }
   const text = `${page.route} ${page.navLabel} ${page.purpose}`.toLowerCase();
@@ -311,6 +465,9 @@ function routeOpeningTopology(
   }
   if (/(?:^|\/)(?:casux-)?construction(?:\/|$)/i.test(page.route) || /\bconstruction\b/.test(text)) {
     return "process lead band -> execution roadmap -> implementation proof row";
+  }
+  if (/(?:^|\/)(?:casux-)?certification(?:\/|$)/i.test(page.route) || /\bcertification\b/.test(text)) {
+    return "certification criteria lead -> scoring/results ledger -> review-prep and consultation band";
   }
   if (/(?:^|\/)(?:casux-)?advocacy(?:\/|$)/i.test(page.route) || /\badvocacy\b/.test(text)) {
     return "advocacy lead band -> participation network -> action framework";
@@ -404,6 +561,17 @@ function buildRouteMediaResource(
       preferredRatio: "16:9, 4:3, or disciplined landscape",
     };
   }
+  if (/^\/blog\/[^/]+$/i.test(String(page.route || "").trim())) {
+    return {
+      resourceId,
+      route: page.route,
+      slotOwner: "article-supporting-proof slot",
+      imagePurpose: "article-specific contextual proof, operator scene, or subject-supporting visual that reinforces the main argument",
+      placementBand:
+        "inside the article lead band or the first evidence section; support the article body without turning the page back into a collection index",
+      preferredRatio: "16:9, 4:3, or disciplined landscape",
+    };
+  }
   const text = `${page.route} ${page.navLabel} ${page.purpose}`.toLowerCase();
   if (/products?|catalog|collection/.test(text)) {
     return {
@@ -463,8 +631,10 @@ export function buildRouteUnitContractSummary(
   const websiteSurfaceMode = resolveWebsiteSurfaceMode(params);
   const enterpriseHomepage =
     websiteSurfaceMode === "corporate-b2b-site" && isCorporateB2BEnterpriseHomepage(params);
+  const normalizedRoute = String(route || "/").trim() || "/";
   const page =
-    params.decision.pageBlueprints.find((item) => item.route === route) ||
+    params.decision.pageBlueprints.find((item) => item.route === normalizedRoute) ||
+    (/^\/blog\/[^/]+$/i.test(normalizedRoute) ? buildSyntheticBlogDetailPage(normalizedRoute) : undefined) ||
     params.decision.pageBlueprints.find((item) => item.route === "/") ||
     params.decision.pageBlueprints[0];
   if (!page) return undefined;
@@ -481,6 +651,7 @@ export function buildRouteUnitContractSummary(
     ],
     inheritedTerminology: summarizeInheritedTerminology(params),
     inheritedTokens: summarizeInheritedTokens(params),
+    inheritedSeedSkillIds: params.selectedSeedSkillIds || [],
     openingFamily: routeOpeningFamily(page),
     openingTopology,
     mediaPlan: routeMediaPlan(page, enterpriseHomepage, websiteSurfaceMode),
@@ -510,6 +681,14 @@ function routeProhibitions(
     ];
   }
   if (page.route === "/" && surfaceMode === "content-hub-site") {
+    if (isInstitutionLedContentHubHomepage(page, surfaceMode)) {
+      return [
+        "- prohibit: collapsing the homepage identity into a resource index, archive explanation, certification portal, download hub, or search-directory opener",
+        "- prohibit: title/meta/H1/lead copy that lists downstream route families or operational functions as the homepage identity",
+        "- prohibit: marketing hero utility geometry made from `hero`, `hero-wrap`, `hero-grid`, `hero__grid`, `hero-copy`, `hero__copy`, `hero__body`, `hero-panel`, `hero__panel`, `hero-aside`, or a right-side visual rail",
+        "- prohibit: collection shelves, ledgers, or resource rows taking over the first-screen homepage role before the institutional masthead establishes brand mission and scope",
+      ];
+    }
     return [
       "- prohibit: generic marketing homepage skeleton such as hero -> three feature cards -> proof strip -> CTA",
       "- prohibit: docs workspace chrome, code/reference panels, enterprise proof rows, and product-sales capability bands as the dominant homepage template",
@@ -517,7 +696,24 @@ function routeProhibitions(
       "- prohibit: marketing hero utility geometry made from `hero`, `hero-wrap`, `hero-grid`, `hero__grid`, `hero-copy`, `hero__copy`, `hero__body`, `hero-panel`, `hero__panel`, `hero-aside`, or a right-side visual rail",
     ];
   }
+  if (page.route === "/" && surfaceMode === "portfolio-blog-site") {
+    return [
+      "- prohibit: generic marketing homepage skeleton such as hero -> three feature cards -> proof strip -> CTA",
+      "- prohibit: enterprise proof-row cadence, docs workspace rails, or institutional archive shelves as the dominant homepage template",
+      "- prohibit: turning the homepage into a bare article directory, reading-order explainer, or archive-count announcement before introducing the person behind the site",
+      "- prohibit: using only generic classes such as `hero`, `hero-grid`, `card-grid`, `page-section`, or `section band` for the opening portfolio/blog modules",
+      "- prohibit: low-information visual filler such as pale gradient rectangles, empty context cards, weak right rails, placeholder media boxes, or decorative featured-context panels with little or no real evidence",
+    ];
+  }
   if (isContentCollectionPage(page)) {
+    if (surfaceMode === "portfolio-blog-site" && String(page.route || "").trim().toLowerCase() === "/blog") {
+      return [
+        "- prohibit: generic split-hero markup such as `hero-grid`, `hero__grid`, `hero-panel`, `hero-copy`, or a side-rail aside in the opening archive band",
+        "- prohibit: turning the blog index into a route-order explainer, article-count note, or generic company summary before the writing itself",
+        "- prohibit: reusing the same opening geometry as `/about` or `/contact`; the blog route must read as an editorial archive first",
+        "- prohibit: giant text-only archive lead plus a low-information context box or empty visual rail; supporting archive panels must carry real writing or publication evidence",
+      ];
+    }
     return [
       "- prohibit: repeated homepage hero skeleton on every route",
       "- prohibit: turning a knowledge/resource collection into a faux product catalog or export-sales assortment page",
@@ -557,6 +753,7 @@ function buildRouteSpecLines(
   enterpriseHomepage: boolean,
   localeMode: DesignSpecLocaleMode,
   surfaceMode: WebsiteSurfaceMode,
+  requirementText = "",
 ): string[] {
   if (isContentCollectionPage(page)) {
     return [
@@ -565,6 +762,7 @@ function buildRouteSpecLines(
       `- purpose: ${page.purpose}`,
       `- opening_topology: ${routeOpeningTopology(page, enterpriseHomepage, surfaceMode)}`,
       "- section_cadence: Knowledge-hub lead explaining how visitors should use the collection -> page-specific collection/index surface -> resource/result cards or rows -> contextual CTA or cross-navigation back into the core site",
+      `- page_archetype: ${routePageArchetype(page, surfaceMode)}`,
       "- section_spacing_contract: major route-owned section bands should usually breathe in roughly the 40-72px range, while nested resource cards, filter rows, metadata stacks, CTA action groups, and support clusters should still feel spacious in roughly the 28-44px range.",
       `- component_mix: hero ${page.componentMix.hero}, feature ${page.componentMix.feature}, grid ${page.componentMix.grid}, proof ${page.componentMix.proof}, form ${page.componentMix.form}, cta ${page.componentMix.cta}`,
       ...routeProhibitions(page, enterpriseHomepage, surfaceMode),
@@ -572,7 +770,7 @@ function buildRouteSpecLines(
       "- markup_contract: do not wrap a content-collection opening in generic hero shells such as `hero`, `hero--split`, `hero-grid`, `hero__grid`, or `hero-panel`.",
       "- markup_contract: do not mix legacy hero utility classes such as `hero__content`, `hero__actions`, `hero-title`, or `hero-lead` into a route-owned collection opening. The opening lead itself must carry the route-owned collection semantics.",
       "- markup_contract: collection openings should name their copy clusters with route-owned classes such as `collection-title`, `collection-lead`, `collection-actions`, `knowledge-hub-title`, or `knowledge-hub-actions` instead of reusing legacy hero utility names.",
-      ...buildLocaleShellContractLines(localeMode),
+      ...buildLocaleShellContractLines(localeMode, requirementText),
       "- cta_contract: section shells, opening grids, checklists, and support rows must use reusable classes rather than inline spacing/alignment styles.",
       "- copy_contract: route-opening leads, captions, and support lines must read like finished visitor-facing copy. Do not echo instruction-led verbs such as `should`, `must`, `use`, `explain`, or other contract wording in visible text.",
       "- caption_contract: visible collection captions may describe standards, research, policy, documentation, or case-library context, but they must not explain what the visual or layout is trying to prove.",
@@ -584,6 +782,28 @@ function buildRouteSpecLines(
     ];
   }
   const routeText = `${page.route} ${page.navLabel} ${page.purpose}`.toLowerCase();
+  const consultationHostContract =
+    requirementNeedsConsultationForm(requirementText) && routeShouldHostConsultationForm(page)
+      ? [
+          "- conversion_contract: this route is an approved host for the required consultation intake. Materialize one real HTML `<form>` with name, organization/company, email, topic/subject, and message fields.",
+          "- conversion_contract: search fields, filter rows, CTA-only action groups, and mailto links do not satisfy the consultation intake requirement on this route.",
+        ]
+      : [];
+  const contentHubInteriorCopyContract =
+    surfaceMode === "content-hub-site" && page.route !== "/"
+      ? [
+          "- copy_contract: interior content-hub routes must speak directly about standards coverage, research scope, resource categories, institutional governance, or implementation evidence. Do not explain how the page is organized, how visitors should read it, or what the route helps teams do.",
+          "- copy_contract: reject self-descriptions such as `The page groups...`, `This route helps teams...`, `This page helps teams compare...`, or `How the collection is organized` in visible headings, leads, section intros, and CTA helper text.",
+        ]
+      : [];
+  const portfolioBlogInteriorContract =
+    isPortfolioBlogInteriorSurface(page, surfaceMode)
+      ? [
+          "- copy_contract: portfolio/blog interior routes must speak directly about writing themes, operator background, collaboration scope, response expectations, or article value. Do not reuse generic route-purpose filler or split-hero scaffolding text.",
+          "- layout_contract: `/blog`, `/about`, and `/contact` must each use different opening geometry. Do not let those sibling routes share the same lead-copy plus aside/panel composition.",
+          "- layout_contract: when an interior portfolio/blog route uses a two-column text/media composition, the media column must be a real paired companion with aligned top edge, shared row height logic, and enough visual area to balance the copy column. Do not place a small floating image tile beside a much taller text slab.",
+        ]
+      : [];
   const interiorMarkupContract =
     /(?:^|\/)(?:casux-)?creation(?:\/|$)/i.test(page.route) || /\bcreation\b/.test(routeText)
       ? [
@@ -593,6 +813,10 @@ function buildRouteSpecLines(
         ? [
             "- markup_contract: the first visible construction band should use route-owned class semantics such as `process-lead`, `construction-intro`, or `execution-roadmap` rather than a generic `detail-grid` with an `aside` surface.",
           ]
+        : /(?:^|\/)(?:casux-)?certification(?:\/|$)/i.test(page.route) || /\bcertification\b/.test(routeText)
+          ? [
+              "- markup_contract: the first visible certification band should use route-owned class semantics such as `certification-entry`, `criteria-ledger`, `scorecard-band`, `review-prep`, or `assessor-packet` rather than a generic `detail-grid` with an `aside` surface.",
+            ]
         : /(?:^|\/)(?:casux-)?advocacy(?:\/|$)/i.test(page.route) || /\badvocacy\b/.test(routeText)
           ? [
               "- markup_contract: the first visible advocacy band should use route-owned class semantics such as `advocacy-lead`, `participation-network`, or `action-framework` rather than a generic `detail-grid` with an `aside` surface.",
@@ -605,6 +829,19 @@ function buildRouteSpecLines(
       ? [
           "- markup_contract: the first visible products band should use route-owned class semantics such as `catalog-lead`, `assortment-lead`, or `product-comparison-lead` rather than a generic `section stack-lg` shell.",
         ]
+      : surfaceMode === "portfolio-blog-site" && page.route === "/blog"
+        ? [
+            "- markup_contract: the first visible blog band should use route-owned editorial archive semantics such as `editorial-archive-masthead`, `writing-ledger-intro`, `featured-writing-band`, or `article-ledger` rather than a generic `route-hero`, `hero-grid`, `hero-copy`, `hero-panel`, or split-hero shell.",
+            "- card_media_contract: `/blog` archive cards should prefer integrated image-text article cards or featured-writing cards when credible contextual imagery is available. Do not default to text-only cards if the route already reserves visual support space.",
+          ]
+        : surfaceMode === "portfolio-blog-site" && page.route === "/about"
+          ? [
+              "- markup_contract: the first visible about band should use route-owned profile semantics such as `operator-masthead`, `profile-timeline`, `credibility-ledger`, or `operator-proof` rather than a generic `route-hero`, `hero-grid`, `hero-copy`, `hero-panel`, or split-hero shell.",
+            ]
+          : surfaceMode === "portfolio-blog-site" && page.route === "/contact"
+            ? [
+                "- markup_contract: the first visible contact band should use route-owned conversion semantics such as `contact-conversion`, `contact-channels`, `response-expectation`, or `collaboration-intake` rather than a generic `route-hero`, `hero-grid`, `hero-copy`, `hero-panel`, or split-hero shell.",
+              ]
       : /solutions?|services?|custom-solutions?/.test(routeText)
       ? [
           "- markup_contract: the first visible solutions band should use route-owned class semantics such as `process-intro`, `solutions-process-intro`, `scenario-fit-lead`, or `solution-lead` rather than a generic `section stack-lg` shell.",
@@ -631,6 +868,14 @@ function buildRouteSpecLines(
           "- markup_contract: do not lead the docs homepage with generic `hero`, `hero-wrap`, `hero-grid`, `hero__grid`, `hero-copy`, `hero__copy`, `hero__body`, `hero-panel`, `hero__panel`, `hero-aside`, `card-grid`, or campaign `page-section` shells as the dominant opening.",
           "- layout_contract: docs homepage density should come from wayfinding, readable measures, reference grouping, version/search cues, and code/reference panels; avoid broad sales proof rows and repeated floating feature cards.",
         ]
+      : page.route === "/" && !enterpriseHomepage && surfaceMode === "content-hub-site" && isInstitutionLedContentHubHomepage(page, surfaceMode)
+        ? [
+            "- surface_homepage_archetype: institution-led content hub homepage, not a pure collection index and not a marketing landing page.",
+            "- geometry_contract: the content-hub homepage opening must establish the institution first through a brand-led masthead plus capability shelves. Do not let collection shelves, resource rows, archive explanations, or directory framing replace the homepage identity in the first screen.",
+            "- markup_contract: the first visible content-hub homepage section should use route-owned institutional semantics such as `institutional-masthead`, `brand-overview`, `capability-shelf`, `standards-scope`, or `institutional-proof` instead of archive-index wrappers such as `collection-home`, `archive-masthead`, or `resource-index-head`.",
+            "- copy_contract: the title, meta description, H1, and first lead paragraph must establish the institution, audience, trust scope, and umbrella mission only. Keep certification, downloads, resource index, search, and route-family explanations out of those fields; defer them to later shelves, proof rows, nav, or CTA modules.",
+            "- copy_contract: the homepage opening may mention the site's standards, research, advocacy, or information scope, but it must frame them as institutional capabilities or destinations rather than as the homepage's primary semantic role.",
+          ]
       : page.route === "/" && !enterpriseHomepage && surfaceMode === "content-hub-site"
         ? [
             "- surface_homepage_archetype: editorial/institutional collection index, not a marketing landing page or docs workspace.",
@@ -639,12 +884,34 @@ function buildRouteSpecLines(
             "- markup_contract: do not lead the content-hub homepage with generic `hero`, `hero-wrap`, `hero-grid`, `hero__grid`, `hero-copy`, `hero__copy`, `hero__body`, `hero-panel`, `hero__panel`, `hero-aside`, `card-grid`, or campaign `page-section` shells as the dominant opening.",
             "- layout_contract: content-hub density should come from shelves, ledgers, archive grids, topic navigation, and resource rows; avoid docs code panels, enterprise proof bands, and product-sales capability modules.",
           ]
+        : page.route === "/" && !enterpriseHomepage && surfaceMode === "portfolio-blog-site"
+          ? [
+              "- surface_homepage_archetype: profile-led editorial homepage, not a marketing landing page, not a docs workspace, and not a bare archive index.",
+              "- geometry_contract: the portfolio/blog homepage opening must establish the named operator first through a profile masthead plus expertise or editorial-pillars support. Do not let article-count notes, archive mechanics, or route-order explanations replace the homepage identity in the first screen.",
+              "- markup_contract: the first visible portfolio/blog homepage section should use route-owned editorial semantics such as `profile-masthead`, `operator-overview`, `editorial-pillar-grid`, `writing-spotlight`, or `operator-proof` rather than enterprise, docs, or institutional wrappers.",
+              "- layout_contract: portfolio/blog cadence should come from profile framing, article cards, editorial proof, and readable long-form support zones; avoid enterprise proof rows, docs rails, and archive-shelf-first homepage logic.",
+              "- support_band_contract: when the homepage uses a companion visual/support panel, that panel must contain either a real operator/publication-context image or dense writing/proof substance. Do not ship decorative gradient placeholders, empty context cards, or weak right-side filler.",
+              "- support_band_contract: when the homepage uses a left-right support band, the copy and media columns must read as one aligned pair. Match their top edge, keep the media at card/panel scale rather than thumbnail scale, and avoid a narrow floating image that visually detaches from the text column.",
+              "- card_media_contract: featured writing, operator proof, and selected article shelves should prefer integrated image-text cards when credible contextual imagery is available rather than text-only cards plus a detached support image elsewhere on the page.",
+            ]
         : [];
   const sectionCadence =
     page.route === "/" && !enterpriseHomepage && surfaceMode === "docs-knowledge-site"
       ? "documentation workspace lead -> search/index rail -> quickstart strip -> guide stack -> reference matrix -> compact support CTA"
+      : page.route === "/blog" && surfaceMode === "portfolio-blog-site"
+        ? "editorial archive masthead -> featured writing/image-text band -> article ledger with image-text cards -> concise archive CTA"
+      : page.route === "/about" && surfaceMode === "portfolio-blog-site"
+        ? "operator masthead -> credibility or timeline slab -> collaboration proof/CTA"
+      : page.route === "/contact" && surfaceMode === "portfolio-blog-site"
+        ? "contact conversion band -> channel matrix -> response expectation row"
+      : page.route === "/" && !enterpriseHomepage && surfaceMode === "portfolio-blog-site"
+        ? "profile-led editorial masthead -> expertise or editorial-pillars band -> selected writing/proof band with aligned companion media -> concise contact CTA"
+      : page.route === "/" && !enterpriseHomepage && surfaceMode === "content-hub-site" && isInstitutionLedContentHubHomepage(page, surfaceMode)
+        ? "brand-led institutional masthead -> capability overview shelves -> standards/research proof band -> consultation or route CTA"
       : page.route === "/" && !enterpriseHomepage && surfaceMode === "content-hub-site"
         ? "editorial archive masthead -> topic/collection shelves -> standards/research ledger -> resource index rows -> institutional CTA"
+        : /(?:^|\/)(?:casux-)?certification(?:\/|$)/i.test(page.route) || /\bcertification\b/.test(routeText)
+          ? "certification criteria lead -> score/results rows -> review-prep and assessor materials -> consultation CTA"
         : page.contentSkeleton.join(" -> ") || "derive from the route role without reusing a generic hero shell";
   return [
     `- role: ${routeRoleSummary(page)}`,
@@ -652,10 +919,21 @@ function buildRouteSpecLines(
     `- purpose: ${page.purpose}`,
     `- opening_topology: ${routeOpeningTopology(page, enterpriseHomepage, surfaceMode)}`,
     `- section_cadence: ${sectionCadence}`,
+    `- page_archetype: ${routePageArchetype(page, surfaceMode)}`,
     "- section_spacing_contract: major route-owned section bands should usually breathe in roughly the 40-72px range, while nested proof rows, capability grids, card stacks, CTA action groups, and support clusters should still feel spacious in roughly the 28-44px range.",
     `- component_mix: hero ${page.componentMix.hero}, feature ${page.componentMix.feature}, grid ${page.componentMix.grid}, proof ${page.componentMix.proof}, form ${page.componentMix.form}, cta ${page.componentMix.cta}`,
     ...routeProhibitions(page, enterpriseHomepage, surfaceMode),
+    ...consultationHostContract,
+    ...contentHubInteriorCopyContract,
+    ...portfolioBlogInteriorContract,
     ...surfaceHomepageContract,
+    ...((/(?:^|\/)(?:casux-)?certification(?:\/|$)/i.test(page.route) || /\bcertification\b/.test(routeText))
+      ? [
+          "- copy_contract: certification routes must speak concretely about evaluation criteria, scoring dimensions, total-score thresholds, assessor/reviewer materials, evidence packets, or quality-mark/badge outcomes. Do not keep the route at the generic level of topic filters plus resource cards.",
+          "- copy_contract: at least one opening/result band should name review logic directly, for example score criteria, assessment dimensions, threshold logic, assessor packet, reviewer checklist, certification badge, or quality-mark workflow.",
+          "- copy_contract: when the source brief names certification-specific mechanics, preserve them as visitor-facing route substance rather than diluting them into generic standards or information-platform wording.",
+        ]
+      : []),
     ...(page.route === "/" && enterpriseHomepage
       ? [
           "- markup_contract: the opening hero should use an enterprise-specific wrapper such as `enterprise-hero` or `hero hero--enterprise`, plus dedicated media/content children like `enterprise-hero__media` and `enterprise-hero__content`.",
@@ -669,7 +947,7 @@ function buildRouteSpecLines(
           "- css_overlay_contract: `.enterprise-hero__content` must remain a transparent overlay text layer. Do not assign it `background`, `border`, `box-shadow`, or `backdrop-filter` values that make it read as a separate frosted card.",
           "- header_contract: the primary nav cluster should contain route links only. Do not place locale buttons inside `<nav>` and then emit a second empty utility wrapper.",
           "- header_contract: do not emit an empty locale utility shell.",
-          ...buildLocaleShellContractLines(localeMode),
+          ...buildLocaleShellContractLines(localeMode, requirementText),
           "- spacing_contract: keep the opening hero visually close to the shared header, but allow a measured shell transition of roughly 20-36px so the masthead can breathe. Do not stack large shell top padding and full section top padding before the first meaningful hero content.",
           "- spacing_contract: homepage shell rhythm should stay controlled and enterprise-like; major section spacing should usually remain in roughly the 40-72px range, while proof rows, capability-card groups, and CTA/support clusters should usually remain in roughly the 28-44px range instead of collapsing into utility-tight spacing.",
           "- capability_contract: homepage capability content must render as one unified capability band with heading + grid/list content in the same shell rhythm.",
@@ -686,7 +964,7 @@ function buildRouteSpecLines(
         ]
       : [
           ...interiorMarkupContract,
-          ...buildLocaleShellContractLines(localeMode),
+          ...buildLocaleShellContractLines(localeMode, requirementText),
           "- cta_contract: section shells, opening grids, checklists, and support rows must use reusable classes rather than inline spacing/alignment styles.",
           "- copy_contract: route-opening leads, captions, and support lines must read like finished buyer-facing copy. Do not echo instruction-led verbs such as `should`, `must`, `use`, `explain`, or other contract wording in visible text.",
           "- caption_contract: visible route-opening captions must be buyer-facing and business-facing. They may describe material proof, application context, sourcing relevance, or delivery context, but they must not explain what the visual should do, what the layout is trying to prove, or what weaker visual treatment was avoided.",
@@ -736,10 +1014,12 @@ function buildExpandedMediaResource(
       ? "full-width hero background layer with a protected center-right focal zone, at least 680px visual depth behind the masthead, and enough visible subject area to dominate the first screen"
       : page.route === "/" && surfaceMode === "docs-knowledge-site"
         ? "compact docs/reference panel or search-index surface, roughly 420-560px wide, visually secondary to wayfinding clarity"
+        : page.route === "/" && surfaceMode === "content-hub-site" && isInstitutionLedContentHubHomepage(page, surfaceMode)
+          ? "institutional context visual or standards/research proof panel, roughly 360-520px wide, visually secondary to the brand masthead and capability shelves"
         : page.route === "/" && surfaceMode === "content-hub-site"
           ? "archive thumbnail, document-cover cluster, or institutional context panel, roughly 360-520px wide, visually secondary to collection shelves and ledgers"
       : /products?|catalog|collection/i.test(`${page.route} ${page.navLabel}`)
-        ? "520px max-width x 420px visual box within the opening or first proof/specification band"
+        ? "image-text product card or aligned proof panel, typically 520px max-width x 420px visual box within the opening or first proof/specification band"
         : /solutions?|services?|custom-solutions?/i.test(`${page.route} ${page.navLabel}`)
           ? "560px max-width x 340px visual box within the opening or first process/capability band"
           : /cases?|portfolio|projects?/i.test(`${page.route} ${page.navLabel}`)
@@ -750,32 +1030,44 @@ function buildExpandedMediaResource(
       ? "full-width hero background layer with copy-first overlay and a 420px minimum visible visual depth"
       : page.route === "/" && surfaceMode === "docs-knowledge-site"
         ? "full-width compact reference panel below the docs opening, capped around 260px height"
+        : page.route === "/" && surfaceMode === "content-hub-site" && isInstitutionLedContentHubHomepage(page, surfaceMode)
+          ? "full-width institutional context image or proof panel below the masthead, capped around 260px height"
         : page.route === "/" && surfaceMode === "content-hub-site"
           ? "full-width archive/resource thumbnail cluster below the collection masthead, capped around 260px height"
-      : "full available shell width, max 280px height";
+      : /products?|catalog|collection/i.test(`${page.route} ${page.navLabel}`)
+        ? "full-width image-text product card media, usually capped around 260-320px height while keeping the text paired in the same card"
+        : "full available shell width, max 280px height";
   const textCompanionArea =
     page.route === "/" && (enterpriseHomepage || surfaceMode === "corporate-b2b-site")
       ? "overlay content zone stays left/center-left, limited to roughly 35-45% of the visual emphasis, while the image remains the main first-screen attention anchor"
       : page.route === "/" && surfaceMode === "docs-knowledge-site"
         ? "docs opening copy should stay compact and pair with search/index/reference controls rather than overlaying a large hero image"
+        : page.route === "/" && surfaceMode === "content-hub-site" && isInstitutionLedContentHubHomepage(page, surfaceMode)
+          ? "institutional opening copy should lead the first screen, while capability shelves and proof context support the masthead instead of replacing it with archive navigation"
         : page.route === "/" && surfaceMode === "content-hub-site"
           ? "collection opening copy should pair with shelves, ledgers, and topic navigation rather than overlaying a large hero image"
       : "preserve a readable adjacent text column; do not let the image consume the entire band";
   const visualBalance =
     page.route === "/" && surfaceMode === "docs-knowledge-site"
       ? "docs homepage visuals should support wayfinding; search/index/reference content carries the primary first-screen emphasis"
+      : page.route === "/" && surfaceMode === "content-hub-site" && isInstitutionLedContentHubHomepage(page, surfaceMode)
+        ? "content-hub homepage visuals should support institutional scope and proof; the brand masthead and capability overview carry the primary first-screen emphasis"
       : page.route === "/" && surfaceMode === "content-hub-site"
         ? "content-hub homepage visuals should support collection context; shelves, ledgers, and topic navigation carry the primary first-screen emphasis"
         : "the image should carry roughly 55-65% of the first-screen visual emphasis while the overlay copy remains crisp and readable";
   const displayMode =
     page.route === "/" && surfaceMode === "docs-knowledge-site"
       ? "compact docs workspace panel, reference matrix, or search/index support slot only; never a full-bleed campaign hero"
+      : page.route === "/" && surfaceMode === "content-hub-site" && isInstitutionLedContentHubHomepage(page, surfaceMode)
+        ? "institutional proof panel, standards/research context visual, or capability-supporting media slot only; never a pure archive index thumbnail cluster or full-bleed campaign hero"
       : page.route === "/" && surfaceMode === "content-hub-site"
         ? "archive/context panel, document-cover cluster, or ledger thumbnail system only; never a full-bleed campaign hero or docs code panel"
         : "image-backed hero or contained route-owned media slot only; never hard-insert as a generic full-width image outside its planned module";
   const captionPolicy =
     page.route === "/" && surfaceMode === "docs-knowledge-site"
       ? "visible docs visual labels may name APIs, versions, guides, or reference areas, but must not explain layout intent"
+      : page.route === "/" && surfaceMode === "content-hub-site" && isInstitutionLedContentHubHomepage(page, surfaceMode)
+        ? "visible hub visual labels may name institutional scope, standards coverage, research focus, or proof context, but must not explain layout intent or reframe the homepage as a resource directory"
       : page.route === "/" && surfaceMode === "content-hub-site"
         ? "visible hub visual labels may name standards, research scopes, resource categories, or institutional context, but must not explain layout intent"
         : "homepage hero visual normally carries no caption; if a supporting line is used later, it must reinforce buyer trust through product/use context and never describe layout intent";
@@ -835,7 +1127,7 @@ export function buildWebsiteDesignSpecRouteExcerpt(params: WebsiteDesignSpecPara
     `- selected_style: ${String(params.designHit?.name || params.designHit?.id || "runtime-selected-style").trim() || "runtime-selected-style"}`,
     `- website_surface_mode: ${websiteSurfaceMode}`,
     ...buildSurfaceVisualIdentityLines(websiteSurfaceMode),
-    ...buildRouteSpecLines(page, enterpriseHomepage, localeMode, websiteSurfaceMode),
+    ...buildRouteSpecLines(page, enterpriseHomepage, localeMode, websiteSurfaceMode, params.requirementText),
     "- media_resource:",
     ...buildMediaResourceLines(page, enterpriseHomepage, websiteSurfaceMode),
   ].join("\n");
@@ -846,6 +1138,11 @@ export function buildWebsiteDesignSpecMarkdown(params: WebsiteDesignSpecParams):
   const websiteSurfaceMode = resolveWebsiteSurfaceMode(params);
   const enterpriseHomepage =
     websiteSurfaceMode === "corporate-b2b-site" && isCorporateB2BEnterpriseHomepage(params);
+  const homepagePage =
+    params.decision.pageBlueprints.find((page) => page.route === "/") || params.decision.pageBlueprints[0];
+  const institutionLedContentHubHomepage =
+    homepagePage ? isInstitutionLedContentHubHomepage(homepagePage, websiteSurfaceMode) : false;
+  const needsConsultationForm = requirementNeedsConsultationForm(params.requirementText);
   const styleId = String(params.designHit?.id || "runtime-selected-style").trim() || "runtime-selected-style";
   const styleName = String(params.designHit?.name || styleId).trim() || styleId;
   const styleReason = String(params.designHit?.design_desc || "runtime-selected-style").trim() || "runtime-selected-style";
@@ -856,7 +1153,7 @@ export function buildWebsiteDesignSpecMarkdown(params: WebsiteDesignSpecParams):
   });
 
   const routeSections = params.decision.pageBlueprints.map((page) =>
-    [`### ${page.route}`, ...buildRouteSpecLines(page, enterpriseHomepage, localeMode, websiteSurfaceMode)].join("\n"),
+    [`### ${page.route}`, ...buildRouteSpecLines(page, enterpriseHomepage, localeMode, websiteSurfaceMode, params.requirementText)].join("\n"),
   );
   const mediaResources = buildWebsiteMediaResourceList(params).map(mediaResourceMarkdownSection);
 
@@ -878,12 +1175,17 @@ export function buildWebsiteDesignSpecMarkdown(params: WebsiteDesignSpecParams):
       ? [
           `- discovery_source_priority: ${params.discoveryBrief.sourcePriority}`,
           `- discovery_routes: ${params.discoveryBrief.routes.join(", ")}`,
+          ...(params.discoveryBrief.supportedLocales?.length
+            ? [`- discovery_supported_locales: ${params.discoveryBrief.supportedLocales.join(", ")}`]
+            : []),
+          ...(params.discoveryBrief.defaultLocale ? [`- discovery_default_locale: ${params.discoveryBrief.defaultLocale}`] : []),
           `- discovery_visual_direction_id: ${params.discoveryBrief.visualDirectionId}`,
           `- discovery_primary_goal: ${params.discoveryBrief.primaryGoal || "prompt-adaptive"}`,
         ]
       : []),
     ...(params.designSystemId ? [`- design_system_lock_id: ${params.designSystemId}`] : []),
     ...(params.designSystemName ? [`- design_system_lock_name: ${params.designSystemName}`] : []),
+    ...(params.discoveryBrief?.designSystemName ? [`- discovery_design_system_name: ${params.discoveryBrief.designSystemName}`] : []),
     `- primary_color: ${params.stylePreset.colors.primary}`,
     `- accent_color: ${params.stylePreset.colors.accent}`,
     `- background_color: ${params.stylePreset.colors.background}`,
@@ -899,35 +1201,65 @@ export function buildWebsiteDesignSpecMarkdown(params: WebsiteDesignSpecParams):
     "## 3. Shell Contract",
     `- confirmed_routes: ${params.decision.routes.join(", ")}`,
     "- Shared shell may keep one header and one footer system, but body topology must still vary by route.",
+    "- footer_destination_contract: the homepage footer must enumerate the full confirmed route destination set for this run; do not reduce it to a CTA-only subset or a partial route sample.",
+    "- footer_destination_contract: every interior route footer must preserve that same destination set even when the routes are regrouped under different headings.",
+    "- footer_shell_contract: every route footer must use a structured footer shell with a visually distinct footer band plus separate identity, navigation, and support/meta zones. Do not collapse the footer into one inline row of anchors or a copyright-only strip.",
+    "- footer_shell_contract: if `/styles.css` defines footer-shell utilities such as `site-footer__inner`, `footer-grid`, `footer-brand`, `footer-links`, `footer-nav`, `footer-meta`, `footer-actions`, `footer-bottom`, `footer-panel`, or `footer-col`, the HTML footer must use those same structured zones.",
+    "- footer_group_distinction_contract: footer groups must have distinct jobs. Do not repeat the same route set under multiple headings such as both primary navigation and key sections/resources.",
     "- Utility routes, locale mechanics, source/documentation mechanics, and accessibility notes must not become homepage narrative content unless explicitly requested.",
     "- footer_copy_rule: shared shell copy must describe the company, support buyers, or reinforce trust; it must not expose text-wordmark mode, brand-system labels, i18n/locale strategy, or site-implementation notes.",
     "- copy_firewall_rule: visible copy must translate internal generation instructions into buyer-facing language. Do not surface contract wording such as `should`, `must`, `use`, `explain`, `layout intent`, or other instruction-led phrasing in captions, leads, shell copy, or CTA labels.",
-    ...buildShellLocaleLines(localeMode),
+    ...(needsConsultationForm
+      ? [
+          "- consultation_form_contract: this run requires at least one real consultation intake form in the generated site.",
+          "- consultation_form_host_preference: use the dedicated contact route when present; otherwise host the form on the primary information/resource route or the homepage.",
+          "- consultation_form_fields: the form must contain name, organization/company, email, topic/subject, and message fields. Search/filter inputs, CTA buttons, and mailto links do not satisfy this requirement.",
+        ]
+      : []),
+    ...buildShellLocaleLines(localeMode, params.requirementText),
     "- section_spacing_contract: corporate-b2b pages should feel composed and breathable; major section bands should usually land in roughly the 40-72px range instead of collapsing into very tight dashboard spacing.",
     "",
     "## 4. Homepage Contract",
-    `- homepage_mode: ${enterpriseHomepage || websiteSurfaceMode === "corporate-b2b-site" ? "enterprise_masthead" : websiteSurfaceMode === "docs-knowledge-site" ? "docs_workspace_homepage" : websiteSurfaceMode === "content-hub-site" ? "collection_index_homepage" : "standard_homepage"}`,
-    `- homepage_opening: ${routeOpeningTopology(params.decision.pageBlueprints.find((page) => page.route === "/") || params.decision.pageBlueprints[0], enterpriseHomepage, websiteSurfaceMode)}`,
+    `- homepage_mode: ${enterpriseHomepage || websiteSurfaceMode === "corporate-b2b-site" ? "enterprise_masthead" : websiteSurfaceMode === "docs-knowledge-site" ? "docs_workspace_homepage" : websiteSurfaceMode === "portfolio-blog-site" ? "profile_editorial_homepage" : websiteSurfaceMode === "content-hub-site" ? institutionLedContentHubHomepage ? "institution_led_content_hub_homepage" : "collection_index_homepage" : "standard_homepage"}`,
+    `- homepage_opening: ${routeOpeningTopology(homepagePage, enterpriseHomepage, websiteSurfaceMode)}`,
     websiteSurfaceMode === "docs-knowledge-site"
       ? "- homepage_archetype_contract: docs home must use docs workspace/reference index geometry with search/index rail, quickstart strip, guide stack, and reference matrix. Do not reuse corporate or hub homepage skeletons."
+      : websiteSurfaceMode === "content-hub-site" && institutionLedContentHubHomepage
+        ? "- homepage_archetype_contract: content hub home may still carry standards/research/resource depth, but when the prompt requires an official homepage identity it must open as a brand-led institutional overview. Downstream directories, certification/resource semantics, and collection shelves belong after the institutional masthead."
       : websiteSurfaceMode === "content-hub-site"
         ? "- homepage_archetype_contract: content hub home must use editorial/institutional collection-index geometry with archive masthead, shelves, ledgers, and resource rows. Do not reuse corporate or docs homepage skeletons."
         : "",
     enterpriseHomepage
       ? "- buyer_signals_mode: compact proof row only; do not render a second hero, large snapshot panel, or aside rail."
+      : websiteSurfaceMode === "content-hub-site" && institutionLedContentHubHomepage
+        ? "- buyer_signals_mode: institutional trust and capability overview band."
       : "- buyer_signals_mode: supporting proof/capability band.",
+    websiteSurfaceMode === "content-hub-site" && institutionLedContentHubHomepage
+      ? "- homepage_opening_copy_gate: keep the title, meta description, H1, first lead, and first capability/proof band at the umbrella-institution level. Do not let certification, information-entry, support-entry, consultation-entry, downloads, or route-family labels dominate the opening identity."
+      : "",
+    websiteSurfaceMode === "content-hub-site" && institutionLedContentHubHomepage
+      ? "- homepage_density_gate: the opening homepage sequence must include enough institutional substance to stand alone before route cards or contact actions. Do not collapse route / into a thin overview plus consultation/support entry framing."
+      : "",
     enterpriseHomepage
       ? "- homepage_media_rule: the primary stock/library image belongs inside the opening hero as a background-supported visual layer with readable overlay copy; do not push the first meaningful image below the opening band."
+      : websiteSurfaceMode === "content-hub-site" && institutionLedContentHubHomepage
+        ? "- homepage_media_rule: content-hub homepage media should support institutional scope, standards/research proof, or public-trust context inside the masthead or first proof band; do not let archive thumbnails or directory framing replace the homepage identity."
       : websiteSurfaceMode === "docs-knowledge-site"
         ? "- homepage_media_rule: docs homepage media should support wayfinding or reference context inside docs modules; do not place a generic image/card as a right-side hero panel."
         : websiteSurfaceMode === "content-hub-site"
           ? "- homepage_media_rule: content-hub homepage media should support archive, research, or resource context inside collection modules; do not place a generic image/card as a right-side hero panel."
+          : websiteSurfaceMode === "portfolio-blog-site"
+            ? "- homepage_media_rule: portfolio/blog homepage media should reinforce the named operator or publication through a real contextual image or a substantive writing/proof module; do not place a decorative placeholder card or weak right-side panel beside the masthead."
           : "- homepage_media_rule: media belongs to a supporting band, not a hard-inserted generic hero panel.",
     enterpriseHomepage
       ? "- homepage_media_source_validation: a real stock/library photo is required for the primary hero visual when available; inline SVG or abstract placeholder media is not acceptable."
+      : websiteSurfaceMode === "portfolio-blog-site"
+        ? "- homepage_media_source_validation: when a portfolio/blog homepage or archive support slot uses media, prefer a real operator/publication-context image when available; otherwise replace the slot with route-owned writing/proof substance instead of abstract placeholder media."
       : "- homepage_media_source_validation: prefer real stock/library imagery when available; avoid abstract placeholder media for key supporting slots.",
     enterpriseHomepage
       ? "- homepage_hero_markup_rule: render a real img/picture node inside the opening hero media slot; do not rely on a CSS-only background-image as the sole hero visual when a real asset is available, and do not emit enterprise-hero-visual, media-panel, visual-content, visual-note, or any text-only pseudo-image box."
+      : websiteSurfaceMode === "portfolio-blog-site"
+        ? "- homepage_hero_markup_rule: when the profile/editorial homepage or `/blog` archive uses a support panel, render a real image node or a dense route-owned proof module; do not emit a text-light placeholder box, empty context rectangle, or decorative pseudo-image panel."
       : "- homepage_hero_markup_rule: when the route calls for hero media, render a real image node or background image rather than a text-only placeholder box.",
     enterpriseHomepage
       ? "- homepage_markup_contract: prefer `enterprise-hero` / `enterprise-hero__media` / `enterprise-hero__content` style class semantics. Do not reuse legacy `hero-grid`, `hero__grid`, `hero-panel`, `media-frame`, or `aside`-rail naming for the opening hero."

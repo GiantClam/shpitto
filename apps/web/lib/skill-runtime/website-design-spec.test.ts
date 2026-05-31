@@ -203,6 +203,134 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
     expect(markdown).toContain("major homepage section spacing should usually stay in roughly the 40-72px range");
   });
 
+  it("emits a translation-driven locale registry contract for multilingual sites", () => {
+    const decision = buildMockDecision();
+    decision.requirementText =
+      "Create a multilingual company website with supported locales: zh-CN, en, ja, fr. Default visible language is Chinese and later translations should come from a catalog pipeline instead of rebuilding pages per locale.";
+    decision.pageBlueprints = decision.pageIntents;
+
+    const markdown = buildWebsiteDesignSpecMarkdown({
+      decision,
+      requirementText: decision.requirementText,
+      stylePreset: DEFAULT_STYLE_PRESET,
+      websiteSurfaceMode: "corporate-b2b-site",
+    });
+
+    expect(markdown).toContain("Translation-driven multilingual shell");
+    expect(markdown).toContain("/i18n/locales.json");
+    expect(markdown).toContain("/i18n/messages.zh-CN.json");
+    expect(markdown).toContain("compact selector/menu");
+    expect(markdown).toContain("Do not emit one HTML route tree per locale");
+  });
+
+  it("keeps Chinese-first bilingual prompts on the bilingual shell instead of collapsing to single-language Chinese-first", () => {
+    const decision = buildMockDecision();
+    decision.locale = "zh-CN";
+    decision.routes = ["/", "/casux-information-platform"];
+    decision.navLabels = ["Home", "Information"];
+    decision.pageIntents = [
+      {
+        route: "/",
+        navLabel: "Home",
+        purpose: "Homepage.",
+        source: "prompt_contract",
+        pageKind: "home",
+        responsibility: "Homepage",
+        contentSkeleton: ["Masthead", "Collection", "CTA"],
+        componentMix: { hero: 20, feature: 20, grid: 20, proof: 20, form: 10, cta: 10 },
+        constraints: [],
+      },
+      {
+        route: "/casux-information-platform",
+        navLabel: "Information",
+        purpose: "Resource and standards index.",
+        source: "prompt_contract",
+        pageKind: "content-collection-index",
+        responsibility: "Information platform.",
+        contentSkeleton: ["Collection lead", "Resource list", "CTA"],
+        componentMix: { hero: 10, feature: 15, grid: 30, proof: 10, form: 20, cta: 15 },
+        constraints: [],
+      },
+    ] as any;
+    decision.pageBlueprints = decision.pageIntents;
+
+    const requirementText = [
+      "# Canonical Website Generation Prompt",
+      "- Language: Chinese-first bilingual Chinese and English.",
+      "- Keep one locale visible at a time. Chinese is the default visible language for the first render on every route.",
+      "- Bilingual output must be locale-switchable.",
+    ].join("\n");
+
+    const markdown = buildWebsiteDesignSpecMarkdown({
+      decision,
+      requirementText,
+      stylePreset: DEFAULT_STYLE_PRESET,
+      websiteSurfaceMode: "content-hub-site",
+    });
+
+    expect(markdown).toContain("locale_strategy: Bilingual with the prompt-defined default visible locale and i18n resources for the inactive locale");
+    expect(markdown).toContain("/i18n/messages.en.json");
+    expect(markdown).toContain("/i18n/messages.zh-CN.json");
+    expect(markdown).not.toContain("locale_strategy: Chinese-first single-language shell");
+    expect(markdown).not.toContain("Do not emit locale/language controls");
+  });
+
+  it("injects consultation-form and full-footer contracts when inquiry capture is required", () => {
+    const decision = buildMockDecision();
+    decision.requirementText =
+      'Create a CASUX information platform with a real consultation form. Requirement form includes "functionalRequirements":["contact_form"].';
+    decision.routes = ["/", "/casux-information-platform", "/about"];
+    decision.navLabels = ["Home", "Information Platform", "About"];
+    decision.pageBlueprints = [
+      {
+        route: "/",
+        navLabel: "Home",
+        purpose: "Institutional overview.",
+        source: "prompt_contract",
+        pageKind: "home",
+        responsibility: "Homepage",
+        contentSkeleton: ["Masthead", "Overview", "CTA"],
+        componentMix: { hero: 20, feature: 20, grid: 20, proof: 20, form: 10, cta: 10 },
+        constraints: [],
+      },
+      {
+        route: "/casux-information-platform",
+        navLabel: "Information Platform",
+        purpose: "Resource and standards index.",
+        source: "prompt_contract",
+        pageKind: "content-collection-index",
+        responsibility: "Information platform.",
+        contentSkeleton: ["Collection lead", "Resource list", "CTA"],
+        componentMix: { hero: 10, feature: 15, grid: 30, proof: 10, form: 20, cta: 15 },
+        constraints: [],
+      },
+      {
+        route: "/about",
+        navLabel: "About",
+        purpose: "Identity page.",
+        source: "prompt_contract",
+        pageKind: "intent",
+        responsibility: "About page.",
+        contentSkeleton: ["Identity", "Trust", "CTA"],
+        componentMix: { hero: 10, feature: 20, grid: 15, proof: 20, form: 0, cta: 10 },
+        constraints: [],
+      },
+    ] as any;
+
+    const markdown = buildWebsiteDesignSpecMarkdown({
+      decision,
+      requirementText: decision.requirementText,
+      stylePreset: DEFAULT_STYLE_PRESET,
+      websiteSurfaceMode: "content-hub-site",
+    });
+
+    expect(markdown).toContain("footer_destination_contract: the homepage footer must enumerate the full confirmed route destination set");
+    expect(markdown).toContain("consultation_form_contract: this run requires at least one real consultation intake form");
+    expect(markdown).toContain("consultation_form_fields: the form must contain name, organization/company, email, topic/subject, and message fields");
+    expect(markdown).toContain("this route is an approved host for the required consultation intake");
+    expect(markdown).toContain("CTA-only action groups, and mailto links do not satisfy the consultation intake requirement");
+  });
+
   it("produces a focused homepage route excerpt", () => {
     const decision = buildMockDecision();
     decision.pageBlueprints = decision.pageIntents;
@@ -256,22 +384,30 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
         routes: ["/", "/guides", "/reference"],
         sourcePriority: "uploaded_files",
         localeMode: "en",
+        supportedLocales: ["en", "fr"],
+        defaultLocale: "en",
         visualDirectionId: "tech-utility",
         designSystemId: "ibm-carbon",
+        designSystemName: "IBM Carbon",
         immutableConstraints: ["brand:Vbuy Textile"],
       },
       designSystemId: "ibm-carbon",
       designSystemName: "IBM Carbon",
+      selectedSeedSkillIds: ["docs-knowledge-foundation", "docs-reference-template"],
       designHit: { id: "ibm", slug: "ibm", name: "IBM", design_desc: "IBM Carbon enterprise system" } as any,
     });
 
     expect(markdown).toContain("website_surface_mode: docs-knowledge-site");
     expect(markdown).toContain("discovery_source_priority: uploaded_files");
+    expect(markdown).toContain("discovery_supported_locales: en, fr");
+    expect(markdown).toContain("discovery_default_locale: en");
+    expect(markdown).toContain("discovery_design_system_name: IBM Carbon");
     expect(markdown).toContain("design_system_lock_id: ibm-carbon");
     expect(markdown).toContain("design_system_lock_name: IBM Carbon");
+    expect(markdown).toContain("selected_frontend_seed_skills: docs-knowledge-foundation, docs-reference-template");
   });
 
-  it("locks distinct visual identities for corporate, docs, and content-hub surfaces", () => {
+  it("locks distinct visual identities for corporate, docs, content-hub, and portfolio/blog surfaces", () => {
     const decision = buildMockDecision();
     decision.pageBlueprints = decision.pageIntents;
 
@@ -290,6 +426,12 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
       },
       "/",
     );
+    const portfolio = buildWebsiteDesignSpecMarkdown({
+      decision,
+      requirementText: "Create a polished personal technical blog with article writing as a first-class surface.",
+      stylePreset: DEFAULT_STYLE_PRESET,
+      websiteSurfaceMode: "portfolio-blog-site",
+    });
     const hub = buildWebsiteDesignSpecMarkdown({
       decision,
       requirementText: "Create an institutional standards and resource hub.",
@@ -313,12 +455,97 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
     expect(docs).toContain("surface_css_tokens: --bg #F7F8FB");
     expect(docs).toContain("--primary #2454D8; --accent #00A7B5");
 
+    expect(portfolio).toContain("website_surface_mode: portfolio-blog-site");
+    expect(portfolio).toContain("editorial technical journal or operator portfolio");
+    expect(portfolio).toContain("profile-led masthead, expertise or editorial-pillars band");
+    expect(portfolio).toContain("Do not reuse the same green/white rounded-card system");
+    expect(portfolio).toContain("surface_css_tokens: --bg #F4EFE7");
+    expect(portfolio).toContain("--primary #1E6B8F; --accent #C86B3C");
+
     expect(hub).toContain("website_surface_mode: content-hub-site");
     expect(hub).toContain("editorial/institutional archive");
     expect(hub).toContain("collection shelves, ledger rows, archive grids");
     expect(hub).toContain("Do not reuse the same green/white rounded-card system");
     expect(hub).toContain("surface_css_tokens: --bg #F5EFE6");
     expect(hub).toContain("--primary #7A3524; --accent #B6813B");
+  });
+
+  it("uses a profile-led homepage archetype for portfolio/blog surfaces", () => {
+    const decision = buildMockDecision();
+    decision.routes = ["/", "/blog", "/about", "/contact"];
+    decision.navLabels = ["Home", "Blog", "About", "Contact"];
+    decision.pageIntents = [
+      {
+        route: "/",
+        navLabel: "Home",
+        purpose: "Introduce the operator and editorial viewpoint.",
+        source: "prompt_contract",
+        pageKind: "home",
+        responsibility: "Homepage",
+        contentSkeleton: ["Profile masthead", "Editorial pillars", "Writing spotlight", "CTA"],
+        componentMix: { hero: 20, feature: 15, grid: 15, proof: 15, form: 5, cta: 10 },
+        constraints: [],
+      },
+      {
+        route: "/blog",
+        navLabel: "Blog",
+        purpose: "Technical writing archive.",
+        source: "prompt_contract",
+        pageKind: "blog-data-index",
+        responsibility: "Blog archive",
+        contentSkeleton: ["Archive lead", "Article cards", "CTA"],
+        componentMix: { hero: 10, feature: 10, grid: 30, proof: 10, form: 0, cta: 10 },
+        constraints: [],
+      },
+      {
+        route: "/about",
+        navLabel: "About",
+        purpose: "Operator background.",
+        source: "prompt_contract",
+        pageKind: "intent",
+        responsibility: "About",
+        contentSkeleton: ["Profile", "Experience", "CTA"],
+        componentMix: { hero: 10, feature: 10, grid: 10, proof: 10, form: 0, cta: 10 },
+        constraints: [],
+      },
+      {
+        route: "/contact",
+        navLabel: "Contact",
+        purpose: "Contact route.",
+        source: "prompt_contract",
+        pageKind: "intent",
+        responsibility: "Contact",
+        contentSkeleton: ["Contact", "Channels", "CTA"],
+        componentMix: { hero: 5, feature: 10, grid: 10, proof: 5, form: 20, cta: 10 },
+        constraints: [],
+      },
+    ] as any;
+    decision.pageBlueprints = decision.pageIntents;
+
+    const markdown = buildWebsiteDesignSpecMarkdown({
+      decision,
+      requirementText:
+        "Create a polished personal technical blog homepage for an operator-writer. The homepage should introduce the person first, then route readers into the blog.",
+      stylePreset: DEFAULT_STYLE_PRESET,
+      websiteSurfaceMode: "portfolio-blog-site",
+    });
+
+    expect(markdown).toContain("homepage_mode: profile_editorial_homepage");
+    expect(markdown).toContain("profile-led editorial masthead -> expertise/pillars band -> selected writing or proof band -> concise contact CTA");
+    expect(markdown).toContain("surface_homepage_archetype: profile-led editorial homepage");
+    expect(markdown).toContain("the portfolio/blog homepage opening must establish the named operator first");
+    expect(markdown).toContain("Do not ship decorative gradient placeholders, empty context cards, or weak right-side filler.");
+    expect(markdown).toContain(
+      "homepage_media_rule: portfolio/blog homepage media should reinforce the named operator or publication through a real contextual image or a substantive writing/proof module; do not place a decorative placeholder card or weak right-side panel beside the masthead.",
+    );
+    expect(markdown).toContain(
+      "homepage_media_source_validation: when a portfolio/blog homepage or archive support slot uses media, prefer a real operator/publication-context image when available; otherwise replace the slot with route-owned writing/proof substance instead of abstract placeholder media.",
+    );
+    expect(markdown).toContain(
+      "homepage_hero_markup_rule: when the profile/editorial homepage or `/blog` archive uses a support panel, render a real image node or a dense route-owned proof module; do not emit a text-light placeholder box, empty context rectangle, or decorative pseudo-image panel.",
+    );
+    expect(markdown).toContain("footer_shell_contract: every route footer must use a structured footer shell");
+    expect(markdown).not.toContain("homepage_mode: enterprise_masthead");
   });
 
   it("uses different homepage archetypes for docs and content-hub surfaces", () => {
@@ -362,6 +589,110 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
     expect(hub).not.toContain("section_cadence: Brand-led hero establishing the site home entry");
   });
 
+  it("uses an institution-led homepage contract for official content-hub homepages", () => {
+    const decision = buildMockDecision();
+    decision.locale = "zh-CN";
+    decision.routes = ["/", "/casux-information-platform", "/casux-research-center"];
+    decision.navLabels = ["Home", "Information Platform", "Research Center"];
+    decision.pageIntents = [
+      {
+        route: "/",
+        navLabel: "Home",
+        purpose:
+          "Build the Home page as the official CASUX homepage and institutional overview. Establish CASUX as the umbrella standards system, research center, and information platform before routing visitors into sibling pathways.",
+        source: "prompt_contract",
+        pageKind: "home",
+        responsibility: "Homepage",
+        contentSkeleton: [
+          "Brand-led hero establishing the official homepage overview",
+          "Core value or capability overview with distinct supporting cards",
+          "Evidence, standards, or proof section that reinforces the site mission",
+          "Primary CTA to the most important next step",
+        ],
+        componentMix: { hero: 20, feature: 20, grid: 20, proof: 20, form: 10, cta: 10 },
+        constraints: [],
+      },
+      {
+        route: "/casux-information-platform",
+        navLabel: "Information Platform",
+        purpose: "Public information library and resource index.",
+        source: "prompt_contract",
+        pageKind: "content-collection-index",
+        responsibility: "Information platform",
+        contentSkeleton: ["Collection lead", "Resource list", "Consultation CTA"],
+        componentMix: { hero: 10, feature: 15, grid: 30, proof: 10, form: 20, cta: 15 },
+        constraints: [],
+      },
+      {
+        route: "/casux-research-center",
+        navLabel: "Research Center",
+        purpose: "Research evidence collection route.",
+        source: "prompt_contract",
+        pageKind: "search-directory",
+        responsibility: "Research route",
+        contentSkeleton: ["Research intro", "Evidence rows", "CTA"],
+        componentMix: { hero: 10, feature: 20, grid: 20, proof: 15, form: 5, cta: 10 },
+        constraints: [],
+      },
+    ] as any;
+    decision.pageBlueprints = decision.pageIntents;
+
+    const markdown = buildWebsiteDesignSpecMarkdown({
+      decision,
+      requirementText:
+        "Create the official CASUX homepage and institutional overview for a bilingual standards and research platform. Route / must remain the official homepage identity and must not read like a resource index or certification portal.",
+      stylePreset: DEFAULT_STYLE_PRESET,
+      websiteSurfaceMode: "content-hub-site",
+    });
+
+    expect(markdown).toContain("homepage_mode: institution_led_content_hub_homepage");
+    expect(markdown).toContain("brand-led institutional masthead -> capability overview shelves -> standards/research proof band -> consultation or route CTA");
+    expect(markdown).toContain("institution-led content hub homepage");
+    expect(markdown).toContain("title, meta description, H1, and first lead paragraph must establish the institution");
+    expect(markdown).toContain("Keep certification, downloads, resource index, search, and route-family explanations out of those fields");
+    expect(markdown).toContain("Do not let certification, information-entry, support-entry, consultation-entry, downloads, or route-family labels dominate the opening identity");
+    expect(markdown).toContain("Do not collapse route / into a thin overview plus consultation/support entry framing");
+    expect(markdown).toContain("institutional trust and capability overview band");
+    expect(markdown).not.toContain("homepage_mode: collection_index_homepage");
+  });
+
+  it("adds certification-specific scoring and review contracts to certification directory routes", () => {
+    const decision = buildMockDecision();
+    decision.locale = "zh-CN";
+    decision.routes = ["/casux-certification"];
+    decision.navLabels = ["Certification"];
+    decision.pageIntents = [
+      {
+        route: "/casux-certification",
+        navLabel: "Certification",
+        purpose: "Certification directory for standards review and preparation guidance.",
+        source: "prompt_contract",
+        pageKind: "search-directory",
+        responsibility: "Certification route",
+        contentSkeleton: ["Lead", "Filters", "Results", "Consultation CTA"],
+        componentMix: { hero: 15, feature: 10, grid: 35, proof: 20, form: 10, cta: 10 },
+        constraints: [],
+      },
+    ] as any;
+    decision.pageBlueprints = decision.pageIntents;
+
+    const markdown = buildWebsiteDesignSpecMarkdown({
+      decision,
+      requirementText:
+        "Certification route source notes: cover five-dimension scoring model, total score thresholds, assessor packet, quality-mark workflow, and certification badge criteria.",
+      stylePreset: DEFAULT_STYLE_PRESET,
+      websiteSurfaceMode: "content-hub-site",
+    });
+
+    expect(markdown).toContain("opening_topology: certification criteria lead -> scoring/results ledger -> review-prep and consultation band");
+    expect(markdown).toContain("section_cadence: certification criteria lead -> score/results rows -> review-prep and assessor materials -> consultation CTA");
+    expect(markdown).toContain("criteria-ledger");
+    expect(markdown).toContain("scorecard-band");
+    expect(markdown).toContain("total-score thresholds");
+    expect(markdown).toContain("assessor/reviewer materials");
+    expect(markdown).toContain("certification badge");
+  });
+
   it("builds a route-unit contract summary for checkpoint metadata", () => {
     const decision = buildMockDecision();
     decision.pageBlueprints = decision.pageIntents;
@@ -372,6 +703,7 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
         requirementText: decision.requirementText,
         stylePreset: DEFAULT_STYLE_PRESET,
         websiteSurfaceMode: "corporate-b2b-site",
+        selectedSeedSkillIds: ["open-design-web-prototype", "corporate-b2b-site"],
       },
       "/products",
     );
@@ -381,6 +713,7 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
     expect(summary?.openingFamily).toBe("catalog");
     expect(summary?.inheritedTokens).toEqual(expect.arrayContaining(["#2563EB", "#22C55E"]));
     expect(summary?.inheritedTerminology).toContain("corporate-b2b-site");
+    expect(summary?.inheritedSeedSkillIds).toEqual(["open-design-web-prototype", "corporate-b2b-site"]);
     expect(summary?.openingTopology).toContain("catalog lead band");
     expect(summary?.mediaPlan.join("\n")).toContain("slot_owner: catalog-lead proof slot");
     expect(summary?.mediaResources?.[0]).toMatchObject({
@@ -388,6 +721,159 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
       slotOwner: "catalog-lead proof slot",
       preferredRatio: "4:3, 5:4, or square",
     });
+  });
+
+  it("builds a synthetic route-unit summary for blog detail routes instead of falling back to home", () => {
+    const decision = buildMockDecision();
+    decision.pageBlueprints = decision.pageIntents;
+
+    const summary = buildRouteUnitContractSummary(
+      {
+        decision,
+        requirementText: "Build a personal editorial site with a publishable blog archive and article detail pages.",
+        stylePreset: DEFAULT_STYLE_PRESET,
+        websiteSurfaceMode: "portfolio-blog-site",
+      },
+      "/blog/devops-as-team-rhythm",
+    );
+
+    expect(summary?.route).toBe("/blog/devops-as-team-rhythm");
+    expect(summary?.navLabel).toBe("Devops As Team Rhythm");
+    expect(summary?.routeContract[0]).toBe("route=/blog/devops-as-team-rhythm");
+    expect(summary?.openingTopology).toContain("article lead band");
+    expect(summary?.mediaResources?.[0]).toMatchObject({
+      route: "/blog/devops-as-team-rhythm",
+      slotOwner: "article-supporting-proof slot",
+    });
+  });
+
+  it("keeps the /blog route-unit summary under an authoritative portfolio-blog manifest", () => {
+    const decision: LocalDecisionPlan = {
+      requirementText:
+        "Build a polished personal technical blog for an AI consultant with Home, Blog, About, and Contact. Keep the first pass profile-led and index-first.",
+      locale: "en",
+      routes: ["/", "/blog", "/contact", "/about"],
+      navLabels: ["Home", "Blog", "Contact", "About"],
+      brandHint: "AI Consultant",
+      routeAuthorityMode: "prompt_manifest",
+      pageIntents: [
+        {
+          route: "/",
+          navLabel: "Home",
+          purpose: "Homepage. Establish the profile-led editorial overview and next action.",
+          source: "prompt_contract",
+          pageKind: "home",
+          responsibility: "Homepage",
+          contentSkeleton: ["Profile masthead", "Writing themes", "Contact CTA"],
+          componentMix: { hero: 30, feature: 20, grid: 15, proof: 20, form: 0, cta: 15 },
+          constraints: [],
+        },
+        {
+          route: "/blog",
+          navLabel: "Blog",
+          purpose:
+            'Content collection page for "Blog". Keep the first pass as a route-owned editorial archive and do not require publishable detail pages.',
+          source: "prompt_contract",
+          pageKind: "content-collection-index",
+          responsibility: "Blog index",
+          contentSkeleton: ["Archive intro", "Post cards", "Contextual CTA"],
+          componentMix: { hero: 20, feature: 15, grid: 35, proof: 5, form: 0, cta: 25 },
+          constraints: [],
+        },
+        {
+          route: "/contact",
+          navLabel: "Contact",
+          purpose: 'Dedicated page for "Contact".',
+          source: "prompt_contract",
+          pageKind: "intent",
+          responsibility: "Contact",
+          contentSkeleton: ["Contact block"],
+          componentMix: { hero: 10, feature: 10, grid: 10, proof: 10, form: 40, cta: 20 },
+          constraints: [],
+        },
+        {
+          route: "/about",
+          navLabel: "About",
+          purpose: 'Dedicated page for "About".',
+          source: "prompt_contract",
+          pageKind: "intent",
+          responsibility: "About",
+          contentSkeleton: ["About lead"],
+          componentMix: { hero: 15, feature: 15, grid: 15, proof: 20, form: 0, cta: 10 },
+          constraints: [],
+        },
+      ],
+      pageBlueprints: [] as any,
+    };
+    decision.pageBlueprints = decision.pageIntents;
+
+    const summary = buildRouteUnitContractSummary(
+      {
+        decision,
+        requirementText: decision.requirementText,
+        stylePreset: DEFAULT_STYLE_PRESET,
+        websiteSurfaceMode: "portfolio-blog-site",
+      },
+      "/blog",
+    );
+
+    expect(summary?.route).toBe("/blog");
+    expect(summary?.navLabel).toBe("Blog");
+    expect(summary?.pageKind).toBe("content-collection-index");
+    expect(summary?.routeContract.join("\n")).toContain('purpose=Content collection page for "Blog"');
+    expect(summary?.openingTopology).toContain("editorial");
+  });
+
+  it("tightens the portfolio/blog archive against weak support rails and placeholder context panels", () => {
+    const decision = buildMockDecision();
+    decision.routes = ["/", "/blog"];
+    decision.navLabels = ["Home", "Blog"];
+    decision.pageIntents = [
+      {
+        route: "/",
+        navLabel: "Home",
+        purpose: "Introduce the operator and route readers into selected writing.",
+        source: "prompt_contract",
+        pageKind: "home",
+        responsibility: "Homepage",
+        contentSkeleton: ["Profile masthead", "Editorial pillars", "Writing spotlight"],
+        componentMix: { hero: 20, feature: 15, grid: 15, proof: 15, form: 0, cta: 10 },
+        constraints: [],
+      },
+      {
+        route: "/blog",
+        navLabel: "Blog",
+        purpose: "Editorial archive for articles, notes, and archive-ready essays.",
+        source: "prompt_contract",
+        pageKind: "content-collection-index",
+        responsibility: "Blog archive",
+        contentSkeleton: ["Archive intro", "Featured writing", "Article ledger"],
+        componentMix: { hero: 10, feature: 10, grid: 30, proof: 10, form: 0, cta: 10 },
+        constraints: [],
+      },
+    ] as any;
+    decision.pageBlueprints = decision.pageIntents;
+
+    const markdown = buildWebsiteDesignSpecMarkdown({
+      decision,
+      requirementText:
+        "Create a personal editorial site for an AI consultant with a strong profile homepage and a blog archive that feels like a real publication.",
+      stylePreset: DEFAULT_STYLE_PRESET,
+      websiteSurfaceMode: "portfolio-blog-site",
+    });
+
+    expect(markdown).toContain(
+      "prohibit: giant text-only archive lead plus a low-information context box or empty visual rail; supporting archive panels must carry real writing or publication evidence",
+    );
+    expect(markdown).toContain(
+      "support_band_contract: when the homepage uses a companion visual/support panel, that panel must contain either a real operator/publication-context image or dense writing/proof substance. Do not ship decorative gradient placeholders, empty context cards, or weak right-side filler.",
+    );
+    expect(markdown).toContain(
+      "support_band_contract: when the homepage uses a left-right support band, the copy and media columns must read as one aligned pair.",
+    );
+    expect(markdown).toContain(
+      "card_media_contract: featured writing, operator proof, and selected article shelves should prefer integrated image-text cards when credible contextual imagery is available",
+    );
   });
 
   it("exposes the media resource list as structured contract data", () => {
@@ -452,6 +938,7 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
 
     expect(products).toContain("opening_topology: catalog lead band -> assortment navigator -> comparison/specification row");
     expect(products).toContain("opening_media_contract: the products page must include a real product/material image in the opening catalog lead or the first opening-adjacent proof/specification band.");
+    expect(products).toContain("image-text product card or aligned proof panel");
     expect(products).toContain("placement_band: inside the opening catalog lead or the immediately following assortment/specification proof band");
     expect(solutions).toContain("opening_topology: process intro band -> collaboration timeline -> scenario-fit proof row");
     expect(solutions).toContain("opening_media_contract: the solutions page must include a real process/scenario image in the opening process intro or the first opening-adjacent capability/proof band.");
