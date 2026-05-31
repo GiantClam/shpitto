@@ -1,7 +1,15 @@
 ﻿import type { AgentState } from "../agent/graph.ts";
 import { parseReferencedAssetsFromText } from "../agent/referenced-assets.ts";
-import { isBilingualRequirementText } from "./bilingual-copy-guard.ts";
 import { routePlanningPolicy } from "./route-planning-policy.ts";
+import {
+  detectPrimaryLocaleFromRequirement,
+  hasNegativeBlogArchiveBehaviorContract,
+  hasNegativePublishableDetailContract,
+  requestedPublishableContentCount,
+  requirementRequestsPublishableDetailPages as sharedRequirementRequestsPublishableDetailPages,
+  routeDefaultsToCollectionSurface as sharedRouteDefaultsToCollectionSurface,
+  shouldRequireBlogDetailPagesForRoute as sharedShouldRequireBlogDetailPagesForRoute,
+} from "./website-generation-shared-policy.ts";
 
 export type PageIntentSource =
   | "workflow_contract"
@@ -48,36 +56,6 @@ export type LocalDecisionPlan = {
 
 type RouteAuthorityMode = "workflow_manifest" | "prompt_manifest" | "heuristic";
 type IntentBlueprintArchetype = "products" | "solutions" | "cases" | "contact" | "about" | "generic";
-
-function detectLocale(text: string): "zh-CN" | "en" {
-  const normalized = String(text || "");
-  if (isBilingualRequirementText(normalized)) return "en";
-  if (
-    /(?:Final website locale requirement|Language|Locale|Requested site locale)\s*:\s*Chinese\b(?!\s*(?:and|\/|,|&))/i.test(
-      normalized,
-    ) ||
-    /single-language\s+Chinese-first/i.test(normalized) ||
-    /Chinese-only/i.test(normalized) ||
-    /Chinese-facing site output/i.test(normalized) ||
-    /Keep all visible copy in Chinese/i.test(normalized) ||
-    /Keep the site in Chinese/i.test(normalized)
-  ) {
-    return "zh-CN";
-  }
-  if (
-    /(?:Final website locale requirement|Language|Locale|Requested site locale)\s*:\s*English\b(?!\s*(?:and|\/|,|&))/i.test(
-      normalized,
-    ) ||
-    /single-language\s+English-first/i.test(normalized) ||
-    /English-only/i.test(normalized) ||
-    /English-facing site output/i.test(normalized) ||
-    /Keep all visible copy in English/i.test(normalized) ||
-    /Keep the site in English/i.test(normalized)
-  ) {
-    return "en";
-  }
-  return /[\u4e00-\u9fff]/.test(normalized) ? "zh-CN" : "en";
-}
 
 function normalizeLabelForMatching(label: string): string {
   return String(label || "")
@@ -299,16 +277,28 @@ function extractBrandHint(requirementText: string): string | undefined {
   if (/(?:logo\s+source|logo\s+strategy|text wordmark|generated temporary text logo|品牌文字标识|暂无\s*logo)/i.test(requirementText)) {
     return undefined;
   }
-  const direct = requirementText.match(/(?:logo|brand|\u54c1\u724c)\s*[:：]\s*([^\n|,，。]+)/iu);
+  const isGenericBrandHintValue = (value: string) =>
+    /^(?:logo|text[_ -]?mark|wordmark|site|website|blog|brand)$/i.test(value.trim());
+  const cleanBrandHintValue = (value: string) => value.trim().replace(/[.,;:!?。！？；：]+$/u, "").trim();
+
+  const direct = requirementText.match(/(?:\b(?:logo|brand)\b|\u54c1\u724c)\s*[:：]\s*([^\n|,，。]+)/iu);
   if (direct?.[1]) {
-    const value = String(direct[1]).trim();
-    if (!/^(?:logo|text[_ -]?mark|wordmark|site|website|blog|brand)$/i.test(value)) return value;
+    const value = cleanBrandHintValue(String(direct[1]));
+    if (!isGenericBrandHintValue(value)) return value;
   }
 
-  const named = requirementText.match(/(?:named|name|\u540d\u4e3a)\s*["“”'`]?([A-Za-z][A-Za-z0-9 _-]{1,48})["“”'`]?/iu);
+  const forWebsite = requirementText.match(
+    /(?:website|site|homepage|landing page|portal|docs|documentation|knowledge homepage|company website|official website)[^.:\n]{0,90}?\bfor\s+([A-Z][A-Za-z0-9&._-]*(?:\s+[A-Z][A-Za-z0-9&._-]*){0,5})(?=\.|,|;|\s+(?:audience|with|that|to)\b|$)/iu,
+  );
+  if (forWebsite?.[1]) {
+    const value = cleanBrandHintValue(String(forWebsite[1]));
+    if (!isGenericBrandHintValue(value)) return value;
+  }
+
+  const named = requirementText.match(/(?:\bnamed\b|\bname\b|\u540d\u4e3a)\s*["“”'`]?([A-Za-z][A-Za-z0-9 _-]{1,48})["“”'`]?/iu);
   if (named?.[1]) {
-    const value = String(named[1]).trim();
-    if (!/^(?:logo|text[_ -]?mark|wordmark|site|website|blog|brand)$/i.test(value)) return value;
+    const value = cleanBrandHintValue(String(named[1]));
+    if (!isGenericBrandHintValue(value)) return value;
   }
 
   return undefined;
@@ -317,6 +307,7 @@ function extractBrandHint(requirementText: string): string | undefined {
 function cleanLabel(raw: string): string {
   return String(raw || "")
     .replace(/^\s*(?:[-*•+]|\d+[.)])\s+/, "")
+    .replace(/^\s*(?:and|or)\s+/iu, "")
     .replace(/\s*(?:\u9875\u9762|page)\s*$/iu, "")
     .replace(/\s*[（(][^）)]*[）)]\s*$/g, "")
     .replace(/[.,;:!?。！？；：]+$/g, "")
@@ -900,45 +891,16 @@ function isBlogSemanticRoute(route: string, navLabel: string): boolean {
   return result.score >= threshold;
 }
 
-function routeActsAsPublishableArchive(route: string, navLabel: string): boolean {
-  const text = `${normalizeRoute(route)} ${String(navLabel || "")}`.trim().toLowerCase();
-  return /(?:^|[\s/-])(blog|blogs|news|article|articles|post|posts|insight|insights|journal|story|stories)(?:$|[\s/-])/i.test(
-    text,
-  );
-}
-
-function routeDefaultsToCollectionSurface(route: string, navLabel: string): boolean {
-  const text = `${normalizeRoute(route)} ${String(navLabel || "")}`.trim().toLowerCase();
-  return /(?:information[-\s]?platform|knowledge[-\s]?(?:platform|hub)|resource(?:s)?[-\s]?hub|resource[-\s]?library|resource[-\s]?center|research[-\s]?center|standards[-\s]?system|standards[-\s]?library|policy[-\s]?library|documentation[-\s]?portal|downloads?[-\s]?hub|repository|archive[-\s]?center|case[-\s]?library)/i.test(
-    text,
-  );
-}
-
 function requirementRequestsPublishableDetailPages(requirementText: string): boolean {
   const text = String(requirementText || "").trim();
   if (!text) return false;
-  if (hasNegativeBlogArchiveBehaviorContract(text) && !requestedPublishableDetailCount(text)) return false;
-  return /(?:\b(?:add|build|create|generate|include|need|publish|seed|write|require)\b.{0,48}\b(?:blog|blogs|article|articles|post|posts|news|insight|insights|journal|story|stories)\b|\b(?:blog|blogs|article|articles|post|posts|news|insight|insights|journal|story|stories)\b.{0,32}\b(?:detail page|detail pages|archive|archives|route|routes|slug|slugs)\b|(?:新增|创建|生成|提供|包含|发布|需要).{0,24}(?:博客|文章|帖子|博文|资讯|快讯|洞察)(?:页|详情页|归档)?|(?:博客|文章|帖子|博文|资讯|快讯|洞察).{0,16}(?:详情页|归档|列表|路由))/iu.test(
-    text,
-  );
-}
-
-function requestedPublishableDetailCount(requirementText: string): number | undefined {
-  const text = String(requirementText || "").trim();
-  if (!text) return undefined;
-  const match = text.match(
-    /\b(?:create|write|generate|publish|seed|add|produce)\s+([0-9]+)\s+(?:complete\s+|generated\s+)?(?:articles?|posts?|blog\s+posts?|news\s+updates?|insights?|stories?)\b/i,
-  ) || text.match(/\b([0-9]+)\s+(?:complete\s+|generated\s+)?(?:articles?|posts?|blog\s+posts?|news\s+updates?|insights?|stories?)\b/i);
-  const count = Number(match?.[1] || "");
-  return Number.isFinite(count) && count > 0 ? count : undefined;
-}
-
-function shouldRequireBlogDetailPagesForRoute(route: string, navLabel: string, requirementText: string): boolean {
-  if (normalizeRoute(route) === "/blog") return true;
-  if (requestedPublishableDetailCount(requirementText)) return true;
-  if (routeDefaultsToCollectionSurface(route, navLabel)) return false;
-  if (routeActsAsPublishableArchive(route, navLabel)) return true;
-  return requirementRequestsPublishableDetailPages(requirementText);
+  if (
+    (hasNegativeBlogArchiveBehaviorContract(text) || hasNegativePublishableDetailContract(text)) &&
+    !requestedPublishableContentCount(text)
+  ) {
+    return false;
+  }
+  return sharedRequirementRequestsPublishableDetailPages(text);
 }
 
 function findBlogSemanticRoute(routes: string[], navLabels?: string[]): string | undefined {
@@ -960,7 +922,13 @@ function findBlogSemanticRoute(routes: string[], navLabels?: string[]): string |
 function requirementRequestsBlogSurface(text: string): boolean {
   const normalized = String(text || "").trim();
   if (!normalized) return false;
-  if (requestedPublishableDetailCount(normalized) || requirementRequestsPublishableDetailPages(normalized)) return true;
+  if (requestedPublishableContentCount(normalized) || requirementRequestsPublishableDetailPages(normalized)) return true;
+  const explicitBlogSurface =
+    /(?:\bblog\s+(?:index|archive|archives?|page|pages|route|routes)\b|\b(?:articles?|posts?|writing|journal)\s+(?:index|archive|archives?|page|pages|route|routes)\b|博客(?:页面|页|路由|归档)|博文归档|文章(?:列表|归档|路由)|内容归档|\bhome\s+and\s+blog\b|\bblog\b.{0,24}\b(?:home|about|contact)\b)/i;
+  const companyLikeWithoutExplicitBlog =
+    /(?:\bcompany\s+website\b|\bofficial\s+company\s+website\b|\bcorporate\s+website\b|企业官网|公司官网|官方网站)/i.test(normalized) &&
+    !explicitBlogSurface.test(normalized);
+  if (companyLikeWithoutExplicitBlog) return false;
   const negative = [
     /(?:不要|不需要|无需|仅首页|只做首页).{0,12}(?:blog|博客|博文)/i,
     /(?:do not|don't|no need|without|home only|single page).{0,20}(?:blog|post archive|article archive)/i,
@@ -968,17 +936,17 @@ function requirementRequestsBlogSurface(text: string): boolean {
     /\bno\s+blog\/archive\s+assumptions\b/i,
   ];
   if (negative.some((pattern) => pattern.test(normalized))) return false;
-  return /(?:\bblog\b|博客|博文|blog页面|blog route|文章列表|文章归档|内容归档|3篇\s*blog|\d+\s*篇\s*(?:blog|博客|文章))/i.test(
-    normalized,
-  );
+  return explicitBlogSurface.test(normalized);
 }
 
 function suppressedContentRoutes(requirementText: string): Set<string> {
   const normalized = String(requirementText || "").trim();
   const suppressed = new Set<string>();
+  const explicitBlogSurfaceRequested = requirementRequestsBlogSurface(normalized);
   const explicitPublishableRequest =
-    Boolean(requestedPublishableDetailCount(normalized)) || requirementRequestsPublishableDetailPages(normalized);
+    Boolean(requestedPublishableContentCount(normalized)) || requirementRequestsPublishableDetailPages(normalized);
   if (
+    !explicitBlogSurfaceRequested &&
     !explicitPublishableRequest &&
     (/(?:do not|don't|no need|without|avoid|no)\s+(?:a\s+)?(?:blog|blogs?|blog\/archive|blog or archive)\b/i.test(
       normalized,
@@ -1019,12 +987,6 @@ const CONTENT_DATA_SOURCE_CONSTRAINTS = [
   "Do not generate D1 credentials, Cloudflare binding code, worker code, or database secrets in static HTML.",
 ];
 
-function hasNegativeBlogArchiveBehaviorContract(requirementText = ""): boolean {
-  return /(?:do\s+not|don't|without|no|avoid|exclude|不要|不得|禁止|不).{0,80}(?:blog|blogs|archive|archives|博客|归档).{0,60}(?:behavior|behaviour|routes?|links?|pages?|surface|archive|archives|行为|路由|链接|页面|归档)?/iu.test(
-    String(requirementText || ""),
-  );
-}
-
 function buildBlogDataSourceConstraints(
   route: string,
   navLabel: string,
@@ -1037,7 +999,13 @@ function buildBlogDataSourceConstraints(
       : "Treat the selected content-backed navigation route as a first-class page-specific collection surface, not a generic article mockup, detached landing page, or visible backend implementation block.",
     ...CONTENT_DATA_SOURCE_CONSTRAINTS,
   ];
-  if (shouldRequireBlogDetailPagesForRoute(route, navLabel, requirementText)) {
+  if (
+    sharedShouldRequireBlogDetailPagesForRoute({
+      route,
+      navLabel,
+      requirementText,
+    })
+  ) {
     constraints.push("Detail links must use /blog/{slug}/ so deployment-time static detail pages and sitemap output are SEO-addressable.");
     constraints.push(
       "Dynamic /blog/{slug}/ detail pages should inherit the selected route's detail grammar, such as resource, report, standard, case, news, insight, or blog article according to route semantics.",
@@ -1193,6 +1161,12 @@ function hasExplicitIbmCarbonHomepageIntent(text: string): boolean {
   return /(?:\bIBM\b|\bCarbon\b)/i.test(normalized);
 }
 
+function isContentHubIntentContext(route: string, navLabel: string, evidence?: string): boolean {
+  return /(?:research|standards?|policy|resource|resources|library|institutional|knowledge|information platform|hub|advocacy|certification|reports?|documents?)/i.test(
+    `${route} ${navLabel} ${String(evidence || "")}`,
+  );
+}
+
 export function extractRouteSourceBrief(
   requirementText: string,
   route: string,
@@ -1295,11 +1269,16 @@ function buildPageBlueprint(
   }
   if (isBlogSemanticRoute(normalizedRoute, resolvedLabel)) {
     const semanticScore = scoreBlogSemanticRoute(normalizedRoute, resolvedLabel);
+    const explicitlyKeepsBlogArchive =
+      normalizedRoute === "/blog" &&
+      /\bblog\s+(?:index|archive|page)\b|first\s+pass[^.\n]{0,80}\bblog\b/i.test(evidence || "");
     const forbidsBlogArchiveBehavior =
+      normalizedRoute !== "/blog" &&
+      !explicitlyKeepsBlogArchive &&
       hasNegativeBlogArchiveBehaviorContract(evidence || "") &&
-      !requestedPublishableDetailCount(evidence || "") &&
+      !requestedPublishableContentCount(evidence || "") &&
       !requirementRequestsPublishableDetailPages(evidence || "");
-    const contentPageKind = routeDefaultsToCollectionSurface(normalizedRoute, resolvedLabel)
+    const contentPageKind = sharedRouteDefaultsToCollectionSurface(normalizedRoute, resolvedLabel)
       ? "content-collection-index"
       : "blog-data-index";
     const pageKind = forbidsBlogArchiveBehavior
@@ -1341,7 +1320,11 @@ function buildPageBlueprint(
               ? "Fallback editorial/resource cards inside [data-shpitto-blog-list] using the selected route taxonomy, categories, excerpts, dates, tags, and any explicitly requested detail-link behavior"
               : "Fallback collection/resource cards inside [data-shpitto-blog-list] using the selected route taxonomy, categories, excerpts, dates, tags, scope labels, and any explicitly requested detail-link behavior",
             "For information-platform or knowledge-hub routes, structure the visible list around page collections such as case library, standards/documents, research reports, policy updates, or product database entries when supported by the prompt",
-            shouldRequireBlogDetailPagesForRoute(normalizedRoute, resolvedLabel, evidence || "")
+            sharedShouldRequireBlogDetailPagesForRoute({
+              route: normalizedRoute,
+              navLabel: resolvedLabel,
+              requirementText: evidence || "",
+            })
               ? "Because this route behaves like a publishable archive, the visible cards should link to matching /blog/{slug}/ detail pages with route-appropriate detail grammar"
               : "Because this route is a generic content/resource hub, keep the first pass focused on the collection/index surface unless the prompt explicitly asks for publishable article/news details",
             "Optional category/filter controls only if they are styled, page-specific, and usable with the static HTML content",
@@ -1351,7 +1334,8 @@ function buildPageBlueprint(
     };
   }
   if (normalizedRoute === "/") {
-    const purpose = "Homepage. Establish the brand overview, core value, primary route entry, and next action while preserving site home-entry semantics.";
+    const purpose =
+      "Homepage. Establish the brand overview, core value, institutional scope, and next action while preserving a clear official-homepage identity.";
     const prefersIbmCarbonEnterpriseHome = hasExplicitIbmCarbonHomepageIntent(evidence || "");
     return {
       route: normalizedRoute,
@@ -1376,7 +1360,7 @@ function buildPageBlueprint(
             "Primary CTA strip to the most important next step",
           ]
         : [
-            "Brand-led hero establishing the site home entry",
+            "Brand-led hero establishing the official homepage overview",
             "Core value or capability overview with distinct supporting cards",
             "Evidence, standards, or proof section that reinforces the site mission",
             "Primary CTA to the most important next step",
@@ -1388,6 +1372,7 @@ function buildPageBlueprint(
   }
   if (isSearchDirectoryRoute(normalizedRoute, resolvedLabel)) {
     const purpose = "Search-directory page. Provide search, filtering, results, and next-step guidance in one closed loop.";
+    const contentHubIntent = isContentHubIntentContext(normalizedRoute, resolvedLabel, evidence);
     return {
       route: normalizedRoute,
       navLabel: resolvedLabel,
@@ -1398,6 +1383,12 @@ function buildPageBlueprint(
         "Canonical Website Prompt remains authoritative for brand voice, audience, language, and visual direction.",
         "Search results and query cards must occupy the full available row; never leave them as narrow fragments inside a 12-column grid.",
         "Keep the visual rail compact unless it contains real media, charts, or metrics.",
+        ...(contentHubIntent
+          ? [
+              "Visitor-facing copy must describe the route's actual standards, research, resource, policy, or institutional subject matter. Do not narrate page mechanics, reading method, or route self-description to visitors.",
+              "Reject phrases such as `The page groups...`, `This route helps teams...`, `This page helps teams compare...`, or `How the collection is organized` in visible copy.",
+            ]
+          : []),
       ],
       pageKind: "search-directory",
       responsibility: purpose,
@@ -1420,6 +1411,12 @@ function buildPageBlueprint(
     "The page must be meaningfully distinct from sibling pages in section purpose, headings, content, and layout.",
     "Navigation links must stay within the fixed route list and preserve the configured navigation order.",
   ];
+  if (isContentHubIntentContext(normalizedRoute, resolvedLabel, evidence)) {
+    constraints.push(
+      "Visitor-facing copy must talk about the route subject itself: standards coverage, research scope, evidence quality, resource categories, governance, or institutional outcomes. Do not explain how the page is organized or how visitors should read it.",
+      "Reject page-mechanics lines such as `The page groups...`, `This route helps teams...`, `This page helps teams compare...`, or `How the standards collection is organized`.",
+    );
+  }
   const intentPreset = buildIntentPageBlueprintPreset(classifyIntentBlueprintArchetype(normalizedRoute, resolvedLabel), resolvedLabel);
 
   return {
@@ -1440,7 +1437,7 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
   const rawRequirementText = extractRequirementText(state);
   const parsedRequirement = parseReferencedAssetsFromText(rawRequirementText);
   const requirementText = parsedRequirement.cleanText || rawRequirementText;
-  const locale = detectLocale(requirementText);
+  const locale = detectPrimaryLocaleFromRequirement(requirementText);
   const workflowContractPlan = extractWorkflowPromptControlManifestRoutePlan(state, locale);
   const promptContractPlan =
     workflowContractPlan.routes.length > 0 ? { routes: [], navLabels: [] } : extractPromptControlManifestRoutePlan(requirementText, locale);
@@ -1505,10 +1502,7 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
       });
   const suppressedRoutes = suppressedContentRoutes(requirementText);
   const routes = hasAuthoritativeRoutePlan
-    ? uniqueRoutes(
-        preOrderedRoutes.filter((route) => !suppressedRoutes.has(normalizeRoute(route))),
-        { canonicalizeSemantic: false },
-      ).slice(0, 16)
+    ? uniqueRoutes(preOrderedRoutes, { canonicalizeSemantic: false }).slice(0, 16)
     : orderNavigationRoutes(
         preOrderedRoutes.filter((route) => !suppressedRoutes.has(normalizeRoute(route))),
       ).slice(0, 16);

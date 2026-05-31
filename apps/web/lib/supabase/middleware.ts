@@ -8,6 +8,8 @@ const PUBLIC_EXACT_PATHS = new Set<string>([
   '/register',
   '/pricing',
   '/launch-center',
+  '/ai-ready',
+  '/example-websites',
   '/auth/callback',
   '/auth/password',
   '/auth/signup',
@@ -20,13 +22,14 @@ const PUBLIC_EXACT_PATHS = new Set<string>([
   '/verify-email',
   '/reset-password',
   '/blog',
+  '/use-cases',
   '/robots.txt',
   '/sitemap.xml',
   '/legal/privacy',
   '/legal/terms',
   '/legal/acceptable-use',
 ])
-const PUBLIC_PREFIXES = ['/blog/']
+const PUBLIC_PREFIXES = ['/blog/', '/use-cases/']
 
 export function isPublicPath(pathname: string): boolean {
   if (PUBLIC_EXACT_PATHS.has(pathname)) return true

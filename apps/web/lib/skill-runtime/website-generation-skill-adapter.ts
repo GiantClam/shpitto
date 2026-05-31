@@ -9,13 +9,13 @@ import type { LocalDecisionPlan } from "./decision-layer.ts";
 import { resolveWebsiteChatAction } from "../../skills/website-generation-workflow/routing-policy.ts";
 import {
   buildWebsiteSkillToolRoundPromptForAdapter,
-  formatWebsiteTargetPageContractForAdapter,
   planWebsiteSkillRoundObjectiveForAdapter,
   requiredWebsiteFileChecklistForAdapter,
   resolveWebsiteSkillMaxToolRoundsForAdapter,
   sanitizeWebsiteSkillHtmlOutputForAdapter,
   validateWebsiteRequiredFilesWithQaForAdapter,
 } from "./skill-tool-executor.ts";
+import { formatWebsiteTargetPageContractForAdapter } from "./website-page-contract.ts";
 
 export function createWebsiteGenerationSkillAdapter(skillId: string): SkillExecutionAdapter {
   return {
@@ -50,10 +50,7 @@ export function createWebsiteGenerationSkillAdapter(skillId: string): SkillExecu
       requirementText?: string;
       websiteSurfaceMode?: string;
     }): SkillExecutionValidationResult {
-      return validateWebsiteRequiredFilesWithQaForAdapter({
-        ...params,
-        enforceCorporateHomepageContract: false,
-      });
+      return validateWebsiteRequiredFilesWithQaForAdapter(params);
     },
   };
 }

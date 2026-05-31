@@ -1,12 +1,16 @@
 ---
 name: "content-resource-template"
 description: |
-  Website-only staged import adapted from HTML Anything template discipline for
+  Website-only import adapted from HTML Anything template discipline for
   resource hubs and information-platform routes.
 triggers:
   - "resource hub template"
   - "information platform"
   - "downloads hub"
+  - "resource hub"
+  - "research hub"
+  - "standards"
+  - "resources"
 od:
   mode: website
   platform: responsive
@@ -18,8 +22,8 @@ od:
     requires: true
     sections: [color, typography, layout, components]
   activation:
-    mode: sidecar
-    rollout_status: staged
+    mode: primary
+    rollout_status: active
     website_only: true
     ownership_layer: skill
     compatible_surface_modes: [content-hub-site]
@@ -27,7 +31,7 @@ od:
 
 # Content Resource Template
 
-This staged imported skill is a website-only sidecar seed for collection-first content hubs.
+This imported skill is the default website-only primary template seed for collection-first content hubs.
 
 Use it for:
 
@@ -36,4 +40,4 @@ Use it for:
 - research/standards/information navigation
 - no fake article archives or placeholder resource rows
 
-Do not promote it to default selection until targeted replay evidence proves it improves long-running content-hub generation.
+Treat this skill as the default concrete HTML/CSS route-template contract for collection-first content hubs.

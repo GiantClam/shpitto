@@ -41,11 +41,47 @@ describe("website-type-selector", () => {
     expect(result.surfaceMode).toBe("marketing-landing-site");
   });
 
+  it("selects corporate-b2b for Chinese official company website signals", () => {
+    const result = selectWebsiteGenerationTypeSkill({
+      requirementText:
+        "做一个制造商企业官网，面向海外采购团队和渠道客户，展示产品、工厂能力、案例和联系方式。",
+      routes: ["/", "/products", "/cases", "/contact"],
+    });
+
+    expect(result.skillId).toBe("corporate-b2b-site");
+    expect(result.siteType).toBe("corporate-b2b");
+    expect(result.surfaceMode).toBe("corporate-b2b-site");
+  });
+
+  it("selects marketing-landing for Chinese landing page and conversion signals", () => {
+    const result = selectWebsiteGenerationTypeSkill({
+      requirementText: "生成一个 SaaS 活动落地页，突出定价、注册、试用和转化 CTA。",
+      routes: ["/", "/pricing"],
+    });
+
+    expect(result.skillId).toBe("marketing-landing-site");
+    expect(result.siteType).toBe("marketing-landing");
+    expect(result.surfaceMode).toBe("marketing-landing-site");
+  });
+
   it("falls back to portfolio-blog for personal profile and writing-led requests", () => {
     const result = selectWebsiteGenerationTypeSkill({
       siteType: "portfolio",
       requirementText: "Build a personal portfolio and blog for an AI consultant with articles and resume highlights.",
       routes: ["/", "/blog"],
+    });
+
+    expect(result.skillId).toBe("portfolio-blog-site");
+    expect(result.siteType).toBe("portfolio-blog");
+    expect(result.surfaceMode).toBe("portfolio-blog-site");
+  });
+
+  it("still selects portfolio-blog when the default brief only asks for a blog index and profile routes", () => {
+    const result = selectWebsiteGenerationTypeSkill({
+      siteType: "portfolio",
+      requirementText:
+        "Build a polished personal technical blog for an AI consultant with Home, Blog, About, and Contact. The first pass only needs a strong blog index and profile-led homepage.",
+      routes: ["/", "/blog", "/about", "/contact"],
     });
 
     expect(result.skillId).toBe("portfolio-blog-site");

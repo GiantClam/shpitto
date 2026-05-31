@@ -306,4 +306,130 @@ describe("chat lifecycle regression", () => {
     expect(Array.isArray(inputState.project_json?.pages)).toBe(true);
     expect(Array.isArray(inputState.site_artifacts?.staticSite?.files)).toBe(true);
   });
+
+  it("keeps deferred blog-detail-fill recoverable after deploy gating", async () => {
+    const chatId = `chat-reg-blog-detail-fill-${Date.now()}`;
+    const projectPath = path.resolve(process.cwd(), ".tmp", "chat-tests", `${chatId}-blog.json`);
+    const siteArtifacts = {
+      projectId: chatId,
+      pages: [{ path: "/blog", html: "<!doctype html><html><body><main>Blog</main></body></html>" }],
+      staticSite: {
+        mode: "skill-direct",
+        files: [
+          {
+            path: "/index.html",
+            type: "text/html",
+            content:
+              '<!doctype html><html><head><title>Home</title></head><body><header><nav><a href="/">Home</a><a href="/blog">Blog</a></nav></header><main>Home</main></body></html>',
+          },
+          {
+            path: "/blog/index.html",
+            type: "text/html",
+            content:
+              '<!doctype html><html><head><title>Blog</title></head><body><main><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list><article><a href="/blog/alpha-systems/">Alpha systems</a></article><article><a href="/blog/beta-ops/">Beta ops</a></article></div></section></main></body></html>',
+          },
+          {
+            path: "/styles.css",
+            type: "text/css",
+            content: "body{font-family:system-ui}",
+          },
+          {
+            path: "/script.js",
+            type: "text/javascript",
+            content: "console.log('ok')",
+          },
+        ],
+      },
+    };
+    await fs.mkdir(path.dirname(projectPath), { recursive: true });
+    await fs.writeFile(projectPath, JSON.stringify(siteArtifacts, null, 2), "utf8");
+
+    const deployedTask = await createChatTask(chatId, undefined, {
+      assistantText: "deployed",
+      phase: "end",
+      internal: {
+        sessionState: {
+          messages: [],
+          phase: "end",
+          current_page_index: 0,
+          attempt_count: 0,
+          deployed_url: "https://demo.pages.dev",
+          workflow_context: {
+            checkpointProjectPath: projectPath,
+            deploySourceProjectPath: projectPath,
+            blogDetailFillStatus: "pending",
+            blogDetailFillCompleted: false,
+          },
+          site_artifacts: siteArtifacts,
+        },
+      },
+      progress: {
+        stage: "deployed",
+        checkpointProjectPath: projectPath,
+        blogDetailFillStatus: "pending",
+        blogDetailFillCompleted: false,
+      } as any,
+      deployedUrl: "https://demo.pages.dev",
+      timelineMetadata: {
+        cardType: "blog_detail_fill_required",
+        payload: "Fill the current site's blog detail pages now and align the blog slugs with their final URLs.",
+      } as any,
+    });
+    await completeChatTask(deployedTask.id, {
+      assistantText: "deployed",
+      phase: "end",
+      internal: deployedTask.result?.internal,
+      progress: {
+        stage: "deployed",
+        checkpointProjectPath: projectPath,
+        blogDetailFillStatus: "pending",
+        blogDetailFillCompleted: false,
+      } as any,
+      deployedUrl: "https://demo.pages.dev",
+      timelineMetadata: {
+        cardType: "blog_detail_fill_required",
+        payload: "Fill the current site's blog detail pages now and align the blog slugs with their final URLs.",
+      } as any,
+    });
+
+    const fillRequestRes = await sendChat(chatId, "fill blog detail pages now");
+    expect(fillRequestRes.status).toBe(202);
+    const queuedFillTask = await getLatestChatTaskForChat(chatId);
+    const queuedFillWorkflow = (queuedFillTask?.result?.internal?.inputState as any)?.workflow_context || {};
+    expect(queuedFillWorkflow.executionMode).toBe("refine");
+    expect(queuedFillWorkflow.skillActionDomain).toBe("blog_detail");
+    expect(queuedFillWorkflow.skillAction).toBe("fill_details");
+    expect(queuedFillWorkflow.refineSkillId).toBe("blog-detail-fill-workflow");
+
+    await completeChatTask(queuedFillTask!.id, {
+      ...(queuedFillTask!.result || {}),
+      assistantText: "Blog detail fill is complete.",
+      phase: "end",
+      internal: {
+        ...(queuedFillTask!.result?.internal || {}),
+        sessionState: {
+          ...((queuedFillTask!.result?.internal as any)?.inputState || {}),
+          workflow_context: {
+            ...queuedFillWorkflow,
+            blogDetailFillStatus: "completed",
+            blogDetailFillCompleted: true,
+          },
+        },
+      } as any,
+      progress: {
+        stage: "refined",
+        checkpointProjectPath: projectPath,
+        blogDetailFillStatus: "completed",
+        blogDetailFillCompleted: true,
+      } as any,
+    });
+
+    const completedFillTask = await getLatestChatTaskForChat(chatId);
+    const completedFillWorkflow =
+      ((completedFillTask?.result?.internal as any)?.sessionState?.workflow_context ||
+        (completedFillTask?.result?.internal as any)?.inputState?.workflow_context ||
+        {}) as Record<string, unknown>;
+    expect(completedFillWorkflow.blogDetailFillStatus).toBe("completed");
+    expect(completedFillWorkflow.blogDetailFillCompleted).toBe(true);
+  });
 });

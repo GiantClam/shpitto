@@ -13,9 +13,12 @@ export type WebsiteDiscoveryBrief = {
   primaryGoal: string;
   routes: string[];
   sourcePriority: "user" | "uploaded_files" | "same_domain" | "web_research" | "mixed";
-  localeMode: "en" | "zh-CN" | "bilingual";
+  localeMode: "en" | "zh-CN" | "bilingual" | "multilingual";
+  supportedLocales?: string[];
+  defaultLocale?: string;
   visualDirectionId: string;
   designSystemId?: string;
+  designSystemName?: string;
   immutableConstraints: string[];
   confirmationStatus?: "confirmed" | "inferred" | "needs_confirmation";
   missingFields?: string[];
@@ -23,7 +26,7 @@ export type WebsiteDiscoveryBrief = {
   confirmedAt?: string;
 };
 
-export type ImportedWebsiteSkillActivationMode = "default" | "sidecar" | "opt_in";
+export type ImportedWebsiteSkillActivationMode = "default" | "primary" | "sidecar" | "opt_in";
 export type ImportedWebsiteSkillRolloutStatus = "active" | "staged" | "disabled";
 
 export type OpenDesignAdoptionFlags = {
@@ -32,6 +35,14 @@ export type OpenDesignAdoptionFlags = {
   importedSkills: boolean;
   routeUnits: boolean;
 };
+
+const DEFAULT_IMPORTED_SKILL_FIRST_SURFACES: WebsiteSurfaceMode[] = [
+  "corporate-b2b-site",
+  "marketing-landing-site",
+  "portfolio-blog-site",
+  "docs-knowledge-site",
+  "content-hub-site",
+];
 
 function isEnabled(raw: string | undefined, defaultValue = false): boolean {
   const normalized = String(raw || "").trim().toLowerCase();
@@ -63,14 +74,34 @@ export function inferWebsiteSurfaceModeFromSkillId(skillId: string): WebsiteSurf
   return undefined;
 }
 
+export function getImportedSkillFirstSurfaceModes(): WebsiteSurfaceMode[] {
+  const configured = String(process.env.SHPITTO_OD_IMPORTED_SKILL_FIRST_SURFACES || "")
+    .split(",")
+    .map((item) => inferWebsiteSurfaceModeFromSkillId(item))
+    .filter((item): item is WebsiteSurfaceMode => Boolean(item));
+  if (configured.length > 0) return Array.from(new Set(configured));
+  return [...DEFAULT_IMPORTED_SKILL_FIRST_SURFACES];
+}
+
+export function isImportedSkillFirstSurfaceMode(surfaceMode?: WebsiteSurfaceMode): boolean {
+  if (!surfaceMode) return false;
+  return getImportedSkillFirstSurfaceModes().includes(surfaceMode);
+}
+
 export function shouldSelectImportedWebsiteSkill(params: {
   activationMode?: ImportedWebsiteSkillActivationMode;
   rolloutStatus?: ImportedWebsiteSkillRolloutStatus;
+  surfaceMode?: WebsiteSurfaceMode;
 }): boolean {
   const rolloutStatus = params.rolloutStatus || "active";
   if (rolloutStatus === "disabled") return false;
-  if (rolloutStatus === "staged") return getOpenDesignAdoptionFlags().importedSkills;
+  if (params.activationMode === "primary") return true;
+  if (rolloutStatus === "staged") {
+    if (isImportedSkillFirstSurfaceMode(params.surfaceMode)) return true;
+    return getOpenDesignAdoptionFlags().importedSkills;
+  }
   if (params.activationMode === "sidecar" || params.activationMode === "opt_in") {
+    if (params.activationMode === "sidecar" && isImportedSkillFirstSurfaceMode(params.surfaceMode)) return true;
     return getOpenDesignAdoptionFlags().importedSkills;
   }
   return true;
@@ -97,6 +128,12 @@ export function assessWebsiteDiscoveryBrief(
   if (!String(brief.visualDirectionId || "").trim() || brief.visualDirectionId === "prompt-adaptive") {
     missingFields.push("visualDirectionId");
     assumptions.push("Visual direction remains prompt-adaptive until explicitly locked.");
+  }
+  if (!String(brief.designSystemId || "").trim()) {
+    assumptions.push("Design system remains unlocked until a registry-backed or prompt-defined system is selected.");
+  }
+  if ((brief.supportedLocales || []).length === 0 && brief.localeMode === "bilingual") {
+    assumptions.push("Locale list remains inferred until supported locales are explicitly confirmed.");
   }
 
   return {

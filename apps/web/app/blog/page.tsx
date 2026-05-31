@@ -3,13 +3,15 @@ import type { Metadata } from "next";
 import { ArrowLeft, ArrowRight, Calendar, User } from "lucide-react";
 import { getPublicBlogIndex } from "@/lib/blog";
 import { stripMarkdown } from "@/lib/blog-markdown";
+import { formatBlogTaxonomyDisplayLabel } from "@/lib/blog-taxonomy";
+import { getFeaturedUseCases } from "@/lib/use-cases";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Shpitto Blog",
-    description: "Project blogs managed in Shpitto with SEO-friendly server rendering.",
+    description: "Guides for manufacturers, trading companies, and export-oriented B2B teams building SEO-friendly company websites.",
     alternates: {
       canonical: "/blog",
       types: {
@@ -18,14 +20,14 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     openGraph: {
       title: "Shpitto Blog",
-      description: "Project blogs managed in Shpitto with SEO-friendly server rendering.",
+      description: "Guides for manufacturers, trading companies, and export-oriented B2B teams building SEO-friendly company websites.",
       url: "/blog",
       type: "website",
     },
     twitter: {
       card: "summary_large_image",
       title: "Shpitto Blog",
-      description: "Project blogs managed in Shpitto with SEO-friendly server rendering.",
+      description: "Guides for manufacturers, trading companies, and export-oriented B2B teams building SEO-friendly company websites.",
     },
   };
 }
@@ -38,6 +40,7 @@ function formatDateLabel(value: string) {
 
 export default async function BlogIndexPage() {
   const posts = await getPublicBlogIndex();
+  const featuredUseCases = getFeaturedUseCases();
 
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans">
@@ -60,10 +63,21 @@ export default async function BlogIndexPage() {
 
       <main className="mx-auto max-w-7xl px-6 py-16">
         <div className="mx-auto mb-16 max-w-2xl text-center">
-          <h1 className="mb-6 text-4xl font-bold text-slate-900 lg:text-5xl">Insights for Industrial Growth</h1>
+          <h1 className="mb-6 text-4xl font-bold text-slate-900 lg:text-5xl">Guides for Export B2B Website Growth</h1>
           <p className="text-lg text-slate-600">
-            Project blogs can be authored in Shpitto data pages and rendered on the public site with server-side SEO.
+            Practical articles for manufacturers, trading companies, and industrial suppliers improving company pages, product content, and SEO.
           </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            {featuredUseCases.map((item) => (
+              <Link
+                key={item.slug}
+                href={item.href}
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-blue-300 hover:text-blue-600"
+              >
+                {item.shortLabel}
+              </Link>
+            ))}
+          </div>
         </div>
 
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-3">
@@ -83,13 +97,13 @@ export default async function BlogIndexPage() {
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 px-8 text-center">
                       <div>
-                        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{post.category || "Blog"}</p>
+                        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{formatBlogTaxonomyDisplayLabel(post.category, "Blog")}</p>
                         <p className="mt-3 text-2xl font-bold text-slate-900">{post.title}</p>
                       </div>
                     </div>
                   )}
                   <div className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-700 backdrop-blur-sm">
-                    {post.category || "Blog"}
+                    {formatBlogTaxonomyDisplayLabel(post.category, "Blog")}
                   </div>
                 </div>
 

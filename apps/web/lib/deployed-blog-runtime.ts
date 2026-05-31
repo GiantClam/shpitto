@@ -278,6 +278,24 @@ function decodeSegment(value) {
   }
 }
 
+function taxonomySlug(value, fallback = "topic") {
+  const label = String(value || "").replace(/\\s+/g, " ").trim();
+  if (!label) return fallback;
+  const slug = label
+    .normalize("NFKD")
+    .toLowerCase()
+    .replace(/['’]/g, "")
+    .replace(/&/g, " and ")
+    .replace(/[^-\\p{L}\\p{N}]+/gu, "-")
+    .replace(/-{2,}/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug || fallback;
+}
+
+function blogTagHrefPath(tag) {
+  return \`/blog/tag/\${encodeURIComponent(taxonomySlug(tag, "tag"))}\`;
+}
+
 function blogSlugFromPath(path) {
   if (!path.startsWith("/blog/")) return "";
   if (path === "/blog/rss.xml") return "";
@@ -301,7 +319,7 @@ function blogCollectionFilterFromPath(path) {
 }
 
 function normalizeFilterValue(value) {
-  return String(value || "").trim().toLowerCase();
+  return taxonomySlug(value, "");
 }
 
 function postMatchesFilters(post, filters = {}) {
@@ -321,6 +339,20 @@ function postMatchesFilters(post, filters = {}) {
     if (!haystack.includes(search)) return false;
   }
   return true;
+}
+
+function inferCollectionDisplayValue(posts, filters = {}) {
+  if (filters.tag) {
+    for (const post of posts || []) {
+      const match = (post.tags || []).find((item) => normalizeFilterValue(item) === normalizeFilterValue(filters.tag));
+      if (match) return match;
+    }
+  }
+  if (filters.category) {
+    const match = (posts || []).find((post) => normalizeFilterValue(post.category) === normalizeFilterValue(filters.category));
+    if (match?.category) return match.category;
+  }
+  return decodeSegment(filters.tag || filters.category || "");
 }
 
 function getDb(env) {
@@ -450,7 +482,7 @@ function renderShell({ title, description, body }) {
 
 function renderPostCard(post, cardClass = "card", locale = runtimeLocaleFrom(post?.title || "", post?.excerpt || "", post?.category || "")) {
   const copy = blogRuntimeCopy(locale);
-  const tagHtml = post.tags.map((tag) => \`<a class="tag" href="/blog/tag/\${encodeURIComponent(tag)}">\${escapeHtml(tag)}</a>\`).join("");
+  const tagHtml = post.tags.map((tag) => \`<a class="tag" href="\${blogTagHrefPath(tag)}">\${escapeHtml(tag)}</a>\`).join("");
   const tagsText = [post.category || "", ...(post.tags || [])].join(" ").toLowerCase();
   return \`<article class="\${escapeAttr(cardClass || "card")}" data-filter-card data-tags="\${escapeAttr(tagsText)}">
     \${post.coverImageUrl ? \`<img src="\${escapeAttr(post.coverImageUrl)}" alt="\${escapeAttr(post.coverImageAlt || post.title)}" loading="lazy" />\` : ""}
@@ -538,7 +570,7 @@ async function renderListResponse(request, env, posts, title = "Blog", descripti
 function renderPost(post) {
   const title = post.seoTitle || post.title;
   const description = post.seoDescription || post.excerpt || post.title;
-  const tags = post.tags.map((tag) => \`<a class="tag" href="/blog/tag/\${encodeURIComponent(tag)}">\${escapeHtml(tag)}</a>\`).join("");
+  const tags = post.tags.map((tag) => \`<a class="tag" href="\${blogTagHrefPath(tag)}">\${escapeHtml(tag)}</a>\`).join("");
   const body = \`<article>
     \${post.coverImageUrl ? \`<img class="cover" src="\${escapeAttr(post.coverImageUrl)}" alt="\${escapeAttr(post.coverImageAlt || post.title)}" />\` : ""}
     <p class="meta">\${escapeHtml(post.category || "Article")} \${post.publishedAt ? " · " + escapeHtml(post.publishedAt.slice(0, 10)) : ""}</p>
@@ -552,7 +584,7 @@ function renderPost(post) {
 
 function renderPostTags(post) {
   return post.tags
-    .map((tag) => \`<a class="pill shpitto-blog-post-tag" href="/blog/tag/\${encodeURIComponent(tag)}">\${escapeHtml(tag)}</a>\`)
+    .map((tag) => \`<a class="pill shpitto-blog-post-tag" href="\${blogTagHrefPath(tag)}">\${escapeHtml(tag)}</a>\`)
     .join("");
 }
 
@@ -639,7 +671,7 @@ function blogRuntimeLocale(posts, ...parts) {
 
 function renderPostCardLocalized(post, cardClass = "card", locale = runtimeLocaleFrom(post?.title || "", post?.excerpt || "", post?.category || "")) {
   const copy = blogRuntimeCopy(locale);
-  const tagHtml = post.tags.map((tag) => \`<a class="tag" href="/blog/tag/\${encodeURIComponent(tag)}">\${escapeHtml(tag)}</a>\`).join("");
+  const tagHtml = post.tags.map((tag) => \`<a class="tag" href="\${blogTagHrefPath(tag)}">\${escapeHtml(tag)}</a>\`).join("");
   const tagsText = [post.category || "", ...(post.tags || [])].join(" ").toLowerCase();
   return \`<article class="\${escapeAttr(cardClass || "card")}" data-filter-card data-tags="\${escapeAttr(tagsText)}">
     \${post.coverImageUrl ? \`<img src="\${escapeAttr(post.coverImageUrl)}" alt="\${escapeAttr(post.coverImageAlt || post.title)}" loading="lazy" />\` : ""}
@@ -721,7 +753,7 @@ function renderPostLocalized(post) {
   const copy = blogRuntimeCopy(locale);
   const title = post.seoTitle || post.title;
   const description = post.seoDescription || post.excerpt || post.title;
-  const tags = post.tags.map((tag) => \`<a class="tag" href="/blog/tag/\${encodeURIComponent(tag)}">\${escapeHtml(tag)}</a>\`).join("");
+  const tags = post.tags.map((tag) => \`<a class="tag" href="\${blogTagHrefPath(tag)}">\${escapeHtml(tag)}</a>\`).join("");
   const body = \`<article>
     \${post.coverImageUrl ? \`<img class="cover" src="\${escapeAttr(post.coverImageUrl)}" alt="\${escapeAttr(post.coverImageAlt || post.title)}" />\` : ""}
     <p class="meta">\${escapeHtml(post.category || copy.article)} \${post.publishedAt ? " | " + escapeHtml(post.publishedAt.slice(0, 10)) : ""}</p>
@@ -830,7 +862,7 @@ async function handleBlogRequest(request, env) {
   const collectionFilter = blogCollectionFilterFromPath(path);
   if (collectionFilter) {
     const posts = await listPosts(db, { ...collectionFilter, limit: 50 });
-    const value = collectionFilter.tag || collectionFilter.category || "";
+    const value = inferCollectionDisplayValue(posts, collectionFilter);
     const title = collectionPageTitleLocalized(collectionFilter, value, settings);
     return renderListResponseLocalized(request, env, posts, title, settings.navLabel || "Blog");
   }

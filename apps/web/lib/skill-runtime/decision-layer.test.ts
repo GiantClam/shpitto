@@ -45,6 +45,51 @@ describe("decision-layer", () => {
     expect(home?.constraints.join(" ")).toContain("enterprise homepage rhythm");
   });
 
+  it("uses official-homepage wording instead of entry-point semantics for the default home blueprint", () => {
+    const state: any = {
+      messages: [new HumanMessage("Generate a standards and research site. Nav: Home | Research | Contact")],
+      phase: "conversation",
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+    const home = plan.pageBlueprints.find((page) => page.route === "/");
+
+    expect(home?.purpose).toContain("official-homepage identity");
+    expect(home?.purpose).not.toContain("entry");
+    expect(home?.contentSkeleton.join(" ")).toContain("official homepage overview");
+    expect(home?.contentSkeleton.join(" ")).not.toContain("site home entry");
+  });
+
+  it("extracts brand hints from website-for-brand briefs", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          "Build a documentation and knowledge homepage for Meridian API Platform. Audience: developers and technical leads. Homepage only.",
+        ),
+      ],
+      phase: "conversation",
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+
+    expect(plan.brandHint).toBe("Meridian API Platform");
+  });
+
+  it("does not extract prompt prose about class names as a brand hint", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          "Class names, headings, card types, and interactions should describe the actual route intent and source content, not generic template categories.",
+        ),
+      ],
+      phase: "conversation",
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+
+    expect(plan.brandHint).toBeUndefined();
+  });
+
   it("treats Blog as a data-source page at the blueprint layer", () => {
     const state: any = {
       messages: [
@@ -154,6 +199,35 @@ describe("decision-layer", () => {
     expect(resources?.constraints.join(" ")).toContain("resource-index-header");
     expect(resources?.constraints.join(" ")).toContain("no hero-grid");
     expect(resources?.contentSkeleton.join(" ")).not.toContain("data-shpitto-blog-root");
+  });
+
+  it("adds page-mechanics copy firewall rules to content-hub interior routes", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          "Build a multi-page resource and research hub for Civic Standards Lab. Generate Home, Research, Standards, Resources, and About. Use collection-first IA, consistent terminology, varied editorial modules, research/standards/resource navigation, and no blog or archive behavior.",
+        ),
+      ],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/research", "/standards", "/resources", "/about"],
+          navLabels: ["Home", "Research", "Standards", "Resources", "About"],
+          files: ["/styles.css", "/script.js", "/index.html", "/research/index.html", "/standards/index.html", "/resources/index.html", "/about/index.html"],
+        },
+      },
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+    const standards = plan.pageBlueprints.find((page) => page.route === "/standards");
+
+    expect(standards?.pageKind).toBe("intent");
+    expect(standards?.constraints.join(" ")).toContain("Visitor-facing copy must talk about the route subject itself");
+    expect(standards?.constraints.join(" ")).toContain("The page groups...");
+    expect(standards?.constraints.join(" ")).toContain("How the standards collection is organized");
   });
 
   it("keeps explicit Blog manifest routes when publishable articles are requested", () => {
@@ -483,6 +557,27 @@ describe("decision-layer", () => {
     expect(plan.pageBlueprints[0]?.route).toBe("/");
   });
 
+  it("keeps Chinese-first bilingual prompts on zh-CN visible locale instead of collapsing to English", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          [
+            "# Canonical Website Generation Prompt",
+            "- Language: Chinese-first bilingual Chinese and English",
+            "- Requested site locale: bilingual Chinese and English",
+            "Nav: Home | CASUX Information Platform | Downloads | Contact",
+          ].join("\n"),
+        ),
+      ],
+      phase: "conversation",
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+
+    expect(plan.locale).toBe("zh-CN");
+    expect(plan.routes).toEqual(["/", "/casux-information-platform", "/downloads", "/contact"]);
+  });
+
   it("still lets refine mode prioritize the latest user instruction over generation baseline", () => {
     const canonicalPrompt = [
       "# Canonical Website Generation Prompt",
@@ -545,6 +640,30 @@ describe("decision-layer", () => {
     expect(plan.routes).toEqual(
       expect.arrayContaining(["/", "/3c-machines", "/custom-solutions", "/cases", "/about", "/contact"]),
     );
+  });
+
+  it("strips leading conjunctions from authoritative manifest nav labels", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage("# Canonical Website Generation Prompt"),
+      ],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/", "/blog", "/contact", "/about"],
+          navLabels: ["Home", "Blog", "and Contact", "About"],
+          files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html", "/contact/index.html", "/about/index.html"],
+        },
+      },
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+    expect(plan.routes).toEqual(["/", "/blog", "/contact", "/about"]);
+    expect(plan.navLabels).toEqual(["Home", "Blog", "Contact", "About"]);
+    expect(plan.pageBlueprints.find((page) => page.route === "/contact")?.navLabel).toBe("Contact");
   });
 
   it("extracts page routes from numbered page lists", () => {
@@ -1128,6 +1247,41 @@ describe("decision-layer", () => {
     expect(plan.routes).toEqual(["/", "/blog"]);
     expect(plan.pageBlueprints.find((page) => page.route === "/blog")?.pageKind).toBe("blog-data-index");
   });
+
+  it("keeps /blog content-backed when the prompt manifest defers detail pages but keeps the archive", () => {
+    const state: any = {
+      messages: [
+        new HumanMessage(
+          [
+            "# Canonical Website Generation Prompt",
+            "",
+            "Build a polished personal technical blog for an AI consultant with Home, Blog, About, and Contact.",
+            "The first pass only needs a strong blog index and a profile-led homepage.",
+            "Do not generate blog detail pages yet. Blog details will be filled later by a separate workflow.",
+            "",
+            "### Prompt Control Manifest (Machine Readable)",
+            "```json",
+            JSON.stringify({
+              schemaVersion: 1,
+              promptKind: "canonical_website_prompt",
+              routeSource: "prompt_draft_page_plan",
+              routes: ["/", "/blog", "/contact", "/about"],
+              navLabels: ["Home", "Blog", "Contact", "About"],
+              files: ["/styles.css", "/script.js", "/index.html", "/blog/index.html", "/contact/index.html", "/about/index.html"],
+            }),
+            "```",
+          ].join("\n"),
+        ),
+      ],
+      phase: "conversation",
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+    expect(plan.routeAuthorityMode).toBe("prompt_manifest");
+    expect(plan.routes).toEqual(["/", "/blog", "/contact", "/about"]);
+    expect(plan.pageBlueprints.find((page) => page.route === "/blog")?.pageKind).toBe("blog-data-index");
+  });
+
 
   it("falls back to fixed output files when the embedded prompt control manifest json is malformed", () => {
     const state: any = {

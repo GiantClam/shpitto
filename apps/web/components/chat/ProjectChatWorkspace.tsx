@@ -340,6 +340,70 @@ function isTaskProgressCardMetadata(metadata: Record<string, unknown> | null | u
   return String(metadata?.cardType || "").trim() === "task_progress";
 }
 
+type BlogDetailFillCardCopy = {
+  titleFallback: string;
+  summaryFallback: string;
+  buttonLabel: string;
+};
+
+export function blogDetailFillCardCopy(locale: RequirementFormLocale): BlogDetailFillCardCopy {
+  if (locale === "zh") {
+    return {
+      titleFallback: "先补全 Blog Detail",
+      summaryFallback: "网站已经部署，但 Blog 详情页还没补全。先生成 slug 对齐的详情页，再继续绑定自定义域名。",
+      buttonLabel: "立即补全 Blog Detail",
+    };
+  }
+  return {
+    titleFallback: "Fill Blog Details First",
+    summaryFallback: "The site is deployed, but the Blog detail pages still need to be filled. Generate the slug-aligned detail pages first, then continue to custom-domain binding.",
+    buttonLabel: "Fill Blog Details Now",
+  };
+}
+
+function BlogDetailFillRequiredCard(params: {
+  metadata: Record<string, unknown>;
+  locale: RequirementFormLocale;
+  disabled: boolean;
+  onConfirm: (payload: string) => void;
+}) {
+  const copy = blogDetailFillCardCopy(params.locale);
+  const title = String(params.metadata.title || copy.titleFallback).trim();
+  const summary = String(params.metadata.summary || copy.summaryFallback).trim();
+  const steps = Array.isArray(params.metadata.steps)
+    ? params.metadata.steps.map((item) => String(item || "").trim()).filter(Boolean)
+    : [];
+  const payload = String(params.metadata.payload || "").trim();
+  const label = String(params.metadata.label || copy.buttonLabel).trim();
+
+  return (
+    <div className="mt-3 rounded-xl border border-[color-mix(in_oklab,var(--shp-primary)_36%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_10%,var(--shp-surface)_90%)] p-3">
+      <p className="text-sm font-semibold text-[var(--shp-text)]">{title}</p>
+      <p className="mt-1 text-xs leading-5 text-[var(--shp-muted)]">{summary}</p>
+      {steps.length > 0 ? (
+        <ol className="mt-3 space-y-1 text-xs text-[var(--shp-muted)]">
+          {steps.map((step, index) => (
+            <li key={`${index}-${step}`} className="flex gap-2">
+              <span className="font-medium text-[var(--shp-text)]">{index + 1}.</span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
+      ) : null}
+      {payload ? (
+        <button
+          type="button"
+          onClick={() => params.onConfirm(payload)}
+          disabled={params.disabled}
+          className="mt-3 rounded-lg border border-[color-mix(in_oklab,var(--shp-primary)_55%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_18%,var(--shp-surface)_82%)] px-3 py-2 text-xs font-semibold text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-primary)_24%,var(--shp-surface)_76%)] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {label}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 function parseTaskProgressEvents(metadata: Record<string, unknown>): TaskEvent[] {
   const events = Array.isArray(metadata.events) ? metadata.events : [];
   const normalized: TaskEvent[] = [];
@@ -658,6 +722,9 @@ const REQUIREMENT_FORM_COPY: Record<RequirementFormLocale, Record<string, string
     primaryGoal: "核心转化目标",
     customGoal: "自定义目标",
     websiteLanguage: "网站语言",
+    supportedLocales: "支持语言",
+    defaultLocale: "默认语言",
+    customLocale: "添加 locale，例如 ja 或 fr",
     logoStrategy: "Logo 策略",
     uploadLogo: "上传 Logo",
     logoRequired: "需要上传或选择一个 Logo",
@@ -693,6 +760,9 @@ const REQUIREMENT_FORM_COPY: Record<RequirementFormLocale, Record<string, string
     primaryGoal: "Primary conversion goal",
     customGoal: "Custom goal",
     websiteLanguage: "Website language",
+    supportedLocales: "Supported locales",
+    defaultLocale: "Default locale",
+    customLocale: "Add locale, e.g. ja or fr",
     logoStrategy: "Logo strategy",
     uploadLogo: "Upload Logo",
     logoRequired: "Upload or select a logo",
@@ -751,6 +821,7 @@ const OPTION_I18N_FALLBACKS: Record<string, Record<RequirementFormLocale, string
   "zh-CN": { zh: "中文", en: "Chinese" },
   en: { zh: "英文", en: "English" },
   bilingual: { zh: "中英双语", en: "Chinese and English" },
+  multilingual: { zh: "多语言", en: "Multilingual" },
   uploaded: { zh: "上传已有 Logo", en: "Upload existing logo" },
   text_mark: { zh: "暂无 Logo，使用品牌文字标识", en: "No logo yet, use a text wordmark" },
   generated_placeholder: { zh: "暂无 Logo，请生成临时文字 Logo", en: "No logo yet, generate a temporary text logo" },
@@ -784,6 +855,8 @@ type RequirementFormValues = {
   functionalRequirements: string[];
   primaryGoal: string[];
   language?: string;
+  supportedLocales: string[];
+  defaultLocale?: string;
   brandLogo: {
     mode?: "uploaded" | "text_mark" | "generated_placeholder" | "none";
     assetKey?: string;
@@ -2363,6 +2436,8 @@ function initialRequirementFormValues(metadata: Record<string, unknown>): Requir
     functionalRequirements: stringArray(spec.functionalRequirements),
     primaryGoal: stringArray(spec.primaryGoal?.length ? spec.primaryGoal : spec.ctas),
     language: String(spec.locale || ""),
+    supportedLocales: stringArray(spec.supportedLocales),
+    defaultLocale: String(spec.defaultLocale || ""),
     brandLogo: {
       mode: ["uploaded", "text_mark", "generated_placeholder", "none"].includes(String(brandLogo.mode || ""))
         ? brandLogo.mode
@@ -2415,6 +2490,10 @@ function buildRequirementFormMessage(
   ]
     .filter(Boolean)
     .join(locale === "zh" ? " · " : " · ");
+  const languageSummary =
+    values.language === "multilingual" && values.supportedLocales.length > 0
+      ? `${optionLabels(getOptions("language-and-tone"), [values.language || ""], locale, "language-and-tone")} (${values.supportedLocales.join(", ")}${values.defaultLocale ? `; ${copy.defaultLocale}: ${values.defaultLocale}` : ""})`
+      : optionLabels(getOptions("language-and-tone"), [values.language || ""], locale, "language-and-tone");
   const summary = [
     locale === "zh" ? "生成前必填信息已提交：" : "Requirement form submitted:",
     `- ${copy.websiteType}: ${optionLabels(getOptions("site-type"), [values.siteType || ""], locale, "site-type")}`,
@@ -2425,7 +2504,7 @@ function buildRequirementFormMessage(
     `- ${copy.pageStructure}: ${pageSummary}`,
     `- ${copy.functionalRequirements}: ${optionLabels(getOptions("functional-requirements"), values.functionalRequirements, locale, "functional-requirements")}`,
     `- ${copy.primaryGoal}: ${optionLabels(getOptions("interaction-cta"), values.primaryGoal, locale, "interaction-cta")}`,
-    `- ${copy.websiteLanguage}: ${optionLabels(getOptions("language-and-tone"), [values.language || ""], locale, "language-and-tone")}`,
+    `- ${copy.websiteLanguage}: ${languageSummary}`,
     `- ${copy.logoStrategy}: ${logoSummary}${values.brandLogo.assetName ? ` (${values.brandLogo.assetName})` : ""}`,
   ].filter(Boolean).join("\n");
   return [
@@ -2456,6 +2535,11 @@ function hasRequirementFormMinimum(values: RequirementFormValues): boolean {
   const logoOk =
     values.brandLogo.mode &&
     (values.brandLogo.mode !== "uploaded" || Boolean(values.brandLogo.assetKey || values.brandLogo.referenceText));
+  const localeOk =
+    values.language !== "multilingual" ||
+    (values.supportedLocales.length >= 2 &&
+      Boolean(values.defaultLocale) &&
+      values.supportedLocales.includes(String(values.defaultLocale || "")));
   return Boolean(
     values.siteType &&
       values.contentSources.length > 0 &&
@@ -2465,6 +2549,7 @@ function hasRequirementFormMinimum(values: RequirementFormValues): boolean {
       values.functionalRequirements.length > 0 &&
       values.primaryGoal.length > 0 &&
       values.language &&
+      localeOk &&
       logoOk,
   );
 }
@@ -2508,6 +2593,7 @@ function RequirementFormCard({
   const [customTheme, setCustomTheme] = useState("");
   const [customPage, setCustomPage] = useState("");
   const [customGoal, setCustomGoal] = useState("");
+  const [customLocale, setCustomLocale] = useState("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [formError, setFormError] = useState("");
   const [formLocale, setFormLocale] = useState<RequirementFormLocale>(() =>
@@ -2636,6 +2722,32 @@ function RequirementFormCard({
         pages: prev.pageStructure.planning === "auto" ? prev.pageStructure.pages : [],
       },
     }));
+  };
+  const addSupportedLocale = (localeCode: string) => {
+    const normalized = String(localeCode || "").trim().replace(/_/g, "-");
+    if (!normalized) return;
+    setValues((prev) => {
+      if (prev.supportedLocales.includes(normalized)) return prev;
+      const supportedLocales = [...prev.supportedLocales, normalized];
+      return {
+        ...prev,
+        supportedLocales,
+        defaultLocale: prev.defaultLocale && supportedLocales.includes(prev.defaultLocale) ? prev.defaultLocale : supportedLocales[0],
+      };
+    });
+  };
+  const removeSupportedLocale = (localeCode: string) => {
+    setValues((prev) => {
+      const supportedLocales = prev.supportedLocales.filter((item) => item !== localeCode);
+      return {
+        ...prev,
+        supportedLocales,
+        defaultLocale:
+          prev.defaultLocale && supportedLocales.includes(prev.defaultLocale)
+            ? prev.defaultLocale
+            : supportedLocales[0] || "",
+      };
+    });
   };
   const setLogoAsset = (asset: ProjectAsset) => {
     setValues((prev) => ({
@@ -2927,7 +3039,72 @@ function RequirementFormCard({
 
         <section>
           <p className="text-xs font-medium text-[var(--shp-text)]">{t.websiteLanguage}</p>
-          {renderChoiceGroup("language-and-tone", values.language, (language) => setValues((prev) => ({ ...prev, language })))}
+          {renderChoiceGroup("language-and-tone", values.language, (language) =>
+            setValues((prev) => {
+              if (language === "multilingual") {
+                const supportedLocales = prev.supportedLocales.length > 0 ? prev.supportedLocales : ["en", "zh-CN"];
+                const defaultLocale = prev.defaultLocale && supportedLocales.includes(prev.defaultLocale)
+                  ? prev.defaultLocale
+                  : supportedLocales[0];
+                return { ...prev, language, supportedLocales, defaultLocale };
+              }
+              if (language === "bilingual") {
+                const supportedLocales = ["zh-CN", "en"];
+                const defaultLocale =
+                  prev.defaultLocale && supportedLocales.includes(prev.defaultLocale) ? prev.defaultLocale : "zh-CN";
+                return { ...prev, language, supportedLocales, defaultLocale };
+              }
+              return { ...prev, language, supportedLocales: language ? [language] : [], defaultLocale: language };
+            })
+          )}
+          {values.language === "multilingual" ? (
+            <div className="mt-3 space-y-3 rounded-lg border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] p-3">
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--shp-muted)]">{t.supportedLocales}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {values.supportedLocales.map((localeCode) => (
+                    <button
+                      key={localeCode}
+                      type="button"
+                      onClick={() => removeSupportedLocale(localeCode)}
+                      className={[
+                        "rounded-md border px-2.5 py-1.5 text-xs",
+                        values.defaultLocale === localeCode
+                          ? "border-[color-mix(in_oklab,var(--shp-primary)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_18%,transparent)] text-[var(--shp-text)]"
+                          : "border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] text-[var(--shp-muted)]",
+                      ].join(" ")}
+                    >
+                      {localeCode}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-2 flex gap-2">
+                  <input value={customLocale} onChange={(event) => setCustomLocale(event.target.value)} placeholder={t.customLocale} className="min-w-0 flex-1 rounded-md border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-transparent px-2 py-1.5 text-xs outline-none" />
+                  <button type="button" onClick={() => { addSupportedLocale(customLocale); setCustomLocale(""); }} className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] px-2 text-xs">{t.add}</button>
+                </div>
+              </div>
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--shp-muted)]">{t.defaultLocale}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {values.supportedLocales.map((localeCode) => (
+                    <button
+                      key={`default-${localeCode}`}
+                      type="button"
+                      onClick={() => setValues((prev) => ({ ...prev, defaultLocale: localeCode }))}
+                      className={[
+                        "rounded-md border px-2.5 py-1.5 text-xs",
+                        values.defaultLocale === localeCode
+                          ? "border-[color-mix(in_oklab,var(--shp-primary)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_22%,transparent)] text-[var(--shp-text)]"
+                          : "border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] text-[var(--shp-muted)]",
+                      ].join(" ")}
+                    >
+                      {localeCode}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : null}
         </section>
 
         <section>
@@ -4123,6 +4300,14 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
                           metadata={metadata}
                           locale={messageLocale}
                           confirmPayload={confirmPayload}
+                          disabled={submitting || loadingTask}
+                          onConfirm={(payload) => void handleTimelineAction(payload)}
+                        />
+                      ) : null}
+                      {cardType === "blog_detail_fill_required" ? (
+                        <BlogDetailFillRequiredCard
+                          metadata={metadata}
+                          locale={messageLocale}
                           disabled={submitting || loadingTask}
                           onConfirm={(payload) => void handleTimelineAction(payload)}
                         />

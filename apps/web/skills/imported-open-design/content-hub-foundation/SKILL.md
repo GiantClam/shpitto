@@ -1,12 +1,17 @@
 ---
 name: "content-hub-foundation"
 description: |
-  Website-only staged import adapted from Open Design patterns for resource hub,
-  standards, research, and information-platform surfaces. Keep as sidecar
-  guidance until replay evidence proves promotion readiness.
+  Website-only import adapted from Open Design patterns for resource hub,
+  standards, research, and information-platform surfaces. Default primary
+  seed for content-hub generation.
 triggers:
   - "content hub foundation"
   - "resource hub"
+  - "content hub"
+  - "resource center"
+  - "research hub"
+  - "standards library"
+  - "information platform"
 od:
   mode: website
   platform: responsive
@@ -18,8 +23,8 @@ od:
     requires: true
     sections: [color, typography, layout, components]
   activation:
-    mode: sidecar
-    rollout_status: staged
+    mode: primary
+    rollout_status: active
     website_only: true
     ownership_layer: skill
     compatible_surface_modes: [content-hub-site]
@@ -27,9 +32,9 @@ od:
 
 # Content Hub Foundation
 
-This staged imported skill is a website-only seed for resource and institutional content hubs.
+This imported skill is the default website-only primary seed for resource and institutional content hubs.
 
-Use it as sidecar guidance only:
+Use it as primary guidance:
 
 - collection-first route openings
 - route-owned resource grouping
@@ -46,5 +51,9 @@ Use it as sidecar guidance only:
   `hero__panel`, `hero-aside`, `aside`, panel, or right-side visual rail
 - avoid generic `hero + cards + CTA`, docs workspace chrome, and enterprise
   proof bands
+- keep interior-route copy subject-facing; reject page-mechanics lines such as
+  `The page groups...`, `This route helps teams...`,
+  `This page helps teams compare...`, or
+  `How the collection is organized`
 
-Do not promote it to default selection until targeted replay evidence proves it improves stability.
+Treat this skill as the first structural contract for content-hub surfaces before falling back to generic local website generation guidance.

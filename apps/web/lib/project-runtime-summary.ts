@@ -8,6 +8,8 @@ export type ProjectRuntimeSummary = {
   deploymentHost: string | null;
   latestDeploymentUrl: string | null;
   source: "d1" | "chat-session";
+  blogDetailFillCompleted?: boolean;
+  blogDetailFillStatus?: string | null;
 };
 
 function toHost(value: string | null | undefined): string | null {
@@ -50,5 +52,15 @@ export async function resolveOwnedProjectRuntimeSummary(
     deploymentHost: toHost(latestDeploymentUrl),
     latestDeploymentUrl,
     source: "chat-session",
+    blogDetailFillCompleted: Boolean(
+      (session as any)?.lastTaskResult?.internal?.sessionState?.workflow_context?.blogDetailFillCompleted ??
+      (session as any)?.lastTaskResult?.internal?.inputState?.workflow_context?.blogDetailFillCompleted,
+    ),
+    blogDetailFillStatus:
+      String(
+        (session as any)?.lastTaskResult?.internal?.sessionState?.workflow_context?.blogDetailFillStatus ||
+        (session as any)?.lastTaskResult?.internal?.inputState?.workflow_context?.blogDetailFillStatus ||
+        "",
+      ).trim() || null,
   };
 }

@@ -57,6 +57,13 @@ const scenarios: SmokeScenario[] = [
     requirementText:
       "Build a resource and research hub for Civic Standards Lab. Audience: policy researchers and implementation teams. Routes: /, /research, /standards, /resources, /contact. Use collection-first homepage and interior route contracts with consistent terminology and varied openings.",
   },
+  {
+    id: "portfolio-blog",
+    expectedSurfaceMode: "portfolio-blog-site",
+    forbiddenRoutes: ["/archive", "/downloads"],
+    requirementText:
+      "Build a polished personal technical blog for an AI consultant with Home, Blog, About, and Contact. Keep the first pass profile-led and index-first, with a strong blog archive page but no requirement to publish blog detail pages in the initial generation pass.",
+  },
 ];
 
 function routeToHtmlPath(route: string): string {
@@ -74,8 +81,13 @@ function safeFileName(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+function routeToUnitId(route: string): string {
+  const normalized = String(route || "/").trim() || "/";
+  return normalized === "/" ? "route-home" : `route-${normalized.replace(/^\/+/, "").replace(/[^a-z0-9]+/gi, "-")}`;
+}
+
 describe("Open Design adoption smoke", () => {
-  it("builds locked prompts, design specs, route units, and sidecar guidance for the first rollout surfaces", async () => {
+  it("builds locked prompts, design specs, route units, and primary imported guidance for the first-stage surfaces", async () => {
     const outputRoot = path.resolve(process.cwd(), ".tmp", "open-design-adoption-smoke", "latest");
     await fs.mkdir(outputRoot, { recursive: true });
     const report = [];
@@ -115,7 +127,7 @@ describe("Open Design adoption smoke", () => {
         designHit: {
           id: "open-design-adoption-smoke",
           name: "Open Design Adoption Smoke",
-          design_desc: "Deterministic smoke preset for route contracts and sidecar guidance.",
+          design_desc: "Deterministic smoke preset for route contracts and primary imported guidance.",
         } as any,
       });
       const routeUnits = routes
@@ -164,7 +176,7 @@ describe("Open Design adoption smoke", () => {
       await Promise.all([
         fs.writeFile(path.join(scenarioDir, "canonical-prompt.md"), draft.canonicalPrompt, "utf8"),
         fs.writeFile(path.join(scenarioDir, "website_design_spec.md"), designSpec, "utf8"),
-        fs.writeFile(path.join(scenarioDir, "sidecar-guidance.md"), sidecarGuidance || "(none)\n", "utf8"),
+        fs.writeFile(path.join(scenarioDir, "primary-seed-guidance.md"), sidecarGuidance || "(none)\n", "utf8"),
         fs.writeFile(path.join(scenarioDir, "round-01-prompt.md"), roundPrompt, "utf8"),
         fs.writeFile(path.join(scenarioDir, "route-units.json"), JSON.stringify(routeUnits, null, 2), "utf8"),
         fs.writeFile(path.join(scenarioDir, "route-unit-dispatch.json"), JSON.stringify(routeUnitDispatch, null, 2), "utf8"),
@@ -172,6 +184,10 @@ describe("Open Design adoption smoke", () => {
 
       const requiredHtmlFiles = routes.map(routeToHtmlPath);
       const selectedIds = selectedSeedSkills.map((item) => item.id);
+      const expectedUnitIds = routes.map(routeToUnitId).sort();
+      const actualUnitIds = routeUnitDispatch.results.map((result) => result.unitId).sort();
+      const actualRouteUnitRoutes = routeUnits.map((unit) => unit.route).sort();
+      const expectedRoutesSorted = [...routes].sort();
       const checks = {
         surfaceMode: draft.websiteSurfaceMode === scenario.expectedSurfaceMode,
         manifestFiles: ["/styles.css", "/script.js", ...requiredHtmlFiles].every((file) => files.includes(file)),
@@ -187,11 +203,14 @@ describe("Open Design adoption smoke", () => {
           designSpec.includes("shpitto_ui_theme_boundary: Shpitto Studio and platform UI keep the app theme") &&
           designSpec.includes(`selected_frontend_seed_skills: ${selectedIds.join(", ")}`) &&
           designSpec.includes("## 6. Route Specifications"),
-        routeUnits: routeUnits.length === routes.length && routeUnits.every((unit: any) => unit.routeContract?.length > 0),
+        routeUnits:
+          routeUnits.length === routes.length &&
+          routeUnits.every((unit: any) => unit.routeContract?.length > 0) &&
+          JSON.stringify(actualRouteUnitRoutes) === JSON.stringify(expectedRoutesSorted),
         routeUnitDispatch:
           routeUnitDispatch.passed &&
           routeUnitDispatch.results.length === routes.length &&
-          routeUnitDispatch.results.every((result, index) => result.unitId === `route-${routes[index] === "/" ? "home" : routes[index].replace(/^\/+/, "").replace(/[^a-z0-9]+/gi, "-")}`),
+          JSON.stringify(actualUnitIds) === JSON.stringify(expectedUnitIds),
         noForbiddenRoutes: (scenario.forbiddenRoutes || []).every((route) => !routes.includes(route)),
         sidecarGuidance: scenario.expectedSeedId
           ? selectedIds.includes(scenario.expectedSeedId) && sidecarGuidance.includes("example-backed HTML contract")
@@ -209,6 +228,8 @@ describe("Open Design adoption smoke", () => {
         passed: Object.values(checks).every(Boolean),
         surfaceMode: draft.websiteSurfaceMode,
         routes,
+        decisionRoutes: decision.routes,
+        routeUnitRoutes: routeUnits.map((unit) => unit.route),
         files,
         selectedSeedSkills: selectedIds,
         routeUnitDispatch: {

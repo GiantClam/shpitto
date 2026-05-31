@@ -14,11 +14,24 @@ Preserve existing routes and structure unless the user explicitly requests a str
 ### 1) Inspect Baseline
 - Read all available baseline files and keep their existing paths.
 - Treat the current project as the source of truth; do not invent missing pages.
+- Preserve the current website surface mode and route semantics. If the baseline is a corporate B2B site, keep refining it as a corporate B2B site rather than falling back to a generic marketing or placeholder shell.
 
 ### 2) Translate Intent to Code Changes
 - Convert visual requests into explicit layout, spacing, typography, color, and component-level edits.
 - Convert deletion requests into real removals of matching nodes, text, and related hooks.
 - Keep changes minimal and local to the requested scope.
+
+### 2.2) Scope Handling
+- If the request is a small copy/color/spacing change, keep it as a local patch.
+- If the request targets a route opening, hero structure, route-leading media, or a page-specific blank/placeholder block, treat it as a route rewrite within the current route scope instead of a tiny patch.
+- If the request names one or more routes or page openings, rewrite those route files coherently so the opening module, supporting proof band, and shared shell all stay consistent.
+
+### 2.3) Corporate B2B Media Contract
+- For corporate/procurement-facing B2B sites, homepage and route-leading media must look like a real enterprise website, not a generic split hero with empty side cards.
+- When replacing blank or placeholder media, remove placeholder scaffolding such as `media-frame`, `ph-img`, empty visual cards, or decorative blank rails.
+- If the homepage hero is rewritten for a corporate B2B surface, use enterprise-style markup with a real media layer such as `.enterprise-hero`, `.enterprise-hero__content`, and `.enterprise-hero__media`.
+- `.enterprise-hero__media` must contain a real `<img>` or `<picture>` node, not only a styled `<div role="img">`.
+- If a Cases page has a route-leading media slot, replace blank or placeholder blocks with a real image-backed module and keep the page consistent with the site's shared industrial/procurement visual language.
 
 ### 2.5) Referenced Asset Handling
 - If the user request contains a `[Referenced Assets]` block, treat each listed asset as an external project asset with an authoritative `logical path`.
@@ -64,9 +77,11 @@ Return JSON only using this schema:
 - Do not add new routes unless explicitly requested.
 - Do not remove core shared imports required for rendering.
 - Do not rewrite unrelated files.
+- Do not keep placeholder media scaffolding after a request explicitly asks for real media replacement.
 
 ## Completion Criteria
 - Preview should show the requested change clearly.
 - Referenced assets should use their provided logical paths so the platform can rewrite them to the correct CDN prefix.
 - Edited files should be minimal and directly explainable by the request.
 - The summary should match the actual edits.
+- When the request targets homepage or route-leading media, the result should read as a finished visitor-facing section rather than an empty media placeholder with cosmetic styling.

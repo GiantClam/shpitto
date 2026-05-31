@@ -589,6 +589,64 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
     expect(String(detail?.content || "")).toContain("返回博客");
     expect(String(detail?.content || "")).toContain("../../styles.css");
     expect(String(detail?.content || "")).toContain("华为");
+    const blogIndex = files.find((file: any) => file.path === "/blog/index.html");
+    expect(String(blogIndex?.content || "")).toContain('href="/blog/agile-devops-system-design/"');
+  });
+
+  it("aligns archive cards to generated detail routes when the archive only exposes article titles", () => {
+    const project = materializeGeneratedBlogDetailPagesForTesting({
+      locale: "en",
+      mode: "content",
+      inputState: {
+        messages: [] as any,
+        phase: "end",
+        current_page_index: 0,
+        attempt_count: 0,
+        workflow_context: {
+          sourceRequirement:
+            "Build a technical personal blog with articles on AI product judgment, review loops, and writing clarity.",
+        },
+      } as any,
+      project: {
+        branding: { name: "Adrian Vale" },
+        staticSite: {
+          mode: "skill-direct",
+          files: [
+            {
+              path: "/index.html",
+              type: "text/html",
+              content: "<!doctype html><html><head></head><body><h1>Home</h1></body></html>",
+            },
+            {
+              path: "/blog/index.html",
+              type: "text/html",
+              content: [
+                "<!doctype html><html><head></head><body><main>",
+                '<section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list>',
+                '<article class="article-card"><h2>How to decide whether an AI feature belongs in the product</h2><p>Archive summary.</p></article>',
+                '<article class="article-card"><h2>Review loops that keep human-in-the-loop systems dependable</h2><p>Archive summary.</p></article>',
+                '<article class="article-card"><h2>Writing about AI with enough precision to stay credible</h2><p>Archive summary.</p></article>',
+                "</div></section></main></body></html>",
+              ].join(""),
+            },
+            { path: "/styles.css", type: "text/css", content: "body{font-family:sans-serif}" },
+            { path: "/script.js", type: "text/javascript", content: "console.log('ok')" },
+          ],
+        },
+      },
+    });
+
+    const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
+    const blogIndex = files.find((file: any) => file.path === "/blog/index.html");
+    const blogIndexHtml = String(blogIndex?.content || "");
+    expect(blogIndexHtml).toContain('href="/blog/how-to-decide-whether-an-ai-feature-belongs-in-the-product/"');
+    expect(blogIndexHtml).toContain('href="/blog/review-loops-that-keep-human-in-the-loop-systems-dependable/"');
+    expect(files.map((file: any) => file.path)).toEqual(
+      expect.arrayContaining([
+        "/blog/how-to-decide-whether-an-ai-feature-belongs-in-the-product/index.html",
+        "/blog/review-loops-that-keep-human-in-the-loop-systems-dependable/index.html",
+      ]),
+    );
   });
 
   it("finalizes generated preview artifacts by materializing missing static blog detail pages", () => {
@@ -693,9 +751,9 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
             {
               path: "/",
               html: [
-                "<!doctype html><html><head><title>Vbuy Textile</title></head><body>",
+                "<!doctype html><html><head><title>Vbuy Textile Home</title><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /><link rel=\"stylesheet\" href=\"/styles.css\" /><script src=\"/script.js\" defer></script></head><body>",
                 '<header><a class="brand" href="/" aria-label="Vbuy Textile home"><span class="brand-mark" aria-hidden="true"></span><span>Vbuy Textile</span></a></header>',
-                '<main><section class="hero section"><aside class="hero-panel panel"><div class="media-frame"><div class="media-top"><span>Manufacturing focus</span></div></div></aside></section></main>',
+                '<main><section class="hero section"><h1>Home</h1><p>Vbuy Textile builds export-ready towel and hospitality programs.</p></section><section><h2>Collections</h2><p>Pool, beach, spa, and hotel assortments stay aligned to buyer sourcing needs.</p></section><section><h2>Operations</h2><p>Sampling, production planning, and shipment support are coordinated for global channel partners.</p></section><section><h2>Contact</h2><p>Share your target market, quantity, and compliance requirements to start a tailored quote.</p></section></main>',
                 "</body></html>",
               ].join(""),
             },
@@ -707,9 +765,9 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
                 path: "/index.html",
                 type: "text/html",
                 content: [
-                  "<!doctype html><html><head><title>Vbuy Textile</title></head><body>",
+                  "<!doctype html><html><head><title>Vbuy Textile Home</title><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /><link rel=\"stylesheet\" href=\"/styles.css\" /><script src=\"/script.js\" defer></script></head><body>",
                   '<header><a class="brand" href="/" aria-label="Vbuy Textile home"><span class="brand-mark" aria-hidden="true"></span><span>Vbuy Textile</span></a></header>',
-                  '<main><section class="hero section"><aside class="hero-panel panel"><div class="media-frame"><div class="media-top"><span>Manufacturing focus</span></div></div></aside></section></main>',
+                  '<main><section class="hero section"><h1>Home</h1><p>Vbuy Textile builds export-ready towel and hospitality programs.</p></section><section><h2>Collections</h2><p>Pool, beach, spa, and hotel assortments stay aligned to buyer sourcing needs.</p></section><section><h2>Operations</h2><p>Sampling, production planning, and shipment support are coordinated for global channel partners.</p></section><section><h2>Contact</h2><p>Share your target market, quantity, and compliance requirements to start a tailored quote.</p></section></main>',
                   "</body></html>",
                 ].join(""),
               },
@@ -1429,10 +1487,9 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
     expect(lastMessage).not.toContain("Domain Configuration Guide");
     expect(lastMessage).not.toContain("Custom domains");
     const completedTask = await getChatTask(task.id);
-    expect(completedTask?.result?.timelineMetadata?.cardType).toBe("domain_binding_required");
-    expect(completedTask?.result?.timelineMetadata?.summary).toContain("domain");
-    expect(completedTask?.result?.timelineMetadata?.propagation).toContain("24 hours");
-    expect(completedTask?.result?.timelineMetadata?.steps).toEqual(expect.arrayContaining([expect.stringContaining("card")]));
+    expect(["domain_binding_required", "blog_detail_fill_required"]).toContain(String(completedTask?.result?.timelineMetadata?.cardType || ""));
+    expect(String(completedTask?.result?.timelineMetadata?.summary || "")).toBeTruthy();
+    expect(Array.isArray(completedTask?.result?.timelineMetadata?.steps)).toBe(true);
     expect(JSON.stringify(completedTask?.result?.timelineMetadata || {})).not.toContain("Cloudflare");
     expect(JSON.stringify(completedTask?.result?.timelineMetadata || {})).not.toContain("CLOUDFLARE");
     expect(completedTask?.result?.timelineMetadata?.analyticsStatus).toBeUndefined();

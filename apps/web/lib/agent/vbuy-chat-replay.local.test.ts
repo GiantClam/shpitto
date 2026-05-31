@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import { describe, expect, it } from "vitest";
 import {
   applyForcedDesignTemplateToReplayInputState,
+  captureMobilePreviewScreenshots,
   loadGeneratedProject,
   parsePromptControlManifest,
   rewriteCanonicalPromptWithForcedDesignTemplate,
@@ -410,6 +411,29 @@ describe.skipIf(!runLocalReplay)("vbuy replay validation", () => {
         }
 
         await fs.mkdir(path.dirname(latestReplayInfoPath), { recursive: true });
+        const previewUrl = generated?.id
+          ? `http://localhost:3000/api/chat/tasks/${generated.id}/preview/index.html`
+          : null;
+        const shouldRunMobileScreenshotQa =
+          String(process.env.RUN_PREVIEW_MOBILE_SCREENSHOT_QA || "").trim() === "1";
+        const mobileScreenshotQa =
+          shouldRunMobileScreenshotQa && previewUrl
+            ? await captureMobilePreviewScreenshots({
+                previewUrl,
+                outputDir: path.resolve(process.cwd(), ".tmp", "qa-screenshots", replayLocalChatId, String(generated?.id || "")),
+              })
+            : {
+                previewUrl: previewUrl || "",
+                artifacts: [],
+                executed: false,
+                skippedReason: !previewUrl
+                  ? "Missing preview URL."
+                  : "RUN_PREVIEW_MOBILE_SCREENSHOT_QA != 1",
+              };
+        if (shouldRunMobileScreenshotQa && previewUrl) {
+          expect(mobileScreenshotQa.executed).toBe(true);
+          expect(mobileScreenshotQa.artifacts.length).toBeGreaterThanOrEqual(4);
+        }
         await fs.writeFile(
           latestReplayInfoPath,
           JSON.stringify(
@@ -418,12 +442,11 @@ describe.skipIf(!runLocalReplay)("vbuy replay validation", () => {
               replayChatId: replayLocalChatId,
               taskId: generated?.id,
               status: generated?.status,
-              previewUrl: generated?.id
-                ? `http://localhost:3000/api/chat/tasks/${generated.id}/preview/index.html`
-                : null,
+              previewUrl,
               homepageOnly: replayHomepageOnly,
               forcedStyle: replayForcedStyle || null,
               overrideText: replayOverrideText || null,
+              mobileScreenshotQa,
               checkpointProjectPath:
                 persistedCheckpointProjectPath || generated?.result?.progress?.checkpointProjectPath || null,
               checkpointDir: generated?.result?.progress?.checkpointDir || generated?.result?.progress?.artifactKey || null,

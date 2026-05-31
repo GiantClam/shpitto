@@ -26,7 +26,7 @@ export function SiteHeader({ userEmail = "", getStartedHref = "/chat", locale = 
           className="shrink-0 rounded-xl px-2 py-1.5 shadow-[0_8px_18px_rgba(66,39,28,0.12)]"
           imageClassName="h-12 w-auto md:h-14"
         />
-        <nav className="hidden items-center gap-8 text-sm font-medium text-[var(--shp-muted)] md:flex">
+        <nav className="hidden items-center gap-6 text-sm font-medium text-[var(--shp-muted)] md:flex">
           <Link href={getStartedHref} className="hover:text-[var(--shp-primary)]">
             {copy.projects}
           </Link>
@@ -38,6 +38,12 @@ export function SiteHeader({ userEmail = "", getStartedHref = "/chat", locale = 
           </Link>
           <Link href="/pricing" className="hover:text-[var(--shp-primary)]">
             {copy.pricing}
+          </Link>
+          <Link href="/use-cases" className="hover:text-[var(--shp-primary)]">
+            {copy.useCases}
+          </Link>
+          <Link href="/example-websites" className="hover:text-[var(--shp-primary)]">
+            Examples
           </Link>
           <Link href="/blog" className="hover:text-[var(--shp-primary)]">
             {copy.blog}

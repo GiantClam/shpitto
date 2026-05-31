@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { getActiveChatTask, getLatestChatTaskForChat, listChatTimelineMessages } from "./chat-task-store";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { buildLocalDecisionPlan } from "../skill-runtime/decision-layer";
 
 describe("chat api async mode", () => {
   const confirmPayload = (text: string) => `__SHP_CONFIRM_GENERATE__\n${text}`;
@@ -85,7 +86,7 @@ describe("chat api async mode", () => {
   it("persists website surface mode and discovery brief in queued workflow context", async () => {
     const chatId = `chat-surface-mode-${Date.now()}`;
     const requirement =
-      "# Canonical Website Generation Prompt\n\nBuild a developer documentation portal with guides, API reference, and onboarding tutorials.";
+      "# Canonical Website Generation Prompt\n\nBuild a developer documentation portal with guides, API reference, onboarding tutorials, and searchable technical reference pages.";
     const { POST } = await import("../../app/api/chat/route");
     const res = await POST(
       new Request("http://localhost/api/chat", {
@@ -98,12 +99,147 @@ describe("chat api async mode", () => {
       }),
     );
 
+    if (res.status !== 202) {
+      const body = await res.text();
+      throw new Error(`unexpected status ${res.status}: ${body}`);
+    }
     expect(res.status).toBe(202);
     const task = await getLatestChatTaskForChat(chatId);
     const workflow = (task?.result?.internal?.inputState as any)?.workflow_context || {};
     expect(workflow.websiteSurfaceMode).toBe("docs-knowledge-site");
     expect(workflow.websiteTypeSkillId).toBe("docs-knowledge-site");
     expect(workflow.websiteDiscoveryBrief?.surfaceMode).toBe("docs-knowledge-site");
+  });
+
+  it("persists discovery brief locale and design-system contract fields in queued workflow context", async () => {
+    const chatId = `chat-discovery-brief-contract-${Date.now()}`;
+    const requirement =
+      "# Canonical Website Generation Prompt\n\nBuild a multilingual documentation portal using IBM Carbon, with English default plus French and Japanese reference support.";
+    const { POST } = await import("../../app/api/chat/route");
+    const res = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: chatId,
+          messages: [{ role: "user", parts: [{ type: "text", text: confirmPayload(requirement) }] }],
+        }),
+      }),
+    );
+
+    if (res.status !== 202) {
+      const body = await res.text();
+      throw new Error(`unexpected status ${res.status}: ${body}`);
+    }
+    expect(res.status).toBe(202);
+    const task = await getLatestChatTaskForChat(chatId);
+    const workflow = (task?.result?.internal?.inputState as any)?.workflow_context || {};
+    expect(workflow.websiteDiscoveryBrief?.supportedLocales || []).toEqual(
+      expect.arrayContaining(["en", "fr", "ja"]),
+    );
+    expect(workflow.websiteDiscoveryBrief?.defaultLocale).toBe("en");
+    expect(workflow.supportedLocales || []).toEqual(expect.arrayContaining(["en", "fr", "ja"]));
+  });
+
+  it("keeps default portfolio-blog first pass on generate without activating deferred blog detail fill", async () => {
+    const chatId = `chat-portfolio-blog-first-pass-${Date.now()}`;
+    const requirement = [
+      "# Canonical Website Generation Prompt",
+      "",
+      "Build a polished personal technical blog for an AI consultant with Home, Blog, About, and Contact.",
+      "The first pass only needs a strong blog index and a profile-led homepage.",
+      "Do not generate blog detail pages yet. Blog details will be filled later by a separate workflow.",
+    ].join("\n");
+    const { POST } = await import("../../app/api/chat/route");
+    const res = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: chatId,
+          messages: [{ role: "user", parts: [{ type: "text", text: confirmPayload(requirement) }] }],
+        }),
+      }),
+    );
+
+    if (res.status !== 202) {
+      const body = await res.text();
+      throw new Error(`unexpected status ${res.status}: ${body}`);
+    }
+    expect(res.status).toBe(202);
+    const task = await getLatestChatTaskForChat(chatId);
+    const workflow = (task?.result?.internal?.inputState as any)?.workflow_context || {};
+    expect(workflow.executionMode).toBe("generate");
+    expect(workflow.websiteSurfaceMode).toBe("portfolio-blog-site");
+    expect(workflow.websiteTypeSkillId).toBe("portfolio-blog-site");
+    expect(workflow.skillActionDomain).toBeUndefined();
+    expect(workflow.skillAction).toBeUndefined();
+    expect(workflow.blogDetailFillRequested).toBeUndefined();
+    expect(workflow.refineSkillId).not.toBe("blog-detail-fill-workflow");
+    const plan = buildLocalDecisionPlan(task?.result?.internal?.inputState as any);
+    expect(plan.routes).toEqual(["/", "/blog", "/contact", "/about"]);
+    expect(plan.pageBlueprints.find((page) => page.route === "/blog")?.pageKind).toBe("blog-data-index");
+  });
+
+  it("keeps confirmed content-hub surface and bilingual locale from the canonical prompt", async () => {
+    const chatId = `chat-confirmed-content-hub-bilingual-${Date.now()}`;
+    const requirement = [
+      "# Canonical Website Generation Prompt",
+      "",
+      "Generate the official CASUX website as an institutional standards and research hub.",
+      "",
+      "Language: Chinese-first bilingual Chinese and English.",
+      "",
+      "### Prompt Control Manifest (Machine Readable)",
+      "```json",
+      JSON.stringify(
+        {
+          schemaVersion: 1,
+          promptKind: "canonical_website_prompt",
+          routeSource: "uploaded_source_page_plan",
+          websiteSurfaceMode: "content-hub-site",
+          routes: ["/", "/casux-information-platform"],
+          navLabels: ["Home", "Information"],
+          files: ["/styles.css", "/script.js", "/i18n/messages.en.json", "/i18n/messages.zh-CN.json", "/index.html", "/casux-information-platform/index.html"],
+          discoveryBrief: {
+            surfaceMode: "content-hub-site",
+            localeMode: "bilingual",
+            supportedLocales: ["zh-CN", "en"],
+            defaultLocale: "zh-CN",
+            routes: ["/", "/casux-information-platform"],
+          },
+        },
+        null,
+        2,
+      ),
+      "```",
+    ].join("\n");
+    const { POST } = await import("../../app/api/chat/route");
+    const res = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: chatId,
+          messages: [{ role: "user", parts: [{ type: "text", text: confirmPayload(requirement) }] }],
+        }),
+      }),
+    );
+
+    if (res.status !== 202) {
+      const body = await res.text();
+      throw new Error(`unexpected status ${res.status}: ${body}`);
+    }
+    expect(res.status).toBe(202);
+    const task = await getLatestChatTaskForChat(chatId);
+    const workflow = (task?.result?.internal?.inputState as any)?.workflow_context || {};
+    expect(workflow.websiteSurfaceMode).toBe("content-hub-site");
+    expect(workflow.websiteDiscoveryBrief?.surfaceMode).toBe("content-hub-site");
+    expect(workflow.websiteDiscoveryBrief?.localeMode).toBe("bilingual");
+    expect(workflow.websiteDiscoveryBrief?.supportedLocales || []).toEqual(["zh-CN", "en"]);
+    expect(workflow.websiteDiscoveryBrief?.defaultLocale).toBe("zh-CN");
+    expect(workflow.supportedLocales || []).toEqual(["zh-CN", "en"]);
+    expect(workflow.defaultLocale).toBe("zh-CN");
   });
 
   it("returns existing active task instead of creating duplicate", async () => {
@@ -1444,6 +1580,74 @@ describe("chat api async mode", () => {
     expect(workflow.contentPreviewStatus || workflow.blogContentPreviewStatus).toBeTruthy();
     const timeline = await listChatTimelineMessages(chatId, 30);
     expect(timeline.some((message) => String(message.text || "").includes("__SHP_CONFIRM_CONTENT_DEPLOY__"))).toBe(false);
+  });
+
+  it("routes manual blog detail fill requests into the deferred detail workflow", async () => {
+    const chatId = `chat-blog-detail-fill-${Date.now()}`;
+    const projectPath = "/remote/project.json";
+    const siteArtifacts = {
+      projectId: "blog-detail-fill-test",
+      pages: [{ path: "/blog", html: "<!doctype html><html><body><main>blog</main></body></html>" }],
+      staticSite: {
+        mode: "skill-direct",
+        files: [
+          {
+            path: "/blog/index.html",
+            type: "text/html",
+            content:
+              '<!doctype html><html><body><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list><article><a href="/blog/alpha/">Alpha</a></article></div></section></body></html>',
+          },
+        ],
+      },
+    };
+
+    const { createChatTask, completeChatTask } = await import("./chat-task-store");
+    const previous = await createChatTask(chatId, undefined, {
+      assistantText: "generated",
+      phase: "end",
+      internal: {
+        sessionState: {
+          messages: [],
+          phase: "end",
+          current_page_index: 0,
+          attempt_count: 0,
+          workflow_context: {
+            checkpointProjectPath: projectPath,
+            deploySourceProjectPath: projectPath,
+          },
+          site_artifacts: siteArtifacts,
+        },
+      },
+      progress: { checkpointProjectPath: projectPath } as any,
+    });
+    await completeChatTask(previous.id, {
+      assistantText: "generated",
+      phase: "end",
+      internal: previous.result?.internal,
+      progress: { checkpointProjectPath: projectPath } as any,
+    });
+
+    const { POST } = await import("../../app/api/chat/route");
+    const res = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: chatId,
+          messages: [{ role: "user", parts: [{ type: "text", text: "fill blog detail pages now" }] }],
+        }),
+      }),
+    );
+
+    expect(res.status).toBe(202);
+    const latest = await getLatestChatTaskForChat(chatId);
+    const workflow = (latest?.result?.internal?.inputState as any)?.workflow_context || {};
+    expect(workflow.executionMode).toBe("refine");
+    expect(workflow.refineScope).toBe("structural");
+    expect(workflow.skillActionDomain).toBe("blog_detail");
+    expect(workflow.skillAction).toBe("fill_details");
+    expect(workflow.blogDetailFillRequested).toBe(true);
+    expect(workflow.refineSkillId).toBe("blog-detail-fill-workflow");
   });
 
 

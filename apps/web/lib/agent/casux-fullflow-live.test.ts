@@ -14,6 +14,14 @@ import {
   normalizeRoute,
   routeToHtmlPath,
 } from "./chat-replay-live-test-helpers";
+import {
+  collectSharedDistinctLocaleKeys,
+  extractHtmlLang,
+  hasBlogNavLink,
+  hasConsultationForm,
+  hasDistinctTranslatedLocaleResources,
+  hasDuplicateFooterLinkGroups,
+} from "./institutional-live-quality";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local"), override: false, quiet: true });
 dotenv.config({ path: path.resolve(process.cwd(), "scripts/.env.local"), override: false, quiet: true });
@@ -63,7 +71,7 @@ function buildCasuxRequirementPayload() {
   return [
     "Generate the official CASUX multi-page website based on the attached planning document.",
     "Keep the site bilingual, institutionally credible, and content-rich.",
-    "The homepage must act as the official CASUX site entry and institutional overview, not as a certification, downloads, login, or search landing page.",
+    "The homepage must act as the official CASUX homepage and institutional overview, not as a certification, downloads, login, or search landing page.",
     "",
     "[Requirement Form]",
     "```json",
@@ -90,7 +98,7 @@ function buildCasuxRequirementPayload() {
           altText: "CASUX",
         },
         customNotes:
-          "Treat CASUX Information Platform as a route-owned standards/resource directory, not as a generic blog surface. Keep research, standards, advocacy, scoring, and certification language specific to CASUX instead of generic corporate defaults. Route / must present CASUX as the umbrella institution and first-visit home entry. Do not put certification, downloads, login, register, or search-directory wording into the homepage title, meta description, H1, or first lead paragraph. Do not use route-choreography wording such as from-to path, next step, where to start, or start from home anywhere visible on route /. On /casux-information-platform, do not describe the page as an entry point, route guidance page, reading entry, contact entry, or site entry label; present it as a public information library, resource index, or institutional materials directory instead. The homepage or information platform must include a real consultation form with name, organization, email, topic, and message fields. Footer groups must not duplicate the same links under both Routes and Resources. Bilingual means locale-switchable content with Chinese as the default visible language for this Chinese-source site, not simultaneous Chinese and English visible in the same headline, lead, button row, nav row, or footer block. Do not create blog or archive routes and do not enable a generic blog runtime.",
+          "Treat CASUX Information Platform as a route-owned standards/resource directory, not as a generic blog surface. Keep research, standards, advocacy, scoring, and certification language specific to CASUX instead of generic corporate defaults. Route / must present CASUX as the umbrella institution and official homepage overview. Do not put certification, downloads, login, register, or search-directory wording into the homepage title, meta description, H1, or first lead paragraph. Do not use route-choreography wording such as from-to path, next step, where to start, or start from home anywhere visible on route /. On /casux-information-platform, do not describe the page as an entry point, route guidance page, reading entry, contact entry, or site entry label; present it as a public information library, resource index, or institutional materials directory instead. The homepage or information platform must include a real consultation form with name, organization, email, topic, and message fields. Footer groups must not duplicate the same links under both Routes and Resources. Bilingual means locale-switchable content with Chinese as the default visible language for this Chinese-source site, not simultaneous Chinese and English visible in the same headline, lead, button row, nav row, or footer block. Do not create blog or archive routes and do not enable a generic blog runtime.",
       },
       null,
       2,
@@ -117,7 +125,7 @@ function appendCasuxHomepageGate(prompt: string) {
   if (!normalized) return normalized;
   const contract = [
     "## CASUX Homepage Contract",
-    "- Route / must be the official CASUX site home entry and institutional overview.",
+    "- Route / must be the official CASUX homepage and institutional overview.",
     "- The title, meta description, H1, and first lead paragraph must describe CASUX as the umbrella standards system, research center, and information platform.",
     "- Do not use certification, download, login, register, or search-directory wording in the title, meta description, H1, or first lead paragraph for route /.",
     "- Do not enumerate Creation, Construction, Certification, Advocacy, Research Center, or Information Platform in the title, meta description, H1, or first lead paragraph for route /.",
@@ -140,7 +148,7 @@ function rewriteCasuxPromptForFullFlow(prompt: string) {
 
   rewritten = rewritten.replace(
     /"purpose"\s*:\s*"Build the Home page from the uploaded source document, preserving its source-defined role and content modules\."/,
-    '"purpose": "Build the Home page as the official CASUX site entry and institutional overview. Establish CASUX as the umbrella standards system, research center, and information platform before routing visitors into sibling pathways."',
+    '"purpose": "Build the Home page as the official CASUX homepage and institutional overview. Establish CASUX as the umbrella standards system, research center, and information platform before routing visitors into sibling pathways."',
   );
 
   const override = [
@@ -174,7 +182,7 @@ function buildCasuxConfirmedCanonicalPrompt() {
     "",
     "## 1. Site Mission",
     "Generate the official CASUX website for child-friendly space standards, implementation guidance, research support, and information access.",
-    "Route / must be the official CASUX site home entry and institutional overview.",
+    "Route / must be the official CASUX homepage and institutional overview.",
     "The title, meta description, H1, and first lead paragraph on route / must describe CASUX as the umbrella standards system, research center, and information platform.",
     "Do not use certification, download, login, register, search-directory, next-step, where-to-start, or from-to browsing wording in those homepage fields.",
     "Do not enumerate Creation, Construction, Certification, Advocacy, Research Center, or Information Platform inside the homepage title, meta description, H1, or first lead paragraph.",
@@ -252,7 +260,7 @@ function buildCasuxConfirmedCanonicalPrompt() {
             route: "/",
             navLabel: "Home",
             purpose:
-              "Build the Home page as the official CASUX site entry and institutional overview. Establish CASUX as the umbrella standards system, research center, and information platform before routing visitors into sibling pathways.",
+              "Build the Home page as the official CASUX homepage and institutional overview. Establish CASUX as the umbrella standards system, research center, and information platform before routing visitors into sibling pathways.",
             source: "casux_fullflow_live_smoke",
           },
           {
@@ -420,43 +428,6 @@ function deploymentBundleContentType(pathSuffix: string) {
   if (normalized.endsWith(".js")) return "application/javascript; charset=utf-8";
   if (normalized.endsWith(".css")) return "text/css; charset=utf-8";
   return "text/html; charset=utf-8";
-}
-
-function extractHtmlLang(html: string): string {
-  const match = String(html || "").match(/<html\b[^>]*\blang=["']([^"']+)["']/i);
-  return String(match?.[1] || "").trim();
-}
-
-function hasDistinctTranslatedLocaleResources(enRaw: string, zhRaw: string): boolean {
-  try {
-    const en = JSON.parse(String(enRaw || "{}"));
-    const zh = JSON.parse(String(zhRaw || "{}"));
-    const sharedKeys = Object.keys(en).filter((key) => typeof zh?.[key] === "string" && typeof en?.[key] === "string");
-    return sharedKeys.some((key) => String(en[key]).trim() && String(zh[key]).trim() && String(en[key]) !== String(zh[key]));
-  } catch {
-    return false;
-  }
-}
-
-function hasConsultationForm(html: string): boolean {
-  const source = String(html || "");
-  if (!/<form\b/i.test(source)) return false;
-  return /name=/i.test(source) && /email/i.test(source) && /(organization|company)/i.test(source) && /(message|textarea)/i.test(source);
-}
-
-function hasDuplicateFooterLinkGroups(html: string): boolean {
-  const footerMatch = String(html || "").match(/<footer\b[\s\S]*?<\/footer>/i);
-  const footer = String(footerMatch?.[0] || "");
-  const groups = Array.from(footer.matchAll(/<div\b[^>]*class=["'][^"']*footer-links[^"']*["'][^>]*>([\s\S]*?)<\/div>/gi))
-    .map((match) =>
-      Array.from(String(match[1] || "").matchAll(/\bhref=["']([^"']+)["']/gi))
-        .map((hrefMatch) => String(hrefMatch[1] || "").trim())
-        .filter(Boolean)
-        .sort()
-        .join("|"),
-    )
-    .filter((group) => group.split("|").filter(Boolean).length >= 3);
-  return new Set(groups).size !== groups.length;
 }
 
 async function fetchDeployedTextWithFallback(params: {
@@ -672,6 +643,7 @@ describe.skipIf(!shouldRun)("CASUX full flow live smoke", () => {
         const infoHtml = fileContent(files, "/casux-information-platform/index.html");
         const enMessages = fileContent(files, "/i18n/messages.en.json");
         const zhMessages = fileContent(files, "/i18n/messages.zh-CN.json");
+        const distinctLocaleKeys = collectSharedDistinctLocaleKeys(enMessages, zhMessages);
         const combinedVisibleText = htmlToVisibleText([indexHtml, mountedHtml].join("\n"));
 
         expect(projectJson?.staticSite?.mode).toBe("skill-direct");
@@ -686,6 +658,7 @@ describe.skipIf(!shouldRun)("CASUX full flow live smoke", () => {
         expect(extractHtmlLang(indexHtml)).toBe("zh-CN");
         expect(extractHtmlLang(infoHtml)).toBe("zh-CN");
         expect(hasDistinctTranslatedLocaleResources(enMessages, zhMessages)).toBe(true);
+        expect(distinctLocaleKeys.length).toBeGreaterThan(0);
         expect(hasDuplicateFooterLinkGroups(indexHtml)).toBe(false);
         expect(hasDuplicateFooterLinkGroups(infoHtml)).toBe(false);
         expect(hasConsultationForm(indexHtml) || hasConsultationForm(infoHtml)).toBe(true);
@@ -868,6 +841,18 @@ describe.skipIf(!shouldRun)("CASUX full flow live smoke", () => {
           deployTaskId: String(queuedDeployTask?.id || ""),
           projectName: pagesProjectName,
         });
+        const liveHomeDistinctLocaleKeys = await fetchTextFromAnyWithRetry(
+          deployedUrlCandidates,
+          "/i18n/messages.en.json",
+          (text, status, contentType) => status === 200 && contentType.includes("json") && text.includes("{"),
+        ).then(async (enResponse) => {
+          const zhResponse = await fetchTextFromAnyWithRetry(
+            deployedUrlCandidates,
+            "/i18n/messages.zh-CN.json",
+            (text, status, contentType) => status === 200 && contentType.includes("json") && text.includes("{"),
+          );
+          return collectSharedDistinctLocaleKeys(enResponse.text, zhResponse.text);
+        });
         let runtimeJson:
           | {
               status: number;
@@ -919,6 +904,12 @@ describe.skipIf(!shouldRun)("CASUX full flow live smoke", () => {
           projectName: pagesProjectName,
         });
 
+        if (String(progress.generatedBlogContentStatus?.status || "") === "skipped:no_content_mount") {
+          expect(hasBlogNavLink(home.text)).toBe(false);
+          expect(hasBlogNavLink(mountedLive.text)).toBe(false);
+        }
+        expect(liveHomeDistinctLocaleKeys.length).toBeGreaterThan(0);
+
         const report = {
           chatId,
           generatedTaskId: queuedGenerateTask?.id,
@@ -944,6 +935,7 @@ describe.skipIf(!shouldRun)("CASUX full flow live smoke", () => {
             home: home.verificationMode,
             runtimeJson: runtimeJson?.verificationMode || null,
             mountedLive: mountedLive.verificationMode,
+            liveDistinctLocaleKeyCount: liveHomeDistinctLocaleKeys.length,
             cloudflareLatestDeploymentUrl:
               home.deploymentEvidence?.latestDeploymentUrl ||
               runtimeJson?.deploymentEvidence?.latestDeploymentUrl ||

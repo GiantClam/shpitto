@@ -53,6 +53,8 @@ import { buildBlogContentWorkflowPreview } from "../../../lib/skill-runtime/exec
 import {
   assessWebsiteDiscoveryBrief,
   inferWebsiteSurfaceModeFromSkillId,
+  type WebsiteDiscoveryBrief,
+  type WebsiteSurfaceMode,
 } from "../../../lib/skill-runtime/open-design-adoption";
 import { getSkillExecutionAdapter } from "../../../lib/skill-runtime/skill-execution-adapter-registry";
 import { loadProjectSkill } from "../../../lib/skill-runtime/project-skill-loader";
@@ -94,6 +96,18 @@ const CONTINUE_STALE_RUNNING_TASK_MS = Math.max(
 );
 const CHAT_ROUTE_STORE_TIMEOUT_MS = Math.max(1_000, Number(process.env.CHAT_ROUTE_STORE_TIMEOUT_MS || 9_600));
 type ChatDisplayLocale = "zh" | "en";
+type CanonicalPromptControlManifest = {
+  websiteSurfaceMode?: WebsiteSurfaceMode;
+  localeConfig?: {
+    mode?: "single" | "bilingual" | "multilingual";
+    defaultLocale?: string;
+    locales?: string[];
+  };
+  discoveryBrief?: Partial<WebsiteDiscoveryBrief>;
+  routes?: string[];
+  navLabels?: string[];
+  files?: string[];
+};
 
 const CHAT_COPY: Record<ChatDisplayLocale, Record<string, string>> = {
   en: {
@@ -117,6 +131,7 @@ const CHAT_COPY: Record<ChatDisplayLocale, Record<string, string>> = {
     clarificationInfo: "Requirement clarification is in progress. Add more details or confirm generation to start a task.",
     acceptedGenerate: "Generation task accepted. Queued for background worker execution.",
     acceptedRefine: "Refine task accepted. Will adjust the latest version in background.",
+    acceptedTranslate: "Translation task accepted. Locale catalogs will be generated from the latest baseline.",
     acceptedDeploy: "Deploy task accepted. Queued for background deployment.",
     queuedStageSuffix: "task queued. Waiting for background worker...",
     syncDisabled: "Synchronous generation path is disabled. Use async task mode.",
@@ -149,6 +164,7 @@ const CHAT_COPY: Record<ChatDisplayLocale, Record<string, string>> = {
     clarificationInfo: "\u5df2\u8fdb\u5165\u9700\u6c42\u68b3\u7406\u9636\u6bb5\u3002\u4f60\u53ef\u4ee5\u7ee7\u7eed\u8865\u5145\u9700\u6c42\uff0c\u6216\u786e\u8ba4\u540e\u5f00\u59cb\u751f\u6210\u3002",
     acceptedGenerate: "\u751f\u6210\u4efb\u52a1\u5df2\u63a5\u6536\uff0c\u6b63\u5728\u6392\u961f\u7b49\u5f85\u540e\u53f0\u6267\u884c\u3002",
     acceptedRefine: "\u4fee\u6539\u4efb\u52a1\u5df2\u63a5\u6536\uff0c\u5c06\u5728\u540e\u53f0\u57fa\u4e8e\u6700\u65b0\u7248\u672c\u8fdb\u884c\u8c03\u6574\u3002",
+    acceptedTranslate: "\u7ffb\u8bd1\u4efb\u52a1\u5df2\u63a5\u6536\uff0c\u5c06\u57fa\u4e8e\u6700\u65b0\u7248\u672c\u751f\u6210 locale \u8d44\u6e90\u3002",
     acceptedDeploy: "\u90e8\u7f72\u4efb\u52a1\u5df2\u63a5\u6536\uff0c\u6b63\u5728\u6392\u961f\u7b49\u5f85\u53d1\u5e03\u3002",
     queuedStageSuffix: "\u4efb\u52a1\u5df2\u6392\u961f\uff0c\u7b49\u5f85\u540e\u53f0\u6267\u884c\u5668\u3002",
     syncDisabled: "\u540c\u6b65\u751f\u6210\u8def\u5f84\u5df2\u7981\u7528\uff0c\u8bf7\u4f7f\u7528\u5f02\u6b65\u4efb\u52a1\u6a21\u5f0f\u3002",
@@ -187,13 +203,15 @@ function localizedClarificationQuestion(params: {
   return "\u9700\u6c42\u4ecd\u9700\u8981\u8865\u5145\u3002\u4f60\u53ef\u4ee5\u7ee7\u7eed\u63d0\u4f9b\u7ec6\u8282\uff0c\u6216\u57fa\u4e8e\u5f53\u524d\u4fe1\u606f\u786e\u8ba4\u751f\u6210\u3002";
 }
 
-function localizedQueuedStageMessage(locale: ChatDisplayLocale, mode: "generate" | "refine" | "deploy"): string {
+function localizedQueuedStageMessage(locale: ChatDisplayLocale, mode: "generate" | "refine" | "translate" | "deploy"): string {
   if (locale === "zh") {
     const modeLabel =
       mode === "generate"
         ? "\u751f\u6210"
         : mode === "refine"
           ? "\u4fee\u6539"
+          : mode === "translate"
+            ? "\u7ffb\u8bd1"
           : "\u90e8\u7f72";
     return `${modeLabel}${chatCopy(locale, "queuedStageSuffix")}`;
   }
@@ -243,6 +261,10 @@ function buildWorkflowContextFromLongTermPreferences(
   if (!preferences) return {};
   return {
     ...(preferences.preferredLocale ? { preferredLocale: preferences.preferredLocale } : {}),
+    ...(Array.isArray(preferences.supportedLocales) && preferences.supportedLocales.length > 0
+      ? { supportedLocales: preferences.supportedLocales }
+      : {}),
+    ...(preferences.defaultLocale ? { defaultLocale: preferences.defaultLocale } : {}),
     ...(preferences.primaryVisualDirection ? { primaryVisualDirection: preferences.primaryVisualDirection } : {}),
     ...(Array.isArray(preferences.secondaryVisualTags) && preferences.secondaryVisualTags.length > 0
       ? { secondaryVisualTags: preferences.secondaryVisualTags }
@@ -293,6 +315,23 @@ function mergeRequirementSpecWithMemory(params: {
       : shortTermSpec?.visualStyle?.length
         ? shortTermSpec.visualStyle
         : mergedSecondaryVisualTags;
+  const localeLockedByCurrentRequirement = hasText(requirementSpec.locale);
+  const localeNormalized = String(requirementSpec.locale || "").trim().toLowerCase();
+  const mergedSupportedLocales =
+    localeLockedByCurrentRequirement && (localeNormalized === "bilingual" || localeNormalized === "zh-cn" || localeNormalized === "en")
+      ? requirementSpec.supportedLocales
+      : requirementSpec.supportedLocales?.length
+        ? requirementSpec.supportedLocales
+        : shortTermSpec?.supportedLocales?.length
+          ? shortTermSpec.supportedLocales
+          : longTerm?.supportedLocales;
+  const mergedDefaultLocale =
+    localeLockedByCurrentRequirement && (localeNormalized === "bilingual" || localeNormalized === "zh-cn" || localeNormalized === "en")
+      ? requirementSpec.defaultLocale || mergedSupportedLocales?.[0]
+      : requirementSpec.defaultLocale ||
+        shortTermSpec?.defaultLocale ||
+        longTerm?.defaultLocale ||
+        mergedSupportedLocales?.[0];
   const deploymentProvider =
     requirementSpec.deployment?.provider || shortTermSpec?.deployment?.provider || longTerm?.deploymentProvider;
   const deploymentDomain =
@@ -314,6 +353,8 @@ function mergeRequirementSpecWithMemory(params: {
         : hasText(longTerm?.preferredLocale)
           ? { locale: longTerm?.preferredLocale }
           : {}),
+    ...(mergedSupportedLocales?.length ? { supportedLocales: mergedSupportedLocales } : {}),
+    ...(mergedDefaultLocale ? { defaultLocale: mergedDefaultLocale } : {}),
     ...(hasText(requirementSpec.tone)
       ? {}
       : hasText(shortTermSpec?.tone)
@@ -361,6 +402,12 @@ function buildExplicitLongTermPreferences(params: {
   if (formValues?.language && params.requirementSpec.locale) {
     next.preferredLocale = params.requirementSpec.locale;
   }
+  if (Array.isArray(formValues?.supportedLocales) && formValues.supportedLocales.length > 0) {
+    next.supportedLocales = params.requirementSpec.supportedLocales || formValues.supportedLocales;
+  }
+  if (formValues?.defaultLocale && params.requirementSpec.defaultLocale) {
+    next.defaultLocale = params.requirementSpec.defaultLocale;
+  }
   if (formValues?.primaryVisualDirection && params.requirementSpec.primaryVisualDirection) {
     next.primaryVisualDirection = params.requirementSpec.primaryVisualDirection;
   }
@@ -374,14 +421,23 @@ function buildExplicitLongTermPreferences(params: {
     if (params.requirementSpec.deployment.provider) next.deploymentProvider = params.requirementSpec.deployment.provider;
     if (params.requirementSpec.deployment.domain) next.deploymentDomain = params.requirementSpec.deployment.domain;
   }
-  if (!next.preferredLocale && !next.primaryVisualDirection && !next.secondaryVisualTags?.length && !next.targetAudience?.length && !next.deploymentProvider && !next.deploymentDomain) {
+  if (
+    !next.preferredLocale &&
+    !next.supportedLocales?.length &&
+    !next.defaultLocale &&
+    !next.primaryVisualDirection &&
+    !next.secondaryVisualTags?.length &&
+    !next.targetAudience?.length &&
+    !next.deploymentProvider &&
+    !next.deploymentDomain
+  ) {
     return undefined;
   }
   return next;
 }
 
 function buildRevisionPointer(params: {
-  executionMode: "generate" | "refine" | "deploy";
+  executionMode: "generate" | "refine" | "translate" | "deploy";
   requirementRevision: number;
   existingWorkflow: Record<string, unknown>;
   shortTermMemory?: ChatShortTermMemorySnapshot;
@@ -966,6 +1022,110 @@ function hasTrustedConfirmedPromptDraftMetadata(params: {
   return confirmedPrompt === storedPrompt || normalizedDraftText === storedPrompt;
 }
 
+function uniqueStringList(values: unknown[]): string[] {
+  return Array.from(
+    new Set(
+      values
+        .map((value) => String(value || "").trim())
+        .filter(Boolean),
+    ),
+  );
+}
+
+function parseCanonicalPromptControlManifest(text: string): CanonicalPromptControlManifest | undefined {
+  const normalized = String(text || "").trim();
+  if (!normalized || !looksLikeCanonicalWebsitePrompt(normalized)) return undefined;
+  const matches = Array.from(
+    normalized.matchAll(
+      /^###\s+Prompt Control Manifest(?:\s*\(Machine Readable\))?[^\n]*\s*(?:\r?\n)+```(?:json)?\s*([\s\S]*?)```/gim,
+    ),
+  );
+  const rawJson = String(matches.at(-1)?.[1] || "").trim();
+  if (!rawJson) return undefined;
+  try {
+    const parsed = JSON.parse(rawJson) as CanonicalPromptControlManifest;
+    return parsed && typeof parsed === "object" ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function buildDiscoveryBriefFromConfirmedManifest(params: {
+  manifest?: CanonicalPromptControlManifest;
+  requirementSpec: ReturnType<typeof buildRequirementSpec>;
+  requirementText: string;
+}): WebsiteDiscoveryBrief | undefined {
+  const manifest = params.manifest;
+  if (!manifest) return undefined;
+  const manifestBrief =
+    manifest.discoveryBrief && typeof manifest.discoveryBrief === "object"
+      ? (manifest.discoveryBrief as Partial<WebsiteDiscoveryBrief>)
+      : undefined;
+  const surfaceMode =
+    inferWebsiteSurfaceModeFromSkillId(String(manifest.websiteSurfaceMode || "")) ||
+    inferWebsiteSurfaceModeFromSkillId(String(manifestBrief?.surfaceMode || ""));
+  const routes = uniqueStringList([...(manifestBrief?.routes || []), ...(manifest.routes || [])]);
+  const localeMode = (() => {
+    const briefLocale = String(manifestBrief?.localeMode || "").trim();
+    if (briefLocale === "en" || briefLocale === "zh-CN" || briefLocale === "bilingual" || briefLocale === "multilingual") {
+      return briefLocale;
+    }
+    const configMode = String(manifest.localeConfig?.mode || "").trim();
+    if (configMode === "bilingual" || configMode === "multilingual") return configMode;
+    if (params.requirementSpec.locale === "en" || params.requirementSpec.locale === "zh-CN" || params.requirementSpec.locale === "bilingual") {
+      return params.requirementSpec.locale;
+    }
+    return "en";
+  })();
+  const supportedLocales = uniqueStringList([
+    ...(((manifestBrief?.supportedLocales || []) as string[])),
+    ...((manifest.localeConfig?.locales || []) as string[]),
+    ...((params.requirementSpec.supportedLocales || []) as string[]),
+  ]);
+  const defaultLocale =
+    String(manifestBrief?.defaultLocale || manifest.localeConfig?.defaultLocale || params.requirementSpec.defaultLocale || "").trim() ||
+    supportedLocales[0];
+  if (!surfaceMode && routes.length === 0 && !supportedLocales.length && !defaultLocale) return undefined;
+  const brief = {
+    surfaceMode:
+      surfaceMode ||
+      selectWebsiteGenerationTypeSkill({
+        requirementText: params.requirementText,
+        siteType: params.requirementSpec.siteType,
+        routes,
+        targetAudience: params.requirementSpec.targetAudience,
+        primaryGoal: params.requirementSpec.primaryGoal,
+      }).surfaceMode,
+    audience: Array.isArray(manifestBrief?.audience)
+      ? manifestBrief.audience.map((item) => String(item || "").trim()).filter(Boolean)
+      : [],
+    primaryGoal: String(manifestBrief?.primaryGoal || "").trim(),
+    routes,
+    sourcePriority:
+      manifestBrief?.sourcePriority === "uploaded_files" ||
+      manifestBrief?.sourcePriority === "same_domain" ||
+      manifestBrief?.sourcePriority === "web_research" ||
+      manifestBrief?.sourcePriority === "mixed"
+        ? manifestBrief.sourcePriority
+        : "user",
+    localeMode,
+    supportedLocales: supportedLocales.length > 0 ? supportedLocales : undefined,
+    defaultLocale: defaultLocale || undefined,
+    visualDirectionId:
+      String(manifestBrief?.visualDirectionId || params.requirementSpec.primaryVisualDirection || "prompt-adaptive").trim() ||
+      "prompt-adaptive",
+    designSystemId: String(manifestBrief?.designSystemId || "").trim() || undefined,
+    designSystemName: String(manifestBrief?.designSystemName || "").trim() || undefined,
+    immutableConstraints: Array.isArray(manifestBrief?.immutableConstraints)
+      ? manifestBrief.immutableConstraints.map((item) => String(item || "").trim()).filter(Boolean)
+      : [],
+  } satisfies Omit<WebsiteDiscoveryBrief, "confirmationStatus" | "missingFields" | "assumptions">;
+  return {
+    ...brief,
+    ...assessWebsiteDiscoveryBrief(brief),
+  };
+}
+
 function shouldRebuildConfirmedPromptForCanonicalExecution(params: {
   explicitConfirmedPrompt?: boolean;
   confirmedPrompt?: string | null;
@@ -1180,11 +1340,14 @@ function taskExecutionMode(task: Awaited<ReturnType<typeof getLatestChatTaskForC
     (task?.result?.internal?.sessionState as any)?.workflow_context ||
     {}) as Record<string, unknown>;
   const explicit = String(workflow.executionMode || workflow.intent || task?.result?.progress?.nextStep || "").trim().toLowerCase();
-  if (explicit === "deploy" || explicit === "generate" || explicit === "refine") return explicit;
+  if (explicit === "deploy" || explicit === "generate" || explicit === "refine" || explicit === "translate") {
+    return explicit;
+  }
   const phase = String(task?.result?.phase || "").trim().toLowerCase();
   if (phase === "deploy" || phase === "generate" || phase === "refine") return phase;
   const stage = String(task?.result?.progress?.stage || "").trim().toLowerCase();
   if (stage.includes("deploy")) return "deploy";
+  if (stage.includes("translat")) return "translate";
   if (stage.includes("refine")) return "refine";
   return "";
 }
@@ -1546,11 +1709,6 @@ export async function POST(req: Request) {
   const confirmedPromptDraftMetadata = confirmedPrompt
     ? findConfirmedPromptDraftMetadata(timelineMessages, confirmedPrompt)
     : undefined;
-  const confirmedPromptControlManifest =
-    (confirmedPromptDraftMetadata?.promptControlManifest &&
-    typeof confirmedPromptDraftMetadata.promptControlManifest === "object"
-      ? confirmedPromptDraftMetadata.promptControlManifest
-      : undefined) || (previousState.workflow_context as any)?.promptControlManifest;
   const confirmedPromptDraftText =
     confirmedPrompt && typeof (confirmedPromptDraftMetadata as any)?.canonicalPrompt === "string"
       ? String((confirmedPromptDraftMetadata as any)?.canonicalPrompt || "").trim()
@@ -1593,6 +1751,30 @@ export async function POST(req: Request) {
     shortTermMemory,
     longTermPreferences,
   });
+  const confirmedPromptManifestFromPrompt = confirmedPrompt
+    ? parseCanonicalPromptControlManifest(confirmedPromptDraftText || String(confirmedPrompt || ""))
+    : undefined;
+  const confirmedPromptControlManifest =
+    confirmedPromptManifestFromPrompt ||
+    ((confirmedPromptDraftMetadata?.promptControlManifest &&
+      typeof confirmedPromptDraftMetadata.promptControlManifest === "object"
+      ? confirmedPromptDraftMetadata.promptControlManifest
+      : undefined) as CanonicalPromptControlManifest | undefined) ||
+    ((previousState.workflow_context as any)?.promptControlManifest as CanonicalPromptControlManifest | undefined);
+  const confirmedPromptDiscoveryBrief = confirmedPrompt
+    ? buildDiscoveryBriefFromConfirmedManifest({
+        manifest: confirmedPromptControlManifest,
+        requirementSpec,
+        requirementText: confirmedPromptDraftText || String(confirmedPrompt || ""),
+      })
+    : undefined;
+  const confirmedPromptDiscoveryBriefValue = confirmedPromptDiscoveryBrief as WebsiteDiscoveryBrief | undefined;
+  const confirmedPromptDiscoverySurfaceMode = inferWebsiteSurfaceModeFromSkillId(
+    String(confirmedPromptDiscoveryBriefValue?.surfaceMode || ""),
+  );
+  const confirmedPromptDiscoveryLocaleMode = confirmedPromptDiscoveryBriefValue?.localeMode;
+  const confirmedPromptDiscoverySupportedLocales = confirmedPromptDiscoveryBriefValue?.supportedLocales;
+  const confirmedPromptDiscoveryDefaultLocale = confirmedPromptDiscoveryBriefValue?.defaultLocale;
   const slots = hydrateRequirementSlotsFromSpec(buildRequirementSlots(effectiveRequirementText), requirementSpec);
   const requiredSlotValidation = validateRequiredRequirementSlots(slots);
   const requirementPatchPlan = buildRequirementPatchPlan(currentUserRequirementText, aggregated.revision);
@@ -1663,6 +1845,8 @@ export async function POST(req: Request) {
     executionMode:
       decision.intent === "deploy"
         ? "deploy"
+        : decision.intent === "translate_preview" || decision.intent === "translate_deployed"
+          ? "translate"
         : decision.intent === "refine_preview" || decision.intent === "refine_deployed"
           ? "refine"
           : "generate",
@@ -1853,23 +2037,56 @@ export async function POST(req: Request) {
         knowledgeProfile: undefined,
         promptControlManifest: confirmedPromptControlManifest,
         websiteSurfaceMode:
+          inferWebsiteSurfaceModeFromSkillId(String(confirmedPromptControlManifest?.websiteSurfaceMode || "")) ||
+          confirmedPromptDiscoverySurfaceMode ||
+          selectWebsiteGenerationTypeSkill({
+            requirementText: confirmedPromptDraftText || String(confirmedPrompt || "") || effectiveRequirementText,
+            siteType: requirementSpec.siteType,
+            routes: confirmedPromptControlManifest?.routes || [],
+            targetAudience: requirementSpec.targetAudience,
+            primaryGoal: requirementSpec.primaryGoal,
+          }).surfaceMode ||
           inferWebsiteSurfaceModeFromSkillId(String((existingWorkflow as any)?.websiteSurfaceMode || "")) ||
           inferWebsiteSurfaceModeFromSkillId(String((existingWorkflow as any)?.websiteTypeSkillId || "")) ||
           "portfolio-blog-site",
         discoveryBrief:
+          confirmedPromptDiscoveryBrief ||
           (existingWorkflow as any)?.websiteDiscoveryBrief ||
           (() => {
             const brief = {
               surfaceMode:
+                inferWebsiteSurfaceModeFromSkillId(String(confirmedPromptControlManifest?.websiteSurfaceMode || "")) ||
+                confirmedPromptDiscoverySurfaceMode ||
+                selectWebsiteGenerationTypeSkill({
+                  requirementText: confirmedPromptDraftText || String(confirmedPrompt || "") || effectiveRequirementText,
+                  siteType: requirementSpec.siteType,
+                  routes: confirmedPromptControlManifest?.routes || [],
+                  targetAudience: requirementSpec.targetAudience,
+                  primaryGoal: requirementSpec.primaryGoal,
+                }).surfaceMode ||
                 inferWebsiteSurfaceModeFromSkillId(String((existingWorkflow as any)?.websiteSurfaceMode || "")) ||
                 "portfolio-blog-site",
               audience: [],
               primaryGoal: "",
               routes: confirmedPromptControlManifest?.routes || [],
               sourcePriority: "user" as const,
-              localeMode: requirementSpec.locale || "en",
+              localeMode:
+                confirmedPromptDiscoveryLocaleMode ||
+                requirementSpec.locale ||
+                "en",
+              supportedLocales:
+                confirmedPromptDiscoverySupportedLocales ||
+                requirementSpec.supportedLocales ||
+                [],
+              defaultLocale:
+                confirmedPromptDiscoveryDefaultLocale ||
+                requirementSpec.defaultLocale,
               visualDirectionId: requirementSpec.primaryVisualDirection || "prompt-adaptive",
-              designSystemId: undefined,
+              designSystemId:
+                String((requirementSpec.designSystemInspiration as any)?.id || "") ||
+                String((requirementSpec.designSystemInspiration as any)?.slug || "") ||
+                undefined,
+              designSystemName: String((requirementSpec.designSystemInspiration as any)?.title || "") || undefined,
               immutableConstraints: [],
             };
             return {
@@ -1901,8 +2118,10 @@ export async function POST(req: Request) {
       })
     : undefined;
   const resolvedWebsiteSurfaceMode =
-    selectedWebsiteType?.surfaceMode ||
+    inferWebsiteSurfaceModeFromSkillId(String(promptControlManifest?.websiteSurfaceMode || "")) ||
     promptDraftResult.websiteSurfaceMode ||
+    selectedWebsiteType?.surfaceMode ||
+    inferWebsiteSurfaceModeFromSkillId(String((promptDraftResult.discoveryBrief as any)?.surfaceMode || "")) ||
     inferWebsiteSurfaceModeFromSkillId(String((previousState.workflow_context as any)?.websiteSurfaceMode || ""));
   const resolvedWebsiteDiscoveryBrief =
     promptDraftResult.discoveryBrief && resolvedWebsiteSurfaceMode
@@ -1921,6 +2140,12 @@ export async function POST(req: Request) {
           };
         })()
       : promptDraftResult.discoveryBrief || (previousState.workflow_context as any)?.websiteDiscoveryBrief;
+  const resolvedSupportedLocales =
+    resolvedWebsiteDiscoveryBrief?.supportedLocales?.length
+      ? resolvedWebsiteDiscoveryBrief.supportedLocales
+      : requirementSpec.supportedLocales || [];
+  const resolvedDefaultLocale =
+    resolvedWebsiteDiscoveryBrief?.defaultLocale || requirementSpec.defaultLocale;
   const requiresPromptDraftConfirmation =
     isWebsiteSkill(requestedSkillId) &&
     stage === "drafting" &&
@@ -2136,8 +2361,11 @@ export async function POST(req: Request) {
 
   const deployRequested = deployIntentRequested && hasCompletedGenerationBaseline;
   const refineRequested = decision.intent === "refine_preview" || decision.intent === "refine_deployed";
-  const executionMode: "generate" | "refine" | "deploy" = deployRequested
+  const translateRequested = decision.intent === "translate_preview" || decision.intent === "translate_deployed";
+  const executionMode: "generate" | "refine" | "translate" | "deploy" = deployRequested
     ? "deploy"
+    : translateRequested
+      ? "translate"
     : refineRequested
       ? "refine"
       : "generate";
@@ -2205,6 +2433,7 @@ export async function POST(req: Request) {
       refineScope: decision.refineScope,
       deployRequested,
       refineRequested,
+      translateRequested,
       blogContentConfirmed:
         blogContentDeployConfirmed || (deployRequested ? Boolean((previousState.workflow_context as any)?.blogContentConfirmed) : false),
       contentPreviewConfirmed:
@@ -2229,6 +2458,8 @@ export async function POST(req: Request) {
       deploySourceTaskId: String(deployableTask?.id || latestTask?.id || (previousState.workflow_context as any)?.deploySourceTaskId || ""),
       refineSourceProjectPath: checkpointProjectPath || String((previousState.workflow_context as any)?.deploySourceProjectPath || ""),
       refineSourceTaskId: String(deployableTask?.id || latestTask?.id || (previousState.workflow_context as any)?.deploySourceTaskId || ""),
+      translationSourceProjectPath: checkpointProjectPath || String((previousState.workflow_context as any)?.deploySourceProjectPath || ""),
+      translationSourceTaskId: String(deployableTask?.id || latestTask?.id || (previousState.workflow_context as any)?.deploySourceTaskId || ""),
       checkpointProjectPath,
       siteRevisionId: revisionPointer.revisionId,
       baseSiteRevisionId: revisionPointer.baseRevisionId,
@@ -2236,6 +2467,9 @@ export async function POST(req: Request) {
       requirementCompletionPercent: decision.completionPercent,
       requirementSlots: slots,
       requirementSpec,
+      supportedLocales: resolvedSupportedLocales,
+      defaultLocale: resolvedDefaultLocale,
+      translationTargetLocales: resolvedSupportedLocales,
       websiteSurfaceMode: resolvedWebsiteSurfaceMode,
       websiteTypeSkillId:
         selectedWebsiteType?.skillId ||
@@ -2258,6 +2492,7 @@ export async function POST(req: Request) {
         String((requirementSpec.designSystemInspiration as any)?.id || "") ||
         String((previousState.workflow_context as any)?.designSystemId || ""),
       designSystemName:
+        String((promptDraftResult.discoveryBrief as any)?.designSystemName || "") ||
         String((requirementSpec.designSystemInspiration as any)?.title || "") ||
         String((previousState.workflow_context as any)?.designSystemName || ""),
       latestUserText: currentUserRequirementText,
@@ -2265,6 +2500,7 @@ export async function POST(req: Request) {
       referencedAssets,
       assumedDefaults: decision.assumedDefaults,
       displayLocale,
+      ...(decision.workflowHints && typeof decision.workflowHints === "object" ? decision.workflowHints : {}),
     } as any,
     messages: [...(previousState.messages || []), new HumanMessage({ content: runtimeUserText })],
   };
@@ -2273,9 +2509,10 @@ export async function POST(req: Request) {
     return errorStreamResponse(chatCopy(displayLocale, "syncDisabled"), 409);
   }
 
-  const acceptedMessageByMode: Record<"generate" | "refine" | "deploy", string> = {
+  const acceptedMessageByMode: Record<"generate" | "refine" | "translate" | "deploy", string> = {
     generate: chatCopy(displayLocale, "acceptedGenerate"),
     refine: chatCopy(displayLocale, "acceptedRefine"),
+    translate: chatCopy(displayLocale, "acceptedTranslate"),
     deploy: chatCopy(displayLocale, "acceptedDeploy"),
   };
   const acceptedMessage = acceptedMessageByMode[executionMode];

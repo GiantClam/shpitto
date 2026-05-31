@@ -38,6 +38,49 @@ const INVENTED_METRIC_CONTEXT_PATTERN =
 
 const HEX_COLOR_PATTERN = /#[0-9a-fA-F]{3,8}\b/g;
 const GENERIC_CTA_LABEL_PATTERN = /^(?:learn more|get started|read more|click here|submit|more|start now)$/i;
+const GENERIC_SERVICE_HEADING_PATTERN =
+  /^(?:our\s+)?(?:services?|solutions?|features?|benefits?|offerings?|capabilities?|what\s+we\s+do|why\s+choose\s+us)$/i;
+const GENERIC_PROOF_PATTERN =
+  /\b(?:trusted by|trusted partner|industry[-\s]?leading|world[-\s]?class|best[-\s]?in[-\s]?class|leading teams|global leaders|innovative solutions|seamless experience|future[-\s]?ready)\b/i;
+const ABSTRACT_FILLER_TOKEN_PATTERN =
+  /\b(?:solutions?|innovation|innovative|excellence|seamless|powerful|future[-\s]?ready|transform|unlock|elevate|empower|optimize|streamline|robust|cutting[-\s]?edge)\b/i;
+const CONCRETE_NOUN_TOKEN_PATTERN =
+  /\b(?:[A-Z][A-Za-z0-9]+(?:\s+[A-Z][A-Za-z0-9]+){1,2}|[a-z0-9]+(?:[-_][a-z0-9]+)+|api|docs?|catalog|products?|services?|cases?|portfolio|blog|article|research|standards?|certification|supply|manufactur(?:er|ing)|textile|procurement|operations?|workflow|platform|dashboard|analytics?|security|compliance|customer|buyers?|developer|integration|deployment|inquiry|consultation|pricing|team|founder|operator|editorial|source|domain|route)\b/g;
+const GENERIC_SPECIFICITY_STOP_TOKENS = new Set([
+  "approach",
+  "capabilities",
+  "collaboration",
+  "delivery",
+  "engagement",
+  "every",
+  "excellence",
+  "experience",
+  "future",
+  "future-ready",
+  "goals",
+  "groups",
+  "innovation",
+  "innovative",
+  "journey",
+  "modern",
+  "momentum",
+  "organization",
+  "organizations",
+  "outcomes",
+  "performance",
+  "possibilities",
+  "progress",
+  "results",
+  "robust",
+  "seamless",
+  "solutions",
+  "stakeholder",
+  "stakeholders",
+  "support",
+  "teams",
+  "transform",
+  "value",
+]);
 const LEAD_CLASS_PATTERN = /\b(?:hero-lead|section-lead|lead)\b/i;
 
 function stripTags(html: string): string {
@@ -113,6 +156,12 @@ function extractAnchorTexts(source: string): string[] {
 function extractActionLabels(source: string): string[] {
   return Array.from(String(source || "").matchAll(/<(a|button)\b[^>]*>([\s\S]*?)<\/\1>/gi))
     .map((match) => stripTags(String(match[2] || "")))
+    .filter(Boolean);
+}
+
+function extractHeadingTexts(source: string): string[] {
+  return Array.from(String(source || "").matchAll(/<h[1-3]\b[^>]*>([\s\S]*?)<\/h[1-3]>/gi))
+    .map((match) => stripTags(String(match[1] || "")))
     .filter(Boolean);
 }
 
@@ -193,6 +242,32 @@ function hasInventedMetricClaim(sentence: string): boolean {
   }
 
   return /\bhours saved\b/i.test(text) || /\bconversion lift\b/i.test(text) || (/\bgrowth\b/i.test(text) && /(?:claim|boost|drive|increase|improve|unlock|deliver|generate|accelerate)/i.test(text));
+}
+
+function routeContextText(context: WebsiteRouteLintContext): string {
+  return [context.route, context.navLabel, context.pagePurpose]
+    .map((part) => String(part || "").trim())
+    .filter(Boolean)
+    .join(" ");
+}
+
+function concreteNounCount(text: string): number {
+  const tokens = new Set<string>();
+  for (const match of String(text || "").matchAll(CONCRETE_NOUN_TOKEN_PATTERN)) {
+    const token = String(match[0] || "").toLowerCase();
+    if (token.length >= 3 && !GENERIC_SPECIFICITY_STOP_TOKENS.has(token)) tokens.add(token);
+  }
+  return tokens.size;
+}
+
+function contextTokenOverlapCount(context: string, body: string): number {
+  const bodyTokens = new Set(normalizeLabelTokens(body).filter((token) => token.length >= 4 && !GENERIC_SPECIFICITY_STOP_TOKENS.has(token)));
+  const contextTokens = new Set(normalizeLabelTokens(context).filter((token) => token.length >= 4 && !GENERIC_SPECIFICITY_STOP_TOKENS.has(token)));
+  let count = 0;
+  for (const token of contextTokens) {
+    if (bodyTokens.has(token)) count += 1;
+  }
+  return count;
 }
 
 export function lintGeneratedWebsiteHtml(html: string): AntiSlopLintResult {
@@ -281,6 +356,40 @@ export function lintGeneratedWebsiteHtml(html: string): AntiSlopLintResult {
       code: "overlong-lead-copy",
       severity: "warning",
       message: "Lead copy is too long; keep hero and section leads short enough to scan before deeper body content.",
+    });
+  }
+
+  if (extractHeadingTexts(source).some((heading) => GENERIC_SERVICE_HEADING_PATTERN.test(heading))) {
+    pushIssue(issues, {
+      code: "generic-service-heading",
+      severity: "warning",
+      message: "A major heading is a generic service/feature label; replace it with subject-specific route content.",
+    });
+  }
+
+  if (GENERIC_PROOF_PATTERN.test(text) && !hasSourceContext(text)) {
+    pushIssue(issues, {
+      code: "generic-proof-copy",
+      severity: "warning",
+      message: "Generic trust/proof language appears without source-backed evidence; make proof specific or remove it.",
+    });
+  }
+
+  const actionLabels = extractActionLabels(source);
+  const genericActionCount = actionLabels.filter((label) => GENERIC_CTA_LABEL_PATTERN.test(label)).length;
+  if (actionLabels.length >= 3 && genericActionCount >= Math.ceil(actionLabels.length / 2)) {
+    pushIssue(issues, {
+      code: "generic-cta-dominance",
+      severity: "warning",
+      message: "Generic CTA labels dominate the page action system; make actions route-specific.",
+    });
+  }
+
+  if (text.length >= 500 && concreteNounCount(text) < 8 && ABSTRACT_FILLER_TOKEN_PATTERN.test(text)) {
+    pushIssue(issues, {
+      code: "low-specificity-copy",
+      severity: "warning",
+      message: "The page has enough words but too few concrete nouns; add brand, product, audience, source, or route-specific terms.",
     });
   }
 
@@ -434,6 +543,7 @@ export function lintGeneratedWebsiteRouteHtml(html: string, context: WebsiteRout
   const title = extractTagText(source, "title");
   const h1 = extractTagText(source, "h1");
   const body = `${title} ${h1} ${text}`.trim();
+  const contextText = routeContextText(context);
   const issues: AntiSlopIssue[] = [];
 
   if (route === "/") {
@@ -448,8 +558,23 @@ export function lintGeneratedWebsiteRouteHtml(html: string, context: WebsiteRout
     const blockedRoleTerms = [/\u8d44\u6599\u4e0b\u8f7d/, /\u8ba4\u8bc1/, /\u4e0b\u8f7d/, /download/i, /certification/i, /login/i, /register/i];
     const blockedLeadTerms = [/\u8d44\u6599\u4e0b\u8f7d/, /\u8ba4\u8bc1/, /\u4e0b\u8f7d/, /download/i, /certification/i, /login/i, /register/i];
     const leadHomeSignals = [/CASUX/i, /\u9996\u9875/, /Home/i, /homepage/i, /\u54c1\u724c/, /\u603b\u89c8/, /\u6807\u51c6\u4f53\u7cfb/, /\u4e13\u4e1a\u673a\u6784/, /\u7edf\u4e00\u5165\u53e3/];
+    const blockedOpeningIdentityTerms = [
+      /\u652f\u6301\u5165\u53e3/,
+      /\u8054\u7cfb\u5165\u53e3/,
+      /\u54a8\u8be2\u5165\u53e3/,
+      /\u4fe1\u606f\u5165\u53e3/,
+      /\u9879\u76ee\u652f\u6301/,
+      /\u673a\u6784\u652f\u6301/,
+      /support entry/i,
+      /consultation entry/i,
+      /contact entry/i,
+      /information entry/i,
+      /project support/i,
+      /institutional support/i,
+    ];
     if (
       blockedRoleTerms.some((pattern) => pattern.test(homepageRoleText)) ||
+      blockedOpeningIdentityTerms.some((pattern) => pattern.test(homepageRoleText)) ||
       (blockedLeadTerms.some((pattern) => pattern.test(homepageLeadText)) &&
         !leadHomeSignals.some((pattern) => pattern.test(homepageLeadText)))
     ) {
@@ -458,7 +583,7 @@ export function lintGeneratedWebsiteRouteHtml(html: string, context: WebsiteRout
         createIssue(
           "root-route-semantic-mismatch",
           "error",
-          "Homepage route / is using downstream download or certification semantics; reframe it as the site home entry.",
+          "Homepage route / is using downstream download or certification semantics; reframe it as the official homepage and institutional overview.",
         ),
       );
     }
@@ -485,6 +610,21 @@ export function lintGeneratedWebsiteRouteHtml(html: string, context: WebsiteRout
           "blog-route-semantic-mismatch",
           "warning",
           "Blog route /blog should read like a native content surface, not a detached product page.",
+        ),
+      );
+    }
+  }
+
+  if (contextText && text.length >= 600) {
+    const bodySpecificity = concreteNounCount(body);
+    const contextOverlap = contextTokenOverlapCount(contextText, body);
+    if ((bodySpecificity < 6 || contextOverlap < 2) && ABSTRACT_FILLER_TOKEN_PATTERN.test(body)) {
+      pushIssue(
+        issues,
+        createIssue(
+          "route-context-specificity-missing",
+          "warning",
+          "Route copy does not carry enough concrete nouns from the route context; add route-specific brand, product, audience, source, or content terms.",
         ),
       );
     }
@@ -637,7 +777,7 @@ export function renderAntiSlopFeedback(result: AntiSlopLintResult): string {
   if (result.issues.length === 0) return "";
   const fixHints: Record<string, string> = {
     "root-route-semantic-mismatch":
-      "Rewrite route / so title, meta description, H1, and the first lead paragraph present the site home entry; move download, certification, query, and login wording into secondary navigation/cards only.",
+      "Rewrite route / so title, meta description, H1, and the first lead paragraph present the official homepage and institutional overview; move download, certification, query, login, support-entry, consultation-entry, and contact-intake wording into secondary navigation/cards only.",
     "root-route-home-signal-missing":
       "Add an explicit home signal such as Home, Homepage, 濠碘槅鍋撶徊楣冩偋閻樿违? 濠电偞鍨堕幑浣哥暦閻㈠憡鍋? or 缂傚倸鍊烽懗鍫曞窗瀹ュ洨鍗氶柟缁㈠枛缁€鍌炴煏婢跺牆鍔氱紓?to the title, H1, or lead copy.",
     "weak-responsive-css":
@@ -672,6 +812,16 @@ export function renderAntiSlopFeedback(result: AntiSlopLintResult): string {
       "Move repeated raw colors into :root tokens and reference them with var(...) or color-mix(...) so the visual system stays coherent.",
     "generic-cta-label":
       "Replace generic CTA labels with concrete actions such as Explore documentation areas, Review standards, Request demo, or Open the guide.",
+    "generic-cta-dominance":
+      "Replace repeated generic CTA labels with route-specific next actions tied to the page archetype, such as Compare product families, Review implementation evidence, Start a sourcing inquiry, or Read the editorial archive.",
+    "generic-service-heading":
+      "Replace generic headings such as Our Services, Solutions, or Features with subject-specific section titles that name the offer, audience, product family, process, or evidence type.",
+    "generic-proof-copy":
+      "Replace anonymous trust language with source-backed proof, named evidence categories, concrete operating details, or remove the claim if no evidence exists.",
+    "low-specificity-copy":
+      "Add concrete nouns from the confirmed brief, source material, route role, brand, product, audience, or domain context; reduce abstract filler such as innovation, seamless, powerful, and future-ready.",
+    "route-context-specificity-missing":
+      "Rewrite the route opening and section copy so it uses concrete route-context nouns from the nav label, route purpose, source brief, product/service/category, or visitor job.",
     "overlong-headline":
       "Shorten major H1/H2 copy to a sharp subject statement; move qualifiers into the lead or body copy.",
     "overlong-lead-copy":

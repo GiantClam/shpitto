@@ -41,7 +41,11 @@ describe("supabase middleware", () => {
     const forgotResponse = await updateSession(new NextRequest("http://localhost/auth/password/forgot"));
     const resetPageResponse = await updateSession(new NextRequest("http://localhost/reset-password"));
     const verifyEmailResponse = await updateSession(new NextRequest("http://localhost/verify-email"));
+    const aiReadyResponse = await updateSession(new NextRequest("http://localhost/ai-ready"));
+    const exampleWebsitesResponse = await updateSession(new NextRequest("http://localhost/example-websites"));
     const blogResponse = await updateSession(new NextRequest("http://localhost/blog"));
+    const useCasesResponse = await updateSession(new NextRequest("http://localhost/use-cases"));
+    const useCaseDetailResponse = await updateSession(new NextRequest("http://localhost/use-cases/manufacturers"));
     const launchResponse = await updateSession(new NextRequest("http://localhost/launch-center"));
     const robotsResponse = await updateSession(new NextRequest("http://localhost/robots.txt"));
     const sitemapResponse = await updateSession(new NextRequest("http://localhost/sitemap.xml"));
@@ -54,7 +58,11 @@ describe("supabase middleware", () => {
     expect(forgotResponse.status).toBe(200);
     expect(resetPageResponse.status).toBe(200);
     expect(verifyEmailResponse.status).toBe(200);
+    expect(aiReadyResponse.status).toBe(200);
+    expect(exampleWebsitesResponse.status).toBe(200);
     expect(blogResponse.status).toBe(200);
+    expect(useCasesResponse.status).toBe(200);
+    expect(useCaseDetailResponse.status).toBe(200);
     expect(launchResponse.status).toBe(200);
     expect(robotsResponse.status).toBe(200);
     expect(sitemapResponse.status).toBe(200);

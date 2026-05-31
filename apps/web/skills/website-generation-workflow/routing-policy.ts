@@ -229,14 +229,15 @@ async function classifyWithLlm(params: {
         "Return strict JSON only.",
         "Allowed JSON shape:",
         "{",
-        '  "actionDomain": "blog_content" | "deploy" | "none",',
-        '  "action": "regenerate_posts" | "deploy_site" | "none",',
+        '  "actionDomain": "blog_content" | "blog_detail" | "deploy" | "none",',
+        '  "action": "regenerate_posts" | "fill_details" | "deploy_site" | "none",',
         '  "intent": "refine_preview" | "refine_deployed" | "deploy" | "clarify",',
         '  "confidence": number from 0 to 1,',
         '  "reason": "short machine-readable reason",',
         '  "evidence": ["short source phrases or semantic cues"]',
         "}",
         "Use blog_content/regenerate_posts when the user is asking to create, supplement, change, or set topics/counts/direction for blog/article content rather than edit a visible selector.",
+        "Use blog_detail/fill_details when the user is asking to generate, fill, supplement, or complete blog/article detail pages or slug-aligned article URLs after the archive/index already exists.",
         "Use deploy/deploy_site when the user is asking to publish, release, go live, or deploy the generated website.",
         "Use none when the message is a normal visual/copy/site refine, a new generation request, unclear, or unrelated.",
         "For previewing stage, blog content updates should route to refine_preview. For deployed stage, route to refine_deployed. For deploy requests without a preview baseline, use clarify.",
@@ -377,6 +378,34 @@ function normalizeLlmAction(params: {
       workflowContext: {
         skillActionDomain: actionDomain,
         skillAction: action,
+      },
+    };
+  }
+
+  if (actionDomain === "blog_detail" && action === "fill_details") {
+    if (params.stage !== "previewing" && params.stage !== "deployed") return undefined;
+    const refineScope: SkillChatActionRefineScope = "structural";
+    if (!VALID_REFINE_SCOPES.has(refineScope)) return undefined;
+    return {
+      intent: params.stage === "deployed" ? "refine_deployed" : "refine_preview",
+      confidence,
+      reason,
+      shouldCreateTask: true,
+      refineScope,
+      actionDomain,
+      action,
+      evidence,
+      rejected: [
+        {
+          action: "site_refine.patch",
+          reason: "LLM classified the message as a deferred blog detail generation request, not a selector-bound patch",
+        },
+      ],
+      workflowContext: {
+        skillActionDomain: actionDomain,
+        skillAction: action,
+        blogDetailFillRequested: true,
+        refineSkillId: "blog-detail-fill-workflow",
       },
     };
   }

@@ -184,4 +184,46 @@ describe("chat history route", () => {
       else process.env.CHAT_TASKS_USE_SUPABASE = prevUseSupabase;
     }
   });
+
+  it("preserves deploy timeline card metadata when history synthesizes the latest task result message", async () => {
+    const prevUseSupabase = process.env.CHAT_TASKS_USE_SUPABASE;
+    process.env.CHAT_TASKS_USE_SUPABASE = "0";
+
+    try {
+      const chatId = `chat-history-domain-card-${Date.now()}`;
+      const deployTask = await createChatTask(chatId, undefined, {
+        phase: "deploy",
+        progress: { stage: "deploying" } as any,
+      });
+      await completeChatTask(deployTask.id, {
+        assistantText: "Deployment successful: https://demo.pages.dev",
+        deployedUrl: "https://demo.pages.dev",
+        progress: {
+          stage: "deployed",
+        } as any,
+        timelineMetadata: {
+          cardType: "domain_binding_required",
+          title: "Bind a Custom Domain",
+          summary: "Enter a domain to see DNS instructions.",
+          deploymentHost: "demo.pages.dev",
+          deployedUrl: "https://demo.pages.dev",
+        },
+      });
+
+      const { GET } = await import("../../app/api/chat/history/route");
+      const res = await GET(new Request(`http://localhost/api/chat/history?chatId=${encodeURIComponent(chatId)}`));
+      const json = await res.json();
+      const domainCard = (json?.messages || []).find(
+        (item: any) => String(item?.metadata?.cardType || "") === "domain_binding_required",
+      );
+
+      expect(res.status).toBe(200);
+      expect(domainCard).toBeTruthy();
+      expect(domainCard?.metadata?.deploymentHost).toBe("demo.pages.dev");
+      expect(domainCard?.metadata?.deployedUrl).toBe("https://demo.pages.dev");
+    } finally {
+      if (prevUseSupabase === undefined) delete process.env.CHAT_TASKS_USE_SUPABASE;
+      else process.env.CHAT_TASKS_USE_SUPABASE = prevUseSupabase;
+    }
+  });
 });

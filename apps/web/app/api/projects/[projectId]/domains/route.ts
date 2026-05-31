@@ -6,6 +6,7 @@ import {
   listProjectCustomDomains,
   upsertProjectCustomDomain,
 } from "@/lib/agent/db";
+import { getLatestChatTaskForChat } from "@/lib/agent/chat-task-store";
 import { provisionProjectWebAnalyticsSite } from "@/lib/project-web-analytics";
 import { BillingAccessError, assertCanMutatePublishedSite } from "@/lib/billing/enforcement";
 import { normalizePreferredWorkspaceProjectRouteId } from "@/lib/project-route-id";
@@ -68,6 +69,40 @@ async function requireOwnedProject(projectId: string, userId: string) {
   return { error: null, project };
 }
 
+async function requireCompletedBlogDetailFill(projectId: string) {
+  const latestTask = await getLatestChatTaskForChat(projectId).catch(() => undefined);
+  const workflow =
+    ((latestTask?.result?.internal?.sessionState as any)?.workflow_context ||
+      (latestTask?.result?.internal?.inputState as any)?.workflow_context ||
+      {}) as Record<string, unknown>;
+  const completed = Boolean(workflow.blogDetailFillCompleted);
+  const status = String(workflow.blogDetailFillStatus || "").trim();
+  if (completed || status === "completed") return null;
+  return NextResponse.json(
+    {
+      ok: false,
+      error: "Blog detail fill must complete before binding a custom domain.",
+      code: "blog_detail_fill_required",
+    },
+    { status: 409 },
+  );
+}
+
+async function getBlogDetailFillGate(projectId: string) {
+  const latestTask = await getLatestChatTaskForChat(projectId).catch(() => undefined);
+  const workflow =
+    ((latestTask?.result?.internal?.sessionState as any)?.workflow_context ||
+      (latestTask?.result?.internal?.inputState as any)?.workflow_context ||
+      {}) as Record<string, unknown>;
+  const completed = Boolean(workflow.blogDetailFillCompleted);
+  const status = String(workflow.blogDetailFillStatus || "").trim() || null;
+  return {
+    blogDetailFillRequired: !(completed || status === "completed"),
+    blogDetailFillCompleted: completed || status === "completed",
+    blogDetailFillStatus: status,
+  };
+}
+
 async function requireDomainMutationAccess(userId: string) {
   try {
     await assertCanMutatePublishedSite(userId);
@@ -125,10 +160,12 @@ export async function GET(
       }
     }
     const dnsTarget = resolveProjectDnsTarget(project);
+    const blogDetailFillGate = await getBlogDetailFillGate(projectId);
     return NextResponse.json({
       ok: true,
       project,
       domains,
+      ...blogDetailFillGate,
       dns: {
         type: "CNAME",
         host: DEFAULT_DNS_HOST,
@@ -158,6 +195,8 @@ export async function POST(
     const project = owned.project;
     const accessError = await requireDomainMutationAccess(userId);
     if (accessError) return accessError;
+    const blogDetailFillError = await requireCompletedBlogDetailFill(projectId);
+    if (blogDetailFillError) return blogDetailFillError;
 
     const body = (await request.json().catch(() => ({}))) as {
       hostname?: string;
@@ -259,6 +298,8 @@ export async function PATCH(
     const project = owned.project;
     const accessError = await requireDomainMutationAccess(userId);
     if (accessError) return accessError;
+    const blogDetailFillError = await requireCompletedBlogDetailFill(projectId);
+    if (blogDetailFillError) return blogDetailFillError;
 
     const body = (await request.json().catch(() => ({}))) as {
       currentHostname?: string;

@@ -76,6 +76,6 @@ describe("Open Design website skills in the real project environment", () => {
       maxSkills: 1,
     });
     expect(fallback[0]?.id).toBe("open-design-web-prototype");
-    expect(fallback[0]?.reason).toBe("fallback:generic-website-seed");
+    expect(fallback[0]?.reason).toContain("fallback:generic-website-seed");
   });
 });

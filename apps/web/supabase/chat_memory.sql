@@ -22,6 +22,8 @@ create index if not exists idx_shpitto_chat_thread_memory_updated
 create table if not exists shpitto_chat_user_preferences (
   owner_user_id text primary key,
   preferred_locale text,
+  supported_locales jsonb not null default '[]'::jsonb,
+  default_locale text,
   primary_visual_direction text,
   secondary_visual_tags jsonb not null default '[]'::jsonb,
   deployment_provider text,
@@ -32,6 +34,12 @@ create table if not exists shpitto_chat_user_preferences (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+alter table shpitto_chat_user_preferences
+  add column if not exists supported_locales jsonb not null default '[]'::jsonb;
+
+alter table shpitto_chat_user_preferences
+  add column if not exists default_locale text;
 
 create index if not exists idx_shpitto_chat_user_preferences_updated
   on shpitto_chat_user_preferences(updated_at desc);

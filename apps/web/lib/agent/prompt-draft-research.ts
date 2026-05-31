@@ -468,8 +468,13 @@ function buildWebsiteDiscoveryBrief(params: {
       requirementText: params.requirementText,
     }),
     localeMode: params.spec.locale || resolveRequestedSiteLocale(params.requirementText),
+    supportedLocales: Array.isArray(params.spec.supportedLocales)
+      ? params.spec.supportedLocales.map((item) => String(item || "").trim()).filter(Boolean)
+      : undefined,
+    defaultLocale: String(params.spec.defaultLocale || "").trim() || undefined,
     visualDirectionId: sanitizeWorkflowArtifactText(params.spec.primaryVisualDirection || "prompt-adaptive", "visual direction"),
     designSystemId: normalizeDiscoveryDesignSystemId(params.spec),
+    designSystemName: normalizeText((params.spec.designSystemInspiration as any)?.title || ""),
     immutableConstraints,
   };
   return {
@@ -535,6 +540,9 @@ function buildDiscoveryBriefSection(brief: WebsiteDiscoveryBrief): string {
     `- visualDirectionId: ${brief.visualDirectionId}`,
   ];
   if (brief.designSystemId) lines.push(`- designSystemId: ${brief.designSystemId}`);
+  if (brief.designSystemName) lines.push(`- designSystemName: ${brief.designSystemName}`);
+  if (brief.supportedLocales?.length) lines.push(`- supportedLocales: ${brief.supportedLocales.join(", ")}`);
+  if (brief.defaultLocale) lines.push(`- defaultLocale: ${brief.defaultLocale}`);
   if (brief.immutableConstraints.length > 0) {
     lines.push(`- immutableConstraints: ${brief.immutableConstraints.join("; ")}`);
   }
@@ -732,7 +740,22 @@ function buildPromptControlManifestSection(
   routeSource: PromptControlManifest["routeSource"] = "prompt_draft_page_plan",
   discoveryBrief?: WebsiteDiscoveryBrief,
 ): string {
+  const needsConsultationForm = /(?:consultation|intake|clarification|contact|inquiry)\s+form|form\s+with\s+name,\s*organization,\s*email,\s*topic,\s*and\s*message|咨询(?:表单|收集|入口|需求)|咨询.*(?:姓名|机构|单位|邮箱|主题|留言)|customer_inquiry_form|contact_form/i.test(
+    String(requirementText || ""),
+  );
+  const plannedRoutes = new Set((plan.routes || []).map((route) => String(route || "").trim().toLowerCase()));
+  const consultationHostRoutes = plan.pageBlueprints
+    .filter((page) => {
+      const route = String(page.route || "").trim().toLowerCase();
+      const label = String(page.navLabel || "").trim().toLowerCase();
+      if (/(?:^|\/)(contact|inquiry|get-in-touch)(?:\/|$)|\bcontact\b|\binquiry\b/i.test(`${route} ${label}`)) return true;
+      if (/(?:information-platform|information|resource|resources|downloads?|support|help|library)/i.test(`${route} ${label}`))
+        return true;
+      return route === "/" && !plannedRoutes.has("/contact");
+    })
+    .map((page) => page.route);
   const requestedSiteLocale = resolveRequestedSiteLocale(requirementText);
+  const localePlan = buildLocalePlan(requirementText, requestedSiteLocale);
   const promptControlManifest = buildPromptControlManifest(plan, routeSource, requestedSiteLocale, discoveryBrief);
   const fixedFileLines = promptControlManifest.files.map((file) => `- ${file}`);
   const pageLines = plan.pageBlueprints.flatMap((page, index) => [
@@ -741,6 +764,11 @@ function buildPromptControlManifestSection(
     `   - Route source: ${page.source}`,
     `   - Page kind: ${page.pageKind}`,
     ...(page.constraints.length ? page.constraints.map((item) => `   - Constraint: ${item}`) : []),
+    ...(needsConsultationForm && consultationHostRoutes.includes(page.route)
+      ? [
+          "   - Constraint: This route is an approved host for the required consultation intake. Materialize one real HTML `<form>` with fields for name, organization/company, email, topic/subject, and message. Search/filter controls, CTA buttons, and mailto links do not satisfy this requirement.",
+        ]
+      : []),
     ...(page.contentSkeleton.length ? page.contentSkeleton.map((item) => `   - Required module: ${item}`) : []),
     "   - Derive page-specific sections, content depth, and interactions from the Canonical Website Prompt and source material.",
     "   - Do not apply a hardcoded industry skeleton or reuse another page by only replacing text.",
@@ -766,13 +794,18 @@ function buildPromptControlManifestSection(
     "- Page differentiation and shared shell/footer requirements are governed by website-generation-workflow SKILL.md.",
     "- Navigation links must point only to the fixed pages above. The current page nav item must have a recognizable active state.",
     "- Shared-shell navigation labels must stay concise and visitor-facing. If source page titles repeat a brand prefix or end with container words such as Center, Platform, or System, collapse the visible nav label to the shortest natural single-word destination that still preserves route meaning.",
-    ...(requestedSiteLocale === "bilingual"
+    ...(requestedSiteLocale === "multilingual"
       ? [
-          "- Locale contract: render a real EN/ZH switch only when the site is explicitly bilingual and the i18n resource files are present.",
+          `- Locale contract: this site is translation-driven multilingual with ${localePlan.defaultLocale} as the default visible language. Generate one shared HTML structure, \`${I18N_LOCALE_REGISTRY_PATH}\`, and \`${localePlan.sourceCatalogPath}\` as the source catalog; do not generate one route tree per locale.`,
+          "- Locale contract: visible locale switching is optional in the first pass and should appear only when non-default locale dictionaries contain real translated copy.",
         ]
-      : [
-          `- Locale contract: this site is ${requestedSiteLocale === "zh-CN" ? "single-language Chinese-first" : "single-language English-first"}. Do not emit an EN/ZH switch, bilingual resource files, or hidden alternate-language shell payloads.`,
-        ]),
+      : requestedSiteLocale === "bilingual"
+        ? [
+            "- Locale contract: render a real EN/ZH switch only when the site is explicitly bilingual and the i18n resource files are present.",
+          ]
+        : [
+            `- Locale contract: this site is ${requestedSiteLocale === "zh-CN" ? "single-language Chinese-first" : "single-language English-first"}. Do not emit an EN/ZH switch, bilingual resource files, or hidden alternate-language shell payloads.`,
+          ]),
     "- Canonical Website Prompt is the authoritative source for website type, audience, content scope, page structure, and design direction.",
     "- The executor must not substitute product, fintech, industrial, or other preset content when the source material defines a different site.",
     ...(workflowContractSummary ? ["", "### Workflow Skill Contract (Authoritative Rules)", workflowContractSummary] : []),
@@ -781,8 +814,19 @@ function buildPromptControlManifestSection(
     ...pageLines,
     "",
     "### Shared Shell Destination Contract",
-    "- Every route must preserve the same planned shared footer destinations defined by the home page. Do not drop route links from the footer on interior pages.",
+    "- The homepage footer must enumerate the full confirmed shared destination set for this run. Do not reduce it to a CTA-only subset, a category-only subset, or a partial route sample.",
+    "- Every interior route footer must preserve the same planned shared footer destinations defined by the home page. Do not drop route links from the footer on interior pages, even when regrouping them under different headings.",
     "- Shared footer consistency must not flatten page bodies into one repeated split-hero template. Keep the shell consistent while giving sibling routes distinct first-screen structures.",
+    ...(needsConsultationForm
+      ? [
+          "",
+          "### Consultation Capture Contract",
+          "- This run requires at least one real consultation intake form in the generated site.",
+          "- Preferred host routes are the dedicated contact route when present; otherwise use the primary information/resource route or the homepage.",
+          "- The form must be a real HTML `<form>` with name, organization/company, email, topic/subject, and message fields.",
+          "- Search boxes, filters, newsletter fields, CTA buttons, and mailto links do not satisfy the consultation capture requirement.",
+        ]
+      : []),
     "",
     "### Home Hero Layout Safety",
     "- Hero text, stats panels, CTAs, and media must not overlap.",

@@ -258,6 +258,29 @@ describe("prompt draft research", () => {
     );
   });
 
+  it("keeps source-derived homepage intents away from entry-point wording", () => {
+    const contract = buildPromptControlManifestFromKnowledgeProfileForTesting("Generate from uploaded planning materials.", {
+      sourceMode: "uploaded_files",
+      domains: [],
+      sources: [],
+      brand: { name: "CASUX" },
+      audience: [],
+      offerings: [],
+      differentiators: [],
+      proofPoints: [],
+      suggestedPages: [
+        { route: "/", title: "Home", purpose: "Institutional overview.", contentInputs: [] },
+        { route: "/casux-information-platform", title: "CASUX Information Platform", purpose: "Information platform.", contentInputs: [] },
+      ],
+      contentGaps: [],
+      summary: "",
+    });
+
+    const homeIntent = contract.pageIntents.find((page) => page.route === "/")?.purpose || "";
+    expect(homeIntent).not.toMatch(/entry point|site entry|home entry/i);
+    expect(homeIntent).toMatch(/institutional overview|official homepage|brand overview/i);
+  });
+
   it("persists docs-knowledge discovery brief data for documentation-style prompts", async () => {
     const requirement = "Create a developer documentation portal with guides, API reference, tutorials, and FAQs.";
     const result = await buildPromptDraftWithResearch({
@@ -822,6 +845,40 @@ describe("prompt draft research", () => {
     expect(result.canonicalPrompt).not.toContain("Language switch");
   });
 
+  it("injects consultation capture and full footer destination contracts when inquiry capture is required", async () => {
+    const requirement = [
+      "需求表单已提交：",
+      "",
+      "[Requirement Form]",
+      "```json",
+      JSON.stringify(
+        {
+          siteType: "company",
+          pageStructure: { mode: "multi", pages: ["home", "information-platform", "about"] },
+          functionalRequirements: ["contact_form"],
+          primaryGoal: ["lead_generation"],
+          language: "zh-CN",
+          brandLogo: { mode: "text_mark" },
+        },
+        null,
+        2,
+      ),
+      "```",
+      "Include a real consultation form with name, organization, email, topic, and message fields.",
+    ].join("\n");
+
+    const result = await buildPromptDraftWithResearch({
+      requirementText: requirement,
+      slots: buildRequirementSlots(requirement),
+    });
+
+    expect(result.canonicalPrompt).toContain("### Shared Shell Destination Contract");
+    expect(result.canonicalPrompt).toContain("homepage footer must enumerate the full confirmed shared destination set");
+    expect(result.canonicalPrompt).toContain("### Consultation Capture Contract");
+    expect(result.canonicalPrompt).toContain("This route is an approved host for the required consultation intake");
+    expect(result.canonicalPrompt).toContain("Search/filter controls, CTA buttons, and mailto links do not satisfy this requirement");
+  });
+
   it("injects a bilingual site contract into the prompt draft when the requested locale is bilingual", async () => {
     const requirement = [
       "生成前必填信息已提交：",
@@ -858,6 +915,49 @@ describe("prompt draft research", () => {
     expect(result.promptControlManifest.files).toEqual(
       expect.arrayContaining(["/i18n/messages.en.json", "/i18n/messages.zh-CN.json"]),
     );
+  });
+
+  it("switches to a translation-driven locale registry contract for multilingual websites", async () => {
+    const requirement = [
+      "生成前必填信息已提交：",
+      "[Requirement Form]",
+      "```json",
+      JSON.stringify(
+        {
+          siteType: "company",
+          pageStructure: { mode: "multi", pages: ["home", "about", "contact"] },
+          functionalRequirements: ["contact_form"],
+          primaryGoal: ["brand_trust"],
+          language: "multilingual",
+          supportedLocales: ["zh-CN", "en", "ja", "fr"],
+          defaultLocale: "zh-CN",
+        },
+        null,
+        2,
+      ),
+      "```",
+      "做一个多语言官网，支持 zh-CN、en、ja、fr，默认中文，后续翻译走 catalog，不要为每种语言重建页面。",
+    ].join("\n");
+
+    const result = await buildPromptDraftWithResearch({
+      requirementText: requirement,
+      slots: buildRequirementSlots(requirement),
+      displayLocale: "zh",
+    });
+
+    expect(result.canonicalPrompt).toContain("## 7.35 Locale & Translation Contract");
+    expect(result.canonicalPrompt).toContain("/i18n/locales.json");
+    expect(result.canonicalPrompt).toContain("/i18n/messages.zh-CN.json");
+    expect(result.canonicalPrompt).toContain("do not generate one route tree per locale");
+    expect(result.promptControlManifest.files).toEqual(
+      expect.arrayContaining(["/i18n/locales.json", "/i18n/messages.zh-CN.json"]),
+    );
+    expect(result.promptControlManifest.localeConfig).toMatchObject({
+      mode: "multilingual",
+      defaultLocale: "zh-CN",
+      locales: ["zh-CN", "en", "ja", "fr"],
+      translationDriven: true,
+    });
   });
 
   it("keeps Chinese-first single-language sites free of bilingual shell requirements", async () => {

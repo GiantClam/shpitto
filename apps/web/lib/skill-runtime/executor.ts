@@ -60,6 +60,7 @@ import { DEFAULT_STYLE_PRESET, normalizeStylePreset, type DesignStylePreset } fr
 import { artifactCounts, collectCompletedPhases, getGeneratedFilePaths, getPages, getStaticArtifactFiles, mergeAgentState } from "./artifacts.ts";
 import { invokeModelWithIdleTimeout } from "./llm-stream.ts";
 import { bindRunProviderLockToState, resolveRunProviderRunnerLock, resolveRunProviderRunnerLocks, type RunProviderLock } from "./provider-runner.ts";
+import { applyTranslationLane, resolveTranslationLanePlan, type TranslationCatalogDraft } from "./translation-lane.ts";
 import {
   buildLocalDecisionPlan,
   extractRouteSourceBrief,
@@ -87,7 +88,9 @@ import {
 } from "../visual-qa/anti-slop-linter.ts";
 import {
   normalizeWebsiteStaticFilesForPreview,
+  resolveWorkflowSurfaceSelection,
   runSkillToolExecutor,
+  validateAndNormalizeRequiredFilesWithQa,
   type SkillToolRouteRepairEvidence,
 } from "./skill-tool-executor.ts";
 import {
@@ -700,6 +703,7 @@ async function resolveDeploySourceProject(
 
   const workflow = toRecord((state as any)?.workflow_context);
   const sourcePathCandidates = [
+    String(workflow.translationSourceProjectPath || ""),
     String(workflow.refineSourceProjectPath || ""),
     String(workflow.deploySourceProjectPath || ""),
     String(workflow.checkpointProjectPath || ""),
@@ -712,6 +716,7 @@ async function resolveDeploySourceProject(
   }
 
   const sourceTaskIdCandidates = [
+    String(workflow.translationSourceTaskId || ""),
     String(workflow.refineSourceTaskId || ""),
     String(workflow.deploySourceTaskId || ""),
   ].filter(Boolean);
@@ -744,10 +749,12 @@ async function resolveDeploySourceProject(
 function summarizeRefineBaselineInputs(state: AgentState) {
   const workflow = toRecord((state as any)?.workflow_context);
   return {
+    translationSourceProjectPath: String(workflow.translationSourceProjectPath || "").trim() || null,
     refineSourceProjectPath: String(workflow.refineSourceProjectPath || "").trim() || null,
     deploySourceProjectPath: String(workflow.deploySourceProjectPath || "").trim() || null,
     checkpointProjectPath: String(workflow.checkpointProjectPath || "").trim() || null,
     lastCheckpointProjectPath: String(workflow.lastCheckpointProjectPath || "").trim() || null,
+    translationSourceTaskId: String(workflow.translationSourceTaskId || "").trim() || null,
     refineSourceTaskId: String(workflow.refineSourceTaskId || "").trim() || null,
     deploySourceTaskId: String(workflow.deploySourceTaskId || "").trim() || null,
     hasProjectJson: isProjectLikeArtifact((state as any)?.project_json),
@@ -883,17 +890,85 @@ function syncPagesFromStaticFiles(project: any): any {
   return next;
 }
 
+function ensureSharedSiteRefsForRefineHtml(project: any): any {
+  const next = ensureSkillDirectStaticProject(project);
+  const files = dedupeFiles((next?.staticSite?.files || []) as any[]);
+  let changed = false;
+
+  const updatedFiles = files.map((file) => {
+    const filePath = normalizePath(String(file?.path || ""));
+    if (!filePath.toLowerCase().endsWith(".html")) return file;
+
+    let html = ensureHtmlDocument(String(file?.content || ""));
+    if (!html) return file;
+
+    if (!/<link\b[^>]*href=["'][^"']*styles\.css["'][^>]*>/i.test(html)) {
+      const href = filePath === "/index.html" ? "/styles.css" : relativeAssetPathForHtml(filePath, "/styles.css");
+      html = /<\/head>/i.test(html)
+        ? html.replace(/<\/head>/i, `  <link rel="stylesheet" href="${href}">\n</head>`)
+        : html;
+    }
+
+    if (!/<script\b[^>]*src=["'][^"']*script\.js["'][^>]*>\s*<\/script>/i.test(html)) {
+      const src = filePath === "/index.html" ? "/script.js" : relativeAssetPathForHtml(filePath, "/script.js");
+      html = /<\/body>/i.test(html)
+        ? html.replace(/<\/body>/i, `  <script src="${src}" defer></script>\n</body>`)
+        : `${html}\n<script src="${src}" defer></script>`;
+    }
+
+    if (html === String(file?.content || "")) return file;
+    changed = true;
+    return {
+      ...file,
+      content: html,
+      type: String(file?.type || guessMimeByPath(filePath)),
+    };
+  });
+
+  if (!changed) return next;
+  return syncPagesFromStaticFiles({
+    ...next,
+    staticSite: {
+      ...(next.staticSite || {}),
+      mode: "skill-direct",
+      files: updatedFiles,
+    },
+  });
+}
+
+function relativeAssetPathForHtml(filePath: string, assetPath: "/styles.css" | "/script.js"): string {
+  const normalized = normalizePath(filePath);
+  if (normalized === "/index.html") return assetPath;
+  const segments = normalized.replace(/^\/+/, "").split("/");
+  const depth = Math.max(0, segments.length - 1);
+  const prefix = depth <= 0 ? "." : Array(depth).fill("..").join("/");
+  return `${prefix}${assetPath}`;
+}
+
+function isRecoverableRefineSkillFailure(error: unknown): boolean {
+  const text = String((error as any)?.message || error || "").trim();
+  if (!text) return false;
+  return /provider_tool_protocol_mismatch|skill_tool_invalid_generated_html|skill_tool_invalid_required_file/i.test(text);
+}
+
 function normalizeGeneratedProjectArtifactPreview(params: {
   project: any;
   decision: LocalDecisionPlan;
   requirementText: string;
+  workflowContext?: Record<string, unknown>;
 }): any {
   const next = ensureSkillDirectStaticProject(params.project);
-  const normalizedFiles = normalizeWebsiteStaticFilesForPreview({
+  const workflowSurfaceSelection = resolveWorkflowSurfaceSelection({
+    ...(params.workflowContext || {}),
+    sourceRequirement: params.requirementText,
+  });
+  const normalizedFiles = validateAndNormalizeRequiredFilesWithQa({
     decision: params.decision,
     files: dedupeFiles((next?.staticSite?.files || []) as any[]),
     requirementText: params.requirementText,
-  });
+    websiteSurfaceMode: workflowSurfaceSelection.websiteSurfaceMode,
+    enforceCorporateHomepageContract: workflowSurfaceSelection.websiteSurfaceMode === "corporate-b2b-site",
+  }).files;
   return syncPagesFromStaticFiles({
     ...next,
     staticSite: {
@@ -1411,6 +1486,11 @@ async function applyRefineInstructionWithSkill(params: {
   skillDirective: string;
   providerConfig: ProviderConfig;
   timeoutMs: number;
+  refineScope?: string;
+  targetRoutes?: string[];
+  websiteSurfaceMode?: WebsiteSurfaceMode;
+  qualityContract?: string;
+  validationFeedback?: string;
 }): Promise<{ project: any; changedFiles: string[]; summary?: string }> {
   const normalizedInstruction = String(params.instruction || "").trim();
   if (!normalizedInstruction) {
@@ -1450,9 +1530,16 @@ async function applyRefineInstructionWithSkill(params: {
   const systemPrompt = [
     "You are a senior frontend refinement engineer.",
     "Apply visual/code refinements to an existing static website project.",
+    "You must preserve the site's current surface mode and satisfy every supplied quality contract.",
+    "When the scope is route_regenerate, rewrite the named route openings coherently instead of making only cosmetic micro-patches.",
     "Return strict JSON only.",
     "Never output markdown fences.",
   ].join(" ");
+
+  const refineScope = String(params.refineScope || "").trim();
+  const surfaceMode = String(params.websiteSurfaceMode || "").trim();
+  const targetRoutes = Array.isArray(params.targetRoutes) ? params.targetRoutes.filter(Boolean) : [];
+  const validationFeedback = String(params.validationFeedback || "").trim();
 
   const userPrompt = [
     "Task: apply the user refine request to the current static site files.",
@@ -1460,8 +1547,39 @@ async function applyRefineInstructionWithSkill(params: {
     "User refine request:",
     normalizedInstruction,
     "",
+    "Current refine scope:",
+    refineScope || "(unspecified)",
+    "",
+    "Current website surface mode:",
+    surfaceMode || "(unspecified)",
+    "",
+    "Target routes that should receive coherent route-owned changes first:",
+    targetRoutes.length > 0 ? JSON.stringify(targetRoutes, null, 2) : "(no explicit route targets detected)",
+    "",
     "Skill directive (must follow):",
     params.skillDirective || "(none)",
+    "",
+    "Website quality contract (must follow):",
+    String(params.qualityContract || "").trim() || "(none)",
+    "",
+    "Surface-specific guidance:",
+    surfaceMode === "corporate-b2b-site"
+      ? [
+          "- This is a corporate/procurement-facing B2B site.",
+          "- Homepage openings must use an enterprise homepage structure, not a generic split hero shell.",
+          "- If the homepage hero or route-leading media is edited, use `.enterprise-hero`, `.enterprise-hero__content`, and `.enterprise-hero__media`.",
+          "- `.enterprise-hero__media` must contain a real `<img>` or `<picture>` node; do not leave placeholder-only boxes.",
+          "- Remove placeholder scaffolding such as `media-frame`, `ph-img`, empty visual cards, and decorative blank media rails when replacing hero media.",
+          "- When a route such as Cases uses a leading visual slot, replace placeholder media with a real image-backed module rather than a blank frame.",
+        ].join("\n")
+      : "- Preserve the current route surface semantics and replace placeholder media with real, publishable media modules when requested.",
+    ...(validationFeedback
+      ? [
+          "",
+          "Previous validation failed. Your edits must explicitly fix this:",
+          validationFeedback,
+        ]
+      : []),
     "",
     "Current files (path + full content):",
     JSON.stringify(fileContext, null, 2),
@@ -1481,10 +1599,13 @@ async function applyRefineInstructionWithSkill(params: {
     "- Output full file content for each edited file (not patch).",
     "- Only edit files that are truly needed.",
     "- Keep HTML/CSS/JS valid and production-safe.",
+    "- Prefer changing the targeted route files and shared assets before touching unrelated routes.",
+    "- If refine scope is route_regenerate, rewrite the target route opening and its immediate supporting structure so it reads like a finished route, not a patched shell.",
     "- You may create a new file only when its path is listed in 'Approved new file paths for this refine request'.",
     "- When creating a new route page, output a complete production-ready HTML document for that path, not a stub.",
     "- For deletion requests, remove the exact target text/element instead of adding comments.",
     "- If request says remove menu button, remove the corresponding button/trigger from nav markup and related JS hooks when needed.",
+    "- If the request replaces blank or placeholder media, remove placeholder scaffolding classes instead of keeping them around new content.",
   ].join("\n");
 
   const ai = await invokeModelWithIdleTimeout({
@@ -1559,15 +1680,18 @@ function normalizeProjectArtifactForMaterialization(params: {
   project: any;
   decision?: LocalDecisionPlan;
   requirementText?: string;
+  workflowContext?: Record<string, unknown>;
+  skipFullSiteValidation?: boolean;
 }): any {
-  if (params.decision) {
+  if (params.decision && !params.skipFullSiteValidation) {
     return normalizeGeneratedProjectArtifactPreview({
       project: params.project,
       decision: params.decision,
       requirementText: String(params.requirementText || params.decision.requirementText || "").trim(),
+      workflowContext: params.workflowContext,
     });
   }
-  return ensureSkillDirectStaticProject(params.project);
+  return ensureSharedSiteRefsForRefineHtml(ensureSkillDirectStaticProject(params.project));
 }
 
 async function materializeSiteDirectoryFromProject(
@@ -1576,6 +1700,8 @@ async function materializeSiteDirectoryFromProject(
   options?: {
     decision?: LocalDecisionPlan;
     requirementText?: string;
+    workflowContext?: Record<string, unknown>;
+    skipFullSiteValidation?: boolean;
   },
 ): Promise<{
   fileCount: number;
@@ -1586,6 +1712,8 @@ async function materializeSiteDirectoryFromProject(
     project,
     decision: options?.decision,
     requirementText: options?.requirementText,
+    workflowContext: options?.workflowContext,
+    skipFullSiteValidation: options?.skipFullSiteValidation,
   });
   const bundle = await Bundler.createBundle(normalizedProject);
   await fs.mkdir(siteDir, { recursive: true });
@@ -2757,6 +2885,37 @@ function normalizeSlugToken(input: string, fallback: string): string {
   return normalized || fallback;
 }
 
+function extractRefineTargetRoutes(project: any, instruction: string): string[] {
+  const normalizedInstruction = String(instruction || "").trim().toLowerCase();
+  if (!normalizedInstruction) return [];
+
+  const discovered = new Set<string>();
+  const existingRoutes = listProjectRoutes(project).map((route) => normalizePath(route));
+
+  if (/(?:homepage|home page|home hero|首页|首屏)/i.test(normalizedInstruction)) {
+    discovered.add("/");
+  }
+
+  for (const route of existingRoutes) {
+    if (route === "/") continue;
+    const leaf = route.split("/").filter(Boolean).pop() || "";
+    const normalizedLeaf = leaf.replace(/[-_]+/g, " ").trim().toLowerCase();
+    if (!normalizedLeaf) continue;
+    if (normalizedInstruction.includes(route.toLowerCase()) || normalizedInstruction.includes(normalizedLeaf)) {
+      discovered.add(route);
+    }
+  }
+
+  for (const alias of STRUCTURAL_ROUTE_ALIAS_MAP) {
+    if (alias.keys.some((key) => normalizedInstruction.includes(String(key || "").toLowerCase()))) {
+      const normalizedRoute = normalizePath(alias.route);
+      if (existingRoutes.includes(normalizedRoute)) discovered.add(normalizedRoute);
+    }
+  }
+
+  return Array.from(discovered);
+}
+
 function buildInternalRequirementSummaryForWorkflow(requirementText: string, decision: LocalDecisionPlan, locale: "zh-CN" | "en" | "bilingual"): string {
   locale = toVisibleLocale(locale);
   const excerpt = clipTextWithBudget(String(requirementText || "").trim(), 1600);
@@ -2928,6 +3087,7 @@ function renderLocalWebsiteDesignSpec(params: {
   discoveryBrief?: WebsiteDiscoveryBrief;
   designSystemId?: string;
   designSystemName?: string;
+  selectedSeedSkillIds?: string[];
 }): string {
   return buildWebsiteDesignSpecMarkdown({
     decision: params.decision,
@@ -2938,6 +3098,7 @@ function renderLocalWebsiteDesignSpec(params: {
     discoveryBrief: params.discoveryBrief,
     designSystemId: params.designSystemId,
     designSystemName: params.designSystemName,
+    selectedSeedSkillIds: params.selectedSeedSkillIds,
   });
 }
 
@@ -3653,6 +3814,7 @@ type RuntimeContext = {
   discoveryBrief?: WebsiteDiscoveryBrief;
   designSystemId?: string;
   designSystemName?: string;
+  selectedSeedSkillIds?: string[];
 };
 
 function toRecord(value: unknown): Record<string, unknown> {
@@ -3783,11 +3945,19 @@ class NativeSkillRuntime {
     );
     const designHit = ((params.state as any)?.design_hit || undefined) as DesignSkillHit | undefined;
     const designOverrides = toRecord(workflowContext.designOverrides);
+    const promptControlManifest = toRecord(workflowContext.promptControlManifest);
     const websiteSurfaceMode =
+      inferWebsiteSurfaceModeFromSkillId(String(promptControlManifest.websiteSurfaceMode || "")) ||
+      inferWebsiteSurfaceModeFromSkillId(String((promptControlManifest as any)?.discoveryBrief?.surfaceMode || "")) ||
       inferWebsiteSurfaceModeFromSkillId(String(workflowContext.websiteSurfaceMode || "")) ||
       inferWebsiteSurfaceModeFromSkillId(String(workflowContext.websiteTypeSkillId || "")) ||
       inferWebsiteSurfaceModeFromSkillId(skillId);
-    const discoveryBrief = ((workflowContext.websiteDiscoveryBrief || undefined) as WebsiteDiscoveryBrief | undefined);
+    const discoveryBrief = (((promptControlManifest as any)?.discoveryBrief ||
+      workflowContext.websiteDiscoveryBrief ||
+      undefined) as WebsiteDiscoveryBrief | undefined);
+    const selectedSeedSkillIds = Array.isArray(workflowContext.selectedSeedSkillIds)
+      ? (workflowContext.selectedSeedSkillIds as unknown[]).map((item) => String(item || "").trim()).filter(Boolean)
+      : [];
     const guidance: WorkflowGuidancePack = {
       selectionCriteria: String(workflowContext.selectionCriteria || ""),
       sequentialWorkflow: String(workflowContext.sequentialWorkflow || ""),
@@ -3827,6 +3997,7 @@ class NativeSkillRuntime {
       discoveryBrief,
       designSystemId: String(workflowContext.designSystemId || "").trim() || undefined,
       designSystemName: String(workflowContext.designSystemName || "").trim() || undefined,
+      selectedSeedSkillIds,
     });
     const websiteDesignSpec = shouldReuseWebsiteDesignSpec(guidance.websiteDesignSpec, locale)
       ? guidance.websiteDesignSpec.trim()
@@ -3860,6 +4031,7 @@ class NativeSkillRuntime {
       discoveryBrief,
       designSystemId: String(workflowContext.designSystemId || "").trim() || undefined,
       designSystemName: String(workflowContext.designSystemName || "").trim() || undefined,
+      selectedSeedSkillIds,
     };
     this.requirementText = requirementText;
     this.files = existingStatic;
@@ -3922,6 +4094,7 @@ class NativeSkillRuntime {
           discoveryBrief: this.context.discoveryBrief,
           designSystemId: this.context.designSystemId,
           designSystemName: this.context.designSystemName,
+          selectedSeedSkillIds: this.context.selectedSeedSkillIds,
         },
         page.route,
       ) || {
@@ -3941,6 +4114,7 @@ class NativeSkillRuntime {
           this.context.stylePreset.colors.background,
           this.context.stylePreset.typography,
         ].filter(Boolean),
+        inheritedSeedSkillIds: this.context.selectedSeedSkillIds || [],
         openingFamily: "route-owned",
         openingTopology: "route-specific lead band",
         mediaPlan: [],
@@ -4911,6 +5085,11 @@ function buildSessionSnapshot(state: AgentState): Partial<AgentState> {
       latestUserTextRaw: workflow.latestUserTextRaw,
       referencedAssets: workflow.referencedAssets,
       assumedDefaults: workflow.assumedDefaults,
+      skillActionDomain: workflow.skillActionDomain,
+      skillAction: workflow.skillAction,
+      blogDetailFillRequested: workflow.blogDetailFillRequested,
+      blogDetailFillStatus: workflow.blogDetailFillStatus,
+      blogDetailFillCompleted: workflow.blogDetailFillCompleted,
       deploySourceProjectPath: workflow.deploySourceProjectPath,
       deploySourceTaskId: workflow.deploySourceTaskId,
       checkpointProjectPath: workflow.checkpointProjectPath,
@@ -5189,11 +5368,22 @@ export async function materializeSiteDirectoryFromProjectForTesting(params: {
   siteDir: string;
   decision?: LocalDecisionPlan;
   requirementText?: string;
+  workflowContext?: Record<string, unknown>;
 }) {
   return materializeSiteDirectoryFromProject(params.project, params.siteDir, {
     decision: params.decision,
     requirementText: params.requirementText,
+    workflowContext: params.workflowContext,
   });
+}
+
+export function normalizeGeneratedProjectArtifactPreviewForTesting(params: {
+  project: any;
+  decision: LocalDecisionPlan;
+  requirementText: string;
+  workflowContext?: Record<string, unknown>;
+}) {
+  return normalizeGeneratedProjectArtifactPreview(params);
 }
 
 export async function resolveWebsiteRuntimeSkillForTesting(params: {
@@ -5201,6 +5391,10 @@ export async function resolveWebsiteRuntimeSkillForTesting(params: {
   explicitSkillId?: string;
 }) {
   return resolveWebsiteRuntimeSkill(params);
+}
+
+export function resolveRuntimeTaskExecutionModeForTesting(state: AgentState) {
+  return resolveRuntimeTaskExecutionMode(state);
 }
 
 function materializeGeneratedBlogDetailPages(params: {
@@ -5393,6 +5587,86 @@ function buildWebsiteGenerationTimelineMetadata(summary: SkillRuntimeExecutionSu
   };
 }
 
+async function translateCatalogWithModel(params: {
+  providerConfig: ProviderConfig;
+  timeoutMs: number;
+  targetLocale: string;
+  defaultLocale: string;
+  sourceMessages: Record<string, string>;
+  existingMessages: Record<string, string>;
+}): Promise<TranslationCatalogDraft | null> {
+  const sourceEntries = Object.entries(params.sourceMessages);
+  if (sourceEntries.length === 0) return null;
+
+  const model = createModelForProvider(
+    params.providerConfig,
+    Math.max(25_000, Number(params.timeoutMs || 90_000)),
+    Math.max(1200, Number(process.env.CHAT_TRANSLATION_MAX_TOKENS || 5000)),
+    0.1,
+  );
+
+  const systemPrompt = [
+    "You are a professional website localization engine.",
+    "Translate message catalog values from the default locale into the target locale.",
+    "Return strict JSON only without markdown fences.",
+    "Preserve keys exactly and keep placeholders, HTML tags, brand names, URLs, code snippets, and variable tokens intact.",
+  ].join(" ");
+
+  const userPrompt = [
+    `Default locale: ${params.defaultLocale}`,
+    `Target locale: ${params.targetLocale}`,
+    "",
+    "Source messages:",
+    JSON.stringify(params.sourceMessages, null, 2),
+    "",
+    "Existing target messages:",
+    JSON.stringify(params.existingMessages, null, 2),
+    "",
+    'Return JSON with this exact shape: {"translated":true,"messages":{"key":"translated value"},"note":"optional short note"}',
+    "Rules:",
+    "- Include every source key in messages.",
+    "- Translate only the values, never the keys.",
+    "- Keep placeholders like {count}, {{name}}, %s, and :id unchanged.",
+    "- Keep inline HTML tags and attribute-like fragments unchanged except for the human-language text around them.",
+    "- If a value is already language-neutral or a proper noun, it may stay unchanged.",
+  ].join("\n");
+
+  const ai = await invokeModelWithIdleTimeout({
+    model,
+    messages: [new SystemMessage(systemPrompt), new HumanMessage(userPrompt)],
+    timeoutMs: Math.max(25_000, Number(params.timeoutMs || 90_000)),
+    operation: `translate-catalog:${params.targetLocale}`,
+  });
+  const parsed = parseJsonFromLlmText(String(ai?.content || "").trim());
+  const rawMessages = toRecord(parsed?.messages);
+  const normalizedMessages = Object.fromEntries(
+    sourceEntries.map(([key, fallbackValue]) => {
+      const candidate = String(rawMessages[key] || "").trim();
+      return [key, candidate || String(params.existingMessages[key] || "").trim() || fallbackValue];
+    }),
+  );
+  return {
+    translated: true,
+    messages: normalizedMessages,
+    note: String(parsed?.note || "").trim() || undefined,
+  };
+}
+
+function resolveRuntimeTaskExecutionMode(state: AgentState): "generate" | "refine" | "translate" | "deploy" {
+  const workflow = toRecord((state as any)?.workflow_context);
+  const executionMode = String(workflow.executionMode || "").trim().toLowerCase();
+  const deployRequested = Boolean(workflow.deployRequested) || isDeployConfirmationIntent(extractRequirementText(state));
+  if (deployRequested || executionMode === "deploy") return "deploy";
+  if (executionMode === "translate" || Boolean(workflow.translateRequested)) return "translate";
+  if (executionMode === "refine" || Boolean(workflow.refineRequested)) return "refine";
+  return "generate";
+}
+
+function isBlogDetailFillAction(inputState: AgentState): boolean {
+  return String((inputState.workflow_context as any)?.skillActionDomain || "").trim() === "blog_detail" &&
+    String((inputState.workflow_context as any)?.skillAction || "").trim() === "fill_details";
+}
+
 function getWorkflowContentPreviewPosts(workflowContext: Record<string, unknown>): BlogPostUpsertInput[] {
   if (Array.isArray((workflowContext as any)?.contentPreviewPosts)) {
     return (((workflowContext as any)?.contentPreviewPosts || []) as BlogPostUpsertInput[]).filter((post) => post && typeof post === "object");
@@ -5414,6 +5688,13 @@ function getWorkflowContentPreviewStatus(workflowContext: Record<string, unknown
 function isBlogContentRegenerationAction(inputState: AgentState): boolean {
   return String((inputState.workflow_context as any)?.skillActionDomain || "").trim() === "blog_content" &&
     String((inputState.workflow_context as any)?.skillAction || "").trim() === "regenerate_posts";
+}
+
+function shouldRequireBlogDetailFillBeforeDomainBinding(workflowContext: Record<string, unknown>, project: any): boolean {
+  if (Boolean((workflowContext as any)?.blogDetailFillCompleted)) return false;
+  if (String((workflowContext as any)?.blogDetailFillStatus || "").trim() === "completed") return false;
+  if (!projectHasGeneratedBlogContentMount(project)) return false;
+  return true;
 }
 
 function resolveBlogNavLabelFromProject(project: any, locale: "zh-CN" | "en") {
@@ -6032,6 +6313,10 @@ async function runDeployOnlyTask(params: {
       }
     }
 
+    const blogDetailFillRequired = shouldRequireBlogDetailFillBeforeDomainBinding(
+      ((inputState.workflow_context as any) || {}) as Record<string, unknown>,
+      deployProject,
+    );
     const deploymentMessageParts = [
       deployLocale === "zh-CN" ? `\u90e8\u7f72\u6210\u529f\uff1a${liveUrl}` : `Deployment successful: ${liveUrl}`,
       publishedAssetVersion ? `(Published assets ${publishedAssetVersion})` : "",
@@ -6054,27 +6339,58 @@ async function runDeployOnlyTask(params: {
       `(Smoke: pre=${preDeploySmoke.status}, post=${postDeploySmoke.status}${
         blogRuntimeSmoke ? `, blogRuntime=${blogRuntimeSmoke.status}` : ""
       })`,
-      deployLocale === "zh-CN"
-        ? "\u4e0b\u4e00\u6b65\uff1a\u8bf7\u76f4\u63a5\u5728\u4e0b\u65b9\u6d88\u606f\u5361\u7247\u91cc\u586b\u5199\u5e76\u7ed1\u5b9a\u4f60\u7684\u81ea\u5b9a\u4e49\u57df\u540d\uff0c\u63d0\u4ea4\u540e\u4f1a\u7acb\u5373\u7ed9\u51fa DNS \u914d\u7f6e\u5361\u7247\u3002"
-        : "Next, enter the custom domain you want to use directly in the card below. After submission, the app will immediately show the exact DNS records to configure.",
+      blogDetailFillRequired
+        ? deployLocale === "zh-CN"
+          ? "\u4e0b\u4e00\u6b65\uff1a\u5148\u8865\u5168 blog detail \u8be6\u60c5\u9875\u5e76\u5bf9\u9f50 slug\u3001URL\u5173\u7cfb\uff0c\u5b8c\u6210\u540e\u518d\u7ed1\u5b9a\u81ea\u5b9a\u4e49\u57df\u540d\u3002"
+          : "Next, run blog detail fill to generate slug-aligned article pages. Custom-domain binding stays blocked until that step is complete."
+        : deployLocale === "zh-CN"
+          ? "\u4e0b\u4e00\u6b65\uff1a\u8bf7\u76f4\u63a5\u5728\u4e0b\u65b9\u6d88\u606f\u5361\u7247\u91cc\u586b\u5199\u5e76\u7ed1\u5b9a\u4f60\u7684\u81ea\u5b9a\u4e49\u57df\u540d\uff0c\u63d0\u4ea4\u540e\u4f1a\u7acb\u5373\u7ed9\u51fa DNS \u914d\u7f6e\u5361\u7247\u3002"
+          : "Next, enter the custom domain you want to use directly in the card below. After submission, the app will immediately show the exact DNS records to configure.",
     ].filter(Boolean);
     const deploymentMessage = deploymentMessageParts.join("\n");
     const domainGuidanceMetadata = {
-      cardType: "domain_binding_required",
+      cardType: blogDetailFillRequired ? "blog_detail_fill_required" : "domain_binding_required",
       locale: deployLocale === "zh-CN" ? "zh" : "en",
-      title: deployLocale === "zh-CN" ? "\u7ed1\u5b9a\u81ea\u5b9a\u4e49\u57df\u540d" : "Bind a Custom Domain",
+      title: blogDetailFillRequired
+        ? deployLocale === "zh-CN" ? "\u5148\u8865\u5168 Blog Detail" : "Fill Blog Details First"
+        : deployLocale === "zh-CN" ? "\u7ed1\u5b9a\u81ea\u5b9a\u4e49\u57df\u540d" : "Bind a Custom Domain",
+      payload: blogDetailFillRequired
+        ? deployLocale === "zh-CN"
+          ? "请补全当前站点的 blog detail 详情页，并对齐 blog slug 和 URL 关联。"
+          : "Fill the current site's blog detail pages now and align the blog slugs with their final URLs."
+        : "",
+      label: blogDetailFillRequired
+        ? deployLocale === "zh-CN" ? "\u7acb\u5373\u8865\u5168 Blog Detail" : "Fill Blog Details Now"
+        : "",
       summary:
-        deployLocale === "zh-CN"
-          ? "\u8fd9\u4e2a\u7f51\u7ad9\u5df2\u7ecf\u90e8\u7f72\u6210\u529f\u3002\u8bf7\u76f4\u63a5\u5728\u8fd9\u5f20\u5361\u7247\u91cc\u586b\u5199\u4f60\u8981\u4f7f\u7528\u7684\u57df\u540d\uff0c\u63d0\u4ea4\u540e\u518d\u6309\u63d0\u793a\u914d\u7f6e DNS \u5e76\u7b49\u5f85\u751f\u6548\u3002"
-          : "Your site is deployed. Enter the domain you want to use directly in this card, submit it for binding, and then follow the DNS instructions shown here.",
+        blogDetailFillRequired
+          ? deployLocale === "zh-CN"
+            ? "\u7f51\u7ad9\u5df2\u90e8\u7f72\uff0c\u4f46 blog detail \u8be6\u60c5\u9875\u8fd8\u672a\u8865\u5168\u3002\u5148\u751f\u6210\u8be6\u60c5\u9875\u5e76\u5bf9\u9f50 slug / URL\uff0c\u7136\u540e\u518d\u7ed1\u5b9a\u57df\u540d\u3002"
+            : "The site is deployed, but blog detail pages are not filled yet. Generate slug-aligned detail pages first, then continue to custom-domain binding."
+          : deployLocale === "zh-CN"
+            ? "\u8fd9\u4e2a\u7f51\u7ad9\u5df2\u7ecf\u90e8\u7f72\u6210\u529f\u3002\u8bf7\u76f4\u63a5\u5728\u8fd9\u5f20\u5361\u7247\u91cc\u586b\u5199\u4f60\u8981\u4f7f\u7528\u7684\u57df\u540d\uff0c\u63d0\u4ea4\u540e\u518d\u6309\u63d0\u793a\u914d\u7f6e DNS \u5e76\u7b49\u5f85\u751f\u6548\u3002"
+            : "Your site is deployed. Enter the domain you want to use directly in this card, submit it for binding, and then follow the DNS instructions shown here.",
       propagation:
         deployLocale === "zh-CN"
           ? "\u901a\u5e38\u51e0\u5206\u949f\u751f\u6548\uff0c\u6700\u957f\u53ef\u80fd\u9700\u8981 24 \u5c0f\u65f6\u3002"
           : "Usually active within minutes; some DNS providers can take up to 24 hours.",
       deployedUrl: liveUrl,
       deploymentHost,
+      blogDetailFillRequired,
       steps:
-        deployLocale === "zh-CN"
+        blogDetailFillRequired
+          ? deployLocale === "zh-CN"
+            ? [
+                "\u89e6\u53d1 blog detail fill workflow\uff0c\u751f\u6210\u8be6\u60c5\u9875\u6b63\u6587\u5e76\u5bf9\u9f50 slug / URL\u3002",
+                "\u786e\u8ba4 `/blog` \u5217\u8868\u4e0e `/blog/{slug}/` \u8be6\u60c5\u9875\u4e00\u4e00\u5bf9\u5e94\u3002",
+                "\u5b8c\u6210\u540e\u518d\u8fdb\u5165 custom domain \u7ed1\u5b9a\u3002",
+              ]
+            : [
+                "Run the blog detail fill workflow to generate article bodies and align slugs and URLs.",
+                "Confirm the `/blog` archive and `/blog/{slug}/` detail routes match one-to-one.",
+                "When that step is complete, continue to custom-domain binding.",
+              ]
+          : deployLocale === "zh-CN"
           ? [
               "\u76f4\u63a5\u5728\u8fd9\u5f20\u5361\u7247\u91cc\u8f93\u5165\u4f60\u7684\u6839\u57df\u540d\u6216 www \u57df\u540d\uff0c\u63d0\u4ea4\u7ed1\u5b9a\u3002",
               "\u63d0\u4ea4\u540e\u6309\u5361\u7247\u4e0b\u65b9\u7ed9\u51fa\u7684 DNS \u8bb0\u5f55\u914d\u7f6e\u3002",
@@ -6163,6 +6479,8 @@ async function runDeployOnlyTask(params: {
         analyticsSiteTag: analyticsSite?.siteTag || "",
         blogRuntimeStatus,
         generatedBlogContentStatus,
+        blogDetailFillStatus: blogDetailFillRequired ? "pending" : "completed",
+        blogDetailFillCompleted: !blogDetailFillRequired,
         deploymentStrategy,
         wranglerDeploymentUrl: wranglerDeployment?.deploymentUrl || "",
         productionUrl: liveUrl,
@@ -6190,6 +6508,271 @@ async function runDeployOnlyTask(params: {
     const message = String((error as any)?.message || error || "Deploy failed.");
     await failChatTask(taskId, message);
   }
+}
+
+async function runTranslateTask(params: {
+  taskId: string;
+  chatId: string;
+  workerId: string;
+  inputState: AgentState;
+  setSessionState?: (state: AgentState) => void;
+}): Promise<void> {
+  const { taskId, chatId, workerId, inputState, setSessionState } = params;
+  const startedAt = Date.now();
+  const checkpointRoot = localChatTaskRoot(chatId, taskId);
+  const checkpointProjectPath = path.join(checkpointRoot, "project.json");
+  const checkpointStatePath = path.join(checkpointRoot, "state.json");
+  const checkpointWorkflowDir = path.join(checkpointRoot, "workflow");
+  const checkpointSiteDir = path.join(checkpointRoot, "site");
+
+  await touchChatTaskHeartbeat(taskId, workerId);
+  await updateChatTaskProgress(taskId, {
+    assistantText: "Translation request accepted. Preparing locale catalogs from the latest site baseline.",
+    phase: "translate",
+    progress: {
+      stage: "translating:prepare",
+      stageMessage: "Loading the latest project baseline and locale source catalog...",
+      startedAt: new Date(startedAt).toISOString(),
+      lastTokenAt: nowIso(),
+      elapsedMs: 0,
+      attempt: 1,
+      checkpointSaved: false,
+    } as any,
+  });
+
+  const sourceProject = await resolveDeploySourceProject(inputState, { chatId, taskId });
+  if (!sourceProject) {
+    console.warn("[SkillRuntimeExecutor] translation baseline missing", {
+      chatId,
+      taskId,
+      baseline: summarizeRefineBaselineInputs(inputState),
+    });
+    await failChatTask(
+      taskId,
+      "No preview/deployed baseline found for translation. Please generate a site first, then request locale catalogs.",
+    );
+    return;
+  }
+
+  const requirementText = extractRequirementText(inputState);
+  const workflowContext = toRecord((inputState.workflow_context as any) || {});
+  const translationPlan = resolveTranslationLanePlan({
+    project: sourceProject,
+    instructionText: requirementText,
+    workflowContext,
+  });
+  if (!translationPlan) {
+    await failChatTask(
+      taskId,
+      "Translation source catalog is missing. Generate the multilingual baseline first so locale resources can be derived.",
+    );
+    return;
+  }
+  if (translationPlan.targetLocales.length === 0) {
+    await failChatTask(
+      taskId,
+      "No target locales were resolved for translation. Add supported locales in the requirement form or translation request.",
+    );
+    return;
+  }
+
+  const translateModelEnabledRaw = String(
+    process.env.CHAT_TRANSLATE_ENABLE_MODEL ||
+      (process.env.NODE_ENV === "test" ? "0" : "1"),
+  )
+    .trim()
+    .toLowerCase();
+  const translateModelEnabled = !["0", "false", "off", "no"].includes(translateModelEnabledRaw);
+  const providerLock = resolveRunProviderRunnerLock({
+    provider: String(workflowContext.lockedProvider || "").trim() || undefined,
+    model: String(workflowContext.lockedModel || "").trim() || undefined,
+  });
+  const providerConfig = resolveProviderConfig(providerLock);
+  let translateModelError = "";
+  const translated = await applyTranslationLane({
+    project: sourceProject,
+    plan: translationPlan,
+    translateCatalog: translateModelEnabled
+      ? async ({ targetLocale, defaultLocale, sourceMessages, existingMessages }) => {
+          try {
+            return await translateCatalogWithModel({
+              providerConfig,
+              timeoutMs: Math.max(30_000, Number(process.env.CHAT_TRANSLATE_TIMEOUT_MS || 120_000)),
+              targetLocale,
+              defaultLocale,
+              sourceMessages,
+              existingMessages,
+            });
+          } catch (error) {
+            translateModelError = String((error as any)?.message || "unknown translation failure");
+            return null;
+          }
+        }
+      : undefined,
+  });
+
+  await updateChatTaskProgress(taskId, {
+    assistantText: "Writing locale catalogs and validating the updated preview bundle.",
+    phase: "translate",
+    progress: {
+      stage: "translating:apply",
+      stageMessage: "Generating locale catalog files...",
+      startedAt: new Date(startedAt).toISOString(),
+      lastTokenAt: nowIso(),
+      elapsedMs: Date.now() - startedAt,
+      attempt: 1,
+      checkpointSaved: false,
+    } as any,
+  });
+
+  await fs.mkdir(checkpointRoot, { recursive: true });
+  await fs.mkdir(checkpointWorkflowDir, { recursive: true });
+  const translateDecision = buildLocalDecisionPlan(inputState);
+  const materialized = await materializeSiteDirectoryFromProject(translated.project, checkpointSiteDir, {
+    decision: translateDecision,
+    requirementText: requirementText || translateDecision.requirementText,
+  });
+  const translatedProject = materialized.project;
+  await fs.writeFile(checkpointProjectPath, JSON.stringify(translatedProject, null, 2), "utf8");
+  await fs.writeFile(
+    path.join(checkpointWorkflowDir, "translation_report.md"),
+    [
+      "# Translation Report",
+      "",
+      `- generatedAt: ${nowIso()}`,
+      `- defaultLocale: ${translated.validationReport.defaultLocale}`,
+      `- supportedLocales: ${translated.validationReport.supportedLocales.join(", ") || "(none)"}`,
+      `- targetLocales: ${translated.validationReport.targetLocales.join(", ") || "(none)"}`,
+      `- sourceCatalogPath: ${translated.validationReport.sourceCatalogPath}`,
+      `- sourceKeyCount: ${translated.validationReport.sourceKeyCount}`,
+      `- translatedLocales: ${translated.validationReport.translatedLocales.join(", ") || "(none)"}`,
+      `- fallbackLocales: ${translated.validationReport.fallbackLocales.join(", ") || "(none)"}`,
+      `- missingKeyFillCount: ${translated.validationReport.missingKeyFillCount}`,
+      ...(translateModelEnabled ? ["- translationModel: enabled"] : ["- translationModel: disabled"]),
+      ...(translateModelError ? [`- translationModelError: ${translateModelError}`] : []),
+      `- changedFiles: ${translated.changedFiles.join(", ") || "(none)"}`,
+      ...(translated.validationReport.notes.length > 0
+        ? [`- notes: ${translated.validationReport.notes.join(" | ")}`]
+        : []),
+      "",
+      "## Instruction",
+      "",
+      requirementText || "(empty)",
+    ].join("\n"),
+    "utf8",
+  );
+  await fs.writeFile(
+    checkpointStatePath,
+    JSON.stringify(
+      {
+        savedAt: nowIso(),
+        phase: "translate",
+        stage: "translated",
+        fileCount: materialized.fileCount,
+        changedFiles: translated.changedFiles,
+        validationReport: translated.validationReport,
+      },
+      null,
+      2,
+    ),
+    "utf8",
+  );
+
+  const visibleLocale = detectRuntimeLocale(
+    requirementText,
+    typeof workflowContext.preferredLocale === "string" ? workflowContext.preferredLocale : undefined,
+  );
+  const nextState: AgentState = {
+    ...inputState,
+    phase: "end",
+    project_json: translatedProject,
+    site_artifacts: translatedProject,
+    workflow_context: {
+      ...(inputState.workflow_context || {}),
+      executionMode: "generate",
+      translateRequested: false,
+      refineRequested: false,
+      deployRequested: false,
+      checkpointProjectPath,
+      deploySourceProjectPath: checkpointProjectPath,
+      deploySourceTaskId: taskId,
+      translationSourceProjectPath: checkpointProjectPath,
+      translationSourceTaskId: taskId,
+      supportedLocales: translated.validationReport.supportedLocales,
+      defaultLocale: translated.validationReport.defaultLocale,
+      translationTargetLocales: translated.validationReport.targetLocales,
+      translationValidationReport: translated.validationReport,
+    } as any,
+    messages: [
+      ...(inputState.messages || []),
+      new AIMessage({
+        id: crypto.randomUUID(),
+        content: `Translation completed. Generated locale catalogs for ${translated.validationReport.targetLocales.join(", ")}.`,
+      }),
+    ],
+  };
+  if (setSessionState) setSessionState(nextState);
+
+  const elapsedMs = Date.now() - startedAt;
+  await bestEffortWithTimeout(
+    syncGeneratedProjectAssetsFromSite({
+      ownerUserId: String(inputState.user_id || "").trim() || undefined,
+      projectId: chatId,
+      taskId,
+      siteDir: checkpointSiteDir,
+      generatedFiles: materialized.generatedFiles,
+    }).catch((error) => {
+      console.warn(
+        `[SkillRuntimeExecutor] Generated asset sync failed after translation: ${String((error as any)?.message || error)}`,
+      );
+      return undefined;
+    }),
+    resolveGeneratedAssetSyncTimeoutMs(),
+    "generated asset sync after translation",
+  );
+  await completeChatTask(taskId, {
+    assistantText:
+      visibleLocale === "zh-CN"
+        ? `翻译资源已生成，已更新 ${translated.validationReport.targetLocales.length} 个目标语言 catalog。`
+        : `Translation catalogs are ready for ${translated.validationReport.targetLocales.length} target locale(s).`,
+    phase: "end",
+    internal: {
+      workerId,
+      inputState: buildSessionSnapshot(nextState),
+      sessionState: buildSessionSnapshot(nextState),
+      artifactSnapshot: nextState.site_artifacts || null,
+    } as any,
+    progress: {
+      stage: "translated",
+      stageMessage: "Translation catalogs generated successfully.",
+      startedAt: new Date(startedAt).toISOString(),
+      lastTokenAt: nowIso(),
+      elapsedMs,
+      attempt: 1,
+      fileCount: materialized.fileCount,
+      generatedFiles: materialized.generatedFiles,
+      changedFiles: translated.changedFiles,
+      checkpointSaved: true,
+      checkpointDir: checkpointRoot,
+      checkpointStatePath,
+      checkpointProjectPath,
+      checkpointSiteDir,
+      checkpointWorkflowDir,
+      nextStep: "preview",
+      provider: translateModelEnabled ? providerLock.provider : undefined,
+      model: translateModelEnabled ? providerLock.model : undefined,
+      translationValidationReport: translated.validationReport,
+    } as any,
+  });
+  await syncChatMemoryFromState({
+    chatId,
+    taskId,
+    stage: "previewing",
+    state: nextState,
+    recentSummary: `Translation completed. Generated locale catalogs for ${translated.validationReport.targetLocales.join(", ")}.`,
+  }).catch((error) => {
+    console.warn(`[SkillRuntimeExecutor] short-term memory sync failed after translation: ${String((error as any)?.message || error)}`);
+  });
 }
 
 async function runRefineTask(params: {
@@ -6237,6 +6820,7 @@ async function runRefineTask(params: {
   }
 
   const requirementText = extractRequirementText(inputState);
+  const refineDecision = buildLocalDecisionPlan(inputState);
   const refineScope = String((inputState.workflow_context as any)?.refineScope || "patch").trim().toLowerCase();
   const refineLocale = detectRuntimeLocale(
     requirementText,
@@ -6253,6 +6837,7 @@ async function runRefineTask(params: {
   const refineSkillId = resolveProjectSkillAlias(
     String(
       (inputState.workflow_context as any)?.refineSkillId ||
+        (isBlogDetailFillAction(inputState) ? "blog-detail-fill-workflow" : "") ||
         process.env.CHAT_REFINE_SKILL_ID ||
         "website-refinement-workflow",
     ).trim(),
@@ -6260,6 +6845,10 @@ async function runRefineTask(params: {
   let refineSkillDirective = "";
   let effectiveRefineSkillId = refineSkillId;
   let refineSkillError = "";
+  const refineWorkflowContext = (inputState.workflow_context || {}) as Record<string, unknown>;
+  const refineWebsiteSurfaceMode = resolveWorkflowSurfaceSelection(refineWorkflowContext).websiteSurfaceMode;
+  const refineQualityContract = renderWebsiteQualityContract();
+  const refineTargetRoutes = extractRefineTargetRoutes(sourceProject, requirementText);
   let refined: { project: any; changedFiles: string[]; summary?: string } = {
     project: sourceProject,
     changedFiles: [],
@@ -6279,15 +6868,77 @@ async function runRefineTask(params: {
     });
     const providerConfig = resolveProviderConfig(providerLock);
     try {
-      refined = await applyRefineInstructionWithSkill({
-        project: sourceProject,
-        instruction: requirementText,
-        skillDirective: refineSkillDirective,
-        providerConfig,
-        timeoutMs: Math.max(30_000, Number(process.env.CHAT_REFINE_TIMEOUT_MS || 120_000)),
+      const validateRefinedProject = (candidate: { project: any; changedFiles: string[]; summary?: string }) => ({
+        ...candidate,
+        project: normalizeGeneratedProjectArtifactPreview({
+          project: candidate.project,
+          decision: refineDecision,
+          requirementText: requirementText || refineDecision.requirementText,
+          workflowContext: refineWorkflowContext,
+        }),
       });
+
+      const trySkillRefine = async (validationFeedback?: string) =>
+        applyRefineInstructionWithSkill({
+          project: sourceProject,
+          instruction: requirementText,
+          skillDirective: refineSkillDirective,
+          providerConfig,
+          timeoutMs: Math.max(30_000, Number(process.env.CHAT_REFINE_TIMEOUT_MS || 120_000)),
+          refineScope,
+          targetRoutes: refineTargetRoutes,
+          websiteSurfaceMode: refineWebsiteSurfaceMode,
+          qualityContract: refineQualityContract,
+          validationFeedback,
+        });
+
+      refined = await trySkillRefine();
+      if (refined.changedFiles.length > 0) {
+        try {
+          refined = validateRefinedProject(refined);
+        } catch (error) {
+          const validationMessage = String((error as any)?.message || error || "unknown validation failure");
+          refineSkillError = [refineSkillError, `invalid_skill_refine_output:${validationMessage}`].filter(Boolean).join(" | ");
+          if (isRecoverableRefineSkillFailure(error)) {
+            try {
+              const retried = await trySkillRefine(validationMessage);
+              if (retried.changedFiles.length > 0) {
+                refined = validateRefinedProject(retried);
+              } else {
+                refined = {
+                  project: sourceProject,
+                  changedFiles: [],
+                  summary: retried.summary || refined.summary,
+                };
+              }
+            } catch (retryError) {
+              refineSkillError = [
+                refineSkillError,
+                `retry_failed:${String((retryError as any)?.message || retryError || "unknown retry failure")}`,
+              ]
+                .filter(Boolean)
+                .join(" | ");
+              refined = {
+                project: sourceProject,
+                changedFiles: [],
+                summary: refined.summary,
+              };
+            }
+          } else {
+            refined = {
+              project: sourceProject,
+              changedFiles: [],
+              summary: refined.summary,
+            };
+          }
+        }
+      }
     } catch (error) {
-      refineSkillError = String((error as any)?.message || "unknown skill refine failure");
+      const message = String((error as any)?.message || "unknown skill refine failure");
+      refineSkillError = message;
+      if (!isRecoverableRefineSkillFailure(error)) {
+        // Leave the error recorded, but continue into deterministic fallback logic below.
+      }
     }
   } else {
     effectiveRefineSkillId = `${refineSkillId} (disabled)`;
@@ -6329,12 +6980,23 @@ async function runRefineTask(params: {
       };
     }
   }
+  refined = {
+    ...refined,
+    project: ensureSharedSiteRefsForRefineHtml(refined.project),
+  };
   if (refined.changedFiles.length === 0) {
-    await failChatTask(
-      taskId,
-      "Refine request did not match existing site content. Please provide exact target text/selector or a clearer visual change description.",
-    );
-    return;
+    if (refineScope === "structural" || isBlogDetailFillAction(inputState) || isBlogContentRegenerationAction(inputState)) {
+      refined = {
+        ...refined,
+        project: ensureSharedSiteRefsForRefineHtml(sourceProject),
+      };
+    } else {
+      await failChatTask(
+        taskId,
+        "Refine request did not match existing site content. Please provide exact target text/selector or a clearer visual change description.",
+      );
+      return;
+    }
   }
 
   await updateChatTaskProgress(taskId, {
@@ -6353,10 +7015,10 @@ async function runRefineTask(params: {
 
   await fs.mkdir(checkpointRoot, { recursive: true });
   await fs.mkdir(checkpointWorkflowDir, { recursive: true });
-  const refineDecision = buildLocalDecisionPlan(inputState);
   const materialized = await materializeSiteDirectoryFromProject(refined.project, checkpointSiteDir, {
     decision: refineDecision,
     requirementText: requirementText || refineDecision.requirementText,
+    workflowContext: (inputState.workflow_context || {}) as Record<string, unknown>,
   });
   refined = {
     ...refined,
@@ -6403,6 +7065,7 @@ async function runRefineTask(params: {
     locale: refineBlogLocale,
   });
   const isBlogContentRefine = isBlogContentRegenerationAction(inputState);
+  const isBlogDetailFillRefine = isBlogDetailFillAction(inputState);
   let generatedBlogContentStatus = "";
   let refinedDbProjectId = String((inputState as any)?.db_project_id || "").trim();
   if (isBlogContentRefine && refinedBlogPreview.required) {
@@ -6488,6 +7151,12 @@ async function runRefineTask(params: {
       deploySourceProjectPath: checkpointProjectPath,
       deploySourceTaskId: taskId,
       ...(generatedBlogContentStatus ? { generatedBlogContentStatus } : {}),
+      ...(isBlogDetailFillRefine
+        ? {
+            blogDetailFillStatus: "completed",
+            blogDetailFillCompleted: true,
+          }
+        : {}),
       ...refinedBlogWorkflowState,
     } as any,
     messages: [
@@ -6521,6 +7190,8 @@ async function runRefineTask(params: {
   await completeChatTask(taskId, {
     assistantText: isBlogContentRefine
       ? `Blog content is generated. ${refinedBlogPreview.posts.length} article bodies were updated and synced into the project Blog data.`
+      : isBlogDetailFillRefine
+        ? `Blog detail fill is complete. ${refined.changedFiles.length} files were updated and slug-aligned detail routes are ready for custom-domain binding.`
       : refinedBlogPreview.required
         ? renderPendingContentConfirmationAssistantText({
             locale: refineLocale,
@@ -6589,18 +7260,16 @@ async function runRefineTask(params: {
 export class SkillRuntimeExecutor {
   static async runTask(params: SkillRuntimeTaskParams): Promise<void> {
     const { taskId, chatId, inputState, workerId = "worker", setSessionState } = params;
-    const executionMode = String((inputState.workflow_context as any)?.executionMode || "").trim().toLowerCase();
-    const refineRequested =
-      executionMode === "refine" ||
-      Boolean((inputState.workflow_context as any)?.refineRequested);
-    const deployRequested =
-      Boolean((inputState.workflow_context as any)?.deployRequested) ||
-      isDeployConfirmationIntent(extractRequirementText(inputState));
-    if (refineRequested && !deployRequested) {
+    const executionMode = resolveRuntimeTaskExecutionMode(inputState);
+    if (executionMode === "refine") {
       await runRefineTask({ taskId, chatId, workerId, inputState, setSessionState });
       return;
     }
-    if (deployRequested) {
+    if (executionMode === "translate") {
+      await runTranslateTask({ taskId, chatId, workerId, inputState, setSessionState });
+      return;
+    }
+    if (executionMode === "deploy") {
       await runDeployOnlyTask({ taskId, chatId, workerId, inputState, setSessionState });
       return;
     }

@@ -486,7 +486,6 @@
         "insertBefore": "/contact",
         "matchPatterns": [
           "news",
-          "blog",
           "updates"
         ]
       },
@@ -496,10 +495,7 @@
         "matchPatterns": [
           "download",
           "whitepaper",
-          "manual",
-          "pdf",
-          "document",
-          "resource"
+          "manual"
         ]
       }
     ]
@@ -754,7 +750,7 @@
       "The generated blog page must share the same visual system, language, header, footer, and CTA strategy as the rest of the site.",
       "The blog page must include a stable data-source mount so deployment can bind project-scoped D1 blog data without replacing the page shell.",
       "Deployment derives the dynamic blog detail shell from the generated site so /blog/{slug}/ uses the same language, CSS, navigation, and footer as the generated website.",
-      "Generation must write every /blog/{slug}/ detail page from the user's supplied topics, named entities, source materials, and visible card promise so the page expands the intended subject instead of drifting into generic implementation filler.",
+      "The default first pass should prioritize a strong blog index or content-backed archive. Use the dedicated blog-detail-fill stage to write /blog/{slug}/ detail pages from the user's supplied topics, named entities, source materials, and visible card promise before custom-domain binding.",
       "Fallback article cards are required for preview, no-JS rendering, and SEO-safe first paint.",
       "Static code must not include D1 credentials, Cloudflare binding code, worker source, or secrets.",
       "A regenerate or rebuild request for any site with an explicit blog or selected content-backed route that already promises publishable detail pages restarts the full blog workflow rather than refreshing only shell pages.",

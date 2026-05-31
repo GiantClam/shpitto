@@ -125,6 +125,22 @@ describe("chat-task-store", () => {
     expect(await getActiveChatTask(chatId)).toBeUndefined();
   });
 
+  it("replaces stale progress copy with the real failure message", async () => {
+    const chatId = `chat-fail-message-${Date.now()}`;
+    const task = await createChatTask(chatId, undefined, {
+      assistantText: "Refine request accepted. Preparing base project and patch plan.",
+      progress: { stage: "refining:prepare" } as any,
+    });
+
+    await failChatTask(task.id, "provider_tool_protocol_mismatch: skill-tool-round-3 returned no native tool_calls");
+
+    const failed = await getChatTask(task.id);
+    expect(failed?.status).toBe("failed");
+    expect(failed?.result?.assistantText).toContain("provider_tool_protocol_mismatch");
+    expect(failed?.result?.assistantText).not.toContain("Refine request accepted");
+    expect(failed?.result?.error).toContain("provider_tool_protocol_mismatch");
+  });
+
   it("hides internal payload from client result", async () => {
     const redacted = sanitizeTaskResultForClient({
       assistantText: "ok",

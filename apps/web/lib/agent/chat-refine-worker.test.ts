@@ -195,6 +195,83 @@ describe("chat refine worker", () => {
     );
   });
 
+  it("falls back to deterministic refine when skill-based refine emits invalid html", async () => {
+    const previousRefineSkill = process.env.CHAT_REFINE_ENABLE_SKILL;
+    const previousProvider = process.env.OPENAI_API_KEY;
+    process.env.CHAT_REFINE_ENABLE_SKILL = "1";
+    process.env.OPENAI_API_KEY = process.env.OPENAI_API_KEY || "test-key";
+
+    const chatId = `chat-refine-worker-fallback-${Date.now()}`;
+    const sourceProjectPath = path.resolve(process.cwd(), ".tmp", "chat-tests", `${chatId}-source.json`);
+    await fs.mkdir(path.dirname(sourceProjectPath), { recursive: true });
+    await fs.writeFile(
+      sourceProjectPath,
+      JSON.stringify(
+        {
+          projectId: "refine-worker-fallback",
+          pages: [
+            {
+              path: "/",
+              html: "<!doctype html><html><head><title>Old Brand</title></head><body><main><h1>Old Brand</h1></main></body></html>",
+            },
+          ],
+          staticSite: {
+            mode: "skill-direct",
+            files: [
+              {
+                path: "/index.html",
+                type: "text/html",
+                content: "<!doctype html><html><head><title>Old Brand</title></head><body><main><h1>Old Brand</h1></main></body></html>",
+              },
+              { path: "/styles.css", type: "text/css", content: "body{color:#111}" },
+              { path: "/script.js", type: "text/javascript", content: "console.log('ok');" },
+            ],
+          },
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
+
+    const inputState: any = {
+      messages: [new HumanMessage({ content: "Change the brand heading to New Brand and update the accent color to #ff5500." })],
+      phase: "end",
+      current_page_index: 0,
+      attempt_count: 0,
+      workflow_context: {
+        executionMode: "refine",
+        refineScope: "patch",
+        refineRequested: true,
+        checkpointProjectPath: sourceProjectPath,
+        deploySourceProjectPath: sourceProjectPath,
+      },
+    };
+
+    const task = await createChatTask(chatId, undefined, {
+      assistantText: "queued refine",
+      phase: "queued",
+      internal: { inputState, skillId: "website-generation-workflow" },
+      progress: { stage: "queued" } as any,
+    });
+
+    const { runChatTaskWorkerOnce } = await import("../../scripts/chat-task-worker");
+    await runChatTaskWorkerOnce();
+
+    const updated = await getChatTask(task.id);
+    expect(updated?.status).toBe("succeeded");
+    expect(updated?.result?.assistantText).toContain("Refinement completed");
+    const refinedProjectPath = String(updated?.result?.progress?.checkpointProjectPath || "").trim();
+    const refinedProjectRaw = await fs.readFile(refinedProjectPath, "utf8");
+    expect(refinedProjectRaw).toContain("New Brand");
+    expect(refinedProjectRaw).toContain("#ff5500");
+
+    if (previousRefineSkill === undefined) delete process.env.CHAT_REFINE_ENABLE_SKILL;
+    else process.env.CHAT_REFINE_ENABLE_SKILL = previousRefineSkill;
+    if (previousProvider === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = previousProvider;
+  });
+
   it("materializes newly requested route pages during structural refine", async () => {
     const chatId = `chat-refine-worker-add-page-${Date.now()}`;
     const sourceProjectPath = path.resolve(process.cwd(), ".tmp", "chat-tests", `${chatId}-source.json`);

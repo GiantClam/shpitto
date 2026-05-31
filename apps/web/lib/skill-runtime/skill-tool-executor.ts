@@ -1329,7 +1329,6 @@ function ensureEnglishFirstI18nResourceFiles(
     byPath.has(I18N_MESSAGE_EN_PATH) ||
     byPath.has(I18N_MESSAGE_ZH_CN_PATH) ||
     next.some((file) => normalizePath(file.path).endsWith(".html") && hasBilingualI18nMapping(String(file.content || "")));
-  if (localePlan.mode === "single" && !hasExplicitBilingualFiles) return files;
   if (localePlan.mode === "multilingual") {
     const harvested = collectSourceLocaleMessagesFromHtml(next, localePlan.defaultLocale);
     const sourceCatalogPath = localePlan.sourceCatalogPath;

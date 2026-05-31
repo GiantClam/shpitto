@@ -13,6 +13,11 @@ import {
   createRouteUnitSmokeAdapter,
   runGenerationUnitsWithAdapter,
 } from "../skill-runtime/generation-worker-adapter";
+import {
+  collectSharedDistinctLocaleKeys,
+  hasBlogNavLink,
+  hasDuplicateFooterLinkGroups,
+} from "./institutional-live-quality";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local"), override: false, quiet: true });
 dotenv.config({ path: path.resolve(process.cwd(), "scripts/.env.local"), override: false, quiet: true });
@@ -188,21 +193,6 @@ function collectInternalRoutes(html: string): string[] {
   return Array.from(routes).sort();
 }
 
-function hasDuplicateFooterLinkGroups(html: string): boolean {
-  const footerMatch = String(html || "").match(/<footer\b[\s\S]*?<\/footer>/i);
-  const footer = String(footerMatch?.[0] || "");
-  const groups = Array.from(footer.matchAll(/<div\b[^>]*class=["'][^"']*footer-links[^"']*["'][^>]*>([\s\S]*?)<\/div>/gi))
-    .map((match) =>
-      Array.from(String(match[1] || "").matchAll(/\bhref=["']([^"']+)["']/gi))
-        .map((hrefMatch) => normalizeRoutePath(String(hrefMatch[1] || "")))
-        .filter(Boolean)
-        .sort()
-        .join("|"),
-    )
-    .filter((group) => group.split("|").filter(Boolean).length >= 3);
-  return new Set(groups).size !== groups.length;
-}
-
 async function collectFullSiteStaticVisualChecks(params: {
   siteDir: string;
   manifest: PromptControlManifest;
@@ -248,6 +238,7 @@ async function collectFullSiteStaticVisualChecks(params: {
       issues.push(issue.code);
     }
     if (hasDuplicateFooterLinkGroups(html)) issues.push("duplicate-footer-link-groups");
+    if (!allowedRoutes.has("/blog") && hasBlogNavLink(html)) issues.push("unexpected-blog-nav-link");
     if (!allowedRoutes.has("/blog") && /data-shpitto-blog-|\/api\/blog\/posts|href=["'][^"']*\/(?:blog|archive)(?:\/|["'#?])/i.test(html)) {
       issues.push("blog-archive-behavior-without-manifest-route");
     }
@@ -330,6 +321,12 @@ async function materializeProject(project: any, siteDir: string) {
   }
 }
 
+function collectBlogLikeHtmlPaths(files: Iterable<string>): string[] {
+  return Array.from(files)
+    .filter((file) => /^\/(?:blog|archive)(?:\/.*)?\/index\.html$/i.test(file))
+    .sort();
+}
+
 describe.skipIf(!shouldRun)("Open Design full-site live generation", () => {
   it("generates all planned routes with route-unit metadata", async () => {
     const config = scenarioConfig[scenario] || scenarioConfig.docs!;
@@ -395,13 +392,20 @@ describe.skipIf(!shouldRun)("Open Design full-site live generation", () => {
     for (const file of manifest.files) {
       expect(generatedFiles.has(file)).toBe(true);
     }
+    const blogLikeHtmlPaths = collectBlogLikeHtmlPaths(generatedFiles);
     const blogDetailRoutes = Array.from(generatedFiles)
       .filter((file) => /^\/blog\/[^/]+\/index\.html$/i.test(file))
       .map((file) => normalizeRoutePath(file.replace(/\/index\.html$/i, "")))
       .sort();
+    const unexpectedArchiveLikePaths = blogLikeHtmlPaths.filter(
+      (file) => file !== "/blog/index.html" && !/^\/blog\/[^/]+\/index\.html$/i.test(file),
+    );
     if (config.expectedBlogDetailCount) {
-      expect(blogDetailRoutes.length).toBeGreaterThanOrEqual(config.expectedBlogDetailCount);
+      expect(generatedFiles.has("/blog/index.html")).toBe(true);
+      expect(blogDetailRoutes.length).toBe(config.expectedBlogDetailCount);
+      expect(unexpectedArchiveLikePaths).toEqual([]);
     } else {
+      expect(blogLikeHtmlPaths).toEqual([]);
       expect(blogDetailRoutes).toEqual([]);
     }
     const routeUnits = summary.routeUnits || (summary.state as any)?.workflow_context?.routeUnits || [];
@@ -442,6 +446,17 @@ describe.skipIf(!shouldRun)("Open Design full-site live generation", () => {
     expect(summary.pageCount).toBeGreaterThanOrEqual(manifest.routes.length);
     expect(summary.qaSummary?.totalRoutes || manifest.routes.length).toBeGreaterThanOrEqual(manifest.routes.length);
     const css = await fs.readFile(path.join(siteDir, "styles.css"), "utf8");
+    const hasBilingualResourceFiles =
+      generatedFiles.has("/i18n/messages.en.json") && generatedFiles.has("/i18n/messages.zh-CN.json");
+    let distinctLocaleKeys: string[] = [];
+    if (hasBilingualResourceFiles) {
+      const [enMessages, zhMessages] = await Promise.all([
+        fs.readFile(path.join(siteDir, "i18n", "messages.en.json"), "utf8"),
+        fs.readFile(path.join(siteDir, "i18n", "messages.zh-CN.json"), "utf8"),
+      ]);
+      distinctLocaleKeys = collectSharedDistinctLocaleKeys(enMessages, zhMessages);
+      expect(distinctLocaleKeys.length).toBeGreaterThan(0);
+    }
     const routeVisualChecks = await collectFullSiteStaticVisualChecks({
       siteDir,
       manifest,
@@ -474,7 +489,13 @@ describe.skipIf(!shouldRun)("Open Design full-site live generation", () => {
             pageCount: summary.pageCount,
             fileCount: summary.fileCount,
             generatedFiles: summary.generatedFiles,
+            blogLikeHtmlPaths,
             blogDetailRoutes,
+            unexpectedArchiveLikePaths,
+            liveQuality: {
+              distinctLocaleKeyCount: distinctLocaleKeys.length,
+              hasBilingualResourceFiles,
+            },
             routeUnits,
             routeUnitDispatch: {
               adapterId: routeUnitDispatch.adapterId,

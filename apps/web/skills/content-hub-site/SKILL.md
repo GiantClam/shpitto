@@ -33,19 +33,36 @@ Use this skill when the site is a collection-first institutional or resource hub
 
 ## Route family contract
 
-- `/` must use an editorial/institutional collection-index homepage
+- `/` usually uses an editorial/institutional collection-index homepage
   archetype, not the generic marketing homepage rhythm and not docs workspace
   chrome.
+- Exception: when the confirmed prompt explicitly says route `/` is the
+  official homepage, institutional overview, or umbrella brand entry, keep the
+  first screen institution-led. In that case the masthead must establish brand
+  mission, trust scope, and audience first, and the collection/index mechanics
+  move to later shelves or proof rows instead of defining the homepage title,
+  H1, or lead identity.
 - Preferred homepage sequence:
   - editorial archive masthead
   - topic or collection shelves
   - standards or research ledger
   - resource index rows
   - institutional CTA
+- Preferred institution-led homepage sequence for that exception:
+  - brand-led institutional masthead
+  - capability or scope shelves
+  - standards/research proof band
+  - consultation or route CTA
+- For the institution-led exception, the homepage title, meta description, H1, first lead paragraph, and first capability/proof band must stay at the umbrella-institution level. Do not let certification, downloads, information-entry, consultation-entry, support-entry, or route-family naming dominate the opening identity.
+- For the institution-led exception, do not present route `/` as a contact/support intake page with a thin overview. The opening needs enough institutional depth to stand on its own before visitors reach route cards or consultation actions.
 - Homepage modules should use route-owned collection classes such as
   `collection-home`, `archive-masthead`, `resource-shelf`,
   `standards-ledger`, `research-index`, `issue-map`, and
   `institutional-context`.
+- For the institution-led exception, the opening section should instead use
+  route-owned institutional classes such as `institutional-masthead`,
+  `brand-overview`, `capability-shelf`, `standards-scope`, or
+  `institutional-proof`.
 - Do not lead the content-hub homepage with only generic `hero`, `hero-grid`,
   `card-grid`, `page-section`, or campaign CTA shells.
 - Do not hide generic marketing hero utility geometry behind collection-owned
@@ -58,6 +75,9 @@ Use this skill when the site is a collection-first institutional or resource hub
 - Collection openings should use route-owned collection semantics rather than generic `hero` / `hero-grid` / `aside` shells.
 - Resource cards, summary ledgers, index rows, and cross-navigation are the primary building blocks.
 - Do not invent `/blog/{slug}/` detail pages, editorial archives, or publishability promises unless the request explicitly demands them.
+- Do not let the homepage title, meta description, H1, or first lead paragraph
+  read like a downloads hub, certification portal, search directory, or
+  resource index when the prompt requires an official homepage identity.
 
 ## Shared shell contract
 
@@ -75,6 +95,10 @@ Use this skill when the site is a collection-first institutional or resource hub
 - Do not expose internal layout, responsive-review, or QA labels such as
   `Responsive layout`, `Shared shell`, `Desktop and mobile review`,
   `homepage groups`, `homepage frames`, or `visual system keeps`.
+- Do not use page-mechanics self-description on interior routes, such as
+  `The page groups...`, `This route helps teams...`,
+  `This page helps teams compare...`, or
+  `How the collection is organized`.
 - Rewrite any homepage or section explanation around the hub subject itself:
   standards coverage, research scope, resource categories, evidence quality,
   downloads, or institutional outcomes.
