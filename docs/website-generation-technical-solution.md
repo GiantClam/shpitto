@@ -2,6 +2,20 @@
 
 ## 1. 目标与范围
 
+## Implementation Status Note (2026-05)
+
+This document still contains some historical wording from the period when `website-generation-workflow` looked like the single website-generation surface.
+
+Current repository behavior is more layered:
+
+1. `website-generation-workflow` remains the compatibility entry skill for API, task, and runtime continuity.
+2. Concrete planning and generation may route through `website-orchestrator`, website surface-mode selectors, type-specific website skills, and imported website-only Open Design seeds.
+3. Open Design now owns a meaningful part of the upstream design-direction and question-form contract.
+4. HTML Anything-style example-backed skill discipline is partially active through imported skill metadata plus `example.html`, `assets/template.html`, and checklist discovery.
+5. Translation-driven multilingual flow is no longer prompt/spec-only; the repository now carries `supportedLocales`, `defaultLocale`, and a dedicated translation execution lane through chat, runtime, and worker routing.
+
+When this document conflicts with `docs/open-design-html-anything-conservative-adoption-plan.md`, prefer the newer Open Design / HTML Anything status description there.
+
 本文档定义 `shpitto` 当前网站生成功能的完整技术方案，覆盖：
 
 - 入口协议（API）
@@ -29,11 +43,11 @@
 - 代码：`apps/web/lib/agent/chat-task-store.ts`
 - SQL：`apps/web/supabase/chat_tasks.sql`、`apps/web/supabase/chat_task_events.sql`、`apps/web/supabase/chat_task_claim.sql`
 
-3. 执行层（Worker + Skill Runtime）
-- 职责：按固定阶段调用 LLM 生成文件并实时落盘。
+3. Execution layer (`Worker + Skill Runtime`)
+- Role: run `generate`, `refine`, and `translate` task modes in the chat worker, and keep `deploy` isolated in the deployment worker.
 - Worker：`apps/web/scripts/chat-task-worker.mts`
 - Runtime：`apps/web/lib/skill-runtime/executor.ts`
-- 生产建议：普通生成/精修 worker 与部署 worker 分离运行，避免长时间 Cloudflare 部署阻塞生成队列。
+- Production note: keep the chat worker (`generate/refine/translate`) separate from the deployment worker so long-running Cloudflare deploys do not block content-generation throughput.
 
 4. 产物层（本地 checkpoint + R2）
 - 职责：保存中间步骤产物与最终站点文件，支持进度可视化和排障。
@@ -77,6 +91,15 @@
 2. 进入 `worker:claimed` 状态并写 heartbeat。
 3. 调用 `SkillRuntimeExecutor.runTask` 执行生成。
 4. 成功后 `completeChatTask`；失败则 `failChatTask`。
+
+### 3.2.1 Runtime execution modes
+
+Current repository truth:
+
+1. `generate` -> full website generation
+2. `refine` -> post-preview or post-deploy targeted refinement
+3. `translate` -> locale-catalog generation from the latest baseline without full HTML regeneration
+4. `deploy` -> production deployment and deployment-only verification
 
 ### 3.3 Runtime 固定阶段
 
@@ -145,6 +168,8 @@
 
 - Skill 仍只从 `apps/web/skills` 加载，不读取 `.codex/skills`。
 - 主入口 skill 固定：`website-generation-workflow`（必选）。
+- Compatibility note: `website-generation-workflow` is still the required entry/root for continuity, but it is no longer the sole design/generation authority.
+- Current generation planning may additionally consume `website-orchestrator`, `website-type-selector`, type-specific website skills, imported website-only Open Design seeds, and HTML Anything-style example-backed skill resources before concrete file generation.
 - 辅助 skill 使用阶段化动态注入，不再整包一次性拼接到每次 prompt：
   - `styles`：`responsive-by-default`、`web-image-generator`、`web-icon-library`
   - `script`：`responsive-by-default`
@@ -154,6 +179,233 @@
   - `brainstorming` -> `superpowers-brainstorming`
   - `writing-plans` -> `superpowers-writing-plans`
 - 每阶段注入内容有总长度上限（`SKILL_DYNAMIC_DIRECTIVE_MAX_CHARS`），默认裁剪，避免 prompt 过大导致延迟或超时。
+
+### 4.6 Maximizing Open Design and HTML Anything
+
+Current repository truth: Open Design and HTML Anything are already active, but they still operate conservatively in several paths. To maximize their effect, the system should move from "metadata-assisted imported guidance" to "contract-driving imported guidance" without breaking the compatibility root.
+
+The goal is not to replace Shpitto's runtime with upstream product architecture. The goal is to let imported website-only discovery assets, direction assets, example-backed seeds, and checklist-backed resources become the strongest control surface before local TypeScript repair logic takes over.
+
+#### 4.6.1 Make the discovery brief the authoritative pre-generation contract
+
+Open Design is most valuable when ambiguity is reduced before route generation starts.
+
+To maximize that value:
+
+1. Treat `websiteDiscoveryBrief` as a durable contract, not as optional decoration.
+2. Require the brief to carry the selected `surfaceMode`, `visualDirectionId`, source priority, route list, and immutable constraints before full generation begins on high-ambiguity prompts.
+3. Persist the same brief through prompt drafting, website design spec generation, route-unit planning, refine, translate, and deploy checkpoints.
+4. Prefer updating the discovery brief when the user changes direction instead of layering late runtime overrides.
+
+Relevant implementation surfaces:
+
+1. `apps/web/lib/open-design/question-form.ts`
+2. `apps/web/lib/agent/prompt-draft-research.ts`
+3. `apps/web/app/api/chat/route.ts`
+4. `apps/web/lib/skill-runtime/website-design-spec.ts`
+
+Acceptance evidence:
+
+1. A vague prompt should produce a compact discovery contract instead of skipping straight to generation.
+2. A detailed prompt should still emit an inferred brief, even when no interactive clarification is shown.
+3. Refine and translate requests should continue to reference the same brief unless the user explicitly changes it.
+
+#### 4.6.2 Make imported seed skills the primary explanation for eligible website surfaces
+
+HTML Anything-style resources and imported Open Design seeds create the most leverage when they are the first-class generation narrative for eligible surfaces, not just a sidecar.
+
+To maximize that value:
+
+1. Define which surface modes are imported-skill-first by default.
+2. Keep `website-generation-workflow` only as the compatibility root and dispatcher, not as the main design-language owner.
+3. Route imported-skill-first scenarios through `website-orchestrator`, `website-type-selector`, and seed-skill selection before local fallback logic.
+4. Treat local fallback generation as the recovery path, not the primary explanation, for imported-skill-first scenarios.
+
+Relevant implementation surfaces:
+
+1. `apps/web/lib/skill-runtime/project-skill-loader.ts`
+2. `apps/web/lib/skill-runtime/open-design-adoption.ts`
+3. `apps/web/lib/skill-runtime/website-type-selector.ts`
+4. `apps/web/skills/open-design-*/`
+5. `apps/web/skills/imported-open-design/**`
+6. `apps/web/skills/imported-html-anything/**`
+
+Acceptance evidence:
+
+1. For supported surfaces, the selected imported seed skill is visible in runtime metadata and checkpoint outputs.
+2. Postmortems can explain the route through skill metadata and seed resources instead of only through TypeScript branches.
+3. Disabling imported-skill selection remains possible through rollout flags.
+
+#### 4.6.3 Promote `example.html`, `assets/template.html`, and `references/checklist.md` from indexed metadata to runtime-critical prompt context
+
+HTML Anything is most powerful when examples and templates are not merely discoverable, but actively shape generation.
+
+To maximize that value:
+
+1. Always expose the seed resource index to the skill-loading prompt path for imported website seeds.
+2. Include concise summaries of `example.html`, `assets/template.html`, and `references/checklist.md` in route-generation context whenever a seed skill is selected.
+3. Prefer "copy the proven structure, then adapt content" over re-describing the same structure in long abstract prose.
+4. Keep examples bounded and website-specific so they remain stronger than generic prompt text.
+
+Relevant implementation surfaces:
+
+1. `apps/web/lib/skill-runtime/project-skill-loader.ts`
+2. `apps/web/lib/skill-runtime/skill-tool-registry.ts`
+3. `apps/web/lib/skill-runtime/skill-tool-executor.ts`
+
+Acceptance evidence:
+
+1. Skill payloads visibly include the seed resource index when seed resources exist.
+2. Route-level regressions can be traced back to missing or weak seed resources, not only to weak freeform prompting.
+3. Replay quality improves when example-backed seeds are active versus when only `SKILL.md` prose is active.
+
+#### 4.6.4 Push surface-specific behavior upward into skill/spec metadata and shrink TypeScript-side narrative branching
+
+Open Design and HTML Anything deliver the most value when behavior differences live in imported contracts rather than scattered conditional branches.
+
+To maximize that value:
+
+1. Keep TypeScript responsible for routing, persistence, safety gates, and bounded normalization.
+2. Move site-type-specific layout posture, route opening topology, media expectations, and visual rhythm rules into skill metadata, examples, templates, and design specs.
+3. Avoid naming imported skills in one-off TypeScript conditionals unless the code is routing by declared metadata.
+4. Prefer explicit skill metadata fields and surface-mode compatibility declarations over brittle string matching.
+
+Relevant implementation surfaces:
+
+1. `apps/web/lib/skill-runtime/od-skill-metadata.ts`
+2. `apps/web/lib/skill-runtime/project-skill-loader.ts`
+3. `apps/web/lib/skill-runtime/website-design-spec.ts`
+4. `apps/web/lib/skill-runtime/skill-tool-executor.ts`
+
+Acceptance evidence:
+
+1. New imported website seeds can be staged without adding bespoke runtime branches.
+2. Site-type-specific prompt shape is explainable from metadata and examples.
+3. Runtime code changes are needed only for generalized execution behavior, not for individual seed identities.
+
+#### 4.6.5 Let route-unit generation inherit the selected seed and brief instead of reverting to a generic generator posture
+
+Imported assets lose force when the runtime selects a good seed up front but route generation later falls back to a generic internal tone.
+
+To maximize that value:
+
+1. Carry the selected discovery brief, visual direction, design-system choice, and seed resource index into every route unit.
+2. Use the homepage as the token and terminology anchor, then let interior routes inherit that same imported-skill posture.
+3. Make route-unit QA verify that generated routes still match the selected surface mode and seed constraints.
+4. Prefer route-local repair over full-site regeneration when one route drifts away from the imported contract.
+
+Relevant implementation surfaces:
+
+1. `apps/web/lib/skill-runtime/executor.ts`
+2. `apps/web/lib/skill-runtime/skill-tool-executor.ts`
+3. `apps/web/lib/skill-runtime/decision-layer.ts`
+4. `apps/web/lib/skill-runtime/website-design-spec.ts`
+
+Acceptance evidence:
+
+1. Route-unit snapshots preserve the same surface mode and discovery brief through generation and repair.
+2. A single failing route can be corrected without collapsing the imported contract for the rest of the site.
+3. Replay evidence shows reduced drift between homepage and interior routes.
+
+#### 4.6.6 Treat replay evidence as the promotion gate from conservative adoption to default behavior
+
+The fastest way to overfit imported assets is to make them universal before measuring where they actually help.
+
+To maximize value safely:
+
+1. Keep rollout flags for imported-skill selection, discovery-brief strictness, and route-unit behavior.
+2. Promote a surface from conservative adoption to default imported-skill-first behavior only after replay evidence shows better success rate, lower repair volume, or lower prompt drift.
+3. Store enough checkpoint metadata to compare imported-seed runs against fallback runs.
+4. Update documentation only after repository evidence and replay evidence agree.
+
+Recommended promotion order:
+
+1. `docs-knowledge-site`
+2. `content-hub-site`
+3. `corporate-b2b-site`
+4. `marketing-landing-site`
+5. `portfolio-blog-site`
+
+This order favors surfaces that benefit most from strong structural examples and content topology discipline.
+
+#### 4.6.7 Layered implementation matrix
+
+To maximize Open Design and HTML Anything without creating another patch-heavy runtime, the work should be pushed in source-first order.
+
+Priority order:
+
+1. requirement / discovery brief
+2. skill contract and seed resources
+3. orchestrator / selector policy
+4. runtime execution behavior
+
+Detailed implementation matrix:
+
+1. Requirement / discovery brief layer
+   - Expand `websiteDiscoveryBrief` so locale mode, `supportedLocales`, `defaultLocale`, design-system choice, and immutable constraints are explicit and durable.
+   - Ensure prompt-draft outputs and route specs consume the same brief fields without re-inference drift.
+   - Prefer adding detail here before introducing any new runtime-only fix.
+
+2. Skill contract layer
+   - Require each imported website seed to declare compatible surfaces, posture, route topology hints, media expectations, and example-backed constraints in metadata.
+   - Standardize `example.html`, `assets/template.html`, and `references/checklist.md` so the runtime can assume their semantics rather than heuristically guessing them.
+   - Keep seed examples free of placeholders, fake metrics, and non-website noise so they remain stronger than freeform prompt text.
+
+3. Orchestrator / selector layer
+   - Make imported-skill-first selection explicit per surface instead of inferred only from ad hoc scoring.
+   - Persist why a seed was selected: surface match, metadata match, trigger match, or fallback.
+   - Ensure refine and translate lanes inherit the same selected seed identity and brief identity unless the user explicitly changes direction.
+
+4. Runtime layer
+   - Make runtime prompts consume the chosen brief and seed resource index verbatim.
+   - Narrow runtime fixups toward bounded normalization, route-local repair, and safety validation.
+   - Avoid using runtime code to invent surface-specific design behavior that could live in imported seed metadata or examples.
+
+#### 4.6.8 Concrete near-term roadmap
+
+If the goal is to push Open Design and HTML Anything from conservative adoption toward maximum practical effect, the highest-value near-term sequence is:
+
+1. Phase 1: Make the brief and seed visible everywhere
+   - Ensure every eligible run stores `websiteDiscoveryBrief`, selected surface mode, selected visual direction, selected design system, and selected seed skill in checkpoint-visible metadata.
+   - Ensure route-unit snapshots and final task metadata preserve the same identity.
+
+2. Phase 2: Make seed resources authoritative
+   - Treat `Seed Resource Index` output as mandatory prompt context for imported website seeds.
+   - Audit current imported skills and fill missing `example.html`, `assets/template.html`, or `references/checklist.md` gaps where the resource would materially improve route fidelity.
+
+3. Phase 3: Remove narrative branching from runtime
+   - Review TypeScript branches that still encode site-type posture, homepage topology, media rhythm, or shell behavior.
+   - Move what can be expressed in skill metadata, design spec language, or seed examples out of runtime code.
+
+4. Phase 4: Promote imported-skill-first surfaces one by one
+   - Start with `docs-knowledge-site` and `content-hub-site`.
+   - Promote only after replay evidence shows better structure retention and lower repair volume.
+
+5. Phase 5: Strengthen refine and translate inheritance
+   - Ensure post-generation lanes keep using the same discovery brief, seed identity, and surface posture instead of quietly degrading to generic fallback behavior.
+
+#### 4.6.9 Success metrics for "maximum effect"
+
+Open Design and HTML Anything are near their maximum useful effect only when the following become true in replay evidence and production traces:
+
+1. More runs are explainable by discovery brief + seed skill + seed resources than by post hoc runtime fixups.
+2. Homepage and interior-route drift drops measurably for imported-skill-first surfaces.
+3. Refine volume decreases because the first-pass structure is closer to the requested direction.
+4. Route-local repair is more common than full-site recovery for imported-skill-first surfaces.
+5. New imported website seeds can be staged with metadata and examples, without bespoke TypeScript behavior.
+6. Postmortems identify missing or weak seed contracts more often than "runtime forgot the style" failures.
+
+#### 4.6.10 Guardrails while maximizing adoption
+
+Maximizing effect does not mean removing all conservative boundaries.
+
+These guardrails should remain:
+
+1. `website-generation-workflow` stays as the compatibility root until task, replay, and deployment continuity no longer depend on it.
+2. Imported-skill selection remains rollbackable through flags and selector policy.
+3. Runtime safety gates still protect file completeness, placeholder leakage, and visitor-copy failures.
+4. Non-website imported assets remain out of scope even if upstream products support them.
+5. Documentation should only be upgraded from "conservative adoption" to "default behavior" after repository evidence and replay evidence agree.
 
 ---
 
@@ -233,6 +485,7 @@ SQL：`apps/web/supabase/chat_task_claim.sql`
 - 创建异步任务并返回 `taskId`
 - 状态码 `202`
 - 支持 `skill_id` 参数（默认 `website-generation-workflow`）
+- Compatibility note: the default request skill remains `website-generation-workflow`, but downstream runtime selection may still resolve `website-orchestrator`, type-specific website skills, and imported website-only seeds.
 
 返回要点：
 - `taskId`
@@ -257,7 +510,7 @@ SQL：`apps/web/supabase/chat_task_claim.sql`
 - `CHAT_WORKER_POLL_MS`
 - `CHAT_WORKER_STALE_RUNNING_MS`
 - `CHAT_WORKER_ONCE`
-- `CHAT_WORKER_CLAIM_MODES`：普通 worker 建议设置为 `generate,refine`
+- `CHAT_WORKER_CLAIM_MODES`: recommended value `generate,refine,translate`
 - `DEPLOY_WORKER_CLAIM_MODES`：部署 worker 建议设置为 `deploy`
 
 ### 8.2 Provider 与模型
@@ -550,7 +803,7 @@ Cloudflare Pages
 当前仓库支持通过 `railway:start` 在同一个 repo 内选择运行角色：
 
 ```text
-RAILWAY_WORKER_MODE=chat             -> 普通生成/精修 worker，默认 claim generate,refine
+RAILWAY_WORKER_MODE=chat             -> chat worker; default claim modes are generate, refine, translate
 RAILWAY_WORKER_MODE=deploy           -> 部署域 worker，默认 claim deploy，启用 Wrangler + Blog runtime
 RAILWAY_WORKER_MODE=deploy-preflight -> 只运行部署域 preflight 后退出
 ```
@@ -571,17 +824,18 @@ RAILWAY_WORKER_MODE=deploy pnpm --filter web railway:start
 
 ### 15.8 部署任务分流与 Worker Claim
 
-当前 `shpitto_chat_tasks` 已能承载生成、精修和部署任务。生产环境需要增加 claim 过滤，避免普通生成 worker 与部署 worker 抢同一队列：
+Current repository truth: `shpitto_chat_tasks` now carries `generate`, `refine`, `translate`, and `deploy` tasks.
+Production claim filtering should keep chat and deployment lanes from competing for the same queue entries:
 
-- 普通 worker：只处理 `generate`、`refine`。
-- 部署 worker：只处理 `deploy`。
-- 过滤字段：`result.internal.inputState.workflow_context.executionMode`。
-- 兼容字段：`result.internal.inputState.workflow_context.deployRequested = true` 可作为 deploy 任务兜底识别。
+- Chat worker: handle `generate`, `refine`, and `translate`.
+- Deploy worker: handle `deploy`.
+- Primary routing field: `result.internal.inputState.workflow_context.executionMode`.
+- Compatibility fallback: `result.internal.inputState.workflow_context.deployRequested = true` can still identify deploy tasks conservatively.
 
 建议环境变量：
 
 ```env
-CHAT_WORKER_CLAIM_MODES=generate,refine
+CHAT_WORKER_CLAIM_MODES=generate,refine,translate
 DEPLOY_WORKER_CLAIM_MODES=deploy
 ```
 
@@ -612,11 +866,11 @@ SHPITTO_DEPLOY_BLOG_RUNTIME=1
 RAILWAY_DEPLOY_PREFLIGHT=1
 ```
 
-普通生成 worker service 环境变量：
+Chat worker service environment:
 
 ```env
 RAILWAY_WORKER_MODE=chat
-CHAT_WORKER_CLAIM_MODES=generate,refine
+CHAT_WORKER_CLAIM_MODES=generate,refine,translate
 ```
 
 ### 15.9 Wrangler 部署适配器
@@ -893,7 +1147,7 @@ SUPABASE_TASK_PROXY_URL=http://127.0.0.1:7890
 - Deploy worker：`deploy-task-worker.mts` 默认只 claim `deploy` 任务，可部署在 Railway 常驻运行
 - Railway start dispatcher：`railway:start` 根据 `RAILWAY_WORKER_MODE` 启动 chat、deploy 或 deploy-preflight 模式，默认保持 chat worker 兼容
 - Deploy worker preflight：`deploy-worker:preflight` 可验证 Supabase、Cloudflare、D1、代理和 Wrangler CLI 是否可用
-- Worker claim 分流：`claimNextQueuedChatTask` 支持按 `generate/refine/deploy` execution mode 过滤
+- Worker claim routing: `claimNextQueuedChatTask` can filter by `generate/refine/translate/deploy` execution modes
 - 动态 runtime smoke：启用 Wrangler Blog runtime 后，部署成功前必须验证 `/api/blog/posts` 返回 JSON、`/blog/` 返回 HTML、RSS/sitemap/runtime metadata 可访问
 - 真实 Wrangler smoke：`smoke:blog-runtime:wrangler` 会创建临时 Pages 项目、通过 Wrangler 发布 Blog runtime、验证 JSON/HTML/RSS/sitemap 后删除临时项目
 - 默认内容：仅用于未绑定公开 blog project 或开发环境兜底

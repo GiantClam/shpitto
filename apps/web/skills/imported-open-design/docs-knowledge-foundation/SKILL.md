@@ -1,12 +1,18 @@
 ---
 name: "docs-knowledge-foundation"
 description: |
-  Website-only staged import adapted from Open Design patterns for documentation
-  and knowledge-base surfaces. Keep as sidecar guidance until replay evidence
-  proves promotion readiness.
+  Website-only import adapted from Open Design patterns for documentation
+  and knowledge-base surfaces. Default primary seed for docs/knowledge
+  generation.
 triggers:
   - "docs knowledge foundation"
   - "documentation hub"
+  - "documentation"
+  - "knowledge base"
+  - "docs portal"
+  - "developer portal"
+  - "api reference"
+  - "implementation guides"
 od:
   mode: website
   platform: responsive
@@ -18,8 +24,8 @@ od:
     requires: true
     sections: [color, typography, layout, components]
   activation:
-    mode: sidecar
-    rollout_status: staged
+    mode: primary
+    rollout_status: active
     website_only: true
     ownership_layer: skill
     compatible_surface_modes: [docs-knowledge-site]
@@ -27,9 +33,9 @@ od:
 
 # Docs Knowledge Foundation
 
-This staged imported skill is a website-only seed for docs and knowledge surfaces.
+This imported skill is the default website-only primary seed for docs and knowledge surfaces.
 
-Use it as sidecar guidance only:
+Use it as primary guidance:
 
 - route-owned documentation openings
 - structured wayfinding
@@ -47,4 +53,4 @@ Use it as sidecar guidance only:
 - avoid generic `hero + cards + CTA`, enterprise proof bands, and content-hub
   archive shelves
 
-Do not promote it to default selection until targeted replay evidence proves it improves stability.
+Treat this skill as the first structural contract for docs/knowledge surfaces before falling back to generic local website generation guidance.

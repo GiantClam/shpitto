@@ -395,3 +395,35 @@ Acceptance:
 - The refine worker can complete missing blog detail pages from an existing `/blog/index.html` baseline and can materialize newly requested route pages such as `/pricing/index.html` without escalating to full-site regeneration.
 - Explicit whole-site requests such as `重新生成整个网站` still route to full generation.
 - Deploy remains independent from generate/refine.
+
+## Phase 8: Minimal Fast-Impact Website Experience Pass
+
+Goal:
+- Improve generated website quality without changing the product framework, async task flow, provider routing, deployment pipeline, or preview architecture.
+- Make first-pass outputs feel more like real visitor-facing websites and less like generic AI templates.
+
+Scope:
+- Strengthen existing prompt contracts and anti-slop QA only.
+- Do not add external services, sandboxes, new generation stages, route-specific product branches, or brand-specific rules.
+
+Implementation:
+1. Strengthen `apps/web/lib/skill-runtime/website-quality-contract.ts`.
+   - Require the homepage first screen to identify the brand, object, or business category before broad value propositions.
+   - Require each route to include concrete nouns from the brief, uploaded/domain/source material, or route context.
+   - Forbid generic service/feature card labels, anonymous proof, repeated CTA labels, and repeated hero-card-CTA page skeletons.
+   - Make mobile text fit and first-screen composition part of the existing quality contract.
+2. Strengthen `apps/web/lib/skill-runtime/website-design-spec.ts`.
+   - Add a route-level page archetype line derived from the route role.
+   - Distinguish home, products/catalog, solutions/services, cases/proof, about/identity, contact/conversion, docs/reference, content hub, and blog/editorial surfaces.
+   - Keep the rule generic and surface-owned rather than scenario-owned.
+3. Strengthen `apps/web/lib/visual-qa/anti-slop-linter.ts`.
+   - Detect generic service/feature headings and generic proof language.
+   - Detect pages with too few concrete nouns from route context.
+   - Detect pages where generic CTA labels dominate the action set.
+   - Return repair hints that tell the next generation attempt exactly what to replace.
+
+Acceptance:
+- Focused anti-slop tests pass.
+- The generated quality contract includes visitor-facing specificity rules.
+- The route design spec exposes a page archetype for route contracts.
+- Runtime executor and product flow remain unchanged.

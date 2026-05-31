@@ -5,8 +5,9 @@ import { getServerLocale } from "@/lib/i18n-server";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Shpitto - AI Industrial Website Builder",
-  description: "Generate professional industrial websites in minutes.",
+  title: "AI Website Builder for Export B2B Companies | Shpitto",
+  description:
+    "Shpitto helps manufacturers and trading companies create professional, SEO-friendly export websites with AI. Generate company pages, product pages, and multilingual content faster.",
   metadataBase: new URL("https://shpitto.com"),
   icons: {
     icon: [

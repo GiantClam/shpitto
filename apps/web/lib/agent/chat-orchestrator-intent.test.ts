@@ -60,6 +60,17 @@ describe("chat orchestrator intent", () => {
     expect(decision.shouldCreateTask).toBe(true);
   });
 
+  it("treats homepage and cases placeholder-media replacement as route regenerate refine", () => {
+    const decision = decide(
+      "Replace placeholder blank media blocks on the homepage hero and the Cases page with real image-backed media. Do not use media-frame or ph-img.",
+      "deployed",
+    );
+    expect(decision.intent).toBe("refine_deployed");
+    expect(decision.reason).toBe("route-media-rewrite-on-deployed");
+    expect(decision.refineScope).toBe("route_regenerate");
+    expect(decision.shouldCreateTask).toBe(true);
+  });
+
   it("routes deployed refinements to refine_deployed", () => {
     const decision = decide("上线版本标题改成 LC-CNC Global", "deployed");
     expect(decision.intent).toBe("refine_deployed");
@@ -513,5 +524,18 @@ describe("chat orchestrator intent", () => {
     expect(spec.customNotes).toContain("300%");
     expect(spec.siteType).toBe("portfolio");
     expect(spec.locale).toBe("bilingual");
+  });
+  it("treats explicit blog detail fill requests as deferred detail workflow on preview", () => {
+    const decision = decide("fill blog detail pages for the current archive", "previewing");
+    expect(decision.intent).toBe("refine_preview");
+    expect(decision.reason).toBe("explicit-blog-detail-fill-on-preview");
+    expect(decision.refineScope).toBe("structural");
+    expect(decision.shouldCreateTask).toBe(true);
+    expect(decision.workflowHints).toMatchObject({
+      skillActionDomain: "blog_detail",
+      skillAction: "fill_details",
+      blogDetailFillRequested: true,
+      refineSkillId: "blog-detail-fill-workflow",
+    });
   });
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { submitPasswordLogin } from "@/lib/auth/password-login";
 import { serializeAuthTheme, withAuthQueryPath, withAuthThemePath } from "@/lib/auth/theme";
 import { useState } from "react";
 import Link from "next/link";
@@ -33,19 +34,15 @@ export function LoginForm({ initialLocale, nextPath, theme, projectId, siteKey }
     setLoading(true);
     setMessage(null);
 
-      const response = await fetch("/auth/password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, projectId, siteKey }),
-      });
-    const data = (await response.json().catch(() => ({}))) as { error?: string };
+    const result = await submitPasswordLogin({ email, password, projectId, siteKey });
 
-    if (!response.ok) {
-      setMessage({ type: "error", text: data.error || "Invalid login credentials" });
+    if (!result.ok) {
+      setMessage({ type: "error", text: result.error });
       setLoading(false);
-    } else {
-      window.location.assign(nextPath);
+      return;
     }
+
+    window.location.assign(nextPath);
   };
 
   const handleGoogleLogin = async () => {

@@ -6,10 +6,16 @@ import {
   fileContent,
   htmlToVisibleText,
   loadGeneratedProject,
+  normalizeRoute,
   parsePromptControlManifest,
   pickReplayPrompt,
   routeToHtmlPath,
 } from "./chat-replay-live-test-helpers";
+import {
+  collectSharedDistinctLocaleKeys,
+  hasBlogNavLink,
+  hasDuplicateFooterLinkGroups,
+} from "./institutional-live-quality";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local"), override: false, quiet: true });
 dotenv.config({ path: path.resolve(process.cwd(), "scripts/.env.local"), override: false, quiet: true });
@@ -100,6 +106,9 @@ describe.skipIf(!runEnterpriseReplay)("enterprise existing chat live replay", ()
         const files = (projectJson?.staticSite?.files || []) as Array<{ path?: string; content?: string; type?: string }>;
         const paths = files.map((file) => String(file.path || ""));
         const indexHtml = fileContent(files, "/index.html");
+        const enMessages = fileContent(files, "/i18n/messages.en.json");
+        const zhMessages = fileContent(files, "/i18n/messages.zh-CN.json");
+        const distinctLocaleKeys = collectSharedDistinctLocaleKeys(enMessages, zhMessages);
         const htmlFiles = files.filter((file) => String(file.path || "").endsWith(".html"));
         const combinedVisibleText = htmlToVisibleText(htmlFiles.map((file) => String(file.content || "")).join("\n"));
         const expectedManifestFiles = Array.from(
@@ -108,6 +117,7 @@ describe.skipIf(!runEnterpriseReplay)("enterprise existing chat live replay", ()
         const expectedManifestHtmlPaths = Array.from(
           new Set((promptManifest?.routes || []).map((route) => routeToHtmlPath(route)).filter(Boolean)),
         );
+        const manifestRoutes = new Set((promptManifest?.routes || []).map((route) => normalizeRoute(route)));
 
         const previewRootRes = await getPreviewRoot(new Request("http://localhost/api/chat/tasks/x/preview"), {
           params: Promise.resolve({ taskId: generated.id }),
@@ -134,6 +144,13 @@ describe.skipIf(!runEnterpriseReplay)("enterprise existing chat live replay", ()
         }
         expect(indexHtml.length).toBeGreaterThan(500);
         expect(combinedVisibleText.length).toBeGreaterThan(300);
+        expect(hasDuplicateFooterLinkGroups(indexHtml)).toBe(false);
+        if (!manifestRoutes.has("/blog")) {
+          expect(hasBlogNavLink(indexHtml)).toBe(false);
+        }
+        if (paths.includes("/i18n/messages.en.json") && paths.includes("/i18n/messages.zh-CN.json")) {
+          expect(distinctLocaleKeys.length).toBeGreaterThan(0);
+        }
 
         console.log(
           "ENTERPRISE_CHAT_REPLAY_PREVIEW=" +
@@ -144,6 +161,11 @@ describe.skipIf(!runEnterpriseReplay)("enterprise existing chat live replay", ()
                 generatedProjectSource: generatedProject.source,
                 promptManifest,
                 generatedPaths: paths,
+                liveQuality: {
+                  duplicateFooterGroups: hasDuplicateFooterLinkGroups(indexHtml),
+                  hasBlogNavLink: hasBlogNavLink(indexHtml),
+                  distinctLocaleKeyCount: distinctLocaleKeys.length,
+                },
                 previewUrlPath,
                 previewUrl,
               },

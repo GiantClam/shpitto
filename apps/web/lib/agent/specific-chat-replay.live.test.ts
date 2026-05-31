@@ -2,6 +2,17 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import dotenv from "dotenv";
 import { describe, expect, it } from "vitest";
+import {
+  collectSharedDistinctLocaleKeys,
+  hasBlogNavLink,
+  hasDuplicateFooterLinkGroups,
+} from "./institutional-live-quality";
+import { captureMobilePreviewScreenshots } from "./chat-replay-live-test-helpers";
+import {
+  I18N_LOCALE_REGISTRY_PATH,
+  I18N_MESSAGE_EN_PATH,
+  I18N_MESSAGE_ZH_CN_PATH,
+} from "../skill-runtime/locale-plan";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local"), override: false, quiet: true });
 dotenv.config({ path: path.resolve(process.cwd(), "scripts/.env.local"), override: false, quiet: true });
@@ -9,6 +20,24 @@ dotenv.config({ path: path.resolve(process.cwd(), "../../.env"), override: false
 
 const runSpecificReplay = String(process.env.RUN_SPECIFIC_CHAT_REPLAY || "").trim() === "1";
 const replayChatId = process.env.SPECIFIC_CHAT_REPLAY_ID || "chat-1778485587681-7m1313";
+
+const SPECIFIC_REPLAY_REQUIRED_BLOG_DETAILS = [
+  {
+    slug: "ai-notes-for-everyday-judgment",
+    title: "把 AI 写进日常判断，而不是只写进演示稿",
+    topic: "WeChat real-time media architecture and practical AI judgment habits",
+  },
+  {
+    slug: "devops-as-team-rhythm",
+    title: "DevOps 不是流程口号，而是团队节拍",
+    topic: "DevOps operating systems and recovery-aware delivery rhythm",
+  },
+  {
+    slug: "consumer-products-build-trust",
+    title: "消费者产品如何把信任感做进细节里",
+    topic: "AI SaaS commercialization, K12 product trust, and HelloTalk-style retention judgment",
+  },
+] as const;
 
 process.env.CHAT_TASKS_USE_SUPABASE = "1";
 process.env.CLOUDFLARE_REQUIRE_REAL = "1";
@@ -69,6 +98,145 @@ function parsePromptControlManifest(prompt: string): { routes: string[]; files: 
     }
   }
   return null;
+}
+
+function replaceFirstJsonCodeBlock(source: string, nextJson: string): string {
+  return String(source || "").replace(/```json\s*[\s\S]*?```/i, `\`\`\`json\n${nextJson}\n\`\`\``);
+}
+
+function enforceSpecificReplayPromptControlManifest(prompt: string): string {
+  const normalized = String(prompt || "").trim();
+  if (!normalized) return normalized;
+  const manifest = parsePromptControlManifest(normalized);
+  if (!manifest || !manifest.routes.includes("/blog")) return normalized;
+  const nextManifest = {
+    schemaVersion: 1,
+    promptKind: "canonical_website_prompt",
+    routeSource: "prompt_draft_page_plan",
+    routes: ["/", "/blog"],
+    navLabels: ["Home", "Blog"],
+    files: [
+      "/styles.css",
+      "/script.js",
+      I18N_LOCALE_REGISTRY_PATH,
+      I18N_MESSAGE_EN_PATH,
+      I18N_MESSAGE_ZH_CN_PATH,
+      "/index.html",
+      "/blog/index.html",
+      ...requiredReplayBlogDetailHtmlPaths(),
+    ],
+    localeConfig: {
+      mode: "bilingual",
+      defaultLocale: "zh-CN",
+      locales: ["zh-CN", "en"],
+      translationDriven: false,
+      sourceCatalogPath: I18N_MESSAGE_ZH_CN_PATH,
+    },
+    pageIntents: [
+      {
+        route: "/",
+        navLabel: "Home",
+        purpose: "Homepage. Establish the brand overview, core value, primary route entry, and next action while preserving site home-entry semantics.",
+        source: "requirement_spec",
+      },
+      {
+        route: "/blog",
+        navLabel: "Blog",
+        purpose: "Deliver a route-specific page for Blog with distinct source-backed content and a clear next action.",
+        source: "requirement_spec",
+      },
+    ],
+  };
+  return replaceFirstJsonCodeBlock(normalized, JSON.stringify(nextManifest, null, 2));
+}
+
+function replayPromptIncludesPublishableBlogContract(prompt: string) {
+  return /exactly\s*3\s+complete\s+article\s+detail\s+pages|3\s+complete\s+article\s+detail\s+pages|3\s+publishable\s+article\s+detail\s+pages/i.test(
+    String(prompt || ""),
+  );
+}
+
+function replayPromptIncludesBilingualResourceContract(prompt: string) {
+  return /must\s+ship\s+real\s+en\/zh\s+i18n\s+resource\s+files|\/i18n\/messages\.en\.json|\/i18n\/messages\.zh-CN\.json|core\s+shared-shell\s+keys\s+must\s+contain\s+real\s+translation/i.test(
+    String(prompt || ""),
+  );
+}
+
+function replayPromptIncludesSharedShellDetailExclusion(prompt: string) {
+  return /global header and homepage\/footer destination groups may link only to `\/` and `\/blog`|detail routes are article-level destinations only/i.test(
+    String(prompt || ""),
+  );
+}
+
+function replayPromptIncludesRequiredBilingualArtifactRule(prompt: string) {
+  return /required output artifacts for this replay|first generation pass is incomplete if either file is missing/i.test(
+    String(prompt || ""),
+  );
+}
+
+function enforceSpecificReplayPublishableBlogContract(prompt: string): string {
+  const normalized = enforceSpecificReplayPromptControlManifest(String(prompt || "").trim());
+  if (!normalized) return normalized;
+  const manifest = parsePromptControlManifest(normalized);
+  const routes = manifest?.routes || [];
+  if (!routes.includes("/blog")) return normalized;
+  let next = normalized;
+  if (!replayPromptIncludesPublishableBlogContract(next)) {
+    next = `${next}
+
+## Replay Publishable Blog Contract
+
+- The Blog route must publish exactly 3 complete article detail pages with stable \`/blog/{slug}/\` URLs on the first generation pass.
+- The 3 required detail files are fixed for this replay. Do not rename, localize, replace, or reduce them:
+  - \`/blog/${SPECIFIC_REPLAY_REQUIRED_BLOG_DETAILS[0].slug}/index.html\` with the article title "${SPECIFIC_REPLAY_REQUIRED_BLOG_DETAILS[0].title}"
+  - \`/blog/${SPECIFIC_REPLAY_REQUIRED_BLOG_DETAILS[1].slug}/index.html\` with the article title "${SPECIFIC_REPLAY_REQUIRED_BLOG_DETAILS[1].title}"
+  - \`/blog/${SPECIFIC_REPLAY_REQUIRED_BLOG_DETAILS[2].slug}/index.html\` with the article title "${SPECIFIC_REPLAY_REQUIRED_BLOG_DETAILS[2].title}"
+- Required article topics:
+  - ${SPECIFIC_REPLAY_REQUIRED_BLOG_DETAILS[0].topic}
+  - ${SPECIFIC_REPLAY_REQUIRED_BLOG_DETAILS[1].topic}
+  - ${SPECIFIC_REPLAY_REQUIRED_BLOG_DETAILS[2].topic}
+- \`/blog/index.html\` must include the hidden Blog data-source mount contract inside the route-owned archive/list section: \`data-shpitto-blog-root\`, \`data-shpitto-blog-api="/api/blog/posts"\`, and \`data-shpitto-blog-list\`.
+- Every visible article/archive card on \`/blog/index.html\` must link to one of those 3 exact detail pages.
+- The archive must expose all 3 detail links in the first generation pass. Do not ship only one finished detail page while leaving the others as missing files or implied future work.
+- Do not invent category, tag, author, or archive routes beyond \`/blog\` and the 3 requested \`/blog/{slug}/\` detail pages.
+- Do not label the visible archive UI with generic internal wording such as "文章列表", "article list", "content API", "blog backend", or "data source". Use visitor-facing editorial wording instead.
+- Keep the writing concrete and source-shaped around Huawei, WeChat globalization, HelloTalk, DevOps systems, and AI SaaS operating judgment rather than generic launch-post framing.`;
+  }
+  if (!replayPromptIncludesBilingualResourceContract(next)) {
+    next = `${next}
+
+## Replay Bilingual Resource Contract
+
+- This replay must ship real EN/ZH i18n resource files on the first generation pass: \`/i18n/messages.en.json\` and \`/i18n/messages.zh-CN.json\`.
+- Keep exactly one visible language at a time in the rendered HTML. Do not render visible Chinese/English pairs in the same heading, paragraph, CTA, nav item, footer item, or blog card.
+- The homepage and shared shell must contain stable \`data-i18n\` keys for nav, hero, CTA, and footer copy, and the EN/ZH resource files must both include those keys.
+- Core shared-shell keys must contain real translation differences between English and Chinese. Do not mirror English strings into the Chinese file or Chinese strings into the English file.
+- The default visible language may stay Chinese-first, but the generated artifact must still include both locale files and a real route-preserving EN/ZH switch for the non-blog shared shell.
+- Blog/article long-form bodies may stay single-language in the first pass, but the homepage, shared shell, and blog archive chrome must be i18n-ready and backed by the EN/ZH resource files.`;
+  }
+  if (!replayPromptIncludesSharedShellDetailExclusion(next)) {
+    next = `${next}
+
+## Replay Shared Shell Boundary Contract
+
+- Shared-shell route groups are limited to the confirmed public shell destinations for this replay: \`/\` and \`/blog\`.
+- Blog detail routes are article-level destinations only. Do not place \`/blog/{slug}/\` links in the homepage footer, global navigation, shared CTA strips, or generic support/destination groups.
+- Keep detail links inside the Blog archive cards and inside article-to-article reading flows only.`;
+  }
+  if (!replayPromptIncludesRequiredBilingualArtifactRule(next)) {
+    next = `${next}
+
+## Replay Required Bilingual Artifacts
+
+- \`/i18n/messages.en.json\` and \`/i18n/messages.zh-CN.json\` are required output artifacts for this replay.
+- Treat the first generation pass as incomplete if either locale file is missing, even if \`/i18n/locales.json\` or a locale switch UI already exists.
+- The English locale file must contain real translated values for shared-shell and homepage core keys instead of mirroring the Chinese source strings.`;
+  }
+  return next;
+}
+
+function requiredReplayBlogDetailHtmlPaths() {
+  return SPECIFIC_REPLAY_REQUIRED_BLOG_DETAILS.map((item) => `/blog/${item.slug}/index.html`);
 }
 
 type ReplaySurfaceKind = "blog-archive" | "content-collection" | "unknown";
@@ -372,10 +540,38 @@ async function waitForTerminalTask(taskId: string, runWorkerOnce: () => Promise<
 }
 
 describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => {
+  it("enforces stable replay-only blog detail and bilingual resource contracts", () => {
+    const prompt = enforceSpecificReplayPublishableBlogContract(`
+# Canonical Website Generation Prompt
+
+Language: Chinese and English
+
+\`\`\`json
+{"routes":["/","/blog"],"files":["/styles.css","/script.js","/index.html","/blog/index.html"]}
+\`\`\`
+`);
+    const manifest = parsePromptControlManifest(prompt);
+
+    expect(manifest?.files).toEqual(
+      expect.arrayContaining([
+        I18N_LOCALE_REGISTRY_PATH,
+        I18N_MESSAGE_EN_PATH,
+        I18N_MESSAGE_ZH_CN_PATH,
+        ...requiredReplayBlogDetailHtmlPaths(),
+      ]),
+    );
+    expect(prompt).toContain("/i18n/messages.en.json");
+    expect(prompt).toContain("/i18n/messages.zh-CN.json");
+    for (const htmlPath of requiredReplayBlogDetailHtmlPaths()) {
+      expect(prompt).toContain(htmlPath);
+    }
+  });
+
   it(
     "replays generation for the existing chat and keeps source-specific IA/content instead of a generic template",
     async () => {
       const prevUseSupabase = process.env.CHAT_TASKS_USE_SUPABASE;
+      const prevChatMemoryBackend = process.env.CHAT_MEMORY_BACKEND;
       const prevSupabaseProxy = process.env.SUPABASE_TASK_PROXY_URL;
       const prevAsyncTaskTimeoutMs = process.env.CHAT_ASYNC_TASK_TIMEOUT_MS;
       const prevStageBudgetPerFileMs = process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS;
@@ -389,6 +585,7 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
       const prevCrossProviderFallback = process.env.LLM_CROSS_PROVIDER_FALLBACK;
 
       try {
+        process.env.CHAT_MEMORY_BACKEND = "file";
         process.env.SUPABASE_TASK_PROXY_URL = "direct";
         process.env.CHAT_ASYNC_TASK_TIMEOUT_MS = "1800000";
         process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS = "420000";
@@ -405,7 +602,7 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         const beforeLatest = await getLatestChatTaskForChat(replayChatId);
         const ownerUserId = String(beforeLatest?.ownerUserId || "").trim() || undefined;
         const existingTimeline = await listChatTimelineMessages(replayChatId, 500);
-        const replayPrompt = pickReplayPrompt(existingTimeline);
+        const replayPrompt = enforceSpecificReplayPublishableBlogContract(pickReplayPrompt(existingTimeline));
         const promptManifest = parsePromptControlManifest(replayPrompt);
         const expectedManifestFiles = Array.from(
           new Set((promptManifest?.files || []).map((item) => String(item || "").trim()).filter(Boolean)),
@@ -495,6 +692,24 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         expect(previewEntryRes.status).toBe(200);
         expect(previewEntryHtml.toLowerCase()).toContain("<!doctype html");
 
+        const shouldRunMobileScreenshotQa =
+          String(process.env.RUN_PREVIEW_MOBILE_SCREENSHOT_QA || "").trim() === "1";
+        const mobileScreenshotQa = shouldRunMobileScreenshotQa
+          ? await captureMobilePreviewScreenshots({
+              previewUrl: previewUrl || `${previewBaseUrl}/api/chat/tasks/${generated.id}/preview/index.html`,
+              outputDir: path.resolve(process.cwd(), ".tmp", "qa-screenshots", replayChatId, String(generated.id)),
+            })
+          : {
+              previewUrl: previewUrl || `${previewBaseUrl}/api/chat/tasks/${generated.id}/preview/index.html`,
+              artifacts: [],
+              executed: false,
+              skippedReason: "RUN_PREVIEW_MOBILE_SCREENSHOT_QA != 1",
+            };
+        if (shouldRunMobileScreenshotQa) {
+          expect(mobileScreenshotQa.executed).toBe(true);
+          expect(mobileScreenshotQa.artifacts.length).toBeGreaterThanOrEqual(4);
+        }
+
         expect(paths).toEqual(expect.arrayContaining(["/styles.css", "/script.js"]));
         if (expectedManifestFiles.length > 0) {
           expect(paths).toEqual(expect.arrayContaining(expectedManifestFiles));
@@ -556,12 +771,15 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
                 mountedRoute: surface.mountedRoute,
                 previewUrlPath,
                 previewUrl,
+                mobileScreenshotQa,
               },
               null,
               2,
             ),
         );
       } finally {
+        if (prevChatMemoryBackend === undefined) delete process.env.CHAT_MEMORY_BACKEND;
+        else process.env.CHAT_MEMORY_BACKEND = prevChatMemoryBackend;
         if (prevSupabaseProxy === undefined) delete process.env.SUPABASE_TASK_PROXY_URL;
         else process.env.SUPABASE_TASK_PROXY_URL = prevSupabaseProxy;
         process.env.CHAT_TASKS_USE_SUPABASE = prevUseSupabase;
@@ -591,6 +809,7 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
     "forces pptoken preflight fallback and proves fresh-stage retry is attempted before succeeding",
     async () => {
       const prevUseSupabase = process.env.CHAT_TASKS_USE_SUPABASE;
+      const prevChatMemoryBackend = process.env.CHAT_MEMORY_BACKEND;
       const prevSupabaseProxy = process.env.SUPABASE_TASK_PROXY_URL;
       const prevAsyncTaskTimeoutMs = process.env.CHAT_ASYNC_TASK_TIMEOUT_MS;
       const prevStageBudgetPerFileMs = process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS;
@@ -605,12 +824,13 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
       const originalWarn = console.warn;
 
       try {
+        process.env.CHAT_MEMORY_BACKEND = "file";
         process.env.SUPABASE_TASK_PROXY_URL = "direct";
         const { getLatestChatTaskForChat, listChatTimelineMessages } = await import("./chat-task-store");
         const beforeLatest = await getLatestChatTaskForChat(replayChatId);
         const ownerUserId = String(beforeLatest?.ownerUserId || "").trim() || undefined;
         const existingTimeline = await listChatTimelineMessages(replayChatId, 500);
-        const replayPrompt = pickReplayPrompt(existingTimeline);
+        const replayPrompt = enforceSpecificReplayPublishableBlogContract(pickReplayPrompt(existingTimeline));
         expect(replayPrompt.length).toBeGreaterThan(40);
 
         process.env.CHAT_TASKS_USE_SUPABASE = "0";
@@ -695,6 +915,8 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         ).toBe(true);
       } finally {
         console.warn = originalWarn;
+        if (prevChatMemoryBackend === undefined) delete process.env.CHAT_MEMORY_BACKEND;
+        else process.env.CHAT_MEMORY_BACKEND = prevChatMemoryBackend;
         if (prevSupabaseProxy === undefined) delete process.env.SUPABASE_TASK_PROXY_URL;
         else process.env.SUPABASE_TASK_PROXY_URL = prevSupabaseProxy;
         process.env.CHAT_TASKS_USE_SUPABASE = prevUseSupabase;
@@ -716,6 +938,7 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
     "replays generation for the existing chat, deploys with Wrangler, and verifies local artifacts plus deployed Blog runtime",
     async () => {
       const prevUseSupabase = process.env.CHAT_TASKS_USE_SUPABASE;
+      const prevChatMemoryBackend = process.env.CHAT_MEMORY_BACKEND;
       const prevSupabaseProxy = process.env.SUPABASE_TASK_PROXY_URL;
       const prevAsyncTaskTimeoutMs = process.env.CHAT_ASYNC_TASK_TIMEOUT_MS;
       const prevStageBudgetPerFileMs = process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS;
@@ -728,6 +951,7 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
       const prevProviderOrder = process.env.LLM_PROVIDER_ORDER;
 
       try {
+        process.env.CHAT_MEMORY_BACKEND = "file";
         process.env.SUPABASE_TASK_PROXY_URL = "direct";
         process.env.CHAT_ASYNC_TASK_TIMEOUT_MS = "1800000";
         process.env.SKILL_TOOL_STAGE_BUDGET_PER_FILE_MS = "420000";
@@ -749,7 +973,7 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         const beforeLatest = await getLatestChatTaskForChat(replayChatId);
         const ownerUserId = String(beforeLatest?.ownerUserId || "").trim() || undefined;
         const existingTimeline = await listChatTimelineMessages(replayChatId, 500);
-        const replayPrompt = pickReplayPrompt(existingTimeline);
+        const replayPrompt = enforceSpecificReplayPublishableBlogContract(pickReplayPrompt(existingTimeline));
         const promptManifest = parsePromptControlManifest(replayPrompt);
         const expectedManifestFiles = Array.from(
           new Set((promptManifest?.files || []).map((item) => String(item || "").trim()).filter(Boolean)),
@@ -819,8 +1043,12 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
       const projectJson = generatedProject.project;
       const files = (projectJson?.staticSite?.files || []) as Array<{ path?: string; content?: string; type?: string }>;
       const paths = files.map((file) => String(file.path || ""));
+      const hasBilingualResources = paths.includes("/i18n/messages.en.json") && paths.includes("/i18n/messages.zh-CN.json");
       const surface = inferReplaySurface(files, promptManifest?.routes || []);
       const indexHtml = fileContent(files, "/index.html");
+      const enMessages = fileContent(files, "/i18n/messages.en.json");
+      const zhMessages = fileContent(files, "/i18n/messages.zh-CN.json");
+      const distinctLocaleKeys = collectSharedDistinctLocaleKeys(enMessages, zhMessages);
       const blogDataPath = surface.mountedPath;
       const blogDataHref = blogDataPath.replace(/\/index\.html$/, "/");
       const blogHtml = surface.mountedHtml;
@@ -844,11 +1072,14 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
       expect(surface.kind).not.toBe("unknown");
       if (surface.hasRootIndex) {
         expect(indexHtml.length).toBeGreaterThan(800);
+        expect(hasDuplicateFooterLinkGroups(indexHtml)).toBe(false);
       }
       expect(indexHtml).not.toMatch(/Cal\.com|Open scheduling|Custom Solutions/i);
       if (surface.hasRootIndex) {
         expect(hasHrefToRoute(indexHtml, blogDataRoute)).toBe(true);
       }
+      expect(hasBilingualResources).toBe(true);
+      expect(distinctLocaleKeys.length).toBeGreaterThan(0);
       expect(blogHtml).toContain("/styles.css");
       expect(blogHtml).toContain('data-shpitto-blog-api="/api/blog/posts"');
       const blogVisibleText = htmlToVisibleText(blogHtml);
@@ -856,13 +1087,20 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
       expect(blogVisibleText).not.toMatch(/\u535a\u5ba2\u6570\u636e\u6e90|\u535a\u5ba2\u540e\u7aef|\u535a\u5ba2\s*API|\u5185\u5bb9\s*API|\u8fd0\u884c\u65f6|\u9759\u6001\u56de\u9000|\u56de\u9000\u5361\u7247|\u6c34\u5408|\u90e8\u7f72\u5237\u65b0/);
       if (surface.kind === "blog-archive") {
         expect(paths).toEqual(expect.arrayContaining(["/blog/index.html"]));
+        expect(paths).toEqual(expect.arrayContaining(requiredReplayBlogDetailHtmlPaths()));
         expect(surface.blogDetailPaths).toHaveLength(3);
         expect(blogHtml).toMatch(/href=["']\/blog\/[^"']+\/["']/);
+        if (surface.hasRootIndex) {
+          expect(hasBlogNavLink(indexHtml)).toBe(true);
+        }
       } else {
         expect(surface.hasBlogIndex).toBe(false);
         expect(blogDataRoute).not.toBe("/blog");
         expect(blogDataRoute).toMatch(/^\/(?:casux-|standards-system|case-studies|page-\d+)/i);
         expect(blogHtml).not.toMatch(/href=["']\/blog\/[^"']+\/["']/);
+        if (surface.hasRootIndex) {
+          expect(hasBlogNavLink(indexHtml)).toBe(false);
+        }
       }
       if (false) {
         expect(blogVisibleText).toMatch(
@@ -1024,6 +1262,33 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
           !text.includes("Specific Replay Blog Verification") &&
           !text.includes("Powered by Shpitto Blog runtime"),
       );
+      const deployedEnMessages = (
+        await fetchTextFromAnyWithRetry(
+          deployedUrlCandidates,
+          "/i18n/messages.en.json",
+          (text, status, contentType) => status === 200 && contentType.includes("json"),
+        )
+      ).text;
+      const deployedZhMessages = (
+        await fetchTextFromAnyWithRetry(
+          deployedUrlCandidates,
+          "/i18n/messages.zh-CN.json",
+          (text, status, contentType) => status === 200 && contentType.includes("json"),
+        )
+      ).text;
+      const liveHomeDistinctLocaleKeys =
+        home && surface.hasRootIndex
+          ? collectSharedDistinctLocaleKeys(deployedEnMessages, deployedZhMessages)
+          : [];
+      if (home?.text) {
+        expect(hasDuplicateFooterLinkGroups(home.text)).toBe(false);
+        if (surface.kind === "blog-archive") {
+          expect(hasBlogNavLink(home.text)).toBe(true);
+        } else {
+          expect(hasBlogNavLink(home.text)).toBe(false);
+        }
+      }
+      expect(liveHomeDistinctLocaleKeys.length).toBeGreaterThan(0);
       const generatedBlogCardClass = blogHtml.match(/data-shpitto-blog-list[\s\S]*?<article\b[^>]*\bclass=(["'])([^"']+)\1/i)?.[2] || "";
       expect(blog.text).not.toContain('class="shpitto-blog-live-card"');
       if (generatedBlogCardClass) {
@@ -1080,6 +1345,16 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         generatedBlogPostTitles: generatedBlogRows.map((row) => String(row.title || "")),
         blogRuntimeSmoke: progress.smoke?.blogRuntime,
         generatedRuntimePost,
+        liveQuality: {
+          generatedHasBilingualResources: hasBilingualResources,
+          liveHasBilingualResources: true,
+          generatedDistinctLocaleKeyCount: distinctLocaleKeys.length,
+          liveDistinctLocaleKeyCount: liveHomeDistinctLocaleKeys.length,
+          generatedDuplicateFooterGroups: surface.hasRootIndex ? hasDuplicateFooterLinkGroups(indexHtml) : false,
+          liveDuplicateFooterGroups: home?.text ? hasDuplicateFooterLinkGroups(home.text) : false,
+          generatedHasBlogNavLink: surface.hasRootIndex ? hasBlogNavLink(indexHtml) : false,
+          liveHasBlogNavLink: home?.text ? hasBlogNavLink(home.text) : false,
+        },
         checks: {
           previewIndex: previewIndexRes.status,
           home: home?.status || null,
@@ -1108,6 +1383,8 @@ describe.skipIf(!runSpecificReplay)("specific existing chat live replay", () => 
         expect(finalTask?.status).toBe("succeeded");
         console.log(JSON.stringify({ SPECIFIC_CHAT_REPLAY_RESULT: report }, null, 2));
       } finally {
+        if (prevChatMemoryBackend === undefined) delete process.env.CHAT_MEMORY_BACKEND;
+        else process.env.CHAT_MEMORY_BACKEND = prevChatMemoryBackend;
         if (prevSupabaseProxy === undefined) delete process.env.SUPABASE_TASK_PROXY_URL;
         else process.env.SUPABASE_TASK_PROXY_URL = prevSupabaseProxy;
         if (prevUseSupabase === undefined) delete process.env.CHAT_TASKS_USE_SUPABASE;

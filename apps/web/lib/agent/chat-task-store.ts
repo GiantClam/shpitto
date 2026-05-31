@@ -838,10 +838,11 @@ function normalizeClaimModes(modes?: string[]): Set<string> | undefined {
   return normalized.length > 0 ? new Set(normalized) : undefined;
 }
 
-function resolveTaskExecutionMode(task: Pick<ChatTaskRecord, "result">): "generate" | "refine" | "deploy" {
+function resolveTaskExecutionMode(task: Pick<ChatTaskRecord, "result">): "generate" | "refine" | "translate" | "deploy" {
   const workflow = ((task.result?.internal?.inputState as any)?.workflow_context || {}) as Record<string, unknown>;
   const explicit = String(workflow.executionMode || "").trim().toLowerCase();
   if (explicit === "deploy" || Boolean(workflow.deployRequested)) return "deploy";
+  if (explicit === "translate" || Boolean(workflow.translateRequested)) return "translate";
   if (explicit === "refine" || explicit === "refine_preview" || explicit === "refine_deployed") return "refine";
   return "generate";
 }
@@ -1993,11 +1994,12 @@ export async function touchChatTaskHeartbeat(
 }
 
 export async function failChatTask(taskId: string, error: string): Promise<ChatTaskRecord | undefined> {
+  const failureAssistantText = String(error || "").trim() || "Task failed.";
   if (!isSupabaseTaskStoreEnabled()) {
     const existing = getStore().tasks.get(taskId);
     const updated = updateMemoryTask(taskId, {
       status: "failed",
-      result: { ...(existing?.result || {}), error },
+      result: { ...(existing?.result || {}), assistantText: failureAssistantText, error },
     });
     if (updated) {
       await writeTaskEventBestEffort({
@@ -2023,7 +2025,7 @@ export async function failChatTask(taskId: string, error: string): Promise<ChatT
 
   try {
     const current = await getChatTask(taskId);
-    const merged = { ...(current?.result || {}), error };
+    const merged = { ...(current?.result || {}), assistantText: failureAssistantText, error };
     const updated = await updateSupabaseTask(taskId, { status: "failed", result: merged });
     if (updated) {
       await writeTaskEventBestEffort({
@@ -2051,7 +2053,7 @@ export async function failChatTask(taskId: string, error: string): Promise<ChatT
         return rememberSupabaseTask({
           ...existing,
           status: "failed",
-          result: { ...(existing.result || {}), error },
+          result: { ...(existing.result || {}), assistantText: failureAssistantText, error },
           updatedAt: now(),
         });
       }

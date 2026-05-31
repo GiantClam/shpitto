@@ -210,6 +210,68 @@ describe("deployed blog runtime", () => {
     expect(pageHtml).not.toContain("DevOps 研发体系");
   });
 
+  it("matches slugified category and tag routes against human-readable taxonomy labels", async () => {
+    const worker = buildDeployedBlogRuntimeFiles({
+      projectId: "project-123",
+      d1BindingName: "DB",
+    }).find((file) => file.path === "/_worker.js")?.content;
+
+    const mod = await import(`data:text/javascript;base64,${Buffer.from(String(worker || "")).toString("base64")}`);
+    const rows = [
+      {
+        id: "post-1",
+        project_id: "project-123",
+        slug: "export-website",
+        title: "Export Website Guide",
+        excerpt: "Homepage structure for export-focused teams.",
+        content_html: "<p>Guide body</p>",
+        author_name: "Bays",
+        category: "Industry Trends",
+        tags_json: JSON.stringify(["Trading Company", "SEO"]),
+        cover_image_url: "",
+        cover_image_alt: "",
+        seo_title: "",
+        seo_description: "",
+        published_at: "2026-04-30T00:00:00.000Z",
+        updated_at: "2026-04-30T00:00:00.000Z",
+      },
+    ];
+    const env = {
+      DB: {
+        prepare(sql: string) {
+          return {
+            bind(...args: unknown[]) {
+              return {
+                async first() {
+                  if (sql.includes("shpitto_blog_settings")) {
+                    return { enabled: 1, nav_label: "Blog", rss_enabled: 1, sitemap_enabled: 1 };
+                  }
+                  return rows.find((row) => args.includes(row.slug)) || null;
+                },
+                async all() {
+                  return { results: rows };
+                },
+              };
+            },
+          };
+        },
+      },
+      ASSETS: { async fetch() { return new Response("asset", { status: 200 }); } },
+    };
+
+    const tagResponse = await mod.default.fetch(new Request("https://example.test/blog/tag/trading-company/"), env);
+    const tagHtml = await tagResponse.text();
+    expect(tagResponse.status).toBe(200);
+    expect(tagHtml).toContain("Export Website Guide");
+    expect(tagHtml).toContain("Tag: Trading Company");
+
+    const categoryResponse = await mod.default.fetch(new Request("https://example.test/blog/category/industry-trends/"), env);
+    const categoryHtml = await categoryResponse.text();
+    expect(categoryResponse.status).toBe(200);
+    expect(categoryHtml).toContain("Export Website Guide");
+    expect(categoryHtml).toContain("Category: Industry Trends");
+  });
+
   it("renders the Blog root collection when /blog/index.html is missing", async () => {
     const worker = buildDeployedBlogRuntimeFiles({
       projectId: "project-123",

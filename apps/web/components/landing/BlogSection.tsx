@@ -8,21 +8,21 @@ export function BlogSection({ locale = "en" }: { locale?: Locale }) {
   const posts = [
     {
       ...copy.posts[0],
-      slug: "personal-blog-from-ai-notes",
+      slug: "seo-friendly-export-website-for-manufacturers",
       date: "Oct 24, 2025",
       author: "Sarah Chen",
       image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800",
     },
     {
       ...copy.posts[1],
-      slug: "company-site-generate-deploy-measure",
+      slug: "trading-company-homepage-checklist",
       date: "Nov 02, 2025",
       author: "Mike Ross",
       image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800",
     },
     {
       ...copy.posts[2],
-      slug: "launch-ai-tool-site-without-cms",
+      slug: "product-pages-for-overseas-buyers",
       date: "Nov 15, 2025",
       author: "Alex V.",
       image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&q=80&w=800",

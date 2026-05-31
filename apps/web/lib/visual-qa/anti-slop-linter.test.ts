@@ -216,6 +216,89 @@ describe("anti-slop-linter", () => {
     expect(renderAntiSlopFeedback(result)).toContain("Replace generic CTA labels");
   });
 
+  it("warns when generic service headings and generic CTAs dominate a page", () => {
+    const result = lintGeneratedWebsiteHtml(`<!doctype html>
+<html>
+  <head>
+    <title>Acme Operations Platform</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <section><h1>Acme Operations Platform</h1><p>Acme gives operations teams practical scheduling, workflow, and supplier coordination support for daily planning.</p><a href="/contact">Learn More</a></section>
+      <section><h2>Our Services</h2><p>Teams get planning support, workflow guidance, and implementation paths for production coordination.</p><a href="/services">Get Started</a></section>
+      <section><h2>Features</h2><p>Dashboards, supplier notes, and schedule reviews help buyers understand the next operational decision.</p><a href="/features">Read More</a></section>
+      <section><h2>Operations Review</h2><p>Review paths connect planning, supplier recovery, and weekly execution rituals.</p><a href="/review">Compare workflows</a></section>
+    </main>
+  </body>
+</html>`);
+
+    expect(result.issues.map((issue) => issue.code)).toEqual(
+      expect.arrayContaining(["generic-service-heading", "generic-cta-dominance"]),
+    );
+    expect(renderAntiSlopFeedback(result)).toContain("Replace generic headings");
+    expect(renderAntiSlopFeedback(result)).toContain("route-specific next actions");
+  });
+
+  it("warns on abstract low-specificity copy that has enough length but little route substance", () => {
+    const result = lintGeneratedWebsiteHtml(`<!doctype html>
+<html>
+  <head>
+    <title>Velocity Systems</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <section><h1>Future-ready innovation for every team</h1><p>Our powerful solutions help teams transform the way they work with seamless experiences, robust capabilities, and innovative support for the future.</p></section>
+      <section><h2>Transform outcomes</h2><p>We empower organizations to unlock excellence with powerful solutions that streamline collaboration, optimize performance, and elevate every moment across the experience.</p></section>
+      <section><h2>Innovative support</h2><p>Our future-ready approach brings seamless execution, robust quality, powerful innovation, and excellent momentum to every engagement with a flexible delivery model.</p></section>
+      <section><h2>Powerful delivery</h2><p>The experience stays seamless as teams transform operations, unlock value, optimize goals, and elevate performance through innovative solutions built for modern excellence.</p></section>
+      <section><h2>Next step</h2><p>Start with a future-ready discussion about powerful possibilities, seamless improvements, and innovative paths toward excellent results across the complete experience.</p></section>
+      <section><h2>Future momentum</h2><p>The experience remains seamless, powerful, innovative, and optimized as every group moves toward future-ready excellence with robust support and transformative value.</p></section>
+      <section><h2>Elevated collaboration</h2><p>Excellent collaboration, seamless delivery, powerful progress, and innovative support continue across every engagement with a future-ready approach.</p></section>
+      <section><h2>Optimized performance</h2><p>Every experience can transform through robust capabilities, seamless support, powerful execution, innovative progress, and future-ready momentum that elevates results.</p></section>
+      <section><h2>Excellent outcomes</h2><p>The approach remains powerful, flexible, innovative, seamless, and optimized so each group can unlock value, elevate performance, and transform the entire journey.</p></section>
+    </main>
+  </body>
+</html>`);
+
+    expect(result.issues.map((issue) => issue.code)).toContain("low-specificity-copy");
+    expect(renderAntiSlopFeedback(result)).toContain("Add concrete nouns");
+  });
+
+  it("warns when route copy ignores its route context", () => {
+    const result = lintGeneratedWebsiteRouteHtml(
+      `<!doctype html>
+<html>
+  <head>
+    <title>Solutions</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <section><h1>Innovative solutions for modern teams</h1><p>Future-ready innovation helps every team transform work with seamless execution and powerful collaboration.</p></section>
+      <section><h2>Seamless approach</h2><p>Powerful capabilities streamline the journey, optimize outcomes, and elevate the experience for every stakeholder.</p></section>
+      <section><h2>Robust execution</h2><p>Excellent support and innovative thinking unlock future-ready momentum with flexible delivery and seamless collaboration.</p></section>
+      <section><h2>Transformative value</h2><p>Teams can get started with powerful innovation, robust solutions, and an optimized path to future excellence.</p></section>
+      <section><h2>Future momentum</h2><p>The experience remains seamless, powerful, innovative, and optimized as every group moves toward future-ready excellence with robust support and transformative value.</p></section>
+      <section><h2>Elevated collaboration</h2><p>Excellent collaboration, seamless delivery, powerful progress, and innovative support continue across every engagement with a future-ready approach.</p></section>
+    </main>
+  </body>
+</html>`,
+      {
+        route: "/custom-solutions",
+        navLabel: "Custom textile programs",
+        pagePurpose: "Explain private-label textile sourcing, sampling, packaging, and buyer inquiry workflow.",
+      },
+    );
+
+    expect(result.issues.map((issue) => issue.code)).toContain("route-context-specificity-missing");
+    expect(renderAntiSlopFeedback(result)).toContain("route-context nouns");
+  });
+
   it("does not treat implementation class names as placeholder copy", () => {
     const result = lintGeneratedWebsiteHtml(`<!doctype html>
 <html>

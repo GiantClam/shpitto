@@ -6,7 +6,11 @@ import {
   type SkillFrontmatterSummary,
   type WebsiteSkillMetadata,
 } from "./od-skill-metadata.ts";
-import { shouldSelectImportedWebsiteSkill, type WebsiteSurfaceMode } from "./open-design-adoption.ts";
+import {
+  isImportedSkillFirstSurfaceMode,
+  shouldSelectImportedWebsiteSkill,
+  type WebsiteSurfaceMode,
+} from "./open-design-adoption.ts";
 import {
   classifyWebsiteSeedOrigin,
   resolveWebsiteArtifactGeneratorMode,
@@ -55,6 +59,7 @@ export const WEBSITE_GENERATION_TYPE_SKILL_IDS = [
 export const WEBSITE_GENERATION_SKILL_BUNDLE: string[] = [
   WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID,
   "website-generation-workflow",
+  "blog-detail-fill-workflow",
   "brainstorming",
   "writing-plans",
   "web-image-generator",
@@ -412,7 +417,10 @@ function scoreWebsiteSeedSkill(
   const hasScenarioMatch = scenarioMatchesIntent && scenarioMatchAllowed;
   const hasPricingIntent = /(?:^|\s|\/)(?:pricing|price|plans?|tiers?|subscriptions?)(?:\s|\/|$)/i.test(intentText);
   const surfaceMatchAllowed = entry.id !== "open-design-pricing-page" || hasPricingIntent;
-  const hasSurfaceMatch = Boolean(surfaceMatchAllowed && surfaceMode && compatibleSurfaceModes.includes(surfaceMode));
+  const hasNonSurfaceSignal = hasNameMatch || hasScenarioMatch || triggerHits.length > 0;
+  const hasSurfaceMatch = Boolean(
+    hasNonSurfaceSignal && surfaceMatchAllowed && surfaceMode && compatibleSurfaceModes.includes(surfaceMode),
+  );
 
   if (hasNameMatch) {
     score += 8;
@@ -423,13 +431,22 @@ function scoreWebsiteSeedSkill(
     reasons.push(`scenario:${scenario}`);
   }
   if (hasSurfaceMatch) {
-    const surfaceBonus = entry.websiteMetadata?.activation?.rolloutStatus === "staged" ? 24 : 6;
+    const activationMode = entry.websiteMetadata?.activation?.mode;
+    const rolloutStatus = entry.websiteMetadata?.activation?.rolloutStatus;
+    const surfaceBonus =
+      activationMode === "primary"
+        ? 32
+        : rolloutStatus === "active"
+          ? 26
+          : rolloutStatus === "staged"
+            ? 24
+            : 6;
     score += surfaceBonus;
     reasons.push(`surface:${surfaceMode}`);
   }
   const origin = classifyWebsiteSeedOrigin(entry);
   const generatorBonus = scoreWebsiteSeedOriginForGenerator({ mode: generatorMode, origin });
-  const hasDirectGeneratorMatch = hasSurfaceMatch || hasNameMatch || hasScenarioMatch || triggerHits.length > 0;
+  const hasDirectGeneratorMatch = hasSurfaceMatch || hasNonSurfaceSignal;
   if (generatorBonus > 0 && hasDirectGeneratorMatch) {
     score += generatorBonus;
     reasons.push(`generator:${generatorMode}:${origin}`);
@@ -448,6 +465,18 @@ function scoreWebsiteSeedSkill(
   };
 }
 
+function enrichImportedSkillFirstSelections(
+  selections: WebsiteSeedSkillSelection[],
+  surfaceMode?: WebsiteSurfaceMode,
+): WebsiteSeedSkillSelection[] {
+  if (!isImportedSkillFirstSurfaceMode(surfaceMode)) return selections;
+  return selections.map((selection) => ({
+    ...selection,
+    score: selection.score + 18,
+    reason: [selection.reason, `imported-skill-first:${surfaceMode}`].filter(Boolean).join("; "),
+  }));
+}
+
 export async function selectWebsiteSeedSkillsForIntent(params: {
   requirementText?: string;
   routes?: string[];
@@ -455,37 +484,47 @@ export async function selectWebsiteSeedSkillsForIntent(params: {
   start?: string;
   generatorMode?: WebsiteArtifactGeneratorMode;
 }): Promise<WebsiteSeedSkillSelection[]> {
+  const surfaceMode = selectWebsiteGenerationTypeSkill({
+    requirementText: params.requirementText,
+    routes: params.routes,
+  }).surfaceMode;
   const index = (await readProjectSkillIndex(params.start)).filter((entry) => {
     if (entry.websiteMetadata?.mode !== "website") return false;
     return shouldSelectImportedWebsiteSkill({
       activationMode: entry.websiteMetadata.activation?.mode,
       rolloutStatus: entry.websiteMetadata.activation?.rolloutStatus,
+      surfaceMode,
     });
   });
   if (index.length === 0) return [];
 
   const intentText = normalizeIntentText([params.requirementText || "", ...(params.routes || [])]);
   const maxSkills = Math.max(1, Number(params.maxSkills || 2));
-  const surfaceMode = selectWebsiteGenerationTypeSkill({
-    requirementText: params.requirementText,
-    routes: params.routes,
-  }).surfaceMode;
   const generatorMode = params.generatorMode || resolveWebsiteArtifactGeneratorMode();
-  const scored = index
+  const scored = enrichImportedSkillFirstSelections(
+    index
     .map((entry) => scoreWebsiteSeedSkill(entry, intentText, surfaceMode, generatorMode))
     .filter((entry) => entry.score > 0)
-    .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+    .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id)),
+    surfaceMode,
+  );
 
   if (scored.length > 0) return scored.slice(0, maxSkills);
 
   const fallback =
     index.find((entry) => String(entry.websiteMetadata?.scenario || "").toLowerCase() === "design") || index[0];
+  const fallbackReason = [
+    "fallback:generic-website-seed",
+    isImportedSkillFirstSurfaceMode(surfaceMode) ? `imported-skill-first:${surfaceMode}` : "",
+  ]
+    .filter(Boolean)
+    .join("; ");
   return fallback
     ? [
         {
           id: fallback.id,
           score: 1,
-          reason: "fallback:generic-website-seed",
+          reason: fallbackReason,
         },
       ]
     : [];

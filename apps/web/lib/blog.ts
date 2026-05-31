@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { getOwnedProjectState, saveProjectState } from "./agent/db";
 import { BLOG_FALLBACK_POSTS } from "./blog-content";
 import { buildBlogExcerpt, normalizeBlogMarkdown, normalizeBlogSlug, renderMarkdownToHtml, resolveUniqueBlogSlug } from "./blog-markdown";
-import { buildDeployedBlogSnapshotFilesFromD1, injectDeployedBlogSnapshot } from "./deployed-blog-snapshot";
+import { buildDeployedBlogSnapshotFilesFromD1, injectDeployedBlogSnapshot } from "./deployed-blog-snapshot.ts";
 import { getD1Client } from "./d1";
 import { getR2Client } from "./r2";
 import type { BlogAssetRecord, BlogPostRecord, BlogPostStatus, BlogPostUpsertInput, BlogSettingsRecord } from "./blog-types";

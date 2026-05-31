@@ -11,11 +11,12 @@ export function Hero({ ctaHref = "/login", locale = "en" }: HeroProps) {
   const copy = getLandingCopy(locale).hero;
   const isZh = locale === "zh";
   const siteTypes = isZh
-    ? ["个人 Blog", "企业官网", "AI 工具站"]
-    : ["Personal Blog", "Company Site", "AI Tool Site"];
+    ? ["制造企业官网", "贸易公司官网", "产品目录网站"]
+    : ["Manufacturer Website", "Trading Company Website", "Product Catalog Website"];
   const studioSteps = isZh
-    ? ["生成", "预览", "部署", "看数据"]
-    : ["Generate", "Preview", "Deploy", "Measure"];
+    ? ["简介", "结构", "调整", "发布"]
+    : ["Brief", "Structure", "Refine", "Launch"];
+
   return (
     <section className="relative overflow-hidden px-6 pb-24 pt-32 text-[var(--shp-text)] lg:pb-40 lg:pt-48">
       <div className="absolute inset-0 z-0 opacity-25">
@@ -36,25 +37,25 @@ export function Hero({ ctaHref = "/login", locale = "en" }: HeroProps) {
 
         <h1 className="mb-8 text-5xl font-black leading-[0.95] tracking-tight lg:text-8xl">
           {copy.headline}
-          <br />
-          <span className="text-[var(--shp-primary)]">
-            {copy.highlight}
-          </span>
+          {copy.highlight ? (
+            <>
+              <br />
+              <span className="text-[var(--shp-primary)]">{copy.highlight}</span>
+            </>
+          ) : null}
         </h1>
 
-        <p className="mx-auto mb-12 max-w-3xl text-xl leading-relaxed text-[var(--shp-muted)]">
-          {copy.body}
-        </p>
+        <p className="mx-auto mb-12 max-w-3xl text-xl leading-relaxed text-[var(--shp-muted)]">{copy.body}</p>
 
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Link href={ctaHref} className="shp-btn-primary group flex w-full items-center justify-center gap-2 px-8 py-4 text-lg font-black sm:w-auto">
             {copy.cta}
             <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
           </Link>
-          <button className="shp-btn-secondary flex w-full items-center justify-center gap-2 px-8 py-4 text-lg font-medium sm:w-auto">
+          <Link href="/example-websites" className="shp-btn-secondary flex w-full items-center justify-center gap-2 px-8 py-4 text-lg font-medium sm:w-auto">
             <PlayCircle className="h-5 w-5" />
             {copy.demo}
-          </button>
+          </Link>
         </div>
 
         <div className="mx-auto mt-10 flex max-w-3xl flex-wrap items-center justify-center gap-8">
@@ -81,7 +82,7 @@ export function Hero({ ctaHref = "/login", locale = "en" }: HeroProps) {
             <div className="relative flex h-[calc(100%-2.5rem)]">
               <div className="hidden w-64 border-r border-[color-mix(in_oklab,var(--shp-border)_74%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_88%,white_12%)] p-4 text-left md:block">
                 <div className="mb-5 text-xs font-black uppercase tracking-[0.22em] text-[var(--shp-primary)]">
-                  {isZh ? "网站类型" : "Site types"}
+                  {isZh ? "适用场景" : "Use cases"}
                 </div>
                 <div className="space-y-3">
                   {siteTypes.map((item, index) => (
@@ -100,7 +101,7 @@ export function Hero({ ctaHref = "/login", locale = "en" }: HeroProps) {
                 </div>
                 <div className="mt-6 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_72%,transparent)] p-3">
                   <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--shp-muted)]">
-                    {isZh ? "项目资源" : "Assets"}
+                    {isZh ? "关键页面" : "Key pages"}
                   </div>
                   <div className="mt-3 grid grid-cols-3 gap-2">
                     <div className="h-10 rounded-lg bg-[color-mix(in_oklab,var(--shp-warm)_18%,var(--shp-surface)_82%)]"></div>

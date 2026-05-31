@@ -1,4 +1,5 @@
 import type { BlogPostRecord, BlogSettingsRecord } from "./blog-types";
+import { blogTagHref } from "./blog-taxonomy.ts";
 
 type StaticSiteFile = {
   path: string;
@@ -130,7 +131,7 @@ function renderShell(params: { title: string; description: string; body: string;
 
 function renderPostCard(post: BlogPostRecord) {
   const tags = post.tags
-    .map((tag) => `<a class="shpitto-blog-tag" href="/blog/tag/${encodeURIComponent(tag)}">${escapeHtml(tag)}</a>`)
+    .map((tag) => `<a class="shpitto-blog-tag" href="${escapeAttr(blogTagHref(tag))}">${escapeHtml(tag)}</a>`)
     .join("");
   return `<article class="shpitto-blog-card">
     ${post.coverImageUrl ? `<img src="${escapeAttr(post.coverImageUrl)}" alt="${escapeAttr(post.coverImageAlt || post.title)}" loading="lazy" />` : ""}
@@ -154,7 +155,7 @@ function renderPost(post: BlogPostRecord, theme?: SnapshotTheme) {
   const title = post.seoTitle || post.title;
   const description = post.seoDescription || post.excerpt || post.title;
   const tags = post.tags
-    .map((tag) => `<a class="shpitto-blog-tag" href="/blog/tag/${encodeURIComponent(tag)}">${escapeHtml(tag)}</a>`)
+    .map((tag) => `<a class="shpitto-blog-tag" href="${escapeAttr(blogTagHref(tag))}">${escapeHtml(tag)}</a>`)
     .join("");
   const body = `<article class="shpitto-blog-post">
     ${post.coverImageUrl ? `<img class="shpitto-blog-cover" src="${escapeAttr(post.coverImageUrl)}" alt="${escapeAttr(post.coverImageAlt || post.title)}" />` : ""}
@@ -446,7 +447,7 @@ function blogSnapshotSlugFromPath(path: string) {
 
 function renderShellPostTags(post: BlogPostRecord) {
   return post.tags
-    .map((tag) => `<a class="pill shpitto-blog-post-tag" href="/blog/tag/${encodeURIComponent(tag)}">${escapeHtml(tag)}</a>`)
+    .map((tag) => `<a class="pill shpitto-blog-post-tag" href="${escapeAttr(blogTagHref(tag))}">${escapeHtml(tag)}</a>`)
     .join("");
 }
 
@@ -765,6 +766,7 @@ export function injectDeployedBlogSnapshot(project: any, files: StaticSiteFile[]
     type: String(item?.type || "") || undefined,
   }));
   const generatedBlogSource = findGeneratedBlogSourceFile(normalizedExisting);
+  const shouldExposeBlogNav = Boolean(generatedBlogSource);
   const generatedBlogHref = routeToHref(htmlPathToRoute(String(generatedBlogSource?.path || "/blog/index.html")) || "/blog");
   const themeHeadHtml = extractThemeHeadHtml(normalizedExisting);
   const payload = readSnapshotPayload(files);
@@ -777,7 +779,7 @@ export function injectDeployedBlogSnapshot(project: any, files: StaticSiteFile[]
     const content = String(item?.content || "");
     const nextContent = isHtmlFile(path, type) && (isBlogIndexPath(path) || hasBlogDataSourceContract(content))
       ? injectBlogApiBridgeIntoGeneratedHtml(addThemeHeadToBlogHtml(content, themeHeadHtml), payload)
-      : isHtmlFile(path, type) && !isBlogPath(path)
+      : shouldExposeBlogNav && isHtmlFile(path, type) && !isBlogPath(path)
         ? injectBlogLinkIntoGeneratedHtml(content, payload?.settings.navLabel, generatedBlogHref)
         : content;
     byPath.set(path, {

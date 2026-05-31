@@ -26,6 +26,12 @@ od:
   design_system:
     requires: true
     sections: [color, typography, layout, components]
+  activation:
+    mode: primary
+    rollout_status: active
+    website_only: true
+    ownership_layer: skill
+    compatible_surface_modes: [corporate-b2b-site, marketing-landing-site, portfolio-blog-site]
 ---
 
 # Web Prototype Skill

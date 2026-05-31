@@ -9,7 +9,7 @@ import type { ChatIntent, ConversationStage, RequirementSlot, RequirementSpec } 
 export type ChatRevisionPointer = {
   revisionId: string;
   baseRevisionId?: string;
-  mode: "generate" | "refine" | "deploy";
+  mode: "generate" | "refine" | "translate" | "deploy";
   taskId?: string;
   checkpointProjectPath?: string;
   deployedUrl?: string;
@@ -43,6 +43,8 @@ export type ChatShortTermMemorySnapshot = {
 export type ChatLongTermPreferenceSnapshot = {
   ownerUserId: string;
   preferredLocale?: RequirementSpec["locale"];
+  supportedLocales?: string[];
+  defaultLocale?: string;
   primaryVisualDirection?: string;
   secondaryVisualTags?: string[];
   deploymentProvider?: string;
@@ -86,6 +88,8 @@ type SupabaseThreadMemoryRow = {
 type SupabaseLongTermPreferenceRow = {
   owner_user_id: string;
   preferred_locale: string | null;
+  supported_locales: string[] | null;
+  default_locale: string | null;
   primary_visual_direction: string | null;
   secondary_visual_tags: string[] | null;
   deployment_provider: string | null;
@@ -149,7 +153,9 @@ function cleanText(value: unknown): string | undefined {
 
 function normalizeLocale(value: unknown): RequirementSpec["locale"] | undefined {
   const normalized = cleanText(value);
-  if (normalized === "zh-CN" || normalized === "en" || normalized === "bilingual") return normalized;
+  if (normalized === "zh-CN" || normalized === "en" || normalized === "bilingual" || normalized === "multilingual") {
+    return normalized;
+  }
   return undefined;
 }
 
@@ -163,6 +169,45 @@ function normalizeStringArray(value: unknown): string[] | undefined {
     ),
   );
   return normalized.length > 0 ? normalized : undefined;
+}
+
+function normalizeLocaleCode(value: unknown): string | undefined {
+  const normalized = cleanText(value)?.replace(/_/g, "-");
+  if (!normalized) return undefined;
+  if (/^[a-z]{2,3}$/i.test(normalized)) {
+    const base = normalized.toLowerCase();
+    if (base === "zh") return "zh-CN";
+    if (base === "en") return "en";
+    return base;
+  }
+  if (/^[a-z]{2,3}-[a-z]{2,4}$/i.test(normalized)) {
+    const [base, region] = normalized.split("-");
+    if (base.toLowerCase() === "zh") return "zh-CN";
+    if (base.toLowerCase() === "en") return "en";
+    return `${base.toLowerCase()}-${region.toUpperCase()}`;
+  }
+  return undefined;
+}
+
+function normalizeSupportedLocales(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const normalized = Array.from(
+    new Set(
+      value
+        .map((item) => normalizeLocaleCode(item))
+        .filter((item): item is string => Boolean(item)),
+    ),
+  );
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function normalizeDefaultLocale(value: unknown, supportedLocales?: string[]): string | undefined {
+  const normalized = normalizeLocaleCode(value);
+  if (!normalized) return undefined;
+  if (Array.isArray(supportedLocales) && supportedLocales.length > 0 && !supportedLocales.includes(normalized)) {
+    return supportedLocales[0];
+  }
+  return normalized;
 }
 
 function cloneRequirementState(state: ChatRequirementState): ChatRequirementState {
@@ -216,6 +261,14 @@ function mergeLongTermPreferenceSnapshots(
   const merged: ChatLongTermPreferenceSnapshot = {
     ownerUserId,
     preferredLocale: normalizeLocale(incoming.preferredLocale) || normalizeLocale(existing?.preferredLocale),
+    supportedLocales:
+      normalizeSupportedLocales(incoming.supportedLocales) || normalizeSupportedLocales(existing?.supportedLocales),
+    defaultLocale: normalizeDefaultLocale(
+      incoming.defaultLocale,
+      normalizeSupportedLocales(incoming.supportedLocales) ||
+        normalizeSupportedLocales(existing?.supportedLocales),
+    ) ||
+      normalizeDefaultLocale(existing?.defaultLocale, normalizeSupportedLocales(existing?.supportedLocales)),
     primaryVisualDirection:
       cleanText(incoming.primaryVisualDirection) || cleanText(existing?.primaryVisualDirection),
     secondaryVisualTags: normalizeStringArray(incoming.secondaryVisualTags) || normalizeStringArray(existing?.secondaryVisualTags),
@@ -421,6 +474,8 @@ function fromPreferenceRow(row: SupabaseLongTermPreferenceRow): ChatLongTermPref
   return normalizeLongTermSnapshot({
     ownerUserId: row.owner_user_id,
     preferredLocale: normalizeLocale(row.preferred_locale),
+    supportedLocales: normalizeSupportedLocales(row.supported_locales),
+    defaultLocale: normalizeDefaultLocale(row.default_locale, normalizeSupportedLocales(row.supported_locales)),
     primaryVisualDirection: row.primary_visual_direction || undefined,
     secondaryVisualTags: row.secondary_visual_tags || undefined,
     deploymentProvider: row.deployment_provider || undefined,
@@ -435,6 +490,8 @@ function toPreferenceInsertRow(snapshot: ChatLongTermPreferenceSnapshot, version
   return {
     owner_user_id: snapshot.ownerUserId,
     preferred_locale: snapshot.preferredLocale || null,
+    supported_locales: snapshot.supportedLocales || [],
+    default_locale: snapshot.defaultLocale || null,
     primary_visual_direction: snapshot.primaryVisualDirection || null,
     secondary_visual_tags: snapshot.secondaryVisualTags || [],
     deployment_provider: snapshot.deploymentProvider || null,

@@ -23,6 +23,12 @@ od:
   design_system:
     requires: true
     sections: [color, typography, layout, components]
+  activation:
+    mode: primary
+    rollout_status: active
+    website_only: true
+    ownership_layer: skill
+    compatible_surface_modes: [marketing-landing-site, corporate-b2b-site, portfolio-blog-site]
   inputs:
     - name: product_name
       type: string

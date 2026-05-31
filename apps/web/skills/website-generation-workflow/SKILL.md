@@ -85,6 +85,27 @@ Generation must not start from the raw user request alone. Generation may start 
 
 Quality gate: A confirmed Canonical Website Prompt exists before task creation or any file generation.
 
+### Phase 0.5: Deferred Blog Detail Strategy (Mandatory)
+
+Use Open Design decomposition to keep the main workflow focused on the shared shell, route plan, and first-pass page set.
+
+1. The default first pass for a blog-capable site is:
+   - homepage and shared routes
+   - `/blog/index.html`
+   - shared CSS/JS/i18n assets
+2. Do not make the first pass depend on complete `/blog/{slug}/index.html` article pages unless the runtime is explicitly executing the later blog-detail-fill stage.
+3. Blog/article detail generation is a separate workflow stage:
+   - after deploy readiness
+   - before custom-domain binding
+   - or when the user manually triggers article generation
+4. The later blog-detail-fill stage owns:
+   - slug stabilization
+   - detail body generation
+   - archive-card to detail-route alignment
+   - deployed blog runtime content synchronization
+
+Quality gate: first-pass website generation stays deployable without full blog detail completion.
+
 #### Internal Workflow Language Contract (Mandatory)
 
 1. All internal workflow artifacts must stay in English: Canonical Website Prompt, Prompt Control Manifest prose, task plans, findings, design notes, QA notes, repair instructions, and other process files.
@@ -459,8 +480,10 @@ Generation responsibilities:
 11. Blog article generation is an explicit workflow stage between site preview and deployment, not a hidden deploy-time side effect. After the site preview is ready and the confirmed plan includes an explicit Blog route or explicitly requested publishable detail pages, generate the article set, show the titles/excerpts/categories/tags to the user for confirmation, and only then proceed to deployment.
 12. Generation and deployment are separate actions. The generation action stops at preview artifacts, content-backed list/detail deliverables, and any confirmation card. It must never silently deploy, auto-confirm deployment, combine generate+deploy into one completion step, or claim the site is deployed unless the user triggers a later explicit deploy action.
 13. Deployment/runtime hydration must preserve the generated list's article/card class and visual rhythm. It may replace list data, but it must not replace a site-specific resource card layout with a generic Blog card style.
-14. Explicit Blog routes and explicitly requested publishable detail pages imply detail deliverables. For those cases, every visible resource card rendered inside `[data-shpitto-blog-list]` that promises a detail page must link to a corresponding `/blog/{slug}/` target, and each linked target must contain a complete readable body page in the generated output. Without an explicit requested count, keep the initial fallback/detail set to 3 entries instead of expanding every inferred topic into a separate article.
-    - This is a generation responsibility first. Use the user's supplied topics, named entities, source materials, and visible card promise to write the detail page at generation time instead of relying on runtime QA to infer direction later.
+14. Explicit Blog routes and explicitly requested publishable detail pages imply detail deliverables, but this workflow may satisfy them in two stages.
+    - Stage 1: the default first pass must produce a strong archive/index surface with stable slug intent, meaningful cards, and a deployable content-backed route.
+    - Stage 2: the dedicated blog-detail-fill workflow completes the `/blog/{slug}/` pages, aligns slug-to-URL mapping, and prepares the site for custom-domain binding.
+    - When the active run is the dedicated blog-detail-fill stage, every visible resource card rendered inside `[data-shpitto-blog-list]` that promises a detail page must link to a corresponding `/blog/{slug}/` target, and each linked target must contain a complete readable body page in the generated output.
     - Each detail page must expand the exact list-card topic and the user's source direction rather than drifting into generic blog filler, website-process commentary, or reusable placeholder prose.
     - For generic information-platform, knowledge-hub, standards, research, or resource-collection routes, the default is collection-first. Do not invent `/blog/{slug}/` detail pages unless the prompt, route identity, or source material explicitly asks for publishable article/news details.
 15. If the user requests a specific number of articles/posts/reports/guides, generate that exact number of complete content items. Each item must have:
@@ -470,9 +493,9 @@ Generation responsibilities:
     - full body content with multiple paragraphs and meaningful section headings,
     - body paragraphs and subheads that reuse the user's real topics, named entities, or source-document themes,
     - no placeholder, outline-only, "coming soon", or metadata-only detail page.
-16. For article-style Blog routes, the list page is an index, not the article body. It must link to full details, and deployed/static output must make each requested article readable even when the Blog API or runtime route is unavailable. If runtime detail rendering cannot be guaranteed, emit static `/blog/{slug}/index.html` pages for every requested article using the same shell and typography.
+16. For article-style Blog routes, the list page is an index, not the article body. The default first pass may stop at the index/archive so long as the workflow clearly preserves slug intent and routes the site into the later blog-detail-fill stage before custom-domain binding.
     - Do not satisfy this requirement with data attributes alone. The no-JS initial HTML must visibly expose the article titles/summaries and their `/blog/{slug}/` links before any script runs.
-    - This is a same-run generation requirement. Once `/blog/index.html` contains visible `/blog/{slug}/` cards, the same generated artifact batch must already include the matching `/blog/{slug}/index.html` files; do not leave detail pages for a later retry, deploy step, or QA repair pass.
+    - When the active run is the dedicated blog-detail-fill stage, the generated artifact batch must already include the matching `/blog/{slug}/index.html` files for the visible detail links it promises.
 17. Use web search or uploaded/source material enrichment when the user's requested article content needs facts, examples, current context, named tools, policies, standards, reports, or nontrivial domain knowledge. For broad personal-opinion or conceptual posts, LLM drafting may fill the prose, but it must still produce complete publishable body content. Generic web search may inform framing and examples; explicit user-provided content remains the highest-priority source.
 18. When web search is used for article generation, distill facts into the Evidence Brief and write original article prose. Do not paste source excerpts, do not expose "web search says" copy to visitors, and do not cite unsupported claims as if they came from the site owner.
 19. Regeneration is not a partial repaint. When the user asks to regenerate, rebuild, re-run, or restart generation for a site whose confirmed route plan includes `/blog` or another selected content-backed route with explicit detail deliverables, rerun the full content workflow for that route:
@@ -494,7 +517,7 @@ Treat refinement as non-full-site incremental evolution from the current website
    - `structural`: add/remove pages, materialize newly requested route files, repair missing route deliverables, adjust navigation relationships, or complete omitted detail pages.
    - `route_regenerate`: rewrite one page or one route family from the current site baseline without discarding the whole website.
 3. Only requests such as "full regenerate" or "rebuild everything" may leave refinement and re-enter full-site generation.
-4. Requests such as "add missing blog detail pages", "add a new page", "remove the pricing page", "rewrite /about", or "redo the blog page" are still refinement tasks unless they explicitly ask for whole-site regeneration.
+4. Requests such as "add missing blog detail pages", "fill blog details", "generate article details", "add a new page", "remove the pricing page", "rewrite /about", or "redo the blog page" are still refinement tasks unless they explicitly ask for whole-site regeneration.
 5. Structural refinement may create new route files when those files are missing deliverables implied by the current confirmed route plan, or when the user explicitly requests a new page without asking for full-site regeneration.
 6. Any newly created page must inherit the current site's active theme, shared navigation, and shared footer contract by default. A structural refine must not introduce a visually detached page, a different header/footer system, or a one-off navigation shell unless the user explicitly requests a shell redesign.
 7. Route-level regeneration must preserve the rest of the site's shell, navigation, style system, and unaffected routes unless the user explicitly asks to change them too.
@@ -520,10 +543,10 @@ Before emitting any files, run a route- and layout-aware preflight check.
 Minimum deliverable priority before polish:
 
 1. If the requirement is bilingual, every emitted non-blog HTML route must already ship with a visible EN/ZH switch in the shared header/navigation plus working `data-i18n` mappings for its core visible copy. Do not defer the switch to a later repair round.
-2. If `/blog/index.html` emits visible article/resource cards linking to `/blog/{slug}/`, the same generation run must emit the corresponding `/blog/{slug}/index.html` files before spending budget on extra decorative modules, secondary sections, or ornamental variants.
-3. Under token/time pressure, cut optional flourish first: decorative badges, extra testimonial rows, ornamental illustrations, secondary case-study modules, and non-essential filler sections are lower priority than bilingual switch completeness and Blog detail-page completeness.
+2. If `/blog/index.html` emits visible article/resource cards linking to `/blog/{slug}/`, the default first pass may stop at the archive/index as long as those cards remain structurally coherent and the workflow defers full detail-page completion to the dedicated blog-detail-fill stage.
+3. Under token/time pressure, cut optional flourish first: decorative badges, extra testimonial rows, ornamental illustrations, secondary case-study modules, and non-essential filler sections are lower priority than bilingual switch completeness and a strong first-pass archive/index surface.
 
-1. Route `/` must read as the site home entry. Its title, meta description, H1, and first lead paragraph must establish brand mission, audience, scope, and navigation overview. Do not include download, certification, query/search, login, or registration wording in those fields; place those downstream functions only in later cards, navigation, or CTA modules.
+1. Route `/` must read as the official homepage and institutional overview. Its title, meta description, H1, and first lead paragraph must establish brand mission, audience, scope, and navigation overview. Do not describe route `/` as an entry point, site entry, homepage path, or browsing gateway in visible copy. Do not include download, certification, query/search, login, registration, support-entry, consultation-entry, contact-entry, project-support, or institutional-support wording in those fields; place those downstream functions only in later cards, navigation, or CTA modules.
 2. If a hero visual rail is tall, it must contain real media, chart, or data-viz content. A large empty right rail with only bottom-aligned text is a generation failure.
 3. Dense result cards rendered inside a 12-column grid must span the full available row unless the prompt explicitly calls for a narrower card pattern.
 4. Any selected content-backed route with explicit detail deliverables must use `/blog/{slug}/` detail links and preserve the hidden data-source mount contract from Phase 0.35.
@@ -536,7 +559,7 @@ Minimum deliverable priority before polish:
 9. Requested-content completeness gate: if the prompt asks for a fixed number of articles/posts/resources, validate that the generated output contains the same number of readable detail targets. Each target must include full body prose with multiple paragraphs or sections. A card with only title, tags, date, excerpt, or "read more" is not a completed content item.
 10. Count-led editorial framing gate: if the prompt asks for a fixed number of articles/posts/resources, the generated page may contain that number of cards and details, but it must not turn the count itself into visitor-facing scaffold copy such as "three articles, three ways" or equivalent count-announcement prose.
 11. Homepage entry gate: the home page may point visitors to the Blog/content route, but it must do so with site-positioning or topical CTA language. Do not explain the site by saying the blog currently has three articles, by summarizing those three articles in sequence, or by telling readers to start from those three pieces.
-12. Blog-detail inevitability gate: if the route plan includes `/blog` or another content-backed route with explicit detail deliverables, the generated list surface must expose at least one visible `/blog/{slug}/` detail entry and must include matching readable detail output. A Blog archive that promises detail targets without readable detail output is a generation failure.
+12. Blog-detail inevitability gate: if the route plan includes `/blog` or another content-backed route with explicit detail deliverables, the generated list surface must expose stable slug-aligned detail intent. Matching readable detail output is mandatory when the active run is the dedicated blog-detail-fill stage; otherwise the first pass may defer those pages while preserving the archive/index contract and the later fill step.
 13. Action-separation gate: generation and deployment must remain distinct workflow actions. The generation stage may produce preview files, Blog cards, Blog detail pages, and confirmation artifacts, but it must not claim deployment success, auto-trigger deployment, or collapse "generate site" and "deploy site" into one step unless the user explicitly asks for deployment later.
 14. Regeneration continuity gate: if a prior or current confirmed route plan includes `/blog` or another content-backed route with explicit detail deliverables, then a regenerate/rebuild request must re-enter the Blog workflow instead of ending at plain site preview. The regenerated output must again produce:
    - the Blog/content-backed list surface,

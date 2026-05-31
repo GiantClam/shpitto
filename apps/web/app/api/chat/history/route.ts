@@ -112,6 +112,10 @@ export async function GET(req: Request) {
     Boolean(task?.id && taskAssistantText) &&
     (task?.status === "succeeded" || task?.status === "failed") &&
     !hasVisibleTaskStatusMessage(visibleMessages, { id: task!.id, status: task!.status });
+  const syntheticTaskResultMetadata =
+    task?.result?.timelineMetadata && typeof task.result.timelineMetadata === "object" && !Array.isArray(task.result.timelineMetadata)
+      ? task.result.timelineMetadata
+      : {};
   const visibleMessagesWithTaskResult = shouldIncludeTaskResultMessage
     ? [
         ...visibleMessages,
@@ -127,6 +131,7 @@ export async function GET(req: Request) {
             source: "task_result",
             stage: task!.result?.progress?.stage || null,
             synthetic: true,
+            ...syntheticTaskResultMetadata,
           },
           createdAt: task!.updatedAt,
         },

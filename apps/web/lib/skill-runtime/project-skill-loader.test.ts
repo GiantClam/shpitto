@@ -134,7 +134,7 @@ describe("project-skill-loader", () => {
     expect(skill.websiteMetadata?.designSystem?.requires).toBe(true);
   });
 
-  it("discovers staged imported website skills from nested namespaces without TS aliases", async () => {
+  it("discovers active imported website skills from nested namespaces without TS aliases", async () => {
     const seedIds = await listWebsiteSeedSkillIds();
 
     expect(seedIds).toEqual(
@@ -150,13 +150,13 @@ describe("project-skill-loader", () => {
     expect(skill.skillMdPath.replace(/\\/g, "/")).toContain(
       "/apps/web/skills/imported-open-design/docs-knowledge-foundation/SKILL.md",
     );
-    expect(skill.websiteMetadata?.activation?.rolloutStatus).toBe("staged");
-    expect(skill.websiteMetadata?.activation?.mode).toBe("sidecar");
+    expect(skill.websiteMetadata?.activation?.rolloutStatus).toBe("active");
+    expect(skill.websiteMetadata?.activation?.mode).toBe("primary");
     expect(skill.resourceIndex?.exampleHtml?.path).toBe("example.html");
     expect(renderProjectSkillResourceIndex(skill.resourceIndex)).toContain("example.html: example-backed HTML contract");
   });
 
-  it("discovers staged imported HTML Anything website skills from nested namespaces", async () => {
+  it("discovers active imported HTML Anything website skills from nested namespaces", async () => {
     const docsSkill = await loadProjectSkill("docs-reference-template");
     const contentSkill = await loadProjectSkill("content-resource-template");
 
@@ -167,14 +167,15 @@ describe("project-skill-loader", () => {
     expect(contentSkill.websiteMetadata?.activation?.compatibleSurfaceModes).toContain("content-hub-site");
   });
 
-  it("keeps staged imported website skills out of native seed selection until the rollout flag is enabled", async () => {
+  it("keeps imported skill activation gated in native generator mode for non-imported flows", async () => {
     const previous = process.env.SHPITTO_OD_IMPORTED_SKILLS;
     const previousGenerator = process.env.SHPITTO_SITE_GENERATOR;
     delete process.env.SHPITTO_OD_IMPORTED_SKILLS;
     process.env.SHPITTO_SITE_GENERATOR = "native";
 
     const defaultSelected = await selectWebsiteSeedSkillsForIntent({
-      requirementText: "Build a documentation knowledge base with implementation guides and references.",
+      requirementText: "Build a corporate B2B website with products, solutions, and contact.",
+      routes: ["/", "/products", "/solutions", "/contact"],
       maxSkills: 3,
     });
     expect(defaultSelected.map((item) => item.id)).not.toContain("docs-knowledge-foundation");
@@ -192,7 +193,7 @@ describe("project-skill-loader", () => {
     else process.env.SHPITTO_SITE_GENERATOR = previousGenerator;
   });
 
-  it("uses default hybrid generator mode to promote compatible Open Design and HTML Anything sidecars", async () => {
+  it("uses default hybrid generator mode to promote compatible Open Design and HTML Anything primary seeds", async () => {
     const previous = process.env.SHPITTO_OD_IMPORTED_SKILLS;
     const previousGenerator = process.env.SHPITTO_SITE_GENERATOR;
     delete process.env.SHPITTO_OD_IMPORTED_SKILLS;
@@ -212,6 +213,28 @@ describe("project-skill-loader", () => {
     else process.env.SHPITTO_OD_IMPORTED_SKILLS = previous;
     if (previousGenerator === undefined) delete process.env.SHPITTO_SITE_GENERATOR;
     else process.env.SHPITTO_SITE_GENERATOR = previousGenerator;
+  });
+
+  it("treats all first-stage website surfaces as imported-skill-first by default", async () => {
+    const previous = process.env.SHPITTO_OD_IMPORTED_SKILLS;
+    delete process.env.SHPITTO_OD_IMPORTED_SKILLS;
+
+    const docs = await selectWebsiteSeedSkillsForIntent({
+      requirementText: "Build a documentation knowledge base with API reference and implementation guides.",
+      routes: ["/", "/docs", "/guides", "/api-reference"],
+      maxSkills: 2,
+    });
+
+    expect(docs.some((item) => item.reason.includes("imported-skill-first:docs-knowledge-site"))).toBe(true);
+    const corporate = await selectWebsiteSeedSkillsForIntent({
+      requirementText: "Build a corporate B2B website with products, solutions, cases, and contact.",
+      routes: ["/", "/products", "/solutions", "/cases", "/contact"],
+      maxSkills: 3,
+    });
+    expect(corporate.some((item) => item.reason.includes("imported-skill-first:corporate-b2b-site"))).toBe(true);
+
+    if (previous === undefined) delete process.env.SHPITTO_OD_IMPORTED_SKILLS;
+    else process.env.SHPITTO_OD_IMPORTED_SKILLS = previous;
   });
 
   it("indexes seed template and checklist resources into a compact summary", async () => {
@@ -246,7 +269,7 @@ describe("project-skill-loader", () => {
     expect(pricing[0]?.id).toBe("open-design-pricing-page");
   });
 
-  it("selects the pricing seed as a controlled sidecar for pricing routes on supported surfaces", async () => {
+  it("selects the pricing seed as a controlled imported primary companion for pricing routes on supported surfaces", async () => {
     const selected = await selectWebsiteSeedSkillsForIntent({
       requirementText: "Create a corporate B2B website for an enterprise software vendor.",
       routes: ["/", "/solutions", "/pricing", "/contact"],

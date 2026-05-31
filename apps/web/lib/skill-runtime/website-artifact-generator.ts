@@ -61,7 +61,7 @@ export function renderWebsiteArtifactGeneratorContract(params: {
     `- frontend_generation_owner: ${ownerLine}`,
     mode === "native"
       ? "- imported_skill_policy: staged Open Design / HTML Anything imports remain opt-in sidecars unless rollout flags explicitly enable them."
-      : "- imported_skill_policy: include compatible Open Design / HTML Anything website imports as primary frontend generation guidance before the model emits HTML/CSS.",
+      : "- imported_skill_policy: treat compatible Open Design / HTML Anything website imports as the primary frontend generation contract before the model emits HTML/CSS; local fallback guidance exists only when no compatible imported contract matches the selected surface.",
     mode === "native"
       ? "- functionality_port_scope: no external frontend generator is active for this run."
       : "- functionality_port_scope: port generation functionality, template discipline, route-unit structure, and QA checklists only; do not port external product chrome, account UI, admin panels, global app layout, or unrelated platform navigation.",

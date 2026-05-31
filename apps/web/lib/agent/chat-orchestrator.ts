@@ -6,6 +6,7 @@ import {
   renderWebsiteDesignDirectionPrompt,
 } from "../open-design/design-directions";
 import type { DesignSystemSource, DesignSystemSummary } from "../design-system-registry";
+import { buildLocalePlan, normalizeLocaleCode, normalizeLocaleList } from "../skill-runtime/locale-plan";
 import {
   containsWorkflowCjk,
   isWorkflowArtifactEnglishSafe,
@@ -14,7 +15,14 @@ import {
 
 export type ConversationStage = "drafting" | "previewing" | "deployed" | "deploying";
 
-export type ChatIntent = "clarify" | "generate" | "refine_preview" | "refine_deployed" | "deploy";
+export type ChatIntent =
+  | "clarify"
+  | "generate"
+  | "refine_preview"
+  | "refine_deployed"
+  | "translate_preview"
+  | "translate_deployed"
+  | "deploy";
 
 export type RequirementSlot = {
   key: string;
@@ -60,7 +68,9 @@ export type RequirementFormValues = {
   pageStructure?: PageStructureRequirement;
   functionalRequirements?: string[];
   primaryGoal?: string[];
-  language?: "zh-CN" | "en" | "bilingual";
+  language?: "zh-CN" | "en" | "bilingual" | "multilingual";
+  supportedLocales?: string[];
+  defaultLocale?: string;
   brandLogo?: BrandLogoRequirement;
   designSystemInspiration?: DesignSystemInspiration;
   contentSources?: string[];
@@ -87,7 +97,9 @@ export type RequirementSpec = {
   contentModules?: string[];
   ctas?: string[];
   primaryGoal?: string[];
-  locale?: "zh-CN" | "en" | "bilingual";
+  locale?: "zh-CN" | "en" | "bilingual" | "multilingual";
+  supportedLocales?: string[];
+  defaultLocale?: string;
   tone?: string;
   brandLogo?: BrandLogoRequirement;
   designSystemInspiration?: DesignSystemInspiration;
@@ -148,6 +160,7 @@ export type IntentDecision = {
   assumedDefaults: string[];
   shouldCreateTask: boolean;
   refineScope?: "patch" | "structural" | "route_regenerate" | "full_regenerate";
+  workflowHints?: Record<string, unknown>;
 };
 
 export type RequiredSlotValidation = {
@@ -374,6 +387,17 @@ function normalizeFormLanguage(value: unknown): RequirementFormValues["language"
   return undefined;
 }
 
+function normalizeSupportedLocales(value: unknown): string[] {
+  return normalizeLocaleList(Array.isArray(value) ? value : typeof value === "string" ? splitList(value) : []);
+}
+
+function normalizeDefaultLocale(value: unknown, supportedLocales: string[]): string | undefined {
+  const normalized = normalizeLocaleCode(String(value || ""));
+  if (!normalized) return undefined;
+  if (supportedLocales.length > 0 && !supportedLocales.includes(normalized)) return supportedLocales[0];
+  return normalized;
+}
+
 function normalizePageStructure(value: unknown): PageStructureRequirement | undefined {
   if (!value || typeof value !== "object") return undefined;
   const raw = value as Record<string, unknown>;
@@ -514,6 +538,8 @@ function normalizeRequirementFormValues(value: unknown): RequirementFormValues |
   );
   const primaryGoal = toStringArray(raw.primaryGoal || raw.ctas);
   const language = normalizeFormLanguage(raw.language || raw.locale);
+  const supportedLocales = normalizeSupportedLocales(raw.supportedLocales || raw.locales || raw.languages);
+  const defaultLocale = normalizeDefaultLocale(raw.defaultLocale || raw.sourceLocale, supportedLocales);
   const brandLogo = normalizeBrandLogo(raw.brandLogo || raw.logo);
   const designSystemInspiration = normalizeDesignSystemInspiration(
     raw.designSystemInspiration || raw.designSystem || raw.inspiration,
@@ -562,6 +588,8 @@ function normalizeRequirementFormValues(value: unknown): RequirementFormValues |
     functionalRequirements.length === 0 &&
     primaryGoal.length === 0 &&
     !language &&
+    supportedLocales.length === 0 &&
+    !defaultLocale &&
     !brandLogo &&
     !designSystemInspiration &&
     contentSources.length === 0 &&
@@ -579,7 +607,9 @@ function normalizeRequirementFormValues(value: unknown): RequirementFormValues |
     ...(pageStructure ? { pageStructure } : {}),
     ...(functionalRequirements.length > 0 ? { functionalRequirements } : {}),
     ...(primaryGoal.length > 0 ? { primaryGoal } : {}),
-    ...(language ? { language } : {}),
+    ...(language ? { language } : supportedLocales.length >= 3 ? { language: "multilingual" as const } : {}),
+    ...(supportedLocales.length > 0 ? { supportedLocales } : {}),
+    ...(defaultLocale ? { defaultLocale } : {}),
     ...(brandLogo ? { brandLogo } : {}),
     ...(designSystemInspiration ? { designSystemInspiration } : {}),
     ...(contentSources.length > 0 ? { contentSources } : {}),
@@ -744,7 +774,9 @@ type ExtractedRequirementFields = {
   contentModules?: string[];
   ctas?: string[];
   primaryGoal?: string[];
-  locale?: "zh-CN" | "en" | "bilingual";
+  locale?: "zh-CN" | "en" | "bilingual" | "multilingual";
+  supportedLocales?: string[];
+  defaultLocale?: string;
   tone?: string;
   brandLogo?: BrandLogoRequirement;
   designSystemInspiration?: DesignSystemInspiration;
@@ -895,6 +927,9 @@ function extractRequirementFieldsFromText(text: string): ExtractedRequirementFie
       (match) => match[1],
     ),
   ]);
+  const localePlan = buildLocalePlan(raw);
+  const supportedLocales = unique([...(form?.supportedLocales || []), ...localePlan.locales]);
+  const defaultLocale = form?.defaultLocale || (supportedLocales.length > 0 ? localePlan.defaultLocale : undefined);
   const locale =
     form?.language ||
     (/中英双语|双语|bilingual/i.test(raw)
@@ -905,6 +940,10 @@ function extractRequirementFieldsFromText(text: string): ExtractedRequirementFie
           ? "en"
           : undefined);
   const deploymentProvider = /cloudflare/i.test(raw) ? "cloudflare" : /vercel/i.test(raw) ? "vercel" : undefined;
+  const resolvedLocale =
+    supportedLocales.length >= 3
+      ? (locale || "multilingual")
+      : locale;
   const domain = raw.match(/\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b/i)?.[0];
   const deployment = {
     provider: deploymentProvider,
@@ -936,7 +975,9 @@ function extractRequirementFieldsFromText(text: string): ExtractedRequirementFie
     contentModules,
     ctas,
     primaryGoal,
-    locale,
+    locale: resolvedLocale,
+    supportedLocales,
+    defaultLocale,
     tone: extractLabelValue(raw, ["tone", "语气", "口吻"]),
     brandLogo: form?.brandLogo,
     contentSources,
@@ -1116,6 +1157,8 @@ function mergeRequirementFieldsFromSources(sourceMessages: string[]): {
     apply("ctas", "ctas");
     apply("primaryGoal", "ctas");
     apply("locale", "locale");
+    apply("supportedLocales", "locale");
+    apply("defaultLocale", "locale");
     apply("tone", "tone");
     apply("brandLogo", "text");
     apply("contentSources", "contentModules");
@@ -1176,6 +1219,8 @@ export function buildRequirementSpec(text: string, sourceMessages?: string[]): R
     ctas: merged.values.ctas || [],
     primaryGoal: merged.values.primaryGoal || [],
     locale: merged.values.locale,
+    supportedLocales: merged.values.supportedLocales || [],
+    defaultLocale: merged.values.defaultLocale,
     tone: merged.values.tone,
     brandLogo: merged.values.brandLogo,
     designSystemInspiration: merged.values.designSystemInspiration || parsedInput.formValues?.designSystemInspiration,
@@ -1316,10 +1361,29 @@ function isStructuralRefineIntent(text: string): boolean {
   );
 }
 
+function isBlogDetailFillIntent(text: string): boolean {
+  const normalized = toLower(text);
+  if (!normalized) return false;
+  return /(?:blog detail|blog details|article detail|article details|post detail|post details|fill blog detail|generate blog detail|generate article detail|complete blog detail|complete article detail|补齐blog详情|补全blog详情|生成blog详情|补齐文章详情|补全文章详情|生成文章详情|详情页补全|详情页生成)/i.test(
+    normalized,
+  );
+}
+
 function isRouteRegenerateIntent(text: string): boolean {
   const normalized = toLower(text);
   if (!normalized) return false;
   return /(?:重做(?!整个)|重写(?!整个)|重生成(?!整个)|重建(?!整个)|重新生成(?!整个网站)|rewrite page|redo page|regenerate page|rebuild page|regenerate blog|rewrite blog|redo blog)/i.test(
+    normalized,
+  );
+}
+
+function isRouteMediaRewriteIntent(text: string): boolean {
+  const normalized = toLower(text);
+  if (!normalized) return false;
+  const targetsRouteOwnedOpening =
+    /(?:homepage|home page|home hero|hero|首屏|首页|cases page|case page|cases|案例页|案例)/i.test(normalized);
+  if (!targetsRouteOwnedOpening) return false;
+  return /(?:placeholder|blank|empty|占位|空白|ph-img|media-frame|real image|image-backed media|replace.*media|replace.*image|rewrite.*hero|重做.*首屏|重写.*首屏|替换.*图片|替换.*媒体|真实图片|图片媒体)/i.test(
     normalized,
   );
 }
@@ -1414,10 +1478,17 @@ const PRIMARY_GOAL_OPTIONS: RequirementSlotOption[] = [
   localizedOption("online_purchase", "在线购买", "Online purchase"),
 ];
 
-const LANGUAGE_OPTIONS: RequirementSlotOption[] = [
+const _LANGUAGE_OPTIONS_UNUSED: RequirementSlotOption[] = [
   localizedOption("zh-CN", "中文", "Chinese"),
   localizedOption("en", "英文", "English"),
   localizedOption("bilingual", "中英双语", "Chinese and English"),
+];
+
+const LEGACY_LANGUAGE_OPTIONS: RequirementSlotOption[] = [
+  localizedOption("zh-CN", "Chinese", "Chinese"),
+  localizedOption("en", "English", "English"),
+  localizedOption("bilingual", "Chinese and English", "Chinese and English"),
+  localizedOption("multilingual", "Multilingual", "Multilingual"),
 ];
 
 const LOGO_OPTIONS: RequirementSlotOption[] = [
@@ -1519,7 +1590,7 @@ const SLOT_DEFINITIONS: Array<{
     label: "语言与语气",
     required: true,
     inputType: "single",
-    options: LANGUAGE_OPTIONS,
+    options: LEGACY_LANGUAGE_OPTIONS,
     patterns: [/中文|英文|english|chinese|语气|tone|专业|亲切/i],
   },
   {
@@ -1599,7 +1670,10 @@ function buildStructuredSlotEvidence(spec: RequirementSpec): Record<string, stri
     "functional-requirements": spec.functionalRequirements?.join(", "),
     "content-modules": spec.contentModules?.join(", "),
     "interaction-cta": (spec.primaryGoal?.length ? spec.primaryGoal : spec.ctas)?.join(", "),
-    "language-and-tone": spec.locale || spec.tone,
+    "language-and-tone":
+      spec.locale === "multilingual" && (spec.supportedLocales || []).length > 0
+        ? `multilingual: ${(spec.supportedLocales || []).join(", ")}${spec.defaultLocale ? ` (default ${spec.defaultLocale})` : ""}`
+        : spec.locale || spec.tone,
     "brand-logo": spec.brandLogo?.mode
       ? spec.brandLogo.mode === "uploaded" && !(spec.brandLogo.assetKey || spec.brandLogo.assetId || spec.brandLogo.referenceText)
         ? undefined
@@ -1743,6 +1817,14 @@ function inferAssumedDefaults(stage: ConversationStage, missingSlots: string[]):
   return defaults;
 }
 
+function isTranslationIntent(text: string): boolean {
+  const normalized = toLower(text);
+  if (!normalized) return false;
+  return /(?:translate|translation|locale catalog|locale catalogs|language pack|messages\.[a-z-]+\.json|i18n|多语言|翻译|译成|新增.*语言|增加.*语言|添加.*语言|生成.*语言包|生成.*翻译)/i.test(
+    normalized,
+  );
+}
+
 export function decideChatIntent(params: {
   userText: string;
   stage: ConversationStage;
@@ -1814,6 +1896,31 @@ export function decideChatIntent(params: {
     };
   }
 
+  if (isTranslationIntent(text)) {
+    if (params.stage === "deployed") {
+      return {
+        intent: "translate_deployed",
+        confidence: 0.94,
+        reason: "explicit-translation-intent-on-deployed",
+        completionPercent: completion,
+        missingSlots: missingSlotLabels,
+        assumedDefaults: [],
+        shouldCreateTask: true,
+      };
+    }
+    if (params.stage === "previewing") {
+      return {
+        intent: "translate_preview",
+        confidence: 0.94,
+        reason: "explicit-translation-intent-on-preview",
+        completionPercent: completion,
+        missingSlots: missingSlotLabels,
+        assumedDefaults: [],
+        shouldCreateTask: true,
+      };
+    }
+  }
+
   if (isRebuildIntent(text)) {
     return {
       intent: "generate",
@@ -1850,6 +1957,72 @@ export function decideChatIntent(params: {
         assumedDefaults: [],
         shouldCreateTask: true,
         refineScope: "route_regenerate",
+      };
+    }
+  }
+
+  if (isRouteMediaRewriteIntent(text)) {
+    if (params.stage === "deployed") {
+      return {
+        intent: "refine_deployed",
+        confidence: 0.93,
+        reason: "route-media-rewrite-on-deployed",
+        completionPercent: completion,
+        missingSlots: missingSlotLabels,
+        assumedDefaults: [],
+        shouldCreateTask: true,
+        refineScope: "route_regenerate",
+      };
+    }
+    if (params.stage === "previewing") {
+      return {
+        intent: "refine_preview",
+        confidence: 0.93,
+        reason: "route-media-rewrite-on-preview",
+        completionPercent: completion,
+        missingSlots: missingSlotLabels,
+        assumedDefaults: [],
+        shouldCreateTask: true,
+        refineScope: "route_regenerate",
+      };
+    }
+  }
+
+  if (isBlogDetailFillIntent(text)) {
+    if (params.stage === "deployed") {
+      return {
+        intent: "refine_deployed",
+        confidence: 0.95,
+        reason: "explicit-blog-detail-fill-on-deployed",
+        completionPercent: completion,
+        missingSlots: missingSlotLabels,
+        assumedDefaults: [],
+        shouldCreateTask: true,
+        refineScope: "structural",
+        workflowHints: {
+          skillActionDomain: "blog_detail",
+          skillAction: "fill_details",
+          blogDetailFillRequested: true,
+          refineSkillId: "blog-detail-fill-workflow",
+        },
+      };
+    }
+    if (params.stage === "previewing") {
+      return {
+        intent: "refine_preview",
+        confidence: 0.95,
+        reason: "explicit-blog-detail-fill-on-preview",
+        completionPercent: completion,
+        missingSlots: missingSlotLabels,
+        assumedDefaults: [],
+        shouldCreateTask: true,
+        refineScope: "structural",
+        workflowHints: {
+          skillActionDomain: "blog_detail",
+          skillAction: "fill_details",
+          blogDetailFillRequested: true,
+          refineSkillId: "blog-detail-fill-workflow",
+        },
       };
     }
   }
@@ -2031,6 +2204,7 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
     "zh-CN": "Chinese",
     en: "English",
     bilingual: "Chinese and English",
+    multilingual: "Multilingual",
     uploaded: "Uploaded logo",
     text_mark: "Text wordmark",
     generated_placeholder: "Generated temporary text logo",
@@ -2092,6 +2266,7 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
         buildEnglishSafeBusinessSignalFallback(spec.customNotes),
       )
     : "";
+  const specSupportedLocales = spec.supportedLocales || [];
   const confirmedParameters = [
     spec.siteType ? `- Website type: ${optionLabel(SITE_TYPE_OPTIONS, spec.siteType)}` : "",
     spec.targetAudience?.length ? `- Target audience: ${optionLabels(AUDIENCE_OPTIONS, spec.targetAudience)}` : "",
@@ -2111,7 +2286,13 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
       ? `- Functional requirements: ${optionLabels(FUNCTIONAL_REQUIREMENT_OPTIONS, spec.functionalRequirements)}`
       : "",
     spec.primaryGoal?.length ? `- Primary goal: ${optionLabels(PRIMARY_GOAL_OPTIONS, spec.primaryGoal)}` : "",
-    spec.locale ? `- Language: ${optionLabel(LANGUAGE_OPTIONS, spec.locale)}` : "",
+    spec.locale
+      ? `- Language: ${optionLabel(LEGACY_LANGUAGE_OPTIONS, spec.locale)}${
+          spec.locale === "multilingual" && specSupportedLocales.length > 0
+            ? ` (${specSupportedLocales.join(", ")}${spec.defaultLocale ? `; default ${spec.defaultLocale}` : ""})`
+            : ""
+        }`
+      : "",
     logoMode
       ? `- Logo source: ${logoMode}${spec.brandLogo?.assetName ? ` (${spec.brandLogo.assetName})` : ""}`
       : "",
@@ -2148,7 +2329,13 @@ export function composeStructuredPrompt(rawRequirement: string, slots: Requireme
   const stableConstraintTokens = extractStableInternalConstraintTokens(normalizedRequirement);
   const internalRequirementSummary = [
     "- Internal prompt language: English only.",
-    spec.locale ? `- Final website locale requirement: ${optionLabel(LANGUAGE_OPTIONS, spec.locale)}.` : "",
+    spec.locale
+      ? `- Final website locale requirement: ${optionLabel(LEGACY_LANGUAGE_OPTIONS, spec.locale)}${
+          spec.locale === "multilingual" && specSupportedLocales.length > 0
+            ? ` (${specSupportedLocales.join(", ")}${spec.defaultLocale ? `; default ${spec.defaultLocale}` : ""})`
+            : ""
+        }.`
+      : "",
     spec.contentSources?.includes("uploaded_files")
       ? "- Uploaded materials remain the primary content source; keep the workflow artifact in English while preserving source-backed route and content decisions."
       : "",

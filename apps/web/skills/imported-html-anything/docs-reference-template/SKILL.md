@@ -1,9 +1,9 @@
 ---
 name: "docs-reference-template"
 description: |
-  Website-only staged import adapted from HTML Anything template discipline for
-  documentation/reference pages. Keep as sidecar guidance until replay evidence
-  proves promotion readiness.
+  Website-only import adapted from HTML Anything template discipline for
+  documentation/reference pages. Default primary template discipline for docs
+  and reference routes.
 triggers:
   - "docs reference template"
   - "api reference"
@@ -19,8 +19,8 @@ od:
     requires: true
     sections: [color, typography, layout, components]
   activation:
-    mode: sidecar
-    rollout_status: staged
+    mode: primary
+    rollout_status: active
     website_only: true
     ownership_layer: skill
     compatible_surface_modes: [docs-knowledge-site]
@@ -28,7 +28,7 @@ od:
 
 # Docs Reference Template
 
-This staged imported skill is a website-only sidecar seed for docs/reference pages.
+This imported skill is the default website-only primary template seed for docs/reference pages.
 
 Use it for:
 
@@ -37,4 +37,4 @@ Use it for:
 - table-of-contents and cross-link structure
 - no placeholder examples, fake metrics, or editorial archive assumptions
 
-Do not promote it to default selection until targeted replay evidence proves it improves long-running docs generation.
+Treat this skill as the default concrete HTML/CSS route-template contract for docs/reference pages.

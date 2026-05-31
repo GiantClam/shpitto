@@ -133,6 +133,110 @@ export function extractOrderedBlogDetailRoutesFromProject(project: any, deps: Co
   return Array.from(discovered);
 }
 
+type BlogIndexArchiveEntry = {
+  title: string;
+  route?: string;
+};
+
+function extractBlogIndexArchiveEntries(project: any, deps: CompletionDeps): BlogIndexArchiveEntry[] {
+  const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
+  const blogIndexHtml = String(
+    files.find((file: any) => deps.normalizePath(String(file?.path || "")) === "/blog/index.html")?.content || "",
+  );
+  if (!blogIndexHtml) return [];
+
+  const entries: BlogIndexArchiveEntry[] = [];
+  for (const match of blogIndexHtml.matchAll(/<article\b[^>]*>[\s\S]*?<\/article>/gi)) {
+    const block = String(match[0] || "");
+    const routeMatch = block.match(/href=["'](\/blog\/(?!tag\/|category\/|rss\.xml)[^"'?#]+\/?)["']/i);
+    const titleHtml =
+      block.match(/<h[1-4]\b[^>]*>([\s\S]*?)<\/h[1-4]>/i)?.[1] ||
+      block.match(/<a\b[^>]*>([\s\S]*?)<\/a>/i)?.[1] ||
+      "";
+    const title = deps.htmlToReadableText(titleHtml).replace(/\s+/g, " ").trim();
+    const route = routeMatch?.[1] ? deps.normalizePath(String(routeMatch[1]).replace(/\/+$/g, "")) : undefined;
+    if (!title && !route) continue;
+    entries.push({ title, route });
+  }
+
+  return entries;
+}
+
+function toArchiveDetailHref(route: string, deps: CompletionDeps): string {
+  const normalized = deps.normalizePath(route).replace(/\/+$/g, "");
+  return normalized === "/" ? "/" : `${normalized}/`;
+}
+
+function alignBlogIndexArchiveLinks(params: {
+  project: any;
+  posts: BlogPostUpsertInput[];
+  postRoutes: string[];
+  locale: VisibleLocale;
+  deps: CompletionDeps;
+}): any {
+  const next = params.deps.cloneJson(params.project);
+  const files = params.deps.dedupeFiles((next?.staticSite?.files || []) as any[]);
+  let changed = false;
+
+  const rewriteHtml = (html: string) => {
+    let articleIndex = 0;
+    return String(html || "").replace(/<article\b[^>]*>[\s\S]*?<\/article>/gi, (block) => {
+      const post = params.posts[articleIndex];
+      const route = params.postRoutes[articleIndex];
+      articleIndex += 1;
+      if (!post || !route) return block;
+
+      const href = toArchiveDetailHref(route, params.deps);
+      if (/href=["'](\/blog\/(?!tag\/|category\/|rss\.xml)[^"'?#]+\/?)["']/i.test(block)) {
+        const nextBlock = block.replace(
+          /href=["'](\/blog\/(?!tag\/|category\/|rss\.xml)[^"'?#]+\/?)["']/i,
+          `href="${params.deps.escapeHtml(href)}"`,
+        );
+        if (nextBlock !== block) changed = true;
+        return nextBlock;
+      }
+
+      if (/<h([1-4])\b[^>]*>[\s\S]*?<\/h\1>/i.test(block)) {
+        const nextBlock = block.replace(/<h([1-4])\b([^>]*)>([\s\S]*?)<\/h\1>/i, (_full, level, attrs, inner) => {
+          return `<h${level}${attrs}><a href="${params.deps.escapeHtml(href)}" class="article-card__link">${inner}</a></h${level}>`;
+        });
+        if (nextBlock !== block) changed = true;
+        return nextBlock;
+      }
+
+      const linkLabel = params.locale === "en" ? "Read article" : "阅读全文";
+      const nextBlock = block.replace(
+        /<\/article>/i,
+        `<p><a href="${params.deps.escapeHtml(href)}" class="article-card__link">${params.deps.escapeHtml(linkLabel)}</a></p></article>`,
+      );
+      if (nextBlock !== block) changed = true;
+      return nextBlock;
+    });
+  };
+
+  next.staticSite = {
+    ...(next?.staticSite || {}),
+    mode: "skill-direct",
+    files: files.map((file) => {
+      const filePath = params.deps.normalizePath(String(file?.path || ""));
+      if (filePath !== "/blog/index.html") return file;
+      const updated = rewriteHtml(String(file?.content || ""));
+      return updated === String(file?.content || "") ? file : { ...file, content: updated };
+    }),
+  };
+
+  if (Array.isArray(next?.pages)) {
+    next.pages = next.pages.map((page: any) => {
+      const route = params.deps.normalizePath(String(page?.path || ""));
+      if (route !== "/blog") return page;
+      const updated = rewriteHtml(String(page?.html || ""));
+      return updated === String(page?.html || "") ? page : { ...page, html: updated };
+    });
+  }
+
+  return changed ? params.deps.syncPagesFromStaticFiles(next) : params.project;
+}
+
 export function slugFromBlogDetailRoute(route: string, deps: CompletionDeps): string {
   return String(deps.normalizePath(route).split("/").filter(Boolean).pop() || "").trim();
 }
@@ -141,6 +245,67 @@ export function projectHasStaticBlogDetailFile(project: any, route: string, deps
   const targetPath = `${deps.normalizePath(route)}/index.html`;
   const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
   return files.some((file: any) => deps.normalizePath(String(file?.path || "")) === targetPath);
+}
+
+function countMarkdownH2(text: string): number {
+  return (String(text || "").match(/^##\s+/gm) || []).length;
+}
+
+function ensureBlogDetailMarkdownDepth(post: BlogPostUpsertInput, locale: VisibleLocale): string {
+  const title = String(post.title || "").trim();
+  const excerpt = String(post.excerpt || "").trim();
+  const category = String(post.category || "").trim();
+  const tags = Array.isArray(post.tags) ? post.tags.map((tag) => String(tag || "").trim()).filter(Boolean) : [];
+  const existing = String(post.contentMd || "").trim();
+  const normalizedExisting = existing || [title ? `# ${title}` : "", excerpt].filter(Boolean).join("\n\n");
+  if (countMarkdownH2(normalizedExisting) >= 2) return normalizedExisting;
+
+  const sectionOneTitle = locale === "en" ? "Why this topic matters" : "为什么这个主题重要";
+  const sectionTwoTitle = locale === "en" ? "What to apply in practice" : "如何把它落到实践";
+  const sectionThreeTitle = locale === "en" ? "Signals to keep in review" : "复盘时要持续观察的信号";
+  const categoryLead = category
+    ? locale === "en"
+      ? `Within ${category}, ${title || "this topic"} is not a decorative idea.`
+      : `在${category}这个语境里，${title || "这个主题"}不是一个装饰性话题。`
+    : locale === "en"
+      ? `${title || "This topic"} matters because it changes real decisions, not just presentation.`
+      : `${title || "这个主题"}之所以重要，是因为它会改变真实决策，而不只是改变表述方式。`;
+  const tagsLead = tags.length > 0
+    ? locale === "en"
+      ? `The most useful discussion usually lives in the tradeoffs between ${tags.slice(0, 3).join(", ")} rather than in generic best-practice slogans.`
+      : `真正有价值的讨论，通常发生在${tags.slice(0, 3).join("、")}这些维度的取舍之间，而不是停留在泛泛而谈的“最佳实践”口号里。`
+    : locale === "en"
+      ? "The useful version of the conversation stays close to constraints, review standards, and user outcomes."
+      : "真正有用的讨论必须贴近约束条件、评审标准以及最终用户结果。";
+  const excerptLead = excerpt
+    ? excerpt
+    : locale === "en"
+      ? "A strong article should keep the original tension visible, then expand it into concrete judgment and action."
+      : "一篇合格的文章应该先保留原始问题的张力，再把它展开为具体判断与行动。";
+
+  const fallbackSections = [
+    `## ${sectionOneTitle}`,
+    `${excerptLead} ${categoryLead}`,
+    tagsLead,
+    "",
+    `## ${sectionTwoTitle}`,
+    locale === "en"
+      ? `${title || "The subject"} becomes more useful when it is translated into review steps, decision criteria, and explicit handoffs that a team can actually follow.`
+      : `当${title || "这个主题"}被翻译成清晰的评审步骤、判断标准和可执行交接方式时，它才真正开始产生价值。`,
+    locale === "en"
+      ? "That means naming the assumptions, the boundary conditions, and the signals that would tell the team to continue, revise, or stop."
+      : "这意味着要把假设、边界条件，以及应该继续、修正还是停止的判断信号明确写出来。",
+    "",
+    `## ${sectionThreeTitle}`,
+    locale === "en"
+      ? "Good follow-through comes from revisiting the evidence after publication or delivery instead of assuming the first framing was complete."
+      : "真正高质量的后续动作，来自于在发布或交付后继续回看证据，而不是默认第一次表述就已经完整。",
+    locale === "en"
+      ? "The article should therefore leave the reader with a sharper operating lens, not only a polished summary."
+      : "因此，文章最终留给读者的应该是一套更锋利的工作判断视角，而不只是更漂亮的总结。",
+  ].join("\n\n").trim();
+
+  return [normalizedExisting, fallbackSections].filter(Boolean).join("\n\n");
 }
 
 export function renderGeneratedBlogDetailPage(params: {
@@ -173,7 +338,7 @@ export function renderGeneratedBlogDetailPage(params: {
   const navBlogEn = "Blog";
   const metaBits = [post.category, ...(Array.isArray(post.tags) ? post.tags.slice(0, 2) : [])].filter(Boolean);
   const metaText = metaBits.join(" \u00b7 ");
-  const articleHtml = renderMarkdownToHtml(String(post.contentMd || "").trim());
+  const articleHtml = renderMarkdownToHtml(ensureBlogDetailMarkdownDepth(post, locale));
   const relatedHtml = relatedPosts
     .slice(0, 2)
     .map((item) => {
@@ -554,9 +719,18 @@ export function materializeWebsiteBlogDetailPages(params: {
 
   const visibleLocale = params.deps.toVisibleLocale(params.locale);
   const desiredRoutes = extractOrderedBlogDetailRoutesFromProject(baseProject, params.deps);
+  const archiveEntries = extractBlogIndexArchiveEntries(baseProject, params.deps);
+  const archiveRoutes = archiveEntries.map(
+    (entry, index) => entry.route || `/blog/${slugToken(String(entry.title || "").trim(), `post-${index + 1}`)}`,
+  );
   const postRoutes = desiredRoutes.length > 0
     ? desiredRoutes
-    : preview.posts.map((post) => `/blog/${slugToken(String(post.slug || "").trim(), "post")}`);
+    : archiveRoutes.length > 0
+      ? archiveRoutes
+      : preview.posts.map((post, index) => {
+          const archiveTitle = String(archiveEntries[index]?.title || "").trim();
+          return `/blog/${slugToken(archiveTitle || String(post.slug || "").trim(), `post-${index + 1}`)}`;
+        });
   const brandSourceText =
     params.deps.collectPrimaryBlogSourceText(params.inputState) ||
     params.deps.collectDeployBlogSourceText(params.inputState, baseProject);
@@ -565,9 +739,14 @@ export function materializeWebsiteBlogDetailPages(params: {
     (visibleLocale === "zh-CN" ? "网站" : "Site");
   const navLabel = String(preview.navLabel || "").trim() || (visibleLocale === "zh-CN" ? "博客" : "Blog");
   const posts = preview.posts.map((post, index) => {
+    const archiveTitle = String(archiveEntries[index]?.title || "").trim();
     const route = postRoutes[index] || `/blog/${slugToken(String(post.slug || "").trim(), `post-${index + 1}`)}`;
     const slug = slugFromBlogDetailRoute(route, params.deps) || slugToken(String(post.slug || "").trim(), `post-${index + 1}`);
-    return { ...post, slug };
+    return {
+      ...post,
+      ...(archiveTitle ? { title: archiveTitle } : {}),
+      slug,
+    };
   });
 
   const next = params.deps.cloneJson(baseProject);
@@ -613,18 +792,25 @@ export function materializeWebsiteBlogDetailPages(params: {
     pagesByRoute.set(params.deps.normalizePath(route), { path: params.deps.normalizePath(route), html });
   });
 
-  if (generatedFiles.length === 0) return next;
-  next.staticSite = {
-    ...(next.staticSite || {}),
-    mode: "skill-direct",
-    files: params.deps.dedupeFiles([...files, ...generatedFiles]),
-  };
-  next.pages = Array.from(pagesByRoute.values()).sort((a, b) => {
-    if (a.path === "/") return -1;
-    if (b.path === "/") return 1;
-    return a.path.localeCompare(b.path);
+  if (generatedFiles.length > 0) {
+    next.staticSite = {
+      ...(next.staticSite || {}),
+      mode: "skill-direct",
+      files: params.deps.dedupeFiles([...files, ...generatedFiles]),
+    };
+    next.pages = Array.from(pagesByRoute.values()).sort((a, b) => {
+      if (a.path === "/") return -1;
+      if (b.path === "/") return 1;
+      return a.path.localeCompare(b.path);
+    });
+  }
+  return alignBlogIndexArchiveLinks({
+    project: next,
+    posts,
+    postRoutes,
+    locale: visibleLocale,
+    deps: params.deps,
   });
-  return next;
 }
 
 export function applyWebsiteStructuralRefineCompletions(params: {

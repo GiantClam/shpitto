@@ -16,6 +16,32 @@
 
 ---
 
+## Implementation Status Note (2026-05)
+
+This plan was written when `website-generation-workflow` was still described as the visible mainline generation surface.
+
+Current repository behavior is more layered:
+
+1. `website-generation-workflow` still exists as the compatibility root for chat/task/runtime continuity.
+2. The generation stack now also uses `website-orchestrator`, website surface-mode selection, type-specific website skills, imported website-only Open Design seeds, and HTML Anything-style example-backed skill resources.
+3. Chat lifecycle changes should therefore preserve compatibility with the entry/root skill while describing downstream selection and delegation more accurately.
+
+Read references to "the existing full-generate path" in this document as compatibility-root language, not as proof that design and generation remain a single-skill implementation.
+
+## Current implementation alignment (2026-05 audit)
+
+The proposal items below are no longer purely aspirational.
+
+Confirmed in the current repository:
+
+1. Chat intent routing already distinguishes `clarify`, `generate`, `refine_preview`, `refine_deployed`, `translate_preview`, `translate_deployed`, and `deploy`.
+2. The API/orchestrator path already persists structured short-term memory with `requirementState`, `revisionPointer`, stage, intent, workflow context, and confidence metadata.
+3. Chat memory already supports a conservative `file` backend and an explicit `supabase` backend with fallback behavior when shared tables are unavailable.
+4. Runtime execution already separates `generate`, `refine`, `translate`, and `deploy` modes instead of treating all post-draft work as one full-regenerate path.
+5. Locale handling is already propagated through chat intake, workflow context, runtime state, and the dedicated translation lane with `supportedLocales`, `defaultLocale`, locale registry files, and source-catalog-first translation outputs.
+
+Read the remaining sections of this document as design intent plus rationale. For current implementation truth, prefer the repository code and the verification tests that cover these behaviors.
+
 ## 2. 硬约束（必须满足）
 
 1. 不修改现有完整生成主路径语义：`POST /api/chat -> createChatTask -> worker -> SkillRuntimeExecutor.runTask`。  

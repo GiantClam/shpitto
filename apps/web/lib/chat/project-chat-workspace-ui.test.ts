@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ensureVisibleWorkspaceProjects } from "../../components/chat/project-workspace-context";
 import { buildDomainGuidanceCardMetadata } from "../../components/chat/project-domain-ui";
 import {
+  blogDetailFillCardCopy,
   deriveWorkspacePreTaskState,
   formatQaSummaryDetail,
   shouldSuppressOptimisticTimelineEcho,
@@ -70,6 +71,7 @@ describe("ProjectChatWorkspace timeline actions", () => {
         functionalRequirements: ["contact_form"],
         primaryGoal: ["lead_generation"],
         language: "en",
+        supportedLocales: ["en"],
         brandLogo: { mode: "none" },
         customNotes: "",
         designSystemInspiration: {
@@ -200,6 +202,21 @@ describe("ProjectChatWorkspace timeline actions", () => {
         type: "CNAME",
         host: "www",
         value: "shpitto-chat-1778638147239-yoh11u-930d5607-4.pages.dev",
+      }),
+    );
+  });
+
+  it("returns dedicated copy for the blog-detail-fill gate card", () => {
+    expect(blogDetailFillCardCopy("en")).toEqual(
+      expect.objectContaining({
+        titleFallback: "Fill Blog Details First",
+        buttonLabel: "Fill Blog Details Now",
+      }),
+    );
+    expect(blogDetailFillCardCopy("zh")).toEqual(
+      expect.objectContaining({
+        titleFallback: "先补全 Blog Detail",
+        buttonLabel: "立即补全 Blog Detail",
       }),
     );
   });

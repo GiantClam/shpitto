@@ -117,7 +117,49 @@ describe("deployed blog snapshot", () => {
     expect(paths).toContain("/shpitto-blog-snapshot.json");
     expect(paths).toContain("/shpitto-blog-post-shell.html");
     expect(paths).toContain("/shpitto-blog-theme.json");
-    expect(home).toContain('href="/blog/"');
+    expect(home).not.toContain('href="/blog/"');
+  });
+
+  it("does not inject a Blog nav link into non-blog sites when only deployment snapshot files exist", () => {
+    const files = buildDeployedBlogSnapshotFiles({
+      projectId: "project-1",
+      posts: [post],
+      settings: {
+        projectId: "project-1",
+        accountId: "account-1",
+        ownerUserId: "user-1",
+        enabled: true,
+        navLabel: "Blog",
+        homeFeaturedCount: 3,
+        defaultLayoutKey: "",
+        defaultThemeKey: "",
+        rssEnabled: true,
+        sitemapEnabled: true,
+        createdAt: "2026-04-30T00:00:00.000Z",
+        updatedAt: "2026-04-30T00:00:00.000Z",
+      },
+      generatedAt: "2026-04-30T00:00:00.000Z",
+    });
+    const result = injectDeployedBlogSnapshot(
+      {
+        staticSite: {
+          mode: "skill-direct",
+          files: [
+            {
+              path: "/index.html",
+              content:
+                '<!doctype html><html><head><link rel="stylesheet" href="/styles.css"></head><body><header><nav><a href="/">Home</a><a href="/about/">About</a></nav></header><main><h1>Institutional site</h1></main></body></html>',
+              type: "text/html",
+            },
+          ],
+        },
+      },
+      files,
+    );
+
+    const home = result.project.staticSite.files.find((file: { path: string }) => file.path === "/index.html")?.content || "";
+    expect(home).not.toContain('href="/blog/"');
+    expect(home).not.toContain(">Blog<");
   });
 
   it("does not inject a duplicate Blog nav link when /blog already exists", () => {

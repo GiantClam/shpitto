@@ -1,5 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+
+const execFileAsync = promisify(execFile);
 
 export function confirmGenerate(text: string) {
   return `__SHP_CONFIRM_GENERATE__\n${text}`;
@@ -321,4 +325,119 @@ export async function loadLatestLocalReplayCanonicalPrompt(prefix: string) {
   }
 
   return null;
+}
+
+export type PreviewScreenshotArtifact = {
+  device: string;
+  path: string;
+  fullPage: boolean;
+};
+
+export type PreviewScreenshotQaResult = {
+  previewUrl: string;
+  artifacts: PreviewScreenshotArtifact[];
+  executed: boolean;
+  skippedReason?: string;
+};
+
+function pngLooksNonBlank(buffer: Buffer): boolean {
+  if (!Buffer.isBuffer(buffer) || buffer.length < 64) return false;
+  let zeroRuns = 0;
+  for (let index = 0; index < buffer.length; index += 1) {
+    if (buffer[index] === 0) zeroRuns += 1;
+  }
+  return zeroRuns / buffer.length < 0.985;
+}
+
+async function ensureFileLooksUsable(filePath: string) {
+  const stat = await fs.stat(filePath);
+  if (stat.size < 4_096) {
+    throw new Error(`Screenshot artifact is unexpectedly small: ${filePath} (${stat.size} bytes)`);
+  }
+  const bytes = await fs.readFile(filePath);
+  if (!pngLooksNonBlank(bytes)) {
+    throw new Error(`Screenshot artifact appears blank or near-empty: ${filePath}`);
+  }
+}
+
+export async function captureMobilePreviewScreenshots(params: {
+  previewUrl: string;
+  outputDir: string;
+  devices?: string[];
+  waitForTimeoutMs?: number;
+  timeoutMs?: number;
+}): Promise<PreviewScreenshotQaResult> {
+  const previewUrl = String(params.previewUrl || "").trim();
+  if (!previewUrl) {
+    return {
+      previewUrl,
+      artifacts: [],
+      executed: false,
+      skippedReason: "Missing preview URL.",
+    };
+  }
+
+  const outputDir = path.resolve(params.outputDir);
+  const devices = (params.devices || ["iPhone 13", "Pixel 5"]).map((item) => String(item || "").trim()).filter(Boolean);
+  const waitForTimeoutMs = Math.max(0, Number(params.waitForTimeoutMs || 2500));
+  const timeoutMs = Math.max(5_000, Number(params.timeoutMs || 90_000));
+
+  await fs.mkdir(outputDir, { recursive: true });
+
+  try {
+    await execFileAsync("pnpm", ["exec", "playwright", "--version"], {
+      cwd: process.cwd(),
+      timeout: 15_000,
+      windowsHide: true,
+      encoding: "utf8",
+    });
+  } catch (error) {
+    return {
+      previewUrl,
+      artifacts: [],
+      executed: false,
+      skippedReason: `Playwright CLI unavailable: ${String((error as Error)?.message || error)}`,
+    };
+  }
+
+  const artifacts: PreviewScreenshotArtifact[] = [];
+  for (const device of devices) {
+    const deviceSlug = device.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    for (const fullPage of [false, true]) {
+      const filePath = path.join(outputDir, `${deviceSlug}${fullPage ? "-full" : "-viewport"}.png`);
+      const args = [
+        "exec",
+        "playwright",
+        "screenshot",
+        previewUrl,
+        filePath,
+        "--browser",
+        "chromium",
+        "--device",
+        device,
+        "--timeout",
+        String(timeoutMs),
+        "--wait-for-timeout",
+        String(waitForTimeoutMs),
+      ];
+      if (fullPage) args.push("--full-page");
+
+      await execFileAsync("pnpm", args, {
+        cwd: process.cwd(),
+        timeout: timeoutMs + waitForTimeoutMs + 30_000,
+        windowsHide: true,
+        encoding: "utf8",
+        maxBuffer: 1024 * 1024,
+      });
+
+      await ensureFileLooksUsable(filePath);
+      artifacts.push({ device, path: filePath, fullPage });
+    }
+  }
+
+  return {
+    previewUrl,
+    artifacts,
+    executed: true,
+  };
 }
