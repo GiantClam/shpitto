@@ -104,7 +104,7 @@ function providerConfig(provider: ProviderName, model: string): RoutingProviderC
     return {
       provider,
       apiKey,
-      baseURL: normalizeText(process.env.PPTOKEN_BASE_URL) || "https://api.pptoken.org/v1",
+      baseURL: normalizeText(process.env.PPTOKEN_BASE_URL) || "https://cn.pptoken.cc/v1",
       model: normalizeText(model || process.env.LLM_MODEL_PPTOKEN || process.env.PPTOKEN_MODEL || process.env.LLM_MODEL) || "gpt-5.4-mini",
     };
   }

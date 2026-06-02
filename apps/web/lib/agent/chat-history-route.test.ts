@@ -109,6 +109,15 @@ describe("chat history route", () => {
       const generatedTask = await createChatTask(chatId);
       await completeChatTask(generatedTask.id, {
         assistantText: "Site refined.",
+        internal: {
+          inputState: {
+            workflow_context: {
+              contractHash: "c".repeat(64),
+              generationLane: "website-generation-mvp",
+              websiteSurfaceMode: "content-hub-site",
+            },
+          },
+        },
         progress: {
           stage: "refined",
           generatedFiles: ["/index.html", "/styles.css"],
@@ -133,6 +142,9 @@ describe("chat history route", () => {
       expect(json?.task?.status).toBe("failed");
       expect(json?.previewTask?.id).toBe(generatedTask.id);
       expect(json?.previewTask?.result?.progress?.generatedFiles).toEqual(["/index.html", "/styles.css"]);
+      expect(json?.previewTask?.result?.contractHash).toBe("c".repeat(64));
+      expect(json?.previewTask?.result?.generationLane).toBe("website-generation-mvp");
+      expect(json?.previewTask?.result?.websiteSurfaceMode).toBe("content-hub-site");
     } finally {
       if (prevUseSupabase === undefined) delete process.env.CHAT_TASKS_USE_SUPABASE;
       else process.env.CHAT_TASKS_USE_SUPABASE = prevUseSupabase;

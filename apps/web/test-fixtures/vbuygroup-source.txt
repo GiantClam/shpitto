@@ -1,0 +1,77 @@
+Source summary extracted from https://www.vbuygroup.com/ and its public subpages.
+
+Brand and company:
+- Brand: Vbuy Textile
+- Legal footer names: Jiangsu Vbuy Textile Group Co Ltd and Jiangyin Vbuy Industrial Co Ltd
+- Positioning: custom towel and home textile manufacturer in China
+- Core message: expert towel manufacturer for OEM and custom programs
+
+Homepage summary:
+- Hero positioning: towel manufacturer expert in custom towel and home textile
+- Short introduction: Jiangyin Vbuy is presented as an expert towel manufacturer with BSCI and OEKO-Tex certifications
+- Trust message: the company emphasizes OEM capability, custom development, and modern manufacturing
+
+Primary public navigation observed:
+- Home
+- Company
+- Towel Factory
+- Quality Control
+- Towel
+- Customized Services
+- Contact
+- Trade Fair
+
+Product families presented on the homepage and category pages:
+- Beach towel
+- Bath towel
+- Sports towel
+- Car towel
+- Cleaning cloth / cleaning towel
+- Pet towel
+- Promotional towel
+
+Representative product examples named on the site:
+- Round beach towel
+- Beach towel bag
+- Kids hooded towel
+- Dry-fast beach towel
+- Hair turban towel
+- Hooded bath towel
+- Cooling towel
+- Gym towel
+- Golf towel
+- Drying towel
+- Plush detailing towel
+- Microfiber glass cloth
+- Pet hooded towel
+
+Service and manufacturing facts:
+- The company highlights a custom towel service for fast development and manufacturing
+- The site says the company has served broad industries for over 16 years
+- It emphasizes short lead times and streamlined idea-to-manufacture workflow
+- Weave types named on the site: Terry, Suede, Coral Fleece, Long Pile, Waffle, Pearl, Glass, Chenille
+- Printing techniques named on the site: Heat Transfer, Digital, Reactive, Embossed, Screen, Embroidery
+
+Factory and certification facts:
+- The factory is described as a brand-new, purpose-designed factory
+- The site states the factory is audited by global brands including Disney
+- Certifications and reports mentioned: SMETA 4 Pillar, BSCI, OEKO-Tex Standard 100, ISO 9001, ISO 14001
+- Additional audits mentioned: Wal-Mart and L'Oreal
+- The manufacturing story emphasizes worker welfare, efficiency, and quality control
+
+Social proof and clients:
+- The site shows global client logos including McDonald's, Disney, Coca-Cola, Hilton, Nivea, Swarovski, Armani, Kiehl's, and L'Oreal
+- The trust posture is global B2B supply, custom manufacturing, and brand-grade compliance
+
+Contact details extracted from the public site:
+- Address: No. 171 Shashan Avenue, Zhouzhuang, Jiangyin, Jiangsu, China 214100
+- Contact email visible on pages: sales06@sz-baoquan.com
+
+Design and content implications for a regenerated V2 site:
+- This should be a corporate B2B manufacturer website, not a blog, editorial magazine, or product marketplace
+- The homepage should establish Vbuy as a capable global custom textile manufacturing partner before routing into product families and capability pages
+- The information architecture should prioritize trust, factory capability, compliance, custom service process, core product families, and inquiry conversion
+- The site should include a real inquiry/contact form for B2B leads
+- The regenerated site should feel more premium and modern than the current WordPress site while preserving the source business facts
+- Because the business prominently sells beach towels, poolside towels, promotional resort towels, and hospitality-friendly textile programs, ocean, pool, sunlight, resort, and coastal leisure cues are legitimate source-backed visual references rather than unrelated decoration
+- A sky-blue and white palette with restrained deep-navy structure is consistent with the source business, as long as the site still reads as a premium B2B manufacturer rather than a travel brochure

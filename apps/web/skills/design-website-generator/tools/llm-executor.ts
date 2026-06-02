@@ -36,7 +36,7 @@ function getOrderedProviderConfigs(): ProviderConfig[] {
       return [{
         provider,
         apiKey: process.env.PPTOKEN_API_KEY,
-        baseURL: process.env.PPTOKEN_BASE_URL || process.env.LLM_BASE_URL || 'https://api.pptoken.org/v1',
+        baseURL: process.env.PPTOKEN_BASE_URL || process.env.LLM_BASE_URL || 'https://cn.pptoken.cc/v1',
       }];
     }
     if (provider === 'aiberm' && process.env.AIBERM_API_KEY) {

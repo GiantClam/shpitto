@@ -27,6 +27,7 @@ const confirmPayload = (text: string) => `__SHP_CONFIRM_GENERATE__\n${text}`;
 
 async function seedPreviewBaseline(chatId: string, fileSuffix = "project") {
   const projectPath = path.resolve(process.cwd(), ".tmp", "chat-tests", `${chatId}-${fileSuffix}.json`);
+  const contractHash = "a".repeat(64);
   await fs.mkdir(path.dirname(projectPath), { recursive: true });
   await fs.writeFile(
     projectPath,
@@ -60,6 +61,30 @@ async function seedPreviewBaseline(chatId: string, fileSuffix = "project") {
         workflow_context: {
           checkpointProjectPath: projectPath,
           deploySourceProjectPath: projectPath,
+          generationLane: "website-generation-mvp",
+          generationLaneConfig: { disableWebSearch: true, routePolicy: "default" },
+          websiteSurfaceMode: "content-hub-site",
+          contractHash,
+          generationContract: {
+            contractVersion: 1,
+            contractHash,
+            generationLane: "website-generation-mvp",
+            websiteSurfaceMode: "content-hub-site",
+            promptControlManifest: null,
+            discoveryBrief: null,
+            selectedSeedSkillManifest: {
+              selected: [{ id: "content-hub-site", source: "shpitto", reason: "seeded baseline" }],
+            },
+            routeUnitContracts: [
+              {
+                route: "/",
+                navLabel: "Home",
+                pageKind: "intent",
+                routeContract: ["route=/", "navLabel=Home", "pageKind=intent"],
+                inheritedSeedSkillIds: ["content-hub-site"],
+              },
+            ],
+          },
         },
       },
     },
@@ -77,7 +102,7 @@ async function seedPreviewBaseline(chatId: string, fileSuffix = "project") {
       checkpointProjectPath: projectPath,
     } as any,
   });
-  return { taskId: task.id, projectPath };
+  return { taskId: task.id, projectPath, contractHash };
 }
 
 describe("chat lifecycle regression", () => {
@@ -108,6 +133,9 @@ describe("chat lifecycle regression", () => {
       expect(refinePreviewRes.status).toBe(202);
       const refinePreviewTask = await getLatestChatTaskForChat(chatRefinePreview);
       expect((refinePreviewTask?.result?.internal?.inputState as any)?.workflow_context?.executionMode).toBe("refine");
+      expect((refinePreviewTask?.result?.internal?.inputState as any)?.workflow_context?.contractHash).toBe(
+        "a".repeat(64),
+      );
 
       const chatDeployPreview = `chat-reg-deploy-preview-${Date.now()}`;
       await seedPreviewBaseline(chatDeployPreview, "deploy-preview");
@@ -115,6 +143,9 @@ describe("chat lifecycle regression", () => {
       expect(deployFromPreviewRes.status).toBe(202);
       const deployFromPreviewTask = await getLatestChatTaskForChat(chatDeployPreview);
       expect((deployFromPreviewTask?.result?.internal?.inputState as any)?.workflow_context?.executionMode).toBe("deploy");
+      expect((deployFromPreviewTask?.result?.internal?.inputState as any)?.workflow_context?.contractHash).toBe(
+        "a".repeat(64),
+      );
 
       const chatDeployedFlow = `chat-reg-deployed-flow-${Date.now()}`;
       const baseline = await seedPreviewBaseline(chatDeployedFlow, "deployed");

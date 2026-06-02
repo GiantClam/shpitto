@@ -169,7 +169,7 @@ const getProviderConfig = (providerOverride?: LlmProvider): ProviderConfig => {
     return {
       provider,
       apiKey: process.env.PPTOKEN_API_KEY,
-      baseURL: process.env.PPTOKEN_BASE_URL || "https://api.pptoken.org/v1",
+      baseURL: process.env.PPTOKEN_BASE_URL || "https://cn.pptoken.cc/v1",
       defaultHeaders: {},
       modelName:
         sharedModel ||
@@ -451,6 +451,10 @@ export interface AgentState {
     correctionSummary?: string[];
     canonicalPrompt?: string;
     promptControlManifest?: unknown;
+    selectedSeedSkillManifest?: unknown;
+    routeUnitContracts?: unknown;
+    generationContract?: unknown;
+    contractHash?: string;
     requirementAggregatedText?: string;
     latestUserText?: string;
     latestUserTextRaw?: string;

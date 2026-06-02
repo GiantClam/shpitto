@@ -1,3 +1,6 @@
+import fs from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { getProjectAssetObject } from "../project-assets.ts";
 import {
   buildRequirementSpec,
@@ -88,6 +91,25 @@ export type WebsiteEvidenceBrief = {
   assumptions: string[];
 };
 
+export type StructuredSourceFacts = {
+  brandCandidates: string[];
+  audienceSignals: string[];
+  offeringSignals: string[];
+  proofSignals: string[];
+  contactSignals: string[];
+  navCandidates: Array<{
+    label: string;
+    source: string;
+    confidence: number;
+  }>;
+  pageCandidates: Array<{
+    route: string;
+    title: string;
+    source: string;
+    confidence: number;
+  }>;
+};
+
 export type KnowledgeProfileEnrichmentOptions = {
   useDomainSources?: boolean;
   useExplicitUrlSources?: boolean;
@@ -99,6 +121,7 @@ type AssetReference = {
   key?: string;
   fileName?: string;
   url?: string;
+  localPath?: string;
   localProjectAssetUrl?: boolean;
   referenceText: string;
 };
@@ -712,7 +735,8 @@ function synthesizeStructuredHomePage(pages: SuggestedPage[]): SuggestedPage {
   return {
     route: "/",
     title: "Home",
-    purpose: "Provide the primary landing page that introduces the organization and routes visitors into the source-defined sections.",
+    purpose:
+      "Provide the official homepage and umbrella institutional overview. Establish mission, trust scope, audience, and primary capabilities before directory mechanics or downstream route details.",
     contentInputs: featuredInputs,
     sourceKind: "structural_source",
     confidence: 0.84,
@@ -1187,22 +1211,30 @@ async function collectDomainPageSources(params: {
 function parseAssetReference(line: string): AssetReference {
   const referenceText = normalizeText(line);
   const urlMatch = referenceText.match(/\bhttps?:\/\/\S+/i)?.[0]?.replace(/[),.;]+$/g, "") || "";
+  const fileUrlMatch = referenceText.match(/\bfile:\/\/\S+/i)?.[0]?.replace(/[),.;]+$/g, "") || "";
+  const localPathMatch = referenceText.match(/\bpath:\s*(.+)$/i)?.[1] || referenceText.match(/\blocalPath:\s*(.+)$/i)?.[1] || "";
   const parsedUrl = urlMatch ? safeUrl(urlMatch) : undefined;
+  const parsedFileUrl = fileUrlMatch ? safeUrl(fileUrlMatch) : undefined;
   const keyFromQuery = parsedUrl?.searchParams.get("key") || "";
   const keyFromPublicUrl = parsedUrl?.pathname
     ? decodeURIComponent(parsedUrl.pathname.replace(/^\/+/, "")).match(/(?:^|\/)(project-assets\/.+)$/)?.[1] || ""
     : "";
   const keyMatch = referenceText.match(/\bkey:\s*([^\s)]+)/i)?.[1] || "";
+  const localPath = normalizeText(
+    localPathMatch ||
+      (parsedFileUrl?.protocol === "file:" ? fileURLToPath(parsedFileUrl) : ""),
+  ).replace(/^"(.+)"$/, "$1");
   const fileName =
     referenceText.match(/Asset\s+"([^"]+)"/i)?.[1] ||
     referenceText.match(/\bfile(?:Name)?:\s*([^,;)]+)/i)?.[1] ||
-    referenceText.match(/\bpath:\s*([^,;)]+?)(?:\s+\(|\s+URL:|$)/i)?.[1]?.split("/").pop() ||
+    (localPath ? path.basename(localPath) : "") ||
     (parsedUrl ? decodeURIComponent(parsedUrl.pathname.split("/").pop() || "") : "") ||
     "";
   return {
     key: normalizeText(keyMatch || keyFromQuery || keyFromPublicUrl),
     fileName: normalizeText(fileName),
     url: normalizeText(urlMatch),
+    localPath,
     localProjectAssetUrl: Boolean(keyFromPublicUrl),
     referenceText,
   };
@@ -1253,6 +1285,22 @@ async function fetchAssetBytesFromUrl(url: string): Promise<{ body: Uint8Array; 
   }
 }
 
+async function readAssetBytesFromLocalPath(localPath: string): Promise<{ body: Uint8Array; contentType: string } | undefined> {
+  const normalized = normalizeText(localPath);
+  if (!normalized) return undefined;
+  try {
+    const stat = await fs.stat(normalized);
+    if (!stat.isFile() || stat.size > 10 * 1024 * 1024) return undefined;
+    const body = new Uint8Array(await fs.readFile(normalized));
+    return {
+      body,
+      contentType: "",
+    };
+  } catch {
+    return undefined;
+  }
+}
+
 async function retryUploadedAssetRead<T>(read: () => Promise<T | undefined>): Promise<T | undefined> {
   let last: T | undefined;
   const maxAttempts = Math.max(3, Number(process.env.CHAT_UPLOAD_ASSET_READ_RETRIES || 5));
@@ -1278,13 +1326,14 @@ async function collectUploadedFileSources(params: {
   const referencedAssets = params.referencedAssets || [];
   const parsedReferences = referencedAssets.map((line) => parseAssetReference(line));
   const hasPublicUrlReference = parsedReferences.some((ref) => !!ref.url);
-  if ((!ownerUserId || !projectId) && !hasPublicUrlReference) {
+  const hasLocalPathReference = parsedReferences.some((ref) => !!ref.localPath);
+  if ((!ownerUserId || !projectId) && !hasPublicUrlReference && !hasLocalPathReference) {
     if (referencedAssets.length > 0) gaps.push("Uploaded assets were referenced but cannot be read without project owner context.");
     return { sources, gaps };
   }
 
   for (const ref of parsedReferences) {
-    if (!ref.key && !ref.url) {
+    if (!ref.key && !ref.url && !ref.localPath) {
       sources.push({
         type: "uploaded_file",
         title: ref.fileName || "Referenced uploaded asset",
@@ -1323,11 +1372,20 @@ async function collectUploadedFileSources(params: {
         const assetUrl = ref.url;
         assetBytes = await retryUploadedAssetRead(() => fetchAssetBytesFromUrl(assetUrl));
       }
+      if (!assetBytes && ref.localPath) {
+        const localPath = ref.localPath;
+        assetBytes = await retryUploadedAssetRead(() => readAssetBytesFromLocalPath(localPath));
+      }
       if (!assetBytes) {
-        gaps.push(`Uploaded file was not readable: ${ref.fileName || ref.key || ref.url}`);
+        gaps.push(`Uploaded file was not readable: ${ref.fileName || ref.key || ref.url || ref.localPath}`);
         continue;
       }
-      const fileName = ref.fileName || ref.key?.split("/").pop() || ref.url?.split("/").pop() || "uploaded-file";
+      const fileName =
+        ref.fileName ||
+        ref.key?.split("/").pop() ||
+        ref.url?.split("/").pop() ||
+        (ref.localPath ? path.basename(ref.localPath) : "") ||
+        "uploaded-file";
       const contentType = assetBytes.contentType || "";
       const extracted = await extractDocumentContentFromBytes({
         body: assetBytes.body,
@@ -1468,7 +1526,12 @@ function buildKnowledgeProfileLegacy(params: {
     contentGaps: Array.from(new Set(gaps)).slice(0, 8),
     summary: summarySources
       .slice(0, 6)
-      .map((source) => `${source.title}: ${source.snippet || source.url || source.fileName || ""}`)
+      .map((source) => {
+        const summarizedSnippet = summarizeWorkflowSourceText(source.snippet || "", "");
+        const summarizedLocation = normalizeText(source.url || source.fileName || "");
+        const summaryBody = summarizedSnippet || summarizedLocation || "Source-backed evidence available.";
+        return `${source.title}: ${summaryBody}`;
+      })
       .join(" ")
       .slice(0, KNOWLEDGE_PROFILE_SUMMARY_LIMIT),
   };
@@ -1579,7 +1642,12 @@ function buildKnowledgeProfile(params: {
     contentGaps: Array.from(new Set(gaps)).slice(0, 8),
     summary: summarySources
       .slice(0, 6)
-      .map((source) => `${source.title}: ${source.snippet || source.url || source.fileName || ""}`)
+      .map((source) => {
+        const summarizedSnippet = summarizeWorkflowSourceText(source.snippet || "", "");
+        const summarizedLocation = normalizeText(source.url || source.fileName || "");
+        const summaryBody = summarizedSnippet || summarizedLocation || "Source-backed evidence available.";
+        return `${source.title}: ${summaryBody}`;
+      })
       .join(" ")
       .slice(0, KNOWLEDGE_PROFILE_SUMMARY_LIMIT),
   };
@@ -1651,6 +1719,47 @@ export function buildWebsiteEvidenceBrief(profile: WebsiteKnowledgeProfile): Web
     pageBriefs,
     contentGaps: profile.contentGaps.slice(0, 8),
     assumptions,
+  };
+}
+
+function extractContactSignalsFromProfile(profile: WebsiteKnowledgeProfile): string[] {
+  const emailPattern = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
+  const phonePattern = /\+?\d[\d ()-]{7,}\d/g;
+  const collected: string[] = [];
+  for (const source of profile.sources.slice(0, 8)) {
+    const snippet = String(source.snippet || "");
+    const emailMatches = snippet.match(emailPattern) || [];
+    const phoneMatches = snippet.match(phonePattern) || [];
+    for (const match of emailMatches) collected.push(match.toLowerCase());
+    for (const match of phoneMatches) collected.push(match.replace(/\s+/g, " ").trim());
+  }
+  return uniqueBriefItems(collected, 6);
+}
+
+export function buildStructuredSourceFacts(profile: WebsiteKnowledgeProfile): StructuredSourceFacts {
+  return {
+    brandCandidates: uniqueBriefItems(
+      [
+        profile.brand.name || "",
+        profile.brand.description ? summarizeWorkflowSourceText(profile.brand.description, "") : "",
+      ],
+      4,
+    ),
+    audienceSignals: uniqueBriefItems(profile.audience, 6),
+    offeringSignals: uniqueBriefItems(profile.offerings, 8),
+    proofSignals: uniqueBriefItems(profile.proofPoints, 6),
+    contactSignals: extractContactSignalsFromProfile(profile),
+    navCandidates: profile.suggestedPages.slice(0, 10).map((page) => ({
+      label: internalNavLabelForRoute(page.route, page.title),
+      source: page.sourceKind || page.extractionReason || "source-backed page candidate",
+      confidence: page.confidence ?? 0.66,
+    })),
+    pageCandidates: profile.suggestedPages.slice(0, 12).map((page) => ({
+      route: page.route,
+      title: internalNavLabelForRoute(page.route, page.title),
+      source: page.sourceKind || page.extractionReason || "source-backed page candidate",
+      confidence: page.confidence ?? 0.66,
+    })),
   };
 }
 
@@ -1836,8 +1945,10 @@ export function formatWebsiteKnowledgeProfile(profile: WebsiteKnowledgeProfile):
 }
 
 export const __contentSourceIngestionForTesting = {
+  buildStructuredSourceFacts,
   buildWebsiteEvidenceBrief,
   buildKnowledgeProfile,
+  collectUploadedFileSources,
   extractExplicitUrlsFromRequirement,
   extractDocumentSuggestedPages,
   extractTextFromUploadedBytes,

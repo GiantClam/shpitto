@@ -98,7 +98,7 @@ function summarizeInheritedTerminology(params: WebsiteDesignSpecParams): string[
 
 function summarizeInheritedTokens(params: WebsiteDesignSpecParams): string[] {
   const surfaceMode = resolveWebsiteSurfaceMode(params);
-  const surfaceTokenLines = buildSurfaceTokenContractLines(surfaceMode)
+  const surfaceTokenLines = buildSurfaceTokenContractLines(params, surfaceMode)
     .filter((line) => /surface_(?:css|typography)_tokens/i.test(line))
     .map((line) => line.replace(/^-\s*/, "").trim());
   return Array.from(
@@ -167,9 +167,35 @@ function requirementNeedsConsultationForm(text: string): boolean {
   );
 }
 
-function routeShouldHostConsultationForm(page: PageBlueprint): boolean {
+function extractExplicitConsultationFormHostHints(requirementText: string): Array<{ route?: string; pattern?: RegExp }> {
+  const text = String(requirementText || "").trim().toLowerCase();
+  if (!text) return [];
+  const hints: Array<{ route?: string; pattern?: RegExp }> = [];
+  const hasHomeOrInfoHost =
+    /(?:homepage|home page|route\s*\/|route \/|首页|主页).{0,40}(?:or|and|或|及).{0,40}(?:information platform|resource index|materials directory|information|资料平台|信息平台|资源索引)/i.test(
+      text,
+    ) ||
+    /(?:information platform|resource index|materials directory|information|资料平台|信息平台|资源索引).{0,40}(?:or|and|或|及).{0,40}(?:homepage|home page|route\s*\/|route \/|首页|主页)/i.test(
+      text,
+    );
+  if (hasHomeOrInfoHost) {
+    hints.push({ route: "/" });
+    hints.push({ pattern: /(?:information-platform|information|resource|resources|materials|downloads?|library|support|help)/i });
+  }
+  return hints;
+}
+
+function routeShouldHostConsultationForm(page: PageBlueprint, requirementText = ""): boolean {
   const route = String(page.route || "").trim().toLowerCase();
   const text = `${route} ${String(page.navLabel || "").trim().toLowerCase()}`;
+  const explicitHints = extractExplicitConsultationFormHostHints(requirementText);
+  if (explicitHints.length > 0) {
+    return explicitHints.some((hint) => {
+      if (hint.route && route === hint.route) return true;
+      if (hint.pattern && hint.pattern.test(text)) return true;
+      return false;
+    });
+  }
   if (/(?:^|\/)(contact|inquiry|get-in-touch)(?:\/|$)|\bcontact\b|\binquiry\b/i.test(text)) return true;
   if (/(?:information-platform|information|resource|resources|downloads?|support|help|library)/i.test(text)) return true;
   return route === "/";
@@ -291,7 +317,35 @@ function resolveWebsiteSurfaceMode(params: WebsiteDesignSpecParams): WebsiteSurf
   );
 }
 
-function buildSurfaceTokenContractLines(surfaceMode: WebsiteSurfaceMode): string[] {
+function isInstitutionalChildFriendlyContentHubSurface(
+  params: WebsiteDesignSpecParams,
+  surfaceMode = resolveWebsiteSurfaceMode(params),
+): boolean {
+  if (surfaceMode !== "content-hub-site") return false;
+  const text = [
+    params.requirementText,
+    params.designHit?.id,
+    params.designHit?.name,
+    params.designHit?.design_desc,
+    params.designSystemId,
+    params.designSystemName,
+    params.discoveryBrief?.visualDirectionId,
+    params.discoveryBrief?.primaryGoal,
+    ...(params.discoveryBrief?.audience || []),
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const childFriendly = /\b(child(?:-|\s)?friendly|children|kids?|education|校园|儿童|亲子|幼儿)\b/i.test(text);
+  const institutional = /\b(institutional|standards?|research|resource|library|advocacy|certification|平台|标准|研究|机构)\b/i.test(
+    text,
+  );
+  const greenLocked =
+    /#2e8b57|#f59e0b|institutional-child-friendly|ecological green|warm orange/i.test(text) ||
+    normalizeStyleToken(params.stylePreset.colors.primary) === normalizeStyleToken("#2E8B57");
+  return childFriendly && institutional && greenLocked;
+}
+
+function buildSurfaceTokenContractLines(params: WebsiteDesignSpecParams, surfaceMode: WebsiteSurfaceMode): string[] {
   const shared = [
     "- surface_token_precedence: the surface token contract wins over generic style preset colors when they conflict. `/styles.css` should declare these values, or a very close palette with the same contrast and type personality.",
   ];
@@ -310,6 +364,13 @@ function buildSurfaceTokenContractLines(surfaceMode: WebsiteSurfaceMode): string
     ];
   }
   if (surfaceMode === "content-hub-site") {
+    if (isInstitutionalChildFriendlyContentHubSurface(params, surfaceMode)) {
+      return [
+        ...shared,
+        "- surface_css_tokens: --bg #F6FBF6; --surface #FFFFFF; --panel #F3FAF1; --text #193329; --muted #4B6657; --border #CFE3D3; --primary #2E8B57; --accent #F59E0B.",
+        '- surface_typography_tokens: warm institutional sans such as Inter, Noto Sans SC, or IBM Plex Sans with crisp display sizing; avoid serif-forward archive typography and heavy enterprise-industrial chrome.',
+      ];
+    }
     return [
       ...shared,
       "- surface_css_tokens: --bg #F5EFE6; --surface #FFF9EF; --panel #FFFFFF; --text #261A13; --muted #6F5B4B; --border #D8C6AD; --primary #7A3524; --accent #B6813B.",
@@ -329,11 +390,11 @@ function buildSurfaceTokenContractLines(surfaceMode: WebsiteSurfaceMode): string
   ];
 }
 
-function buildSurfaceVisualIdentityLines(surfaceMode: WebsiteSurfaceMode): string[] {
+function buildSurfaceVisualIdentityLines(params: WebsiteDesignSpecParams, surfaceMode: WebsiteSurfaceMode): string[] {
   const shared = [
     "- surface_visual_identity: this surface must have a distinct aesthetic, layout rhythm, and module vocabulary for its website type. Do not reuse the same green/white rounded-card system across corporate, docs, and content-hub sites.",
     "- surface_copy_exclusion: never render internal layout or QA labels such as `Responsive layout`, `Shared shell`, `Desktop and mobile review`, `homepage groups`, `homepage frames`, or `visual system keeps` in visitor-facing copy. Replace them with subject-specific content, proof, reference topics, resource categories, or visitor outcomes.",
-    ...buildSurfaceTokenContractLines(surfaceMode),
+    ...buildSurfaceTokenContractLines(params, surfaceMode),
   ];
   if (surfaceMode === "corporate-b2b-site") {
     return [
@@ -352,6 +413,14 @@ function buildSurfaceVisualIdentityLines(surfaceMode: WebsiteSurfaceMode): strin
     ];
   }
   if (surfaceMode === "content-hub-site") {
+    if (isInstitutionalChildFriendlyContentHubSurface(params, surfaceMode)) {
+      return [
+        ...shared,
+        "- surface_aesthetic: child-friendly institutional guidance, ecological green trust cues, and warm learning-oriented accents. Prefer bright natural surfaces, credible education/research photography, and approachable institutional polish instead of terracotta archive mood or factory styling.",
+        "- surface_layout_rhythm: brand-led institutional masthead, route-owned process/research/standards bands, scoring or roadmap proof rows, and image-backed evidence modules should define the cadence instead of repeated archive mastheads or generic hero-card-CTA loops.",
+        "- surface_module_vocabulary: use institutional-masthead, capability-shelf, process-lead, framework-grid, scorecard-band, research-proof, standards-library, and consultation-host modules. Avoid collection-home repetition, archive-only chrome, and identical kicker-title-lead openings across routes.",
+      ];
+    }
     return [
       ...shared,
       "- surface_aesthetic: editorial/institutional archive, standards library, or research desk. Prefer serif-forward or publication-like typography with paper/ink/terracotta/olive or another distinct archive palette rather than corporate/docs green-white cards.",
@@ -783,7 +852,7 @@ function buildRouteSpecLines(
   }
   const routeText = `${page.route} ${page.navLabel} ${page.purpose}`.toLowerCase();
   const consultationHostContract =
-    requirementNeedsConsultationForm(requirementText) && routeShouldHostConsultationForm(page)
+        requirementNeedsConsultationForm(requirementText) && routeShouldHostConsultationForm(page, requirementText)
       ? [
           "- conversion_contract: this route is an approved host for the required consultation intake. Materialize one real HTML `<form>` with name, organization/company, email, topic/subject, and message fields.",
           "- conversion_contract: search fields, filter rows, CTA-only action groups, and mailto links do not satisfy the consultation intake requirement on this route.",
@@ -872,9 +941,12 @@ function buildRouteSpecLines(
         ? [
             "- surface_homepage_archetype: institution-led content hub homepage, not a pure collection index and not a marketing landing page.",
             "- geometry_contract: the content-hub homepage opening must establish the institution first through a brand-led masthead plus capability shelves. Do not let collection shelves, resource rows, archive explanations, or directory framing replace the homepage identity in the first screen.",
+            "- geometry_contract: the institution-led homepage opening must not use a two-column split hero, equal-column copy/media pair, or right-side visual rail. Prefer a stacked or asymmetrical masthead where the institution-defining copy lands first and any visual support is subordinate.",
             "- markup_contract: the first visible content-hub homepage section should use route-owned institutional semantics such as `institutional-masthead`, `brand-overview`, `capability-shelf`, `standards-scope`, or `institutional-proof` instead of archive-index wrappers such as `collection-home`, `archive-masthead`, or `resource-index-head`.",
+            "- markup_contract: do not lead the content-hub homepage with generic `hero`, `hero-wrap`, `hero-grid`, `hero__grid`, `hero-copy`, `hero__copy`, `hero__body`, `hero-panel`, `hero__panel`, `hero-aside`, `media-frame`, `proof-visual`, or campaign `page-section` shells as the dominant opening.",
             "- copy_contract: the title, meta description, H1, and first lead paragraph must establish the institution, audience, trust scope, and umbrella mission only. Keep certification, downloads, resource index, search, and route-family explanations out of those fields; defer them to later shelves, proof rows, nav, or CTA modules.",
             "- copy_contract: the homepage opening may mention the site's standards, research, advocacy, or information scope, but it must frame them as institutional capabilities or destinations rather than as the homepage's primary semantic role.",
+            "- layout_contract: prefer a stacked or asymmetrical institutional masthead followed by capability shelves and standards/research proof. The homepage opening visual should sit below or behind the institutional masthead, not as a same-weight hero column beside the opening copy.",
           ]
       : page.route === "/" && !enterpriseHomepage && surfaceMode === "content-hub-site"
         ? [
@@ -921,6 +993,8 @@ function buildRouteSpecLines(
     `- section_cadence: ${sectionCadence}`,
     `- page_archetype: ${routePageArchetype(page, surfaceMode)}`,
     "- section_spacing_contract: major route-owned section bands should usually breathe in roughly the 40-72px range, while nested proof rows, capability grids, card stacks, CTA action groups, and support clusters should still feel spacious in roughly the 28-44px range.",
+    "- header_layout_contract: on desktop widths, keep the primary navigation in one compact row. Do not allow wrapped nav links before tightening labels, gap spacing, font sizing, or utility-shell width.",
+    "- card_spacing_contract: visible cards, proof rows, resource rows, and CTA shells must keep consistent internal padding so copy does not visually crowd borders, corners, or action rows.",
     `- component_mix: hero ${page.componentMix.hero}, feature ${page.componentMix.feature}, grid ${page.componentMix.grid}, proof ${page.componentMix.proof}, form ${page.componentMix.form}, cta ${page.componentMix.cta}`,
     ...routeProhibitions(page, enterpriseHomepage, surfaceMode),
     ...consultationHostContract,
@@ -973,6 +1047,26 @@ function buildRouteSpecLines(
           "- layout_markup_contract: do not use generic `hero-actions` class names on interior openings, proof strips, or CTA bands. Use route-owned or shell-owned action classes instead.",
           "- layout_markup_contract: do not place inline `style=` attributes on `section__head`, `section-header`, or equivalent heading wrappers. Section-head spacing and alignment must be class-owned.",
           "- footer_markup_contract: footer support notes and action groups must use reusable footer classes. Do not use inline `margin-top` spacing fixes on `footer-notes`, helper paragraphs, or footer action wrappers.",
+          ...(/(?:^|\/)(?:casux-)?creation(?:\/|$)|\bcreation\b/.test(routeText)
+            ? [
+                "- opening_media_contract: framework and creation routes must pair the opening masthead or the first opening-adjacent proof band with a real workshop, planning, or child-space context image. Do not leave the route opening text-only.",
+                "- opening_markup_contract: creation/framework routes should foreground route-owned opening classes such as `framework-masthead`, `creation-lead`, or `principles-grid` rather than reusing a generic lead-band shell with swapped copy.",
+              ]
+            : /(?:^|\/)(?:casux-)?construction(?:\/|$)|\bconstruction\b/.test(routeText)
+              ? [
+                  "- opening_media_contract: process, implementation, or construction routes must include a real delivery, site, or execution-context image in the opening band or first proof row. Do not leave the route opening text-only.",
+                  "- opening_markup_contract: process/implementation routes should foreground route-owned opening classes such as `process-intro`, `execution-roadmap`, or `implementation-lead` rather than reusing a generic lead-band shell with swapped copy.",
+                ]
+              : /(?:^|\/)(?:casux-)?advocacy(?:\/|$)|\badvocacy\b/.test(routeText)
+                ? [
+                    "- opening_media_contract: advocacy, alliance, outreach, or participation routes must include a real meeting, partnership, workshop, or community-context image in the opening band or first proof row. Do not leave the route opening text-only.",
+                    "- opening_markup_contract: advocacy/participation routes should foreground route-owned opening classes such as `advocacy-lead`, `participation-network`, or `action-framework` rather than reusing a generic lead-band shell with swapped copy.",
+                  ]
+                : /research|information platform|resource|resources|library|standards|reports?|documents?/.test(routeText)
+                  ? [
+                      "- opening_media_contract: research, standards, information-platform, or resource routes must include a real institutional, reading, archive, or evidence-context image in the opening band or first proof row. Do not leave the route opening text-only.",
+                    ]
+                  : []),
           ...(/products?|catalog|collection/.test(routeText)
             ? [
                 "- opening_media_contract: the products page must include a real product/material image in the opening catalog lead or the first opening-adjacent proof/specification band. Do not delay the first meaningful product image until a later support section.",
@@ -1126,7 +1220,7 @@ export function buildWebsiteDesignSpecRouteExcerpt(params: WebsiteDesignSpecPara
     `# Route Design Spec: ${page.route}`,
     `- selected_style: ${String(params.designHit?.name || params.designHit?.id || "runtime-selected-style").trim() || "runtime-selected-style"}`,
     `- website_surface_mode: ${websiteSurfaceMode}`,
-    ...buildSurfaceVisualIdentityLines(websiteSurfaceMode),
+    ...buildSurfaceVisualIdentityLines(params, websiteSurfaceMode),
     ...buildRouteSpecLines(page, enterpriseHomepage, localeMode, websiteSurfaceMode, params.requirementText),
     "- media_resource:",
     ...buildMediaResourceLines(page, enterpriseHomepage, websiteSurfaceMode),
@@ -1143,6 +1237,7 @@ export function buildWebsiteDesignSpecMarkdown(params: WebsiteDesignSpecParams):
   const institutionLedContentHubHomepage =
     homepagePage ? isInstitutionLedContentHubHomepage(homepagePage, websiteSurfaceMode) : false;
   const needsConsultationForm = requirementNeedsConsultationForm(params.requirementText);
+  const restrictedConsultationHosts = extractExplicitConsultationFormHostHints(params.requirementText);
   const styleId = String(params.designHit?.id || "runtime-selected-style").trim() || "runtime-selected-style";
   const styleName = String(params.designHit?.name || styleId).trim() || styleId;
   const styleReason = String(params.designHit?.design_desc || "runtime-selected-style").trim() || "runtime-selected-style";
@@ -1190,7 +1285,7 @@ export function buildWebsiteDesignSpecMarkdown(params: WebsiteDesignSpecParams):
     `- accent_color: ${params.stylePreset.colors.accent}`,
     `- background_color: ${params.stylePreset.colors.background}`,
     `- typography: ${params.stylePreset.typography}`,
-    ...buildSurfaceVisualIdentityLines(websiteSurfaceMode),
+    ...buildSurfaceVisualIdentityLines(params, websiteSurfaceMode),
     "",
     renderWebsiteArtifactGeneratorContract({
       mode: siteGeneratorMode,
@@ -1212,7 +1307,9 @@ export function buildWebsiteDesignSpecMarkdown(params: WebsiteDesignSpecParams):
     ...(needsConsultationForm
       ? [
           "- consultation_form_contract: this run requires at least one real consultation intake form in the generated site.",
-          "- consultation_form_host_preference: use the dedicated contact route when present; otherwise host the form on the primary information/resource route or the homepage.",
+          restrictedConsultationHosts.length > 0
+            ? "- consultation_form_host_preference: when the requirement text explicitly limits the form host, place the single real form only on those approved host routes and link back to it from the other pages instead of duplicating the form."
+            : "- consultation_form_host_preference: use the dedicated contact route when present; otherwise host the form on the primary information/resource route or the homepage.",
           "- consultation_form_fields: the form must contain name, organization/company, email, topic/subject, and message fields. Search/filter inputs, CTA buttons, and mailto links do not satisfy this requirement.",
         ]
       : []),
@@ -1258,14 +1355,20 @@ export function buildWebsiteDesignSpecMarkdown(params: WebsiteDesignSpecParams):
       : "- homepage_media_source_validation: prefer real stock/library imagery when available; avoid abstract placeholder media for key supporting slots.",
     enterpriseHomepage
       ? "- homepage_hero_markup_rule: render a real img/picture node inside the opening hero media slot; do not rely on a CSS-only background-image as the sole hero visual when a real asset is available, and do not emit enterprise-hero-visual, media-panel, visual-content, visual-note, or any text-only pseudo-image box."
+      : websiteSurfaceMode === "content-hub-site" && institutionLedContentHubHomepage
+        ? "- homepage_hero_markup_rule: if the institutional homepage uses a supporting visual, keep it subordinate to the opening copy inside the masthead background, below the masthead, or inside the first institutional proof band. Do not render an equal-column copy/image hero pair or a detached right-side visual panel."
       : websiteSurfaceMode === "portfolio-blog-site"
         ? "- homepage_hero_markup_rule: when the profile/editorial homepage or `/blog` archive uses a support panel, render a real image node or a dense route-owned proof module; do not emit a text-light placeholder box, empty context rectangle, or decorative pseudo-image panel."
       : "- homepage_hero_markup_rule: when the route calls for hero media, render a real image node or background image rather than a text-only placeholder box.",
     enterpriseHomepage
       ? "- homepage_markup_contract: prefer `enterprise-hero` / `enterprise-hero__media` / `enterprise-hero__content` style class semantics. Do not reuse legacy `hero-grid`, `hero__grid`, `hero-panel`, `media-frame`, or `aside`-rail naming for the opening hero."
+      : websiteSurfaceMode === "content-hub-site" && institutionLedContentHubHomepage
+        ? "- homepage_markup_contract: prefer route-owned institutional classes such as `institutional-masthead`, `brand-overview`, `capability-shelf`, `institutional-proof`, or `standards-scope`. Do not lead route / with `hero-grid`, `hero__grid`, `hero-copy`, `hero-panel`, `hero-aside`, `media-frame`, or a symmetric copy/media masthead wrapper."
       : "",
     enterpriseHomepage
       ? "- homepage_css_contract: styles.css must style the opening hero through `.enterprise-hero`, `.enterprise-hero__media`, `.enterprise-hero__content`, and `.enterprise-proof-row`. Do not rely on generic `.hero-grid`, `.hero-copy`, `.hero-panel`, or `.media-frame` selectors for the homepage opening."
+      : websiteSurfaceMode === "content-hub-site" && institutionLedContentHubHomepage
+        ? "- homepage_css_contract: styles.css must style the homepage opening as an institutional masthead with stacked or asymmetrical rhythm. Do not implement route / with equal-width hero columns, right-rail media geometry, or generic `.hero-grid` / `.hero-copy` / `.hero-panel` selectors as the opening layout primitive."
       : "",
     enterpriseHomepage
       ? "- homepage_css_overlay_contract: the homepage opening must behave like one image-backed hero surface. `.enterprise-hero__media` should fill the hero container as the underlying media layer, and `.enterprise-hero__content` should sit above it as overlay copy rather than as a separate split-panel card."

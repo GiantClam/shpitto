@@ -78,6 +78,7 @@ describe("prompt draft research", () => {
     expect(result.promptControlManifest.websiteSurfaceMode).toBe("corporate-b2b-site");
     expect(result.discoveryBrief.surfaceMode).toBe("corporate-b2b-site");
     expect(result.canonicalPrompt).toContain("Evidence Brief Contract");
+    expect(result.canonicalPrompt).toContain("Prompt Budget Envelope");
     expect(result.canonicalPrompt).toContain("Shared Shell/Footer Contract");
     expect(result.canonicalPrompt).toContain("Do not reduce inner-page footers to a single copyright line");
     expect(result.canonicalPrompt).toContain("overflow-wrap: anywhere");
@@ -277,8 +278,11 @@ describe("prompt draft research", () => {
     });
 
     const homeIntent = contract.pageIntents.find((page) => page.route === "/")?.purpose || "";
-    expect(homeIntent).not.toMatch(/entry point|site entry|home entry/i);
+    expect(homeIntent).not.toContain("routes visitors into the source-defined sections");
+    expect(homeIntent).not.toContain("primary landing page");
     expect(homeIntent).toMatch(/institutional overview|official homepage|brand overview/i);
+    expect(homeIntent).toMatch(/mission|trust scope|primary capabilities|proof/i);
+    expect(homeIntent).toMatch(/split hero|right-side media panel|equal-column copy\/media/i);
   });
 
   it("persists docs-knowledge discovery brief data for documentation-style prompts", async () => {
@@ -553,6 +557,7 @@ describe("prompt draft research", () => {
     });
 
     expect(prompt).toContain("## 7.25 Source Material Appendix");
+    expect(prompt).toContain("## 7.2 Structured Source Facts");
     expect(prompt).toContain("Internal Generation Input");
     expect(prompt).toContain("standards document card component");
     expect(prompt).toContain("scoring visualization component");
@@ -588,6 +593,16 @@ describe("prompt draft research", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(result.fallbackReason).toContain("test_environment_skip_network");
     expect(result.knowledgeProfile?.sourceMode).toBe("uploaded_files");
+    expect(result.structuredSourceFacts?.pageCandidates.map((page) => page.route)).toEqual([
+      "/",
+      "/casux-creation",
+      "/casux-construction",
+      "/casux-certification",
+      "/casux-advocacy",
+      "/casux-research-center",
+      "/casux-information-platform",
+    ]);
+    expect(result.promptBudgetEnvelope?.truncationPolicy).toBe("page_scoped_drop");
     expect(result.promptControlManifest.routeSource).toBe("uploaded_source_page_plan");
     expect(result.promptControlManifest.routes).toEqual([
       "/",
@@ -600,6 +615,14 @@ describe("prompt draft research", () => {
     ]);
     expect(result.promptControlManifest.navLabels.every((label) => !/\s/.test(label))).toBe(true);
     expect(result.canonicalPrompt).toContain("## 7.25 Source Material Appendix");
+    expect(result.canonicalPrompt).toContain("## 7.1 Prompt Budget Envelope");
+    expect(result.canonicalPrompt).toContain("## 7.2 Structured Source Facts");
+    expect(result.canonicalPrompt).toContain("### Homepage Opening Contract");
+    expect(result.canonicalPrompt).toContain("Route / is the official homepage and umbrella brand or institutional overview");
+    expect(result.canonicalPrompt).toContain("Do not describe the homepage as a gateway, entry point, route map");
+    expect(result.canonicalPrompt).toContain("keep the first screen institution-led");
+    expect(result.canonicalPrompt).toContain("Do not implement the first screen as a split hero");
+    expect(result.canonicalPrompt).toContain("Prefer a stacked or asymmetrical institutional masthead");
     expect(result.canonicalPrompt).toContain("CASUX");
     expect(result.canonicalPrompt).toContain("Main navigation");
     expect(result.canonicalPrompt).toContain("scoring visualization component");
@@ -607,6 +630,29 @@ describe("prompt draft research", () => {
     expect(containsWorkflowCjk(result.canonicalPrompt)).toBe(false);
     expect(isWorkflowArtifactEnglishSafe(result.canonicalPrompt)).toBe(true);
     expect(result.canonicalPrompt).not.toContain("/custom-solutions/index.html");
+  });
+
+  it("clips oversized requirement text deterministically instead of dumping the full raw source into the prompt", async () => {
+    const rawRequirement = [
+      "Build an English website for Northstar Labs with Home, Solutions, Research, Contact.",
+      "Primary audience: enterprise platform teams evaluating AI workflow governance.",
+      "The following imported planning dump is intentionally oversized and should not be copied wholesale into the internal prompt artifact.",
+      "BEGIN_OVERSIZED_SOURCE",
+      "ALPHA-001".repeat(500),
+      "MIDDLE-SOURCE-BLOCK-SHOULD-BE-CLIPPED",
+      "BETA-002".repeat(500),
+      "KEEP-TAIL-CONTEXT enterprise rollout contact northstar@example.com",
+    ].join("\n");
+
+    const result = await buildPromptDraftWithResearch({
+      requirementText: rawRequirement,
+      slots: buildRequirementSlots(rawRequirement),
+    });
+
+    expect(result.canonicalPrompt).toContain("[requirement clipped");
+    expect(result.canonicalPrompt).toContain("Requirement budget:");
+    expect(result.canonicalPrompt).toContain("KEEP-TAIL-CONTEXT enterprise rollout contact northstar@example.com");
+    expect(result.promptBudgetEnvelope?.canonicalRequirementChars).toBeGreaterThanOrEqual(2200);
   });
 
   it("replays the vbuy session input and uses the explicit URL as a source without inventing a /www route", async () => {
@@ -810,6 +856,36 @@ describe("prompt draft research", () => {
     expect(plan.shouldUseUrlExtraction).toBe(false);
     expect(plan.shouldUseDomainSources).toBe(false);
     expect(plan.shouldUseWebSearch).toBe(false);
+  });
+
+  it("allows the caller to hard-disable web search for a clean source-bounded lane", () => {
+    const requirement = "Build a premium AI studio website with strong process, proof, and contact sections.";
+
+    const plan = buildSourceEnrichmentPlanForTesting({
+      requirementText: requirement,
+      allowWebSearch: false,
+    });
+
+    expect(plan.shouldUseWebSearch).toBe(false);
+  });
+
+  it("supports forcing a clean single-page route contract for the MVP lane", async () => {
+    const requirement =
+      "Create a clean one-page website for Northstar Labs. The homepage should include hero, services, selected work, process, testimonials, and contact. Use English only.";
+
+    const result = await buildPromptDraftWithResearch({
+      requirementText: requirement,
+      slots: buildRequirementSlots(requirement),
+      disableWebSearch: true,
+      routePolicy: "force_root_single_page",
+    });
+
+    expect(result.usedWebSearch).toBe(false);
+    expect(result.promptControlManifest.routes).toEqual(["/"]);
+    expect(result.promptControlManifest.files).toEqual(["/styles.css", "/script.js", "/index.html"]);
+    expect(result.discoveryBrief.routes).toEqual(["/"]);
+    expect(result.canonicalPrompt).toContain('"/index.html"');
+    expect(result.canonicalPrompt).not.toContain('"/contact/index.html"');
   });
 
   it("includes confirmed functional requirements in the prompt draft", async () => {

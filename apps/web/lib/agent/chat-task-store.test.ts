@@ -20,6 +20,7 @@ import {
   updateChatTaskProgress,
   withSupabaseTaskReadRetryForTesting,
 } from "./chat-task-store";
+import { buildExecutionWorkflowRuntime } from "./workflow-runtime-adapter";
 
 describe("chat-task-store", () => {
   it("keeps only canonical prompt fields in task and timeline storage", async () => {
@@ -73,6 +74,32 @@ describe("chat-task-store", () => {
     expect(done?.status).toBe("succeeded");
     expect(done?.result?.assistantText).toBe("done");
     expect(await getActiveChatTask(chatId)).toBeUndefined();
+  });
+
+  it("surfaces workflow runtime summary from the internal workflow context", async () => {
+    const runtime = buildExecutionWorkflowRuntime({
+      chatId: "workflow-summary-chat",
+      executionMode: "deploy",
+      contractHash: "a".repeat(64),
+      generationLane: "website-generation-mvp",
+      websiteSurfaceMode: "content-hub-site",
+    });
+    const sanitized = sanitizeTaskResultForClient({
+      internal: {
+        inputState: {
+          workflow_context: {
+            contractHash: "a".repeat(64),
+            generationLane: "website-generation-mvp",
+            websiteSurfaceMode: "content-hub-site",
+            workflowRuntime: runtime,
+          },
+        },
+      } as any,
+    });
+
+    expect(sanitized?.workflowRuntime?.workflowId).toBe(runtime.workflowId);
+    expect(sanitized?.workflowRuntime?.approvalStatus).toBe("approved");
+    expect(sanitized?.workflowRuntime?.compensationStatus).toBe("idle");
   });
 
   it("keeps one persisted progress card per task so multi-task history stays visible", async () => {
@@ -144,10 +171,25 @@ describe("chat-task-store", () => {
   it("hides internal payload from client result", async () => {
     const redacted = sanitizeTaskResultForClient({
       assistantText: "ok",
-      internal: { inputState: { secret: true }, workerId: "w1" },
+      internal: {
+        inputState: {
+          secret: true,
+          workflow_context: {
+            contractHash: "a".repeat(64),
+            generationLane: "website-generation-mvp",
+            generationLaneConfig: { disableWebSearch: true, routePolicy: "default" },
+            websiteSurfaceMode: "content-hub-site",
+          },
+        },
+        workerId: "w1",
+      },
     });
     expect(redacted?.assistantText).toBe("ok");
     expect((redacted as any)?.internal).toBeUndefined();
+    expect(redacted?.contractHash).toBe("a".repeat(64));
+    expect(redacted?.generationLane).toBe("website-generation-mvp");
+    expect(redacted?.generationLaneConfig).toEqual({ disableWebSearch: true, routePolicy: "default" });
+    expect(redacted?.websiteSurfaceMode).toBe("content-hub-site");
   });
 
   it("retries transient Supabase task read failures", async () => {

@@ -39,7 +39,7 @@ function hasInstitutionalKnowledgeSignals(normalizedSiteType: string, normalized
     return true;
   }
 
-  return /(?:institution|institutional|association|alliance|foundation|consortium|committee|standards?\s+system|research\s+center|research\s+hub|resource\s+center|information\s+platform|knowledge\s+platform|knowledge\s+base|documentation\s+portal|policy\s+library|public-interest|public service|advocacy|certification|repository|directory|download\s+center|downloads?\s+hub|research|标准体系|研究中心|信息平台|知识平台|资源中心|认证|倡议|资料库|下载中心)/i.test(
+  return /(?:institution|institutional|association|alliance|foundation|consortium|committee|standards?\s+system|research\s+center|research\s+hub|resource\s+center|information\s+platform|knowledge\s+platform|policy\s+library|public-interest|public service|advocacy|certification|repository|directory|download\s+center|downloads?\s+hub|research|标准体系|研究中心|信息平台|知识平台|资源中心|认证|倡议|资料库|下载中心)/i.test(
     intentText,
   );
 }
@@ -118,15 +118,6 @@ export function selectWebsiteGenerationTypeSkill(params: {
       ["/products", "/custom-solutions", "/solutions", "/cases", "/about", "/contact"].includes(route),
     );
 
-  if (hasDocsKnowledgeSignal) {
-    return {
-      skillId: "docs-knowledge-site",
-      siteType: "docs-knowledge",
-      surfaceMode: "docs-knowledge-site",
-      reason: "Matched documentation, knowledge-base, guide, reference, or developer-portal signals.",
-    };
-  }
-
   if (hasInstitutionalKnowledgeSignal) {
     return {
       skillId: "content-hub-site",
@@ -134,6 +125,15 @@ export function selectWebsiteGenerationTypeSkill(params: {
       surfaceMode: "content-hub-site",
       reason:
         "Matched institutional or content-hub signals such as research, standards, certification, advocacy, or information-library routes, so the request should avoid both the corporate-b2b enterprise grammar and explicit blog/archive assumptions.",
+    };
+  }
+
+  if (hasDocsKnowledgeSignal) {
+    return {
+      skillId: "docs-knowledge-site",
+      siteType: "docs-knowledge",
+      surfaceMode: "docs-knowledge-site",
+      reason: "Matched documentation, knowledge-base, guide, reference, or developer-portal signals.",
     };
   }
 

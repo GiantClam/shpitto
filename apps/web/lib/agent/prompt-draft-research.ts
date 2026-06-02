@@ -8,6 +8,7 @@ import {
   type RequirementSlot,
 } from "./chat-orchestrator";
 import {
+  buildStructuredSourceFacts,
   buildWebsiteEvidenceBrief,
   buildWebsiteKnowledgeProfile,
   extractExplicitUrlsFromRequirement,
@@ -16,6 +17,7 @@ import {
   formatWebsiteKnowledgeProfile,
   resolveWebSearchQueryBudget,
   summarizeWorkflowSourceText,
+  type StructuredSourceFacts,
   type WebsiteEvidenceBrief,
   type KnowledgeProfileEnrichmentOptions,
   type WebsiteKnowledgeProfile,
@@ -68,6 +70,8 @@ export type PromptDraftBuildResult = {
   discoveryBrief: WebsiteDiscoveryBrief;
   evidenceBrief?: WebsiteEvidenceBrief;
   knowledgeProfile?: WebsiteKnowledgeProfile;
+  structuredSourceFacts?: StructuredSourceFacts;
+  promptBudgetEnvelope?: PromptBudgetEnvelope;
   model?: string;
   provider?: ProviderName;
   draftMode?: "template" | "llm" | "llm_web_search";
@@ -109,6 +113,16 @@ export type SourceEnrichmentPlan = {
   reasons: string[];
 };
 
+export type PromptBudgetEnvelope = {
+  canonicalRequirementChars: number;
+  evidenceBriefChars: number;
+  perPageEvidenceChars: number;
+  sourceSnippetChars: number;
+  truncationPolicy: "clip_middle" | "ranked_drop" | "page_scoped_drop";
+};
+
+export type PromptDraftRoutePolicy = "default" | "force_root_single_page";
+
 type DraftProviderConfig = {
   provider: ProviderName;
   apiKey: string;
@@ -122,9 +136,72 @@ type RequestedSiteLocale = "zh-CN" | "en" | "bilingual" | "multilingual";
 
 const SOURCE_MATERIAL_APPENDIX_PER_SOURCE_LIMIT = 12_000;
 const SOURCE_MATERIAL_APPENDIX_TOTAL_LIMIT = 24_000;
+const DEFAULT_REQUIREMENT_BUDGET_CHARS = 3_600;
+const DEFAULT_EVIDENCE_BUDGET_CHARS = 4_800;
+const DEFAULT_PER_PAGE_EVIDENCE_CHARS = 420;
+const DEFAULT_SOURCE_SNIPPET_BUDGET_CHARS = 2_400;
 
 function normalizeText(value: unknown): string {
   return String(value || "").trim();
+}
+
+function clipTextForPromptBudget(text: string, maxChars: number, label: string): string {
+  const normalized = String(text || "").trim();
+  if (!normalized || maxChars <= 0 || normalized.length <= maxChars) return normalized;
+  const reserved = Math.min(96, Math.max(48, Math.floor(maxChars * 0.15)));
+  const headLength = Math.max(240, Math.floor((maxChars - reserved) * 0.7));
+  const tailLength = Math.max(120, maxChars - reserved - headLength);
+  const head = normalized.slice(0, headLength).trimEnd();
+  const tail = normalized.slice(-tailLength).trimStart();
+  const removed = normalized.length - head.length - tail.length;
+  return `${head}\n...[${label} clipped ${removed} chars by prompt budget]...\n${tail}`;
+}
+
+function buildPromptBudgetEnvelope(params: {
+  requirementText: string;
+  knowledgeProfile?: WebsiteKnowledgeProfile;
+  evidenceBrief?: WebsiteEvidenceBrief;
+}): PromptBudgetEnvelope {
+  const normalizedRequirementLength = normalizeText(params.requirementText).length;
+  const pageCount = params.evidenceBrief?.pageBriefs.length || params.knowledgeProfile?.suggestedPages.length || 0;
+  const sourceCount = params.knowledgeProfile?.sources.length || 0;
+  const hasUploadedSources = (params.knowledgeProfile?.sources || []).some((source) => source.type === "uploaded_file");
+  const hasMixedSources = (params.knowledgeProfile?.sources || []).some((source) => source.type !== "uploaded_file");
+
+  return {
+    canonicalRequirementChars: Math.max(
+      2_200,
+      Math.min(
+        5_200,
+        normalizedRequirementLength > 12_000
+          ? 2_200
+          : normalizedRequirementLength > 6_000
+            ? 2_600
+            : normalizedRequirementLength > 4_000
+              ? 3_000
+              : DEFAULT_REQUIREMENT_BUDGET_CHARS,
+      ),
+    ),
+    evidenceBriefChars: Math.max(
+      2_600,
+      Math.min(6_000, DEFAULT_EVIDENCE_BUDGET_CHARS + Math.min(pageCount, 10) * 160),
+    ),
+    perPageEvidenceChars: Math.max(
+      220,
+      Math.min(520, DEFAULT_PER_PAGE_EVIDENCE_CHARS - Math.max(0, pageCount - 5) * 24),
+    ),
+    sourceSnippetChars: Math.max(
+      1_200,
+      Math.min(
+        4_200,
+        DEFAULT_SOURCE_SNIPPET_BUDGET_CHARS +
+          (hasUploadedSources ? 600 : 0) +
+          Math.min(sourceCount, 6) * 160 +
+          (hasMixedSources ? 240 : 0),
+      ),
+    ),
+    truncationPolicy: pageCount >= 6 ? "page_scoped_drop" : sourceCount >= 5 ? "ranked_drop" : "clip_middle",
+  };
 }
 
 function toKebabToken(value: string): string {
@@ -291,7 +368,19 @@ function isCollectionRoutePurpose(value: string): boolean {
   return /source-backed content collection route .*route-owned collection opening/i.test(String(value || ""));
 }
 
+function buildHomepagePurpose(route: string, fallback = ""): string {
+  const label = internalNavLabelForRoute(route, fallback);
+  const institutionalSignal = /institution|institutional|organization|research|standards?|resource|information|platform|umbrella|overview/i.test(
+    String(fallback || ""),
+  );
+  const scopeLabel = institutionalSignal ? "institutional overview" : "umbrella brand overview";
+  return `Treat ${label} as the official homepage and ${scopeLabel}. The opening must establish mission, trust scope, audience, and primary capabilities or proof before any route directories, downloads, certification lookup, support-entry, consultation-entry, or shared-shell mechanics. Do not describe the homepage as a gateway, entry point, route map, or explanation of how the site is organized, keep route-family labels out of the title, H1, and first lead paragraph, and do not stage the first screen as a split hero, right-side media panel, or equal-column copy/media masthead.`;
+}
+
 function internalPurposeForRoute(route: string, fallback = ""): string {
+  if ((String(route || "").trim() || "/") === "/") {
+    return buildHomepagePurpose(route, fallback);
+  }
   if (isWorkflowArtifactEnglishSafe(fallback) && isSpecializedRoutePurpose(fallback)) {
     return normalizeWorkflowArtifactText(fallback);
   }
@@ -378,6 +467,46 @@ function buildPromptDecisionPlan(requirementText: string): LocalDecisionPlan {
     workflow_context: workflowContext,
   } as any);
   return mergeRequiredBlogRoute(plan, requirementText);
+}
+
+function normalizeDecisionPlanForRoutePolicy(
+  plan: LocalDecisionPlan,
+  routePolicy: PromptDraftRoutePolicy = "default",
+): LocalDecisionPlan {
+  if (routePolicy !== "force_root_single_page") return plan;
+  const sourceBlueprint = plan.pageBlueprints.find((page) => page.route === "/") || plan.pageBlueprints[0];
+  const homepageBlueprint = sourceBlueprint
+    ? {
+        ...sourceBlueprint,
+        route: "/",
+        navLabel: "Home",
+        pageKind: "home" as const,
+      }
+    : {
+        route: "/",
+        navLabel: "Home",
+        purpose: "Deliver a single-page homepage that consolidates the confirmed sections and calls to action.",
+        source: "prompt_contract" as const,
+        constraints: [],
+        pageKind: "home" as const,
+        responsibility:
+          "Single-page homepage for the confirmed requirement. Keep all primary sections and conversion paths on one page.",
+        contentSkeleton: [
+          "Hero introducing the brand, audience, and primary offer",
+          "Services or offering section",
+          "Proof, selected work, or testimonial section",
+          "Process or methodology section",
+          "Primary contact or CTA section",
+        ],
+        componentMix: { hero: 24, feature: 20, grid: 14, proof: 16, form: 8, cta: 18 },
+      };
+  return {
+    ...plan,
+    routes: ["/"],
+    navLabels: ["Home"],
+    pageBlueprints: [homepageBlueprint],
+    pageIntents: [homepageBlueprint],
+  };
 }
 
 function routeToHtmlPath(route: string): string {
@@ -550,6 +679,29 @@ function buildDiscoveryBriefSection(brief: WebsiteDiscoveryBrief): string {
   if (brief.missingFields?.length) lines.push(`- missingFields: ${brief.missingFields.join(", ")}`);
   if (brief.assumptions?.length) lines.push(`- assumptions: ${brief.assumptions.join("; ")}`);
   return lines.join("\n");
+}
+
+function buildHomepageOpeningContractSection(plan: LocalDecisionPlan, discoveryBrief?: WebsiteDiscoveryBrief): string[] {
+  const hasHomepage = plan.pageBlueprints.some((page) => (String(page.route || "").trim() || "/") === "/");
+  if (!hasHomepage) return [];
+  const isContentHub = discoveryBrief?.surfaceMode === "content-hub-site";
+  const lines = [
+    "### Homepage Opening Contract",
+    "- Route / is the official homepage and umbrella brand or institutional overview for this run.",
+    "- The title, meta description, H1, first lead paragraph, and first capability/proof band must establish mission, trust scope, audience, and primary capabilities before route navigation mechanics.",
+    "- Do not describe the homepage as a gateway, entry point, route map, information architecture explainer, or explanation of how the site is organized.",
+    "- Do not let downloads, certification, login, register, support-entry, contact-intake, consultation-entry, or information-platform semantics dominate the title, H1, meta description, or first lead paragraph.",
+  ];
+  if (isContentHub) {
+    lines.push(
+      "- For content-hub sites, keep the first screen institution-led. Move route shelves, collection indexes, and directory mechanics below the opening masthead instead of using them as the homepage identity.",
+      "- Keep route-family names such as research center, information platform, downloads, certification, or advocacy out of the homepage title, H1, and first lead paragraph unless the user explicitly asked for one of those routes to be the homepage identity.",
+      "- The first two body paragraphs must contribute real institutional or topical substance, not only navigation guidance or route explanations.",
+      "- Do not implement the first screen as a split hero, equal-column copy/media masthead, or right-side visual rail. Avoid generic hero utility geometry such as `hero-grid`, `hero__grid`, `hero-copy`, `hero-panel`, `hero-aside`, `media-frame`, or a detached image card beside the opening copy.",
+      "- Prefer a stacked or asymmetrical institutional masthead where the H1/lead establishes the organization first, and any supporting visual sits below the lead or inside a later proof band rather than as an equal hero column.",
+    );
+  }
+  return lines;
 }
 
 function resolveRequestedSiteLocale(requirementText: string): RequestedSiteLocale {
@@ -757,6 +909,7 @@ function buildPromptControlManifestSection(
   const requestedSiteLocale = resolveRequestedSiteLocale(requirementText);
   const localePlan = buildLocalePlan(requirementText, requestedSiteLocale);
   const promptControlManifest = buildPromptControlManifest(plan, routeSource, requestedSiteLocale, discoveryBrief);
+  const homepageOpeningContractSection = buildHomepageOpeningContractSection(plan, discoveryBrief);
   const fixedFileLines = promptControlManifest.files.map((file) => `- ${file}`);
   const pageLines = plan.pageBlueprints.flatMap((page, index) => [
     `${index + 1}. ${internalNavLabelForRoute(page.route, page.navLabel)} (${page.route} -> ${routeToHtmlPath(page.route)})`,
@@ -813,6 +966,8 @@ function buildPromptControlManifestSection(
     "### Page-Level Intent Contract",
     ...pageLines,
     "",
+    ...homepageOpeningContractSection,
+    ...(homepageOpeningContractSection.length > 0 ? [""] : []),
     "### Shared Shell Destination Contract",
     "- The homepage footer must enumerate the full confirmed shared destination set for this run. Do not reduce it to a CTA-only subset, a category-only subset, or a partial route sample.",
     "- Every interior route footer must preserve the same planned shared footer destinations defined by the home page. Do not drop route links from the footer on interior pages, even when regrouping them under different headings.",
@@ -916,7 +1071,7 @@ function resolveDraftProviderConfig(): { config?: DraftProviderConfig; reason?: 
       config: {
         provider: "pptoken",
         apiKey,
-        baseURL: normalizeText(process.env.PPTOKEN_BASE_URL) || "https://api.pptoken.org/v1",
+        baseURL: normalizeText(process.env.PPTOKEN_BASE_URL) || "https://cn.pptoken.cc/v1",
         model:
           normalizeText(process.env.CHAT_DRAFT_MODEL) ||
           normalizeText(lock.model) ||
@@ -1091,6 +1246,7 @@ function buildSourceEnrichmentPlan(params: {
   requirementText: string;
   spec: RequirementSpec;
   referencedAssets?: string[];
+  allowWebSearch?: boolean;
 }): SourceEnrichmentPlan {
   const sufficiency = assessUserInputSufficiency(params.requirementText, params.spec, params.referencedAssets);
   const explicitUrls = extractExplicitUrlsFromRequirement(params.requirementText);
@@ -1103,7 +1259,7 @@ function buildSourceEnrichmentPlan(params: {
   const shouldUseDomainSources =
     (contentSources.has("existing_domain") || explicitUrls.length > 0) &&
     (explicitUrlIntent || !sufficiency.sufficient);
-  const shouldUseWebSearch = !sufficiency.sufficient;
+  const shouldUseWebSearch = params.allowWebSearch !== false && !sufficiency.sufficient;
 
   const reasons: string[] = [];
   if (!sufficiency.sufficient) {
@@ -1208,12 +1364,78 @@ export function mergeTemplateWithKnowledgeProfileForTesting(
 export function buildSourceEnrichmentPlanForTesting(params: {
   requirementText: string;
   referencedAssets?: string[];
+  allowWebSearch?: boolean;
 }): SourceEnrichmentPlan {
   return buildSourceEnrichmentPlan({
     requirementText: params.requirementText,
     spec: buildRequirementSpec(params.requirementText, [params.requirementText]),
     referencedAssets: params.referencedAssets,
+    allowWebSearch: params.allowWebSearch,
   });
+}
+
+function formatPromptBudgetEnvelope(envelope: PromptBudgetEnvelope): string {
+  return [
+    "## 7.1 Prompt Budget Envelope",
+    "- Apply deterministic prompt clipping before route generation when requirement text or source evidence becomes too large.",
+    `- Requirement budget: ${envelope.canonicalRequirementChars} chars`,
+    `- Evidence brief budget: ${envelope.evidenceBriefChars} chars`,
+    `- Per-page evidence budget: ${envelope.perPageEvidenceChars} chars`,
+    `- Source snippet budget: ${envelope.sourceSnippetChars} chars`,
+    `- Truncation policy: ${envelope.truncationPolicy}`,
+  ].join("\n");
+}
+
+function formatStructuredSourceFacts(facts?: StructuredSourceFacts): string {
+  if (!facts) return "";
+  const renderList = (items: string[], fallback: string) =>
+    items.length
+      ? items.map((item) => `- ${sanitizeWorkflowArtifactText(item, fallback)}`).join("\n")
+      : `- ${fallback}`;
+  const navLines = facts.navCandidates.length
+    ? facts.navCandidates
+        .slice(0, 8)
+        .map(
+          (item, index) =>
+            `${index + 1}. ${sanitizeWorkflowArtifactText(item.label, "Source-backed navigation label")} | ${sanitizeWorkflowArtifactText(item.source, "source-backed page candidate")} | confidence ${item.confidence.toFixed(2)}`,
+        )
+        .join("\n")
+    : "1. None";
+  const pageLines = facts.pageCandidates.length
+    ? facts.pageCandidates
+        .slice(0, 10)
+        .map(
+          (item, index) =>
+            `${index + 1}. ${sanitizeWorkflowArtifactText(item.title, "Source-backed page")} (${item.route}) | ${sanitizeWorkflowArtifactText(item.source, "source-backed page candidate")} | confidence ${item.confidence.toFixed(2)}`,
+        )
+        .join("\n")
+    : "1. None";
+
+  return [
+    "## 7.2 Structured Source Facts",
+    "Use this section for route planning, terminology, page ownership, and business facts before consulting any raw source appendix.",
+    "",
+    "### Brand Candidates",
+    renderList(facts.brandCandidates, "No source-backed brand candidate extracted."),
+    "",
+    "### Audience Signals",
+    renderList(facts.audienceSignals, "No source-backed audience signal extracted."),
+    "",
+    "### Offering Signals",
+    renderList(facts.offeringSignals, "No source-backed offering signal extracted."),
+    "",
+    "### Proof Signals",
+    renderList(facts.proofSignals, "No source-backed proof signal extracted."),
+    "",
+    "### Contact Signals",
+    renderList(facts.contactSignals, "No source-backed contact signal extracted."),
+    "",
+    "### Navigation Candidates",
+    navLines,
+    "",
+    "### Page Candidates",
+    pageLines,
+  ].join("\n");
 }
 
 async function collectSerperResearch(params: {
@@ -1271,38 +1493,75 @@ function mergeTemplateWithResearch(
   );
   const resolvedEvidenceBrief =
     evidenceBrief || (knowledgeProfile ? buildWebsiteEvidenceBrief(knowledgeProfile) : undefined);
-  const evidenceLines = resolvedEvidenceBrief ? [formatWebsiteEvidenceBrief(resolvedEvidenceBrief), ""] : [];
-  const sourceAppendix = formatSourceMaterialAppendix(knowledgeProfile);
+  const promptBudgetEnvelope = buildPromptBudgetEnvelope({
+    requirementText: localDraft,
+    knowledgeProfile,
+    evidenceBrief: resolvedEvidenceBrief,
+  });
+  const structuredSourceFacts = knowledgeProfile ? buildStructuredSourceFacts(knowledgeProfile) : undefined;
+  const evidenceLines = resolvedEvidenceBrief
+    ? [
+        clipTextForPromptBudget(
+          formatWebsiteEvidenceBrief(resolvedEvidenceBrief),
+          promptBudgetEnvelope.evidenceBriefChars,
+          "evidence brief",
+        ),
+        "",
+      ]
+    : [];
+  const budgetEnvelopeLines = /##\s*7\.1\s+Prompt Budget Envelope/i.test(seededDraft)
+    ? []
+    : [formatPromptBudgetEnvelope(promptBudgetEnvelope), ""];
+  const structuredSourceFactLines = structuredSourceFacts
+    ? [formatStructuredSourceFacts(structuredSourceFacts), ""]
+    : [];
+  const sourceAppendix = formatSourceMaterialAppendix(knowledgeProfile, promptBudgetEnvelope);
   const sourceAppendixLines = sourceAppendix ? [sourceAppendix, ""] : [];
   return [
     seededDraft,
     "",
     ...evidenceLines,
+    ...budgetEnvelopeLines,
+    ...structuredSourceFactLines,
     ...sourceAppendixLines,
     "## 7.5 External Research Addendum",
-    safeSummary ? `- Search summary: ${safeSummary}` : "- Search summary: none",
+    safeSummary
+      ? `- Search summary: ${clipTextForPromptBudget(safeSummary, promptBudgetEnvelope.sourceSnippetChars, "search summary")}`
+      : "- Search summary: none",
     refs ? "- Reference sources:\n" + refs : "- Reference sources: none",
     knowledgeProfile ? "" : "",
     knowledgeProfile ? formatWebsiteKnowledgeProfile(knowledgeProfile) : "",
   ].join("\n");
 }
 
-function formatSourceMaterialAppendix(knowledgeProfile?: WebsiteKnowledgeProfile): string {
+function formatSourceMaterialAppendix(
+  knowledgeProfile?: WebsiteKnowledgeProfile,
+  envelope?: PromptBudgetEnvelope,
+): string {
   const sourceEntries = (knowledgeProfile?.sources || [])
     .filter((source) => source.confidence >= 0.65 && normalizeText(source.snippet))
     .slice(0, 4);
   if (sourceEntries.length === 0) return "";
 
-  let remaining = SOURCE_MATERIAL_APPENDIX_TOTAL_LIMIT;
+  let remaining = Math.max(1_200, Math.min(SOURCE_MATERIAL_APPENDIX_TOTAL_LIMIT, envelope?.sourceSnippetChars || SOURCE_MATERIAL_APPENDIX_TOTAL_LIMIT));
+  const perSourceLimit = Math.max(
+    320,
+    Math.min(
+      SOURCE_MATERIAL_APPENDIX_PER_SOURCE_LIMIT,
+      Math.floor(remaining / Math.max(1, sourceEntries.length)),
+    ),
+  );
   const blocks: string[] = [];
   for (const [index, source] of sourceEntries.entries()) {
     if (remaining <= 0) break;
     const rawLocation = normalizeText(source.url || source.fileName);
     const location = isWorkflowArtifactEnglishSafe(rawLocation) || /^https?:\/\//i.test(rawLocation) ? rawLocation : "";
     const title = sanitizeWorkflowArtifactText(source.title || location, `Source ${index + 1}`);
-    const snippet = normalizeText(source.snippet)
-      .replace(/```/g, "'''")
-      .slice(0, Math.min(SOURCE_MATERIAL_APPENDIX_PER_SOURCE_LIMIT, remaining));
+    const snippet = clipTextForPromptBudget(
+      normalizeText(source.snippet).replace(/```/g, "'''"),
+      Math.min(perSourceLimit, remaining),
+      `source ${index + 1}`,
+    );
     remaining -= snippet.length;
     if (!snippet) continue;
     blocks.push(
@@ -1341,6 +1600,41 @@ function ensureCanonicalPromptHasEvidenceBrief(draft: string, evidenceBrief?: We
     return `${normalizedDraft.slice(0, addendumIndex).trimEnd()}\n\n${evidenceSection}\n${normalizedDraft.slice(addendumIndex)}`;
   }
   return `${normalizedDraft}\n\n${evidenceSection}`;
+}
+
+function ensureCanonicalPromptHasPromptBudgetEnvelope(
+  draft: string,
+  promptBudgetEnvelope?: PromptBudgetEnvelope,
+): string {
+  const normalizedDraft = normalizeText(draft);
+  if (!promptBudgetEnvelope || !normalizedDraft || /##\s*7\.1\s+Prompt Budget Envelope/i.test(normalizedDraft)) {
+    return normalizedDraft;
+  }
+  const section = formatPromptBudgetEnvelope(promptBudgetEnvelope);
+  const insertAfter = normalizedDraft.search(/\n##\s*7\.\s+Evidence Brief/i);
+  if (insertAfter >= 0) {
+    const nextHeading = normalizedDraft.indexOf("\n## ", insertAfter + 1);
+    if (nextHeading >= 0) {
+      return `${normalizedDraft.slice(0, nextHeading).trimEnd()}\n\n${section}\n${normalizedDraft.slice(nextHeading)}`;
+    }
+  }
+  return `${normalizedDraft}\n\n${section}`;
+}
+
+function ensureCanonicalPromptHasStructuredSourceFacts(
+  draft: string,
+  structuredSourceFacts?: StructuredSourceFacts,
+): string {
+  const normalizedDraft = normalizeText(draft);
+  if (!structuredSourceFacts || !normalizedDraft || /##\s*7\.2\s+Structured Source Facts/i.test(normalizedDraft)) {
+    return normalizedDraft;
+  }
+  const section = formatStructuredSourceFacts(structuredSourceFacts);
+  const addendumIndex = normalizedDraft.search(/\n##\s*7\.25\s+Source Material Appendix\b/i);
+  if (addendumIndex >= 0) {
+    return `${normalizedDraft.slice(0, addendumIndex).trimEnd()}\n\n${section}\n${normalizedDraft.slice(addendumIndex)}`;
+  }
+  return `${normalizedDraft}\n\n${section}`;
 }
 
 function ensureCanonicalPromptHasSourceMaterialAppendix(
@@ -1391,6 +1685,7 @@ async function requestPromptDraftWithLlm(params: {
   researchSummary: string;
   evidenceBrief?: WebsiteEvidenceBrief;
   knowledgeProfile?: WebsiteKnowledgeProfile;
+  promptBudgetEnvelope?: PromptBudgetEnvelope;
   displayLocale?: PromptDraftDisplayLocale;
   requestedSiteLocale?: RequestedSiteLocale;
 }): Promise<PromptDraftBuildResult | undefined> {
@@ -1406,6 +1701,18 @@ async function requestPromptDraftWithLlm(params: {
   const displayLocale = params.displayLocale === "zh" ? "zh" : "en";
   const requestedSiteLocale = params.requestedSiteLocale || "en";
   const localePlan = buildLocalePlan(params.requirementText, requestedSiteLocale);
+  const promptBudgetEnvelope =
+    params.promptBudgetEnvelope ||
+    buildPromptBudgetEnvelope({
+      requirementText: params.requirementText,
+      knowledgeProfile: params.knowledgeProfile,
+      evidenceBrief: params.evidenceBrief,
+    });
+  const requirementExcerpt = clipTextForPromptBudget(
+    params.requirementText,
+    promptBudgetEnvelope.canonicalRequirementChars,
+    "requirement",
+  );
   const targetLanguage = "English for internal workflow artifacts";
   const languagePreservationRule = [
     "- Write the entire canonical prompt, workflow instructions, assumptions, page descriptions, and process notes in English only.",
@@ -1422,13 +1729,24 @@ async function requestPromptDraftWithLlm(params: {
     params.researchSources.length > 0
       ? params.researchSources
           .slice(0, 6)
-          .map((item, idx) => `${idx + 1}. ${item.title} | ${item.url} | ${item.snippet || ""}`)
+          .map(
+            (item, idx) =>
+              `${idx + 1}. ${item.title} | ${item.url} | ${clipTextForPromptBudget(item.snippet || "", Math.max(160, Math.floor(promptBudgetEnvelope.sourceSnippetChars / 3)), `research source ${idx + 1}`)}`,
+          )
           .join("\n")
-    : "(none)";
+      : "(none)";
   const evidenceBriefBlock = params.evidenceBrief
-    ? formatWebsiteEvidenceBrief(params.evidenceBrief)
+    ? clipTextForPromptBudget(
+        formatWebsiteEvidenceBrief(params.evidenceBrief),
+        promptBudgetEnvelope.evidenceBriefChars,
+        "evidence brief",
+      )
     : params.knowledgeProfile
-      ? formatWebsiteEvidenceBrief(buildWebsiteEvidenceBrief(params.knowledgeProfile))
+      ? clipTextForPromptBudget(
+          formatWebsiteEvidenceBrief(buildWebsiteEvidenceBrief(params.knowledgeProfile)),
+          promptBudgetEnvelope.evidenceBriefChars,
+          "evidence brief",
+        )
       : "(none)";
 
   async function runSingleAttempt(attempt: {
@@ -1461,7 +1779,7 @@ async function requestPromptDraftWithLlm(params: {
           role: "user",
           content: [
             "User requirement:",
-            params.requirementText || "(empty)",
+            requirementExcerpt || "(empty)",
             "",
             `Requirement completion: ${completion}`,
             `Missing slots: ${missingLabels.join(" / ") || "none"}`,
@@ -1472,14 +1790,21 @@ async function requestPromptDraftWithLlm(params: {
             "```",
             "",
             "Web search findings (Serper):",
-            params.researchSummary || "(none)",
+            clipTextForPromptBudget(params.researchSummary || "", promptBudgetEnvelope.sourceSnippetChars, "research summary") ||
+              "(none)",
             attempt.compact ? compactResearchBlock : fullResearchBlock,
             "",
             "Evidence Brief:",
             evidenceBriefBlock,
             "",
             "Website knowledge profile:",
-            params.knowledgeProfile ? formatWebsiteKnowledgeProfile(params.knowledgeProfile) : "(none)",
+            params.knowledgeProfile
+              ? clipTextForPromptBudget(
+                  formatWebsiteKnowledgeProfile(params.knowledgeProfile),
+                  promptBudgetEnvelope.evidenceBriefChars,
+                  "knowledge profile",
+                )
+              : "(none)",
             "",
             "Return JSON with shape:",
             "{",
@@ -1565,20 +1890,27 @@ async function requestPromptDraftWithLlm(params: {
   const rawDraft = normalizeText(result?.rawDraft);
   if (!rawDraft) return undefined;
   const evidenceBrief = params.evidenceBrief || (params.knowledgeProfile ? buildWebsiteEvidenceBrief(params.knowledgeProfile) : undefined);
+  const structuredSourceFacts = params.knowledgeProfile ? buildStructuredSourceFacts(params.knowledgeProfile) : undefined;
 
   const canonicalPrompt = ensureCanonicalPromptHasSourceMaterialAppendix(
-    ensureCanonicalPromptHasEvidenceBrief(
-      enrichCanonicalPromptWithControlManifest(
-        looksLikeTemplateDraft(rawDraft)
-          ? rawDraft
-          : mergeTemplateWithResearch(params.templateDraft, params.researchSources, params.researchSummary, params.knowledgeProfile, evidenceBrief, requestedSiteLocale, displayLocale),
-        params.requirementText,
-        params.workflowContractSummary,
-        params.decisionPlan,
-        params.routeSource,
-        params.discoveryBrief,
+    ensureCanonicalPromptHasStructuredSourceFacts(
+      ensureCanonicalPromptHasPromptBudgetEnvelope(
+        ensureCanonicalPromptHasEvidenceBrief(
+          enrichCanonicalPromptWithControlManifest(
+            looksLikeTemplateDraft(rawDraft)
+              ? rawDraft
+              : mergeTemplateWithResearch(params.templateDraft, params.researchSources, params.researchSummary, params.knowledgeProfile, evidenceBrief, requestedSiteLocale, displayLocale),
+            params.requirementText,
+            params.workflowContractSummary,
+            params.decisionPlan,
+            params.routeSource,
+            params.discoveryBrief,
+          ),
+          evidenceBrief,
+        ),
+        promptBudgetEnvelope,
       ),
-      evidenceBrief,
+      structuredSourceFacts,
     ),
     params.knowledgeProfile,
   );
@@ -1601,6 +1933,8 @@ async function requestPromptDraftWithLlm(params: {
     discoveryBrief: params.discoveryBrief,
     evidenceBrief,
     knowledgeProfile: params.knowledgeProfile,
+    structuredSourceFacts,
+    promptBudgetEnvelope,
     model: usedModel,
     provider: params.config.provider,
     draftMode: hasWebEvidence(params.knowledgeProfile) ? "llm_web_search" : "llm",
@@ -1664,16 +1998,34 @@ export async function buildPromptDraftWithResearch(params: {
   ownerUserId?: string;
   projectId?: string;
   displayLocale?: PromptDraftDisplayLocale;
+  disableWebSearch?: boolean;
+  routePolicy?: PromptDraftRoutePolicy;
 }): Promise<PromptDraftBuildResult> {
   const workflowContractSummary = await loadWebsiteWorkflowContractSummary();
   const requestedSiteLocale = resolveRequestedSiteLocale(params.requirementText);
   const requirementSpec = buildRequirementSpec(params.requirementText, [params.requirementText]);
+  const resolvePromptBudget = (
+    profile?: WebsiteKnowledgeProfile,
+    brief?: WebsiteEvidenceBrief,
+  ) =>
+    buildPromptBudgetEnvelope({
+      requirementText: params.requirementText,
+      knowledgeProfile: profile,
+      evidenceBrief: brief,
+    });
+  const buildRequirementExcerpt = (profile?: WebsiteKnowledgeProfile, brief?: WebsiteEvidenceBrief) =>
+    clipTextForPromptBudget(
+      params.requirementText,
+      resolvePromptBudget(profile, brief).canonicalRequirementChars,
+      "requirement",
+    );
   const sourceEnrichmentPlan = buildSourceEnrichmentPlan({
     requirementText: params.requirementText,
     spec: requirementSpec,
     referencedAssets: params.referencedAssets,
+    allowWebSearch: params.disableWebSearch !== true,
   });
-  let decisionPlan = buildPromptDecisionPlan(params.requirementText);
+  let decisionPlan = normalizeDecisionPlanForRoutePolicy(buildPromptDecisionPlan(params.requirementText), params.routePolicy);
   let discoveryBrief = buildWebsiteDiscoveryBrief({
     requirementText: params.requirementText,
     spec: requirementSpec,
@@ -1688,7 +2040,7 @@ export async function buildPromptDraftWithResearch(params: {
     discoveryBrief,
   );
   let localDraft = enrichCanonicalPromptWithControlManifest(
-    composeStructuredPrompt(params.requirementText, params.slots),
+    composeStructuredPrompt(buildRequirementExcerpt(), params.slots),
     params.requirementText,
     workflowContractSummary,
     decisionPlan,
@@ -1696,6 +2048,7 @@ export async function buildPromptDraftWithResearch(params: {
     discoveryBrief,
   );
   localDraft = ensureCanonicalPromptHasBilingualContract(localDraft, requestedSiteLocale, params.displayLocale);
+  localDraft = ensureCanonicalPromptHasPromptBudgetEnvelope(localDraft, resolvePromptBudget());
   const searchTimeoutMs = Number(params.timeoutMs || process.env.CHAT_DRAFT_WEB_SEARCH_TIMEOUT_MS || 16_000);
   const llmTimeoutMs = resolveDraftLlmTimeoutMs(params.timeoutMs);
   let sources: PromptDraftSource[] = [];
@@ -1717,6 +2070,8 @@ export async function buildPromptDraftWithResearch(params: {
       researchSummary,
       "English-normalized research summary unavailable; rely on the evidence brief and source-backed profile.",
     );
+  const getStructuredSourceFacts = () => (knowledgeProfile ? buildStructuredSourceFacts(knowledgeProfile) : undefined);
+  const getPromptBudgetEnvelope = () => resolvePromptBudget(knowledgeProfile, evidenceBrief);
   const applyResolvedKnowledgeProfile = (profile: WebsiteKnowledgeProfile) => {
     knowledgeProfile = profile;
     evidenceBrief = buildWebsiteEvidenceBrief(profile);
@@ -1729,7 +2084,7 @@ export async function buildPromptDraftWithResearch(params: {
       discoveryBrief,
       knowledgeProfile: profile,
     });
-    decisionPlan = next.decisionPlan;
+    decisionPlan = normalizeDecisionPlanForRoutePolicy(next.decisionPlan, params.routePolicy);
     discoveryBrief = buildWebsiteDiscoveryBrief({
       requirementText: params.requirementText,
       spec: requirementSpec,
@@ -1741,7 +2096,7 @@ export async function buildPromptDraftWithResearch(params: {
     promptControlManifest = buildPromptControlManifest(decisionPlan, routeSource, requestedSiteLocale, discoveryBrief);
     localDraft = ensureCanonicalPromptHasBilingualContract(
       enrichCanonicalPromptWithControlManifest(
-        composeStructuredPrompt(params.requirementText, params.slots),
+        composeStructuredPrompt(buildRequirementExcerpt(profile, evidenceBrief), params.slots),
         params.requirementText,
         workflowContractSummary,
         decisionPlan,
@@ -1751,6 +2106,7 @@ export async function buildPromptDraftWithResearch(params: {
       requestedSiteLocale,
       params.displayLocale,
     );
+    localDraft = ensureCanonicalPromptHasPromptBudgetEnvelope(localDraft, resolvePromptBudget(profile, evidenceBrief));
   };
   const buildKnowledgeProfileForSelectedSources = async (overrides?: Partial<KnowledgeProfileEnrichmentOptions>) => {
     const enrichment = buildEnrichmentOptions(overrides);
@@ -1797,6 +2153,8 @@ export async function buildPromptDraftWithResearch(params: {
       discoveryBrief,
       evidenceBrief,
       knowledgeProfile,
+      structuredSourceFacts: getStructuredSourceFacts(),
+      promptBudgetEnvelope: getPromptBudgetEnvelope(),
       researchSummary: getSafeResearchSummary(),
       fallbackReason: networkGate.reason,
       draftMode: "template",
@@ -1880,6 +2238,8 @@ export async function buildPromptDraftWithResearch(params: {
       discoveryBrief,
       evidenceBrief,
       knowledgeProfile,
+      structuredSourceFacts: getStructuredSourceFacts(),
+      promptBudgetEnvelope: getPromptBudgetEnvelope(),
       researchSummary: getSafeResearchSummary(),
       fallbackReason: provider.reason,
       draftMode: "template",
@@ -1902,6 +2262,7 @@ export async function buildPromptDraftWithResearch(params: {
         researchSummary,
         evidenceBrief,
         knowledgeProfile,
+        promptBudgetEnvelope: getPromptBudgetEnvelope(),
         displayLocale: params.displayLocale,
         requestedSiteLocale,
       });
@@ -1932,6 +2293,8 @@ export async function buildPromptDraftWithResearch(params: {
         discoveryBrief,
         evidenceBrief,
         knowledgeProfile,
+        structuredSourceFacts: getStructuredSourceFacts(),
+        promptBudgetEnvelope: getPromptBudgetEnvelope(),
         researchSummary: getSafeResearchSummary(),
         fallbackReason: webSearchFailureReason
           ? `web_search:${webSearchFailureReason};llm:${llmReason}`
@@ -1961,6 +2324,8 @@ export async function buildPromptDraftWithResearch(params: {
     discoveryBrief,
     evidenceBrief,
     knowledgeProfile,
+    structuredSourceFacts: getStructuredSourceFacts(),
+    promptBudgetEnvelope: getPromptBudgetEnvelope(),
     researchSummary: getSafeResearchSummary(),
     fallbackReason: webSearchFailureReason || "llm_draft_disabled",
     provider: provider.config.provider,

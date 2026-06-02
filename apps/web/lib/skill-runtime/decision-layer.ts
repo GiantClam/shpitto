@@ -702,6 +702,29 @@ function extractWorkflowPromptControlManifestRoutePlan(
   return { routes: fileRoutes, navLabels: [] };
 }
 
+function extractWorkflowDesignSpecRoutes(state: AgentState): string[] {
+  const workflow = ((state as any)?.workflow_context || {}) as Record<string, any>;
+  const designSpec = String(workflow.websiteDesignSpec || "").trim();
+  if (!designSpec) return [];
+
+  const confirmedRoutesMatch = designSpec.match(/^\s*-\s*confirmed_routes:\s*(.+)$/im);
+  if (confirmedRoutesMatch?.[1]) {
+    const routes = String(confirmedRoutesMatch[1] || "")
+      .split(/[,\n]/)
+      .map((route) => String(route || "").trim())
+      .filter(Boolean);
+    const normalizedRoutes = normalizeStructuredRoutes(routes, { canonicalizeSemantic: false });
+    if (normalizedRoutes.length > 0) return normalizedRoutes;
+  }
+
+  const routeMapSectionMatch = designSpec.match(/##\s*5\.\s*Route Map\s*([\s\S]*?)(?:\n##\s*\d+\.|\s*$)/i);
+  if (!routeMapSectionMatch?.[1]) return [];
+  const routeMapRoutes = Array.from(String(routeMapSectionMatch[1] || "").matchAll(/^\s*-\s*(\/[^\s(]*)/gm))
+    .map((match) => String(match[1] || "").trim())
+    .filter(Boolean);
+  return normalizeStructuredRoutes(routeMapRoutes, { canonicalizeSemantic: false });
+}
+
 function extractRequirementSpecRoutes(state: AgentState, requirementText: string): string[] {
   const workflow = ((state as any)?.workflow_context || {}) as Record<string, any>;
   const spec = workflow.requirementSpec && typeof workflow.requirementSpec === "object" ? workflow.requirementSpec : undefined;
@@ -1439,13 +1462,24 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
   const requirementText = parsedRequirement.cleanText || rawRequirementText;
   const locale = detectPrimaryLocaleFromRequirement(requirementText);
   const workflowContractPlan = extractWorkflowPromptControlManifestRoutePlan(state, locale);
+  const workflowDesignSpecRoutes =
+    workflowContractPlan.routes.length > 0 ? [] : extractWorkflowDesignSpecRoutes(state);
   const promptContractPlan =
-    workflowContractPlan.routes.length > 0 ? { routes: [], navLabels: [] } : extractPromptControlManifestRoutePlan(requirementText, locale);
+    workflowContractPlan.routes.length > 0 || workflowDesignSpecRoutes.length > 0
+      ? { routes: [], navLabels: [] }
+      : extractPromptControlManifestRoutePlan(requirementText, locale);
   const workflowContractRoutes = workflowContractPlan.routes;
-  const contractRoutes = workflowContractRoutes.length > 0 ? workflowContractRoutes : promptContractPlan.routes;
+  const contractRoutes =
+    workflowContractRoutes.length > 0
+      ? workflowContractRoutes
+      : workflowDesignSpecRoutes.length > 0
+        ? workflowDesignSpecRoutes
+        : promptContractPlan.routes;
   const routeAuthorityMode: RouteAuthorityMode =
     workflowContractRoutes.length > 0
       ? "workflow_manifest"
+      : workflowDesignSpecRoutes.length > 0
+        ? "workflow_manifest"
       : promptContractPlan.routes.length > 0
         ? "prompt_manifest"
         : "heuristic";

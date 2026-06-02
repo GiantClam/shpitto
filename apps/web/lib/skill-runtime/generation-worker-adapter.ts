@@ -1,6 +1,9 @@
 import type { RouteUnitContractSummary } from "./website-design-spec";
+import type { RouteUnitContract } from "./route-unit-contract";
 import type { DesignStylePreset } from "../design-style-preset";
 import type { LocalDecisionPlan } from "./decision-layer";
+import type { AgentState } from "../agent/graph";
+import type { SkillRuntimeExecutionSummary, SkillRuntimeStepSnapshot } from "./executor";
 import type {
   RuntimeWorkflowFile,
   SkillExecutionAdapter,
@@ -44,6 +47,18 @@ export type GenerationUnitDispatchReport = {
   issues: string[];
 };
 
+export type GenerationRuntimeRequest = {
+  state: AgentState;
+  timeoutMs: number;
+  onStep?: (snapshot: SkillRuntimeStepSnapshot) => Promise<void> | void;
+};
+
+export type GenerationRuntimeWorker = {
+  id: string;
+  capabilities: string[];
+  runGeneration(input: GenerationRuntimeRequest): Promise<SkillRuntimeExecutionSummary>;
+};
+
 export function createStaticGenerationWorkerAdapter(params: {
   id: GenerationWorkerAdapter["id"];
   capabilities: string[];
@@ -53,6 +68,18 @@ export function createStaticGenerationWorkerAdapter(params: {
     id: params.id,
     capabilities: Array.from(new Set(params.capabilities.map((item) => String(item || "").trim()).filter(Boolean))),
     runUnit: params.runUnit,
+  };
+}
+
+export function createStaticGenerationRuntimeWorker(params: {
+  id: string;
+  capabilities: string[];
+  runGeneration: GenerationRuntimeWorker["runGeneration"];
+}): GenerationRuntimeWorker {
+  return {
+    id: String(params.id || "generation-runtime-worker").trim() || "generation-runtime-worker",
+    capabilities: Array.from(new Set(params.capabilities.map((item) => String(item || "").trim()).filter(Boolean))),
+    runGeneration: params.runGeneration,
   };
 }
 
@@ -74,7 +101,7 @@ function routeToUnitId(route: string): string {
 }
 
 export function buildGenerationUnitInputFromRouteContract(params: {
-  summary: RouteUnitContractSummary;
+  summary: RouteUnitContractSummary | RouteUnitContract;
   prompt?: string;
   targetFiles?: string[];
   context?: Record<string, unknown>;
@@ -96,12 +123,13 @@ export function buildGenerationUnitInputFromRouteContract(params: {
       routeContract: params.summary.routeContract,
       navLabel: params.summary.navLabel,
       pageKind: params.summary.pageKind,
-      inheritedTerminology: params.summary.inheritedTerminology,
-      inheritedTokens: params.summary.inheritedTokens,
+      inheritedTerminology: (params.summary as any).inheritedTerminology,
+      inheritedTokens: (params.summary as any).inheritedTokens,
       openingFamily: params.summary.openingFamily,
       openingTopology: params.summary.openingTopology,
-      mediaPlan: params.summary.mediaPlan,
-      mediaResources: params.summary.mediaResources,
+      mediaPlan: (params.summary as any).mediaPlan,
+      mediaResources: (params.summary as any).mediaResources,
+      htmlPath: (params.summary as any).htmlPath,
       ...(params.context || {}),
     },
   };

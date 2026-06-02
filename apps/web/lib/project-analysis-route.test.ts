@@ -47,6 +47,10 @@ describe("project analysis route", () => {
       deploymentHost: null,
       latestDeploymentUrl: null,
       source: "chat-session",
+      contractHash: "a".repeat(64),
+      generationLane: "website-generation-mvp",
+      generationLaneConfig: { disableWebSearch: true, routePolicy: "default" },
+      websiteSurfaceMode: "content-hub-site",
     });
     mocks.getProjectAnalyticsBinding.mockResolvedValue(null);
 
@@ -58,6 +62,10 @@ describe("project analysis route", () => {
     expect(response.status).toBe(200);
     expect(body.ok).toBe(true);
     expect(body.project.id).toBe("chat-1");
+    expect(body.project.contractHash).toBe("a".repeat(64));
+    expect(body.project.generationLane).toBe("website-generation-mvp");
+    expect(body.project.generationLaneConfig).toEqual({ disableWebSearch: true, routePolicy: "default" });
+    expect(body.project.websiteSurfaceMode).toBe("content-hub-site");
     expect(body.analytics.status).toBe("pending");
     expect(body.warning).toContain("Analytics will become available");
   });

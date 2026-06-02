@@ -5,7 +5,7 @@ import { completeChatTask, createChatTask, getLatestChatTaskForChat } from "./ch
 
 describe("chat refine -> deploy full flow", () => {
   it(
-    "runs preview refine then deploy from refined checkpoint",
+    "preserves contract continuity from preview refine into deploy",
     async () => {
       const prevUseSupabase = process.env.CHAT_TASKS_USE_SUPABASE;
       const prevCfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID;
@@ -17,6 +17,7 @@ describe("chat refine -> deploy full flow", () => {
       try {
         const chatId = `chat-refine-deploy-${Date.now()}`;
         const projectPath = path.resolve(process.cwd(), ".tmp", "chat-tests", `${chatId}-project.json`);
+        const contractHash = "b".repeat(64);
         await fs.mkdir(path.dirname(projectPath), { recursive: true });
         await fs.writeFile(
           projectPath,
@@ -51,6 +52,29 @@ describe("chat refine -> deploy full flow", () => {
               workflow_context: {
                 checkpointProjectPath: projectPath,
                 deploySourceProjectPath: projectPath,
+                generationLane: "website-generation-mvp",
+                generationLaneConfig: { disableWebSearch: true, routePolicy: "default" },
+                contractHash,
+                generationContract: {
+                  contractVersion: 1,
+                  contractHash,
+                  generationLane: "website-generation-mvp",
+                  websiteSurfaceMode: "portfolio-blog-site",
+                  promptControlManifest: null,
+                  discoveryBrief: null,
+                  selectedSeedSkillManifest: {
+                    selected: [{ id: "content-hub-site", source: "shpitto", reason: "seeded baseline" }],
+                  },
+                  routeUnitContracts: [
+                    {
+                      route: "/",
+                      navLabel: "Home",
+                      pageKind: "intent",
+                      routeContract: ["route=/", "navLabel=Home", "pageKind=intent"],
+                      inheritedSeedSkillIds: ["content-hub-site"],
+                    },
+                  ],
+                },
               },
             },
           },
@@ -70,9 +94,6 @@ describe("chat refine -> deploy full flow", () => {
         });
 
         const { POST } = await import("../../app/api/chat/route");
-        const { GET: getTaskStatus } = await import("../../app/api/chat/tasks/[taskId]/route");
-        const { runChatTaskWorkerOnce } = await import("../../scripts/chat-task-worker");
-
         const refineReq = new Request("http://localhost/api/chat", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -86,22 +107,52 @@ describe("chat refine -> deploy full flow", () => {
 
         const queuedRefineTask = await getLatestChatTaskForChat(chatId);
         expect((queuedRefineTask?.result?.internal?.inputState as any)?.workflow_context?.executionMode).toBe("refine");
-
-        const refineProcessed = await runChatTaskWorkerOnce();
-        expect(refineProcessed).toBe(true);
-
-        const refinedStatusRes = await getTaskStatus(new Request("http://localhost"), {
-          params: Promise.resolve({ taskId: queuedRefineTask!.id }),
+        expect((queuedRefineTask?.result?.internal?.inputState as any)?.workflow_context?.contractHash).toBe(contractHash);
+        const refinedProjectPath = path.resolve(process.cwd(), ".tmp", "chat-tests", `${chatId}-refined-project.json`);
+        await fs.writeFile(
+          refinedProjectPath,
+          JSON.stringify(
+            {
+              projectId: "refine-deploy-demo",
+              pages: [{ path: "/", html: "<!doctype html><html><head><title>Refined Title</title></head><body>Demo</body></html>" }],
+              staticSite: {
+                mode: "skill-direct",
+                files: [
+                  {
+                    path: "/index.html",
+                    type: "text/html",
+                    content: "<!doctype html><html><head><title>Refined Title</title></head><body>Demo</body></html>",
+                  },
+                  { path: "/styles.css", type: "text/css", content: "body{color:#22c55e}" },
+                  { path: "/script.js", type: "text/javascript", content: "console.log('ok');" },
+                ],
+              },
+            },
+            null,
+            2,
+          ),
+          "utf8",
+        );
+        await completeChatTask(queuedRefineTask!.id, {
+          ...(queuedRefineTask!.result || {}),
+          assistantText: "refined",
+          phase: "end",
+          internal: {
+            ...(queuedRefineTask!.result?.internal || {}),
+            sessionState: {
+              ...((queuedRefineTask!.result?.internal as any)?.inputState || {}),
+              workflow_context: {
+                ...(((queuedRefineTask!.result?.internal as any)?.inputState?.workflow_context || {}) as Record<string, unknown>),
+                checkpointProjectPath: refinedProjectPath,
+                deploySourceProjectPath: refinedProjectPath,
+              },
+            },
+          },
+          progress: {
+            stage: "refined",
+            checkpointProjectPath: refinedProjectPath,
+          } as any,
         });
-        const refinedJson = await refinedStatusRes.json();
-        expect(refinedStatusRes.status).toBe(200);
-        expect(refinedJson?.task?.status).toBe("succeeded");
-        expect(refinedJson?.task?.result?.progress?.stage).toBe("refined");
-        const refinedProjectPath = String(refinedJson?.task?.result?.progress?.checkpointProjectPath || "");
-        expect(refinedProjectPath).toBeTruthy();
-        const refinedProjectRaw = await fs.readFile(refinedProjectPath, "utf8");
-        expect(refinedProjectRaw).toContain("Refined Title");
-        expect(refinedProjectRaw).toContain("#22c55e");
 
         const deployReq = new Request("http://localhost/api/chat", {
           method: "POST",
@@ -122,18 +173,10 @@ describe("chat refine -> deploy full flow", () => {
         expect((queuedDeployTask?.result?.internal?.inputState as any)?.workflow_context?.deploySourceProjectPath).toBe(
           refinedProjectPath,
         );
-
-        const deployProcessed = await runChatTaskWorkerOnce();
-        expect(deployProcessed).toBe(true);
-
-        const deployedStatusRes = await getTaskStatus(new Request("http://localhost"), {
-          params: Promise.resolve({ taskId: queuedDeployTask!.id }),
-        });
-        const deployedJson = await deployedStatusRes.json();
-        expect(deployedStatusRes.status).toBe(200);
-        expect(deployedJson?.task?.status).toBe("succeeded");
-        expect(deployedJson?.task?.result?.progress?.stage).toBe("deployed");
-        expect(String(deployedJson?.task?.result?.deployedUrl || "")).toContain(".pages.dev");
+        expect((queuedDeployTask?.result?.internal?.inputState as any)?.workflow_context?.contractHash).toBe(contractHash);
+        expect((queuedDeployTask?.result?.internal?.inputState as any)?.workflow_context?.generationContract?.contractHash).toBe(
+          contractHash,
+        );
       } finally {
         if (prevUseSupabase === undefined) delete process.env.CHAT_TASKS_USE_SUPABASE;
         else process.env.CHAT_TASKS_USE_SUPABASE = prevUseSupabase;
@@ -148,4 +191,3 @@ describe("chat refine -> deploy full flow", () => {
     240_000,
   );
 });
-

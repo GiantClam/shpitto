@@ -60,6 +60,19 @@ type MatrixReport = {
   homepage: ScenarioSummary[];
   fullsite: ScenarioSummary[];
   casux?: CasuxSummary;
+  promotionEvidence?: {
+    homepage: ScenarioFamilyEvidence;
+    fullsite: ScenarioFamilyEvidence;
+    casux: ScenarioFamilyEvidence;
+  };
+};
+
+type ScenarioFamilyEvidence = {
+  family: "homepage" | "fullsite" | "casux";
+  passed: boolean;
+  requiredScenarioCount: number;
+  passedScenarioCount: number;
+  failingScenarios: string[];
 };
 
 const pnpmBin = process.platform === "win32" ? "pnpm" : "pnpm";
@@ -104,6 +117,42 @@ function formatDuration(durationMs: number | null): string {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes}m ${seconds.toString().padStart(2, "0")}s`;
+}
+
+function evaluateScenarioFamilyEvidence(params: {
+  family: "homepage" | "fullsite" | "casux";
+  homepage: ScenarioSummary[];
+  fullsite: ScenarioSummary[];
+  casux?: CasuxSummary;
+}): ScenarioFamilyEvidence {
+  if (params.family === "homepage") {
+    const failing = params.homepage.filter((item) => !item.ok).map((item) => item.scenario);
+    return {
+      family: "homepage",
+      passed: failing.length === 0 && params.homepage.length > 0,
+      requiredScenarioCount: params.homepage.length,
+      passedScenarioCount: params.homepage.length - failing.length,
+      failingScenarios: failing,
+    };
+  }
+  if (params.family === "fullsite") {
+    const failing = params.fullsite.filter((item) => !item.ok).map((item) => item.scenario);
+    return {
+      family: "fullsite",
+      passed: failing.length === 0 && params.fullsite.length > 0,
+      requiredScenarioCount: params.fullsite.length,
+      passedScenarioCount: params.fullsite.length - failing.length,
+      failingScenarios: failing,
+    };
+  }
+  const casuxOk = Boolean(params.casux?.ok);
+  return {
+    family: "casux",
+    passed: casuxOk,
+    requiredScenarioCount: 1,
+    passedScenarioCount: casuxOk ? 1 : 0,
+    failingScenarios: casuxOk ? [] : ["casux-fullflow"],
+  };
 }
 
 async function runCommand(params: {
@@ -350,6 +399,16 @@ function renderMarkdown(report: MatrixReport): string {
       `| casux-fullflow | ${report.casux.ok ? "pass" : "fail"} | ${formatDuration(report.casux.elapsedMs)} | ${report.casux.manifestRouteCount || 0} | ${report.casux.hasRuntimeContentRoute ? "yes" : "no"} | ${verification || "-"} | ${report.casux.deployedUrl || report.casux.productionUrl || "-"} | ${report.casux.reportPath || "-"} |`,
     );
   }
+  if (report.promotionEvidence) {
+    lines.push("", "## Promotion Evidence", "");
+    lines.push("| Family | Status | Passed / Required | Failing Scenarios |");
+    lines.push("| --- | --- | --- | --- |");
+    for (const family of [report.promotionEvidence.homepage, report.promotionEvidence.fullsite, report.promotionEvidence.casux]) {
+      lines.push(
+        `| ${family.family} | ${family.passed ? "pass" : "fail"} | ${family.passedScenarioCount}/${family.requiredScenarioCount} | ${family.failingScenarios.join(", ") || "-"} |`,
+      );
+    }
+  }
   const failures = [...report.homepage, ...report.fullsite, ...(report.casux ? [report.casux] : [])].filter(
     (item) => !item.ok || item.error,
   );
@@ -400,6 +459,11 @@ async function main() {
     homepage.every((item) => item.ok) &&
     fullsite.every((item) => item.ok) &&
     (casux ? casux.ok : true);
+  const promotionEvidence = {
+    homepage: evaluateScenarioFamilyEvidence({ family: "homepage", homepage, fullsite, casux }),
+    fullsite: evaluateScenarioFamilyEvidence({ family: "fullsite", homepage, fullsite, casux }),
+    casux: evaluateScenarioFamilyEvidence({ family: "casux", homepage, fullsite, casux }),
+  };
   const report: MatrixReport = {
     generatedAt: new Date().toISOString(),
     passed,
@@ -408,6 +472,7 @@ async function main() {
     homepage,
     fullsite,
     casux,
+    promotionEvidence,
   };
 
   await Promise.all([

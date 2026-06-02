@@ -63,6 +63,10 @@ describe("project domains route", () => {
       deploymentHost: null,
       latestDeploymentUrl: null,
       source: "chat-session",
+      contractHash: "b".repeat(64),
+      generationLane: "website-generation-mvp",
+      generationLaneConfig: { disableWebSearch: true, routePolicy: "default" },
+      websiteSurfaceMode: "content-hub-site",
     });
     mocks.listProjectCustomDomains.mockResolvedValue([]);
     mocks.getLatestChatTaskForChat.mockResolvedValue({
@@ -86,6 +90,10 @@ describe("project domains route", () => {
     expect(response.status).toBe(200);
     expect(body.ok).toBe(true);
     expect(body.project.projectId).toBe("chat-1");
+    expect(body.project.contractHash).toBe("b".repeat(64));
+    expect(body.project.generationLane).toBe("website-generation-mvp");
+    expect(body.project.generationLaneConfig).toEqual({ disableWebSearch: true, routePolicy: "default" });
+    expect(body.project.websiteSurfaceMode).toBe("content-hub-site");
     expect(body.domains).toEqual([]);
     expect(body.blogDetailFillRequired).toBe(false);
     expect(body.blogDetailFillCompleted).toBe(true);
@@ -100,6 +108,10 @@ describe("project domains route", () => {
       deploymentHost: "demo.pages.dev",
       latestDeploymentUrl: "https://demo.pages.dev",
       source: "chat-session",
+      contractHash: "c".repeat(64),
+      generationLane: "website-generation-mvp",
+      generationLaneConfig: { disableWebSearch: true, routePolicy: "default" },
+      websiteSurfaceMode: "content-hub-site",
     });
     mocks.listProjectCustomDomains.mockResolvedValue([]);
     mocks.getLatestChatTaskForChat.mockResolvedValue({
@@ -121,6 +133,9 @@ describe("project domains route", () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
+    expect(body.project.contractHash).toBe("c".repeat(64));
+    expect(body.project.generationLane).toBe("website-generation-mvp");
+    expect(body.project.websiteSurfaceMode).toBe("content-hub-site");
     expect(body.blogDetailFillRequired).toBe(true);
     expect(body.blogDetailFillCompleted).toBe(false);
     expect(body.blogDetailFillStatus).toBe("pending");
@@ -136,6 +151,10 @@ describe("project domains route", () => {
       deploymentHost: "demo.pages.dev",
       latestDeploymentUrl: "https://demo.pages.dev",
       source: "chat-session",
+      contractHash: "d".repeat(64),
+      generationLane: "website-generation-mvp",
+      generationLaneConfig: { disableWebSearch: true, routePolicy: "default" },
+      websiteSurfaceMode: "content-hub-site",
     });
     mocks.getLatestChatTaskForChat.mockResolvedValue({
       result: {

@@ -123,6 +123,26 @@ describe("website-type-selector", () => {
     expect(result.reason).toContain("content-hub");
   });
 
+  it("prefers content-hub over docs-knowledge when institutional and documentation signals overlap", () => {
+    const result = selectWebsiteGenerationTypeSkill({
+      requirementText:
+        "Generate the official CASUX multi-page website for standards, advocacy, research center, and information platform access. Treat the information platform as a public resource directory, not a generic docs shell.",
+      routes: [
+        "/",
+        "/casux-creation",
+        "/casux-construction",
+        "/casux-certification",
+        "/casux-advocacy",
+        "/casux-research-center",
+        "/casux-information-platform",
+      ],
+    });
+
+    expect(result.skillId).toBe("content-hub-site");
+    expect(result.siteType).toBe("content-hub");
+    expect(result.surfaceMode).toBe("content-hub-site");
+  });
+
   it("selects docs-knowledge for documentation and reference surfaces", () => {
     const result = selectWebsiteGenerationTypeSkill({
       siteType: "documentation",

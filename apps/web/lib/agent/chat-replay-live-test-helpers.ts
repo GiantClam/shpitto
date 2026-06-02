@@ -288,6 +288,73 @@ export async function loadGeneratedProject(task: any) {
   };
 }
 
+export function extractTaskGenerationTrace(task: any) {
+  const result = (task?.result || {}) as Record<string, any>;
+  const workflow =
+    ((result?.internal?.inputState?.workflow_context ||
+      result?.internal?.sessionState?.workflow_context ||
+      {}) as Record<string, any>);
+  const generationContract =
+    workflow.generationContract && typeof workflow.generationContract === "object"
+      ? (workflow.generationContract as Record<string, any>)
+      : null;
+  const selectedSeedSkillManifest =
+    workflow.selectedSeedSkillManifest && typeof workflow.selectedSeedSkillManifest === "object"
+      ? (workflow.selectedSeedSkillManifest as Record<string, any>)
+      : null;
+  const routeUnitContracts = Array.isArray(workflow.routeUnitContracts) ? (workflow.routeUnitContracts as unknown[]) : [];
+  const promptControlManifest =
+    workflow.promptControlManifest && typeof workflow.promptControlManifest === "object"
+      ? (workflow.promptControlManifest as Record<string, any>)
+      : null;
+  const generatedProject =
+    internalProjectSnapshot(task) ||
+    workflow.generatedProject ||
+    workflow.siteArtifacts ||
+    null;
+  const staticFiles = Array.isArray((generatedProject as any)?.staticSite?.files)
+    ? ((generatedProject as any).staticSite.files as unknown[])
+    : [];
+
+  return {
+    taskId: String(task?.id || "").trim() || null,
+    contractHash: String(result.contractHash || workflow.contractHash || generationContract?.contractHash || "").trim() || null,
+    generationLane: String(result.generationLane || workflow.generationLane || generationContract?.generationLane || "").trim() || null,
+    websiteSurfaceMode:
+      String(result.websiteSurfaceMode || workflow.websiteSurfaceMode || generationContract?.websiteSurfaceMode || "").trim() || null,
+    routeCount: routeUnitContracts.length,
+    routes: routeUnitContracts
+      .map((entry) => String((entry as any)?.route || "").trim())
+      .filter(Boolean),
+    selectedSeedSkillIds: Array.isArray((selectedSeedSkillManifest as any)?.selected)
+      ? ((selectedSeedSkillManifest as any).selected as unknown[])
+          .map((entry) => String((entry as any)?.id || "").trim())
+          .filter(Boolean)
+      : [],
+    promptManifestRoutes: Array.isArray(promptControlManifest?.routes)
+      ? (promptControlManifest.routes as unknown[]).map((entry) => normalizeRoute(String(entry || ""))).filter(Boolean)
+      : [],
+    generatedFiles: staticFiles
+      .map((entry) => String((entry as any)?.path || "").trim())
+      .filter(Boolean)
+      .sort(),
+    promptManifestFiles: Array.isArray(promptControlManifest?.files)
+      ? (promptControlManifest.files as unknown[]).map((entry) => String(entry || "").trim()).filter(Boolean).sort()
+      : [],
+  };
+}
+
+function internalProjectSnapshot(task: any) {
+  return (
+    task?.result?.internal?.artifactSnapshot ||
+    task?.result?.internal?.sessionState?.site_artifacts ||
+    task?.result?.internal?.sessionState?.project_json ||
+    task?.result?.internal?.inputState?.site_artifacts ||
+    task?.result?.internal?.inputState?.project_json ||
+    null
+  );
+}
+
 function extractCanonicalPromptFromFindings(text: string) {
   const normalized = String(text || "").trim();
   const marker = "# Canonical Website Generation Prompt";
@@ -332,6 +399,149 @@ export type PreviewScreenshotArtifact = {
   path: string;
   fullPage: boolean;
 };
+
+export type GenerationTraceSnapshot = ReturnType<typeof extractTaskGenerationTrace>;
+export type GenerationTraceLike = Partial<GenerationTraceSnapshot> & { taskId?: string | null };
+
+export function compareGenerationTraces(
+  baseline: GenerationTraceLike | null | undefined,
+  candidate: GenerationTraceLike | null | undefined,
+  options?: {
+    ignoreGenerationLane?: boolean;
+  },
+) {
+  const baselineRoutes = Array.from(new Set((baseline?.routes || []).map((item) => normalizeRoute(item)).filter(Boolean))).sort();
+  const candidateRoutes = Array.from(new Set((candidate?.routes || []).map((item) => normalizeRoute(item)).filter(Boolean))).sort();
+  const baselineSeedSkills = Array.from(new Set((baseline?.selectedSeedSkillIds || []).map((item) => String(item || "").trim()).filter(Boolean))).sort();
+  const candidateSeedSkills = Array.from(new Set((candidate?.selectedSeedSkillIds || []).map((item) => String(item || "").trim()).filter(Boolean))).sort();
+  const baselineFiles = Array.from(new Set((baseline?.generatedFiles || []).map((item) => String(item || "").trim()).filter(Boolean))).sort();
+  const candidateFiles = Array.from(new Set((candidate?.generatedFiles || []).map((item) => String(item || "").trim()).filter(Boolean))).sort();
+  const contractHashMatch =
+    Boolean(baseline?.contractHash) && Boolean(candidate?.contractHash) && baseline?.contractHash === candidate?.contractHash;
+  const generationLaneMatch =
+    options?.ignoreGenerationLane
+      ? true
+      : Boolean(baseline?.generationLane) &&
+        Boolean(candidate?.generationLane) &&
+        baseline?.generationLane === candidate?.generationLane;
+  const websiteSurfaceModeMatch =
+    Boolean(baseline?.websiteSurfaceMode) &&
+    Boolean(candidate?.websiteSurfaceMode) &&
+    baseline?.websiteSurfaceMode === candidate?.websiteSurfaceMode;
+  const routeSetMatch = JSON.stringify(baselineRoutes) === JSON.stringify(candidateRoutes);
+  const selectedSeedSkillsMatch = JSON.stringify(baselineSeedSkills) === JSON.stringify(candidateSeedSkills);
+  const fileSetMatch = JSON.stringify(baselineFiles) === JSON.stringify(candidateFiles);
+  const missingRoutes = baselineRoutes.filter((route) => !candidateRoutes.includes(route));
+  const extraRoutes = candidateRoutes.filter((route) => !baselineRoutes.includes(route));
+  const missingSeedSkills = baselineSeedSkills.filter((item) => !candidateSeedSkills.includes(item));
+  const extraSeedSkills = candidateSeedSkills.filter((item) => !baselineSeedSkills.includes(item));
+  const missingFiles = baselineFiles.filter((item) => !candidateFiles.includes(item));
+  const extraFiles = candidateFiles.filter((item) => !baselineFiles.includes(item));
+  const driftReasons = [
+    ...(contractHashMatch ? [] : ["contract-hash"]),
+    ...(generationLaneMatch ? [] : ["generation-lane"]),
+    ...(websiteSurfaceModeMatch ? [] : ["website-surface-mode"]),
+    ...(routeSetMatch ? [] : ["route-set"]),
+    ...(selectedSeedSkillsMatch ? [] : ["seed-skills"]),
+    ...(fileSetMatch ? [] : ["generated-files"]),
+  ];
+  const matchingAxes = [
+    contractHashMatch,
+    generationLaneMatch,
+    websiteSurfaceModeMatch,
+    routeSetMatch,
+    selectedSeedSkillsMatch,
+    fileSetMatch,
+  ].filter(Boolean).length;
+  return {
+    baselineTaskId: baseline?.taskId || null,
+    candidateTaskId: candidate?.taskId || null,
+    baselineRoutes,
+    candidateRoutes,
+    baselineSeedSkills,
+    candidateSeedSkills,
+    contractHashMatch,
+    generationLaneMatch,
+    websiteSurfaceModeMatch,
+    routeSetMatch,
+    selectedSeedSkillsMatch,
+    fileSetMatch,
+    baselineFiles,
+    candidateFiles,
+    missingRoutes,
+    extraRoutes,
+    missingSeedSkills,
+    extraSeedSkills,
+    missingFiles,
+    extraFiles,
+    driftReasons,
+    verdict:
+      contractHashMatch &&
+      generationLaneMatch &&
+      websiteSurfaceModeMatch &&
+      routeSetMatch &&
+      selectedSeedSkillsMatch &&
+      fileSetMatch
+        ? "same_contract"
+        : matchingAxes >= 4
+          ? "partial_match"
+          : "drifted",
+  };
+}
+
+export type ReplayGenerationSummaryEntry = {
+  summaryVersion: 1;
+  sourceChatId: string | null;
+  replayChatId: string | null;
+  replayMode: "local" | "live";
+  replayScenario: string;
+  status: string | null;
+  expectedTrace: GenerationTraceLike | null;
+  generatedTrace: GenerationTraceLike | null;
+  deployedTrace?: GenerationTraceLike | null;
+  expectedToGeneratedComparison?: ReturnType<typeof compareGenerationTraces> | null;
+  generatedToDeployedComparison?: ReturnType<typeof compareGenerationTraces> | null;
+  updatedAt: string;
+};
+
+export function buildReplayGenerationSummaryEntry(params: {
+  sourceChatId?: string | null;
+  replayChatId?: string | null;
+  replayMode: "local" | "live";
+  replayScenario: string;
+  status?: string | null;
+  expectedTrace?: GenerationTraceLike | null;
+  generatedTrace?: GenerationTraceLike | null;
+  deployedTrace?: GenerationTraceLike | null;
+  expectedToGeneratedComparison?: ReturnType<typeof compareGenerationTraces> | null;
+  generatedToDeployedComparison?: ReturnType<typeof compareGenerationTraces> | null;
+  updatedAt?: string;
+}): ReplayGenerationSummaryEntry {
+  return {
+    summaryVersion: 1,
+    sourceChatId: String(params.sourceChatId || "").trim() || null,
+    replayChatId: String(params.replayChatId || "").trim() || null,
+    replayMode: params.replayMode,
+    replayScenario: String(params.replayScenario || "").trim() || "unspecified",
+    status: String(params.status || "").trim() || null,
+    expectedTrace: params.expectedTrace || null,
+    generatedTrace: params.generatedTrace || null,
+    deployedTrace: params.deployedTrace || null,
+    expectedToGeneratedComparison: params.expectedToGeneratedComparison || null,
+    generatedToDeployedComparison: params.generatedToDeployedComparison || null,
+    updatedAt: String(params.updatedAt || "").trim() || new Date().toISOString(),
+  };
+}
+
+export async function appendReplayGenerationSummaryEntry(
+  entry: ReplayGenerationSummaryEntry,
+  outputPath = path.resolve(process.cwd(), ".tmp", "replay-generation-summary.jsonl"),
+) {
+  const target = path.resolve(outputPath);
+  await fs.mkdir(path.dirname(target), { recursive: true });
+  await fs.appendFile(target, `${JSON.stringify(entry)}\n`, "utf8");
+  return target;
+}
 
 export type PreviewScreenshotQaResult = {
   previewUrl: string;

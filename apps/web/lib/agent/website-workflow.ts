@@ -1105,7 +1105,7 @@ export function resolveWorkflowProviderConfigForTesting(
     return {
       provider: "pptoken",
       apiKey: process.env.PPTOKEN_API_KEY,
-      baseURL: process.env.PPTOKEN_BASE_URL || "https://api.pptoken.org/v1",
+      baseURL: process.env.PPTOKEN_BASE_URL || "https://cn.pptoken.cc/v1",
       modelName,
     };
   }
@@ -1569,7 +1569,14 @@ export async function resolveDesignSkillHit(
   let llmOverrideReason: string | undefined;
 
   const structuredDirectionId = normalizedVisualDecision?.primaryVisualDirection;
-  if (!explicit && structuredDirectionId) {
+  const promptVisualIntent = extractPromptVisualIntent(query, stylePolicy.promptAdaptiveDesign);
+  const shouldPreferPromptAdaptiveOverStructuredDefault =
+    !explicit &&
+    promptVisualIntent.active &&
+    Boolean(structuredDirectionId) &&
+    !Boolean(normalizedVisualDecision?.lockPrimaryVisualDirection) &&
+    normalizedVisualDecision?.visualDecisionSource !== "user_explicit";
+  if (!explicit && structuredDirectionId && !shouldPreferPromptAdaptiveOverStructuredDefault) {
     const direction = getWebsiteDesignDirection(structuredDirectionId);
     if (direction) {
       const lockedPrimary = Boolean(normalizedVisualDecision?.lockPrimaryVisualDirection);
@@ -1617,8 +1624,6 @@ export async function resolveDesignSkillHit(
       };
     }
   }
-
-  const promptVisualIntent = extractPromptVisualIntent(query, stylePolicy.promptAdaptiveDesign);
 
   if (!explicit && promptVisualIntent.active) {
     return {

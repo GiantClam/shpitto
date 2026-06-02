@@ -39,7 +39,19 @@ import {
   type ChatRevisionPointer,
   type ChatShortTermMemorySnapshot,
 } from "../../../lib/agent/chat-memory";
-import { buildPromptDraftWithResearch } from "../../../lib/agent/prompt-draft-research";
+import {
+  attachWorkflowRuntimeToState,
+  buildExecutionWorkflowRuntime,
+} from "../../../lib/agent/workflow-runtime-adapter";
+import { buildPromptDraftWithResearch, type PromptDraftRoutePolicy } from "../../../lib/agent/prompt-draft-research";
+import {
+  buildPromptManifestRouteUnits,
+  buildSelectedSeedSkillManifest,
+  buildWebsiteGenerationContract,
+  type GenerationContractRouteUnit,
+  type SelectedSeedSkillManifest,
+  type WebsiteGenerationContract,
+} from "../../../lib/agent/website-generation-contract";
 import {
   appendReferencedAssetsBlock,
   collectReferencedAssetsFromTexts,
@@ -108,6 +120,83 @@ type CanonicalPromptControlManifest = {
   navLabels?: string[];
   files?: string[];
 };
+
+type WebsiteGenerationLaneConfig = {
+  lane: "legacy" | "website-generation-mvp";
+  disableWebSearch: boolean;
+  routePolicy: PromptDraftRoutePolicy;
+};
+
+function normalizeSeedSkillManifest(value: unknown): SelectedSeedSkillManifest | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const selected = Array.isArray((value as any).selected)
+    ? ((value as any).selected as unknown[]).flatMap((entry) => {
+        if (!entry || typeof entry !== "object" || Array.isArray(entry)) return [];
+        const id = String((entry as any).id || "").trim();
+        const source = String((entry as any).source || "").trim();
+        if (!id || !source) return [];
+        return [
+          {
+            id,
+            source:
+              source === "imported-open-design" || source === "imported-html-anything" ? source : "shpitto",
+            reason: String((entry as any).reason || "").trim() || undefined,
+          } satisfies SelectedSeedSkillManifest["selected"][number],
+        ];
+      })
+    : [];
+  return selected.length > 0 ? { selected } : undefined;
+}
+
+function normalizeGenerationRouteUnitContracts(value: unknown): GenerationContractRouteUnit[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const units = value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) return [];
+    const route = String((entry as any).route || "").trim();
+    if (!route) return [];
+    const routeContract = Array.isArray((entry as any).routeContract)
+      ? ((entry as any).routeContract as unknown[]).map((item) => String(item || "").trim()).filter(Boolean)
+      : [];
+    return [
+      {
+        route,
+        navLabel: String((entry as any).navLabel || "").trim() || (route === "/" ? "Home" : route.replace(/^\/+/, "")),
+        pageKind: String((entry as any).pageKind || "").trim() || "intent",
+        routeContract,
+        openingFamily: String((entry as any).openingFamily || "").trim() || undefined,
+        openingTopology: String((entry as any).openingTopology || "").trim() || undefined,
+        inheritedSeedSkillIds: Array.isArray((entry as any).inheritedSeedSkillIds)
+          ? ((entry as any).inheritedSeedSkillIds as unknown[]).map((item) => String(item || "").trim()).filter(Boolean)
+          : undefined,
+      } satisfies GenerationContractRouteUnit,
+    ];
+  });
+  return units.length > 0 ? units : undefined;
+}
+
+function normalizeGenerationContract(value: unknown): WebsiteGenerationContract | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const contractHash = String((value as any).contractHash || "").trim();
+  if (!/^[a-f0-9]{64}$/i.test(contractHash)) return undefined;
+  const selectedSeedSkillManifest = normalizeSeedSkillManifest((value as any).selectedSeedSkillManifest) || { selected: [] };
+  const routeUnitContracts = normalizeGenerationRouteUnitContracts((value as any).routeUnitContracts) || [];
+  return {
+    contractVersion: 1,
+    contractHash,
+    generationLane: String((value as any).generationLane || "").trim() || "legacy",
+    websiteSurfaceMode: String((value as any).websiteSurfaceMode || "").trim() || "unknown",
+    promptControlManifest:
+      (value as any).promptControlManifest && typeof (value as any).promptControlManifest === "object"
+        ? ((value as any).promptControlManifest as Record<string, unknown>)
+        : null,
+    discoveryBrief:
+      (value as any).discoveryBrief && typeof (value as any).discoveryBrief === "object"
+        ? ((value as any).discoveryBrief as Record<string, unknown>)
+        : null,
+    selectedSeedSkillManifest,
+    routeUnitContracts,
+  };
+}
 
 const CHAT_COPY: Record<ChatDisplayLocale, Record<string, string>> = {
   en: {
@@ -220,6 +309,51 @@ function localizedQueuedStageMessage(locale: ChatDisplayLocale, mode: "generate"
 
 function hasText(value: unknown): value is string {
   return Boolean(String(value || "").trim());
+}
+
+function envFlagEnabled(value: unknown, defaultValue = false): boolean {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (!normalized) return defaultValue;
+  if (["1", "true", "yes", "on", "enabled"].includes(normalized)) return true;
+  if (["0", "false", "no", "off", "disabled"].includes(normalized)) return false;
+  return defaultValue;
+}
+
+function normalizePromptDraftRoutePolicy(value: unknown): PromptDraftRoutePolicy {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (["single", "single-page", "root", "root-only", "force_root_single_page"].includes(normalized)) {
+    return "force_root_single_page";
+  }
+  return "default";
+}
+
+function resolveWebsiteGenerationLaneConfig(skillId: string): WebsiteGenerationLaneConfig {
+  if (!isWebsiteSkill(skillId)) {
+    return {
+      lane: "legacy",
+      disableWebSearch: false,
+      routePolicy: "default",
+    };
+  }
+
+  const rawLane = String(process.env.SHPITTO_WEBSITE_GENERATION_LANE || "").trim().toLowerCase();
+  const explicitMvpFlag = String(process.env.SHPITTO_WEBSITE_GENERATION_MVP || "").trim();
+  const disabledByLane = rawLane === "legacy" || rawLane === "off" || rawLane === "disabled";
+  const enabled = disabledByLane ? false : explicitMvpFlag ? envFlagEnabled(explicitMvpFlag, true) : true;
+
+  if (!enabled) {
+    return {
+      lane: "legacy",
+      disableWebSearch: false,
+      routePolicy: "default",
+    };
+  }
+
+  return {
+    lane: "website-generation-mvp",
+    disableWebSearch: !envFlagEnabled(process.env.SHPITTO_WEBSITE_GENERATION_WEB_SEARCH, false),
+    routePolicy: normalizePromptDraftRoutePolicy(process.env.SHPITTO_WEBSITE_GENERATION_ROUTE_POLICY || "default"),
+  };
 }
 
 function uniqueStrings(values: Array<string | undefined>): string[] {
@@ -1659,6 +1793,7 @@ export async function POST(req: Request) {
   )
     .trim()
     .toLowerCase();
+  const websiteGenerationLaneConfig = resolveWebsiteGenerationLaneConfig(requestedSkillId);
 
   try {
     await loadProjectSkill(requestedSkillId);
@@ -1713,6 +1848,22 @@ export async function POST(req: Request) {
     confirmedPrompt && typeof (confirmedPromptDraftMetadata as any)?.canonicalPrompt === "string"
       ? String((confirmedPromptDraftMetadata as any)?.canonicalPrompt || "").trim()
       : String(confirmedPrompt || "").trim();
+  const confirmedPromptKnowledgeProfile =
+    confirmedPromptDraftMetadata && typeof confirmedPromptDraftMetadata === "object"
+      ? (confirmedPromptDraftMetadata as any).websiteKnowledgeProfile
+      : undefined;
+  const confirmedPromptStructuredSourceFacts =
+    confirmedPromptDraftMetadata && typeof confirmedPromptDraftMetadata === "object"
+      ? (confirmedPromptDraftMetadata as any).structuredSourceFacts
+      : undefined;
+  const confirmedPromptBudgetEnvelope =
+    confirmedPromptDraftMetadata && typeof confirmedPromptDraftMetadata === "object"
+      ? (confirmedPromptDraftMetadata as any).promptBudgetEnvelope
+      : undefined;
+  const confirmedPromptEvidenceBrief =
+    confirmedPromptDraftMetadata && typeof confirmedPromptDraftMetadata === "object"
+      ? (confirmedPromptDraftMetadata as any).evidenceBrief
+      : undefined;
   const historyUserMessagesRaw = timelineMessages
     .filter((item) => item.role === "user")
     .map((item) => String(item.text || ""));
@@ -2028,13 +2179,30 @@ export async function POST(req: Request) {
         ownerUserId: body.user_id || previousState.user_id,
         projectId: chatId,
         displayLocale,
+        disableWebSearch: websiteGenerationLaneConfig.disableWebSearch,
+        routePolicy: websiteGenerationLaneConfig.routePolicy,
       })
     : {
         canonicalPrompt: confirmedPrompt ? confirmedPromptDraftText || String(confirmedPrompt || "") : effectiveRequirementText,
         usedWebSearch: false,
         sources: [],
         researchSummary: "",
-        knowledgeProfile: undefined,
+        knowledgeProfile:
+          confirmedPromptKnowledgeProfile ||
+          (previousState.workflow_context as any)?.websiteKnowledgeProfile ||
+          undefined,
+        structuredSourceFacts:
+          confirmedPromptStructuredSourceFacts ||
+          (previousState.workflow_context as any)?.structuredSourceFacts ||
+          undefined,
+        promptBudgetEnvelope:
+          confirmedPromptBudgetEnvelope ||
+          (previousState.workflow_context as any)?.promptBudgetEnvelope ||
+          undefined,
+        evidenceBrief:
+          confirmedPromptEvidenceBrief ||
+          (previousState.workflow_context as any)?.evidenceBrief ||
+          undefined,
         promptControlManifest: confirmedPromptControlManifest,
         websiteSurfaceMode:
           inferWebsiteSurfaceModeFromSkillId(String(confirmedPromptControlManifest?.websiteSurfaceMode || "")) ||
@@ -2146,6 +2314,22 @@ export async function POST(req: Request) {
       : requirementSpec.supportedLocales || [];
   const resolvedDefaultLocale =
     resolvedWebsiteDiscoveryBrief?.defaultLocale || requirementSpec.defaultLocale;
+  const selectedSeedSkillManifest = buildSelectedSeedSkillManifest(
+    [
+      selectedWebsiteType?.skillId || "",
+      String((previousState.workflow_context as any)?.websiteTypeSkillId || ""),
+    ].filter(Boolean),
+    "Chat route selected the website surface skill from the current prompt/spec context.",
+  );
+  const routeUnitContracts = buildPromptManifestRouteUnits(promptControlManifest, selectedSeedSkillManifest);
+  const generationContract = buildWebsiteGenerationContract({
+    generationLane: websiteGenerationLaneConfig.lane,
+    websiteSurfaceMode: resolvedWebsiteSurfaceMode,
+    promptControlManifest,
+    discoveryBrief: resolvedWebsiteDiscoveryBrief,
+    selectedSeedSkillManifest,
+    routeUnitContracts,
+  });
   const requiresPromptDraftConfirmation =
     isWebsiteSkill(requestedSkillId) &&
     stage === "drafting" &&
@@ -2281,7 +2465,22 @@ export async function POST(req: Request) {
         researchSummary: promptDraftResult.researchSummary,
         researchSources: promptDraftResult.sources,
         websiteKnowledgeProfile: promptDraftResult.knowledgeProfile || null,
+        structuredSourceFacts: promptDraftResult.structuredSourceFacts || null,
+        promptBudgetEnvelope: promptDraftResult.promptBudgetEnvelope || null,
+        evidenceBrief: promptDraftResult.evidenceBrief || null,
         promptControlManifest: promptControlManifest || null,
+        selectedSeedSkillManifest,
+        routeUnitContracts,
+        generationContract,
+        contractHash: generationContract.contractHash,
+        generationLane: websiteGenerationLaneConfig.lane,
+        generationLaneConfig:
+          websiteGenerationLaneConfig.lane === "website-generation-mvp"
+            ? {
+                disableWebSearch: websiteGenerationLaneConfig.disableWebSearch,
+                routePolicy: websiteGenerationLaneConfig.routePolicy,
+              }
+            : null,
         requirementSpec,
         requirementRevision: aggregated.revision,
         supersededMessages: aggregated.supersededMessages,
@@ -2344,7 +2543,23 @@ export async function POST(req: Request) {
         requirementRevision: aggregated.revision,
         canonicalPrompt,
         requirementAggregatedText: effectiveRequirementText,
+        websiteKnowledgeProfile: promptDraftResult.knowledgeProfile || null,
+        structuredSourceFacts: promptDraftResult.structuredSourceFacts || null,
+        promptBudgetEnvelope: promptDraftResult.promptBudgetEnvelope || null,
+        evidenceBrief: promptDraftResult.evidenceBrief || null,
         promptControlManifest,
+        selectedSeedSkillManifest,
+        routeUnitContracts,
+        generationContract,
+        contractHash: generationContract.contractHash,
+        generationLane: websiteGenerationLaneConfig.lane,
+        generationLaneConfig:
+          websiteGenerationLaneConfig.lane === "website-generation-mvp"
+            ? {
+                disableWebSearch: websiteGenerationLaneConfig.disableWebSearch,
+                routePolicy: websiteGenerationLaneConfig.routePolicy,
+              }
+            : null,
         templateStyleId: explicitTemplateStyleId,
       },
       recentSummary: canonicalPrompt || effectiveRequirementText,
@@ -2369,6 +2584,58 @@ export async function POST(req: Request) {
     : refineRequested
       ? "refine"
       : "generate";
+  const existingSeedSkillManifest =
+    normalizeSeedSkillManifest((existingWorkflow as any)?.selectedSeedSkillManifest) ||
+    normalizeSeedSkillManifest((previousState.workflow_context as any)?.selectedSeedSkillManifest);
+  const existingRouteUnitContracts =
+    normalizeGenerationRouteUnitContracts((existingWorkflow as any)?.routeUnitContracts) ||
+    normalizeGenerationRouteUnitContracts((previousState.workflow_context as any)?.routeUnitContracts);
+  const existingGenerationContract =
+    normalizeGenerationContract((existingWorkflow as any)?.generationContract) ||
+    normalizeGenerationContract((previousState.workflow_context as any)?.generationContract);
+  const shouldInheritLockedGenerationContract =
+    executionMode === "deploy" ||
+    executionMode === "translate" ||
+    (executionMode === "refine" && decision.refineScope !== "structural");
+  const executionSelectedSeedSkillManifest =
+    shouldInheritLockedGenerationContract && existingGenerationContract?.selectedSeedSkillManifest?.selected?.length
+      ? existingGenerationContract.selectedSeedSkillManifest
+      : shouldInheritLockedGenerationContract && existingSeedSkillManifest?.selected?.length
+        ? existingSeedSkillManifest
+        : selectedSeedSkillManifest;
+  const executionRouteUnitContracts =
+    shouldInheritLockedGenerationContract && existingGenerationContract?.routeUnitContracts?.length
+      ? existingGenerationContract.routeUnitContracts
+      : shouldInheritLockedGenerationContract && existingRouteUnitContracts?.length
+        ? existingRouteUnitContracts
+        : routeUnitContracts;
+  const executionGenerationLane =
+    (shouldInheritLockedGenerationContract &&
+      (String(existingGenerationContract?.generationLane || "").trim() ||
+        String((existingWorkflow as any)?.generationLane || "").trim())) ||
+    websiteGenerationLaneConfig.lane;
+  const executionGenerationLaneConfig =
+    shouldInheritLockedGenerationContract &&
+    (existingWorkflow as any)?.generationLaneConfig &&
+    typeof (existingWorkflow as any).generationLaneConfig === "object"
+      ? ((existingWorkflow as any).generationLaneConfig as Record<string, unknown>)
+      : websiteGenerationLaneConfig.lane === "website-generation-mvp"
+        ? {
+            disableWebSearch: websiteGenerationLaneConfig.disableWebSearch,
+            routePolicy: websiteGenerationLaneConfig.routePolicy,
+          }
+        : null;
+  const executionGenerationContract =
+    shouldInheritLockedGenerationContract && existingGenerationContract?.contractHash
+      ? existingGenerationContract
+      : buildWebsiteGenerationContract({
+          generationLane: executionGenerationLane,
+          websiteSurfaceMode: resolvedWebsiteSurfaceMode,
+          promptControlManifest,
+          discoveryBrief: resolvedWebsiteDiscoveryBrief,
+          selectedSeedSkillManifest: executionSelectedSeedSkillManifest,
+          routeUnitContracts: executionRouteUnitContracts,
+        });
   const revisionPointer = buildRevisionPointer({
     executionMode,
     requirementRevision: aggregated.revision,
@@ -2487,6 +2754,16 @@ export async function POST(req: Request) {
       canonicalPrompt: canonicalPromptForExecution,
       requirementAggregatedText: requirementAggregatedTextForExecution,
       promptControlManifest,
+      selectedSeedSkillManifest: executionSelectedSeedSkillManifest,
+      routeUnitContracts: executionRouteUnitContracts,
+      generationContract: executionGenerationContract,
+      contractHash: executionGenerationContract.contractHash,
+      generationLane: executionGenerationLane,
+      generationLaneConfig: executionGenerationLaneConfig,
+      websiteKnowledgeProfile: promptDraftResult.knowledgeProfile || null,
+      structuredSourceFacts: promptDraftResult.structuredSourceFacts || null,
+      promptBudgetEnvelope: promptDraftResult.promptBudgetEnvelope || null,
+      evidenceBrief: promptDraftResult.evidenceBrief || null,
       designSystemId:
         String((promptDraftResult.discoveryBrief as any)?.designSystemId || "") ||
         String((requirementSpec.designSystemInspiration as any)?.id || "") ||
@@ -2504,6 +2781,21 @@ export async function POST(req: Request) {
     } as any,
     messages: [...(previousState.messages || []), new HumanMessage({ content: runtimeUserText })],
   };
+  const workflowRuntime = buildExecutionWorkflowRuntime({
+    chatId,
+    executionMode,
+    contractHash: executionGenerationContract.contractHash,
+    generationLane: executionGenerationLane,
+    websiteSurfaceMode: resolvedWebsiteSurfaceMode,
+    promptConfirmed: Boolean(confirmedPrompt),
+    blogContentDeployConfirmed:
+      executionMode === "deploy" && String(userText || "").trim().startsWith(CONFIRM_BLOG_CONTENT_DEPLOY_PREFIX),
+    contentPreviewDeployConfirmed:
+      executionMode === "deploy" && String(userText || "").trim().startsWith(CONFIRM_CONTENT_PREVIEW_DEPLOY_PREFIX),
+    sourceTaskId: String(deployableTask?.id || latestTask?.id || "").trim() || undefined,
+    decidedBy: body.user_id || previousState.user_id,
+  });
+  const queuedInputState = attachWorkflowRuntimeToState(inputState, workflowRuntime);
 
   if (!useAsyncTaskMode) {
     return errorStreamResponse(chatCopy(displayLocale, "syncDisabled"), 409);
@@ -2565,8 +2857,8 @@ export async function POST(req: Request) {
     assistantText: acceptedMessage,
     phase: "queued",
     internal: {
-      inputState,
-      sessionState: inputState,
+      inputState: queuedInputState,
+      sessionState: queuedInputState,
       queuedAt: new Date().toISOString(),
       skillId: requestedSkillId,
     },
@@ -2599,7 +2891,7 @@ export async function POST(req: Request) {
       checkpointProjectPath: String((inputState.workflow_context as any)?.checkpointProjectPath || "").trim() || undefined,
       updatedAt: new Date().toISOString(),
     },
-    workflowContext: (inputState.workflow_context || {}) as Record<string, unknown>,
+    workflowContext: (queuedInputState.workflow_context || {}) as Record<string, unknown>,
     recentSummary: canonicalPromptForExecution || runtimeSourceRequirement,
     correctionSummary: aggregated.correctionSummary,
     explicitLongTermPreferences,

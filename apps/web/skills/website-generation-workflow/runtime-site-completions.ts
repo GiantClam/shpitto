@@ -112,6 +112,47 @@ function sanitizeBlogIndexEditorialScaffold(project: any, deps: CompletionDeps) 
   return deps.syncPagesFromStaticFiles(next);
 }
 
+function shouldDeferBlogDetailMaterialization(inputState: AgentState, deps: CompletionDeps): boolean {
+  const workflow = ((inputState as any)?.workflow_context || {}) as Record<string, unknown>;
+  if (
+    String(workflow.skillActionDomain || "").trim() === "blog_detail" &&
+    String(workflow.skillAction || "").trim() === "fill_details"
+  ) {
+    return false;
+  }
+
+  const requirementTexts = [
+    String(workflow.sourceRequirement || "").trim(),
+    String(workflow.canonicalPrompt || "").trim(),
+    String(workflow.requirementAggregatedText || "").trim(),
+    String(workflow.requirementSpec || "").trim(),
+    String(deps.extractRequirementText(inputState) || "").trim(),
+    String(deps.buildLocalDecisionPlan(inputState as any)?.requirementText || "").trim(),
+  ]
+    .filter(Boolean)
+    .join("\n");
+  if (!requirementTexts) return false;
+
+  const normalized = requirementTexts.toLowerCase();
+  const explicitDeferral =
+    /do not generate blog detail pages yet|blog details? will be filled later|filled later by a separate workflow|first pass only needs a strong blog index|initial pass only needs a strong blog index/i.test(
+      requirementTexts,
+    ) ||
+    /(?:先|首轮|第一轮).{0,24}(?:只要|仅需).{0,24}(?:blog|博客).{0,24}(?:列表|索引|归档)/i.test(requirementTexts) ||
+    /(?:暂不|先不|不要).{0,24}(?:生成|补全).{0,24}(?:blog|博客).{0,24}(?:详情|内容页|文章页)/i.test(requirementTexts) ||
+    /(?:稍后|后续|之后).{0,24}(?:再|单独).{0,24}(?:补全|生成|填写).{0,24}(?:blog|博客).{0,24}(?:详情|内容页|文章页)/i.test(
+      requirementTexts,
+    );
+  if (!explicitDeferral) return false;
+
+  const explicitFillNow =
+    /fill blog detail pages now|fill the missing blog detail pages now|align the slugs|generate blog detail pages now|complete the blog detail pages now/i.test(
+      normalized,
+    ) ||
+    /(?:现在|立即).{0,16}(?:补全|生成).{0,24}(?:blog|博客).{0,24}(?:详情|内容页|文章页)/i.test(requirementTexts);
+  return !explicitFillNow;
+}
+
 export function extractOrderedBlogDetailRoutesFromProject(project: any, deps: CompletionDeps): string[] {
   const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
   const blogIndexHtml = String(
@@ -716,6 +757,7 @@ export function materializeWebsiteBlogDetailPages(params: {
     locale: params.locale,
   });
   if (!preview.required || !Array.isArray(preview.posts) || preview.posts.length === 0) return baseProject;
+  if (shouldDeferBlogDetailMaterialization(params.inputState, params.deps)) return baseProject;
 
   const visibleLocale = params.deps.toVisibleLocale(params.locale);
   const desiredRoutes = extractOrderedBlogDetailRoutesFromProject(baseProject, params.deps);
