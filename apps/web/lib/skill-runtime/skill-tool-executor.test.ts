@@ -5619,6 +5619,160 @@ describe("skill-tool-executor", () => {
     );
   });
 
+  it("allows shared footer links to manifest-declared publishable blog detail routes", () => {
+    const detailRoutes = [
+      "/blog/wechat-real-time-media-architecture",
+      "/blog/devops-operating-systems",
+      "/blog/ai-saas-commercialization",
+    ];
+    const promptControlManifest = {
+      schemaVersion: 1,
+      promptKind: "canonical_website_prompt",
+      routeSource: "prompt_draft_page_plan",
+      websiteSurfaceMode: "portfolio-blog-site",
+      routes: ["/", "/blog", "/about", "/contact"],
+      navLabels: ["Home", "Blog", "About", "Contact"],
+      files: [
+        "/styles.css",
+        "/script.js",
+        "/index.html",
+        "/blog/index.html",
+        "/about/index.html",
+        "/contact/index.html",
+        ...detailRoutes.map((route) => `${route}/index.html`),
+      ],
+    };
+    const requirementText = [
+      "Build a polished personal technical blog for Bays Wong.",
+      "Generate Home, Blog, About, and Contact.",
+      "The Blog route must publish 3 complete article detail pages with stable /blog/{slug}/ URLs.",
+      "",
+      "### Prompt Control Manifest (Machine Readable)",
+      "```json",
+      JSON.stringify(promptControlManifest, null, 2),
+      "```",
+    ].join("\n");
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage(requirementText)],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest,
+      },
+    } as any);
+    const footerLinks = [
+      '<a href="/">Home</a>',
+      '<a href="/blog/">Blog</a>',
+      '<a href="/about/">About</a>',
+      '<a href="/contact/">Contact</a>',
+      ...detailRoutes.map((route) => `<a href="${route}/">${route.split("/").pop()}</a>`),
+    ].join("");
+    const footer =
+      `<footer class="site-footer"><div class="site-footer__inner"><div class="footer-brand"><a class="brand" href="/">Bays Wong</a><p>Concrete technical writing and operator notes.</p></div><div class="footer-grid"><div class="footer-col"><h2>Navigate</h2><ul>${[
+        '<li><a href="/">Home</a></li>',
+        '<li><a href="/blog/">Blog</a></li>',
+        '<li><a href="/about/">About</a></li>',
+        '<li><a href="/contact/">Contact</a></li>',
+      ].join("")}</ul></div><div class="footer-col"><h2>Articles</h2><ul>${detailRoutes.map((route) => `<li><a href="${route}/">${route.split("/").pop()}</a></li>`).join("")}</ul></div></div><div class="footer-meta"><p>Operator notes for engineers, founders, and product teams.</p></div></div></footer>`;
+    const nav = '<nav><a href="/">Home</a><a href="/blog/">Blog</a><a href="/about/">About</a><a href="/contact/">Contact</a></nav>';
+    const pageHtml = (title: string, body: string) =>
+      [
+        "<!doctype html>",
+        '<html lang="en">',
+        "<head>",
+        `  <title>${title}</title>`,
+        '  <meta charset="utf-8" />',
+        '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+        '  <link rel="stylesheet" href="/styles.css" />',
+        "</head>",
+        "<body>",
+        `  ${nav}`,
+        `  <main>${body}</main>`,
+        `  ${footer}`,
+        '  <script src="/script.js"></script>',
+        "</body>",
+        "</html>",
+      ].join("\n");
+    const files = [
+      {
+        path: "/styles.css",
+        type: "text/css",
+        content:
+          ".site-footer{padding:24px;background:#0f172a;color:#e2e8f0}.site-footer__inner{display:grid;gap:16px}.footer-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.footer-col,.footer-brand,.footer-meta{display:block}.article-card{padding:20px;border:1px solid rgba(148,163,184,.35)}main{display:block;padding:24px}",
+      },
+      { path: "/script.js", type: "text/javascript", content: "document.documentElement.dataset.ready='true';" },
+      {
+        path: "/index.html",
+        type: "text/html",
+        content: pageHtml(
+          "Home",
+          "<section><h1>Bays Wong</h1><p>Technical writing, product judgment, and operator notes for engineers and founders.</p><p>Visitors can move from the front page into concrete essays, background context, and collaboration paths without wandering into invented archive sections.</p></section>",
+        ),
+      },
+      {
+        path: "/blog/index.html",
+        type: "text/html",
+        content: pageHtml(
+          "Blog",
+          [
+            "<section>",
+            "<h1>Blog</h1>",
+            "<p>Three concrete essays are available as stable publishable detail pages.</p>",
+            "<section data-shpitto-blog-root data-shpitto-blog-api=\"/api/blog/posts\"><div data-shpitto-blog-list>",
+            "<article class=\"article-card\"><h2>WeChat real-time media architecture</h2><p>Operational notes on latency, fan-out, and media transport.</p><a href=\"/blog/wechat-real-time-media-architecture/\">Read article</a></article>",
+            "<article class=\"article-card\"><h2>DevOps operating systems</h2><p>Why delivery organizations need durable working agreements.</p><a href=\"/blog/devops-operating-systems/\">Read article</a></article>",
+            "<article class=\"article-card\"><h2>AI SaaS commercialization</h2><p>How packaging, trust, and operations shape AI revenue.</p><a href=\"/blog/ai-saas-commercialization/\">Read article</a></article>",
+            "</div></section>",
+            "</section>",
+          ].join(""),
+        ),
+      },
+      {
+        path: "/about/index.html",
+        type: "text/html",
+        content: pageHtml(
+          "About",
+          "<section><h1>About</h1><p>Bays Wong writes about systems design, delivery practice, and commercialization with an operator lens.</p><p>This page explains background, working style, and the practical domains that shape the writing.</p></section>",
+        ),
+      },
+      {
+        path: "/contact/index.html",
+        type: "text/html",
+        content: pageHtml(
+          "Contact",
+          "<section><h1>Contact</h1><p>Use this route for collaborations, product advisory work, and writing inquiries.</p><p>It gives readers a direct path to start a conversation about products, systems, or editorial work.</p></section>",
+        ),
+      },
+      ...detailRoutes.map((route) => ({
+        path: `${route}/index.html`,
+        type: "text/html",
+        content: pageHtml(
+          route.split("/").pop() || "Article",
+          [
+            "<article>",
+            `<h1>${route.split("/").pop()}</h1>`,
+            "<p>This detail page expands the archive promise into a complete readable article with concrete technical argument, context, and implications for operators.</p>",
+            "<p>Readers can follow the argument from framing through tradeoffs and practical impact without dropping into placeholder summary copy.</p>",
+            "<section><h2>Context</h2><p>The article explains the specific operating environment, the constraint that mattered, and the tradeoff that shaped the final approach.</p></section>",
+            "<section><h2>Decision</h2><p>Readers should understand what was chosen, why alternatives were weaker, and how the decision holds up under production pressure.</p></section>",
+            "</article>",
+          ].join(""),
+        ),
+      })),
+    ];
+
+    expect(() =>
+      validateWebsiteRequiredFilesWithQaForAdapter({
+        decision: {
+          ...decision,
+          routeAuthorityMode: "prompt_manifest",
+        },
+        files,
+        requirementText,
+        enforceCorporateHomepageContract: false,
+      }),
+    ).not.toThrow();
+  });
+
   it("requires bilingual locale dictionaries for bilingual website contracts", () => {
     const decision = buildLocalDecisionPlan({
       messages: [new HumanMessage("Build a bilingual company website with Home, Products, Cases, Contact, About.")],
