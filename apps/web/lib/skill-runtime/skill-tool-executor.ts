@@ -4554,10 +4554,11 @@ export function normalizeToolChoiceForProvider(config: Pick<ProviderConfig, "pro
   if (namedToolChoiceMode === "1" || namedToolChoiceMode === "true") return toolChoice;
   if (namedToolChoiceMode === "0" || namedToolChoiceMode === "false") return "required";
 
-  // Aiberm's OpenAI-compatible endpoint rejects OpenAI's named tool_choice shape
-  // with `Unknown parameter: tool_choice.function`. It still accepts tools with
-  // the generic required mode, and the prompt constrains the desired tool.
-  if (config.provider === "aiberm") return "required";
+  // Some OpenAI-compatible endpoints reject named tool_choice objects even though
+  // they accept the generic required mode. We still restrict the exposed tools
+  // later, so required mode preserves the single-tool contract without sending
+  // provider-specific object shapes that regress in production.
+  if (config.provider === "aiberm" || config.provider === "pptoken") return "required";
 
   return toolChoice;
 }

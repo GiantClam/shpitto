@@ -436,10 +436,8 @@ function isSupabaseTaskStoreEnabled() {
   if (process.env.NODE_ENV === "test") {
     return String(process.env.CHAT_TASKS_USE_SUPABASE || "0").trim() === "1";
   }
-  if (String(process.env.CHAT_TASKS_USE_SUPABASE || "1").trim() === "0") {
-    return false;
-  }
-  if (String(process.env.CHAT_TASKS_USE_SUPABASE || "").trim() === "") {
+  const raw = String(process.env.CHAT_TASKS_USE_SUPABASE || "").trim().toLowerCase();
+  if (raw === "0" || raw === "false" || raw === "off" || raw === "disabled" || raw === "no") {
     return false;
   }
   const key =

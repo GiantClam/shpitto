@@ -4,14 +4,14 @@ import {
   isWebsiteDesignDirectionId,
   recommendWebsiteDesignDirections,
   renderWebsiteDesignDirectionPrompt,
-} from "../open-design/design-directions";
-import type { DesignSystemSource, DesignSystemSummary } from "../design-system-registry";
-import { buildLocalePlan, normalizeLocaleCode, normalizeLocaleList } from "../skill-runtime/locale-plan";
+} from "../open-design/design-directions.ts";
+import type { DesignSystemSource, DesignSystemSummary } from "../design-system-registry.ts";
+import { buildLocalePlan, normalizeLocaleCode, normalizeLocaleList } from "../skill-runtime/locale-plan.ts";
 import {
   containsWorkflowCjk,
   isWorkflowArtifactEnglishSafe,
   sanitizeWorkflowArtifactText,
-} from "../workflow-artifact-language";
+} from "../workflow-artifact-language.ts";
 
 export type ConversationStage = "drafting" | "previewing" | "deployed" | "deploying";
 
