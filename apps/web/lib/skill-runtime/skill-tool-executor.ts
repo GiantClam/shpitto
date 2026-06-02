@@ -5686,7 +5686,7 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
     );
   }
 
-  assertSharedShellConsistency(params.decision, byPath);
+  assertSharedShellConsistency(params.decision, byPath, params.requirementText || "");
   assertGenericRouteShapeQuality(params.decision, byPath);
   assertConsultationFormRequirement(params.decision, byPath, params.requirementText || "");
   assertNoReservedPlaceholderContacts(byPath);
@@ -6279,6 +6279,18 @@ function extractUndeclaredInternalRoutesFromHtmlBlock(html: string, allowedRoute
   return Array.from(new Set(routes));
 }
 
+function collectAllowedSharedShellRoutes(decision: LocalDecisionPlan, requirementText = ""): Set<string> {
+  const allowedRoutes = new Set(decision.routes.map((route) => normalizePath(route)));
+  const allowedHtmlRoutes = requiredFileChecklist(decision, { requirementText })
+    .filter((filePath) => filePath.endsWith(".html"))
+    .map((filePath) => htmlPathToRoute(filePath))
+    .filter((route): route is string => Boolean(route));
+  for (const route of allowedHtmlRoutes) {
+    allowedRoutes.add(normalizePath(route));
+  }
+  return allowedRoutes;
+}
+
 function findReservedPlaceholderContactTokens(html: string): string[] {
   const source = `${String(html || "")}\n${htmlVisibleText(html)}`;
   const matches = new Set<string>();
@@ -6309,8 +6321,12 @@ function assertNoReservedPlaceholderContacts(byPath: Map<string, RuntimeWorkflow
   }
 }
 
-function assertSharedShellConsistency(decision: LocalDecisionPlan, byPath: Map<string, RuntimeWorkflowFile>) {
-  const plannedRoutes = new Set(decision.routes.map((route) => normalizePath(route)));
+function assertSharedShellConsistency(
+  decision: LocalDecisionPlan,
+  byPath: Map<string, RuntimeWorkflowFile>,
+  requirementText = "",
+) {
+  const plannedRoutes = collectAllowedSharedShellRoutes(decision, requirementText);
   const homeHtml = ensureHtmlDocument(String(byPath.get("/index.html")?.content || ""));
   if (!homeHtml) return;
   const stylesCss = String(byPath.get("/styles.css")?.content || "");
