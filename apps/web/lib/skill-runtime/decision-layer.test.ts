@@ -26,6 +26,82 @@ describe("decision-layer", () => {
     expect(contact?.constraints.join(" ")).toContain("Canonical Website Prompt is the authoritative source");
   });
 
+  it("prefers explicit requirement-spec page labels over noisy requirement-form prose", () => {
+    const requirementText = [
+      "Requirement form submitted:",
+      "",
+      "[Requirement Form]",
+      "```json",
+      JSON.stringify({
+        siteType: "company",
+        contentSources: ["existing_domain", "industry_research"],
+        targetAudience: ["enterprise_buyers", "overseas_customers"],
+        primaryVisualDirection: "industrial-b2b",
+        pageStructure: {
+          mode: "multi",
+          planning: "manual",
+          pages: [
+            "Home",
+            "Product Families",
+            "Factory Capability",
+            "Quality and Certifications",
+            "Customized Services",
+            "Contact",
+          ],
+        },
+        functionalRequirements: ["customer_inquiry_form", "contact_form"],
+        primaryGoal: ["lead_generation"],
+        language: "en",
+        brandLogo: { mode: "uploaded", referenceText: "Use the uploaded VBUY logo lockup." },
+        customNotes:
+          "Build an English website for VBUY Textile, a custom towel manufacturer and export supplier. Required pages: Home, Product Families, Factory Capability, Quality and Certifications, Customized Services, Contact. The primary goal is lead generation and contact inquiries.",
+      }),
+      "```",
+    ].join("\n");
+
+    const state: any = {
+      messages: [new HumanMessage(requirementText)],
+      phase: "conversation",
+      workflow_context: {
+        requirementSpec: {
+          pageStructure: {
+            mode: "multi",
+            planning: "manual",
+            pages: [
+              "Home",
+              "Product Families",
+              "Factory Capability",
+              "Quality and Certifications",
+              "Customized Services",
+              "Contact",
+            ],
+          },
+        },
+      },
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+
+    expect(plan.routes).toEqual([
+      "/",
+      "/product-families",
+      "/factory-capability",
+      "/quality-and-certifications",
+      "/customized-services",
+      "/contact",
+    ]);
+    expect(plan.navLabels).toEqual([
+      "Home",
+      "Product Families",
+      "Factory Capability",
+      "Quality and Certifications",
+      "Customized Services",
+      "Contact",
+    ]);
+    expect(plan.navLabels).not.toContain("Capability");
+    expect(plan.navLabels).not.toContain("and");
+  });
+
   it("switches homepage blueprint to enterprise masthead mode when IBM Carbon is explicitly requested", () => {
     const state: any = {
       messages: [
@@ -256,6 +332,81 @@ describe("decision-layer", () => {
     expect(plan.routes).toContain("/blog");
     expect(blog?.pageKind).toBe("blog-data-index");
     expect(blog?.constraints.join(" ")).toContain("Detail links must use /blog/{slug}/");
+  });
+
+  it("prefers explicit requirement-spec page labels over noisy requirement-form text", () => {
+    const requirementFormText = [
+      "Requirement form submitted:",
+      "",
+      "[Requirement Form]",
+      "```json",
+      JSON.stringify({
+        siteType: "company",
+        contentSources: ["existing_domain", "industry_research"],
+        targetAudience: ["enterprise_buyers", "overseas_customers"],
+        pageStructure: {
+          mode: "multi",
+          planning: "manual",
+          pages: [
+            "Home",
+            "Product Families",
+            "Factory Capability",
+            "Quality and Certifications",
+            "Customized Services",
+            "Contact",
+          ],
+        },
+        functionalRequirements: ["customer_inquiry_form", "contact_form"],
+        primaryGoal: ["lead_generation"],
+        language: "en",
+        customNotes:
+          "Build an English website for VBUY Textile, a custom towel manufacturer and export supplier. Required pages: Home, Product Families, Factory Capability, Quality and Certifications, Customized Services, Contact. The primary goal is lead generation and contact inquiries.",
+      }),
+      "```",
+    ].join("\n");
+
+    const state: any = {
+      messages: [new HumanMessage(requirementFormText)],
+      phase: "conversation",
+      workflow_context: {
+        requirementSpec: {
+          siteType: "company",
+          pageStructure: {
+            mode: "multi",
+            planning: "manual",
+            pages: [
+              "Home",
+              "Product Families",
+              "Factory Capability",
+              "Quality and Certifications",
+              "Customized Services",
+              "Contact",
+            ],
+          },
+        },
+      },
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+
+    expect(plan.routes).toEqual([
+      "/",
+      "/product-families",
+      "/factory-capability",
+      "/quality-and-certifications",
+      "/customized-services",
+      "/contact",
+    ]);
+    expect(plan.navLabels).toEqual([
+      "Home",
+      "Product Families",
+      "Factory Capability",
+      "Quality and Certifications",
+      "Customized Services",
+      "Contact",
+    ]);
+    expect(plan.navLabels).not.toContain("Capability");
+    expect(plan.navLabels).not.toContain("and");
   });
 
   it("recovers confirmed routes from website design spec during refine flows when the prompt manifest is missing", () => {

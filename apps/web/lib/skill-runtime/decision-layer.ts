@@ -1,4 +1,5 @@
 ﻿import type { AgentState } from "../agent/graph.ts";
+import { stripRequirementFormScaffolding } from "../agent/chat-orchestrator.ts";
 import { parseReferencedAssetsFromText } from "../agent/referenced-assets.ts";
 import { routePlanningPolicy } from "./route-planning-policy.ts";
 import {
@@ -746,8 +747,15 @@ function labelToRoute(label: string, index: number): string {
   const normalizedLabel = normalizeLabelForMatching(label);
   if (!normalizedLabel) return index === 1 ? "/" : `/page-${index}`;
 
+  const hasBrandLikeLeadingToken = /^[A-Z0-9-]{4,}/.test(String(label || "").trim());
+
   const matchedAlias = getPlanningRouteAliasEntries().find((entry) =>
-    entry.keys.some((key) => normalizedLabel.includes(normalizeLabelForMatching(key))),
+    entry.keys.some((key) => {
+      const normalizedKey = normalizeLabelForMatching(key);
+      if (!normalizedKey) return false;
+      if (normalizedLabel === normalizedKey) return true;
+      return hasBrandLikeLeadingToken && normalizedLabel.endsWith(normalizedKey);
+    }),
   );
   if (matchedAlias) return canonicalizeSemanticRoute(matchedAlias.route);
   if (normalizedLabel === "home") return "/";
@@ -1459,8 +1467,19 @@ function buildPageBlueprint(
 export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
   const rawRequirementText = extractRequirementText(state);
   const parsedRequirement = parseReferencedAssetsFromText(rawRequirementText);
-  const requirementText = parsedRequirement.cleanText || rawRequirementText;
+  const requirementText =
+    stripRequirementFormScaffolding(parsedRequirement.cleanText || rawRequirementText) ||
+    parsedRequirement.cleanText ||
+    rawRequirementText;
   const locale = detectPrimaryLocaleFromRequirement(requirementText);
+  const workflow = ((state as any)?.workflow_context || {}) as Record<string, any>;
+  const requirementSpec =
+    workflow.requirementSpec && typeof workflow.requirementSpec === "object" ? workflow.requirementSpec : undefined;
+  const requirementSpecPages = Array.isArray(requirementSpec?.pageStructure?.pages)
+    ? requirementSpec.pageStructure.pages
+    : Array.isArray(requirementSpec?.pages)
+      ? requirementSpec.pages
+      : [];
   const workflowContractPlan = extractWorkflowPromptControlManifestRoutePlan(state, locale);
   const workflowDesignSpecRoutes =
     workflowContractPlan.routes.length > 0 ? [] : extractWorkflowDesignSpecRoutes(state);
@@ -1558,7 +1577,7 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
       structuredLabelRoutes.add(route);
     }
   }
-  if (!hasExplicitRoutePlan) {
+  if (!hasExplicitRoutePlan && !hasAuthoritativeRoutePlan) {
     for (let i = 0; i < mergedLabels.length; i += 1) {
       const label = String(mergedLabels[i] || "").trim();
       const mappedRoute = canonicalizeSemanticRoute(labelToRoute(label, i + 1));
@@ -1566,6 +1585,17 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
       if (label && mappedRoute) {
         labelMap.set(mappedRoute, choosePreferredNavLabel(mappedRoute, labelMap.get(mappedRoute), label, locale));
       }
+    }
+  }
+  if (!hasAuthoritativeRoutePlan && !hasExplicitRoutePlan) {
+    for (let i = 0; i < requirementSpecPages.length; i += 1) {
+      const label = String(requirementSpecPages[i] || "").trim();
+      const mappedRoute = canonicalizeSemanticRoute(labelToRoute(label, i + 1));
+      if (!label || !mappedRoute) continue;
+      labelMap.set(
+        mappedRoute,
+        choosePreferredNavLabel(mappedRoute, labelMap.get(mappedRoute) || routeToNavLabel(mappedRoute, locale), label, locale),
+      );
     }
   }
 

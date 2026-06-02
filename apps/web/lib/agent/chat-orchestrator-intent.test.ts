@@ -217,6 +217,58 @@ describe("chat orchestrator intent", () => {
     expect(spec.pageStructure?.pages || []).not.toContain("/whatsapp");
   });
 
+  it("treats explicit requirement-form values as authoritative over custom-note heuristics", () => {
+    const text = [
+      "Requirement form submitted:",
+      "",
+      "[Requirement Form]",
+      "```json",
+      JSON.stringify({
+        siteType: "company",
+        contentSources: ["existing_domain", "industry_research"],
+        targetAudience: ["enterprise_buyers", "overseas_customers"],
+        primaryVisualDirection: "industrial-b2b",
+        pageStructure: {
+          mode: "multi",
+          planning: "manual",
+          pages: [
+            "Home",
+            "Product Families",
+            "Factory Capability",
+            "Quality and Certifications",
+            "Customized Services",
+            "Contact",
+          ],
+        },
+        functionalRequirements: ["customer_inquiry_form", "contact_form"],
+        primaryGoal: ["lead_generation"],
+        language: "en",
+        brandLogo: {
+          mode: "uploaded",
+          referenceText: "Use the uploaded VBUY logo lockup.",
+        },
+        customNotes:
+          "Build an English website for VBUY Textile, a custom towel manufacturer and export supplier. Required pages: Home, Product Families, Factory Capability, Quality and Certifications, Customized Services, Contact. The primary goal is lead generation and contact inquiries.",
+      }),
+      "```",
+    ].join("\n");
+
+    const spec = buildRequirementSpec(text);
+
+    expect(spec.targetAudience).toEqual(["enterprise_buyers", "overseas_customers"]);
+    expect(spec.pageStructure?.pages).toEqual([
+      "Home",
+      "Product Families",
+      "Factory Capability",
+      "Quality and Certifications",
+      "Customized Services",
+      "Contact",
+    ]);
+    expect(spec.pageStructure?.pages).not.toContain("Contact. The primary goal is lead generation and contact inquiries");
+    expect(spec.functionalRequirements).toEqual(["customer_inquiry_form", "contact_form"]);
+    expect(spec.primaryGoal).toEqual(["lead_generation"]);
+  });
+
   it("filters function options to currently supported website capabilities", () => {
     const text = "Features: login, payment, inquiry form, language switch";
     const spec = buildRequirementSpec(text);
@@ -347,6 +399,40 @@ describe("chat orchestrator intent", () => {
     expect(spec.pageStructure?.planning).toBe("auto");
     expect(slots.find((slot) => slot.key === "sitemap-pages")?.filled).toBe(true);
     expect(validation.passed).toBe(true);
+  });
+
+  it("promotes explicit required pages from form custom notes into the page structure contract", () => {
+    const text = [
+      "Requirement form submitted:",
+      "",
+      "[Requirement Form]",
+      "```json",
+      JSON.stringify({
+        siteType: "company",
+        contentSources: ["existing_domain", "industry_research"],
+        targetAudience: ["procurement_teams", "hospitality_buyers"],
+        pageStructure: { mode: "multi", planning: "auto", pages: [] },
+        functionalRequirements: ["customer_inquiry_form"],
+        primaryGoal: ["lead_generation"],
+        language: "en",
+        brandLogo: { mode: "text_mark" },
+        customNotes:
+          "Build an English website for VBUY Textile, a custom towel manufacturer and export supplier. Required pages: Home, Product Families, Factory Capability, Quality and Certifications, Customized Services, Contact.",
+      }),
+      "```",
+    ].join("\n");
+    const spec = buildRequirementSpec(text);
+
+    expect(spec.pageStructure?.mode).toBe("multi");
+    expect(spec.pageStructure?.planning).toBe("manual");
+    expect(spec.pageStructure?.pages).toEqual([
+      "Home",
+      "Product Families",
+      "Factory Capability",
+      "Quality and Certifications",
+      "Customized Services",
+      "Contact",
+    ]);
   });
 
   it("keeps an explicit user-selected visual direction above recommendations", () => {

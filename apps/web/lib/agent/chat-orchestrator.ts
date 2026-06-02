@@ -335,6 +335,13 @@ function splitList(raw: string): string[] {
     .filter(Boolean);
 }
 
+function cleanExplicitPageLabel(value: string): string {
+  return String(value || "")
+    .replace(/^["“”'`]+|["“”'`]+$/g, "")
+    .replace(/[.!?。！？;；:：]+$/g, "")
+    .trim();
+}
+
 function toStringArray(value: unknown): string[] {
   if (Array.isArray(value)) return unique(value.map((item) => normalizeText(String(item))));
   if (typeof value === "string") return unique(splitList(value));
@@ -649,7 +656,7 @@ export function parseRequirementFormFromText(input: string): {
 function extractLabelValue(text: string, labels: string[]): string | undefined {
   for (const label of labels) {
     const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const match = text.match(new RegExp(`(?:^|\\n)\\s*(?:${escaped})\\s*[:：]\\s*([^\\n]+)`, "i"));
+    const match = text.match(new RegExp(`(?:^|\\n|[.;。！？])\\s*(?:${escaped})\\s*[:：]\\s*([^\\n]+)`, "i"));
     if (match?.[1]) return normalizeText(match[1]);
   }
   return undefined;
@@ -665,6 +672,18 @@ function stripRequirementFencedBlocks(text: string): string {
   return String(text || "").replace(/```[\s\S]*?```/g, " ");
 }
 
+export function stripRequirementFormScaffolding(text: string): string {
+  return normalizeText(
+    String(text || "")
+      .replace(
+        /(?:(?:Requirement form submitted|生成前必填信息已提交|需求表单已提交)[:：]?\s*)?\[Requirement Form\]\s*```(?:json)?\s*[\s\S]*?```/gi,
+        " ",
+      )
+      .replace(/\[Requirement Form\]/gi, " ")
+      .replace(/(?:Requirement form submitted|生成前必填信息已提交|需求表单已提交)[:：]?/gi, " "),
+  );
+}
+
 function extractFreeformBusinessContext(text: string): string | undefined {
   const parsed = parseRequirementFormFromText(text);
   const source = normalizeText(stripRequirementFencedBlocks(parsed.cleanText || text));
@@ -678,7 +697,7 @@ function extractFreeformBusinessContext(text: string): string | undefined {
     .filter((line) => !/^(?:Requirement form submitted|生成前必填信息已提交|需求表单已提交)[:：]?$/i.test(line))
     .filter(
       (line) =>
-        !/^(?:brand|company|name|pages?|page list|routes?|sitemap|audience|target audience|style|visual|cta|actions|language|tone|modules?|sections?|business|content notes|business details|features|functions|siteType|targetAudience|primaryVisualDirection|secondaryVisualTags|pageStructure|functionalRequirements|primaryGoal|brandLogo|contentSources|customNotes|网站类型|页面|导航|目标受众|风格|视觉|按钮|语言|语气|模块|业务|资料说明|业务细节|补充说明|功能需求)\s*[:：]/i.test(
+        !/^(?:required pages?|brand|company|name|pages?|page list|routes?|sitemap|audience|target audience|style|visual|cta|actions|language|tone|modules?|sections?|business|content notes|business details|features|functions|siteType|targetAudience|primaryVisualDirection|secondaryVisualTags|pageStructure|functionalRequirements|primaryGoal|brandLogo|contentSources|customNotes|网站类型|页面|导航|目标受众|风格|视觉|按钮|语言|语气|模块|业务|资料说明|业务细节|补充说明|功能需求)\s*[:：]/i.test(
           line,
         ),
     )
@@ -822,7 +841,7 @@ function extractLabeledSlashRoutes(text: string): string[] {
     .map((line) => normalizeText(line))
     .filter(Boolean);
   const routeLines = lines.filter((line) =>
-    /^(?:pages?|page list|routes?|sitemap|页面|导航|页面结构)\s*[:：]/i.test(line),
+    /^(?:required pages?|pages?|page list|routes?|sitemap|页面|导航|页面结构)\s*[:：]/i.test(line),
   );
   return routeLines.flatMap((line) =>
     Array.from(line.matchAll(/\/[a-zA-Z0-9][a-zA-Z0-9/_-]{0,60}/g)).map((match) => match[0]),
@@ -831,35 +850,43 @@ function extractLabeledSlashRoutes(text: string): string[] {
 
 function extractRequirementFieldsFromText(text: string): ExtractedRequirementFields {
   const raw = normalizeText(text);
-  const rawWithoutUrls = stripUrlLikeSegments(raw);
-  const form = parseRequirementFormFromText(raw).formValues;
-  const startsWithNonBrandLabel = /^\s*(?:pages?|page list|routes?|sitemap|页面|导航|audience|target audience|客户|目标受众|用户|style|visual|视觉|风格|配色|cta|actions|按钮|转化动作|language|语言|tone|语气|modules?|sections?|内容模块|模块)\s*[:：]/i.test(
-    raw,
+  const parsedInput = parseRequirementFormFromText(raw);
+  const form = parsedInput.formValues;
+  const heuristicSource = stripRequirementFormScaffolding(raw) || normalizeText(parsedInput.cleanText || raw);
+  const rawWithoutUrls = stripUrlLikeSegments(heuristicSource);
+  const formCustomNotes = normalizeText(form?.customNotes || "");
+  const formHasExplicitPages = Array.isArray(form?.pageStructure?.pages) && form.pageStructure.pages.length > 0;
+  const explicitPageNoteSource = formHasExplicitPages ? "" : formCustomNotes || heuristicSource;
+  const startsWithNonBrandLabel = /^\s*(?:required pages?|pages?|page list|routes?|sitemap|页面|导航|audience|target audience|客户|目标受众|用户|style|visual|视觉|风格|配色|cta|actions|按钮|转化动作|language|语言|tone|语气|modules?|sections?|内容模块|模块)\s*[:：]/i.test(
+    heuristicSource,
   );
   const siteType =
     form?.siteType ||
-    (/企业官网|公司官网|机构官网|corporate|company website|official website/i.test(raw)
+    (/企业官网|公司官网|机构官网|corporate|company website|official website/i.test(heuristicSource)
       ? "company"
-      : /落地页|landing page/i.test(raw)
+      : /落地页|landing page/i.test(heuristicSource)
         ? "landing"
-        : /电商|商城|ecommerce|shop|store/i.test(raw)
+        : /电商|商城|ecommerce|shop|store/i.test(heuristicSource)
           ? "ecommerce"
-          : /作品集|portfolio/i.test(raw)
+          : /作品集|portfolio/i.test(heuristicSource)
             ? "portfolio"
-            : /活动页|event/i.test(raw)
+            : /活动页|event/i.test(heuristicSource)
               ? "event"
               : undefined);
   const brandCandidate =
-    extractLabelValue(raw, ["brand", "品牌", "公司", "company", "name", "名称"]) ||
-    raw.match(/(?:for|给|为)\s*([A-Za-z][A-Za-z0-9 _-]{1,48})\s*(?:build|create|generate|做|生成|官网|网站)/i)?.[1]?.trim() ||
+    extractLabelValue(heuristicSource, ["brand", "品牌", "公司", "company", "name", "名称"]) ||
+    heuristicSource.match(/(?:for|给|为)\s*([A-Za-z][A-Za-z0-9 _-]{1,48})\s*(?:build|create|generate|做|生成|官网|网站)/i)?.[1]?.trim() ||
     (!startsWithNonBrandLabel
-      ? raw.match(/\b([A-Z][A-Z0-9-]{2,32})\b(?:\s+(?:website|site|官网|网站))?/i)?.[1]?.trim()
+      ? heuristicSource.match(/\b([A-Z][A-Z0-9-]{2,32})\b(?:\s+(?:website|site|官网|网站))?/i)?.[1]?.trim()
       : undefined);
   const brand = brandCandidate && !isInvalidBrandCandidate(brandCandidate) ? brandCandidate : undefined;
-  const pages = unique([
+  const explicitListedPages = unique([
     ...(form?.pageStructure?.pages || []),
-    ...extractDelimitedList(raw, ["pages", "page list", "routes", "sitemap", "页面", "导航", "页面结构"]),
-    ...extractLabeledSlashRoutes(rawWithoutUrls),
+    ...extractDelimitedList(explicitPageNoteSource, ["required pages", "pages", "page list", "routes", "sitemap", "页面", "导航", "页面结构"]),
+    ...extractLabeledSlashRoutes(stripUrlLikeSegments(explicitPageNoteSource)),
+  ]);
+  const pages = unique([
+    ...explicitListedPages,
     ...Array.from(
       rawWithoutUrls.matchAll(
         /\b(home|about|products?|services?|solutions?|cases?|contact|news|blog|downloads?|pricing)\b/gi,
@@ -867,106 +894,135 @@ function extractRequirementFieldsFromText(text: string): ExtractedRequirementFie
     ).map((match) => match[1]),
     ...extractStandaloneChinesePageKeywords(rawWithoutUrls),
   ]);
-  const wantsAutoPageStructure = /自动生成页面结构|自动规划页面|自动页面结构|帮我规划页面|auto(?:matically)? generate (?:the )?(?:page structure|sitemap)|auto(?:matic)? sitemap/i.test(raw);
-  const pageStructure =
-    form?.pageStructure ||
-    (wantsAutoPageStructure
+  const wantsAutoPageStructure = /自动生成页面结构|自动规划页面|自动页面结构|帮我规划页面|auto(?:matically)? generate (?:the )?(?:page structure|sitemap)|auto(?:matic)? sitemap/i.test(
+    heuristicSource,
+  );
+  const explicitPageStructurePages = unique(
+    explicitListedPages
+      .map((page) => cleanExplicitPageLabel(page))
+      .filter((page) => page && !isUrlArtifactPageToken(page)),
+  );
+  const heuristicPageStructurePages = unique(pages.filter((page) => !isUrlArtifactPageToken(page)));
+  const pageStructure = form?.pageStructure
+    ? {
+        ...form.pageStructure,
+        ...(explicitPageStructurePages.length > 0
+          ? {
+              mode: explicitPageStructurePages.length > 1 ? ("multi" as const) : ("single" as const),
+              planning: "manual" as const,
+              pages: explicitPageStructurePages,
+            }
+          : {}),
+      }
+    : wantsAutoPageStructure
       ? { mode: "multi" as const, planning: "auto" as const }
-      : unique(pages.filter((page) => !isUrlArtifactPageToken(page))).length > 0
+      : heuristicPageStructurePages.length > 0
         ? {
-            mode: unique(pages.filter((page) => !isUrlArtifactPageToken(page))).length > 1 ? "multi" as const : "single" as const,
+            mode: heuristicPageStructurePages.length > 1 ? ("multi" as const) : ("single" as const),
             planning: "manual" as const,
-            pages: unique(pages.filter((page) => !isUrlArtifactPageToken(page))),
+            pages: heuristicPageStructurePages,
           }
-        : undefined);
+        : undefined;
   const visualStyle = unique([
-    ...(form?.secondaryVisualTags || []),
-    ...extractDelimitedList(raw, ["style", "visual", "视觉", "风格", "配色"]),
-    ...Array.from(raw.matchAll(/(工业风|科技感|温暖|活泼|高级|极简|专业|可信|蓝色|绿色|黑金|高对比)/g)).map(
+    ...(form?.secondaryVisualTags?.length ? form.secondaryVisualTags : []),
+    ...(form?.secondaryVisualTags?.length
+      ? []
+      : [
+          ...extractDelimitedList(heuristicSource, ["style", "visual", "视觉", "风格", "配色"]),
+          ...Array.from(heuristicSource.matchAll(/(工业风|科技感|温暖|活泼|高级|极简|专业|可信|蓝色|绿色|黑金|高对比)/g)).map(
       (match) => match[1],
-    ),
+          ),
+        ]),
   ]);
-  const targetAudience = unique([
-    ...(form?.targetAudience || []),
-    ...extractDelimitedList(raw, ["audience", "target audience", "客户", "目标受众", "用户"]),
-    ...Array.from(raw.matchAll(/(采购|工程师|设计师|政府|研究者|manufacturer|buyers?|engineers?|customers?)/gi)).map(
-      (match) => match[1],
-    ),
-  ]);
+  const targetAudience = form?.targetAudience?.length
+    ? unique(form.targetAudience)
+    : unique([
+        ...extractDelimitedList(heuristicSource, ["audience", "target audience", "客户", "目标受众", "用户"]),
+        ...Array.from(
+          heuristicSource.matchAll(/(采购|工程师|设计师|政府|研究者|manufacturer|buyers?|engineers?|customers?)/gi),
+        ).map((match) => match[1]),
+      ]);
   const contentModules = unique([
-    ...extractDelimitedList(raw, ["modules", "sections", "内容模块", "模块"]),
-    ...Array.from(raw.matchAll(/(hero|案例|新闻|表单|认证|查询|下载|数据|图表|合作伙伴|faq|FAQ)/gi)).map(
+    ...extractDelimitedList(heuristicSource, ["modules", "sections", "内容模块", "模块"]),
+    ...Array.from(heuristicSource.matchAll(/(hero|案例|新闻|表单|认证|查询|下载|数据|图表|合作伙伴|faq|FAQ)/gi)).map(
       (match) => match[1],
     ),
   ]);
-  const contentSources = normalizeContentSources([
-    ...(form?.contentSources || []),
-    ...(raw.match(/\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b/i) ? ["existing_domain"] : []),
-    ...Array.from(
-      raw.matchAll(/(新建站|没有资料|暂无内容|已有域名|旧站|域名|上传资料|上传文件|行业资料|竞品|new website|existing domain|domain|uploaded files|industry research)/gi),
-    ).map((match) => match[1]),
-  ]);
-  const functionalRequirements = normalizeSupportedFunctionalRequirements([
-    ...(form?.functionalRequirements || []),
-    ...extractDelimitedList(raw, ["features", "functions", "功能", "功能需求"]),
-    ...Array.from(
-      raw.matchAll(
-        /(客户询盘|询盘表单|询价表单|需求表单|联系表单|留言表单|搜索|筛选|下载|资料下载|inquiry form|contact form|search|filter|download)/gi,
-      ),
-    ).map((match) => match[1]),
-  ]);
-  const primaryGoal = unique([
-    ...(form?.primaryGoal || []),
-    ...Array.from(
-      raw.matchAll(/(获取咨询|展示产品|建立品牌信任|下载资料|预约演示|在线购买|lead generation|brand trust|book demo|purchase|download)/gi),
-    ).map((match) => match[1]),
-  ]);
+  const contentSources = form?.contentSources?.length
+    ? normalizeContentSources(form.contentSources)
+    : normalizeContentSources([
+        ...(heuristicSource.match(/\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b/i) ? ["existing_domain"] : []),
+        ...Array.from(
+          heuristicSource.matchAll(/(新建站|没有资料|暂无内容|已有域名|旧站|域名|上传资料|上传文件|行业资料|竞品|new website|existing domain|domain|uploaded files|industry research)/gi),
+        ).map((match) => match[1]),
+      ]);
+  const functionalRequirements = form?.functionalRequirements?.length
+    ? normalizeSupportedFunctionalRequirements(form.functionalRequirements)
+    : normalizeSupportedFunctionalRequirements([
+        ...extractDelimitedList(heuristicSource, ["features", "functions", "功能", "功能需求"]),
+        ...Array.from(
+          heuristicSource.matchAll(
+            /(客户询盘|询盘表单|询价表单|需求表单|联系表单|留言表单|搜索|筛选|下载|资料下载|inquiry form|contact form|search|filter|download)/gi,
+          ),
+        ).map((match) => match[1]),
+      ]);
+  const primaryGoal = form?.primaryGoal?.length
+    ? unique(form.primaryGoal)
+    : unique([
+        ...Array.from(
+          heuristicSource.matchAll(/(获取咨询|展示产品|建立品牌信任|下载资料|预约演示|在线购买|lead generation|brand trust|book demo|purchase|download)/gi),
+        ).map((match) => match[1]),
+      ]);
   const ctas = unique([
-    ...extractDelimitedList(raw, ["cta", "actions", "按钮", "转化动作"]),
-    ...Array.from(raw.matchAll(/(联系|询价|quote|whatsapp|catalog|订阅|下载|查询|预约|contact)/gi)).map(
+    ...extractDelimitedList(heuristicSource, ["cta", "actions", "按钮", "转化动作"]),
+    ...Array.from(heuristicSource.matchAll(/(联系|询价|quote|whatsapp|catalog|订阅|下载|查询|预约|contact)/gi)).map(
       (match) => match[1],
     ),
   ]);
-  const localePlan = buildLocalePlan(raw);
+  const localePlan = buildLocalePlan(heuristicSource);
   const supportedLocales = unique([...(form?.supportedLocales || []), ...localePlan.locales]);
   const defaultLocale = form?.defaultLocale || (supportedLocales.length > 0 ? localePlan.defaultLocale : undefined);
   const locale =
     form?.language ||
-    (/中英双语|双语|bilingual/i.test(raw)
+    (/中英双语|双语|bilingual/i.test(heuristicSource)
       ? "bilingual"
-      : /中文|chinese|zh-cn/i.test(raw)
+      : /中文|chinese|zh-cn/i.test(heuristicSource)
         ? "zh-CN"
-        : /英文|english|en\b/i.test(raw)
+        : /英文|english|en\b/i.test(heuristicSource)
           ? "en"
           : undefined);
-  const deploymentProvider = /cloudflare/i.test(raw) ? "cloudflare" : /vercel/i.test(raw) ? "vercel" : undefined;
+  const deploymentProvider = /cloudflare/i.test(heuristicSource)
+    ? "cloudflare"
+    : /vercel/i.test(heuristicSource)
+      ? "vercel"
+      : undefined;
   const resolvedLocale =
     supportedLocales.length >= 3
       ? (locale || "multilingual")
       : locale;
-  const domain = raw.match(/\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b/i)?.[0];
+  const domain = heuristicSource.match(/\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b/i)?.[0];
   const deployment = {
     provider: deploymentProvider,
     domain,
-    requested: /cloudflare|vercel|deploy|部署|发布|上线|pages\.dev/i.test(raw),
+    requested: /cloudflare|vercel|deploy|部署|发布|上线|pages\.dev/i.test(heuristicSource),
   };
   const contactForwardTo = unique([
     ...(form?.contactSettings?.forwardTo || []),
-    ...extractForwardToEmails(raw),
+    ...extractForwardToEmails(heuristicSource),
   ]);
   const contactSendUserAck =
     form?.contactSettings?.sendUserAck != null
       ? Boolean(form.contactSettings.sendUserAck)
-      : /(?:send|发送|寄送).*(?:confirmation|ack|回执|确认邮件)/i.test(raw)
+      : /(?:send|发送|寄送).*(?:confirmation|ack|回执|确认邮件)/i.test(heuristicSource)
         ? true
-        : /(?:不要|无需|don't|do not).*(?:confirmation|ack|回执|确认邮件)/i.test(raw)
+        : /(?:不要|无需|don't|do not).*(?:confirmation|ack|回执|确认邮件)/i.test(heuristicSource)
           ? false
           : undefined;
 
   return {
     siteType,
     brand,
-    businessContext: extractLabelValue(raw, ["business", "业务", "定位", "背景"]),
+    businessContext: extractLabelValue(heuristicSource, ["business", "业务", "定位", "背景"]),
     targetAudience,
     pages,
     pageStructure,
@@ -978,7 +1034,7 @@ function extractRequirementFieldsFromText(text: string): ExtractedRequirementFie
     locale: resolvedLocale,
     supportedLocales,
     defaultLocale,
-    tone: extractLabelValue(raw, ["tone", "语气", "口吻"]),
+    tone: extractLabelValue(heuristicSource, ["tone", "语气", "口吻"]),
     brandLogo: form?.brandLogo,
     contentSources,
     contactSettings:
@@ -988,7 +1044,8 @@ function extractRequirementFieldsFromText(text: string): ExtractedRequirementFie
             sendUserAck: contactSendUserAck !== false,
           }
         : undefined,
-    customNotes: form?.customNotes || extractLabelValue(raw, ["content notes", "business details", "资料说明", "业务细节", "补充说明"]),
+    customNotes:
+      form?.customNotes || extractLabelValue(heuristicSource, ["content notes", "business details", "资料说明", "业务细节", "补充说明"]),
     deployment: deployment.requested || deployment.provider || deployment.domain ? deployment : undefined,
   };
 }
