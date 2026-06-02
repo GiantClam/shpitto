@@ -155,4 +155,26 @@ describe("website-type-selector", () => {
     expect(result.siteType).toBe("docs-knowledge");
     expect(result.surfaceMode).toBe("docs-knowledge-site");
   });
+
+  it("keeps manufacturer/export sites out of content-hub when the brief only references industry research and certifications", () => {
+    const result = selectWebsiteGenerationTypeSkill({
+      siteType: "company",
+      requirementText:
+        "Build an English website for VBUY Textile, a custom towel manufacturer and export supplier. Use the existing domain plus industry research. Required pages: Home, Product Families, Factory Capability, Quality and Certifications, Customized Services, Contact. Target overseas procurement teams and hospitality buyers.",
+      routes: [
+        "/",
+        "/product-families",
+        "/factory-capability",
+        "/quality-and-certifications",
+        "/customized-services",
+        "/contact",
+      ],
+      targetAudience: ["procurement teams", "hospitality buyers"],
+      primaryGoal: ["lead_generation", "contact"],
+    });
+
+    expect(result.skillId).toBe("corporate-b2b-site");
+    expect(result.siteType).toBe("corporate-b2b");
+    expect(result.surfaceMode).toBe("corporate-b2b-site");
+  });
 });

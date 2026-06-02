@@ -85,6 +85,67 @@ describe("prompt draft research", () => {
     expect(result.canonicalPrompt).not.toContain("/downloads/index.html");
   });
 
+  it("preserves explicit required pages and corporate surface selection for manufacturer requirement forms", async () => {
+    const requirement = [
+      "Requirement form submitted:",
+      "",
+      "[Requirement Form]",
+      "```json",
+      JSON.stringify({
+        siteType: "company",
+        contentSources: ["existing_domain", "industry_research"],
+        targetAudience: ["enterprise_buyers", "overseas_customers"],
+        primaryVisualDirection: "industrial-b2b",
+        pageStructure: {
+          mode: "multi",
+          planning: "manual",
+          pages: [
+            "Home",
+            "Product Families",
+            "Factory Capability",
+            "Quality and Certifications",
+            "Customized Services",
+            "Contact",
+          ],
+        },
+        functionalRequirements: ["customer_inquiry_form", "contact_form"],
+        primaryGoal: ["lead_generation"],
+        language: "en",
+        brandLogo: { mode: "uploaded", referenceText: "Use the uploaded VBUY logo lockup." },
+        customNotes:
+          "Build an English website for VBUY Textile, a custom towel manufacturer and export supplier. Required pages: Home, Product Families, Factory Capability, Quality and Certifications, Customized Services, Contact. The primary goal is lead generation and contact inquiries.",
+      }),
+      "```",
+    ].join("\n");
+
+    const result = await buildPromptDraftWithResearch({
+      requirementText: requirement,
+      slots: buildRequirementSlots(requirement),
+    });
+
+    expect(result.websiteSurfaceMode).toBe("corporate-b2b-site");
+    expect(result.discoveryBrief.surfaceMode).toBe("corporate-b2b-site");
+    expect(result.promptControlManifest.routes).toEqual([
+      "/",
+      "/product-families",
+      "/factory-capability",
+      "/quality-and-certifications",
+      "/customized-services",
+      "/contact",
+    ]);
+    expect(result.promptControlManifest.navLabels).toEqual([
+      "Home",
+      "Product Families",
+      "Factory Capability",
+      "Quality and Certifications",
+      "Customized Services",
+      "Contact",
+    ]);
+    expect(result.promptControlManifest.routes).not.toContain("/products");
+    expect(result.promptControlManifest.routes).not.toContain("/custom-solutions");
+    expect(result.promptControlManifest.routes).not.toContain("/contact-the-primary-goal-is-lead-generation-and-contact-inquiries");
+  });
+
   it("builds a structured routing contract separately from the markdown draft", () => {
     const contract = buildPromptControlManifestForTesting(
       "Build a site. Pages: Home, Products, Cases, Contact. Contact form fields include Email and Phone.",

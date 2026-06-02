@@ -29,19 +29,23 @@ function normalizeText(parts: Array<unknown>): string {
 
 function hasInstitutionalKnowledgeSignals(normalizedSiteType: string, normalizedRoutes: string[], intentText: string): boolean {
   if (normalizedSiteType === "institution") return true;
+  const hasStrongInstitutionalRouteSignal = normalizedRoutes.some((route) =>
+    /(?:advocacy|information-platform|resource-center|knowledge-platform|policy-library|public-service|public-interest|research-center|research-hub|standards-system|repository|directory|downloads?-hub)/i.test(
+      route,
+    ),
+  );
+  if (hasStrongInstitutionalRouteSignal) {
+    return true;
+  }
   if (
-    normalizedRoutes.some((route) =>
-      /(?:research|standards?|certification|advocacy|information-platform|knowledge|resource|downloads?|library|directory|repository)/i.test(
-        route,
-      ),
+    /(?:institution|institutional|association|alliance|foundation|consortium|committee|standards?\s+system|research\s+center|research\s+hub|resource\s+center|information\s+platform|knowledge\s+platform|policy\s+library|public-interest|public service|advocacy|certification\s+(?:system|platform|directory)|repository|directory|download\s+center|downloads?\s+hub|标准体系|研究中心|信息平台|知识平台|资源中心|倡议|资料库|下载中心)/i.test(
+      intentText,
     )
   ) {
     return true;
   }
 
-  return /(?:institution|institutional|association|alliance|foundation|consortium|committee|standards?\s+system|research\s+center|research\s+hub|resource\s+center|information\s+platform|knowledge\s+platform|policy\s+library|public-interest|public service|advocacy|certification|repository|directory|download\s+center|downloads?\s+hub|research|标准体系|研究中心|信息平台|知识平台|资源中心|认证|倡议|资料库|下载中心)/i.test(
-    intentText,
-  );
+  return false;
 }
 
 function hasDocsKnowledgeSignals(normalizedSiteType: string, normalizedRoutes: string[], intentText: string): boolean {

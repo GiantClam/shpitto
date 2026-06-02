@@ -4,6 +4,7 @@ import {
   buildRequirementSpec,
   composeStructuredPrompt,
   parseRequirementFormFromText,
+  stripRequirementFormScaffolding,
   type RequirementSpec,
   type RequirementSlot,
 } from "./chat-orchestrator";
@@ -562,8 +563,15 @@ function buildWebsiteDiscoveryBrief(params: {
   knowledgeProfile?: WebsiteKnowledgeProfile;
   referencedAssets?: string[];
 }): WebsiteDiscoveryBrief {
+  const selectionRequirementText = [
+    stripRequirementFormScaffolding(params.requirementText),
+    normalizeText(params.spec.businessContext || ""),
+    normalizeText(params.spec.customNotes || ""),
+  ]
+    .filter(Boolean)
+    .join("\n");
   const selection = selectWebsiteGenerationTypeSkill({
-    requirementText: params.requirementText,
+    requirementText: selectionRequirementText || params.requirementText,
     siteType: params.spec.siteType,
     routes: params.decisionPlan.routes,
     targetAudience: params.spec.targetAudience,
@@ -634,7 +642,13 @@ function buildPromptControlManifest(
     visualDirectionId: discoveryBrief?.visualDirectionId,
     designSystemId: discoveryBrief?.designSystemId,
     routes: [...plan.routes],
-    navLabels: plan.pageBlueprints.map((page) => internalNavLabelForRoute(page.route, page.navLabel)),
+    navLabels: plan.pageBlueprints.map((page) => {
+      const label = String(page.navLabel || "").trim();
+      if (routeSource === "prompt_draft_page_plan" && label && isWorkflowArtifactEnglishSafe(label)) {
+        return label;
+      }
+      return internalNavLabelForRoute(page.route, label);
+    }),
     files: Array.from(new Set(["/styles.css", "/script.js", ...i18nPaths, ...htmlPaths])),
     localeConfig:
       requestedSiteLocale === "bilingual" || requestedSiteLocale === "multilingual"
