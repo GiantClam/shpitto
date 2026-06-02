@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { buildContentWorkflowConfirmTimelineMetadataForWorkflow } from "../../skills/website-generation-workflow/blog-content-workflow";
 import { createChatTask, getChatTask } from "../agent/chat-task-store";
+import { buildExecutionWorkflowRuntime } from "../agent/workflow-runtime-adapter";
 import {
   buildBlogContentWorkflowPreview,
   detectRuntimeLocaleForTesting,
@@ -548,7 +549,11 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
             {
               path: "/index.html",
               type: "text/html",
-              content: "<!doctype html><html><head></head><body><h1>Home</h1></body></html>",
+              content: [
+                '<!doctype html><html><head><link rel="stylesheet" href="/styles.css"><script src="/script.js" defer></script></head><body>',
+                "<h1>Home</h1>",
+                "</body></html>",
+              ].join(""),
             },
             {
               path: "/blog/index.html",
@@ -726,6 +731,75 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
     expect(html).toContain('data-shpitto-blog-detail-shell="true"');
     expect(html).toContain("Topic map");
     expect(html).not.toContain('<div class="prose"');
+  });
+
+  it("keeps index-first deferred blog previews free of detail routes during finalization", () => {
+    const requirementText = [
+      "# Canonical Website Generation Prompt",
+      "",
+      "Build a polished personal technical blog for an AI consultant with Home, Blog, About, and Contact.",
+      "The first pass only needs a strong blog index and a profile-led homepage.",
+      "Do not generate blog detail pages yet. Blog details will be filled later by a separate workflow.",
+    ].join("\n");
+
+    const project = finalizeGeneratedProjectArtifactForTesting({
+      locale: "en",
+      inputState: {
+        messages: [] as any,
+        phase: "end",
+        current_page_index: 0,
+        attempt_count: 0,
+        workflow_context: {
+          sourceRequirement: requirementText,
+          canonicalPrompt: requirementText,
+        },
+      } as any,
+      project: {
+        branding: { name: "Adrian Vale" },
+        staticSite: {
+          mode: "skill-direct",
+          files: [
+            {
+              path: "/index.html",
+              type: "text/html",
+              content: "<!doctype html><html><head></head><body><h1>Home</h1></body></html>",
+            },
+            {
+              path: "/blog/index.html",
+              type: "text/html",
+              content: [
+                "<!doctype html><html><head></head><body><main>",
+                '<section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list>',
+                '<article class="article-card"><h2>Why useful AI work starts with constraints</h2><p>Archive summary.</p></article>',
+                '<article class="article-card"><h2>Writing the operating model before the tool stack</h2><p>Archive summary.</p></article>',
+                '<article class="article-card"><h2>What good AI consulting leaves behind</h2><p>Archive summary.</p></article>',
+                "</div></section></main></body></html>",
+              ].join(""),
+            },
+            {
+              path: "/about/index.html",
+              type: "text/html",
+              content:
+                '<!doctype html><html><head><link rel="stylesheet" href="../styles.css"><script src="../script.js" defer></script></head><body><h1>About</h1></body></html>',
+            },
+            {
+              path: "/contact/index.html",
+              type: "text/html",
+              content:
+                '<!doctype html><html><head><link rel="stylesheet" href="../styles.css"><script src="../script.js" defer></script></head><body><h1>Contact</h1></body></html>',
+            },
+            { path: "/styles.css", type: "text/css", content: "body{font-family:sans-serif}" },
+            { path: "/script.js", type: "text/javascript", content: "console.log('ok')" },
+          ],
+        },
+      },
+    });
+
+    const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
+    const blogIndexHtml = String(files.find((file: any) => file.path === "/blog/index.html")?.content || "");
+    expect(blogIndexHtml).not.toMatch(/href=["']\/blog\/[^"'#?]+\/?["']/i);
+    expect(files.some((file: any) => /^\/blog\/[^/]+\/index\.html$/i.test(String(file.path || "")))).toBe(false);
+
   });
 
   it("materializes normalized final artifacts without leaving an empty brand-mark shell", async () => {
@@ -1468,6 +1542,13 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
         workflow_context: {
           skillId: "website-generation-workflow",
           deployRequested: true,
+          workflowRuntime: buildExecutionWorkflowRuntime({
+            chatId,
+            executionMode: "deploy",
+            contractHash: "d".repeat(64),
+            generationLane: "website-generation-mvp",
+            websiteSurfaceMode: "content-hub-site",
+          }),
         } as any,
         site_artifacts: buildStaticSiteProject() as any,
       } as any,
@@ -1495,6 +1576,45 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
     expect(completedTask?.result?.timelineMetadata?.analyticsStatus).toBeUndefined();
     expect(completedTask?.result?.timelineMetadata?.smoke).toBeUndefined();
     expect(completedTask?.result?.timelineMetadata?.dnsRecords).toBeUndefined();
+    expect((completedTask?.result?.internal as any)?.sessionState?.workflow_context?.workflowRuntime?.status).toBe("completed");
+  });
+
+  it("records workflow compensation when deploy fails before any baseline exists", async () => {
+    process.env.CHAT_TASKS_USE_SUPABASE = "0";
+    process.env.CLOUDFLARE_ACCOUNT_ID = "";
+    process.env.CLOUDFLARE_API_TOKEN = "";
+
+    const chatId = `deploy-missing-baseline-${Date.now()}`;
+    const task = await createChatTask(chatId);
+    await SkillRuntimeExecutor.runTask({
+      taskId: task.id,
+      chatId,
+      workerId: "test-worker",
+      inputState: {
+        messages: [{ role: "user", content: "deploy to cloudflare" }] as any,
+        phase: "end",
+        current_page_index: 0,
+        attempt_count: 0,
+        workflow_context: {
+          skillId: "website-generation-workflow",
+          deployRequested: true,
+          workflowRuntime: buildExecutionWorkflowRuntime({
+            chatId,
+            executionMode: "deploy",
+            contractHash: "c".repeat(64),
+            generationLane: "website-generation-mvp",
+            websiteSurfaceMode: "content-hub-site",
+          }),
+        } as any,
+      } as any,
+    });
+
+    const failed = await getChatTask(task.id);
+    expect(failed?.status).toBe("failed");
+    expect((failed?.result?.internal as any)?.sessionState?.workflow_context?.workflowRuntime?.status).toBe("failed");
+    expect((failed?.result?.internal as any)?.sessionState?.workflow_context?.workflowRuntime?.compensation?.status).toBe(
+      "completed",
+    );
   });
 
   it("materializes confirmed Blog preview posts into deployed static snapshot when D1 is unavailable", async () => {

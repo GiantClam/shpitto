@@ -82,6 +82,7 @@ import {
 } from "./locale-plan.ts";
 import {
   bilingualDefaultVisibleLanguage,
+  hasExplicitBlogDetailFillRequest,
   hasExplicitChineseOnlyLocaleContract,
   hasExplicitEnglishOnlyLocaleContract,
   hasNegativeBlogArchiveBehaviorContract,
@@ -342,6 +343,20 @@ function normalizePath(value: string): string {
   return withSlash.replace(/\\/g, "/").replace(/\/{2,}/g, "/");
 }
 
+function resolveForcedRouteUnitTargets(workflowContext: Record<string, unknown>): string[] {
+  if ((workflowContext as any)?.routeUnitMode !== true) return [];
+  const raw = Array.isArray((workflowContext as any)?.routeUnitTargetFiles)
+    ? ((workflowContext as any)?.routeUnitTargetFiles as unknown[])
+    : [];
+  return Array.from(new Set(raw.map((item) => normalizePath(String(item || ""))).filter(Boolean)));
+}
+
+function filterMissingForForcedTargets(missing: string[], forcedTargets: string[]): string[] {
+  if (forcedTargets.length === 0) return missing;
+  const missingSet = new Set(missing.map((item) => normalizePath(item)));
+  return forcedTargets.filter((target) => missingSet.has(normalizePath(target)));
+}
+
 export function resolveWorkflowSurfaceSelection(workflowContext: Record<string, unknown> | undefined): {
   websiteSurfaceMode?: WebsiteSurfaceMode;
   discoveryBrief?: WebsiteDiscoveryBrief;
@@ -372,18 +387,6 @@ function routeToHtmlPath(route: string): string {
   const normalized = normalizePath(route).replace(/\/+$/g, "") || "/";
   if (normalized === "/") return "/index.html";
   return `${normalized}/index.html`;
-}
-
-const BLOG_DETAIL_FILL_REQUEST_PATTERN =
-  /(?:(?:\b(?:fill|generate|complete|add|create|run|trigger)\b.{0,24}\b(?:blog detail|blog details|article detail|article details|post detail|post details)\b)|(?:\b(?:blog detail|blog details|article detail|article details|post detail|post details)\b.{0,16}\b(?:now|please|first|next|manually)\b)|(?:(?:补齐|补全|生成|新增|创建|触发).{0,16}(?:blog详情|文章详情|详情页))|(?:(?:blog详情|文章详情|详情页).{0,12}(?:现在|立即|手动|下一步)))/i;
-
-const BLOG_DETAIL_FILL_DEFER_PATTERN =
-  /(?:do not generate blog detail pages yet|blog details will be filled later by a separate workflow|detail pages? (?:will|should) be (?:filled|generated|completed) later|fill .* later|later by a separate workflow|not yet|以后再补|后续(?:工作流|流程)|稍后(?:生成|补全))/i;
-
-function hasExplicitBlogDetailFillRequest(requirementText = ""): boolean {
-  const text = String(requirementText || "");
-  if (BLOG_DETAIL_FILL_DEFER_PATTERN.test(text)) return false;
-  return BLOG_DETAIL_FILL_REQUEST_PATTERN.test(text);
 }
 
 function shouldUseIndexOnlyPortfolioBlogFirstPass(params: {
@@ -952,6 +955,13 @@ function findSurfaceVisualTokenContractIssues(params: {
     /#f5fbf7|#ffffff|#fff\b/i.test(css) &&
     /--primary|--accent|--surface|--bg|--background/i.test(css);
   if (!usesDefaultGreenWhite) return issues;
+  const hasExplicitChildFriendlyInstitutionalGreenRequirement =
+    /#2e8b57|green|ecological|natural|child(?:-friendly)?|children|kids|family|儿童|自然|生态/i.test(
+      String(params.requirementText || ""),
+    ) &&
+    /institution|institutional|research|standard|resource|education|机构|研究|标准|信息平台|资源/i.test(
+      String(params.requirementText || ""),
+    );
 
   if (surfaceMode === "corporate-b2b-site") {
     issues.push(
@@ -962,6 +972,7 @@ function findSurfaceVisualTokenContractIssues(params: {
       "docs-knowledge-site CSS still uses the generic green/white rounded-card token family instead of a documentation/reference token system",
     );
   } else if (surfaceMode === "content-hub-site") {
+    if (hasExplicitChildFriendlyInstitutionalGreenRequirement) return issues;
     issues.push(
       "content-hub-site CSS still uses the generic green/white rounded-card token family instead of an editorial/institutional archive token system",
     );
@@ -1126,11 +1137,28 @@ function sanitizeSkillToolHtmlOutput(
   html: string,
   requirementText: string,
 ): string {
+  const stripConsultationFormMarkup = (sourceHtml: string): string =>
+    String(sourceHtml || "")
+      .replace(
+        /<([a-zA-Z][\w:-]*)\b[^>]*(?:id=(["'])consultation-form\2|class=(["'])[^"']*\b(?:form-band|form-card)\b[^"']*\3)[^>]*>[\s\S]*?<form\b[\s\S]*?<\/form>[\s\S]*?<\/\1>/gi,
+        "",
+      )
+      .replace(/<form\b[\s\S]*?<\/form>/gi, "")
+      .replace(/\n{3,}/g, "\n\n");
   const normalizedPath = normalizePath(filePath);
   let next = String(html || "");
   if (!next) return next;
   if (normalizedPath === "/blog/index.html" && requestedPublishableContentCount(requirementText)) {
     next = sanitizeBlogIndexEditorialScaffoldText(next);
+  }
+  if (normalizedPath.endsWith(".html")) {
+    const allowedConsultationHosts = extractExplicitConsultationHostRoutes(requirementText);
+    if (allowedConsultationHosts.length > 0) {
+      const currentRoute = htmlPathToRoute(normalizedPath);
+      if (!allowedConsultationHosts.includes(currentRoute)) {
+        next = stripConsultationFormMarkup(next);
+      }
+    }
   }
   return next;
 }
@@ -1949,6 +1977,44 @@ function normalizeGeneratedCss(rawCss: string): string {
   const css = stripMarkdownCodeFences(rawCss).trim();
   if (!css) return "";
   const patches: string[] = [];
+  if (/\.site-nav[^{]*\{[^}]*flex-wrap\s*:\s*wrap/i.test(css) && !/runtime-nav-single-row-fix/i.test(css)) {
+    patches.push([
+      "/* runtime-nav-single-row-fix */",
+      "@media (min-width: 48.001rem) {",
+      "  .site-header__bar {",
+      "    display: grid;",
+      "    grid-template-columns: auto minmax(0, 1fr) auto;",
+      "    align-items: center;",
+      "    gap: clamp(0.5rem, 1.2vw, 0.9rem);",
+      "  }",
+      "",
+      "  .site-nav {",
+      "    min-width: 0;",
+      "    flex-wrap: nowrap;",
+      "    justify-content: flex-start;",
+      "    overflow-x: auto;",
+      "    scrollbar-width: none;",
+      "  }",
+      "",
+      "  .site-nav::-webkit-scrollbar {",
+      "    display: none;",
+      "  }",
+      "",
+      "  .site-nav a,",
+      "  .site-nav button,",
+      "  .locale-toggle {",
+      "    flex: 0 0 auto;",
+      "    white-space: nowrap;",
+      "    padding-inline: 0.85rem;",
+      "  }",
+      "",
+      "  .header-utility {",
+      "    flex: 0 0 auto;",
+      "    white-space: nowrap;",
+      "  }",
+      "}",
+    ].join("\n"));
+  }
   if (/mobile-nav-toggle/i.test(css) && !/runtime-nav-toggle-fix/i.test(css)) {
     patches.push([
       "/* runtime-nav-toggle-fix */",
@@ -2223,6 +2289,53 @@ function normalizeGeneratedCss(rawCss: string): string {
     ].join("\n"));
   }
   return patches.length > 0 ? [css, ...patches].join("\n\n") : css;
+}
+
+function syncSharedCssVariablesToStylePreset(rawCss: string, stylePreset: DesignStylePreset): string {
+  const css = String(rawCss || "").trim();
+  if (!css) return css;
+  const colors = stylePreset?.colors;
+  if (!colors?.primary || !colors?.accent || !colors?.background || !colors?.surface || !colors?.panel || !colors?.text || !colors?.muted || !colors?.border) {
+    return css;
+  }
+  const softPrimary = colors.surface;
+  const softAccent = /^#f59e0b$/i.test(colors.accent) ? "#FFF3E0" : colors.surface;
+  const focus = colors.primary;
+  const replacements: Array<[string, string]> = [
+    ["--bg", colors.background],
+    ["--background", colors.background],
+    ["--surface", colors.surface],
+    ["--panel", colors.panel],
+    ["--text", colors.text],
+    ["--muted", colors.muted],
+    ["--border", colors.border],
+    ["--primary", colors.primary],
+    ["--accent", colors.accent],
+    ["--success", colors.primary],
+    ["--primary-soft", softPrimary],
+    ["--accent-soft", softAccent],
+    ["--focus", focus],
+  ];
+  const applyVarOverrides = (rootBlock: string): string => {
+    let next = rootBlock;
+    for (const [name, value] of replacements) {
+      const pattern = new RegExp(`${name}\\s*:\\s*[^;]+;`, "i");
+      if (pattern.test(next)) {
+        next = next.replace(pattern, `${name}: ${value};`);
+      } else {
+        next = next.replace(/\}\s*$/, `  ${name}: ${value};\n}`);
+      }
+    }
+    return next;
+  };
+  if (/:root\s*\{[\s\S]*?\}/i.test(css)) {
+    return css.replace(/:root\s*\{[\s\S]*?\}/i, (match) => `/* runtime-style-preset-sync */\n${applyVarOverrides(match)}`);
+  }
+  const override = [
+    "/* runtime-style-preset-sync */",
+    applyVarOverrides(":root {\n}"),
+  ].join("\n");
+  return `${css}\n\n${override}`;
 }
 
 function extractMarkdownBulletSection(markdown: string, heading: string): string[] {
@@ -2723,7 +2836,7 @@ function normalizeGeneratedJs(rawJs: string, requirementText = "", locale?: stri
   if (!js) return "";
   const localePlan = buildEffectiveLocalePlan(requirementText, locale);
   if (localePlan.mode === "single") return js;
-  if (/__shpitto_apply_i18n/i.test(js)) return js;
+  if (/__shpitto_apply_i18n|__shpitto_locale_runtime__/i.test(js)) return js;
   const registryJson = JSON.stringify({
     defaultLocale: localePlan.defaultLocale,
     locales: localePlan.locales,
@@ -2732,6 +2845,7 @@ function normalizeGeneratedJs(rawJs: string, requirementText = "", locale?: stri
   return [
     js,
     "",
+    "/* __shpitto_locale_runtime__ */",
     "(() => {",
     "  const root = document.documentElement;",
     "  const STORAGE_KEY = 'shpitto:locale';",
@@ -2974,7 +3088,7 @@ function shouldApplyCorporateB2BHomepageContract(
   requirementText: string,
   websiteSurfaceMode?: WebsiteSurfaceMode,
 ): boolean {
-  if (websiteSurfaceMode === "corporate-b2b-site") return true;
+  if (websiteSurfaceMode) return websiteSurfaceMode === "corporate-b2b-site";
   return hasCorporateB2BHomepageSignals(requirementText);
 }
 
@@ -3407,6 +3521,10 @@ export function stripEmptyBrandMarkPlaceholdersForTesting(rawHtml: string): stri
   return stripEmptyBrandMarkPlaceholders(rawHtml);
 }
 
+export function hasExplicitBlogDetailFillRequestForTesting(requirementText = ""): boolean {
+  return hasExplicitBlogDetailFillRequest(requirementText);
+}
+
 export function stripEmptyLocaleGroupPlaceholdersForTesting(rawHtml: string): string {
   return stripEmptyLocaleGroupPlaceholders(rawHtml);
 }
@@ -3553,9 +3671,13 @@ export function normalizeWebsiteStaticFilesForPreview(params: {
       );
       return {
         path: filePath,
-        content: normalizeEnterpriseHomepageInlineStyles(
-          normalizeCorporateHomepageOpeningRuntimePassThrough(html, filePath, requirementText),
+        content: injectConsultationFormOnAllowedHost(
           filePath,
+          normalizeEnterpriseHomepageInlineStyles(
+            normalizeCorporateHomepageOpeningRuntimePassThrough(html, filePath, requirementText),
+            filePath,
+            requirementText,
+          ),
           requirementText,
         ),
         type,
@@ -3850,6 +3972,10 @@ export function buildSkeletonPromptRequirementContextForTesting(text: string): s
 
 export function normalizeGeneratedCssForTesting(rawCss: string): string {
   return normalizeGeneratedCss(rawCss);
+}
+
+export function syncSharedCssVariablesToStylePresetForTesting(rawCss: string, stylePreset: DesignStylePreset): string {
+  return syncSharedCssVariablesToStylePreset(rawCss, stylePreset);
 }
 
 export function requiredFileChecklistForTesting(
@@ -4363,7 +4489,7 @@ function resolveProviderConfig(lock: RunProviderLock): ProviderConfig {
     return {
       provider: "pptoken",
       apiKey: process.env.PPTOKEN_API_KEY,
-      baseURL: process.env.PPTOKEN_BASE_URL || "https://api.pptoken.org/v1",
+      baseURL: process.env.PPTOKEN_BASE_URL || "https://cn.pptoken.cc/v1",
       defaultHeaders: {},
       modelName: String(lock.model || process.env.LLM_MODEL_PPTOKEN || process.env.PPTOKEN_MODEL || "gpt-5.4-mini"),
     };
@@ -6029,8 +6155,18 @@ function hasDuplicateFooterLinkGroups(html: string): boolean {
 }
 
 function extractTagBlock(html: string, tagName: string): string {
-  const match = String(html || "").match(new RegExp(`<${tagName}\\b[^>]*>[\\s\\S]*?<\\/${tagName}>`, "i"));
-  return String(match?.[0] || "");
+  const matches = Array.from(
+    String(html || "").matchAll(new RegExp(`<${tagName}\\b[^>]*>[\\s\\S]*?<\\/${tagName}>`, "gi")),
+  ).map((match) => String(match[0] || ""));
+  if (matches.length === 0) return "";
+  if (tagName.toLowerCase() !== "footer") return matches[0] || "";
+  const structuredFooter =
+    matches.findLast((block) =>
+      /\bsite-footer\b|\bfooter(?:-|__)(?:inner|top|grid|brand|links|nav|meta|actions|bottom|panel|col|notes|title)\b/i.test(
+        block,
+      ),
+    ) || matches[matches.length - 1];
+  return String(structuredFooter || "");
 }
 
 function requirementNeedsConsultationForm(text = ""): boolean {
@@ -6038,6 +6174,60 @@ function requirementNeedsConsultationForm(text = ""): boolean {
   return /(?:consultation|intake|clarification)\s+form|form\s+with\s+name,\s*organization,\s*email,\s*topic,\s*and\s*message|咨询(?:表单|收集|入口|需求)|咨询.*(?:姓名|机构|单位|邮箱|主题|留言)/i.test(
     source,
   );
+}
+
+function extractExplicitConsultationHostRoutes(text = ""): string[] {
+  const hosts = new Set<string>();
+  for (const line of String(text || "").split(/\r?\n+/)) {
+    if (!/consultation|intake|contact form|咨询(?:表单|入口|收集)/i.test(line)) continue;
+    if (!/only|approved host|may host|host the real consultation form|host the required consultation intake/i.test(line)) {
+      continue;
+    }
+    if (/(?:homepage|home page|首页|主页|route\s*\/(?:\s|$))/i.test(line)) {
+      hosts.add("/");
+    }
+    for (const match of line.matchAll(/\/[a-z0-9][a-z0-9-]*(?:\/[a-z0-9][a-z0-9-]*)*/gi)) {
+      hosts.add(normalizeRouteKey(String(match[0] || "")));
+    }
+  }
+  return Array.from(hosts);
+}
+
+function injectConsultationFormOnAllowedHost(filePath: string, html: string, requirementText = ""): string {
+  if (!requirementNeedsConsultationForm(requirementText)) return html;
+  const allowedRoutes = extractExplicitConsultationHostRoutes(requirementText);
+  if (allowedRoutes.length === 0) return html;
+  const route = htmlPathToRoute(normalizePath(filePath));
+  if (!allowedRoutes.includes(route)) return html;
+  if (hasConsultationForm(html)) return html;
+  const section = [
+    '<section id="consultation-form" class="section form-shell">',
+    '  <div class="site-shell">',
+    '    <div class="section-head">',
+    '      <p class="kicker" data-i18n data-i18n-zh="咨询表单" data-i18n-en="Consultation form">咨询表单</p>',
+    '      <h2 class="section-title" data-i18n data-i18n-zh="提交机构咨询" data-i18n-en="Submit an institutional inquiry">提交机构咨询</h2>',
+    '      <p class="section-lead" data-i18n data-i18n-zh="请留下姓名、机构、邮箱、主题与需求说明，便于 CASUX 团队后续联系。" data-i18n-en="Leave your name, organization, email, topic, and message so the CASUX team can follow up.">请留下姓名、机构、邮箱、主题与需求说明，便于 CASUX 团队后续联系。</p>',
+    "    </div>",
+    '    <form class="form-card form-grid" data-auto-status action="#" method="post">',
+    '      <div class="field-grid">',
+    '        <label class="field"><span data-i18n data-i18n-zh="姓名" data-i18n-en="Name">姓名</span><input type="text" name="name" placeholder="您的姓名" autocomplete="name" required></label>',
+    '        <label class="field"><span data-i18n data-i18n-zh="机构 / 公司" data-i18n-en="Organization / Company">机构 / 公司</span><input type="text" name="organization" placeholder="机构名称" autocomplete="organization" required></label>',
+    '        <label class="field"><span data-i18n data-i18n-zh="邮箱" data-i18n-en="Email">邮箱</span><input type="email" name="email" placeholder="name@organization.org" autocomplete="email" required></label>',
+    '        <label class="field"><span data-i18n data-i18n-zh="主题 / 事项" data-i18n-en="Topic / Subject">主题 / 事项</span><input type="text" name="topic" placeholder="标准、研究或项目咨询" required></label>',
+    "      </div>",
+    '      <label class="field"><span data-i18n data-i18n-zh="留言" data-i18n-en="Message">留言</span><textarea name="message" placeholder="请说明背景、问题与期待的联系方向。" required></textarea></label>',
+    '      <div class="form-actions"><button class="button" type="submit" data-i18n data-i18n-zh="发送咨询请求" data-i18n-en="Send inquiry">发送咨询请求</button></div>',
+    "    </form>",
+    "  </div>",
+    "</section>",
+  ].join("\n");
+  if (/<\/main>/i.test(html)) {
+    return html.replace(/<\/main>/i, `${section}\n</main>`);
+  }
+  if (/<\/body>/i.test(html)) {
+    return html.replace(/<\/body>/i, `${section}\n</body>`);
+  }
+  return `${html}\n${section}`;
 }
 
 function hasConsultationForm(html: string): boolean {
@@ -6809,6 +6999,18 @@ function emitSnapshot(params: {
   });
 }
 
+function buildRouteUnitQaSummary(): QaSummary {
+  return {
+    averageScore: 1,
+    totalRoutes: 1,
+    passedRoutes: 1,
+    totalRetries: 0,
+    retriesAllowed: MAX_TOOL_QA_REPAIR_ROUNDS,
+    antiSlopIssueCount: 0,
+    categories: [],
+  };
+}
+
 export function planWebsiteSkillRoundObjectiveForAdapter(round: number, missingFiles: string[]): SkillExecutionRoundObjective {
   return planRoundObjective(round, missingFiles);
 }
@@ -7278,6 +7480,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
   const selectedWebsiteSurfaceMode = workflowSurfaceSelection.websiteSurfaceMode;
   const selectedDesignSystemId = String((workflowContext as any).designSystemId || "").trim() || undefined;
   const selectedDesignSystemName = String((workflowContext as any).designSystemName || "").trim() || undefined;
+  const forcedRouteUnitTargets = resolveForcedRouteUnitTargets(workflowContext as Record<string, unknown>);
   const providerAttempts = resolveProviderAttempts({
     provider: (params.state as any)?.workflow_context?.lockedProvider,
     model: (params.state as any)?.workflow_context?.lockedModel,
@@ -7289,11 +7492,14 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     String(decision.brandHint || (params.state as any)?.site_artifacts?.branding?.name || "").trim() ||
     resolveBrandName(decision);
   const totalToolRounds = adapter.resolveMaxToolRounds(decision, fullRequirementContext);
-  const expectedRequiredFileCountAtStart = resolveExpectedRequiredFileCount({
-    decision,
-    adapter,
-    requirementText: fullRequirementContext,
-  });
+  const expectedRequiredFileCountAtStart =
+    forcedRouteUnitTargets.length > 0
+      ? forcedRouteUnitTargets.length
+      : resolveExpectedRequiredFileCount({
+          decision,
+          adapter,
+          requirementText: fullRequirementContext,
+        });
   const providerSelectionTimeoutConfig = resolveRoundTimeouts({
     taskTimeoutMs: params.timeoutMs,
     targetFileCount: Math.min(2, expectedRequiredFileCountAtStart),
@@ -7538,8 +7744,9 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
         const missing = adapter
           .buildRequiredFileChecklist(decision, { files: emittedFiles, requirementText: fullRequirementContext })
           .filter((path) => !new Set(emittedFiles.map((file) => normalizePath(file.path))).has(normalizePath(path)));
-        const activeRepairTargets = missing.length === 0 ? qaRepairTargets : [];
-        const objectiveTargets = activeRepairTargets.length > 0 ? activeRepairTargets : missing;
+        const scopedMissing = filterMissingForForcedTargets(missing, forcedRouteUnitTargets);
+        const activeRepairTargets = scopedMissing.length === 0 ? qaRepairTargets : [];
+        const objectiveTargets = activeRepairTargets.length > 0 ? activeRepairTargets : scopedMissing;
         const objective = adapter.planRoundObjective(round, objectiveTargets);
         const timeoutConfig = resolveRoundTimeouts({
           taskTimeoutMs: params.timeoutMs,
@@ -7691,9 +7898,12 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
             if (!isRetryableProviderError(error)) {
               throw error;
             }
-            const stillMissingAfterRetry = adapter
+            const stillMissingAfterRetry = filterMissingForForcedTargets(
+              adapter
               .buildRequiredFileChecklist(decision, { files: emittedFiles, requirementText: fullRequirementContext })
-              .filter((path) => !new Set(emittedFiles.map((file) => normalizePath(file.path))).has(normalizePath(path)));
+              .filter((path) => !new Set(emittedFiles.map((file) => normalizePath(file.path))).has(normalizePath(path))),
+              forcedRouteUnitTargets,
+            );
             throw new Error(
               `skill_tool_provider_retry_exhausted: ${errorText(error)}; missing=${stillMissingAfterRetry.join(", ") || "(none)"}`,
             );
@@ -7794,9 +8004,12 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
         }
 
         const dedupedCurrent = dedupeFiles(emittedFiles);
-        const stillMissing = adapter
+        const stillMissing = filterMissingForForcedTargets(
+          adapter
           .buildRequiredFileChecklist(decision, { files: dedupedCurrent, requirementText: fullRequirementContext })
-          .filter((path) => !new Set(dedupedCurrent.map((file) => normalizePath(file.path))).has(normalizePath(path)));
+          .filter((path) => !new Set(dedupedCurrent.map((file) => normalizePath(file.path))).has(normalizePath(path))),
+          forcedRouteUnitTargets,
+        );
         const emittedTargetThisRound =
           !objective.strictSingleTarget ||
           objective.targetFiles.some((target) => emittedPathsThisRound.includes(normalizePath(target)));
@@ -7888,6 +8101,12 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
           );
         }
         if (stillMissing.length === 0) {
+          if (forcedRouteUnitTargets.length > 0) {
+            completedStaticFiles = dedupedCurrent;
+            completedQaSummary = buildRouteUnitQaSummary();
+            completedQaRecords = [];
+            break;
+          }
           try {
             const validated = adapter.validateAndNormalizeRequiredFilesWithQa({
               decision,
@@ -7922,6 +8141,12 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
       }
 
       if (!completedStaticFiles || !completedQaSummary) {
+        if (forcedRouteUnitTargets.length > 0) {
+          completedStaticFiles = dedupeFiles(emittedFiles);
+          completedQaSummary = buildRouteUnitQaSummary();
+          completedQaRecords = [];
+          break;
+        }
         const validated = adapter.validateAndNormalizeRequiredFilesWithQa({
           decision,
           files: emittedFiles,
@@ -7950,6 +8175,11 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
   }
 
   if (!completedStaticFiles || !completedQaSummary) {
+    if (forcedRouteUnitTargets.length > 0) {
+      completedStaticFiles = dedupeFiles(lastStageFiles);
+      completedQaSummary = buildRouteUnitQaSummary();
+      completedQaRecords = [];
+    } else {
     const validated = adapter.validateAndNormalizeRequiredFilesWithQa({
       decision,
       files: lastStageFiles,
@@ -7959,6 +8189,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     completedStaticFiles = validated.files;
     completedQaSummary = validated.qaSummary;
     completedQaRecords = validated.qaRecords;
+    }
   }
   if (qaRepairAttemptCount > 0) {
     completedQaSummary = {
@@ -7966,6 +8197,11 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
       totalRetries: Math.max(Number(completedQaSummary.totalRetries || 0), qaRepairAttemptCount),
     };
   }
+  completedStaticFiles = completedStaticFiles.map((file) =>
+    file.path === "/styles.css"
+      ? { ...file, content: syncSharedCssVariablesToStylePreset(String(file.content || ""), stylePreset) }
+      : file,
+  );
   const routeRepairEvidence: SkillToolRouteRepairEvidence = {
     status: qaRepairAttemptCount > 0 ? "route_repairs_applied" : "no_route_repair_needed",
     repairAttemptCount: qaRepairAttemptCount,

@@ -1,0 +1,16 @@
+CASUX website full-page generation prompt
+Main navigation: Home | CASUX Creation | CASUX Construction | CASUX Certification | CASUX Advocacy | CASUX Research Center | CASUX Information Platform | Downloads
+Website positioning: a professional standards institution, research center, and information platform in one system.
+Default visible language: Chinese. Provide a real EN/ZH language switch backed by translated locale resources; do not mix English and Chinese in the same visible block.
+Visual style: use ecological green #2E8B57 and white as the primary palette, with warm orange accents for CTA moments.
+Homepage priorities: introduce CASUX as the umbrella standards system for child-friendly space creation, construction, certification, advocacy, research, and public information access. Keep the first screen institutional, not a docs shell or route directory.
+Creation route source notes: cover child-friendly-space principles, stakeholder alignment, spatial assessment baseline, and concept workshop outputs.
+Construction route source notes: cover delivery checklist, material safety review, supervision cadence, implementation milestones, and site handover readiness.
+Certification route source notes: cover five-dimension scoring model, total score thresholds, assessor packet, quality-mark workflow, and certification badge criteria.
+Advocacy route source notes: cover alliance partners, public education campaign topics, outreach toolkit, and policy-facing communication materials.
+Research center route source notes: cover child behavior observation studies, pilot evaluations, annual reports, and evidence synthesis for institutional partners.
+Information platform route source notes: present a standards/resource directory with standards document cards showing standard title, standard ID, issuing body, release date, and download button. Include consultation intake for institutions that need document clarification.
+Consultation form requirement: include a real form with name, organization, email, topic, and message fields on the homepage or information platform route.
+Do not create blog or archive routes. Do not enable a generic blog runtime for this site.
+Generate a standards document card component: left PDF icon, middle standard title, standard ID, issuing body, release date, and a right-aligned download button.
+Generate a CASUX child-friendly-space scoring visualization component: total score, circular progress chart, five-dimension radar chart, and certification badge.

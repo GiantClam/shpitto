@@ -36,7 +36,7 @@ describe("design-website llm-executor", () => {
     const mod = await import("../../skills/design-website-generator/tools/llm-executor");
     await mod.executeLLM("hello world", "system context");
 
-    expect(constructorOptions[0]?.baseURL).toBe("https://api.pptoken.org/v1");
+    expect(constructorOptions[0]?.baseURL).toBe("https://cn.pptoken.cc/v1");
     expect(createSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         system: "system context",

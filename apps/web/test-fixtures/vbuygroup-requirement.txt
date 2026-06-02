@@ -1,0 +1,71 @@
+请基于 vbuygroup.com 的公开信息，重做一个更高质量的英文 B2B 外贸官网，服务对象是全球采购商、品牌客户和渠道客户。
+
+要求：
+- 网站类型：企业官网 / 制造业官网
+- 语言：英文为主
+- 目标：展示实力、展示产品品类、展示工厂与认证、引导客户提交询盘
+- 风格：现代、可信赖、国际化、制造业高级感，不要做成廉价阿里巴巴模板风格
+- 视觉主题：以天蓝色、白色为主，允许少量深海军蓝或深灰做结构色。因为业务天然和 beach towel、pool、sunlight、sun lounger、resort、coastal leisure 相关，所以视觉上可以合理使用大海、泳池、沙滩阳光的意象，但整体仍要保持 B2B 外贸企业官网的可信度
+- 内容来源：以提取出的 vbuygroup.com 公开内容为准
+- 不要生成 blog、news、archive、article 体系
+- 必须有真实的 contact / inquiry 表单
+- 首页必须先建立 Vbuy 的品牌与制造能力，再进入产品和服务，不要把首页做成纯分类目录页
+- 每个主页面 opening 结构要有区别，不要所有页面都复用同一套 hero
+- 站点要保留并强化这些主题：custom towel manufacturer, factory capability, quality control, certifications, customized services, product families
+
+[Requirement Form]
+```json
+{
+  "siteType": "corporate",
+  "targetAudience": [
+    "global_buyers",
+    "brand_partners",
+    "distributors"
+  ],
+  "contentSources": [
+    "existing_domain",
+    "uploaded_files"
+  ],
+  "primaryVisualDirection": "industrial-b2b",
+  "secondaryVisualTags": [
+    "modern",
+    "trustworthy",
+    "blue",
+    "global",
+    "manufacturing",
+    "coastal",
+    "resort"
+  ],
+  "pageStructure": {
+    "mode": "multi",
+    "planning": "manual",
+    "pages": [
+      "home",
+      "product-families",
+      "factory-capability",
+      "quality-and-certifications",
+      "customized-services",
+      "contact"
+    ]
+  },
+  "functionalRequirements": [
+    "customer_inquiry_form",
+    "lead_generation_cta",
+    "product_category_navigation"
+  ],
+  "primaryGoal": [
+    "brand_trust",
+    "product_showcase",
+    "lead_generation"
+  ],
+  "language": "english",
+  "brandLogo": {
+    "mode": "reuse_existing_logo",
+    "assetKey": "",
+    "assetName": "Vbuy Textile",
+    "referenceText": "Vbuy Textile",
+    "altText": "Vbuy Textile logo"
+  },
+  "customNotes": "Treat this as a premium corporate B2B manufacturing website for a Chinese custom towel supplier serving global buyers. Route / must establish the company as a reliable custom towel and home textile manufacturing partner, not as a simple category directory. Use the extracted source facts to build pages for product families, factory capability, quality and certifications, customized services, and contact. Keep the experience polished and globally credible. Use real manufacturing imagery, certification proof, and structured inquiry conversion. Avoid blog mechanics, archive mechanics, or generic content-hub language. This site must not be treated as a content hub or editorial resource surface. It should resolve to the corporate-b2b company website path. The authoritative visual direction is industrial-b2b with sky blue and white as the primary palette, supported by restrained navy or graphite structure. Because the source business prominently sells beach towels, poolside towels, resort towels, and hospitality programs, ocean, beach, pool, sunlight, and sun-lounger cues are valid source-backed visual references. Use those cues carefully to create a fresh blue-and-white export-brand atmosphere without turning the site into a travel or lifestyle brochure."
+}
+```

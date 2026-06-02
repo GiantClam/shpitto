@@ -3,8 +3,12 @@ import path from "node:path";
 import dotenv from "dotenv";
 import { describe, expect, it } from "vitest";
 import {
+  appendReplayGenerationSummaryEntry,
   applyForcedDesignTemplateToReplayInputState,
+  buildReplayGenerationSummaryEntry,
   captureMobilePreviewScreenshots,
+  compareGenerationTraces,
+  extractTaskGenerationTrace,
   loadGeneratedProject,
   parsePromptControlManifest,
   rewriteCanonicalPromptWithForcedDesignTemplate,
@@ -376,6 +380,7 @@ describe.skipIf(!runLocalReplay)("vbuy replay validation", () => {
 
         const queuedGenerate = await getLatestChatTaskForChat(replayLocalChatId);
         expect(queuedGenerate?.id).toBeTruthy();
+        const expectedTrace = extractTaskGenerationTrace(queuedGenerate);
         const replayInputState = replayForcedStyle
           ? applyForcedDesignTemplateToReplayInputState(
               (queuedGenerate?.result?.internal?.inputState || {}) as any,
@@ -434,31 +439,42 @@ describe.skipIf(!runLocalReplay)("vbuy replay validation", () => {
           expect(mobileScreenshotQa.executed).toBe(true);
           expect(mobileScreenshotQa.artifacts.length).toBeGreaterThanOrEqual(4);
         }
-        await fs.writeFile(
-          latestReplayInfoPath,
-          JSON.stringify(
-            {
-              sourceChatId: replayChatId,
-              replayChatId: replayLocalChatId,
-              taskId: generated?.id,
-              status: generated?.status,
-              previewUrl,
-              homepageOnly: replayHomepageOnly,
-              forcedStyle: replayForcedStyle || null,
-              overrideText: replayOverrideText || null,
-              mobileScreenshotQa,
-              checkpointProjectPath:
-                persistedCheckpointProjectPath || generated?.result?.progress?.checkpointProjectPath || null,
-              checkpointDir: generated?.result?.progress?.checkpointDir || generated?.result?.progress?.artifactKey || null,
-              checkpointSiteDir: generated?.result?.progress?.checkpointSiteDir || null,
-              error: generated?.result?.error || null,
-              progress: generated?.result?.progress || null,
-              updatedAt: new Date().toISOString(),
-            },
-            null,
-            2,
-          ),
-          "utf8",
+        const generationTrace = extractTaskGenerationTrace(generated);
+        const generationContractComparison = compareGenerationTraces(expectedTrace, generationTrace);
+        const replayInfo = {
+          sourceChatId: replayChatId,
+          replayChatId: replayLocalChatId,
+          taskId: generated?.id,
+          status: generated?.status,
+          previewUrl,
+          homepageOnly: replayHomepageOnly,
+          forcedStyle: replayForcedStyle || null,
+          overrideText: replayOverrideText || null,
+          expectedTrace,
+          generationTrace,
+          generationContractComparison,
+          mobileScreenshotQa,
+          checkpointProjectPath:
+            persistedCheckpointProjectPath || generated?.result?.progress?.checkpointProjectPath || null,
+          checkpointDir: generated?.result?.progress?.checkpointDir || generated?.result?.progress?.artifactKey || null,
+          checkpointSiteDir: generated?.result?.progress?.checkpointSiteDir || null,
+          error: generated?.result?.error || null,
+          progress: generated?.result?.progress || null,
+          updatedAt: new Date().toISOString(),
+        };
+        await fs.writeFile(latestReplayInfoPath, JSON.stringify(replayInfo, null, 2), "utf8");
+        await appendReplayGenerationSummaryEntry(
+          buildReplayGenerationSummaryEntry({
+            sourceChatId: replayChatId,
+            replayChatId: replayLocalChatId,
+            replayMode: "local",
+            replayScenario: replayHomepageOnly ? "vbuy-homepage-only" : "vbuy-fullsite",
+            status: String(generated?.status || "").trim() || null,
+            expectedTrace,
+            generatedTrace: generationTrace,
+            expectedToGeneratedComparison: generationContractComparison,
+            updatedAt: replayInfo.updatedAt,
+          }),
         );
 
         const finalError = String(generated?.result?.error || "");

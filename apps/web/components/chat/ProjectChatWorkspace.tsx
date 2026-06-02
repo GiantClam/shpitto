@@ -255,6 +255,9 @@ type ProjectDomainApiResponse = {
     projectName: string;
     deploymentHost: string | null;
     latestDeploymentUrl: string | null;
+    generationLane?: string | null;
+    generationLaneConfig?: Record<string, unknown> | null;
+    websiteSurfaceMode?: string | null;
   } | null;
   domains?: ProjectDomainRecord[];
   domain?: ProjectDomainRecord | null;
@@ -334,6 +337,57 @@ export function deriveWorkspacePreTaskState(
     stageText: copy.idleStage,
     previewHint: copy.idleHint,
   };
+}
+
+function formatSurfaceModeLabel(surfaceMode: string, locale: RequirementFormLocale): string {
+  const normalized = String(surfaceMode || "").trim().toLowerCase();
+  const known: Record<string, { en: string; zh: string }> = {
+    "content-hub-site": { en: "Content hub", zh: "内容中枢" },
+    "docs-knowledge-site": { en: "Docs", zh: "文档站" },
+    "corporate-b2b-site": { en: "Corporate", zh: "企业官网" },
+    "portfolio-blog-site": { en: "Portfolio blog", zh: "作品博客" },
+    "campaign-landing-site": { en: "Landing", zh: "落地页" },
+  };
+  const hit = known[normalized];
+  if (hit) return locale === "zh" ? hit.zh : hit.en;
+  const compact = normalized.replace(/-site$/i, "").split("-").filter(Boolean).join(" ");
+  if (!compact) return "";
+  return compact.replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function formatGenerationLaneLabel(lane: string, locale: RequirementFormLocale): string {
+  const normalized = String(lane || "").trim().toLowerCase();
+  if (!normalized) return "";
+  if (normalized === "website-generation-mvp") {
+    return locale === "zh" ? "MVP 链路" : "MVP lane";
+  }
+  if (normalized === "legacy") {
+    return locale === "zh" ? "旧链路" : "Legacy lane";
+  }
+  return normalized.replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+export function summarizeGenerationRuntimeBadges(
+  metadata: {
+    generationLane?: unknown;
+    websiteSurfaceMode?: unknown;
+    promptControlManifest?: unknown;
+    discoveryBrief?: unknown;
+  },
+  locale: RequirementFormLocale,
+): string[] {
+  const lane = formatGenerationLaneLabel(String(metadata.generationLane || ""), locale);
+  const manifestSurface =
+    metadata.promptControlManifest && typeof metadata.promptControlManifest === "object"
+      ? String((metadata.promptControlManifest as Record<string, unknown>).websiteSurfaceMode || "").trim()
+      : "";
+  const discoverySurface =
+    metadata.discoveryBrief && typeof metadata.discoveryBrief === "object"
+      ? String((metadata.discoveryBrief as Record<string, unknown>).surfaceMode || "").trim()
+      : "";
+  const surfaceMode = String(metadata.websiteSurfaceMode || manifestSurface || discoverySurface || "").trim();
+  const surface = formatSurfaceModeLabel(surfaceMode, locale);
+  return [lane, surface].filter(Boolean);
 }
 
 function isTaskProgressCardMetadata(metadata: Record<string, unknown> | null | undefined): boolean {
@@ -3226,6 +3280,14 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
     }
     return browserLocale;
   }, [browserLocale, messages]);
+  const generationRuntimeBadges = useMemo(() => {
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      const metadata = (messages[index]?.metadata || {}) as Record<string, unknown>;
+      const badges = summarizeGenerationRuntimeBadges(metadata, conversationLocale);
+      if (badges.length > 0) return badges;
+    }
+    return [] as string[];
+  }, [conversationLocale, messages]);
   const preTaskState = useMemo(
     () => deriveWorkspacePreTaskState(messages, conversationLocale),
     [conversationLocale, messages],
@@ -4043,6 +4105,18 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-lg font-semibold text-[var(--shp-text)]">{projectTitle}</p>
                     <p className="text-xs text-[var(--shp-muted)]">{formatVersionLabel(projectUpdatedAt)}-stable</p>
+                    {generationRuntimeBadges.length > 0 ? (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {generationRuntimeBadges.map((badge) => (
+                          <span
+                            key={badge}
+                            className="inline-flex rounded-md border border-[color-mix(in_oklab,var(--shp-primary)_34%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_10%,var(--shp-surface)_90%)] px-2 py-1 text-[10px] font-medium text-[var(--shp-text)]"
+                          >
+                            {badge}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
                 <button
@@ -4484,6 +4558,14 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
                 <span className="rounded-md border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] px-2 py-1 text-[var(--shp-text)]">
                   Latest
                 </span>
+                {generationRuntimeBadges.map((badge) => (
+                  <span
+                    key={`preview-${badge}`}
+                    className="rounded-md border border-[color-mix(in_oklab,var(--shp-primary)_34%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_10%,var(--shp-surface)_90%)] px-2 py-1 text-[10px] text-[var(--shp-text)]"
+                  >
+                    {badge}
+                  </span>
+                ))}
                 <span className={`inline-flex rounded-md border px-2 py-1 text-[10px] ${statusTone(task?.status || null)}`}>
                   {stageText}
                 </span>

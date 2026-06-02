@@ -141,6 +141,44 @@ describe("chat api async mode", () => {
     expect(workflow.supportedLocales || []).toEqual(expect.arrayContaining(["en", "fr", "ja"]));
   });
 
+  it("defaults website prompt drafts to the website-generation-mvp lane", async () => {
+    const previousLane = process.env.SHPITTO_WEBSITE_GENERATION_LANE;
+    const previousMvp = process.env.SHPITTO_WEBSITE_GENERATION_MVP;
+    delete process.env.SHPITTO_WEBSITE_GENERATION_LANE;
+    delete process.env.SHPITTO_WEBSITE_GENERATION_MVP;
+
+    try {
+      const chatId = `chat-default-mvp-lane-${Date.now()}`;
+      const requirement =
+        "# Canonical Website Generation Prompt\n\nBuild a company website for an AI studio with Home, Services, Cases, and Contact.";
+      const { POST } = await import("../../app/api/chat/route");
+      const res = await POST(
+        new Request("http://localhost/api/chat", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            id: chatId,
+            messages: [{ role: "user", parts: [{ type: "text", text: confirmPayload(requirement) }] }],
+          }),
+        }),
+      );
+
+      expect(res.status).toBe(202);
+      const task = await getLatestChatTaskForChat(chatId);
+      const workflow = (task?.result?.internal?.inputState as any)?.workflow_context || {};
+      expect(workflow.generationLane).toBe("website-generation-mvp");
+      expect(workflow.generationLaneConfig?.disableWebSearch).toBe(true);
+      expect(workflow.generationLaneConfig?.routePolicy).toBe("default");
+      expect(String(workflow.contractHash || "")).toMatch(/^[a-f0-9]{64}$/);
+      expect(workflow.generationContract?.contractHash).toBe(workflow.contractHash);
+    } finally {
+      if (previousLane === undefined) delete process.env.SHPITTO_WEBSITE_GENERATION_LANE;
+      else process.env.SHPITTO_WEBSITE_GENERATION_LANE = previousLane;
+      if (previousMvp === undefined) delete process.env.SHPITTO_WEBSITE_GENERATION_MVP;
+      else process.env.SHPITTO_WEBSITE_GENERATION_MVP = previousMvp;
+    }
+  });
+
   it("keeps default portfolio-blog first pass on generate without activating deferred blog detail fill", async () => {
     const chatId = `chat-portfolio-blog-first-pass-${Date.now()}`;
     const requirement = [
@@ -240,6 +278,126 @@ describe("chat api async mode", () => {
     expect(workflow.websiteDiscoveryBrief?.defaultLocale).toBe("zh-CN");
     expect(workflow.supportedLocales || []).toEqual(["zh-CN", "en"]);
     expect(workflow.defaultLocale).toBe("zh-CN");
+  });
+
+  it("queues website-generation-mvp lane metadata and structured evidence through confirm flow", async () => {
+    const previousLane = process.env.SHPITTO_WEBSITE_GENERATION_LANE;
+    const previousMvp = process.env.SHPITTO_WEBSITE_GENERATION_MVP;
+    const previousWebSearch = process.env.SHPITTO_WEBSITE_GENERATION_WEB_SEARCH;
+    const previousRoutePolicy = process.env.SHPITTO_WEBSITE_GENERATION_ROUTE_POLICY;
+    process.env.SHPITTO_WEBSITE_GENERATION_LANE = "mvp";
+    process.env.SHPITTO_WEBSITE_GENERATION_MVP = "1";
+    process.env.SHPITTO_WEBSITE_GENERATION_WEB_SEARCH = "0";
+    process.env.SHPITTO_WEBSITE_GENERATION_ROUTE_POLICY = "default";
+
+    try {
+      const chatId = `chat-mvp-lane-${Date.now()}`;
+      const localFixturePath = path.resolve(process.cwd(), "test-fixtures", "casux-source.txt");
+      const requirement = [
+        "Build the official CASUX website as an institutional standards and research hub.",
+        "Generate a bilingual Chinese and English research and standards site.",
+      ].join("\n");
+      const requirementFormText = [
+        requirementFormPayload({
+          siteType: "company",
+          contentSources: ["uploaded_files"],
+          customNotes:
+            "CASUX institutional standards and research hub with public information, creation, construction, certification, advocacy, research center, and information platform sections.",
+          targetAudience: ["enterprise_buyers", "overseas_customers"],
+          primaryVisualDirection: "institutional-editorial",
+          secondaryVisualTags: ["professional", "research-driven"],
+          pageStructure: {
+            mode: "multi",
+            pages: ["home", "information", "creation", "construction", "certification", "advocacy", "research"],
+          },
+          functionalRequirements: ["multilingual_switch"],
+          primaryGoal: ["public_information"],
+          language: "bilingual",
+        }),
+        "",
+        "[Referenced Assets]",
+        `- Asset "casux-source.txt" path: ${localFixturePath}`,
+      ].join("\n");
+      const { POST } = await import("../../app/api/chat/route");
+      const initialRes = await POST(
+        new Request("http://localhost/api/chat", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            id: chatId,
+            messages: [{ role: "user", parts: [{ type: "text", text: requirement }] }],
+          }),
+        }),
+      );
+      expect(initialRes.status).toBe(200);
+
+      const draftRes = await POST(
+        new Request("http://localhost/api/chat", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            id: chatId,
+            messages: [{ role: "user", parts: [{ type: "text", text: requirementFormText }] }],
+          }),
+        }),
+      );
+
+      expect(draftRes.status).toBe(200);
+      const timeline = await listChatTimelineMessages(chatId, 100);
+      const promptCard = timeline.find((message) => String(message.metadata?.cardType || "") === "prompt_draft");
+      const confirmCard = timeline.find((message) => String(message.metadata?.cardType || "") === "confirm_generate");
+      const metadata = (promptCard?.metadata || {}) as Record<string, any>;
+      expect(metadata.generationLane).toBe("website-generation-mvp");
+      expect(metadata.generationLaneConfig).toEqual({
+        disableWebSearch: true,
+        routePolicy: "default",
+      });
+      expect(String(metadata.contractHash || "")).toMatch(/^[a-f0-9]{64}$/);
+      expect(metadata.generationContract?.contractHash).toBe(metadata.contractHash);
+      expect(metadata.usedWebSearch).toBe(false);
+      expect(metadata.promptBudgetEnvelope?.truncationPolicy).toBe("page_scoped_drop");
+      expect(metadata.structuredSourceFacts?.pageCandidates?.length).toBeGreaterThan(0);
+
+      const confirmRes = await POST(
+        new Request("http://localhost/api/chat", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            id: chatId,
+            messages: [{ role: "user", parts: [{ type: "text", text: String(confirmCard?.metadata?.payload || "") }] }],
+          }),
+        }),
+      );
+
+      expect(confirmRes.status).toBe(202);
+      const task = await getLatestChatTaskForChat(chatId);
+      const workflow = (task?.result?.internal?.inputState as any)?.workflow_context || {};
+      expect(workflow.generationLane).toBe("website-generation-mvp");
+      expect(workflow.generationLaneConfig).toEqual({
+        disableWebSearch: true,
+        routePolicy: "default",
+      });
+      expect(String(workflow.contractHash || "")).toMatch(/^[a-f0-9]{64}$/);
+      expect(workflow.generationContract?.contractHash).toBe(workflow.contractHash);
+      expect(Array.isArray(workflow.routeUnitContracts)).toBe(true);
+      expect(Array.isArray(workflow.selectedSeedSkillManifest?.selected)).toBe(true);
+      expect(workflow.promptBudgetEnvelope?.truncationPolicy).toBe("page_scoped_drop");
+      expect(workflow.structuredSourceFacts?.pageCandidates?.length).toBeGreaterThan(0);
+      expect(workflow.referencedAssets).toEqual([`Asset "casux-source.txt" path: ${localFixturePath}`]);
+      expect(workflow.websiteSurfaceMode).toBe("content-hub-site");
+      expect(workflow.promptControlManifest?.routes).toEqual(
+        expect.arrayContaining(["/", "/casux-creation", "/casux-information-platform"]),
+      );
+    } finally {
+      if (previousLane === undefined) delete process.env.SHPITTO_WEBSITE_GENERATION_LANE;
+      else process.env.SHPITTO_WEBSITE_GENERATION_LANE = previousLane;
+      if (previousMvp === undefined) delete process.env.SHPITTO_WEBSITE_GENERATION_MVP;
+      else process.env.SHPITTO_WEBSITE_GENERATION_MVP = previousMvp;
+      if (previousWebSearch === undefined) delete process.env.SHPITTO_WEBSITE_GENERATION_WEB_SEARCH;
+      else process.env.SHPITTO_WEBSITE_GENERATION_WEB_SEARCH = previousWebSearch;
+      if (previousRoutePolicy === undefined) delete process.env.SHPITTO_WEBSITE_GENERATION_ROUTE_POLICY;
+      else process.env.SHPITTO_WEBSITE_GENERATION_ROUTE_POLICY = previousRoutePolicy;
+    }
   });
 
   it("returns existing active task instead of creating duplicate", async () => {

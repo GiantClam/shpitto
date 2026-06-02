@@ -15,6 +15,7 @@ import {
   formatTargetPageContract,
   enforceNavigationOrder,
   ensureEnglishFirstI18nResourceFilesForTesting,
+  hasExplicitBlogDetailFillRequestForTesting,
   findVisibleSimultaneousBilingualCopyForTesting,
   htmlPathToRoute,
   injectCuratedMediaIntoHtmlForTesting,
@@ -39,8 +40,10 @@ import {
   resolveToolProtocolForProvider,
   renderWebsiteSeedSkillSidecarGuidance,
   runSkillToolExecutor,
+  sanitizeWebsiteSkillHtmlOutputForAdapter,
   sanitizeRequirementForGenerationForTesting,
   shouldUseRouteUnitProviderBridgeForTesting,
+  syncSharedCssVariablesToStylePresetForTesting,
   stripEmptyBrandMarkPlaceholdersForTesting,
   stripEmptyLocaleGroupPlaceholdersForTesting,
   validateAndNormalizeRequiredFiles,
@@ -1104,6 +1107,107 @@ describe("skill-tool-executor", () => {
     ).not.toThrow();
   });
 
+  it("accepts structured page footers even when blog cards contain nested article footers", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build site. Nav: Home | Blog | About | Contact")],
+      phase: "conversation",
+    } as any);
+    const sharedFooter = [
+      '<footer class="site-footer">',
+      '  <div class="site-footer__inner footer-band">',
+      '    <div class="footer-brand"><a class="brand" href="/">Brand</a><p>Independent advisory practice.</p></div>',
+      '    <div class="footer-links"><p class="footer-heading">Primary navigation</p><a href="/">Home</a><a href="/blog">Blog</a><a href="/about">About</a><a href="/contact">Contact</a></div>',
+      '    <div class="footer-meta"><p class="footer-heading">Contact</p><a href="/contact">Project inquiry</a></div>',
+      "  </div>",
+      "</footer>",
+    ].join("");
+    const files = [
+      {
+        path: "/styles.css",
+        content:
+          ".site-footer{padding:3rem 0;background:#f8fafc;border-top:1px solid #d8dee8}.site-footer__inner{display:grid}.footer-band{display:grid}.footer-brand{display:grid}.footer-links{display:grid}.footer-meta{display:grid}.card{padding:1rem}.card footer{display:flex}",
+        type: "text/css",
+      },
+      { path: "/script.js", content: "(() => {})();", type: "text/javascript" },
+      {
+        path: "/index.html",
+        type: "text/html",
+        content: [
+          "<!doctype html>",
+          "<html><head>",
+          '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+          '  <link rel="stylesheet" href="/styles.css" />',
+          '  <script src="/script.js"></script>',
+          "</head><body>",
+          '  <header><nav><a href="/">Home</a><a href="/blog">Blog</a><a href="/about">About</a><a href="/contact">Contact</a></nav></header>',
+          "  <main><section><h1>Home</h1><p>Route specific content.</p></section></main>",
+          `  ${sharedFooter}`,
+          "</body></html>",
+        ].join("\n"),
+      },
+      {
+        path: "/blog/index.html",
+        type: "text/html",
+        content: [
+          "<!doctype html>",
+          "<html><head>",
+          '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+          '  <link rel="stylesheet" href="../styles.css" />',
+          '  <script src="../script.js"></script>',
+          "</head><body>",
+          '  <header><nav><a href="/">Home</a><a href="/blog">Blog</a><a href="/about">About</a><a href="/contact">Contact</a></nav></header>',
+          '  <main><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div class="article-ledger" data-shpitto-blog-list>',
+          '    <article class="card article-card"><h2>Post A</h2><p>Archive summary.</p><footer><span>Tag A</span><span>Tag B</span></footer></article>',
+          '    <article class="card article-card"><h2>Post B</h2><p>Archive summary.</p><footer><span>Tag C</span><span>Tag D</span></footer></article>',
+          "  </div></section></main>",
+          `  ${sharedFooter}`,
+          "</body></html>",
+        ].join("\n"),
+      },
+      {
+        path: "/about/index.html",
+        type: "text/html",
+        content: [
+          "<!doctype html>",
+          "<html><head>",
+          '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+          '  <link rel="stylesheet" href="../styles.css" />',
+          '  <script src="../script.js"></script>',
+          "</head><body>",
+          '  <header><nav><a href="/">Home</a><a href="/blog">Blog</a><a href="/about">About</a><a href="/contact">Contact</a></nav></header>',
+          "  <main><section><h1>About</h1><p>Route specific content.</p></section></main>",
+          `  ${sharedFooter}`,
+          "</body></html>",
+        ].join("\n"),
+      },
+      {
+        path: "/contact/index.html",
+        type: "text/html",
+        content: [
+          "<!doctype html>",
+          "<html><head>",
+          '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+          '  <link rel="stylesheet" href="../styles.css" />',
+          '  <script src="../script.js"></script>',
+          "</head><body>",
+          '  <header><nav><a href="/">Home</a><a href="/blog">Blog</a><a href="/about">About</a><a href="/contact">Contact</a></nav></header>',
+          "  <main><section><h1>Contact</h1><p>Route specific content.</p></section></main>",
+          `  ${sharedFooter}`,
+          "</body></html>",
+        ].join("\n"),
+      },
+    ];
+
+    expect(() =>
+      validateWebsiteRequiredFilesWithQaForAdapter({
+        decision,
+        files,
+        requirementText: "Institutional site with a structured shared footer shell.",
+        enforceCorporateHomepageContract: false,
+      }),
+    ).not.toThrow();
+  });
+
   it("localizes known route anchors into switchable locale labels", () => {
     const html = [
       "<!doctype html><html><body>",
@@ -1711,13 +1815,46 @@ describe("skill-tool-executor", () => {
         : file,
     );
 
-    expect(() =>
+  expect(() =>
       validateAndNormalizeRequiredFilesWithQa({
         decision,
         files,
         requirementText: "Build a resource and research hub homepage for policy researchers.",
       }),
     ).toThrow(/violates surface visual token contract/i);
+  });
+
+  it("allows content-hub green tokens when the requirement explicitly calls for a child-friendly institutional palette", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a child-friendly standards and research hub for educational institutions.")],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          routeSource: "prompt_draft_page_plan",
+          routes: ["/"],
+          navLabels: ["Home"],
+          files: ["/styles.css", "/script.js", "/index.html"],
+        },
+      },
+    } as any);
+    const files = validGeneratedFiles(["/"]).map((file) =>
+      file.path === "/styles.css"
+        ? {
+            ...file,
+            content:
+              ":root{--bg:#fff;--surface:#f5fbf7;--panel:#fff;--text:#12312a;--muted:#51635c;--border:#d7e7dd;--primary:#2e8b57;--accent:#f59e0b;} body{background:var(--bg);color:var(--text)} .card{background:var(--surface)}",
+          }
+        : file,
+    );
+
+    expect(() =>
+      validateAndNormalizeRequiredFilesWithQa({
+        decision,
+        files,
+        requirementText:
+          "Build a child-friendly institutional standards and research hub. The ecological green #2E8B57 plus white palette with warm orange accents is authoritative.",
+      }),
+    ).not.toThrow();
   });
 
   it("flags docs and content-hub homepages that miss their surface-owned archetype classes", () => {
@@ -2156,6 +2293,11 @@ describe("skill-tool-executor", () => {
       - Footer must contribute real site content; avoid copyright-only placeholders, label-only footers, or generic legal shells that add no value.
       - Footer must use a structured shell with a distinct footer band plus separate identity, navigation, and support/meta zones when the shared CSS defines footer-shell utilities; do not collapse the footer into a flat row of links.
       - Mobile nav may collapse visually, but it still needs the same meaningful destinations as desktop rather than a menu-only placeholder shell.
+      - Homepage first screen must identify the brand, object, institution, person, product, or business category before broad value propositions; the first viewport must not read as an interchangeable SaaS or agency template.
+      - Every route must include concrete nouns from the confirmed brief, uploaded/domain/source material, selected surface mode, or route role. Do not rely on abstract filler such as solutions, innovation, excellence, seamless, powerful, or future-ready without subject-specific details.
+      - Page archetypes must stay distinct: home establishes identity and visitor path, products/catalog supports comparison, solutions/services explains process or scenario fit, cases/proof shows evidence, about builds trust, contact clarifies conversion expectations, docs/reference supports wayfinding, content hubs organize resources, and blogs/editorial surfaces foreground writing.
+      - CTA labels must describe the route-specific next action. Do not repeat generic labels such as Learn More, Get Started, Read More, or Submit as the dominant action system across the site.
+      - Mobile composition must be readable without text collisions: headings, CTA groups, cards, stats, and nav labels must fit their containers and must not push the first meaningful content below decorative empty space.
       - When refine or generation creates a new page, that page must reuse the current site's active theme and the same shared navigation/footer shell unless the brief explicitly requests a shell redesign.
       - External imagery must come from source-backed or project-owned assets; do not ship example.com, placeholder.com, or other demo/stock placeholder URLs.
       - Public contact details and outbound URLs must be publishable; do not ship reserved placeholder domains such as \`.example\`, \`.test\`, \`.invalid\`, \`localhost\`, or \`example.com\` in visible copy or href/src attributes.
@@ -4149,6 +4291,94 @@ describe("skill-tool-executor", () => {
     expect(patched).toContain("gap: 0.875rem;");
   });
 
+  it("injects a desktop single-row nav fix when generated nav css wraps", () => {
+    const css = ".site-nav{display:flex;flex-wrap:wrap;gap:.25rem}.header-utility{display:flex;gap:.5rem}";
+    const normalized = normalizeGeneratedCssForTesting(css);
+
+    expect(normalized).toContain("runtime-nav-single-row-fix");
+    expect(normalized).toContain("flex-wrap: nowrap;");
+    expect(normalized).toContain("overflow-x: auto;");
+  });
+
+  it("removes real consultation forms from routes outside the explicit host allowlist", () => {
+    const html = [
+      "<!doctype html><html><body>",
+      '<section id="consultation-form" class="form-band form-card">',
+      "  <h2>咨询表单</h2>",
+      '  <form><input name="name" /><textarea name="message"></textarea></form>',
+      "</section>",
+      "</body></html>",
+    ].join("");
+    const requirementText =
+      "Only route / or /casux-information-platform may host the real consultation form with name, organization, email, topic, and message fields.";
+
+    const sanitized = sanitizeWebsiteSkillHtmlOutputForAdapter(
+      "/casux-research-center/index.html",
+      html,
+      requirementText,
+    );
+
+    expect(sanitized).not.toContain("<form");
+    expect(sanitized).not.toContain('id="consultation-form"');
+  });
+
+  it("injects a consultation form onto allowed host routes when the host is missing one", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a bilingual CASUX institutional hub.")],
+      phase: "conversation",
+      workflow_context: {
+        promptControlManifest: {
+          routes: ["/", "/casux-information-platform"],
+          navLabels: ["Home", "Information"],
+          files: ["/styles.css", "/script.js", "/index.html", "/casux-information-platform/index.html"],
+        },
+      },
+    } as any);
+    const requirementText =
+      "Only route / or /casux-information-platform may host the real consultation form with name, organization, email, topic, and message fields.";
+    const files = [
+      { path: "/styles.css", type: "text/css", content: ".site-nav{display:flex}" },
+      { path: "/script.js", type: "text/javascript", content: "console.log('ok')" },
+      { path: "/index.html", type: "text/html", content: "<!doctype html><html><body><main><section><h1>Home</h1></section></main></body></html>" },
+      { path: "/casux-information-platform/index.html", type: "text/html", content: "<!doctype html><html><body><main><section><h1>Info</h1></section></main></body></html>" },
+    ];
+
+    const normalized = normalizeWebsiteStaticFilesForPreview({
+      decision,
+      files,
+      requirementText,
+    });
+    const byPath = new Map(normalized.map((file) => [file.path, String(file.content || "")]));
+
+    expect(byPath.get("/index.html")).toContain("<form");
+    expect(byPath.get("/index.html")).toContain('id="consultation-form"');
+    expect(byPath.get("/casux-information-platform/index.html")).toContain("<form");
+  });
+
+  it("appends style-preset root variables so shared css honors the selected theme", () => {
+    const css = ":root { --bg: #f5efe6; --surface:#fff9ef; --primary: #7a3524; --accent: #b6813b; }";
+    const synced = syncSharedCssVariablesToStylePresetForTesting(css, {
+      ...DEFAULT_STYLE_PRESET,
+      colors: {
+        primary: "#2E8B57",
+        accent: "#F59E0B",
+        background: "#FFFFFF",
+        surface: "#F5FBF7",
+        panel: "#FFFFFF",
+        text: "#12312A",
+        muted: "#51635C",
+        border: "#D7E7DD",
+      },
+    });
+
+    expect(synced).toContain("runtime-style-preset-sync");
+    expect(synced).toContain("--primary: #2E8B57;");
+    expect(synced).toContain("--accent: #F59E0B;");
+    expect(synced).toContain("--surface: #F5FBF7;");
+    expect(synced).not.toContain("#7a3524");
+    expect(synced).not.toContain("#b6813b");
+  });
+
   it("does not treat design-direction labels and Mercury-style brand references as simultaneous bilingual copy", () => {
     const decision = buildLocalDecisionPlan({
       messages: [new HumanMessage("Build a bilingual Chinese and English personal blog with a language switch.")],
@@ -4453,9 +4683,10 @@ describe("skill-tool-executor", () => {
           '<header><nav><a href="/">Home</a><a href="/contact/">Contact</a></nav></header>',
           [
             "<main>",
-            "<section><h1>Home</h1><p>Prompt Control Manifest, content gap, and assumption notes should never be visitor-facing.</p></section>",
-            "<section><h2>Capabilities</h2><p>The team helps operators translate complex requirements into clearer service design, coordination rules, and trustworthy public-facing material.</p></section>",
-            "<section><h2>Proof</h2><p>Recent programs consolidated stakeholder updates, working standards, and field case notes into one destination that reduced coordination drift across teams.</p></section>",
+            "<section><h1>Operational publishing systems for regulated documentation teams</h1><p>Prompt Control Manifest, content gap, and assumption notes should never be visitor-facing.</p></section>",
+            "<section><h2>Documentation governance model</h2><p>The team helps operations leaders turn fragmented review rules, approval checkpoints, and delivery expectations into one publishable documentation system that internal writers and external readers can actually follow.</p></section>",
+            "<section><h2>Editorial review operations</h2><p>Recent programs consolidated stakeholder updates, working standards, escalation paths, and field case notes into one destination that reduced coordination drift across legal, policy, and delivery teams.</p></section>",
+            "<section><h2>Evidence and distribution workflow</h2><p>Each route explains how announcements, reference updates, support notices, and implementation guidance move from internal review into reader-safe pages without leaking planning jargon into the finished site.</p></section>",
             "</main>",
           ].join(""),
           '<footer><a href="/">Home</a><a href="/contact/">Contact</a><p>Direct contact and delivery support.</p></footer>',
@@ -5945,6 +6176,19 @@ describe("skill-tool-executor", () => {
     );
   });
 
+  it("treats an explicit blog-detail fill instruction as active even when earlier history said details would be filled later", () => {
+    const requirementText = [
+      "# Canonical Website Generation Prompt",
+      "Build a polished personal technical blog for an AI consultant with Home, Blog, About, and Contact.",
+      "The first pass only needs a strong blog index and a profile-led homepage.",
+      "Do not generate blog detail pages yet. Blog details will be filled later by a separate workflow.",
+      "",
+      "fill blog detail pages now and align the slugs",
+    ].join("\n");
+
+    expect(hasExplicitBlogDetailFillRequestForTesting(requirementText)).toBe(true);
+  });
+
   it("builds targeted QA repair guidance for collection openings that still use legacy hero utilities", () => {
     const feedback =
       "skill_tool_invalid_required_file: /casux-research-center/index.html reuses the legacy split-hero template instead of a route-owned content collection opening";
@@ -6380,6 +6624,44 @@ describe("skill-tool-executor", () => {
     expect(issueText).toContain("legacy split-hero markup");
   });
 
+  it("does not apply the corporate homepage contract to docs homepages just because the prompt negates enterprise/corporate patterns", () => {
+    const html = [
+      '<section class="hero-grid">',
+      '  <div class="hero-copy"><h1>Reference docs for platform teams</h1></div>',
+      '  <aside class="hero-panel"><p>Generic split opening</p></aside>',
+      "</section>",
+    ].join("\n");
+
+    const issues = findCorporateB2BHomepageContractIssuesForTesting(
+      html,
+      "/index.html",
+      "Build a docs homepage. Avoid enterprise proof bands and corporate marketing hero rhythm.",
+      "",
+      "docs-knowledge-site",
+    );
+
+    expect(issues).toEqual([]);
+  });
+
+  it("does not apply the corporate homepage contract to content-hub homepages just because the prompt negates enterprise/corporate patterns", () => {
+    const html = [
+      '<section class="hero-grid">',
+      '  <div class="hero-copy"><h1>Research collections and standards briefings</h1></div>',
+      '  <aside class="hero-panel"><p>Generic split opening</p></aside>',
+      "</section>",
+    ].join("\n");
+
+    const issues = findCorporateB2BHomepageContractIssuesForTesting(
+      html,
+      "/index.html",
+      "Build a research hub homepage. Avoid enterprise proof bands and corporate buyer framing.",
+      "",
+      "content-hub-site",
+    );
+
+    expect(issues).toEqual([]);
+  });
+
   it("flags corporate homepage CSS when the hero is styled as split panels instead of one overlay surface", () => {
     const html = [
       "<!doctype html><html><body>",
@@ -6769,6 +7051,17 @@ describe("skill-tool-executor", () => {
     expect(normalized).toContain("attributeFilter: ['data-lang']");
     expect(normalized).toContain("window.__shpittoPreviewBase");
     expect(normalized).toContain("const path = resolveMessagePath(normalizedLang);");
+  });
+
+  it("does not append duplicate locale runtime blocks when the bilingual helper is already present", () => {
+    const script = [
+      "console.log('ready');",
+      "/* __shpitto_locale_runtime__ */",
+      "(() => { window.__alreadyPatched = true; })();",
+    ].join("\n");
+
+    const normalized = normalizeGeneratedJsForTesting(script, "Chinese and English bilingual site");
+    expect(normalized).toBe(script);
   });
 
   it("injects locale-registry runtime support for multilingual translation-driven sites", () => {

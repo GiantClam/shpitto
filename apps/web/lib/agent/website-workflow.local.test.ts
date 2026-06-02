@@ -233,7 +233,7 @@ describe("website-workflow local awesome-design templates", () => {
     }
   });
 
-  it("uses structured orchestrator visual decisions before prompt-derived runtime guessing", async () => {
+  it("lets prompt-adaptive visual intent override a soft structured default", async () => {
     const prevUseLlm = process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
     process.env.WORKFLOW_STYLE_SELECT_USE_LLM = "0";
 
@@ -249,10 +249,10 @@ describe("website-workflow local awesome-design templates", () => {
         lockPrimaryVisualDirection: false,
       });
 
-      expect(hit.selection_mode).toBe("open_design_context");
-      expect(hit.id).toBe("open-design-industrial-b2b");
-      expect(hit.design_md_inline).toContain("Open Design Direction: Industrial B2B / precision");
-      expect(hit.design_md_inline).not.toContain("Prompt-Adaptive Design System");
+      expect(hit.selection_mode).toBe("prompt_adaptive");
+      expect(hit.id).toBe("prompt-adaptive");
+      expect(hit.design_md_inline).toContain("Prompt-Adaptive Design System");
+      expect(hit.style_preset?.colors?.primary).toBe("#2E8B57");
     } finally {
       if (prevUseLlm === undefined) delete process.env.WORKFLOW_STYLE_SELECT_USE_LLM;
       else process.env.WORKFLOW_STYLE_SELECT_USE_LLM = prevUseLlm;

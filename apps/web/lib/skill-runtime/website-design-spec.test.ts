@@ -331,6 +331,68 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
     expect(markdown).toContain("CTA-only action groups, and mailto links do not satisfy the consultation intake requirement");
   });
 
+  it("respects explicit consultation-host restrictions from the requirement text", () => {
+    const decision = buildMockDecision();
+    decision.requirementText =
+      "Create a CASUX information platform and homepage. The homepage or information platform must include the consultation form with name, organization, email, topic, and message.";
+    decision.routes = ["/", "/casux-information-platform", "/about"];
+    decision.navLabels = ["Home", "Information Platform", "About"];
+    decision.pageBlueprints = [
+      {
+        route: "/",
+        navLabel: "Home",
+        purpose: "Institutional overview.",
+        source: "prompt_contract",
+        pageKind: "home",
+        responsibility: "Homepage",
+        contentSkeleton: ["Masthead", "Overview", "CTA"],
+        componentMix: { hero: 20, feature: 20, grid: 20, proof: 20, form: 10, cta: 10 },
+        constraints: [],
+      },
+      {
+        route: "/casux-information-platform",
+        navLabel: "Information Platform",
+        purpose: "Resource and standards index.",
+        source: "prompt_contract",
+        pageKind: "content-collection-index",
+        responsibility: "Information platform.",
+        contentSkeleton: ["Collection lead", "Resource list", "CTA"],
+        componentMix: { hero: 10, feature: 15, grid: 30, proof: 10, form: 20, cta: 15 },
+        constraints: [],
+      },
+      {
+        route: "/about",
+        navLabel: "About",
+        purpose: "Identity page.",
+        source: "prompt_contract",
+        pageKind: "intent",
+        responsibility: "About page.",
+        contentSkeleton: ["Identity", "Trust", "CTA"],
+        componentMix: { hero: 10, feature: 20, grid: 15, proof: 20, form: 0, cta: 10 },
+        constraints: [],
+      },
+    ] as any;
+
+    const markdown = buildWebsiteDesignSpecMarkdown({
+      decision,
+      requirementText: decision.requirementText,
+      stylePreset: DEFAULT_STYLE_PRESET,
+      websiteSurfaceMode: "content-hub-site",
+    });
+    const aboutExcerpt = buildWebsiteDesignSpecRouteExcerpt(
+      {
+        decision,
+        requirementText: decision.requirementText,
+        stylePreset: DEFAULT_STYLE_PRESET,
+        websiteSurfaceMode: "content-hub-site",
+      } as any,
+      "/about",
+    );
+
+    expect(markdown).toContain("consultation_form_host_preference: when the requirement text explicitly limits the form host");
+    expect(aboutExcerpt).not.toContain("this route is an approved host for the required consultation intake");
+  });
+
   it("produces a focused homepage route excerpt", () => {
     const decision = buildMockDecision();
     decision.pageBlueprints = decision.pageIntents;
@@ -468,6 +530,57 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
     expect(hub).toContain("Do not reuse the same green/white rounded-card system");
     expect(hub).toContain("surface_css_tokens: --bg #F5EFE6");
     expect(hub).toContain("--primary #7A3524; --accent #B6813B");
+  });
+
+  it("switches content-hub surface tokens to the child-friendly institutional palette when the brief explicitly locks it", () => {
+    const decision = buildMockDecision();
+    decision.pageBlueprints = decision.pageIntents;
+    const markdown = buildWebsiteDesignSpecMarkdown({
+      decision,
+      requirementText:
+        "Create the official CASUX bilingual institutional website for child-friendly space standards and research. Use ecological green #2E8B57 with warm orange CTA accents.",
+      stylePreset: {
+        ...DEFAULT_STYLE_PRESET,
+        colors: {
+          ...DEFAULT_STYLE_PRESET.colors,
+          primary: "#2E8B57",
+          accent: "#F59E0B",
+          background: "#FFFFFF",
+        },
+        typography: '"Inter", "Noto Sans SC", system-ui, -apple-system, sans-serif',
+      },
+      websiteSurfaceMode: "content-hub-site",
+      designHit: {
+        id: "prompt-adaptive",
+        name: "Prompt-Adaptive",
+        design_desc: "Canonical prompt contains explicit visual requirements; using prompt-adaptive design context instead of a generic template default.",
+        score: 100,
+        matched_keywords: ["child-friendly", "institutional", "ecological green"],
+        source: "website-generation-workflow",
+        category: "Prompt-Adaptive",
+        design_md_inline: "",
+      },
+      discoveryBrief: {
+        surfaceMode: "content-hub-site",
+        sourcePriority: "uploaded_files",
+        audience: ["education_operators", "research_partners"],
+        primaryGoal: "institutional_trust, resource_discovery, program_introduction",
+        routes: ["/", "/casux-creation", "/casux-construction"],
+        localeMode: "bilingual",
+        visualDirectionId: "institutional-child-friendly",
+        immutableConstraints: [],
+      },
+      designSystemId: "prompt-adaptive",
+      designSystemName: "Prompt-Adaptive",
+    });
+
+    expect(markdown).toContain("surface_css_tokens: --bg #F6FBF6");
+    expect(markdown).toContain("--primary #2E8B57; --accent #F59E0B");
+    expect(markdown).toContain("warm institutional sans such as Inter");
+    expect(markdown).toContain("child-friendly institutional guidance");
+    expect(markdown).toContain("process-lead, framework-grid, scorecard-band");
+    expect(markdown).not.toContain("--primary #7A3524; --accent #B6813B");
+    expect(markdown).not.toContain("serif-forward or publication-like typography");
   });
 
   it("uses a profile-led homepage archetype for portfolio/blog surfaces", () => {
@@ -653,7 +766,60 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
     expect(markdown).toContain("Do not let certification, information-entry, support-entry, consultation-entry, downloads, or route-family labels dominate the opening identity");
     expect(markdown).toContain("Do not collapse route / into a thin overview plus consultation/support entry framing");
     expect(markdown).toContain("institutional trust and capability overview band");
+    expect(markdown).toContain("must not use a two-column split hero, equal-column copy/media pair, or right-side visual rail");
+    expect(markdown).toContain("do not lead the content-hub homepage with generic `hero`, `hero-wrap`, `hero-grid`");
+    expect(markdown).toContain("prefer a stacked or asymmetrical institutional masthead");
+    expect(markdown).toContain("homepage_markup_contract: prefer route-owned institutional classes");
     expect(markdown).not.toContain("homepage_mode: collection_index_homepage");
+  });
+
+  it("writes institution-led content-hub homepage excerpt rules that ban split-hero geometry", () => {
+    const decision = buildMockDecision();
+    decision.locale = "zh-CN";
+    decision.routes = ["/", "/casux-information-platform"];
+    decision.navLabels = ["Home", "Information"];
+    decision.pageIntents = [
+      {
+        route: "/",
+        navLabel: "Home",
+        purpose: "Official homepage and institutional overview for CASUX.",
+        source: "prompt_contract",
+        pageKind: "home",
+        responsibility: "Institution-led homepage",
+        contentSkeleton: ["Institutional masthead", "Capability shelves", "Proof band", "Consultation CTA"],
+        componentMix: { hero: 18, feature: 18, grid: 18, proof: 18, form: 10, cta: 8 },
+        constraints: [],
+      },
+      {
+        route: "/casux-information-platform",
+        navLabel: "Information",
+        purpose: "Content collection page.",
+        source: "prompt_contract",
+        pageKind: "content-collection-index",
+        responsibility: "Collection page",
+        contentSkeleton: ["Knowledge lead", "Collection surface", "Cards", "CTA"],
+        componentMix: { hero: 12, feature: 12, grid: 30, proof: 8, form: 0, cta: 18 },
+        constraints: [],
+      },
+    ] as any;
+    decision.pageBlueprints = decision.pageIntents;
+
+    const excerpt = buildWebsiteDesignSpecRouteExcerpt(
+      {
+        decision,
+        requirementText:
+          "Create the official CASUX homepage and institutional overview for a bilingual standards and research platform. Route / must remain the official homepage identity and must not read like a resource index or certification portal.",
+        stylePreset: DEFAULT_STYLE_PRESET,
+        websiteSurfaceMode: "content-hub-site",
+      },
+      "/",
+    );
+
+    expect(excerpt).toContain("surface_homepage_archetype: institution-led content hub homepage");
+    expect(excerpt).toContain("must not use a two-column split hero, equal-column copy/media pair, or right-side visual rail");
+    expect(excerpt).toContain("do not lead the content-hub homepage with generic `hero`, `hero-wrap`, `hero-grid`");
+    expect(excerpt).toContain("prefer a stacked or asymmetrical institutional masthead");
+    expect(excerpt).toContain("homepage opening visual should sit below or behind the institutional masthead");
   });
 
   it("adds certification-specific scoring and review contracts to certification directory routes", () => {

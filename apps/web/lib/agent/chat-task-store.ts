@@ -3,6 +3,16 @@ import crypto from "node:crypto";
 import { Agent, ProxyAgent, type Dispatcher } from "undici";
 import { invalidateLaunchCenterRecentProjectsCache } from "../launch-center/cache.ts";
 import type { QaSummary } from "../skill-runtime/qa-summary.ts";
+import {
+  normalizeWorkflowRuntimeState,
+  summarizeWorkflowRuntimeForClient,
+  updateWorkflowRuntimeState,
+  type WorkflowRuntimeClientSummary,
+} from "./workflow-state.ts";
+import {
+  persistWorkflowRuntimeSnapshot,
+  resolveWorkflowRuntimeCheckpointDir,
+} from "./workflow-store.ts";
 
 export type ChatTaskStatus = "queued" | "running" | "succeeded" | "failed";
 
@@ -12,6 +22,11 @@ export type ChatTaskResult = {
   phase?: string;
   deployedUrl?: string;
   error?: string;
+  contractHash?: string;
+  generationLane?: string;
+  generationLaneConfig?: Record<string, unknown> | null;
+  websiteSurfaceMode?: string;
+  workflowRuntime?: WorkflowRuntimeClientSummary;
   timelineMetadata?: Record<string, unknown>;
   internal?: {
     inputState?: any;
@@ -512,6 +527,75 @@ function normalizeTaskResultCanonicalFields(result?: ChatTaskResult | null): Cha
     ...result,
     ...(internal ? { internal: internal as ChatTaskResult["internal"] } : {}),
   };
+}
+
+function bindTaskIdToWorkflowRuntime(result: ChatTaskResult | undefined, chatId: string, taskId: string): ChatTaskResult | undefined {
+  if (!result?.internal) return result;
+  const internal = result.internal as Record<string, unknown>;
+  const inputState = (internal.inputState || undefined) as any;
+  const sessionState = (internal.sessionState || undefined) as any;
+  const workflowContext =
+    (inputState?.workflow_context || sessionState?.workflow_context || undefined) as Record<string, unknown> | undefined;
+  const runtime = normalizeWorkflowRuntimeState(workflowContext?.workflowRuntime);
+  if (!runtime) return result;
+  const nextRuntime = updateWorkflowRuntimeState(runtime, {
+    chatId,
+    taskId,
+  });
+  const nextInputState = inputState
+    ? {
+        ...inputState,
+        workflow_context: {
+          ...(inputState.workflow_context || {}),
+          workflowRuntime: nextRuntime,
+        },
+      }
+    : inputState;
+  const nextSessionState = sessionState
+    ? {
+        ...sessionState,
+        workflow_context: {
+          ...(sessionState.workflow_context || {}),
+          workflowRuntime: nextRuntime,
+        },
+      }
+    : sessionState;
+  return {
+    ...result,
+    internal: {
+      ...result.internal,
+      ...(nextInputState ? { inputState: nextInputState } : {}),
+      ...(nextSessionState ? { sessionState: nextSessionState } : {}),
+    },
+  };
+}
+
+async function persistWorkflowSnapshotBestEffort(task: ChatTaskRecord) {
+  try {
+    const internal = task.result?.internal as Record<string, unknown> | undefined;
+    const inputState = (internal?.inputState || undefined) as any;
+    const sessionState = (internal?.sessionState || undefined) as any;
+    const workflowContext =
+      (inputState?.workflow_context || sessionState?.workflow_context || undefined) as Record<string, unknown> | undefined;
+    const runtime = normalizeWorkflowRuntimeState(workflowContext?.workflowRuntime);
+    if (!runtime) return;
+    await persistWorkflowRuntimeSnapshot({
+      checkpointDir: resolveWorkflowRuntimeCheckpointDir({
+        chatId: task.chatId,
+        taskId: task.id,
+        workflowId: runtime.workflowId,
+      }),
+      runtime,
+      state: inputState,
+      sessionState,
+      metadata: {
+        source: "chat-task-store",
+        status: task.status,
+      },
+    });
+  } catch {
+    // Best-effort durability should not block task creation.
+  }
 }
 
 function normalizePromptDraftMetadataCanonicalFields(
@@ -1324,6 +1408,9 @@ export async function createChatTask(
 ): Promise<ChatTaskRecord> {
   if (!isSupabaseTaskStoreEnabled()) {
     const task = createMemoryTask(chatId, ownerUserId, initialResult);
+    if (task.result) {
+      task.result = bindTaskIdToWorkflowRuntime(task.result, task.chatId, task.id);
+    }
     await writeTaskEventBestEffort({
       taskId: task.id,
       chatId: task.chatId,
@@ -1331,6 +1418,7 @@ export async function createChatTask(
       stage: "queued",
       payload: { ownerUserId: ownerUserId || null },
     });
+    await persistWorkflowSnapshotBestEffort(task);
     return task;
   }
 
@@ -1339,12 +1427,13 @@ export async function createChatTask(
     const taskId = crypto.randomUUID();
     const ts = now();
     const expiresAt = asIso(ts + TASK_TTL_MS);
+    const canonicalInitialResult = bindTaskIdToWorkflowRuntime(initialResult, chatId, taskId);
     const task = await insertSupabaseTaskWithRetry(supabase, {
       id: taskId,
       chat_id: chatId,
       owner_user_id: ownerUserId || null,
       status: "queued",
-      result: normalizeTaskResultCanonicalFields(initialResult) || null,
+      result: normalizeTaskResultCanonicalFields(canonicalInitialResult) || null,
       created_at: asIso(ts),
       updated_at: asIso(ts),
       expires_at: expiresAt,
@@ -1361,6 +1450,7 @@ export async function createChatTask(
       stage: "queued",
       payload: { ownerUserId: ownerUserId || null },
     });
+    await persistWorkflowSnapshotBestEffort(task);
     return task;
   } catch (error) {
     throw withTaskStoreErrorContext(error);
@@ -1370,6 +1460,10 @@ export async function createChatTask(
 export function sanitizeTaskResultForClient(result?: ChatTaskResult | null): ChatTaskResult | null {
   if (!result) return null;
   const { internal: _internal, progress, ...rest } = result;
+  const workflowContext =
+    (((result.internal as any)?.inputState?.workflow_context ||
+      (result.internal as any)?.sessionState?.workflow_context ||
+      {}) as Record<string, unknown>);
   const sanitizedProgress = progress
     ? {
         ...progress,
@@ -1379,6 +1473,16 @@ export function sanitizeTaskResultForClient(result?: ChatTaskResult | null): Cha
     : undefined;
   return {
     ...rest,
+    contractHash: String(workflowContext.contractHash || "").trim() || undefined,
+    generationLane: String(workflowContext.generationLane || "").trim() || undefined,
+    generationLaneConfig:
+      workflowContext.generationLaneConfig && typeof workflowContext.generationLaneConfig === "object"
+        ? (workflowContext.generationLaneConfig as Record<string, unknown>)
+        : undefined,
+    websiteSurfaceMode: String(workflowContext.websiteSurfaceMode || "").trim() || undefined,
+    workflowRuntime: summarizeWorkflowRuntimeForClient(
+      normalizeWorkflowRuntimeState((workflowContext as any).workflowRuntime),
+    ),
     ...(sanitizedProgress ? { progress: sanitizedProgress } : {}),
   };
 }
@@ -1993,20 +2097,25 @@ export async function touchChatTaskHeartbeat(
   }
 }
 
-export async function failChatTask(taskId: string, error: string): Promise<ChatTaskRecord | undefined> {
+export async function failChatTask(
+  taskId: string,
+  error: string,
+  patch?: Partial<ChatTaskResult>,
+): Promise<ChatTaskRecord | undefined> {
   const failureAssistantText = String(error || "").trim() || "Task failed.";
   if (!isSupabaseTaskStoreEnabled()) {
     const existing = getStore().tasks.get(taskId);
+    const merged = { ...(existing?.result || {}), ...(patch || {}), assistantText: failureAssistantText, error };
     const updated = updateMemoryTask(taskId, {
       status: "failed",
-      result: { ...(existing?.result || {}), assistantText: failureAssistantText, error },
+      result: merged,
     });
     if (updated) {
       await writeTaskEventBestEffort({
         taskId: updated.id,
         chatId: updated.chatId,
         eventType: "task_failed",
-        stage: updated.result?.progress?.stage || "failed",
+        stage: merged.progress?.stage || "failed",
         payload: { error },
       });
     }
@@ -2025,7 +2134,7 @@ export async function failChatTask(taskId: string, error: string): Promise<ChatT
 
   try {
     const current = await getChatTask(taskId);
-    const merged = { ...(current?.result || {}), assistantText: failureAssistantText, error };
+    const merged = { ...(current?.result || {}), ...(patch || {}), assistantText: failureAssistantText, error };
     const updated = await updateSupabaseTask(taskId, { status: "failed", result: merged });
     if (updated) {
       await writeTaskEventBestEffort({

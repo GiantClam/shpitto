@@ -56,4 +56,14 @@ Use it as primary guidance:
   `This page helps teams compare...`, or
   `How the collection is organized`
 
+Institution-led override:
+
+- if the canonical prompt or `website_design_spec` explicitly locks an official homepage identity, child-friendly institutional tone, or a visual direction such as `institutional-child-friendly`, do not keep the site in the archive/terracotta default
+- in that override mode, route `/` should open as a brand-led institutional masthead before any archive shelves or resource ledgers
+- route-owned interior pages should follow their declared opening topology (for example process lead, framework grid, scoring band, research proof, or standards library) instead of repeating the same archive masthead shell
+- prefer ecological green / bright neutral surfaces when the prompt explicitly locks that palette; do not pull the site back into terracotta archive tokens
+- every primary route should carry a real contextual image in the opening band or first proof band
+- only the approved consultation-host routes may contain the real consultation form; other routes should link back to that host
+- keep the locale switch in a dedicated utility wrapper beside navigation and make it work across every route, not only on the homepage
+
 Treat this skill as the first structural contract for content-hub surfaces before falling back to generic local website generation guidance.

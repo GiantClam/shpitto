@@ -2,7 +2,6 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { AIMessage, BaseMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { ChatOpenAI } from "@langchain/openai";
 import { getR2Client } from "../r2.ts";
 import { buildCloudflareBeaconSnippet, CloudflareClient, type CloudflareWebAnalyticsSite } from "../cloudflare.ts";
 import { deployWithWrangler, type WranglerDeployResult } from "../cloudflare-pages-wrangler.ts";
@@ -48,6 +47,19 @@ import {
   syncProjectCustomDomainOrigin,
   upsertProjectSiteBinding,
 } from "../agent/db.ts";
+import { appendWorkflowAuditEvent } from "../agent/workflow-audit.ts";
+import {
+  completeWorkflowCompensation,
+  failWorkflowCompensation,
+  startWorkflowCompensation,
+} from "../agent/workflow-compensation.ts";
+import {
+  attachWorkflowRuntimeToState,
+  markWorkflowExecutionCompleted,
+  markWorkflowExecutionFailed,
+  markWorkflowExecutionStarted,
+  resolveWorkflowRuntimeFromState,
+} from "../agent/workflow-runtime-adapter.ts";
 import { assertCanMutatePublishedSite } from "../billing/enforcement.ts";
 import {
   loadWorkflowSkillContext,
@@ -59,7 +71,7 @@ import { configureUndiciProxyFromEnv } from "../agent/network.ts";
 import { DEFAULT_STYLE_PRESET, normalizeStylePreset, type DesignStylePreset } from "../design-style-preset.ts";
 import { artifactCounts, collectCompletedPhases, getGeneratedFilePaths, getPages, getStaticArtifactFiles, mergeAgentState } from "./artifacts.ts";
 import { invokeModelWithIdleTimeout } from "./llm-stream.ts";
-import { bindRunProviderLockToState, resolveRunProviderRunnerLock, resolveRunProviderRunnerLocks, type RunProviderLock } from "./provider-runner.ts";
+import { bindRunProviderLockToState, resolveRunProviderRunnerLock, type RunProviderLock } from "./provider-runner.ts";
 import { applyTranslationLane, resolveTranslationLanePlan, type TranslationCatalogDraft } from "./translation-lane.ts";
 import {
   buildLocalDecisionPlan,
@@ -97,7 +109,14 @@ import {
   buildGenerationUnitInputFromRouteContract,
   type GenerationUnitInput,
 } from "./generation-worker-adapter.ts";
+import {
+  buildImmutableGenerationContract,
+  normalizeWebsiteGenerationContract,
+  type ImmutableGenerationContract,
+} from "./generation-contract.ts";
 import type { WebsiteArtifactGeneratorMode } from "./website-artifact-generator.ts";
+import { verifyRouteUnitArtifacts } from "./contract-verifier.ts";
+import { GenerationContractViolationError } from "./contract-violation.ts";
 import {
   buildRouteUnitContractSummary,
   buildWebsiteDesignSpecMarkdown,
@@ -105,12 +124,30 @@ import {
   type RouteUnitContractSummary,
 } from "./website-design-spec.ts";
 import {
+  writeGenerationContractCheckpoint,
+  writeGenerationVerificationCheckpoint,
+  writeRouteUnitInputCheckpoint,
+  writeRouteUnitVerificationCheckpoint,
+} from "./route-unit-checkpoint.ts";
+import { runV2RouteUnitRuntime } from "./route-unit-runner.ts";
+import {
   inferWebsiteSurfaceModeFromSkillId,
   type WebsiteDiscoveryBrief,
   type WebsiteSurfaceMode,
 } from "./open-design-adoption.ts";
 import { selectWebsiteGenerationTypeSkill } from "./website-type-selector.ts";
 import { renderWebsiteQualityContract } from "./website-quality-contract.ts";
+import { createSkillToolRouteUnitGenerationWorker } from "./v2-route-generation-worker.ts";
+import {
+  createModelForProvider,
+  isRetryableProviderError,
+  providerErrorText,
+  resolveProviderAttempts,
+  resolveProviderConfig,
+  type LlmProvider,
+  type ProviderAttempt,
+  type ProviderConfig,
+} from "./provider-model.ts";
 
 configureUndiciProxyFromEnv();
 import type { QaSummary } from "./qa-summary.ts";
@@ -152,21 +189,6 @@ import {
   type TermRecord,
   type TypoUsage,
 } from "../../skills/design-website-generator/tools/context-builder.ts";
-
-type LlmProvider = "pptoken" | "aiberm" | "crazyroute";
-
-type ProviderConfig = {
-  provider: LlmProvider;
-  apiKey?: string;
-  baseURL: string;
-  defaultHeaders?: Record<string, string>;
-  modelName: string;
-};
-
-type ProviderAttempt = {
-  lock: RunProviderLock;
-  config: ProviderConfig;
-};
 
 type StaticArtifactFile = {
   path: string;
@@ -1540,6 +1562,33 @@ async function applyRefineInstructionWithSkill(params: {
   const surfaceMode = String(params.websiteSurfaceMode || "").trim();
   const targetRoutes = Array.isArray(params.targetRoutes) ? params.targetRoutes.filter(Boolean) : [];
   const validationFeedback = String(params.validationFeedback || "").trim();
+  const surfaceSpecificGuidance =
+    surfaceMode === "corporate-b2b-site"
+      ? [
+          "- This is a corporate/procurement-facing B2B site.",
+          "- Homepage openings must use an enterprise homepage structure, not a generic split hero shell.",
+          "- If the homepage hero or route-leading media is edited, use `.enterprise-hero`, `.enterprise-hero__content`, and `.enterprise-hero__media`.",
+          "- `.enterprise-hero__media` must contain a real `<img>` or `<picture>` node; do not leave placeholder-only boxes.",
+          "- Remove placeholder scaffolding such as `media-frame`, `ph-img`, empty visual cards, and decorative blank media rails when replacing hero media.",
+          "- When a route such as Cases uses a leading visual slot, replace placeholder media with a real image-backed module rather than a blank frame.",
+        ].join("\n")
+      : surfaceMode === "docs-knowledge-site"
+        ? [
+            "- This is a docs/knowledge site.",
+            "- Homepage openings must use docs workspace/reference-index structure, not a generic marketing hero shell.",
+            "- If `/index.html` is being regenerated, use route-owned docs classes such as `.docs-workspace`, `.docs-index-rail`, `.quickstart-strip`, `.guide-stack`, and `.reference-matrix` in the opening modules.",
+            "- Do not reuse `.enterprise-hero`, `.archive-masthead`, `.resource-shelf`, `hero-grid`, `hero__grid`, `hero__body`, `hero-panel`, or right-rail split openings on docs homepages.",
+            "- Keep search/index rail, quickstart, guide stack, and reference modules in the docs opening itself instead of generic cards dropped under a hero.",
+          ].join("\n")
+        : surfaceMode === "content-hub-site"
+          ? [
+              "- This is a content-hub / research-index site.",
+              "- Homepage openings must use editorial collection-index structure, not a generic marketing hero shell.",
+              "- If `/index.html` is being regenerated, use route-owned collection classes such as `.collection-home`, `.archive-masthead`, `.resource-shelf`, `.standards-ledger`, `.research-index`, and `.institutional-context` in the opening modules.",
+              "- Do not reuse `.enterprise-hero`, `.docs-workspace`, `.docs-index-rail`, `hero-grid`, `hero__grid`, `hero__body`, `hero-panel`, or right-rail split openings on content-hub homepages.",
+              "- Keep collection shelves, ledgers, and resource index rows in the homepage opening itself instead of generic hero-plus-card stacks.",
+            ].join("\n")
+          : "- Preserve the current route surface semantics and replace placeholder media with real, publishable media modules when requested.";
 
   const userPrompt = [
     "Task: apply the user refine request to the current static site files.",
@@ -1563,16 +1612,7 @@ async function applyRefineInstructionWithSkill(params: {
     String(params.qualityContract || "").trim() || "(none)",
     "",
     "Surface-specific guidance:",
-    surfaceMode === "corporate-b2b-site"
-      ? [
-          "- This is a corporate/procurement-facing B2B site.",
-          "- Homepage openings must use an enterprise homepage structure, not a generic split hero shell.",
-          "- If the homepage hero or route-leading media is edited, use `.enterprise-hero`, `.enterprise-hero__content`, and `.enterprise-hero__media`.",
-          "- `.enterprise-hero__media` must contain a real `<img>` or `<picture>` node; do not leave placeholder-only boxes.",
-          "- Remove placeholder scaffolding such as `media-frame`, `ph-img`, empty visual cards, and decorative blank media rails when replacing hero media.",
-          "- When a route such as Cases uses a leading visual slot, replace placeholder media with a real image-backed module rather than a blank frame.",
-        ].join("\n")
-      : "- Preserve the current route surface semantics and replace placeholder media with real, publishable media modules when requested.",
+    surfaceSpecificGuidance,
     ...(validationFeedback
       ? [
           "",
@@ -1733,6 +1773,72 @@ async function materializeSiteDirectoryFromProject(
     generatedFiles: bundle.fileEntries.map((entry) => normalizePath(entry.path)),
     project: normalizedProject,
   };
+}
+
+function normalizeGenerationContractRecord(value: unknown): Record<string, unknown> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  return value as Record<string, unknown>;
+}
+
+function resolveWorkflowGenerationContract(workflowContext: Record<string, unknown>): ImmutableGenerationContract | undefined {
+  const existing = normalizeGenerationContractRecord(workflowContext.generationContract);
+  if (existing) {
+    try {
+      return normalizeWebsiteGenerationContract(existing as any);
+    } catch {
+      // Fall through to contract rebuild from normalized workflow context.
+    }
+  }
+  const promptControlManifest =
+    workflowContext.promptControlManifest && typeof workflowContext.promptControlManifest === "object"
+      ? workflowContext.promptControlManifest
+      : undefined;
+  const discoveryBrief =
+    workflowContext.websiteDiscoveryBrief && typeof workflowContext.websiteDiscoveryBrief === "object"
+      ? workflowContext.websiteDiscoveryBrief
+      : undefined;
+  const routeUnitContracts = Array.isArray(workflowContext.routeUnitContracts)
+    ? ((workflowContext.routeUnitContracts as unknown[]) as any[])
+    : undefined;
+  const selectedSeedSkillManifest =
+    workflowContext.selectedSeedSkillManifest && typeof workflowContext.selectedSeedSkillManifest === "object"
+      ? (workflowContext.selectedSeedSkillManifest as any)
+      : undefined;
+  if (!promptControlManifest && !routeUnitContracts?.length) return undefined;
+  return buildImmutableGenerationContract({
+    generationLane: String(workflowContext.generationLane || "").trim() || "legacy",
+    websiteSurfaceMode: String(workflowContext.websiteSurfaceMode || "").trim() || undefined,
+    promptControlManifest,
+    discoveryBrief,
+    selectedSeedSkillManifest,
+    routeUnitContracts,
+  });
+}
+
+async function persistContractVerificationCheckpoints(params: {
+  checkpointRoot: string;
+  contract: ImmutableGenerationContract;
+  verification: ReturnType<typeof verifyRouteUnitArtifacts>;
+}) {
+  await writeGenerationContractCheckpoint(params.checkpointRoot, params.contract);
+  for (const summary of params.contract.routeUnitContracts) {
+    await writeRouteUnitInputCheckpoint(
+      params.checkpointRoot,
+      summary.route,
+      buildGenerationUnitInputFromRouteContract({
+        summary,
+        context: {
+          contractHash: params.contract.contractHash,
+          websiteSurfaceMode: params.contract.websiteSurfaceMode,
+          generationLane: params.contract.generationLane,
+        },
+      }),
+    );
+  }
+  await writeGenerationVerificationCheckpoint(params.checkpointRoot, params.verification);
+  for (const routeResult of params.verification.routeResults || []) {
+    await writeRouteUnitVerificationCheckpoint(params.checkpointRoot, routeResult);
+  }
 }
 
 function toSafeProjectNameToken(value: string, fallback: string): string {
@@ -2751,79 +2857,6 @@ function ensureHtmlDocument(rawHtml: string): string {
     }
   }
   return html;
-}
-
-function providerErrorText(error: unknown): string {
-  if (error instanceof Error) return String(error.message || error).trim();
-  return String(error || "").trim();
-}
-
-function isRetryableProviderError(error: unknown): boolean {
-  const text = providerErrorText(error).toLowerCase();
-  if (!text) return false;
-  if (/(401|403|forbidden|unauthorized|invalid api key|authentication failed)/i.test(text)) return false;
-  if (/(404|model not found|unsupported model|not supported|bad request|invalid_request_error)/i.test(text)) return false;
-  return /(timeout|timed out|bodytimeouterror|body timeout|und_err_body_timeout|terminated|429|rate limit|503|502|504|service unavailable|connection error|network|socket hang up|econnreset|econnaborted|etimedout|eai_again|enotfound|fetch failed|temporarily unavailable|overloaded|upstream)/i.test(
-    text,
-  );
-}
-
-function createModelForProvider(config: ProviderConfig, timeoutMs: number, maxTokens: number, temperature = 0.2): ChatOpenAI {
-  const model = new ChatOpenAI({
-    modelName: config.modelName,
-    openAIApiKey: config.apiKey,
-    configuration: {
-      baseURL: config.baseURL,
-      defaultHeaders: config.defaultHeaders,
-    },
-    timeout: timeoutMs,
-    maxRetries: Number(process.env.LLM_MAX_RETRIES || 0),
-    temperature,
-    ...(Number.isFinite(Number(maxTokens)) && Number(maxTokens) > 0 ? { maxTokens: Number(maxTokens) } : {}),
-  });
-  if (config.provider === "aiberm") {
-    (model as any).topP = undefined;
-  }
-  return model;
-}
-
-function resolveProviderConfig(lock: RunProviderLock): ProviderConfig {
-  if (lock.provider === "pptoken") {
-    return {
-      provider: "pptoken",
-      apiKey: process.env.PPTOKEN_API_KEY,
-      baseURL: process.env.PPTOKEN_BASE_URL || "https://api.pptoken.org/v1",
-      defaultHeaders: {},
-      modelName: String(lock.model || process.env.LLM_MODEL_PPTOKEN || process.env.PPTOKEN_MODEL || process.env.LLM_MODEL || "gpt-5.4-mini"),
-    };
-  }
-  if (lock.provider === "aiberm") {
-    return {
-      provider: "aiberm",
-      apiKey: process.env.AIBERM_API_KEY,
-      baseURL: process.env.AIBERM_BASE_URL || "https://aiberm.com/v1",
-      defaultHeaders: {},
-      modelName: String(lock.model || process.env.LLM_MODEL_AIBERM || process.env.AIBERM_MODEL || process.env.LLM_MODEL || "gpt-5.4-mini"),
-    };
-  }
-  return {
-    provider: "crazyroute",
-    apiKey: process.env.CRAZYROUTE_API_KEY || process.env.CRAZYROUTER_API_KEY || process.env.CRAZYREOUTE_API_KEY,
-    baseURL:
-      process.env.CRAZYROUTE_BASE_URL ||
-      process.env.CRAZYROUTER_BASE_URL ||
-      process.env.CRAZYREOUTE_BASE_URL ||
-      "https://crazyrouter.com/v1",
-    defaultHeaders: {},
-    modelName: String(
-      lock.model ||
-        process.env.LLM_MODEL_CRAZYROUTE ||
-        process.env.LLM_MODEL_CRAZYROUTER ||
-        process.env.LLM_MODEL_CRAZYREOUTE ||
-        process.env.LLM_MODEL ||
-        "gpt-5.4-mini",
-    ),
-  };
 }
 
 function extractPageTitleForRoute(route: string, locale: "zh-CN" | "en" | "bilingual"): string {
@@ -5085,6 +5118,15 @@ function buildSessionSnapshot(state: AgentState): Partial<AgentState> {
       latestUserTextRaw: workflow.latestUserTextRaw,
       referencedAssets: workflow.referencedAssets,
       assumedDefaults: workflow.assumedDefaults,
+      websiteSurfaceMode: workflow.websiteSurfaceMode,
+      websiteDiscoveryBrief: workflow.websiteDiscoveryBrief,
+      contractHash: workflow.contractHash,
+      generationLane: workflow.generationLane,
+      generationLaneConfig: workflow.generationLaneConfig,
+      selectedSeedSkillManifest: workflow.selectedSeedSkillManifest,
+      routeUnitContracts: workflow.routeUnitContracts,
+      generationContract: workflow.generationContract,
+      workflowRuntime: workflow.workflowRuntime,
       skillActionDomain: workflow.skillActionDomain,
       skillAction: workflow.skillAction,
       blogDetailFillRequested: workflow.blogDetailFillRequested,
@@ -5264,15 +5306,6 @@ function htmlToReadableText(input: string) {
     .replace(/&#39;/gi, "'")
     .replace(/\s+/g, " ")
     .trim();
-}
-
-function resolveProviderAttempts(preferred?: { provider?: string; model?: string }): ProviderAttempt[] {
-  const attempts = resolveRunProviderRunnerLocks(preferred)
-    .map((lock) => ({ lock, config: resolveProviderConfig(lock) }))
-    .filter((attempt) => !!attempt.config.apiKey);
-  if (attempts.length > 0) return attempts;
-  const fallbackLock = resolveRunProviderRunnerLock(preferred);
-  return [{ lock: fallbackLock, config: resolveProviderConfig(fallbackLock) }];
 }
 
 export type BlogContentWorkflowPreview = {
@@ -5991,6 +6024,20 @@ async function runDeployOnlyTask(params: {
 }): Promise<void> {
   const { taskId, chatId, workerId, inputState, setSessionState } = params;
   const startedAt = Date.now();
+  const checkpointRoot = localChatTaskRoot(chatId, taskId);
+  const checkpointWorkflowDir = path.join(checkpointRoot, "workflow");
+  let workflowRuntime = resolveWorkflowRuntimeFromState(inputState);
+  if (workflowRuntime) {
+    workflowRuntime = markWorkflowExecutionStarted(workflowRuntime);
+    workflowRuntime = (
+      await appendWorkflowAuditEvent({
+        runtime: workflowRuntime,
+        checkpointDir: checkpointWorkflowDir,
+        type: "execution_started",
+        message: "Deploy execution started.",
+      })
+    ).runtime;
+  }
 
   await touchChatTaskHeartbeat(taskId, workerId);
   await updateChatTaskProgress(taskId, {
@@ -6009,10 +6056,32 @@ async function runDeployOnlyTask(params: {
 
   const sourceProject = await resolveDeploySourceProject(inputState, { chatId, taskId });
   if (!sourceProject) {
-    await failChatTask(
-      taskId,
-      "No generated site artifacts found for deployment. Please generate a site first, then confirm deploy.",
-    );
+    if (workflowRuntime) {
+      workflowRuntime = markWorkflowExecutionFailed(workflowRuntime);
+      workflowRuntime = startWorkflowCompensation(workflowRuntime, {
+        reason: "Deployment was requested without a generated baseline.",
+      });
+      workflowRuntime = completeWorkflowCompensation(workflowRuntime, {
+        message: "No external deployment side effects were produced because the baseline was missing.",
+      });
+      workflowRuntime = (
+        await appendWorkflowAuditEvent({
+          runtime: workflowRuntime,
+          checkpointDir: checkpointWorkflowDir,
+          type: "execution_failed",
+          message: "Deploy baseline is missing.",
+        })
+      ).runtime;
+    }
+    await failChatTask(taskId, "No generated site artifacts found for deployment. Please generate a site first, then confirm deploy.", workflowRuntime
+      ? {
+          internal: {
+            inputState: buildSessionSnapshot(attachWorkflowRuntimeToState(inputState, workflowRuntime)),
+            sessionState: buildSessionSnapshot(attachWorkflowRuntimeToState(inputState, workflowRuntime)),
+            workerId,
+          },
+        }
+      : undefined);
     return;
   }
   const deployLocale = detectRuntimeLocale(
@@ -6451,7 +6520,23 @@ async function runDeployOnlyTask(params: {
       ],
     };
 
-    if (setSessionState) setSessionState(nextState);
+    if (workflowRuntime) {
+      workflowRuntime = markWorkflowExecutionCompleted(workflowRuntime);
+      workflowRuntime = (
+        await appendWorkflowAuditEvent({
+          runtime: workflowRuntime,
+          checkpointDir: checkpointWorkflowDir,
+          type: "execution_completed",
+          message: "Deploy execution completed.",
+          metadata: {
+            deployedUrl: liveUrl,
+            deploymentStrategy,
+          },
+        })
+      ).runtime;
+    }
+    const nextStateWithWorkflow = workflowRuntime ? attachWorkflowRuntimeToState(nextState, workflowRuntime) : nextState;
+    if (setSessionState) setSessionState(nextStateWithWorkflow);
 
     const elapsedMs = Date.now() - startedAt;
     const mergedResult: ChatTaskResult = {
@@ -6462,8 +6547,8 @@ async function runDeployOnlyTask(params: {
       timelineMetadata: domainGuidanceMetadata,
       internal: {
         workerId,
-        inputState: buildSessionSnapshot(nextState),
-        sessionState: buildSessionSnapshot(nextState),
+        inputState: buildSessionSnapshot(nextStateWithWorkflow),
+        sessionState: buildSessionSnapshot(nextStateWithWorkflow),
       } as any,
       progress: {
         stage: "deployed",
@@ -6498,7 +6583,7 @@ async function runDeployOnlyTask(params: {
       chatId,
       taskId,
       stage: "deployed",
-      state: nextState,
+      state: nextStateWithWorkflow,
       recentSummary: deploymentMessage,
       deployedUrl: liveUrl,
     }).catch((error) => {
@@ -6506,7 +6591,46 @@ async function runDeployOnlyTask(params: {
     });
   } catch (error) {
     const message = String((error as any)?.message || error || "Deploy failed.");
-    await failChatTask(taskId, message);
+    if (workflowRuntime) {
+      workflowRuntime = markWorkflowExecutionFailed(workflowRuntime);
+      workflowRuntime = startWorkflowCompensation(workflowRuntime, {
+        reason: message,
+      });
+      workflowRuntime = (
+        await appendWorkflowAuditEvent({
+          runtime: workflowRuntime,
+          checkpointDir: checkpointWorkflowDir,
+          type: "execution_failed",
+          message,
+        })
+      ).runtime;
+      try {
+        workflowRuntime = completeWorkflowCompensation(workflowRuntime, {
+          message: "Compensation plan recorded for deploy failure.",
+        });
+      } catch (compensationError) {
+        workflowRuntime = failWorkflowCompensation(
+          workflowRuntime,
+          String((compensationError as any)?.message || compensationError || "compensation failed"),
+        );
+      }
+    }
+    await failChatTask(taskId, message, workflowRuntime
+      ? {
+          internal: {
+            inputState: buildSessionSnapshot(attachWorkflowRuntimeToState(inputState, workflowRuntime)),
+            sessionState: buildSessionSnapshot(attachWorkflowRuntimeToState(inputState, workflowRuntime)),
+            workerId,
+          },
+          progress: {
+            stage: "deploy_failed",
+            stageMessage: message,
+            checkpointDir: checkpointRoot,
+            checkpointWorkflowDir,
+            checkpointSaved: false,
+          } as any,
+        }
+      : undefined);
   }
 }
 
@@ -6789,6 +6913,18 @@ async function runRefineTask(params: {
   const checkpointStatePath = path.join(checkpointRoot, "state.json");
   const checkpointWorkflowDir = path.join(checkpointRoot, "workflow");
   const checkpointSiteDir = path.join(checkpointRoot, "site");
+  let workflowRuntime = resolveWorkflowRuntimeFromState(inputState);
+  if (workflowRuntime) {
+    workflowRuntime = markWorkflowExecutionStarted(workflowRuntime);
+    workflowRuntime = (
+      await appendWorkflowAuditEvent({
+        runtime: workflowRuntime,
+        checkpointDir: checkpointWorkflowDir,
+        type: "execution_started",
+        message: "Refine execution started.",
+      })
+    ).runtime;
+  }
 
   await touchChatTaskHeartbeat(taskId, workerId);
   await updateChatTaskProgress(taskId, {
@@ -6812,10 +6948,26 @@ async function runRefineTask(params: {
       taskId,
       baseline: summarizeRefineBaselineInputs(inputState),
     });
-    await failChatTask(
-      taskId,
-      "No preview/deployed baseline found for refine. Please generate a site first, then request refinement.",
-    );
+    if (workflowRuntime) {
+      workflowRuntime = markWorkflowExecutionFailed(workflowRuntime);
+      workflowRuntime = (
+        await appendWorkflowAuditEvent({
+          runtime: workflowRuntime,
+          checkpointDir: checkpointWorkflowDir,
+          type: "execution_failed",
+          message: "Refine baseline is missing.",
+        })
+      ).runtime;
+    }
+    await failChatTask(taskId, "No preview/deployed baseline found for refine. Please generate a site first, then request refinement.", {
+      internal: workflowRuntime
+        ? {
+            inputState: buildSessionSnapshot(attachWorkflowRuntimeToState(inputState, workflowRuntime)),
+            sessionState: buildSessionSnapshot(attachWorkflowRuntimeToState(inputState, workflowRuntime)),
+            workerId,
+          }
+        : undefined,
+    });
     return;
   }
 
@@ -6991,9 +7143,29 @@ async function runRefineTask(params: {
         project: ensureSharedSiteRefsForRefineHtml(sourceProject),
       };
     } else {
+      if (workflowRuntime) {
+        workflowRuntime = markWorkflowExecutionFailed(workflowRuntime);
+        workflowRuntime = (
+          await appendWorkflowAuditEvent({
+            runtime: workflowRuntime,
+            checkpointDir: checkpointWorkflowDir,
+            type: "execution_failed",
+            message: "Refine request did not map to any concrete site change.",
+          })
+        ).runtime;
+      }
       await failChatTask(
         taskId,
         "Refine request did not match existing site content. Please provide exact target text/selector or a clearer visual change description.",
+        workflowRuntime
+          ? {
+              internal: {
+                inputState: buildSessionSnapshot(attachWorkflowRuntimeToState(inputState, workflowRuntime)),
+                sessionState: buildSessionSnapshot(attachWorkflowRuntimeToState(inputState, workflowRuntime)),
+                workerId,
+              },
+            }
+          : undefined,
       );
       return;
     }
@@ -7024,6 +7196,62 @@ async function runRefineTask(params: {
     ...refined,
     project: materialized.project,
   };
+  const lockedGenerationContract = resolveWorkflowGenerationContract(refineWorkflowContext);
+  if (lockedGenerationContract) {
+    const verification = verifyRouteUnitArtifacts({
+      contract: lockedGenerationContract,
+      files: Array.isArray(refined.project?.staticSite?.files) ? refined.project.staticSite.files : [],
+      baselineFiles: Array.isArray(sourceProject?.staticSite?.files) ? sourceProject.staticSite.files : [],
+    });
+    await persistContractVerificationCheckpoints({
+      checkpointRoot,
+      contract: lockedGenerationContract,
+      verification,
+    });
+    await fs.writeFile(
+      path.join(checkpointWorkflowDir, "refine_verification.json"),
+      JSON.stringify(verification, null, 2),
+      "utf8",
+    );
+    if (verification.status !== "passed") {
+      const violationError = new GenerationContractViolationError(verification);
+      if (workflowRuntime) {
+        workflowRuntime = markWorkflowExecutionFailed(workflowRuntime);
+        workflowRuntime = (
+          await appendWorkflowAuditEvent({
+            runtime: workflowRuntime,
+            checkpointDir: checkpointWorkflowDir,
+            type: "execution_failed",
+            message: `Refine verification failed: ${violationError.message}`,
+            metadata: {
+              violationCode: verification.violationCode,
+              route: verification.route,
+              scope: verification.scope,
+            },
+          })
+        ).runtime;
+      }
+      await failChatTask(taskId, violationError.message, workflowRuntime
+        ? {
+            internal: {
+              inputState: buildSessionSnapshot(attachWorkflowRuntimeToState(inputState, workflowRuntime)),
+              sessionState: buildSessionSnapshot(attachWorkflowRuntimeToState(inputState, workflowRuntime)),
+              workerId,
+            },
+            progress: {
+              stage: "refine_verification_failed",
+              stageMessage: violationError.message,
+              checkpointSaved: true,
+              checkpointDir: checkpointRoot,
+              checkpointProjectPath,
+              checkpointSiteDir,
+              checkpointWorkflowDir,
+            } as any,
+          }
+        : undefined);
+      return;
+    }
+  }
   await fs.writeFile(checkpointProjectPath, JSON.stringify(refined.project, null, 2), "utf8");
   await fs.writeFile(
     path.join(checkpointWorkflowDir, "refine_report.md"),
@@ -7167,7 +7395,22 @@ async function runRefineTask(params: {
       }),
     ],
   };
-  if (setSessionState) setSessionState(nextState);
+  if (workflowRuntime) {
+    workflowRuntime = markWorkflowExecutionCompleted(workflowRuntime);
+    workflowRuntime = (
+      await appendWorkflowAuditEvent({
+        runtime: workflowRuntime,
+        checkpointDir: checkpointWorkflowDir,
+        type: "execution_completed",
+        message: "Refine execution completed.",
+        metadata: {
+          changedFiles: refined.changedFiles,
+        },
+      })
+    ).runtime;
+  }
+  const nextStateWithWorkflow = workflowRuntime ? attachWorkflowRuntimeToState(nextState, workflowRuntime) : nextState;
+  if (setSessionState) setSessionState(nextStateWithWorkflow);
 
   const elapsedMs = Date.now() - startedAt;
   await bestEffortWithTimeout(
@@ -7211,8 +7454,8 @@ async function runRefineTask(params: {
       : undefined,
     internal: {
       workerId,
-      inputState: buildSessionSnapshot(nextState),
-      sessionState: buildSessionSnapshot(nextState),
+      inputState: buildSessionSnapshot(nextStateWithWorkflow),
+      sessionState: buildSessionSnapshot(nextStateWithWorkflow),
       artifactSnapshot: nextState.site_artifacts || null,
       pendingEdits,
     } as any,
@@ -7240,7 +7483,7 @@ async function runRefineTask(params: {
     chatId,
     taskId,
     stage: "previewing",
-    state: nextState,
+    state: nextStateWithWorkflow,
     recentSummary: `Refinement completed. Updated ${refined.changedFiles.length} files.`,
   }).catch((error) => {
     console.warn(`[SkillRuntimeExecutor] short-term memory sync failed after refine: ${String((error as any)?.message || error)}`);
@@ -7249,11 +7492,11 @@ async function runRefineTask(params: {
     await queuePendingRefineTask({
       taskId,
       chatId,
-      ownerUserId: String(inputState.user_id || pendingEdits[pendingEdits.length - 1]?.ownerUserId || "").trim() || undefined,
-      baseState: nextState,
-      checkpointProjectPath,
-      pendingEdits,
-    });
+          ownerUserId: String(inputState.user_id || pendingEdits[pendingEdits.length - 1]?.ownerUserId || "").trim() || undefined,
+          baseState: nextStateWithWorkflow,
+          checkpointProjectPath,
+          pendingEdits,
+        });
   }
 }
 
@@ -7324,8 +7567,21 @@ export class SkillRuntimeExecutor {
     );
 
     const checkpointRoot = localChatTaskRoot(chatId, taskId);
+    const checkpointWorkflowDir = path.join(checkpointRoot, "workflow");
+    let workflowRuntime = resolveWorkflowRuntimeFromState(stateWithLock);
 
     try {
+      if (workflowRuntime) {
+        workflowRuntime = markWorkflowExecutionStarted(workflowRuntime);
+        workflowRuntime = (
+          await appendWorkflowAuditEvent({
+            runtime: workflowRuntime,
+            checkpointDir: checkpointWorkflowDir,
+            type: "execution_started",
+            message: "Generation execution started.",
+          })
+        ).runtime;
+      }
       await touchChatTaskHeartbeat(taskId, workerId);
       await updateChatTaskProgress(taskId, {
         assistantText: "Worker started skill-native runtime. Selecting design system and confirming tokens.",
@@ -7345,60 +7601,80 @@ export class SkillRuntimeExecutor {
         } as any,
       });
 
-      const summary = await runSkillRuntimeExecutor({
-        state: stateWithLock,
-        timeoutMs: taskTimeoutMs,
-        onStep: async (snapshot) => {
-          stepCount += 1;
-          const persisted = await persistStepArtifacts({ chatId, taskId, snapshot });
-          latestCheckpointSiteDir = persisted.latestSiteDir;
-          latestCheckpointWorkflowDir = persisted.latestWorkflowDir;
-          const stageMessage = toProgressStageMessage(snapshot.status, snapshot.stepIndex, snapshot.totalSteps);
-          try {
-            await touchChatTaskHeartbeat(taskId, workerId);
-            await updateChatTaskProgress(taskId, {
-              assistantText: stageMessage,
-              phase: "skeleton",
-              progress: {
-                stage: snapshot.status,
-                stageMessage,
-                skillId: loadedSkill.id,
-                filePath: normalizePath(snapshot.stepKey),
-                provider:
-                  String((snapshot as any)?.provider || "").trim() ||
-                  String((summaryProviderRef.current as any)?.provider || "").trim() ||
-                  lock.provider,
-                model:
-                  String((snapshot as any)?.model || "").trim() ||
-                  String((summaryProviderRef.current as any)?.model || "").trim() ||
-                  lock.model,
-                attempt: 1,
-                startedAt: new Date(startedAt).toISOString(),
-                lastTokenAt: nowIso(),
-                elapsedMs: Date.now() - startedAt,
-                artifactKey: persisted.r2Prefix || persisted.localDir,
-                pageCount: snapshot.pages.length,
-                fileCount: snapshot.files.length,
-                generatedFiles: snapshot.files.map((file) => normalizePath(file.path)),
-                routeUnitCount: snapshot.routeUnits?.length || 0,
-                routeUnits: snapshot.routeUnits || [],
-                changedFiles: persisted.changedFiles.map((file) => normalizePath(file)),
-                changedWorkflowFiles: persisted.changedWorkflowFiles.map((file) => normalizePath(file)),
-                checkpointSaved: true,
-                checkpointDir: persisted.latestDir,
-                checkpointStepDir: persisted.localDir,
-                checkpointSiteDir: latestCheckpointSiteDir,
-                checkpointWorkflowDir: latestCheckpointWorkflowDir,
-                r2UploadedCount: persisted.r2UploadedCount,
-                r2UploadError: persisted.r2Error || null,
-                qaSummary: snapshot.qaSummary,
-              } as any,
-            });
-          } catch (progressError) {
-            console.warn("[SkillRuntimeExecutor] continuing after non-fatal step progress update failure:", progressError);
-          }
-        },
-      });
+      const onRuntimeStep = async (snapshot: SkillRuntimeStepSnapshot) => {
+        stepCount += 1;
+        const persisted = await persistStepArtifacts({ chatId, taskId, snapshot });
+        latestCheckpointSiteDir = persisted.latestSiteDir;
+        latestCheckpointWorkflowDir = persisted.latestWorkflowDir;
+        const stageMessage = toProgressStageMessage(snapshot.status, snapshot.stepIndex, snapshot.totalSteps);
+        try {
+          await touchChatTaskHeartbeat(taskId, workerId);
+          await updateChatTaskProgress(taskId, {
+            assistantText: stageMessage,
+            phase: "skeleton",
+            progress: {
+              stage: snapshot.status,
+              stageMessage,
+              skillId: loadedSkill.id,
+              filePath: normalizePath(snapshot.stepKey),
+              provider:
+                String((snapshot as any)?.provider || "").trim() ||
+                String((summaryProviderRef.current as any)?.provider || "").trim() ||
+                lock.provider,
+              model:
+                String((snapshot as any)?.model || "").trim() ||
+                String((summaryProviderRef.current as any)?.model || "").trim() ||
+                lock.model,
+              attempt: 1,
+              startedAt: new Date(startedAt).toISOString(),
+              lastTokenAt: nowIso(),
+              elapsedMs: Date.now() - startedAt,
+              artifactKey: persisted.r2Prefix || persisted.localDir,
+              pageCount: snapshot.pages.length,
+              fileCount: snapshot.files.length,
+              generatedFiles: snapshot.files.map((file) => normalizePath(file.path)),
+              routeUnitCount: snapshot.routeUnits?.length || 0,
+              routeUnits: snapshot.routeUnits || [],
+              changedFiles: persisted.changedFiles.map((file) => normalizePath(file)),
+              changedWorkflowFiles: persisted.changedWorkflowFiles.map((file) => normalizePath(file)),
+              checkpointSaved: true,
+              checkpointDir: persisted.latestDir,
+              checkpointStepDir: persisted.localDir,
+              checkpointSiteDir: latestCheckpointSiteDir,
+              checkpointWorkflowDir: latestCheckpointWorkflowDir,
+              r2UploadedCount: persisted.r2UploadedCount,
+              r2UploadError: persisted.r2Error || null,
+              qaSummary: snapshot.qaSummary,
+            } as any,
+          });
+        } catch (progressError) {
+          console.warn("[SkillRuntimeExecutor] continuing after non-fatal step progress update failure:", progressError);
+        }
+      };
+
+      const lockedGenerationContract = resolveWorkflowGenerationContract(
+        ((stateWithLock.workflow_context || {}) as Record<string, unknown>) || undefined,
+      );
+      const kernel = lockedGenerationContract
+        ? await runV2RouteUnitRuntime({
+            state: stateWithLock,
+            timeoutMs: taskTimeoutMs,
+            checkpointDir: checkpointRoot,
+            contract: lockedGenerationContract,
+            unitWorker: createSkillToolRouteUnitGenerationWorker({
+              baseState: stateWithLock,
+              timeoutMs: taskTimeoutMs,
+            }),
+            onStep: onRuntimeStep,
+          })
+        : null;
+      const summary = kernel
+        ? kernel.execution
+        : await runSkillRuntimeExecutor({
+            state: stateWithLock,
+            timeoutMs: taskTimeoutMs,
+            onStep: onRuntimeStep,
+          });
       summaryProviderRef.current = {
         provider: String(summary.provider || "").trim() || lock.provider,
         model: String(summary.model || "").trim() || lock.model,
@@ -7407,6 +7683,7 @@ export class SkillRuntimeExecutor {
       const checkpointProjectPath = path.join(checkpointRoot, "project.json");
       const finalizedProjectArtifact = finalizeGeneratedProjectArtifact({
         project:
+          kernel?.project ||
           (summary.state as any)?.site_artifacts ||
           (summary.state as any)?.project_json ||
           {
@@ -7476,7 +7753,26 @@ export class SkillRuntimeExecutor {
         },
       };
 
-      if (setSessionState) setSessionState(sessionStateForNext);
+      if (workflowRuntime) {
+        workflowRuntime = markWorkflowExecutionCompleted(workflowRuntime);
+        workflowRuntime = (
+          await appendWorkflowAuditEvent({
+            runtime: workflowRuntime,
+            checkpointDir: checkpointWorkflowDir,
+            type: "execution_completed",
+            message: "Generation execution completed.",
+            metadata: {
+              generatedFiles: summary.generatedFiles,
+              routeUnitCount: (summary.routeUnits || []).length,
+            },
+          })
+        ).runtime;
+      }
+      const sessionStateForNextWithWorkflow = workflowRuntime
+        ? attachWorkflowRuntimeToState(sessionStateForNext, workflowRuntime)
+        : sessionStateForNext;
+
+      if (setSessionState) setSessionState(sessionStateForNextWithWorkflow);
       await fs.mkdir(checkpointRoot, { recursive: true });
       await materializeSiteDirectoryFromProject(
         generatedProjectArtifact,
@@ -7534,8 +7830,8 @@ export class SkillRuntimeExecutor {
         internal: {
           skillId: loadedSkill.id,
           workerId,
-          inputState: buildSessionSnapshot(sessionStateForNext),
-          sessionState: buildSessionSnapshot(sessionStateForNext),
+          inputState: buildSessionSnapshot(sessionStateForNextWithWorkflow),
+          sessionState: buildSessionSnapshot(sessionStateForNextWithWorkflow),
           artifactSnapshot: generatedProjectArtifact || null,
           pendingEdits,
         } as any,
@@ -7596,7 +7892,7 @@ export class SkillRuntimeExecutor {
         chatId,
         taskId,
         stage: "previewing",
-        state: sessionStateForNext,
+        state: sessionStateForNextWithWorkflow,
         recentSummary: String(mergedResult.assistantText || ""),
       }).catch((error) => {
         console.warn(`[SkillRuntimeExecutor] short-term memory sync failed after generation: ${String((error as any)?.message || error)}`);
@@ -7606,7 +7902,7 @@ export class SkillRuntimeExecutor {
           taskId,
           chatId,
           ownerUserId: String(inputState.user_id || pendingEdits[pendingEdits.length - 1]?.ownerUserId || "").trim() || undefined,
-          baseState: sessionStateForNext,
+          baseState: sessionStateForNextWithWorkflow,
           checkpointProjectPath,
           pendingEdits,
         });
@@ -7614,6 +7910,17 @@ export class SkillRuntimeExecutor {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       const failureProviderMeta = resolveFailureProviderMeta(message, summaryProviderRef.current);
+      if (workflowRuntime) {
+        workflowRuntime = markWorkflowExecutionFailed(workflowRuntime);
+        workflowRuntime = (
+          await appendWorkflowAuditEvent({
+            runtime: workflowRuntime,
+            checkpointDir: checkpointWorkflowDir,
+            type: "execution_failed",
+            message,
+          })
+        ).runtime;
+      }
       await updateChatTaskProgress(taskId, {
         assistantText: message,
         progress: {
@@ -7630,7 +7937,19 @@ export class SkillRuntimeExecutor {
           artifactKey: checkpointRoot,
         } as any,
       });
-      await failChatTask(taskId, message || "skill-runtime task failed");
+      await failChatTask(
+        taskId,
+        message || "skill-runtime task failed",
+        workflowRuntime
+          ? {
+              internal: {
+                inputState: buildSessionSnapshot(attachWorkflowRuntimeToState(inputState, workflowRuntime)),
+                sessionState: buildSessionSnapshot(attachWorkflowRuntimeToState(inputState, workflowRuntime)),
+                workerId,
+              },
+            }
+          : undefined,
+      );
     }
   }
 }

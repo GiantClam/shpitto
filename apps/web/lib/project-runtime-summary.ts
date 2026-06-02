@@ -10,6 +10,10 @@ export type ProjectRuntimeSummary = {
   source: "d1" | "chat-session";
   blogDetailFillCompleted?: boolean;
   blogDetailFillStatus?: string | null;
+  contractHash?: string | null;
+  generationLane?: string | null;
+  generationLaneConfig?: Record<string, unknown> | null;
+  websiteSurfaceMode?: string | null;
 };
 
 function toHost(value: string | null | undefined): string | null {
@@ -46,6 +50,10 @@ export async function resolveOwnedProjectRuntimeSummary(
   if (!session) return null;
 
   const latestDeploymentUrl = String(session.lastDeployedUrl || "").trim() || null;
+  const workflow =
+    (((session as any)?.lastTaskResult?.internal?.sessionState?.workflow_context ||
+      (session as any)?.lastTaskResult?.internal?.inputState?.workflow_context ||
+      {}) as Record<string, unknown>) || {};
   return {
     projectId: session.id,
     projectName: normalizeProjectTitleForDisplay(session.title, session.id),
@@ -53,14 +61,16 @@ export async function resolveOwnedProjectRuntimeSummary(
     latestDeploymentUrl,
     source: "chat-session",
     blogDetailFillCompleted: Boolean(
-      (session as any)?.lastTaskResult?.internal?.sessionState?.workflow_context?.blogDetailFillCompleted ??
-      (session as any)?.lastTaskResult?.internal?.inputState?.workflow_context?.blogDetailFillCompleted,
+      workflow.blogDetailFillCompleted,
     ),
     blogDetailFillStatus:
-      String(
-        (session as any)?.lastTaskResult?.internal?.sessionState?.workflow_context?.blogDetailFillStatus ||
-        (session as any)?.lastTaskResult?.internal?.inputState?.workflow_context?.blogDetailFillStatus ||
-        "",
-      ).trim() || null,
+      String(workflow.blogDetailFillStatus || "").trim() || null,
+    contractHash: String(workflow.contractHash || "").trim() || null,
+    generationLane: String(workflow.generationLane || "").trim() || null,
+    generationLaneConfig:
+      workflow.generationLaneConfig && typeof workflow.generationLaneConfig === "object"
+        ? (workflow.generationLaneConfig as Record<string, unknown>)
+        : null,
+    websiteSurfaceMode: String(workflow.websiteSurfaceMode || "").trim() || null,
   };
 }

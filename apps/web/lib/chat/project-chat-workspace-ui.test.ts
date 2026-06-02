@@ -6,6 +6,7 @@ import {
   deriveWorkspacePreTaskState,
   formatQaSummaryDetail,
   shouldSuppressOptimisticTimelineEcho,
+  summarizeGenerationRuntimeBadges,
   summarizePromptDraftCard,
   summarizeRequirementCardDesignLine,
   toReadableStage,
@@ -137,6 +138,28 @@ describe("ProjectChatWorkspace timeline actions", () => {
     expect(summary).toContain("Deployment target: shpitto server");
     expect(summary).not.toContain("cloudflare");
     expect(summary).not.toContain("Canonical Website Generation Prompt");
+  });
+
+  it("summarizes generation lane and surface badges for workspace headers", () => {
+    expect(
+      summarizeGenerationRuntimeBadges(
+        {
+          generationLane: "website-generation-mvp",
+          websiteSurfaceMode: "content-hub-site",
+        },
+        "en",
+      ),
+    ).toEqual(["MVP lane", "Content hub"]);
+
+    expect(
+      summarizeGenerationRuntimeBadges(
+        {
+          generationLane: "legacy",
+          promptControlManifest: { websiteSurfaceMode: "docs-knowledge-site" },
+        },
+        "zh",
+      ),
+    ).toEqual(["旧链路", "文档站"]);
   });
 
   it("uses a current-project fallback instead of an empty project list", () => {

@@ -180,7 +180,27 @@ export function requestedPublishableContentCount(requirementText = ""): number |
   return undefined;
 }
 
+const BLOG_DETAIL_FILL_REQUEST_PATTERN =
+  /(?:(?:\b(?:fill|generate|complete|add|create|run|trigger)\b.{0,24}\b(?:blog detail|blog details|article detail|article details|post detail|post details)\b)|(?:\b(?:blog detail|blog details|article detail|article details|post detail|post details)\b.{0,16}\b(?:now|please|first|next|manually)\b)|(?:(?:补齐|补全|生成|新增|创建|触发).{0,16}(?:blog详情|文章详情|详情页))|(?:(?:blog详情|文章详情|详情页).{0,12}(?:现在|立即|手动|下一步)))/i;
+
+const BLOG_DETAIL_FILL_DEFER_PATTERN =
+  /(?:do not generate blog detail pages yet|blog details will be filled later by a separate workflow|detail pages? (?:will|should) be (?:filled|generated|completed) later|fill .* later|later by a separate workflow|not yet|以后再补|后续(?:工作流|流程)|稍后(?:生成|补全))/i;
+
+const BLOG_DETAIL_FILL_IMMEDIATE_OVERRIDE_PATTERN =
+  /(?:\b(?:now|immediately|right now|this round|current run|next step|please do it now)\b|(?:现在|立即|立刻|马上|这一轮|当前轮次|下一步))/i;
+
+export function hasExplicitBlogDetailFillRequest(requirementText = ""): boolean {
+  const text = String(requirementText || "");
+  const hasRequest = BLOG_DETAIL_FILL_REQUEST_PATTERN.test(text);
+  const hasDefer = BLOG_DETAIL_FILL_DEFER_PATTERN.test(text);
+  const hasImmediateOverride = BLOG_DETAIL_FILL_IMMEDIATE_OVERRIDE_PATTERN.test(text);
+  if (hasDefer && !hasImmediateOverride) return false;
+  if (hasRequest) return true;
+  return false;
+}
+
 export function shouldRequireAllDiscoveredBlogDetails(requirementText = ""): boolean {
+  if (hasExplicitBlogDetailFillRequest(requirementText)) return true;
   return /(?:complete|full|all|every|matching|corresponding|全部|所有|完整|每个|对应).{0,30}(?:blog|article|post|detail|文章|博客|详情)/i.test(
     String(requirementText || ""),
   );

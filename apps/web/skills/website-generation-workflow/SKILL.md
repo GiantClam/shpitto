@@ -152,6 +152,17 @@ Quality gate: A Canonical Website Prompt generated from researched material must
 6a. `products`, `custom-solutions`, and `cases` must not open as large white text slabs with delayed imagery. Each of those routes needs a real route-owned image in the opening band or the first opening-adjacent proof/capability band.
 7. Language switching is utility UI only. Do not create visible section headings or major body sections whose topic is "Switch between English and Chinese", "Choose language", "Read in both languages", or equivalent wording. The locale control lives in the shared header/footer, not in the page body content model.
 
+#### Shared Navigation And Footer Contract (Mandatory)
+
+1. Treat the primary navigation and footer as one authoritative shared shell for the entire website, not as route-local modules.
+2. Every generated route must inherit the same navigation destinations, labels, order, and primary CTA wording unless the confirmed Prompt Control Manifest explicitly removes or renames a route.
+3. Every generated route must inherit the same footer destinations, footer information architecture, contact/trust blocks, and support CTA wording unless the confirmed Prompt Control Manifest explicitly removes or renames a route.
+4. Do not redesign the navigation or footer per page. Route-owned differentiation belongs in the body layout, opening module topology, media choice, and section rhythm, not in shared-shell structure changes.
+5. Shared-shell localization may change visible copy strings between locales, but it must not create page-specific nav/footer variants, alternate destination sets, or different footer block structures for different routes.
+6. Active states, aria-current markers, and route-local highlighting may change by page. Shared-shell composition, destination set, and business intent must remain stable.
+7. If a route is added during generation or refinement, update the authoritative shared navigation/footer contract once and propagate the same updated shell across every route instead of patching only the new page.
+8. Nav/footer drift is a generation failure, not acceptable page-level variation.
+
 #### Brand Representation Contract (Mandatory)
 
 1. If the logo strategy is `Text wordmark` / `text_mark`, the default brand treatment is text-only.
@@ -790,7 +801,9 @@ Quality gate: Visual consistency > 85%.
    - All fixed output files exist.
    - Every route follows its page-specific intent and confirmed Canonical Website Prompt content.
    - Inner pages are not repeated templates with swapped text.
-   - Every HTML page includes the complete shared shell/footer contract.
+   - Every HTML page includes the complete shared navigation and footer contract.
+   - Primary nav destinations, labels, order, and CTA wording remain consistent across routes unless the confirmed manifest changed them.
+   - Footer destinations, trust/contact blocks, and support CTA wording remain consistent across routes unless the confirmed manifest changed them.
    - Footer nav with more than 3 links does not render as right-aligned wrapped pills in a narrow column or single-column footer.
    - Route semantics were already validated in preflight, so do not accept a homepage that reads like a downloads portal or certification index.
    - Dense result cards inside 12-column grids retain full-width row spans.

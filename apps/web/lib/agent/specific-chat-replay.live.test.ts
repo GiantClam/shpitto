@@ -7,7 +7,13 @@ import {
   hasBlogNavLink,
   hasDuplicateFooterLinkGroups,
 } from "./institutional-live-quality";
-import { captureMobilePreviewScreenshots } from "./chat-replay-live-test-helpers";
+import {
+  appendReplayGenerationSummaryEntry,
+  buildReplayGenerationSummaryEntry,
+  captureMobilePreviewScreenshots,
+  compareGenerationTraces,
+  extractTaskGenerationTrace,
+} from "./chat-replay-live-test-helpers";
 import {
   I18N_LOCALE_REGISTRY_PATH,
   I18N_MESSAGE_EN_PATH,
@@ -637,6 +643,7 @@ Language: Chinese and English
         expect(queuedGenerate?.id).toBeTruthy();
         expect(queuedGenerate?.id).not.toBe(beforeLatest?.id);
         expect((queuedGenerate?.result?.internal?.inputState as any)?.workflow_context?.executionMode).toBe("generate");
+        const expectedTrace = extractTaskGenerationTrace(queuedGenerate);
 
         await SkillRuntimeExecutor.runTask({
           taskId: queuedGenerate!.id,
@@ -1324,10 +1331,21 @@ Language: Chinese and English
             )
           : null;
 
+      const generatedTrace = extractTaskGenerationTrace(generated);
+      const deployedTrace = extractTaskGenerationTrace(deployed);
+      const expectedTrace = extractTaskGenerationTrace(queuedGenerate);
+      const expectedToGeneratedComparison = compareGenerationTraces(expectedTrace, generatedTrace);
+      const generatedToDeployedComparison = compareGenerationTraces(generatedTrace, deployedTrace);
+
       const report = {
         chatId: replayChatId,
         ownerUserId,
         marker,
+        expectedTrace,
+        generatedTrace,
+        deployedTrace,
+        expectedToGeneratedComparison,
+        generatedToDeployedComparison,
         generatedTaskId: generated.id,
         deployTaskId: deployed.id,
         checkpointProjectPath,
@@ -1378,6 +1396,20 @@ Language: Chinese and English
 
       await fs.mkdir(path.dirname(reportPath), { recursive: true });
       await fs.writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
+      await appendReplayGenerationSummaryEntry(
+        buildReplayGenerationSummaryEntry({
+          sourceChatId: replayChatId,
+          replayChatId,
+          replayMode: "live",
+          replayScenario: "specific-chat-generate-deploy",
+          status: String(deployed?.status || generated?.status || "").trim() || null,
+          expectedTrace,
+          generatedTrace,
+          deployedTrace,
+          expectedToGeneratedComparison,
+          generatedToDeployedComparison,
+        }),
+      );
 
         const finalTask = await getChatTask(deployed.id);
         expect(finalTask?.status).toBe("succeeded");

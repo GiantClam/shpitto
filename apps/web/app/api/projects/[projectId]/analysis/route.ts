@@ -117,6 +117,10 @@ export async function GET(
       name: binding?.projectName || runtimeProject.projectName,
       latestDeploymentUrl: binding?.latestDeploymentUrl || runtimeProject.latestDeploymentUrl,
       deploymentHost: binding?.deploymentHost || binding?.cfWaHost || runtimeProject.deploymentHost,
+      contractHash: runtimeProject.contractHash || null,
+      generationLane: runtimeProject.generationLane || null,
+      generationLaneConfig: runtimeProject.generationLaneConfig || null,
+      websiteSurfaceMode: runtimeProject.websiteSurfaceMode || null,
     };
 
     if (!binding) {

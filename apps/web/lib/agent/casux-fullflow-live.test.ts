@@ -80,7 +80,6 @@ function buildCasuxRequirementPayload() {
         siteType: "corporate",
         targetAudience: ["education_operators", "research_partners", "institutional_buyers"],
         contentSources: ["uploaded_files"],
-        primaryVisualDirection: "heritage-manufacturing",
         secondaryVisualTags: ["institutional", "warm", "child-friendly"],
         pageStructure: {
           mode: "multi",
@@ -98,7 +97,7 @@ function buildCasuxRequirementPayload() {
           altText: "CASUX",
         },
         customNotes:
-          "Treat CASUX Information Platform as a route-owned standards/resource directory, not as a generic blog surface. Keep research, standards, advocacy, scoring, and certification language specific to CASUX instead of generic corporate defaults. Route / must present CASUX as the umbrella institution and official homepage overview. Do not put certification, downloads, login, register, or search-directory wording into the homepage title, meta description, H1, or first lead paragraph. Do not use route-choreography wording such as from-to path, next step, where to start, or start from home anywhere visible on route /. On /casux-information-platform, do not describe the page as an entry point, route guidance page, reading entry, contact entry, or site entry label; present it as a public information library, resource index, or institutional materials directory instead. The homepage or information platform must include a real consultation form with name, organization, email, topic, and message fields. Footer groups must not duplicate the same links under both Routes and Resources. Bilingual means locale-switchable content with Chinese as the default visible language for this Chinese-source site, not simultaneous Chinese and English visible in the same headline, lead, button row, nav row, or footer block. Do not create blog or archive routes and do not enable a generic blog runtime.",
+          "Treat CASUX Information Platform as a route-owned standards/resource directory, not as a generic blog surface. Keep research, standards, advocacy, scoring, and certification language specific to CASUX instead of generic corporate defaults. Route / must present CASUX as the umbrella institution and official homepage overview. The ecological green #2E8B57 plus white palette with warm orange CTA accents is authoritative for this site; do not substitute blue-grey, brown, factory, or heritage-manufacturing palettes. Do not put certification, downloads, login, register, or search-directory wording into the homepage title, meta description, H1, or first lead paragraph. Do not use route-choreography wording such as from-to path, next step, where to start, or start from home anywhere visible on route /. On /casux-information-platform, do not describe the page as an entry point, route guidance page, reading entry, contact entry, or site entry label; present it as a public information library, resource index, or institutional materials directory instead. Each primary route must use a visibly distinct opening structure aligned to its role; do not repeat the same kicker + title + lead + CTA opening stack across creation, construction, certification, advocacy, research, and information pages. Every primary route must include a real contextual image in the opening band or the first proof band; do not ship text-only openings on interior routes. Keep the desktop navigation on a single compact row; do not allow wrapped nav links before tightening labels, spacing, or utility placement. Only route / or /casux-information-platform may host the real consultation form with name, organization, email, topic, and message fields; other routes should link back to that host instead of duplicating the form. Footer groups must not duplicate the same links under both Routes and Resources. Bilingual means locale-switchable content with Chinese as the default visible language for this Chinese-source site, not simultaneous Chinese and English visible in the same headline, lead, button row, nav row, or footer block. The EN/ZH switch must translate all visible route copy, including headings, section intros, CTA labels, form labels, nav, and footer copy on every route. Do not create blog or archive routes and do not enable a generic blog runtime.",
       },
       null,
       2,
@@ -195,6 +194,12 @@ function buildCasuxConfirmedCanonicalPrompt() {
     "- Avoid docs-workspace chrome, search-first openings, and route-choreography copy as the first impression.",
     "- Keep one locale visible at a time. Chinese is the default visible language for the first render on every route. If bilingual support is implemented with data attributes or resource files, do not duplicate both languages visibly in the same section.",
     "- The homepage or information platform must include a real consultation form with fields for name, organization, email, topic, and message.",
+    "- Only route / or /casux-information-platform may host the real consultation form. Other routes should use CTA links back to those hosts instead of duplicating the form.",
+    "- The ecological green #2E8B57 plus white palette with warm orange CTA accents is authoritative. Do not substitute blue-grey, brown, or heritage-manufacturing palette systems.",
+    "- Each primary route must use a visibly distinct opening structure aligned to its route role. Do not repeat one generic lead-band hero stack across creation, construction, certification, advocacy, research, and information pages.",
+    "- Every primary route must include a real contextual image in the opening band or first proof band; do not ship text-only interior openings.",
+    "- Keep the desktop navigation on a single compact row; do not allow wrapped nav links before reducing label length, gap spacing, or utility width.",
+    "- The EN/ZH switch must translate all visible route copy, including hero text, section headings, CTA labels, form labels, nav, and footer copy on every route.",
     "",
     "## 3. Route Contracts",
     "1. /casux-creation",
@@ -639,7 +644,12 @@ describe.skipIf(!shouldRun)("CASUX full flow live smoke", () => {
         const mountedRoute = surface.mountedRoute || fallbackMountedRoute;
         const mountedHtml = surface.mountedHtml || fileContent(files, routeToHtmlPath(mountedRoute));
         const indexHtml = fileContent(files, "/index.html");
+        const stylesCss = fileContent(files, "/styles.css");
+        const creationHtml = fileContent(files, "/casux-creation/index.html");
+        const constructionHtml = fileContent(files, "/casux-construction/index.html");
         const certificationHtml = fileContent(files, "/casux-certification/index.html");
+        const advocacyHtml = fileContent(files, "/casux-advocacy/index.html");
+        const researchHtml = fileContent(files, "/casux-research-center/index.html");
         const infoHtml = fileContent(files, "/casux-information-platform/index.html");
         const enMessages = fileContent(files, "/i18n/messages.en.json");
         const zhMessages = fileContent(files, "/i18n/messages.zh-CN.json");
@@ -650,6 +660,9 @@ describe.skipIf(!shouldRun)("CASUX full flow live smoke", () => {
         expect(paths).toEqual(expect.arrayContaining(["/index.html", "/styles.css", "/script.js"]));
         expect(paths).not.toEqual(expect.arrayContaining(["/blog/index.html", "/archive/index.html"]));
         expect(paths).toEqual(expect.arrayContaining(expectedCoreRoutes.map((route) => routeToHtmlPath(route))));
+        expect(stylesCss).toContain("#2E8B57");
+        expect(stylesCss).toContain("#F59E0B");
+        expect(stylesCss).not.toMatch(/#3F5D7D|#A47A3A|#7A3524/i);
         expect(mountedRoute).toBeTruthy();
         expect(mountedRoute).not.toBe("/blog");
         expect(manifestRoutes).toContain(mountedRoute);
@@ -674,6 +687,16 @@ describe.skipIf(!shouldRun)("CASUX full flow live smoke", () => {
         expect(htmlToVisibleText(certificationHtml)).toMatch(/score|评分|badge|优标|criteria|评审/i);
         expect(combinedVisibleText).toMatch(/CASUX|Information Platform|Research Center|Standards System|Case Studies/i);
         expect(combinedVisibleText).not.toMatch(/Custom Solutions|Open scheduling|Cal\.com|lorem ipsum/i);
+        expect(indexHtml).toContain("<form");
+        expect(infoHtml).toContain("<form");
+        expect(creationHtml).not.toContain("<form");
+        expect(constructionHtml).not.toContain("<form");
+        expect(advocacyHtml).not.toContain("<form");
+        expect(researchHtml).not.toContain("<form");
+        expect(creationHtml).toContain("<img");
+        expect(constructionHtml).toContain("<img");
+        expect(advocacyHtml).toContain("<img");
+        expect(researchHtml).toContain("<img");
 
         const previewRootRes = await getPreviewRoot(new Request("http://localhost/api/chat/tasks/x/preview"), {
           params: Promise.resolve({ taskId: queuedGenerateTask!.id }),
@@ -1001,6 +1024,6 @@ describe.skipIf(!shouldRun)("CASUX full flow live smoke", () => {
         else process.env.CHAT_DRAFT_LLM_ENABLED = prevDraftLlm;
       }
     },
-    900_000,
+    1_800_000,
   );
 });

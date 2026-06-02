@@ -258,6 +258,38 @@ describe("decision-layer", () => {
     expect(blog?.constraints.join(" ")).toContain("Detail links must use /blog/{slug}/");
   });
 
+  it("recovers confirmed routes from website design spec during refine flows when the prompt manifest is missing", () => {
+    const state: any = {
+      messages: [new HumanMessage("fill blog detail pages now and align the slugs")],
+      phase: "conversation",
+      workflow_context: {
+        executionMode: "refine",
+        websiteDesignSpec: [
+          "# Website Design Specification",
+          "## 3. Shell Contract",
+          "- confirmed_routes: /, /blog, /contact, /about",
+          "## 5. Route Map",
+          "- / (Home)",
+          "- /blog (Blog)",
+          "- /contact (Contact)",
+          "- /about (About)",
+        ].join("\n"),
+        requirementSpec: {
+          pages: ["blog"],
+          pageStructure: {
+            mode: "single",
+            planning: "manual",
+            pages: ["blog"],
+          },
+        },
+      },
+    };
+
+    const plan = buildLocalDecisionPlan(state);
+
+    expect(plan.routes).toEqual(["/", "/blog", "/contact", "/about"]);
+  });
+
   it("does not force publishable detail pages when a knowledge hub merely mentions articles as source material", () => {
     const state: any = {
       messages: [

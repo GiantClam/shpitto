@@ -1,3 +1,4 @@
+import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import {
   __contentSourceIngestionForTesting,
@@ -245,6 +246,20 @@ describe("content source ingestion", () => {
       "/casux-information-platform",
       "/downloads",
     ]);
+  });
+
+  it("reads uploaded local fixture files through referencedAssets path mode", async () => {
+    const localFixturePath = path.resolve(process.cwd(), "test-fixtures", "casux-source.txt");
+
+    const collected = await __contentSourceIngestionForTesting.collectUploadedFileSources({
+      referencedAssets: [`Asset "casux-source.txt" path: ${localFixturePath}`],
+    });
+
+    expect(collected.gaps).toEqual([]);
+    expect(collected.sources).toHaveLength(1);
+    expect(collected.sources[0]?.type).toBe("uploaded_file");
+    expect(collected.sources[0]?.title).toBe("casux-source.txt");
+    expect(String(collected.sources[0]?.snippet || "")).toContain("CASUX website full-page generation prompt");
   });
 
   it("preserves uploaded source multi-page information architecture with stable first-level routes", () => {
