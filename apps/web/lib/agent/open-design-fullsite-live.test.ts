@@ -136,15 +136,119 @@ function manifestForScenario(key: string): PromptControlManifest {
 }
 
 function replaceFirstJsonBlock(prompt: string, manifest: PromptControlManifest): string {
+  const text = String(prompt || "").trim();
   const block = `\`\`\`json\n${JSON.stringify(manifest, null, 2)}\n\`\`\``;
-  if (/```json\s*[\s\S]*?```/i.test(prompt)) {
-    return prompt.replace(/```json\s*[\s\S]*?```/i, block);
+  if (/```json\s*[\s\S]*?```/i.test(text)) {
+    return text.replace(/```json\s*[\s\S]*?```/i, block);
   }
-  return `${prompt.trim()}\n\n## Prompt Control Manifest\n${block}`;
+  return `${text}\n\n## Prompt Control Manifest\n${block}`;
+}
+
+function rewriteFullSitePromptSections(prompt: string, manifest: PromptControlManifest, key: string): string {
+  const config = scenarioConfig[key] || scenarioConfig.docs!;
+  const fixedFiles = manifest.files.map((file) => `- ${file}`).join("\n");
+  const surfaceMode =
+    key === "hub"
+      ? "content-hub-site"
+      : key === "docs"
+        ? "docs-knowledge-site"
+        : key === "corporate"
+          ? "corporate-b2b-site"
+          : "portfolio-blog-site";
+  const pageIntent = [
+    "### Page-Level Intent Contract",
+    ...manifest.routes.map((route, index) => {
+      const htmlPath = route === "/" ? "/index.html" : `${route}/index.html`;
+      const routeSpecificLines =
+        route === "/"
+          ? key === "hub"
+            ? [
+                "   - Homepage archetype: institutional collection masthead, topic shelves, standards/research ledger, and resource rows.",
+                "   - Do not use generic marketing hero utilities such as `hero`, `hero-wrap`, `hero-grid`, `hero__body`, `hero-copy`, `hero-panel`, or `hero-aside`.",
+                "   - Visitor-facing homepage copy must deliver institutional subject matter, not implementation review wording such as `shared shell`, `responsive layout`, or reading-order guidance.",
+              ]
+            : key === "docs"
+              ? [
+                  "   - Homepage archetype: docs workspace/reference-index opening, search/index rail, quickstart strip, guide stack, and reference matrix.",
+                  "   - Do not use corporate procurement hero language or content-hub collection shelves on the homepage.",
+                  "   - Visitor-facing homepage copy must deliver technical value and wayfinding, not implementation review wording such as `shared shell`, `responsive layout`, or route choreography.",
+                ]
+              : key === "corporate"
+                ? [
+                    "   - Homepage archetype: enterprise image-backed masthead, proof row, capability band, and concise contact path.",
+                    "   - Locale controls belong in a dedicated utility wrapper adjacent to nav, never appended into the primary nav link stream.",
+                    "   - Footer copy must not expose shell/mechanics labels such as `site browsing path`, `where to start`, `shared shell`, `responsive layout`, or similar implementation wording.",
+                  ]
+                : [
+                    "   - Homepage archetype: profile-led technical homepage with direct Blog, About, and Contact paths.",
+                    "   - Blog detail deliverables are explicit and may appear in shared footer/navigation when promised by the manifest.",
+                  ]
+          : [];
+      return [
+        `${index + 1}. ${config.navLabels[index] || route} (${route} -> ${htmlPath})`,
+        `   - Page intent: ${config.purposes[index] || `${config.navLabels[index] || route} route.`}`,
+        "   - Route source: fullsite_live_smoke",
+        "   - Constraint: The Prompt Control Manifest route list is authoritative.",
+        "   - Constraint: Navigation, footer, buttons, and CTAs may link only to manifest routes or in-page anchors.",
+        ...routeSpecificLines,
+        "   - Derive route-specific sections, content depth, and interactions from the Canonical Website Prompt and source material.",
+        "",
+      ].join("\n");
+    }),
+  ].join("\n");
+  const discoveryLock = [
+    "### Discovery Brief Lock",
+    `- websiteSurfaceMode: ${surfaceMode}`,
+    "- audience: prompt-adaptive",
+    `- primaryGoal: ${config.purposes[0] || "Full-site live smoke."}`,
+    `- routes: ${manifest.routes.join(", ")}`,
+    "- sourcePriority: user",
+    key === "publishable" ? "- localeMode: bilingual-allowed" : "- localeMode: en",
+    "- visualDirectionId: prompt-adaptive",
+    "- immutableConstraints: full-site live smoke",
+    "- confirmationStatus: confirmed",
+    "",
+  ].join("\n");
+  const sharedShell = [
+    "### Shared Shell Destination Contract",
+    `- Shared shell destinations are exactly: ${manifest.routes.join(", ")}.`,
+    "- Navigation, footer, buttons, and CTAs may link only to manifest routes or in-page anchors.",
+    "- Do not expose Archive, Downloads, Research, Standards, Docs, Support, or Blog destinations unless that exact route is present in the manifest.",
+    "- Treat nav and footer as one authoritative shared shell across every route; do not emit page-specific destination drift.",
+    "- Locale controls belong in a dedicated utility wrapper adjacent to the nav, not appended directly into the nav link stream.",
+    "- Do not use footer labels or helper copy such as `site browsing path`, `reading path`, `where to start`, `shared shell`, `responsive layout`, `language strategy`, or other implementation-review wording.",
+    "",
+  ].join("\n");
+  const layoutSafety = [
+    "### Home Hero Layout Safety",
+    "- The homepage opening must follow the surface-owned archetype from the Website Design Specification.",
+    "- Docs and content-hub homepages must not reuse generic marketing/corporate hero utility geometry unless the surface contract explicitly calls for it.",
+    "- Corporate homepages must use an enterprise masthead with a real image-backed hero and a distinct top-level footer band.",
+    "- Visitor-facing copy must stay subject-matter-first. Do not explain route choreography, page structure, shell mechanics, or responsive implementation in visible text.",
+    "",
+  ].join("\n");
+
+  return String(prompt || "")
+    .replace(
+      /### Fixed Pages And File Output[\s\S]*?(?=### Prompt Control Manifest \(Machine Readable\))/i,
+      `### Fixed Pages And File Output\n${fixedFiles}\n\n`,
+    )
+    .replace(/### Discovery Brief Lock[\s\S]*?(?=### Workflow Skill Contract)/i, discoveryLock)
+    .replace(/### Page-Level Intent Contract[\s\S]*?(?=### Shared Shell Destination Contract)/i, pageIntent)
+    .replace(/### Shared Shell Destination Contract[\s\S]*?(?=### Home Hero Layout Safety)/i, sharedShell)
+    .replace(/### Home Hero Layout Safety[\s\S]*?(?=### Page Repetition Constraints)/i, layoutSafety);
 }
 
 function appendFullSiteRouteOverride(prompt: string, manifest: PromptControlManifest, key: string): string {
   const config = scenarioConfig[key] || scenarioConfig.docs!;
+  const archetype =
+    key === "hub"
+      ? "Homepage must use institutional collection-index geometry with collection masthead, shelves, ledgers, and resource rows. Do not use blog/archive behavior or implementation-review wording in visible copy."
+      : key === "docs"
+        ? "Homepage must use docs workspace/reference-index geometry with search/index rail, quickstart strip, guide stack, and reference matrix. Do not use corporate procurement hero language, content-hub collection shelves, or implementation-review wording in visible copy."
+        : key === "corporate"
+          ? "Homepage must use an enterprise image-backed masthead, proof row, capability band, and concise contact path. Locale controls must sit in a dedicated utility wrapper beside nav, and the footer must render as a distinct top-level site-footer band."
+          : "Blog/detail routes are explicit deliverables in this run. Shared nav/footer may include manifest-declared /blog/{slug}/ detail routes, but must not invent archive/category routes beyond the confirmed set.";
   return `${prompt.trim()}
 
 ## Full-Site Route Unit Override
@@ -154,7 +258,9 @@ ${manifest.routes.map((route, index) => `- ${route}: ${config.purposes[index] ||
 
 Generate the matching HTML files, shared /styles.css, and shared /script.js. Navigation, footer, buttons, and CTAs may link only to manifest routes or in-page anchors. Do not invent blog, archive, downloads, research, standards, docs, or support routes unless they are explicitly listed in the manifest above.
 
-Each route is a route unit. Keep the shared shell consistent, but give every route its own opening, module vocabulary, media plan, and visitor-facing purpose.`;
+Each route is a route unit. Keep the shared shell consistent, but give every route its own opening, module vocabulary, media plan, and visitor-facing purpose.
+
+${archetype}`;
 }
 
 function normalizeRoutePath(value: string): string {
@@ -341,7 +447,11 @@ describe.skipIf(!shouldRun)("Open Design full-site live generation", () => {
       timeoutMs: 1_000,
     });
     const manifest = manifestForScenario(scenario);
-    const canonicalPrompt = appendFullSiteRouteOverride(replaceFirstJsonBlock(draft.canonicalPrompt, manifest), manifest, scenario);
+    const canonicalPrompt = appendFullSiteRouteOverride(
+      rewriteFullSitePromptSections(replaceFirstJsonBlock(draft.canonicalPrompt, manifest), manifest, scenario),
+      manifest,
+      scenario,
+    );
     const selection = selectWebsiteGenerationTypeSkill({
       requirementText: config.requirement,
       routes: manifest.routes,
