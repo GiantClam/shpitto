@@ -252,13 +252,14 @@ main { display: grid; gap: 24px; }
 }
 
 describe("skill-tool-executor", () => {
-  it("downgrades named tool choice for Aiberm compatibility", () => {
+  it("downgrades named tool choice for providers that reject named tool_choice objects", () => {
     const namedFinishChoice = { type: "function", function: { name: "finish" } };
 
     expect(normalizeToolChoiceForProvider({ provider: "aiberm" }, namedFinishChoice)).toBe("required");
-    expect(normalizeToolChoiceForProvider({ provider: "pptoken" }, namedFinishChoice)).toEqual(namedFinishChoice);
+    expect(normalizeToolChoiceForProvider({ provider: "pptoken" }, namedFinishChoice)).toBe("required");
     expect(normalizeToolChoiceForProvider({ provider: "crazyroute" }, namedFinishChoice)).toEqual(namedFinishChoice);
     expect(normalizeToolChoiceForProvider({ provider: "aiberm" }, "required")).toBe("required");
+    expect(normalizeToolChoiceForProvider({ provider: "pptoken" }, "required")).toBe("required");
   });
 
   it("restricts Aiberm tools when named tool choice is downgraded", () => {
@@ -269,8 +270,8 @@ describe("skill-tool-executor", () => {
       toolNames: ["emit_file"],
     });
     expect(resolveToolProtocolForProvider({ provider: "pptoken" }, namedEmitChoice)).toEqual({
-      toolChoice: namedEmitChoice,
-      toolNames: ["load_skill", "emit_file", "web_search", "finish"],
+      toolChoice: "required",
+      toolNames: ["emit_file"],
     });
     expect(resolveToolProtocolForProvider({ provider: "crazyroute" }, namedEmitChoice)).toEqual({
       toolChoice: namedEmitChoice,
