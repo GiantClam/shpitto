@@ -20,9 +20,114 @@ export type ProviderAttempt = {
   config: ProviderConfig;
 };
 
+function collectProviderErrorTextParts(error: unknown, seen = new Set<unknown>()): string[] {
+  if (!error || seen.has(error)) return [];
+  seen.add(error);
+  if (typeof error === "string") return [error];
+  if (typeof error !== "object") return [String(error)];
+
+  const raw = error as Record<string, unknown>;
+  const parts = [
+    raw.name,
+    raw.code,
+    raw.status,
+    raw.statusCode,
+    raw.type,
+    raw.message,
+  ]
+    .map((item) => String(item || "").trim())
+    .filter(Boolean);
+
+  return [
+    ...parts,
+    ...collectProviderErrorTextParts(raw.cause, seen),
+    ...collectProviderErrorTextParts(raw.error, seen),
+    ...collectProviderErrorTextParts(raw.details, seen),
+  ];
+}
+
 export function providerErrorText(error: unknown): string {
-  if (error instanceof Error) return String(error.message || error).trim();
-  return String(error || "").trim();
+  const parts = collectProviderErrorTextParts(error);
+  return parts.length > 0 ? parts.join(" | ") : String(error || "").trim();
+}
+
+function clipProviderDebugText(value: unknown, maxLength = 500): string {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  if (!text) return "";
+  return text.length > maxLength ? `${text.slice(0, Math.max(0, maxLength - 3))}...` : text;
+}
+
+function summarizeProviderEnvelope(value: unknown, maxLength = 500): string {
+  if (value == null) return "";
+  if (typeof value === "string") return clipProviderDebugText(value, maxLength);
+  if (typeof value !== "object") return clipProviderDebugText(value, maxLength);
+  const raw = value as Record<string, unknown>;
+  const summary = {
+    keys: Object.keys(raw).slice(0, 12),
+    id: raw.id,
+    object: raw.object,
+    model: raw.model,
+    choices: Array.isArray(raw.choices) ? raw.choices.length : undefined,
+    error: raw.error,
+    status: raw.status,
+    statusCode: raw.statusCode,
+    type: raw.type,
+    message: raw.message,
+  };
+  try {
+    return clipProviderDebugText(JSON.stringify(summary), maxLength);
+  } catch {
+    return clipProviderDebugText(Object.prototype.toString.call(value), maxLength);
+  }
+}
+
+function buildProviderOperationError(params: {
+  label: string;
+  config: Pick<ProviderConfig, "provider" | "modelName">;
+  phase: string;
+  error: unknown;
+  response?: unknown;
+}): Error {
+  const rawError = (params.error && typeof params.error === "object") ? (params.error as Record<string, unknown>) : undefined;
+  const status = rawError?.status ?? rawError?.statusCode ?? rawError?.responseStatus;
+  const requestId = rawError?.request_id ?? rawError?.requestId ?? rawError?.["x-request-id"];
+  const code = rawError?.code ?? (rawError?.error && typeof rawError.error === "object" ? (rawError.error as any).code : undefined);
+  const type = rawError?.type ?? (rawError?.error && typeof rawError.error === "object" ? (rawError.error as any).type : undefined);
+  const responseSummary = summarizeProviderEnvelope(params.response);
+  const upstreamSummary = summarizeProviderEnvelope(rawError?.error ?? rawError?.response ?? rawError?.body ?? rawError?.data);
+  const message = [
+    `${params.label}: provider=${params.config.provider} model=${params.config.modelName} phase=${params.phase}`,
+    status ? `status=${status}` : "",
+    requestId ? `request_id=${requestId}` : "",
+    code ? `code=${code}` : "",
+    type ? `type=${type}` : "",
+    `detail=${clipProviderDebugText(providerErrorText(params.error), 700) || "unknown error"}`,
+    upstreamSummary ? `upstream=${upstreamSummary}` : "",
+    responseSummary ? `response=${responseSummary}` : "",
+  ]
+    .filter(Boolean)
+    .join("; ");
+  const wrapped = new Error(message);
+  try {
+    (wrapped as any).cause = params.error;
+  } catch {}
+  return wrapped;
+}
+
+export function buildProviderOperationErrorForTesting(params: {
+  label: string;
+  config: Pick<ProviderConfig, "provider" | "modelName">;
+  phase: string;
+  error: unknown;
+  response?: unknown;
+}): string {
+  return buildProviderOperationError(params as {
+    label: string;
+    config: ProviderConfig;
+    phase: string;
+    error: unknown;
+    response?: unknown;
+  }).message;
 }
 
 export function isRetryableProviderError(error: unknown): boolean {
@@ -163,16 +268,41 @@ export async function invokeOpenAiCompatibleTextModel(params: {
     } catch {}
   }, Math.max(10_000, Number(params.timeoutMs) || 60_000));
   try {
-    const rawResponse = await client.chat.completions.create(
-      {
-        model: params.config.modelName,
-        messages: baseMessagesToOpenAiCompatibleMessages(params.messages),
-        temperature: params.temperature ?? 0.2,
-        max_tokens: Math.max(256, Number(params.maxTokens) || 8192),
-      } as any,
-      { signal: controller.signal },
-    );
-    return buildAiMessageFromOpenAiCompatibleResponse(rawResponse, params.config.modelName);
+    let rawResponse: unknown;
+    try {
+      rawResponse = await client.chat.completions.create(
+        {
+          model: params.config.modelName,
+          messages: baseMessagesToOpenAiCompatibleMessages(params.messages),
+          temperature: params.temperature ?? 0.2,
+          max_tokens: Math.max(256, Number(params.maxTokens) || 8192),
+        } as any,
+        { signal: controller.signal },
+      );
+    } catch (error) {
+      const wrapped = buildProviderOperationError({
+        label: "provider_openai_compat_request_failed",
+        config: params.config,
+        phase: "text_model.request",
+        error,
+      });
+      console.error(`[provider-model] ${wrapped.message}`);
+      throw wrapped;
+    }
+
+    try {
+      return buildAiMessageFromOpenAiCompatibleResponse(rawResponse, params.config.modelName);
+    } catch (error) {
+      const wrapped = buildProviderOperationError({
+        label: "provider_openai_compat_invalid_response",
+        config: params.config,
+        phase: "text_model.response",
+        error,
+        response: rawResponse,
+      });
+      console.error(`[provider-model] ${wrapped.message}`);
+      throw wrapped;
+    }
   } finally {
     clearTimeout(timer);
   }
