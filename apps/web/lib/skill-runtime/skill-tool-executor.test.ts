@@ -4,6 +4,7 @@ import {
   applyStateSitemapToDecisionForTesting,
   buildQaRepairMessageForTesting,
   buildSkeletonPromptRequirementContextForTesting,
+  buildProviderOperationErrorForTesting,
   buildQaRepairGuidanceForTesting,
   buildWebsiteSkillToolRoundPromptForAdapter,
   collapseVisibleBilingualPairsForTesting,
@@ -283,6 +284,36 @@ describe("skill-tool-executor", () => {
         error,
       }),
     ).toBe(false);
+  });
+
+  it("adds provider and phase context to malformed openai-compatible provider errors", () => {
+    const message = buildProviderOperationErrorForTesting({
+      label: "provider_openai_compat_request_failed",
+      config: {
+        provider: "pptoken",
+        modelName: "gpt-5.4-mini",
+      },
+      phase: "tool_protocol.request",
+      error: {
+        name: "TypeError",
+        message: "Cannot read properties of undefined (reading 'message')",
+        request_id: "req_123",
+        error: {
+          type: "server_error",
+          message: "gateway returned malformed envelope",
+        },
+      },
+      response: {
+        id: "resp_1",
+        choices: [],
+      },
+    });
+
+    expect(message).toContain("provider_openai_compat_request_failed: provider=pptoken model=gpt-5.4-mini phase=tool_protocol.request");
+    expect(message).toContain("request_id=req_123");
+    expect(message).toContain("detail=TypeError | Cannot read properties of undefined (reading 'message')");
+    expect(message).toContain('upstream={"keys":["type","message"]');
+    expect(message).toContain('response={"keys":["id","choices"]');
   });
 
   it("restricts Aiberm tools when named tool choice is downgraded", () => {

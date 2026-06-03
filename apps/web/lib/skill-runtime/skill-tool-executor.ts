@@ -4704,22 +4704,60 @@ function createToolProtocolModel(params: {
         } catch {}
       }, Math.max(10_000, Number(params.requestTimeoutMs) || 60_000));
       try {
-        const rawResponse = await client.chat.completions.create(
-          {
-            model: params.config.modelName,
-            messages: baseMessagesToOpenAiMessages(messages),
-            tools,
-            tool_choice: protocol.toolChoice,
-            temperature: 0.2,
-            max_tokens: maxTokens,
-          } as any,
-          { signal: controller.signal },
-        );
-        const response =
-          typeof rawResponse === "string"
-            ? JSON.parse(rawResponse)
-            : rawResponse;
+        let rawResponse: unknown;
+        try {
+          rawResponse = await client.chat.completions.create(
+            {
+              model: params.config.modelName,
+              messages: baseMessagesToOpenAiMessages(messages),
+              tools,
+              tool_choice: protocol.toolChoice,
+              temperature: 0.2,
+              max_tokens: maxTokens,
+            } as any,
+            { signal: controller.signal },
+          );
+        } catch (error) {
+          const wrapped = buildProviderOperationError({
+            label: "provider_openai_compat_request_failed",
+            config: params.config,
+            phase: "tool_protocol.request",
+            error,
+          });
+          console.error(`[skill-tool] ${wrapped.message}`);
+          throw wrapped;
+        }
+
+        let response: any;
+        try {
+          response =
+            typeof rawResponse === "string"
+              ? JSON.parse(rawResponse)
+              : rawResponse;
+        } catch (error) {
+          const wrapped = buildProviderOperationError({
+            label: "provider_openai_compat_invalid_response",
+            config: params.config,
+            phase: "tool_protocol.parse",
+            error,
+            response: rawResponse,
+          });
+          console.error(`[skill-tool] ${wrapped.message}`);
+          throw wrapped;
+        }
+
         const choice = response?.choices?.[0]?.message as any;
+        if (!choice) {
+          const wrapped = buildProviderOperationError({
+            label: "provider_openai_compat_invalid_response",
+            config: params.config,
+            phase: "tool_protocol.choices[0].message",
+            error: new Error("missing choices[0].message"),
+            response,
+          });
+          console.error(`[skill-tool] ${wrapped.message}`);
+          throw wrapped;
+        }
         const toolCalls = Array.isArray(choice?.tool_calls) ? choice.tool_calls : [];
         return new AIMessage({
           content: readModelText(choice?.content),
@@ -5114,6 +5152,85 @@ function collectErrorTextParts(error: unknown, seen = new Set<unknown>()): strin
 function errorText(error: unknown): string {
   const parts = collectErrorTextParts(error);
   return parts.length > 0 ? parts.join(" | ") : "unknown error";
+}
+
+function clipProviderDebugText(value: unknown, maxLength = 500): string {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  if (!text) return "";
+  return text.length > maxLength ? `${text.slice(0, Math.max(0, maxLength - 3))}...` : text;
+}
+
+function summarizeProviderEnvelope(value: unknown, maxLength = 500): string {
+  if (value == null) return "";
+  if (typeof value === "string") return clipProviderDebugText(value, maxLength);
+  if (typeof value !== "object") return clipProviderDebugText(value, maxLength);
+  const raw = value as Record<string, unknown>;
+  const summary = {
+    keys: Object.keys(raw).slice(0, 12),
+    id: raw.id,
+    object: raw.object,
+    model: raw.model,
+    choices: Array.isArray(raw.choices) ? raw.choices.length : undefined,
+    error: raw.error,
+    status: raw.status,
+    statusCode: raw.statusCode,
+    type: raw.type,
+    message: raw.message,
+  };
+  try {
+    return clipProviderDebugText(JSON.stringify(summary), maxLength);
+  } catch {
+    return clipProviderDebugText(Object.prototype.toString.call(value), maxLength);
+  }
+}
+
+function buildProviderOperationError(params: {
+  label: string;
+  config: Pick<ProviderConfig, "provider" | "modelName">;
+  phase: string;
+  error: unknown;
+  response?: unknown;
+}): Error {
+  const rawError = (params.error && typeof params.error === "object") ? (params.error as Record<string, unknown>) : undefined;
+  const status = rawError?.status ?? rawError?.statusCode ?? rawError?.responseStatus;
+  const requestId = rawError?.request_id ?? rawError?.requestId ?? rawError?.["x-request-id"];
+  const code = rawError?.code ?? (rawError?.error && typeof rawError.error === "object" ? (rawError.error as any).code : undefined);
+  const type = rawError?.type ?? (rawError?.error && typeof rawError.error === "object" ? (rawError.error as any).type : undefined);
+  const responseSummary = summarizeProviderEnvelope(params.response);
+  const upstreamSummary = summarizeProviderEnvelope(rawError?.error ?? rawError?.response ?? rawError?.body ?? rawError?.data);
+  const message = [
+    `${params.label}: provider=${params.config.provider} model=${params.config.modelName} phase=${params.phase}`,
+    status ? `status=${status}` : "",
+    requestId ? `request_id=${requestId}` : "",
+    code ? `code=${code}` : "",
+    type ? `type=${type}` : "",
+    `detail=${clipProviderDebugText(errorText(params.error), 700) || "unknown error"}`,
+    upstreamSummary ? `upstream=${upstreamSummary}` : "",
+    responseSummary ? `response=${responseSummary}` : "",
+  ]
+    .filter(Boolean)
+    .join("; ");
+  const wrapped = new Error(message);
+  try {
+    (wrapped as any).cause = params.error;
+  } catch {}
+  return wrapped;
+}
+
+export function buildProviderOperationErrorForTesting(params: {
+  label: string;
+  config: Pick<ProviderConfig, "provider" | "modelName">;
+  phase: string;
+  error: unknown;
+  response?: unknown;
+}): string {
+  return buildProviderOperationError(params as {
+    label: string;
+    config: ProviderConfig;
+    phase: string;
+    error: unknown;
+    response?: unknown;
+  }).message;
 }
 
 export function isRetryableProviderError(error: unknown): boolean {
