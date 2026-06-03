@@ -27,6 +27,7 @@ import { configureUndiciProxyFromEnv, createHttpsProxyAgentFromEnv, isRegionDeni
 import { CloudflareClient } from "../cloudflare";
 import { Bundler } from "../bundler";
 import { resolveRunProviderLocks } from "../skill-runtime/provider-lock.ts";
+import { DEFAULT_OPENAI_COMPAT_MODEL, normalizeProviderModelId } from "../skill-runtime/provider-model-id.ts";
 import { applyProjectContactSettingsToProjectJson } from "../project-settings";
 
 // Load environment variables from .env file at project root
@@ -171,16 +172,19 @@ const getProviderConfig = (providerOverride?: LlmProvider): ProviderConfig => {
       apiKey: process.env.PPTOKEN_API_KEY,
       baseURL: process.env.PPTOKEN_BASE_URL || "https://cn.pptoken.cc/v1",
       defaultHeaders: {},
-      modelName:
-        sharedModel ||
-        process.env.LLM_MODEL_PPTOKEN ||
-        process.env.PPTOKEN_MODEL ||
-        "gpt-5.4-mini",
-      fallbackModelName:
+      modelName: normalizeProviderModelId(
+        "pptoken",
+        sharedModel || process.env.LLM_MODEL_PPTOKEN || process.env.PPTOKEN_MODEL || DEFAULT_OPENAI_COMPAT_MODEL,
+        DEFAULT_OPENAI_COMPAT_MODEL,
+      ),
+      fallbackModelName: normalizeProviderModelId(
+        "pptoken",
         sharedFallbackModel ||
-        process.env.LLM_MODEL_FALLBACK_PPTOKEN ||
-        process.env.PPTOKEN_MODEL_FALLBACK ||
-        "gpt-5.4-mini",
+          process.env.LLM_MODEL_FALLBACK_PPTOKEN ||
+          process.env.PPTOKEN_MODEL_FALLBACK ||
+          DEFAULT_OPENAI_COMPAT_MODEL,
+        DEFAULT_OPENAI_COMPAT_MODEL,
+      ),
     };
   }
 
@@ -190,16 +194,19 @@ const getProviderConfig = (providerOverride?: LlmProvider): ProviderConfig => {
       apiKey: process.env.AIBERM_API_KEY,
       baseURL: process.env.AIBERM_BASE_URL || "https://aiberm.com/v1",
       defaultHeaders: {},
-      modelName:
-        sharedModel ||
-        process.env.LLM_MODEL_AIBERM ||
-        process.env.AIBERM_MODEL ||
-        "gpt-5.4-mini",
-      fallbackModelName:
+      modelName: normalizeProviderModelId(
+        "aiberm",
+        sharedModel || process.env.LLM_MODEL_AIBERM || process.env.AIBERM_MODEL || DEFAULT_OPENAI_COMPAT_MODEL,
+        DEFAULT_OPENAI_COMPAT_MODEL,
+      ),
+      fallbackModelName: normalizeProviderModelId(
+        "aiberm",
         sharedFallbackModel ||
-        process.env.LLM_MODEL_FALLBACK_AIBERM ||
-        process.env.AIBERM_MODEL_FALLBACK ||
-        "gpt-5.4-mini",
+          process.env.LLM_MODEL_FALLBACK_AIBERM ||
+          process.env.AIBERM_MODEL_FALLBACK ||
+          DEFAULT_OPENAI_COMPAT_MODEL,
+        DEFAULT_OPENAI_COMPAT_MODEL,
+      ),
     };
   }
 
@@ -216,24 +223,30 @@ const getProviderConfig = (providerOverride?: LlmProvider): ProviderConfig => {
         process.env.CRAZYROUTER_BASE_URL ||
         "https://crazyrouter.com/v1",
       defaultHeaders: {},
-      modelName:
+      modelName: normalizeProviderModelId(
+        "crazyroute",
         sharedModel ||
-        process.env.LLM_MODEL_CRAZYROUTE ||
-        process.env.LLM_MODEL_CRAZYREOUTE ||
-        process.env.LLM_MODEL_CRAZYROUTER ||
-        process.env.CRAZYROUTE_MODEL ||
-        process.env.CRAZYREOUTE_MODEL ||
-        process.env.CRAZYROUTER_MODEL ||
-        "gpt-5.4-mini",
-      fallbackModelName:
+          process.env.LLM_MODEL_CRAZYROUTE ||
+          process.env.LLM_MODEL_CRAZYREOUTE ||
+          process.env.LLM_MODEL_CRAZYROUTER ||
+          process.env.CRAZYROUTE_MODEL ||
+          process.env.CRAZYREOUTE_MODEL ||
+          process.env.CRAZYROUTER_MODEL ||
+          DEFAULT_OPENAI_COMPAT_MODEL,
+        DEFAULT_OPENAI_COMPAT_MODEL,
+      ),
+      fallbackModelName: normalizeProviderModelId(
+        "crazyroute",
         sharedFallbackModel ||
-        process.env.LLM_MODEL_FALLBACK_CRAZYROUTE ||
-        process.env.LLM_MODEL_FALLBACK_CRAZYREOUTE ||
-        process.env.LLM_MODEL_FALLBACK_CRAZYROUTER ||
-        process.env.CRAZYROUTE_MODEL_FALLBACK ||
-        process.env.CRAZYREOUTE_MODEL_FALLBACK ||
-        process.env.CRAZYROUTER_MODEL_FALLBACK ||
-        "gpt-5.4-mini",
+          process.env.LLM_MODEL_FALLBACK_CRAZYROUTE ||
+          process.env.LLM_MODEL_FALLBACK_CRAZYREOUTE ||
+          process.env.LLM_MODEL_FALLBACK_CRAZYROUTER ||
+          process.env.CRAZYROUTE_MODEL_FALLBACK ||
+          process.env.CRAZYREOUTE_MODEL_FALLBACK ||
+          process.env.CRAZYROUTER_MODEL_FALLBACK ||
+          DEFAULT_OPENAI_COMPAT_MODEL,
+        DEFAULT_OPENAI_COMPAT_MODEL,
+      ),
     };
   }
 

@@ -1,10 +1,14 @@
 export type ProviderName = "pptoken" | "aiberm" | "crazyroute";
 
+import { DEFAULT_OPENAI_COMPAT_MODEL, normalizeProviderModelId } from "./provider-model-id.ts";
+
 export type ProviderLock = {
   provider: ProviderName;
   model: string;
   reason: string;
 };
+
+const DEFAULT_LOCKED_PROVIDER: ProviderName = "pptoken";
 
 function resolveSharedRequestedModel(preferredModel?: string): string {
   const shared = String(
@@ -21,16 +25,9 @@ function buildProviderLock(provider: ProviderName, preferredModel?: string, reas
   const sharedModel = resolveSharedRequestedModel(preferredModel);
   return {
     provider,
-    model: String(sharedModel || resolveProviderModel(provider)).trim(),
+    model: normalizeProviderModelId(provider, String(sharedModel || resolveProviderModel(provider)).trim(), DEFAULT_OPENAI_COMPAT_MODEL),
     reason,
   };
-}
-
-function resolveProviderOrder(): ProviderName[] {
-  return String(process.env.LLM_PROVIDER_ORDER || "pptoken,aiberm,crazyrouter")
-    .split(",")
-    .map((x) => normalizeProvider(x))
-    .filter((x): x is ProviderName => !!x);
 }
 
 export function resolveRunProviderLocks(preferred?: { provider?: string; model?: string }): ProviderLock[] {
@@ -43,25 +40,17 @@ export function resolveRunProviderLocks(preferred?: { provider?: string; model?:
       "",
   );
 
-  const order = resolveProviderOrder().filter((provider, index, list) => list.indexOf(provider) === index);
-  const available = order.filter((provider) => hasProviderKey(provider));
-
-  if (forcedProvider && hasProviderKey(forcedProvider)) {
-    return [
-      buildProviderLock(forcedProvider, preferredModel, "forced"),
-      ...available
-        .filter((provider) => provider !== forcedProvider)
-        .map((provider) => buildProviderLock(provider, preferredModel, "ordered_fallback")),
-    ];
+  if (forcedProvider) {
+    return [buildProviderLock(forcedProvider, preferredModel, "manual_locked")];
   }
 
-  if (available.length > 0) {
-    return available.map((provider, index) =>
-      buildProviderLock(provider, preferredModel, index === 0 ? "first_available_in_order" : "ordered_fallback"),
-    );
-  }
-
-  return [buildProviderLock("pptoken", preferredModel, "fallback_without_key")];
+  return [
+    buildProviderLock(
+      DEFAULT_LOCKED_PROVIDER,
+      preferredModel,
+      hasProviderKey(DEFAULT_LOCKED_PROVIDER) ? "default_locked_pptoken" : "default_locked_pptoken_missing_key",
+    ),
+  ];
 }
 
 const normalizeProvider = (value: string): ProviderName | undefined => {
@@ -81,22 +70,22 @@ function hasProviderKey(provider: ProviderName): boolean {
 
 function resolveProviderModel(provider: ProviderName): string {
   if (provider === "pptoken") {
-    return (
+    return normalizeProviderModelId(provider, (
       process.env.LLM_MODEL_PPTOKEN ||
       process.env.PPTOKEN_MODEL ||
       process.env.LLM_MODEL ||
-      "gpt-5.4-mini"
-    );
+      DEFAULT_OPENAI_COMPAT_MODEL
+    ), DEFAULT_OPENAI_COMPAT_MODEL);
   }
   if (provider === "aiberm") {
-    return (
+    return normalizeProviderModelId(provider, (
       process.env.LLM_MODEL_AIBERM ||
       process.env.AIBERM_MODEL ||
       process.env.LLM_MODEL ||
-      "gpt-5.4-mini"
-    );
+      DEFAULT_OPENAI_COMPAT_MODEL
+    ), DEFAULT_OPENAI_COMPAT_MODEL);
   }
-  return (
+  return normalizeProviderModelId(provider, (
     process.env.LLM_MODEL_CRAZYROUTE ||
     process.env.LLM_MODEL_CRAZYROUTER ||
     process.env.LLM_MODEL_CRAZYREOUTE ||
@@ -104,8 +93,8 @@ function resolveProviderModel(provider: ProviderName): string {
     process.env.CRAZYROUTER_MODEL ||
     process.env.CRAZYREOUTE_MODEL ||
     process.env.LLM_MODEL ||
-    "gpt-5.4-mini"
-  );
+    DEFAULT_OPENAI_COMPAT_MODEL
+  ), DEFAULT_OPENAI_COMPAT_MODEL);
 }
 
 export function resolveRunProviderLock(preferred?: { provider?: string; model?: string }): ProviderLock {

@@ -54,6 +54,7 @@ import {
   normalizeWorkflowArtifactText,
   sanitizeWorkflowArtifactText,
 } from "../workflow-artifact-language.ts";
+import { DEFAULT_OPENAI_COMPAT_MODEL, normalizeProviderModelId } from "../skill-runtime/provider-model-id.ts";
 
 export type PromptDraftSource = {
   title: string;
@@ -1086,13 +1087,14 @@ function resolveDraftProviderConfig(): { config?: DraftProviderConfig; reason?: 
         provider: "pptoken",
         apiKey,
         baseURL: normalizeText(process.env.PPTOKEN_BASE_URL) || "https://cn.pptoken.cc/v1",
-        model:
+        model: normalizeProviderModelId("pptoken",
           normalizeText(process.env.CHAT_DRAFT_MODEL) ||
           normalizeText(lock.model) ||
           normalizeText(process.env.LLM_MODEL) ||
           normalizeText(process.env.LLM_MODEL_PPTOKEN) ||
           normalizeText(process.env.PPTOKEN_MODEL) ||
-          "gpt-5.4-mini",
+          DEFAULT_OPENAI_COMPAT_MODEL,
+          DEFAULT_OPENAI_COMPAT_MODEL),
         fallbackModel:
           normalizeText(process.env.CHAT_DRAFT_FALLBACK_MODEL) ||
           normalizeText(process.env.LLM_MODEL_FALLBACK_PPTOKEN) ||
@@ -1109,13 +1111,14 @@ function resolveDraftProviderConfig(): { config?: DraftProviderConfig; reason?: 
         provider: "aiberm",
         apiKey,
         baseURL: normalizeText(process.env.AIBERM_BASE_URL) || "https://aiberm.com/v1",
-        model:
+        model: normalizeProviderModelId("aiberm",
           normalizeText(process.env.CHAT_DRAFT_MODEL) ||
           normalizeText(lock.model) ||
           normalizeText(process.env.LLM_MODEL) ||
           normalizeText(process.env.LLM_MODEL_AIBERM) ||
           normalizeText(process.env.AIBERM_MODEL) ||
-          "gpt-5.4-mini",
+          DEFAULT_OPENAI_COMPAT_MODEL,
+          DEFAULT_OPENAI_COMPAT_MODEL),
         fallbackModel:
           normalizeText(process.env.CHAT_DRAFT_FALLBACK_MODEL) ||
           normalizeText(process.env.LLM_MODEL_FALLBACK_AIBERM) ||
@@ -1138,7 +1141,7 @@ function resolveDraftProviderConfig(): { config?: DraftProviderConfig; reason?: 
         normalizeText(process.env.CRAZYROUTER_BASE_URL) ||
         normalizeText(process.env.CRAZYREOUTE_BASE_URL) ||
         "https://crazyrouter.com/v1",
-      model:
+      model: normalizeProviderModelId("crazyroute",
         normalizeText(process.env.CHAT_DRAFT_MODEL) ||
         normalizeText(lock.model) ||
         normalizeText(process.env.LLM_MODEL) ||
@@ -1148,7 +1151,8 @@ function resolveDraftProviderConfig(): { config?: DraftProviderConfig; reason?: 
         normalizeText(process.env.CRAZYROUTE_MODEL) ||
         normalizeText(process.env.CRAZYROUTER_MODEL) ||
         normalizeText(process.env.CRAZYREOUTE_MODEL) ||
-        "gpt-5.4-mini",
+        DEFAULT_OPENAI_COMPAT_MODEL,
+        DEFAULT_OPENAI_COMPAT_MODEL),
       fallbackModel:
         normalizeText(process.env.CHAT_DRAFT_FALLBACK_MODEL) ||
         normalizeText(process.env.LLM_MODEL_FALLBACK_CRAZYROUTE) ||
@@ -1703,7 +1707,7 @@ async function requestPromptDraftWithLlm(params: {
   displayLocale?: PromptDraftDisplayLocale;
   requestedSiteLocale?: RequestedSiteLocale;
 }): Promise<PromptDraftBuildResult | undefined> {
-  const model = normalizeText(params.config.model) || "openai/gpt-5.4-mini";
+  const model = normalizeProviderModelId(params.config.provider, normalizeText(params.config.model), DEFAULT_OPENAI_COMPAT_MODEL);
   const fallbackModel = normalizeText(params.config.fallbackModel);
   const client = new OpenAI({
     apiKey: params.config.apiKey,
