@@ -5121,6 +5121,13 @@ export function isRetryableProviderError(error: unknown): boolean {
   if (!text) return false;
   if (/(401|403|forbidden|unauthorized|invalid api key|authentication failed)/i.test(text)) return false;
   if (/(404|model not found|unsupported model|not supported|bad request|invalid_request_error)/i.test(text)) return false;
+  if (
+    /cannot read properties of undefined \(reading ['"]message['"]\)|cannot read property ['"]message['"] of undefined/i.test(
+      text,
+    )
+  ) {
+    return true;
+  }
   if (/(timeout|timed out|bodytimeouterror|body timeout|und_err_body_timeout|terminated|429|rate limit|503|502|504|service unavailable|connection error|network|socket hang up|econnreset|econnaborted|etimedout|eai_again|enotfound|fetch failed|temporarily unavailable|overloaded|upstream)/i.test(text)) {
     return true;
   }
@@ -5266,6 +5273,25 @@ async function preflightProviderModel(params: {
   }
 }
 
+function shouldBypassProviderPreflightError(params: {
+  config: ProviderConfig;
+  error: unknown;
+}): boolean {
+  if (params.config.provider !== "pptoken") return false;
+  const text = errorText(params.error).toLowerCase();
+  if (!text) return false;
+  return /cannot read properties of undefined \(reading ['"]message['"]\)|cannot read property ['"]message['"] of undefined/i.test(
+    text,
+  );
+}
+
+export function shouldBypassProviderPreflightErrorForTesting(params: {
+  config: Pick<ProviderConfig, "provider">;
+  error: unknown;
+}) {
+  return shouldBypassProviderPreflightError(params as { config: ProviderConfig; error: unknown });
+}
+
 async function selectProviderAttempt(params: {
   attempts: ProviderAttempt[];
   taskTimeoutMs: number;
@@ -5297,6 +5323,18 @@ async function selectProviderAttempt(params: {
       };
     } catch (error) {
       lastError = error;
+      if (shouldBypassProviderPreflightError({ config: attempt.config, error })) {
+        const note = `provider_preflight_bypass:${attempt.config.provider}/${attempt.config.modelName}:${errorText(error).slice(0, 320)}`;
+        notes.push(note);
+        console.warn(
+          `[skill-tool] provider preflight bypass for ${attempt.config.provider}/${attempt.config.modelName}: ${errorText(error)}`,
+        );
+        return {
+          attempt,
+          notes,
+          excludedProviders: Array.from(excludedProviders).filter((provider) => provider !== attempt.config.provider),
+        };
+      }
       const isLast = index >= params.attempts.length - 1;
       const canFallback =
         isRetryableProviderError(error) ||

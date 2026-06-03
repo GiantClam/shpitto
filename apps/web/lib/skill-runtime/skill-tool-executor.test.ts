@@ -42,6 +42,7 @@ import {
   runSkillToolExecutor,
   sanitizeWebsiteSkillHtmlOutputForAdapter,
   sanitizeRequirementForGenerationForTesting,
+  shouldBypassProviderPreflightErrorForTesting,
   shouldUseRouteUnitProviderBridgeForTesting,
   syncSharedCssVariablesToStylePresetForTesting,
   stripEmptyBrandMarkPlaceholdersForTesting,
@@ -260,6 +261,28 @@ describe("skill-tool-executor", () => {
     expect(normalizeToolChoiceForProvider({ provider: "crazyroute" }, namedFinishChoice)).toEqual(namedFinishChoice);
     expect(normalizeToolChoiceForProvider({ provider: "aiberm" }, "required")).toBe("required");
     expect(normalizeToolChoiceForProvider({ provider: "pptoken" }, "required")).toBe("required");
+  });
+
+  it("treats undefined-message provider envelopes as retryable", () => {
+    expect(isRetryableProviderError(new TypeError("Cannot read properties of undefined (reading 'message')"))).toBe(true);
+  });
+
+  it("only bypasses preflight malformed envelopes for pptoken", () => {
+    const error = new TypeError("Cannot read properties of undefined (reading 'message')");
+
+    expect(
+      shouldBypassProviderPreflightErrorForTesting({
+        config: { provider: "pptoken" },
+        error,
+      }),
+    ).toBe(true);
+
+    expect(
+      shouldBypassProviderPreflightErrorForTesting({
+        config: { provider: "aiberm" },
+        error,
+      }),
+    ).toBe(false);
   });
 
   it("restricts Aiberm tools when named tool choice is downgraded", () => {
