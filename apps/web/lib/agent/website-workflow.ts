@@ -9,6 +9,7 @@ import { getWebsiteDesignDirection } from "../open-design/design-directions.ts";
 import { sanitizeWorkflowArtifactText } from "../workflow-artifact-language.ts";
 import { resolveRunProviderLocks, type ProviderName } from "../skill-runtime/provider-lock.ts";
 import { invokeOpenAiCompatibleTextModel } from "../skill-runtime/provider-model.ts";
+import { DEFAULT_OPENAI_COMPAT_MODEL, normalizeProviderModelId } from "../skill-runtime/provider-model-id.ts";
 
 const execFileAsync = promisify(execFile);
 
@@ -1100,14 +1101,13 @@ export function resolveWorkflowProviderConfigForTesting(
   lockOverride?: { provider?: string; model?: string },
 ): WorkflowProviderConfig {
   const lock = lockOverride || resolveRunProviderLocks()[0];
-  const modelName = resolveWorkflowSelectorModelName(lock);
   const provider = (lock?.provider || "pptoken") as ProviderName;
   if (provider === "pptoken") {
     return {
       provider: "pptoken",
       apiKey: process.env.PPTOKEN_API_KEY,
       baseURL: process.env.PPTOKEN_BASE_URL || "https://cn.pptoken.cc/v1",
-      modelName,
+      modelName: normalizeProviderModelId("pptoken", resolveWorkflowSelectorModelName(lock), DEFAULT_OPENAI_COMPAT_MODEL),
     };
   }
   if (provider === "aiberm") {
@@ -1115,7 +1115,7 @@ export function resolveWorkflowProviderConfigForTesting(
       provider: "aiberm",
       apiKey: process.env.AIBERM_API_KEY,
       baseURL: process.env.AIBERM_BASE_URL || "https://aiberm.com/v1",
-      modelName,
+      modelName: normalizeProviderModelId("aiberm", resolveWorkflowSelectorModelName(lock), DEFAULT_OPENAI_COMPAT_MODEL),
     };
   }
   return {
@@ -1129,7 +1129,7 @@ export function resolveWorkflowProviderConfigForTesting(
       process.env.CRAZYROUTER_BASE_URL ||
       process.env.CRAZYREOUTE_BASE_URL ||
       "https://crazyrouter.com/v1",
-    modelName,
+    modelName: normalizeProviderModelId("crazyroute", resolveWorkflowSelectorModelName(lock), DEFAULT_OPENAI_COMPAT_MODEL),
   };
 }
 

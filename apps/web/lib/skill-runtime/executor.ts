@@ -2758,10 +2758,17 @@ async function resolveWebsiteRuntimeSkill(params: {
     websiteDesignSpec: String(existingWorkflow.websiteDesignSpec || ""),
   };
   if (!hasExistingGuidance || !styleHit) {
-    const workflowContext = await loadWorkflowSkillContext(
-      requirementText,
-      normalizedVisualDecision,
-    );
+    let workflowContext;
+    try {
+      workflowContext = await loadWorkflowSkillContext(
+        requirementText,
+        normalizedVisualDecision,
+      );
+    } catch (error) {
+      throw new Error(
+        `design_confirm_workflow_context_failed: ${String((error as Error)?.message || error || "unknown error")}`,
+      );
+    }
     stylePreset = normalizeStylePreset(workflowContext.stylePreset, {});
     styleHit = workflowContext.hit;
     guidance = {
