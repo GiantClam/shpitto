@@ -90,4 +90,27 @@ describe("invokeModelWithIdleTimeout", () => {
       }),
     ).rejects.toThrow("Request timed out. [operation=unit-test-stalled-stream]");
   });
+
+  it("preserves the stream method binding when calling model.stream", async () => {
+    class BoundStreamModel {
+      readonly prefix = "bound-stream";
+
+      async invoke() {
+        return { content: "" };
+      }
+
+      async stream() {
+        return streamFrom([{ content: this.prefix }]);
+      }
+    }
+
+    const message = await invokeModelWithIdleTimeout({
+      model: new BoundStreamModel(),
+      messages: [new HumanMessage("test")],
+      timeoutMs: 5000,
+      operation: "unit-test-bound-stream",
+    });
+
+    expect(String(message.content || "")).toContain("bound-stream");
+  });
 });

@@ -1,4 +1,6 @@
+import { AIMessage, HumanMessage, SystemMessage, ToolMessage, type BaseMessage } from "@langchain/core/messages";
 import { ChatOpenAI } from "@langchain/openai";
+import OpenAI from "openai";
 
 import { resolveRunProviderRunnerLock, resolveRunProviderRunnerLocks, type RunProviderLock } from "./provider-runner.ts";
 import { DEFAULT_OPENAI_COMPAT_MODEL, normalizeProviderModelId } from "./provider-model-id.ts";
@@ -41,6 +43,139 @@ export function isRetryableProviderError(error: unknown): boolean {
   return /(timeout|timed out|bodytimeouterror|body timeout|und_err_body_timeout|terminated|429|rate limit|503|502|504|service unavailable|connection error|network|socket hang up|econnreset|econnaborted|etimedout|eai_again|enotfound|fetch failed|temporarily unavailable|overloaded|upstream)/i.test(
     text,
   );
+}
+
+function readOpenAiCompatibleText(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) {
+    return value
+      .map((item: any) => {
+        if (typeof item === "string") return item;
+        if (typeof item?.text === "string") return item.text;
+        if (typeof item?.content === "string") return item.content;
+        return "";
+      })
+      .filter(Boolean)
+      .join("\n");
+  }
+  if (value && typeof value === "object" && typeof (value as any).content === "string") {
+    return String((value as any).content);
+  }
+  return "";
+}
+
+function stringifyToolArgs(raw: unknown): string {
+  if (typeof raw === "string") return raw;
+  if (raw && typeof raw === "object") {
+    try {
+      return JSON.stringify(raw);
+    } catch {
+      return "{}";
+    }
+  }
+  return "{}";
+}
+
+function baseMessagesToOpenAiCompatibleMessages(messages: BaseMessage[]): any[] {
+  const output: any[] = [];
+  for (const msg of messages || []) {
+    if (msg instanceof SystemMessage) {
+      output.push({ role: "system", content: readOpenAiCompatibleText((msg as any)?.content) || "" });
+      continue;
+    }
+    if (msg instanceof HumanMessage) {
+      output.push({ role: "user", content: readOpenAiCompatibleText((msg as any)?.content) || "" });
+      continue;
+    }
+    if (msg instanceof ToolMessage) {
+      output.push({
+        role: "tool",
+        content: readOpenAiCompatibleText((msg as any)?.content) || "",
+        tool_call_id: String((msg as any)?.tool_call_id || ""),
+      });
+      continue;
+    }
+    const toolCalls = Array.isArray((msg as any)?.tool_calls) ? (msg as any).tool_calls : [];
+    if (toolCalls.length > 0) {
+      output.push({
+        role: "assistant",
+        content: readOpenAiCompatibleText((msg as any)?.content) || null,
+        tool_calls: toolCalls.map((call: any) => ({
+          id: String(call?.id || ""),
+          type: "function",
+          function: {
+            name: String(call?.function?.name || call?.name || "").trim(),
+            arguments: stringifyToolArgs(call?.function?.arguments ?? call?.args ?? {}),
+          },
+        })),
+      });
+      continue;
+    }
+    output.push({ role: "assistant", content: readOpenAiCompatibleText((msg as any)?.content) || "" });
+  }
+  return output;
+}
+
+function buildAiMessageFromOpenAiCompatibleResponse(rawResponse: unknown, fallbackModelName: string): AIMessage {
+  const response =
+    typeof rawResponse === "string"
+      ? JSON.parse(rawResponse)
+      : rawResponse;
+  const choice = (response as any)?.choices?.[0]?.message as any;
+  if (!choice) {
+    throw new Error(`provider_openai_compat_invalid_response: missing choices[0].message for model=${fallbackModelName}`);
+  }
+  const toolCalls = Array.isArray(choice?.tool_calls) ? choice.tool_calls : [];
+  return new AIMessage({
+    content: readOpenAiCompatibleText(choice?.content),
+    additional_kwargs: toolCalls.length > 0 ? { tool_calls: toolCalls } : {},
+    response_metadata: {
+      model_name: String((response as any)?.model || fallbackModelName),
+      finish_reason: String((response as any)?.choices?.[0]?.finish_reason || ""),
+    },
+    ...(toolCalls.length > 0 ? { tool_calls: toolCalls } : {}),
+  } as any);
+}
+
+export function buildAiMessageFromOpenAiCompatibleResponseForTesting(
+  rawResponse: unknown,
+  fallbackModelName: string,
+): AIMessage {
+  return buildAiMessageFromOpenAiCompatibleResponse(rawResponse, fallbackModelName);
+}
+
+export async function invokeOpenAiCompatibleTextModel(params: {
+  config: ProviderConfig;
+  messages: BaseMessage[];
+  timeoutMs: number;
+  maxTokens: number;
+  temperature?: number;
+}): Promise<AIMessage> {
+  const client = new OpenAI({
+    apiKey: params.config.apiKey,
+    baseURL: params.config.baseURL,
+    defaultHeaders: params.config.defaultHeaders,
+  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => {
+    try {
+      controller.abort();
+    } catch {}
+  }, Math.max(10_000, Number(params.timeoutMs) || 60_000));
+  try {
+    const rawResponse = await client.chat.completions.create(
+      {
+        model: params.config.modelName,
+        messages: baseMessagesToOpenAiCompatibleMessages(params.messages),
+        temperature: params.temperature ?? 0.2,
+        max_tokens: Math.max(256, Number(params.maxTokens) || 8192),
+      } as any,
+      { signal: controller.signal },
+    );
+    return buildAiMessageFromOpenAiCompatibleResponse(rawResponse, params.config.modelName);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export function createModelForProvider(

@@ -8,6 +8,7 @@ import { normalizeStylePreset, type DesignStylePreset } from "../design-style-pr
 import { getWebsiteDesignDirection } from "../open-design/design-directions.ts";
 import { sanitizeWorkflowArtifactText } from "../workflow-artifact-language.ts";
 import { resolveRunProviderLocks, type ProviderName } from "../skill-runtime/provider-lock.ts";
+import { invokeOpenAiCompatibleTextModel } from "../skill-runtime/provider-model.ts";
 
 const execFileAsync = promisify(execFile);
 
@@ -1240,7 +1241,22 @@ async function selectStylesWithLlm(params: {
   ].join("\n");
 
   try {
-    const response = await model.invoke([new SystemMessage(systemPrompt), new HumanMessage(userPrompt)]);
+    const messages = [new SystemMessage(systemPrompt), new HumanMessage(userPrompt)];
+    const response = config.provider === "pptoken"
+      ? await invokeOpenAiCompatibleTextModel({
+          config: {
+            provider: "pptoken",
+            apiKey: config.apiKey,
+            baseURL: config.baseURL,
+            defaultHeaders: config.defaultHeaders,
+            modelName: config.modelName,
+          },
+          messages,
+          timeoutMs: Math.max(12_000, Number(process.env.WORKFLOW_STYLE_SELECT_TIMEOUT_MS || 45_000)),
+          temperature: 0,
+          maxTokens: Math.max(1200, Number(process.env.WORKFLOW_STYLE_SELECT_MAX_TOKENS || 2400)),
+        })
+      : await model.invoke(messages);
     const content = Array.isArray((response as any)?.content)
       ? (response as any).content
           .map((item: any) => (typeof item === "string" ? item : String(item?.text || "")))

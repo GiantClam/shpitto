@@ -61,7 +61,7 @@ export async function invokeModelWithIdleTimeout(params: {
   if (typeof model.stream !== "function") {
     return await invokeWithAbsoluteTimeout();
   }
-  const streamMethod = model.stream;
+  const streamMethod = model.stream.bind(model);
 
   const controller = new AbortController();
   let timer: NodeJS.Timeout | null = null;
