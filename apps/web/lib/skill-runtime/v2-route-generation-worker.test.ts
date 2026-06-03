@@ -71,7 +71,7 @@ describe("v2 route generation worker", () => {
     expect(result.issues?.[0]).toContain("/styles.css");
   });
 
-  it("falls through to the next provider when a provider returns malformed or incomplete route-unit output", async () => {
+  it("does not auto-fallback to the next provider when pptoken returns malformed route-unit output", async () => {
     const previousPptokenKey = process.env.PPTOKEN_API_KEY;
     const previousAibermKey = process.env.AIBERM_API_KEY;
     const previousProviderOrder = process.env.LLM_PROVIDER_ORDER;
@@ -120,9 +120,9 @@ describe("v2 route generation worker", () => {
         context: {},
       });
 
-      expect(result.status).toBe("passed");
-      expect(attemptedProviders).toEqual(["pptoken", "aiberm"]);
-      expect(result.files.map((file) => file.path)).toEqual(["/index.html", "/styles.css"]);
+      expect(result.status).toBe("failed");
+      expect(attemptedProviders).toEqual(["pptoken"]);
+      expect(result.issues?.[0]).toContain("/styles.css");
     } finally {
       process.env.PPTOKEN_API_KEY = previousPptokenKey;
       process.env.AIBERM_API_KEY = previousAibermKey;
@@ -131,7 +131,7 @@ describe("v2 route generation worker", () => {
     }
   });
 
-  it("falls through to the next provider when the provider stack throws an undefined-message TypeError", async () => {
+  it("does not auto-fallback to the next provider when pptoken throws an undefined-message TypeError", async () => {
     const previousPptokenKey = process.env.PPTOKEN_API_KEY;
     const previousAibermKey = process.env.AIBERM_API_KEY;
     const previousProviderOrder = process.env.LLM_PROVIDER_ORDER;
@@ -182,9 +182,9 @@ describe("v2 route generation worker", () => {
         context: {},
       });
 
-      expect(result.status).toBe("passed");
-      expect(attemptedProviders).toEqual(["pptoken", "aiberm"]);
-      expect(result.files.map((file) => file.path)).toEqual(["/index.html", "/styles.css"]);
+      expect(result.status).toBe("failed");
+      expect(attemptedProviders).toEqual(["pptoken"]);
+      expect(result.issues?.[0]).toContain("Cannot read properties of undefined");
     } finally {
       process.env.PPTOKEN_API_KEY = previousPptokenKey;
       process.env.AIBERM_API_KEY = previousAibermKey;

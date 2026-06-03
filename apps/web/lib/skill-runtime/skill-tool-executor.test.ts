@@ -1377,6 +1377,33 @@ describe("skill-tool-executor", () => {
     expect(result.notes[0]).toContain("403 status code");
   });
 
+  it("normalizes openai-prefixed lightweight round overrides for crazyroute", () => {
+    const previousHomeRoundModel = process.env.LLM_MODEL_HOME_ROUND;
+    try {
+      process.env.LLM_MODEL_HOME_ROUND = "openai/gpt-5.4-mini";
+
+      const resolved = resolveWebsiteSkillRoundProviderConfigForTesting(
+        {
+          provider: "crazyroute",
+          apiKey: "mock",
+          baseURL: "https://crazyrouter.example/v1",
+          defaultHeaders: {},
+          modelName: "gpt-5.4",
+        },
+        {
+          targetFiles: ["/index.html"],
+          instruction: "Emit the homepage.",
+          strictSingleTarget: true,
+        },
+      );
+
+      expect(resolved.modelName).toBe("gpt-5.4-mini");
+    } finally {
+      if (previousHomeRoundModel === undefined) delete process.env.LLM_MODEL_HOME_ROUND;
+      else process.env.LLM_MODEL_HOME_ROUND = previousHomeRoundModel;
+    }
+  });
+
   it("routes a generation unit bridge through provider fallback", async () => {
     const state: any = {
       messages: [new HumanMessage("Build a website with Home and Products routes.")],

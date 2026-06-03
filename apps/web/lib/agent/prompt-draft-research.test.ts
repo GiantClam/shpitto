@@ -1233,6 +1233,46 @@ describe("prompt draft research", () => {
     }
   });
 
+  it("normalizes crazyroute draft model aliases before template fallback", async () => {
+    const snapshot = {
+      NODE_ENV: process.env.NODE_ENV,
+      CHAT_DRAFT_PROVIDER: process.env.CHAT_DRAFT_PROVIDER,
+      CHAT_DRAFT_MODEL: process.env.CHAT_DRAFT_MODEL,
+      CHAT_DRAFT_LLM_ENABLED: process.env.CHAT_DRAFT_LLM_ENABLED,
+      PPTOKEN_API_KEY: process.env.PPTOKEN_API_KEY,
+      AIBERM_API_KEY: process.env.AIBERM_API_KEY,
+      CRAZYROUTE_API_KEY: process.env.CRAZYROUTE_API_KEY,
+    };
+
+    try {
+      (process.env as any).NODE_ENV = "development";
+      process.env.CHAT_DRAFT_PROVIDER = "crazyrouter";
+      process.env.CHAT_DRAFT_MODEL = "openai/gpt-5.4-mini";
+      process.env.CHAT_DRAFT_LLM_ENABLED = "0";
+      delete process.env.PPTOKEN_API_KEY;
+      delete process.env.AIBERM_API_KEY;
+      process.env.CRAZYROUTE_API_KEY = "test-crazyroute-key";
+
+      const result = await buildPromptDraftWithResearch({
+        requirementText: "build a product website",
+        slots: buildRequirementSlots("build a product website"),
+      });
+
+      expect(result.provider).toBe("crazyroute");
+      expect(result.model).toBe("gpt-5.4-mini");
+      expect(result.draftMode).toBe("template");
+      expect(String(result.fallbackReason || "")).not.toContain("openai/");
+    } finally {
+      for (const [key, value] of Object.entries(snapshot)) {
+        if (value === undefined) {
+          delete process.env[key];
+        } else {
+          process.env[key] = value;
+        }
+      }
+    }
+  });
+
   it("keeps freeform profile facts in template draft fallback instead of collapsing to a generic portfolio shell", async () => {
     const requirement = [
       "我做过华为、微信、HelloTalk 等产品与增长相关工作，过去长期服务 K12 和教育信息化场景。",

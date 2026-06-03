@@ -1,6 +1,7 @@
 import { ChatOpenAI } from "@langchain/openai";
 
 import { resolveRunProviderRunnerLock, resolveRunProviderRunnerLocks, type RunProviderLock } from "./provider-runner.ts";
+import { DEFAULT_OPENAI_COMPAT_MODEL, normalizeProviderModelId } from "./provider-model-id.ts";
 
 export type LlmProvider = "pptoken" | "aiberm" | "crazyroute";
 
@@ -73,9 +74,9 @@ export function resolveProviderConfig(lock: RunProviderLock): ProviderConfig {
       apiKey: process.env.PPTOKEN_API_KEY,
       baseURL: process.env.PPTOKEN_BASE_URL || "https://cn.pptoken.cc/v1",
       defaultHeaders: {},
-      modelName: String(
+      modelName: normalizeProviderModelId("pptoken", String(
         lock.model || process.env.LLM_MODEL_PPTOKEN || process.env.PPTOKEN_MODEL || process.env.LLM_MODEL || "gpt-5.4-mini",
-      ),
+      ), DEFAULT_OPENAI_COMPAT_MODEL),
     };
   }
   if (lock.provider === "aiberm") {
@@ -84,9 +85,9 @@ export function resolveProviderConfig(lock: RunProviderLock): ProviderConfig {
       apiKey: process.env.AIBERM_API_KEY,
       baseURL: process.env.AIBERM_BASE_URL || "https://aiberm.com/v1",
       defaultHeaders: {},
-      modelName: String(
+      modelName: normalizeProviderModelId("aiberm", String(
         lock.model || process.env.LLM_MODEL_AIBERM || process.env.AIBERM_MODEL || process.env.LLM_MODEL || "gpt-5.4-mini",
-      ),
+      ), DEFAULT_OPENAI_COMPAT_MODEL),
     };
   }
   return {
@@ -98,14 +99,14 @@ export function resolveProviderConfig(lock: RunProviderLock): ProviderConfig {
       process.env.CRAZYREOUTE_BASE_URL ||
       "https://crazyrouter.com/v1",
     defaultHeaders: {},
-    modelName: String(
+    modelName: normalizeProviderModelId("crazyroute", String(
       lock.model ||
         process.env.LLM_MODEL_CRAZYROUTE ||
         process.env.LLM_MODEL_CRAZYROUTER ||
         process.env.LLM_MODEL_CRAZYREOUTE ||
         process.env.LLM_MODEL ||
         "gpt-5.4-mini",
-    ),
+    ), DEFAULT_OPENAI_COMPAT_MODEL),
   };
 }
 

@@ -36,6 +36,7 @@ import {
 import { inferWebsiteSurfaceModeFromSkillId, type WebsiteDiscoveryBrief, type WebsiteSurfaceMode } from "./open-design-adoption.ts";
 import { invokeModelWithIdleTimeout } from "./llm-stream.ts";
 import { collectCompletedPhases, getGeneratedFilePaths, getPages, getStaticArtifactFiles } from "./artifacts.ts";
+import { DEFAULT_OPENAI_COMPAT_MODEL, normalizeProviderModelId } from "./provider-model-id.ts";
 import { resolveRunProviderRunnerLock, resolveRunProviderRunnerLocks, type RunProviderLock } from "./provider-runner.ts";
 import {
   getWebsiteGenerationSkillBundle,
@@ -4186,9 +4187,11 @@ function resolveLightweightRoundModelName(config: ProviderConfig, envKeys: strin
     (providerScopedKey
       ? String((process.env as Record<string, string | undefined>)[providerScopedKey] || "").trim()
       : "");
-  if (explicit) return explicit;
-  if (/mini/i.test(config.modelName)) return config.modelName;
-  return "gpt-5.4-mini";
+  if (explicit) return normalizeProviderModelId(config.provider, explicit, DEFAULT_OPENAI_COMPAT_MODEL);
+  if (/mini/i.test(config.modelName)) {
+    return normalizeProviderModelId(config.provider, config.modelName, DEFAULT_OPENAI_COMPAT_MODEL);
+  }
+  return normalizeProviderModelId(config.provider, DEFAULT_OPENAI_COMPAT_MODEL, DEFAULT_OPENAI_COMPAT_MODEL);
 }
 
 function resolveRoundProviderConfig(config: ProviderConfig, objective: RoundObjective): ProviderConfig {
@@ -4491,7 +4494,11 @@ function resolveProviderConfig(lock: RunProviderLock): ProviderConfig {
       apiKey: process.env.PPTOKEN_API_KEY,
       baseURL: process.env.PPTOKEN_BASE_URL || "https://cn.pptoken.cc/v1",
       defaultHeaders: {},
-      modelName: String(lock.model || process.env.LLM_MODEL_PPTOKEN || process.env.PPTOKEN_MODEL || "gpt-5.4-mini"),
+      modelName: normalizeProviderModelId(
+        "pptoken",
+        String(lock.model || process.env.LLM_MODEL_PPTOKEN || process.env.PPTOKEN_MODEL || DEFAULT_OPENAI_COMPAT_MODEL),
+        DEFAULT_OPENAI_COMPAT_MODEL,
+      ),
     };
   }
   if (lock.provider === "aiberm") {
@@ -4500,7 +4507,13 @@ function resolveProviderConfig(lock: RunProviderLock): ProviderConfig {
       apiKey: process.env.AIBERM_API_KEY,
       baseURL: process.env.AIBERM_BASE_URL || "https://aiberm.com/v1",
       defaultHeaders: {},
-      modelName: String(lock.model || process.env.LLM_MODEL_AIBERM || process.env.AIBERM_MODEL || process.env.LLM_MODEL || "gpt-5.4-mini"),
+      modelName: normalizeProviderModelId(
+        "aiberm",
+        String(
+          lock.model || process.env.LLM_MODEL_AIBERM || process.env.AIBERM_MODEL || process.env.LLM_MODEL || DEFAULT_OPENAI_COMPAT_MODEL,
+        ),
+        DEFAULT_OPENAI_COMPAT_MODEL,
+      ),
     };
   }
   return {
@@ -4512,13 +4525,17 @@ function resolveProviderConfig(lock: RunProviderLock): ProviderConfig {
       process.env.CRAZYREOUTE_BASE_URL ||
       "https://crazyrouter.com/v1",
     defaultHeaders: {},
-    modelName: String(
-      lock.model ||
-        process.env.LLM_MODEL_CRAZYROUTE ||
-        process.env.LLM_MODEL_CRAZYROUTER ||
-        process.env.LLM_MODEL_CRAZYREOUTE ||
-        process.env.LLM_MODEL ||
-        "gpt-5.4-mini",
+    modelName: normalizeProviderModelId(
+      "crazyroute",
+      String(
+        lock.model ||
+          process.env.LLM_MODEL_CRAZYROUTE ||
+          process.env.LLM_MODEL_CRAZYROUTER ||
+          process.env.LLM_MODEL_CRAZYREOUTE ||
+          process.env.LLM_MODEL ||
+          DEFAULT_OPENAI_COMPAT_MODEL,
+      ),
+      DEFAULT_OPENAI_COMPAT_MODEL,
     ),
   };
 }
