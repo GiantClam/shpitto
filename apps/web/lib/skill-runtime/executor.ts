@@ -2684,146 +2684,158 @@ async function resolveWebsiteRuntimeSkill(params: {
   loadedSkillIds: string[];
   skillDirective: string;
 }> {
-  const requestedSkillId = String(
-    params.explicitSkillId || (params.state.workflow_context as any)?.skillId || WEBSITE_MAIN_SKILL_ID,
-  ).trim();
-  const requestedExecutionSkillId = String((params.state.workflow_context as any)?.executionSkillId || "").trim();
-  const requestedWebsiteSkillId =
-    requestedSkillId && requestedSkillId !== WEBSITE_MAIN_SKILL_ID ? requestedSkillId : requestedExecutionSkillId || requestedSkillId;
-  const loadedSkill = await loadProjectSkill(requestedWebsiteSkillId || WEBSITE_MAIN_SKILL_ID);
-  if (loadedSkill.id !== WEBSITE_MAIN_SKILL_ID && !WEBSITE_GENERATION_TYPE_SKILL_IDS.includes(loadedSkill.id as any)) {
-    throw new Error(
-      `skill "${loadedSkill.id}" is not supported by website runtime. supported: ${WEBSITE_MAIN_SKILL_ID}, ${WEBSITE_GENERATION_TYPE_SKILL_IDS.join(", ")}`,
-    );
-  }
-  const requirementText = extractRequirementText(params.state);
-  const existingWorkflow = ((params.state as any)?.workflow_context || {}) as Record<string, unknown>;
-  const requirementSpec = (existingWorkflow.requirementSpec || {}) as Record<string, unknown>;
-  const persistedWebsiteTypeSkillId = String(existingWorkflow.websiteTypeSkillId || "").trim();
-  const selectedWebsiteType = persistedWebsiteTypeSkillId
-    ? {
-        skillId: persistedWebsiteTypeSkillId as (typeof WEBSITE_GENERATION_TYPE_SKILL_IDS)[number],
-        siteType: String(existingWorkflow.websiteSiteType || "").trim() as any,
-        surfaceMode:
-          inferWebsiteSurfaceModeFromSkillId(String(existingWorkflow.websiteSurfaceMode || "")) ||
-          inferWebsiteSurfaceModeFromSkillId(persistedWebsiteTypeSkillId) ||
-          "portfolio-blog-site",
-        reason: "workflow-context-persisted surface selection",
-      }
-    : selectWebsiteGenerationTypeSkill({
-        requirementText,
-        siteType: String(requirementSpec.siteType || ""),
-        routes:
-          (((existingWorkflow.promptControlManifest as any)?.routes || (params.state as any)?.sitemap?.routes || []) as string[]),
-        targetAudience: Array.isArray(requirementSpec.targetAudience)
-          ? (requirementSpec.targetAudience as string[])
-          : undefined,
-        primaryGoal: Array.isArray(requirementSpec.primaryGoal) ? (requirementSpec.primaryGoal as string[]) : undefined,
-      });
-  const selectedSeedSkills = await selectWebsiteSeedSkillsForIntent({
-    requirementText,
-    routes: ((params.state as any)?.sitemap?.routes || []) as string[],
-    maxSkills: Number(process.env.SKILL_RUNTIME_MAX_SEED_SKILLS || 2),
-  });
-  const selectedDocumentSkills = await selectDocumentContentSkillsForIntent({
-    requirementText,
-    routes: ((params.state as any)?.sitemap?.routes || []) as string[],
-    maxSkills: Number(process.env.SKILL_RUNTIME_MAX_DOCUMENT_SKILLS || 3),
-  });
-  const loadedSkillIds = Array.from(
-    new Set([
-      ...WEBSITE_GENERATION_SKILL_BUNDLE.map((id) => resolveProjectSkillAlias(id)),
-      resolveProjectSkillAlias(selectedWebsiteType.skillId),
-      ...selectedSeedSkills.map((item) => item.id),
-      ...selectedDocumentSkills.map((item) => item.id),
-    ]),
-  );
-  const skillDirective = extractSkillDirectiveSnippet(loadedSkill);
-  const normalizedVisualDecision = normalizeWorkflowVisualDecisionContext(existingWorkflow as any);
-  const currentGuidanceCache = buildDesignGuidanceCacheSnapshot(requirementText, normalizedVisualDecision);
-  const hasExistingGuidance =
-    String(existingWorkflow.selectionCriteria || "").trim().length > 0 &&
-    String(existingWorkflow.sequentialWorkflow || "").trim().length > 0 &&
-    String(existingWorkflow.designMd || "").trim().length > 0 &&
-    matchesDesignGuidanceCacheSnapshot(existingWorkflow, currentGuidanceCache);
-
-  let styleHit = ((params.state as any)?.design_hit || undefined) as DesignSkillHit | undefined;
-  let stylePreset = normalizeStylePreset(existingWorkflow.stylePreset as Partial<DesignStylePreset>, {});
-  let guidance = {
-    selectionCriteria: String(existingWorkflow.selectionCriteria || ""),
-    sequentialWorkflow: String(existingWorkflow.sequentialWorkflow || ""),
-    workflowGuide: String(existingWorkflow.workflowGuide || ""),
-    rulesSummary: String(existingWorkflow.rulesSummary || ""),
-    designMd: String(existingWorkflow.designMd || ""),
-    websiteDesignSpec: String(existingWorkflow.websiteDesignSpec || ""),
-  };
-  if (!hasExistingGuidance || !styleHit) {
-    let workflowContext;
-    try {
-      workflowContext = await loadWorkflowSkillContext(
-        requirementText,
-        normalizedVisualDecision,
-      );
-    } catch (error) {
+  let resolvePhase = "load_project_skill";
+  try {
+    const requestedSkillId = String(
+      params.explicitSkillId || (params.state.workflow_context as any)?.skillId || WEBSITE_MAIN_SKILL_ID,
+    ).trim();
+    const requestedExecutionSkillId = String((params.state.workflow_context as any)?.executionSkillId || "").trim();
+    const requestedWebsiteSkillId =
+      requestedSkillId && requestedSkillId !== WEBSITE_MAIN_SKILL_ID ? requestedSkillId : requestedExecutionSkillId || requestedSkillId;
+    const loadedSkill = await loadProjectSkill(requestedWebsiteSkillId || WEBSITE_MAIN_SKILL_ID);
+    if (loadedSkill.id !== WEBSITE_MAIN_SKILL_ID && !WEBSITE_GENERATION_TYPE_SKILL_IDS.includes(loadedSkill.id as any)) {
       throw new Error(
-        `design_confirm_workflow_context_failed: ${String((error as Error)?.message || error || "unknown error")}`,
+        `skill "${loadedSkill.id}" is not supported by website runtime. supported: ${WEBSITE_MAIN_SKILL_ID}, ${WEBSITE_GENERATION_TYPE_SKILL_IDS.join(", ")}`,
       );
     }
-    stylePreset = normalizeStylePreset(workflowContext.stylePreset, {});
-    styleHit = workflowContext.hit;
-    guidance = {
-      selectionCriteria: workflowContext.selectionCriteria,
-      sequentialWorkflow: workflowContext.sequentialWorkflow,
-      workflowGuide: workflowContext.workflowGuide,
-      rulesSummary: workflowContext.rulesSummary,
-      designMd: workflowContext.designMd,
-      websiteDesignSpec: "",
+    const requirementText = extractRequirementText(params.state);
+    const existingWorkflow = ((params.state as any)?.workflow_context || {}) as Record<string, unknown>;
+    const requirementSpec = (existingWorkflow.requirementSpec || {}) as Record<string, unknown>;
+    const persistedWebsiteTypeSkillId = String(existingWorkflow.websiteTypeSkillId || "").trim();
+    resolvePhase = "select_website_type";
+    const selectedWebsiteType = persistedWebsiteTypeSkillId
+      ? {
+          skillId: persistedWebsiteTypeSkillId as (typeof WEBSITE_GENERATION_TYPE_SKILL_IDS)[number],
+          siteType: String(existingWorkflow.websiteSiteType || "").trim() as any,
+          surfaceMode:
+            inferWebsiteSurfaceModeFromSkillId(String(existingWorkflow.websiteSurfaceMode || "")) ||
+            inferWebsiteSurfaceModeFromSkillId(persistedWebsiteTypeSkillId) ||
+            "portfolio-blog-site",
+          reason: "workflow-context-persisted surface selection",
+        }
+      : selectWebsiteGenerationTypeSkill({
+          requirementText,
+          siteType: String(requirementSpec.siteType || ""),
+          routes:
+            (((existingWorkflow.promptControlManifest as any)?.routes || (params.state as any)?.sitemap?.routes || []) as string[]),
+          targetAudience: Array.isArray(requirementSpec.targetAudience)
+            ? (requirementSpec.targetAudience as string[])
+            : undefined,
+          primaryGoal: Array.isArray(requirementSpec.primaryGoal) ? (requirementSpec.primaryGoal as string[]) : undefined,
+        });
+    resolvePhase = "select_seed_skills";
+    const selectedSeedSkills = await selectWebsiteSeedSkillsForIntent({
+      requirementText,
+      routes: ((params.state as any)?.sitemap?.routes || []) as string[],
+      maxSkills: Number(process.env.SKILL_RUNTIME_MAX_SEED_SKILLS || 2),
+    });
+    resolvePhase = "select_document_skills";
+    const selectedDocumentSkills = await selectDocumentContentSkillsForIntent({
+      requirementText,
+      routes: ((params.state as any)?.sitemap?.routes || []) as string[],
+      maxSkills: Number(process.env.SKILL_RUNTIME_MAX_DOCUMENT_SKILLS || 3),
+    });
+    const loadedSkillIds = Array.from(
+      new Set([
+        ...WEBSITE_GENERATION_SKILL_BUNDLE.map((id) => resolveProjectSkillAlias(id)),
+        resolveProjectSkillAlias(selectedWebsiteType.skillId),
+        ...selectedSeedSkills.map((item) => item.id),
+        ...selectedDocumentSkills.map((item) => item.id),
+      ]),
+    );
+    resolvePhase = "prepare_guidance";
+    const skillDirective = extractSkillDirectiveSnippet(loadedSkill);
+    const normalizedVisualDecision = normalizeWorkflowVisualDecisionContext(existingWorkflow as any);
+    const currentGuidanceCache = buildDesignGuidanceCacheSnapshot(requirementText, normalizedVisualDecision);
+    const hasExistingGuidance =
+      String(existingWorkflow.selectionCriteria || "").trim().length > 0 &&
+      String(existingWorkflow.sequentialWorkflow || "").trim().length > 0 &&
+      String(existingWorkflow.designMd || "").trim().length > 0 &&
+      matchesDesignGuidanceCacheSnapshot(existingWorkflow, currentGuidanceCache);
+
+    let styleHit = ((params.state as any)?.design_hit || undefined) as DesignSkillHit | undefined;
+    let stylePreset = normalizeStylePreset(existingWorkflow.stylePreset as Partial<DesignStylePreset>, {});
+    let guidance = {
+      selectionCriteria: String(existingWorkflow.selectionCriteria || ""),
+      sequentialWorkflow: String(existingWorkflow.sequentialWorkflow || ""),
+      workflowGuide: String(existingWorkflow.workflowGuide || ""),
+      rulesSummary: String(existingWorkflow.rulesSummary || ""),
+      designMd: String(existingWorkflow.designMd || ""),
+      websiteDesignSpec: String(existingWorkflow.websiteDesignSpec || ""),
     };
-  }
+    if (!hasExistingGuidance || !styleHit) {
+      let workflowContext;
+      resolvePhase = "load_workflow_context";
+      try {
+        workflowContext = await loadWorkflowSkillContext(
+          requirementText,
+          normalizedVisualDecision,
+        );
+      } catch (error) {
+        throw new Error(
+          `design_confirm_workflow_context_failed: ${providerErrorText(error)}`,
+        );
+      }
+      resolvePhase = "apply_workflow_context";
+      stylePreset = normalizeStylePreset(workflowContext.stylePreset, {});
+      styleHit = workflowContext.hit;
+      guidance = {
+        selectionCriteria: workflowContext.selectionCriteria,
+        sequentialWorkflow: workflowContext.sequentialWorkflow,
+        workflowGuide: workflowContext.workflowGuide,
+        rulesSummary: workflowContext.rulesSummary,
+        designMd: workflowContext.designMd,
+        websiteDesignSpec: "",
+      };
+    }
 
-  const executionSkillId = loadedSkill.id === WEBSITE_MAIN_SKILL_ID ? selectedWebsiteType.skillId : loadedSkill.id;
+    resolvePhase = "assemble_state";
+    const executionSkillId = loadedSkill.id === WEBSITE_MAIN_SKILL_ID ? selectedWebsiteType.skillId : loadedSkill.id;
 
-  const stateWithSkill: AgentState = {
-    ...params.state,
-    design_hit: styleHit,
-    workflow_context: {
-      ...(params.state.workflow_context || {}),
-      skillId: WEBSITE_MAIN_SKILL_ID,
-      executionSkillId,
-      skillDirective,
+    const stateWithSkill: AgentState = {
+      ...params.state,
+      design_hit: styleHit,
+      workflow_context: {
+        ...(params.state.workflow_context || {}),
+        skillId: WEBSITE_MAIN_SKILL_ID,
+        executionSkillId,
+        skillDirective,
+        loadedSkillIds,
+        selectedSeedSkillIds: selectedSeedSkills.map((item) => item.id),
+        selectedSeedSkillReasons: selectedSeedSkills,
+        selectedDocumentSkillIds: selectedDocumentSkills.map((item) => item.id),
+        selectedDocumentSkillReasons: selectedDocumentSkills,
+        websiteOrchestratorSkillId: WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID,
+        websiteTypeSkillId: selectedWebsiteType.skillId,
+        websiteTypeKind: selectedWebsiteType.siteType,
+        websiteTypeSelectionReason: selectedWebsiteType.reason,
+        skillMdPath: loadedSkill.skillMdPath,
+        selectionCriteria: guidance.selectionCriteria,
+        sequentialWorkflow: guidance.sequentialWorkflow,
+        workflowGuide: guidance.workflowGuide,
+        rulesSummary: guidance.rulesSummary,
+        designMd: guidance.designMd,
+        websiteDesignSpec: guidance.websiteDesignSpec,
+        stylePreset,
+        designGuidanceRequirementHash: currentGuidanceCache.requirementHash,
+        designGuidanceTemplateStyleId: currentGuidanceCache.templateStyleId,
+        designGuidancePrimaryVisualDirection: currentGuidanceCache.primaryVisualDirection,
+        designGuidanceSecondaryVisualTags: currentGuidanceCache.secondaryVisualTags,
+        designSystemId: styleHit?.id,
+        designSystemName: styleHit?.name,
+        designSelectionReason:
+          (styleHit?.selection_candidates || []).find((item) => item.id === styleHit?.id)?.reason || styleHit?.design_desc,
+      } as any,
+    };
+    return {
+      state: stateWithSkill,
+      loadedSkill,
       loadedSkillIds,
-      selectedSeedSkillIds: selectedSeedSkills.map((item) => item.id),
-      selectedSeedSkillReasons: selectedSeedSkills,
-      selectedDocumentSkillIds: selectedDocumentSkills.map((item) => item.id),
-      selectedDocumentSkillReasons: selectedDocumentSkills,
-      websiteOrchestratorSkillId: WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID,
-      websiteTypeSkillId: selectedWebsiteType.skillId,
-      websiteTypeKind: selectedWebsiteType.siteType,
-      websiteTypeSelectionReason: selectedWebsiteType.reason,
-      skillMdPath: loadedSkill.skillMdPath,
-      selectionCriteria: guidance.selectionCriteria,
-      sequentialWorkflow: guidance.sequentialWorkflow,
-      workflowGuide: guidance.workflowGuide,
-      rulesSummary: guidance.rulesSummary,
-      designMd: guidance.designMd,
-      websiteDesignSpec: guidance.websiteDesignSpec,
-      stylePreset,
-      designGuidanceRequirementHash: currentGuidanceCache.requirementHash,
-      designGuidanceTemplateStyleId: currentGuidanceCache.templateStyleId,
-      designGuidancePrimaryVisualDirection: currentGuidanceCache.primaryVisualDirection,
-      designGuidanceSecondaryVisualTags: currentGuidanceCache.secondaryVisualTags,
-      designSystemId: styleHit?.id,
-      designSystemName: styleHit?.name,
-      designSelectionReason:
-        (styleHit?.selection_candidates || []).find((item) => item.id === styleHit?.id)?.reason || styleHit?.design_desc,
-    } as any,
-  };
-  return {
-    state: stateWithSkill,
-    loadedSkill,
-    loadedSkillIds,
-    skillDirective,
-  };
+      skillDirective,
+    };
+  } catch (error) {
+    throw new Error(`design_confirm_state_prepare_failed: phase=${resolvePhase}; detail=${providerErrorText(error)}`);
+  }
 }
 
 function hasValidHtmlCore(rawHtml: string): boolean {
