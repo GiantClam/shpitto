@@ -302,10 +302,21 @@ export function extractTaskGenerationTrace(task: any) {
     workflow.selectedSeedSkillManifest && typeof workflow.selectedSeedSkillManifest === "object"
       ? (workflow.selectedSeedSkillManifest as Record<string, any>)
       : null;
+  const selectedSeedContracts = Array.isArray(workflow.selectedSeedContracts)
+    ? (workflow.selectedSeedContracts as unknown[])
+    : [];
   const routeUnitContracts = Array.isArray(workflow.routeUnitContracts) ? (workflow.routeUnitContracts as unknown[]) : [];
   const promptControlManifest =
     workflow.promptControlManifest && typeof workflow.promptControlManifest === "object"
       ? (workflow.promptControlManifest as Record<string, any>)
+      : null;
+  const qaSummary =
+    result?.progress?.qaSummary && typeof result.progress.qaSummary === "object"
+      ? (result.progress.qaSummary as Record<string, any>)
+      : null;
+  const shadowVisualEvaluation =
+    qaSummary?.shadowVisualEvaluation && typeof qaSummary.shadowVisualEvaluation === "object"
+      ? (qaSummary.shadowVisualEvaluation as Record<string, any>)
       : null;
   const generatedProject =
     internalProjectSnapshot(task) ||
@@ -331,6 +342,16 @@ export function extractTaskGenerationTrace(task: any) {
           .map((entry) => String((entry as any)?.id || "").trim())
           .filter(Boolean)
       : [],
+    selectedSeedContractIds: selectedSeedContracts
+      .map((entry) => String((entry as any)?.id || "").trim())
+      .filter(Boolean),
+    selectedSeedContractSources: Array.from(
+      new Set(
+        selectedSeedContracts
+          .map((entry) => String((entry as any)?.source || "").trim())
+          .filter(Boolean),
+      ),
+    ).sort(),
     promptManifestRoutes: Array.isArray(promptControlManifest?.routes)
       ? (promptControlManifest.routes as unknown[]).map((entry) => normalizeRoute(String(entry || ""))).filter(Boolean)
       : [],
@@ -340,6 +361,12 @@ export function extractTaskGenerationTrace(task: any) {
       .sort(),
     promptManifestFiles: Array.isArray(promptControlManifest?.files)
       ? (promptControlManifest.files as unknown[]).map((entry) => String(entry || "").trim()).filter(Boolean).sort()
+      : [],
+    shadowVisualEvaluationScore: Number(shadowVisualEvaluation?.score || 0) || null,
+    shadowVisualEvaluationSignals: Array.isArray(shadowVisualEvaluation?.signals)
+      ? (shadowVisualEvaluation.signals as unknown[])
+          .map((entry) => String((entry as any)?.code || "").trim())
+          .filter(Boolean)
       : [],
   };
 }

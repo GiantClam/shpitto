@@ -6,9 +6,18 @@ export type SelectedSeedSkillManifestEntry = {
   reason?: string;
 };
 
+export type SelectedSeedContractEntry = {
+  id: string;
+  source: "shpitto" | "imported-open-design" | "imported-html-anything";
+  reason?: string;
+  contract: Record<string, unknown>;
+};
+
 export type SelectedSeedSkillManifest = {
   selected: SelectedSeedSkillManifestEntry[];
 };
+
+type SelectedSeedSkillManifestInput = string | SelectedSeedSkillManifestEntry;
 
 export type GenerationContractRouteUnit = {
   route: string;
@@ -28,6 +37,7 @@ export type WebsiteGenerationContract = {
   promptControlManifest: Record<string, unknown> | null;
   discoveryBrief: Record<string, unknown> | null;
   selectedSeedSkillManifest: SelectedSeedSkillManifest;
+  selectedSeedContracts: SelectedSeedContractEntry[];
   routeUnitContracts: GenerationContractRouteUnit[];
 };
 
@@ -58,16 +68,59 @@ export function inferSeedSkillSource(skillId: string): SelectedSeedSkillManifest
 }
 
 export function buildSelectedSeedSkillManifest(
-  skillIds: string[],
+  skillIds: SelectedSeedSkillManifestInput[],
   reason?: string,
 ): SelectedSeedSkillManifest {
-  return {
-    selected: Array.from(new Set(skillIds.map((item) => String(item || "").trim()).filter(Boolean))).map((id) => ({
+  const entries: SelectedSeedSkillManifestEntry[] = [];
+  for (const item of skillIds) {
+    if (typeof item === "string") {
+      const id = String(item || "").trim();
+      if (!id) continue;
+      entries.push({
+        id,
+        source: inferSeedSkillSource(id),
+        reason,
+      });
+      continue;
+    }
+    const id = String(item?.id || "").trim();
+    if (!id) continue;
+    entries.push({
       id,
-      source: inferSeedSkillSource(id),
-      reason,
-    })),
+      source: item.source || inferSeedSkillSource(id),
+      reason: item.reason || reason,
+    });
+  }
+
+  return {
+    selected: Array.from(new Map(entries.map((item) => [item.id, item])).values()),
   };
+}
+
+function normalizeSelectedSeedContracts(values: unknown): SelectedSeedContractEntry[] {
+  if (!Array.isArray(values)) return [];
+  const entries = values.flatMap((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+    const id = String((item as any).id || "").trim();
+    const rawSource = String((item as any).source || "").trim();
+    const contract =
+      (item as any).contract && typeof (item as any).contract === "object" && !Array.isArray((item as any).contract)
+        ? stableSortObject((item as any).contract)
+        : undefined;
+    if (!id || !contract) return [];
+    return [
+      {
+        id,
+        source:
+          rawSource === "imported-open-design" || rawSource === "imported-html-anything"
+            ? rawSource
+            : ("shpitto" as const),
+        reason: String((item as any).reason || "").trim() || undefined,
+        contract: contract as Record<string, unknown>,
+      } satisfies SelectedSeedContractEntry,
+    ];
+  });
+  return Array.from(new Map(entries.map((item) => [item.id, item])).values());
 }
 
 export function buildPromptManifestRouteUnits(
@@ -104,12 +157,24 @@ export function buildWebsiteGenerationContract(params: {
   promptControlManifest?: unknown;
   discoveryBrief?: unknown;
   selectedSeedSkillManifest?: SelectedSeedSkillManifest;
+  selectedSeedContracts?: SelectedSeedContractEntry[];
   routeUnitContracts?: GenerationContractRouteUnit[];
 }): WebsiteGenerationContract {
   const promptControlManifest = normalizeRecord(params.promptControlManifest);
   const discoveryBrief = normalizeRecord(params.discoveryBrief);
+  const selectedSeedContracts = normalizeSelectedSeedContracts(params.selectedSeedContracts);
   const selectedSeedSkillManifest =
-    params.selectedSeedSkillManifest || buildSelectedSeedSkillManifest([], "no selected seed skill recorded");
+    params.selectedSeedSkillManifest ||
+    buildSelectedSeedSkillManifest(
+      selectedSeedContracts.map((item) => ({
+        id: item.id,
+        source: item.source,
+        reason: item.reason,
+      })),
+      selectedSeedContracts.length > 0
+        ? "seed skill manifest derived from selected seed contracts"
+        : "no selected seed skill recorded",
+    );
   const routeUnitContracts =
     (params.routeUnitContracts || []).map((item) => ({
       ...item,
@@ -125,6 +190,7 @@ export function buildWebsiteGenerationContract(params: {
     promptControlManifest,
     discoveryBrief,
     selectedSeedSkillManifest,
+    selectedSeedContracts,
     routeUnitContracts,
   });
 
@@ -136,6 +202,7 @@ export function buildWebsiteGenerationContract(params: {
     promptControlManifest,
     discoveryBrief,
     selectedSeedSkillManifest,
+    selectedSeedContracts,
     routeUnitContracts,
   };
 }

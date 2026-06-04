@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --surface: #ffffff;
+      --panel: #eef3fa;
+      --text: #172033;
+      --muted: #526173;
+      --accent: #2454d8;
+    }
+    .docs-workspace { display: grid; gap: 24px; }
+    .docs-search { background: var(--panel); border-radius: 20px; padding: 20px; }
+    .quickstart-strip { display: grid; gap: 12px; }
+    .reference-matrix { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    @media (max-width: 900px) { .reference-matrix { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="docs-workspace">
+    <section class="docs-home docs-workspace" data-od-id="docs-home">
+      <p>Docs workspace</p>
+      <h1>Product documentation that starts with wayfinding</h1>
+    </section>
+    <section class="docs-search" data-od-id="docs-search">
+      <h2>Search and index rail</h2>
+    </section>
+    <section class="quickstart-strip" data-od-id="quickstart-strip">
+      <h2>Quickstart strip</h2>
+    </section>
+    <section class="reference-matrix" data-od-id="reference-matrix">
+      <article class="card">Reference family</article>
+      <article class="card">Guide family</article>
+    </section>
+  </main>
+</body>
+</html>

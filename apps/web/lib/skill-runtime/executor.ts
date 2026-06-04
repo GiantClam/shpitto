@@ -37,6 +37,7 @@ import {
 } from "../agent/chat-task-store.ts";
 import { extractUiPayload } from "../agent/chat-ui-payload.ts";
 import type { AgentState } from "../agent/graph.ts";
+import { buildSelectedSeedSkillManifest } from "../agent/website-generation-contract.ts";
 import {
   archiveSiteArtifactsToR2,
   deriveProjectSiteKey,
@@ -84,12 +85,14 @@ import { SKILL_RUNTIME_FIXED_PHASES, type SkillRuntimePhase } from "./phase-type
 import {
   loadProjectSkill,
   resolveProjectSkillAlias,
+  inferRouteFamiliesForPlanning,
   selectDocumentContentSkillsForIntent,
   selectWebsiteSeedSkillsForIntent,
   WEBSITE_GENERATION_SKILL_BUNDLE,
   WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID,
   WEBSITE_GENERATION_TYPE_SKILL_IDS,
   type ProjectSkillDescriptor,
+  type ProjectSkillSeedContract,
 } from "./project-skill-loader.ts";
 import {
   lintGeneratedWebsiteHtml,
@@ -148,9 +151,11 @@ import {
   type ProviderAttempt,
   type ProviderConfig,
 } from "./provider-model.ts";
+import { resolveScenarioAwareProviderModelId } from "./provider-model-id.ts";
+import { classifyWebsiteSeedOrigin, type WebsiteSeedOrigin } from "./website-artifact-generator.ts";
 
 configureUndiciProxyFromEnv();
-import type { QaSummary } from "./qa-summary.ts";
+import { buildShadowVisualEvaluation, type QaSummary } from "./qa-summary.ts";
 import {
   containsWorkflowCjk,
   isWorkflowArtifactEnglishSafe,
@@ -354,7 +359,20 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
-function buildQaSummaryFromPageRecords(records: PageQaRecord[], retriesAllowed: number): QaSummary {
+function buildQaSummaryFromPageRecords(
+  records: PageQaRecord[],
+  retriesAllowed: number,
+  shadowOptions?: {
+    routeUnits?: Array<{
+      route: string;
+      routeContract: string[];
+      openingFamily?: string;
+      openingTopology?: string;
+    }>;
+    stylesCss?: string;
+    selectedSeedSkillIds?: string[];
+  },
+): QaSummary {
   const safeRecords = Array.isArray(records) ? records : [];
   const averageScore =
     safeRecords.length > 0
@@ -370,6 +388,11 @@ function buildQaSummaryFromPageRecords(records: PageQaRecord[], retriesAllowed: 
     }
   }
   const categories = Array.from(categoryMap.values()).sort((left, right) => right.count - left.count || left.code.localeCompare(right.code));
+  const shadowVisualEvaluation = buildShadowVisualEvaluation({
+    routeUnits: shadowOptions?.routeUnits || [],
+    stylesCss: shadowOptions?.stylesCss || "",
+    selectedSeedSkillIds: shadowOptions?.selectedSeedSkillIds || [],
+  });
   return {
     averageScore,
     totalRoutes: safeRecords.length,
@@ -378,6 +401,7 @@ function buildQaSummaryFromPageRecords(records: PageQaRecord[], retriesAllowed: 
     retriesAllowed: Math.max(0, Number(retriesAllowed || 0)),
     antiSlopIssueCount: categories.reduce((sum, item) => sum + item.count, 0),
     categories,
+    shadowVisualEvaluation,
   };
 }
 
@@ -1804,6 +1828,9 @@ function resolveWorkflowGenerationContract(workflowContext: Record<string, unkno
     workflowContext.selectedSeedSkillManifest && typeof workflowContext.selectedSeedSkillManifest === "object"
       ? (workflowContext.selectedSeedSkillManifest as any)
       : undefined;
+  const selectedSeedContracts = Array.isArray(workflowContext.selectedSeedContracts)
+    ? (workflowContext.selectedSeedContracts as any[])
+    : undefined;
   if (!promptControlManifest && !routeUnitContracts?.length) return undefined;
   return buildImmutableGenerationContract({
     generationLane: String(workflowContext.generationLane || "").trim() || "legacy",
@@ -1811,6 +1838,7 @@ function resolveWorkflowGenerationContract(workflowContext: Record<string, unkno
     promptControlManifest,
     discoveryBrief,
     selectedSeedSkillManifest,
+    selectedSeedContracts,
     routeUnitContracts,
   });
 }
@@ -2725,6 +2753,7 @@ async function resolveWebsiteRuntimeSkill(params: {
     routes: ((params.state as any)?.sitemap?.routes || []) as string[],
     maxSkills: Number(process.env.SKILL_RUNTIME_MAX_SEED_SKILLS || 2),
   });
+  const { selectedSeedContracts, selectedSeedSkillManifest } = await resolveSelectedSeedSkillArtifacts(selectedSeedSkills);
   const selectedDocumentSkills = await selectDocumentContentSkillsForIntent({
     requirementText,
     routes: ((params.state as any)?.sitemap?.routes || []) as string[],
@@ -2785,8 +2814,10 @@ async function resolveWebsiteRuntimeSkill(params: {
       executionSkillId,
       skillDirective,
       loadedSkillIds,
-      selectedSeedSkillIds: selectedSeedSkills.map((item) => item.id),
+      selectedSeedSkillIds: selectedSeedSkillManifest.selected.map((item) => item.id),
       selectedSeedSkillReasons: selectedSeedSkills,
+      selectedSeedContracts,
+      selectedSeedSkillManifest,
       selectedDocumentSkillIds: selectedDocumentSkills.map((item) => item.id),
       selectedDocumentSkillReasons: selectedDocumentSkills,
       websiteOrchestratorSkillId: WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID,
@@ -3121,6 +3152,7 @@ function renderLocalWebsiteDesignSpec(params: {
   designSystemId?: string;
   designSystemName?: string;
   selectedSeedSkillIds?: string[];
+  selectedSeedContracts?: Array<{ id: string; contract: ProjectSkillSeedContract }>;
 }): string {
   return buildWebsiteDesignSpecMarkdown({
     decision: params.decision,
@@ -3132,6 +3164,7 @@ function renderLocalWebsiteDesignSpec(params: {
     designSystemId: params.designSystemId,
     designSystemName: params.designSystemName,
     selectedSeedSkillIds: params.selectedSeedSkillIds,
+    selectedSeedContracts: params.selectedSeedContracts,
   });
 }
 
@@ -3848,11 +3881,140 @@ type RuntimeContext = {
   designSystemId?: string;
   designSystemName?: string;
   selectedSeedSkillIds?: string[];
+  selectedSeedContracts?: Array<{
+    id: string;
+    source?: "shpitto" | "imported-open-design" | "imported-html-anything";
+    reason?: string;
+    contract: ProjectSkillSeedContract;
+  }>;
 };
 
 function toRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
   return value as Record<string, unknown>;
+}
+
+function mapWebsiteSeedOriginToManifestSource(origin: WebsiteSeedOrigin): "shpitto" | "imported-open-design" | "imported-html-anything" {
+  if (origin === "open-design") return "imported-open-design";
+  if (origin === "html-anything") return "imported-html-anything";
+  return "shpitto";
+}
+
+function normalizePersistedSelectedSeedContracts(
+  value: unknown,
+): Array<{
+  id: string;
+  source?: "shpitto" | "imported-open-design" | "imported-html-anything";
+  reason?: string;
+  contract: ProjectSkillSeedContract;
+}> {
+  if (!Array.isArray(value)) return [];
+  const entries = value
+    .map((entry) => {
+      const item = toRecord(entry);
+      const id = String(item.id || "").trim();
+      const contract = item.contract && typeof item.contract === "object" && !Array.isArray(item.contract)
+        ? (item.contract as ProjectSkillSeedContract)
+        : undefined;
+      if (!id || !contract) return undefined;
+      const source = String(item.source || "").trim();
+      return {
+        id,
+        source:
+          source === "imported-open-design" || source === "imported-html-anything" || source === "shpitto"
+            ? (source as "shpitto" | "imported-open-design" | "imported-html-anything")
+            : undefined,
+        reason: String(item.reason || "").trim() || undefined,
+        contract,
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== undefined);
+  return entries;
+}
+
+function normalizeSelectedSeedSkillIdsFromWorkflowContext(workflowContext: Record<string, unknown>): string[] {
+  const explicit = Array.isArray(workflowContext.selectedSeedSkillIds)
+    ? (workflowContext.selectedSeedSkillIds as unknown[]).map((item) => String(item || "").trim()).filter(Boolean)
+    : [];
+  if (explicit.length > 0) return Array.from(new Set(explicit));
+
+  const fromContracts = normalizePersistedSelectedSeedContracts(workflowContext.selectedSeedContracts).map((item) => item.id);
+  if (fromContracts.length > 0) return Array.from(new Set(fromContracts));
+
+  const manifest = toRecord(workflowContext.selectedSeedSkillManifest);
+  const fromManifest = Array.isArray(manifest.selected)
+    ? (manifest.selected as unknown[])
+        .map((item) => String(toRecord(item).id || "").trim())
+        .filter(Boolean)
+    : [];
+  return Array.from(new Set(fromManifest));
+}
+
+async function resolveSelectedSeedSkillArtifacts(
+  selectedSeedSkills: Array<{ id: string; reason: string }>,
+): Promise<{
+  selectedSeedContracts: Array<{
+    id: string;
+    source: "shpitto" | "imported-open-design" | "imported-html-anything";
+    reason?: string;
+    contract: ProjectSkillSeedContract;
+  }>;
+  selectedSeedSkillManifest: ReturnType<typeof buildSelectedSeedSkillManifest>;
+}> {
+  type ResolvedSelectedSeedEntry = {
+    id: string;
+    source: "shpitto" | "imported-open-design" | "imported-html-anything";
+    reason?: string;
+    contract?: ProjectSkillSeedContract;
+  };
+
+  const resolvedEntries: ResolvedSelectedSeedEntry[] = await Promise.all(
+    selectedSeedSkills.map(async (item): Promise<ResolvedSelectedSeedEntry> => {
+      try {
+        const skill = await loadProjectSkill(item.id);
+        return {
+          id: skill.id,
+          source: mapWebsiteSeedOriginToManifestSource(classifyWebsiteSeedOrigin(skill)),
+          reason: item.reason,
+          contract: skill.seedContract,
+        };
+      } catch {
+        return {
+          id: String(item.id || "").trim(),
+          source: String(item.id || "").includes("imported-")
+            ? (String(item.id || "").includes("html-anything") ? "imported-html-anything" : "imported-open-design")
+            : ("shpitto" as const),
+          reason: item.reason,
+          contract: undefined,
+        };
+      }
+    }),
+  );
+
+  const selectedSeedContracts = resolvedEntries.flatMap((item) =>
+    item.id && item.contract
+      ? [
+          {
+            id: item.id,
+            source: item.source,
+            reason: item.reason,
+            contract: item.contract,
+          },
+        ]
+      : [],
+  );
+
+  return {
+    selectedSeedContracts,
+    selectedSeedSkillManifest: buildSelectedSeedSkillManifest(
+      resolvedEntries.map((item) => ({
+        id: item.id,
+        source: item.source,
+        reason: item.reason,
+      })),
+      "Skill runtime selected imported website seeds for the active website workflow.",
+    ),
+  };
 }
 
 function extractPrimaryFontFamily(fontStack: string): string {
@@ -3959,12 +4121,6 @@ class NativeSkillRuntime {
     );
     const requirementText = decision.requirementText || extractRequirementText(params.state);
     const locale = detectRuntimeLocale(requirementText, (params.state as any)?.workflow_context?.preferredLocale);
-    const providerAttempts = resolveProviderAttempts({
-      provider: (params.state as any)?.workflow_context?.lockedProvider,
-      model: (params.state as any)?.workflow_context?.lockedModel,
-    });
-    const providerLock = providerAttempts[0].lock;
-    const providerConfig = providerAttempts[0].config;
     const workflowContext = toRecord((params.state as any)?.workflow_context);
     const skillId = resolveProjectSkillAlias(
       String(workflowContext.executionSkillId || workflowContext.skillId || WEBSITE_MAIN_SKILL_ID),
@@ -3988,9 +4144,28 @@ class NativeSkillRuntime {
     const discoveryBrief = (((promptControlManifest as any)?.discoveryBrief ||
       workflowContext.websiteDiscoveryBrief ||
       undefined) as WebsiteDiscoveryBrief | undefined);
-    const selectedSeedSkillIds = Array.isArray(workflowContext.selectedSeedSkillIds)
-      ? (workflowContext.selectedSeedSkillIds as unknown[]).map((item) => String(item || "").trim()).filter(Boolean)
-      : [];
+    const selectedSeedContracts = normalizePersistedSelectedSeedContracts(workflowContext.selectedSeedContracts);
+    const selectedSeedSkillIds = normalizeSelectedSeedSkillIdsFromWorkflowContext(workflowContext);
+    const routeFamilies = inferRouteFamiliesForPlanning({ routes });
+    const baseProviderAttempts = resolveProviderAttempts({
+      provider: (params.state as any)?.workflow_context?.lockedProvider,
+      model: (params.state as any)?.workflow_context?.lockedModel,
+    });
+    const requestedModel = resolveScenarioAwareProviderModelId({
+      provider: baseProviderAttempts[0].lock.provider,
+      requestedModel: String(workflowContext.lockedModel || "").trim() || undefined,
+      surfaceMode: websiteSurfaceMode,
+      seedAuthorityMode: decision.seedAuthorityMode,
+      hasImportedSeed: selectedSeedContracts.length > 0,
+      visualBoldness: selectedSeedContracts.some((item) => item.contract.visualBoldness === "high") ? "high" : undefined,
+      routeFamilies,
+    });
+    const providerAttempts = resolveProviderAttempts({
+      provider: baseProviderAttempts[0].lock.provider,
+      model: requestedModel,
+    });
+    const providerLock = providerAttempts[0].lock;
+    const providerConfig = providerAttempts[0].config;
     const guidance: WorkflowGuidancePack = {
       selectionCriteria: String(workflowContext.selectionCriteria || ""),
       sequentialWorkflow: String(workflowContext.sequentialWorkflow || ""),
@@ -4031,6 +4206,7 @@ class NativeSkillRuntime {
       designSystemId: String(workflowContext.designSystemId || "").trim() || undefined,
       designSystemName: String(workflowContext.designSystemName || "").trim() || undefined,
       selectedSeedSkillIds,
+      selectedSeedContracts,
     });
     const websiteDesignSpec = shouldReuseWebsiteDesignSpec(guidance.websiteDesignSpec, locale)
       ? guidance.websiteDesignSpec.trim()
@@ -4065,6 +4241,7 @@ class NativeSkillRuntime {
       designSystemId: String(workflowContext.designSystemId || "").trim() || undefined,
       designSystemName: String(workflowContext.designSystemName || "").trim() || undefined,
       selectedSeedSkillIds,
+      selectedSeedContracts,
     };
     this.requirementText = requirementText;
     this.files = existingStatic;
@@ -4128,6 +4305,7 @@ class NativeSkillRuntime {
           designSystemId: this.context.designSystemId,
           designSystemName: this.context.designSystemName,
           selectedSeedSkillIds: this.context.selectedSeedSkillIds,
+          selectedSeedContracts: this.context.selectedSeedContracts,
         },
         page.route,
       ) || {
@@ -4183,6 +4361,15 @@ class NativeSkillRuntime {
 
   private async emit(stepKey: string, status: string) {
     if (!this.onStep) return;
+    const routeUnits = this.buildRouteUnitSnapshots();
+    const qaSummary =
+      this.qaRecords.length > 0
+        ? buildQaSummaryFromPageRecords(this.qaRecords, QA_MAX_RETRIES, {
+            routeUnits,
+            stylesCss: this.getFile("/styles.css")?.content || "",
+            selectedSeedSkillIds: this.context.selectedSeedSkillIds || [],
+          })
+        : undefined;
     await this.onStep({
       stepKey,
       stepIndex: this.stepIndex,
@@ -4192,9 +4379,9 @@ class NativeSkillRuntime {
       workflowArtifacts: [...this.workflowFiles],
       pages: [...this.pages],
       preferredLocale: this.context.locale,
-      qaSummary: this.qaRecords.length > 0 ? buildQaSummaryFromPageRecords(this.qaRecords, QA_MAX_RETRIES) : undefined,
+      qaSummary,
       websiteSurfaceMode: this.context.websiteSurfaceMode,
-      routeUnits: this.buildRouteUnitSnapshots(),
+      routeUnits,
     });
   }
 
@@ -4825,7 +5012,12 @@ ${qaFeedback ? `\nQA fix instructions (attempt ${attempt}):\n${qaFeedback}` : ""
       this.qaRecords.length > 0
         ? Math.round(this.qaRecords.reduce((sum, item) => sum + Number(item.score || 0), 0) / this.qaRecords.length)
         : 100;
-    const summary = buildQaSummaryFromPageRecords(this.qaRecords, QA_MAX_RETRIES);
+    const routeUnits = this.buildRouteUnitSnapshots();
+    const summary = buildQaSummaryFromPageRecords(this.qaRecords, QA_MAX_RETRIES, {
+      routeUnits,
+      stylesCss: this.getFile("/styles.css")?.content || "",
+      selectedSeedSkillIds: this.context.selectedSeedSkillIds || [],
+    });
     await this.writeWorkflow(
       "/qa-report.json",
       JSON.stringify(
@@ -4971,7 +5163,11 @@ ${qaFeedback ? `\nQA fix instructions (attempt ${attempt}):\n${qaFeedback}` : ""
   }
 
   getQaSummary(): QaSummary {
-    return buildQaSummaryFromPageRecords(this.qaRecords, QA_MAX_RETRIES);
+    return buildQaSummaryFromPageRecords(this.qaRecords, QA_MAX_RETRIES, {
+      routeUnits: this.buildRouteUnitSnapshots(),
+      stylesCss: this.getFile("/styles.css")?.content || "",
+      selectedSeedSkillIds: this.context.selectedSeedSkillIds || [],
+    });
   }
 }
 
@@ -5124,6 +5320,9 @@ function buildSessionSnapshot(state: AgentState): Partial<AgentState> {
       contractHash: workflow.contractHash,
       generationLane: workflow.generationLane,
       generationLaneConfig: workflow.generationLaneConfig,
+      selectedSeedSkillIds: workflow.selectedSeedSkillIds,
+      selectedSeedSkillReasons: workflow.selectedSeedSkillReasons,
+      selectedSeedContracts: workflow.selectedSeedContracts,
       selectedSeedSkillManifest: workflow.selectedSeedSkillManifest,
       routeUnitContracts: workflow.routeUnitContracts,
       generationContract: workflow.generationContract,
@@ -5418,6 +5617,25 @@ export function normalizeGeneratedProjectArtifactPreviewForTesting(params: {
   workflowContext?: Record<string, unknown>;
 }) {
   return normalizeGeneratedProjectArtifactPreview(params);
+}
+
+export function buildQaSummaryFromPageRecordsForTesting(params: {
+  records: PageQaRecord[];
+  retriesAllowed: number;
+  routeUnits?: Array<{
+    route: string;
+    routeContract: string[];
+    openingFamily?: string;
+    openingTopology?: string;
+  }>;
+  stylesCss?: string;
+  selectedSeedSkillIds?: string[];
+}) {
+  return buildQaSummaryFromPageRecords(params.records, params.retriesAllowed, {
+    routeUnits: params.routeUnits,
+    stylesCss: params.stylesCss,
+    selectedSeedSkillIds: params.selectedSeedSkillIds,
+  });
 }
 
 export async function resolveWebsiteRuntimeSkillForTesting(params: {

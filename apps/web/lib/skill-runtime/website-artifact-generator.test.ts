@@ -17,6 +17,18 @@ describe("website-artifact-generator", () => {
     expect(websiteArtifactGeneratorEnablesImportedSkills("native")).toBe(false);
   });
 
+  it("keeps native rollback language explicit in the generator contract", () => {
+    const contract = renderWebsiteArtifactGeneratorContract({
+      mode: "native",
+      surfaceMode: "corporate-b2b-site",
+      selectedSeedSkillIds: [],
+    });
+
+    expect(contract).toContain("site_generator_mode: native");
+    expect(contract).toContain("imported_skill_policy: staged Open Design / HTML Anything imports remain opt-in sidecars");
+    expect(contract).toContain("functionality_port_scope: no external frontend generator is active for this run.");
+  });
+
   it("renders the Shpitto UI preservation boundary for hybrid mode", () => {
     const contract = renderWebsiteArtifactGeneratorContract({
       mode: "hybrid",

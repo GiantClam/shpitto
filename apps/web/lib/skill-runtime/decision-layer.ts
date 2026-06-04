@@ -1,7 +1,9 @@
 ﻿import type { AgentState } from "../agent/graph.ts";
 import { stripRequirementFormScaffolding } from "../agent/chat-orchestrator.ts";
 import { parseReferencedAssetsFromText } from "../agent/referenced-assets.ts";
+import type { WebsiteSurfaceMode } from "./open-design-adoption.ts";
 import { routePlanningPolicy } from "./route-planning-policy.ts";
+import { selectWebsiteGenerationTypeSkill } from "./website-type-selector.ts";
 import {
   detectPrimaryLocaleFromRequirement,
   hasNegativeBlogArchiveBehaviorContract,
@@ -53,9 +55,11 @@ export type LocalDecisionPlan = {
   pageBlueprints: PageBlueprint[];
   brandHint?: string;
   routeAuthorityMode?: RouteAuthorityMode;
+  seedAuthorityMode?: SeedAuthorityMode;
 };
 
 type RouteAuthorityMode = "workflow_manifest" | "prompt_manifest" | "heuristic";
+export type SeedAuthorityMode = "seed-authoritative" | "heuristic-authoritative";
 type IntentBlueprintArchetype = "products" | "solutions" | "cases" | "contact" | "about" | "generic";
 
 function normalizeLabelForMatching(label: string): string {
@@ -272,6 +276,103 @@ function extractRequirementText(state: AgentState): string {
     ...humanMessages,
   ];
   return Array.from(new Set(fallbackCandidates.filter(Boolean))).join("\n\n").trim();
+}
+
+function resolveSeedAuthorityModeForDecision(): SeedAuthorityMode {
+  const configured = String(process.env.SHPITTO_OD_SEED_AUTHORITY_MODE || "").trim().toLowerCase();
+  if (configured === "heuristic-authoritative") return "heuristic-authoritative";
+  if (configured === "seed-authoritative") return "seed-authoritative";
+  return "seed-authoritative";
+}
+
+function applySeedAuthoritativeBlueprintPolicy(
+  page: PageBlueprint,
+  surfaceMode: WebsiteSurfaceMode,
+  seedAuthorityMode: SeedAuthorityMode,
+): PageBlueprint {
+  if (seedAuthorityMode !== "seed-authoritative") return page;
+  const route = normalizeRoute(page.route);
+  const text = `${route} ${page.navLabel} ${page.purpose} ${page.responsibility}`.toLowerCase();
+  const constraints = Array.from(
+    new Set([
+      ...page.constraints,
+      "Seed-authoritative mode is active: imported seed cadence and route-owned opening structure outrank generic local hero/grid/card defaults.",
+    ]),
+  );
+
+  if (route === "/") {
+    return {
+      ...page,
+      constraints,
+    };
+  }
+
+  if (/(?:^|\/)(?:products?|catalog|collection)(?:\/|$)/.test(route) || /\bproducts?\b|\bcatalog\b/.test(text)) {
+    return {
+      ...page,
+      contentSkeleton:
+        page.contentSkeleton.length > 0
+          ? page.contentSkeleton
+          : ["Catalog lead band", "Assortment navigator", "Comparison/specification row", "Buyer CTA strip"],
+      constraints: Array.from(
+        new Set([
+          ...constraints,
+          "Do not let this route collapse into a generic marketing hero plus card grid unless the selected seed explicitly requires it.",
+        ]),
+      ),
+    };
+  }
+
+  if (/(?:^|\/)(?:solutions?|services?|custom-solutions?)(?:\/|$)/.test(route) || /\bsolutions?\b|\bservices?\b/.test(text)) {
+    return {
+      ...page,
+      contentSkeleton:
+        page.contentSkeleton.length > 0
+          ? page.contentSkeleton
+          : ["Process intro band", "Collaboration timeline", "Scenario-fit proof row", "Inquiry CTA strip"],
+      constraints: Array.from(
+        new Set([
+          ...constraints,
+          "Avoid reusing homepage hero rhythm; this route should open as a process/capability explanation unless the seed contract overrides it.",
+        ]),
+      ),
+    };
+  }
+
+  if (/(?:^|\/)(?:cases?|portfolio|projects?)(?:\/|$)/.test(route) || /\bcases?\b|\bportfolio\b|\bprojects?\b/.test(text)) {
+    return {
+      ...page,
+      contentSkeleton:
+        page.contentSkeleton.length > 0 ? page.contentSkeleton : ["Evidence header", "Case ledger", "Outcome strip", "Next-step CTA"],
+      constraints: Array.from(
+        new Set([
+          ...constraints,
+          "Do not use a generic homepage-style hero for evidence routes unless the selected seed explicitly authorizes it.",
+        ]),
+      ),
+    };
+  }
+
+  if (surfaceMode === "docs-knowledge-site" && page.contentSkeleton.length === 0) {
+    return {
+      ...page,
+      contentSkeleton: ["Reference lead", "Guide/index stack", "Cross-link strip"],
+      constraints,
+    };
+  }
+
+  if (surfaceMode === "content-hub-site" && page.contentSkeleton.length === 0) {
+    return {
+      ...page,
+      contentSkeleton: ["Collection lead", "Resource shelf", "Evidence/index row"],
+      constraints,
+    };
+  }
+
+  return {
+    ...page,
+    constraints,
+  };
 }
 
 function extractBrandHint(requirementText: string): string | undefined {
@@ -1620,9 +1721,14 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
                     : plannedFallback.length > 0
                       ? "auto_plan"
                       : "default";
-  const pageBlueprints = routes.map((route, index) =>
-    buildPageBlueprint(route, locale, normalizedNavLabels[index], pageIntentSource, requirementText),
-  );
+  const seedAuthorityMode = resolveSeedAuthorityModeForDecision();
+  const surfaceMode = selectWebsiteGenerationTypeSkill({
+    requirementText,
+    routes,
+  }).surfaceMode;
+  const pageBlueprints = routes
+    .map((route, index) => buildPageBlueprint(route, locale, normalizedNavLabels[index], pageIntentSource, requirementText))
+    .map((page) => applySeedAuthoritativeBlueprintPolicy(page, surfaceMode, seedAuthorityMode));
 
   return {
     requirementText,
@@ -1633,7 +1739,6 @@ export function buildLocalDecisionPlan(state: AgentState): LocalDecisionPlan {
     pageBlueprints,
     brandHint: extractBrandHint(requirementText),
     routeAuthorityMode,
+    seedAuthorityMode,
   };
 }
-
-

@@ -1,0 +1,43 @@
+{
+  "contractVersion": 1,
+  "homepageTopologyClass": "signal-masthead",
+  "openingFamily": "campaign-signal",
+  "sectionCadence": [
+    "signal masthead",
+    "benefit rail",
+    "product proof split",
+    "single CTA block"
+  ],
+  "allowedComponentRhythms": [
+    "benefit rail",
+    "proof split",
+    "objection strip"
+  ],
+  "bannedGenericOpenings": [
+    "generic hero cards CTA loop",
+    "navy enterprise proof row"
+  ],
+  "componentBans": [
+    "docs workspace",
+    "editorial archive shelf"
+  ],
+  "mediaPosture": "Use one decisive product or campaign visual, not a busy collage.",
+  "typographyPosture": "Confident display sans with compressed supporting copy.",
+  "ctaPosture": "Single primary CTA block with tight secondary support.",
+  "compatibleSurfaceModes": [
+    "marketing-landing-site"
+  ],
+  "visualBoldness": "high",
+  "routeOverrides": {
+    "home": {
+      "homepageTopologyClass": "signal-masthead",
+      "openingFamily": "campaign-signal",
+      "sectionCadence": [
+        "signal masthead",
+        "benefit rail",
+        "proof split",
+        "single CTA block"
+      ]
+    }
+  }
+}

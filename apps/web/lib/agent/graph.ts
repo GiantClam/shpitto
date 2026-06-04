@@ -465,6 +465,7 @@ export interface AgentState {
     canonicalPrompt?: string;
     promptControlManifest?: unknown;
     selectedSeedSkillManifest?: unknown;
+    selectedSeedContracts?: unknown;
     routeUnitContracts?: unknown;
     generationContract?: unknown;
     contractHash?: string;
@@ -2156,6 +2157,5 @@ workflow.addConditionalEdges(
 workflow.addEdge("deploy", END);
 
 export const graph = workflow.compile();
-
 
 

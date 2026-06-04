@@ -180,6 +180,49 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
     expect(markdown).toContain("selected_frontend_seed_skills: open-design-web-prototype, docs-reference-template");
   });
 
+  it("persists selected seed contract signals when contract objects are available", () => {
+    const decision = buildMockDecision();
+    decision.pageBlueprints = decision.pageIntents;
+
+    const markdown = buildWebsiteDesignSpecMarkdown({
+      decision,
+      requirementText: decision.requirementText,
+      stylePreset: DEFAULT_STYLE_PRESET,
+      websiteSurfaceMode: "corporate-b2b-site",
+      selectedSeedSkillIds: ["industrial-b2b-foundation", "precision-catalog-template"],
+      selectedSeedContracts: [
+        {
+          id: "industrial-b2b-foundation",
+          contract: {
+            homepageTopologyClass: "procurement-masthead",
+            openingFamily: "enterprise-industrial",
+            sectionCadence: ["image-backed procurement masthead", "proof row", "capability band", "inquiry CTA"],
+            componentBans: ["editorial archive shelf", "pricing table"],
+            mediaPosture: "Use factory and operations visuals.",
+            typographyPosture: "Industrial sans with mono accents.",
+            ctaPosture: "Quote or consultation CTA.",
+            compatibleSurfaceModes: ["corporate-b2b-site"],
+            visualBoldness: "high",
+            routeOverrides: {
+              home: {
+                homepageTopologyClass: "procurement-masthead",
+                openingFamily: "enterprise-industrial",
+                sectionCadence: ["image-backed procurement masthead", "proof row", "capability band", "inquiry CTA"],
+              },
+            },
+          },
+        },
+      ],
+    });
+
+    expect(markdown).toContain("seed_opening_family: enterprise-industrial");
+    expect(markdown).toContain("seed_homepage_topology_class: procurement-masthead");
+    expect(markdown).toContain("seed_section_cadence: image-backed procurement masthead -> proof row -> capability band -> inquiry CTA");
+    expect(markdown).toContain("seed_component_bans: editorial archive shelf, pricing table");
+    expect(markdown).toContain("seed_media_posture: Use factory and operations visuals.");
+    expect(markdown).toContain("seed_typography_posture: Industrial sans with mono accents.");
+  });
+
   it("applies the enterprise homepage contract to generic corporate-b2b sites even without an explicit IBM override", () => {
     const decision = buildMockDecision();
     decision.requirementText =

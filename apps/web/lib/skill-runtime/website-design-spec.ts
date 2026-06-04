@@ -4,6 +4,7 @@ import type { DesignStylePreset } from "../design-style-preset.ts";
 import { selectCuratedLibraryImage } from "./curated-media-library.ts";
 import { isBilingualRequirementText } from "./bilingual-copy-guard.ts";
 import type { WebsiteDiscoveryBrief, WebsiteSurfaceMode } from "./open-design-adoption.ts";
+import type { ProjectSkillRouteFamily, ProjectSkillSeedContract } from "./project-skill-loader.ts";
 import { selectWebsiteGenerationTypeSkill } from "./website-type-selector.ts";
 import { buildLocalePlan, I18N_LOCALE_REGISTRY_PATH } from "./locale-plan.ts";
 import {
@@ -29,6 +30,7 @@ type WebsiteDesignSpecParams = {
   designSystemName?: string;
   siteGeneratorMode?: WebsiteArtifactGeneratorMode;
   selectedSeedSkillIds?: string[];
+  selectedSeedContracts?: Array<{ id: string; contract: ProjectSkillSeedContract }>;
 };
 
 type DesignSpecLocaleMode = "zh-CN" | "en" | "bilingual" | "multilingual";
@@ -130,6 +132,27 @@ function routeOpeningFamily(page: PageBlueprint): string {
   if (/contact|inquiry/.test(text)) return "conversion";
   if (/about|company|team|profile/.test(text)) return "identity";
   return "route-owned";
+}
+
+function inferSeedRouteFamily(page: PageBlueprint, surfaceMode: WebsiteSurfaceMode): ProjectSkillRouteFamily {
+  if (page.route === "/") return "home";
+  if (isContentCollectionPage(page)) {
+    if (surfaceMode === "docs-knowledge-site") return "docs";
+    if (surfaceMode === "content-hub-site") return "resource";
+    if (/^\/blog(?:\/|$)/i.test(page.route)) return "blog";
+  }
+  const text = `${page.route} ${page.navLabel} ${page.purpose}`.toLowerCase();
+  if (/docs?|documentation|guide|manual|reference|api|handbook|playbook|faq|tutorial/.test(text)) return "docs";
+  if (/research|standards?|information|downloads?|resource|library|certification|advocacy|repository|directory/.test(text)) {
+    return "resource";
+  }
+  if (/products?|catalog|collection/.test(text)) return "products";
+  if (/solutions?|services?|custom-solutions?/.test(text)) return "solutions";
+  if (/cases?|portfolio|projects?/.test(text)) return "cases";
+  if (/contact|inquiry/.test(text)) return "contact";
+  if (/about|company|team|profile/.test(text)) return "about";
+  if (/blog|article|story|editorial|feature/.test(text)) return "blog";
+  return surfaceMode === "portfolio-blog-site" ? "blog" : "resource";
 }
 
 function isContentCollectionPage(page: PageBlueprint): boolean {
@@ -322,8 +345,74 @@ function hasSelectedSeedAuthority(params: WebsiteDesignSpecParams): boolean {
 }
 
 function resolveSeedAuthorityMode(params: WebsiteDesignSpecParams): "seed-authoritative" | "heuristic-authoritative" {
+  const configured = String(process.env.SHPITTO_OD_SEED_AUTHORITY_MODE || "").trim().toLowerCase();
+  if (configured === "heuristic-authoritative") return "heuristic-authoritative";
+  if (configured === "seed-authoritative") return hasSelectedSeedAuthority(params) ? "seed-authoritative" : "heuristic-authoritative";
   if (!hasSelectedSeedAuthority(params)) return "heuristic-authoritative";
   return "seed-authoritative";
+}
+
+function resolvePrimarySelectedSeedContract(
+  params: WebsiteDesignSpecParams,
+  routeFamily?: ProjectSkillRouteFamily,
+): { id: string; contract: ProjectSkillSeedContract } | undefined {
+  const surfaceMode = resolveWebsiteSurfaceMode(params);
+  const candidates = (params.selectedSeedContracts || []).filter((item) => item?.contract);
+  if (candidates.length === 0) return undefined;
+  return (
+    candidates
+      .slice()
+      .sort((left, right) => {
+        const leftSurface = (left.contract.compatibleSurfaceModes || []).includes(surfaceMode) ? 1 : 0;
+        const rightSurface = (right.contract.compatibleSurfaceModes || []).includes(surfaceMode) ? 1 : 0;
+        if (leftSurface !== rightSurface) return rightSurface - leftSurface;
+        const leftOverride = routeFamily && left.contract.routeOverrides?.[routeFamily] ? 1 : 0;
+        const rightOverride = routeFamily && right.contract.routeOverrides?.[routeFamily] ? 1 : 0;
+        if (leftOverride !== rightOverride) return rightOverride - leftOverride;
+        return left.id.localeCompare(right.id);
+      })[0]
+  );
+}
+
+function resolveSelectedSeedContractSignals(
+  params: WebsiteDesignSpecParams,
+  routeFamily?: ProjectSkillRouteFamily,
+): {
+  seedId?: string;
+  routeFamily?: ProjectSkillRouteFamily;
+  homepageTopologyClass?: string;
+  openingFamily?: string;
+  sectionCadence?: string[];
+  componentBans?: string[];
+  bannedGenericOpenings?: string[];
+  mediaPosture?: string;
+  typographyPosture?: string;
+  ctaPosture?: string;
+  visualBoldness?: string;
+} {
+  const selected = resolvePrimarySelectedSeedContract(params, routeFamily);
+  if (!selected) return {};
+  const override = routeFamily ? selected.contract.routeOverrides?.[routeFamily] : undefined;
+  return {
+    seedId: selected.id,
+    routeFamily,
+    homepageTopologyClass: override?.homepageTopologyClass || selected.contract.homepageTopologyClass,
+    openingFamily: override?.openingFamily || selected.contract.openingFamily,
+    sectionCadence:
+      (override?.sectionCadence || []).length > 0 ? override?.sectionCadence : (selected.contract.sectionCadence || []).length > 0 ? selected.contract.sectionCadence : undefined,
+    componentBans:
+      (override?.componentBans || []).length > 0 ? override?.componentBans : (selected.contract.componentBans || []).length > 0 ? selected.contract.componentBans : undefined,
+    bannedGenericOpenings:
+      (override?.bannedGenericOpenings || []).length > 0
+        ? override?.bannedGenericOpenings
+        : (selected.contract.bannedGenericOpenings || []).length > 0
+          ? selected.contract.bannedGenericOpenings
+          : undefined,
+    mediaPosture: override?.mediaPosture || selected.contract.mediaPosture,
+    typographyPosture: override?.typographyPosture || selected.contract.typographyPosture,
+    ctaPosture: override?.ctaPosture || selected.contract.ctaPosture,
+    visualBoldness: selected.contract.visualBoldness,
+  };
 }
 
 function buildSeedAuthorityContractLines(params: WebsiteDesignSpecParams): string[] {
@@ -334,12 +423,21 @@ function buildSeedAuthorityContractLines(params: WebsiteDesignSpecParams): strin
       "- heuristic_fallback_rule: local contentSkeleton and componentMix remain the primary planning hints when no selected frontend seed contract is active.",
     ];
   }
+  const homeSignals = resolveSelectedSeedContractSignals(params, "home");
   return [
     "- seed_authority_mode: seed-authoritative",
     `- selected_seed_contracts: ${selectedSeedSkillIds.join(", ")}`,
     "- seed_authority_rule: when selected frontend seeds specify opening family, section cadence, route-owned class semantics, or template discipline, those seed signals outrank generic local hero/grid/card heuristics.",
+    homeSignals.openingFamily ? `- seed_opening_family: ${homeSignals.openingFamily}` : "",
+    homeSignals.homepageTopologyClass ? `- seed_homepage_topology_class: ${homeSignals.homepageTopologyClass}` : "",
+    homeSignals.sectionCadence?.length ? `- seed_section_cadence: ${homeSignals.sectionCadence.join(" -> ")}` : "",
+    homeSignals.componentBans?.length ? `- seed_component_bans: ${homeSignals.componentBans.join(", ")}` : "",
+    homeSignals.mediaPosture ? `- seed_media_posture: ${homeSignals.mediaPosture}` : "",
+    homeSignals.typographyPosture ? `- seed_typography_posture: ${homeSignals.typographyPosture}` : "",
+    homeSignals.ctaPosture ? `- seed_cta_posture: ${homeSignals.ctaPosture}` : "",
+    homeSignals.visualBoldness ? `- seed_visual_boldness: ${homeSignals.visualBoldness}` : "",
     "- heuristic_fallback_rule: local contentSkeleton and componentMix are fallback planning hints only. Use them only when the selected seed contract and route-specific spec leave a real gap.",
-  ];
+  ].filter(Boolean);
 }
 
 function isInstitutionalChildFriendlyContentHubSurface(
@@ -732,7 +830,12 @@ export function buildRouteUnitContractSummary(
     params.decision.pageBlueprints.find((item) => item.route === "/") ||
     params.decision.pageBlueprints[0];
   if (!page) return undefined;
-  const openingTopology = routeOpeningTopology(page, enterpriseHomepage, websiteSurfaceMode);
+  const routeFamily = inferSeedRouteFamily(page, websiteSurfaceMode);
+  const seedSignals = resolveSelectedSeedContractSignals(params, routeFamily);
+  const openingTopology =
+    seedSignals.sectionCadence?.length && resolveSeedAuthorityMode(params) === "seed-authoritative"
+      ? seedSignals.sectionCadence.join(" -> ")
+      : routeOpeningTopology(page, enterpriseHomepage, websiteSurfaceMode);
   return {
     route: page.route,
     navLabel: page.navLabel,
@@ -743,11 +846,19 @@ export function buildRouteUnitContractSummary(
       `pageKind=${page.pageKind}`,
       `purpose=${page.purpose}`,
       `seedAuthority=${resolveSeedAuthorityMode(params)}`,
-    ],
+      `seedRouteFamily=${routeFamily}`,
+      seedSignals.seedId ? `seedContract=${seedSignals.seedId}` : "",
+      seedSignals.openingFamily ? `seedOpeningFamily=${seedSignals.openingFamily}` : "",
+      seedSignals.homepageTopologyClass ? `seedHomepageTopologyClass=${seedSignals.homepageTopologyClass}` : "",
+      seedSignals.sectionCadence?.length ? `seedSectionCadence=${seedSignals.sectionCadence.join(" -> ")}` : "",
+      seedSignals.componentBans?.length ? `seedComponentBans=${seedSignals.componentBans.join(", ")}` : "",
+      seedSignals.mediaPosture ? `seedMediaPosture=${seedSignals.mediaPosture}` : "",
+      seedSignals.typographyPosture ? `seedTypographyPosture=${seedSignals.typographyPosture}` : "",
+    ].filter(Boolean),
     inheritedTerminology: summarizeInheritedTerminology(params),
     inheritedTokens: summarizeInheritedTokens(params),
     inheritedSeedSkillIds: params.selectedSeedSkillIds || [],
-    openingFamily: routeOpeningFamily(page),
+    openingFamily: seedSignals.openingFamily || routeOpeningFamily(page),
     openingTopology,
     mediaPlan: routeMediaPlan(page, enterpriseHomepage, websiteSurfaceMode),
     mediaResources: [buildRouteMediaResource(page, enterpriseHomepage, websiteSurfaceMode)],

@@ -136,6 +136,18 @@ describe("SkillRuntimeExecutor deploy-only path", () => {
     expect(workflow.loadedSkillIds).toEqual(
       expect.arrayContaining(["website-generation-workflow", "website-orchestrator", "corporate-b2b-site"]),
     );
+    expect(workflow.selectedSeedSkillIds).toEqual(expect.arrayContaining([expect.any(String)]));
+    expect(workflow.selectedSeedContracts).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: expect.any(String),
+          contract: expect.objectContaining({
+            openingFamily: expect.any(String),
+          }),
+        }),
+      ]),
+    );
+    expect(workflow.selectedSeedSkillManifest?.selected?.some((item: any) => item.source !== "shpitto")).toBe(true);
   });
 
   it("builds three source-derived Blog seed posts from the provided website content", () => {

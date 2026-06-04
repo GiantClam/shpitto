@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { HumanMessage } from "@langchain/core/messages";
 import {
+  buildQaSummaryFromPageRecordsForTesting,
   normalizeGeneratedProjectArtifactPreviewForTesting,
   resolveRuntimeTaskExecutionModeForTesting,
 } from "./executor";
@@ -115,5 +116,48 @@ describe("executor task mode routing", () => {
         },
       }),
     ).toThrow(/corporate-b2b homepage contract|placeholder media scaffolding|enterprise-hero markup/i);
+  });
+
+  it("emits shadow visual evaluation signals for native QA summaries when imported seeds are active", () => {
+    const summary = buildQaSummaryFromPageRecordsForTesting({
+      records: [
+        {
+          route: "/",
+          score: 92,
+          passed: true,
+          retries: 0,
+          antiSlopIssues: [],
+        } as any,
+        {
+          route: "/products",
+          score: 89,
+          passed: true,
+          retries: 0,
+          antiSlopIssues: [],
+        } as any,
+      ],
+      retriesAllowed: 0,
+      routeUnits: [
+        {
+          route: "/",
+          routeContract: ["route=/", "seedContract=industrial-b2b-foundation"],
+          openingFamily: "commanding intro",
+          openingTopology: "proof-led masthead",
+        },
+        {
+          route: "/products",
+          routeContract: ["route=/products", "seedContract=precision-catalog-template"],
+          openingFamily: "catalog evidence rail",
+          openingTopology: "route-owned product matrix",
+        },
+      ],
+      stylesCss: ":root{--bg:#fff;--fg:#111;--surface:#f5f5f5;--muted:#777;--border:#ddd;--accent:#0a6}",
+      selectedSeedSkillIds: ["industrial-b2b-foundation", "precision-catalog-template"],
+    });
+
+    expect(summary.shadowVisualEvaluation?.score).toBeGreaterThan(0);
+    expect(summary.shadowVisualEvaluation?.signals.map((signal) => signal.code)).toEqual(
+      expect.arrayContaining(["authoredness", "seed-faithfulness", "opening-non-generic-quality"]),
+    );
   });
 });

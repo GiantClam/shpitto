@@ -1,0 +1,55 @@
+{
+  "contractVersion": 1,
+  "homepageTopologyClass": "feature-masthead",
+  "openingFamily": "editorial-feature",
+  "sectionCadence": [
+    "feature masthead",
+    "story grid",
+    "pull-quote rail",
+    "issue index",
+    "subscribe/contact CTA"
+  ],
+  "allowedComponentRhythms": [
+    "story grid",
+    "note rail",
+    "feature pull quote"
+  ],
+  "bannedGenericOpenings": [
+    "enterprise hero",
+    "pricing strip",
+    "generic card trio"
+  ],
+  "componentBans": [
+    "factory proof row",
+    "docs search rail"
+  ],
+  "mediaPosture": "Use one feature image or editorial framing per lead zone.",
+  "typographyPosture": "Serif-forward display with quiet supporting sans and visible reading rhythm.",
+  "ctaPosture": "Subscribe, explore stories, or contact after the feature arc.",
+  "compatibleSurfaceModes": [
+    "portfolio-blog-site",
+    "content-hub-site"
+  ],
+  "visualBoldness": "high",
+  "routeOverrides": {
+    "home": {
+      "homepageTopologyClass": "feature-masthead",
+      "openingFamily": "editorial-feature",
+      "sectionCadence": [
+        "feature masthead",
+        "story grid",
+        "issue index",
+        "subscribe CTA"
+      ]
+    },
+    "blog": {
+      "openingFamily": "feature-story",
+      "sectionCadence": [
+        "story lead",
+        "pull quote",
+        "body chapters",
+        "next read strip"
+      ]
+    }
+  }
+}

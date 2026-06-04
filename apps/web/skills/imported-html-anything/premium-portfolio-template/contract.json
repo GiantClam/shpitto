@@ -1,0 +1,60 @@
+{
+  "contractVersion": 1,
+  "homepageTopologyClass": "project-masthead",
+  "openingFamily": "showcase-home",
+  "sectionCadence": [
+    "project masthead",
+    "case stack",
+    "bio band",
+    "contact CTA"
+  ],
+  "allowedComponentRhythms": [
+    "project stack",
+    "image-caption pair",
+    "bio band"
+  ],
+  "bannedGenericOpenings": [
+    "enterprise hero",
+    "pricing row",
+    "generic feature card trio"
+  ],
+  "componentBans": [
+    "docs rail",
+    "factory proof row"
+  ],
+  "mediaPosture": "Lead with project imagery and quiet supporting captions.",
+  "typographyPosture": "Premium display serif or elegant sans with restrained UI chrome.",
+  "ctaPosture": "Contact or inquiry CTA after project proof.",
+  "compatibleSurfaceModes": [
+    "portfolio-blog-site"
+  ],
+  "visualBoldness": "high",
+  "routeOverrides": {
+    "home": {
+      "homepageTopologyClass": "project-masthead",
+      "openingFamily": "showcase-home",
+      "sectionCadence": [
+        "project masthead",
+        "case stack",
+        "bio band",
+        "contact CTA"
+      ]
+    },
+    "about": {
+      "openingFamily": "profile-masthead",
+      "sectionCadence": [
+        "profile masthead",
+        "operating note",
+        "contact CTA"
+      ]
+    },
+    "blog": {
+      "openingFamily": "essay-lead",
+      "sectionCadence": [
+        "essay lead",
+        "chapter blocks",
+        "next read strip"
+      ]
+    }
+  }
+}

@@ -4,6 +4,7 @@ import {
   applyStateSitemapToDecisionForTesting,
   buildQaRepairMessageForTesting,
   buildSkeletonPromptRequirementContextForTesting,
+  buildShadowVisualEvaluationForTesting,
   buildQaRepairGuidanceForTesting,
   buildWebsiteSkillToolRoundPromptForAdapter,
   collapseVisibleBilingualPairsForTesting,
@@ -2963,6 +2964,7 @@ describe("skill-tool-executor", () => {
         - The page must be meaningfully distinct from sibling pages in section purpose, headings, content, and layout.
         - Navigation links must stay within the fixed route list and preserve the configured navigation order.
         - This route must not reuse a sibling page's section order or module rhythm without a clear content reason.
+        - Seed-authoritative mode is active: imported seed cadence and route-owned opening structure outrank generic local hero/grid/card defaults.
       - Required page skeleton:
         - Route-specific hero introducing the page's visitor purpose
         - Primary content section unique to the route
@@ -7494,6 +7496,87 @@ describe("skill-tool-executor", () => {
     expect(guidance).toContain("Preserve this seed's opening discipline");
     expect(guidance).toContain("route-owned documentation openings");
     expect(guidance).toContain("Call load_skill for the full skill");
+  });
+
+  it("injects route-relevant contract excerpts into selected seed guidance", async () => {
+    const guidance = await renderWebsiteSeedSkillSidecarGuidance(
+      [
+        {
+          id: "industrial-b2b-foundation",
+          score: 32,
+          reason: "surface:corporate-b2b-site",
+        },
+      ],
+      {
+        routes: ["/", "/products"],
+        websiteSurfaceMode: "corporate-b2b-site",
+      },
+    );
+
+    expect(guidance).toContain("### home contract excerpt");
+    expect(guidance).toContain("### products contract excerpt");
+    expect(guidance).toContain("### assets/template.html home excerpt");
+  });
+
+  it("builds a non-blocking shadow visual evaluation summary", () => {
+    const evaluation = buildShadowVisualEvaluationForTesting({
+      routeUnits: [
+        {
+          route: "/",
+          navLabel: "Home",
+          pageKind: "home",
+          routeContract: ["seedContract=industrial-b2b-foundation"],
+          inheritedTerminology: [],
+          inheritedTokens: [],
+          inheritedSeedSkillIds: ["industrial-b2b-foundation"],
+          openingFamily: "enterprise-industrial",
+          openingTopology: "image-backed procurement masthead -> proof row -> capability band",
+          mediaPlan: [],
+          mediaResources: [],
+          generatedFiles: ["/index.html", "/styles.css"],
+          generationUnit: { unitId: "route-home", route: "/", targetFiles: ["/index.html"] },
+          validationStatus: "passed",
+          validationResult: { status: "passed", checkedFiles: ["/index.html"], issues: [] },
+        },
+        {
+          route: "/products",
+          navLabel: "Products",
+          pageKind: "intent",
+          routeContract: ["seedContract=precision-catalog-template"],
+          inheritedTerminology: [],
+          inheritedTokens: [],
+          inheritedSeedSkillIds: ["precision-catalog-template"],
+          openingFamily: "catalog-proof",
+          openingTopology: "catalog lead -> spec comparison row -> buyer inquiry strip",
+          mediaPlan: [],
+          mediaResources: [],
+          generatedFiles: ["/products/index.html", "/styles.css"],
+          generationUnit: { unitId: "route-products", route: "/products", targetFiles: ["/products/index.html"] },
+          validationStatus: "passed",
+          validationResult: { status: "passed", checkedFiles: ["/products/index.html"], issues: [] },
+        },
+      ],
+      files: [
+        {
+          path: "/styles.css",
+          type: "text/css",
+          content: ":root{--bg:#fff;--surface:#f7f8fb;--text:#182433;--accent:#2e6cf6;--signal:#f59e0b;--muted:#4f6076;}",
+        },
+      ],
+      selectedSeedSkillIds: ["industrial-b2b-foundation", "precision-catalog-template"],
+      seedAuthorityMode: "seed-authoritative",
+    });
+
+    expect(evaluation?.score).toBeGreaterThanOrEqual(80);
+    expect(evaluation?.signals.map((signal) => signal.code)).toEqual(
+      expect.arrayContaining([
+        "authoredness",
+        "section-differentiation",
+        "seed-faithfulness",
+        "typography-palette-discipline",
+        "opening-non-generic-quality",
+      ]),
+    );
   });
 
   it("uses a focused contract for single interior-page rounds without unrelated blog/home prompt bloat", () => {

@@ -1,0 +1,43 @@
+{
+  "contractVersion": 1,
+  "homepageTopologyClass": "cinematic-stage",
+  "openingFamily": "demo-stage",
+  "sectionCadence": [
+    "cinematic stage",
+    "demo proof strip",
+    "story chapter band",
+    "signup CTA"
+  ],
+  "allowedComponentRhythms": [
+    "demo stage",
+    "chapter band",
+    "signup CTA"
+  ],
+  "bannedGenericOpenings": [
+    "generic hero-grid",
+    "enterprise proof row"
+  ],
+  "componentBans": [
+    "docs search rail",
+    "pricing matrix"
+  ],
+  "mediaPosture": "Use one high-drama demo/product visual with surrounding dark-space restraint.",
+  "typographyPosture": "High-contrast display sans with controlled body density.",
+  "ctaPosture": "Signup or waitlist CTA after the staged proof sequence.",
+  "compatibleSurfaceModes": [
+    "marketing-landing-site"
+  ],
+  "visualBoldness": "high",
+  "routeOverrides": {
+    "home": {
+      "homepageTopologyClass": "cinematic-stage",
+      "openingFamily": "demo-stage",
+      "sectionCadence": [
+        "cinematic stage",
+        "demo proof strip",
+        "story chapter band",
+        "signup CTA"
+      ]
+    }
+  }
+}

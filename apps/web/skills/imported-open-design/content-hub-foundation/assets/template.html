@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #f5efe6;
+      --surface: #fff9ef;
+      --text: #261a13;
+      --muted: #6f5b4b;
+      --accent: #7a3524;
+    }
+    .collection-home { display: grid; gap: 28px; }
+    .archive-masthead { padding: 28px; border: 1px solid #d8c6ad; }
+    .resource-shelf { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .standards-ledger { display: grid; gap: 10px; }
+    @media (max-width: 900px) { .resource-shelf { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="collection-home">
+    <section class="archive-masthead" data-od-id="archive-masthead">
+      <p>Institutional archive</p>
+      <h1>Research, standards, and public resources in one governed library</h1>
+    </section>
+    <section class="resource-shelf" data-od-id="resource-shelf">
+      <article class="card">Research collection</article>
+      <article class="card">Standards library</article>
+      <article class="card">Downloads</article>
+    </section>
+    <section class="standards-ledger" data-od-id="standards-ledger">
+      <h2>Standards ledger</h2>
+    </section>
+  </main>
+</body>
+</html>

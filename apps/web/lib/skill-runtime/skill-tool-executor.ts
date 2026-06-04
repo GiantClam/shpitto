@@ -36,10 +36,15 @@ import {
 import { inferWebsiteSurfaceModeFromSkillId, type WebsiteDiscoveryBrief, type WebsiteSurfaceMode } from "./open-design-adoption.ts";
 import { invokeModelWithIdleTimeout } from "./llm-stream.ts";
 import { collectCompletedPhases, getGeneratedFilePaths, getPages, getStaticArtifactFiles } from "./artifacts.ts";
-import { DEFAULT_OPENAI_COMPAT_MODEL, normalizeProviderModelId } from "./provider-model-id.ts";
+import {
+  DEFAULT_OPENAI_COMPAT_MODEL,
+  normalizeProviderModelId,
+  resolveScenarioAwareProviderModelId,
+} from "./provider-model-id.ts";
 import { resolveRunProviderRunnerLock, resolveRunProviderRunnerLocks, type RunProviderLock } from "./provider-runner.ts";
 import {
   getWebsiteGenerationSkillBundle,
+  inferRouteFamiliesForPlanning,
   listDocumentContentSkillIds,
   listWebsiteSeedSkillIds,
   loadProjectSkill,
@@ -47,6 +52,7 @@ import {
   renderProjectSkillResourceIndex,
   selectDocumentContentSkillsForIntent,
   selectWebsiteSeedSkillsForIntent,
+  type ProjectSkillRouteFamily,
   type WebsiteSeedSkillSelection,
 } from "./project-skill-loader.ts";
 import {
@@ -57,7 +63,7 @@ import {
   type SkillToolFile,
 } from "./skill-tool-registry.ts";
 import { renderWebsiteQualityContract } from "./website-quality-contract.ts";
-import type { QaSummary } from "./qa-summary.ts";
+import { buildShadowVisualEvaluation, type QaSummary } from "./qa-summary.ts";
 import {
   lintGeneratedWebsiteHtml,
   lintGeneratedWebsiteRouteHtml,
@@ -4348,6 +4354,7 @@ function buildWorkflowFiles(params: {
   designSystemName?: string;
   siteGeneratorMode?: WebsiteArtifactGeneratorMode;
   selectedSeedSkillIds?: string[];
+  selectedSeedContracts?: Array<{ id: string; contract: any }>;
 }): RuntimeWorkflowFile[] {
   const workflowLocale = resolveRequestedExperienceLocale(params.requirementText, params.locale) || params.locale;
   const taskPlan = [
@@ -4397,6 +4404,7 @@ function buildWorkflowFiles(params: {
     designSystemName: params.designSystemName,
     siteGeneratorMode: params.siteGeneratorMode,
     selectedSeedSkillIds: params.selectedSeedSkillIds,
+    selectedSeedContracts: params.selectedSeedContracts,
   });
 
   return [
@@ -4417,6 +4425,7 @@ function buildRouteUnitSnapshotsForToolFlow(params: {
   designSystemId?: string;
   designSystemName?: string;
   selectedSeedSkillIds?: string[];
+  selectedSeedContracts?: Array<{ id: string; contract: any }>;
   files: RuntimeWorkflowFile[];
   qaRecords?: SkillToolQaRecord[];
 }): NonNullable<SkillToolExecutorStepSnapshot["routeUnits"]> {
@@ -4435,6 +4444,7 @@ function buildRouteUnitSnapshotsForToolFlow(params: {
         designSystemId: params.designSystemId,
         designSystemName: params.designSystemName,
         selectedSeedSkillIds: params.selectedSeedSkillIds,
+        selectedSeedContracts: params.selectedSeedContracts,
       },
       route,
     ) || {
@@ -4485,6 +4495,19 @@ function buildRouteUnitSnapshotsForToolFlow(params: {
         issues: (routeQa?.antiSlopIssues || []).map((issue) => `${issue.severity}:${issue.code}`),
       },
     };
+  });
+}
+
+export function buildShadowVisualEvaluationForTesting(params: {
+  routeUnits: NonNullable<SkillToolExecutorStepSnapshot["routeUnits"]>;
+  files: RuntimeWorkflowFile[];
+  selectedSeedSkillIds: string[];
+  seedAuthorityMode?: string;
+}): QaSummary["shadowVisualEvaluation"] | undefined {
+  return buildShadowVisualEvaluation({
+    routeUnits: params.routeUnits,
+    stylesCss: params.files.find((file) => normalizePath(file.path) === "/styles.css")?.content || "",
+    selectedSeedSkillIds: params.selectedSeedSkillIds,
   });
 }
 
@@ -7330,8 +7353,14 @@ export function buildWebsiteSkillToolRoundPromptForAdapter(params: {
 
 export async function renderWebsiteSeedSkillSidecarGuidance(
   selections: WebsiteSeedSkillSelection[],
-  maxChars = DEFAULT_INITIAL_SEED_GUIDANCE_CHARS,
+  options?: {
+    maxChars?: number;
+    routes?: string[];
+    websiteSurfaceMode?: WebsiteSurfaceMode;
+    routeFamilies?: ProjectSkillRouteFamily[];
+  },
 ): Promise<string> {
+  const maxChars = options?.maxChars || DEFAULT_INITIAL_SEED_GUIDANCE_CHARS;
   const uniqueSelections = Array.from(
     new Map((selections || []).filter((item) => item?.id).map((item) => [item.id, item])).values(),
   ).slice(0, 4);
@@ -7342,7 +7371,11 @@ export async function renderWebsiteSeedSkillSidecarGuidance(
     try {
       const skill = await loadProjectSkill(selection.id);
       const resourceIndex = renderProjectSkillResourceIndex(skill.resourceIndex);
-      const resourceContract = renderProjectSkillResourceContract(skill.resourceIndex);
+      const resourceContract = renderProjectSkillResourceContract(skill.resourceIndex, {
+        routes: options?.routes,
+        surfaceMode: options?.websiteSurfaceMode,
+        routeFamilies: options?.routeFamilies,
+      });
       blocks.push(
         [
           `## seed:${skill.id}`,
@@ -7354,6 +7387,7 @@ export async function renderWebsiteSeedSkillSidecarGuidance(
           resourceIndex,
           resourceContract,
           resourceContract ? "" : undefined,
+          skill.seedContract?.visualBoldness ? `- visual_boldness: ${skill.seedContract.visualBoldness}` : "",
           "### Contract excerpt",
           clipRuntimeRequirement(skill.content, Math.max(900, Math.floor(maxChars / Math.max(1, uniqueSelections.length)))),
         ]
@@ -7505,7 +7539,33 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
           ).values(),
         )
       : selectedSeedSkills;
-  const selectedSeedSkillGuidance = await renderWebsiteSeedSkillSidecarGuidance(effectiveSelectedSeedSkills);
+  const workflowSurfaceSelection = resolveWorkflowSurfaceSelection(workflowContext as Record<string, unknown> | undefined);
+  const selectedDiscoveryBrief = workflowSurfaceSelection.discoveryBrief;
+  const selectedWebsiteSurfaceMode = workflowSurfaceSelection.websiteSurfaceMode;
+  const selectedSeedContracts = (
+    await Promise.all(
+      effectiveSelectedSeedSkills.map(async (item) => {
+        try {
+          const skill = await loadProjectSkill(item.id);
+          return skill.seedContract ? { id: skill.id, contract: skill.seedContract } : undefined;
+        } catch {
+          return undefined;
+        }
+      }),
+    )
+  ).filter((item): item is { id: string; contract: Record<string, unknown> } => Boolean(item));
+  const selectedSeedRouteFamilies = inferRouteFamiliesForPlanning({
+    routes: decision.routes,
+    surfaceMode: selectedWebsiteSurfaceMode,
+  });
+  const strongestVisualBoldness = selectedSeedContracts.some((item) => item.contract.visualBoldness === "high")
+    ? "high"
+    : "standard";
+  const selectedSeedSkillGuidance = await renderWebsiteSeedSkillSidecarGuidance(effectiveSelectedSeedSkills, {
+    routes: decision.routes,
+    websiteSurfaceMode: selectedWebsiteSurfaceMode,
+    routeFamilies: selectedSeedRouteFamilies,
+  });
   const selectedDocumentSkills = await selectDocumentContentSkillsForIntent({
     requirementText: sanitizedRequirementWithReferences,
     routes: decision.routes,
@@ -7513,16 +7573,29 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     maxSkills: Number(process.env.SKILL_TOOL_MAX_DOCUMENT_SKILLS || 3),
   });
   const stylePreset = normalizeStylePreset(workflow.stylePreset, {});
-  const workflowSurfaceSelection = resolveWorkflowSurfaceSelection(workflowContext as Record<string, unknown> | undefined);
-  const selectedDiscoveryBrief = workflowSurfaceSelection.discoveryBrief;
-  const selectedWebsiteSurfaceMode = workflowSurfaceSelection.websiteSurfaceMode;
   const selectedDesignSystemId = String((workflowContext as any).designSystemId || "").trim() || undefined;
   const selectedDesignSystemName = String((workflowContext as any).designSystemName || "").trim() || undefined;
   const forcedRouteUnitTargets = resolveForcedRouteUnitTargets(workflowContext as Record<string, unknown>);
-  const providerAttempts = resolveProviderAttempts({
+  let providerAttempts = resolveProviderAttempts({
     provider: (params.state as any)?.workflow_context?.lockedProvider,
     model: (params.state as any)?.workflow_context?.lockedModel,
   });
+  providerAttempts = providerAttempts.map((attempt) => ({
+    ...attempt,
+    config: {
+      ...attempt.config,
+      modelName: resolveScenarioAwareProviderModelId({
+        provider: attempt.config.provider,
+        requestedModel: attempt.config.modelName,
+        fallbackModel: DEFAULT_OPENAI_COMPAT_MODEL,
+        surfaceMode: selectedWebsiteSurfaceMode,
+        seedAuthorityMode: decision.seedAuthorityMode || "seed-authoritative",
+        hasImportedSeed: selectedSeedContracts.length > 0,
+        visualBoldness: strongestVisualBoldness,
+        routeFamilies: selectedSeedRouteFamilies,
+      }),
+    },
+  }));
   let activeAttempt = providerAttempts[0];
   let lock = activeAttempt.lock;
   let providerConfig = activeAttempt.config;
@@ -7547,8 +7620,8 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     decision,
     designMd: workflow.designMd,
     locale: decision.locale,
-    provider: lock.provider,
-    model: lock.model,
+    provider: providerConfig.provider,
+    model: providerConfig.modelName,
     stylePreset,
     designHit: workflow.hit,
     websiteSurfaceMode: selectedWebsiteSurfaceMode,
@@ -7557,6 +7630,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     designSystemName: selectedDesignSystemName,
     siteGeneratorMode,
     selectedSeedSkillIds: effectiveSelectedSeedSkills.map((item) => item.id),
+    selectedSeedContracts,
   });
   let assistantNotes: string[] = [];
   let completedStaticFiles: RuntimeWorkflowFile[] | undefined;
@@ -7694,8 +7768,8 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
         decision,
         designMd: workflow.designMd,
         locale: decision.locale,
-        provider: lock.provider,
-        model: lock.model,
+        provider: providerConfig.provider,
+        model: providerConfig.modelName,
         stylePreset,
         designHit: workflow.hit,
         websiteSurfaceMode: selectedWebsiteSurfaceMode,
@@ -7704,6 +7778,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
         designSystemName: selectedDesignSystemName,
         siteGeneratorMode,
         selectedSeedSkillIds: effectiveSelectedSeedSkills.map((item) => item.id),
+        selectedSeedContracts,
       });
       stageMeta = {
         activeProvider: providerConfig.provider,
@@ -7740,6 +7815,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
           designSystemId: selectedDesignSystemId,
           designSystemName: selectedDesignSystemName,
           selectedSeedSkillIds: effectiveSelectedSeedSkills.map((item) => item.id),
+          selectedSeedContracts,
           files: dedupeFiles(emittedFiles),
           qaRecords: completedQaRecords,
         }),
@@ -8104,6 +8180,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
           designSystemId: selectedDesignSystemId,
           designSystemName: selectedDesignSystemName,
           selectedSeedSkillIds: effectiveSelectedSeedSkills.map((item) => item.id),
+          selectedSeedContracts,
           files: dedupedCurrent,
           qaRecords: completedQaRecords,
         }),
@@ -8246,6 +8323,29 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     repairedFiles: Array.from(qaRepairFileTargets).sort((a, b) => a.localeCompare(b)),
     fullRegenerationAvoided: qaRepairAttemptCount > 0 ? true : null,
   };
+  const { staticFiles } = splitStaticAndWorkflow(completedStaticFiles);
+  const finalRouteUnits = buildRouteUnitSnapshotsForToolFlow({
+    decision,
+    requirementText: fullRequirementContext,
+    stylePreset,
+    designHit: workflow.hit,
+    websiteSurfaceMode: selectedWebsiteSurfaceMode,
+    discoveryBrief: selectedDiscoveryBrief,
+    designSystemId: selectedDesignSystemId,
+    designSystemName: selectedDesignSystemName,
+    selectedSeedSkillIds: effectiveSelectedSeedSkills.map((item) => item.id),
+    selectedSeedContracts,
+    files: staticFiles,
+    qaRecords: completedQaRecords,
+  });
+  completedQaSummary = {
+    ...completedQaSummary,
+    shadowVisualEvaluation: buildShadowVisualEvaluation({
+      routeUnits: finalRouteUnits,
+      stylesCss: staticFiles.find((file) => normalizePath(file.path) === "/styles.css")?.content || "",
+      selectedSeedSkillIds: effectiveSelectedSeedSkills.map((item) => item.id),
+    }),
+  };
   const qaReportFile: RuntimeWorkflowFile = {
     path: "/qa-report.json",
     type: "application/json",
@@ -8268,7 +8368,6 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
     ...completedStaticFiles.filter((file) => file.path.endsWith(".md")),
     qaReportFile,
   ]);
-  const { staticFiles } = splitStaticAndWorkflow(completedStaticFiles);
   const pages = buildPagesFromRoutes(decision.routes, staticFiles, decision.locale, brandName);
   const routeToFile: Record<string, string> = {};
   for (const route of decision.routes) {
@@ -8302,20 +8401,6 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
       files: mergedWorkflowFiles,
     },
   };
-  const finalRouteUnits = buildRouteUnitSnapshotsForToolFlow({
-    decision,
-    requirementText: fullRequirementContext,
-    stylePreset,
-    designHit: workflow.hit,
-    websiteSurfaceMode: selectedWebsiteSurfaceMode,
-    discoveryBrief: selectedDiscoveryBrief,
-    designSystemId: selectedDesignSystemId,
-    designSystemName: selectedDesignSystemName,
-    selectedSeedSkillIds: effectiveSelectedSeedSkills.map((item) => item.id),
-    files: staticFiles,
-    qaRecords: completedQaRecords,
-  });
-
   const finalState: AgentState = {
     ...params.state,
     phase: "end",
@@ -8342,7 +8427,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
       sourceRequirement: sanitizedRequirementWithReferences,
       skillId: String((params.state.workflow_context as any)?.skillId || "website-generation-workflow"),
       lockedProvider: lock.provider,
-      lockedModel: lock.model,
+      lockedModel: stageMeta.activeModel,
       stylePreset,
       designSystemId: workflow.hit?.id,
       designSystemName: workflow.hit?.name,
