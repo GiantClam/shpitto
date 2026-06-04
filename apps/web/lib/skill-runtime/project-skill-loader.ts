@@ -124,6 +124,7 @@ export type ProjectSkillTemplateSummary = {
   tokenNames: string[];
   responsiveBreakpoint?: string;
   keyClasses: string[];
+  structureExcerpt: string[];
 };
 
 export type ProjectSkillChecklistSummary = {
@@ -132,6 +133,7 @@ export type ProjectSkillChecklistSummary = {
   p1Count: number;
   p2Count: number;
   criticalChecks: string[];
+  mustPassExcerpt: string[];
 };
 
 export type ProjectSkillResourceIndex = {
@@ -162,6 +164,35 @@ function uniqueTrimmed(items: string[]): string[] {
   return Array.from(new Set((items || []).map((item) => String(item || "").trim()).filter(Boolean)));
 }
 
+function clipResourceExcerptValue(value: string, maxChars = 140): string {
+  const text = String(value || "").trim().replace(/\s+/g, " ");
+  if (text.length <= maxChars) return text;
+  return `${text.slice(0, Math.max(0, maxChars - 1)).trimEnd()}…`;
+}
+
+function extractHtmlStructureExcerpt(content: string): string[] {
+  const lines = String(content || "")
+    .split(/\r?\n/g)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (lines.length === 0) return [];
+
+  const bodyStart = lines.findIndex((line) => /^<body\b/i.test(line));
+  const relevantLines = bodyStart >= 0 ? lines.slice(bodyStart + 1) : lines;
+  const structural = relevantLines
+    .filter(
+      (line) =>
+        /^<\/?(?:header|main|section|nav|footer|article|aside)\b/i.test(line) ||
+        /\bclass=/.test(line) ||
+        /\bdata-od-id=/.test(line),
+    )
+    .slice(0, 8);
+  const excerpt = (structural.length > 0 ? structural : relevantLines.slice(0, 8)).map((line) =>
+    clipResourceExcerptValue(line),
+  );
+  return uniqueTrimmed(excerpt);
+}
+
 function summarizeTemplateHtml(content: string, filePath: string): ProjectSkillTemplateSummary | undefined {
   const text = String(content || "");
   if (!text.trim()) return undefined;
@@ -175,6 +206,7 @@ function summarizeTemplateHtml(content: string, filePath: string): ProjectSkillT
     tokenNames: tokenNames.slice(0, 12),
     responsiveBreakpoint,
     keyClasses,
+    structureExcerpt: extractHtmlStructureExcerpt(text),
   };
 }
 
@@ -212,6 +244,12 @@ function summarizeChecklist(content: string, filePath: string): ProjectSkillChec
     p1Count: countChecklistItems(p1Lines),
     p2Count: countChecklistItems(p2Lines),
     criticalChecks,
+    mustPassExcerpt: uniqueTrimmed(
+      p0Lines
+        .filter((line) => /^\s*-\s*\[[ xX]?\]/.test(line))
+        .map((line) => clipResourceExcerptValue(line.replace(/^\s*-\s*\[[ xX]?\]\s*/, ""), 180))
+        .slice(0, 4),
+    ),
   };
 }
 
@@ -277,6 +315,28 @@ export function renderProjectSkillResourceIndex(index?: ProjectSkillResourceInde
         .filter(Boolean)
         .join("; "),
     );
+  }
+  return lines.join("\n");
+}
+
+export function renderProjectSkillResourceContract(index?: ProjectSkillResourceIndex): string {
+  if (!index) return "";
+  const lines = [
+    "## Seed Structural Contract",
+    "- Preserve this seed's opening discipline, section cadence, and route-owned class semantics before falling back to generic local heuristics.",
+    "- Treat these excerpts as structural cues, not placeholder copy to duplicate verbatim.",
+  ];
+  if (index.templateHtml?.structureExcerpt?.length) {
+    lines.push("### assets/template.html excerpt");
+    lines.push(...index.templateHtml.structureExcerpt.map((line) => `- ${line}`));
+  }
+  if (index.exampleHtml?.structureExcerpt?.length) {
+    lines.push("### example.html excerpt");
+    lines.push(...index.exampleHtml.structureExcerpt.map((line) => `- ${line}`));
+  }
+  if (index.checklist?.mustPassExcerpt?.length) {
+    lines.push("### checklist excerpt");
+    lines.push(...index.checklist.mustPassExcerpt.map((line) => `- ${line}`));
   }
   return lines.join("\n");
 }

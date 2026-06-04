@@ -7490,6 +7490,8 @@ describe("skill-tool-executor", () => {
     expect(guidance).toContain("# Recommended Website Primary Seed Guidance");
     expect(guidance).toContain("## seed:docs-knowledge-foundation");
     expect(guidance).toContain("example.html: example-backed HTML contract");
+    expect(guidance).toContain("## Seed Structural Contract");
+    expect(guidance).toContain("Preserve this seed's opening discipline");
     expect(guidance).toContain("route-owned documentation openings");
     expect(guidance).toContain("Call load_skill for the full skill");
   });

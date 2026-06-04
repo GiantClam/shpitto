@@ -1,6 +1,7 @@
 import {
   getWebsiteGenerationSkillBundle,
   loadProjectSkill,
+  renderProjectSkillResourceContract,
   renderProjectSkillResourceIndex,
   resolveProjectSkillAlias,
   WEBSITE_GENERATION_SKILL_BUNDLE,
@@ -267,6 +268,7 @@ export async function handleSkillToolCall(
     }
     const metadataPrompt = skill.websiteMetadata ? renderWebsiteSkillMetadataPrompt(skill.websiteMetadata) : "";
     const resourceIndexPrompt = renderProjectSkillResourceIndex(skill.resourceIndex);
+    const resourceContractPrompt = renderProjectSkillResourceContract(skill.resourceIndex);
     const payload = [
       `# skill:${resolvedSkillId}`,
       "",
@@ -274,6 +276,8 @@ export async function handleSkillToolCall(
       metadataPrompt ? "" : undefined,
       resourceIndexPrompt,
       resourceIndexPrompt ? "" : undefined,
+      resourceContractPrompt,
+      resourceContractPrompt ? "" : undefined,
       clipText(skill.content, Number(context.maxSkillChars || DEFAULT_MAX_SKILL_CHARS)),
     ]
       .filter((part): part is string => typeof part === "string")

@@ -4776,8 +4776,9 @@ Locale: ${this.context.locale}
 Navigation links: ${navLinks}
 Internal content binding contract, not visitor copy: when the current page kind is blog-data-index or content-collection-index, include data-shpitto-blog-root, data-shpitto-blog-list, and data-shpitto-blog-api="/api/blog/posts" inside the selected page's collection/list/database module; use source-aligned preview resource cards only. Never expose backend names, API/storage/runtime/hydration/fallback jargon, data-source mechanics, English design jargon, policy wording, or deployment mechanics in visible copy unless this route is explicitly Blog. Do not generate database credentials, D1 binding code, Cloudflare Worker code, or secrets.
 Page responsibility: ${blueprint.responsibility}
-Page skeleton: ${blueprint.contentSkeleton.join(" -> ")}
-Component mix: ${formatComponentMix(blueprint.componentMix)}
+Local fallback skeleton only: ${blueprint.contentSkeleton.join(" -> ")}
+Local fallback component mix only: ${formatComponentMix(blueprint.componentMix)}
+Fallback rule: if the selected seed guidance or route design spec defines a stronger opening family, section cadence, route-owned class vocabulary, or template discipline, follow that seed/spec contract first and use the local fallback hints only where the contract stays silent.
 Page-specific source brief excerpt (authoritative for this file):
 ${internalPageSourceBrief || "No route-specific source excerpt found. Derive a unique page architecture from the complete requirement below."}
 Route design spec excerpt (authoritative for layout/media decisions):

@@ -57,6 +57,7 @@ describe("skill-tool-registry", () => {
         
         
         
+        
         ---
         name: "website-generation-workflow"
         description: "Defines the end-to-end website generation workflow. Invoke when generating multi-section pages or full websites."
@@ -139,14 +140,14 @@ describe("skill-tool-registry", () => {
         - example.html: example-backed HTML contract; tokens --bg, --fg, --muted, --border, --accent, --surface; key classes btn; responsive collapse at 720px
         - references/checklist.md: self-review gates; P0=10; P1=8; P2=4; critical checks No raw hex outside \`:root\` token block.; All headings use \`var(--font-display)\`.; Accent appears at most twice per screen.; No purple/violet gradient backgrounds.; No emoji used as feature icons.; No invented metrics.
         
-        ---
-        name: web-prototype
-        description: |
-          General-purpose desktop web prototype. Single self-contained HTML file built
-          by copying the seed \`assets/template.html\` and pasting section layouts from
-          \`references/layouts.md\`. Default for any landing / marketing / docs / SaaS
-          page when no more specific skill matches.
-        triggers:"
+        ## Seed Structural Contract
+        - Preserve this seed's opening discipline, section cadence, and route-owned class semantics before falling back to generic local heuristics.
+        - Treat these excerpts as structural cues, not placeholder copy to duplicate verbatim.
+        ### assets/template.html excerpt
+        - <header class=\"topnav\" data-od-id=\"topnav\">
+        - <div class=\"container topnav-inner\">
+        - <span class=\"logo\">[REPLACE] Brand</span>
+        - <nav>"
       `);
     }
   });

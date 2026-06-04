@@ -317,6 +317,31 @@ function resolveWebsiteSurfaceMode(params: WebsiteDesignSpecParams): WebsiteSurf
   );
 }
 
+function hasSelectedSeedAuthority(params: WebsiteDesignSpecParams): boolean {
+  return Array.isArray(params.selectedSeedSkillIds) && params.selectedSeedSkillIds.some((item) => String(item || "").trim());
+}
+
+function resolveSeedAuthorityMode(params: WebsiteDesignSpecParams): "seed-authoritative" | "heuristic-authoritative" {
+  if (!hasSelectedSeedAuthority(params)) return "heuristic-authoritative";
+  return "seed-authoritative";
+}
+
+function buildSeedAuthorityContractLines(params: WebsiteDesignSpecParams): string[] {
+  const selectedSeedSkillIds = (params.selectedSeedSkillIds || []).map((item) => String(item || "").trim()).filter(Boolean);
+  if (selectedSeedSkillIds.length === 0) {
+    return [
+      "- seed_authority_mode: heuristic-authoritative",
+      "- heuristic_fallback_rule: local contentSkeleton and componentMix remain the primary planning hints when no selected frontend seed contract is active.",
+    ];
+  }
+  return [
+    "- seed_authority_mode: seed-authoritative",
+    `- selected_seed_contracts: ${selectedSeedSkillIds.join(", ")}`,
+    "- seed_authority_rule: when selected frontend seeds specify opening family, section cadence, route-owned class semantics, or template discipline, those seed signals outrank generic local hero/grid/card heuristics.",
+    "- heuristic_fallback_rule: local contentSkeleton and componentMix are fallback planning hints only. Use them only when the selected seed contract and route-specific spec leave a real gap.",
+  ];
+}
+
 function isInstitutionalChildFriendlyContentHubSurface(
   params: WebsiteDesignSpecParams,
   surfaceMode = resolveWebsiteSurfaceMode(params),
@@ -717,6 +742,7 @@ export function buildRouteUnitContractSummary(
       `navLabel=${page.navLabel}`,
       `pageKind=${page.pageKind}`,
       `purpose=${page.purpose}`,
+      `seedAuthority=${resolveSeedAuthorityMode(params)}`,
     ],
     inheritedTerminology: summarizeInheritedTerminology(params),
     inheritedTokens: summarizeInheritedTokens(params),
@@ -823,6 +849,7 @@ function buildRouteSpecLines(
   localeMode: DesignSpecLocaleMode,
   surfaceMode: WebsiteSurfaceMode,
   requirementText = "",
+  seedAuthorityLines: string[] = [],
 ): string[] {
   if (isContentCollectionPage(page)) {
     return [
@@ -989,6 +1016,7 @@ function buildRouteSpecLines(
     `- role: ${routeRoleSummary(page)}`,
     `- nav_label: ${page.navLabel}`,
     `- purpose: ${page.purpose}`,
+    ...seedAuthorityLines,
     `- opening_topology: ${routeOpeningTopology(page, enterpriseHomepage, surfaceMode)}`,
     `- section_cadence: ${sectionCadence}`,
     `- page_archetype: ${routePageArchetype(page, surfaceMode)}`,
@@ -1216,12 +1244,13 @@ export function buildWebsiteDesignSpecRouteExcerpt(params: WebsiteDesignSpecPara
     params.decision.pageBlueprints.find((item) => item.route === "/") ||
     params.decision.pageBlueprints[0];
   if (!page) return "";
+  const seedAuthorityLines = buildSeedAuthorityContractLines(params);
   return [
     `# Route Design Spec: ${page.route}`,
     `- selected_style: ${String(params.designHit?.name || params.designHit?.id || "runtime-selected-style").trim() || "runtime-selected-style"}`,
     `- website_surface_mode: ${websiteSurfaceMode}`,
     ...buildSurfaceVisualIdentityLines(params, websiteSurfaceMode),
-    ...buildRouteSpecLines(page, enterpriseHomepage, localeMode, websiteSurfaceMode, params.requirementText),
+    ...buildRouteSpecLines(page, enterpriseHomepage, localeMode, websiteSurfaceMode, params.requirementText, seedAuthorityLines),
     "- media_resource:",
     ...buildMediaResourceLines(page, enterpriseHomepage, websiteSurfaceMode),
   ].join("\n");
@@ -1246,9 +1275,10 @@ export function buildWebsiteDesignSpecMarkdown(params: WebsiteDesignSpecParams):
     const page = params.decision.pageBlueprints[index];
     return `- ${route} (${page?.navLabel || route})`;
   });
+  const seedAuthorityLines = buildSeedAuthorityContractLines(params);
 
   const routeSections = params.decision.pageBlueprints.map((page) =>
-    [`### ${page.route}`, ...buildRouteSpecLines(page, enterpriseHomepage, localeMode, websiteSurfaceMode, params.requirementText)].join("\n"),
+    [`### ${page.route}`, ...buildRouteSpecLines(page, enterpriseHomepage, localeMode, websiteSurfaceMode, params.requirementText, seedAuthorityLines)].join("\n"),
   );
   const mediaResources = buildWebsiteMediaResourceList(params).map(mediaResourceMarkdownSection);
 
@@ -1286,6 +1316,7 @@ export function buildWebsiteDesignSpecMarkdown(params: WebsiteDesignSpecParams):
     `- background_color: ${params.stylePreset.colors.background}`,
     `- typography: ${params.stylePreset.typography}`,
     ...buildSurfaceVisualIdentityLines(params, websiteSurfaceMode),
+    ...seedAuthorityLines,
     "",
     renderWebsiteArtifactGeneratorContract({
       mode: siteGeneratorMode,

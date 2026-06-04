@@ -8,6 +8,7 @@ import {
   listWebsiteSeedSkillIds,
   loadProjectSkill,
   loadProjectSkillBundle,
+  renderProjectSkillResourceContract,
   renderProjectSkillResourceIndex,
   resolveProjectSkillAlias,
   selectDocumentContentSkillsForIntent,
@@ -245,14 +246,21 @@ describe("project-skill-loader", () => {
       expect.arrayContaining(["--bg", "--surface", "--fg", "--muted", "--border", "--accent"]),
     );
     expect(skill.resourceIndex?.templateHtml?.responsiveBreakpoint).toBe("920px");
+    expect(skill.resourceIndex?.templateHtml?.structureExcerpt).toEqual(
+      expect.arrayContaining(['<header class="topnav" data-od-id="topnav">', "<nav>"]),
+    );
     expect(skill.resourceIndex?.checklist?.path).toBe("references/checklist.md");
     expect(skill.resourceIndex?.checklist?.p0Count).toBeGreaterThanOrEqual(8);
     expect(skill.resourceIndex?.checklist?.criticalChecks).toEqual(
       expect.arrayContaining(["No raw hex outside `:root` token block.", "No invented metrics."]),
     );
+    expect(skill.resourceIndex?.checklist?.mustPassExcerpt?.[0]).toContain("No raw hex outside `:root` token block.");
     expect(renderProjectSkillResourceIndex(skill.resourceIndex)).toContain("## Seed Resource Index");
     expect(renderProjectSkillResourceIndex(skill.resourceIndex)).toContain("assets/template.html: reusable HTML seed");
     expect(renderProjectSkillResourceIndex(skill.resourceIndex)).toContain("references/checklist.md: self-review gates");
+    expect(renderProjectSkillResourceContract(skill.resourceIndex)).toContain("## Seed Structural Contract");
+    expect(renderProjectSkillResourceContract(skill.resourceIndex)).toContain("Preserve this seed's opening discipline");
+    expect(renderProjectSkillResourceContract(skill.resourceIndex)).toContain("### checklist excerpt");
   });
 
   it("selects seed skills by workflow intent instead of loading all seeds", async () => {

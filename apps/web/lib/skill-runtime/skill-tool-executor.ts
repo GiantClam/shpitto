@@ -43,6 +43,7 @@ import {
   listDocumentContentSkillIds,
   listWebsiteSeedSkillIds,
   loadProjectSkill,
+  renderProjectSkillResourceContract,
   renderProjectSkillResourceIndex,
   selectDocumentContentSkillsForIntent,
   selectWebsiteSeedSkillsForIntent,
@@ -7341,6 +7342,7 @@ export async function renderWebsiteSeedSkillSidecarGuidance(
     try {
       const skill = await loadProjectSkill(selection.id);
       const resourceIndex = renderProjectSkillResourceIndex(skill.resourceIndex);
+      const resourceContract = renderProjectSkillResourceContract(skill.resourceIndex);
       blocks.push(
         [
           `## seed:${skill.id}`,
@@ -7350,6 +7352,8 @@ export async function renderWebsiteSeedSkillSidecarGuidance(
             ? `- rollout_status: ${skill.websiteMetadata.activation.rolloutStatus}`
             : "",
           resourceIndex,
+          resourceContract,
+          resourceContract ? "" : undefined,
           "### Contract excerpt",
           clipRuntimeRequirement(skill.content, Math.max(900, Math.floor(maxChars / Math.max(1, uniqueSelections.length)))),
         ]

@@ -167,6 +167,9 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
     });
 
     expect(markdown).toContain("site_generator_mode: hybrid");
+    expect(markdown).toContain("seed_authority_mode: seed-authoritative");
+    expect(markdown).toContain("selected_seed_contracts: open-design-web-prototype, docs-reference-template");
+    expect(markdown).toContain("heuristic_fallback_rule: local contentSkeleton and componentMix are fallback planning hints only.");
     expect(markdown).toContain("Open Design owns visual direction and module rhythm");
     expect(markdown).toContain("HTML Anything owns concrete HTML/CSS template discipline");
     expect(markdown).toContain("functionality_port_scope: port generation functionality, template discipline");
@@ -876,6 +879,7 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
 
     expect(summary?.route).toBe("/products");
     expect(summary?.routeContract.join("\n")).toContain("route=/products");
+    expect(summary?.routeContract.join("\n")).toContain("seedAuthority=seed-authoritative");
     expect(summary?.openingFamily).toBe("catalog");
     expect(summary?.inheritedTokens).toEqual(expect.arrayContaining(["#2563EB", "#22C55E"]));
     expect(summary?.inheritedTerminology).toContain("corporate-b2b-site");
@@ -1394,6 +1398,26 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
     expect(excerpt).toContain("this route is single-language Chinese-first");
     expect(excerpt).not.toContain("keep locale button labels literal `EN` and `ZH`");
     expect(excerpt).not.toContain("route HTML should rely on stable `data-i18n` keys plus `/i18n/messages.en.json`");
+  });
+
+  it("marks route excerpts as seed-authoritative when selected frontend seeds exist", () => {
+    const decision = buildMockDecision();
+    decision.pageBlueprints = decision.pageIntents;
+
+    const excerpt = buildWebsiteDesignSpecRouteExcerpt(
+      {
+        decision,
+        requirementText: decision.requirementText,
+        stylePreset: DEFAULT_STYLE_PRESET,
+        websiteSurfaceMode: "corporate-b2b-site",
+        selectedSeedSkillIds: ["open-design-web-prototype", "docs-reference-template"],
+      },
+      "/products",
+    );
+
+    expect(excerpt).toContain("seed_authority_mode: seed-authoritative");
+    expect(excerpt).toContain("selected_seed_contracts: open-design-web-prototype, docs-reference-template");
+    expect(excerpt).toContain("local contentSkeleton and componentMix are fallback planning hints only");
   });
 
   it("lets explicit Chinese-first locale contracts beat bilingual-looking workflow noise", () => {

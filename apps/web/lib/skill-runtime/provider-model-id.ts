@@ -10,7 +10,7 @@ export function normalizeProviderModelId(
   const fallback = String(fallbackModel || DEFAULT_OPENAI_COMPAT_MODEL).trim() || DEFAULT_OPENAI_COMPAT_MODEL;
   const candidate = String(requestedModel || "").trim() || fallback;
 
-  if (provider === "crazyroute") {
+  if (provider === "pptoken" || provider === "crazyroute") {
     const normalized = candidate.replace(/^openai\//i, "").trim();
     return normalized || fallback;
   }
