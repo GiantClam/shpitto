@@ -37,21 +37,33 @@ describe("provider-lock", () => {
     });
   });
 
-  it("ignores provider order and stays on pptoken by default", () => {
+  it("keeps pptoken locked first and builds a fallback chain from provider order", () => {
     delete process.env.LLM_PROVIDER;
     process.env.LLM_PROVIDER_ORDER = "pptoken,aiberm,crazyrouter";
     process.env.PPTOKEN_API_KEY = "test-pptoken-key";
     process.env.AIBERM_API_KEY = "test-aiberm-key";
     process.env.CRAZYROUTE_API_KEY = "test-crazyroute-key";
 
-    expect(resolveRunProviderLock()).toEqual({
-      provider: "pptoken",
-      model: "gpt-5.4-mini",
-      reason: "default_locked_pptoken",
-    });
+    expect(resolveRunProviderLocks()).toEqual([
+      {
+        provider: "pptoken",
+        model: "gpt-5.4-mini",
+        reason: "default_locked_pptoken",
+      },
+      {
+        provider: "aiberm",
+        model: "gpt-5.4-mini",
+        reason: "fallback_chain_aiberm",
+      },
+      {
+        provider: "crazyroute",
+        model: "gpt-5.4-mini",
+        reason: "fallback_chain_crazyroute",
+      },
+    ]);
   });
 
-  it("returns only the manually forced provider without fallback chain", () => {
+  it("treats LLM_PROVIDER as a preferred provider while preserving fallback chain", () => {
     process.env.LLM_PROVIDER = "aiberm";
     process.env.LLM_PROVIDER_ORDER = "pptoken,aiberm,crazyrouter";
     process.env.LLM_MODEL = "gpt-5.4-mini";
@@ -63,9 +75,42 @@ describe("provider-lock", () => {
       {
         provider: "aiberm",
         model: "gpt-5.4-mini",
-        reason: "manual_locked",
+        reason: "env_preferred_aiberm",
+      },
+      {
+        provider: "pptoken",
+        model: "gpt-5.4-mini",
+        reason: "fallback_chain_pptoken",
+      },
+      {
+        provider: "crazyroute",
+        model: "gpt-5.4-mini",
+        reason: "fallback_chain_crazyroute",
       },
     ]);
+  });
+
+  it("still allows SKILL_NATIVE_PROVIDER_LOCK to force a single provider", () => {
+    const previousSkillNativeProviderLock = process.env.SKILL_NATIVE_PROVIDER_LOCK;
+    try {
+      process.env.SKILL_NATIVE_PROVIDER_LOCK = "aiberm";
+      process.env.LLM_PROVIDER_ORDER = "pptoken,aiberm,crazyrouter";
+      process.env.LLM_MODEL = "gpt-5.4-mini";
+      process.env.PPTOKEN_API_KEY = "test-pptoken-key";
+      process.env.AIBERM_API_KEY = "test-aiberm-key";
+      process.env.CRAZYROUTE_API_KEY = "test-crazyroute-key";
+
+      expect(resolveRunProviderLocks()).toEqual([
+        {
+          provider: "aiberm",
+          model: "gpt-5.4-mini",
+          reason: "manual_locked",
+        },
+      ]);
+    } finally {
+      if (previousSkillNativeProviderLock === undefined) delete process.env.SKILL_NATIVE_PROVIDER_LOCK;
+      else process.env.SKILL_NATIVE_PROVIDER_LOCK = previousSkillNativeProviderLock;
+    }
   });
 
   it("accepts crazyrouter spelling for manual provider aliases", () => {
@@ -95,5 +140,19 @@ describe("provider-lock", () => {
       model: "gpt-5.4-mini",
       reason: "default_locked_pptoken_missing_key",
     });
+  });
+
+  it("prepends pptoken even when provider order omits it so fallback order stays deterministic", () => {
+    delete process.env.LLM_PROVIDER;
+    process.env.LLM_PROVIDER_ORDER = "aiberm,crazyrouter";
+    process.env.PPTOKEN_API_KEY = "test-pptoken-key";
+    process.env.AIBERM_API_KEY = "test-aiberm-key";
+    process.env.CRAZYROUTE_API_KEY = "test-crazyroute-key";
+
+    expect(resolveRunProviderLocks().map((lock) => lock.provider)).toEqual([
+      "pptoken",
+      "aiberm",
+      "crazyroute",
+    ]);
   });
 });

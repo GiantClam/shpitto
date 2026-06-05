@@ -350,6 +350,12 @@ function buildSpecializedRoutePurpose(route: string, fallback = ""): string {
   if (/(?:^|\/)(?:casux-)?advocacy(?:\/|$)/i.test(normalizedRoute)) {
     return `Treat ${label} as a coalition, participation, or action-framework route. Open with a route-owned advocacy lead, show the network or participation model, then move into action framework, proof, and next involvement paths. Do not fall back to a generic split hero with an aside panel.`;
   }
+  if (/(?:information-platform|resource|resources|downloads?|library|materials?)(?:[-_\s/]|$)/i.test(normalizedRoute)) {
+    return `Treat ${label} as a public information library or institutional materials directory. The first visible section root must use a route-owned class such as information-platform-lead, resource-collection-lead, or knowledge-hub-lead; keep category cues, quick access, standards/research/update framing, and any supporting proof inside that same opening surface; name copy clusters with route-owned classes such as collection-title, collection-lead, collection-actions, knowledge-hub-title, or knowledge-hub-actions; then move into curated ledgers or resource rows. Do not stage the first screen as a generic split hero, hero-copy plus hero-aside rail, promotional two-column masthead, or any opening aside, and do not invent /blog/{slug}/ detail pages unless the source material explicitly requires them.`;
+  }
+  if (/(?:research|standards?|documents?|publications?|reports?)(?:[-_\s/]|$)/i.test(normalizedRoute)) {
+    return `Treat ${label} as a research, standards, or evidence collection route. The first visible section root must use a route-owned research index lead such as research-index-lead, knowledge-hub-lead, or resource-collection-lead; keep scope notes, topic framing, evidence context, and any supporting proof inside that same opening surface; name copy clusters with route-owned classes such as collection-title, collection-lead, collection-actions, knowledge-hub-title, or knowledge-hub-actions; then move into publication ledgers, summaries, or evidence rows. Do not stage the first screen as a generic split hero, hero-copy plus hero-aside rail, promotional two-column masthead, or any opening aside, and do not invent /blog/{slug}/ detail pages unless the source material explicitly requires them.`;
+  }
   if (/(?:^|\/)(?:case-studies|cases)(?:\/|$)/i.test(normalizedRoute)) {
     return `Treat ${label} as an evidence-led case route. Open with a route-owned evidence header, lead quickly into scenario or outcome proof, and keep the page grounded in concrete case signals rather than a generic split hero with an aside panel.`;
   }
@@ -357,7 +363,7 @@ function buildSpecializedRoutePurpose(route: string, fallback = ""): string {
 }
 
 function isSpecializedRoutePurpose(value: string): boolean {
-  return /treat\s+.+\s+as\s+(?:a narrative and content-architecture route|an implementation and execution route|a coalition, participation, or action-framework route|an evidence-led case route)\./i.test(
+  return /treat\s+.+\s+as\s+(?:a narrative and content-architecture route|an implementation and execution route|a coalition, participation, or action-framework route|a public information library or institutional materials directory|a research, standards, or evidence collection route|an evidence-led case route)\./i.test(
     String(value || ""),
   );
 }
@@ -769,6 +775,8 @@ function ensureCanonicalPromptHasBilingualContract(
           `- Initial visible-language contract: the first generated website pass must render ${visibleLanguageLabel} visible copy only across nav, hero, CTAs, footer, forms, and core non-blog site sections. Do not emit visible Chinese/English pairs in the same heading, paragraph, card, CTA, nav item, footer, or article body.`,
           "- Initial implementation contract: generate stable `data-i18n` keys on translatable nodes plus `/i18n/messages.en.json` and `/i18n/messages.zh-CN.json` resource files. The alternate-locale file may start as a key-complete draft, but do not ship a visible EN/ZH switch unless the alternate locale already contains real translated copy for the core keys used on the page.",
           `- Keep the initial HTML shell ${strategyLabel} and lightweight. Alternate-language delivery should come from i18n resource files rather than duplicating page content inside HTML attributes or sibling DOM nodes.`,
+          "- Do not implement bilingual UI with `.t-zh` / `.t-en` span pairs, duplicated zh/en paragraphs, `data-alt-zh` / `data-alt-en`, or any route-local alternate-language mirror attributes.",
+          "- Homepage, shared header/nav/footer, CTAs, forms, and interior-route openings all follow the same `data-i18n` + shared catalog contract. Route / does not get a special twin-node bilingual shell.",
           "- Add EN/ZH switch controls only when the runtime is prepared to swap visible copy via the i18n resource files while preserving the current route and language preference.",
           "- Blog/content workflows stay single-language in the first pass. Do not require EN/ZH switching inside blog cards, blog index pages, or blog/article detail pages during initial generation.",
           `- If a real i18n-backed language switch cannot be completed, keep the initial website ${visibleLanguageLabel.toLowerCase()}-only with the i18n resource files in place. Do not fake bilingual support with visible \`Chinese / English\` copy pairs.`,

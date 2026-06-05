@@ -9,6 +9,7 @@ export type ProviderLock = {
 };
 
 const DEFAULT_LOCKED_PROVIDER: ProviderName = "pptoken";
+const DEFAULT_PROVIDER_ORDER: ProviderName[] = ["pptoken", "aiberm", "crazyroute"];
 
 function resolveSharedRequestedModel(preferredModel?: string): string {
   const shared = String(
@@ -30,27 +31,51 @@ function buildProviderLock(provider: ProviderName, preferredModel?: string, reas
   };
 }
 
+function resolveDefaultProviderOrder(): ProviderName[] {
+  const configured = String(process.env.LLM_PROVIDER_ORDER || "").trim();
+  const normalized = configured
+    .split(/[,\s]+/g)
+    .map((token) => normalizeProvider(token))
+    .filter((provider): provider is ProviderName => !!provider);
+  const ordered = [
+    DEFAULT_LOCKED_PROVIDER,
+    ...normalized,
+    ...DEFAULT_PROVIDER_ORDER,
+  ].filter((provider, index, list) => list.indexOf(provider) === index);
+  return ordered.length > 0 ? ordered : [...DEFAULT_PROVIDER_ORDER];
+}
+
+function reorderProvidersByPreference(
+  providers: ProviderName[],
+  preferredProvider: ProviderName | undefined,
+): ProviderName[] {
+  if (!preferredProvider || providers.length <= 1) return providers;
+  const preferredIndex = providers.indexOf(preferredProvider);
+  if (preferredIndex <= 0) return providers;
+  return [providers[preferredIndex], ...providers.slice(0, preferredIndex), ...providers.slice(preferredIndex + 1)];
+}
+
 export function resolveRunProviderLocks(preferred?: { provider?: string; model?: string }): ProviderLock[] {
   const preferredModel = String(preferred?.model || "").trim();
-  const forcedProvider = normalizeProvider(
-    preferred?.provider ||
-      process.env.SKILL_NATIVE_PROVIDER_LOCK ||
-      process.env.LLM_PROVIDER ||
-      process.env.LLM_PROVIDER_DEFAULT ||
-      "",
-  );
+  const forcedProvider = normalizeProvider(preferred?.provider || process.env.SKILL_NATIVE_PROVIDER_LOCK || "");
+  const preferredProvider = normalizeProvider(process.env.LLM_PROVIDER || process.env.LLM_PROVIDER_DEFAULT || "");
 
   if (forcedProvider) {
     return [buildProviderLock(forcedProvider, preferredModel, "manual_locked")];
   }
 
-  return [
-    buildProviderLock(
-      DEFAULT_LOCKED_PROVIDER,
-      preferredModel,
-      hasProviderKey(DEFAULT_LOCKED_PROVIDER) ? "default_locked_pptoken" : "default_locked_pptoken_missing_key",
-    ),
-  ];
+  const orderedProviders = reorderProvidersByPreference(resolveDefaultProviderOrder(), preferredProvider);
+  return orderedProviders.map((provider, index) => {
+    const reason =
+      index === 0
+        ? provider === DEFAULT_LOCKED_PROVIDER
+          ? hasProviderKey(DEFAULT_LOCKED_PROVIDER)
+            ? "default_locked_pptoken"
+            : "default_locked_pptoken_missing_key"
+          : `env_preferred_${provider}`
+        : `fallback_chain_${provider}`;
+    return buildProviderLock(provider, preferredModel, reason);
+  });
 }
 
 const normalizeProvider = (value: string): ProviderName | undefined => {

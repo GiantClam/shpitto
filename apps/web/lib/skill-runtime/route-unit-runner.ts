@@ -1,6 +1,10 @@
 import type { AgentState } from "../agent/graph.ts";
 import type { SkillRuntimeExecutionSummary, SkillRuntimeStepSnapshot } from "./executor.ts";
-import { GenerationContractViolationError, type ContractVerificationResult } from "./contract-violation.ts";
+import {
+  GenerationContractViolationError,
+  type ContractVerificationResult,
+  type RouteUnitVerificationRecord,
+} from "./contract-violation.ts";
 import { verifyRouteUnitArtifacts } from "./contract-verifier.ts";
 import type { ImmutableGenerationContract } from "./generation-contract.ts";
 import { normalizeWebsiteGenerationContract } from "./generation-contract.ts";
@@ -171,6 +175,46 @@ function normalizeGeneratedFileContent(params: {
   return content;
 }
 
+function parseJsonObjectContent(content: string): Record<string, unknown> | null {
+  try {
+    const parsed = JSON.parse(String(content || ""));
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+    return parsed as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function deepMergeJsonObjects(
+  base: Record<string, unknown>,
+  incoming: Record<string, unknown>,
+): Record<string, unknown> {
+  const next: Record<string, unknown> = { ...base };
+  for (const [key, value] of Object.entries(incoming)) {
+    const prior = next[key];
+    if (
+      prior &&
+      value &&
+      typeof prior === "object" &&
+      typeof value === "object" &&
+      !Array.isArray(prior) &&
+      !Array.isArray(value)
+    ) {
+      next[key] = deepMergeJsonObjects(prior as Record<string, unknown>, value as Record<string, unknown>);
+      continue;
+    }
+    next[key] = value;
+  }
+  return next;
+}
+
+function mergeRouteScopedJsonCatalog(existingContent: string, incomingContent: string): string {
+  const existing = parseJsonObjectContent(existingContent);
+  const incoming = parseJsonObjectContent(incomingContent);
+  if (!existing || !incoming) return incomingContent;
+  return JSON.stringify(deepMergeJsonObjects(existing, incoming), null, 2);
+}
+
 function mergeGeneratedFilesIntoProject(params: {
   project: any;
   files: Array<{ path?: string; content?: string; type?: string }>;
@@ -182,13 +226,19 @@ function mergeGeneratedFilesIntoProject(params: {
   for (const file of params.files || []) {
     const normalizedPath = normalizePath(String(file?.path || ""));
     if (!normalizedPath || normalizedPath === "/") continue;
+    const normalizedContent = normalizeGeneratedFileContent({
+      path: normalizedPath,
+      content: String(file?.content || ""),
+      contract: params.contract,
+    });
+    const existing = filesByPath.get(normalizedPath);
+    const mergedContent =
+      normalizedPath === "/i18n/messages.en.json" || normalizedPath === "/i18n/messages.zh-CN.json"
+        ? mergeRouteScopedJsonCatalog(String(existing?.content || ""), normalizedContent)
+        : normalizedContent;
     filesByPath.set(normalizedPath, {
       path: normalizedPath,
-      content: normalizeGeneratedFileContent({
-        path: normalizedPath,
-        content: String(file?.content || ""),
-        contract: params.contract,
-      }),
+      content: mergedContent,
       type: String(file?.type || ""),
     });
   }
@@ -231,7 +281,7 @@ function resolveRouteScopedTargetFiles(contract: ImmutableGenerationContract, ro
   )
     .trim()
     .toLowerCase();
-  if (normalizedRoute === "/" && localeMode === "bilingual") {
+  if (localeMode === "bilingual") {
     sharedTargets.push("/i18n/messages.en.json", "/i18n/messages.zh-CN.json");
   }
   return [htmlPath, ...sharedTargets];
@@ -258,6 +308,9 @@ function buildRepairHints(record: { violationCode?: string; evidence?: string[];
   }
   if (record.violationCode === "locale_shell_mismatch") {
     hints.push("Preserve the locale shell exactly and emit the required locale controls/catalogs.");
+    hints.push("Keep exactly one visible language at a time; remove visible Chinese/English twin spans, duplicated bilingual paragraphs, and `.t-zh` / `.t-en` node pairs.");
+    hints.push("Rewrite visible shell copy to use stable `data-i18n` keys backed by `/i18n/messages.en.json` and `/i18n/messages.zh-CN.json` instead of `data-alt-zh`, `data-alt-en`, `data-zh`, or `data-en` attributes.");
+    hints.push("Use `data-i18n-attr` for translated attributes such as `alt`, `title`, `placeholder`, `content`, or `aria-label`.");
   }
   for (const evidence of normalizeStringList(record.evidence).slice(0, 2)) {
     hints.push(`Verifier evidence: ${evidence}`);
@@ -295,6 +348,42 @@ function chunkArray<T>(items: T[], chunkSize: number): T[][] {
     chunks.push(items.slice(index, index + size));
   }
   return chunks;
+}
+
+function buildProvisionalPassedRouteRecord(input: GenerationUnitInput): RouteUnitVerificationRecord {
+  const route = String(input.route || "/").trim() || "/";
+  const htmlPath = normalizePath(String((input.context || {}).htmlPath || (route === "/" ? "/index.html" : `${route}/index.html`)));
+  return {
+    route,
+    htmlPath,
+    status: "passed",
+    checkedFiles: input.targetFiles.map((target) => normalizePath(target)),
+    issues: [],
+    violatedFields: [],
+    evidence: [],
+  };
+}
+
+function buildSingleRouteContract(contract: ImmutableGenerationContract, route: string): ImmutableGenerationContract {
+  const normalizedRoute = String(route || "/").trim() || "/";
+  return {
+    ...cloneJson(contract),
+    routeUnitContracts: contract.routeUnitContracts.filter((item) => item.route === normalizedRoute),
+  };
+}
+
+function buildFailedRouteRecord(input: GenerationUnitInput, message: string): RouteUnitVerificationRecord {
+  const route = String(input.route || "/").trim() || "/";
+  const htmlPath = normalizePath(String((input.context || {}).htmlPath || (route === "/" ? "/index.html" : `${route}/index.html`)));
+  return {
+    route,
+    htmlPath,
+    status: "artifact_failure",
+    checkedFiles: input.targetFiles.map((target) => normalizePath(target)),
+    issues: [message],
+    violatedFields: ["route_unit_generation"],
+    evidence: [message],
+  };
 }
 
 export async function runV2RouteUnitRuntime(params: V2RouteUnitRuntimeParams): Promise<V2RouteUnitRuntimeResult> {
@@ -374,28 +463,86 @@ export async function runV2RouteUnitRuntime(params: V2RouteUnitRuntimeParams): P
       savedProject: matchingSavedContract ? savedProject : undefined,
       savedRouteVerifications: matchingSavedContract ? savedRouteVerifications : [],
     });
+    const checkpointRouteResults = new Map<string, RouteUnitVerificationRecord>(
+      (matchingSavedContract ? savedRouteVerifications : [])
+        .map(
+          (record) =>
+            [String(record.route || "").trim(), cloneJson(record) as RouteUnitVerificationRecord] as [
+              string,
+              RouteUnitVerificationRecord,
+            ],
+        )
+        .filter(([route]) => Boolean(route)),
+    );
     let completedUnits = 0;
     const concurrency = Math.max(1, Number(process.env.SHPITTO_ROUTE_UNIT_CONCURRENCY || 3));
     for (const inputChunk of chunkArray(pendingInputs, concurrency)) {
       const results = await Promise.all(
-        inputChunk.map(async (input) => ({
-          input,
-          result: await params.unitWorker!.runUnit(input),
-        })),
+        inputChunk.map(async (input) => {
+          try {
+            return {
+              input,
+              result: await params.unitWorker!.runUnit(input),
+            };
+          } catch (error) {
+            return {
+              input,
+              error,
+            };
+          }
+        }),
       );
-      for (const { input, result } of results) {
+      const failedMessages: string[] = [];
+      for (const entry of results) {
+        const input = entry.input;
+        const result = (entry as { result?: Awaited<ReturnType<GenerationWorkerAdapter["runUnit"]>> }).result;
+        const executionError = (entry as { error?: unknown }).error;
+        const failedResult = result?.status === "failed" ? result : null;
+        if (executionError || failedResult) {
+          const message =
+            executionError instanceof Error
+              ? executionError.message
+              : failedResult?.issues?.join("; ") || failedResult?.summary || `Route unit ${input.unitId} failed.`;
+          checkpointRouteResults.set(String(input.route || "").trim(), buildFailedRouteRecord(input, message));
+          failedMessages.push(`${input.unitId}: ${message}`);
+          continue;
+        }
+        if (!result) {
+          const message = `Route unit ${input.unitId} returned no result.`;
+          checkpointRouteResults.set(String(input.route || "").trim(), buildFailedRouteRecord(input, message));
+          failedMessages.push(`${input.unitId}: ${message}`);
+          continue;
+        }
         if (result.status !== "passed") {
-          throw new Error(result.issues?.join("; ") || result.summary || `Route unit ${input.unitId} failed.`);
+          const message = result.issues?.join("; ") || result.summary || `Route unit ${input.unitId} failed.`;
+          checkpointRouteResults.set(String(input.route || "").trim(), buildFailedRouteRecord(input, message));
+          failedMessages.push(`${input.unitId}: ${message}`);
+          continue;
         }
         project = mergeGeneratedFilesIntoProject({
           project,
           files: result.files,
           contract,
         });
-        completedUnits += 1;
+        const singleRouteVerification = verifyRouteUnitArtifacts({
+          contract: buildSingleRouteContract(contract, String(input.route || "/")),
+          files: resolveGeneratedFiles(project),
+          baselineFiles: resolveGeneratedFiles(params.baselineProject),
+        });
+        const routeRecord =
+          singleRouteVerification.status === "passed"
+            ? buildProvisionalPassedRouteRecord(input)
+            : Array.isArray(singleRouteVerification.routeResults) && singleRouteVerification.routeResults.length > 0
+              ? singleRouteVerification.routeResults[singleRouteVerification.routeResults.length - 1]
+              : buildFailedRouteRecord(
+                  input,
+                  singleRouteVerification.issues?.join("; ") || singleRouteVerification.violationCode || "Route verification failed.",
+                );
+        checkpointRouteResults.set(routeRecord.route, routeRecord);
+        await writeRouteUnitVerificationCheckpoint(params.checkpointDir, routeRecord);
         await params.onStep?.({
           stepKey: String(input.route || input.unitId),
-          stepIndex: completedUnits,
+          stepIndex: completedUnits + 1,
           totalSteps: Math.max(1, pendingInputs.length),
           status: "generated",
           files: Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [],
@@ -406,6 +553,30 @@ export async function runV2RouteUnitRuntime(params: V2RouteUnitRuntimeParams): P
               ? "zh-CN"
               : "en",
         });
+        if (routeRecord.status === "passed") {
+          completedUnits += 1;
+        }
+      }
+      await writeGeneratedProjectCheckpoint(params.checkpointDir, project);
+      if (failedMessages.length > 0) {
+        const generatedFiles = resolveGeneratedFiles(project).map((file) => String(file?.path || ""));
+        const execution: SkillRuntimeExecutionSummary = {
+          state: {
+            ...(params.state as any),
+            phase: "end",
+            site_artifacts: project,
+            project_json: project,
+          } as any,
+          assistantText: `Partially generated route units before failure.\n${failedMessages.join("\n")}`.trim(),
+          actions: [],
+          pageCount: Array.isArray(project?.pages) ? project.pages.length : 0,
+          fileCount: generatedFiles.length,
+          generatedFiles,
+          phase: "end",
+          completedPhases: [],
+        };
+        await writeGenerationExecutionCheckpoint(params.checkpointDir, execution);
+        throw new Error(failedMessages.join("; "));
       }
     }
 
@@ -435,13 +606,28 @@ export async function runV2RouteUnitRuntime(params: V2RouteUnitRuntimeParams): P
       files: resolveGeneratedFiles(project),
       baselineFiles: resolveGeneratedFiles(params.baselineProject),
     });
-    if (verification.status !== "passed" && Array.isArray(verification.routeResults) && verification.routeResults.length > 0) {
-      const retryableRecords = verification.routeResults.filter(
-        (record) =>
-          record.status === "contract_violation" &&
-          ["homepage_topology_mismatch", "homepage_semantic_mismatch", "shared_shell_drift", "locale_shell_mismatch"].includes(
-            String(record.violationCode || ""),
-          ),
+    if (verification.status !== "passed") {
+      const routeLevelRecords = Array.isArray(verification.routeResults) ? verification.routeResults : [];
+      const topLevelRouteRecord =
+        verification.scope === "route" && String(verification.route || "").trim()
+          ? [verification as ContractVerificationResult & { route: string }]
+          : [];
+      const retryableCandidates: Array<{ status?: string; route?: string; violationCode?: string; evidence?: string[] }> = [
+        ...routeLevelRecords,
+        ...topLevelRouteRecord,
+      ];
+      const retryableRecords = Array.from(
+        new Map(
+          retryableCandidates
+            .filter(
+              (record) =>
+                record.status === "contract_violation" &&
+                ["homepage_topology_mismatch", "homepage_semantic_mismatch", "shared_shell_drift", "locale_shell_mismatch"].includes(
+                  String(record.violationCode || ""),
+                ),
+            )
+            .map((record) => [`${String(record.route || "").trim()}::${String(record.violationCode || "").trim()}`, record]),
+        ).values(),
       );
       if (retryableRecords.length > 0) {
         const inputByRoute = new Map(routeInputs.map((input) => [String(input.route || "").trim(), input]));
@@ -483,6 +669,7 @@ export async function runV2RouteUnitRuntime(params: V2RouteUnitRuntimeParams): P
     }
     await writeGenerationVerificationCheckpoint(params.checkpointDir, verification);
     for (const record of verification.routeResults || []) {
+      checkpointRouteResults.set(String(record.route || "").trim(), record);
       await writeRouteUnitVerificationCheckpoint(params.checkpointDir, record);
     }
     if (verification.status !== "passed") {

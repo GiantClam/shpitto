@@ -656,11 +656,16 @@ Definition: bilingual means one active language at a time with a working languag
 
 1. Define default and fallback language from the user/session context (default `en`, support `zh` unless the brief makes Chinese primary).
 2. Render only the default language as visible text in the initial HTML. Store the alternate language in `data-i18n-*` attributes, an in-page JS dictionary, generated `i18n/messages.*.json`, or hidden templates that are not visually exposed.
+   - Do not use visible `.t-zh` / `.t-en` twin spans, duplicated zh/en paragraphs, slash-separated bilingual labels, or route-local mirrored attributes such as `data-alt-zh` / `data-alt-en` as the primary bilingual implementation.
 3. Build a unified i18n key structure (page-level + section-level keys).
 4. Add language switch in the top navigation (EN / ZH) only when switching actually replaces visible copy.
    - The switch must be a real visible control in the shared header/navigation, not only a JavaScript function.
-   - Required implementation protocol: `<button data-locale-toggle data-locale="zh-CN">ZH</button>` and `<button data-locale-toggle data-locale="en">EN</button>`, with translatable nodes carrying `data-i18n`, `data-i18n-zh`, and `data-i18n-en`.
-   - Do not use a different selector or data attribute name. `data-i18n-text*`, `data-language-toggle`, `data-lang-switch`, `data-en`, and `data-zh` are invalid for generated output.
+   - Accepted shared-shell implementations:
+     - explicit two-button protocol: `<button data-locale-toggle data-locale="zh-CN">ZH</button>` and `<button data-locale-toggle data-locale="en">EN</button>`
+     - route-preserving single-button protocol: `<button data-locale-switch type="button">EN</button>` with runtime state switching between `zh-CN` and `en`
+   - Both variants must keep the locale control in a dedicated utility wrapper beside the primary nav, preserve the current route, and drive visible copy from stable `data-i18n` keys plus generated `/i18n/messages.en.json` and `/i18n/messages.zh-CN.json` catalogs.
+   - Translated attributes such as `alt`, `title`, `placeholder`, `content`, and `aria-label` must stay on the keyed node and use `data-i18n-attr`; do not mint route-specific alternate-language attributes.
+   - Do not use ad-hoc selector names such as `data-i18n-text*`, `data-language-toggle`, `data-lang-switch`, `data-en`, or `data-zh` for the visible switch contract.
    - Never ship switch JavaScript whose queried controls do not exist in the HTML.
 5. Ensure all core copy has bilingual mapping (nav, headings, CTA, form labels, footer, Blog/content cards, and detail/article pages).
 6. Preserve the current route on language switch; only content language changes.
@@ -672,7 +677,7 @@ Definition: bilingual means one active language at a time with a working languag
 Outputs:
 
 - `i18n/messages.en.json`
-- `i18n/messages.zh.json`
+- `i18n/messages.zh-CN.json`
 - `i18n/README.md` (key naming and contribution flow)
 
 Quality gate:
@@ -705,6 +710,7 @@ i18n requirements:
      `/i18n/messages.en.json` and `/i18n/messages.zh-CN.json`; do not emit
      inline `data-i18n-zh` / `data-i18n-en` values across the final corporate
      HTML unless a route-specific exception is explicitly required.
+   - Homepage override for this project: route `/` uses the same `data-i18n` + shared catalog contract as interior routes. Do not fall back to a special homepage-only `.t-zh` / `.t-en` shell.
 3. The default language must render without JavaScript. JavaScript may enhance switching by replacing text from an in-page dictionary or generated i18n files.
 4. Switching language must preserve the current route, active nav state, form accessibility labels, and persisted language preference.
    - The shared `/script.js` must bind click handlers to the same selector used by the header control, update active/pressed state, update `html[lang]`, and persist preference.

@@ -889,6 +889,69 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
     });
   });
 
+  it("pushes information-platform collection openings into the compact route-unit summary", () => {
+    const decision = buildMockDecision();
+    decision.requirementText =
+      "Create an institutional content hub with Home, Research Center, and Information Platform. Keep collection routes as public resource directories, not marketing heroes.";
+    decision.routes = ["/", "/casux-research-center", "/casux-information-platform"];
+    decision.navLabels = ["Home", "Research", "Information"];
+    decision.pageIntents = [
+      {
+        route: "/",
+        navLabel: "Home",
+        purpose: "Official homepage and institutional overview.",
+        source: "prompt_contract",
+        pageKind: "home",
+        responsibility: "Homepage",
+        contentSkeleton: ["Institutional masthead", "Capability shelves", "CTA"],
+        componentMix: { hero: 16, feature: 18, grid: 14, proof: 18, form: 6, cta: 12 },
+        constraints: [],
+      },
+      {
+        route: "/casux-research-center",
+        navLabel: "Research",
+        purpose: "Research collection route.",
+        source: "prompt_contract",
+        pageKind: "casux_fullflow_live_smoke",
+        responsibility: "Research library",
+        contentSkeleton: ["Research lead", "Topic navigator", "Publication ledger"],
+        componentMix: { hero: 10, feature: 12, grid: 24, proof: 16, form: 0, cta: 10 },
+        constraints: [],
+      },
+      {
+        route: "/casux-information-platform",
+        navLabel: "Information",
+        purpose: "Information platform route.",
+        source: "prompt_contract",
+        pageKind: "casux_fullflow_live_smoke",
+        responsibility: "Information platform",
+        contentSkeleton: ["Information lead", "Collection navigator", "Resource ledger"],
+        componentMix: { hero: 10, feature: 12, grid: 24, proof: 16, form: 0, cta: 10 },
+        constraints: [],
+      },
+    ] as any;
+    decision.pageBlueprints = decision.pageIntents;
+
+    const summary = buildRouteUnitContractSummary(
+      {
+        decision,
+        requirementText: decision.requirementText,
+        stylePreset: DEFAULT_STYLE_PRESET,
+        websiteSurfaceMode: "content-hub-site",
+      },
+      "/casux-information-platform",
+    );
+
+    expect(summary?.openingFamily).toBe("collection");
+    expect(summary?.openingTopology).toContain("information-platform lead");
+    expect(summary?.routeContract.join("\n")).toContain("routeOwnedOpening=information-platform-lead");
+    expect(summary?.routeContract.join("\n")).toContain("openingRootClass=first visible <section> root must include information-platform-lead");
+    expect(summary?.routeContract.join("\n")).toContain("openingLayout=one route-owned collection/index surface");
+    expect(summary?.routeContract.join("\n")).toContain("openingMarkup=no <aside> inside the opening band");
+    expect(summary?.routeContract.join("\n")).toContain("openingBan=no hero");
+    expect(summary?.routeContract.join("\n")).toContain("openingIdentity=public information library or materials directory");
+  });
+
   it("builds a synthetic route-unit summary for blog detail routes instead of falling back to home", () => {
     const decision = buildMockDecision();
     decision.pageBlueprints = decision.pageIntents;
@@ -1244,7 +1307,7 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
       } as any,
     }, "/casux-information-platform");
 
-    expect(excerpt).toContain("opening_topology: knowledge-hub lead band -> collection navigator -> resource/result stack");
+    expect(excerpt).toContain("opening_topology: information-platform lead -> collection navigator -> standards/research/update ledgers");
     expect(excerpt).toContain("Knowledge-hub lead explaining how visitors should use the collection");
     expect(excerpt).toContain("knowledge-hub-lead");
     expect(excerpt).toContain("do not wrap a content-collection opening in generic hero shells such as `hero`, `hero--split`, `hero-grid`, `hero__grid`, or `hero-panel`");

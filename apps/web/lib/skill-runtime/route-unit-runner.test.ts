@@ -4,14 +4,16 @@ import { describe, expect, it } from "vitest";
 
 import { buildImmutableGenerationContract } from "./generation-contract.ts";
 import { GenerationContractViolationError } from "./contract-violation.ts";
+import { createStaticGenerationWorkerAdapter } from "./generation-worker-adapter.ts";
 import { runV2RouteUnitRuntime } from "./route-unit-runner.ts";
 
-function buildContract(routes: string[]) {
+function buildContract(routes: string[], localeMode?: string) {
   return buildImmutableGenerationContract({
     generationLane: "website-generation-mvp",
     websiteSurfaceMode: "content-hub-site",
     promptControlManifest: {
       routes,
+      ...(localeMode ? { localeMode } : {}),
       pageIntents: routes.map((route) => ({
         route,
         navLabel: route === "/" ? "Home" : "Research Center",
@@ -22,6 +24,7 @@ function buildContract(routes: string[]) {
     discoveryBrief: {
       surfaceMode: "content-hub-site",
       routes,
+      ...(localeMode ? { localeMode } : {}),
     },
     selectedSeedSkillManifest: {
       selected: [{ id: "content-hub-site", source: "shpitto" }],
@@ -177,6 +180,84 @@ describe("route unit runner", () => {
     expect(first.verification.status).toBe("passed");
     expect(second.verification.status).toBe("passed");
     expect(invocationCount).toBe(1);
+  });
+
+  it("re-prompts locale-shell repairs with strict shared i18n guidance for the homepage", async () => {
+    const checkpointDir = path.resolve(process.cwd(), ".tmp", "route-unit-runner-bilingual-repair");
+    await fs.rm(checkpointDir, { recursive: true, force: true });
+    const contract = buildContract(["/"], "bilingual");
+    const seenPrompts: string[] = [];
+    let invocationCount = 0;
+    const unitWorker = createStaticGenerationWorkerAdapter({
+      id: "test-bilingual-repair",
+      capabilities: ["route-unit"],
+      runUnit: async (input) => {
+        invocationCount += 1;
+        seenPrompts.push(input.prompt);
+        if (invocationCount === 1) {
+          return {
+            unitId: input.unitId,
+            status: "passed",
+            files: [
+              {
+                path: "/index.html",
+                content:
+                  "<!doctype html><html lang=\"zh-CN\" data-locale=\"zh-CN\"><body><header><a href=\"/\">CASUX</a><nav><a href=\"/\">Home</a></nav><div class=\"locale-switch\"><button type=\"button\" data-locale-toggle data-locale=\"zh-CN\">中文</button><button type=\"button\" data-locale-toggle data-locale=\"en\">EN</button></div></header><main><h1><span class=\"t-zh\">CASUX</span><span class=\"t-en\">CASUX</span></h1><p><span class=\"t-zh\">官方机构概览。</span><span class=\"t-en\">Official institutional overview.</span></p><img src=\"hero.jpg\" alt=\"中文图像\" data-alt-zh=\"中文图像\" data-alt-en=\"English image\"><footer><p><span class=\"t-zh\">页脚摘要。</span><span class=\"t-en\">Footer summary.</span></p></footer></main></body></html>",
+                type: "text/html",
+              },
+              { path: "/styles.css", content: "body{font-family:system-ui}", type: "text/css" },
+              { path: "/script.js", content: "console.log('ready')", type: "application/javascript" },
+              { path: "/i18n/messages.en.json", content: "{\"hero.title\":\"CASUX\"}", type: "application/json" },
+              { path: "/i18n/messages.zh-CN.json", content: "{\"hero.title\":\"CASUX\"}", type: "application/json" },
+            ],
+          };
+        }
+
+        expect(input.prompt).toContain("Repair this route unit to satisfy the verifier.");
+        expect(input.prompt).toContain("Keep exactly one visible language at a time");
+        expect(input.prompt).toContain("`.t-zh` / `.t-en`");
+        expect(input.prompt).toContain("`data-alt-zh`, `data-alt-en`, `data-zh`, or `data-en`");
+        expect(input.prompt).toContain("Use `data-i18n-attr`");
+        return {
+          unitId: input.unitId,
+          status: "passed",
+          files: [
+            {
+              path: "/index.html",
+              content:
+                "<!doctype html><html lang=\"zh-CN\" data-locale=\"zh-CN\"><body><header><a href=\"/\">CASUX</a><nav><a href=\"/\" data-i18n=\"nav.home\">首页</a></nav><div class=\"locale-switch\"><button type=\"button\" data-locale-toggle data-locale=\"zh-CN\" data-i18n=\"locale.zh\">中文</button><button type=\"button\" data-locale-toggle data-locale=\"en\" data-i18n=\"locale.en\">English</button></div></header><main><h1 data-i18n=\"hero.title\">CASUX 官方机构概览</h1><p data-i18n=\"hero.lead\">CASUX provides an institutional overview with one active locale at a time and stable i18n markers for the shared shell.</p><img src=\"hero.jpg\" alt=\"温暖明亮的儿童友好学习空间\" data-i18n=\"hero.imageAlt\" data-i18n-attr=\"alt\"><footer><p data-i18n=\"footer.summary\">Footer summary for institutional visitors and partners.</p></footer></main></body></html>",
+              type: "text/html",
+            },
+            { path: "/styles.css", content: "body{font-family:system-ui}", type: "text/css" },
+            { path: "/script.js", content: "console.log('ready')", type: "application/javascript" },
+            {
+              path: "/i18n/messages.en.json",
+              content:
+                "{\"nav.home\":\"Home\",\"locale.zh\":\"Chinese\",\"locale.en\":\"English\",\"hero.title\":\"CASUX official institutional overview\",\"hero.lead\":\"CASUX provides an institutional overview with one active locale at a time and stable i18n markers for the shared shell.\",\"hero.imageAlt\":\"A warm, bright child-friendly learning space\",\"footer.summary\":\"Footer summary for institutional visitors and partners.\"}",
+              type: "application/json",
+            },
+            {
+              path: "/i18n/messages.zh-CN.json",
+              content:
+                "{\"nav.home\":\"首页\",\"locale.zh\":\"中文\",\"locale.en\":\"English\",\"hero.title\":\"CASUX 官方机构概览\",\"hero.lead\":\"CASUX 以单一可见语言和稳定 i18n 标记提供机构概览。\",\"hero.imageAlt\":\"温暖明亮的儿童友好学习空间\",\"footer.summary\":\"面向机构访客与合作伙伴的页脚摘要。\"}",
+              type: "application/json",
+            },
+          ],
+        };
+      },
+    });
+
+    const result = await runV2RouteUnitRuntime({
+      state: { workflow_context: {} } as any,
+      timeoutMs: 1000,
+      checkpointDir,
+      contract,
+      unitWorker,
+    });
+
+    expect(result.verification.status).toBe("passed");
+    expect(invocationCount).toBe(2);
+    expect(seenPrompts).toHaveLength(2);
   });
 
   it("recovers missing passed route artifacts from prior route checkpoints instead of requiring a full rerun", async () => {
@@ -338,6 +419,92 @@ describe("route unit runner", () => {
     expect(rerunUnits).toBe(1);
   });
 
+  it("preserves verifier-approved routes across transient worker failure and reruns only the failed route", async () => {
+    const checkpointDir = path.resolve(process.cwd(), ".tmp", "route-unit-runner-transient-worker-failure");
+    await fs.rm(checkpointDir, { recursive: true, force: true });
+    const contract = buildContract(["/", "/research-center"]);
+
+    await expect(
+      runV2RouteUnitRuntime({
+        state: { workflow_context: {} } as any,
+        timeoutMs: 1000,
+        checkpointDir,
+        contract,
+        unitWorker: {
+          id: "test-route-unit-worker",
+          capabilities: ["route-unit"],
+          runUnit: async (input) => {
+            if (input.route === "/research-center") {
+              throw new Error("502 Bad Gateway from pptoken");
+            }
+            return {
+              unitId: input.unitId,
+              status: "passed",
+              files: input.targetFiles.map((target) => ({
+                path: target,
+                content:
+                  target === "/index.html"
+                    ? "<!doctype html><html><body><header><nav><a href=\"/\">Home</a><a href=\"/research-center\">Research Center</a></nav></header><main><h1>CASUX</h1><p>CASUX is the institutional home for standards, research, advocacy, and certification work that helps members discover trusted programs, reference materials, and collaboration pathways.</p></main><footer>Footer</footer></body></html>"
+                    : target.endsWith(".css")
+                      ? "body{font-family:system-ui}"
+                      : "console.log('ready')",
+                type: target.endsWith(".html")
+                  ? "text/html"
+                  : target.endsWith(".css")
+                    ? "text/css"
+                    : "application/javascript",
+              })),
+            };
+          },
+        },
+      }),
+    ).rejects.toThrow(/502 Bad Gateway/i);
+
+    const savedHomeRecord = JSON.parse(
+      await fs.readFile(path.join(checkpointDir, "route-home.verification.json"), "utf8"),
+    );
+    expect(savedHomeRecord.status).toBe("passed");
+    const savedProject = JSON.parse(await fs.readFile(path.join(checkpointDir, "generated-project.json"), "utf8"));
+    expect(savedProject.staticSite.files.some((file: any) => file.path === "/index.html")).toBe(true);
+    expect(savedProject.staticSite.files.some((file: any) => file.path === "/research-center/index.html")).toBe(false);
+
+    const rerunRoutes: string[] = [];
+    const rerun = await runV2RouteUnitRuntime({
+      state: { workflow_context: {} } as any,
+      timeoutMs: 1000,
+      checkpointDir,
+      contract,
+      unitWorker: {
+        id: "test-route-unit-worker",
+        capabilities: ["route-unit"],
+        runUnit: async (input) => {
+          rerunRoutes.push(String(input.route || ""));
+          return {
+            unitId: input.unitId,
+            status: "passed",
+            files: input.targetFiles.map((target) => ({
+              path: target,
+              content:
+                target === "/research-center/index.html"
+                  ? "<!doctype html><html><body><header><nav><a href=\"/\">Home</a><a href=\"/research-center\">Research Center</a></nav></header><main><h1>Research Center</h1><p>The research center curates studies, standards resources, and evidence-backed materials for policy, implementation, and training teams.</p></main><footer>Footer</footer></body></html>"
+                  : target.endsWith(".css")
+                    ? "body{font-family:system-ui}"
+                    : "console.log('ready')",
+              type: target.endsWith(".html")
+                ? "text/html"
+                : target.endsWith(".css")
+                  ? "text/css"
+                  : "application/javascript",
+            })),
+          };
+        },
+      },
+    });
+
+    expect(rerun.verification.status).toBe("passed");
+    expect(rerunRoutes).toEqual(["/research-center"]);
+  });
+
   it("applies verifier-guided route repair before failing the runtime", async () => {
     const checkpointDir = path.resolve(process.cwd(), ".tmp", "route-unit-runner-verifier-repair");
     await fs.rm(checkpointDir, { recursive: true, force: true });
@@ -465,5 +632,138 @@ describe("route unit runner", () => {
     expect(second.verification.status).toBe("passed");
     expect(rerunUnits).toBe(0);
     expect(second.project?.staticSite?.files.some((file: any) => file.path === "/research-center/index.html")).toBe(true);
+  });
+
+  it("lets bilingual interior route units extend shared locale catalogs without overwriting earlier keys", async () => {
+    const checkpointDir = path.resolve(process.cwd(), ".tmp", "route-unit-runner-bilingual-catalog-merge");
+    await fs.rm(checkpointDir, { recursive: true, force: true });
+    const contract = buildImmutableGenerationContract({
+      generationLane: "website-generation-mvp",
+      websiteSurfaceMode: "content-hub-site",
+      promptControlManifest: {
+        routes: ["/", "/research-center"],
+        pageIntents: [
+          { route: "/", navLabel: "Home", pageKind: "home", purpose: "Institutional homepage." },
+          { route: "/research-center", navLabel: "Research Center", pageKind: "content-collection-index", purpose: "Research library." },
+        ],
+      },
+      discoveryBrief: {
+        surfaceMode: "content-hub-site",
+        routes: ["/", "/research-center"],
+        localeMode: "bilingual",
+      },
+      selectedSeedSkillManifest: {
+        selected: [{ id: "content-hub-site", source: "shpitto" }],
+      },
+    });
+
+    const result = await runV2RouteUnitRuntime({
+      state: { workflow_context: {} } as any,
+      timeoutMs: 1000,
+      checkpointDir,
+      contract,
+      unitWorker: {
+        id: "test-route-unit-worker",
+        capabilities: ["route-unit"],
+        runUnit: async (input) => {
+          if (input.route === "/") {
+            return {
+              unitId: input.unitId,
+              status: "passed",
+              files: [
+                {
+                  path: "/index.html",
+                  content:
+                    "<!doctype html><html lang='zh-CN' data-locale='zh-CN'><body><header><nav><a href='/' data-i18n='nav.home'>首页</a><a href='/research-center' data-i18n='nav.research'>研究</a></nav><button type='button' data-locale-switch aria-label='切换至英文'>EN</button></header><main><h1 data-i18n='home.title'>CASUX institution overview</h1><p data-i18n='home.lead'>CASUX presents an institutional overview with standards, research, and public-information guidance for child-friendly space operators.</p><p data-i18n='home.support'>The homepage keeps one active locale at a time while shared shell and proof copy remain translatable through shared message catalogs.</p></main><footer><p data-i18n='footer.summary'>Footer summary for institutional visitors.</p></footer></body></html>",
+                  type: "text/html",
+                },
+                { path: "/styles.css", content: "body{font-family:system-ui}.locale-switch{display:inline-flex}", type: "text/css" },
+                { path: "/script.js", content: "document.querySelector('[data-locale-switch]');", type: "application/javascript" },
+                {
+                  path: "/i18n/messages.en.json",
+                  content: JSON.stringify({
+                    nav: { home: "Home", research: "Research" },
+                    home: {
+                      title: "CASUX institution overview",
+                      lead: "CASUX presents an institutional overview with standards, research, and public-information guidance for child-friendly space operators.",
+                      support:
+                        "The homepage keeps one active locale at a time while shared shell and proof copy remain translatable through shared message catalogs.",
+                    },
+                    footer: { summary: "Footer summary for institutional visitors." },
+                  }),
+                  type: "application/json",
+                },
+                {
+                  path: "/i18n/messages.zh-CN.json",
+                  content: JSON.stringify({
+                    nav: { home: "首页", research: "研究" },
+                    home: {
+                      title: "CASUX 机构概览",
+                      lead: "CASUX 为儿童友好空间运营方提供关于标准、研究与公共信息的机构级概览。",
+                      support: "首页一次只显示一种语言，但共享壳与证明性文案仍通过共享消息目录完成切换。",
+                    },
+                    footer: { summary: "面向机构访客的页脚摘要。" },
+                  }),
+                  type: "application/json",
+                },
+              ],
+            };
+          }
+
+          expect(input.targetFiles).toEqual(
+            expect.arrayContaining([
+              "/research-center/index.html",
+              "/i18n/messages.en.json",
+              "/i18n/messages.zh-CN.json",
+            ]),
+          );
+          return {
+            unitId: input.unitId,
+            status: "passed",
+            files: [
+              {
+                path: "/research-center/index.html",
+                content:
+                  "<!doctype html><html lang='zh-CN' data-locale='zh-CN'><body><header><nav><a href='/' data-i18n='nav.home'>首页</a><a href='/research-center' data-i18n='nav.research'>研究</a></nav><button type='button' data-locale-switch aria-label='切换至英文'>EN</button></header><main><h1 data-i18n='research.title'>Research Center</h1><p data-i18n='research.lead'>The research center curates evidence, studies, and public-facing resources for institutional partners and implementation teams.</p><p data-i18n='research.support'>Its route-specific content adds new bilingual keys without rewriting the shared shell catalogs from the homepage.</p></main><footer><p data-i18n='footer.summary'>Footer summary for institutional visitors.</p></footer></body></html>",
+                type: "text/html",
+              },
+              {
+                path: "/i18n/messages.en.json",
+                content: JSON.stringify({
+                  research: {
+                    title: "Research Center",
+                    lead:
+                      "The research center curates evidence, studies, and public-facing resources for institutional partners and implementation teams.",
+                    support:
+                      "Its route-specific content adds new bilingual keys without rewriting the shared shell catalogs from the homepage.",
+                  },
+                }),
+                type: "application/json",
+              },
+              {
+                path: "/i18n/messages.zh-CN.json",
+                content: JSON.stringify({
+                  research: {
+                    title: "研究中心",
+                    lead: "研究中心为机构伙伴与实施团队整理证据、研究成果与公共资源。",
+                    support: "它的路由专属内容会增量补充双语键，而不会重写首页已经建立的共享壳目录。",
+                  },
+                }),
+                type: "application/json",
+              },
+            ],
+          };
+        },
+      },
+    });
+
+    expect(result.verification.status).toBe("passed");
+    const files = Array.isArray(result.project?.staticSite?.files) ? result.project.staticSite.files : [];
+    const enCatalog = JSON.parse(String(files.find((file: any) => file.path === "/i18n/messages.en.json")?.content || "{}"));
+    const zhCatalog = JSON.parse(String(files.find((file: any) => file.path === "/i18n/messages.zh-CN.json")?.content || "{}"));
+    expect(enCatalog.nav?.home).toBe("Home");
+    expect(enCatalog.research?.title).toBe("Research Center");
+    expect(zhCatalog.nav?.home).toBe("首页");
+    expect(zhCatalog.research?.title).toBe("研究中心");
   });
 });

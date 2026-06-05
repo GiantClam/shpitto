@@ -9,12 +9,16 @@ import {
 } from "./generation-worker-adapter.ts";
 import {
   createModelForProvider,
+  describeProviderConfig,
   isRetryableProviderError,
   providerErrorText,
+  providerRetryBackoffMs,
   resolveProviderAttempts,
+  resolveProviderRetryPolicy,
   type ProviderAttempt,
 } from "./provider-model.ts";
 import { rankProviderAttemptsByHealth, recordProviderHealthStatus } from "./provider-health.ts";
+import { DEFAULT_OPENAI_COMPAT_MODEL, normalizeProviderModelId } from "./provider-model-id.ts";
 
 function normalizePath(value: string): string {
   const raw = String(value || "").trim();
@@ -116,6 +120,84 @@ function buildSystemPrompt() {
   ].join("\n");
 }
 
+function readMessageText(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) {
+    return value
+      .map((item: any) => {
+        if (typeof item === "string") return item;
+        if (typeof item?.text === "string") return item.text;
+        if (typeof item?.content === "string") return item.content;
+        return "";
+      })
+      .filter(Boolean)
+      .join("\n");
+  }
+  if (value && typeof value === "object" && typeof (value as any).content === "string") {
+    return String((value as any).content || "");
+  }
+  return "";
+}
+
+function baseMessagesToOpenAiMessages(messages: BaseMessage[]) {
+  return messages.map((message) => {
+    const type = String((message as any)?._getType?.() || "").trim();
+    if (type === "system") {
+      return { role: "system", content: readMessageText((message as any).content) };
+    }
+    if (type === "assistant") {
+      return { role: "assistant", content: readMessageText((message as any).content) };
+    }
+    return { role: "user", content: readMessageText((message as any).content) };
+  });
+}
+
+function readOpenAiChoiceText(choice: any): string {
+  return readMessageText(choice?.message?.content);
+}
+
+function isRouteUnitHomeTarget(input: Pick<GenerationUnitInput, "route" | "targetFiles">): boolean {
+  if (String(input.route || "").trim() === "/") return true;
+  return (input.targetFiles || []).some((target) => normalizePath(target) === "/index.html");
+}
+
+function isRouteUnitSharedAssetOnly(input: Pick<GenerationUnitInput, "targetFiles">): boolean {
+  const targets = (input.targetFiles || []).map((target) => normalizePath(target)).filter(Boolean);
+  if (targets.length === 0) return false;
+  return targets.every((target) => !target.endsWith(".html"));
+}
+
+function resolveRouteUnitLightweightModelName(
+  config: ProviderAttempt["config"],
+  input: Pick<GenerationUnitInput, "route" | "targetFiles">,
+): string {
+  const envKeys = isRouteUnitHomeTarget(input)
+    ? ["LLM_MODEL_ROUTE_UNIT_HOME", "LLM_MODEL_HOME_ROUND"]
+    : isRouteUnitSharedAssetOnly(input)
+      ? ["LLM_MODEL_ROUTE_UNIT_SHARED_ASSET", "LLM_MODEL_SHARED_ASSET"]
+      : ["LLM_MODEL_ROUTE_UNIT_INTERIOR_HTML", "LLM_MODEL_INTERIOR_HTML"];
+  const explicit = envKeys
+    .map((key) => String((process.env as Record<string, string | undefined>)[key] || "").trim())
+    .find(Boolean);
+  if (explicit) return normalizeProviderModelId(config.provider, explicit, DEFAULT_OPENAI_COMPAT_MODEL);
+  if (/mini/i.test(String(config.modelName || "").trim())) {
+    return normalizeProviderModelId(config.provider, config.modelName, DEFAULT_OPENAI_COMPAT_MODEL);
+  }
+  return normalizeProviderModelId(config.provider, DEFAULT_OPENAI_COMPAT_MODEL, DEFAULT_OPENAI_COMPAT_MODEL);
+}
+
+function resolveRouteUnitProviderConfig(
+  config: ProviderAttempt["config"],
+  input: Pick<GenerationUnitInput, "route" | "targetFiles">,
+): ProviderAttempt["config"] {
+  const lightweightModelName = resolveRouteUnitLightweightModelName(config, input);
+  if (!lightweightModelName || lightweightModelName === config.modelName) return config;
+  return {
+    ...config,
+    modelName: lightweightModelName,
+  };
+}
+
 class RetryableRouteUnitOutputError extends Error {
   constructor(message: string) {
     super(message);
@@ -134,15 +216,79 @@ async function recordProviderHealthStatusSafely(params: {
   }
 }
 
+type PromptSection = {
+  heading: string;
+  body: string;
+};
+
+function parseMarkdownSections(markdown: string): { preamble: string; sections: PromptSection[] } {
+  const lines = String(markdown || "").split(/\r?\n/);
+  const preamble: string[] = [];
+  const sections: PromptSection[] = [];
+  let current: PromptSection | null = null;
+  for (const line of lines) {
+    const headingMatch = line.match(/^##+\s+(.+?)\s*$/);
+    if (headingMatch) {
+      current = { heading: String(headingMatch[1] || "").trim(), body: "" };
+      sections.push(current);
+      continue;
+    }
+    if (current) {
+      current.body = current.body ? `${current.body}\n${line}` : line;
+      continue;
+    }
+    preamble.push(line);
+  }
+  return {
+    preamble: preamble.join("\n").trim(),
+    sections: sections.map((section) => ({
+      heading: section.heading,
+      body: String(section.body || "").trim(),
+    })),
+  };
+}
+
+function shouldKeepCanonicalPromptSection(heading: string, route: string) {
+  const normalized = String(heading || "").trim().toLowerCase();
+  if (!normalized) return false;
+  if (/prompt control manifest|machine readable|source material appendix|referenced assets|appendix/.test(normalized)) {
+    return false;
+  }
+  if (/confirmed generation parameters|site mission|quality constraints|route contracts|locale|translation|bilingual/.test(normalized)) {
+    return true;
+  }
+  if (route === "/" && /homepage/.test(normalized)) return true;
+  return false;
+}
+
+function buildCanonicalPromptExcerpt(canonicalPrompt: string, route: string) {
+  const text = String(canonicalPrompt || "").trim();
+  if (!text) return "";
+  if (!/^#/m.test(text)) {
+    return clipText(text, 4_000);
+  }
+  const parsed = parseMarkdownSections(text);
+  const parts: string[] = [];
+  if (parsed.preamble) {
+    parts.push(clipText(parsed.preamble, 600));
+  }
+  for (const section of parsed.sections) {
+    if (!shouldKeepCanonicalPromptSection(section.heading, route)) continue;
+    parts.push(`## ${section.heading}\n${clipText(section.body, 1_800)}`.trim());
+  }
+  const excerpt = parts.filter(Boolean).join("\n\n").trim();
+  return clipText(excerpt || text, 5_000);
+}
+
 function buildUserPrompt(baseState: AgentState, input: GenerationUnitInput) {
   const workflowContext = ((baseState.workflow_context || {}) as Record<string, unknown>) || {};
   const routeContext = toRecord(input.context);
   const promptControlManifest = toRecord(workflowContext.promptControlManifest);
   const discoveryBrief = toRecord(workflowContext.websiteDiscoveryBrief);
   const structuredSourceFacts = workflowContext.structuredSourceFacts;
-  const canonicalPrompt = clipText(
-    workflowContext.canonicalPrompt || workflowContext.sourceRequirement || workflowContext.latestUserText || "",
-    12_000,
+  const canonicalPrompt = buildCanonicalPromptExcerpt(
+    String(workflowContext.canonicalPrompt || workflowContext.sourceRequirement || workflowContext.latestUserText || ""),
+    String(input.route || "/").trim() || "/",
   );
   const localeMode = String(
     discoveryBrief.localeMode || discoveryBrief.preferredLocale || promptControlManifest.localeMode || "",
@@ -203,7 +349,15 @@ function buildUserPrompt(baseState: AgentState, input: GenerationUnitInput) {
       ? `- The nav must expose exactly these routes: ${confirmedRoutes.join(", ")}`
       : "- The nav must expose the confirmed route set from the manifest.",
     localeMode.toLowerCase() === "bilingual"
-      ? "- Include locale toggles for zh-CN and en and emit both message catalogs when requested."
+      ? [
+          "- Use one shared locale-switch protocol consistently across every bilingual route in this run.",
+          "- Accepted protocols: either explicit `data-locale-toggle` buttons with `data-locale=\"zh-CN\"` and `data-locale=\"en\"`, or one route-preserving `data-locale-switch` button.",
+          "- Do not invent alternate switch contracts such as `data-locale-button`, `data-language-toggle`, or route-specific locale button APIs.",
+          "- Keep exactly one visible language on screen at a time. Do not render paired visible Chinese/English spans, duplicated bilingual paragraphs, slash-separated labels, or twin-node protocols such as `.t-zh` / `.t-en`.",
+          "- Drive translatable visible copy from stable `data-i18n` keys plus the shared locale catalogs. Do not use `data-alt-zh`, `data-alt-en`, `data-zh`, `data-en`, or route-local visible bilingual mirrors as the primary content transport.",
+          "- For translated attributes such as `alt`, `title`, `placeholder`, `content`, or `aria-label`, keep the visible node keyed with `data-i18n` and declare the translated attribute through `data-i18n-attr` instead of route-specific alternate-language attributes.",
+          "- Emit both `/i18n/messages.en.json` and `/i18n/messages.zh-CN.json` when bilingual output is requested.",
+        ].join("\n")
       : "",
     "Canonical prompt excerpt:",
     canonicalPrompt,
@@ -226,6 +380,42 @@ async function invokeRouteModel(params: {
   messages: BaseMessage[];
   timeoutMs: number;
 }) {
+  if (params.attempt.config.provider === "pptoken") {
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      try {
+        controller.abort(`Request timed out. [operation=v2-route-unit:${params.attempt.config.provider}] [timeoutMs=${params.timeoutMs}]`);
+      } catch {}
+    }, Math.max(10_000, Number(params.timeoutMs) || 60_000));
+
+    try {
+      const response = await fetch(`${String(params.attempt.config.baseURL || "").replace(/\/+$/g, "")}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${String(params.attempt.config.apiKey || "").trim()}`,
+          ...(params.attempt.config.defaultHeaders || {}),
+        },
+        body: JSON.stringify({
+          model: params.attempt.config.modelName,
+          messages: baseMessagesToOpenAiMessages(params.messages),
+          max_tokens: 8_192,
+          temperature: 0.2,
+        }),
+        signal: controller.signal,
+      });
+
+      const rawText = await response.text();
+      if (!response.ok) {
+        throw new Error(`${response.status} ${response.statusText || "Upstream request failed"}${rawText ? `: ${rawText}` : ""}`.trim());
+      }
+      const payload = rawText ? JSON.parse(rawText) : {};
+      return readOpenAiChoiceText(payload?.choices?.[0]);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   const model = createModelForProvider(params.attempt.config, params.timeoutMs, 8_192, 0.2);
   const ai = await invokeModelWithIdleTimeout({
     model: {
@@ -236,6 +426,13 @@ async function invokeRouteModel(params: {
     operation: `v2-route-unit:${params.attempt.config.provider}`,
   });
   return String(ai?.content || "").trim();
+}
+
+export function resolveDirectRouteUnitProviderConfigForTesting(
+  config: ProviderAttempt["config"],
+  input: Pick<GenerationUnitInput, "route" | "targetFiles">,
+): ProviderAttempt["config"] {
+  return resolveRouteUnitProviderConfig(config, input);
 }
 
 export function createSkillToolRouteUnitGenerationWorker(params: {
@@ -261,50 +458,95 @@ export function createSkillToolRouteUnitGenerationWorker(params: {
       ];
 
       let lastError: unknown;
+      const retryPolicy = resolveProviderRetryPolicy("route-unit");
+      let stopProviderChain = false;
+      const workflowContext = toRecord(scopedState.workflow_context);
       for (const attempt of attempts) {
-        try {
-          const raw = params.invokeRouteModel
-            ? await params.invokeRouteModel({ input, messages, attempt })
-            : await invokeRouteModel({
-                attempt,
-                messages,
-                timeoutMs: params.timeoutMs,
-              });
-          const payload = extractJsonObject(raw);
-          if (!payload) {
-            throw new RetryableRouteUnitOutputError(
-              `Provider ${attempt.config.provider} returned non-JSON or malformed JSON output for ${input.unitId}.`,
+        const routeProviderConfig = resolveRouteUnitProviderConfig(attempt.config, input);
+        const routeProviderAttempt: ProviderAttempt = {
+          ...attempt,
+          lock: {
+            ...attempt.lock,
+            model: routeProviderConfig.modelName,
+          },
+          config: routeProviderConfig,
+        };
+        for (let retryAttempt = 0; retryAttempt <= retryPolicy.retries; retryAttempt += 1) {
+          try {
+            const raw = params.invokeRouteModel
+              ? await params.invokeRouteModel({ input, messages, attempt: routeProviderAttempt })
+              : await invokeRouteModel({
+                  attempt: routeProviderAttempt,
+                  messages,
+                  timeoutMs: params.timeoutMs,
+                });
+            const payload = extractJsonObject(raw);
+            if (!payload) {
+              throw new RetryableRouteUnitOutputError(
+                `Provider ${attempt.config.provider} returned non-JSON or malformed JSON output for ${input.unitId}.`,
+              );
+            }
+            const files = normalizeGeneratedFiles(payload, input);
+            const missingTargets = collectMissingTargets(files, input);
+            if (missingTargets.length > 0) {
+              throw new RetryableRouteUnitOutputError(
+                `Provider ${attempt.config.provider} omitted requested route-unit target files for ${input.unitId}: ${missingTargets.join(", ")}`,
+              );
+            }
+            await recordProviderHealthStatusSafely({
+              attempt: routeProviderAttempt,
+              status: "success",
+            });
+            return {
+              unitId: input.unitId,
+              status: "passed",
+              files,
+              summary: String(payload?.summary || "").trim() || `Generated ${input.unitId}.`,
+            };
+          } catch (error) {
+            lastError = error;
+            const retryable =
+              error instanceof RetryableRouteUnitOutputError || isRetryableProviderError(error);
+            await recordProviderHealthStatusSafely({
+              attempt: routeProviderAttempt,
+              status: retryable ? "retryable_failure" : "fatal_failure",
+            });
+            const isLastProvider = attempt === attempts[attempts.length - 1];
+            const exhaustedProviderRetries = retryAttempt >= retryPolicy.retries;
+            console.warn(
+              `[v2-route-unit] provider_attempt_failed ${JSON.stringify({
+                chatId: String(workflowContext.chatId || "") || null,
+                taskId: String(workflowContext.chatTaskId || workflowContext.taskId || "") || null,
+                workflowId: String(toRecord(workflowContext.workflowRuntime).workflowId || "") || null,
+                routeUnitId: input.unitId,
+                route: input.route,
+                targetFiles: input.targetFiles,
+                provider: routeProviderAttempt.config.provider,
+                model: routeProviderAttempt.config.modelName,
+                endpoint: describeProviderConfig(routeProviderAttempt.config),
+                providerAttempt: retryAttempt + 1,
+                providerRetryBudget: retryPolicy.retries + 1,
+                retryable,
+                willRetrySameProvider: retryable && !exhaustedProviderRetries,
+                willFallbackProvider: retryable && exhaustedProviderRetries && !isLastProvider,
+                error: providerErrorText(error),
+              })}`,
             );
-          }
-          const files = normalizeGeneratedFiles(payload, input);
-          const missingTargets = collectMissingTargets(files, input);
-          if (missingTargets.length > 0) {
-            throw new RetryableRouteUnitOutputError(
-              `Provider ${attempt.config.provider} omitted requested route-unit target files for ${input.unitId}: ${missingTargets.join(", ")}`,
-            );
-          }
-          await recordProviderHealthStatusSafely({
-            attempt,
-            status: "success",
-          });
-          return {
-            unitId: input.unitId,
-            status: "passed",
-            files,
-            summary: String(payload?.summary || "").trim() || `Generated ${input.unitId}.`,
-          };
-        } catch (error) {
-          lastError = error;
-          const retryable =
-            error instanceof RetryableRouteUnitOutputError || isRetryableProviderError(error);
-          await recordProviderHealthStatusSafely({
-            attempt,
-            status: retryable ? "retryable_failure" : "fatal_failure",
-          });
-          const isLast = attempt === attempts[attempts.length - 1];
-          if (!retryable || isLast) {
+            if (retryable && !exhaustedProviderRetries) {
+              await new Promise<void>((resolve) =>
+                setTimeout(resolve, providerRetryBackoffMs(retryPolicy, retryAttempt + 1)),
+              );
+              continue;
+            }
+            if (!retryable || isLastProvider) {
+              stopProviderChain = true;
+              break;
+            }
             break;
           }
+        }
+        if (stopProviderChain || (!(lastError instanceof RetryableRouteUnitOutputError) && !isRetryableProviderError(lastError))) {
+          break;
         }
       }
 

@@ -12,6 +12,16 @@ async function waitForTerminalTask(taskId: string, runWorkerOnce: () => Promise<
       throw new Error(String(task.result?.assistantText || task.result?.error || "task failed"));
     }
     await runWorkerOnce();
+    const refreshedTask = await getChatTask(taskId);
+    if (refreshedTask?.status === "succeeded") return refreshedTask;
+    if (refreshedTask?.status === "failed") {
+      throw new Error(String(refreshedTask.result?.assistantText || refreshedTask.result?.error || "task failed"));
+    }
+  }
+  const finalTask = await getChatTask(taskId);
+  if (finalTask?.status === "succeeded") return finalTask;
+  if (finalTask?.status === "failed") {
+    throw new Error(String(finalTask.result?.assistantText || finalTask.result?.error || "task failed"));
   }
   throw new Error(`Timed out waiting for task ${taskId}`);
 }

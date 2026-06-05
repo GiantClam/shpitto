@@ -133,7 +133,20 @@ function routeOpeningFamily(page: PageBlueprint): string {
 }
 
 function isContentCollectionPage(page: PageBlueprint): boolean {
-  return page.pageKind === "blog-data-index" || page.pageKind === "content-collection-index";
+  if (page.pageKind === "blog-data-index" || page.pageKind === "content-collection-index") return true;
+  const text = [
+    page.route,
+    page.navLabel,
+    page.purpose,
+    page.responsibility,
+    ...(page.contentSkeleton || []),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return /research|standards?|information(?:-platform)?|resource|resources|downloads?|library|documents?|publications?|reports?|knowledge-hub/i.test(
+    text,
+  );
 }
 
 function isPortfolioBlogInteriorSurface(page: PageBlueprint, surfaceMode: WebsiteSurfaceMode): boolean {
@@ -141,6 +154,17 @@ function isPortfolioBlogInteriorSurface(page: PageBlueprint, surfaceMode: Websit
   const route = String(page.route || "").trim().toLowerCase();
   if (route === "/" || /^\/blog\/[^/]+$/i.test(route)) return false;
   return route === "/blog" || route === "/about" || route === "/contact";
+}
+
+function isInformationPlatformCollectionPage(page: PageBlueprint): boolean {
+  const text = `${page.route} ${page.navLabel} ${page.purpose}`.toLowerCase();
+  return /information-platform|information|resource|resources|downloads?|library|materials?/i.test(text);
+}
+
+function isResearchCollectionPage(page: PageBlueprint): boolean {
+  if (isInformationPlatformCollectionPage(page)) return false;
+  const text = `${page.route} ${page.navLabel} ${page.purpose}`.toLowerCase();
+  return /research|standards?|documents?|publications?|reports?/i.test(text);
 }
 
 function hasExplicitChineseLocaleContract(text: string): boolean {
@@ -526,6 +550,12 @@ function routeOpeningTopology(
     if (surfaceMode === "portfolio-blog-site" && String(page.route || "").trim().toLowerCase() === "/blog") {
       return "editorial archive masthead -> featured writing band -> article ledger";
     }
+    if (isInformationPlatformCollectionPage(page)) {
+      return "information-platform lead -> collection navigator -> standards/research/update ledgers";
+    }
+    if (isResearchCollectionPage(page)) {
+      return "research index lead -> topic navigator -> publication/evidence ledger";
+    }
     return "knowledge-hub lead band -> collection navigator -> resource/result stack";
   }
   const text = `${page.route} ${page.navLabel} ${page.purpose}`.toLowerCase();
@@ -717,6 +747,8 @@ export function buildRouteUnitContractSummary(
       `navLabel=${page.navLabel}`,
       `pageKind=${page.pageKind}`,
       `purpose=${page.purpose}`,
+      `seedAuthority=${resolveSeedAuthorityMode(params)}`,
+      ...buildRouteUnitContractHighlights(page),
     ],
     inheritedTerminology: summarizeInheritedTerminology(params),
     inheritedTokens: summarizeInheritedTokens(params),
@@ -726,6 +758,29 @@ export function buildRouteUnitContractSummary(
     mediaPlan: routeMediaPlan(page, enterpriseHomepage, websiteSurfaceMode),
     mediaResources: [buildRouteMediaResource(page, enterpriseHomepage, websiteSurfaceMode)],
   };
+}
+
+function buildRouteUnitContractHighlights(page: PageBlueprint): string[] {
+  if (!isContentCollectionPage(page)) return [];
+  const classHints = isInformationPlatformCollectionPage(page)
+    ? "routeOwnedOpening=information-platform-lead | resource-collection-lead | knowledge-hub-lead"
+    : isResearchCollectionPage(page)
+      ? "routeOwnedOpening=research-index-lead | knowledge-hub-lead | resource-collection-lead"
+      : "routeOwnedOpening=knowledge-hub-lead | resource-collection-lead | collection-lead";
+  const highlights = [
+    classHints,
+    `openingRootClass=first visible <section> root must include ${classHints.split("=")[1]}`,
+    "openingLayout=one route-owned collection/index surface with the navigator inside the opening band",
+    "openingMarkup=no <aside> inside the opening band; supporting proof must stay embedded inside the same route-owned root surface",
+    "openingBan=no hero, hero--split, hero-grid, hero__grid, hero-copy, hero-panel, hero-aside, right-rail aside, or promo split-hero masthead",
+  ];
+  if (isInformationPlatformCollectionPage(page)) {
+    highlights.push("openingIdentity=public information library or materials directory, not an entry point or gateway explainer");
+  }
+  if (isResearchCollectionPage(page)) {
+    highlights.push("openingIdentity=research or standards index, not a promotional hero or faux product catalog");
+  }
+  return highlights;
 }
 
 function routeProhibitions(
@@ -788,6 +843,7 @@ function routeProhibitions(
       "- prohibit: turning a knowledge/resource collection into a faux product catalog or export-sales assortment page",
       "- prohibit: inventing publishable article detail pages or editorial archive promises unless the prompt explicitly requests them",
       "- prohibit: utility/language/documentation topics becoming the main body content",
+      "- prohibit: opening the collection as `hero-copy` + `hero-aside`, `hero-panel` + quick-links rail, or another promotional split-hero masthead",
     ];
   }
   const text = `${page.route} ${page.navLabel} ${page.purpose}`.toLowerCase();
@@ -836,9 +892,12 @@ function buildRouteSpecLines(
       `- component_mix: hero ${page.componentMix.hero}, feature ${page.componentMix.feature}, grid ${page.componentMix.grid}, proof ${page.componentMix.proof}, form ${page.componentMix.form}, cta ${page.componentMix.cta}`,
       ...routeProhibitions(page, enterpriseHomepage, surfaceMode),
       "- markup_contract: the first visible content-index band should use route-owned knowledge-hub semantics such as `knowledge-hub-lead`, `resource-collection-lead`, `information-platform-lead`, or `research-index-lead` rather than product-catalog wrappers such as `catalog-lead` or `product-comparison-lead`.",
+      "- opening_root_contract: the first visible `<section>` root must carry a route-owned collection class such as `knowledge-hub-lead`, `resource-collection-lead`, `information-platform-lead`, or `research-index-lead`.",
       "- markup_contract: do not wrap a content-collection opening in generic hero shells such as `hero`, `hero--split`, `hero-grid`, `hero__grid`, or `hero-panel`.",
       "- markup_contract: do not mix legacy hero utility classes such as `hero__content`, `hero__actions`, `hero-title`, or `hero-lead` into a route-owned collection opening. The opening lead itself must carry the route-owned collection semantics.",
       "- markup_contract: collection openings should name their copy clusters with route-owned classes such as `collection-title`, `collection-lead`, `collection-actions`, `knowledge-hub-title`, or `knowledge-hub-actions` instead of reusing legacy hero utility names.",
+      "- layout_contract: keep the first visible collection band as one route-owned index surface. Fold navigator, category cues, scope notes, quick access, and supporting proof into that same opening band instead of splitting the opening into lead copy plus a right-rail aside panel.",
+      "- opening_markup_contract: do not use `<aside>` inside the first visible collection band. Supporting proof must stay as embedded cards, inline media, or stacked companions within the same route-owned root surface.",
       ...buildLocaleShellContractLines(localeMode, requirementText),
       "- cta_contract: section shells, opening grids, checklists, and support rows must use reusable classes rather than inline spacing/alignment styles.",
       "- copy_contract: route-opening leads, captions, and support lines must read like finished visitor-facing copy. Do not echo instruction-led verbs such as `should`, `must`, `use`, `explain`, or other contract wording in visible text.",
