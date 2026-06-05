@@ -723,6 +723,15 @@ function routeMediaPlan(
   return mediaPlanLinesFromResource(buildRouteMediaResource(page, enterpriseHomepage, surfaceMode));
 }
 
+function hasSelectedSeedAuthority(params: WebsiteDesignSpecParams): boolean {
+  return Array.isArray(params.selectedSeedSkillIds) && params.selectedSeedSkillIds.some((item) => String(item || "").trim());
+}
+
+function resolveSeedAuthorityMode(params: WebsiteDesignSpecParams): "seed-authoritative" | "heuristic-authoritative" {
+  if (!hasSelectedSeedAuthority(params)) return "heuristic-authoritative";
+  return "seed-authoritative";
+}
+
 export function buildRouteUnitContractSummary(
   params: WebsiteDesignSpecParams,
   route: string,
