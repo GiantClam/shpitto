@@ -143,10 +143,13 @@ import { renderWebsiteQualityContract } from "./website-quality-contract.ts";
 import { createSkillToolRouteUnitGenerationWorker } from "./v2-route-generation-worker.ts";
 import {
   createModelForProvider,
+  describeProviderConfig,
   isRetryableProviderError,
   providerErrorText,
+  providerRetryBackoffMs,
   resolveProviderAttempts,
   resolveProviderConfig,
+  resolveProviderRetryPolicy,
   type LlmProvider,
   type ProviderAttempt,
   type ProviderConfig,
@@ -3860,6 +3863,10 @@ async function persistStepArtifacts(params: {
 }
 
 type RuntimeContext = {
+  chatId?: string;
+  taskId?: string;
+  workerId?: string;
+  workflowId?: string;
   decision: LocalDecisionPlan;
   requirementText: string;
   locale: "zh-CN" | "en" | "bilingual";
@@ -4135,6 +4142,7 @@ class NativeSkillRuntime {
     const designHit = ((params.state as any)?.design_hit || undefined) as DesignSkillHit | undefined;
     const designOverrides = toRecord(workflowContext.designOverrides);
     const promptControlManifest = toRecord(workflowContext.promptControlManifest);
+    const workflowRuntime = toRecord(workflowContext.workflowRuntime);
     const websiteSurfaceMode =
       inferWebsiteSurfaceModeFromSkillId(String(promptControlManifest.websiteSurfaceMode || "")) ||
       inferWebsiteSurfaceModeFromSkillId(String((promptControlManifest as any)?.discoveryBrief?.surfaceMode || "")) ||
@@ -4220,6 +4228,10 @@ class NativeSkillRuntime {
       : [];
 
     this.context = {
+      chatId: String(workflowContext.chatId || "").trim() || undefined,
+      taskId: String(workflowContext.chatTaskId || workflowContext.taskId || "").trim() || undefined,
+      workerId: String(workflowContext.workerId || "").trim() || undefined,
+      workflowId: String(workflowRuntime.workflowId || "").trim() || undefined,
       decision,
       requirementText,
       locale,
@@ -4405,15 +4417,20 @@ class NativeSkillRuntime {
 
   private async invokeLlm(
     prompt: string,
-    opts?: { maxTokens?: number; timeoutMs?: number; temperature?: number; systemPrompt?: string },
+    opts?: { maxTokens?: number; timeoutMs?: number; temperature?: number; systemPrompt?: string; operationLabel?: string },
   ): Promise<string> {
     const isTestMode = process.env.NODE_ENV === "test";
     if (isTestMode) return "";
     const timeoutMs = Math.max(20_000, Number(opts?.timeoutMs || this.timeoutMs));
     const maxTokens = Math.max(256, Number(opts?.maxTokens || 8192));
+    const retryPolicy = resolveProviderRetryPolicy("skill-native");
+    const sleepMs = async (ms: number) => {
+      await new Promise<void>((resolve) => setTimeout(resolve, Math.max(0, ms)));
+    };
     const model = createModelForProvider(this.context.providerConfig, timeoutMs, maxTokens, opts?.temperature ?? 0.2);
     const messages: BaseMessage[] = [];
     const systemPrompt = String(opts?.systemPrompt || "").trim();
+    const operationLabel = String(opts?.operationLabel || "").trim() || "skill-native-stage";
     if (systemPrompt) {
       messages.push(new SystemMessage(systemPrompt));
     }
@@ -4425,33 +4442,66 @@ class NativeSkillRuntime {
         index === this.activeProviderIndex
           ? model
           : createModelForProvider(attempt.config, timeoutMs, maxTokens, opts?.temperature ?? 0.2);
-      try {
-        const ai = await invokeModelWithIdleTimeout({
-          model: attemptModel,
-          messages,
-          timeoutMs,
-          operation: `skill-native-stage:${attempt.config.provider}`,
-        });
-        if (index !== this.activeProviderIndex) {
-          this.activeProviderIndex = index;
-          this.context.providerLock = attempt.lock;
-          this.context.providerConfig = attempt.config;
+      for (let retryAttempt = 0; retryAttempt <= retryPolicy.retries; retryAttempt += 1) {
+        try {
+          const ai = await invokeModelWithIdleTimeout({
+            model: attemptModel,
+            messages,
+            timeoutMs,
+            operation: `${operationLabel}:${attempt.config.provider}`,
+          });
+          if (index !== this.activeProviderIndex) {
+            this.activeProviderIndex = index;
+            this.context.providerLock = attempt.lock;
+            this.context.providerConfig = attempt.config;
+            console.warn(
+              `[skill-native] provider_fallback_engaged ${JSON.stringify({
+                chatId: this.context.chatId || null,
+                taskId: this.context.taskId || null,
+                workflowId: this.context.workflowId || null,
+                workerId: this.context.workerId || null,
+                operation: operationLabel,
+                activeProviderIndex: index,
+                provider: attempt.config.provider,
+                model: attempt.config.modelName,
+                endpoint: describeProviderConfig(attempt.config),
+              })}`,
+            );
+          }
+          return String(ai?.content || "").trim();
+        } catch (error) {
+          lastError = error;
+          const retryable = isRetryableProviderError(error);
+          const isLastProvider = index >= this.providerAttempts.length - 1;
+          const exhaustedProviderRetries = retryAttempt >= retryPolicy.retries;
           console.warn(
-            `[skill-native] provider fallback engaged: ${attempt.config.provider}/${attempt.config.modelName}`,
+            `[skill-native] provider_attempt_failed ${JSON.stringify({
+              chatId: this.context.chatId || null,
+              taskId: this.context.taskId || null,
+              workflowId: this.context.workflowId || null,
+              workerId: this.context.workerId || null,
+              operation: operationLabel,
+              providerChainIndex: index,
+              providerAttempt: retryAttempt + 1,
+              providerRetryBudget: retryPolicy.retries + 1,
+              provider: attempt.config.provider,
+              model: attempt.config.modelName,
+              endpoint: describeProviderConfig(attempt.config),
+              retryable,
+              willRetrySameProvider: retryable && !exhaustedProviderRetries,
+              willFallbackProvider: retryable && exhaustedProviderRetries && !isLastProvider,
+              error: providerErrorText(error),
+            })}`,
           );
+          if (retryable && !exhaustedProviderRetries) {
+            await sleepMs(providerRetryBackoffMs(retryPolicy, retryAttempt + 1));
+            continue;
+          }
+          if (!retryable || isLastProvider) {
+            throw error;
+          }
+          break;
         }
-        return String(ai?.content || "").trim();
-      } catch (error) {
-        lastError = error;
-        const isLast = index >= this.providerAttempts.length - 1;
-        if (!isRetryableProviderError(error) || isLast) {
-          throw error;
-        }
-        console.warn(
-          `[skill-native] provider attempt failed for ${attempt.config.provider}/${attempt.config.modelName}; falling back: ${providerErrorText(
-            error,
-          )}`,
-        );
       }
     }
     throw lastError instanceof Error ? lastError : new Error(providerErrorText(lastError));
@@ -4713,6 +4763,7 @@ class NativeSkillRuntime {
         maxTokens: params.maxTokens,
         timeoutMs: params.timeoutMs,
         systemPrompt: params.systemPrompt,
+        operationLabel: `page:${params.route}`,
       });
       finalHtml = ensureHtmlDocument(modelHtml);
       if (!finalHtml.trim()) finalHtml = params.fallbackHtml;
@@ -4839,6 +4890,7 @@ ${internalRequirementSummary}`;
         maxTokens: Number(process.env.LLM_MAX_TOKENS_SKILL_DIRECT_SHARED_ASSET || 12000),
         timeoutMs: Number(process.env.LLM_REQUEST_TIMEOUT_SKILL_DIRECT_SHARED_ASSET_MS || 120000),
         systemPrompt,
+        operationLabel: "styles:/styles.css",
       })));
     }
     if (!css.trim()) css = renderLocalStyles(this.context.stylePreset);
@@ -4883,6 +4935,7 @@ ${this.context.routes.some((route) => normalizePath(route) === "/blog") ? 'Blog 
         maxTokens: Number(process.env.LLM_MAX_TOKENS_SKILL_DIRECT_SHARED_ASSET || 8000),
         timeoutMs: Number(process.env.LLM_REQUEST_TIMEOUT_SKILL_DIRECT_SHARED_ASSET_MS || 120000),
         systemPrompt,
+        operationLabel: "script:/script.js",
       }));
     }
     if (!js.trim()) js = renderLocalScript();

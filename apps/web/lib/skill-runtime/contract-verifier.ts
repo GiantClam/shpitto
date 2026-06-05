@@ -132,8 +132,22 @@ function extractNavRoutes(source: string): string[] {
 }
 
 function extractLocaleToggleSet(source: string): string[] {
-  const matches = Array.from(String(source || "").matchAll(/data-locale-toggle[^>]*data-locale=["']([^"']+)["']/gi));
-  return Array.from(new Set(matches.map((match) => String(match[1] || "").trim()).filter(Boolean))).sort();
+  return inspectLocaleToggle(source).locales;
+}
+
+function inspectLocaleToggle(source: string): { locales: string[]; protocol: "explicit-buttons" | "single-switch" | "" } {
+  const html = String(source || "");
+  const explicitMatches = Array.from(html.matchAll(/data-locale-toggle[^>]*data-locale=["']([^"']+)["']/gi));
+  const explicitLocales = Array.from(
+    new Set(explicitMatches.map((match) => String(match[1] || "").trim()).filter(Boolean)),
+  ).sort();
+  if (explicitLocales.length > 0) {
+    return { locales: explicitLocales, protocol: "explicit-buttons" };
+  }
+  if (/\bdata-locale-switch\b/i.test(html)) {
+    return { locales: ["en", "zh-CN"], protocol: "single-switch" };
+  }
+  return { locales: [], protocol: "" };
 }
 
 function resolveLocaleMode(contract: ImmutableGenerationContract): string {
@@ -334,7 +348,8 @@ export function verifyRouteUnitArtifacts(params: {
       }
       for (const page of htmlPages) {
         const html = String(page.file?.content || "");
-        const toggleSet = extractLocaleToggleSet(html);
+        const localeToggle = inspectLocaleToggle(html);
+        const toggleSet = localeToggle.locales;
         if (!(toggleSet.includes("zh-CN") && toggleSet.includes("en"))) {
           return {
             status: "contract_violation",
@@ -350,10 +365,12 @@ export function verifyRouteUnitArtifacts(params: {
         }
         const baselineHistoricalFile = baselineFilesByPath.get(page.htmlPath);
         if (baselineHistoricalFile) {
-          const priorToggleSet = extractLocaleToggleSet(String(baselineHistoricalFile.content || ""));
+          const priorLocaleToggle = inspectLocaleToggle(String(baselineHistoricalFile.content || ""));
+          const priorToggleSet = priorLocaleToggle.locales;
           if (
-            priorToggleSet.length > 0 &&
-            JSON.stringify(toggleSet) !== JSON.stringify(priorToggleSet)
+            (priorToggleSet.length > 0 || priorLocaleToggle.protocol) &&
+            (JSON.stringify(toggleSet) !== JSON.stringify(priorToggleSet) ||
+              localeToggle.protocol !== priorLocaleToggle.protocol)
           ) {
             return {
               status: "contract_violation",
@@ -364,12 +381,15 @@ export function verifyRouteUnitArtifacts(params: {
               violationCode: "locale_shell_mismatch",
               ownerLayer: inferOwnerLayerFromViolationCode("locale_shell_mismatch"),
               violatedFields: ["locale_shell.toggle"],
-              evidence: [`baseline=${priorToggleSet.join(",")}`, `route=${toggleSet.join(",")}`],
+              evidence: [
+                `baseline=${priorLocaleToggle.protocol || "none"}:${priorToggleSet.join(",")}`,
+                `route=${localeToggle.protocol || "none"}:${toggleSet.join(",")}`,
+              ],
             };
           }
         }
         const navBlock = extractNavBlock(html);
-        if (/data-locale-toggle/i.test(navBlock)) {
+        if (/\bdata-locale-toggle\b|\bdata-locale-switch\b/i.test(navBlock)) {
           return {
             status: "contract_violation",
             scope: "route",

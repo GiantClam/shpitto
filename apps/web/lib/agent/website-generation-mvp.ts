@@ -79,6 +79,59 @@ export type WebsiteGenerationMvpRecoveryResult = {
   previewOnly: boolean;
 };
 
+function sleepMs(delayMs: number) {
+  return new Promise((resolve) => setTimeout(resolve, Math.max(0, delayMs)));
+}
+
+function clipErrorMessage(error: unknown) {
+  const text =
+    error instanceof Error
+      ? `${error.name}: ${error.message}`
+      : typeof error === "string"
+        ? error
+        : JSON.stringify(error);
+  const normalized = String(text || "").trim();
+  return normalized.length > 320 ? `${normalized.slice(0, 317)}...` : normalized;
+}
+
+function isRetryableRouteUnitExecutionError(error: unknown) {
+  const text = clipErrorMessage(error).toLowerCase();
+  if (!text) return false;
+  return [
+    "502",
+    "bad gateway",
+    "fetch failed",
+    "unexpected end",
+    "stream ended",
+    "stream end",
+    "socket hang up",
+    "connection reset",
+    "econnreset",
+    "etimedout",
+    "timed out",
+    "timeout",
+    "strict json",
+    "json",
+    "non-json",
+    "invalid json",
+    "malformed",
+    "upstream",
+    "overloaded",
+    "temporarily unavailable",
+  ].some((token) => text.includes(token));
+}
+
+function resolveEventualRecoveryWindowMs() {
+  return Math.max(0, Number(process.env.SHPITTO_MVP_EVENTUAL_RECOVERY_WINDOW_MS || 1_800_000));
+}
+
+function resolveEventualRecoveryDelayMs(attempt: number) {
+  const baseMs = Math.max(0, Number(process.env.SHPITTO_MVP_EVENTUAL_RECOVERY_BASE_MS || 5_000));
+  const maxMs = Math.max(baseMs, Number(process.env.SHPITTO_MVP_EVENTUAL_RECOVERY_MAX_MS || 60_000));
+  if (baseMs === 0) return 0;
+  return Math.min(maxMs, baseMs * Math.max(1, 2 ** Math.max(0, attempt - 1)));
+}
+
 function sanitizeCheckpointSegment(value: string): string {
   return value.replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || "step";
 }
@@ -538,29 +591,49 @@ export async function runWebsiteGenerationMvp(
   );
 
   let kernel;
+  const runtimeTimeoutMs = Math.max(360_000, Number(request.timeoutMs || process.env.SHPITTO_MVP_TIMEOUT_MS || 900_000));
+  const recoveryWindowMs = resolveEventualRecoveryWindowMs();
+  const recoveryDeadlineAt = Date.now() + recoveryWindowMs;
+  let recoveryAttempt = 0;
   try {
-    kernel = await runV2RouteUnitRuntime({
-      state: prepared.initialState,
-      timeoutMs: Math.max(360_000, Number(request.timeoutMs || process.env.SHPITTO_MVP_TIMEOUT_MS || 900_000)),
-      checkpointDir,
-      contract: prepared.generationContract,
-      unitWorker: createSkillToolRouteUnitGenerationWorker({
-        baseState: prepared.initialState,
-        timeoutMs: Math.max(360_000, Number(request.timeoutMs || process.env.SHPITTO_MVP_TIMEOUT_MS || 900_000)),
-      }),
-      onStep: async (snapshot) => {
-        await fs.writeFile(
-          path.join(
-            checkpointDir,
-            `${String(snapshot.stepIndex).padStart(2, "0")}-${sanitizeCheckpointSegment(snapshot.stepKey)}.json`,
-          ),
-          JSON.stringify(snapshot, null, 2),
-          "utf8",
-        );
-        await materializeStepFiles(checkpointSiteDir, snapshot.files || []);
-        await request.onStep?.(snapshot);
-      },
-    });
+    while (true) {
+      recoveryAttempt += 1;
+      try {
+        kernel = await runV2RouteUnitRuntime({
+          state: prepared.initialState,
+          timeoutMs: runtimeTimeoutMs,
+          checkpointDir,
+          contract: prepared.generationContract,
+          unitWorker: createSkillToolRouteUnitGenerationWorker({
+            baseState: prepared.initialState,
+            timeoutMs: runtimeTimeoutMs,
+          }),
+          onStep: async (snapshot) => {
+            await fs.writeFile(
+              path.join(
+                checkpointDir,
+                `${String(snapshot.stepIndex).padStart(2, "0")}-${sanitizeCheckpointSegment(snapshot.stepKey)}.json`,
+              ),
+              JSON.stringify(snapshot, null, 2),
+              "utf8",
+            );
+            await materializeStepFiles(checkpointSiteDir, snapshot.files || []);
+            await request.onStep?.(snapshot);
+          },
+        });
+        break;
+      } catch (error) {
+        const retryable = isRetryableRouteUnitExecutionError(error);
+        const withinRecoveryWindow = Date.now() < recoveryDeadlineAt;
+        if (!(retryable && withinRecoveryWindow)) {
+          throw error;
+        }
+        const delayMs = resolveEventualRecoveryDelayMs(recoveryAttempt);
+        if (delayMs > 0) {
+          await sleepMs(delayMs);
+        }
+      }
+    }
   } catch (error) {
     const recovered = await recoverWebsiteGenerationMvpFromCheckpoints({
       outputDir,
@@ -575,7 +648,7 @@ export async function runWebsiteGenerationMvp(
       generationContract: prepared.generationContract,
       execution: {
         state: prepared.initialState,
-        assistantText: `Recovered V2 artifacts after fresh route-unit generation failed: ${String((error as Error)?.message || error || "unknown error")}`,
+        assistantText: `Recovered V2 artifacts after route-unit generation failed: ${clipErrorMessage(error)}`,
         actions: [],
         pageCount: prepared.generationContract.routeUnitContracts.length,
         fileCount: recovered.generatedFiles.length,

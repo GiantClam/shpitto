@@ -76,4 +76,29 @@ describe("provider health", () => {
     expect(ranked[0]?.config.provider).toBe("aiberm");
     expect(ranked[ranked.length - 1]?.config.provider).toBe("pptoken");
   });
+
+  it("does not override a manual-locked provider with health-based reordering", async () => {
+    const storePath = path.resolve(process.cwd(), ".tmp", "provider-health-manual-lock", "store.json");
+    await fs.rm(path.dirname(storePath), { recursive: true, force: true });
+
+    await recordProviderHealthStatus({
+      attempt: buildAttempt("pptoken", "manual_locked"),
+      status: "retryable_failure",
+      storePath,
+    });
+    await recordProviderHealthStatus({
+      attempt: buildAttempt("aiberm"),
+      status: "success",
+      storePath,
+    });
+
+    const ranked = await rankProviderAttemptsByHealth(
+      [buildAttempt("pptoken", "manual_locked"), buildAttempt("aiberm"), buildAttempt("crazyroute")],
+      storePath,
+    );
+
+    expect(ranked).toHaveLength(1);
+    expect(ranked[0]?.config.provider).toBe("pptoken");
+    expect(ranked[0]?.lock.reason).toBe("manual_locked");
+  });
 });

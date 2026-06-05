@@ -274,13 +274,13 @@ describe("prompt draft research", () => {
     expect(contract.routes).not.toContain("/custom-solutions");
     expect(
       contract.pageIntents.find((page) => page.route === "/casux-research-center")?.purpose,
-    ).toContain("source-backed content collection route");
+    ).toContain("research, standards, or evidence collection route");
     expect(
       contract.pageIntents.find((page) => page.route === "/casux-information-platform")?.purpose,
-    ).toContain("route-owned collection opening");
+    ).toContain("public information library or institutional materials directory");
     expect(
       contract.pageIntents.find((page) => page.route === "/downloads")?.purpose,
-    ).toContain("Do not default to a legacy split-hero template");
+    ).toContain("Do not stage the first screen as a generic split hero");
     expect(contract.websiteSurfaceMode).toBe("content-hub-site");
     expect(contract.discoveryBrief?.surfaceMode).toBe("content-hub-site");
   });
@@ -411,7 +411,7 @@ describe("prompt draft research", () => {
       ]),
     );
     expect(contract.pageIntents.find((page) => page.route === "/resources")?.purpose).toContain(
-      "source-backed content collection route",
+      "public information library or institutional materials directory",
     );
   });
 
@@ -440,7 +440,7 @@ describe("prompt draft research", () => {
     });
 
     const purpose = contract.pageIntents.find((page) => page.route === "/casux-research-center")?.purpose || "";
-    expect(purpose).toContain("source-backed content collection route");
+    expect(purpose).toContain("research, standards, or evidence collection route");
     expect(purpose).not.toContain("Treat Treat");
     expect(purpose).not.toContain("Deliver a route-specific page for Deliver");
   });
@@ -464,8 +464,34 @@ describe("prompt draft research", () => {
     });
 
     const purpose = contract.pageIntents.find((page) => page.route === "/casux-information-platform")?.purpose || "";
+    expect(purpose).toContain("public information library or institutional materials directory");
+    expect(purpose).toContain("information-platform-lead");
     expect(purpose).toContain("collection-title");
-    expect(purpose).toContain("hero-title");
+    expect(purpose).toContain("hero-aside");
+  });
+
+  it("specializes research collections as single-surface index routes instead of generic collection pages", () => {
+    const contract = buildPromptControlManifestFromKnowledgeProfileForTesting("Generate from uploaded materials.", {
+      sourceMode: "uploaded_files",
+      domains: [],
+      sources: [],
+      brand: { name: "CASUX" },
+      audience: [],
+      offerings: [],
+      differentiators: [],
+      proofPoints: [],
+      suggestedPages: [
+        { route: "/", title: "Home", purpose: "Homepage", contentInputs: [] },
+        { route: "/casux-research-center", title: "CASUX Research Center", purpose: "Research hub", contentInputs: [] },
+      ],
+      contentGaps: [],
+      summary: "",
+    });
+
+    const purpose = contract.pageIntents.find((page) => page.route === "/casux-research-center")?.purpose || "";
+    expect(purpose).toContain("research, standards, or evidence collection route");
+    expect(purpose).toContain("research-index-lead");
+    expect(purpose).toContain("hero-aside");
   });
 
   it("keeps specialized route purposes stable without duplicated Treat prefixes", () => {

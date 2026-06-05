@@ -154,6 +154,11 @@ export async function rankProviderAttemptsByHealth(
   attempts: ProviderAttempt[],
   storePath = defaultProviderHealthPath(),
 ): Promise<ProviderAttempt[]> {
+  if (attempts.length <= 1) return attempts;
+  const forcedProvider = attempts.find((attempt) => String(attempt.lock.reason || "").trim() === "manual_locked");
+  if (forcedProvider) {
+    return [forcedProvider];
+  }
   const store = await readProviderHealthStore(storePath);
   return attempts
     .map((attempt, index) => ({

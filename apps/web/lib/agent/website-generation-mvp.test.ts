@@ -238,6 +238,110 @@ describe("website generation mvp", () => {
     expect(runtimeSummary.verification.status).toBe("passed");
   });
 
+  it("retries transient route-unit failure within the recovery window and eventually succeeds", async () => {
+    const outputDir = "D:/github/shpitto/apps/web/.tmp/website-generation-mvp-eventual-retry-test";
+    await import("node:fs/promises").then((fs) => fs.rm(outputDir, { recursive: true, force: true }));
+    buildPromptDraftWithResearchMock.mockResolvedValue({
+      canonicalPrompt: "# Canonical Prompt",
+      usedWebSearch: false,
+      sources: [],
+      promptControlManifest: {
+        schemaVersion: 1,
+        promptKind: "canonical_website_prompt",
+        routeSource: "prompt_draft_page_plan",
+        routes: ["/", "/research"],
+        navLabels: ["Home", "Research"],
+        files: ["/styles.css", "/script.js", "/index.html", "/research/index.html"],
+        pageIntents: [
+          { route: "/", navLabel: "Home", pageKind: "home", purpose: "Institutional homepage." },
+          { route: "/research", navLabel: "Research", pageKind: "content-collection-index", purpose: "Research archive." },
+        ],
+      },
+      websiteSurfaceMode: "content-hub-site",
+      discoveryBrief: {
+        surfaceMode: "content-hub-site",
+        audience: [],
+        primaryGoal: "Institutional resource discovery",
+        routes: ["/", "/research"],
+        sourcePriority: "user",
+        localeMode: "en",
+        immutableConstraints: ["locale:en"],
+        confirmationStatus: "needs_confirmation",
+      },
+      structuredSourceFacts: undefined,
+      promptBudgetEnvelope: undefined,
+      evidenceBrief: undefined,
+      knowledgeProfile: undefined,
+    });
+    selectWebsiteGenerationTypeSkillMock.mockReturnValue({
+      surfaceMode: "content-hub-site",
+      skillId: "content-hub-foundation",
+      siteType: "content_hub",
+    });
+
+    let workerInvocation = 0;
+    const seenRoutes: string[] = [];
+    createSkillToolRouteUnitGenerationWorkerMock.mockImplementation(() => ({
+      id: "eventual-success-worker",
+      capabilities: ["route-unit"],
+      runUnit: async (input: any) => {
+        workerInvocation += 1;
+        seenRoutes.push(String(input.route || ""));
+        if (workerInvocation === 2 && input.route === "/research") {
+          throw new Error("fetch failed: 502 Bad Gateway");
+        }
+        return {
+          unitId: input.unitId,
+          status: "passed",
+          files: input.targetFiles.map((target: string) => ({
+            path: target,
+            content:
+              target === "/index.html"
+                ? "<!doctype html><html><body><header><nav><a href=\"/\">Home</a><a href=\"/research\">Research</a></nav></header><main><h1>Northstar Labs</h1><p>Northstar Labs is the institutional home for research resources, guidance, and governance support for enterprise platform teams. The homepage explains the operating model, the public knowledge base, the delivery guidance, and the evidence pathways that help teams assess readiness before they request deeper collaboration.</p><section><h2>Institutional overview</h2><p>Use this homepage to understand the scope of the program, the way research is organized, and the practical routes that connect planning, standards, implementation, and public documentation.</p></section></main><footer>Footer</footer></body></html>"
+                : target === "/research/index.html"
+                  ? "<!doctype html><html><body><header><nav><a href=\"/\">Home</a><a href=\"/research\">Research</a></nav></header><main><h1>Research</h1><p>The research archive curates studies, standards resources, and evidence-backed materials for policy, implementation, and training teams. It groups methods notes, reference summaries, collaboration documents, and evidence-backed briefs so institutions can move from general interest to a more grounded review of available knowledge.</p><section><h2>Curated archive</h2><p>Each entry is intended to support policy, implementation, and training conversations with enough detail to avoid thin placeholder copy and enough structure to feel like a real institutional archive rather than a generic blog index.</p></section></main><footer>Footer</footer></body></html>"
+                  : target.endsWith(".css")
+                    ? "body{color:black}"
+                    : "console.log('ready')",
+            type: target.endsWith(".html")
+              ? "text/html"
+              : target.endsWith(".css")
+                ? "text/css"
+                : "application/javascript",
+          })),
+        };
+      },
+    }));
+
+    const priorWindow = process.env.SHPITTO_MVP_EVENTUAL_RECOVERY_WINDOW_MS;
+    const priorBase = process.env.SHPITTO_MVP_EVENTUAL_RECOVERY_BASE_MS;
+    process.env.SHPITTO_MVP_EVENTUAL_RECOVERY_WINDOW_MS = "30000";
+    process.env.SHPITTO_MVP_EVENTUAL_RECOVERY_BASE_MS = "0";
+    try {
+      const { runWebsiteGenerationMvp } = await import("./website-generation-mvp");
+      const result = await runWebsiteGenerationMvp({
+        requirementText: "Build a research website for Northstar Labs.",
+        outputDir,
+        timeoutMs: 1000,
+      });
+
+      expect(result.verification.status).toBe("passed");
+      expect(result.previewOnly).not.toBe(true);
+      expect(seenRoutes.filter((route) => route === "/")).toHaveLength(1);
+      expect(seenRoutes.filter((route) => route === "/research").length).toBeGreaterThanOrEqual(2);
+      expect(workerInvocation).toBe(seenRoutes.length);
+      const siteResearch = await import("node:fs/promises").then((fs) =>
+        fs.readFile(path.join(outputDir, "site", "research", "index.html"), "utf8"),
+      );
+      expect(siteResearch).toMatch(/Curated archive|Research \| CASUX/);
+    } finally {
+      if (priorWindow === undefined) delete process.env.SHPITTO_MVP_EVENTUAL_RECOVERY_WINDOW_MS;
+      else process.env.SHPITTO_MVP_EVENTUAL_RECOVERY_WINDOW_MS = priorWindow;
+      if (priorBase === undefined) delete process.env.SHPITTO_MVP_EVENTUAL_RECOVERY_BASE_MS;
+      else process.env.SHPITTO_MVP_EVENTUAL_RECOVERY_BASE_MS = priorBase;
+    }
+  });
+
   it("recovers a site from V2 checkpoints without rerunning generation", async () => {
     const outputDir = "D:/github/shpitto/apps/web/.tmp/website-generation-mvp-recover-test";
     const checkpointDir = path.join(outputDir, "checkpoints");

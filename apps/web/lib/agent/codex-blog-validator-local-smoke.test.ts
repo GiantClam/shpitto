@@ -54,10 +54,15 @@ describe("codex local Blog validator smoke", () => {
           if (task?.status === "succeeded" || task?.status === "failed") return task;
           if (task?.status === "queued") {
             await runChatTaskWorkerOnce();
+            const refreshedTask = await getChatTask(taskId);
+            last = refreshedTask;
+            if (refreshedTask?.status === "succeeded" || refreshedTask?.status === "failed") return refreshedTask;
             continue;
           }
           await sleep(5000);
         }
+        const finalTask = await getChatTask(taskId);
+        if (finalTask?.status === "succeeded" || finalTask?.status === "failed") return finalTask;
         throw new Error(`Timed out waiting for ${taskId}; last=${JSON.stringify(last?.result?.progress || {})}`);
       }
 

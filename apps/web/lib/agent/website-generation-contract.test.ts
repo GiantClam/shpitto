@@ -99,4 +99,38 @@ describe("website generation contract", () => {
       }),
     ]);
   });
+
+  it("enriches manifest-derived content collection routes with opening topology and anti-split-hero hints", () => {
+    const selectedSeedSkillManifest = buildSelectedSeedSkillManifest(
+      ["content-hub-site"],
+      "selected for content hub generation",
+    );
+    const routeUnitContracts = buildPromptManifestRouteUnits(
+      {
+        websiteSurfaceMode: "content-hub-site",
+        pageIntents: [
+          { route: "/", navLabel: "Home", source: "casux_fullflow_live_smoke", purpose: "Official homepage." },
+          {
+            route: "/casux-information-platform",
+            navLabel: "Information",
+            source: "casux_fullflow_live_smoke",
+            purpose: "Act as the public information library and resource index for standards, research, institutional updates, and public-facing materials.",
+          },
+        ],
+      },
+      selectedSeedSkillManifest,
+    );
+
+    expect(routeUnitContracts[1]).toEqual(
+      expect.objectContaining({
+        route: "/casux-information-platform",
+        pageKind: "content-collection-index",
+        openingFamily: "collection",
+      }),
+    );
+    expect(routeUnitContracts[1]?.openingTopology).toContain("information-platform lead");
+    expect(routeUnitContracts[1]?.routeContract.join("\n")).toContain("routeOwnedOpening=information-platform-lead");
+    expect(routeUnitContracts[1]?.routeContract.join("\n")).toContain("openingRootClass=first visible <section> root must include information-platform-lead");
+    expect(routeUnitContracts[1]?.routeContract.join("\n")).toContain("openingMarkup=no <aside> inside the opening band");
+  });
 });

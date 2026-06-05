@@ -18,9 +18,57 @@ export type ProviderAttempt = {
   config: ProviderConfig;
 };
 
+export type ProviderRetryPolicy = {
+  retries: number;
+  baseMs: number;
+  maxMs: number;
+  jitterMs: number;
+};
+
 export function providerErrorText(error: unknown): string {
   if (error instanceof Error) return String(error.message || error).trim();
   return String(error || "").trim();
+}
+
+export function describeProviderConfig(config: Pick<ProviderConfig, "provider" | "modelName" | "baseURL">): string {
+  const provider = String(config.provider || "").trim() || "unknown-provider";
+  const model = String(config.modelName || "").trim() || "unknown-model";
+  const endpoint = String(config.baseURL || "").trim();
+  if (!endpoint) return `${provider}/${model}`;
+  try {
+    const url = new URL(endpoint);
+    const basePath = `${url.origin}${url.pathname}`.replace(/\/+$/g, "");
+    return `${provider}/${model} @ ${basePath || url.origin}`;
+  } catch {
+    return `${provider}/${model} @ ${endpoint}`;
+  }
+}
+
+export function resolveProviderRetryPolicy(scope: "skill-native" | "route-unit" = "skill-native"): ProviderRetryPolicy {
+  const prefix = scope === "route-unit" ? "ROUTE_UNIT" : "SKILL_NATIVE";
+  const retries = Math.max(
+    0,
+    Number(process.env[`${prefix}_PROVIDER_RETRIES`] || process.env.SKILL_TOOL_PROVIDER_RETRIES || 2),
+  );
+  const baseMs = Math.max(
+    200,
+    Number(process.env[`${prefix}_PROVIDER_RETRY_BASE_MS`] || process.env.SKILL_TOOL_PROVIDER_RETRY_BASE_MS || 1200),
+  );
+  const maxMs = Math.max(
+    baseMs,
+    Number(process.env[`${prefix}_PROVIDER_RETRY_MAX_MS`] || process.env.SKILL_TOOL_PROVIDER_RETRY_MAX_MS || 10000),
+  );
+  const jitterMs = Math.max(
+    0,
+    Number(process.env[`${prefix}_PROVIDER_RETRY_JITTER_MS`] || process.env.SKILL_TOOL_PROVIDER_RETRY_JITTER_MS || 350),
+  );
+  return { retries, baseMs, maxMs, jitterMs };
+}
+
+export function providerRetryBackoffMs(policy: ProviderRetryPolicy, attempt: number): number {
+  const exp = policy.baseMs * Math.pow(2, Math.max(0, attempt - 1));
+  const jitter = policy.jitterMs > 0 ? Math.floor(Math.random() * (policy.jitterMs + 1)) : 0;
+  return Math.min(policy.maxMs, exp + jitter);
 }
 
 export function isRetryableProviderError(error: unknown): boolean {
@@ -110,11 +158,36 @@ export function resolveProviderConfig(lock: RunProviderLock): ProviderConfig {
   };
 }
 
+function normalizePreferredProvider(value: string | undefined): LlmProvider | undefined {
+  const token = String(value || "").trim().toLowerCase();
+  if (!token) return undefined;
+  if (token === "pptoken") return "pptoken";
+  if (token === "aiberm") return "aiberm";
+  if (token === "crazyroute" || token === "crazyrouter" || token === "crazyreoute") return "crazyroute";
+  return undefined;
+}
+
+function reorderProviderLocksByPreference(
+  locks: RunProviderLock[],
+  preferredProvider: LlmProvider | undefined,
+): RunProviderLock[] {
+  if (!preferredProvider || locks.length <= 1) return locks;
+  const preferredIndex = locks.findIndex((lock) => lock.provider === preferredProvider);
+  if (preferredIndex <= 0) return locks;
+  return [locks[preferredIndex], ...locks.slice(0, preferredIndex), ...locks.slice(preferredIndex + 1)];
+}
+
 export function resolveProviderAttempts(preferred?: { provider?: string; model?: string }): ProviderAttempt[] {
-  const attempts = resolveRunProviderRunnerLocks(preferred)
+  const orderedLocks = reorderProviderLocksByPreference(
+    resolveRunProviderRunnerLocks({
+      model: preferred?.model,
+    }),
+    normalizePreferredProvider(preferred?.provider),
+  );
+  const attempts = orderedLocks
     .map((lock) => ({ lock, config: resolveProviderConfig(lock) }))
     .filter((attempt) => !!attempt.config.apiKey);
   if (attempts.length > 0) return attempts;
-  const fallbackLock = resolveRunProviderRunnerLock(preferred);
+  const fallbackLock = orderedLocks[0] || resolveRunProviderRunnerLock(preferred);
   return [{ lock: fallbackLock, config: resolveProviderConfig(fallbackLock) }];
 }
