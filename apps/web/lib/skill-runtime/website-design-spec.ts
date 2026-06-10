@@ -648,6 +648,7 @@ function routeOpeningTopology(
   enterpriseHomepage: boolean,
   surfaceMode: WebsiteSurfaceMode,
 ): string {
+  const text = `${page.route} ${page.navLabel} ${page.purpose}`.toLowerCase();
   if (/^\/blog\/[^/]+$/i.test(String(page.route || "").trim())) {
     return "article lead band -> argument section -> evidence section -> conclusion / related reading";
   }
@@ -669,6 +670,9 @@ function routeOpeningTopology(
     }
     return "single-column homepage hero -> proof band -> capability/CTA";
   }
+  if (/(?:^|\/)(?:casux-)?certification(?:\/|$)/i.test(page.route) || /\bcertification\b/.test(text)) {
+    return "certification criteria lead -> scoring/results ledger -> review-prep and consultation band";
+  }
   if (isContentCollectionPage(page)) {
     if (surfaceMode === "portfolio-blog-site" && String(page.route || "").trim().toLowerCase() === "/blog") {
       return "editorial archive masthead -> featured writing band -> article ledger";
@@ -681,15 +685,11 @@ function routeOpeningTopology(
     }
     return "knowledge-hub lead band -> collection navigator -> resource/result stack";
   }
-  const text = `${page.route} ${page.navLabel} ${page.purpose}`.toLowerCase();
   if (/(?:^|\/)(?:casux-)?creation(?:\/|$)/i.test(page.route) || /\bcreation\b/.test(text)) {
     return "creation masthead -> narrative framework grid -> proof/CTA";
   }
   if (/(?:^|\/)(?:casux-)?construction(?:\/|$)/i.test(page.route) || /\bconstruction\b/.test(text)) {
     return "process lead band -> execution roadmap -> implementation proof row";
-  }
-  if (/(?:^|\/)(?:casux-)?certification(?:\/|$)/i.test(page.route) || /\bcertification\b/.test(text)) {
-    return "certification criteria lead -> scoring/results ledger -> review-prep and consultation band";
   }
   if (/(?:^|\/)(?:casux-)?advocacy(?:\/|$)/i.test(page.route) || /\badvocacy\b/.test(text)) {
     return "advocacy lead band -> participation network -> action framework";
@@ -1017,7 +1017,11 @@ function buildRouteSpecLines(
   requirementText = "",
   seedAuthorityLines: string[] = [],
 ): string[] {
-  if (isContentCollectionPage(page)) {
+  const routeText = `${page.route} ${page.navLabel} ${page.purpose}`.toLowerCase();
+  const isCertificationRoute =
+    /(?:^|\/)(?:casux-)?certification(?:\/|$)/i.test(page.route) || /\bcertification\b/.test(routeText);
+
+  if (page.route !== "/" && isContentCollectionPage(page) && !isCertificationRoute) {
     return [
       `- role: ${routeRoleSummary(page)}`,
       `- nav_label: ${page.navLabel}`,
@@ -1046,7 +1050,6 @@ function buildRouteSpecLines(
       ...routeMediaPlan(page, enterpriseHomepage, surfaceMode),
     ];
   }
-  const routeText = `${page.route} ${page.navLabel} ${page.purpose}`.toLowerCase();
   const consultationHostContract =
         requirementNeedsConsultationForm(requirementText) && routeShouldHostConsultationForm(page, requirementText)
       ? [
@@ -1078,7 +1081,7 @@ function buildRouteSpecLines(
         ? [
             "- markup_contract: the first visible construction band should use route-owned class semantics such as `process-lead`, `construction-intro`, or `execution-roadmap` rather than a generic `detail-grid` with an `aside` surface.",
           ]
-        : /(?:^|\/)(?:casux-)?certification(?:\/|$)/i.test(page.route) || /\bcertification\b/.test(routeText)
+        : isCertificationRoute
           ? [
               "- markup_contract: the first visible certification band should use route-owned class semantics such as `certification-entry`, `criteria-ledger`, `scorecard-band`, `review-prep`, or `assessor-packet` rather than a generic `detail-grid` with an `aside` surface.",
             ]
@@ -1178,7 +1181,7 @@ function buildRouteSpecLines(
         ? "brand-led institutional masthead -> capability overview shelves -> standards/research proof band -> consultation or route CTA"
       : page.route === "/" && !enterpriseHomepage && surfaceMode === "content-hub-site"
         ? "editorial archive masthead -> topic/collection shelves -> standards/research ledger -> resource index rows -> institutional CTA"
-        : /(?:^|\/)(?:casux-)?certification(?:\/|$)/i.test(page.route) || /\bcertification\b/.test(routeText)
+        : isCertificationRoute
           ? "certification criteria lead -> score/results rows -> review-prep and assessor materials -> consultation CTA"
         : page.contentSkeleton.join(" -> ") || "derive from the route role without reusing a generic hero shell";
   return [
@@ -1198,7 +1201,7 @@ function buildRouteSpecLines(
     ...contentHubInteriorCopyContract,
     ...portfolioBlogInteriorContract,
     ...surfaceHomepageContract,
-    ...((/(?:^|\/)(?:casux-)?certification(?:\/|$)/i.test(page.route) || /\bcertification\b/.test(routeText))
+    ...(isCertificationRoute
       ? [
           "- copy_contract: certification routes must speak concretely about evaluation criteria, scoring dimensions, total-score thresholds, assessor/reviewer materials, evidence packets, or quality-mark/badge outcomes. Do not keep the route at the generic level of topic filters plus resource cards.",
           "- copy_contract: at least one opening/result band should name review logic directly, for example score criteria, assessment dimensions, threshold logic, assessor packet, reviewer checklist, certification badge, or quality-mark workflow.",
