@@ -192,6 +192,8 @@ export function shouldRecoverFromSubmitFailure(params: {
 
 const DEFAULT_SUBMIT_FAILURE_RECOVERY_ATTEMPTS = 5;
 const DEFAULT_SUBMIT_FAILURE_RECOVERY_DELAY_MS = 1500;
+const BACKGROUND_SUBMIT_FAILURE_RECOVERY_ATTEMPTS = 36;
+const BACKGROUND_SUBMIT_FAILURE_RECOVERY_DELAY_MS = 5000;
 
 type SubmitFailureRecoveryParams = {
   chatId: string;
@@ -3310,6 +3312,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
   const autoSubmittedInitialPrompt = useRef(false);
   const appliedInitialDraft = useRef(false);
   const appliedLaunchHandoff = useRef(false);
+  const submitFailureRecoveryRunIdRef = useRef(0);
   const attachmentInputRef = useRef<HTMLInputElement | null>(null);
   const previewAutoRefreshSignatureRef = useRef("");
 
@@ -3509,7 +3512,10 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
   }, [assetPickerOpen, fetchProjectAssetsForPicker]);
 
   useEffect(() => {
-    return () => clearPollTimer();
+    return () => {
+      submitFailureRecoveryRunIdRef.current += 1;
+      clearPollTimer();
+    };
   }, [clearPollTimer]);
 
   useEffect(() => {
@@ -3594,6 +3600,33 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
       }
     },
     [clearPollTimer, fetchHistoryByChatId, toTimelineMessage],
+  );
+
+  const applyRecoveredSubmitHistory = useCallback(
+    async (history: HistoryResponse) => {
+      setTaskEvents(Array.isArray(history.events) ? history.events : []);
+      setPreviewTask(history.previewTask || (taskHasPreviewBaseline(history.task) ? history.task! : null));
+      const recoveredMessages = Array.isArray(history.messages)
+        ? history.messages
+            .filter((item) => !isTaskEventTimelineMessage(item))
+            .map((item) => toTimelineMessage(item))
+            .filter((item) => item.text)
+        : [];
+      if (recoveredMessages.length > 0) {
+        setMessages(recoveredMessages);
+      }
+      const recoveredTask = history.task;
+      if (recoveredTask?.id) {
+        setTask(recoveredTask);
+        await fetchTask(recoveredTask.id);
+      } else {
+        setTask(null);
+        setLoadingTask(false);
+        void fetchProjectMeta();
+      }
+      setError("");
+    },
+    [fetchProjectMeta, fetchTask, toTimelineMessage],
   );
 
   useEffect(() => {
@@ -3842,6 +3875,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
       setBillingCta(null);
       setSubmitting(true);
       setLoadingTask(true);
+      submitFailureRecoveryRunIdRef.current += 1;
       setAssetPickerOpen(false);
       setPrompt("");
       clearPollTimer();
@@ -3914,29 +3948,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
             fetchHistory: fetchHistoryByChatId,
           });
           if (recoveredHistory) {
-            setTaskEvents(Array.isArray(recoveredHistory.events) ? recoveredHistory.events : []);
-            setPreviewTask(
-              recoveredHistory.previewTask || (taskHasPreviewBaseline(recoveredHistory.task) ? recoveredHistory.task! : null),
-            );
-            const recoveredMessages = Array.isArray(recoveredHistory.messages)
-              ? recoveredHistory.messages
-                  .filter((item) => !isTaskEventTimelineMessage(item))
-                  .map((item) => toTimelineMessage(item))
-                  .filter((item) => item.text)
-              : [];
-            if (recoveredMessages.length > 0) {
-              setMessages(recoveredMessages);
-            }
-            const recoveredTask = recoveredHistory.task;
-            if (recoveredTask?.id) {
-              setTask(recoveredTask);
-              await fetchTask(recoveredTask.id);
-            } else {
-              setTask(null);
-              setLoadingTask(false);
-              void fetchProjectMeta();
-            }
-            setError("");
+            await applyRecoveredSubmitHistory(recoveredHistory);
             return;
           }
         } catch {
@@ -3952,11 +3964,28 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
           return Array.from(map.values());
         });
         appendMessage("assistant", `${submitCopy.submitFailed}: ${message}`, { locale: submitLocale });
+        const recoveryRunId = submitFailureRecoveryRunIdRef.current + 1;
+        submitFailureRecoveryRunIdRef.current = recoveryRunId;
+        void (async () => {
+          try {
+            const recoveredHistory = await recoverHistoryAfterSubmitFailure({
+              chatId,
+              submittedText: runtimePrompt,
+              fetchHistory: fetchHistoryByChatId,
+              attempts: BACKGROUND_SUBMIT_FAILURE_RECOVERY_ATTEMPTS,
+              delayMs: BACKGROUND_SUBMIT_FAILURE_RECOVERY_DELAY_MS,
+            });
+            if (!recoveredHistory || submitFailureRecoveryRunIdRef.current !== recoveryRunId) return;
+            await applyRecoveredSubmitHistory(recoveredHistory);
+          } catch {
+            // Best-effort background recovery only.
+          }
+        })();
       } finally {
         setSubmitting(false);
       }
     },
-    [appendMessage, chatId, clearPollTimer, fetchHistoryByChatId, fetchProjectMeta, fetchTask, pendingAssetRefs, toTimelineMessage, userId],
+    [appendMessage, applyRecoveredSubmitHistory, chatId, clearPollTimer, fetchHistoryByChatId, fetchProjectMeta, fetchTask, pendingAssetRefs, toTimelineMessage, userId],
   );
 
   useEffect(() => {
