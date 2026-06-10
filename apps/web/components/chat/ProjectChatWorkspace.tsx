@@ -171,6 +171,25 @@ function isTaskEventTimelineMessage(message: HistoryMessage): boolean {
   return false;
 }
 
+export function shouldRecoverFromSubmitFailure(params: {
+  history: HistoryResponse;
+  submittedText: string;
+}): boolean {
+  const submittedText = String(params.submittedText || "").trim();
+  if (!submittedText) return false;
+  const historyMessages = Array.isArray(params.history.messages)
+    ? params.history.messages.filter((item) => !isTaskEventTimelineMessage(item))
+    : [];
+  if (params.history.task?.id) return true;
+  const matchedUserIndex = historyMessages.findLastIndex(
+    (item) => item.role === "user" && String(item.text || "").trim() === submittedText,
+  );
+  if (matchedUserIndex < 0) return false;
+  return historyMessages
+    .slice(matchedUserIndex + 1)
+    .some((item) => item.role !== "user" && String(item.text || "").trim().length > 0);
+}
+
 type SessionPayload = {
   id: string;
   title: string;
@@ -3843,6 +3862,37 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
         await fetchTask(latest.id);
         void fetchProjectMeta();
       } catch (err: any) {
+        try {
+          const recoveredHistory = await fetchHistoryByChatId(chatId);
+          if (shouldRecoverFromSubmitFailure({ history: recoveredHistory, submittedText: runtimePrompt })) {
+            setTaskEvents(Array.isArray(recoveredHistory.events) ? recoveredHistory.events : []);
+            setPreviewTask(
+              recoveredHistory.previewTask || (taskHasPreviewBaseline(recoveredHistory.task) ? recoveredHistory.task! : null),
+            );
+            const recoveredMessages = Array.isArray(recoveredHistory.messages)
+              ? recoveredHistory.messages
+                  .filter((item) => !isTaskEventTimelineMessage(item))
+                  .map((item) => toTimelineMessage(item))
+                  .filter((item) => item.text)
+              : [];
+            if (recoveredMessages.length > 0) {
+              setMessages(recoveredMessages);
+            }
+            const recoveredTask = recoveredHistory.task;
+            if (recoveredTask?.id) {
+              setTask(recoveredTask);
+              await fetchTask(recoveredTask.id);
+            } else {
+              setTask(null);
+              setLoadingTask(false);
+              void fetchProjectMeta();
+            }
+            setError("");
+            return;
+          }
+        } catch {
+          // Fall through to the visible submit error when recovery cannot confirm progress.
+        }
         setLoadingTask(false);
         const message = String(err?.message || err || "Submit failed");
         setError(message);

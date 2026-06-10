@@ -402,6 +402,75 @@ describe("chat api async mode", () => {
     }
   });
 
+  it("preserves the drafted website surface mode and seed manifest when confirming prompt generation", async () => {
+    const chatId = `chat-confirm-lock-${Date.now()}`;
+    const requirement = [
+      "Build a polished industrial manufacturer website for enterprise procurement teams.",
+      "Keep the site focused on products, proof, capability trust, and lead generation.",
+    ].join("\n");
+    const { POST } = await import("../../app/api/chat/route");
+
+    const initialRes = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: chatId,
+          messages: [{ role: "user", parts: [{ type: "text", text: requirement }] }],
+        }),
+      }),
+    );
+    expect(initialRes.status).toBe(200);
+
+    const draftRes = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: chatId,
+          messages: [{ role: "user", parts: [{ type: "text", text: requirementFormPayload() }] }],
+        }),
+      }),
+    );
+    expect(draftRes.status).toBe(200);
+
+    const timeline = await listChatTimelineMessages(chatId, 100);
+    const promptCard = timeline.find((message) => String(message.metadata?.cardType || "") === "prompt_draft");
+    const confirmCard = timeline.find((message) => String(message.metadata?.cardType || "") === "confirm_generate");
+    const promptMetadata = (promptCard?.metadata || {}) as Record<string, any>;
+    const draftedSurfaceMode = String(promptMetadata.generationContract?.websiteSurfaceMode || promptMetadata.websiteSurfaceMode || "");
+    const draftedSeedIds = Array.isArray(promptMetadata.selectedSeedSkillManifest?.selected)
+      ? promptMetadata.selectedSeedSkillManifest.selected.map((item: any) => String(item.id || "")).filter(Boolean)
+      : [];
+
+    expect(draftedSurfaceMode).toBe("corporate-b2b-site");
+    expect(draftedSeedIds.length).toBeGreaterThan(0);
+
+    const confirmRes = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: chatId,
+          messages: [{ role: "user", parts: [{ type: "text", text: String(confirmCard?.metadata?.payload || "") }] }],
+        }),
+      }),
+    );
+    expect(confirmRes.status).toBe(202);
+
+    const task = await getLatestChatTaskForChat(chatId);
+    const workflow = (task?.result?.internal?.inputState as any)?.workflow_context || {};
+    const queuedSeedIds = Array.isArray(workflow.selectedSeedSkillManifest?.selected)
+      ? workflow.selectedSeedSkillManifest.selected.map((item: any) => String(item.id || "")).filter(Boolean)
+      : [];
+
+    expect(workflow.websiteSurfaceMode).toBe(draftedSurfaceMode);
+    expect(workflow.generationContract?.websiteSurfaceMode).toBe(draftedSurfaceMode);
+    expect(workflow.promptControlManifest?.websiteSurfaceMode).toBe(draftedSurfaceMode);
+    expect(queuedSeedIds).toEqual(draftedSeedIds);
+    expect(workflow.generationContract?.selectedSeedSkillManifest?.selected?.map((item: any) => item.id)).toEqual(draftedSeedIds);
+  });
+
   it("returns existing active task instead of creating duplicate", async () => {
     const chatId = `chat-active-${Date.now()}`;
     const { POST } = await import("../../app/api/chat/route");

@@ -2700,7 +2700,16 @@ export async function POST(req: Request) {
   const existingGenerationContract =
     normalizeGenerationContract((existingWorkflow as any)?.generationContract) ||
     normalizeGenerationContract((previousState.workflow_context as any)?.generationContract);
+  const shouldInheritConfirmedPromptGenerationContract =
+    executionMode === "generate" &&
+    confirmedPromptExplicitlyProvided &&
+    hasTrustedConfirmedPromptDraftMetadata({
+      confirmedPrompt,
+      confirmedPromptDraftText,
+      confirmedPromptDraftMetadata,
+    });
   const shouldInheritLockedGenerationContract =
+    shouldInheritConfirmedPromptGenerationContract ||
     executionMode === "deploy" ||
     executionMode === "translate" ||
     (executionMode === "refine" && decision.refineScope !== "structural");
@@ -2748,6 +2757,29 @@ export async function POST(req: Request) {
           selectedSeedContracts: executionSelectedSeedContracts,
           routeUnitContracts: executionRouteUnitContracts,
         });
+  const executionWebsiteSurfaceMode =
+    String(
+      executionGenerationContract.websiteSurfaceMode ||
+        (shouldInheritLockedGenerationContract ? (previousState.workflow_context as any)?.websiteSurfaceMode : "") ||
+        resolvedWebsiteSurfaceMode,
+    ).trim() || resolvedWebsiteSurfaceMode;
+  const executionPromptControlManifest =
+    (shouldInheritLockedGenerationContract &&
+      executionGenerationContract.promptControlManifest &&
+      typeof executionGenerationContract.promptControlManifest === "object"
+      ? executionGenerationContract.promptControlManifest
+      : promptControlManifest) || promptControlManifest;
+  const executionWebsiteDiscoveryBrief =
+    (shouldInheritLockedGenerationContract &&
+      executionGenerationContract.discoveryBrief &&
+      typeof executionGenerationContract.discoveryBrief === "object"
+      ? (executionGenerationContract.discoveryBrief as WebsiteDiscoveryBrief)
+      : resolvedWebsiteDiscoveryBrief) || resolvedWebsiteDiscoveryBrief;
+  const executionSupportedLocales =
+    executionWebsiteDiscoveryBrief?.supportedLocales?.length
+      ? executionWebsiteDiscoveryBrief.supportedLocales
+      : resolvedSupportedLocales;
+  const executionDefaultLocale = executionWebsiteDiscoveryBrief?.defaultLocale || resolvedDefaultLocale;
   const revisionPointer = buildRevisionPointer({
     executionMode,
     requirementRevision: aggregated.revision,
@@ -2846,14 +2878,14 @@ export async function POST(req: Request) {
       requirementCompletionPercent: decision.completionPercent,
       requirementSlots: slots,
       requirementSpec,
-      supportedLocales: resolvedSupportedLocales,
-      defaultLocale: resolvedDefaultLocale,
-      translationTargetLocales: resolvedSupportedLocales,
-      websiteSurfaceMode: resolvedWebsiteSurfaceMode,
+      supportedLocales: executionSupportedLocales,
+      defaultLocale: executionDefaultLocale,
+      translationTargetLocales: executionSupportedLocales,
+      websiteSurfaceMode: executionWebsiteSurfaceMode,
       websiteTypeSkillId:
         selectedWebsiteType?.skillId ||
         String((previousState.workflow_context as any)?.websiteTypeSkillId || ""),
-      websiteDiscoveryBrief: resolvedWebsiteDiscoveryBrief,
+      websiteDiscoveryBrief: executionWebsiteDiscoveryBrief,
       primaryVisualDirection: requirementSpec.primaryVisualDirection,
       secondaryVisualTags: requirementSpec.secondaryVisualTags || [],
       visualDecisionSource: requirementSpec.visualDecisionSource,
@@ -2865,7 +2897,7 @@ export async function POST(req: Request) {
       correctionSummary: aggregated.correctionSummary,
       canonicalPrompt: canonicalPromptForExecution,
       requirementAggregatedText: requirementAggregatedTextForExecution,
-      promptControlManifest,
+      promptControlManifest: executionPromptControlManifest,
       selectedSeedSkillManifest: executionSelectedSeedSkillManifest,
       selectedSeedContracts: executionSelectedSeedContracts,
       routeUnitContracts: executionRouteUnitContracts,
