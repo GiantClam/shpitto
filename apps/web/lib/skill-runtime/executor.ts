@@ -273,12 +273,12 @@ export type SkillRuntimeTaskParams = {
 };
 
 const WEBSITE_MAIN_SKILL_ID = "website-generation-workflow";
-const STAGE_SKILL_SCOPES = {
+export const STAGE_SKILL_SCOPES = {
   workflow: [WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID, WEBSITE_MAIN_SKILL_ID, "brainstorming", "writing-plans"],
-  styles: [WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID, WEBSITE_MAIN_SKILL_ID, "responsive-by-default", "web-image-generator", "web-icon-library"],
+  styles: [WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID, WEBSITE_MAIN_SKILL_ID, "responsive-by-default", "design-system-enforcement", "web-image-generator", "web-icon-library"],
   script: [WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID, WEBSITE_MAIN_SKILL_ID, "responsive-by-default"],
-  page: [WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID, WEBSITE_MAIN_SKILL_ID, "responsive-by-default", "section-quality-checklist", "web-image-generator", "web-icon-library"],
-  repair: [WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID, WEBSITE_MAIN_SKILL_ID, "end-to-end-validation", "verification-before-completion", "visual-qa-mandatory"],
+  page: [WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID, WEBSITE_MAIN_SKILL_ID, "responsive-by-default", "design-system-enforcement", "section-quality-checklist", "web-image-generator", "web-icon-library"],
+  repair: [WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID, WEBSITE_MAIN_SKILL_ID, "design-system-enforcement", "end-to-end-validation", "verification-before-completion", "visual-qa-mandatory"],
 } as const;
 type StageSkillScope = keyof typeof STAGE_SKILL_SCOPES;
 
@@ -4865,7 +4865,7 @@ Generate only raw CSS for styles.css.
 Keep the output production-safe, responsive, and semantically consistent.
 Never include markdown fences or explanation text.
 Follow skill directives, design guidance, and the website quality contract strictly.`;
-      const prompt = `Generate a single styles.css for a multi-page industrial website.
+      const prompt = `Generate a single styles.css for the confirmed multi-page static website.
 Output raw CSS only. No markdown fences.
 ${qualityContract}
 Skill ID: ${this.context.skillId}

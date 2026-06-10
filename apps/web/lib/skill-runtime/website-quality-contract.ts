@@ -22,6 +22,7 @@ export function renderWebsiteQualityContract(): string {
     "- Metrics must be source-backed; do not invent percentages, multipliers, \"hours saved\", growth, or conversion-lift claims without brief or citation support.",
     "- Visual direction must be distinctive: expressive type pairing, intentional background system, layered sections, strong hero composition, and mobile-specific composition.",
     "- CSS must include responsive strategy using media queries, container queries, or clamp-based fluid sizing.",
+    "- Typography safety: keep generated UI text at non-negative letter-spacing by default. Use `letter-spacing: 0` for body text, headings, buttons, and links unless a small uppercase label explicitly needs positive tracking.",
     "- CSS color discipline: raw hex colors are allowed only inside the `:root` token block. Outside `:root`, use `var(...)`, `rgba(...)`, or `color-mix(...)` from tokens; do not put hex fallbacks inside component selectors.",
     "- Every page must contain enough route-specific content depth to stand alone; sibling pages must not be superficial copies.",
     "- When the workflow explicitly requires Blog detail pages, each detail route must be a complete publishable article with a real body, meaningful section structure, and enough route-specific substance to read as finished content rather than a shell, stub, or metadata-only placeholder.",

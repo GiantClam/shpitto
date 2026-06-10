@@ -4,6 +4,7 @@ import {
   buildQaSummaryFromPageRecordsForTesting,
   normalizeGeneratedProjectArtifactPreviewForTesting,
   resolveRuntimeTaskExecutionModeForTesting,
+  STAGE_SKILL_SCOPES,
 } from "./executor";
 import { buildLocalDecisionPlan } from "./decision-layer";
 
@@ -159,5 +160,11 @@ describe("executor task mode routing", () => {
     expect(summary.shadowVisualEvaluation?.signals.map((signal) => signal.code)).toEqual(
       expect.arrayContaining(["authoredness", "seed-faithfulness", "opening-non-generic-quality"]),
     );
+  });
+
+  it("loads design-system enforcement in styles, page, and repair stages", () => {
+    expect(STAGE_SKILL_SCOPES.styles).toContain("design-system-enforcement");
+    expect(STAGE_SKILL_SCOPES.page).toContain("design-system-enforcement");
+    expect(STAGE_SKILL_SCOPES.repair).toContain("design-system-enforcement");
   });
 });

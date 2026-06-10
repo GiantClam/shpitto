@@ -63,6 +63,7 @@ export const WEBSITE_GENERATION_SKILL_BUNDLE: string[] = [
   "blog-detail-fill-workflow",
   "brainstorming",
   "writing-plans",
+  "design-system-enforcement",
   "web-image-generator",
   "web-icon-library",
   "end-to-end-validation",
