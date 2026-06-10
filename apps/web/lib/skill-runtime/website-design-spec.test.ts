@@ -167,6 +167,9 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
     });
 
     expect(markdown).toContain("site_generator_mode: hybrid");
+    expect(markdown).toContain("seed_authority_mode: seed-authoritative");
+    expect(markdown).toContain("selected_seed_contracts: open-design-web-prototype, docs-reference-template");
+    expect(markdown).toContain("heuristic_fallback_rule: local contentSkeleton and componentMix are fallback planning hints only.");
     expect(markdown).toContain("Open Design owns visual direction and module rhythm");
     expect(markdown).toContain("HTML Anything owns concrete HTML/CSS template discipline");
     expect(markdown).toContain("functionality_port_scope: port generation functionality, template discipline");
@@ -175,6 +178,49 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
     expect(markdown).toContain("generated_site_theme_boundary: generated customer websites may use their own route-level design tokens");
     expect(markdown).toContain("Shpitto remains responsible for Blog/content hooks, Contact/API wiring");
     expect(markdown).toContain("selected_frontend_seed_skills: open-design-web-prototype, docs-reference-template");
+  });
+
+  it("persists selected seed contract signals when contract objects are available", () => {
+    const decision = buildMockDecision();
+    decision.pageBlueprints = decision.pageIntents;
+
+    const markdown = buildWebsiteDesignSpecMarkdown({
+      decision,
+      requirementText: decision.requirementText,
+      stylePreset: DEFAULT_STYLE_PRESET,
+      websiteSurfaceMode: "corporate-b2b-site",
+      selectedSeedSkillIds: ["industrial-b2b-foundation", "precision-catalog-template"],
+      selectedSeedContracts: [
+        {
+          id: "industrial-b2b-foundation",
+          contract: {
+            homepageTopologyClass: "procurement-masthead",
+            openingFamily: "enterprise-industrial",
+            sectionCadence: ["image-backed procurement masthead", "proof row", "capability band", "inquiry CTA"],
+            componentBans: ["editorial archive shelf", "pricing table"],
+            mediaPosture: "Use factory and operations visuals.",
+            typographyPosture: "Industrial sans with mono accents.",
+            ctaPosture: "Quote or consultation CTA.",
+            compatibleSurfaceModes: ["corporate-b2b-site"],
+            visualBoldness: "high",
+            routeOverrides: {
+              home: {
+                homepageTopologyClass: "procurement-masthead",
+                openingFamily: "enterprise-industrial",
+                sectionCadence: ["image-backed procurement masthead", "proof row", "capability band", "inquiry CTA"],
+              },
+            },
+          },
+        },
+      ],
+    });
+
+    expect(markdown).toContain("seed_opening_family: enterprise-industrial");
+    expect(markdown).toContain("seed_homepage_topology_class: procurement-masthead");
+    expect(markdown).toContain("seed_section_cadence: image-backed procurement masthead -> proof row -> capability band -> inquiry CTA");
+    expect(markdown).toContain("seed_component_bans: editorial archive shelf, pricing table");
+    expect(markdown).toContain("seed_media_posture: Use factory and operations visuals.");
+    expect(markdown).toContain("seed_typography_posture: Industrial sans with mono accents.");
   });
 
   it("applies the enterprise homepage contract to generic corporate-b2b sites even without an explicit IBM override", () => {
@@ -876,6 +922,7 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
 
     expect(summary?.route).toBe("/products");
     expect(summary?.routeContract.join("\n")).toContain("route=/products");
+    expect(summary?.routeContract.join("\n")).toContain("seedAuthority=seed-authoritative");
     expect(summary?.openingFamily).toBe("catalog");
     expect(summary?.inheritedTokens).toEqual(expect.arrayContaining(["#2563EB", "#22C55E"]));
     expect(summary?.inheritedTerminology).toContain("corporate-b2b-site");
@@ -1457,6 +1504,26 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
     expect(excerpt).toContain("this route is single-language Chinese-first");
     expect(excerpt).not.toContain("keep locale button labels literal `EN` and `ZH`");
     expect(excerpt).not.toContain("route HTML should rely on stable `data-i18n` keys plus `/i18n/messages.en.json`");
+  });
+
+  it("marks route excerpts as seed-authoritative when selected frontend seeds exist", () => {
+    const decision = buildMockDecision();
+    decision.pageBlueprints = decision.pageIntents;
+
+    const excerpt = buildWebsiteDesignSpecRouteExcerpt(
+      {
+        decision,
+        requirementText: decision.requirementText,
+        stylePreset: DEFAULT_STYLE_PRESET,
+        websiteSurfaceMode: "corporate-b2b-site",
+        selectedSeedSkillIds: ["open-design-web-prototype", "docs-reference-template"],
+      },
+      "/products",
+    );
+
+    expect(excerpt).toContain("seed_authority_mode: seed-authoritative");
+    expect(excerpt).toContain("selected_seed_contracts: open-design-web-prototype, docs-reference-template");
+    expect(excerpt).toContain("local contentSkeleton and componentMix are fallback planning hints only");
   });
 
   it("lets explicit Chinese-first locale contracts beat bilingual-looking workflow noise", () => {

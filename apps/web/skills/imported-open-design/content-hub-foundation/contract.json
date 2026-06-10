@@ -1,0 +1,59 @@
+{
+  "contractVersion": 1,
+  "homepageTopologyClass": "institutional-archive-masthead",
+  "openingFamily": "collection-home",
+  "sectionCadence": [
+    "archive masthead",
+    "topic shelf",
+    "standards ledger",
+    "research index",
+    "institutional CTA"
+  ],
+  "allowedComponentRhythms": [
+    "collection shelf",
+    "research ledger",
+    "resource index row"
+  ],
+  "bannedGenericOpenings": [
+    "hero-grid",
+    "right-side visual rail",
+    "generic three-card feature grid"
+  ],
+  "componentBans": [
+    "pricing table",
+    "SaaS proof strip",
+    "enterprise snapshot panel"
+  ],
+  "mediaPosture": "Institutional, research, or collection context visuals that support ledgers and shelves.",
+  "typographyPosture": "Editorial or institutional serif-forward display with restrained support sans.",
+  "ctaPosture": "Institutional next-step or consultation CTA after archive and research context.",
+  "compatibleSurfaceModes": [
+    "content-hub-site"
+  ],
+  "visualBoldness": "high",
+  "routeOverrides": {
+    "home": {
+      "homepageTopologyClass": "institutional-archive-masthead",
+      "openingFamily": "collection-home",
+      "sectionCadence": [
+        "archive masthead",
+        "topic shelf",
+        "standards ledger",
+        "research index"
+      ]
+    },
+    "resource": {
+      "openingFamily": "resource-ledger",
+      "sectionCadence": [
+        "resource lead",
+        "issue map",
+        "research ledger",
+        "consultation host"
+      ],
+      "componentBans": [
+        "blog archive teaser",
+        "campaign hero"
+      ]
+    }
+  }
+}

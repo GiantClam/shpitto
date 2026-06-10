@@ -12,6 +12,7 @@ The selected visual direction or design-system inspiration is a contract. Genera
 - Define core colors in `:root` and reuse them with `var(...)` or derived `color-mix(...)` values.
 - Avoid repeated raw hex colors outside the token block.
 - Use one typography hierarchy across all routes.
+- Keep body text, headings, buttons, and links at non-negative letter-spacing; reserve positive tracking for deliberate small uppercase labels only.
 - Use a documented spacing scale for sections, cards, grids, forms, and footers.
 - Keep radius, border, shadow, and motion choices consistent across components.
 

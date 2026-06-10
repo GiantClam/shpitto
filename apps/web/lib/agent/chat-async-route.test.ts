@@ -381,6 +381,8 @@ describe("chat api async mode", () => {
       expect(workflow.generationContract?.contractHash).toBe(workflow.contractHash);
       expect(Array.isArray(workflow.routeUnitContracts)).toBe(true);
       expect(Array.isArray(workflow.selectedSeedSkillManifest?.selected)).toBe(true);
+      expect(Array.isArray(workflow.selectedSeedContracts)).toBe(true);
+      expect(Array.isArray(workflow.generationContract?.selectedSeedContracts)).toBe(true);
       expect(workflow.promptBudgetEnvelope?.truncationPolicy).toBe("page_scoped_drop");
       expect(workflow.structuredSourceFacts?.pageCandidates?.length).toBeGreaterThan(0);
       expect(workflow.referencedAssets).toEqual([`Asset "casux-source.txt" path: ${localFixturePath}`]);

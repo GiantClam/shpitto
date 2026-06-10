@@ -75,6 +75,14 @@ async function seedPreviewBaseline(chatId: string, fileSuffix = "project") {
             selectedSeedSkillManifest: {
               selected: [{ id: "content-hub-site", source: "shpitto", reason: "seeded baseline" }],
             },
+            selectedSeedContracts: [
+              {
+                id: "imported-open-design-content-hub",
+                source: "imported-open-design",
+                reason: "seeded baseline",
+                contract: { openingFamily: "collection-led narrative" },
+              },
+            ],
             routeUnitContracts: [
               {
                 route: "/",
@@ -136,6 +144,11 @@ describe("chat lifecycle regression", () => {
       expect((refinePreviewTask?.result?.internal?.inputState as any)?.workflow_context?.contractHash).toBe(
         "a".repeat(64),
       );
+      expect(
+        Array.isArray(
+          (refinePreviewTask?.result?.internal?.inputState as any)?.workflow_context?.generationContract?.selectedSeedContracts,
+        ),
+      ).toBe(true);
 
       const chatDeployPreview = `chat-reg-deploy-preview-${Date.now()}`;
       await seedPreviewBaseline(chatDeployPreview, "deploy-preview");
@@ -146,6 +159,11 @@ describe("chat lifecycle regression", () => {
       expect((deployFromPreviewTask?.result?.internal?.inputState as any)?.workflow_context?.contractHash).toBe(
         "a".repeat(64),
       );
+      expect(
+        Array.isArray(
+          (deployFromPreviewTask?.result?.internal?.inputState as any)?.workflow_context?.generationContract?.selectedSeedContracts,
+        ),
+      ).toBe(true);
 
       const chatDeployedFlow = `chat-reg-deployed-flow-${Date.now()}`;
       const baseline = await seedPreviewBaseline(chatDeployedFlow, "deployed");

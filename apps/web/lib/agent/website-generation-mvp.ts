@@ -19,6 +19,7 @@ import { buildRouteUnitContractSummary } from "../skill-runtime/website-design-s
 import { normalizeRouteUnitContract, type RouteUnitContract } from "../skill-runtime/route-unit-contract.ts";
 import { DEFAULT_STYLE_PRESET } from "../design-style-preset.ts";
 import { buildImmutableGenerationContract, type ImmutableGenerationContract } from "../skill-runtime/generation-contract.ts";
+import { loadProjectSkill, selectWebsiteSeedSkillsForIntent } from "../skill-runtime/project-skill-loader.ts";
 import { runV2RouteUnitRuntime } from "../skill-runtime/route-unit-runner.ts";
 import type { ContractVerificationResult } from "../skill-runtime/contract-violation.ts";
 import { verifyRouteUnitArtifacts } from "../skill-runtime/contract-verifier.ts";
@@ -29,6 +30,7 @@ import {
   readRouteUnitInputCheckpoint,
   recoverGeneratedProjectCheckpoint,
 } from "../skill-runtime/route-unit-checkpoint.ts";
+import { classifyWebsiteSeedOrigin } from "../skill-runtime/website-artifact-generator.ts";
 
 export type WebsiteGenerationMvpRequest = {
   requirementText: string;
@@ -409,9 +411,36 @@ export async function prepareWebsiteGenerationMvp(
     requirementText: request.requirementText,
     routes: promptDraft.promptControlManifest.routes,
   });
+  const selectedSeedSkills = await selectWebsiteSeedSkillsForIntent({
+    requirementText: request.requirementText,
+    routes: promptDraft.promptControlManifest.routes,
+    maxSkills: Number(process.env.SHPITTO_MVP_MAX_SEED_SKILLS || 2),
+  });
+  const selectedSeedSkillContracts = (
+    await Promise.all(
+      selectedSeedSkills.map(async (item) => {
+        const skill = await loadProjectSkill(item.id);
+        return {
+          id: skill.id,
+          source:
+            classifyWebsiteSeedOrigin(skill) === "open-design"
+              ? ("imported-open-design" as const)
+              : classifyWebsiteSeedOrigin(skill) === "html-anything"
+                ? ("imported-html-anything" as const)
+                : ("shpitto" as const),
+          reason: item.reason,
+          contract: skill.seedContract,
+        };
+      }),
+    )
+  ).filter((item) => item.contract);
   const selectedSeedSkillManifest = buildSelectedSeedSkillManifest(
-    [selection.skillId],
-    "MVP lane selected the surface-specific website skill from the confirmed prompt control manifest.",
+    selectedSeedSkillContracts.map((item) => ({
+      id: item.id,
+      source: item.source,
+      reason: item.reason,
+    })),
+    "MVP lane selected imported website seeds for the confirmed prompt control manifest.",
   );
   const discoveryBrief = {
     ...promptDraft.discoveryBrief,
@@ -442,6 +471,7 @@ export async function prepareWebsiteGenerationMvp(
           websiteSurfaceMode: selection.surfaceMode,
           discoveryBrief,
           selectedSeedSkillIds: selectedSeedSkillManifest.selected.map((item) => item.id),
+          selectedSeedContracts: selectedSeedSkillContracts.map((item) => ({ id: item.id, contract: item.contract! })),
         },
         route,
       ),
@@ -454,6 +484,12 @@ export async function prepareWebsiteGenerationMvp(
     promptControlManifest: promptDraft.promptControlManifest,
     discoveryBrief,
     selectedSeedSkillManifest,
+    selectedSeedContracts: selectedSeedSkillContracts.map((item) => ({
+      id: item.id,
+      source: item.source,
+      reason: item.reason,
+      contract: item.contract!,
+    })),
     routeUnitContracts,
   });
   const initialState = {
@@ -476,6 +512,7 @@ export async function prepareWebsiteGenerationMvp(
       promptBudgetEnvelope: promptDraft.promptBudgetEnvelope || null,
       evidenceBrief: promptDraft.evidenceBrief || null,
       selectedSeedSkillManifest,
+      selectedSeedContracts: selectedSeedSkillContracts,
       routeUnitContracts,
       generationContract,
       contractHash: generationContract.contractHash,
@@ -542,6 +579,7 @@ export async function runWebsiteGenerationMvp(
         structuredSourceFacts: prepared.promptDraft.structuredSourceFacts || null,
         evidenceBrief: prepared.promptDraft.evidenceBrief || null,
         selectedSeedSkillManifest: prepared.generationContract.selectedSeedSkillManifest,
+        selectedSeedContracts: prepared.generationContract.selectedSeedContracts,
         routeUnitContracts: prepared.generationContract.routeUnitContracts,
         generationContract: prepared.generationContract,
         contractHash: prepared.generationContract.contractHash,

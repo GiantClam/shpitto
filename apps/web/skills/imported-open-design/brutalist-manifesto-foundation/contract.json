@@ -1,0 +1,51 @@
+{
+  "contractVersion": 1,
+  "homepageTopologyClass": "statement-wall",
+  "openingFamily": "manifesto-wall",
+  "sectionCadence": [
+    "statement wall",
+    "proof columns",
+    "action rail"
+  ],
+  "allowedComponentRhythms": [
+    "statement wall",
+    "proof columns",
+    "asymmetrical rail"
+  ],
+  "bannedGenericOpenings": [
+    "rounded hero card",
+    "pastel feature grid",
+    "soft testimonial slider"
+  ],
+  "componentBans": [
+    "enterprise proof row",
+    "docs search rail"
+  ],
+  "mediaPosture": "Sparse, sharp, high-contrast visual punctuation rather than soft illustration.",
+  "typographyPosture": "Oversized serif or mono tension with near-zero radius.",
+  "ctaPosture": "One hot action rail or statement reply CTA.",
+  "compatibleSurfaceModes": [
+    "marketing-landing-site",
+    "portfolio-blog-site"
+  ],
+  "visualBoldness": "high",
+  "routeOverrides": {
+    "home": {
+      "homepageTopologyClass": "statement-wall",
+      "openingFamily": "manifesto-wall",
+      "sectionCadence": [
+        "statement wall",
+        "proof columns",
+        "action rail"
+      ]
+    },
+    "blog": {
+      "openingFamily": "manifesto-essay",
+      "sectionCadence": [
+        "statement lead",
+        "chapter blocks",
+        "reply CTA"
+      ]
+    }
+  }
+}

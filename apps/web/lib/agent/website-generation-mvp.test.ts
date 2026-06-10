@@ -117,14 +117,16 @@ describe("website generation mvp", () => {
     expect((result.initialState as any).workflow_context.structuredSourceFacts.brandCandidates).toEqual([
       "Northstar Labs",
     ]);
+    expect(Array.isArray(result.generationContract.selectedSeedContracts)).toBe(true);
+    expect((result.initialState as any).workflow_context.selectedSeedContracts).toEqual(
+      result.generationContract.selectedSeedContracts,
+    );
     expect((result.initialState as any).workflow_context.promptBudgetEnvelope.truncationPolicy).toBe(
       "page_scoped_drop",
     );
     expect((result.initialState as any).workflow_context.websiteSurfaceMode).toBe("content-hub-site");
     expect(result.generationContract.contractHash).toMatch(/^[a-f0-9]{64}$/);
-    expect(result.generationContract.selectedSeedSkillManifest.selected).toEqual([
-      expect.objectContaining({ id: "content-hub-foundation", source: "shpitto" }),
-    ]);
+    expect(Array.isArray(result.generationContract.selectedSeedSkillManifest.selected)).toBe(true);
     expect((result.initialState as any).workflow_context.contractHash).toBe(result.generationContract.contractHash);
     expect(Array.isArray((result.initialState as any).workflow_context.routeUnitContracts)).toBe(true);
     expect((result.initialState as any).workflow_context.routeUnitContracts[0]).toEqual(

@@ -44,6 +44,13 @@ describe("chat replay live test helpers", () => {
               selectedSeedSkillManifest: {
                 selected: [{ id: "content-hub-site", source: "shpitto" }],
               },
+              selectedSeedContracts: [
+                {
+                  id: "content-hub-foundation",
+                  source: "imported-open-design",
+                  contract: { openingFamily: "collection-led" },
+                },
+              ],
               routeUnitContracts: [
                 { route: "/", navLabel: "Home", pageKind: "intent", routeContract: ["route=/"] },
                 { route: "/research-center", navLabel: "Research Center", pageKind: "intent", routeContract: ["route=/research-center"] },
@@ -53,6 +60,14 @@ describe("chat replay live test helpers", () => {
               staticSite: {
                 files: [{ path: "/index.html" }, { path: "/research-center/index.html" }, { path: "/styles.css" }],
               },
+            },
+          },
+        },
+        progress: {
+          qaSummary: {
+            shadowVisualEvaluation: {
+              score: 88,
+              signals: [{ code: "authoredness" }, { code: "seed-faithfulness" }],
             },
           },
         },
@@ -66,8 +81,12 @@ describe("chat replay live test helpers", () => {
     expect(trace.routeCount).toBe(2);
     expect(trace.routes).toEqual(["/", "/research-center"]);
     expect(trace.selectedSeedSkillIds).toEqual(["content-hub-site"]);
+    expect(trace.selectedSeedContractIds).toEqual(["content-hub-foundation"]);
+    expect(trace.selectedSeedContractSources).toEqual(["imported-open-design"]);
     expect(trace.promptManifestRoutes).toEqual(["/", "/research-center"]);
     expect(trace.generatedFiles).toEqual(["/index.html", "/research-center/index.html", "/styles.css"]);
+    expect(trace.shadowVisualEvaluationScore).toBe(88);
+    expect(trace.shadowVisualEvaluationSignals).toEqual(["authoredness", "seed-faithfulness"]);
   });
 
   it("compares two generation traces and reports contract drift", () => {

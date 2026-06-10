@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { buildPromptDraftWithResearch } from "./prompt-draft-research";
 import { DEFAULT_STYLE_PRESET } from "../design-style-preset";
 import { buildLocalDecisionPlan } from "../skill-runtime/decision-layer";
-import { selectWebsiteSeedSkillsForIntent } from "../skill-runtime/project-skill-loader";
+import { loadProjectSkill, selectWebsiteSeedSkillsForIntent } from "../skill-runtime/project-skill-loader";
 import {
   buildWebsiteSkillToolRoundPromptForAdapter,
   renderWebsiteSeedSkillSidecarGuidance,
@@ -36,6 +36,13 @@ type SmokeScenario = {
 };
 
 const scenarios: SmokeScenario[] = [
+  {
+    id: "marketing-landing",
+    expectedSurfaceMode: "marketing-landing-site",
+    expectedSeedId: "bold-marketing-foundation",
+    requirementText:
+      "Build a single-page product launch landing site for a new AI workflow product. Audience: growth leaders and product marketers. Routes: /. The site should prioritize a dramatic opening, launch CTA, authored section rhythm, and no generic template hero collapse.",
+  },
   {
     id: "corporate-b2b",
     expectedSurfaceMode: "corporate-b2b-site",
@@ -116,6 +123,14 @@ describe("Open Design adoption smoke", () => {
         routes,
         maxSkills: 4,
       });
+      const selectedSeedContracts = (
+        await Promise.all(
+          selectedSeedSkills.map(async (item) => {
+            const skill = await loadProjectSkill(item.id);
+            return skill.seedContract ? { id: skill.id, contract: skill.seedContract } : undefined;
+          }),
+        )
+      ).filter((item): item is { id: string; contract: NonNullable<(Awaited<ReturnType<typeof loadProjectSkill>>)["seedContract"]> } => Boolean(item));
       const sidecarGuidance = await renderWebsiteSeedSkillSidecarGuidance(selectedSeedSkills);
       const designSpec = buildWebsiteDesignSpecMarkdown({
         decision,
@@ -124,6 +139,7 @@ describe("Open Design adoption smoke", () => {
         websiteSurfaceMode: draft.websiteSurfaceMode,
         discoveryBrief: draft.discoveryBrief,
         selectedSeedSkillIds: selectedSeedSkills.map((item) => item.id),
+        selectedSeedContracts,
         designHit: {
           id: "open-design-adoption-smoke",
           name: "Open Design Adoption Smoke",
@@ -139,6 +155,8 @@ describe("Open Design adoption smoke", () => {
               stylePreset: DEFAULT_STYLE_PRESET,
               websiteSurfaceMode: draft.websiteSurfaceMode,
               discoveryBrief: draft.discoveryBrief,
+              selectedSeedSkillIds: selectedSeedSkills.map((item) => item.id),
+              selectedSeedContracts,
             },
             route,
           ),
@@ -197,6 +215,7 @@ describe("Open Design adoption smoke", () => {
           draft.discoveryBrief.routes.length > 0,
         designSpec:
           designSpec.includes(`website_surface_mode: ${scenario.expectedSurfaceMode}`) &&
+          designSpec.includes("seed_authority_mode: seed-authoritative") &&
           designSpec.includes("site_generator_mode: hybrid") &&
           designSpec.includes("Open Design owns visual direction and module rhythm") &&
           designSpec.includes("HTML Anything owns concrete HTML/CSS template discipline") &&
@@ -213,10 +232,14 @@ describe("Open Design adoption smoke", () => {
           JSON.stringify(actualUnitIds) === JSON.stringify(expectedUnitIds),
         noForbiddenRoutes: (scenario.forbiddenRoutes || []).every((route) => !routes.includes(route)),
         sidecarGuidance: scenario.expectedSeedId
-          ? selectedIds.includes(scenario.expectedSeedId) && sidecarGuidance.includes("example-backed HTML contract")
+          ? selectedIds.includes(scenario.expectedSeedId) &&
+            sidecarGuidance.includes("## Seed Structural Contract") &&
+            sidecarGuidance.includes("contract.json excerpt")
           : sidecarGuidance.length > 0,
         hybridSeedCoverage:
-          scenario.expectedSeedId === "docs-knowledge-foundation"
+          scenario.expectedSeedId === "bold-marketing-foundation"
+            ? selectedIds.includes("cinematic-launch-template")
+            : scenario.expectedSeedId === "docs-knowledge-foundation"
             ? selectedIds.includes("docs-reference-template")
             : scenario.expectedSeedId === "content-hub-foundation"
               ? selectedIds.includes("content-resource-template")

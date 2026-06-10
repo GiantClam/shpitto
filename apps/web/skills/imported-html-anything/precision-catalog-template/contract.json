@@ -1,0 +1,48 @@
+{
+  "contractVersion": 1,
+  "homepageTopologyClass": "catalog-proof-shell",
+  "openingFamily": "catalog-proof",
+  "sectionCadence": [
+    "catalog lead",
+    "spec comparison row",
+    "buyer inquiry strip"
+  ],
+  "allowedComponentRhythms": [
+    "comparison row",
+    "spec table",
+    "inquiry strip"
+  ],
+  "bannedGenericOpenings": [
+    "soft marketing hero",
+    "editorial story opener"
+  ],
+  "componentBans": [
+    "quote carousel",
+    "feature trio"
+  ],
+  "mediaPosture": "Use product/module visuals adjacent to specs and comparison.",
+  "typographyPosture": "Dense industrial sans with mono numerics for specs.",
+  "ctaPosture": "Inquiry or quote CTA after comparison clarity.",
+  "compatibleSurfaceModes": [
+    "corporate-b2b-site"
+  ],
+  "visualBoldness": "high",
+  "routeOverrides": {
+    "products": {
+      "openingFamily": "catalog-proof",
+      "sectionCadence": [
+        "catalog lead",
+        "spec comparison row",
+        "buyer inquiry strip"
+      ]
+    },
+    "contact": {
+      "openingFamily": "conversion-first",
+      "sectionCadence": [
+        "inquiry block",
+        "response expectations",
+        "next-step CTA"
+      ]
+    }
+  }
+}

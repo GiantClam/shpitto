@@ -1,0 +1,43 @@
+{
+  "contractVersion": 1,
+  "homepageTopologyClass": "resource-ledger-shell",
+  "openingFamily": "resource-index",
+  "sectionCadence": [
+    "resource lead",
+    "category shelf",
+    "download ledger",
+    "institutional CTA"
+  ],
+  "allowedComponentRhythms": [
+    "resource shelf",
+    "ledger row",
+    "download stack"
+  ],
+  "bannedGenericOpenings": [
+    "hero-grid",
+    "founder hero",
+    "generic CTA strip"
+  ],
+  "componentBans": [
+    "fake article archive",
+    "pricing matrix"
+  ],
+  "mediaPosture": "Use resource cover, research proof, or standards context visuals next to ledgers and shelves.",
+  "typographyPosture": "Editorial/institutional type with compact metadata rails.",
+  "ctaPosture": "Download, consult, or route deeper into governed resources.",
+  "compatibleSurfaceModes": [
+    "content-hub-site"
+  ],
+  "visualBoldness": "high",
+  "routeOverrides": {
+    "resource": {
+      "openingFamily": "resource-ledger",
+      "sectionCadence": [
+        "resource lead",
+        "category shelf",
+        "download ledger",
+        "consultation host"
+      ]
+    }
+  }
+}

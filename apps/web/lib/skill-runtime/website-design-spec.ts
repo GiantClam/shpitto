@@ -4,6 +4,7 @@ import type { DesignStylePreset } from "../design-style-preset.ts";
 import { selectCuratedLibraryImage } from "./curated-media-library.ts";
 import { isBilingualRequirementText } from "./bilingual-copy-guard.ts";
 import type { WebsiteDiscoveryBrief, WebsiteSurfaceMode } from "./open-design-adoption.ts";
+import type { ProjectSkillRouteFamily, ProjectSkillSeedContract } from "./project-skill-loader.ts";
 import { selectWebsiteGenerationTypeSkill } from "./website-type-selector.ts";
 import { buildLocalePlan, I18N_LOCALE_REGISTRY_PATH } from "./locale-plan.ts";
 import {
@@ -29,6 +30,7 @@ type WebsiteDesignSpecParams = {
   designSystemName?: string;
   siteGeneratorMode?: WebsiteArtifactGeneratorMode;
   selectedSeedSkillIds?: string[];
+  selectedSeedContracts?: Array<{ id: string; contract: ProjectSkillSeedContract }>;
 };
 
 type DesignSpecLocaleMode = "zh-CN" | "en" | "bilingual" | "multilingual";
@@ -130,6 +132,27 @@ function routeOpeningFamily(page: PageBlueprint): string {
   if (/contact|inquiry/.test(text)) return "conversion";
   if (/about|company|team|profile/.test(text)) return "identity";
   return "route-owned";
+}
+
+function inferSeedRouteFamily(page: PageBlueprint, surfaceMode: WebsiteSurfaceMode): ProjectSkillRouteFamily {
+  if (page.route === "/") return "home";
+  if (isContentCollectionPage(page)) {
+    if (surfaceMode === "docs-knowledge-site") return "docs";
+    if (surfaceMode === "content-hub-site") return "resource";
+    if (/^\/blog(?:\/|$)/i.test(page.route)) return "blog";
+  }
+  const text = `${page.route} ${page.navLabel} ${page.purpose}`.toLowerCase();
+  if (/docs?|documentation|guide|manual|reference|api|handbook|playbook|faq|tutorial/.test(text)) return "docs";
+  if (/research|standards?|information|downloads?|resource|library|certification|advocacy|repository|directory/.test(text)) {
+    return "resource";
+  }
+  if (/products?|catalog|collection/.test(text)) return "products";
+  if (/solutions?|services?|custom-solutions?/.test(text)) return "solutions";
+  if (/cases?|portfolio|projects?/.test(text)) return "cases";
+  if (/contact|inquiry/.test(text)) return "contact";
+  if (/about|company|team|profile/.test(text)) return "about";
+  if (/blog|article|story|editorial|feature/.test(text)) return "blog";
+  return surfaceMode === "portfolio-blog-site" ? "blog" : "resource";
 }
 
 function isContentCollectionPage(page: PageBlueprint): boolean {
@@ -341,6 +364,106 @@ function resolveWebsiteSurfaceMode(params: WebsiteDesignSpecParams): WebsiteSurf
   );
 }
 
+function hasSelectedSeedAuthority(params: WebsiteDesignSpecParams): boolean {
+  return Array.isArray(params.selectedSeedSkillIds) && params.selectedSeedSkillIds.some((item) => String(item || "").trim());
+}
+
+function resolveSeedAuthorityMode(params: WebsiteDesignSpecParams): "seed-authoritative" | "heuristic-authoritative" {
+  const configured = String(process.env.SHPITTO_OD_SEED_AUTHORITY_MODE || "").trim().toLowerCase();
+  if (configured === "heuristic-authoritative") return "heuristic-authoritative";
+  if (configured === "seed-authoritative") return hasSelectedSeedAuthority(params) ? "seed-authoritative" : "heuristic-authoritative";
+  if (!hasSelectedSeedAuthority(params)) return "heuristic-authoritative";
+  return "seed-authoritative";
+}
+
+function resolvePrimarySelectedSeedContract(
+  params: WebsiteDesignSpecParams,
+  routeFamily?: ProjectSkillRouteFamily,
+): { id: string; contract: ProjectSkillSeedContract } | undefined {
+  const surfaceMode = resolveWebsiteSurfaceMode(params);
+  const candidates = (params.selectedSeedContracts || []).filter((item) => item?.contract);
+  if (candidates.length === 0) return undefined;
+  return (
+    candidates
+      .slice()
+      .sort((left, right) => {
+        const leftSurface = (left.contract.compatibleSurfaceModes || []).includes(surfaceMode) ? 1 : 0;
+        const rightSurface = (right.contract.compatibleSurfaceModes || []).includes(surfaceMode) ? 1 : 0;
+        if (leftSurface !== rightSurface) return rightSurface - leftSurface;
+        const leftOverride = routeFamily && left.contract.routeOverrides?.[routeFamily] ? 1 : 0;
+        const rightOverride = routeFamily && right.contract.routeOverrides?.[routeFamily] ? 1 : 0;
+        if (leftOverride !== rightOverride) return rightOverride - leftOverride;
+        return left.id.localeCompare(right.id);
+      })[0]
+  );
+}
+
+function resolveSelectedSeedContractSignals(
+  params: WebsiteDesignSpecParams,
+  routeFamily?: ProjectSkillRouteFamily,
+): {
+  seedId?: string;
+  routeFamily?: ProjectSkillRouteFamily;
+  homepageTopologyClass?: string;
+  openingFamily?: string;
+  sectionCadence?: string[];
+  componentBans?: string[];
+  bannedGenericOpenings?: string[];
+  mediaPosture?: string;
+  typographyPosture?: string;
+  ctaPosture?: string;
+  visualBoldness?: string;
+} {
+  const selected = resolvePrimarySelectedSeedContract(params, routeFamily);
+  if (!selected) return {};
+  const override = routeFamily ? selected.contract.routeOverrides?.[routeFamily] : undefined;
+  return {
+    seedId: selected.id,
+    routeFamily,
+    homepageTopologyClass: override?.homepageTopologyClass || selected.contract.homepageTopologyClass,
+    openingFamily: override?.openingFamily || selected.contract.openingFamily,
+    sectionCadence:
+      (override?.sectionCadence || []).length > 0 ? override?.sectionCadence : (selected.contract.sectionCadence || []).length > 0 ? selected.contract.sectionCadence : undefined,
+    componentBans:
+      (override?.componentBans || []).length > 0 ? override?.componentBans : (selected.contract.componentBans || []).length > 0 ? selected.contract.componentBans : undefined,
+    bannedGenericOpenings:
+      (override?.bannedGenericOpenings || []).length > 0
+        ? override?.bannedGenericOpenings
+        : (selected.contract.bannedGenericOpenings || []).length > 0
+          ? selected.contract.bannedGenericOpenings
+          : undefined,
+    mediaPosture: override?.mediaPosture || selected.contract.mediaPosture,
+    typographyPosture: override?.typographyPosture || selected.contract.typographyPosture,
+    ctaPosture: override?.ctaPosture || selected.contract.ctaPosture,
+    visualBoldness: selected.contract.visualBoldness,
+  };
+}
+
+function buildSeedAuthorityContractLines(params: WebsiteDesignSpecParams): string[] {
+  const selectedSeedSkillIds = (params.selectedSeedSkillIds || []).map((item) => String(item || "").trim()).filter(Boolean);
+  if (selectedSeedSkillIds.length === 0) {
+    return [
+      "- seed_authority_mode: heuristic-authoritative",
+      "- heuristic_fallback_rule: local contentSkeleton and componentMix remain the primary planning hints when no selected frontend seed contract is active.",
+    ];
+  }
+  const homeSignals = resolveSelectedSeedContractSignals(params, "home");
+  return [
+    "- seed_authority_mode: seed-authoritative",
+    `- selected_seed_contracts: ${selectedSeedSkillIds.join(", ")}`,
+    "- seed_authority_rule: when selected frontend seeds specify opening family, section cadence, route-owned class semantics, or template discipline, those seed signals outrank generic local hero/grid/card heuristics.",
+    homeSignals.openingFamily ? `- seed_opening_family: ${homeSignals.openingFamily}` : "",
+    homeSignals.homepageTopologyClass ? `- seed_homepage_topology_class: ${homeSignals.homepageTopologyClass}` : "",
+    homeSignals.sectionCadence?.length ? `- seed_section_cadence: ${homeSignals.sectionCadence.join(" -> ")}` : "",
+    homeSignals.componentBans?.length ? `- seed_component_bans: ${homeSignals.componentBans.join(", ")}` : "",
+    homeSignals.mediaPosture ? `- seed_media_posture: ${homeSignals.mediaPosture}` : "",
+    homeSignals.typographyPosture ? `- seed_typography_posture: ${homeSignals.typographyPosture}` : "",
+    homeSignals.ctaPosture ? `- seed_cta_posture: ${homeSignals.ctaPosture}` : "",
+    homeSignals.visualBoldness ? `- seed_visual_boldness: ${homeSignals.visualBoldness}` : "",
+    "- heuristic_fallback_rule: local contentSkeleton and componentMix are fallback planning hints only. Use them only when the selected seed contract and route-specific spec leave a real gap.",
+  ].filter(Boolean);
+}
+
 function isInstitutionalChildFriendlyContentHubSurface(
   params: WebsiteDesignSpecParams,
   surfaceMode = resolveWebsiteSurfaceMode(params),
@@ -525,6 +648,7 @@ function routeOpeningTopology(
   enterpriseHomepage: boolean,
   surfaceMode: WebsiteSurfaceMode,
 ): string {
+  const text = `${page.route} ${page.navLabel} ${page.purpose}`.toLowerCase();
   if (/^\/blog\/[^/]+$/i.test(String(page.route || "").trim())) {
     return "article lead band -> argument section -> evidence section -> conclusion / related reading";
   }
@@ -546,6 +670,9 @@ function routeOpeningTopology(
     }
     return "single-column homepage hero -> proof band -> capability/CTA";
   }
+  if (/(?:^|\/)(?:casux-)?certification(?:\/|$)/i.test(page.route) || /\bcertification\b/.test(text)) {
+    return "certification criteria lead -> scoring/results ledger -> review-prep and consultation band";
+  }
   if (isContentCollectionPage(page)) {
     if (surfaceMode === "portfolio-blog-site" && String(page.route || "").trim().toLowerCase() === "/blog") {
       return "editorial archive masthead -> featured writing band -> article ledger";
@@ -558,15 +685,11 @@ function routeOpeningTopology(
     }
     return "knowledge-hub lead band -> collection navigator -> resource/result stack";
   }
-  const text = `${page.route} ${page.navLabel} ${page.purpose}`.toLowerCase();
   if (/(?:^|\/)(?:casux-)?creation(?:\/|$)/i.test(page.route) || /\bcreation\b/.test(text)) {
     return "creation masthead -> narrative framework grid -> proof/CTA";
   }
   if (/(?:^|\/)(?:casux-)?construction(?:\/|$)/i.test(page.route) || /\bconstruction\b/.test(text)) {
     return "process lead band -> execution roadmap -> implementation proof row";
-  }
-  if (/(?:^|\/)(?:casux-)?certification(?:\/|$)/i.test(page.route) || /\bcertification\b/.test(text)) {
-    return "certification criteria lead -> scoring/results ledger -> review-prep and consultation band";
   }
   if (/(?:^|\/)(?:casux-)?advocacy(?:\/|$)/i.test(page.route) || /\badvocacy\b/.test(text)) {
     return "advocacy lead band -> participation network -> action framework";
@@ -723,15 +846,6 @@ function routeMediaPlan(
   return mediaPlanLinesFromResource(buildRouteMediaResource(page, enterpriseHomepage, surfaceMode));
 }
 
-function hasSelectedSeedAuthority(params: WebsiteDesignSpecParams): boolean {
-  return Array.isArray(params.selectedSeedSkillIds) && params.selectedSeedSkillIds.some((item) => String(item || "").trim());
-}
-
-function resolveSeedAuthorityMode(params: WebsiteDesignSpecParams): "seed-authoritative" | "heuristic-authoritative" {
-  if (!hasSelectedSeedAuthority(params)) return "heuristic-authoritative";
-  return "seed-authoritative";
-}
-
 export function buildRouteUnitContractSummary(
   params: WebsiteDesignSpecParams,
   route: string,
@@ -746,7 +860,12 @@ export function buildRouteUnitContractSummary(
     params.decision.pageBlueprints.find((item) => item.route === "/") ||
     params.decision.pageBlueprints[0];
   if (!page) return undefined;
-  const openingTopology = routeOpeningTopology(page, enterpriseHomepage, websiteSurfaceMode);
+  const routeFamily = inferSeedRouteFamily(page, websiteSurfaceMode);
+  const seedSignals = resolveSelectedSeedContractSignals(params, routeFamily);
+  const openingTopology =
+    seedSignals.sectionCadence?.length && resolveSeedAuthorityMode(params) === "seed-authoritative"
+      ? seedSignals.sectionCadence.join(" -> ")
+      : routeOpeningTopology(page, enterpriseHomepage, websiteSurfaceMode);
   return {
     route: page.route,
     navLabel: page.navLabel,
@@ -757,12 +876,20 @@ export function buildRouteUnitContractSummary(
       `pageKind=${page.pageKind}`,
       `purpose=${page.purpose}`,
       `seedAuthority=${resolveSeedAuthorityMode(params)}`,
+      `seedRouteFamily=${routeFamily}`,
+      seedSignals.seedId ? `seedContract=${seedSignals.seedId}` : "",
+      seedSignals.openingFamily ? `seedOpeningFamily=${seedSignals.openingFamily}` : "",
+      seedSignals.homepageTopologyClass ? `seedHomepageTopologyClass=${seedSignals.homepageTopologyClass}` : "",
+      seedSignals.sectionCadence?.length ? `seedSectionCadence=${seedSignals.sectionCadence.join(" -> ")}` : "",
+      seedSignals.componentBans?.length ? `seedComponentBans=${seedSignals.componentBans.join(", ")}` : "",
+      seedSignals.mediaPosture ? `seedMediaPosture=${seedSignals.mediaPosture}` : "",
+      seedSignals.typographyPosture ? `seedTypographyPosture=${seedSignals.typographyPosture}` : "",
       ...buildRouteUnitContractHighlights(page),
-    ],
+    ].filter(Boolean),
     inheritedTerminology: summarizeInheritedTerminology(params),
     inheritedTokens: summarizeInheritedTokens(params),
     inheritedSeedSkillIds: params.selectedSeedSkillIds || [],
-    openingFamily: routeOpeningFamily(page),
+    openingFamily: seedSignals.openingFamily || routeOpeningFamily(page),
     openingTopology,
     mediaPlan: routeMediaPlan(page, enterpriseHomepage, websiteSurfaceMode),
     mediaResources: [buildRouteMediaResource(page, enterpriseHomepage, websiteSurfaceMode)],
@@ -888,8 +1015,13 @@ function buildRouteSpecLines(
   localeMode: DesignSpecLocaleMode,
   surfaceMode: WebsiteSurfaceMode,
   requirementText = "",
+  seedAuthorityLines: string[] = [],
 ): string[] {
-  if (isContentCollectionPage(page)) {
+  const routeText = `${page.route} ${page.navLabel} ${page.purpose}`.toLowerCase();
+  const isCertificationRoute =
+    /(?:^|\/)(?:casux-)?certification(?:\/|$)/i.test(page.route) || /\bcertification\b/.test(routeText);
+
+  if (page.route !== "/" && isContentCollectionPage(page) && !isCertificationRoute) {
     return [
       `- role: ${routeRoleSummary(page)}`,
       `- nav_label: ${page.navLabel}`,
@@ -918,7 +1050,6 @@ function buildRouteSpecLines(
       ...routeMediaPlan(page, enterpriseHomepage, surfaceMode),
     ];
   }
-  const routeText = `${page.route} ${page.navLabel} ${page.purpose}`.toLowerCase();
   const consultationHostContract =
         requirementNeedsConsultationForm(requirementText) && routeShouldHostConsultationForm(page, requirementText)
       ? [
@@ -950,7 +1081,7 @@ function buildRouteSpecLines(
         ? [
             "- markup_contract: the first visible construction band should use route-owned class semantics such as `process-lead`, `construction-intro`, or `execution-roadmap` rather than a generic `detail-grid` with an `aside` surface.",
           ]
-        : /(?:^|\/)(?:casux-)?certification(?:\/|$)/i.test(page.route) || /\bcertification\b/.test(routeText)
+        : isCertificationRoute
           ? [
               "- markup_contract: the first visible certification band should use route-owned class semantics such as `certification-entry`, `criteria-ledger`, `scorecard-band`, `review-prep`, or `assessor-packet` rather than a generic `detail-grid` with an `aside` surface.",
             ]
@@ -1050,13 +1181,14 @@ function buildRouteSpecLines(
         ? "brand-led institutional masthead -> capability overview shelves -> standards/research proof band -> consultation or route CTA"
       : page.route === "/" && !enterpriseHomepage && surfaceMode === "content-hub-site"
         ? "editorial archive masthead -> topic/collection shelves -> standards/research ledger -> resource index rows -> institutional CTA"
-        : /(?:^|\/)(?:casux-)?certification(?:\/|$)/i.test(page.route) || /\bcertification\b/.test(routeText)
+        : isCertificationRoute
           ? "certification criteria lead -> score/results rows -> review-prep and assessor materials -> consultation CTA"
         : page.contentSkeleton.join(" -> ") || "derive from the route role without reusing a generic hero shell";
   return [
     `- role: ${routeRoleSummary(page)}`,
     `- nav_label: ${page.navLabel}`,
     `- purpose: ${page.purpose}`,
+    ...seedAuthorityLines,
     `- opening_topology: ${routeOpeningTopology(page, enterpriseHomepage, surfaceMode)}`,
     `- section_cadence: ${sectionCadence}`,
     `- page_archetype: ${routePageArchetype(page, surfaceMode)}`,
@@ -1069,7 +1201,7 @@ function buildRouteSpecLines(
     ...contentHubInteriorCopyContract,
     ...portfolioBlogInteriorContract,
     ...surfaceHomepageContract,
-    ...((/(?:^|\/)(?:casux-)?certification(?:\/|$)/i.test(page.route) || /\bcertification\b/.test(routeText))
+    ...(isCertificationRoute
       ? [
           "- copy_contract: certification routes must speak concretely about evaluation criteria, scoring dimensions, total-score thresholds, assessor/reviewer materials, evidence packets, or quality-mark/badge outcomes. Do not keep the route at the generic level of topic filters plus resource cards.",
           "- copy_contract: at least one opening/result band should name review logic directly, for example score criteria, assessment dimensions, threshold logic, assessor packet, reviewer checklist, certification badge, or quality-mark workflow.",
@@ -1284,12 +1416,13 @@ export function buildWebsiteDesignSpecRouteExcerpt(params: WebsiteDesignSpecPara
     params.decision.pageBlueprints.find((item) => item.route === "/") ||
     params.decision.pageBlueprints[0];
   if (!page) return "";
+  const seedAuthorityLines = buildSeedAuthorityContractLines(params);
   return [
     `# Route Design Spec: ${page.route}`,
     `- selected_style: ${String(params.designHit?.name || params.designHit?.id || "runtime-selected-style").trim() || "runtime-selected-style"}`,
     `- website_surface_mode: ${websiteSurfaceMode}`,
     ...buildSurfaceVisualIdentityLines(params, websiteSurfaceMode),
-    ...buildRouteSpecLines(page, enterpriseHomepage, localeMode, websiteSurfaceMode, params.requirementText),
+    ...buildRouteSpecLines(page, enterpriseHomepage, localeMode, websiteSurfaceMode, params.requirementText, seedAuthorityLines),
     "- media_resource:",
     ...buildMediaResourceLines(page, enterpriseHomepage, websiteSurfaceMode),
   ].join("\n");
@@ -1314,9 +1447,10 @@ export function buildWebsiteDesignSpecMarkdown(params: WebsiteDesignSpecParams):
     const page = params.decision.pageBlueprints[index];
     return `- ${route} (${page?.navLabel || route})`;
   });
+  const seedAuthorityLines = buildSeedAuthorityContractLines(params);
 
   const routeSections = params.decision.pageBlueprints.map((page) =>
-    [`### ${page.route}`, ...buildRouteSpecLines(page, enterpriseHomepage, localeMode, websiteSurfaceMode, params.requirementText)].join("\n"),
+    [`### ${page.route}`, ...buildRouteSpecLines(page, enterpriseHomepage, localeMode, websiteSurfaceMode, params.requirementText, seedAuthorityLines)].join("\n"),
   );
   const mediaResources = buildWebsiteMediaResourceList(params).map(mediaResourceMarkdownSection);
 
@@ -1354,6 +1488,7 @@ export function buildWebsiteDesignSpecMarkdown(params: WebsiteDesignSpecParams):
     `- background_color: ${params.stylePreset.colors.background}`,
     `- typography: ${params.stylePreset.typography}`,
     ...buildSurfaceVisualIdentityLines(params, websiteSurfaceMode),
+    ...seedAuthorityLines,
     "",
     renderWebsiteArtifactGeneratorContract({
       mode: siteGeneratorMode,

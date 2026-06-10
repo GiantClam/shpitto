@@ -1,6 +1,7 @@
 import {
   buildPromptManifestRouteUnits,
   buildWebsiteGenerationContract,
+  type SelectedSeedContractEntry,
   type SelectedSeedSkillManifest,
   type WebsiteGenerationContract,
 } from "../agent/website-generation-contract.ts";
@@ -11,12 +12,21 @@ export type ImmutableGenerationContract = Omit<WebsiteGenerationContract, "route
 };
 
 export function normalizeWebsiteGenerationContract(contract: WebsiteGenerationContract): ImmutableGenerationContract {
+  const base = buildWebsiteGenerationContract({
+    generationLane: contract.generationLane,
+    websiteSurfaceMode: contract.websiteSurfaceMode,
+    promptControlManifest: contract.promptControlManifest,
+    discoveryBrief: contract.discoveryBrief,
+    selectedSeedSkillManifest: contract.selectedSeedSkillManifest,
+    selectedSeedContracts: contract.selectedSeedContracts,
+    routeUnitContracts: contract.routeUnitContracts,
+  });
   const routeUnits =
-    contract.routeUnitContracts?.length > 0
-      ? contract.routeUnitContracts
-      : buildPromptManifestRouteUnits(contract.promptControlManifest, contract.selectedSeedSkillManifest);
+    base.routeUnitContracts?.length > 0
+      ? base.routeUnitContracts
+      : buildPromptManifestRouteUnits(base.promptControlManifest, base.selectedSeedSkillManifest);
   return {
-    ...contract,
+    ...base,
     routeUnitContracts: routeUnits.map((item) => normalizeRouteUnitContract(item)),
   };
 }
@@ -27,6 +37,7 @@ export function buildImmutableGenerationContract(params: {
   promptControlManifest?: unknown;
   discoveryBrief?: unknown;
   selectedSeedSkillManifest?: SelectedSeedSkillManifest;
+  selectedSeedContracts?: SelectedSeedContractEntry[];
   routeUnitContracts?: RouteUnitContract[];
 }): ImmutableGenerationContract {
   const base = buildWebsiteGenerationContract({
@@ -35,8 +46,8 @@ export function buildImmutableGenerationContract(params: {
     promptControlManifest: params.promptControlManifest,
     discoveryBrief: params.discoveryBrief,
     selectedSeedSkillManifest: params.selectedSeedSkillManifest,
+    selectedSeedContracts: params.selectedSeedContracts,
     routeUnitContracts: params.routeUnitContracts,
   });
   return normalizeWebsiteGenerationContract(base);
 }
-

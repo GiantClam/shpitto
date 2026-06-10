@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { --bg:#f7f2ea; --surface:#fffdf9; --text:#1f1a17; --muted:#625650; --accent:#1e6b8f; }
+    .editorial-home { display:grid; gap:28px; }
+    .feature-masthead { padding:32px; border-bottom:1px solid #d8cdc1; }
+    .story-grid { display:grid; grid-template-columns:1.5fr 1fr; gap:18px; }
+    .note-rail { padding:20px; border-left:3px solid var(--accent); }
+    @media (max-width:920px) { .story-grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <main class="editorial-home">
+    <section class="feature-masthead" data-od-id="feature-masthead"><h1>Feature masthead</h1></section>
+    <section class="story-grid" data-od-id="story-grid"><article>Lead</article><article>Index</article></section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,72 @@
+{
+  "contractVersion": 1,
+  "homepageTopologyClass": "procurement-masthead",
+  "openingFamily": "enterprise-industrial",
+  "sectionCadence": [
+    "image-backed procurement masthead",
+    "proof row",
+    "capability band",
+    "specification strip",
+    "inquiry CTA"
+  ],
+  "allowedComponentRhythms": [
+    "proof row",
+    "capability band",
+    "specification strip",
+    "certification ledger"
+  ],
+  "bannedGenericOpenings": [
+    "generic hero-grid",
+    "floating stat cards",
+    "founder story hero"
+  ],
+  "componentBans": [
+    "editorial archive shelf",
+    "pricing table",
+    "testimonial carousel"
+  ],
+  "mediaPosture": "Use factory, material, certification, or operations visuals with real environmental depth.",
+  "typographyPosture": "Industrial sans with mono accents for specs and certification labels.",
+  "ctaPosture": "Quote, catalog, consultation, or sample request CTA.",
+  "compatibleSurfaceModes": [
+    "corporate-b2b-site"
+  ],
+  "visualBoldness": "high",
+  "routeOverrides": {
+    "home": {
+      "homepageTopologyClass": "procurement-masthead",
+      "openingFamily": "enterprise-industrial",
+      "sectionCadence": [
+        "image-backed procurement masthead",
+        "proof row",
+        "capability band",
+        "inquiry CTA"
+      ]
+    },
+    "products": {
+      "openingFamily": "catalog-proof",
+      "sectionCadence": [
+        "catalog lead",
+        "assortment navigator",
+        "comparison/specification row",
+        "buyer CTA"
+      ]
+    },
+    "solutions": {
+      "openingFamily": "process-proof",
+      "sectionCadence": [
+        "process intro band",
+        "timeline",
+        "scenario-fit proof row"
+      ]
+    },
+    "cases": {
+      "openingFamily": "evidence-ledger",
+      "sectionCadence": [
+        "evidence header",
+        "case ledger",
+        "outcome strip"
+      ]
+    }
+  }
+}

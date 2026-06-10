@@ -28,6 +28,7 @@ export type ProjectSkillDescriptor = {
   config?: Record<string, unknown>;
   websiteMetadata?: WebsiteSkillMetadata;
   frontmatter: SkillFrontmatterSummary;
+  seedContract?: ProjectSkillSeedContract;
   resourceIndex?: ProjectSkillResourceIndex;
 };
 
@@ -62,6 +63,7 @@ export const WEBSITE_GENERATION_SKILL_BUNDLE: string[] = [
   "blog-detail-fill-workflow",
   "brainstorming",
   "writing-plans",
+  "design-system-enforcement",
   "web-image-generator",
   "web-icon-library",
   "end-to-end-validation",
@@ -124,6 +126,8 @@ export type ProjectSkillTemplateSummary = {
   tokenNames: string[];
   responsiveBreakpoint?: string;
   keyClasses: string[];
+  structureExcerpt: string[];
+  routeExcerpts?: Partial<Record<ProjectSkillRouteFamily, string[]>>;
 };
 
 export type ProjectSkillChecklistSummary = {
@@ -132,9 +136,61 @@ export type ProjectSkillChecklistSummary = {
   p1Count: number;
   p2Count: number;
   criticalChecks: string[];
+  mustPassExcerpt: string[];
+};
+
+export type ProjectSkillRouteFamily =
+  | "home"
+  | "products"
+  | "solutions"
+  | "cases"
+  | "about"
+  | "contact"
+  | "docs"
+  | "resource"
+  | "blog";
+
+export type ProjectSkillSeedRouteOverride = {
+  homepageTopologyClass?: string;
+  openingFamily?: string;
+  sectionCadence?: string[];
+  allowedComponentRhythms?: string[];
+  bannedGenericOpenings?: string[];
+  componentBans?: string[];
+  mediaPosture?: string;
+  typographyPosture?: string;
+  ctaPosture?: string;
+};
+
+export type ProjectSkillSeedContract = {
+  contractVersion?: number;
+  homepageTopologyClass?: string;
+  openingFamily?: string;
+  sectionCadence?: string[];
+  allowedComponentRhythms?: string[];
+  bannedGenericOpenings?: string[];
+  componentBans?: string[];
+  mediaPosture?: string;
+  typographyPosture?: string;
+  ctaPosture?: string;
+  compatibleSurfaceModes?: WebsiteSurfaceMode[];
+  visualBoldness?: "standard" | "high";
+  routeOverrides?: Partial<Record<ProjectSkillRouteFamily, ProjectSkillSeedRouteOverride>>;
+};
+
+export type ProjectSkillContractSummary = {
+  path: string;
+  homepageTopologyClass?: string;
+  openingFamily?: string;
+  visualBoldness?: "standard" | "high";
+  compatibleSurfaceModes: WebsiteSurfaceMode[];
+  routeFamilies: ProjectSkillRouteFamily[];
+  contractExcerpt: string[];
+  routeExcerpts: Partial<Record<ProjectSkillRouteFamily, string[]>>;
 };
 
 export type ProjectSkillResourceIndex = {
+  contractJson?: ProjectSkillContractSummary;
   templateHtml?: ProjectSkillTemplateSummary;
   exampleHtml?: ProjectSkillTemplateSummary;
   checklist?: ProjectSkillChecklistSummary;
@@ -162,6 +218,190 @@ function uniqueTrimmed(items: string[]): string[] {
   return Array.from(new Set((items || []).map((item) => String(item || "").trim()).filter(Boolean)));
 }
 
+function clipResourceExcerptValue(value: string, maxChars = 140): string {
+  const text = String(value || "").trim().replace(/\s+/g, " ");
+  if (text.length <= maxChars) return text;
+  return `${text.slice(0, Math.max(0, maxChars - 1)).trimEnd()}…`;
+}
+
+function normalizeRouteFamily(value: unknown): ProjectSkillRouteFamily | undefined {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (
+    normalized === "home" ||
+    normalized === "products" ||
+    normalized === "solutions" ||
+    normalized === "cases" ||
+    normalized === "about" ||
+    normalized === "contact" ||
+    normalized === "docs" ||
+    normalized === "resource" ||
+    normalized === "blog"
+  ) {
+    return normalized;
+  }
+  return undefined;
+}
+
+function normalizeStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return uniqueTrimmed(value.map((item) => String(item || "")));
+}
+
+function normalizeSurfaceModeArray(value: unknown): WebsiteSurfaceMode[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => String(item || "").trim())
+    .filter(
+      (item): item is WebsiteSurfaceMode =>
+        item === "corporate-b2b-site" ||
+        item === "marketing-landing-site" ||
+        item === "portfolio-blog-site" ||
+        item === "docs-knowledge-site" ||
+        item === "content-hub-site",
+    );
+}
+
+function normalizeSeedRouteOverride(value: unknown): ProjectSkillSeedRouteOverride | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const record = value as Record<string, unknown>;
+  const sectionCadence = normalizeStringArray(record.sectionCadence);
+  const allowedComponentRhythms = normalizeStringArray(record.allowedComponentRhythms);
+  const bannedGenericOpenings = normalizeStringArray(record.bannedGenericOpenings);
+  const componentBans = normalizeStringArray(record.componentBans);
+  const normalized: ProjectSkillSeedRouteOverride = {
+    homepageTopologyClass: String(record.homepageTopologyClass || "").trim() || undefined,
+    openingFamily: String(record.openingFamily || "").trim() || undefined,
+    sectionCadence: sectionCadence.length > 0 ? sectionCadence : undefined,
+    allowedComponentRhythms: allowedComponentRhythms.length > 0 ? allowedComponentRhythms : undefined,
+    bannedGenericOpenings: bannedGenericOpenings.length > 0 ? bannedGenericOpenings : undefined,
+    componentBans: componentBans.length > 0 ? componentBans : undefined,
+    mediaPosture: String(record.mediaPosture || "").trim() || undefined,
+    typographyPosture: String(record.typographyPosture || "").trim() || undefined,
+    ctaPosture: String(record.ctaPosture || "").trim() || undefined,
+  };
+  return Object.values(normalized).some((item) => (Array.isArray(item) ? item.length > 0 : Boolean(item))) ? normalized : undefined;
+}
+
+function normalizeSeedContract(value: unknown): ProjectSkillSeedContract | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const record = value as Record<string, unknown>;
+  const routeOverridesInput =
+    record.routeOverrides && typeof record.routeOverrides === "object" && !Array.isArray(record.routeOverrides)
+      ? (record.routeOverrides as Record<string, unknown>)
+      : {};
+  const routeOverrides = Object.fromEntries(
+    Object.entries(routeOverridesInput)
+      .map(([key, item]) => [normalizeRouteFamily(key), normalizeSeedRouteOverride(item)] as const)
+      .filter((entry): entry is [ProjectSkillRouteFamily, ProjectSkillSeedRouteOverride] => Boolean(entry[0] && entry[1])),
+  );
+  const normalized: ProjectSkillSeedContract = {
+    contractVersion: Number.isFinite(Number(record.contractVersion)) ? Number(record.contractVersion) : undefined,
+    homepageTopologyClass: String(record.homepageTopologyClass || "").trim() || undefined,
+    openingFamily: String(record.openingFamily || "").trim() || undefined,
+    sectionCadence: normalizeStringArray(record.sectionCadence),
+    allowedComponentRhythms: normalizeStringArray(record.allowedComponentRhythms),
+    bannedGenericOpenings: normalizeStringArray(record.bannedGenericOpenings),
+    componentBans: normalizeStringArray(record.componentBans),
+    mediaPosture: String(record.mediaPosture || "").trim() || undefined,
+    typographyPosture: String(record.typographyPosture || "").trim() || undefined,
+    ctaPosture: String(record.ctaPosture || "").trim() || undefined,
+    compatibleSurfaceModes: normalizeSurfaceModeArray(record.compatibleSurfaceModes),
+    visualBoldness: String(record.visualBoldness || "").trim() === "high" ? "high" : "standard",
+    routeOverrides: Object.keys(routeOverrides).length > 0 ? routeOverrides : undefined,
+  };
+  return normalized;
+}
+
+export function inferRouteFamiliesForPlanning(params: {
+  routes?: string[];
+  surfaceMode?: WebsiteSurfaceMode;
+}): ProjectSkillRouteFamily[] {
+  const families = new Set<ProjectSkillRouteFamily>();
+  const routes = (params.routes || []).map((route) => String(route || "").trim().toLowerCase()).filter(Boolean);
+  for (const route of routes) {
+    if (route === "/") {
+      families.add("home");
+      continue;
+    }
+    if (/^\/blog(?:\/|$)/.test(route)) families.add("blog");
+    if (/(?:^|\/)(?:products?|catalog|collection)(?:\/|$)/.test(route)) families.add("products");
+    if (/(?:^|\/)(?:solutions?|services?|custom-solutions?)(?:\/|$)/.test(route)) families.add("solutions");
+    if (/(?:^|\/)(?:cases?|portfolio|projects?)(?:\/|$)/.test(route)) families.add("cases");
+    if (/(?:^|\/)(?:about|company|team|profile)(?:\/|$)/.test(route)) families.add("about");
+    if (/(?:^|\/)(?:contact|inquiry|get-in-touch)(?:\/|$)/.test(route)) families.add("contact");
+    if (/(?:^|\/)(?:docs?|documentation|guides?|manual|reference|api|developer|developers|kb|knowledge-base)(?:\/|$)/.test(route)) {
+      families.add("docs");
+    }
+    if (
+      /(?:^|\/)(?:research|resource|resources|downloads?|library|standards?|information-platform|knowledge-platform|repository|directory)(?:\/|$)/.test(
+        route,
+      )
+    ) {
+      families.add("resource");
+    }
+  }
+  if (families.size === 0 || routes.includes("/")) families.add("home");
+  if (params.surfaceMode === "docs-knowledge-site") families.add("docs");
+  if (params.surfaceMode === "content-hub-site") families.add("resource");
+  if (params.surfaceMode === "portfolio-blog-site") families.add("blog");
+  return Array.from(families);
+}
+
+function pickTemplateExcerptForRouteFamily(
+  content: string,
+  fallback: string[],
+  routeFamily: ProjectSkillRouteFamily,
+): string[] {
+  const lines = String(content || "")
+    .split(/\r?\n/g)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (lines.length === 0) return fallback;
+  const familyPatternMap: Record<ProjectSkillRouteFamily, RegExp> = {
+    home: /(?:hero|masthead|home|landing|lead|intro)/i,
+    products: /(?:product|catalog|assortment|spec|comparison)/i,
+    solutions: /(?:solution|service|process|timeline|workflow)/i,
+    cases: /(?:case|proof|outcome|project|result)/i,
+    about: /(?:about|team|identity|profile|trust)/i,
+    contact: /(?:contact|inquiry|consult|form|channel)/i,
+    docs: /(?:docs?|reference|guide|api|quickstart|search)/i,
+    resource: /(?:resource|research|standards|library|ledger|collection)/i,
+    blog: /(?:blog|article|story|editorial|feature)/i,
+  };
+  const matches = lines
+    .filter(
+      (line) =>
+        familyPatternMap[routeFamily].test(line) &&
+        (/^<\/?(?:section|article|aside|header|main)\b/i.test(line) || /\bclass=/.test(line) || /\bdata-od-id=/.test(line)),
+    )
+    .slice(0, 6)
+    .map((line) => clipResourceExcerptValue(line));
+  return matches.length > 0 ? uniqueTrimmed(matches) : fallback;
+}
+
+function extractHtmlStructureExcerpt(content: string): string[] {
+  const lines = String(content || "")
+    .split(/\r?\n/g)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (lines.length === 0) return [];
+
+  const bodyStart = lines.findIndex((line) => /^<body\b/i.test(line));
+  const relevantLines = bodyStart >= 0 ? lines.slice(bodyStart + 1) : lines;
+  const structural = relevantLines
+    .filter(
+      (line) =>
+        /^<\/?(?:header|main|section|nav|footer|article|aside)\b/i.test(line) ||
+        /\bclass=/.test(line) ||
+        /\bdata-od-id=/.test(line),
+    )
+    .slice(0, 8);
+  const excerpt = (structural.length > 0 ? structural : relevantLines.slice(0, 8)).map((line) =>
+    clipResourceExcerptValue(line),
+  );
+  return uniqueTrimmed(excerpt);
+}
+
 function summarizeTemplateHtml(content: string, filePath: string): ProjectSkillTemplateSummary | undefined {
   const text = String(content || "");
   if (!text.trim()) return undefined;
@@ -170,11 +410,19 @@ function summarizeTemplateHtml(content: string, filePath: string): ProjectSkillT
   const responsiveBreakpoint = text.match(/@media\s*\(max-width:\s*([0-9]+px)\)/i)?.[1] || undefined;
   const keyClassCandidates = ["container", "section", "topnav", "pagefoot", "grid-2", "grid-3", "grid-4", "card", "btn", "ph-img"];
   const keyClasses = keyClassCandidates.filter((className) => new RegExp(`\\.${className}\\b`).test(text));
+  const structureExcerpt = extractHtmlStructureExcerpt(text);
+  const routeExcerpts = Object.fromEntries(
+    (["home", "products", "solutions", "cases", "about", "contact", "docs", "resource", "blog"] as ProjectSkillRouteFamily[]).map(
+      (family) => [family, pickTemplateExcerptForRouteFamily(text, structureExcerpt, family)],
+    ),
+  ) as Partial<Record<ProjectSkillRouteFamily, string[]>>;
   return {
     path: filePath,
     tokenNames: tokenNames.slice(0, 12),
     responsiveBreakpoint,
     keyClasses,
+    structureExcerpt,
+    routeExcerpts,
   };
 }
 
@@ -212,15 +460,89 @@ function summarizeChecklist(content: string, filePath: string): ProjectSkillChec
     p1Count: countChecklistItems(p1Lines),
     p2Count: countChecklistItems(p2Lines),
     criticalChecks,
+    mustPassExcerpt: uniqueTrimmed(
+      p0Lines
+        .filter((line) => /^\s*-\s*\[[ xX]?\]/.test(line))
+        .map((line) => clipResourceExcerptValue(line.replace(/^\s*-\s*\[[ xX]?\]\s*/, ""), 180))
+        .slice(0, 4),
+    ),
   };
 }
 
-async function buildProjectSkillResourceIndex(rootDir: string): Promise<ProjectSkillResourceIndex | undefined> {
+function summarizeSeedContract(contract: ProjectSkillSeedContract, filePath: string): ProjectSkillContractSummary | undefined {
+  const routeFamilies = Object.keys(contract.routeOverrides || {})
+    .map((item) => normalizeRouteFamily(item))
+    .filter((item): item is ProjectSkillRouteFamily => Boolean(item));
+  const contractExcerpt = uniqueTrimmed(
+    [
+      contract.homepageTopologyClass ? `homepageTopologyClass=${contract.homepageTopologyClass}` : "",
+      contract.openingFamily ? `openingFamily=${contract.openingFamily}` : "",
+      contract.visualBoldness ? `visualBoldness=${contract.visualBoldness}` : "",
+      (contract.sectionCadence || []).length > 0 ? `sectionCadence=${(contract.sectionCadence || []).slice(0, 4).join(" -> ")}` : "",
+      (contract.componentBans || []).length > 0 ? `componentBans=${(contract.componentBans || []).slice(0, 5).join(", ")}` : "",
+      (contract.bannedGenericOpenings || []).length > 0
+        ? `bannedGenericOpenings=${(contract.bannedGenericOpenings || []).slice(0, 5).join(", ")}`
+        : "",
+      contract.mediaPosture ? `mediaPosture=${contract.mediaPosture}` : "",
+      contract.typographyPosture ? `typographyPosture=${contract.typographyPosture}` : "",
+      contract.ctaPosture ? `ctaPosture=${contract.ctaPosture}` : "",
+    ]
+      .filter(Boolean)
+      .map((line) => clipResourceExcerptValue(line, 180)),
+  );
+  const routeExcerpts = Object.fromEntries(
+    routeFamilies.map((family) => {
+      const override = contract.routeOverrides?.[family];
+      const lines = uniqueTrimmed(
+        [
+          override?.homepageTopologyClass ? `homepageTopologyClass=${override.homepageTopologyClass}` : "",
+          override?.openingFamily ? `openingFamily=${override.openingFamily}` : "",
+          (override?.sectionCadence || []).length > 0 ? `sectionCadence=${(override?.sectionCadence || []).slice(0, 4).join(" -> ")}` : "",
+          (override?.componentBans || []).length > 0 ? `componentBans=${(override?.componentBans || []).slice(0, 4).join(", ")}` : "",
+          (override?.bannedGenericOpenings || []).length > 0
+            ? `bannedGenericOpenings=${(override?.bannedGenericOpenings || []).slice(0, 4).join(", ")}`
+            : "",
+          override?.mediaPosture ? `mediaPosture=${override.mediaPosture}` : "",
+          override?.typographyPosture ? `typographyPosture=${override.typographyPosture}` : "",
+          override?.ctaPosture ? `ctaPosture=${override.ctaPosture}` : "",
+        ]
+          .filter(Boolean)
+          .map((line) => clipResourceExcerptValue(line, 180)),
+      );
+      return [family, lines];
+    }),
+  ) as Partial<Record<ProjectSkillRouteFamily, string[]>>;
+
+  return {
+    path: filePath,
+    homepageTopologyClass: contract.homepageTopologyClass,
+    openingFamily: contract.openingFamily,
+    visualBoldness: contract.visualBoldness,
+    compatibleSurfaceModes: contract.compatibleSurfaceModes || [],
+    routeFamilies,
+    contractExcerpt,
+    routeExcerpts,
+  };
+}
+
+async function buildProjectSkillResourceIndex(
+  rootDir: string,
+  seedContract?: ProjectSkillSeedContract,
+): Promise<ProjectSkillResourceIndex | undefined> {
   const fs = await import("node:fs/promises");
+  const contractPath = path.join(rootDir, "contract.json");
   const templatePath = path.join(rootDir, "assets", "template.html");
   const examplePath = path.join(rootDir, "example.html");
   const checklistPath = path.join(rootDir, "references", "checklist.md");
   const resourceIndex: ProjectSkillResourceIndex = {};
+
+  if (seedContract) {
+    const contractSummary = summarizeSeedContract(seedContract, "contract.json");
+    if (contractSummary) resourceIndex.contractJson = contractSummary;
+  } else if (await pathExists(contractPath)) {
+    const contractSummary = summarizeSeedContract(normalizeSeedContract(await readJsonIfExists(contractPath)) || {}, "contract.json");
+    if (contractSummary) resourceIndex.contractJson = contractSummary;
+  }
 
   if (await pathExists(templatePath)) {
     const template = summarizeTemplateHtml(await fs.readFile(templatePath, "utf8"), "assets/template.html");
@@ -235,12 +557,30 @@ async function buildProjectSkillResourceIndex(rootDir: string): Promise<ProjectS
     if (checklist) resourceIndex.checklist = checklist;
   }
 
-  return resourceIndex.templateHtml || resourceIndex.exampleHtml || resourceIndex.checklist ? resourceIndex : undefined;
+  return resourceIndex.contractJson || resourceIndex.templateHtml || resourceIndex.exampleHtml || resourceIndex.checklist
+    ? resourceIndex
+    : undefined;
 }
 
 export function renderProjectSkillResourceIndex(index?: ProjectSkillResourceIndex): string {
   if (!index) return "";
   const lines = ["## Seed Resource Index"];
+  if (index.contractJson) {
+    lines.push(
+      [
+        `- ${index.contractJson.path}: seed contract`,
+        index.contractJson.homepageTopologyClass ? `home topology ${index.contractJson.homepageTopologyClass}` : "",
+        index.contractJson.openingFamily ? `opening ${index.contractJson.openingFamily}` : "",
+        index.contractJson.visualBoldness ? `boldness ${index.contractJson.visualBoldness}` : "",
+        index.contractJson.compatibleSurfaceModes.length > 0
+          ? `surfaces ${index.contractJson.compatibleSurfaceModes.join(", ")}`
+          : "",
+        index.contractJson.routeFamilies.length > 0 ? `route overrides ${index.contractJson.routeFamilies.join(", ")}` : "",
+      ]
+        .filter(Boolean)
+        .join("; "),
+    );
+  }
   if (index.templateHtml) {
     lines.push(
       [
@@ -277,6 +617,82 @@ export function renderProjectSkillResourceIndex(index?: ProjectSkillResourceInde
         .filter(Boolean)
         .join("; "),
     );
+  }
+  return lines.join("\n");
+}
+
+export function renderProjectSkillResourceContract(
+  index?: ProjectSkillResourceIndex,
+  options?: {
+    routes?: string[];
+    surfaceMode?: WebsiteSurfaceMode;
+    routeFamilies?: ProjectSkillRouteFamily[];
+  },
+): string {
+  if (!index) return "";
+  const excerptMode = String(process.env.SHPITTO_OD_SEED_EXCERPT_INJECTION || "").trim().toLowerCase();
+  const excerptInjectionEnabled =
+    !excerptMode || excerptMode === "1" || excerptMode === "true" || excerptMode === "yes" || excerptMode === "on";
+  if (!excerptInjectionEnabled) {
+    return [
+      renderProjectSkillResourceIndex(index),
+      "## Seed Structural Contract",
+      "- excerpt_injection_mode: summary-only rollback",
+      "- Seed excerpt injection is disabled by rollout flag; keep imported seed selection but fall back to compact resource summaries.",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+  const selectedRouteFamilies =
+    options?.routeFamilies && options.routeFamilies.length > 0
+      ? uniqueTrimmed(options.routeFamilies)
+          .map((item) => normalizeRouteFamily(item))
+          .filter((item): item is ProjectSkillRouteFamily => Boolean(item))
+      : inferRouteFamiliesForPlanning({ routes: options?.routes, surfaceMode: options?.surfaceMode });
+  const lines = [
+    "## Seed Structural Contract",
+    "- Preserve this seed's opening discipline, section cadence, and route-owned class semantics before falling back to generic local heuristics.",
+    "- Treat these excerpts as structural cues, not placeholder copy to duplicate verbatim.",
+  ];
+  if (index.contractJson?.contractExcerpt?.length) {
+    lines.push("### contract.json excerpt");
+    lines.push(...index.contractJson.contractExcerpt.map((line) => `- ${line}`));
+  }
+  if (index.contractJson?.routeExcerpts) {
+    for (const routeFamily of selectedRouteFamilies.slice(0, 4)) {
+      const excerpt = index.contractJson.routeExcerpts[routeFamily];
+      if (!excerpt?.length) continue;
+      lines.push(`### ${routeFamily} contract excerpt`);
+      lines.push(...excerpt.map((line) => `- ${line}`));
+    }
+  }
+  if (index.templateHtml?.structureExcerpt?.length) {
+    for (const routeFamily of selectedRouteFamilies.slice(0, 3)) {
+      const excerpt = index.templateHtml.routeExcerpts?.[routeFamily];
+      if (!excerpt?.length) continue;
+      lines.push(`### assets/template.html ${routeFamily} excerpt`);
+      lines.push(...excerpt.map((line) => `- ${line}`));
+    }
+    if (!selectedRouteFamilies.some((routeFamily) => (index.templateHtml?.routeExcerpts?.[routeFamily] || []).length > 0)) {
+      lines.push("### assets/template.html excerpt");
+      lines.push(...index.templateHtml.structureExcerpt.map((line) => `- ${line}`));
+    }
+  }
+  if (index.exampleHtml?.structureExcerpt?.length) {
+    for (const routeFamily of selectedRouteFamilies.slice(0, 3)) {
+      const excerpt = index.exampleHtml.routeExcerpts?.[routeFamily];
+      if (!excerpt?.length) continue;
+      lines.push(`### example.html ${routeFamily} excerpt`);
+      lines.push(...excerpt.map((line) => `- ${line}`));
+    }
+    if (!selectedRouteFamilies.some((routeFamily) => (index.exampleHtml?.routeExcerpts?.[routeFamily] || []).length > 0)) {
+      lines.push("### example.html excerpt");
+      lines.push(...index.exampleHtml.structureExcerpt.map((line) => `- ${line}`));
+    }
+  }
+  if (index.checklist?.mustPassExcerpt?.length) {
+    lines.push("### checklist excerpt");
+    lines.push(...index.checklist.mustPassExcerpt.map((line) => `- ${line}`));
   }
   return lines.join("\n");
 }
@@ -640,6 +1056,7 @@ export async function loadProjectSkill(skillId: string, start?: string): Promise
   const config = await readJsonIfExists(skillJsonPath);
   const frontmatter = parseSkillFrontmatterSummary(normalized, content);
   const websiteMetadata = parseWebsiteSkillMetadata(normalized, content);
+  const seedContract = normalizeSeedContract(await readJsonIfExists(path.join(targetRoot, "contract.json")));
 
   return {
     id: normalized,
@@ -650,7 +1067,8 @@ export async function loadProjectSkill(skillId: string, start?: string): Promise
     config,
     websiteMetadata,
     frontmatter,
-    resourceIndex: await buildProjectSkillResourceIndex(targetRoot),
+    seedContract,
+    resourceIndex: await buildProjectSkillResourceIndex(targetRoot, seedContract),
   };
 }
 

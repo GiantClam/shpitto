@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --surface: #ffffff;
+      --text: #182433;
+      --muted: #4f6076;
+      --accent: #2e6cf6;
+      --signal: #f59e0b;
+    }
+    .industrial-home { display: grid; gap: 24px; }
+    .procurement-masthead { padding: 32px; background: linear-gradient(135deg, #eef4ff, #dfe7f5); border-radius: 28px; }
+    .proof-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .capability-band { display: grid; gap: 14px; }
+    @media (max-width: 920px) { .proof-row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="industrial-home">
+    <section class="procurement-masthead" data-od-id="procurement-masthead">
+      <p>Industrial proof</p>
+      <h1>Procurement-grade homepage opening</h1>
+    </section>
+    <section class="proof-row" data-od-id="proof-row"><article>Proof</article><article>Specs</article><article>Certificates</article></section>
+    <section class="capability-band" data-od-id="capability-band"><h2>Capability band</h2></section>
+  </main>
+</body>
+</html>

@@ -49,6 +49,7 @@ import {
   buildSelectedSeedSkillManifest,
   buildWebsiteGenerationContract,
   type GenerationContractRouteUnit,
+  type SelectedSeedContractEntry,
   type SelectedSeedSkillManifest,
   type WebsiteGenerationContract,
 } from "../../../lib/agent/website-generation-contract";
@@ -68,8 +69,10 @@ import {
   type WebsiteDiscoveryBrief,
   type WebsiteSurfaceMode,
 } from "../../../lib/skill-runtime/open-design-adoption";
+import { buildLocalDecisionPlan } from "../../../lib/skill-runtime/decision-layer";
 import { getSkillExecutionAdapter } from "../../../lib/skill-runtime/skill-execution-adapter-registry";
-import { loadProjectSkill } from "../../../lib/skill-runtime/project-skill-loader";
+import { loadProjectSkill, selectWebsiteSeedSkillsForIntent } from "../../../lib/skill-runtime/project-skill-loader";
+import { classifyWebsiteSeedOrigin } from "../../../lib/skill-runtime/website-artifact-generator";
 import { selectWebsiteGenerationTypeSkill } from "../../../lib/skill-runtime/website-type-selector";
 import { invalidateLaunchCenterRecentProjectsCache } from "../../../lib/launch-center/cache";
 import {
@@ -148,6 +151,32 @@ function normalizeSeedSkillManifest(value: unknown): SelectedSeedSkillManifest |
   return selected.length > 0 ? { selected } : undefined;
 }
 
+function normalizeSelectedSeedContracts(value: unknown): SelectedSeedContractEntry[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const contracts: SelectedSeedContractEntry[] = value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) return [];
+    const id = String((entry as any).id || "").trim();
+    const source = String((entry as any).source || "").trim();
+    const contract =
+      (entry as any).contract && typeof (entry as any).contract === "object" && !Array.isArray((entry as any).contract)
+        ? ((entry as any).contract as Record<string, unknown>)
+        : undefined;
+    if (!id || !contract) return [];
+    return [
+      {
+        id,
+        source:
+          source === "imported-open-design" || source === "imported-html-anything"
+            ? source
+            : ("shpitto" as const),
+        reason: String((entry as any).reason || "").trim() || undefined,
+        contract,
+      },
+    ];
+  });
+  return contracts.length > 0 ? contracts : undefined;
+}
+
 function normalizeGenerationRouteUnitContracts(value: unknown): GenerationContractRouteUnit[] | undefined {
   if (!Array.isArray(value)) return undefined;
   const units = value.flatMap((entry) => {
@@ -194,8 +223,15 @@ function normalizeGenerationContract(value: unknown): WebsiteGenerationContract 
         ? ((value as any).discoveryBrief as Record<string, unknown>)
         : null,
     selectedSeedSkillManifest,
+    selectedSeedContracts: normalizeSelectedSeedContracts((value as any).selectedSeedContracts) || [],
     routeUnitContracts,
   };
+}
+
+function routeToHtmlPath(route: string): string {
+  const normalized = String(route || "/").trim() || "/";
+  if (normalized === "/" || normalized === "/index") return "/index.html";
+  return `${normalized.replace(/\/+$/g, "")}/index.html`;
 }
 
 const CHAT_COPY: Record<ChatDisplayLocale, Record<string, string>> = {
@@ -2156,6 +2192,7 @@ export async function POST(req: Request) {
     isWebsiteSkill(requestedSkillId) &&
     !requiresRequirementForm &&
     ((!confirmedPrompt && (decision.intent === "clarify" || decision.intent === "generate")) ||
+      (confirmedPromptExplicitlyProvided && (!confirmedPromptControlManifest || confirmedPromptControlManifest.routes?.length === 0)) ||
       rebuildConfirmedPromptForUploadedSources ||
       rebuildConfirmedPromptForCanonicalExecution);
   const explicitTemplateStyleId =
@@ -2272,10 +2309,44 @@ export async function POST(req: Request) {
     explicitTemplateStyleId || "",
   );
   const canonicalPrompt = confirmedPrompt ? canonicalPromptBase : appendReferencedAssetsBlock(canonicalPromptBase, referencedAssets);
-  const promptControlManifest =
+  const confirmedPromptMissingMachineManifest =
+    confirmedPromptExplicitlyProvided && (!confirmedPromptControlManifest || confirmedPromptControlManifest.routes?.length === 0);
+  let promptControlManifest =
     promptDraftResult.promptControlManifest ||
     confirmedPromptControlManifest ||
     (previousState.workflow_context as any)?.promptControlManifest;
+  if (confirmedPromptMissingMachineManifest) {
+    const fallbackPlan = buildLocalDecisionPlan({
+      messages: [{ role: "user", content: promptDraftRequirementText }],
+      workflow_context: {
+        latestUserText: promptDraftRequirementText,
+        requirementAggregatedText: promptDraftRequirementText,
+        requirementSpec,
+      },
+    } as any);
+    if (fallbackPlan.routes.length > 0) {
+      const promptRouteToLabel = new Map<string, string>();
+      for (let index = 0; index < (promptControlManifest?.routes || []).length; index += 1) {
+        const route = String(promptControlManifest?.routes?.[index] || "").trim();
+        const label = String(promptControlManifest?.navLabels?.[index] || "").trim();
+        if (route && label) promptRouteToLabel.set(route, label);
+      }
+      const mergedRoutes = Array.from(new Set([...fallbackPlan.routes, ...(promptControlManifest?.routes || [])]));
+      promptControlManifest = {
+        ...(promptControlManifest || {}),
+        routes: mergedRoutes,
+        navLabels: mergedRoutes.map((route, index) => promptRouteToLabel.get(route) || fallbackPlan.navLabels[index] || ""),
+        files: Array.from(
+          new Set([
+            "/styles.css",
+            "/script.js",
+            ...mergedRoutes.map((route) => routeToHtmlPath(route)),
+            ...((promptControlManifest?.files || []) as string[]),
+          ]),
+        ),
+      };
+    }
+  }
   const selectedWebsiteType = isWebsiteSkill(requestedSkillId)
     ? selectWebsiteGenerationTypeSkill({
         requirementText: promptDraftRequirementText,
@@ -2314,12 +2385,42 @@ export async function POST(req: Request) {
       : requirementSpec.supportedLocales || [];
   const resolvedDefaultLocale =
     resolvedWebsiteDiscoveryBrief?.defaultLocale || requirementSpec.defaultLocale;
+  const selectedWebsiteSeedSkills = isWebsiteSkill(requestedSkillId)
+    ? await selectWebsiteSeedSkillsForIntent({
+        requirementText: promptDraftRequirementText,
+        routes: promptControlManifest?.routes || requirementSpec.pageStructure?.pages || [],
+        maxSkills: Number(process.env.SKILL_RUNTIME_MAX_SEED_SKILLS || 2),
+      })
+    : [];
+  const selectedSeedContracts = (
+    await Promise.all(
+      selectedWebsiteSeedSkills.map(async (item) => {
+        const skill = await loadProjectSkill(item.id);
+        return skill.seedContract
+          ? [
+              {
+                id: skill.id,
+                source:
+                  classifyWebsiteSeedOrigin(skill) === "open-design"
+                    ? ("imported-open-design" as const)
+                    : classifyWebsiteSeedOrigin(skill) === "html-anything"
+                      ? ("imported-html-anything" as const)
+                      : ("shpitto" as const),
+                reason: item.reason || undefined,
+                contract: skill.seedContract,
+              },
+            ]
+          : [];
+      }),
+    )
+  ).flat();
   const selectedSeedSkillManifest = buildSelectedSeedSkillManifest(
-    [
-      selectedWebsiteType?.skillId || "",
-      String((previousState.workflow_context as any)?.websiteTypeSkillId || ""),
-    ].filter(Boolean),
-    "Chat route selected the website surface skill from the current prompt/spec context.",
+    selectedSeedContracts.map((item) => ({
+      id: item.id,
+      source: item.source,
+      reason: item.reason,
+    })),
+    "Chat route selected imported frontend website seeds from the current prompt/spec context.",
   );
   const routeUnitContracts = buildPromptManifestRouteUnits(promptControlManifest, selectedSeedSkillManifest);
   const generationContract = buildWebsiteGenerationContract({
@@ -2328,6 +2429,7 @@ export async function POST(req: Request) {
     promptControlManifest,
     discoveryBrief: resolvedWebsiteDiscoveryBrief,
     selectedSeedSkillManifest,
+    selectedSeedContracts,
     routeUnitContracts,
   });
   const requiresPromptDraftConfirmation =
@@ -2469,10 +2571,11 @@ export async function POST(req: Request) {
         promptBudgetEnvelope: promptDraftResult.promptBudgetEnvelope || null,
         evidenceBrief: promptDraftResult.evidenceBrief || null,
         promptControlManifest: promptControlManifest || null,
-        selectedSeedSkillManifest,
-        routeUnitContracts,
-        generationContract,
-        contractHash: generationContract.contractHash,
+      selectedSeedSkillManifest,
+      selectedSeedContracts,
+      routeUnitContracts,
+      generationContract,
+      contractHash: generationContract.contractHash,
         generationLane: websiteGenerationLaneConfig.lane,
         generationLaneConfig:
           websiteGenerationLaneConfig.lane === "website-generation-mvp"
@@ -2549,6 +2652,7 @@ export async function POST(req: Request) {
         evidenceBrief: promptDraftResult.evidenceBrief || null,
         promptControlManifest,
         selectedSeedSkillManifest,
+        selectedSeedContracts,
         routeUnitContracts,
         generationContract,
         contractHash: generationContract.contractHash,
@@ -2587,6 +2691,9 @@ export async function POST(req: Request) {
   const existingSeedSkillManifest =
     normalizeSeedSkillManifest((existingWorkflow as any)?.selectedSeedSkillManifest) ||
     normalizeSeedSkillManifest((previousState.workflow_context as any)?.selectedSeedSkillManifest);
+  const existingSelectedSeedContracts =
+    normalizeSelectedSeedContracts((existingWorkflow as any)?.selectedSeedContracts) ||
+    normalizeSelectedSeedContracts((previousState.workflow_context as any)?.selectedSeedContracts);
   const existingRouteUnitContracts =
     normalizeGenerationRouteUnitContracts((existingWorkflow as any)?.routeUnitContracts) ||
     normalizeGenerationRouteUnitContracts((previousState.workflow_context as any)?.routeUnitContracts);
@@ -2603,6 +2710,10 @@ export async function POST(req: Request) {
       : shouldInheritLockedGenerationContract && existingSeedSkillManifest?.selected?.length
         ? existingSeedSkillManifest
         : selectedSeedSkillManifest;
+  const executionSelectedSeedContracts =
+    shouldInheritLockedGenerationContract && existingSelectedSeedContracts?.length
+      ? existingSelectedSeedContracts
+      : selectedSeedContracts;
   const executionRouteUnitContracts =
     shouldInheritLockedGenerationContract && existingGenerationContract?.routeUnitContracts?.length
       ? existingGenerationContract.routeUnitContracts
@@ -2634,6 +2745,7 @@ export async function POST(req: Request) {
           promptControlManifest,
           discoveryBrief: resolvedWebsiteDiscoveryBrief,
           selectedSeedSkillManifest: executionSelectedSeedSkillManifest,
+          selectedSeedContracts: executionSelectedSeedContracts,
           routeUnitContracts: executionRouteUnitContracts,
         });
   const revisionPointer = buildRevisionPointer({
@@ -2755,6 +2867,7 @@ export async function POST(req: Request) {
       requirementAggregatedText: requirementAggregatedTextForExecution,
       promptControlManifest,
       selectedSeedSkillManifest: executionSelectedSeedSkillManifest,
+      selectedSeedContracts: executionSelectedSeedContracts,
       routeUnitContracts: executionRouteUnitContracts,
       generationContract: executionGenerationContract,
       contractHash: executionGenerationContract.contractHash,

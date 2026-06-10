@@ -1,0 +1,43 @@
+{
+  "contractVersion": 1,
+  "homepageTopologyClass": "reference-workspace-shell",
+  "openingFamily": "docs-reference",
+  "sectionCadence": [
+    "reference lead",
+    "required inputs",
+    "ordered steps",
+    "cross-links"
+  ],
+  "allowedComponentRhythms": [
+    "ordered checklist",
+    "reference card",
+    "TOC rail"
+  ],
+  "bannedGenericOpenings": [
+    "campaign hero",
+    "testimonial strip",
+    "generic feature card trio"
+  ],
+  "componentBans": [
+    "pricing block",
+    "customer quote carousel"
+  ],
+  "mediaPosture": "Use diagrams, search/index cues, and code/reference panels instead of promo media.",
+  "typographyPosture": "Clean docs sans with mono utilities and compact spacing.",
+  "ctaPosture": "Cross-link or support CTA, not demand-gen urgency.",
+  "compatibleSurfaceModes": [
+    "docs-knowledge-site"
+  ],
+  "visualBoldness": "high",
+  "routeOverrides": {
+    "docs": {
+      "openingFamily": "reference-index",
+      "sectionCadence": [
+        "reference lead",
+        "required inputs",
+        "implementation steps",
+        "cross-links"
+      ]
+    }
+  }
+}

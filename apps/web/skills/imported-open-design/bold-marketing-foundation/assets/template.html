@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { --bg:#fff9f1; --surface:#ffffff; --text:#1b1b1f; --accent:#ff5a1f; --support:#111827; }
+    .campaign-home { display:grid; gap:20px; }
+    .signal-masthead { padding:32px; border-radius:28px; background:linear-gradient(135deg,#ffe7d6,#fff9f1); }
+    .benefit-rail { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+    .launch-cta { padding:24px; border:2px solid var(--support); }
+    @media (max-width:920px) { .benefit-rail { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <main class="campaign-home">
+    <section class="signal-masthead" data-od-id="signal-masthead"><h1>Signal masthead</h1></section>
+    <section class="benefit-rail" data-od-id="benefit-rail"><article>Benefit</article><article>Proof</article><article>CTA support</article></section>
+  </main>
+</body>
+</html>

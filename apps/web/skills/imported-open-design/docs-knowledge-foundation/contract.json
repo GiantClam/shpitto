@@ -1,0 +1,64 @@
+{
+  "contractVersion": 1,
+  "homepageTopologyClass": "docs-workspace-masthead",
+  "openingFamily": "docs-workspace",
+  "sectionCadence": [
+    "docs workspace masthead",
+    "search/index rail",
+    "quickstart strip",
+    "guide stack",
+    "reference matrix",
+    "support CTA"
+  ],
+  "allowedComponentRhythms": [
+    "workspace + index rail",
+    "quickstart checklist",
+    "reference matrix"
+  ],
+  "bannedGenericOpenings": [
+    "hero",
+    "hero-grid",
+    "hero-aside",
+    "generic card CTA loop"
+  ],
+  "componentBans": [
+    "marketing proof band",
+    "editorial archive shelf",
+    "enterprise side rail"
+  ],
+  "mediaPosture": "Compact reference/product panels adjacent to search, quickstart, or API surfaces.",
+  "typographyPosture": "Documentation sans with mono accents for commands and identifiers.",
+  "ctaPosture": "Compact support and quickstart CTA, never campaign urgency.",
+  "compatibleSurfaceModes": [
+    "docs-knowledge-site"
+  ],
+  "visualBoldness": "high",
+  "routeOverrides": {
+    "home": {
+      "homepageTopologyClass": "docs-workspace-masthead",
+      "openingFamily": "docs-workspace",
+      "sectionCadence": [
+        "docs workspace masthead",
+        "search/index rail",
+        "quickstart strip",
+        "reference matrix"
+      ],
+      "componentBans": [
+        "full-bleed marketing hero",
+        "editorial archive shelf"
+      ]
+    },
+    "docs": {
+      "openingFamily": "reference-index",
+      "sectionCadence": [
+        "reference lead",
+        "guide stack",
+        "cross-link strip"
+      ],
+      "componentBans": [
+        "campaign hero",
+        "testimonial slider"
+      ]
+    }
+  }
+}

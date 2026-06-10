@@ -4,10 +4,12 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import {
   getWebsiteGenerationSkillBundle,
+  inferRouteFamiliesForPlanning,
   listDocumentContentSkillIds,
   listWebsiteSeedSkillIds,
   loadProjectSkill,
   loadProjectSkillBundle,
+  renderProjectSkillResourceContract,
   renderProjectSkillResourceIndex,
   resolveProjectSkillAlias,
   selectDocumentContentSkillsForIntent,
@@ -156,6 +158,36 @@ describe("project-skill-loader", () => {
     expect(renderProjectSkillResourceIndex(skill.resourceIndex)).toContain("example.html: example-backed HTML contract");
   });
 
+  it("loads contract-backed imported seed packages with template and checklist assets", async () => {
+    const skill = await loadProjectSkill("industrial-b2b-foundation");
+
+    expect(skill.seedContract?.homepageTopologyClass).toBe("procurement-masthead");
+    expect(skill.resourceIndex?.contractJson?.path).toBe("contract.json");
+    expect(skill.resourceIndex?.templateHtml?.path).toBe("assets/template.html");
+    expect(skill.resourceIndex?.checklist?.path).toBe("references/checklist.md");
+    expect(renderProjectSkillResourceContract(skill.resourceIndex, { routes: ["/", "/products"] })).toContain(
+      "### home contract excerpt",
+    );
+    expect(renderProjectSkillResourceContract(skill.resourceIndex, { routes: ["/products"] })).toContain(
+      "### products contract excerpt",
+    );
+  });
+
+  it("allows excerpt injection to roll back independently to summary-only mode", async () => {
+    const previous = process.env.SHPITTO_OD_SEED_EXCERPT_INJECTION;
+    process.env.SHPITTO_OD_SEED_EXCERPT_INJECTION = "0";
+
+    const skill = await loadProjectSkill("industrial-b2b-foundation");
+    const contract = renderProjectSkillResourceContract(skill.resourceIndex, { routes: ["/", "/products"] });
+
+    expect(contract).toContain("excerpt_injection_mode: summary-only rollback");
+    expect(contract).not.toContain("### home contract excerpt");
+    expect(contract).not.toContain("### assets/template.html home excerpt");
+
+    if (previous === undefined) delete process.env.SHPITTO_OD_SEED_EXCERPT_INJECTION;
+    else process.env.SHPITTO_OD_SEED_EXCERPT_INJECTION = previous;
+  });
+
   it("discovers active imported HTML Anything website skills from nested namespaces", async () => {
     const docsSkill = await loadProjectSkill("docs-reference-template");
     const contentSkill = await loadProjectSkill("content-resource-template");
@@ -237,6 +269,44 @@ describe("project-skill-loader", () => {
     else process.env.SHPITTO_OD_IMPORTED_SKILLS = previous;
   });
 
+  it("keeps at least two viable imported seeds for each mainline surface family", async () => {
+    const corporate = await selectWebsiteSeedSkillsForIntent({
+      requirementText: "Build a corporate B2B website with products, solutions, cases, and contact.",
+      routes: ["/", "/products", "/solutions", "/cases", "/contact"],
+      maxSkills: 6,
+    });
+    expect(corporate.map((item) => item.id)).toEqual(
+      expect.arrayContaining(["industrial-b2b-foundation", "precision-catalog-template"]),
+    );
+
+    const marketing = await selectWebsiteSeedSkillsForIntent({
+      requirementText: "Build a marketing landing page for a product launch with a strong signup CTA.",
+      routes: ["/"],
+      maxSkills: 6,
+    });
+    expect(marketing.map((item) => item.id)).toEqual(
+      expect.arrayContaining(["bold-marketing-foundation", "cinematic-launch-template"]),
+    );
+
+    const portfolio = await selectWebsiteSeedSkillsForIntent({
+      requirementText: "Build a premium portfolio showcase with writing and feature stories.",
+      routes: ["/", "/about", "/blog", "/contact"],
+      maxSkills: 6,
+    });
+    expect(portfolio.map((item) => item.id)).toEqual(
+      expect.arrayContaining(["editorial-feature-foundation", "premium-portfolio-template"]),
+    );
+  });
+
+  it("derives bounded route families for seed contract excerpt selection", () => {
+    expect(
+      inferRouteFamiliesForPlanning({
+        routes: ["/", "/products", "/contact"],
+        surfaceMode: "corporate-b2b-site",
+      }),
+    ).toEqual(expect.arrayContaining(["home", "products", "contact"]));
+  });
+
   it("indexes seed template and checklist resources into a compact summary", async () => {
     const skill = await loadProjectSkill("web-prototype");
 
@@ -245,14 +315,21 @@ describe("project-skill-loader", () => {
       expect.arrayContaining(["--bg", "--surface", "--fg", "--muted", "--border", "--accent"]),
     );
     expect(skill.resourceIndex?.templateHtml?.responsiveBreakpoint).toBe("920px");
+    expect(skill.resourceIndex?.templateHtml?.structureExcerpt).toEqual(
+      expect.arrayContaining(['<header class="topnav" data-od-id="topnav">', "<nav>"]),
+    );
     expect(skill.resourceIndex?.checklist?.path).toBe("references/checklist.md");
     expect(skill.resourceIndex?.checklist?.p0Count).toBeGreaterThanOrEqual(8);
     expect(skill.resourceIndex?.checklist?.criticalChecks).toEqual(
       expect.arrayContaining(["No raw hex outside `:root` token block.", "No invented metrics."]),
     );
+    expect(skill.resourceIndex?.checklist?.mustPassExcerpt?.[0]).toContain("No raw hex outside `:root` token block.");
     expect(renderProjectSkillResourceIndex(skill.resourceIndex)).toContain("## Seed Resource Index");
     expect(renderProjectSkillResourceIndex(skill.resourceIndex)).toContain("assets/template.html: reusable HTML seed");
     expect(renderProjectSkillResourceIndex(skill.resourceIndex)).toContain("references/checklist.md: self-review gates");
+    expect(renderProjectSkillResourceContract(skill.resourceIndex)).toContain("## Seed Structural Contract");
+    expect(renderProjectSkillResourceContract(skill.resourceIndex)).toContain("Preserve this seed's opening discipline");
+    expect(renderProjectSkillResourceContract(skill.resourceIndex)).toContain("### checklist excerpt");
   });
 
   it("selects seed skills by workflow intent instead of loading all seeds", async () => {

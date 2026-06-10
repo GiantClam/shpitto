@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { --bg:#faf8f2; --surface:#ffffff; --text:#111111; --accent:#ef4444; }
+    .manifesto-home { display:grid; gap:18px; }
+    .statement-wall { padding:28px; border:2px solid #111111; }
+    .proof-columns { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .action-rail { padding:18px; border-top:4px solid var(--accent); }
+    @media (max-width:920px) { .proof-columns { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <main class="manifesto-home">
+    <section class="statement-wall" data-od-id="statement-wall"><h1>Statement wall</h1></section>
+    <section class="proof-columns" data-od-id="proof-columns"><article>Column A</article><article>Column B</article></section>
+  </main>
+</body>
+</html>
