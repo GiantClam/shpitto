@@ -5293,6 +5293,11 @@ function toProgressStageMessage(stage: string, stepIndex?: number, totalSteps?: 
     ? ` (step ${stepIndex}/${totalSteps})`
     : "";
   if (!normalized) return `Generation in progress${progress}`;
+  if (normalized.startsWith("generating:route-unit-start:")) {
+    const route = normalized.slice("generating:route-unit-start:".length).trim() || "route unit";
+    return `Generating route ${route}${progress}`;
+  }
+  if (normalized === "generated") return `Completed route unit${progress}`;
   if (normalized.includes("design_confirm")) return `Design confirmation prepared${progress}`;
   if (normalized.includes("task_plan")) return `Planning generation steps${progress}`;
   if (normalized.includes("findings")) return `Analyzing requirements${progress}`;

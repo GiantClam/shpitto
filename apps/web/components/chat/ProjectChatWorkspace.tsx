@@ -190,6 +190,51 @@ export function shouldRecoverFromSubmitFailure(params: {
     .some((item) => item.role !== "user" && String(item.text || "").trim().length > 0);
 }
 
+const DEFAULT_SUBMIT_FAILURE_RECOVERY_ATTEMPTS = 5;
+const DEFAULT_SUBMIT_FAILURE_RECOVERY_DELAY_MS = 1500;
+
+type SubmitFailureRecoveryParams = {
+  chatId: string;
+  submittedText: string;
+  fetchHistory: (chatId: string) => Promise<HistoryResponse>;
+  attempts?: number;
+  delayMs?: number;
+  wait?: (delayMs: number) => Promise<void>;
+};
+
+export async function recoverHistoryAfterSubmitFailure(
+  params: SubmitFailureRecoveryParams,
+): Promise<HistoryResponse | null> {
+  const submittedText = String(params.submittedText || "").trim();
+  if (!submittedText) return null;
+
+  const attempts = Math.max(1, Math.floor(params.attempts ?? DEFAULT_SUBMIT_FAILURE_RECOVERY_ATTEMPTS));
+  const delayMs = Math.max(0, Math.floor(params.delayMs ?? DEFAULT_SUBMIT_FAILURE_RECOVERY_DELAY_MS));
+  const wait =
+    params.wait ||
+    ((nextDelayMs: number) =>
+      new Promise<void>((resolve) => {
+        window.setTimeout(resolve, nextDelayMs);
+      }));
+
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      const history = await params.fetchHistory(params.chatId);
+      if (shouldRecoverFromSubmitFailure({ history, submittedText })) {
+        return history;
+      }
+    } catch {
+      // Preserve the original submit error unless recovery can confirm progress.
+    }
+
+    if (attempt < attempts - 1 && delayMs > 0) {
+      await wait(delayMs);
+    }
+  }
+
+  return null;
+}
+
 type SessionPayload = {
   id: string;
   title: string;
@@ -3863,8 +3908,12 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
         void fetchProjectMeta();
       } catch (err: any) {
         try {
-          const recoveredHistory = await fetchHistoryByChatId(chatId);
-          if (shouldRecoverFromSubmitFailure({ history: recoveredHistory, submittedText: runtimePrompt })) {
+          const recoveredHistory = await recoverHistoryAfterSubmitFailure({
+            chatId,
+            submittedText: runtimePrompt,
+            fetchHistory: fetchHistoryByChatId,
+          });
+          if (recoveredHistory) {
             setTaskEvents(Array.isArray(recoveredHistory.events) ? recoveredHistory.events : []);
             setPreviewTask(
               recoveredHistory.previewTask || (taskHasPreviewBaseline(recoveredHistory.task) ? recoveredHistory.task! : null),
