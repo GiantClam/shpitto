@@ -419,6 +419,52 @@ describe("route unit runner", () => {
     expect(rerunUnits).toBe(1);
   });
 
+  it("emits a route-unit start snapshot before the unit finishes", async () => {
+    const checkpointDir = path.resolve(process.cwd(), ".tmp", "route-unit-runner-start-snapshot");
+    await fs.rm(checkpointDir, { recursive: true, force: true });
+    const contract = buildContract(["/"]);
+    const statuses: string[] = [];
+
+    const result = await runV2RouteUnitRuntime({
+      state: { workflow_context: {} } as any,
+      timeoutMs: 10_000,
+      checkpointDir,
+      contract,
+      onStep: async (snapshot) => {
+        statuses.push(snapshot.status);
+      },
+      unitWorker: {
+        id: "test-route-unit-worker",
+        capabilities: ["route-unit"],
+        runUnit: async (input) => {
+          await new Promise((resolve) => setTimeout(resolve, 5));
+          return {
+            unitId: input.unitId,
+            status: "passed",
+            files: input.targetFiles.map((target) => ({
+              path: target,
+              content:
+                target === "/index.html"
+                  ? "<!doctype html><html><body><header><nav><a href=\"/\">Home</a></nav></header><main><h1>CASUX</h1><p>CASUX is the institutional home for standards, research, advocacy, and certification work that helps members discover trusted programs, reference materials, and collaboration pathways.</p></main><footer>Footer</footer></body></html>"
+                  : target.endsWith(".css")
+                    ? "body{font-family:system-ui}"
+                    : "console.log('ready')",
+              type: target.endsWith(".html")
+                ? "text/html"
+                : target.endsWith(".css")
+                  ? "text/css"
+                  : "application/javascript",
+            })),
+          };
+        },
+      },
+    });
+
+    expect(result.verification.status).toBe("passed");
+    expect(statuses[0]).toBe("generating:route-unit-start:/");
+    expect(statuses).toContain("generated");
+  });
+
   it("preserves verifier-approved routes across transient worker failure and reruns only the failed route", async () => {
     const checkpointDir = path.resolve(process.cwd(), ".tmp", "route-unit-runner-transient-worker-failure");
     await fs.rm(checkpointDir, { recursive: true, force: true });

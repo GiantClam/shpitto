@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { vi } from "vitest";
+
 import { ensureVisibleWorkspaceProjects } from "../../components/chat/project-workspace-context";
 import { buildDomainGuidanceCardMetadata } from "../../components/chat/project-domain-ui";
 import {
   blogDetailFillCardCopy,
   deriveWorkspacePreTaskState,
   formatQaSummaryDetail,
+  recoverHistoryAfterSubmitFailure,
   shouldRecoverFromSubmitFailure,
   shouldSuppressOptimisticTimelineEcho,
   summarizeGenerationRuntimeBadges,
@@ -57,6 +60,46 @@ describe("ProjectChatWorkspace timeline actions", () => {
         },
       }),
     ).toBe(false);
+  });
+
+  it("retries history recovery when submit progress lands after the first failed fetch window", async () => {
+    const fetchHistory = vi
+      .fn<Parameters<typeof recoverHistoryAfterSubmitFailure>[0]["fetchHistory"]>()
+      .mockResolvedValueOnce({
+        ok: true,
+        messages: [{ id: "1", role: "user", text: "Earlier message", createdAt: 1 }],
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        messages: [
+          {
+            id: "2",
+            role: "user",
+            text: "Requirement form submitted:\n[Requirement Form]\n```json\n{\"siteType\":\"company\"}\n```",
+            createdAt: 2,
+          },
+          {
+            id: "3",
+            role: "assistant",
+            text: "Prompt Draft generated with LLM. You can add details or confirm generation.",
+            createdAt: 3,
+          },
+        ],
+      });
+    const wait = vi.fn(async () => {});
+
+    const recovered = await recoverHistoryAfterSubmitFailure({
+      chatId: "chat-1",
+      submittedText: "Requirement form submitted:\n[Requirement Form]\n```json\n{\"siteType\":\"company\"}\n```",
+      fetchHistory,
+      attempts: 2,
+      delayMs: 1,
+      wait,
+    });
+
+    expect(fetchHistory).toHaveBeenCalledTimes(2);
+    expect(wait).toHaveBeenCalledTimes(1);
+    expect(recovered?.messages?.at(-1)?.text).toContain("Prompt Draft generated");
   });
 
   it("keeps optimistic echo messages for normal prompt submissions", () => {

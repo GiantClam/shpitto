@@ -27,6 +27,12 @@ function normalizePath(value: string): string {
   return withSlash.replace(/\\/g, "/").replace(/\/{2,}/g, "/");
 }
 
+function clampTimeout(taskTimeoutMs: number, candidateMs: number, minMs: number) {
+  const safeCandidate = Number.isFinite(candidateMs) && candidateMs > 0 ? Math.max(minMs, candidateMs) : minMs;
+  const safeTask = Number.isFinite(taskTimeoutMs) && taskTimeoutMs > 0 ? Math.max(minMs, taskTimeoutMs) : safeCandidate;
+  return Math.min(safeCandidate, safeTask);
+}
+
 function clipText(value: unknown, maxChars: number) {
   const text = String(value || "").trim();
   if (!text) return "";
@@ -196,6 +202,18 @@ function resolveRouteUnitProviderConfig(
     ...config,
     modelName: lightweightModelName,
   };
+}
+
+function resolveRouteUnitProviderTimeoutMs(params: {
+  taskTimeoutMs: number;
+  targetFileCount: number;
+}) {
+  const fileCount = Math.max(1, Number(params.targetFileCount || 0));
+  const baseMs = Math.max(1_000, Number(process.env.ROUTE_UNIT_PROVIDER_TIMEOUT_BASE_MS || 30_000));
+  const perFileMs = Math.max(0, Number(process.env.ROUTE_UNIT_PROVIDER_TIMEOUT_PER_FILE_MS || 20_000));
+  const maxMs = Math.max(baseMs, Number(process.env.ROUTE_UNIT_PROVIDER_TIMEOUT_MAX_MS || 120_000));
+  const candidateMs = Math.min(maxMs, baseMs + Math.max(0, fileCount - 1) * perFileMs);
+  return clampTimeout(params.taskTimeoutMs, candidateMs, 1_000);
 }
 
 class RetryableRouteUnitOutputError extends Error {
@@ -435,10 +453,22 @@ export function resolveDirectRouteUnitProviderConfigForTesting(
   return resolveRouteUnitProviderConfig(config, input);
 }
 
+export function resolveRouteUnitProviderTimeoutMsForTesting(params: {
+  taskTimeoutMs: number;
+  targetFileCount: number;
+}) {
+  return resolveRouteUnitProviderTimeoutMs(params);
+}
+
 export function createSkillToolRouteUnitGenerationWorker(params: {
   baseState: AgentState;
   timeoutMs: number;
-  invokeRouteModel?: (params: { input: GenerationUnitInput; messages: BaseMessage[]; attempt: ProviderAttempt }) => Promise<string>;
+  invokeRouteModel?: (params: {
+    input: GenerationUnitInput;
+    messages: BaseMessage[];
+    attempt: ProviderAttempt;
+    timeoutMs: number;
+  }) => Promise<string>;
 }): GenerationWorkerAdapter {
   return createStaticGenerationWorkerAdapter({
     id: "v2-route-unit-direct-worker",
@@ -461,6 +491,10 @@ export function createSkillToolRouteUnitGenerationWorker(params: {
       const retryPolicy = resolveProviderRetryPolicy("route-unit");
       let stopProviderChain = false;
       const workflowContext = toRecord(scopedState.workflow_context);
+      const providerTimeoutMs = resolveRouteUnitProviderTimeoutMs({
+        taskTimeoutMs: params.timeoutMs,
+        targetFileCount: input.targetFiles.length,
+      });
       for (const attempt of attempts) {
         const routeProviderConfig = resolveRouteUnitProviderConfig(attempt.config, input);
         const routeProviderAttempt: ProviderAttempt = {
@@ -474,11 +508,11 @@ export function createSkillToolRouteUnitGenerationWorker(params: {
         for (let retryAttempt = 0; retryAttempt <= retryPolicy.retries; retryAttempt += 1) {
           try {
             const raw = params.invokeRouteModel
-              ? await params.invokeRouteModel({ input, messages, attempt: routeProviderAttempt })
+              ? await params.invokeRouteModel({ input, messages, attempt: routeProviderAttempt, timeoutMs: providerTimeoutMs })
               : await invokeRouteModel({
                   attempt: routeProviderAttempt,
                   messages,
-                  timeoutMs: params.timeoutMs,
+                  timeoutMs: providerTimeoutMs,
                 });
             const payload = extractJsonObject(raw);
             if (!payload) {

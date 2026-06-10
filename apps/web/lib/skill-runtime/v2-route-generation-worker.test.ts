@@ -5,6 +5,7 @@ import path from "node:path";
 import {
   createSkillToolRouteUnitGenerationWorker,
   resolveDirectRouteUnitProviderConfigForTesting,
+  resolveRouteUnitProviderTimeoutMsForTesting,
 } from "./v2-route-generation-worker.ts";
 
 const envSnapshot = {
@@ -106,6 +107,16 @@ describe("v2 route generation worker", () => {
     );
 
     expect(resolved.modelName).toBe("gpt-5.4-mini");
+  });
+
+  it("caps route-unit provider timeouts below the full async task budget", () => {
+    const resolved = resolveRouteUnitProviderTimeoutMsForTesting({
+      taskTimeoutMs: 900_000,
+      targetFileCount: 3,
+    });
+
+    expect(resolved).toBe(70_000);
+    expect(resolved).toBeLessThan(900_000);
   });
 
   it("injects strict single-visible-locale rules into bilingual route-unit prompts", async () => {
