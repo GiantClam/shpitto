@@ -5,6 +5,7 @@ import {
   blogDetailFillCardCopy,
   deriveWorkspacePreTaskState,
   formatQaSummaryDetail,
+  shouldRecoverFromSubmitFailure,
   shouldSuppressOptimisticTimelineEcho,
   summarizeGenerationRuntimeBadges,
   summarizePromptDraftCard,
@@ -15,6 +16,47 @@ import {
 describe("ProjectChatWorkspace timeline actions", () => {
   it("does not append optimistic echo messages for timeline card actions", () => {
     expect(shouldSuppressOptimisticTimelineEcho({ source: "timeline-action" })).toBe(true);
+  });
+
+  it("recovers submit failures when history already contains the submitted message and follow-up assistant output", () => {
+    expect(
+      shouldRecoverFromSubmitFailure({
+        submittedText: "Requirement form submitted:\n[Requirement Form]\n```json\n{\"siteType\":\"company\"}\n```",
+        history: {
+          ok: true,
+          messages: [
+            { id: "1", role: "user", text: "Earlier message", createdAt: 1 },
+            {
+              id: "2",
+              role: "user",
+              text: "Requirement form submitted:\n[Requirement Form]\n```json\n{\"siteType\":\"company\"}\n```",
+              createdAt: 2,
+            },
+            {
+              id: "3",
+              role: "assistant",
+              text: "Prompt Draft generated with LLM. You can add details or confirm generation.",
+              createdAt: 3,
+            },
+          ],
+        },
+      }),
+    ).toBe(true);
+  });
+
+  it("does not recover submit failures when history does not confirm progress for the submitted text", () => {
+    expect(
+      shouldRecoverFromSubmitFailure({
+        submittedText: "Fresh requirement form",
+        history: {
+          ok: true,
+          messages: [
+            { id: "1", role: "user", text: "Older requirement form", createdAt: 1 },
+            { id: "2", role: "assistant", text: "Older prompt draft", createdAt: 2 },
+          ],
+        },
+      }),
+    ).toBe(false);
   });
 
   it("keeps optimistic echo messages for normal prompt submissions", () => {
