@@ -492,7 +492,7 @@ function dedupeFiles<T extends { path?: string; content?: string; type?: string 
   return Array.from(byPath.values());
 }
 
-function classifyErrorCode(message: string): string {
+export function classifyErrorCode(message: string): string {
   const normalized = String(message || "").toLowerCase();
   if (
     normalized.includes("timeout") ||
@@ -502,6 +502,15 @@ function classifyErrorCode(message: string): string {
     normalized.includes("und_err_body_timeout") ||
     normalized.includes("terminated")
   ) return "timeout";
+  if (
+    normalized.includes("insufficient_user_quota") ||
+    normalized.includes("quota exhausted") ||
+    normalized.includes("quota exceeded") ||
+    normalized.includes("remaining quota") ||
+    normalized.includes("credit balance") ||
+    normalized.includes("额度不足") ||
+    normalized.includes("余额不足")
+  ) return "quota_exhausted";
   if (normalized.includes("rate")) return "rate_limit";
   if (normalized.includes("auth") || normalized.includes("unauthorized") || normalized.includes("forbidden")) return "auth";
   if (normalized.includes("network") || normalized.includes("socket") || normalized.includes("econn")) return "network";
