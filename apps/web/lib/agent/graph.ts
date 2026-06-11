@@ -129,7 +129,7 @@ export const resetProviderRuntimeState = () => {
   providerRingCursor = 0;
 };
 
-const DEFAULT_PROVIDER_ORDER: LlmProvider[] = ["pptoken", "aiberm", "crazyroute"];
+const DEFAULT_PROVIDER_ORDER: LlmProvider[] = ["aiberm", "pptoken", "crazyroute"];
 let providerRingCursor = 0;
 
 const normalizeProviderToken = (raw: string): LlmProvider | undefined => {
@@ -145,7 +145,7 @@ const normalizeProviderToken = (raw: string): LlmProvider | undefined => {
 const resolveLlmProvider = (): LlmProvider => {
   const requested = normalizeProviderToken(process.env.LLM_PROVIDER || "");
   if (requested) return requested;
-  return (resolveRunProviderLocks()[0]?.provider || "pptoken") as LlmProvider;
+  return (resolveRunProviderLocks()[0]?.provider || "aiberm") as LlmProvider;
 };
 
 const getProviderOrder = (): LlmProvider[] => {
@@ -693,7 +693,7 @@ const selectProviderAttemptOrder = (operation: string): LlmProvider[] => {
   const lastSuccess = providerRuntimeState.lastSuccessfulProvider;
   const canProbeNow = now - lastRecoveryProbeAt >= PROVIDER_RECOVERY_PROBE_INTERVAL_MS || !lastRecoveryProbeAt;
   if (!start && canProbeNow) {
-    const preferredProbe = (["pptoken", "aiberm", "crazyroute"] as LlmProvider[]).find(
+    const preferredProbe = (["aiberm", "pptoken", "crazyroute"] as LlmProvider[]).find(
       (provider) => available.includes(provider) && shouldRecoveryProbeProvider(provider, now),
     );
     if (preferredProbe) {
