@@ -58,4 +58,16 @@ describe("chat-task-worker-run", () => {
     if (prevTaskTimeout === undefined) delete process.env.CHAT_ASYNC_TASK_TIMEOUT_MS;
     else process.env.CHAT_ASYNC_TASK_TIMEOUT_MS = prevTaskTimeout;
   });
+
+  it("uses a 10-minute default stale-running recovery window", async () => {
+    const prevStaleRunning = process.env.CHAT_WORKER_STALE_RUNNING_MS;
+    delete process.env.CHAT_WORKER_STALE_RUNNING_MS;
+    vi.resetModules();
+
+    const workerModule = (await import("../../scripts/chat-task-worker")) as any;
+    expect(workerModule.resolveStaleRunningMsForTesting()).toBe(600_000);
+
+    if (prevStaleRunning === undefined) delete process.env.CHAT_WORKER_STALE_RUNNING_MS;
+    else process.env.CHAT_WORKER_STALE_RUNNING_MS = prevStaleRunning;
+  });
 });
