@@ -1100,7 +1100,7 @@ export function resolveWorkflowProviderConfigForTesting(
 ): WorkflowProviderConfig {
   const lock = lockOverride || resolveRunProviderLocks()[0];
   const modelName = resolveWorkflowSelectorModelName(lock);
-  const provider = (lock?.provider || "aiberm") as ProviderName;
+  const provider = (lock?.provider || "pptoken") as ProviderName;
   if (provider === "pptoken") {
     return {
       provider: "pptoken",

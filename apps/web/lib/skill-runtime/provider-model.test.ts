@@ -38,8 +38,8 @@ describe("provider-model", () => {
       "crazyroute",
     ]);
     expect(attempts.map((attempt) => attempt.lock.reason)).toEqual([
-      "default_locked_aiberm",
-      "fallback_chain_pptoken",
+      "fallback_chain_aiberm",
+      "default_locked_pptoken",
       "fallback_chain_crazyroute",
     ]);
   });
