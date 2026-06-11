@@ -1101,13 +1101,14 @@ export function resolveWorkflowProviderConfigForTesting(
   lockOverride?: { provider?: string; model?: string },
 ): WorkflowProviderConfig {
   const lock = lockOverride || resolveRunProviderLocks()[0];
-  const provider = (lock?.provider || "pptoken") as ProviderName;
+  const modelName = resolveWorkflowSelectorModelName(lock);
+  const provider = (lock?.provider || "aiberm") as ProviderName;
   if (provider === "pptoken") {
     return {
       provider: "pptoken",
       apiKey: process.env.PPTOKEN_API_KEY,
       baseURL: process.env.PPTOKEN_BASE_URL || "https://cn.pptoken.cc/v1",
-      modelName: normalizeProviderModelId("pptoken", resolveWorkflowSelectorModelName(lock), DEFAULT_OPENAI_COMPAT_MODEL),
+      modelName: normalizeProviderModelId("pptoken", modelName, DEFAULT_OPENAI_COMPAT_MODEL),
     };
   }
   if (provider === "aiberm") {
@@ -1115,7 +1116,7 @@ export function resolveWorkflowProviderConfigForTesting(
       provider: "aiberm",
       apiKey: process.env.AIBERM_API_KEY,
       baseURL: process.env.AIBERM_BASE_URL || "https://aiberm.com/v1",
-      modelName: normalizeProviderModelId("aiberm", resolveWorkflowSelectorModelName(lock), DEFAULT_OPENAI_COMPAT_MODEL),
+      modelName: normalizeProviderModelId("aiberm", modelName, DEFAULT_OPENAI_COMPAT_MODEL),
     };
   }
   return {
@@ -1129,7 +1130,7 @@ export function resolveWorkflowProviderConfigForTesting(
       process.env.CRAZYROUTER_BASE_URL ||
       process.env.CRAZYREOUTE_BASE_URL ||
       "https://crazyrouter.com/v1",
-    modelName: normalizeProviderModelId("crazyroute", resolveWorkflowSelectorModelName(lock), DEFAULT_OPENAI_COMPAT_MODEL),
+    modelName: normalizeProviderModelId("crazyroute", modelName, DEFAULT_OPENAI_COMPAT_MODEL),
   };
 }
 

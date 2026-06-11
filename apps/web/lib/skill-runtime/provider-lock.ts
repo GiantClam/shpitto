@@ -8,8 +8,8 @@ export type ProviderLock = {
   reason: string;
 };
 
-const DEFAULT_LOCKED_PROVIDER: ProviderName = "pptoken";
-const DEFAULT_PROVIDER_ORDER: ProviderName[] = ["pptoken", "aiberm", "crazyroute"];
+const DEFAULT_LOCKED_PROVIDER: ProviderName = "aiberm";
+const DEFAULT_PROVIDER_ORDER: ProviderName[] = ["aiberm", "pptoken", "crazyroute"];
 
 function resolveSharedRequestedModel(preferredModel?: string): string {
   const shared = String(
@@ -70,8 +70,8 @@ export function resolveRunProviderLocks(preferred?: { provider?: string; model?:
       index === 0
         ? provider === DEFAULT_LOCKED_PROVIDER
           ? hasProviderKey(DEFAULT_LOCKED_PROVIDER)
-            ? "default_locked_pptoken"
-            : "default_locked_pptoken_missing_key"
+            ? "default_locked_aiberm"
+            : "default_locked_aiberm_missing_key"
           : `env_preferred_${provider}`
         : `fallback_chain_${provider}`;
     return buildProviderLock(provider, preferredModel, reason);
