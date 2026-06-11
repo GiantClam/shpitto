@@ -1,11 +1,32 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { buildImmutableGenerationContract } from "./generation-contract.ts";
 import { GenerationContractViolationError } from "./contract-violation.ts";
 import { createStaticGenerationWorkerAdapter } from "./generation-worker-adapter.ts";
 import { runV2RouteUnitRuntime } from "./route-unit-runner.ts";
+
+const envSnapshot = {
+  ROUTE_UNIT_EXECUTION_TIMEOUT_BASE_MS: process.env.ROUTE_UNIT_EXECUTION_TIMEOUT_BASE_MS,
+  ROUTE_UNIT_EXECUTION_TIMEOUT_PER_FILE_MS: process.env.ROUTE_UNIT_EXECUTION_TIMEOUT_PER_FILE_MS,
+  ROUTE_UNIT_EXECUTION_TIMEOUT_MAX_MS: process.env.ROUTE_UNIT_EXECUTION_TIMEOUT_MAX_MS,
+  ROUTE_UNIT_EXECUTION_TIMEOUT_GRACE_MS: process.env.ROUTE_UNIT_EXECUTION_TIMEOUT_GRACE_MS,
+  ROUTE_UNIT_PROVIDER_TIMEOUT_BASE_MS: process.env.ROUTE_UNIT_PROVIDER_TIMEOUT_BASE_MS,
+  ROUTE_UNIT_PROVIDER_TIMEOUT_PER_FILE_MS: process.env.ROUTE_UNIT_PROVIDER_TIMEOUT_PER_FILE_MS,
+  ROUTE_UNIT_PROVIDER_TIMEOUT_MAX_MS: process.env.ROUTE_UNIT_PROVIDER_TIMEOUT_MAX_MS,
+  ROUTE_UNIT_PROVIDER_RETRIES: process.env.ROUTE_UNIT_PROVIDER_RETRIES,
+  ROUTE_UNIT_PROVIDER_RETRY_BASE_MS: process.env.ROUTE_UNIT_PROVIDER_RETRY_BASE_MS,
+  ROUTE_UNIT_PROVIDER_RETRY_MAX_MS: process.env.ROUTE_UNIT_PROVIDER_RETRY_MAX_MS,
+  ROUTE_UNIT_PROVIDER_RETRY_JITTER_MS: process.env.ROUTE_UNIT_PROVIDER_RETRY_JITTER_MS,
+};
+
+afterEach(() => {
+  for (const [key, value] of Object.entries(envSnapshot)) {
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
+});
 
 function buildContract(routes: string[], localeMode?: string) {
   return buildImmutableGenerationContract({
@@ -811,5 +832,69 @@ describe("route unit runner", () => {
     expect(enCatalog.research?.title).toBe("Research Center");
     expect(zhCatalog.nav?.home).toBe("首页");
     expect(zhCatalog.research?.title).toBe("研究中心");
+  });
+
+  it("keeps interior route execution alive long enough for same-provider retry budgets", async () => {
+    process.env.ROUTE_UNIT_EXECUTION_TIMEOUT_BASE_MS = "60";
+    process.env.ROUTE_UNIT_EXECUTION_TIMEOUT_PER_FILE_MS = "0";
+    process.env.ROUTE_UNIT_EXECUTION_TIMEOUT_MAX_MS = "1000";
+    process.env.ROUTE_UNIT_EXECUTION_TIMEOUT_GRACE_MS = "20";
+    process.env.ROUTE_UNIT_PROVIDER_TIMEOUT_BASE_MS = "50";
+    process.env.ROUTE_UNIT_PROVIDER_TIMEOUT_PER_FILE_MS = "0";
+    process.env.ROUTE_UNIT_PROVIDER_TIMEOUT_MAX_MS = "50";
+    process.env.ROUTE_UNIT_PROVIDER_RETRIES = "2";
+    process.env.ROUTE_UNIT_PROVIDER_RETRY_BASE_MS = "10";
+    process.env.ROUTE_UNIT_PROVIDER_RETRY_MAX_MS = "10";
+    process.env.ROUTE_UNIT_PROVIDER_RETRY_JITTER_MS = "0";
+
+    const checkpointDir = path.resolve(process.cwd(), ".tmp", "route-unit-runner-interior-timeout-floor");
+    await fs.rm(checkpointDir, { recursive: true, force: true });
+    const contract = buildContract(["/", "/pricing"]);
+
+    const result = await runV2RouteUnitRuntime({
+      state: { workflow_context: {} } as any,
+      timeoutMs: 1_000,
+      checkpointDir,
+      contract,
+      unitWorker: createStaticGenerationWorkerAdapter({
+        id: "test-route-unit-worker",
+        capabilities: ["route-unit"],
+        runUnit: async (input) => {
+          if (input.route === "/pricing") {
+            await new Promise((resolve) => setTimeout(resolve, 120));
+            return {
+              unitId: input.unitId,
+              status: "passed",
+              files: [
+              {
+                path: "/pricing/index.html",
+                content:
+                  "<!doctype html><html><body><header><nav><a href=\"/\">Home</a><a href=\"/pricing\">Pricing</a></nav></header><main><h1>Pricing</h1><p>Compare program tiers, onboarding scope, audit readiness, and renewal support for operators, regional partners, and institutional procurement teams.</p><section><h2>Tier Overview</h2><p>Each plan includes standards access, implementation playbooks, training support, and operational checkpoints sized for the organization's review cadence and compliance obligations.</p></section><section><h2>Buying Guidance</h2><p>Use the pricing route to compare seat ranges, certification support, implementation advisory hours, and the evidence pack delivered for public-sector or enterprise approval workflows.</p></section></main><footer>Footer</footer></body></html>",
+              },
+              ],
+              summary: "Generated pricing route.",
+            };
+          }
+          return {
+            unitId: input.unitId,
+            status: "passed",
+            files: [
+              {
+                path: "/index.html",
+                content:
+                  "<!doctype html><html><body><header><nav><a href=\"/\">Home</a><a href=\"/pricing\">Pricing</a></nav></header><main><h1>CASUX</h1><p>CASUX is the institutional home for standards, research, advocacy, and certification work that helps members discover trusted programs, reference materials, and collaboration pathways.</p></main><footer>Footer</footer></body></html>",
+              },
+              { path: "/styles.css", content: "body{font-family:system-ui}" },
+              { path: "/script.js", content: "console.log('ready')" },
+            ],
+            summary: "Generated home route.",
+          };
+        },
+      }),
+    });
+
+    expect(result.verification.status).toBe("passed");
+    const files = Array.isArray(result.project?.staticSite?.files) ? result.project.staticSite.files : [];
+    expect(files.some((file: any) => file.path === "/pricing/index.html")).toBe(true);
   });
 });

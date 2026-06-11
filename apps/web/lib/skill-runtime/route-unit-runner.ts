@@ -15,6 +15,7 @@ import {
   type GenerationUnitInput,
 } from "./generation-worker-adapter.ts";
 import type { WebsiteSurfaceMode } from "./open-design-adoption.ts";
+import { resolveRouteUnitExecutionTimeoutMs } from "./route-unit-timeouts.ts";
 import {
   readAllRouteUnitVerificationCheckpoints,
   readGeneratedProjectCheckpoint,
@@ -75,15 +76,6 @@ function clampTimeout(taskTimeoutMs: number, candidateMs: number, minMs: number)
   const safeCandidate = Number.isFinite(candidateMs) && candidateMs > 0 ? Math.max(minMs, candidateMs) : minMs;
   const safeTask = Number.isFinite(taskTimeoutMs) && taskTimeoutMs > 0 ? Math.max(minMs, taskTimeoutMs) : safeCandidate;
   return Math.min(safeCandidate, safeTask);
-}
-
-function resolveRouteUnitExecutionTimeoutMs(params: { taskTimeoutMs: number; targetFileCount: number }) {
-  const fileCount = Math.max(1, Number(params.targetFileCount || 0));
-  const baseMs = Math.max(1_000, Number(process.env.ROUTE_UNIT_EXECUTION_TIMEOUT_BASE_MS || 60_000));
-  const perFileMs = Math.max(0, Number(process.env.ROUTE_UNIT_EXECUTION_TIMEOUT_PER_FILE_MS || 30_000));
-  const maxMs = Math.max(baseMs, Number(process.env.ROUTE_UNIT_EXECUTION_TIMEOUT_MAX_MS || 240_000));
-  const candidateMs = Math.min(maxMs, baseMs + Math.max(0, fileCount - 1) * perFileMs);
-  return clampTimeout(params.taskTimeoutMs, candidateMs, 1_000);
 }
 
 async function runRouteUnitWithTimeout<T>(params: {
