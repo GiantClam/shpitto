@@ -99,10 +99,38 @@
       },
       {
         "route": "/cms",
-        "kind": "shared-shell",
-        "required": false,
-        "owner": "shared",
-        "purpose": "Low-frequency CMS and operational admin entry."
+        "kind": "account",
+        "required": true,
+        "owner": "product",
+        "purpose": "User-owned task, project, and generated asset management surface."
+      },
+      {
+        "route": "/cms/tasks",
+        "kind": "account",
+        "required": true,
+        "owner": "product",
+        "purpose": "Generation task state and product task-service handoff."
+      },
+      {
+        "route": "/cms/projects",
+        "kind": "account",
+        "required": true,
+        "owner": "product",
+        "purpose": "Saved projects, prompt systems, and low-frequency project metadata."
+      },
+      {
+        "route": "/cms/assets",
+        "kind": "account",
+        "required": true,
+        "owner": "product",
+        "purpose": "Generated asset review, metadata, and publish readiness."
+      },
+      {
+        "route": "/cms/settings",
+        "kind": "account",
+        "required": true,
+        "owner": "product",
+        "purpose": "Payload-backed site, generation, billing, SEO, and provider settings."
       },
       {
         "route": "/app",

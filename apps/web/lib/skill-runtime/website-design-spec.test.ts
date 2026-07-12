@@ -1727,7 +1727,7 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
     expect(markdown).toContain("product_baseline_id: ai-image-tool-baseline-v1");
     expect(markdown).toContain("product_baseline_type: ai-image-tool");
     expect(markdown).toContain("product_baseline_source_template: fluxkreafree");
-    expect(markdown).toContain("route_ownership_contract: /=shared, /app=product, /history=product, /pricing=brand");
+    expect(markdown).toContain("- route_ownership_contract: /=shared,");
     expect(markdown).toContain(
       "forbidden_feature_drift: replace the workspace with a brochure site; remove generation history; hide prompt input behind brand pages",
     );

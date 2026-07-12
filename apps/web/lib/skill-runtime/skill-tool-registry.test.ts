@@ -54,27 +54,27 @@ describe("skill-tool-registry", () => {
     if (result.kind === "skill") {
       expect(payloadPrefix(result.toolResult)).toMatchInlineSnapshot(`
         "# skill:website-generation-workflow
-        
-        
-        
-        
+
+
+
+
         ---
         name: "website-generation-workflow"
         description: "Defines the end-to-end website generation workflow. Invoke when generating multi-section pages or full websites."
         ---
-        
+
         # Website Generation Workflow
-        
+
         ## Skill Relationship (Authoritative)
-        
+
         - This skill is the **orchestrator** for end-to-end website generation.
         - \`design-website-generator\` is the **executor** skill/tooling surface for concrete generation, context building, and QA execution.
         - When both are available, this workflow decides phases and delegates implementation slices to \`design-website-generator\`.
-        
+
         ## Scope
-        
-        Use this workflow for c
-        
+
+        Use this
+
         [truncated due to context budget]"
       `);
     }
@@ -125,7 +125,7 @@ describe("skill-tool-registry", () => {
     if (result.kind === "skill") {
       expect(payloadPrefix(result.toolResult)).toMatchInlineSnapshot(`
         "# skill:open-design-web-prototype
-        
+
         ## Website Skill Contract
         - Skill: web-prototype (open-design-web-prototype).
         - Allowed mode: website only.
@@ -134,20 +134,20 @@ describe("skill-tool-registry", () => {
         - Preview entry: index.html.
         - A local design system reference must be applied before emitting final HTML/CSS.
         - Required design-system sections: color, typography, layout, components.
-        
+
         ## Seed Resource Index
         - assets/template.html: reusable HTML seed; tokens --bg, --surface, --fg, --muted, --border, --accent, --accent-soft, --fg-soft, --font-display, --font-body, --font-mono, --fs-h1; key classes container, section, topnav, pagefoot, grid-2, grid-3, grid-4, card, btn, ph-img; responsive collapse at 920px
         - example.html: example-backed HTML contract; tokens --bg, --fg, --muted, --border, --accent, --surface; key classes btn; responsive collapse at 720px
         - references/checklist.md: self-review gates; P0=10; P1=8; P2=4; critical checks No raw hex outside \`:root\` token block.; All headings use \`var(--font-display)\`.; Accent appears at most twice per screen.; No purple/violet gradient backgrounds.; No emoji used as feature icons.; No invented metrics.
-        
+
         ## Seed Structural Contract
         - Preserve this seed's opening discipline, section cadence, and route-owned class semantics before falling back to generic local heuristics.
         - Treat these excerpts as structural cues, not placeholder copy to duplicate verbatim.
-        ### assets/template.html excerpt
-        - <header class=\"topnav\" data-od-id=\"topnav\">
-        - <div class=\"container topnav-inner\">
-        - <span class=\"logo\">[REPLACE] Brand</span>
-        - <nav>"
+        ### assets/template.html home excerpt
+        - <section class="section hero" data-od-id="hero">
+        - <div class="container hero-center">
+        - <p class="lead">[REPLACE] One subhead sentence — concrete value, not a tagline.</p>
+        - <div class="hero-cta">"
       `);
     }
   });

@@ -45,7 +45,7 @@ describe("ai-image-tool template artifacts", () => {
     expect(manifest.templateId).toBe("ai-image-tool-baseline-v1");
     expect(manifest.defaultLocale).toBe("en");
     expect(manifest.supportedLocales).toEqual(["en"]);
-    expect(manifest.optionalRoutes).toContain("/cms");
+    expect(manifest.requiredRoutes).toContain("/cms");
     expect(manifest.billing.defaultProvider).toBe("stripe");
     expect(manifest.billing.supportedProviders).toContain("stripe");
     expect(manifest.billing.preservedEntities).toContain("ChargeOrder");

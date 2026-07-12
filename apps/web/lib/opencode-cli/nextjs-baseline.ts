@@ -2665,7 +2665,7 @@ function buildAiImageToolAppWorkspaceComponent(): string {
     '              </div>',
     '            ))}',
     '            <div className="hero-actions">',
-    '              <button type="button" className="button-primary" onClick={runMockGeneration} disabled={status === "loading"}>{status === "loading" ? "Running mock generation..." : "Generate image"}</button>',
+    '              <button type="button" className="button-primary" onClick={runMockGeneration} disabled={status === "loading"}>{status === "loading" ? "Running mock generation..." : "Run mock generation"}</button>',
               '              <a href="/app/history" className="button-secondary">History</a>',
               '              <a href="/app/order" className="button-secondary">Billing</a>',
             '            </div>',
