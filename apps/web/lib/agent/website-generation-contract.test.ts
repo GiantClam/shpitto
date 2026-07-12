@@ -5,6 +5,7 @@ import {
   buildWebsiteGenerationContract,
   inferSeedSkillSource,
 } from "./website-generation-contract";
+import { selectAiImageToolBaselineSelection } from "../skill-runtime/product-baseline-contract";
 
 describe("website generation contract", () => {
   it("derives deterministic contract hashes from the same inputs", () => {
@@ -99,6 +100,27 @@ describe("website generation contract", () => {
       }),
     ]);
   });
+
+  it("inherits route ownership from the selected product baseline", () => {
+    const baseline = selectAiImageToolBaselineSelection();
+    const contract = buildWebsiteGenerationContract({
+      generationLane: "website-generation-mvp",
+      websiteSurfaceMode: "marketing-landing-site",
+      productBaselineSelection: baseline,
+      routeUnitContracts: [
+        { route: "/", navLabel: "Home", pageKind: "home", routeContract: [] },
+        { route: "/app", navLabel: "Workspace", pageKind: "intent", routeContract: [] },
+        { route: "/pricing", navLabel: "Pricing", pageKind: "intent", routeContract: [] },
+      ],
+    });
+
+    expect(contract.productBaselineSelection?.baselineId).toBe("ai-image-tool-baseline-v1");
+    expect(contract.routeUnitContracts).toEqual([
+      expect.objectContaining({ route: "/", owner: "shared" }),
+      expect.objectContaining({ route: "/app", owner: "product" }),
+      expect.objectContaining({ route: "/pricing", owner: "brand" }),
+    ]);
+  });
   it("enriches manifest-derived content collection routes with opening topology and anti-split-hero hints", () => {
     const selectedSeedSkillManifest = buildSelectedSeedSkillManifest(
       ["content-hub-site"],
@@ -131,5 +153,11 @@ describe("website generation contract", () => {
     expect(routeUnitContracts[1]?.routeContract.join("\n")).toContain("routeOwnedOpening=information-platform-lead");
     expect(routeUnitContracts[1]?.routeContract.join("\n")).toContain("openingRootClass=first visible <section> root must include information-platform-lead");
     expect(routeUnitContracts[1]?.routeContract.join("\n")).toContain("openingMarkup=no <aside> inside the opening band");
+    expect(routeUnitContracts[1]?.routeContract.join("\n")).toContain(
+      'contentDataRoot=include <section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"> inside the route-owned collection/list module',
+    );
+    expect(routeUnitContracts[1]?.routeContract.join("\n")).toContain(
+      "contentDataList=inside that section, include a data-shpitto-blog-list container with polished fallback cards that match the route taxonomy and visual system",
+    );
   });
 });

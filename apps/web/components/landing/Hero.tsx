@@ -11,11 +11,11 @@ export function Hero({ ctaHref = "/login", locale = "en" }: HeroProps) {
   const copy = getLandingCopy(locale).hero;
   const isZh = locale === "zh";
   const siteTypes = isZh
-    ? ["制造企业官网", "贸易公司官网", "产品目录网站"]
-    : ["Manufacturer Website", "Trading Company Website", "Product Catalog Website"];
+    ? ["Agent Launch Site", "B2B Lead Engine", "Docs + Blog Funnel"]
+    : ["Agent Launch Site", "B2B Lead Engine", "Docs + Blog Funnel"];
   const studioSteps = isZh
-    ? ["简介", "结构", "调整", "发布"]
-    : ["Brief", "Structure", "Refine", "Launch"];
+    ? ["模板", "工作流", "基线", "导出"]
+    : ["Template", "Workflow", "Baseline", "Export"];
 
   return (
     <section className="relative overflow-hidden px-6 pb-24 pt-32 text-[var(--shp-text)] lg:pb-40 lg:pt-48">
@@ -75,14 +75,14 @@ export function Hero({ ctaHref = "/login", locale = "en" }: HeroProps) {
               <div className="h-3 w-3 rounded-full bg-amber-300/70"></div>
               <div className="h-3 w-3 rounded-full bg-emerald-300/70"></div>
               <div className="ml-4 rounded-md border border-[color-mix(in_oklab,var(--shp-border)_75%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_82%,transparent)] px-3 py-1 font-mono text-[10px] text-[var(--shp-muted)]">
-                shpitto-runtime-v3
+                opencode-cli default lane
               </div>
             </div>
 
             <div className="relative flex h-[calc(100%-2.5rem)]">
               <div className="hidden w-64 border-r border-[color-mix(in_oklab,var(--shp-border)_74%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg)_88%,white_12%)] p-4 text-left md:block">
                 <div className="mb-5 text-xs font-black uppercase tracking-[0.22em] text-[var(--shp-primary)]">
-                  {isZh ? "适用场景" : "Use cases"}
+                  {isZh ? "模板入口" : "Template paths"}
                 </div>
                 <div className="space-y-3">
                   {siteTypes.map((item, index) => (
@@ -101,7 +101,7 @@ export function Hero({ ctaHref = "/login", locale = "en" }: HeroProps) {
                 </div>
                 <div className="mt-6 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_72%,transparent)] p-3">
                   <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--shp-muted)]">
-                    {isZh ? "关键页面" : "Key pages"}
+                    {isZh ? "默认输出" : "Default output"}
                   </div>
                   <div className="mt-3 grid grid-cols-3 gap-2">
                     <div className="h-10 rounded-lg bg-[color-mix(in_oklab,var(--shp-warm)_18%,var(--shp-surface)_82%)]"></div>

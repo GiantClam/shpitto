@@ -35,6 +35,13 @@ import {
   touchChatTaskHeartbeat,
   updateChatTaskProgress,
 } from "../agent/chat-task-store.ts";
+import {
+  buildShpittoOpenCodeBundle,
+  materializePreparedWorkspace,
+  runOpenCodeCli,
+  shouldAllowPreparedBaselineFallback,
+  shouldUseOpenCodeForSkill,
+} from "../opencode-cli/index.ts";
 import { extractUiPayload } from "../agent/chat-ui-payload.ts";
 import type { AgentState } from "../agent/graph.ts";
 import { buildSelectedSeedSkillManifest } from "../agent/website-generation-contract.ts";
@@ -117,6 +124,11 @@ import {
   normalizeWebsiteGenerationContract,
   type ImmutableGenerationContract,
 } from "./generation-contract.ts";
+import {
+  normalizeProductBaselineSelection,
+  selectAiImageToolBaselineSelection,
+  type ProductBaselineSelection,
+} from "./product-baseline-contract.ts";
 import type { WebsiteArtifactGeneratorMode } from "./website-artifact-generator.ts";
 import { verifyRouteUnitArtifacts } from "./contract-verifier.ts";
 import { GenerationContractViolationError } from "./contract-violation.ts";
@@ -459,6 +471,59 @@ function normalizePath(value: string): string {
   if (!raw) return "/";
   const withSlash = raw.startsWith("/") ? raw : `/${raw}`;
   return withSlash.replace(/\\/g, "/").replace(/\/{2,}/g, "/");
+}
+
+function sleepMs(delayMs: number) {
+  return new Promise((resolve) => setTimeout(resolve, Math.max(0, delayMs)));
+}
+
+function clipRouteUnitRecoveryErrorMessage(error: unknown) {
+  const text =
+    error instanceof Error
+      ? `${error.name}: ${error.message}`
+      : typeof error === "string"
+        ? error
+        : JSON.stringify(error);
+  const normalized = String(text || "").trim();
+  return normalized.length > 320 ? `${normalized.slice(0, 317)}...` : normalized;
+}
+
+function isRetryableRouteUnitExecutionError(error: unknown) {
+  const text = clipRouteUnitRecoveryErrorMessage(error).toLowerCase();
+  if (!text) return false;
+  return [
+    "502",
+    "bad gateway",
+    "fetch failed",
+    "unexpected end",
+    "stream ended",
+    "stream end",
+    "socket hang up",
+    "connection reset",
+    "econnreset",
+    "etimedout",
+    "timed out",
+    "timeout",
+    "strict json",
+    "json",
+    "non-json",
+    "invalid json",
+    "malformed",
+    "upstream",
+    "overloaded",
+    "temporarily unavailable",
+    "und_err_socket",
+  ].some((token) => text.includes(token));
+}
+
+function resolveRouteUnitRuntimeRecoveryWindowMs() {
+  return Math.max(0, Number(process.env.SHPITTO_MVP_EVENTUAL_RECOVERY_WINDOW_MS || 1_800_000));
+}
+
+function resolveRouteUnitRuntimeRecoveryDelayMs(attempt: number) {
+  const baseMs = Math.max(0, Number(process.env.SHPITTO_MVP_EVENTUAL_RECOVERY_BASE_MS || 5_000));
+  const maxMs = Math.max(baseMs, Number(process.env.SHPITTO_MVP_EVENTUAL_RECOVERY_MAX_MS || 60_000));
+  return Math.min(maxMs, baseMs * Math.max(1, attempt));
 }
 
 function routeToHtmlPath(route: string): string {
@@ -1843,10 +1908,12 @@ function resolveWorkflowGenerationContract(workflowContext: Record<string, unkno
   const selectedSeedContracts = Array.isArray(workflowContext.selectedSeedContracts)
     ? (workflowContext.selectedSeedContracts as any[])
     : undefined;
+  const productBaselineSelection = normalizeProductBaselineSelection(workflowContext.productBaselineSelection);
   if (!promptControlManifest && !routeUnitContracts?.length) return undefined;
   return buildImmutableGenerationContract({
     generationLane: String(workflowContext.generationLane || "").trim() || "legacy",
     websiteSurfaceMode: String(workflowContext.websiteSurfaceMode || "").trim() || undefined,
+    productBaselineSelection,
     promptControlManifest,
     discoveryBrief,
     selectedSeedSkillManifest,
@@ -2764,10 +2831,13 @@ async function resolveWebsiteRuntimeSkill(params: {
           primaryGoal: Array.isArray(requirementSpec.primaryGoal) ? (requirementSpec.primaryGoal as string[]) : undefined,
         });
     resolvePhase = "select_seed_skills";
+    const productBaselineSelection =
+      normalizeProductBaselineSelection(existingWorkflow.productBaselineSelection) || selectAiImageToolBaselineSelection();
     const selectedSeedSkills = await selectWebsiteSeedSkillsForIntent({
       requirementText,
       routes: ((params.state as any)?.sitemap?.routes || []) as string[],
       maxSkills: Number(process.env.SKILL_RUNTIME_MAX_SEED_SKILLS || 2),
+      productBaselineSelection,
     });
     const { selectedSeedContracts, selectedSeedSkillManifest } = await resolveSelectedSeedSkillArtifacts(selectedSeedSkills);
     resolvePhase = "select_document_skills";
@@ -2846,6 +2916,7 @@ async function resolveWebsiteRuntimeSkill(params: {
         selectedSeedSkillReasons: selectedSeedSkills,
         selectedSeedContracts,
         selectedSeedSkillManifest,
+        productBaselineSelection,
         selectedDocumentSkillIds: selectedDocumentSkills.map((item) => item.id),
         selectedDocumentSkillReasons: selectedDocumentSkills,
         websiteOrchestratorSkillId: WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID,
@@ -3184,6 +3255,7 @@ function renderLocalWebsiteDesignSpec(params: {
   designSystemName?: string;
   selectedSeedSkillIds?: string[];
   selectedSeedContracts?: Array<{ id: string; contract: ProjectSkillSeedContract }>;
+  productBaselineSelection?: ProductBaselineSelection;
 }): string {
   return buildWebsiteDesignSpecMarkdown({
     decision: params.decision,
@@ -3196,6 +3268,7 @@ function renderLocalWebsiteDesignSpec(params: {
     designSystemName: params.designSystemName,
     selectedSeedSkillIds: params.selectedSeedSkillIds,
     selectedSeedContracts: params.selectedSeedContracts,
+    productBaselineSelection: params.productBaselineSelection,
   });
 }
 
@@ -3915,6 +3988,7 @@ type RuntimeContext = {
   discoveryBrief?: WebsiteDiscoveryBrief;
   designSystemId?: string;
   designSystemName?: string;
+  productBaselineSelection?: ProductBaselineSelection;
   selectedSeedSkillIds?: string[];
   selectedSeedContracts?: Array<{
     id: string;
@@ -4180,6 +4254,8 @@ class NativeSkillRuntime {
     const discoveryBrief = (((promptControlManifest as any)?.discoveryBrief ||
       workflowContext.websiteDiscoveryBrief ||
       undefined) as WebsiteDiscoveryBrief | undefined);
+    const productBaselineSelection =
+      normalizeProductBaselineSelection(workflowContext.productBaselineSelection) || selectAiImageToolBaselineSelection();
     const selectedSeedContracts = normalizePersistedSelectedSeedContracts(workflowContext.selectedSeedContracts);
     const selectedSeedSkillIds = normalizeSelectedSeedSkillIdsFromWorkflowContext(workflowContext);
     const routeFamilies = inferRouteFamiliesForPlanning({ routes });
@@ -4239,6 +4315,7 @@ class NativeSkillRuntime {
       designHit,
       websiteSurfaceMode,
       discoveryBrief,
+      productBaselineSelection,
       designSystemId: String(workflowContext.designSystemId || "").trim() || undefined,
       designSystemName: String(workflowContext.designSystemName || "").trim() || undefined,
       selectedSeedSkillIds,
@@ -4278,6 +4355,7 @@ class NativeSkillRuntime {
       websiteDesignSpec,
       websiteSurfaceMode,
       discoveryBrief,
+      productBaselineSelection,
       designSystemId: String(workflowContext.designSystemId || "").trim() || undefined,
       designSystemName: String(workflowContext.designSystemName || "").trim() || undefined,
       selectedSeedSkillIds,
@@ -4352,10 +4430,12 @@ class NativeSkillRuntime {
         route: page.route,
         navLabel: page.navLabel,
         pageKind: page.pageKind,
+        owner: "brand",
         routeContract: [
           `route=${page.route}`,
           `navLabel=${page.navLabel}`,
           `pageKind=${page.pageKind}`,
+          "routeOwner=brand",
           `purpose=${page.purpose}`,
         ],
         inheritedTerminology: [this.context.decision.brandHint || "", this.context.websiteSurfaceMode || ""].filter(Boolean),
@@ -5313,6 +5393,256 @@ export async function runSkillRuntimeExecutor(params: RunSkillRuntimeExecutorPar
     };
   }
   return await runLegacySkillRuntimeExecutor(params);
+}
+
+async function runPreparedOpenCodeWebsiteTask(params: {
+  taskId: string;
+  chatId: string;
+  workerId: string;
+  startedAt: number;
+  requestedSkillId: string;
+  state: AgentState;
+  setSessionState?: (state: AgentState) => void;
+}): Promise<void> {
+  const { taskId, chatId, workerId, startedAt, requestedSkillId, state, setSessionState } = params;
+  const checkpointRoot = localChatTaskRoot(chatId, taskId);
+  const checkpointWorkflowDir = path.join(checkpointRoot, "workflow");
+  const checkpointSiteDir = path.join(checkpointRoot, "site");
+  const checkpointProjectPath = path.join(checkpointRoot, "project.json");
+  const workspaceRoot = path.join(checkpointRoot, "opencode-workspace");
+  let workflowRuntime = resolveWorkflowRuntimeFromState(state);
+  const stateWithRuntime = (runtime?: ReturnType<typeof resolveWorkflowRuntimeFromState>) =>
+    runtime ? attachWorkflowRuntimeToState(preparedState, runtime) : preparedState;
+
+  if (workflowRuntime) {
+    workflowRuntime = markWorkflowExecutionStarted(workflowRuntime);
+    workflowRuntime = (
+      await appendWorkflowAuditEvent({
+        runtime: workflowRuntime,
+        checkpointDir: checkpointWorkflowDir,
+        type: "execution_started",
+        message: `Prepared OpenCode execution started for ${requestedSkillId}.`,
+      })
+    ).runtime;
+  }
+
+  await fs.mkdir(checkpointRoot, { recursive: true });
+  await fs.mkdir(checkpointWorkflowDir, { recursive: true });
+
+  await touchChatTaskHeartbeat(taskId, workerId);
+  await updateChatTaskProgress(taskId, {
+    assistantText: "Preparing a Next.js baseline workspace and Shpitto contract bundle for OpenCode CLI.",
+    phase: "skeleton",
+    progress: {
+      stage: "generating:opencode_prepare",
+      stageMessage: "Preparing OpenCode CLI workspace...",
+      skillId: requestedSkillId,
+      startedAt: new Date(startedAt).toISOString(),
+      lastTokenAt: nowIso(),
+      elapsedMs: Date.now() - startedAt,
+      checkpointSaved: false,
+    } as any,
+  });
+
+  const contractBundle = buildShpittoOpenCodeBundle({
+    skillId: requestedSkillId,
+    state,
+    projectRoot: workspaceRoot,
+  });
+  const prepared = await materializePreparedWorkspace({
+    ...contractBundle,
+    workspaceRoot,
+    previewRoot: checkpointSiteDir,
+  });
+  await fs.writeFile(checkpointProjectPath, JSON.stringify(prepared.projectArtifact, null, 2), "utf8");
+  await fs.writeFile(
+    path.join(checkpointWorkflowDir, "opencode-contract-bundle.json"),
+    JSON.stringify(contractBundle, null, 2),
+    "utf8",
+  );
+
+  await touchChatTaskHeartbeat(taskId, workerId);
+  await updateChatTaskProgress(taskId, {
+    assistantText: "Running OpenCode CLI on the prepared Next.js workspace.",
+    phase: "skeleton",
+    progress: {
+      stage: "generating:opencode_run",
+      stageMessage: "Running OpenCode CLI...",
+      skillId: requestedSkillId,
+      startedAt: new Date(startedAt).toISOString(),
+      lastTokenAt: nowIso(),
+      elapsedMs: Date.now() - startedAt,
+      checkpointSaved: true,
+      checkpointDir: checkpointRoot,
+      checkpointProjectPath,
+      checkpointSiteDir,
+      checkpointWorkflowDir,
+      pageCount: Array.isArray((prepared.projectArtifact as any)?.pages) ? (prepared.projectArtifact as any).pages.length : 0,
+      fileCount: prepared.staticSiteFiles.length,
+      generatedFiles: prepared.staticSiteFiles.map((file) => normalizePath(file.path)),
+    } as any,
+  });
+
+  const openCodeResult = await runOpenCodeCli({
+    request: contractBundle.request,
+    workspaceRoot,
+  }).catch((error) => ({
+    status: "failed" as const,
+    exitCode: 1,
+    stdout: "",
+    stderr: String((error as any)?.message || error || "unknown OpenCode CLI failure"),
+    prompt: "",
+    events: [],
+    updatedFiles: [],
+    summary: `OpenCode CLI invocation failed: ${String((error as any)?.message || error || "unknown failure")}`,
+    failureReason: String((error as any)?.message || error || "unknown OpenCode CLI failure"),
+  }));
+
+  await fs.writeFile(
+    path.join(checkpointWorkflowDir, "opencode-run.json"),
+    JSON.stringify(openCodeResult, null, 2),
+    "utf8",
+  );
+
+  const preparedState: AgentState = {
+    ...state,
+    phase: "end",
+    site_artifacts: prepared.projectArtifact,
+    project_json: prepared.projectArtifact,
+    workflow_context: {
+      ...(state.workflow_context || {}),
+      executionMode: "generate",
+      deploySourceProjectPath: checkpointProjectPath,
+      deploySourceTaskId: taskId,
+      checkpointProjectPath,
+      opencodeWorkspaceRoot: workspaceRoot,
+      opencodeRequest: contractBundle.request,
+      opencodeRun: {
+        status: openCodeResult.status,
+        updatedFiles: openCodeResult.updatedFiles,
+        summary: openCodeResult.summary,
+        failureReason: openCodeResult.failureReason,
+      },
+    } as any,
+  };
+
+  const allowFallback = shouldAllowPreparedBaselineFallback();
+  if (openCodeResult.status === "failed" && !allowFallback) {
+    if (workflowRuntime) {
+      workflowRuntime = markWorkflowExecutionFailed(workflowRuntime);
+      workflowRuntime = (
+        await appendWorkflowAuditEvent({
+          runtime: workflowRuntime,
+          checkpointDir: checkpointWorkflowDir,
+          type: "execution_failed",
+          message: openCodeResult.summary,
+        })
+      ).runtime;
+    }
+    await failChatTask(
+      taskId,
+      openCodeResult.summary,
+      {
+        internal: {
+          inputState: buildSessionSnapshot(stateWithRuntime(workflowRuntime)),
+          sessionState: buildSessionSnapshot(stateWithRuntime(workflowRuntime)),
+          workerId,
+          skillId: requestedSkillId,
+        } as any,
+        progress: {
+          stage: "opencode_failed",
+          stageMessage: openCodeResult.summary,
+          checkpointSaved: true,
+          checkpointDir: checkpointRoot,
+          checkpointProjectPath,
+          checkpointSiteDir,
+          checkpointWorkflowDir,
+          generatedFiles: prepared.staticSiteFiles.map((file) => normalizePath(file.path)),
+          pageCount: Array.isArray((prepared.projectArtifact as any)?.pages) ? (prepared.projectArtifact as any).pages.length : 0,
+          fileCount: prepared.staticSiteFiles.length,
+        } as any,
+      },
+    );
+    return;
+  }
+
+  if (workflowRuntime) {
+    workflowRuntime = markWorkflowExecutionCompleted(workflowRuntime);
+    workflowRuntime = (
+      await appendWorkflowAuditEvent({
+        runtime: workflowRuntime,
+        checkpointDir: checkpointWorkflowDir,
+        type: "execution_completed",
+        message:
+          openCodeResult.status === "completed"
+            ? `OpenCode CLI completed for ${requestedSkillId}.`
+            : `OpenCode CLI failed; returning the prepared baseline for ${requestedSkillId}.`,
+      })
+    ).runtime;
+  }
+
+  await fs.writeFile(
+    path.join(checkpointRoot, "state.json"),
+    JSON.stringify(
+      {
+        savedAt: nowIso(),
+        phase: "end",
+        mode: "opencode-prepared-website",
+        opencodeStatus: openCodeResult.status,
+        updatedFiles: openCodeResult.updatedFiles,
+        fileCount: prepared.staticSiteFiles.length,
+      },
+      null,
+      2,
+    ),
+    "utf8",
+  );
+
+  const assistantText =
+    openCodeResult.status === "completed"
+      ? `Prepared a deployable Next.js baseline and ran OpenCode CLI for ${requestedSkillId}.`
+      : `Prepared a deployable Next.js baseline for ${requestedSkillId}. OpenCode CLI failed in this environment, so the prepared baseline is returned with the contract bundle for inspection.`;
+
+  await completeChatTask(taskId, {
+    assistantText,
+    phase: "end",
+    internal: {
+      skillId: requestedSkillId,
+      workerId,
+      inputState: buildSessionSnapshot(stateWithRuntime(workflowRuntime)),
+      sessionState: buildSessionSnapshot(stateWithRuntime(workflowRuntime)),
+      artifactSnapshot: prepared.projectArtifact,
+    } as any,
+    progress: {
+      stage: openCodeResult.status === "completed" ? "done:opencode" : "done:prepared-baseline",
+      stageMessage: assistantText,
+      skillId: requestedSkillId,
+      startedAt: new Date(startedAt).toISOString(),
+      lastTokenAt: nowIso(),
+      elapsedMs: Date.now() - startedAt,
+      checkpointSaved: true,
+      checkpointDir: checkpointRoot,
+      checkpointStatePath: path.join(checkpointRoot, "state.json"),
+      checkpointProjectPath,
+      checkpointSiteDir,
+      checkpointWorkflowDir,
+      pageCount: Array.isArray((prepared.projectArtifact as any)?.pages) ? (prepared.projectArtifact as any).pages.length : 0,
+      fileCount: prepared.staticSiteFiles.length,
+      generatedFiles: prepared.staticSiteFiles.map((file) => normalizePath(file.path)),
+      recentToolCalls: openCodeResult.updatedFiles.length > 0 ? [{ name: "opencode", args: { updatedFiles: openCodeResult.updatedFiles } }] : undefined,
+    } as any,
+  });
+
+  setSessionState?.(preparedState);
+  await syncChatMemoryFromState({
+    chatId,
+    taskId,
+    stage: "previewing",
+    state: preparedState,
+    recentSummary: assistantText,
+  }).catch((error) => {
+    console.warn(`[SkillRuntimeExecutor] short-term memory sync failed after OpenCode preparation: ${String((error as any)?.message || error)}`);
+  });
 }
 
 function toProgressStageMessage(stage: string, stepIndex?: number, totalSteps?: number): string {
@@ -7823,12 +8153,27 @@ export class SkillRuntimeExecutor {
     }
 
     const startedAt = Date.now();
+    const requestedSkillId = String(
+      params.skillId || (inputState.workflow_context as any)?.skillId || WEBSITE_MAIN_SKILL_ID,
+    ).trim();
     const resolvedSkill = await resolveWebsiteRuntimeSkill({
       state: inputState,
-      explicitSkillId: params.skillId,
+      explicitSkillId: requestedSkillId,
     });
     const preparedState = resolvedSkill.state;
     const { loadedSkill, skillDirective } = resolvedSkill;
+    if (shouldUseOpenCodeForSkill(requestedSkillId)) {
+      await runPreparedOpenCodeWebsiteTask({
+        taskId,
+        chatId,
+        workerId,
+        startedAt,
+        requestedSkillId,
+        state: preparedState,
+        setSessionState,
+      });
+      return;
+    }
     const decision = buildLocalDecisionPlan(preparedState);
     const lock = resolveRunProviderRunnerLock({
       provider: (preparedState as any)?.workflow_context?.lockedProvider,
@@ -7960,19 +8305,44 @@ export class SkillRuntimeExecutor {
       const lockedGenerationContract = resolveWorkflowGenerationContract(
         ((stateWithLock.workflow_context || {}) as Record<string, unknown>) || undefined,
       );
-      const kernel = lockedGenerationContract
-        ? await runV2RouteUnitRuntime({
-            state: stateWithLock,
-            timeoutMs: taskTimeoutMs,
-            checkpointDir: checkpointRoot,
-            contract: lockedGenerationContract,
-            unitWorker: createSkillToolRouteUnitGenerationWorker({
-              baseState: stateWithLock,
+      let kernel = null as Awaited<ReturnType<typeof runV2RouteUnitRuntime>> | null;
+      if (lockedGenerationContract) {
+        const recoveryWindowMs = resolveRouteUnitRuntimeRecoveryWindowMs();
+        const recoveryDeadlineAt = Date.now() + recoveryWindowMs;
+        let recoveryAttempt = 0;
+        while (true) {
+          recoveryAttempt += 1;
+          try {
+            kernel = await runV2RouteUnitRuntime({
+              state: stateWithLock,
               timeoutMs: taskTimeoutMs,
-            }),
-            onStep: onRuntimeStep,
-          })
-        : null;
+              checkpointDir: checkpointRoot,
+              contract: lockedGenerationContract,
+              unitWorker: createSkillToolRouteUnitGenerationWorker({
+                baseState: stateWithLock,
+                timeoutMs: taskTimeoutMs,
+              }),
+              onStep: onRuntimeStep,
+            });
+            break;
+          } catch (error) {
+            const retryable = isRetryableRouteUnitExecutionError(error);
+            const withinRecoveryWindow = Date.now() < recoveryDeadlineAt;
+            if (!(retryable && withinRecoveryWindow)) {
+              throw error;
+            }
+            const delayMs = resolveRouteUnitRuntimeRecoveryDelayMs(recoveryAttempt);
+            console.warn(
+              `[SkillRuntimeExecutor] route-unit runtime retry after transient failure; retry=${recoveryAttempt} delayMs=${delayMs} reason=${clipRouteUnitRecoveryErrorMessage(
+                error,
+              )}`,
+            );
+            if (delayMs > 0) {
+              await sleepMs(delayMs);
+            }
+          }
+        }
+      }
       const summary = kernel
         ? kernel.execution
         : await runSkillRuntimeExecutor({
@@ -8002,6 +8372,10 @@ export class SkillRuntimeExecutor {
         inputState: summary.state as AgentState,
         locale: decision.locale,
       });
+      const generationWorkflowContext = {
+        ...((preparedState.workflow_context as any) || {}),
+        ...((summary.state as any)?.workflow_context || {}),
+      } as Record<string, unknown>;
       const generatedProjectArtifact = normalizeGeneratedProjectArtifactPreview({
         project: finalizedProjectArtifact,
         decision,
@@ -8009,6 +8383,7 @@ export class SkillRuntimeExecutor {
           String((summary.state as any)?.workflow_context?.sourceRequirement || "").trim() ||
           String((summary.state as any)?.workflow_context?.canonicalPrompt || "").trim() ||
           decision.requirementText,
+        workflowContext: generationWorkflowContext,
       });
       const generatedBlogPreview = buildBlogContentWorkflowPreview({
         inputState: summary.state as AgentState,
@@ -8088,6 +8463,7 @@ export class SkillRuntimeExecutor {
             String((summary.state as any)?.workflow_context?.sourceRequirement || "").trim() ||
             String((summary.state as any)?.workflow_context?.canonicalPrompt || "").trim() ||
             decision.requirementText,
+          workflowContext: generationWorkflowContext,
         },
       );
       await materializeSiteDirectoryFromProject(generatedProjectArtifact, path.join(checkpointRoot, "site"), {
@@ -8096,6 +8472,7 @@ export class SkillRuntimeExecutor {
           String((summary.state as any)?.workflow_context?.sourceRequirement || "").trim() ||
           String((summary.state as any)?.workflow_context?.canonicalPrompt || "").trim() ||
           decision.requirementText,
+        workflowContext: generationWorkflowContext,
       });
       await fs.writeFile(path.join(checkpointRoot, "state.json"), JSON.stringify({
         savedAt: nowIso(),

@@ -1,5 +1,12 @@
 import crypto from "node:crypto";
 
+import {
+  buildAiImageToolBaselineContract,
+  normalizeProductBaselineSelection,
+  type ProductBaselineSelection,
+  type ProductRouteOwner,
+} from "../skill-runtime/product-baseline-contract.ts";
+
 export type SelectedSeedSkillManifestEntry = {
   id: string;
   source: "shpitto" | "imported-open-design" | "imported-html-anything";
@@ -27,6 +34,7 @@ export type GenerationContractRouteUnit = {
   openingFamily?: string;
   openingTopology?: string;
   inheritedSeedSkillIds?: string[];
+  owner?: ProductRouteOwner;
 };
 
 export type WebsiteGenerationContract = {
@@ -34,6 +42,7 @@ export type WebsiteGenerationContract = {
   contractHash: string;
   generationLane: string;
   websiteSurfaceMode: string;
+  productBaselineSelection?: ProductBaselineSelection;
   promptControlManifest: Record<string, unknown> | null;
   discoveryBrief: Record<string, unknown> | null;
   selectedSeedSkillManifest: SelectedSeedSkillManifest;
@@ -51,6 +60,13 @@ function normalizeStringList(values: unknown): string[] {
   return values
     .map((item) => String(item || "").trim())
     .filter(Boolean);
+}
+
+function normalizeRouteOwnership(value: unknown): ProductRouteOwner {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (normalized === "product") return "product";
+  if (normalized === "shared") return "shared";
+  return "brand";
 }
 
 function inferManifestPageKind(route: string, navLabel: string, purpose: string, providedPageKind: string): string {
@@ -105,6 +121,18 @@ function inferManifestOpeningTopology(route: string, navLabel: string, purpose: 
   return "route-specific lead band -> primary content band -> supporting proof/CTA";
 }
 
+function buildManifestContentDataSourceContract(pageKind: string): string[] {
+  if (pageKind !== "content-collection-index" && pageKind !== "blog-data-index") return [];
+  return [
+    pageKind === "blog-data-index"
+      ? "contentDataMode=treat this route as a first-class editorial archive surface, not a detached article mockup or visible backend implementation block"
+      : "contentDataMode=treat this route as a first-class content-backed collection surface, not a detached landing page or visible backend implementation block",
+    'contentDataRoot=include <section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"> inside the route-owned collection/list module',
+    "contentDataList=inside that section, include a data-shpitto-blog-list container with polished fallback cards that match the route taxonomy and visual system",
+    "contentDataCopy=keep runtime mechanics invisible to visitors; do not expose API, backend, hydration, fallback, or deployment-refresh jargon in visible copy",
+  ];
+}
+
 function buildManifestRouteContractHighlights(route: string, navLabel: string, purpose: string, pageKind: string): string[] {
   const text = `${route} ${navLabel} ${purpose}`.toLowerCase();
   const isInformationCollection = /information(?:-platform)?|resource|resources|downloads?|library|materials?/.test(text);
@@ -128,7 +156,7 @@ function buildManifestRouteContractHighlights(route: string, navLabel: string, p
   if (isResearchCollection) {
     highlights.push("openingIdentity=research or standards index, not a promotional hero or faux product catalog");
   }
-  return highlights;
+  return [...highlights, ...buildManifestContentDataSourceContract(pageKind)];
 }
 
 function stableSortObject(value: unknown): unknown {
@@ -240,12 +268,20 @@ export function buildPromptManifestRouteUnits(
 export function buildWebsiteGenerationContract(params: {
   generationLane: string;
   websiteSurfaceMode?: string | null;
+  productBaselineSelection?: ProductBaselineSelection | unknown;
   promptControlManifest?: unknown;
   discoveryBrief?: unknown;
   selectedSeedSkillManifest?: SelectedSeedSkillManifest;
   selectedSeedContracts?: SelectedSeedContractEntry[];
   routeUnitContracts?: GenerationContractRouteUnit[];
 }): WebsiteGenerationContract {
+  const productBaselineSelection = normalizeProductBaselineSelection(params.productBaselineSelection) || {
+    baselineId: buildAiImageToolBaselineContract().baselineId,
+    baselineType: buildAiImageToolBaselineContract().baselineType,
+    sourceTemplate: buildAiImageToolBaselineContract().sourceTemplate,
+    contract: buildAiImageToolBaselineContract(),
+    routeOwnership: Object.fromEntries(buildAiImageToolBaselineContract().immutable.appRoutes.map((item) => [item.route, item.owner] as const)),
+  };
   const promptControlManifest = normalizeRecord(params.promptControlManifest);
   const discoveryBrief = normalizeRecord(params.discoveryBrief);
   const selectedSeedContracts = normalizeSelectedSeedContracts(params.selectedSeedContracts);
@@ -266,6 +302,7 @@ export function buildWebsiteGenerationContract(params: {
       ...item,
       routeContract: normalizeStringList(item.routeContract),
       inheritedSeedSkillIds: normalizeStringList(item.inheritedSeedSkillIds),
+      owner: normalizeRouteOwnership((item as any).owner || productBaselineSelection.routeOwnership?.[item.route] || "brand"),
     })) || [];
   const websiteSurfaceMode =
     String(params.websiteSurfaceMode || promptControlManifest?.websiteSurfaceMode || discoveryBrief?.surfaceMode || "").trim() || "unknown";
@@ -273,6 +310,7 @@ export function buildWebsiteGenerationContract(params: {
   const hashPayload = stableSortObject({
     generationLane: params.generationLane,
     websiteSurfaceMode,
+    productBaselineSelection,
     promptControlManifest,
     discoveryBrief,
     selectedSeedSkillManifest,
@@ -285,6 +323,7 @@ export function buildWebsiteGenerationContract(params: {
     contractHash: crypto.createHash("sha256").update(JSON.stringify(hashPayload)).digest("hex"),
     generationLane: params.generationLane,
     websiteSurfaceMode,
+    productBaselineSelection,
     promptControlManifest,
     discoveryBrief,
     selectedSeedSkillManifest,

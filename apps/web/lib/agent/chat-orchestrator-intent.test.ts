@@ -36,6 +36,16 @@ describe("chat orchestrator intent", () => {
     expect(decision.shouldCreateTask).toBe(true);
   });
 
+  it("classifies refine ownership scope across brand, product, and shared shell surfaces", () => {
+    const brand = decide("Refine the homepage messaging and brand tone.", "previewing");
+    const product = decide("Refine the workspace history panel and prompt input flow.", "previewing");
+    const shared = decide("Refine the header navigation and footer shell.", "previewing");
+
+    expect(brand.refineOwnershipScope).toBe("brand_surface");
+    expect(product.refineOwnershipScope).toBe("product_surface");
+    expect(shared.refineOwnershipScope).toBe("shared_shell");
+  });
+
   it("treats missing blog detail page requests as structural refine on preview", () => {
     const decision = decide("三篇blog缺少内容页面，请补充", "previewing");
     expect(decision.intent).toBe("refine_preview");

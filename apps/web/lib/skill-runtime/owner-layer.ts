@@ -21,7 +21,7 @@ export function inferOwnerLayerFromViolationCode(code: string): ContractOwnerLay
   }
   if (/placeholder|thin_content/.test(normalized)) return "artifact";
   if (
-    /homepage_semantic_mismatch|homepage_topology_mismatch|route_identity_mismatch|route_contract_mismatch|surface_mode_mismatch|shared_shell_drift|locale_shell_mismatch/.test(
+    /homepage_semantic_mismatch|homepage_topology_mismatch|route_identity_mismatch|route_contract_mismatch|product_route_drift|surface_mode_mismatch|shared_shell_drift|locale_shell_mismatch/.test(
       normalized,
     )
   ) {

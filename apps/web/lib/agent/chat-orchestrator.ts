@@ -160,6 +160,7 @@ export type IntentDecision = {
   assumedDefaults: string[];
   shouldCreateTask: boolean;
   refineScope?: "patch" | "structural" | "route_regenerate" | "full_regenerate";
+  refineOwnershipScope?: "brand_surface" | "product_surface" | "shared_shell";
   workflowHints?: Record<string, unknown>;
 };
 
@@ -1882,6 +1883,25 @@ function isTranslationIntent(text: string): boolean {
   );
 }
 
+function inferRefineOwnershipScope(text: string): "brand_surface" | "product_surface" | "shared_shell" {
+  const normalized = toLower(text);
+  if (
+    /(?:workspace|history|dashboard|render|generation flow|upload|prompt input|result grid|sign in|signin|account|billing logic|product flow|app route|auth flow|history panel|workspace shell|工作区|历史记录|生成流程|登录|账户|产品流程)/i.test(
+      normalized,
+    )
+  ) {
+    return "product_surface";
+  }
+  if (
+    /(?:header|footer|navigation|nav|shared shell|global shell|shell chrome|locale switch|共享壳层|页眉|页脚|导航)/i.test(
+      normalized,
+    )
+  ) {
+    return "shared_shell";
+  }
+  return "brand_surface";
+}
+
 export function decideChatIntent(params: {
   userText: string;
   stage: ConversationStage;
@@ -2002,6 +2022,7 @@ export function decideChatIntent(params: {
         assumedDefaults: [],
         shouldCreateTask: true,
         refineScope: "route_regenerate",
+        refineOwnershipScope: inferRefineOwnershipScope(text),
       };
     }
     if (params.stage === "previewing") {
@@ -2014,6 +2035,7 @@ export function decideChatIntent(params: {
         assumedDefaults: [],
         shouldCreateTask: true,
         refineScope: "route_regenerate",
+        refineOwnershipScope: inferRefineOwnershipScope(text),
       };
     }
   }
@@ -2029,6 +2051,7 @@ export function decideChatIntent(params: {
         assumedDefaults: [],
         shouldCreateTask: true,
         refineScope: "route_regenerate",
+        refineOwnershipScope: inferRefineOwnershipScope(text),
       };
     }
     if (params.stage === "previewing") {
@@ -2041,6 +2064,7 @@ export function decideChatIntent(params: {
         assumedDefaults: [],
         shouldCreateTask: true,
         refineScope: "route_regenerate",
+        refineOwnershipScope: inferRefineOwnershipScope(text),
       };
     }
   }
@@ -2056,6 +2080,7 @@ export function decideChatIntent(params: {
         assumedDefaults: [],
         shouldCreateTask: true,
         refineScope: "structural",
+        refineOwnershipScope: inferRefineOwnershipScope(text),
         workflowHints: {
           skillActionDomain: "blog_detail",
           skillAction: "fill_details",
@@ -2074,6 +2099,7 @@ export function decideChatIntent(params: {
         assumedDefaults: [],
         shouldCreateTask: true,
         refineScope: "structural",
+        refineOwnershipScope: inferRefineOwnershipScope(text),
         workflowHints: {
           skillActionDomain: "blog_detail",
           skillAction: "fill_details",
@@ -2095,6 +2121,7 @@ export function decideChatIntent(params: {
         assumedDefaults: [],
         shouldCreateTask: true,
         refineScope: "structural",
+        refineOwnershipScope: inferRefineOwnershipScope(text),
       };
     }
     if (params.stage === "previewing") {
@@ -2107,6 +2134,7 @@ export function decideChatIntent(params: {
         assumedDefaults: [],
         shouldCreateTask: true,
         refineScope: "structural",
+        refineOwnershipScope: inferRefineOwnershipScope(text),
       };
     }
   }
@@ -2122,6 +2150,7 @@ export function decideChatIntent(params: {
         assumedDefaults: [],
         shouldCreateTask: true,
         refineScope: "patch",
+        refineOwnershipScope: inferRefineOwnershipScope(text),
       };
     }
     if (params.stage === "previewing") {
@@ -2134,6 +2163,7 @@ export function decideChatIntent(params: {
         assumedDefaults: [],
         shouldCreateTask: true,
         refineScope: "patch",
+        refineOwnershipScope: inferRefineOwnershipScope(text),
       };
     }
   }
@@ -2172,6 +2202,7 @@ export function decideChatIntent(params: {
       assumedDefaults: [],
       shouldCreateTask: true,
       refineScope: "patch",
+      refineOwnershipScope: inferRefineOwnershipScope(text),
     };
   }
 
@@ -2185,6 +2216,7 @@ export function decideChatIntent(params: {
       assumedDefaults: [],
       shouldCreateTask: true,
       refineScope: "patch",
+      refineOwnershipScope: inferRefineOwnershipScope(text),
     };
   }
 

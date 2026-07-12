@@ -26,6 +26,8 @@ export type WebsiteSkillMetadata = {
     websiteOnly?: boolean;
     ownershipLayer?: string;
     compatibleSurfaceModes?: WebsiteSurfaceMode[];
+    compatibleProductBaselines?: string[];
+    surfaceScope?: "brand-only" | "website-only" | "product-ui-safe";
   };
 };
 
@@ -161,6 +163,13 @@ export function parseWebsiteSkillMetadata(skillId: string, content: string): Web
     "activation",
     "compatible_surface_modes",
   ) as WebsiteSurfaceMode[];
+  const compatibleProductBaselines = readNestedInlineList(
+    odBlock,
+    "activation",
+    "compatible_product_baselines",
+  );
+  const surfaceScope =
+    readNestedScalar(odBlock, "activation", "surface_scope") as "brand-only" | "website-only" | "product-ui-safe";
 
   return {
     id: skillId,
@@ -192,6 +201,8 @@ export function parseWebsiteSkillMetadata(skillId: string, content: string): Web
             websiteOnly,
             ownershipLayer: ownershipLayer || undefined,
             compatibleSurfaceModes,
+            compatibleProductBaselines,
+            surfaceScope,
           }
         : undefined,
   };

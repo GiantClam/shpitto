@@ -1,0 +1,105 @@
+{
+  "version": "2026-06-29",
+  "mode": "optional",
+  "globals": [
+    {
+      "name": "SiteSettings",
+      "localizedFields": ["siteName", "tagline"],
+      "fields": [
+        "siteName",
+        "tagline",
+        "logo",
+        "favicon",
+        "defaultLocale",
+        "supportedLocales",
+        "primaryDomain",
+        "socialLinks",
+        "brandContactEmail",
+        "supportEmail"
+      ]
+    },
+    {
+      "name": "SeoSettings",
+      "localizedFields": ["defaultTitle", "titleTemplate", "defaultDescription"],
+      "fields": [
+        "defaultTitle",
+        "titleTemplate",
+        "defaultDescription",
+        "defaultOgImage",
+        "robotsPolicy",
+        "sitemapEnabled",
+        "structuredDataDefaults",
+        "hreflangEnabled"
+      ]
+    },
+    {
+      "name": "NavigationSettings",
+      "localizedFields": [],
+      "fields": [
+        "primaryNav",
+        "appNav",
+        "footerNav",
+        "languageSwitcherEnabled"
+      ]
+    },
+    {
+      "name": "GenerationSettings",
+      "localizedFields": [],
+      "fields": [
+        "defaultModelProfile",
+        "fallbackModelProfile",
+        "defaultWorkflowConfig",
+        "maxPromptLength",
+        "moderationMode",
+        "outputStoragePolicy",
+        "costGuardrails",
+        "enabledProviders"
+      ]
+    },
+    {
+      "name": "BillingSettings",
+      "localizedFields": [],
+      "fields": [
+        "billingMode",
+        "defaultPaymentProvider",
+        "defaultPlan",
+        "freeCreditsEnabled",
+        "freeCreditAmount",
+        "trialEnabled",
+        "trialDurationDays",
+        "failedPaymentPolicy",
+        "entitlementFallbackPolicy",
+        "checkoutReturnUrl",
+        "checkoutCancelUrl"
+      ]
+    }
+  ],
+  "collections": [
+    "Pages",
+    "BlogPosts",
+    "Media",
+    "ModelProfiles",
+    "ProviderConfigs",
+    "WorkflowConfigs",
+    "PromptPresets",
+    "DashboardWidgets",
+    "AnalyticsSnapshots",
+    "PaymentProviders",
+    "ChinaPaymentChannelSettings",
+    "PricingPlans",
+    "CreditPacks",
+    "Entitlements",
+    "UsageMeters",
+    "BillingRules",
+    "Coupons",
+    "CheckoutSettings",
+    "WebhookEndpointStatus"
+  ],
+  "forbiddenDataDomains": [
+    "raw webhook payload store",
+    "immutable payment event ledger",
+    "provider secrets in plaintext",
+    "high-frequency usage events",
+    "generation task queues"
+  ]
+}

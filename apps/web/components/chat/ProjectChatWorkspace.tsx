@@ -156,6 +156,10 @@ function taskHasPreviewBaseline(task?: TaskPayload | null): boolean {
   return Boolean(String(task.result?.progress?.checkpointProjectPath || "").trim());
 }
 
+function taskHasExportableSourceCode(task?: TaskPayload | null): boolean {
+  return Boolean(String(task?.result?.progress?.checkpointProjectPath || "").trim());
+}
+
 function isTaskEventTimelineMessage(message: HistoryMessage): boolean {
   const metadata = (message.metadata || {}) as Record<string, unknown>;
   const source = String(metadata.source || "").trim().toLowerCase();
@@ -613,6 +617,7 @@ type PromptSubmitSource = "prompt" | "timeline-action";
 
 type PromptSubmitOptions = {
   source?: PromptSubmitSource;
+  skillId?: string;
 };
 
 export function shouldSuppressOptimisticTimelineEcho(options?: PromptSubmitOptions): boolean {
@@ -3725,6 +3730,10 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
   const previewFrameUrl = useMemo(() => {
     return appendPreviewRefreshParam(previewUrl, previewRefreshNonce);
   }, [previewUrl, previewRefreshNonce]);
+  const exportCodeUrl = useMemo(() => {
+    if (!previewTask?.id || !taskHasExportableSourceCode(previewTask)) return "";
+    return `/api/chat/tasks/${encodeURIComponent(previewTask.id)}/export`;
+  }, [previewTask]);
   const activePreviewDevice = useMemo(
     () => PREVIEW_DEVICE_OPTIONS.find((device) => device.id === previewDevice) || PREVIEW_DEVICE_OPTIONS[0],
     [previewDevice],
@@ -3906,7 +3915,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
               id: chatId,
               user_id: userId || undefined,
               async: true,
-              skill_id: "website-generation-workflow",
+              skill_id: options?.skillId || "website-generation-workflow",
               messages: [createUserMessage(runtimePrompt)],
             }),
           });
@@ -4139,7 +4148,7 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
         const uploadedAssets = handoff.files.length > 0
           ? await uploadAssetsFromChat(handoff.files, false)
           : [];
-        await submitPromptText(handoff.prompt, uploadedAssets);
+        await submitPromptText(handoff.prompt, uploadedAssets, { skillId: handoff.skillId });
       } catch (err: any) {
         setLoadingTask(false);
         setError(String(err?.message || err || "Failed to start generation."));
@@ -4748,6 +4757,17 @@ export function ProjectChatWorkspace({ projectId, locale = "en" }: { projectId: 
                     <RefreshCw className="h-3.5 w-3.5" />
                     <span>Refresh</span>
                   </button>
+                ) : null}
+                {exportCodeUrl ? (
+                  <a
+                    href={exportCodeUrl}
+                    className="inline-flex items-center gap-1 rounded-md border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] px-2 py-1 text-[var(--shp-text)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)]"
+                    title={workspaceCopy.chat.downloadCode}
+                    aria-label={workspaceCopy.chat.downloadCode}
+                  >
+                    <FolderOpen className="h-3.5 w-3.5" />
+                    <span>{workspaceCopy.chat.downloadCode}</span>
+                  </a>
                 ) : null}
                 {previewUrl ? (
                   <a

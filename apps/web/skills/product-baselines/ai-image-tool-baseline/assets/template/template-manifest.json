@@ -1,0 +1,65 @@
+{
+  "templateId": "ai-image-tool-baseline-v1",
+  "templateVersion": "2026-06-29",
+  "templateFamily": "ai-image-tool-platform",
+  "sourceTemplate": "fluxkreafree",
+  "siteType": "ai-image-tool-site",
+  "adminMode": "payload-optional",
+  "defaultLocale": "en",
+  "supportedLocales": [
+    "en"
+  ],
+  "billing": {
+    "defaultProvider": "stripe",
+    "supportedProviders": [
+      "stripe",
+      "paypal",
+      "alipay",
+      "wechatpay",
+      "hupijiao"
+    ],
+    "supportedModes": [
+      "credits",
+      "subscription",
+      "hybrid"
+    ],
+    "preservedEntities": [
+      "ChargeOrder",
+      "UserBilling",
+      "UserCredit",
+      "UserCreditTransaction",
+      "UserPaymentInfo"
+    ]
+  },
+  "requiredRoutes": [
+    "/",
+    "/pricing",
+    "/flux-prompt-generator",
+    "/sign-in",
+    "/app",
+    "/app/generate",
+    "/app/history",
+    "/app/giftcode",
+    "/app/order",
+    "/privacy-policy",
+    "/terms-of-use"
+  ],
+  "optionalRoutes": [
+    "/flux-ai",
+    "/flux-schnell",
+    "/krea-alternative",
+    "/blog",
+    "/cms",
+    "/signin",
+    "/sign-up"
+  ],
+  "artifacts": {
+    "envExample": ".env.example",
+    "readme": "README.md",
+    "deploymentGuides": [
+      "deployment-guides/vercel.md",
+      "deployment-guides/cloudflare-pages.md",
+      "deployment-guides/railway.md"
+    ]
+  }
+}

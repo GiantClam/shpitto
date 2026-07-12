@@ -109,6 +109,45 @@ function collectMissingTargets(files: Array<{ path: string }>, input: Generation
   return input.targetFiles.map((target) => normalizePath(target)).filter((target) => !emitted.has(target));
 }
 
+function routeUnitRequiresBilingualShell(baseState: AgentState): boolean {
+  const workflowContext = toRecord(baseState.workflow_context);
+  const promptControlManifest = toRecord(workflowContext.promptControlManifest);
+  const discoveryBrief = toRecord(workflowContext.websiteDiscoveryBrief || workflowContext.discoveryBrief);
+  const localeMode = String(
+    discoveryBrief.localeMode || discoveryBrief.preferredLocale || promptControlManifest.localeMode || "",
+  )
+    .trim()
+    .toLowerCase();
+  return localeMode === "bilingual";
+}
+
+function hasValidBilingualLocaleSwitch(html: string): boolean {
+  const source = String(html || "");
+  const localeToggleMatches = Array.from(source.matchAll(/data-locale-toggle[^>]*data-locale=["']([^"']+)["']/gi));
+  const localeToggles = new Set(
+    localeToggleMatches.map((match) => String(match[1] || "").trim()).filter(Boolean),
+  );
+  if (localeToggles.has("zh-CN") && localeToggles.has("en")) return true;
+  return /\bdata-locale-switch\b/i.test(source);
+}
+
+function validateRouteUnitFiles(params: {
+  baseState: AgentState;
+  input: GenerationUnitInput;
+  files: Array<{ path: string; content: string; type?: string }>;
+}) {
+  if (!routeUnitRequiresBilingualShell(params.baseState)) return;
+  for (const file of params.files) {
+    const pathName = normalizePath(file.path);
+    if (!pathName.endsWith(".html")) continue;
+    if (!hasValidBilingualLocaleSwitch(String(file.content || ""))) {
+      throw new RetryableRouteUnitOutputError(
+        `Provider route-unit output for ${params.input.unitId} is missing a valid bilingual locale switch on ${pathName}.`,
+      );
+    }
+  }
+}
+
 function buildSystemPrompt() {
   return [
     "You are Shpitto V2 route-unit generator.",
@@ -312,9 +351,17 @@ function buildUserPrompt(baseState: AgentState, input: GenerationUnitInput) {
   const mediaResources = Array.isArray(routeContext.mediaResources)
     ? (routeContext.mediaResources as unknown[]).map((item) => JSON.stringify(item)).join("\n")
     : "";
+  const sharedShellSnapshot = toRecord(routeContext.sharedShellSnapshot);
+  const sharedShellSourceRoute = String(sharedShellSnapshot.sourceRoute || "").trim();
+  const sharedShellHeaderHtml = clipText(String(sharedShellSnapshot.headerHtml || ""), 1_800);
+  const sharedShellFooterHtml = clipText(String(sharedShellSnapshot.footerHtml || ""), 1_800);
+  const sharedShellLocaleProtocol = String(sharedShellSnapshot.localeProtocol || "").trim();
   const repairHints = Array.isArray(routeContext.repairHints)
     ? (routeContext.repairHints as unknown[]).map((item) => String(item || "").trim()).filter(Boolean)
     : [];
+  const isBlogCollectionRoute =
+    normalizePath(String(input.route || "/")) === "/blog" &&
+    String(routeContext.pageKind || "").trim().toLowerCase() === "content-collection-index";
   const splitHeroBan =
     String(input.route || "").trim() === "/"
       ? [
@@ -342,13 +389,48 @@ function buildUserPrompt(baseState: AgentState, input: GenerationUnitInput) {
     inheritedTokens.length > 0 ? `Inherited tokens: ${inheritedTokens.join(", ")}` : "",
     mediaPlan.length > 0 ? `Media plan:\n- ${mediaPlan.join("\n- ")}` : "",
     mediaResources ? `Media resources:\n${mediaResources}` : "",
+    sharedShellHeaderHtml
+      ? [
+          "Verified shared shell snapshot:",
+          sharedShellSourceRoute ? `- Source route: ${sharedShellSourceRoute}` : "",
+          sharedShellLocaleProtocol ? `- Locale protocol already verified on the homepage shell: ${sharedShellLocaleProtocol}` : "",
+          "- Reuse this header/footer contract instead of inventing a new shell for this route.",
+          `Header HTML reference:\n${sharedShellHeaderHtml}`,
+          `Footer HTML reference:\n${sharedShellFooterHtml}`,
+        ]
+          .filter(Boolean)
+          .join("\n")
+      : "",
     repairHints.length > 0 ? `Repair hints:\n- ${repairHints.join("\n- ")}` : "",
     splitHeroBan,
     "Shared shell rules:",
     "- Keep one coherent header/nav/footer system across routes.",
+    sharedShellHeaderHtml
+      ? "- Treat the verified homepage header/footer above as the authoritative shell structure. Preserve its locale switch placement outside the primary nav, preserve the same nav destinations, and only change route-owned main content plus active-state markers."
+      : "",
     confirmedRoutes.length > 0
       ? `- The nav must expose exactly these routes: ${confirmedRoutes.join(", ")}`
       : "- The nav must expose the confirmed route set from the manifest.",
+    confirmedRoutes.length > 0
+      ? `- Any footer navigation on this route must preserve the same planned internal destinations as the homepage shell. If the site links ${confirmedRoutes.join(", ")} in the shared shell, do not drop those destinations from interior-route footers.`
+      : "- Any footer navigation on this route must preserve the same planned internal destinations as the homepage shell.",
+    String(input.route || "/").trim() !== "/"
+      ? "- Do not replace the shared footer with footer copy only. Interior routes must keep the active footer shell, including its destination links, while changing only route-specific main content."
+      : "",
+    [
+      "- Footer shell minimum: use one visible footer band, not a bare row of inline links.",
+      "- The footer must include a structured layout wrapper plus distinct navigation and summary/support copy zones such as footer-inner/footer-nav/footer-note, footer-brand/footer-links/footer-meta, or equivalent footer column classes.",
+      "- If `/styles.css` defines shared footer utilities, the emitted HTML must use those same footer shell classes instead of collapsing the footer into plain anchors.",
+    ].join("\n"),
+    isBlogCollectionRoute
+      ? [
+          "Blog archive copy exclusions:",
+          "- Do not add body sections or link labels whose primary job is route choreography, such as `下一步`, `从这里继续探索`, `返回首页`, `继续了解`, `where to start`, `next step`, `continue reading`, or `continue exploring`.",
+          "- Do not explain reading order, browsing order, page role, archive mechanics, or how visitors should move from the homepage into deeper content.",
+          "- Keep blog card actions visitor-facing and route-owned. Point them toward real archive/detail outcomes, not generic home-page return paths or mechanical navigation instructions.",
+          "- Do not render a final CTA band whose only value is telling the visitor what page to click next.",
+        ].join("\n")
+      : "",
     localeMode.toLowerCase() === "bilingual"
       ? [
           "- Use one shared locale-switch protocol consistently across every bilingual route in this run.",
@@ -369,6 +451,7 @@ function buildUserPrompt(baseState: AgentState, input: GenerationUnitInput) {
     "- Emit every requested target file exactly once.",
     "- Do not emit files outside targetFiles.",
     "- HTML must contain meaningful, non-placeholder content and valid internal links.",
+    "- Every emitted HTML file must reference the shared assets with absolute paths: `<link rel=\"stylesheet\" href=\"/styles.css\">` and `<script src=\"/script.js\"></script>`.",
     "- CSS must style the emitted route coherently; JS should only include essential shell behavior.",
     "- JSON locale files must be valid JSON objects.",
   ]
@@ -510,6 +593,11 @@ export function createSkillToolRouteUnitGenerationWorker(params: {
                 `Provider ${attempt.config.provider} omitted requested route-unit target files for ${input.unitId}: ${missingTargets.join(", ")}`,
               );
             }
+            validateRouteUnitFiles({
+              baseState: scopedState,
+              input,
+              files,
+            });
             await recordProviderHealthStatusSafely({
               attempt: routeProviderAttempt,
               status: "success",
@@ -519,6 +607,8 @@ export function createSkillToolRouteUnitGenerationWorker(params: {
               status: "passed",
               files,
               summary: String(payload?.summary || "").trim() || `Generated ${input.unitId}.`,
+              provider: routeProviderAttempt.config.provider,
+              model: routeProviderAttempt.config.modelName,
             };
           } catch (error) {
             lastError = error;
@@ -573,6 +663,8 @@ export function createSkillToolRouteUnitGenerationWorker(params: {
         files: [],
         summary: `Route-unit generation failed for ${input.unitId}.`,
         issues: [providerErrorText(lastError)],
+        provider: attempts[0]?.config?.provider,
+        model: attempts[0]?.config?.modelName,
       };
     },
   });

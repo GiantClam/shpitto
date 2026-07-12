@@ -1,6 +1,7 @@
 export type LaunchCenterChatHandoff = {
   prompt: string;
   files: File[];
+  skillId?: string;
   createdAt: number;
 };
 
@@ -87,9 +88,11 @@ function normalizeHandoff(record: LaunchCenterChatHandoff | undefined): LaunchCe
   if (Date.now() - Number(record.createdAt || 0) > HANDOFF_TTL_MS) return undefined;
   const prompt = String(record.prompt || "").trim();
   if (!prompt) return undefined;
+  const skillId = String(record.skillId || "").trim();
   return {
     prompt,
     files: Array.from(record.files || []).filter(Boolean),
+    skillId: skillId || undefined,
     createdAt: Number(record.createdAt || Date.now()),
   };
 }
@@ -105,6 +108,7 @@ export async function storeLaunchCenterChatHandoff(
     projectId: normalizedProjectId,
     prompt,
     files: Array.from(handoff.files || []).filter(Boolean),
+    skillId: String(handoff.skillId || "").trim() || undefined,
     createdAt: Date.now(),
   };
   handoffs.set(normalizedProjectId, record);

@@ -7,6 +7,7 @@ import {
 } from "./website-design-spec.ts";
 import type { LocalDecisionPlan } from "./decision-layer.ts";
 import { DEFAULT_STYLE_PRESET } from "../design-style-preset.ts";
+import { selectAiImageToolBaselineSelection } from "./product-baseline-contract.ts";
 
 function buildMockDecision(): LocalDecisionPlan {
   return {
@@ -1100,6 +1101,88 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
     expect(summary?.openingTopology).toContain("editorial");
   });
 
+  it("preserves blog data-source constraints inside the compact /blog route-unit summary", () => {
+    const decision = buildMockDecision();
+    decision.requirementText =
+      "Build a polished personal technical blog for an AI consultant with Home, Blog, About, and Contact. Keep the first pass profile-led and index-first.";
+    decision.routes = ["/", "/blog", "/about", "/contact"];
+    decision.navLabels = ["Home", "Blog", "About", "Contact"];
+    decision.pageIntents = [
+      {
+        route: "/",
+        navLabel: "Home",
+        purpose: "Homepage. Establish the profile-led editorial overview and next action.",
+        source: "prompt_contract",
+        pageKind: "home",
+        responsibility: "Homepage",
+        contentSkeleton: ["Profile masthead", "Writing themes", "Contact CTA"],
+        componentMix: { hero: 30, feature: 20, grid: 15, proof: 20, form: 0, cta: 15 },
+        constraints: [],
+      },
+      {
+        route: "/blog",
+        navLabel: "Blog",
+        purpose:
+          'Content collection page for "Blog". Keep the first pass as a route-owned editorial archive and do not require publishable detail pages.',
+        source: "prompt_contract",
+        pageKind: "content-collection-index",
+        responsibility: "Blog index",
+        contentSkeleton: [
+          "Site-matched hero explaining the value of this route's content/resource system",
+          'Page-specific data-backed collection surface: <section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts">',
+          "Fallback editorial/resource cards inside [data-shpitto-blog-list] using the selected route taxonomy",
+        ],
+        componentMix: { hero: 20, feature: 15, grid: 35, proof: 5, form: 0, cta: 25 },
+        constraints: [
+          "Treat the selected content-backed navigation route as a first-class page-specific collection surface, not a generic article mockup, detached landing page, or visible backend implementation block.",
+          'The generated page for that route must include data-shpitto-blog-root and data-shpitto-blog-api="/api/blog/posts" inside the page collection/list/database module.',
+          "Inside that section, include a data-shpitto-blog-list container with polished fallback resource cards that match the route taxonomy, language, typography, spacing, and visual system.",
+        ],
+      },
+      {
+        route: "/about",
+        navLabel: "About",
+        purpose: 'Dedicated page for "About".',
+        source: "prompt_contract",
+        pageKind: "intent",
+        responsibility: "About",
+        contentSkeleton: ["About lead"],
+        componentMix: { hero: 15, feature: 15, grid: 15, proof: 20, form: 0, cta: 10 },
+        constraints: [],
+      },
+      {
+        route: "/contact",
+        navLabel: "Contact",
+        purpose: 'Dedicated page for "Contact".',
+        source: "prompt_contract",
+        pageKind: "intent",
+        responsibility: "Contact",
+        contentSkeleton: ["Contact block"],
+        componentMix: { hero: 10, feature: 10, grid: 10, proof: 10, form: 40, cta: 20 },
+        constraints: [],
+      },
+    ] as any;
+    decision.pageBlueprints = decision.pageIntents;
+
+    const summary = buildRouteUnitContractSummary(
+      {
+        decision,
+        requirementText: decision.requirementText,
+        stylePreset: DEFAULT_STYLE_PRESET,
+        websiteSurfaceMode: "portfolio-blog-site",
+      },
+      "/blog",
+    );
+
+    const contractText = summary?.routeContract.join("\n") || "";
+    expect(contractText).toContain(
+      'constraint=The generated page for that route must include data-shpitto-blog-root and data-shpitto-blog-api="/api/blog/posts" inside the page collection/list/database module.',
+    );
+    expect(contractText).toContain(
+      "constraint=Inside that section, include a data-shpitto-blog-list container with polished fallback resource cards that match the route taxonomy, language, typography, spacing, and visual system.",
+    );
+  });
+
   it("tightens the portfolio/blog archive against weak support rails and placeholder context panels", () => {
     const decision = buildMockDecision();
     decision.routes = ["/", "/blog"];
@@ -1580,5 +1663,73 @@ describe("buildWebsiteDesignSpecMarkdown", () => {
 
     expect(markdown).toContain("locale_strategy: Chinese-first single-language shell");
     expect(markdown).not.toContain("locale_strategy: English-first with i18n resources for other locales");
+  });
+
+  it("emits product baseline and route ownership contracts when a product baseline is active", () => {
+    const decision = buildMockDecision();
+    decision.routes = ["/", "/app", "/history", "/pricing"];
+    decision.navLabels = ["Home", "App", "History", "Pricing"];
+    decision.pageIntents = [
+      {
+        route: "/",
+        navLabel: "Home",
+        purpose: "Visitor-facing product homepage.",
+        source: "prompt_contract",
+        pageKind: "home",
+        responsibility: "Homepage",
+        contentSkeleton: ["Masthead", "Proof", "CTA"],
+        componentMix: { hero: 20, feature: 20, grid: 20, proof: 20, form: 10, cta: 10 },
+        constraints: [],
+      },
+      {
+        route: "/app",
+        navLabel: "App",
+        purpose: "Image generation workspace.",
+        source: "prompt_contract",
+        pageKind: "intent",
+        responsibility: "Workspace",
+        contentSkeleton: ["Prompt input", "Controls", "Results"],
+        componentMix: { hero: 5, feature: 10, grid: 15, proof: 20, form: 30, cta: 5 },
+        constraints: [],
+      },
+      {
+        route: "/history",
+        navLabel: "History",
+        purpose: "Image generation history.",
+        source: "prompt_contract",
+        pageKind: "intent",
+        responsibility: "History",
+        contentSkeleton: ["History list", "Replay", "Export"],
+        componentMix: { hero: 5, feature: 10, grid: 20, proof: 20, form: 20, cta: 5 },
+        constraints: [],
+      },
+      {
+        route: "/pricing",
+        navLabel: "Pricing",
+        purpose: "Pricing page.",
+        source: "prompt_contract",
+        pageKind: "intent",
+        responsibility: "Pricing",
+        contentSkeleton: ["Pricing tiers", "FAQ", "CTA"],
+        componentMix: { hero: 10, feature: 20, grid: 20, proof: 10, form: 10, cta: 15 },
+        constraints: [],
+      },
+    ] as any;
+    decision.pageBlueprints = decision.pageIntents;
+
+    const markdown = buildWebsiteDesignSpecMarkdown({
+      decision,
+      requirementText: "Build a visitor-facing homepage and product workspace for an AI image tool.",
+      stylePreset: DEFAULT_STYLE_PRESET,
+      productBaselineSelection: selectAiImageToolBaselineSelection(),
+    });
+
+    expect(markdown).toContain("product_baseline_id: ai-image-tool-baseline-v1");
+    expect(markdown).toContain("product_baseline_type: ai-image-tool");
+    expect(markdown).toContain("product_baseline_source_template: fluxkreafree");
+    expect(markdown).toContain("route_ownership_contract: /=shared, /app=product, /history=product, /pricing=brand");
+    expect(markdown).toContain(
+      "forbidden_feature_drift: replace the workspace with a brochure site; remove generation history; hide prompt input behind brand pages",
+    );
   });
 });

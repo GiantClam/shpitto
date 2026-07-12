@@ -38,12 +38,96 @@ function slugTerms(route: string): string[] {
     .filter((item) => item.length >= 4 && !["index", "page", "home"].includes(item));
 }
 
+const ROUTE_IDENTITY_ALIASES: Record<string, string[]> = {
+  about: ["about", "关于"],
+  blog: ["blog", "博客", "文章"],
+  case: ["case", "cases", "案例"],
+  contact: ["contact", "联系", "联系我们", "咨询"],
+  home: ["home", "首页", "主页"],
+  information: ["information", "资讯", "信息", "资料"],
+  product: ["product", "products", "产品"],
+  research: ["research", "研究"],
+};
+
+function localizedRouteIdentityTerms(terms: string[]): string[] {
+  const expanded = new Set<string>();
+  for (const rawTerm of terms) {
+    const term = String(rawTerm || "").trim().toLowerCase();
+    if (!term) continue;
+    expanded.add(rawTerm);
+    for (const [key, aliases] of Object.entries(ROUTE_IDENTITY_ALIASES)) {
+      if (term === key || term === `${key}s` || aliases.some((alias) => alias.toLowerCase() === term)) {
+        for (const alias of aliases) expanded.add(alias);
+      }
+    }
+  }
+  return Array.from(expanded).filter(Boolean);
+}
+
 function navTerms(navLabel: string): string[] {
-  return String(navLabel || "")
-    .toLowerCase()
+  const raw = String(navLabel || "").trim().toLowerCase();
+  if (!raw) return [];
+  const asciiTerms = raw
     .split(/[^a-z0-9]+/g)
     .map((item) => item.trim())
     .filter((item) => item.length >= 4);
+  const cjkTerms = Array.from(raw.matchAll(/[\u4e00-\u9fff]{2,}/g)).map((match) => String(match[0] || "").trim());
+  return localizedRouteIdentityTerms(Array.from(new Set([...asciiTerms, ...cjkTerms].filter(Boolean))));
+}
+
+function parseJsonObject(content: string): Record<string, unknown> | null {
+  try {
+    const parsed = JSON.parse(String(content || ""));
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+    return parsed as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function readNestedString(record: Record<string, unknown>, dottedKey: string): string | null {
+  const direct = record[dottedKey];
+  if (typeof direct === "string" && direct.trim()) return direct.trim();
+  const segments = String(dottedKey || "")
+    .split(".")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  if (segments.length === 0) return null;
+  let current: unknown = record;
+  for (const segment of segments) {
+    if (!current || typeof current !== "object" || Array.isArray(current)) return null;
+    current = (current as Record<string, unknown>)[segment];
+  }
+  return typeof current === "string" && current.trim() ? current.trim() : null;
+}
+
+function catalogTermsForRoute(params: {
+  route: string;
+  filesByPath: Map<string, RuntimeFile>;
+}): string[] {
+  const routeKey =
+    params.route === "/"
+      ? "home"
+      : normalizePath(params.route)
+          .replace(/^\/+|\/+$/g, "")
+          .split("/")
+          .filter(Boolean)
+          .pop() || "";
+  if (!routeKey) return [];
+  const terms = new Set<string>();
+  for (const catalogPath of ["/i18n/messages.en.json", "/i18n/messages.zh-CN.json"]) {
+    const content = String(params.filesByPath.get(catalogPath)?.content || "");
+    const parsed = parseJsonObject(content);
+    if (!parsed) continue;
+    for (const key of [`nav.${routeKey}`, `${routeKey}.title`, `${routeKey}.pageTitle`]) {
+      const value = readNestedString(parsed, key);
+      if (!value) continue;
+      for (const term of navTerms(value)) {
+        terms.add(term);
+      }
+    }
+  }
+  return localizedRouteIdentityTerms(Array.from(terms));
 }
 
 function detectPlaceholderIssue(text: string): string | null {
@@ -103,6 +187,63 @@ function detectHomepageTopologyIssue(params: {
 
   if (/docs workspace|search\/index rail|reference matrix/.test(topologySignals) && hasGenericSplitHero) {
     return "Docs homepage opening reuses generic hero geometry instead of a docs workspace opening.";
+  }
+
+  return null;
+}
+
+function detectProductRouteSemanticDrift(params: {
+  route: string;
+  owner?: string;
+  routeContract?: string[];
+  visibleText: string;
+}): string | null {
+  if (params.owner !== "product") return null;
+  const normalizedRoute = normalizePath(params.route);
+  const normalizedText = String(params.visibleText || "").toLowerCase();
+  const routeContractText = Array.isArray(params.routeContract)
+    ? params.routeContract.join(" ").toLowerCase()
+    : "";
+
+  const requiredTermGroups: Record<string, string[][]> = {
+    "/app": [
+      ["prompt", "generate", "generation", "create", "render"],
+      ["image", "images"],
+    ],
+    "/history": [
+      ["history", "recent", "library", "archive", "past"],
+      ["image", "images", "generation", "renders", "outputs"],
+    ],
+    "/sign-in": [
+      ["sign in", "login", "log in", "continue"],
+      ["account", "email", "password", "google"],
+    ],
+    "/account": [
+      ["account", "profile", "settings", "workspace"],
+      ["plan", "billing", "usage", "preferences"],
+    ],
+  };
+
+  const bannedBrandDriftGroups: Record<string, string[]> = {
+    "/app": ["pricing plans", "case studies", "customer stories", "about us", "contact sales"],
+    "/history": ["pricing plans", "case studies", "customer stories", "about us", "contact sales"],
+    "/sign-in": ["case studies", "customer stories", "product launch", "feature spotlight"],
+    "/account": ["case studies", "customer stories", "product launch", "feature spotlight"],
+  };
+
+  const required = requiredTermGroups[normalizedRoute];
+  if (!required) return null;
+  const hasAllSemanticSignals = required.every((group) => group.some((term) => normalizedText.includes(term)));
+  if (!hasAllSemanticSignals) {
+    return `Product-owned route ${normalizedRoute} no longer exposes the minimum product workflow semantics required by its baseline contract.`;
+  }
+
+  const bannedSignals = bannedBrandDriftGroups[normalizedRoute] || [];
+  const hasBrandDrift =
+    bannedSignals.some((term) => normalizedText.includes(term)) &&
+    !/routeowner=product|productbaseline=/i.test(routeContractText);
+  if (hasBrandDrift) {
+    return `Product-owned route ${normalizedRoute} reads like a visitor-facing brand surface instead of a product workflow surface.`;
   }
 
   return null;
@@ -474,6 +615,39 @@ export function verifyRouteUnitArtifacts(params: {
       };
     }
 
+    const productRouteSemanticIssue = detectProductRouteSemanticDrift({
+      route: routeUnit.route,
+      owner: (routeUnit as any).owner,
+      routeContract: (routeUnit as any).routeContract,
+      visibleText,
+    });
+    if (productRouteSemanticIssue) {
+      const issue = buildIssueResult({
+        route: routeUnit.route,
+        htmlPath,
+        checkedFiles,
+        violationCode: "product_route_drift",
+        issues: [productRouteSemanticIssue],
+        violatedFields: ["product_baseline.route_semantics"],
+        evidence: [
+          `owner=${String((routeUnit as any).owner || "brand")}`,
+          visibleText.slice(0, 240),
+        ],
+        status: "contract_violation",
+      });
+      return {
+        status: "contract_violation",
+        scope: "route",
+        route: routeUnit.route,
+        issues: issue.issues,
+        routeResults: [...routeResults, issue],
+        violationCode: issue.violationCode!,
+        ownerLayer: issue.ownerLayer!,
+        violatedFields: issue.violatedFields || [],
+        evidence: issue.evidence || [],
+      };
+    }
+
     if (routeUnit.route === "/") {
       const homepageIssue = detectHomepageSemanticIssue(visibleText);
       if (homepageIssue) {
@@ -557,7 +731,13 @@ export function verifyRouteUnitArtifacts(params: {
         };
       }
       const lower = visibleText.toLowerCase();
-      const expectedTerms = Array.from(new Set([...navTerms(routeUnit.navLabel), ...slugTerms(routeUnit.route)]));
+      const expectedTerms = Array.from(
+        new Set([
+          ...navTerms(routeUnit.navLabel),
+          ...slugTerms(routeUnit.route),
+          ...catalogTermsForRoute({ route: routeUnit.route, filesByPath }),
+        ]),
+      );
       if (expectedTerms.length > 0 && !expectedTerms.some((term) => lower.includes(term))) {
         const issue = buildIssueResult({
           route: routeUnit.route,

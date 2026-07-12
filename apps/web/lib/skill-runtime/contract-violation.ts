@@ -12,6 +12,7 @@ export type ContractViolationCode =
   | "homepage_topology_mismatch"
   | "route_identity_mismatch"
   | "route_contract_mismatch"
+  | "product_route_drift"
   | "surface_mode_mismatch"
   | "shared_shell_drift"
   | "locale_shell_mismatch";

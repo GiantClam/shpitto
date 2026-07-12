@@ -16,6 +16,7 @@ import {
 } from "./generation-worker-adapter.ts";
 import type { WebsiteSurfaceMode } from "./open-design-adoption.ts";
 import { resolveRouteUnitExecutionTimeoutMs } from "./route-unit-timeouts.ts";
+import { getLocaleMessagePath, normalizeLocaleCode } from "./locale-plan.ts";
 import {
   readAllRouteUnitVerificationCheckpoints,
   readGeneratedProjectCheckpoint,
@@ -97,6 +98,50 @@ async function runRouteUnitWithTimeout<T>(params: {
         reject(error);
       });
   });
+}
+
+function extractFirstBlock(source: string, tagName: string): string {
+  const match = String(source || "").match(new RegExp(`<${tagName}\\b[^>]*>[\\s\\S]*?<\\/${tagName}>`, "i"));
+  return String(match?.[0] || "").trim();
+}
+
+function inspectLocaleProtocol(html: string): "explicit-buttons" | "single-switch" | "" {
+  const source = String(html || "");
+  if (/data-locale-toggle[^>]*data-locale=["']zh-CN["']/i.test(source) && /data-locale-toggle[^>]*data-locale=["']en["']/i.test(source)) {
+    return "explicit-buttons";
+  }
+  if (/\bdata-locale-switch\b/i.test(source)) return "single-switch";
+  return "";
+}
+
+function buildSharedShellSnapshot(project: any): Record<string, unknown> | undefined {
+  const homepage = Array.isArray(project?.pages)
+    ? project.pages.find((page: any) => normalizePath(String(page?.path || "")) === "/")
+    : null;
+  const homepageHtml = String(homepage?.html || "");
+  if (!homepageHtml.trim()) return undefined;
+  const headerHtml = extractFirstBlock(homepageHtml, "header");
+  const footerHtml = extractFirstBlock(homepageHtml, "footer");
+  if (!headerHtml || !footerHtml) return undefined;
+  return {
+    sourceRoute: "/",
+    headerHtml,
+    footerHtml,
+    localeProtocol: inspectLocaleProtocol(homepageHtml),
+  };
+}
+
+function attachSharedShellSnapshot(input: GenerationUnitInput, project: any): GenerationUnitInput {
+  if (normalizePath(String(input.route || "/")) === "/") return input;
+  const sharedShellSnapshot = buildSharedShellSnapshot(project);
+  if (!sharedShellSnapshot) return input;
+  return {
+    ...input,
+    context: {
+      ...(input.context || {}),
+      sharedShellSnapshot,
+    },
+  };
 }
 
 function resolveGeneratedProject(execution: SkillRuntimeExecutionSummary) {
@@ -209,6 +254,223 @@ function normalizeGeneratedFileContent(params: {
   return content;
 }
 
+function resolveContractDefaultLocale(contract?: ImmutableGenerationContract): string | null {
+  const promptLocaleConfig = (contract?.promptControlManifest as any)?.localeConfig || {};
+  const candidates = [
+    promptLocaleConfig.defaultLocale,
+    (contract?.promptControlManifest as any)?.defaultLocale,
+    (contract?.discoveryBrief as any)?.defaultLocale,
+    (contract?.discoveryBrief as any)?.preferredLocale,
+  ];
+  for (const candidate of candidates) {
+    const normalized = normalizeLocaleCode(String(candidate || ""));
+    if (normalized) return normalized;
+  }
+  return null;
+}
+
+function parseJsonStringMap(content: string): Record<string, string> {
+  try {
+    const parsed = JSON.parse(String(content || ""));
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+    return Object.fromEntries(
+      Object.entries(parsed)
+        .map(([key, value]) => [String(key || "").trim(), typeof value === "string" ? value : ""] as const)
+        .filter(([key, value]) => Boolean(key) && Boolean(value)),
+    );
+  } catch {
+    return {};
+  }
+}
+
+function escapeHtmlText(text: string): string {
+  return String(text || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function escapeHtmlAttribute(text: string): string {
+  return escapeHtmlText(text).replace(/"/g, "&quot;");
+}
+
+function applyDefaultLocaleToTranslatedAttributes(
+  html: string,
+  locale: string,
+  messages: Record<string, string>,
+): string {
+  const rewriteTagByAttrs = (match: string, tagName: string, attrs: string, key?: string) => {
+    const attrSpec =
+      String(attrs || "").match(/\sdata-i18n-attr=(["'])([^"']+)\1/i)?.[2] ||
+      String(attrs || "").match(/\sdata-i18n-attr=([^\s>]+)/i)?.[1] ||
+      "";
+    const assignments = String(attrSpec || "")
+      .split(/[;,]+/g)
+      .map((item) => item.trim())
+      .filter(Boolean);
+    if (assignments.length === 0) return match;
+
+    const resolved = String(messages[String(key || "").trim()] || "").trim();
+    let nextAttrs = String(attrs || "");
+    for (const assignment of assignments) {
+      const [rawAttrName, rawSource] = assignment.split(":").map((item) => item.trim());
+      const attrName = String(rawAttrName || "").trim();
+      if (!attrName) continue;
+      const sourceKey = String(rawSource || key || "").trim();
+      const attrValue = String(messages[sourceKey] || resolved).trim();
+      if (!attrValue) continue;
+      const attrPattern = new RegExp(`\\s${attrName}=(["']).*?\\1`, "i");
+      if (attrPattern.test(nextAttrs)) {
+        nextAttrs = nextAttrs.replace(attrPattern, ` ${attrName}="${escapeHtmlAttribute(attrValue)}"`);
+      } else {
+        nextAttrs = `${nextAttrs} ${attrName}="${escapeHtmlAttribute(attrValue)}"`;
+      }
+    }
+    return `<${tagName}${nextAttrs}>`;
+  };
+
+  const withBlockTags = String(html || "").replace(
+    /<([a-zA-Z][\w:-]*)([^>]*)\sdata-i18n=(["'])([^"']+)\3([^>]*)>/g,
+    (match, tagName: string, leftAttrs: string, _quote: string, key: string, rightAttrs: string) =>
+      rewriteTagByAttrs(match, tagName, `${String(leftAttrs || "")} data-i18n="${String(key || "").trim()}"${String(rightAttrs || "")}`, key),
+  );
+
+  return withBlockTags.replace(
+    /<([a-zA-Z][\w:-]*)([^>]*)\sdata-i18n=(["'])([^"']+)\3([^>]*?)\/?>/g,
+    (match, tagName: string, leftAttrs: string, _quote: string, key: string, rightAttrs: string) =>
+      rewriteTagByAttrs(match, tagName, `${String(leftAttrs || "")} data-i18n="${String(key || "").trim()}"${String(rightAttrs || "")}`, key),
+  ).replace(
+    /<([a-zA-Z][\w:-]*)([^>]*\sdata-i18n-attr=(?:"[^"]*"|'[^']*'|[^\s>]+)[^>]*)>/g,
+    (match, tagName: string, attrs: string) => rewriteTagByAttrs(match, tagName, attrs),
+  );
+}
+
+function applyDefaultVisibleLocaleToHtml(
+  html: string,
+  locale: string,
+  messages: Record<string, string>,
+): string {
+  let next = String(html || "");
+  if (!next.trim() || Object.keys(messages).length === 0 || !/\sdata-i18n(?:=|\s|>)/i.test(next)) return next;
+
+  next = next.replace(/<html\b([^>]*)>/i, (_match, attrs: string) => {
+    let nextAttrs = String(attrs || "");
+    if (/\slang=/i.test(nextAttrs)) {
+      nextAttrs = nextAttrs.replace(/\slang=(["']).*?\1/i, ` lang="${locale}"`);
+    } else {
+      nextAttrs = `${nextAttrs} lang="${locale}"`;
+    }
+    if (/\sdata-lang=/i.test(nextAttrs)) {
+      nextAttrs = nextAttrs.replace(/\sdata-lang=(["']).*?\1/i, ` data-lang="${locale}"`);
+    } else {
+      nextAttrs = `${nextAttrs} data-lang="${locale}"`;
+    }
+    return `<html${nextAttrs}>`;
+  });
+
+  next = next.replace(
+    /<button\b([^>]*)data-locale-toggle([^>]*)aria-pressed=(["']).*?\3([^>]*)>/gi,
+    (_match, before: string, middle: string, _quote: string, after: string) => {
+      const attrs = `${String(before || "")}${String(middle || "")}${String(after || "")}`;
+      const targetLocale = normalizeLocaleCode(
+        attrs.match(/\sdata-locale=(["'])([^"']+)\1/i)?.[2] || attrs.match(/\sdata-locale=([^\s>]+)/i)?.[1] || "",
+      );
+      const pressed = targetLocale === locale ? "true" : "false";
+      return `<button${before || ""}data-locale-toggle${middle || ""}aria-pressed="${pressed}"${after || ""}>`;
+    },
+  );
+
+  next = next.replace(
+    /<option\b([^>]*)value=(["'])([^"']+)\2([^>]*)>/gi,
+    (match, before: string, quote: string, value: string, after: string) => {
+      const normalizedValue = normalizeLocaleCode(String(value || ""));
+      const selected = normalizedValue === locale;
+      let attrs = `${String(before || "")}value=${quote}${value}${quote}${String(after || "")}`;
+      attrs = attrs.replace(/\sselected(?:=(["']).*?\1)?/gi, "");
+      if (selected) attrs = `${attrs} selected`;
+      return `<option${attrs}>`;
+    },
+  );
+
+  next = applyDefaultLocaleToTranslatedAttributes(next, locale, messages);
+  next = next.replace(
+    /<([a-zA-Z][\w:-]*)([^>]*)\sdata-i18n=(["'])([^"']+)\3([^>]*)>([\s\S]*?)<\/\1>/g,
+    (match, tagName: string, leftAttrs: string, _quote: string, key: string, rightAttrs: string, inner: string) => {
+      const resolved = String(messages[String(key || "").trim()] || "").trim();
+      if (!resolved) return match;
+      if (/<[a-zA-Z][\w:-]*\b/.test(String(inner || ""))) return match;
+      return `<${tagName}${String(leftAttrs || "")} data-i18n="${String(key || "").trim()}"${String(rightAttrs || "")}>${escapeHtmlText(resolved)}</${tagName}>`;
+    },
+  );
+  return next;
+}
+
+function applyDefaultVisibleLocaleProjection(
+  filesByPath: Map<string, any>,
+  contract?: ImmutableGenerationContract,
+): void {
+  const localeMode = String(
+    (contract?.discoveryBrief as any)?.localeMode ||
+      (contract?.promptControlManifest as any)?.localeMode ||
+      "",
+  )
+    .trim()
+    .toLowerCase();
+  if (localeMode !== "bilingual" && localeMode !== "multilingual") return;
+
+  const defaultLocale = resolveContractDefaultLocale(contract);
+  if (!defaultLocale) return;
+
+  const messagePath = getLocaleMessagePath(defaultLocale);
+  const messages = parseJsonStringMap(String(filesByPath.get(messagePath)?.content || ""));
+  if (Object.keys(messages).length === 0) return;
+
+  for (const [filePath, file] of filesByPath.entries()) {
+    if (!String(filePath || "").toLowerCase().endsWith(".html")) continue;
+    const normalized = applyDefaultVisibleLocaleToHtml(String(file?.content || ""), defaultLocale, messages);
+    filesByPath.set(filePath, {
+      ...file,
+      content: normalized,
+    });
+  }
+}
+
+function ensureStructuredFooterBandClass(html: string, stylesCss = ""): string {
+  const source = String(html || "");
+  const styles = String(stylesCss || "");
+  if (!source || !styles || !/\.footer-band\b/i.test(styles)) return source;
+  const footerBlockMatch = source.match(/<footer\b[^>]*>[\s\S]*?<\/footer>/i);
+  const footerBlock = String(footerBlockMatch?.[0] || "");
+  const looksStructured =
+    /\b(?:footer-inner|site-footer__inner|footer-brand|footer-links|footer-nav|footer-meta|footer-actions)\b/i.test(
+      footerBlock,
+    );
+  if (!looksStructured) return source;
+  return source.replace(/<footer\b([^>]*)>/i, (full, attrs) => {
+    const attrText = String(attrs || "");
+    const classMatch = attrText.match(/\bclass=(["'])([^"']*)\1/i);
+    if (!classMatch) return `<footer${attrText} class="footer-band">`;
+    const quote = classMatch[1];
+    const classValue = classMatch[2];
+    if (/\bfooter-band\b/i.test(classValue)) return full;
+    const nextClassValue = `${classValue} footer-band`.trim().replace(/\s+/g, " ");
+    return `<footer${attrText.replace(classMatch[0], `class=${quote}${nextClassValue}${quote}`)}>`;
+  });
+}
+
+function applyStructuredFooterShellProjection(filesByPath: Map<string, any>): void {
+  const stylesCss = String(filesByPath.get("/styles.css")?.content || "");
+  if (!stylesCss) return;
+  for (const [filePath, file] of filesByPath.entries()) {
+    if (!String(filePath || "").toLowerCase().endsWith(".html")) continue;
+    const normalized = ensureStructuredFooterBandClass(String(file?.content || ""), stylesCss);
+    filesByPath.set(filePath, {
+      ...file,
+      content: normalized,
+    });
+  }
+}
+
 function parseJsonObjectContent(content: string): Record<string, unknown> | null {
   try {
     const parsed = JSON.parse(String(content || ""));
@@ -276,6 +538,8 @@ function mergeGeneratedFilesIntoProject(params: {
       type: String(file?.type || ""),
     });
   }
+  applyDefaultVisibleLocaleProjection(filesByPath, params.contract);
+  applyStructuredFooterShellProjection(filesByPath);
   nextProject.staticSite = {
     ...(nextProject.staticSite || {}),
     mode: String(nextProject?.staticSite?.mode || "route-unit-v2"),
@@ -284,29 +548,24 @@ function mergeGeneratedFilesIntoProject(params: {
 
   const currentPages = Array.isArray(nextProject?.pages) ? nextProject.pages : [];
   const pagesByPath = new Map<string, any>(currentPages.map((page: any) => [normalizePath(String(page?.path || "")), page]));
-  for (const file of params.files || []) {
-    const normalizedPath = normalizePath(String(file?.path || ""));
+  for (const [normalizedPath, file] of filesByPath.entries()) {
     if (!normalizedPath.endsWith(".html")) continue;
-      const route =
-        normalizedPath === "/index.html"
-          ? "/"
-          : normalizedPath.replace(/\/index\.html$/i, "") || "/";
-      pagesByPath.set(route, {
-        path: route,
-        html: normalizeGeneratedFileContent({
-          path: normalizedPath,
-          content: String(file?.content || ""),
-          contract: params.contract,
-        }),
-      });
-    }
+    const route =
+      normalizedPath === "/index.html"
+        ? "/"
+        : normalizedPath.replace(/\/index\.html$/i, "") || "/";
+    pagesByPath.set(route, {
+      path: route,
+      html: String(file?.content || ""),
+    });
+  }
   nextProject.pages = Array.from(pagesByPath.values());
   return nextProject;
 }
 
 function resolveRouteScopedTargetFiles(contract: ImmutableGenerationContract, route: string, htmlPath: string): string[] {
   const normalizedRoute = normalizePath(route);
-  const sharedTargets = normalizedRoute === "/" ? ["/styles.css", "/script.js"] : [];
+  const sharedTargets: string[] = [];
   const localeMode = String(
     (contract.discoveryBrief as any)?.localeMode ||
       (contract.discoveryBrief as any)?.preferredLocale ||
@@ -319,6 +578,32 @@ function resolveRouteScopedTargetFiles(contract: ImmutableGenerationContract, ro
     sharedTargets.push("/i18n/messages.en.json", "/i18n/messages.zh-CN.json");
   }
   return [htmlPath, ...sharedTargets];
+}
+
+function buildSharedFoundationInput(contract: ImmutableGenerationContract): GenerationUnitInput {
+  return {
+    unitId: "route-shared-foundation",
+    route: "/__shared__",
+    targetFiles: ["/styles.css", "/script.js"],
+    prompt: [
+      "Generate the shared static foundation for the website.",
+      "Emit only /styles.css and /script.js.",
+      "CSS must define the shared shell, navigation, footer, responsive layout, and locale-switch presentation.",
+      "JS must stay lightweight and only cover shared shell behaviors such as navigation and locale switching when required.",
+    ].join("\n"),
+    context: {
+      contractHash: contract.contractHash,
+      websiteSurfaceMode: contract.websiteSurfaceMode,
+      generationLane: contract.generationLane,
+      sharedFoundation: true,
+    },
+  };
+}
+
+function hasSharedFoundationFiles(project: any): boolean {
+  const files = resolveGeneratedFiles(project);
+  const filePaths = new Set(files.map((file) => normalizePath(String(file?.path || ""))));
+  return filePaths.has("/styles.css") && filePaths.has("/script.js");
 }
 
 function normalizeStringList(value: unknown): string[] {
@@ -382,6 +667,28 @@ function chunkArray<T>(items: T[], chunkSize: number): T[][] {
     chunks.push(items.slice(index, index + size));
   }
   return chunks;
+}
+
+function sortRouteInputsForExecution(inputs: GenerationUnitInput[]) {
+  return [...inputs].sort((left, right) => {
+    const leftRoute = normalizePath(String(left.route || "/"));
+    const rightRoute = normalizePath(String(right.route || "/"));
+    if (leftRoute === "/" && rightRoute !== "/") return -1;
+    if (rightRoute === "/" && leftRoute !== "/") return 1;
+    return 0;
+  });
+}
+
+function splitExecutionChunks(inputs: GenerationUnitInput[], concurrency: number): GenerationUnitInput[][] {
+  if (inputs.length === 0) return [];
+  const normalizedInputs = sortRouteInputsForExecution(inputs);
+  const firstRoute = normalizePath(String(normalizedInputs[0]?.route || "/"));
+  const remaining = [...normalizedInputs];
+  const chunks: GenerationUnitInput[][] = [];
+  if (firstRoute === "/") {
+    chunks.push([remaining.shift() as GenerationUnitInput]);
+  }
+  return [...chunks, ...chunkArray(remaining, concurrency)];
 }
 
 function buildProvisionalPassedRouteRecord(input: GenerationUnitInput): RouteUnitVerificationRecord {
@@ -497,6 +804,7 @@ export async function runV2RouteUnitRuntime(params: V2RouteUnitRuntimeParams): P
       savedProject: matchingSavedContract ? savedProject : undefined,
       savedRouteVerifications: matchingSavedContract ? savedRouteVerifications : [],
     });
+    const sharedFoundationInput = buildSharedFoundationInput(contract);
     const checkpointRouteResults = new Map<string, RouteUnitVerificationRecord>(
       (matchingSavedContract ? savedRouteVerifications : [])
         .map(
@@ -508,11 +816,58 @@ export async function runV2RouteUnitRuntime(params: V2RouteUnitRuntimeParams): P
         )
         .filter(([route]) => Boolean(route)),
     );
+    if (!hasSharedFoundationFiles(project)) {
+      await writeRouteUnitInputCheckpoint(params.checkpointDir, sharedFoundationInput.route || sharedFoundationInput.unitId, sharedFoundationInput);
+      const foundationResult = await params.unitWorker.runUnit(sharedFoundationInput);
+      if (foundationResult.status !== "passed") {
+        const message =
+          foundationResult.issues?.join("; ") ||
+          foundationResult.summary ||
+          "Shared foundation generation failed.";
+        const execution: SkillRuntimeExecutionSummary = {
+          state: {
+            ...(params.state as any),
+            phase: "end",
+            site_artifacts: project,
+            project_json: project,
+          } as any,
+          assistantText: `Shared foundation generation failed.\n${message}`.trim(),
+          actions: [],
+          pageCount: Array.isArray(project?.pages) ? project.pages.length : 0,
+          fileCount: resolveGeneratedFiles(project).length,
+          generatedFiles: resolveGeneratedFiles(project).map((file) => String(file?.path || "")),
+          phase: "end",
+          completedPhases: [],
+        };
+        await writeGenerationExecutionCheckpoint(params.checkpointDir, execution);
+        throw new Error(`route-shared-foundation: ${message}`);
+      }
+      project = mergeGeneratedFilesIntoProject({
+        project,
+        files: foundationResult.files,
+        contract,
+      });
+      await writeGeneratedProjectCheckpoint(params.checkpointDir, project);
+      await params.onStep?.({
+        stepKey: sharedFoundationInput.unitId,
+        stepIndex: 0,
+        totalSteps: Math.max(1, pendingInputs.length + 1),
+        status: "generated",
+        files: Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [],
+        workflowArtifacts: [],
+        pages: Array.isArray(project?.pages) ? project.pages : [],
+        preferredLocale:
+          String(((params.state.workflow_context || {}) as any)?.preferredLocale || "").trim().toLowerCase() === "zh-cn"
+            ? "zh-CN"
+            : "en",
+      });
+    }
     let completedUnits = 0;
     const concurrency = Math.max(1, Number(process.env.SHPITTO_ROUTE_UNIT_CONCURRENCY || 3));
-    for (const inputChunk of chunkArray(pendingInputs, concurrency)) {
+    for (const inputChunk of splitExecutionChunks(pendingInputs, concurrency)) {
+      const contextualizedChunk = inputChunk.map((input) => attachSharedShellSnapshot(input, project));
       const results = await Promise.all(
-        inputChunk.map(async (input, chunkIndex) => {
+        contextualizedChunk.map(async (input, chunkIndex) => {
           const unitTimeoutMs = resolveRouteUnitExecutionTimeoutMs({
             taskTimeoutMs: params.timeoutMs,
             targetFileCount: input.targetFiles.length,

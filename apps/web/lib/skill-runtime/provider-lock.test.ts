@@ -36,7 +36,7 @@ describe("provider-lock", () => {
     });
   });
 
-  it("keeps pptoken locked first and builds a fallback chain from provider order", () => {
+  it("keeps pptoken as the only default provider even when provider order includes others", () => {
     delete process.env.LLM_PROVIDER;
     process.env.LLM_PROVIDER_ORDER = "pptoken,aiberm,crazyrouter";
     process.env.PPTOKEN_API_KEY = "test-pptoken-key";
@@ -49,20 +49,10 @@ describe("provider-lock", () => {
         model: "gpt-5.4-mini",
         reason: "default_locked_pptoken",
       },
-      {
-        provider: "aiberm",
-        model: "gpt-5.4-mini",
-        reason: "fallback_chain_aiberm",
-      },
-      {
-        provider: "crazyroute",
-        model: "gpt-5.4-mini",
-        reason: "fallback_chain_crazyroute",
-      },
     ]);
   });
 
-  it("treats LLM_PROVIDER as a preferred provider while preserving fallback chain", () => {
+  it("treats LLM_PROVIDER as an explicit manual provider selection", () => {
     process.env.LLM_PROVIDER = "aiberm";
     process.env.LLM_PROVIDER_ORDER = "pptoken,aiberm,crazyrouter";
     process.env.LLM_MODEL = "gpt-5.4-mini";
@@ -74,17 +64,7 @@ describe("provider-lock", () => {
       {
         provider: "aiberm",
         model: "gpt-5.4-mini",
-        reason: "env_preferred_aiberm",
-      },
-      {
-        provider: "pptoken",
-        model: "gpt-5.4-mini",
-        reason: "fallback_chain_pptoken",
-      },
-      {
-        provider: "crazyroute",
-        model: "gpt-5.4-mini",
-        reason: "fallback_chain_crazyroute",
+        reason: "manual_preferred_aiberm",
       },
     ]);
   });
@@ -141,7 +121,7 @@ describe("provider-lock", () => {
     });
   });
 
-  it("prepends pptoken even when provider order omits it so fallback order stays deterministic", () => {
+  it("ignores provider order for default lock selection", () => {
     delete process.env.LLM_PROVIDER;
     process.env.LLM_PROVIDER_ORDER = "aiberm,crazyrouter";
     process.env.PPTOKEN_API_KEY = "test-pptoken-key";
@@ -150,8 +130,6 @@ describe("provider-lock", () => {
 
     expect(resolveRunProviderLocks().map((lock) => lock.provider)).toEqual([
       "pptoken",
-      "aiberm",
-      "crazyroute",
     ]);
   });
 });

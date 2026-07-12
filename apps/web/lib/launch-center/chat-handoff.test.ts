@@ -8,6 +8,7 @@ describe("launch center chat handoff", () => {
     await storeLaunchCenterChatHandoff("project-1", {
       prompt: "Build a website from this brief",
       files: [file],
+      skillId: "build-marketing-site",
     });
 
     const handoff = await takeLaunchCenterChatHandoff("project-1");
@@ -15,6 +16,7 @@ describe("launch center chat handoff", () => {
     expect(handoff?.prompt).toBe("Build a website from this brief");
     expect(handoff?.files).toHaveLength(1);
     expect(handoff?.files[0]?.name).toBe("brief.txt");
+    expect(handoff?.skillId).toBe("build-marketing-site");
     await expect(takeLaunchCenterChatHandoff("project-1")).resolves.toBeUndefined();
   });
 });

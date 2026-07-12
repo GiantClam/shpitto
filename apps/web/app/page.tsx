@@ -9,7 +9,6 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { getLandingCopy } from "@/lib/i18n";
 import { getServerLocale } from "@/lib/i18n-server";
 import { getOptionalServerUser } from "@/lib/supabase/optional-user";
-import { getFeaturedUseCases } from "@/lib/use-cases";
 
 export default async function LandingPage() {
   const locale = await getServerLocale();
@@ -17,74 +16,82 @@ export default async function LandingPage() {
   const user = await getOptionalServerUser();
   const userEmail = String(user?.email || "").trim();
   const isZh = locale === "zh";
-  const featuredUseCases = getFeaturedUseCases();
 
   const audienceItems = isZh
     ? [
         {
-          title: "制造企业",
-          body: "适合需要更专业英文官网、产品展示和询盘入口的出海制造企业。",
-          href: "/use-cases/manufacturers",
+          title: "开发者与 AI maker",
+          body: "适合希望直接拿到完整 Next.js 代码、继续在自己的仓库里迭代的人。",
+          href: "/launch-center?template=agent-launch-site",
         },
         {
-          title: "贸易公司",
-          body: "适合需要清晰展示产品范围、供应能力和响应效率的外贸团队。",
-          href: "/use-cases/trading-companies",
+          title: "独立创业者",
+          body: "适合需要尽快上线营销站、等待名单页、定价页和产品说明页的个人创业者。",
+          href: "/launch-center?template=indie-saas-starter",
         },
         {
-          title: "工业供应商",
-          body: "适合需要按行业应用、材料能力和交付经验组织内容的供应商。",
-          href: "/use-cases/industrial-suppliers",
-        },
-      ]
-    : featuredUseCases.map((item) => ({
-        title: item.shortLabel,
-        body: item.audience,
-        href: item.href,
-      }));
-
-  const pageItems = isZh
-    ? ["首页与公司定位", "公司介绍与实力页", "产品与应用页面", "FAQ 与联系询盘页"]
-    : ["Homepage and positioning", "About and company profile", "Product and application pages", "FAQ and contact pages"];
-
-  const faqItems = isZh
-    ? [
-        {
-          question: "适合做电商独立站吗？",
-          answer: "当前首页定位更适合制造业、贸易公司和工业供应商的品牌官网与询盘型网站。",
-        },
-        {
-          question: "生成后还可以继续修改吗？",
-          answer: "可以。Shpitto 更适合持续迭代公司介绍、产品页面和行业内容，而不是一次性生成后就结束。",
-        },
-        {
-          question: "支持多语言网站吗？",
-          answer: "支持。你可以先用英文建立出口站内容，再逐步扩展到更多语言版本。",
-        },
-        {
-          question: "对 SEO 有帮助吗？",
-          answer: "首页与页面结构会更强调标题层级、产品内容、行业内容和询盘路径，帮助后续 SEO 优化。",
+          title: "小型 SaaS 与 B2B 团队",
+          body: "适合需要模板化工作流、清晰交付边界和可部署基线的网站团队。",
+          href: "/launch-center?template=b2b-lead-engine",
         },
       ]
     : [
         {
-          question: "Is this built for ecommerce stores?",
-          answer:
-            "The current homepage positioning is stronger for manufacturers, trading companies, and industrial suppliers that need lead-generation and inquiry-focused websites.",
+          title: "Developers and AI makers",
+          body: "Best for teams that want the full Next.js codebase and plan to keep iterating in their own repo after launch.",
+          href: "/launch-center?template=agent-launch-site",
         },
         {
-          question: "Can I keep editing pages after generation?",
-          answer:
-            "Yes. Shpitto is designed to help teams keep refining company pages, product pages, and industry content as the business evolves.",
+          title: "Indie founders",
+          body: "Best for solo builders shipping launch pages, waitlists, pricing, and product proof without rebuilding the stack.",
+          href: "/launch-center?template=indie-saas-starter",
         },
         {
-          question: "Does it support multilingual websites?",
-          answer: "Yes. You can start with English export content and expand into additional languages as you enter new markets.",
+          title: "Small SaaS and B2B teams",
+          body: "Best for teams that need template-driven workflows, stable delivery boundaries, and deployable website baselines.",
+          href: "/launch-center?template=b2b-lead-engine",
+        },
+      ];
+
+  const baselineItems = isZh
+    ? ["首页 + 定价 + CTA", "共享导航与页脚", "内页与内容结构", "导出/部署就绪代码"]
+    : ["Homepage + pricing + CTAs", "Shared navigation and footer", "Supporting routes and content structure", "Export and deploy-ready code"];
+
+  const faqItems = isZh
+    ? [
+        {
+          question: "这是一个通用聊天建站器吗？",
+          answer: "不是。V1 的主路径是模板 + 结果型 Skill，而不是从空白 prompt 即兴生成整站。",
         },
         {
-          question: "Does it help with SEO?",
-          answer:
-            "The positioning and page structure are designed to support clearer headings, product content, industry pages, and inquiry paths for ongoing SEO work.",
+          question: "生成后能拿到完整代码吗？",
+          answer: "可以。Shpitto V1 主打代码所有权，默认交付的是可运行、可导出、可部署的 Next.js 网站基线。",
+        },
+        {
+          question: "默认执行链路是什么？",
+          answer: "默认执行链路会走 OpenCode CLI，由 Shpitto 负责模板、工作流和交付边界。",
+        },
+        {
+          question: "会默认带 CMS、鉴权和目录系统吗？",
+          answer: "不会。这些复杂模块不属于 V1 的最小闭环，V1 先保证完整营销站基线跑通。",
+        },
+      ]
+    : [
+        {
+          question: "Is this a generic chat-to-website builder?",
+          answer: "No. The V1 path is template plus result-driven skill, not an improvisational blank-prompt site generator.",
+        },
+        {
+          question: "Do I get the full codebase after generation?",
+          answer: "Yes. Shpitto V1 is built around code ownership and delivers a runnable, exportable, deployable Next.js website baseline.",
+        },
+        {
+          question: "What runs the default execution path?",
+          answer: "The default execution path is OpenCode CLI, while Shpitto owns template selection, workflow contracts, and delivery boundaries.",
+        },
+        {
+          question: "Does V1 include CMS, auth, or heavy catalog modules by default?",
+          answer: "No. Those modules are outside the V1 minimal loop. V1 focuses on shipping a complete marketing website baseline first.",
         },
       ];
 
@@ -98,7 +105,7 @@ export default async function LandingPage() {
             name: "Shpitto",
             url: "https://shpitto.com/",
             description:
-              "AI website builder for export B2B companies, built for manufacturers, trading companies, and industrial suppliers creating SEO-friendly company websites.",
+              "Agent-native marketing website template platform with owned Next.js code, result-driven workflows, and an OpenCode CLI execution path.",
           },
           {
             "@type": "FAQPage",
@@ -131,12 +138,12 @@ export default async function LandingPage() {
                 {isZh ? "适合谁" : "Who It's For"}
               </div>
               <h2 className="mb-5 text-3xl font-bold text-[var(--shp-text)] lg:text-4xl">
-                {isZh ? "面向出海传统 B2B 企业的官网场景" : "Built for traditional B2B companies going global"}
+                {isZh ? "面向想更快交付可拥有代码的网站团队" : "Built for teams that want owned code and a faster launch path"}
               </h2>
               <p className="text-lg leading-relaxed text-[var(--shp-muted)]">
                 {isZh
-                  ? "首页叙事围绕海外买家、公司实力、产品能力和后续内容维护展开，而不是面向所有站型。"
-                  : "The homepage narrative stays focused on overseas buyers, company credibility, product content, and ongoing website maintenance instead of trying to serve every site type."}
+                  ? "V1 不再试图服务所有站型，而是聚焦营销站模板、结果型工作流和可部署交付。"
+                  : "V1 stays focused on marketing-site templates, result-driven workflows, and deployable delivery instead of pretending to generate every website type from scratch."}
               </p>
             </div>
 
@@ -150,7 +157,7 @@ export default async function LandingPage() {
                   <h3 className="mb-3 text-xl font-bold text-[var(--shp-text)]">{item.title}</h3>
                   <p className="text-sm leading-relaxed text-[var(--shp-muted)]">{item.body}</p>
                   <div className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[var(--shp-primary)]">
-                    {isZh ? "查看场景" : "Explore use case"} <ArrowRight className="h-4 w-4" />
+                    {isZh ? "进入模板入口" : "Open template path"} <ArrowRight className="h-4 w-4" />
                   </div>
                 </Link>
               ))}
@@ -158,10 +165,10 @@ export default async function LandingPage() {
 
             <div className="mt-10 rounded-3xl border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_88%,var(--shp-bg)_12%)] p-8 shadow-[var(--shp-shadow)]">
               <div className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-[var(--shp-primary)]">
-                {isZh ? "可生成页面" : "Pages You Can Create"}
+                {isZh ? "V1 默认交付" : "What V1 Delivers"}
               </div>
               <div className="grid gap-4 md:grid-cols-4">
-                {pageItems.map((item) => (
+                {baselineItems.map((item) => (
                   <div
                     key={item}
                     className="rounded-2xl border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] bg-[color-mix(in_oklab,var(--shp-bg-soft)_88%,white_12%)] px-4 py-5 text-sm font-semibold text-[var(--shp-text)]"
@@ -182,56 +189,56 @@ export default async function LandingPage() {
           <div className="mx-auto max-w-7xl px-6">
             <div className="mx-auto mb-12 max-w-3xl text-center">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--shp-primary)_35%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_14%,transparent)] px-3 py-1 text-xs font-bold uppercase tracking-wider text-[var(--shp-primary)]">
-                {isZh ? "内容资源" : "Content Resources"}
+                {isZh ? "产品路径" : "Product Path"}
               </div>
               <h2 className="mb-5 text-3xl font-bold text-[var(--shp-text)] lg:text-4xl">
-                {isZh ? "用样站和 AI 可读性说明补强首页定位" : "Support your positioning with examples and AI-readable structure"}
+                {isZh ? "先跑通最小闭环，再扩展后续能力" : "Run the minimal loop first, then expand from a real baseline"}
               </h2>
               <p className="text-lg leading-relaxed text-[var(--shp-muted)]">
                 {isZh
-                  ? "传统 B2B 企业通常会先看样站和内容结构逻辑，再决定是否进入生成流程。"
-                  : "Traditional B2B teams often want sample website directions and clear content logic before they jump into generation."}
+                  ? "Shpitto 先解决模板选择、工作流执行、代码交付和部署闭环，再逐步扩展内容、SEO 和后续模块。"
+                  : "Shpitto first solves template selection, workflow execution, code delivery, and deployability before expanding into content, SEO, and later modules."}
               </p>
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2">
               <Link
-                href="/example-websites"
+                href="/launch-center"
                 className="rounded-3xl border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_90%,var(--shp-bg)_10%)] p-8 shadow-[var(--shp-shadow)]"
               >
                 <div className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[var(--shp-primary)]">
-                  {isZh ? "样站方向" : "Example Websites"}
+                  {isZh ? "模板入口" : "Template Entry"}
                 </div>
                 <h3 className="text-2xl font-bold text-[var(--shp-text)]">
-                  {isZh ? "按业务模型查看样站方向" : "See sample website directions by export business model"}
+                  {isZh ? "从模板和工作流开始，而不是从空白输入开始" : "Start from template plus workflow, not a blank input box"}
                 </h3>
                 <p className="mt-4 text-sm leading-7 text-[var(--shp-muted)]">
                   {isZh
-                    ? "对照制造业、贸易公司和工业供应商的首页定位、产品页结构、应用页和询盘路径。"
-                    : "Review homepage positioning, product page structure, application pages, and inquiry routes for manufacturers, trading companies, and industrial suppliers."}
+                    ? "选择官方模板基线，再交给匹配的 Skill 生成完整站点结构，这比重新生成 shared shell 更稳定。"
+                    : "Choose an official template baseline and route it through the matching skill so the system generates a complete site structure instead of reinventing the shared shell every time."}
                 </p>
                 <div className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[var(--shp-primary)]">
-                  {isZh ? "查看样站" : "View examples"} <ArrowRight className="h-4 w-4" />
+                  {isZh ? "打开 Launch Center" : "Open Launch Center"} <ArrowRight className="h-4 w-4" />
                 </div>
               </Link>
 
               <Link
-                href="/ai-ready"
+                href="/pricing"
                 className="rounded-3xl border border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_90%,var(--shp-bg)_10%)] p-8 shadow-[var(--shp-shadow)]"
               >
                 <div className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[var(--shp-primary)]">
-                  {isZh ? "AI 可读内容" : "AI-Ready Content"}
+                  {isZh ? "交付模式" : "Delivery Model"}
                 </div>
                 <h3 className="text-2xl font-bold text-[var(--shp-text)]">
-                  {isZh ? "理解内容结构如何影响 SEO 和 AI 发现" : "Understand how content structure affects SEO and AI discovery"}
+                  {isZh ? "卖的是代码所有权和交付闭环，不是平台锁定" : "Sell code ownership and delivery, not hosted lock-in"}
                 </h3>
                 <p className="mt-4 text-sm leading-7 text-[var(--shp-muted)]">
                   {isZh
-                    ? "从公司页、产品页、应用页到 FAQ 和面包屑，查看哪些结构更容易被搜索引擎和 AI 系统理解。"
-                    : "See how company pages, product pages, application pages, FAQs, and breadcrumb paths help search engines and AI systems understand your business."}
+                    ? "V1 的核心价值是模板代码、结果型工作流和部署能力统一，而不是把用户继续锁在托管式 AI 建站叙事里。"
+                    : "The V1 value is the alignment between template code, result-driven workflows, and deployment readiness instead of keeping users inside a hosted AI website-builder story."}
                 </p>
                 <div className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[var(--shp-primary)]">
-                  {isZh ? "查看说明" : "Read the guide"} <ArrowRight className="h-4 w-4" />
+                  {isZh ? "查看产品模式" : "View the product model"} <ArrowRight className="h-4 w-4" />
                 </div>
               </Link>
             </div>
@@ -245,12 +252,12 @@ export default async function LandingPage() {
                 FAQ
               </div>
               <h2 className="mb-5 text-3xl font-bold text-[var(--shp-text)] lg:text-4xl">
-                {isZh ? "出海 B2B 官网常见问题" : "Common questions about export B2B websites"}
+                {isZh ? "关于 Shpitto V1 的常见问题" : "Common questions about Shpitto V1"}
               </h2>
               <p className="text-lg leading-relaxed text-[var(--shp-muted)]">
                 {isZh
-                  ? "在传统企业决策路径里，先理解是否适合自己，再决定是否开始生成，比直接推自助建站更自然。"
-                  : "Traditional B2B buyers usually want fit, clarity, and maintenance confidence before they commit to building. The homepage should answer those questions early."}
+                  ? "先把执行链路、模板交付和产品叙事说清楚，才能开始真实用户试用和销售验证。"
+                  : "The V1 goal is to make the execution path, template delivery, and product narrative concrete enough for real trials and selling conversations."}
               </p>
             </div>
 
@@ -303,10 +310,10 @@ export default async function LandingPage() {
           <div>
             <h4 className="mb-6 font-bold text-[var(--shp-text)]">{copy.footer.product}</h4>
             <ul className="space-y-4">
-              <li><a href="#" className="hover:text-[var(--shp-primary)]">{copy.footer.links.features}</a></li>
+              <li><a href="#features" className="hover:text-[var(--shp-primary)]">{copy.footer.links.features}</a></li>
               <li><Link href="/pricing" className="hover:text-[var(--shp-primary)]">{copy.footer.links.pricing}</Link></li>
-              <li><Link href="/example-websites" className="hover:text-[var(--shp-primary)]">Example Websites</Link></li>
-              <li><a href="#" className="hover:text-[var(--shp-primary)]">{copy.footer.links.integrations}</a></li>
+              <li><Link href="/launch-center" className="hover:text-[var(--shp-primary)]">Launch Center</Link></li>
+              <li><Link href="/example-websites" className="hover:text-[var(--shp-primary)]">Template Directions</Link></li>
             </ul>
           </div>
 
@@ -325,19 +332,17 @@ export default async function LandingPage() {
             <ul className="space-y-4">
               <li><a href="#" className="hover:text-[var(--shp-primary)]">{copy.footer.links.about}</a></li>
               <li><a href="#" className="hover:text-[var(--shp-primary)]">{copy.footer.links.careers}</a></li>
-              <li><Link href="/legal/terms" className="hover:text-[var(--shp-primary)]">{copy.footer.links.legal}</Link></li>
-              <li><a href="mailto:support@shpitto.com" className="hover:text-[var(--shp-primary)]">support@shpitto.com</a></li>
+              <li><a href="#" className="hover:text-[var(--shp-primary)]">{copy.footer.links.privacy}</a></li>
+              <li><a href="#" className="hover:text-[var(--shp-primary)]">{copy.footer.links.terms}</a></li>
             </ul>
           </div>
         </div>
 
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 border-t border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] px-6 pt-8 md:flex-row">
-          <div>{copy.footer.copyright}</div>
-          <div className="flex gap-8">
-            <Link href="/legal/privacy" className="hover:text-[var(--shp-text)]">{copy.footer.links.privacy}</Link>
-            <Link href="/legal/terms" className="hover:text-[var(--shp-text)]">{copy.footer.links.terms}</Link>
-            <Link href="/legal/acceptable-use" className="hover:text-[var(--shp-text)]">{copy.footer.links.acceptableUse}</Link>
-          </div>
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 border-t border-[color-mix(in_oklab,var(--shp-border)_70%,transparent)] px-6 pt-6 md:flex-row md:items-center md:justify-between">
+          <p>{copy.footer.copyright}</p>
+          <p className="text-xs uppercase tracking-[0.16em] text-[var(--shp-muted)]">
+            {isZh ? "模板代码 + Agent Skills + 可部署交付" : "Template code + agent skills + deployable delivery"}
+          </p>
         </div>
       </footer>
     </div>

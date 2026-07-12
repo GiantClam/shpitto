@@ -34,6 +34,7 @@ export type ProjectWorkspaceCopy = {
     preview: string;
     openFullscreen: string;
     generatedPreview: string;
+    downloadCode: string;
   };
   assets: {
     title: string;
@@ -150,6 +151,7 @@ const copy: Record<Locale, ProjectWorkspaceCopy> = {
       preview: "Preview",
       openFullscreen: "Open preview in fullscreen",
       generatedPreview: "Generated Website Preview",
+      downloadCode: "Download code",
     },
     assets: {
       title: "Project Assets",
@@ -264,6 +266,7 @@ const copy: Record<Locale, ProjectWorkspaceCopy> = {
       preview: "预览",
       openFullscreen: "全屏打开预览",
       generatedPreview: "生成网站预览",
+      downloadCode: "下载代码",
     },
     assets: {
       title: "项目资源",

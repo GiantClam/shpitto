@@ -170,6 +170,7 @@ Current repository truth:
 - 主入口 skill 固定：`website-generation-workflow`（必选）。
 - Compatibility note: `website-generation-workflow` is still the required entry/root for continuity, but it is no longer the sole design/generation authority.
 - Current generation planning may additionally consume `website-orchestrator`, `website-type-selector`, type-specific website skills, imported website-only Open Design seeds, and HTML Anything-style example-backed skill resources before concrete file generation.
+- For product-backed AI sites, generation may also carry a `ProductBaselineContract` selection that protects product-owned routes and constrains imported website seeds to brand/page surfaces by default.
 - 辅助 skill 使用阶段化动态注入，不再整包一次性拼接到每次 prompt：
   - `styles`：`responsive-by-default`、`web-image-generator`、`web-icon-library`
   - `script`：`responsive-by-default`
@@ -368,6 +369,37 @@ If the goal is to push Open Design and HTML Anything from conservative adoption 
 1. Phase 1: Make the brief and seed visible everywhere
    - Ensure every eligible run stores `websiteDiscoveryBrief`, selected surface mode, selected visual direction, selected design system, and selected seed skill in checkpoint-visible metadata.
    - Ensure route-unit snapshots and final task metadata preserve the same identity.
+
+### 4.6.9 Product baseline protection layer
+
+The current repository now includes a minimal product-baseline protection layer for product-backed AI sites.
+
+Implemented entrypoints:
+
+1. `apps/web/lib/skill-runtime/product-baseline-contract.ts`
+2. `apps/web/lib/agent/website-generation-contract.ts`
+3. `apps/web/lib/skill-runtime/generation-contract.ts`
+4. `apps/web/lib/skill-runtime/project-skill-loader.ts`
+5. `apps/web/lib/skill-runtime/website-design-spec.ts`
+6. `apps/web/lib/skill-runtime/contract-verifier.ts`
+
+Current behavior:
+
+1. `ai-image-tool-baseline-v1` is the first runtime-consumable `ProductBaselineContract`.
+2. route ownership is explicit across `product`, `brand`, and `shared`.
+3. imported Open Design / HTML Anything website seeds can now declare `compatible_product_baselines` and `surface_scope`.
+4. brand-only imported seeds are blocked from product-owned routes by default.
+5. generated design specs expose route ownership and forbidden feature drift for downstream verification.
+6. contract verification now detects obvious product-route semantic drift on product-owned routes.
+
+This is intentionally not a full runtime rewrite. It is the minimum executable contract and gating layer needed to protect product semantics while preserving the existing website-generation workflow.
+
+The first concrete template extracted through this layer is `GiantClam/fluxkreafree`, which now contributes a reusable `fluxkreafree` shared shell blueprint and design-token blueprint to the AI image baseline. That blueprint is consumed by the OpenCode baseline generator and preserved in the project artifact so downstream replay and refinement can distinguish:
+
+1. shared shell ownership
+2. brand surface ownership
+3. product surface ownership
+4. token-level inheritance from the upstream product template
 
 2. Phase 2: Make seed resources authoritative
    - Treat `Seed Resource Index` output as mandatory prompt context for imported website seeds.

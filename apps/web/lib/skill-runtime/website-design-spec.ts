@@ -5,6 +5,7 @@ import { selectCuratedLibraryImage } from "./curated-media-library.ts";
 import { isBilingualRequirementText } from "./bilingual-copy-guard.ts";
 import type { WebsiteDiscoveryBrief, WebsiteSurfaceMode } from "./open-design-adoption.ts";
 import type { ProjectSkillRouteFamily, ProjectSkillSeedContract } from "./project-skill-loader.ts";
+import type { ProductBaselineSelection, ProductRouteOwner } from "./product-baseline-contract.ts";
 import { selectWebsiteGenerationTypeSkill } from "./website-type-selector.ts";
 import { buildLocalePlan, I18N_LOCALE_REGISTRY_PATH } from "./locale-plan.ts";
 import {
@@ -31,6 +32,7 @@ type WebsiteDesignSpecParams = {
   siteGeneratorMode?: WebsiteArtifactGeneratorMode;
   selectedSeedSkillIds?: string[];
   selectedSeedContracts?: Array<{ id: string; contract: ProjectSkillSeedContract }>;
+  productBaselineSelection?: ProductBaselineSelection;
 };
 
 type DesignSpecLocaleMode = "zh-CN" | "en" | "bilingual" | "multilingual";
@@ -39,6 +41,7 @@ export type RouteUnitContractSummary = {
   route: string;
   navLabel: string;
   pageKind: string;
+  owner: ProductRouteOwner;
   routeContract: string[];
   inheritedTerminology: string[];
   inheritedTokens: string[];
@@ -48,6 +51,10 @@ export type RouteUnitContractSummary = {
   mediaPlan: string[];
   mediaResources: WebsiteMediaResource[];
 };
+
+function resolveRouteOwner(params: WebsiteDesignSpecParams, route: string): ProductRouteOwner {
+  return params.productBaselineSelection?.routeOwnership?.[route] || "brand";
+}
 
 function humanizeBlogDetailSlug(route: string): string {
   const slug = String(route || "")
@@ -870,10 +877,13 @@ export function buildRouteUnitContractSummary(
     route: page.route,
     navLabel: page.navLabel,
     pageKind: page.pageKind,
+    owner: resolveRouteOwner(params, page.route),
     routeContract: [
       `route=${page.route}`,
       `navLabel=${page.navLabel}`,
       `pageKind=${page.pageKind}`,
+      `routeOwner=${resolveRouteOwner(params, page.route)}`,
+      params.productBaselineSelection?.baselineId ? `productBaseline=${params.productBaselineSelection.baselineId}` : "",
       `purpose=${page.purpose}`,
       `seedAuthority=${resolveSeedAuthorityMode(params)}`,
       `seedRouteFamily=${routeFamily}`,
@@ -884,6 +894,7 @@ export function buildRouteUnitContractSummary(
       seedSignals.componentBans?.length ? `seedComponentBans=${seedSignals.componentBans.join(", ")}` : "",
       seedSignals.mediaPosture ? `seedMediaPosture=${seedSignals.mediaPosture}` : "",
       seedSignals.typographyPosture ? `seedTypographyPosture=${seedSignals.typographyPosture}` : "",
+      ...page.constraints.map((constraint) => `constraint=${constraint}`),
       ...buildRouteUnitContractHighlights(page),
     ].filter(Boolean),
     inheritedTerminology: summarizeInheritedTerminology(params),
@@ -1467,6 +1478,13 @@ export function buildWebsiteDesignSpecMarkdown(params: WebsiteDesignSpecParams):
     `- selected_style_name: ${styleName}`,
     `- selection_reason: ${styleReason}`,
     `- website_surface_mode: ${websiteSurfaceMode}`,
+    ...(params.productBaselineSelection
+      ? [
+          `- product_baseline_id: ${params.productBaselineSelection.baselineId}`,
+          `- product_baseline_type: ${params.productBaselineSelection.baselineType}`,
+          ...(params.productBaselineSelection.sourceTemplate ? [`- product_baseline_source_template: ${params.productBaselineSelection.sourceTemplate}`] : []),
+        ]
+      : []),
     `- locale_strategy: ${describeLocaleStrategy(localeMode)}`,
     ...(params.discoveryBrief
       ? [
@@ -1489,6 +1507,12 @@ export function buildWebsiteDesignSpecMarkdown(params: WebsiteDesignSpecParams):
     `- typography: ${params.stylePreset.typography}`,
     ...buildSurfaceVisualIdentityLines(params, websiteSurfaceMode),
     ...seedAuthorityLines,
+    ...(params.productBaselineSelection
+      ? [
+          `- route_ownership_contract: ${params.productBaselineSelection.contract.immutable.appRoutes.map((item) => `${item.route}=${item.owner}`).join(", ")}`,
+          `- forbidden_feature_drift: ${params.productBaselineSelection.contract.immutable.forbiddenFeatureDrift.join("; ")}`,
+        ]
+      : []),
     "",
     renderWebsiteArtifactGeneratorContract({
       mode: siteGeneratorMode,

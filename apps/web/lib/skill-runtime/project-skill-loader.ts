@@ -11,6 +11,7 @@ import {
   shouldSelectImportedWebsiteSkill,
   type WebsiteSurfaceMode,
 } from "./open-design-adoption.ts";
+import type { ProductBaselineSelection, ProductRouteOwner } from "./product-baseline-contract.ts";
 import {
   classifyWebsiteSeedOrigin,
   resolveWebsiteArtifactGeneratorMode,
@@ -41,6 +42,11 @@ export type ProjectSkillBundleDescriptor = {
 const SKILL_ALIAS_MAP: Record<string, string> = {
   brainstorming: "superpowers-brainstorming",
   "writing-plans": "superpowers-writing-plans",
+  "build-ai-image-tool": "website-generation-workflow",
+  "build-b2b-site": "corporate-b2b-site",
+  "build-marketing-site": "marketing-landing-site",
+  "build-docs-site": "docs-knowledge-site",
+  "build-content-hub": "content-hub-site",
   "static-site-html-page": "website-generation-workflow",
   "static-site-css": "website-generation-workflow",
   "static-site-js": "website-generation-workflow",
@@ -111,6 +117,13 @@ export function resolveProjectSkillAlias(skillId: string): string {
   return SKILL_ALIAS_MAP[normalized] || normalized;
 }
 
+export function isWebsiteGenerationSkillId(skillId: string): boolean {
+  const resolved = resolveProjectSkillAlias(skillId);
+  return resolved === WEBSITE_GENERATION_ORCHESTRATOR_SKILL_ID ||
+    resolved === "website-generation-workflow" ||
+    WEBSITE_GENERATION_TYPE_SKILL_IDS.includes(resolved as (typeof WEBSITE_GENERATION_TYPE_SKILL_IDS)[number]);
+}
+
 type ProjectSkillIndexEntry = {
   id: string;
   name: string;
@@ -174,6 +187,8 @@ export type ProjectSkillSeedContract = {
   typographyPosture?: string;
   ctaPosture?: string;
   compatibleSurfaceModes?: WebsiteSurfaceMode[];
+  compatibleProductBaselines?: string[];
+  surfaceScope?: "brand-only" | "website-only" | "product-ui-safe";
   visualBoldness?: "standard" | "high";
   routeOverrides?: Partial<Record<ProjectSkillRouteFamily, ProjectSkillSeedRouteOverride>>;
 };
@@ -306,10 +321,66 @@ function normalizeSeedContract(value: unknown): ProjectSkillSeedContract | undef
     typographyPosture: String(record.typographyPosture || "").trim() || undefined,
     ctaPosture: String(record.ctaPosture || "").trim() || undefined,
     compatibleSurfaceModes: normalizeSurfaceModeArray(record.compatibleSurfaceModes),
+    compatibleProductBaselines: normalizeStringArray(record.compatibleProductBaselines),
+    surfaceScope:
+      String(record.surfaceScope || "").trim() === "product-ui-safe"
+        ? "product-ui-safe"
+        : String(record.surfaceScope || "").trim() === "website-only"
+          ? "website-only"
+          : "brand-only",
     visualBoldness: String(record.visualBoldness || "").trim() === "high" ? "high" : "standard",
     routeOverrides: Object.keys(routeOverrides).length > 0 ? routeOverrides : undefined,
   };
   return normalized;
+}
+
+function normalizeOwnedRoutes(routes: unknown): string[] {
+  if (!Array.isArray(routes)) return [];
+  return Array.from(
+    new Set(
+      routes
+        .map((item) => String(item || "").trim())
+        .filter(Boolean),
+    ),
+  );
+}
+
+function resolveBaselineRoutes(productBaselineSelection?: ProductBaselineSelection): string[] {
+  return normalizeOwnedRoutes(productBaselineSelection?.contract?.immutable?.appRoutes?.map((item) => item.route));
+}
+
+function resolveRequestedRouteOwners(params: {
+  routes?: string[];
+  productBaselineSelection?: ProductBaselineSelection;
+}): ProductRouteOwner[] {
+  const routes = normalizeOwnedRoutes(params.routes);
+  const baselineRoutes = resolveBaselineRoutes(params.productBaselineSelection);
+  const ownership = params.productBaselineSelection?.routeOwnership || {};
+  const resolvedRoutes = routes.length > 0 ? routes : baselineRoutes;
+  if (resolvedRoutes.length === 0) return [];
+  return resolvedRoutes.map((route) => ownership[route] || "brand");
+}
+
+function isSeedCompatibleWithProductBaseline(params: {
+  entry: ProjectSkillIndexEntry;
+  productBaselineSelection?: ProductBaselineSelection;
+  routes?: string[];
+}): boolean {
+  const baselineId = String(params.productBaselineSelection?.baselineId || "").trim();
+  const routeOwners = resolveRequestedRouteOwners({
+    routes: params.routes,
+    productBaselineSelection: params.productBaselineSelection,
+  });
+  const metadata = params.entry.websiteMetadata?.activation;
+  const surfaceScope = metadata?.surfaceScope || "brand-only";
+  const compatibleBaselines = metadata?.compatibleProductBaselines || [];
+  const touchesProductSurface = routeOwners.some((owner) => owner === "product");
+  if (!baselineId) {
+    return !touchesProductSurface || surfaceScope === "product-ui-safe";
+  }
+  if (compatibleBaselines.length > 0 && !compatibleBaselines.includes(baselineId)) return false;
+  if (touchesProductSurface && surfaceScope !== "product-ui-safe") return false;
+  return true;
 }
 
 export function inferRouteFamiliesForPlanning(params: {
@@ -899,6 +970,7 @@ export async function selectWebsiteSeedSkillsForIntent(params: {
   maxSkills?: number;
   start?: string;
   generatorMode?: WebsiteArtifactGeneratorMode;
+  productBaselineSelection?: ProductBaselineSelection;
 }): Promise<WebsiteSeedSkillSelection[]> {
   const surfaceMode = selectWebsiteGenerationTypeSkill({
     requirementText: params.requirementText,
@@ -906,10 +978,17 @@ export async function selectWebsiteSeedSkillsForIntent(params: {
   }).surfaceMode;
   const index = (await readProjectSkillIndex(params.start)).filter((entry) => {
     if (entry.websiteMetadata?.mode !== "website") return false;
-    return shouldSelectImportedWebsiteSkill({
+    if (!shouldSelectImportedWebsiteSkill({
       activationMode: entry.websiteMetadata.activation?.mode,
       rolloutStatus: entry.websiteMetadata.activation?.rolloutStatus,
       surfaceMode,
+    })) {
+      return false;
+    }
+    return isSeedCompatibleWithProductBaseline({
+      entry,
+      productBaselineSelection: params.productBaselineSelection,
+      routes: params.routes,
     });
   });
   if (index.length === 0) return [];

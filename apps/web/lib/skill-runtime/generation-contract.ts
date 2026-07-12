@@ -15,6 +15,7 @@ export function normalizeWebsiteGenerationContract(contract: WebsiteGenerationCo
   const base = buildWebsiteGenerationContract({
     generationLane: contract.generationLane,
     websiteSurfaceMode: contract.websiteSurfaceMode,
+    productBaselineSelection: contract.productBaselineSelection,
     promptControlManifest: contract.promptControlManifest,
     discoveryBrief: contract.discoveryBrief,
     selectedSeedSkillManifest: contract.selectedSeedSkillManifest,
@@ -34,6 +35,7 @@ export function normalizeWebsiteGenerationContract(contract: WebsiteGenerationCo
 export function buildImmutableGenerationContract(params: {
   generationLane: string;
   websiteSurfaceMode?: string | null;
+  productBaselineSelection?: WebsiteGenerationContract["productBaselineSelection"];
   promptControlManifest?: unknown;
   discoveryBrief?: unknown;
   selectedSeedSkillManifest?: SelectedSeedSkillManifest;
@@ -43,6 +45,7 @@ export function buildImmutableGenerationContract(params: {
   const base = buildWebsiteGenerationContract({
     generationLane: params.generationLane,
     websiteSurfaceMode: params.websiteSurfaceMode,
+    productBaselineSelection: params.productBaselineSelection,
     promptControlManifest: params.promptControlManifest,
     discoveryBrief: params.discoveryBrief,
     selectedSeedSkillManifest: params.selectedSeedSkillManifest,

@@ -29,6 +29,8 @@ od:
     website_only: true
     ownership_layer: skill
     compatible_surface_modes: [docs-knowledge-site]
+    compatible_product_baselines: [ai-image-tool-baseline-v1]
+    surface_scope: brand-only
 ---
 
 # Docs Knowledge Foundation

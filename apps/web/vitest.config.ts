@@ -3,6 +3,8 @@ import path from "node:path";
 
 const externalIntegrationTests = [
   "lib/agent/.tmp-full-closure-live.test.ts",
+  "lib/agent/chat-productized-b2b-full-flow.live.test.ts",
+  "lib/agent/chat-productized-full-flow.live.test.ts",
   "lib/agent/chat-entry-full-flow.test.ts",
   "lib/agent/deploy-flow.test.ts",
   "lib/agent/lc-cnc-full-prompt-run.test.ts",

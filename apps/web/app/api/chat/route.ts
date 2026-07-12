@@ -70,8 +70,13 @@ import {
   type WebsiteSurfaceMode,
 } from "../../../lib/skill-runtime/open-design-adoption";
 import { buildLocalDecisionPlan } from "../../../lib/skill-runtime/decision-layer";
+import { selectAiImageToolBaselineSelection } from "../../../lib/skill-runtime/product-baseline-contract";
 import { getSkillExecutionAdapter } from "../../../lib/skill-runtime/skill-execution-adapter-registry";
-import { loadProjectSkill, selectWebsiteSeedSkillsForIntent } from "../../../lib/skill-runtime/project-skill-loader";
+import {
+  isWebsiteGenerationSkillId,
+  loadProjectSkill,
+  selectWebsiteSeedSkillsForIntent,
+} from "../../../lib/skill-runtime/project-skill-loader";
 import { classifyWebsiteSeedOrigin } from "../../../lib/skill-runtime/website-artifact-generator";
 import { selectWebsiteGenerationTypeSkill } from "../../../lib/skill-runtime/website-type-selector";
 import { invalidateLaunchCenterRecentProjectsCache } from "../../../lib/launch-center/cache";
@@ -1392,7 +1397,7 @@ function findTaskGenerationPrompt(task: Awaited<ReturnType<typeof getLatestChatT
 }
 
 function isWebsiteSkill(skillId: string): boolean {
-  return String(skillId || "").trim().toLowerCase() === "website-generation-workflow";
+  return isWebsiteGenerationSkillId(skillId);
 }
 
 function createInfoStreamResponse(message: string, status = 200) {
@@ -2385,35 +2390,49 @@ export async function POST(req: Request) {
       : requirementSpec.supportedLocales || [];
   const resolvedDefaultLocale =
     resolvedWebsiteDiscoveryBrief?.defaultLocale || requirementSpec.defaultLocale;
+  const productBaselineSelection =
+    requestedSkillId === "build-ai-image-tool" ? selectAiImageToolBaselineSelection() : undefined;
   const selectedWebsiteSeedSkills = isWebsiteSkill(requestedSkillId)
     ? await selectWebsiteSeedSkillsForIntent({
         requirementText: promptDraftRequirementText,
         routes: promptControlManifest?.routes || requirementSpec.pageStructure?.pages || [],
         maxSkills: Number(process.env.SKILL_RUNTIME_MAX_SEED_SKILLS || 2),
+        productBaselineSelection,
       })
     : [];
-  const selectedSeedContracts = (
-    await Promise.all(
-      selectedWebsiteSeedSkills.map(async (item) => {
-        const skill = await loadProjectSkill(item.id);
-        return skill.seedContract
-          ? [
-              {
-                id: skill.id,
-                source:
-                  classifyWebsiteSeedOrigin(skill) === "open-design"
-                    ? ("imported-open-design" as const)
-                    : classifyWebsiteSeedOrigin(skill) === "html-anything"
-                      ? ("imported-html-anything" as const)
-                      : ("shpitto" as const),
-                reason: item.reason || undefined,
-                contract: skill.seedContract,
-              },
-            ]
-          : [];
-      }),
-    )
-  ).flat();
+  const selectedSeedContracts = requestedSkillId === "build-ai-image-tool"
+    ? [
+        {
+          id: productBaselineSelection!.baselineId === "ai-image-tool-baseline-v1"
+            ? "fluxkreafree-product-template"
+            : productBaselineSelection!.baselineId,
+          source: "shpitto" as const,
+          reason: "AI image product baseline contract seed.",
+          contract: productBaselineSelection!.contract,
+        },
+      ]
+    : (
+        await Promise.all(
+          selectedWebsiteSeedSkills.map(async (item) => {
+            const skill = await loadProjectSkill(item.id);
+            return skill.seedContract
+              ? [
+                  {
+                    id: skill.id,
+                    source:
+                      classifyWebsiteSeedOrigin(skill) === "open-design"
+                        ? ("imported-open-design" as const)
+                        : classifyWebsiteSeedOrigin(skill) === "html-anything"
+                          ? ("imported-html-anything" as const)
+                          : ("shpitto" as const),
+                    reason: item.reason || undefined,
+                    contract: skill.seedContract,
+                  },
+                ]
+              : [];
+          }),
+        )
+      ).flat();
   const selectedSeedSkillManifest = buildSelectedSeedSkillManifest(
     selectedSeedContracts.map((item) => ({
       id: item.id,
@@ -2842,6 +2861,7 @@ export async function POST(req: Request) {
       intentConfidence: decision.confidence,
       intentReason: decision.reason,
       refineScope: decision.refineScope,
+      refineOwnershipScope: decision.refineOwnershipScope,
       deployRequested,
       refineRequested,
       translateRequested,

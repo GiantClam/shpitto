@@ -56,6 +56,85 @@ describe("chat api async mode", () => {
     expect(task?.result?.internal?.inputState).toBeTruthy();
   });
 
+  it("accepts productized marketing skill ids at the chat API entry", async () => {
+    const chatId = `chat-productized-marketing-${Date.now()}`;
+    const { POST } = await import("../../app/api/chat/route");
+    const req = new Request("http://localhost/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: chatId,
+        skill_id: "build-marketing-site",
+        messages: [
+          {
+            role: "user",
+            parts: [
+              {
+                type: "text",
+                text: confirmPayload(
+                  "Build a launch-ready marketing site for an AI developer tool with pricing, proof, and contact routes.",
+                ),
+              },
+            ],
+          },
+        ],
+      }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(202);
+
+    const task = await getLatestChatTaskForChat(chatId);
+    expect(task?.status).toBe("queued");
+    expect(task?.result?.progress?.skillId).toBe("build-marketing-site");
+    const workflow = (task?.result?.internal?.inputState as any)?.workflow_context || {};
+    expect(workflow.skillId).toBe("build-marketing-site");
+    expect(workflow.executionMode).toBe("generate");
+    expect(workflow.websiteSurfaceMode).toBe("marketing-landing-site");
+  });
+
+  it("accepts productized b2b skill ids at the chat API entry", async () => {
+    const chatId = `chat-productized-b2b-${Date.now()}`;
+    const { POST } = await import("../../app/api/chat/route");
+    const req = new Request("http://localhost/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: chatId,
+        skill_id: "build-b2b-site",
+        messages: [
+          {
+            role: "user",
+            parts: [
+              {
+                type: "text",
+                text: confirmPayload(
+                  requirementFormPayload({
+                    siteType: "company",
+                    primaryVisualDirection: "industrial-b2b",
+                    pageStructure: { mode: "multi", pages: ["home", "products", "cases", "contact"] },
+                  }),
+                ),
+              },
+            ],
+          },
+        ],
+      }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(202);
+
+    const task = await getLatestChatTaskForChat(chatId);
+    expect(task?.status).toBe("queued");
+    expect(task?.result?.progress?.skillId).toBe("build-b2b-site");
+    const workflow = (task?.result?.internal?.inputState as any)?.workflow_context || {};
+    expect(workflow.skillId).toBe("build-b2b-site");
+    expect(workflow.executionMode).toBe("generate");
+    expect(workflow.websiteSurfaceMode).toBe("corporate-b2b-site");
+    expect(workflow.websiteTypeSkillId).toBe("corporate-b2b-site");
+  });
+
   it("carries auto contact-email settings into queued generation workflow context", async () => {
     const chatId = `chat-contact-settings-${Date.now()}`;
     const canonicalPrompt = [
@@ -109,6 +188,73 @@ describe("chat api async mode", () => {
     expect(workflow.websiteSurfaceMode).toBe("docs-knowledge-site");
     expect(workflow.websiteTypeSkillId).toBe("docs-knowledge-site");
     expect(workflow.websiteDiscoveryBrief?.surfaceMode).toBe("docs-knowledge-site");
+  });
+
+  it("persists refine ownership scope in workflow context for refine-intent requests", async () => {
+    const chatId = `chat-refine-ownership-scope-${Date.now()}`;
+    const projectPath = path.resolve(process.cwd(), ".tmp", chatId, "project.json");
+    const siteArtifacts = {
+      projectId: "refine-ownership-scope-test",
+      pages: [{ path: "/", html: "<!doctype html><html><head></head><body>ok</body></html>" }],
+      staticSite: {
+        mode: "skill-direct",
+        files: [
+          { path: "/index.html", type: "text/html", content: "<!doctype html><html><body>ok</body></html>" },
+          { path: "/styles.css", type: "text/css", content: "body{color:#111}" },
+          { path: "/script.js", type: "text/javascript", content: "console.log('ok')" },
+        ],
+      },
+    };
+    await fs.mkdir(path.dirname(projectPath), { recursive: true });
+    await fs.writeFile(projectPath, JSON.stringify(siteArtifacts), "utf8");
+
+    const { createChatTask, completeChatTask } = await import("./chat-task-store");
+    const previous = await createChatTask(chatId, undefined, {
+      assistantText: "generated",
+      phase: "end",
+      internal: {
+        sessionState: {
+          messages: [],
+          phase: "end",
+          current_page_index: 0,
+          attempt_count: 0,
+          workflow_context: {
+            checkpointProjectPath: projectPath,
+            deploySourceProjectPath: projectPath,
+          },
+          site_artifacts: siteArtifacts,
+        },
+      },
+      progress: { stage: "done", checkpointProjectPath: projectPath } as any,
+    });
+    await completeChatTask(previous.id, {
+      assistantText: "generated",
+      phase: "end",
+      internal: previous.result?.internal,
+      progress: { stage: "done", checkpointProjectPath: projectPath } as any,
+    });
+
+    const { POST } = await import("../../app/api/chat/route");
+    const res = await POST(
+      new Request("http://localhost/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: chatId,
+          messages: [{ role: "user", parts: [{ type: "text", text: "Refine the product workspace history panel and keep the app route semantics intact." }] }],
+        }),
+      }),
+    );
+
+    if (res.status !== 202) {
+      const body = await res.text();
+      throw new Error(`unexpected status ${res.status}: ${body}`);
+    }
+
+    const task = await getLatestChatTaskForChat(chatId);
+    const workflow = (task?.result?.internal?.inputState as any)?.workflow_context || {};
+    expect(workflow.executionMode).toBe("refine");
+    expect(workflow.refineOwnershipScope).toBe("product_surface");
   });
 
   it("persists discovery brief locale and design-system contract fields in queued workflow context", async () => {

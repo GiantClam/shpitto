@@ -49,28 +49,21 @@ describe("provider-model", () => {
     expect(message).toContain('response={"keys":["id","choices"]');
   });
 
-  it("keeps the fallback chain when a preferred provider is supplied", () => {
-    delete process.env.LLM_PROVIDER;
+  it("treats a preferred provider as a single explicit provider selection", () => {
+    process.env.LLM_PROVIDER = "aiberm";
     process.env.LLM_PROVIDER_ORDER = "pptoken,aiberm,crazyrouter";
     process.env.LLM_MODEL = "gpt-5.4-mini";
     process.env.PPTOKEN_API_KEY = "pptoken-test-key";
     process.env.AIBERM_API_KEY = "aiberm-test-key";
     process.env.CRAZYROUTE_API_KEY = "crazyroute-test-key";
 
-    const attempts = resolveProviderAttempts({
-      provider: "aiberm",
-      model: "gpt-5.4-mini",
-    });
+    const attempts = resolveProviderAttempts({ model: "gpt-5.4-mini" });
 
     expect(attempts.map((attempt) => attempt.config.provider)).toEqual([
       "aiberm",
-      "pptoken",
-      "crazyroute",
     ]);
     expect(attempts.map((attempt) => attempt.lock.reason)).toEqual([
-      "fallback_chain_aiberm",
-      "default_locked_pptoken",
-      "fallback_chain_crazyroute",
+      "manual_preferred_aiberm",
     ]);
   });
 });

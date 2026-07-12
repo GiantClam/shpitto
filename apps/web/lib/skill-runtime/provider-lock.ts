@@ -63,19 +63,17 @@ export function resolveRunProviderLocks(preferred?: { provider?: string; model?:
   if (forcedProvider) {
     return [buildProviderLock(forcedProvider, preferredModel, "manual_locked")];
   }
+  if (preferredProvider) {
+    return [buildProviderLock(preferredProvider, preferredModel, `manual_preferred_${preferredProvider}`)];
+  }
 
-  const orderedProviders = reorderProvidersByPreference(resolveDefaultProviderOrder(), preferredProvider);
-  return orderedProviders.map((provider, index) => {
-    const reason =
-      index === 0
-        ? provider === DEFAULT_LOCKED_PROVIDER
-          ? hasProviderKey(DEFAULT_LOCKED_PROVIDER)
-            ? "default_locked_pptoken"
-            : "default_locked_pptoken_missing_key"
-          : `env_preferred_${provider}`
-        : `fallback_chain_${provider}`;
-    return buildProviderLock(provider, preferredModel, reason);
-  });
+  return [
+    buildProviderLock(
+      DEFAULT_LOCKED_PROVIDER,
+      preferredModel,
+      hasProviderKey(DEFAULT_LOCKED_PROVIDER) ? "default_locked_pptoken" : "default_locked_pptoken_missing_key",
+    ),
+  ];
 }
 
 const normalizeProvider = (value: string): ProviderName | undefined => {

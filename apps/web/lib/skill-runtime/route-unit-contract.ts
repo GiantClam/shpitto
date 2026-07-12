@@ -1,8 +1,10 @@
 import type { GenerationContractRouteUnit } from "../agent/website-generation-contract.ts";
+import type { ProductRouteOwner } from "./product-baseline-contract.ts";
 
 export type RouteUnitContract = GenerationContractRouteUnit & {
   routeKey: string;
   htmlPath: string;
+  owner: ProductRouteOwner;
 };
 
 export function normalizeRouteUnitRoute(value: string): string {
@@ -34,8 +36,8 @@ export function normalizeRouteUnitContract(input: GenerationContractRouteUnit): 
     inheritedSeedSkillIds: Array.isArray(input.inheritedSeedSkillIds)
       ? input.inheritedSeedSkillIds.map((item) => String(item || "").trim()).filter(Boolean)
       : [],
+    owner: input.owner || "brand",
     routeKey: buildRouteUnitRouteKey(route),
     htmlPath: routeUnitHtmlPath(route),
   };
 }
-

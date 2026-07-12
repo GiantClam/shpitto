@@ -165,6 +165,181 @@ describe("v2 route generation worker", () => {
     expect(result.status).toBe("passed");
   });
 
+  it("requires route-unit HTML to reference shared assets with absolute paths", async () => {
+    const worker = createSkillToolRouteUnitGenerationWorker({
+      baseState: {
+        workflow_context: {
+          canonicalPrompt: "# Canonical Website Generation Prompt\nBlog route for CASUX.",
+          websiteSurfaceMode: "content-hub-site",
+          promptControlManifest: { routes: ["/blog"] },
+        },
+      } as any,
+      timeoutMs: 10_000,
+      invokeRouteModel: async ({ messages }) => {
+        const userMessage = String(messages[1]?.content || "");
+        expect(userMessage).toContain(
+          'Every emitted HTML file must reference the shared assets with absolute paths: `<link rel="stylesheet" href="/styles.css">` and `<script src="/script.js"></script>`.',
+        );
+        return JSON.stringify({
+          summary: "Generated blog route unit.",
+          files: [
+            {
+              path: "/blog/index.html",
+              content:
+                '<!doctype html><html><head><link rel="stylesheet" href="/styles.css"><script src="/script.js"></script></head><body><main><h1>Blog</h1></main></body></html>',
+              type: "text/html",
+            },
+          ],
+        });
+      },
+    });
+
+    const result = await worker.runUnit({
+      unitId: "route-blog",
+      route: "/blog",
+      targetFiles: ["/blog/index.html"],
+      prompt: "Generate blog route.",
+      context: {},
+    });
+
+    expect(result.status).toBe("passed");
+  });
+
+  it("fails bilingual route-unit output that exposes only one data-locale-toggle button", async () => {
+    const worker = createSkillToolRouteUnitGenerationWorker({
+      baseState: {
+        workflow_context: {
+          canonicalPrompt: "# Canonical Website Generation Prompt\nBilingual blog route.",
+          websiteSurfaceMode: "portfolio-blog-site",
+          promptControlManifest: { routes: ["/blog"], localeMode: "bilingual" },
+          discoveryBrief: { localeMode: "bilingual" },
+        },
+      } as any,
+      timeoutMs: 10_000,
+      invokeRouteModel: async () =>
+        JSON.stringify({
+          summary: "Generated bilingual blog route unit with incomplete locale switch.",
+          files: [
+            {
+              path: "/blog/index.html",
+              content:
+                "<!doctype html><html lang=\"zh-CN\"><body><header><nav><a href=\"/\" data-i18n=\"nav.home\">首页</a><a href=\"/blog\" data-i18n=\"nav.blog\">博客</a></nav><button type=\"button\" data-locale-toggle data-locale=\"en\">English</button></header><main><h1 data-i18n=\"blog.title\">博客</h1></main><footer><p data-i18n=\"footer.note\">Footer</p></footer></body></html>",
+              type: "text/html",
+            },
+          ],
+        }),
+    });
+
+    const result = await worker.runUnit({
+      unitId: "route-blog",
+      route: "/blog",
+      targetFiles: ["/blog/index.html"],
+      prompt: "Generate bilingual blog route.",
+      context: {},
+    });
+
+    expect(result.status).toBe("failed");
+    expect(result.issues?.[0]).toContain("valid bilingual locale switch");
+  });
+
+  it("requires interior route prompts to preserve shared footer destinations from the homepage shell", async () => {
+    const worker = createSkillToolRouteUnitGenerationWorker({
+      baseState: {
+        workflow_context: {
+          canonicalPrompt: "# Canonical Website Generation Prompt\nBlog route for CASUX.",
+          websiteSurfaceMode: "content-hub-site",
+          promptControlManifest: { routes: ["/", "/blog"] },
+        },
+      } as any,
+      timeoutMs: 10_000,
+      invokeRouteModel: async ({ messages }) => {
+        const userMessage = String(messages[1]?.content || "");
+        expect(userMessage).toContain(
+          "Any footer navigation on this route must preserve the same planned internal destinations as the homepage shell.",
+        );
+        expect(userMessage).toContain(
+          "Do not replace the shared footer with footer copy only. Interior routes must keep the active footer shell",
+        );
+        return JSON.stringify({
+          summary: "Generated blog route unit.",
+          files: [
+            {
+              path: "/blog/index.html",
+              content:
+                '<!doctype html><html><head><link rel="stylesheet" href="/styles.css"><script src="/script.js"></script></head><body><header><nav><a href="/">Home</a><a href="/blog">Blog</a></nav></header><main><h1>Blog</h1><p>Archive surface.</p></main><footer><a href="/">Home</a><a href="/blog">Blog</a></footer></body></html>',
+              type: "text/html",
+            },
+          ],
+        });
+      },
+    });
+
+    const result = await worker.runUnit({
+      unitId: "route-blog",
+      route: "/blog",
+      targetFiles: ["/blog/index.html"],
+      prompt: "Generate blog route.",
+      context: {},
+    });
+
+    expect(result.status).toBe("passed");
+  });
+
+  it("injects the verified homepage shared shell snapshot into interior route prompts", async () => {
+    const worker = createSkillToolRouteUnitGenerationWorker({
+      baseState: {
+        workflow_context: {
+          canonicalPrompt: "# Canonical Website Generation Prompt\nBlog route for CASUX.",
+          websiteSurfaceMode: "portfolio-blog-site",
+          promptControlManifest: { routes: ["/", "/blog"], localeMode: "bilingual" },
+          discoveryBrief: { localeMode: "bilingual" },
+        },
+      } as any,
+      timeoutMs: 10_000,
+      invokeRouteModel: async ({ messages }) => {
+        const userMessage = String(messages[1]?.content || "");
+        expect(userMessage).toContain("Verified shared shell snapshot:");
+        expect(userMessage).toContain("Locale protocol already verified on the homepage shell: single-switch");
+        expect(userMessage).toContain("Reuse this header/footer contract instead of inventing a new shell for this route.");
+        expect(userMessage).toContain("Header HTML reference:");
+        expect(userMessage).toContain("data-locale-switch");
+        expect(userMessage).toContain("Footer HTML reference:");
+        expect(userMessage).toContain("Treat the verified homepage header/footer above as the authoritative shell structure.");
+        return JSON.stringify({
+          summary: "Generated blog route unit.",
+          files: [
+            {
+              path: "/blog/index.html",
+              content:
+                '<!doctype html><html lang="zh-CN" data-locale="zh-CN"><head><link rel="stylesheet" href="/styles.css"><script src="/script.js"></script></head><body><header><nav><a href="/" data-i18n="nav.home">首页</a><a href="/blog" data-i18n="nav.blog">博客</a></nav><button type="button" data-locale-switch aria-label="切换至英文">EN</button></header><main><h1 data-i18n="blog.title">博客</h1><p data-i18n="blog.lead">Archive surface.</p></main><footer><p data-i18n="footer.summary">Footer summary.</p></footer></body></html>',
+              type: "text/html",
+            },
+            { path: "/i18n/messages.en.json", content: "{\"nav.home\":\"Home\",\"nav.blog\":\"Blog\",\"blog.title\":\"Blog\",\"footer.summary\":\"Footer summary.\"}", type: "application/json" },
+            { path: "/i18n/messages.zh-CN.json", content: "{\"nav.home\":\"首页\",\"nav.blog\":\"博客\",\"blog.title\":\"博客\",\"footer.summary\":\"页脚摘要。\"}", type: "application/json" },
+          ],
+        });
+      },
+    });
+
+    const result = await worker.runUnit({
+      unitId: "route-blog",
+      route: "/blog",
+      targetFiles: ["/blog/index.html", "/i18n/messages.en.json", "/i18n/messages.zh-CN.json"],
+      prompt: "Generate blog route.",
+      context: {
+        sharedShellSnapshot: {
+          sourceRoute: "/",
+          localeProtocol: "single-switch",
+          headerHtml:
+            '<header><nav><a href="/" data-i18n="nav.home">首页</a><a href="/blog" data-i18n="nav.blog">博客</a></nav><button type="button" data-locale-switch aria-label="切换至英文">EN</button></header>',
+          footerHtml: '<footer><p data-i18n="footer.summary">页脚摘要。</p></footer>',
+        },
+      },
+    });
+
+    expect(result.status).toBe("passed");
+  });
+
   it("drops bulky manifest and appendix sections from canonical prompt excerpts before route-unit dispatch", async () => {
     const worker = createSkillToolRouteUnitGenerationWorker({
       baseState: {
@@ -288,6 +463,52 @@ describe("v2 route generation worker", () => {
     expect(result.status).toBe("passed");
   });
 
+  it("injects blog archive copy-exclusion rules for /blog collection routes", async () => {
+    const worker = createSkillToolRouteUnitGenerationWorker({
+      baseState: {
+        workflow_context: {
+          canonicalPrompt: "# Canonical Website Generation Prompt\nPortfolio blog archive.",
+          websiteSurfaceMode: "portfolio-blog-site",
+          promptControlManifest: { routes: ["/", "/blog"] },
+        },
+      } as any,
+      timeoutMs: 10_000,
+      invokeRouteModel: async ({ messages }) => {
+        const userMessage = String(messages[1]?.content || "");
+        expect(userMessage).toContain("Blog archive copy exclusions:");
+        expect(userMessage).toContain("Do not add body sections or link labels whose primary job is route choreography");
+        expect(userMessage).toContain("`下一步`");
+        expect(userMessage).toContain("`返回首页`");
+        expect(userMessage).toContain("Do not explain reading order, browsing order, page role, archive mechanics");
+        return JSON.stringify({
+          summary: "Generated blog route unit.",
+          files: [
+            {
+              path: "/blog/index.html",
+              content:
+                '<!doctype html><html><head><link rel="stylesheet" href="/styles.css"><script src="/script.js"></script></head><body><header><nav><a href="/">Home</a><a href="/blog">Blog</a></nav></header><main><section class="knowledge-hub-lead"><h1>Blog</h1><p>Archive surface for AI notes and durable writing.</p></section></main><footer><a href="/">Home</a><a href="/blog">Blog</a></footer></body></html>',
+              type: "text/html",
+            },
+          ],
+        });
+      },
+    });
+
+    const result = await worker.runUnit({
+      unitId: "route-blog",
+      route: "/blog",
+      targetFiles: ["/blog/index.html"],
+      prompt: "Generate blog route.",
+      context: {
+        navLabel: "Blog",
+        pageKind: "content-collection-index",
+        openingFamily: "collection",
+      },
+    });
+
+    expect(result.status).toBe("passed");
+  });
+
   it("uses direct REST fetch for pptoken route-unit generation", async () => {
     process.env.PPTOKEN_API_KEY = "pptoken-test";
     const fetchMock = vi.fn(async () =>
@@ -377,7 +598,7 @@ describe("v2 route generation worker", () => {
     }
   });
 
-  it("falls back to the next provider after retrying pptoken malformed route-unit output", async () => {
+  it("stays on pptoken after retrying malformed route-unit output when no manual provider switch is requested", async () => {
     const previousPptokenKey = process.env.PPTOKEN_API_KEY;
     const previousAibermKey = process.env.AIBERM_API_KEY;
     const previousProviderOrder = process.env.LLM_PROVIDER_ORDER;
@@ -402,18 +623,9 @@ describe("v2 route generation worker", () => {
         timeoutMs: 10_000,
         invokeRouteModel: async ({ attempt }) => {
           attemptedProviders.push(attempt.config.provider);
-          if (attempt.config.provider === "pptoken") {
-            return JSON.stringify({
-              summary: "Incomplete result.",
-              files: [{ path: "/index.html", content: "<!doctype html><html><body>Home</body></html>", type: "text/html" }],
-            });
-          }
           return JSON.stringify({
-            summary: "Recovered on fallback provider.",
-            files: [
-              { path: "/index.html", content: "<!doctype html><html><body><header><nav><a href=\"/\">Home</a></nav></header><main><h1>CASUX</h1><p>Institutional overview.</p></main><footer>Footer</footer></body></html>", type: "text/html" },
-              { path: "/styles.css", content: "body{font-family:system-ui}", type: "text/css" },
-            ],
+            summary: "Incomplete result.",
+            files: [{ path: "/index.html", content: "<!doctype html><html><body>Home</body></html>", type: "text/html" }],
           });
         },
       });
@@ -426,9 +638,9 @@ describe("v2 route generation worker", () => {
         context: {},
       });
 
-      expect(result.status).toBe("passed");
-      expect(attemptedProviders).toEqual(["pptoken", "pptoken", "pptoken", "aiberm"]);
-      expect(result.files.map((file) => file.path)).toEqual(["/index.html", "/styles.css"]);
+      expect(result.status).toBe("failed");
+      expect(attemptedProviders).toEqual(["pptoken", "pptoken", "pptoken"]);
+      expect(result.files).toEqual([]);
     } finally {
       process.env.PPTOKEN_API_KEY = previousPptokenKey;
       process.env.AIBERM_API_KEY = previousAibermKey;
@@ -437,7 +649,7 @@ describe("v2 route generation worker", () => {
     }
   });
 
-  it("falls back to the next provider after retrying an undefined-message TypeError", async () => {
+  it("stays on pptoken after retrying an undefined-message TypeError when no manual provider switch is requested", async () => {
     const previousPptokenKey = process.env.PPTOKEN_API_KEY;
     const previousAibermKey = process.env.AIBERM_API_KEY;
     const previousProviderOrder = process.env.LLM_PROVIDER_ORDER;
@@ -462,21 +674,7 @@ describe("v2 route generation worker", () => {
         timeoutMs: 10_000,
         invokeRouteModel: async ({ attempt }) => {
           attemptedProviders.push(attempt.config.provider);
-          if (attempt.config.provider === "pptoken") {
-            throw new TypeError("Cannot read properties of undefined (reading 'message')");
-          }
-          return JSON.stringify({
-            summary: "Recovered after provider-envelope crash.",
-            files: [
-              {
-                path: "/index.html",
-                content:
-                  "<!doctype html><html><body><header><nav><a href=\"/\">Home</a></nav></header><main><h1>CASUX</h1><p>Institutional overview.</p></main><footer>Footer</footer></body></html>",
-                type: "text/html",
-              },
-              { path: "/styles.css", content: "body{font-family:system-ui}", type: "text/css" },
-            ],
-          });
+          throw new TypeError("Cannot read properties of undefined (reading 'message')");
         },
       });
 
@@ -488,9 +686,9 @@ describe("v2 route generation worker", () => {
         context: {},
       });
 
-      expect(result.status).toBe("passed");
-      expect(attemptedProviders).toEqual(["pptoken", "pptoken", "pptoken", "aiberm"]);
-      expect(result.files.map((file) => file.path)).toEqual(["/index.html", "/styles.css"]);
+      expect(result.status).toBe("failed");
+      expect(attemptedProviders).toEqual(["pptoken", "pptoken", "pptoken"]);
+      expect(result.files).toEqual([]);
     } finally {
       process.env.PPTOKEN_API_KEY = previousPptokenKey;
       process.env.AIBERM_API_KEY = previousAibermKey;
@@ -499,7 +697,7 @@ describe("v2 route generation worker", () => {
     }
   });
 
-  it("preserves fallback providers when workflow_context carries a preferred provider lock", async () => {
+  it("uses workflow_context provider lock as an explicit single-provider selection", async () => {
     const previousPptokenKey = process.env.PPTOKEN_API_KEY;
     const previousAibermKey = process.env.AIBERM_API_KEY;
     const previousProviderOrder = process.env.LLM_PROVIDER_ORDER;
@@ -528,11 +726,8 @@ describe("v2 route generation worker", () => {
         timeoutMs: 10_000,
         invokeRouteModel: async ({ attempt }) => {
           attemptedProviders.push(attempt.config.provider);
-          if (attempt.config.provider === "pptoken") {
-            throw new Error("502 Upstream request failed");
-          }
           return JSON.stringify({
-            summary: "Recovered on fallback provider.",
+            summary: "Locked provider result.",
             files: [
               {
                 path: "/index.html",
@@ -555,10 +750,72 @@ describe("v2 route generation worker", () => {
       });
 
       expect(result.status).toBe("passed");
-      expect(attemptedProviders).toEqual(["pptoken", "pptoken", "pptoken", "aiberm"]);
+      expect(attemptedProviders).toEqual(["pptoken"]);
     } finally {
       process.env.PPTOKEN_API_KEY = previousPptokenKey;
       process.env.AIBERM_API_KEY = previousAibermKey;
+      process.env.LLM_PROVIDER_ORDER = previousProviderOrder;
+      process.env.SHPITTO_PROVIDER_HEALTH_PATH = previousHealthPath;
+    }
+  });
+
+  it("uses a manually selected provider as the only provider attempt", async () => {
+    const previousPptokenKey = process.env.PPTOKEN_API_KEY;
+    const previousAibermKey = process.env.AIBERM_API_KEY;
+    const previousProviderOrder = process.env.LLM_PROVIDER_ORDER;
+    const previousHealthPath = process.env.SHPITTO_PROVIDER_HEALTH_PATH;
+    const previousProvider = process.env.LLM_PROVIDER;
+    const healthPath = path.resolve(process.cwd(), ".tmp", "v2-route-generation-worker-manual-provider-health-test.json");
+    await fs.rm(healthPath, { force: true });
+    process.env.PPTOKEN_API_KEY = "pptoken-test";
+    process.env.AIBERM_API_KEY = "aiberm-test";
+    process.env.LLM_PROVIDER = "aiberm";
+    process.env.LLM_PROVIDER_ORDER = "pptoken,aiberm";
+    process.env.SHPITTO_PROVIDER_HEALTH_PATH = healthPath;
+    const attemptedProviders: string[] = [];
+
+    try {
+      const worker = createSkillToolRouteUnitGenerationWorker({
+        baseState: {
+          workflow_context: {
+            canonicalPrompt: "# Canonical Website Generation Prompt\nInstitutional homepage for CASUX.",
+            websiteSurfaceMode: "content-hub-site",
+            promptControlManifest: { routes: ["/"] },
+          },
+        } as any,
+        timeoutMs: 10_000,
+        invokeRouteModel: async ({ attempt }) => {
+          attemptedProviders.push(attempt.config.provider);
+          return JSON.stringify({
+            summary: "Manual provider result.",
+            files: [
+              {
+                path: "/index.html",
+                content:
+                  "<!doctype html><html><body><header><nav><a href=\"/\">Home</a></nav></header><main><h1>CASUX</h1><p>Institutional overview.</p></main><footer>Footer</footer></body></html>",
+                type: "text/html",
+              },
+              { path: "/styles.css", content: "body{font-family:system-ui}", type: "text/css" },
+            ],
+          });
+        },
+      });
+
+      const result = await worker.runUnit({
+        unitId: "route-home",
+        route: "/",
+        targetFiles: ["/index.html", "/styles.css"],
+        prompt: "Generate home route.",
+        context: {},
+      });
+
+      expect(result.status).toBe("passed");
+      expect(attemptedProviders).toEqual(["aiberm"]);
+      expect(result.files.map((file) => file.path)).toEqual(["/index.html", "/styles.css"]);
+    } finally {
+      process.env.PPTOKEN_API_KEY = previousPptokenKey;
+      process.env.AIBERM_API_KEY = previousAibermKey;
+      process.env.LLM_PROVIDER = previousProvider;
       process.env.LLM_PROVIDER_ORDER = previousProviderOrder;
       process.env.SHPITTO_PROVIDER_HEALTH_PATH = previousHealthPath;
     }

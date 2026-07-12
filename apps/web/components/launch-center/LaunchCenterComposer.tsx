@@ -1,9 +1,10 @@
 "use client";
 
-import { FormEvent, type ChangeEvent, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowUpRight, Loader2, MessageCircle, Paperclip, Upload, X } from "lucide-react";
 import { getLandingCopy, type Locale } from "@/lib/i18n";
+import type { LaunchCenterTemplateCard } from "@/lib/launch-center/data";
 import { storeLaunchCenterChatHandoff } from "@/lib/launch-center/chat-handoff";
 
 type SessionPayload = {
@@ -20,6 +21,7 @@ type SessionsResponse = {
 type LaunchCenterComposerProps = {
   isAuthenticated: boolean;
   locale?: Locale;
+  templateCards: LaunchCenterTemplateCard[];
 };
 
 const COMPOSER_FILE_COPY: Record<
@@ -64,17 +66,49 @@ function formatFileSize(size: number): string {
   return `${(size / 1024 / 1024).toFixed(1)} MB`;
 }
 
-export function LaunchCenterComposer({ isAuthenticated, locale = "en" }: LaunchCenterComposerProps) {
+function buildPromptWithTemplate(prompt: string, template?: LaunchCenterTemplateCard) {
+  const trimmed = String(prompt || "").trim();
+  if (!trimmed || !template) return trimmed;
+  return [
+    trimmed,
+    "",
+    "[Selected Template]",
+    `- Template: ${template.name}`,
+    `- Template slug: ${template.slug}`,
+    `- Template workflow: ${template.workflowId}`,
+    `- Template guidance: ${template.promptHint}`,
+  ].join("\n");
+}
+
+export function LaunchCenterComposer({ isAuthenticated, locale = "en", templateCards }: LaunchCenterComposerProps) {
   const copy = getLandingCopy(locale).launch.composer;
   const fileCopy = COMPOSER_FILE_COPY[locale] || COMPOSER_FILE_COPY.en;
   const router = useRouter();
+  const searchParams = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const initialTemplateSlug = String(searchParams.get("template") || "").trim();
+  const initialTemplate = templateCards.find((item) => item.slug === initialTemplateSlug) || templateCards[0];
   const [prompt, setPrompt] = useState(copy.defaultPrompt);
+  const [selectedTemplateSlug, setSelectedTemplateSlug] = useState(initialTemplate?.slug || "");
+  const [skillId, setSkillId] = useState(initialTemplate?.workflowId || copy.workflows[0]?.id || "build-marketing-site");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
 
+  const selectedTemplate = useMemo(
+    () => templateCards.find((item) => item.slug === selectedTemplateSlug),
+    [selectedTemplateSlug, templateCards],
+  );
   const disabled = useMemo(() => loading || !String(prompt || "").trim(), [loading, prompt]);
+
+  useEffect(() => {
+    const nextTemplateSlug = String(searchParams.get("template") || "").trim();
+    if (!nextTemplateSlug) return;
+    const matchedTemplate = templateCards.find((item) => item.slug === nextTemplateSlug);
+    if (!matchedTemplate) return;
+    setSelectedTemplateSlug(matchedTemplate.slug);
+    setSkillId(matchedTemplate.workflowId);
+  }, [searchParams, templateCards]);
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const selected = Array.from(event.target.files || []).filter(Boolean);
@@ -116,9 +150,11 @@ export function LaunchCenterComposer({ isAuthenticated, locale = "en" }: LaunchC
       if (!res.ok || !data.ok || !data.session?.id) {
         throw new Error(data.error || copy.createFailed);
       }
+      const effectiveSkillId = skillId || selectedTemplate?.workflowId || "build-marketing-site";
       await storeLaunchCenterChatHandoff(data.session.id, {
-        prompt: finalPrompt,
+        prompt: buildPromptWithTemplate(finalPrompt, selectedTemplate),
         files: pendingFiles,
+        skillId: effectiveSkillId,
       });
       setPendingFiles([]);
       router.push(`/projects/${encodeURIComponent(data.session.id)}/chat?launch=1`);
@@ -146,6 +182,62 @@ export function LaunchCenterComposer({ isAuthenticated, locale = "en" }: LaunchC
         className="w-full resize-none rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_98%,var(--shp-bg-soft)_2%)] px-4 py-3 text-sm leading-relaxed text-[var(--shp-text)] outline-none focus:border-[color-mix(in_oklab,var(--shp-primary)_50%,transparent)]"
         placeholder={copy.placeholder}
       />
+      <div className="mt-4 space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--shp-muted)]">{copy.templateLabel}</p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {templateCards.map((template) => {
+            const active = template.slug === selectedTemplateSlug;
+            return (
+              <button
+                key={template.slug}
+                type="button"
+                onClick={() => {
+                  setSelectedTemplateSlug(template.slug);
+                  setSkillId(template.workflowId);
+                }}
+                disabled={loading}
+                className={[
+                  "rounded-xl border p-3 text-left transition",
+                  active
+                    ? "border-[color-mix(in_oklab,var(--shp-secondary)_55%,transparent)] bg-[color-mix(in_oklab,var(--shp-secondary)_12%,var(--shp-surface)_88%)]"
+                    : "border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)]",
+                ].join(" ")}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-[var(--shp-text)]">{template.name}</p>
+                  <span className="rounded-full border border-[color-mix(in_oklab,var(--shp-border)_68%,transparent)] px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-[var(--shp-muted)]">
+                    {template.tag}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs leading-relaxed text-[var(--shp-muted)]">{template.tone}</p>
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--shp-muted)]">{copy.workflowLabel}</p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {copy.workflows.map((workflow) => {
+            const active = workflow.id === skillId;
+            return (
+              <button
+                key={workflow.id}
+                type="button"
+                onClick={() => setSkillId(workflow.id)}
+                disabled={loading}
+                className={[
+                  "rounded-xl border p-3 text-left transition",
+                  active
+                    ? "border-[color-mix(in_oklab,var(--shp-primary)_55%,transparent)] bg-[color-mix(in_oklab,var(--shp-primary)_12%,var(--shp-surface)_88%)]"
+                    : "border-[color-mix(in_oklab,var(--shp-border)_72%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] hover:bg-[color-mix(in_oklab,var(--shp-surface)_100%,var(--shp-bg)_0%)]",
+                ].join(" ")}
+              >
+                <p className="text-sm font-semibold text-[var(--shp-text)]">{workflow.title}</p>
+                <p className="mt-1 text-xs leading-relaxed text-[var(--shp-muted)]">{workflow.description}</p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
       {pendingFiles.length > 0 ? (
         <div className="mt-3 rounded-xl border border-[color-mix(in_oklab,var(--shp-border)_62%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-bg)_4%)] p-3">
           <div className="mb-2 flex items-center gap-2 text-xs font-medium text-[var(--shp-text)]">

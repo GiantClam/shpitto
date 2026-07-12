@@ -448,6 +448,7 @@ export interface AgentState {
     intentConfidence?: number;
     intentReason?: string;
     refineScope?: "patch" | "structural" | "route_regenerate" | "full_regenerate";
+    refineOwnershipScope?: "brand_surface" | "product_surface" | "shared_shell";
     refineRequested?: boolean;
     refineSourceProjectPath?: string;
     refineSourceTaskId?: string;
@@ -466,6 +467,7 @@ export interface AgentState {
     promptControlManifest?: unknown;
     selectedSeedSkillManifest?: unknown;
     selectedSeedContracts?: unknown;
+    productBaselineSelection?: unknown;
     routeUnitContracts?: unknown;
     generationContract?: unknown;
     contractHash?: string;

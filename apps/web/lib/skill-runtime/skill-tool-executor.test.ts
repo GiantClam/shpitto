@@ -58,6 +58,7 @@ import { buildLocalDecisionPlan } from "./decision-layer";
 import { DEFAULT_STYLE_PRESET } from "../design-style-preset";
 import {
   buildGenerationUnitInputFromRouteContract,
+  createStaticGenerationWorkerAdapter,
   createSkillExecutionGenerationWorkerAdapter,
 } from "./generation-worker-adapter";
 import { createWebsiteGenerationSkillAdapter } from "./website-generation-skill-adapter";
@@ -1118,6 +1119,49 @@ describe("skill-tool-executor", () => {
     ).not.toThrow();
   });
 
+  it("normalizes structured footer shells to include footer-band when shared CSS defines that utility", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a polished personal technical site with Home and About only. Nav: Home | About.")],
+      phase: "conversation",
+    } as any);
+    const files = [
+      {
+        path: "/styles.css",
+        content:
+          ".site-footer{padding:2.5rem 0;border-top:1px solid #d8dee8;background:#f8fafc}.footer-band{margin-top:4rem;background:#f8fafc}.footer-inner{display:grid}.footer-brand{display:grid}.footer-links{display:flex}.footer-meta{display:grid}",
+        type: "text/css",
+      },
+      { path: "/script.js", content: "(() => {})();", type: "text/javascript" },
+      ...decision.routes.map((route) => ({
+        path: route === "/" ? "/index.html" : `${route}/index.html`,
+        type: "text/html",
+        content: [
+          "<!doctype html>",
+          "<html><head>",
+          '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+          '  <link rel="stylesheet" href="/styles.css" />',
+          '  <script src="/script.js"></script>',
+          "</head><body>",
+          '  <header><nav><a href="/">Home</a><a href="/about">About</a></nav></header>',
+          `  <main><section><h1>${route === "/" ? "Home" : "About"}</h1><p>Finished visitor-facing content for this route with enough depth for QA.</p></section></main>`,
+          '  <footer class="site-footer"><div class="footer-inner"><div class="footer-brand"><a class="brand" href="/">Brand</a><p class="footer-note">Independent technical practice with clear service and writing context.</p></div><div class="footer-links"><a href="/">Home</a><a href="/about">About</a></div><div class="footer-meta"><p>Support copy.</p></div></div></footer>',
+          "</body></html>",
+        ].join("\n"),
+      })),
+    ];
+
+    const result = validateWebsiteRequiredFilesWithQaForAdapter({
+      decision,
+      files,
+      requirementText: "Personal technical site with a structured shared footer shell.",
+      enforceCorporateHomepageContract: false,
+    });
+
+    const byPath = new Map(result.files.map((file) => [file.path, String(file.content || "")]));
+    expect(byPath.get("/index.html")).toContain('class="site-footer footer-band"');
+    expect(byPath.get("/about/index.html")).toContain('class="site-footer footer-band"');
+  });
+
   it("accepts structured footers that use footer-panel/footer-col/footer-notes columns", () => {
     const decision = buildLocalDecisionPlan({
       messages: [new HumanMessage("Build site. Nav: Home | Products | Cases | Contact")],
@@ -1158,6 +1202,148 @@ describe("skill-tool-executor", () => {
         decision,
         files,
         requirementText: "Institutional site with a structured shared footer shell.",
+        enforceCorporateHomepageContract: false,
+      }),
+    ).not.toThrow();
+  });
+
+  it("accepts compact structured editorial footers with footer-inner plus nav and note zones", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a portfolio blog site with Home and Blog.")],
+      phase: "conversation",
+    } as any);
+    const files = [
+      {
+        path: "/styles.css",
+        content:
+          ".site-footer{padding:2.5rem 0;margin-top:4rem;border-top:1px solid #d8dee8;background:#f8fafc}.footer-inner{display:flex;justify-content:space-between;gap:1rem}.footer-nav{display:flex;gap:1rem}.footer-note{color:#475569}.entry-card{padding:1rem;border:1px solid #e2e8f0}",
+        type: "text/css",
+      },
+      { path: "/script.js", content: "(() => {})();", type: "text/javascript" },
+      {
+        path: "/index.html",
+        type: "text/html",
+        content: [
+          "<!doctype html>",
+          "<html><head>",
+          '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+          '  <link rel="stylesheet" href="/styles.css" />',
+          '  <script src="/script.js"></script>',
+          "</head><body>",
+          '  <header><nav><a href="/" aria-current="page">Home</a><a href="/blog">Blog</a></nav></header>',
+          `  <main>
+            <section><h1>Deep Notes</h1><p>A portfolio-style editorial homepage with enough route-owned copy to keep shell validation focused on the footer shape.</p></section>
+            <section><h2>Writing focus</h2><p>The homepage introduces the publication viewpoint, current AI themes, and why readers should trust the ongoing archive.</p></section>
+            <section><h2>Proof</h2><p>Selected essays, practical notes, and durable documentation habits reinforce the homepage before visitors move into the archive.</p></section>
+          </main>`,
+          '  <footer class="site-footer"><div class="footer-inner"><nav class="footer-nav"><a href="/">Home</a><a href="/blog">Blog</a></nav><p class="footer-note">Deep Notes · Practical AI writing and documentation-focused updates.</p></div></footer>',
+          "</body></html>",
+        ].join("\n"),
+      },
+      {
+        path: "/blog/index.html",
+        type: "text/html",
+        content: [
+          "<!doctype html>",
+          "<html><head>",
+          '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+          '  <link rel="stylesheet" href="/styles.css" />',
+          '  <script src="/script.js"></script>',
+          "</head><body>",
+          '  <header><nav><a href="/">Home</a><a href="/blog" aria-current="page">Blog</a></nav></header>',
+          `  <main>
+            <section><h1>Blog</h1><p>The archive route keeps a route-owned editorial opening with enough visible depth to avoid thin-content fallback noise.</p></section>
+            <section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list><article class="entry-card"><h2>Recent entries</h2><p>Visitors can move from the homepage into a compact archive surface with a clear reading path and stable navigation.</p></article></div></section>
+            <section><h2>Continue reading</h2><p>The archive keeps a concise footer summary and route links so readers can continue browsing without losing context.</p></section>
+          </main>`,
+          '  <footer class="site-footer"><div class="footer-inner"><nav class="footer-nav"><a href="/">Home</a><a href="/blog" aria-current="page">Blog</a></nav><p class="footer-note">Deep Notes · Practical AI writing and documentation-focused updates.</p></div></footer>',
+          "</body></html>",
+        ].join("\n"),
+      },
+    ];
+
+    expect(() =>
+      validateWebsiteRequiredFilesWithQaForAdapter({
+        decision: {
+          ...decision,
+          routes: ["/", "/blog"],
+          navLabels: ["Home", "Blog"],
+          pageBlueprints: [],
+        },
+        files,
+        requirementText: "Portfolio blog site with a compact shared footer shell.",
+        websiteSurfaceMode: "portfolio-blog-site",
+        enforceCorporateHomepageContract: false,
+      }),
+    ).not.toThrow();
+  });
+
+  it("accepts structured footers when the visible footer band chrome is defined on .footer-band", () => {
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage("Build a portfolio blog site with Home and Blog.")],
+      phase: "conversation",
+    } as any);
+    const files = [
+      {
+        path: "/styles.css",
+        content:
+          ".footer-band{margin-top:auto;border-top:1px solid #d8dee8;background:#f8fafc}.footer-inner{padding:28px 0 20px;display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:22px}.footer-brand{display:grid;gap:10px}.footer-links{display:grid;gap:10px}.footer-meta{color:#475569}.entry-card{padding:1rem;border:1px solid #e2e8f0}",
+        type: "text/css",
+      },
+      { path: "/script.js", content: "(() => {})();", type: "text/javascript" },
+      {
+        path: "/index.html",
+        type: "text/html",
+        content: [
+          "<!doctype html>",
+          "<html><head>",
+          '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+          '  <link rel="stylesheet" href="/styles.css" />',
+          '  <script src="/script.js"></script>',
+          "</head><body>",
+          '  <header><nav><a href="/" aria-current="page">Home</a><a href="/blog">Blog</a></nav></header>',
+          `  <main>
+            <section><h1>Northline Journal</h1><p>A bilingual AI publication homepage with enough finished content to keep shared-shell verification focused on the footer shape.</p></section>
+            <section><h2>Editorial focus</h2><p>The homepage explains the writing themes, practical AI experiments, and research observations that make the publication worth returning to.</p></section>
+            <section><h2>Trust signal</h2><p>Visitors can see the archive direction, the publication voice, and the next reading path without relying on generic shell copy.</p></section>
+          </main>`,
+          '  <footer class="site-footer footer-band"><div class="footer-inner"><div class="footer-brand"><strong>Northline Journal</strong><p>Focused AI articles and knowledge publishing.</p></div><div class="footer-links"><nav aria-label="Footer"><a href="/">Home</a><a href="/blog">Blog</a></nav></div><div class="footer-meta"><p>Calm, reliable, continuously updated writing.</p></div></div></footer>',
+          "</body></html>",
+        ].join("\n"),
+      },
+      {
+        path: "/blog/index.html",
+        type: "text/html",
+        content: [
+          "<!doctype html>",
+          "<html><head>",
+          '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+          '  <link rel="stylesheet" href="/styles.css" />',
+          '  <script src="/script.js"></script>',
+          "</head><body>",
+          '  <header><nav><a href="/">Home</a><a href="/blog" aria-current="page">Blog</a></nav></header>',
+          `  <main>
+            <section><h1>Blog</h1><p>The archive route keeps a route-owned editorial opening with enough visible depth to avoid thin-content fallback noise.</p></section>
+            <section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list><article class="entry-card"><h2>Recent entries</h2><p>Visitors can move from the homepage into a compact archive surface with a clear reading path and stable navigation.</p></article></div></section>
+            <section><h2>Reading context</h2><p>The archive keeps a concise footer summary and route links so readers can continue browsing without losing context.</p></section>
+          </main>`,
+          '  <footer class="site-footer footer-band"><div class="footer-inner"><div class="footer-brand"><strong>Northline Journal</strong><p>Focused AI articles and knowledge publishing.</p></div><div class="footer-links"><nav aria-label="Footer"><a href="/">Home</a><a href="/blog" aria-current="page">Blog</a></nav></div><div class="footer-meta"><p>Calm, reliable, continuously updated writing.</p></div></div></footer>',
+          "</body></html>",
+        ].join("\n"),
+      },
+    ];
+
+    expect(() =>
+      validateWebsiteRequiredFilesWithQaForAdapter({
+        decision: {
+          ...decision,
+          routes: ["/", "/blog"],
+          navLabels: ["Home", "Blog"],
+          pageBlueprints: [],
+        },
+        files,
+        requirementText: "Portfolio blog site with a structured shared footer shell.",
+        websiteSurfaceMode: "portfolio-blog-site",
         enforceCorporateHomepageContract: false,
       }),
     ).not.toThrow();
@@ -1469,6 +1655,7 @@ describe("skill-tool-executor", () => {
       route: "/products",
       navLabel: "Products",
       pageKind: "intent",
+      owner: "brand",
       routeContract: ["route=/products", "navLabel=Products", "purpose=Products route"],
       inheritedTerminology: ["corporate-b2b-site"],
       inheritedTokens: ["#2563EB"],
@@ -1564,6 +1751,41 @@ describe("skill-tool-executor", () => {
     expect(result.summary).toContain("provider_round_fallback:pptoken/gpt-5.4-mini");
   });
 
+  it("preserves provider metadata when a route-unit bridge worker recovers on fallback", async () => {
+    const adapter = createStaticGenerationWorkerAdapter({
+      id: "bridge-worker-test",
+      capabilities: ["route-unit"],
+      runUnit: async (input) => ({
+        unitId: input.unitId,
+        status: "passed",
+        provider: "aiberm",
+        model: "gpt-5.4-mini",
+        files: [
+          {
+            path: "/products/index.html",
+            content: "<!doctype html><html><body><main><h1>Products</h1></main></body></html>",
+            type: "text/html",
+          },
+        ],
+        summary: "Recovered on fallback provider.",
+        notes: ["provider_round_fallback:pptoken/gpt-5.4-mini"],
+      }),
+    });
+
+    const result = await adapter.runUnit({
+      unitId: "route-products",
+      route: "/products",
+      targetFiles: ["/products/index.html"],
+      prompt: "Generate products route.",
+      context: {},
+    });
+
+    expect(result.status).toBe("passed");
+    expect(result.provider).toBe("aiberm");
+    expect(result.model).toBe("gpt-5.4-mini");
+    expect(result.notes).toContain("provider_round_fallback:pptoken/gpt-5.4-mini");
+  });
+
   it("gates provider route-unit bridge to hybrid isolated interior HTML rounds with explicit opt-out", () => {
     const previousBridge = process.env.SHPITTO_ROUTE_UNIT_PROVIDER_BRIDGE;
     const previousGenerator = process.env.SHPITTO_SITE_GENERATOR;
@@ -1574,6 +1796,13 @@ describe("skill-tool-executor", () => {
         shouldUseRouteUnitProviderBridgeForTesting({
           targetFiles: ["/products/index.html"],
           instruction: "Products",
+          strictSingleTarget: true,
+        }),
+      ).toBe(true);
+      expect(
+        shouldUseRouteUnitProviderBridgeForTesting({
+          targetFiles: ["/index.html"],
+          instruction: "Home",
           strictSingleTarget: true,
         }),
       ).toBe(true);
@@ -1602,7 +1831,7 @@ describe("skill-tool-executor", () => {
           instruction: "Home",
           strictSingleTarget: true,
         }),
-      ).toBe(false);
+      ).toBe(true);
       expect(
         shouldUseRouteUnitProviderBridgeForTesting({
           targetFiles: ["/products/index.html", "/styles.css"],
@@ -2811,7 +3040,7 @@ describe("skill-tool-executor", () => {
 
     expect(objective.targetFiles).toEqual(["/index.html"]);
     expect(objective.instruction).toContain("Emit the homepage first in this round");
-    expect(objective.strictSingleTarget).toBe(false);
+    expect(objective.strictSingleTarget).toBe(true);
   });
 
   it("splits non-home interior HTML routes into smaller batches after the homepage", () => {
@@ -3969,6 +4198,95 @@ describe("skill-tool-executor", () => {
     expect(validated.files.some((file) => /^\/blog\/[^/]+\/index\.html$/i.test(file.path))).toBe(false);
   });
 
+  it("normalizes portfolio-blog first-pass detail links when surface mode is passed explicitly without workflow context", () => {
+    const requirementText = [
+      "Build a polished personal technical blog for an AI consultant with Home, Blog, About, and Contact.",
+      "The first pass only needs a strong blog index and a profile-led homepage.",
+      "Do not generate blog detail pages yet. Blog details will be filled later by a separate workflow.",
+    ].join(" ");
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage(requirementText)],
+      phase: "conversation",
+    } as any);
+
+    const files = validGeneratedFiles(["/", "/blog", "/about", "/contact"])
+      .filter((file) => !/^\/blog\/[^/]+\/index\.html$/i.test(String(file.path || "")))
+      .map((file) =>
+        file.path === "/styles.css"
+          ? {
+              ...file,
+              content: `${String(file.content || "")}\n.blog-card { padding: 24px; }`,
+            }
+          : file.path === "/blog/index.html"
+            ? {
+                ...file,
+                content: String(file.content).replace(
+                  /<main>[\s\S]*<\/main>/,
+                  `<main><h1>Blog</h1><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div data-shpitto-blog-list><article class="blog-card"><h2><a href="/blog/ai-opportunity-scan/">AI opportunity scan</a></h2><p>Archive-ready summary.</p></article><article class="blog-card"><h2><a href="/blog/devops-operating-system/">DevOps operating system</a></h2><p>Archive-ready summary.</p></article><article class="blog-card"><h2><a href="/blog/ai-saas-commercialization/">AI SaaS commercialization</a></h2><p>Archive-ready summary.</p></article></div></section></main>`,
+                ),
+              }
+            : file,
+      );
+
+    const validated = validateAndNormalizeRequiredFilesWithQa({
+      decision,
+      files,
+      requirementText,
+      websiteSurfaceMode: "portfolio-blog-site",
+    });
+
+    const blogHtml = String(validated.files.find((file) => file.path === "/blog/index.html")?.content || "");
+    expect(blogHtml).not.toContain('href="/blog/ai-opportunity-scan/"');
+    expect(blogHtml).not.toContain('href="/blog/devops-operating-system/"');
+    expect(blogHtml).not.toContain('href="/blog/ai-saas-commercialization/"');
+    expect(blogHtml).toContain("<span");
+    expect(validated.files.some((file) => /^\/blog\/[^/]+\/index\.html$/i.test(file.path))).toBe(false);
+  });
+
+  it("sanitizes blog index page-mechanics entry wording during portfolio-blog first-pass normalization", () => {
+    const requirementText = [
+      "Build a polished personal technical blog for an AI consultant with Home, Blog, About, and Contact.",
+      "The first pass only needs a strong blog index and a profile-led homepage.",
+      "Do not generate blog detail pages yet. Blog details will be filled later by a separate workflow.",
+    ].join(" ");
+    const decision = buildLocalDecisionPlan({
+      messages: [new HumanMessage(requirementText)],
+      phase: "conversation",
+    } as any);
+
+    const files = validGeneratedFiles(["/", "/blog", "/about", "/contact"])
+      .filter((file) => !/^\/blog\/[^/]+\/index\.html$/i.test(String(file.path || "")))
+      .map((file) =>
+        file.path === "/styles.css"
+          ? {
+              ...file,
+              content: `${String(file.content || "")}\n.blog-card { padding: 24px; }`,
+            }
+          : file.path === "/blog/index.html"
+            ? {
+                ...file,
+                content: String(file.content).replace(
+                  /<main>[\s\S]*<\/main>/,
+                  `<main><section data-shpitto-blog-root data-shpitto-blog-api="/api/blog/posts"><div class="collection-section-head"><p class="section-copy">每篇文章都以清晰标题、简要摘要和明确阅读入口呈现，便于快速检索主题与内容方向。</p></div><div data-shpitto-blog-list><article class="blog-card"><h2><a href="/blog/ai-opportunity-scan/">AI opportunity scan</a></h2><p>Archive-ready summary.</p></article></div></section></main>`,
+                ),
+              }
+            : file,
+      );
+
+    const validated = validateAndNormalizeRequiredFilesWithQa({
+      decision,
+      files,
+      requirementText,
+      websiteSurfaceMode: "portfolio-blog-site",
+    });
+
+    const blogHtml = String(validated.files.find((file) => file.path === "/blog/index.html")?.content || "");
+    expect(blogHtml).not.toContain("明确阅读入口");
+    expect(blogHtml).not.toContain("阅读入口");
+    expect(() => findVisiblePageMechanicsScaffoldForTesting(blogHtml)).not.toThrow();
+    expect(findVisiblePageMechanicsScaffoldForTesting(blogHtml)).toEqual([]);
+  });
+
   it("does not treat deferred blog-detail wording as an immediate detail-fill request", () => {
     const requirementText = [
       "Build a polished personal technical blog for an AI consultant with Home, Blog, About, and Contact.",
@@ -4384,6 +4702,28 @@ describe("skill-tool-executor", () => {
     expect(normalized).toContain("runtime-nav-single-row-fix");
     expect(normalized).toContain("flex-wrap: nowrap;");
     expect(normalized).toContain("overflow-x: auto;");
+  });
+
+  it("normalizes negative heading letter-spacing and hoists repeated raw hex colors into root tokens", () => {
+    const css = [
+      ":root{--accent:#1f5eff;}",
+      "h1{letter-spacing:-.04em;color:#132033}",
+      ".button-primary{background:#fff;color:#132033;border-color:#d9e0ea}",
+      ".locale-switcher{background:#edf2fb}",
+      "body{background:linear-gradient(180deg,#f8faff 0%,#fff 100%)}",
+    ].join("");
+
+    const normalized = normalizeGeneratedCssForTesting(css);
+
+    expect(normalized).toContain("letter-spacing: 0");
+    expect(normalized).toContain("--runtime-color-white: #ffffff;");
+    expect(normalized).toContain("--runtime-color-bg-soft: #f8faff;");
+    expect(normalized).toContain("--runtime-color-surface-muted: #edf2fb;");
+    expect(normalized).toContain("--runtime-color-line-soft: #d9e0ea;");
+    expect(normalized).toContain("--runtime-color-ink-strong: #132033;");
+    expect(normalized).toContain("background:var(--runtime-color-white)");
+    expect(normalized).toContain("color:var(--runtime-color-ink-strong)");
+    expect(normalized).toContain("border-color:var(--runtime-color-line-soft)");
   });
 
   it("removes real consultation forms from routes outside the explicit host allowlist", () => {
@@ -7581,6 +7921,7 @@ describe("skill-tool-executor", () => {
           route: "/",
           navLabel: "Home",
           pageKind: "home",
+          owner: "brand",
           routeContract: ["seedContract=industrial-b2b-foundation"],
           inheritedTerminology: [],
           inheritedTokens: [],
@@ -7598,6 +7939,7 @@ describe("skill-tool-executor", () => {
           route: "/products",
           navLabel: "Products",
           pageKind: "intent",
+          owner: "brand",
           routeContract: ["seedContract=precision-catalog-template"],
           inheritedTerminology: [],
           inheritedTokens: [],

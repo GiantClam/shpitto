@@ -5,6 +5,7 @@ import path from "node:path";
 import {
   getWebsiteGenerationSkillBundle,
   inferRouteFamiliesForPlanning,
+  isWebsiteGenerationSkillId,
   listDocumentContentSkillIds,
   listWebsiteSeedSkillIds,
   loadProjectSkill,
@@ -15,13 +16,29 @@ import {
   selectDocumentContentSkillsForIntent,
   selectWebsiteSeedSkillsForIntent,
 } from "./project-skill-loader";
+import { selectAiImageToolBaselineSelection } from "./product-baseline-contract";
 
 describe("project-skill-loader", () => {
   it("resolves aliases for brainstorming and writing-plans", () => {
     expect(resolveProjectSkillAlias("brainstorming")).toBe("superpowers-brainstorming");
     expect(resolveProjectSkillAlias("writing-plans")).toBe("superpowers-writing-plans");
+    expect(resolveProjectSkillAlias("build-ai-image-tool")).toBe("website-generation-workflow");
+    expect(resolveProjectSkillAlias("build-b2b-site")).toBe("corporate-b2b-site");
+    expect(resolveProjectSkillAlias("build-marketing-site")).toBe("marketing-landing-site");
+    expect(resolveProjectSkillAlias("build-docs-site")).toBe("docs-knowledge-site");
+    expect(resolveProjectSkillAlias("build-content-hub")).toBe("content-hub-site");
     expect(resolveProjectSkillAlias("static-site-css-styles")).toBe("website-generation-workflow");
     expect(resolveProjectSkillAlias("web-prototype")).toBe("web-prototype");
+  });
+
+  it("recognizes productized website entry skills as website-generation skills", () => {
+    expect(isWebsiteGenerationSkillId("website-generation-workflow")).toBe(true);
+    expect(isWebsiteGenerationSkillId("build-ai-image-tool")).toBe(true);
+    expect(isWebsiteGenerationSkillId("build-b2b-site")).toBe(true);
+    expect(isWebsiteGenerationSkillId("build-marketing-site")).toBe(true);
+    expect(isWebsiteGenerationSkillId("build-docs-site")).toBe(true);
+    expect(isWebsiteGenerationSkillId("build-content-hub")).toBe(true);
+    expect(isWebsiteGenerationSkillId("pdf")).toBe(false);
   });
 
   it("loads main website-generation-workflow skill from apps/web/skills", async () => {
@@ -223,6 +240,39 @@ describe("project-skill-loader", () => {
     else process.env.SHPITTO_OD_IMPORTED_SKILLS = previous;
     if (previousGenerator === undefined) delete process.env.SHPITTO_SITE_GENERATOR;
     else process.env.SHPITTO_SITE_GENERATOR = previousGenerator;
+  });
+
+  it("blocks brand-only imported seeds from product-owned baseline routes", async () => {
+    const previous = process.env.SHPITTO_OD_IMPORTED_SKILLS;
+    delete process.env.SHPITTO_OD_IMPORTED_SKILLS;
+
+    const selected = await selectWebsiteSeedSkillsForIntent({
+      requirementText: "Build the AI image tool workspace and history flows.",
+      routes: ["/app", "/history"],
+      maxSkills: 4,
+      productBaselineSelection: selectAiImageToolBaselineSelection(),
+    });
+
+    expect(selected).toEqual([]);
+
+    if (previous === undefined) delete process.env.SHPITTO_OD_IMPORTED_SKILLS;
+    else process.env.SHPITTO_OD_IMPORTED_SKILLS = previous;
+  });
+
+  it("blocks brand-only imported seeds from product baselines even when routes are not explicitly passed", async () => {
+    const previous = process.env.SHPITTO_OD_IMPORTED_SKILLS;
+    delete process.env.SHPITTO_OD_IMPORTED_SKILLS;
+
+    const selected = await selectWebsiteSeedSkillsForIntent({
+      requirementText: "Build the FluxKreaFree AI image product baseline.",
+      maxSkills: 4,
+      productBaselineSelection: selectAiImageToolBaselineSelection(),
+    });
+
+    expect(selected).toEqual([]);
+
+    if (previous === undefined) delete process.env.SHPITTO_OD_IMPORTED_SKILLS;
+    else process.env.SHPITTO_OD_IMPORTED_SKILLS = previous;
   });
 
   it("uses default hybrid generator mode to promote compatible Open Design and HTML Anything primary seeds", async () => {

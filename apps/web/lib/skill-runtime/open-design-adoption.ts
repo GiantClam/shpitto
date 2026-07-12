@@ -28,6 +28,7 @@ export type WebsiteDiscoveryBrief = {
 
 export type ImportedWebsiteSkillActivationMode = "default" | "primary" | "sidecar" | "opt_in";
 export type ImportedWebsiteSkillRolloutStatus = "active" | "staged" | "disabled";
+export type ImportedWebsiteSkillSurfaceScope = "brand-only" | "website-only" | "product-ui-safe";
 
 export type OpenDesignAdoptionFlags = {
   surfaceMode: boolean;

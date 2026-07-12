@@ -24,6 +24,9 @@ export type GenerationUnitResult = {
   files: Array<{ path: string; content: string; type?: string }>;
   summary?: string;
   issues?: string[];
+  provider?: string;
+  model?: string;
+  notes?: string[];
 };
 
 export type GenerationWorkerAdapter = {

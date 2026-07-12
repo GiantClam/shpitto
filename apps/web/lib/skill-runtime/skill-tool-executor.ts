@@ -28,6 +28,7 @@ import {
   createSkillExecutionGenerationWorkerAdapter,
   type GenerationUnitInput,
 } from "./generation-worker-adapter.ts";
+import { createSkillToolRouteUnitGenerationWorker } from "./v2-route-generation-worker.ts";
 import {
   renderWebsiteArtifactGeneratorContract,
   resolveWebsiteArtifactGeneratorMode,
@@ -1144,6 +1145,7 @@ function sanitizeSkillToolHtmlOutput(
   filePath: string,
   html: string,
   requirementText: string,
+  websiteSurfaceMode?: WebsiteSurfaceMode,
 ): string {
   const stripConsultationFormMarkup = (sourceHtml: string): string =>
     String(sourceHtml || "")
@@ -1156,7 +1158,13 @@ function sanitizeSkillToolHtmlOutput(
   const normalizedPath = normalizePath(filePath);
   let next = String(html || "");
   if (!next) return next;
-  if (normalizedPath === "/blog/index.html" && requestedPublishableContentCount(requirementText)) {
+  if (
+    normalizedPath === "/blog/index.html" &&
+    (
+      requestedPublishableContentCount(requirementText) ||
+      shouldUseIndexOnlyPortfolioBlogFirstPass({ requirementText, websiteSurfaceMode })
+    )
+  ) {
     next = sanitizeBlogIndexEditorialScaffoldText(next);
   }
   if (normalizedPath.endsWith(".html")) {
@@ -1175,8 +1183,9 @@ export function sanitizeWebsiteSkillHtmlOutputForAdapter(
   filePath: string,
   html: string,
   requirementText: string,
+  websiteSurfaceMode?: WebsiteSurfaceMode,
 ): string {
-  return sanitizeSkillToolHtmlOutput(filePath, html, requirementText);
+  return sanitizeSkillToolHtmlOutput(filePath, html, requirementText, websiteSurfaceMode);
 }
 
 function extractBlogDetailRoutes(html: string): string[] {
@@ -1982,8 +1991,35 @@ function isLikelyValidI18nJson(raw: string): boolean {
 }
 
 function normalizeGeneratedCss(rawCss: string): string {
-  const css = stripMarkdownCodeFences(rawCss).trim();
+  let css = stripMarkdownCodeFences(rawCss).trim();
   if (!css) return "";
+  css = css.replace(/letter-spacing\s*:\s*-\s*(\d*\.?\d+[a-z%]*)/gi, "letter-spacing: 0");
+  const rootBlockMatch = css.match(/:root\b[^{]*\{[\s\S]*?\}/i);
+  const canonicalHexTokenMap: Array<[RegExp, string, string]> = [
+    [/#fff(?:fff)?\b/gi, "--runtime-color-white", "#ffffff"],
+    [/#f8faff\b/gi, "--runtime-color-bg-soft", "#f8faff"],
+    [/#edf2fb\b/gi, "--runtime-color-surface-muted", "#edf2fb"],
+    [/#d9e0ea\b/gi, "--runtime-color-line-soft", "#d9e0ea"],
+    [/#132033\b/gi, "--runtime-color-ink-strong", "#132033"],
+  ];
+  if (rootBlockMatch) {
+    let rootBlock = rootBlockMatch[0];
+    for (const [, tokenName, tokenValue] of canonicalHexTokenMap) {
+      if (!new RegExp(`${tokenName}\\s*:`, "i").test(rootBlock)) {
+        rootBlock = rootBlock.replace(/\}\s*$/, `\n  ${tokenName}: ${tokenValue};\n}`);
+      }
+    }
+    css = css.replace(rootBlockMatch[0], rootBlock);
+    const rootSpan = rootBlockMatch.index ?? 0;
+    const rootEnd = rootSpan + rootBlock.length;
+    const beforeRoot = css.slice(0, rootSpan);
+    const withinRoot = css.slice(rootSpan, rootEnd);
+    let afterRoot = css.slice(rootEnd);
+    for (const [pattern, tokenName] of canonicalHexTokenMap) {
+      afterRoot = afterRoot.replace(pattern, `var(${tokenName})`);
+    }
+    css = `${beforeRoot}${withinRoot}${afterRoot}`;
+  }
   const patches: string[] = [];
   if (/\.site-nav[^{]*\{[^}]*flex-wrap\s*:\s*wrap/i.test(css) && !/runtime-nav-single-row-fix/i.test(css)) {
     patches.push([
@@ -3289,6 +3325,7 @@ function footerNeedsStructuredShell(footerHtml: string, stylesCss = ""): boolean
   const hasIdentityZone =
     /\bfooter(?:-|__)brand\b/i.test(footer) ||
     /<a\b[^>]*class=(["'])[^"']*\bbrand\b/i.test(footer) ||
+    /\bfooter(?:-|__)(?:copy|summary)\b/i.test(footer) ||
     (/\bfooter(?:-|__)col\b/i.test(footer) && /<a\b[^>]*class=(["'])[^"']*\bbrand\b/i.test(footer));
   const hasNavigationZone =
     /\bfooter(?:-|__)(?:links|nav)\b/i.test(footer) ||
@@ -3296,10 +3333,36 @@ function footerNeedsStructuredShell(footerHtml: string, stylesCss = ""): boolean
     (/<ul\b[\s\S]*?<li>\s*<a\b/gi.test(footer) && (footer.match(/<li>\s*<a\b/gi) || []).length >= 3);
   const hasSupportZone =
     /\bfooter(?:-|__)(?:meta|actions|top|bottom|notes)\b/i.test(footer) ||
+    /\bfooter(?:-|__)note\b/i.test(footer) ||
     /\bfineprint\b/i.test(footer);
   if (!hasFooterBandStyle(stylesCss)) return true;
+  const hasCompactStructuredEditorialShell = hasLayoutShell && hasNavigationZone && (hasIdentityZone || hasSupportZone);
+  if (hasCompactStructuredEditorialShell) return false;
   const structuredZoneCount = [hasLayoutShell, hasIdentityZone, hasNavigationZone, hasSupportZone].filter(Boolean).length;
   return structuredZoneCount < 3;
+}
+
+function ensureStructuredFooterBandClass(html: string, stylesCss = ""): string {
+  const source = String(html || "");
+  const styles = String(stylesCss || "");
+  if (!source || !styles || !/\.footer-band\b/i.test(styles)) return source;
+  const footerBlockMatch = source.match(/<footer\b[^>]*>[\s\S]*?<\/footer>/i);
+  const footerBlock = String(footerBlockMatch?.[0] || "");
+  const looksStructured =
+    /\b(?:footer-inner|site-footer__inner|footer-brand|footer-links|footer-nav|footer-meta|footer-actions)\b/i.test(
+      footerBlock,
+    );
+  if (!looksStructured) return source;
+  return source.replace(/<footer\b([^>]*)>/i, (full, attrs) => {
+    const attrText = String(attrs || "");
+    const classMatch = attrText.match(/\bclass=(["'])([^"']*)\1/i);
+    if (!classMatch) return `<footer${attrText} class="footer-band">`;
+    const quote = classMatch[1];
+    const classValue = classMatch[2];
+    if (/\bfooter-band\b/i.test(classValue)) return full;
+    const nextClassValue = `${classValue} footer-band`.trim().replace(/\s+/g, " ");
+    return `<footer${attrText.replace(classMatch[0], `class=${quote}${nextClassValue}${quote}`)}>`;
+  });
 }
 
 function findCorporateB2BHomepageContractIssues(
@@ -3597,6 +3660,7 @@ export function normalizeWebsiteStaticFilesForPreview(params: {
   decision: LocalDecisionPlan;
   files: RuntimeWorkflowFile[];
   requirementText?: string;
+  websiteSurfaceMode?: WebsiteSurfaceMode;
 }): RuntimeWorkflowFile[] {
   const requirementText = String(params.requirementText || params.decision?.requirementText || "");
   const defaultVisibleLanguage = bilingualDefaultVisibleLanguage(requirementText);
@@ -3606,7 +3670,7 @@ export function normalizeWebsiteStaticFilesForPreview(params: {
   );
   const indexOnlyPortfolioBlogFirstPass = shouldUseIndexOnlyPortfolioBlogFirstPass({
     requirementText,
-    websiteSurfaceMode: workflowSurfaceSelection.websiteSurfaceMode,
+    websiteSurfaceMode: params.websiteSurfaceMode || workflowSurfaceSelection.websiteSurfaceMode,
   });
   const sharedStylesCss = String(
     (params.files || []).find((file) => normalizePath(String(file?.path || "")) === "/styles.css")?.content || "",
@@ -3644,10 +3708,15 @@ export function normalizeWebsiteStaticFilesForPreview(params: {
         };
       }
 
-      const sanitized = sanitizeWebsiteSkillHtmlOutputForAdapter(filePath, content, requirementText);
+      const normalizedBlogScaffold = sanitizeWebsiteSkillHtmlOutputForAdapter(
+        filePath,
+        content,
+        requirementText,
+        params.websiteSurfaceMode || workflowSurfaceSelection.websiteSurfaceMode,
+      );
       const withDocument = wantsBilingualExperience
-        ? ensureBilingualHtmlShell(sanitized, defaultVisibleLanguage, requirementText, params.decision.locale)
-        : ensureHtmlDocument(sanitized);
+        ? ensureBilingualHtmlShell(normalizedBlogScaffold, defaultVisibleLanguage, requirementText, params.decision.locale)
+        : ensureHtmlDocument(normalizedBlogScaffold);
       const routeScopedHtml = rewriteAbsoluteSiteLinksToRelative(withDocument, filePath);
       const html = injectCuratedMediaIntoHtml(
         normalizeEnterpriseTechLegacyDirectionCopy(
@@ -3677,12 +3746,13 @@ export function normalizeWebsiteStaticFilesForPreview(params: {
         filePath,
         requirementText,
       );
+      const htmlWithFooterBand = ensureStructuredFooterBandClass(html, sharedStylesCss);
       return {
         path: filePath,
         content: injectConsultationFormOnAllowedHost(
           filePath,
           normalizeEnterpriseHomepageInlineStyles(
-            normalizeCorporateHomepageOpeningRuntimePassThrough(html, filePath, requirementText),
+            normalizeCorporateHomepageOpeningRuntimePassThrough(htmlWithFooterBand, filePath, requirementText),
             filePath,
             requirementText,
           ),
@@ -4181,7 +4251,11 @@ function isRouteUnitProviderBridgeEnabled(): boolean {
 }
 
 export function shouldUseRouteUnitProviderBridgeForTesting(objective: SkillExecutionRoundObjective): boolean {
-  return isRouteUnitProviderBridgeEnabled() && objective.strictSingleTarget && isIsolatedInteriorHtmlRound(objective.targetFiles);
+  return (
+    isRouteUnitProviderBridgeEnabled() &&
+    objective.strictSingleTarget &&
+    (isIsolatedInteriorHtmlRound(objective.targetFiles) || isIsolatedHomeRound(objective.targetFiles))
+  );
 }
 
 function resolveLightweightRoundModelName(config: ProviderConfig, envKeys: string[]): string {
@@ -4451,10 +4525,12 @@ function buildRouteUnitSnapshotsForToolFlow(params: {
       route,
       navLabel: page.navLabel,
       pageKind: page.pageKind,
+      owner: "brand",
       routeContract: [
         `route=${route}`,
         `navLabel=${page.navLabel}`,
         `pageKind=${page.pageKind}`,
+        "routeOwner=brand",
         `purpose=${page.purpose}`,
       ],
       inheritedTerminology: [params.decision.brandHint || "", params.websiteSurfaceMode || ""].filter(Boolean),
@@ -5632,6 +5708,7 @@ type RouteUnitProviderBridgeResult = {
 };
 
 async function tryInvokeRouteUnitProviderBridgeRound(params: {
+  baseState: AgentState;
   adapter: SkillExecutionAdapter;
   decision: LocalDecisionPlan;
   stylePreset: DesignStylePreset;
@@ -5673,6 +5750,23 @@ async function tryInvokeRouteUnitProviderBridgeRound(params: {
         prompt: string;
       }
     | undefined;
+  const bridgeWorker = createSkillToolRouteUnitGenerationWorker({
+    baseState: {
+      ...(params.baseState as any),
+      workflow_context: {
+        ...(((params.baseState as any)?.workflow_context || {}) as any),
+        providerLock: {
+          provider: params.activeAttempt.config.provider,
+          model: params.activeAttempt.config.modelName,
+        },
+      } as any,
+    } as AgentState,
+    timeoutMs: Math.max(params.absoluteTimeoutMs, params.idleTimeoutMs),
+  });
+  const input = buildGenerationUnitInputFromRouteContract({
+    summary,
+    targetFiles: params.objective.targetFiles,
+  });
   const generationAdapter = createSkillExecutionGenerationWorkerAdapter({
     skillAdapter: params.adapter,
     decision: params.decision,
@@ -5683,50 +5777,60 @@ async function tryInvokeRouteUnitProviderBridgeRound(params: {
     totalRounds: params.totalRounds,
     loadedSkillIds: params.loadedSkillIds,
     emittedFiles: params.emittedFiles,
-    invokeRound: async ({ input, prompt, objective }) => {
-      const roundResult = await invokeRoundWithProviderFallback({
-        attempts: params.providerAttempts,
-        preferredAttempt: params.activeAttempt,
-        excludedProviders: params.excludedProviders,
-        objective: objective as RoundObjective,
-        messages: [...params.toolHistoryMessages, new HumanMessage(prompt)],
-        idleTimeoutMs: params.idleTimeoutMs,
-        absoluteTimeoutMs: params.absoluteTimeoutMs,
-        operation: `route-unit-provider-bridge-${params.roundNumber}`,
-        forceEmitFile: params.forceEmitFile,
-        createModel: ({ config, toolChoice, requestTimeoutMs }) =>
-          createToolProtocolModel({
-            config,
-            requestTimeoutMs,
-            toolChoice,
-          }) as ToolProtocolModel,
-        invokeRound: invokeRoundWithTimeout,
-      });
+    invokeRound: async ({ input, prompt }) => {
+      const result = await bridgeWorker.runUnit(input);
+      if (result.status !== "passed") {
+        throw new Error(result.issues?.join(" | ") || result.summary || `route-unit bridge failed for ${input.unitId}`);
+      }
+      const toolCalls: ToolRoundCall[] = result.files.map((file) => ({
+        name: "emit_file",
+        args: {
+          path: file.path,
+          content: file.content,
+        },
+      }));
+      toolCalls.push({ name: "finish", args: {} });
       captured = {
-        output: roundResult.output,
-        attempt: roundResult.attempt,
-        notes: roundResult.notes,
+        output: {
+          assistant: String(result.summary || "").trim(),
+          tool_calls: toolCalls,
+        },
+        attempt: {
+          ...params.activeAttempt,
+          config: {
+            ...params.activeAttempt.config,
+            provider: (String(result.provider || "").trim() as LlmProvider) || params.activeAttempt.config.provider,
+            modelName: String(result.model || "").trim() || params.activeAttempt.config.modelName,
+          },
+          lock: {
+            ...params.activeAttempt.lock,
+            provider: (String(result.provider || "").trim() as LlmProvider) || params.activeAttempt.lock.provider,
+            model: String(result.model || "").trim() || params.activeAttempt.lock.model,
+          },
+        },
+        notes: [
+          `route_unit_provider_bridge:${input.unitId}:${params.objective.targetFiles.join("|")}`,
+          ...(result.notes || []),
+          String(result.summary || "").trim(),
+        ].filter(Boolean),
         prompt,
       };
       return {
         unitId: input.unitId,
         status: "passed",
-        files: [],
+        files: result.files,
         summary: `route-unit provider bridge dispatched ${input.unitId}`,
       };
     },
   });
-  const input = buildGenerationUnitInputFromRouteContract({
-    summary,
-    targetFiles: params.objective.targetFiles,
-  });
   await generationAdapter.runUnit(input);
   if (!captured) return undefined;
+  const noteSet = new Set<string>(captured.notes.filter(Boolean));
   return {
     output: captured.output,
     attempt: captured.attempt,
     prompt: captured.prompt,
-    notes: [`route_unit_provider_bridge:${input.unitId}:${params.objective.targetFiles.join("|")}`, ...captured.notes],
+    notes: Array.from(noteSet),
   };
 }
 
@@ -5754,6 +5858,7 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
     ensureEnglishFirstI18nResourceFiles(
       normalizeWebsiteStaticFilesForPreview({
         decision: params.decision,
+        websiteSurfaceMode: params.websiteSurfaceMode,
         files: files.map((file) => {
           if (file.path === "/styles.css") {
             return {
@@ -5882,7 +5987,7 @@ export function validateAndNormalizeRequiredFilesWithQa(params: {
     );
   }
 
-  assertSharedShellConsistency(params.decision, byPath, params.requirementText || "");
+  assertSharedShellConsistency(params.decision, byPath, params.requirementText || "", params.websiteSurfaceMode);
   assertGenericRouteShapeQuality(params.decision, byPath);
   assertConsultationFormRequirement(params.decision, byPath, params.requirementText || "");
   assertNoReservedPlaceholderContacts(byPath);
@@ -6327,7 +6432,7 @@ function hasFooterBandStyle(stylesCss: string): boolean {
   return Array.from(styles.matchAll(/([^{}]+)\{([^{}]*)\}/g)).some((match) => {
     const selector = String(match[1] || "");
     const declarations = String(match[2] || "");
-    const targetsFooterBand = /(?:^|[,\s])(?:footer|\.site-footer|\.footer)(?:[#.:\s,{]|$)/i.test(selector);
+    const targetsFooterBand = /(?:^|[,\s])(?:footer|\.site-footer|\.footer|\.footer-band)(?:[#.:\s,{]|$)/i.test(selector);
     const givesVisibleBand =
       /\b(?:padding(?:-[\w-]+)?|background(?:-[\w-]+)?|border-top|margin-top)\s*:/i.test(declarations);
     return targetsFooterBand && givesVisibleBand;
@@ -6521,6 +6626,7 @@ function assertSharedShellConsistency(
   decision: LocalDecisionPlan,
   byPath: Map<string, RuntimeWorkflowFile>,
   requirementText = "",
+  websiteSurfaceMode?: WebsiteSurfaceMode,
 ) {
   const plannedRoutes = collectAllowedSharedShellRoutes(decision, requirementText);
   const homeHtml = ensureHtmlDocument(String(byPath.get("/index.html")?.content || ""));
@@ -7137,7 +7243,7 @@ function planRoundObjective(round: number, missingFiles: string[]): RoundObjecti
       targetFiles: ["/index.html"],
       instruction:
         `Emit the homepage first in this round: ${describeObjectiveTarget("/index.html")}. Focus on the shared shell, hero hierarchy, navigation, footer continuity, and first-impression quality before expanding the interior route batch.`,
-      strictSingleTarget: false,
+      strictSingleTarget: true,
     };
   }
   const pageTargets = missing
@@ -8043,6 +8149,7 @@ export async function runSkillToolExecutor(params: SkillToolExecutorParams): Pro
         let roundOutput: ToolRoundOutput;
         try {
           const bridgeResult = await tryInvokeRouteUnitProviderBridgeRound({
+            baseState: params.state,
             adapter,
             decision,
             stylePreset,

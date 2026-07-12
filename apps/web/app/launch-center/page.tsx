@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { Clock3, FolderKanban, LayoutTemplate, MessageCircle, Sparkles } from "lucide-react";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { getLaunchCenterData } from "@/lib/launch-center/data";
@@ -38,7 +39,17 @@ export default async function LaunchCenterPage() {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-              <LaunchCenterComposer isAuthenticated={Boolean(userId)} locale={locale} />
+              <Suspense
+                fallback={
+                  <div className="min-h-[480px] rounded-3xl border border-[color-mix(in_oklab,var(--shp-border)_74%,transparent)] bg-[color-mix(in_oklab,var(--shp-surface)_96%,var(--shp-border)_4%)]" />
+                }
+              >
+                <LaunchCenterComposer
+                  isAuthenticated={Boolean(userId)}
+                  locale={locale}
+                  templateCards={templateCards}
+                />
+              </Suspense>
 
               <div className="space-y-3">
                 {[
@@ -111,7 +122,7 @@ export default async function LaunchCenterPage() {
               <h2 className="text-2xl font-bold text-[var(--shp-text)]">{copy.recommendedTemplates}</h2>
               <span className="text-xs uppercase tracking-[0.2em] text-[var(--shp-muted)]">{copy.curatedStyles}</span>
             </div>
-            <Link href={draftHref} className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--shp-primary-soft)] hover:text-[var(--shp-primary)]">
+            <Link href="/launch-center" className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--shp-primary-soft)] hover:text-[var(--shp-primary)]">
               {copy.browseAll}
             </Link>
           </div>
@@ -140,14 +151,12 @@ export default async function LaunchCenterPage() {
                 <h3 className="mt-1 text-base font-semibold text-[var(--shp-text)]">{template.name}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-[var(--shp-muted)]">{template.tone}</p>
                 <div className="mt-4">
-                  <a
-                    href={template.sourceUrl || draftHref}
-                    target={template.sourceUrl ? "_blank" : undefined}
-                    rel={template.sourceUrl ? "noreferrer" : undefined}
+                  <Link
+                    href={`/launch-center?template=${encodeURIComponent(template.slug)}`}
                     className="inline-flex items-center text-xs font-semibold uppercase tracking-[0.18em] text-[var(--shp-primary-soft)] hover:text-[var(--shp-primary)]"
                   >
                     {copy.useTemplate}
-                  </a>
+                  </Link>
                 </div>
               </article>
             ))}
