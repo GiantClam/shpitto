@@ -23,8 +23,20 @@ export type TemplateGateFinding = {
 };
 
 type TemplateManifest = {
+  templateId: string;
+  templateVersion: string;
+  siteType: string;
+  runtime: string;
+  cmsSchemaVersion: string;
+  generationCapabilities: string[];
+  providerPolicy: { defaultProvider: string; mockMode?: string };
+  billingPolicy: { defaultProvider: string; ledger?: string; usage?: string };
+  deploymentTargets: Array<{ target: string; runtime: string }>;
+  requiredSecrets: string[];
+  skillCapabilities: string[];
   requiredRoutes: string[];
   artifacts: {
+    sourceDirectory?: string;
     envExample: string;
     readme: string;
     deploymentGuides: string[];
@@ -54,6 +66,47 @@ export function runAiImageToolTemplateFeatureGate(): TemplateGateFinding[] {
   const root = getTemplateRoot();
   const manifest = readTemplateManifest(root);
   const findings: TemplateGateFinding[] = [];
+
+  const manifestContractPass =
+    Boolean(manifest.templateId && manifest.templateVersion && manifest.siteType && manifest.runtime) &&
+    Boolean(manifest.cmsSchemaVersion) &&
+    manifest.generationCapabilities.length > 0 &&
+    manifest.providerPolicy.defaultProvider === "replicate" &&
+    manifest.billingPolicy.defaultProvider === "stripe" &&
+    manifest.billingPolicy.ledger === "append-only" &&
+    manifest.billingPolicy.usage === "reserve-settle-release" &&
+    manifest.deploymentTargets.some((target) => target.target === "vercel" && target.runtime === "server") &&
+    manifest.requiredSecrets.includes("REPLICATE_API_TOKEN") &&
+    manifest.skillCapabilities.includes("modify");
+  findings.push({
+    id: "versioned-template-manifest",
+    status: manifestContractPass ? "pass" : "fail",
+    scope: "export",
+    evidence: manifestContractPass
+      ? "Template manifest declares version, runtime, provider, billing, deployment, secret, and skill capability contracts."
+      : "Template manifest is missing one or more product contract sections.",
+    blocker: !manifestContractPass,
+    nextAction: manifestContractPass ? undefined : "Complete template-manifest.json with the versioned product contract fields.",
+  });
+
+  const deploymentTargets = new Map(manifest.deploymentTargets.map((target) => [target.target, target]));
+  const deploymentMatrixPass =
+    deploymentTargets.get("vercel")?.runtime === "server" &&
+    deploymentTargets.get("railway")?.runtime === "server" &&
+    deploymentTargets.get("docker")?.runtime === "server" &&
+    deploymentTargets.get("source")?.runtime === "server" &&
+    deploymentTargets.get("cloudflare-pages")?.runtime === "server" &&
+    (deploymentTargets.get("cloudflare-pages") as any)?.supported === false;
+  findings.push({
+    id: "deployment-adapter-matrix",
+    status: deploymentMatrixPass ? "pass" : "fail",
+    scope: "export",
+    evidence: deploymentMatrixPass
+      ? "Managed server, Docker, source, and explicitly blocked Cloudflare targets are declared without overstating static Pages support."
+      : "Template deployment target metadata does not match the implemented adapter matrix.",
+    blocker: !deploymentMatrixPass,
+    nextAction: deploymentMatrixPass ? undefined : "Align deployment target metadata with the available server and packaging adapters.",
+  });
 
   const requiredRoutes = baseline.contract.immutable.appRoutes
     .filter((route) => route.required)
@@ -127,6 +180,9 @@ export function runAiImageToolTemplateFeatureGate(): TemplateGateFinding[] {
   });
 
   const exportArtifactsPass =
+    Boolean(manifest.artifacts.sourceDirectory) &&
+    exists(root, `${manifest.artifacts.sourceDirectory || "source"}/package.json`) &&
+    exists(root, `${manifest.artifacts.sourceDirectory || "source"}/Dockerfile`) &&
     exists(root, manifest.artifacts.envExample) &&
     exists(root, manifest.artifacts.readme) &&
     manifest.artifacts.deploymentGuides.every((guide) => exists(root, guide));

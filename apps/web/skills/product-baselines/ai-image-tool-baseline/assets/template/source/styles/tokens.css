@@ -1,0 +1,10 @@
+:root {
+  --bg: #f5f4ff;
+  --surface: rgba(255,255,255,0.82);
+  --card: #ffffff;
+  --text: #111827;
+  --muted: #5b6173;
+  --accent: #5b5df0;
+  --accent-secondary: #111827;
+  --border: rgba(17, 24, 39, 0.09);
+}

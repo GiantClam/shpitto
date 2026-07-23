@@ -1,0 +1,189 @@
+{
+  "templateId": "ai-image-tool-baseline-v1",
+  "templateVersion": "2026-06-29",
+  "displayName": "Shpitto AI Image Tool Baseline",
+  "templateFamily": "ai-image-tool-platform",
+  "sourceTemplate": "fluxkreafree",
+  "siteType": "ai-image-tool-site",
+  "visualSystem": {
+    "source": "fluxkreafree",
+    "sharedShell": "preserved",
+    "mutableScopes": [
+      "brand",
+      "marketing-content",
+      "approved-route-presentation"
+    ]
+  },
+  "mediaPolicy": {
+    "generatedAssets": "provider-url-with-retention-policy",
+    "promptPrivacy": "server-side-only",
+    "moderation": "provider-and-template-boundary"
+  },
+  "runtime": "nextjs-app-router-server",
+  "cmsSchemaVersion": "payload-admin-v1",
+  "generationCapabilities": [
+    "text-to-image",
+    "model-selection",
+    "aspect-ratio-selection",
+    "reference-image-input",
+    "generation-history",
+    "signed-asset-download",
+    "shareable-result-link",
+    "idempotent-generation",
+    "credit-reservation",
+    "provider-failure-retry",
+    "gift-code-redemption",
+    "charge-order-history"
+  ],
+  "providerPolicy": {
+    "defaultProvider": "replicate",
+    "sandboxProvider": "replicate",
+    "mockMode": "explicit-preview-only",
+    "requiredCapabilities": [
+      "prediction-status",
+      "provider-timeout",
+      "provider-error"
+    ]
+  },
+  "billingPolicy": {
+    "defaultProvider": "stripe",
+    "mode": "credits",
+    "webhookSignature": "required",
+    "ledger": "append-only",
+    "usage": "reserve-settle-release"
+  },
+  "deploymentTargets": [
+    {
+      "target": "vercel",
+      "runtime": "server",
+      "buildCommand": "pnpm build",
+      "startCommand": "pnpm start"
+    },
+    {
+      "target": "railway",
+      "runtime": "server",
+      "buildCommand": "pnpm build",
+      "startCommand": "pnpm start"
+    },
+    {
+      "target": "static-export",
+      "runtime": "static",
+      "supported": false
+    }
+  ],
+  "requiredSecrets": [
+    "NEXTAUTH_SECRET",
+    "REPLICATE_API_TOKEN",
+    "REPLICATE_MODEL_VERSION",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "S3_ENDPOINT",
+    "S3_ACCESS_KEY_ID",
+    "S3_SECRET_ACCESS_KEY",
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+    "PAYLOAD_API_KEY"
+  ],
+  "skillCapabilities": [
+    "inspect",
+    "modify",
+    "validate",
+    "preview",
+    "deploy"
+  ],
+  "compatibility": {
+    "framework": "nextjs-app-router",
+    "node": ">=20",
+    "staticDeployment": "unsupported-for-server-runtime"
+  },
+  "adminMode": "payload-optional",
+  "defaultLocale": "en",
+  "supportedLocales": [
+    "en"
+  ],
+  "billing": {
+    "defaultProvider": "stripe",
+    "supportedProviders": [
+      "stripe",
+      "paypal",
+      "alipay",
+      "wechatpay",
+      "hupijiao"
+    ],
+    "supportedModes": [
+      "credits",
+      "subscription",
+      "hybrid"
+    ],
+    "preservedEntities": [
+      "ChargeOrder",
+      "UserBilling",
+      "UserCredit",
+      "UserCreditTransaction",
+      "UserPaymentInfo"
+    ]
+  },
+  "requiredRoutes": [
+    "/",
+    "/pricing",
+    "/flux-prompt-generator",
+    "/sign-in",
+    "/admin",
+    "/admin/tasks",
+    "/admin/projects",
+    "/admin/assets",
+    "/admin/gift-codes",
+    "/admin/settings",
+    "/admin/users",
+    "/app",
+    "/app/generate",
+    "/app/history",
+    "/app/giftcode",
+    "/app/order",
+    "/privacy-policy",
+    "/terms-of-use"
+  ],
+  "optionalRoutes": [
+    "/flux-ai",
+    "/flux-schnell",
+    "/krea-alternative",
+    "/blog",
+    "/signin",
+    "/sign-up"
+  ],
+  "artifacts": {
+    "sourceDirectory": "source",
+    "envExample": ".env.example",
+    "readme": "README.md",
+    "deploymentGuides": [
+      "deployment-guides/vercel.md",
+      "deployment-guides/cloudflare-pages.md",
+      "deployment-guides/railway.md"
+    ]
+  },
+  "templateRoutes": [
+    "/",
+    "/pricing",
+    "/flux-prompt-generator",
+    "/sign-in",
+    "/admin",
+    "/admin/tasks",
+    "/admin/projects",
+    "/admin/assets",
+    "/admin/gift-codes",
+    "/admin/settings",
+    "/admin/users",
+    "/app",
+    "/app/generate",
+    "/app/history",
+    "/app/giftcode",
+    "/app/order",
+    "/privacy-policy",
+    "/terms-of-use",
+    "/flux-ai",
+    "/flux-schnell",
+    "/krea-alternative",
+    "/blog",
+    "/signin",
+    "/sign-up"
+  ]
+}

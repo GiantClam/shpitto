@@ -30,6 +30,7 @@ export type ProductRouteKind =
   | "redeem"
   | "billing"
   | "account"
+  | "admin"
   | "legal"
   | "shared-shell";
 
@@ -521,7 +522,6 @@ const AI_IMAGE_TOOL_TEMPLATE_BLUEPRINT: ProductBaselineTemplateBlueprint = {
       { title: "Krea Alternative", href: "/krea-alternative", scope: "brand" },
       { title: "Prompt Generator", href: "/flux-prompt-generator", scope: "brand" },
       { title: "Blog", href: "/blog", scope: "brand" },
-      { title: "CMS", href: "/cms", scope: "product" },
     ],
     appNav: [
       { title: "Index", href: "/app", scope: "product" },
@@ -529,7 +529,6 @@ const AI_IMAGE_TOOL_TEMPLATE_BLUEPRINT: ProductBaselineTemplateBlueprint = {
       { title: "History", href: "/app/history", scope: "product" },
       { title: "GiftCode", href: "/app/giftcode", scope: "product" },
       { title: "ChargeOrder", href: "/app/order", scope: "product" },
-      { title: "CMS", href: "/cms", scope: "product" },
     ],
     footerNav: [
       { title: "Terms of Use", href: "/terms-of-use", scope: "shared" },
@@ -806,11 +805,13 @@ export function buildAiImageToolBaselineContract(): ProductBaselineContract {
         { route: "/sign-in", kind: "auth", required: true, owner: "product", purpose: "Authentication entry." },
         { route: "/signin", kind: "auth", required: false, owner: "product", purpose: "Authentication entry alias." },
         { route: "/sign-up", kind: "auth", required: false, owner: "product", purpose: "Registration entry alias." },
-        { route: "/cms", kind: "account", required: true, owner: "product", purpose: "User-owned task, project, and generated asset management surface." },
-        { route: "/cms/tasks", kind: "account", required: true, owner: "product", purpose: "Generation task state and product task-service handoff." },
-        { route: "/cms/projects", kind: "account", required: true, owner: "product", purpose: "Saved projects, prompt systems, and low-frequency project metadata." },
-        { route: "/cms/assets", kind: "account", required: true, owner: "product", purpose: "Generated asset review, metadata, and publish readiness." },
-        { route: "/cms/settings", kind: "account", required: true, owner: "product", purpose: "Payload-backed site, generation, billing, SEO, and provider settings." },
+        { route: "/admin", kind: "admin", required: true, owner: "product", purpose: "Administrator control center for users, generation operations, content, billing, and product settings." },
+        { route: "/admin/tasks", kind: "admin", required: true, owner: "product", purpose: "Generation task state and product task-service handoff." },
+        { route: "/admin/projects", kind: "admin", required: true, owner: "product", purpose: "Saved projects, prompt systems, and low-frequency project metadata." },
+        { route: "/admin/assets", kind: "admin", required: true, owner: "product", purpose: "Generated asset review, metadata, and publish readiness." },
+        { route: "/admin/gift-codes", kind: "admin", required: true, owner: "product", purpose: "Administrator gift-code creation, availability, expiration, and redemption review." },
+        { route: "/admin/settings", kind: "admin", required: true, owner: "product", purpose: "Payload-backed site, generation, billing, SEO, and provider settings." },
+        { route: "/admin/users", kind: "admin", required: true, owner: "product", purpose: "Administrator user management for account status, plans, credits, and access review." },
         { route: "/app", kind: "app-dashboard", required: true, owner: "product", purpose: "Product hub that routes users into generator, history, redemption, and billing surfaces." },
         { route: "/app/generate", kind: "app-workspace", required: true, owner: "product", purpose: "Primary image generation workspace." },
         { route: "/app/history", kind: "history", required: true, owner: "product", purpose: "Generation history and replay surface." },
@@ -836,7 +837,7 @@ export function buildAiImageToolBaselineContract(): ProductBaselineContract {
         "remove generation history",
         "hide prompt input behind brand pages",
         "collapse /app/generate into the public homepage",
-        "turn /cms into a generic site-settings placeholder",
+        "turn /admin into a generic site-settings placeholder",
         "move billing or gift-code actions into generic marketing content",
         "remove the public marketing route layer",
       ],

@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { buildOpenCodeWebsitePrompt, runOpenCodeCli } from "./runner";
+import { buildOpenCodeWebsitePrompt, resolveOpenCodeTimeoutMs, runOpenCodeCli } from "./runner";
 
 const ENV_KEYS = [
   "XDG_DATA_HOME",
@@ -141,5 +141,88 @@ describe("opencode runner", () => {
     expect(result.status).toBe("failed");
     expect(String(result.failureReason || "")).toContain("timed out");
     expect(result.summary).toContain("OpenCode CLI invocation failed");
+  });
+
+  it("continues an explicit native OpenCode session and persists its session record", async () => {
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "shpitto-opencode-session-"));
+    try {
+      const calls: string[][] = [];
+      const result = await runOpenCodeCli({
+        request: { ...request, continuationMode: "continue", sessionId: "ses_existing" },
+        workspaceRoot,
+        commandRunner: async (_command, args) => {
+          calls.push(args);
+          return {
+            exitCode: 0,
+            stdout: JSON.stringify({ type: "session.created", sessionID: "ses_next" }),
+            stderr: "",
+          };
+        },
+      });
+
+      expect(calls[0]).toEqual(expect.arrayContaining(["--session", "ses_existing"]));
+      expect(calls[0]).not.toContain("--continue");
+      expect(result.sessionId).toBe("ses_next");
+      expect(JSON.parse(await fs.readFile(path.join(workspaceRoot, ".shpitto", "opencode-session.json"), "utf8"))).toEqual(
+        expect.objectContaining({ sessionId: "ses_next", continuationMode: "continue" }),
+      );
+    } finally {
+      await fs.rm(workspaceRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("forks the persisted native session when requested", async () => {
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "shpitto-opencode-fork-"));
+    try {
+      await fs.mkdir(path.join(workspaceRoot, ".shpitto"), { recursive: true });
+      await fs.writeFile(
+        path.join(workspaceRoot, ".shpitto", "opencode-session.json"),
+        JSON.stringify({ sessionId: "ses_saved" }),
+        "utf8",
+      );
+      let args: string[] = [];
+      await runOpenCodeCli({
+        request: { ...request, continuationMode: "fork" },
+        workspaceRoot,
+        commandRunner: async (_command, receivedArgs) => {
+          args = receivedArgs;
+          return { exitCode: 0, stdout: "", stderr: "" };
+        },
+      });
+
+      expect(args).toEqual(expect.arrayContaining(["--session", "ses_saved", "--fork"]));
+    } finally {
+      await fs.rm(workspaceRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("uses task-class timeout defaults and allows an explicit override", () => {
+    const previous = process.env.SHPITTO_OPENCODE_TIMEOUT_MS;
+    delete process.env.SHPITTO_OPENCODE_TIMEOUT_MS;
+    expect(resolveOpenCodeTimeoutMs({ taskClass: "baseline_generation" })).toBe(1_800_000);
+    expect(resolveOpenCodeTimeoutMs({ taskClass: "template_inspection" })).toBe(300_000);
+    process.env.SHPITTO_OPENCODE_TIMEOUT_MS = "4321";
+    expect(resolveOpenCodeTimeoutMs({ taskClass: "baseline_generation" })).toBe(4321);
+    if (previous === undefined) delete process.env.SHPITTO_OPENCODE_TIMEOUT_MS;
+    else process.env.SHPITTO_OPENCODE_TIMEOUT_MS = previous;
+  });
+
+  it("fails closed when OpenCode writes a forbidden local env file", async () => {
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "shpitto-opencode-forbidden-"));
+    try {
+      const result = await runOpenCodeCli({
+        request,
+        workspaceRoot,
+        commandRunner: async () => {
+          await fs.writeFile(path.join(workspaceRoot, ".env.local"), "SECRET=should-not-be-here", "utf8");
+          return { exitCode: 0, stdout: "", stderr: "" };
+        },
+      });
+
+      expect(result.status).toBe("failed");
+      expect(result.failureReason).toContain("forbidden workspace files");
+    } finally {
+      await fs.rm(workspaceRoot, { recursive: true, force: true });
+    }
   });
 });

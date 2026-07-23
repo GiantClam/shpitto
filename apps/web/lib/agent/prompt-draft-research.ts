@@ -2267,7 +2267,9 @@ export async function buildPromptDraftWithResearch(params: {
       structuredSourceFacts: getStructuredSourceFacts(),
       promptBudgetEnvelope: getPromptBudgetEnvelope(),
       researchSummary: getSafeResearchSummary(),
-      fallbackReason: provider.reason,
+      fallbackReason: webSearchFailureReason
+        ? `web_search:${webSearchFailureReason};llm:${provider.reason || "missing_provider_config"}`
+        : provider.reason,
       draftMode: "template",
     };
   }

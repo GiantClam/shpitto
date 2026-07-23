@@ -1,0 +1,25 @@
+{
+  "name": "shpitto-opencode-site",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
+    "start": "next start",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "16.2.4",
+    "next-auth": "^4.24.7",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "@aws-sdk/client-s3": "^3.848.0",
+    "@aws-sdk/s3-request-presigner": "^3.848.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "@types/node": "^20.19.0",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7"
+  }
+}

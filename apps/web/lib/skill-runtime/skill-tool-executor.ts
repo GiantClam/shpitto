@@ -251,11 +251,14 @@ type BlogPromptGuidance = {
   targetBlogDetailGate: string[];
 };
 
-const BILINGUAL_PROMPT_GUIDANCE_PATH = fileURLToPath(
-  new URL("../../skills/website-generation-workflow/BILINGUAL_PROMPT_GUIDANCE.md", import.meta.url),
+const SKILL_RUNTIME_DIR = path.dirname(fileURLToPath(import.meta.url));
+const BILINGUAL_PROMPT_GUIDANCE_PATH = path.resolve(
+  SKILL_RUNTIME_DIR,
+  "../../skills/website-generation-workflow/BILINGUAL_PROMPT_GUIDANCE.md",
 );
-const BLOG_PROMPT_GUIDANCE_PATH = fileURLToPath(
-  new URL("../../skills/website-generation-workflow/BLOG_PROMPT_GUIDANCE.md", import.meta.url),
+const BLOG_PROMPT_GUIDANCE_PATH = path.resolve(
+  SKILL_RUNTIME_DIR,
+  "../../skills/website-generation-workflow/BLOG_PROMPT_GUIDANCE.md",
 );
 
 let cachedBilingualPromptGuidance: BilingualPromptGuidance | null = null;

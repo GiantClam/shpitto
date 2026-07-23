@@ -43,7 +43,7 @@ loadWorkerEnv();
 const WORKER_ID = `chat-worker-${crypto.randomUUID().slice(0, 12)}`;
 const POLL_MS = Math.max(300, Number(process.env.CHAT_WORKER_POLL_MS || 1200));
 export function resolveStaleRunningMsForTesting() {
-  return Math.max(60_000, Number(process.env.CHAT_WORKER_STALE_RUNNING_MS || 600_000));
+  return Math.max(60_000, Number(process.env.CHAT_WORKER_STALE_RUNNING_MS || 2_700_000));
 }
 const STALE_RUNNING_MS = resolveStaleRunningMsForTesting();
 const RETRY_ATTEMPTS = Math.max(1, Number(process.env.CHAT_WORKER_NETWORK_RETRY_ATTEMPTS || 4));

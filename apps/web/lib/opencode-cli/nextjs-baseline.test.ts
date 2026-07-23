@@ -366,6 +366,9 @@ describe("nextjs baseline workspace", () => {
         },
       },
     });
+    const navigationSource = bundle.workspaceFiles.find((file) => file.path === "content/navigation.ts")?.content || "";
+    expect(navigationSource).not.toContain("href: '/admin'");
+    expect(navigationSource).not.toContain("href: \"/admin\"");
   });
 
   it("documents explicit template preview auth fallback for generated workspaces", () => {
@@ -424,6 +427,36 @@ describe("nextjs baseline workspace", () => {
     const readmeFile = bundle.workspaceFiles.find((file) => file.path === "README.md");
 
     expect(authFile?.content).toContain("process.env.SHPITTO_TEMPLATE_PREVIEW === 'true'");
-    expect(readmeFile?.content).toContain("SHPITTO_TEMPLATE_PREVIEW=1 NEXTAUTH_URL=http://127.0.0.1:4173 pnpm start --hostname 127.0.0.1 --port 4173");
+    expect(authFile?.content).toContain("NEXTAUTH_SECRET is required in production");
+    expect(authFile?.content).toContain("const isPreviewRuntime = isTemplatePreview && !isProduction;");
+    expect(authFile?.content).toContain("SHPITTO_TEMPLATE_PREVIEW is only allowed outside production.");
+    expect(readmeFile?.content).toContain("SHPITTO_TEMPLATE_PREVIEW=1 NEXTAUTH_SECRET=local-preview-secret NEXTAUTH_URL=http://127.0.0.1:4173 pnpm start --hostname 127.0.0.1 --port 4173");
+  });
+
+  it("materializes commercial generation, storage, billing, and redemption surfaces", () => {
+    const bundle = buildPreparedWorkspaceBundle({
+      workspaceRoot: "D:/tmp/shpitto-commercial-template-test",
+      request: {
+        skillId: "build-ai-image-tool",
+        taskClass: "baseline_generation",
+        projectRoot: "D:/tmp/shpitto-commercial-template-test",
+        userIntentSummary: "Launch a commercial AI image product template.",
+        executionScope: "full-baseline",
+        successCriteria: [],
+        structuredInputs: { productName: "Commercial AI Image", industry: "AI image", targetAudience: ["creators"], primaryGoal: ["sell"], locale: "en", routes: ["/", "/pricing", "/sign-in", "/admin", "/app", "/app/generate", "/app/history", "/app/giftcode", "/app/order"] },
+        templateContext: { templateId: "ai-image-tool-starter", siteType: "ai-image-tool-site", templateFamily: "ai-image-tool-platform", foundations: [], seeds: [] },
+      },
+      templateManifest: { templateId: "ai-image-tool-baseline-v1", templateVersion: "v1", templateFamily: "ai-image-tool-platform", siteType: "ai-image-tool-site", templateRoutes: ["/", "/pricing", "/sign-in", "/admin", "/app", "/app/generate", "/app/history", "/app/giftcode", "/app/order"] },
+      routeContract: { requiredRoutes: ["/", "/pricing", "/sign-in", "/admin", "/app", "/app/generate", "/app/history", "/app/giftcode", "/app/order"], optionalRoutes: [], sharedShellContract: [], routeOwnershipNotes: [] },
+      selectedFoundations: { designSystemName: "AI Tool Product Foundation" },
+      selectedSeeds: { selected: [] },
+      deploymentTarget: { target: "vercel", staticFirst: false, framework: "nextjs-app-router" },
+    });
+    const paths = new Set(bundle.workspaceFiles.map((file) => file.path));
+    expect(paths.has("lib/asset-storage.ts")).toBe(true);
+    expect(paths.has("app/api/gift-code/route.ts")).toBe(true);
+    expect(paths.has("app/api/billing/orders/route.ts")).toBe(true);
+    expect(paths.has("app/api/generations/[id]/image/route.ts")).toBe(true);
+    expect(bundle.workspaceFiles.find((file) => file.path === "components/sections/ai-image-tool/app-workspace.tsx")?.content).toContain("referenceImageUrl");
   });
 });

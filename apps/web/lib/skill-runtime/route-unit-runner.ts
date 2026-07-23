@@ -149,7 +149,18 @@ function resolveGeneratedProject(execution: SkillRuntimeExecutionSummary) {
 }
 
 function resolveGeneratedFiles(project: any): Array<{ path?: string; content?: string; type?: string }> {
-  return Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
+  const files = Array.isArray(project?.staticSite?.files) ? project.staticSite.files : [];
+  return [...files].sort((left, right) => {
+    const rank = (value: unknown): number => {
+      const filePath = normalizePath(String(value || ""));
+      if (filePath === "/index.html") return 0;
+      if (filePath === "/styles.css") return 1;
+      if (filePath === "/script.js") return 2;
+      return 3;
+    };
+    return rank(left?.path) - rank(right?.path) ||
+      normalizePath(String(left?.path || "")).localeCompare(normalizePath(String(right?.path || "")));
+  });
 }
 
 function mergeSavedRouteArtifacts(params: {

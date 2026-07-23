@@ -156,12 +156,29 @@ export function buildAiImageToolTemplatePerformanceReport(): AiImageToolTemplate
 }
 
 export function buildAiImageToolTemplateSecurityReport(): AiImageToolTemplateSecurityReport {
+  const bundle = buildCanonicalBundle();
+  const files = new Map(bundle.workspaceFiles.map((file) => [file.path, file.content]));
+  const envExample = String(files.get(".env.example") || "");
+  const webhook = String(files.get("app/api/billing/webhook/route.ts") || "");
+  const billingStore = String(files.get("lib/billing-store.ts") || "");
+  const clientFiles = bundle.workspaceFiles.filter((file) => file.path.endsWith(".tsx") && file.content.includes('"use client"'));
+  const unsafeUrlFetchPaths = bundle.workspaceFiles
+    .filter((file) => file.path.startsWith("app/") && /fetch\([^)]*\+|fetch\([^)]*request\.url/i.test(file.content))
+    .map((file) => file.path);
+  const htmlIngestionPaths = bundle.workspaceFiles
+    .filter((file) => /dangerouslySetInnerHTML|innerHTML\s*=/.test(file.content))
+    .map((file) => file.path);
+  const blockers: string[] = [];
+  if (/NEXT_PUBLIC_(?:STRIPE_SECRET|SUPABASE_SERVICE_ROLE|REPLICATE_API)/i.test(envExample)) blockers.push("secret-like provider values are exposed through a public env name");
+  if (!webhook.includes("timingSafeEqual") || !webhook.includes("STRIPE_WEBHOOK_SECRET")) blockers.push("Stripe webhook signature verification is incomplete");
+  if (!billingStore.includes("provider_event_id") || !billingStore.includes("reserveCredits") || !billingStore.includes("releaseReservation")) blockers.push("billing ledger or generation reservation contract is incomplete");
+  if (clientFiles.some((file) => /STRIPE_SECRET_KEY|SUPABASE_SERVICE_ROLE_KEY|REPLICATE_API_TOKEN/.test(file.content))) blockers.push("a client component references a server-only secret");
   return {
-    secretsRemainServerOnly: true,
-    webhookSignatureVerification: true,
-    paymentEventIdempotency: true,
-    unsafeUrlFetchPaths: [],
-    htmlIngestionPaths: [],
-    blockers: [],
+    secretsRemainServerOnly: !blockers.some((item) => item.includes("secret")),
+    webhookSignatureVerification: webhook.includes("timingSafeEqual") && webhook.includes("STRIPE_WEBHOOK_SECRET"),
+    paymentEventIdempotency: billingStore.includes("provider_event_id") && billingStore.includes("reserveCredits"),
+    unsafeUrlFetchPaths,
+    htmlIngestionPaths,
+    blockers,
   };
 }

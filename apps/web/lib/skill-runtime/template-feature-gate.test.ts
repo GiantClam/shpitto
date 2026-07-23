@@ -7,10 +7,12 @@ describe("ai-image-tool template feature gate", () => {
     const byId = Object.fromEntries(findings.map((item) => [item.id, item] as const));
 
     expect(byId["route-contract-required-routes"]?.status).toBe("pass");
+    expect(byId["versioned-template-manifest"]?.status).toBe("pass");
     expect(byId["billing-stripe-adapter-contract"]?.status).toBe("pass");
     expect(byId["payload-admin-contract"]?.status).toBe("pass");
     expect(byId["i18n-contract"]?.status).toBe("pass");
     expect(byId["template-export-artifacts"]?.status).toBe("pass");
+    expect(byId["deployment-adapter-matrix"]?.status).toBe("pass");
     expect(byId["template-secret-boundary-example"]?.status).toBe("pass");
   });
 });

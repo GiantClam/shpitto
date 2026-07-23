@@ -364,6 +364,7 @@ describe("chat refine routing", () => {
 
     const queued = await getLatestChatTaskForChat(chatId);
     expect((queued?.result?.internal?.inputState as any)?.workflow_context?.refineScope).toBe("structural");
+    expect((queued?.result?.internal?.inputState as any)?.workflow_context?.generationContract).toBeNull();
 
     const completed = await waitForTerminalTask(String(queued?.id || ""), runChatTaskWorkerOnce);
     expect(completed?.status).toBe("succeeded");

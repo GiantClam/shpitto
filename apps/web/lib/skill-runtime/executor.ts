@@ -37,11 +37,18 @@ import {
 } from "../agent/chat-task-store.ts";
 import {
   buildShpittoOpenCodeBundle,
+  isProductizedBaselineSkillId,
   materializePreparedWorkspace,
   runOpenCodeCli,
   shouldAllowPreparedBaselineFallback,
   shouldUseOpenCodeForSkill,
 } from "../opencode-cli/index.ts";
+import {
+  runProductizedTemplateOperation,
+  type ProductizedTemplateOperation,
+} from "../opencode-cli/template-lifecycle.ts";
+import { deployServerCapableTemplate, validateServerCapableTemplate } from "../opencode-cli/server-deployment.ts";
+import { packageSourceWorkspace } from "../opencode-cli/source-deployment.ts";
 import { extractUiPayload } from "../agent/chat-ui-payload.ts";
 import type { AgentState } from "../agent/graph.ts";
 import { buildSelectedSeedSkillManifest } from "../agent/website-generation-contract.ts";
@@ -5395,6 +5402,384 @@ export async function runSkillRuntimeExecutor(params: RunSkillRuntimeExecutorPar
   return await runLegacySkillRuntimeExecutor(params);
 }
 
+function resolveProductizedBaseSkillId(requestedSkillId: string, state: AgentState): string {
+  if (isProductizedBaselineSkillId(requestedSkillId)) return requestedSkillId;
+  const workflow = ((state as any)?.workflow_context || {}) as Record<string, unknown>;
+  const candidate = String(workflow.templateSkillId || workflow.baseSkillId || workflow.skillId || "").trim().toLowerCase();
+  return isProductizedBaselineSkillId(candidate) ? candidate : "build-ai-image-tool";
+}
+
+async function resolveExistingProductizedWorkspace(params: {
+  state: AgentState;
+  chatId: string;
+  operation: Exclude<ProductizedTemplateOperation, "generate">;
+}): Promise<string | undefined> {
+  const workflow = ((params.state as any)?.workflow_context || {}) as Record<string, unknown>;
+  const candidates = [
+    String(workflow.opencodeWorkspaceRoot || "").trim(),
+    String((params.state as any)?.site_artifacts?.shpittoWorkspace?.rootDir || "").trim(),
+  ];
+  const checkpointPath = String(
+    params.operation === "refine" ? workflow.refineSourceProjectPath : workflow.deploySourceProjectPath,
+  ).trim();
+  if (checkpointPath) {
+    try {
+      const checkpoint = JSON.parse(await fs.readFile(checkpointPath, "utf8")) as Record<string, unknown>;
+      candidates.push(String((checkpoint.shpittoWorkspace as any)?.rootDir || "").trim());
+    } catch {}
+  }
+  const sourceTaskId = String(
+    params.operation === "refine" ? workflow.refineSourceTaskId : workflow.deploySourceTaskId,
+  ).trim();
+  if (sourceTaskId) candidates.push(path.join(localChatTaskRoot(params.chatId, sourceTaskId), "opencode-workspace"));
+  for (const candidate of Array.from(new Set(candidates.filter(Boolean)))) {
+    try {
+      const root = path.resolve(candidate);
+      await fs.access(path.join(root, ".shpitto", "request.json"));
+      return root;
+    } catch {}
+  }
+  return undefined;
+}
+
+async function runProductizedTemplateTask(params: {
+  taskId: string;
+  chatId: string;
+  workerId: string;
+  startedAt: number;
+  requestedSkillId: string;
+  executionMode: ProductizedTemplateOperation;
+  state: AgentState;
+  setSessionState?: (state: AgentState) => void;
+}): Promise<void> {
+  const operation = params.executionMode;
+  const checkpointRoot = localChatTaskRoot(params.chatId, params.taskId);
+  const checkpointWorkflowDir = path.join(checkpointRoot, "workflow");
+  const checkpointSiteDir = path.join(checkpointRoot, "site");
+  const checkpointProjectPath = path.join(checkpointRoot, "project.json");
+  const workspaceRoot = path.join(checkpointRoot, "opencode-workspace");
+  const sourceWorkspaceRoot =
+    operation === "generate"
+      ? undefined
+      : await resolveExistingProductizedWorkspace({ state: params.state, chatId: params.chatId, operation });
+  const baseSkillId = resolveProductizedBaseSkillId(params.requestedSkillId, params.state);
+  await fs.mkdir(checkpointWorkflowDir, { recursive: true });
+  await touchChatTaskHeartbeat(params.taskId, params.workerId);
+  await updateChatTaskProgress(params.taskId, {
+    assistantText:
+      operation === "generate"
+        ? "Preparing the versioned template workspace for OpenCode generation."
+        : `Preparing the existing template workspace for OpenCode ${operation}.`,
+    phase: operation === "refine" ? "refine" : operation === "deploy" ? "deploy" : "skeleton",
+    progress: {
+      stage: `opencode:${operation}:prepare`,
+      stageMessage: `Preparing OpenCode ${operation} workspace...`,
+      skillId: baseSkillId,
+      startedAt: new Date(params.startedAt).toISOString(),
+      lastTokenAt: nowIso(),
+      elapsedMs: Date.now() - params.startedAt,
+      checkpointSaved: false,
+      checkpointDir: checkpointRoot,
+    } as any,
+  });
+
+  if (operation !== "generate" && !sourceWorkspaceRoot) {
+    await failChatTask(
+      params.taskId,
+      `No existing template workspace was found for OpenCode ${operation}. Generate or preview the template first.`,
+      { progress: { stage: "opencode:source_missing", stageMessage: "Existing template workspace is missing." } as any },
+    );
+    return;
+  }
+
+  let prepared: Awaited<ReturnType<typeof runProductizedTemplateOperation>>;
+  try {
+    prepared = await runProductizedTemplateOperation({
+      operation,
+      baseSkillId,
+      state: params.state,
+      workspaceRoot,
+      sourceWorkspaceRoot,
+      projectArtifact: (params.state as any)?.site_artifacts || (params.state as any)?.project_json,
+      previewRoot: checkpointSiteDir,
+      onProgress: async (progress) => {
+        if (progress.stream) return;
+        await touchChatTaskHeartbeat(params.taskId, params.workerId);
+        await updateChatTaskProgress(params.taskId, {
+          phase: operation === "refine" ? "refine" : operation === "deploy" ? "deploy" : "skeleton",
+          progress: {
+            stage: `opencode:${operation}:running`,
+            stageMessage: `OpenCode ${operation} is still running...`,
+            skillId: baseSkillId,
+            startedAt: new Date(params.startedAt).toISOString(),
+            lastTokenAt: nowIso(),
+            elapsedMs: progress.elapsedMs,
+            checkpointSaved: true,
+            checkpointDir: checkpointRoot,
+            checkpointWorkflowDir,
+          } as any,
+        });
+      },
+    });
+  } catch (error) {
+    const message = String((error as any)?.message || error || `OpenCode ${operation} preparation failed.`);
+    await failChatTask(params.taskId, message, {
+      progress: { stage: `opencode:${operation}:prepare_failed`, stageMessage: message, checkpointDir: checkpointRoot } as any,
+    });
+    return;
+  }
+
+  await fs.writeFile(checkpointProjectPath, JSON.stringify(prepared.projectArtifact, null, 2), "utf8");
+  await fs.writeFile(
+    path.join(checkpointWorkflowDir, "opencode-contract-bundle.json"),
+    JSON.stringify(
+      {
+        request: prepared.request,
+        template: prepared.projectArtifact.template,
+        workspaceRoot,
+        operation,
+      },
+      null,
+      2,
+    ),
+    "utf8",
+  );
+  await fs.writeFile(
+    path.join(checkpointWorkflowDir, "opencode-run.json"),
+    JSON.stringify(prepared.openCodeResult, null, 2),
+    "utf8",
+  );
+
+  let deploymentEvidence: Record<string, unknown> | undefined;
+  let validationEvidence: Record<string, unknown> | undefined;
+  if ((operation === "validate" || operation === "preview") && Boolean((prepared.projectArtifact as any)?.staticSite?.serverCapable)) {
+    try {
+      validationEvidence = await validateServerCapableTemplate({ workspaceRoot });
+      await fs.writeFile(
+        path.join(checkpointWorkflowDir, "template-validation-evidence.json"),
+        JSON.stringify(validationEvidence, null, 2),
+        "utf8",
+      );
+    } catch (error) {
+      const message = String((error as any)?.message || error || "Server template validation failed.");
+      await failChatTask(params.taskId, message, {
+        progress: {
+          stage: `opencode:${operation}:validation_failed`,
+          stageMessage: message,
+          checkpointSaved: true,
+          checkpointDir: checkpointRoot,
+          checkpointProjectPath,
+          checkpointWorkflowDir,
+        } as any,
+      });
+      return;
+    }
+  }
+  if (operation === "deploy" && Boolean((prepared.projectArtifact as any)?.staticSite?.serverCapable)) {
+    const workflow = ((params.state as any)?.workflow_context || {}) as Record<string, unknown>;
+    const deployApproved =
+      workflow.deployRequested === true ||
+      ["1", "true", "yes", "on"].includes(String(workflow.deployRequested || "").trim().toLowerCase()) ||
+      String(process.env.SHPITTO_PRODUCTIZED_DEPLOY_APPROVED || "") === "1";
+    if (!deployApproved) {
+      await failChatTask(params.taskId, "Server deployment is policy-gated. Confirm deployment or enable the approved deployment policy.", {
+        progress: {
+          stage: "opencode:deploy:blocked",
+          stageMessage: "Deployment approval is required before changing external infrastructure.",
+          checkpointSaved: true,
+          checkpointDir: checkpointRoot,
+          checkpointProjectPath,
+          checkpointWorkflowDir,
+        } as any,
+      });
+      return;
+    }
+    try {
+      await assertCanMutatePublishedSite(String((params.state as any)?.user_id || "").trim());
+      const deploymentTarget = JSON.parse(
+        await fs.readFile(path.join(workspaceRoot, ".shpitto", "deployment-target.json"), "utf8"),
+      ) as { target?: string; runtime?: string };
+      if (
+        deploymentTarget.runtime !== "server" ||
+        (deploymentTarget.target !== "vercel" &&
+          deploymentTarget.target !== "railway" &&
+          deploymentTarget.target !== "docker" &&
+          deploymentTarget.target !== "source")
+      ) {
+        throw new Error(`Server template requires a supported server deployment target; received ${deploymentTarget.target || "unknown"}.`);
+      }
+      const projectName = `${String((params.state as any)?.user_id || params.chatId || "shpitto").slice(0, 18)}-template`;
+      const deployment =
+        deploymentTarget.target === "source"
+          ? await packageSourceWorkspace({ workspaceRoot, packageName: projectName })
+          : await deployServerCapableTemplate({
+              workspaceRoot,
+              target: deploymentTarget.target as "vercel" | "railway" | "docker",
+              projectName,
+            });
+      deploymentEvidence = deployment as unknown as Record<string, unknown>;
+      await fs.writeFile(
+        path.join(checkpointWorkflowDir, "deployment-evidence.json"),
+        JSON.stringify(deploymentEvidence, null, 2),
+        "utf8",
+      );
+    } catch (error) {
+      const message = String((error as any)?.message || error || "Server deployment failed.");
+      await failChatTask(params.taskId, message, {
+        progress: {
+          stage: "opencode:deploy:failed",
+          stageMessage: message,
+          checkpointSaved: true,
+          checkpointDir: checkpointRoot,
+          checkpointProjectPath,
+          checkpointWorkflowDir,
+        } as any,
+      });
+      return;
+    }
+  }
+
+  const nextState: AgentState = {
+    ...params.state,
+    phase: operation === "deploy" ? "end" : "end",
+    site_artifacts: prepared.projectArtifact,
+    project_json: prepared.projectArtifact,
+    workflow_context: {
+      ...(params.state.workflow_context || {}),
+      executionMode: operation,
+      templateOperation: operation,
+      templateSkillId: baseSkillId,
+      opencodeWorkspaceRoot: workspaceRoot,
+      checkpointProjectPath,
+      ...(prepared.openCodeResult.sessionId
+        ? {
+            opencodeSessionId: prepared.openCodeResult.sessionId,
+            openCodeContinuationMode: "continue",
+          }
+        : {}),
+      ...(deploymentEvidence
+        ? {
+            deploymentEvidence,
+            deployedUrl: String(deploymentEvidence.deploymentUrl || "").trim(),
+          }
+        : {}),
+      ...(validationEvidence ? { validationEvidence } : {}),
+      opencodeRequest: prepared.request,
+      opencodeRun: {
+        status: prepared.openCodeResult.status,
+        skillId: prepared.operationSkillId,
+        sessionId: prepared.openCodeResult.sessionId,
+        continuationMode: prepared.openCodeResult.continuationMode,
+        sessionFile: prepared.openCodeResult.sessionFile,
+        updatedFiles: prepared.openCodeResult.updatedFiles,
+        summary: prepared.openCodeResult.summary,
+        failureReason: prepared.openCodeResult.failureReason,
+      },
+    } as any,
+  };
+
+  const allowPreparedFallback = shouldAllowPreparedBaselineFallback() && operation === "generate";
+  if (prepared.openCodeResult.status === "failed" && !allowPreparedFallback) {
+    await failChatTask(params.taskId, prepared.openCodeResult.summary, {
+      internal: {
+        inputState: buildSessionSnapshot(nextState),
+        sessionState: buildSessionSnapshot(nextState),
+        workerId: params.workerId,
+        skillId: prepared.operationSkillId,
+      } as any,
+      progress: {
+        stage: `opencode:${operation}:failed`,
+        stageMessage: prepared.openCodeResult.summary,
+        checkpointSaved: true,
+        checkpointDir: checkpointRoot,
+        checkpointProjectPath,
+        checkpointSiteDir,
+        checkpointWorkflowDir,
+        generatedFiles: prepared.openCodeResult.updatedFiles,
+      } as any,
+    });
+    return;
+  }
+
+  await fs.writeFile(
+    path.join(checkpointRoot, "state.json"),
+    JSON.stringify(
+      {
+        savedAt: nowIso(),
+        phase: "end",
+        mode: "opencode-template-operation",
+        operation,
+        skillId: prepared.operationSkillId,
+        workspaceRoot,
+        updatedFiles: prepared.openCodeResult.updatedFiles,
+      },
+      null,
+      2,
+    ),
+    "utf8",
+  );
+
+  const assistantText =
+    prepared.openCodeResult.status === "failed"
+      ? `Prepared the ${baseSkillId} baseline, but OpenCode failed. This explicit development fallback is not a successful OpenCode execution.`
+      : operation === "generate"
+        ? `Generated the ${baseSkillId} template through OpenCode and preserved its runnable workspace.`
+        : `Completed OpenCode ${operation} for the existing ${baseSkillId} template workspace.`;
+  await completeChatTask(params.taskId, {
+    assistantText,
+    phase: operation === "deploy" ? "end" : "previewing",
+    internal: {
+      skillId: prepared.operationSkillId,
+      workerId: params.workerId,
+      inputState: buildSessionSnapshot(nextState),
+      sessionState: buildSessionSnapshot(nextState),
+      artifactSnapshot: prepared.projectArtifact,
+    } as any,
+    progress: {
+      stage:
+        operation === "generate"
+          ? prepared.openCodeResult.status === "completed"
+            ? "done:opencode"
+            : "done:prepared-baseline"
+          : `opencode:${operation}:completed`,
+      stageMessage: assistantText,
+      skillId: prepared.operationSkillId,
+      startedAt: new Date(params.startedAt).toISOString(),
+      lastTokenAt: nowIso(),
+      elapsedMs: Date.now() - params.startedAt,
+      checkpointSaved: true,
+      checkpointDir: checkpointRoot,
+      checkpointStatePath: path.join(checkpointRoot, "state.json"),
+      checkpointProjectPath,
+      checkpointSiteDir,
+      checkpointWorkflowDir,
+      generatedFiles:
+        prepared.openCodeResult.updatedFiles.length > 0
+          ? prepared.openCodeResult.updatedFiles
+          : prepared.staticSiteFiles.map((file) => normalizePath(file.path)),
+      recentToolCalls: [{ name: "opencode", args: { operation, updatedFiles: prepared.openCodeResult.updatedFiles } }],
+      nextStep: operation === "deploy" ? undefined : "preview",
+      ...(deploymentEvidence
+        ? {
+            deployedUrl: String(deploymentEvidence.deploymentUrl || "").trim(),
+            deploymentEvidence,
+          }
+        : {}),
+      ...(validationEvidence ? { validationEvidence } : {}),
+    } as any,
+  });
+  params.setSessionState?.(nextState);
+  await syncChatMemoryFromState({
+    chatId: params.chatId,
+    taskId: params.taskId,
+    stage: operation === "deploy" ? "deployed" : "previewing",
+    state: nextState,
+    recentSummary: assistantText,
+  }).catch((error) => {
+    console.warn(`[SkillRuntimeExecutor] short-term memory sync failed after OpenCode ${operation}: ${String((error as any)?.message || error)}`);
+  });
+}
+
 async function runPreparedOpenCodeWebsiteTask(params: {
   taskId: string;
   chatId: string;
@@ -5486,6 +5871,27 @@ async function runPreparedOpenCodeWebsiteTask(params: {
   const openCodeResult = await runOpenCodeCli({
     request: contractBundle.request,
     workspaceRoot,
+    onProgress: async (progress) => {
+      if (progress.stream) return;
+      await touchChatTaskHeartbeat(taskId, workerId);
+      await updateChatTaskProgress(taskId, {
+        assistantText: "OpenCode is still running on the prepared Next.js workspace.",
+        phase: "skeleton",
+        progress: {
+          stage: "generating:opencode_run",
+          stageMessage: "OpenCode is still running...",
+          skillId: requestedSkillId,
+          startedAt: new Date(startedAt).toISOString(),
+          lastTokenAt: nowIso(),
+          elapsedMs: progress.elapsedMs,
+          checkpointSaved: true,
+          checkpointDir: checkpointRoot,
+          checkpointProjectPath,
+          checkpointSiteDir,
+          checkpointWorkflowDir,
+        } as any,
+      });
+    },
   }).catch((error) => ({
     status: "failed" as const,
     exitCode: 1,
@@ -5496,6 +5902,9 @@ async function runPreparedOpenCodeWebsiteTask(params: {
     updatedFiles: [],
     summary: `OpenCode CLI invocation failed: ${String((error as any)?.message || error || "unknown failure")}`,
     failureReason: String((error as any)?.message || error || "unknown OpenCode CLI failure"),
+    sessionId: undefined,
+    continuationMode: contractBundle.request.continuationMode,
+    sessionFile: undefined,
   }));
 
   await fs.writeFile(
@@ -5517,8 +5926,17 @@ async function runPreparedOpenCodeWebsiteTask(params: {
       checkpointProjectPath,
       opencodeWorkspaceRoot: workspaceRoot,
       opencodeRequest: contractBundle.request,
+      ...(openCodeResult.sessionId
+        ? {
+            opencodeSessionId: openCodeResult.sessionId,
+            openCodeContinuationMode: "continue",
+          }
+        : {}),
       opencodeRun: {
         status: openCodeResult.status,
+        sessionId: openCodeResult.sessionId,
+        continuationMode: openCodeResult.continuationMode,
+        sessionFile: openCodeResult.sessionFile,
         updatedFiles: openCodeResult.updatedFiles,
         summary: openCodeResult.summary,
         failureReason: openCodeResult.failureReason,
@@ -5751,6 +6169,9 @@ function buildSessionSnapshot(state: AgentState): Partial<AgentState> {
       deploySourceProjectPath: workflow.deploySourceProjectPath,
       deploySourceTaskId: workflow.deploySourceTaskId,
       checkpointProjectPath: workflow.checkpointProjectPath,
+      opencodeWorkspaceRoot: workflow.opencodeWorkspaceRoot,
+      templateSkillId: workflow.templateSkillId,
+      templateOperation: workflow.templateOperation,
       siteRevisionId: workflow.siteRevisionId,
       baseSiteRevisionId: workflow.baseSiteRevisionId,
       siteRevisionMode: workflow.siteRevisionMode,
@@ -6320,13 +6741,15 @@ async function translateCatalogWithModel(params: {
   };
 }
 
-function resolveRuntimeTaskExecutionMode(state: AgentState): "generate" | "refine" | "translate" | "deploy" {
+function resolveRuntimeTaskExecutionMode(state: AgentState): "generate" | "refine" | "translate" | "deploy" | "validate" | "preview" {
   const workflow = toRecord((state as any)?.workflow_context);
   const executionMode = String(workflow.executionMode || "").trim().toLowerCase();
   const deployRequested = Boolean(workflow.deployRequested) || isDeployConfirmationIntent(extractRequirementText(state));
   if (deployRequested || executionMode === "deploy") return "deploy";
   if (executionMode === "translate" || Boolean(workflow.translateRequested)) return "translate";
   if (executionMode === "refine" || Boolean(workflow.refineRequested)) return "refine";
+  if (executionMode === "validate") return "validate";
+  if (executionMode === "preview") return "preview";
   return "generate";
 }
 
@@ -7633,6 +8056,11 @@ async function runRefineTask(params: {
   let effectiveRefineSkillId = refineSkillId;
   let refineSkillError = "";
   const refineWorkflowContext = (inputState.workflow_context || {}) as Record<string, unknown>;
+  const persistedGenerationContract =
+    refineWorkflowContext.generationContract && typeof refineWorkflowContext.generationContract === "object";
+  const lockedGenerationContract = persistedGenerationContract
+    ? resolveWorkflowGenerationContract(refineWorkflowContext)
+    : undefined;
   const refineWebsiteSurfaceMode = resolveWorkflowSurfaceSelection(refineWorkflowContext).websiteSurfaceMode;
   const refineQualityContract = renderWebsiteQualityContract();
   const refineTargetRoutes = extractRefineTargetRoutes(sourceProject, requirementText);
@@ -7657,12 +8085,14 @@ async function runRefineTask(params: {
     try {
       const validateRefinedProject = (candidate: { project: any; changedFiles: string[]; summary?: string }) => ({
         ...candidate,
-        project: normalizeGeneratedProjectArtifactPreview({
-          project: candidate.project,
-          decision: refineDecision,
-          requirementText: requirementText || refineDecision.requirementText,
-          workflowContext: refineWorkflowContext,
-        }),
+        project: resolveWorkflowGenerationContract(refineWorkflowContext)
+          ? normalizeGeneratedProjectArtifactPreview({
+              project: candidate.project,
+              decision: refineDecision,
+              requirementText: requirementText || refineDecision.requirementText,
+              workflowContext: refineWorkflowContext,
+            })
+          : ensureSharedSiteRefsForRefineHtml(candidate.project),
       });
 
       const trySkillRefine = async (validationFeedback?: string) =>
@@ -7826,12 +8256,12 @@ async function runRefineTask(params: {
     decision: refineDecision,
     requirementText: requirementText || refineDecision.requirementText,
     workflowContext: (inputState.workflow_context || {}) as Record<string, unknown>,
+    skipFullSiteValidation: !lockedGenerationContract,
   });
   refined = {
     ...refined,
     project: materialized.project,
   };
-  const lockedGenerationContract = resolveWorkflowGenerationContract(refineWorkflowContext);
   if (lockedGenerationContract) {
     const verification = verifyRouteUnitArtifacts({
       contract: lockedGenerationContract,
@@ -8139,6 +8569,41 @@ export class SkillRuntimeExecutor {
   static async runTask(params: SkillRuntimeTaskParams): Promise<void> {
     const { taskId, chatId, inputState, workerId = "worker", setSessionState } = params;
     const executionMode = resolveRuntimeTaskExecutionMode(inputState);
+    const startedAt = Date.now();
+    const requestedSkillId = String(
+      params.skillId || (inputState.workflow_context as any)?.skillId || WEBSITE_MAIN_SKILL_ID,
+    ).trim();
+    const workflowTemplateSkillId = String(
+      (inputState.workflow_context as any)?.templateSkillId ||
+        (inputState.workflow_context as any)?.baseSkillId ||
+        "",
+    ).trim();
+    const requestedTemplateOperation = String((inputState.workflow_context as any)?.templateOperation || "")
+      .trim()
+      .toLowerCase();
+    const productizedOperation: ProductizedTemplateOperation | undefined =
+      executionMode === "generate" || executionMode === "refine" || executionMode === "deploy" || executionMode === "validate" || executionMode === "preview"
+        ? executionMode
+        : requestedTemplateOperation === "validate" || requestedTemplateOperation === "preview"
+          ? requestedTemplateOperation
+          : undefined;
+    const productizedExecution =
+      executionMode !== "translate" &&
+      (shouldUseOpenCodeForSkill(requestedSkillId) || isProductizedBaselineSkillId(workflowTemplateSkillId)) &&
+      (productizedOperation !== "deploy" || resolveProductizedBaseSkillId(requestedSkillId, inputState) === "build-ai-image-tool");
+    if (productizedExecution && productizedOperation) {
+      await runProductizedTemplateTask({
+        taskId,
+        chatId,
+        workerId,
+        startedAt,
+        requestedSkillId,
+        executionMode: productizedOperation,
+        state: inputState,
+        setSessionState,
+      });
+      return;
+    }
     if (executionMode === "refine") {
       await runRefineTask({ taskId, chatId, workerId, inputState, setSessionState });
       return;
@@ -8152,10 +8617,6 @@ export class SkillRuntimeExecutor {
       return;
     }
 
-    const startedAt = Date.now();
-    const requestedSkillId = String(
-      params.skillId || (inputState.workflow_context as any)?.skillId || WEBSITE_MAIN_SKILL_ID,
-    ).trim();
     const resolvedSkill = await resolveWebsiteRuntimeSkill({
       state: inputState,
       explicitSkillId: requestedSkillId,

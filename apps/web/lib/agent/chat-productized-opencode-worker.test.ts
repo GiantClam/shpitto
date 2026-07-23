@@ -49,11 +49,15 @@ describe("productized OpenCode worker path", () => {
       const prevUseSupabase = process.env.CHAT_TASKS_USE_SUPABASE;
       const prevPreserveDataHome = process.env.SHPITTO_OPENCODE_PRESERVE_DATA_HOME;
       const prevExecutionMode = process.env.SHPITTO_PRODUCTIZED_WEBSITE_EXECUTION;
+      const prevBaselineFallback = process.env.SHPITTO_OPENCODE_ALLOW_BASELINE_FALLBACK;
+      const prevOpenCodeTimeout = process.env.SHPITTO_OPENCODE_TIMEOUT_MS;
       const chatId = `chat-productized-opencode-${Date.now()}`;
 
       process.env.CHAT_TASKS_USE_SUPABASE = "0";
       process.env.SHPITTO_OPENCODE_PRESERVE_DATA_HOME = "1";
       process.env.SHPITTO_PRODUCTIZED_WEBSITE_EXECUTION = "opencode";
+      process.env.SHPITTO_OPENCODE_ALLOW_BASELINE_FALLBACK = "1";
+      process.env.SHPITTO_OPENCODE_TIMEOUT_MS = "10000";
 
       try {
         const { POST } = await import("../../app/api/chat/route");
@@ -168,6 +172,10 @@ describe("productized OpenCode worker path", () => {
         else process.env.SHPITTO_OPENCODE_PRESERVE_DATA_HOME = prevPreserveDataHome;
         if (prevExecutionMode === undefined) delete process.env.SHPITTO_PRODUCTIZED_WEBSITE_EXECUTION;
         else process.env.SHPITTO_PRODUCTIZED_WEBSITE_EXECUTION = prevExecutionMode;
+        if (prevBaselineFallback === undefined) delete process.env.SHPITTO_OPENCODE_ALLOW_BASELINE_FALLBACK;
+        else process.env.SHPITTO_OPENCODE_ALLOW_BASELINE_FALLBACK = prevBaselineFallback;
+        if (prevOpenCodeTimeout === undefined) delete process.env.SHPITTO_OPENCODE_TIMEOUT_MS;
+        else process.env.SHPITTO_OPENCODE_TIMEOUT_MS = prevOpenCodeTimeout;
       }
     },
     240_000,

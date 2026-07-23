@@ -98,39 +98,53 @@
         "purpose": "Registration entry alias."
       },
       {
-        "route": "/cms",
-        "kind": "account",
+        "route": "/admin",
+        "kind": "admin",
         "required": true,
         "owner": "product",
-        "purpose": "User-owned task, project, and generated asset management surface."
+        "purpose": "Administrator control center for users, generation operations, content, billing, and product settings."
       },
       {
-        "route": "/cms/tasks",
-        "kind": "account",
+        "route": "/admin/tasks",
+        "kind": "admin",
         "required": true,
         "owner": "product",
         "purpose": "Generation task state and product task-service handoff."
       },
       {
-        "route": "/cms/projects",
-        "kind": "account",
+        "route": "/admin/projects",
+        "kind": "admin",
         "required": true,
         "owner": "product",
         "purpose": "Saved projects, prompt systems, and low-frequency project metadata."
       },
       {
-        "route": "/cms/assets",
-        "kind": "account",
+        "route": "/admin/assets",
+        "kind": "admin",
         "required": true,
         "owner": "product",
         "purpose": "Generated asset review, metadata, and publish readiness."
       },
       {
-        "route": "/cms/settings",
-        "kind": "account",
+        "route": "/admin/gift-codes",
+        "kind": "admin",
+        "required": true,
+        "owner": "product",
+        "purpose": "Administrator gift-code creation, availability, expiration, and redemption review."
+      },
+      {
+        "route": "/admin/settings",
+        "kind": "admin",
         "required": true,
         "owner": "product",
         "purpose": "Payload-backed site, generation, billing, SEO, and provider settings."
+      },
+      {
+        "route": "/admin/users",
+        "kind": "admin",
+        "required": true,
+        "owner": "product",
+        "purpose": "Administrator user management for account status, plans, credits, and access review."
       },
       {
         "route": "/app",
@@ -589,11 +603,6 @@
             "scope": "brand"
           },
           {
-            "title": "CMS",
-            "href": "/cms",
-            "scope": "shared"
-          },
-          {
             "title": "Sign in",
             "href": "/sign-in",
             "scope": "product"
@@ -631,11 +640,6 @@
             "href": "/app/order",
             "scope": "product"
           },
-          {
-            "title": "CMS",
-            "href": "/cms",
-            "scope": "shared"
-          }
         ],
         "footerNav": [
           {

@@ -1,0 +1,37 @@
+{
+  "requiredRoutes": [
+    "/",
+    "/pricing",
+    "/flux-prompt-generator",
+    "/sign-in",
+    "/admin",
+    "/admin/tasks",
+    "/admin/projects",
+    "/admin/assets",
+    "/admin/gift-codes",
+    "/admin/settings",
+    "/admin/users",
+    "/app",
+    "/app/generate",
+    "/app/history",
+    "/app/giftcode",
+    "/app/order",
+    "/privacy-policy",
+    "/terms-of-use"
+  ],
+  "optionalRoutes": [
+    "/flux-ai",
+    "/flux-schnell",
+    "/krea-alternative",
+    "/blog",
+    "/signin",
+    "/sign-up"
+  ],
+  "sharedShellContract": [
+    "preserve shared nav",
+    "preserve shared footer"
+  ],
+  "routeOwnershipNotes": [
+    "/admin is hidden and direct-access only"
+  ]
+}

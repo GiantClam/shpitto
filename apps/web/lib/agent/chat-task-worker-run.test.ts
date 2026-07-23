@@ -65,7 +65,7 @@ describe("chat-task-worker-run", () => {
     vi.resetModules();
 
     const workerModule = (await import("../../scripts/chat-task-worker")) as any;
-    expect(workerModule.resolveStaleRunningMsForTesting()).toBe(600_000);
+    expect(workerModule.resolveStaleRunningMsForTesting()).toBe(2_700_000);
 
     if (prevStaleRunning === undefined) delete process.env.CHAT_WORKER_STALE_RUNNING_MS;
     else process.env.CHAT_WORKER_STALE_RUNNING_MS = prevStaleRunning;

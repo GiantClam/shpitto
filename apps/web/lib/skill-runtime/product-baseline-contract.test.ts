@@ -15,9 +15,9 @@ describe("ai-image-tool baseline contract", () => {
     expect(immutable.payloadAdminContract).toMatchObject({
       mode: "optional",
     });
-    expect(immutable.templateBlueprint?.sharedShell.marketingNav.map((item) => item.href)).toContain("/cms");
+    expect(immutable.templateBlueprint?.sharedShell.marketingNav.map((item) => item.href)).not.toContain("/admin");
     expect(immutable.templateBlueprint?.sharedShell.marketingNav.map((item) => item.href)).not.toContain("/sign-in");
-    expect(immutable.templateBlueprint?.sharedShell.appNav.map((item) => item.href)).toContain("/cms");
+    expect(immutable.templateBlueprint?.sharedShell.appNav.map((item) => item.href)).not.toContain("/admin");
     expect(immutable.payloadAdminContract?.collections).toContain("PaymentProviders");
     expect(immutable.billingRuntimeContract).toMatchObject({
       sourceModel: "fluxkreafree",

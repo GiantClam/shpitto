@@ -2719,6 +2719,10 @@ export async function POST(req: Request) {
   const existingGenerationContract =
     normalizeGenerationContract((existingWorkflow as any)?.generationContract) ||
     normalizeGenerationContract((previousState.workflow_context as any)?.generationContract);
+  const structuralRefineRequest =
+    executionMode === "refine" && (decision.refineScope === "structural" || decision.refineScope === "route_regenerate");
+  const hasLockedGenerationContract = Boolean(existingGenerationContract?.contractHash);
+  const shouldPersistGeneratedContract = !(structuralRefineRequest && !hasLockedGenerationContract);
   const shouldInheritConfirmedPromptGenerationContract =
     executionMode === "generate" &&
     confirmedPromptExplicitlyProvided &&
@@ -2731,7 +2735,7 @@ export async function POST(req: Request) {
     shouldInheritConfirmedPromptGenerationContract ||
     executionMode === "deploy" ||
     executionMode === "translate" ||
-    (executionMode === "refine" && decision.refineScope !== "structural");
+    (executionMode === "refine" && (!structuralRefineRequest || hasLockedGenerationContract));
   const executionSelectedSeedSkillManifest =
     shouldInheritLockedGenerationContract && existingGenerationContract?.selectedSeedSkillManifest?.selected?.length
       ? existingGenerationContract.selectedSeedSkillManifest
@@ -2917,12 +2921,12 @@ export async function POST(req: Request) {
       correctionSummary: aggregated.correctionSummary,
       canonicalPrompt: canonicalPromptForExecution,
       requirementAggregatedText: requirementAggregatedTextForExecution,
-      promptControlManifest: executionPromptControlManifest,
-      selectedSeedSkillManifest: executionSelectedSeedSkillManifest,
-      selectedSeedContracts: executionSelectedSeedContracts,
-      routeUnitContracts: executionRouteUnitContracts,
-      generationContract: executionGenerationContract,
-      contractHash: executionGenerationContract.contractHash,
+      promptControlManifest: shouldPersistGeneratedContract ? executionPromptControlManifest : null,
+      selectedSeedSkillManifest: shouldPersistGeneratedContract ? executionSelectedSeedSkillManifest : { selected: [] },
+      selectedSeedContracts: shouldPersistGeneratedContract ? executionSelectedSeedContracts : [],
+      routeUnitContracts: shouldPersistGeneratedContract ? executionRouteUnitContracts : [],
+      generationContract: shouldPersistGeneratedContract ? executionGenerationContract : null,
+      contractHash: shouldPersistGeneratedContract ? executionGenerationContract.contractHash : null,
       generationLane: executionGenerationLane,
       generationLaneConfig: executionGenerationLaneConfig,
       websiteKnowledgeProfile: promptDraftResult.knowledgeProfile || null,

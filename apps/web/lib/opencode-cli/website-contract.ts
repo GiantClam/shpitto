@@ -6,11 +6,22 @@ import {
   normalizeProductBaselineSelection,
   selectAiImageToolBaselineSelection,
 } from "../skill-runtime/product-baseline-contract.ts";
+import {
+  resolveSkillManifest,
+  type ShpittoOpenCodeWorkspacePolicy,
+  type ShpittoSkillManifest,
+} from "./skill-manifest.ts";
 
 export type OpenCodeTaskClass =
   | "baseline_generation"
   | "scoped_refinement"
-  | "feature_expansion";
+  | "feature_expansion"
+  | "template_inspection"
+  | "template_validation"
+  | "template_preview"
+  | "template_deployment";
+
+export type OpenCodeContinuationMode = "new" | "continue" | "fork";
 
 export type OpenCodeStructuredInputs = {
   companyName?: string;
@@ -41,6 +52,13 @@ export type ShpittoOpenCodeRequest = {
   templateContext: OpenCodeTemplateContext;
   executionScope: string;
   successCriteria: string[];
+  skillManifest?: ShpittoSkillManifest;
+  workspacePolicy?: ShpittoOpenCodeWorkspacePolicy;
+  sessionId?: string;
+  parentSessionId?: string;
+  continuationMode?: OpenCodeContinuationMode;
+  workflowRunId?: string;
+  stepId?: string;
 };
 
 export type ShpittoTemplateManifest = {
@@ -79,9 +97,12 @@ export type ShpittoSelectedSeedsDocument = {
 };
 
 export type ShpittoDeploymentTargetDocument = {
-  target: "vercel" | "cloudflare-pages" | "static-export";
+  target: "vercel" | "railway" | "docker" | "source" | "cloudflare-pages" | "static-export";
   staticFirst: boolean;
+  runtime?: "server" | "static";
   framework: "nextjs-app-router";
+  buildCommand?: string;
+  startCommand?: string;
 };
 
 const PRODUCTIZED_BASELINE_SKILLS = [
@@ -90,6 +111,14 @@ const PRODUCTIZED_BASELINE_SKILLS = [
   "build-marketing-site",
   "build-docs-site",
   "build-content-hub",
+] as const;
+
+const PRODUCTIZED_OPERATION_SKILLS = [
+  "template-inspect",
+  "template-modify",
+  "template-validate",
+  "template-preview",
+  "template-deploy",
 ] as const;
 
 const TEMPLATE_CONTEXT_MAP: Record<string, OpenCodeTemplateContext> = {
@@ -167,7 +196,7 @@ function resolveOpenCodeTemplateContext(params: {
   workflow: Record<string, unknown>;
   productBaselineSelection?: ReturnType<typeof normalizeProductBaselineSelection>;
 }): OpenCodeTemplateContext {
-  const baseTemplateContext = TEMPLATE_CONTEXT_MAP[params.skillId] || TEMPLATE_CONTEXT_MAP["build-marketing-site"];
+  const baseTemplateContext = TEMPLATE_CONTEXT_MAP[params.skillId] || TEMPLATE_CONTEXT_MAP["build-ai-image-tool"];
   const workflowSeedIds = dedupe([
     ...normalizeStringArray(params.workflow.selectedSeedSkillIds),
     ...normalizeStringArray((params.workflow.selectedSeedSkillManifest as any)?.selected?.map?.((item: any) => item?.id)),
@@ -342,8 +371,12 @@ export function isProductizedBaselineSkillId(skillId: string): boolean {
   return PRODUCTIZED_BASELINE_SKILLS.includes(normalizeSkillId(skillId) as (typeof PRODUCTIZED_BASELINE_SKILLS)[number]);
 }
 
+export function isProductizedOperationSkillId(skillId: string): boolean {
+  return PRODUCTIZED_OPERATION_SKILLS.includes(normalizeSkillId(skillId) as (typeof PRODUCTIZED_OPERATION_SKILLS)[number]);
+}
+
 export function shouldUseOpenCodeForSkill(skillId: string): boolean {
-  if (!isProductizedBaselineSkillId(skillId)) return false;
+  if (!isProductizedBaselineSkillId(skillId) && !isProductizedOperationSkillId(skillId)) return false;
   const mode = String(process.env.SHPITTO_PRODUCTIZED_WEBSITE_EXECUTION || "opencode").trim().toLowerCase();
   return mode !== "legacy";
 }
@@ -353,13 +386,16 @@ export function shouldEnforceOpenCodeSuccess(): boolean {
 }
 
 export function shouldAllowPreparedBaselineFallback(): boolean {
-  return !shouldEnforceOpenCodeSuccess();
+  return String(process.env.SHPITTO_OPENCODE_ALLOW_BASELINE_FALLBACK || "0").trim() === "1";
 }
 
 export function buildShpittoOpenCodeBundle(params: {
   skillId: string;
   state: AgentState;
   projectRoot: string;
+  taskClass?: OpenCodeTaskClass;
+  executionScope?: string;
+  templateSkillId?: string;
 }): {
   request: ShpittoOpenCodeRequest;
   templateManifest: ShpittoTemplateManifest;
@@ -370,6 +406,13 @@ export function buildShpittoOpenCodeBundle(params: {
 } {
   const skillId = normalizeSkillId(params.skillId);
   const workflow = ((params.state as any)?.workflow_context || {}) as Record<string, unknown>;
+  const contextSkillId =
+    isProductizedBaselineSkillId(skillId)
+      ? skillId
+      : normalizeSkillId(
+          params.templateSkillId ||
+            String(workflow.templateSkillId || workflow.baseSkillId || workflow.skillId || "build-ai-image-tool"),
+        ) || "build-ai-image-tool";
   const requirementSpec = ((workflow.requirementSpec as Record<string, unknown> | undefined) || {}) as Record<string, unknown>;
   const decision = buildLocalDecisionPlan(params.state);
   const productBaselineSelection =
@@ -378,7 +421,7 @@ export function buildShpittoOpenCodeBundle(params: {
   const requirementText =
     String(workflow.sourceRequirement || workflow.canonicalPrompt || decision.requirementText || "").trim() || decision.requirementText;
   const templateContext = resolveOpenCodeTemplateContext({
-    skillId,
+    skillId: contextSkillId,
     workflow,
     productBaselineSelection,
   });
@@ -427,7 +470,7 @@ export function buildShpittoOpenCodeBundle(params: {
 
   const request: ShpittoOpenCodeRequest = {
     skillId,
-    taskClass: "baseline_generation",
+    taskClass: params.taskClass || "baseline_generation",
     projectRoot: params.projectRoot,
     userIntentSummary: clipText(requirementText, 520),
     structuredInputs,
@@ -436,13 +479,24 @@ export function buildShpittoOpenCodeBundle(params: {
       foundations: templateContext.foundations,
       seeds: templateContext.seeds,
     },
-    executionScope: "full-baseline",
+    executionScope: params.executionScope || "full-baseline",
+    skillManifest: resolveSkillManifest(skillId),
+    workspacePolicy: resolveSkillManifest(skillId).workspacePolicy,
     successCriteria: [
       "all required routes exist",
       "shared navigation and footer are preserved across routes",
       "output remains a deployable Next.js App Router project",
       "result includes a complete product baseline, not only a homepage",
     ],
+    sessionId: String(workflow.openCodeSessionId || "").trim() || undefined,
+    parentSessionId: String(workflow.parentOpenCodeSessionId || "").trim() || undefined,
+    continuationMode:
+      workflow.openCodeContinuationMode === "fork" || workflow.openCodeContinuationMode === "continue"
+        ? workflow.openCodeContinuationMode
+        : "new",
+    workflowRunId:
+      String(workflow.workflowRunId || (workflow.workflowRuntime as any)?.workflowId || "").trim() || undefined,
+    stepId: String(workflow.openCodeStepId || workflow.stepId || "").trim() || undefined,
   };
 
   const templateManifest: ShpittoTemplateManifest = {
@@ -530,12 +584,32 @@ export function buildShpittoOpenCodeBundle(params: {
       : [],
   };
   const normalizedSelectedSeeds =
-    skillId === "build-ai-image-tool" ? buildAiImageToolSelectedSeedsDocument() : selectedSeeds;
+    contextSkillId === "build-ai-image-tool" ? buildAiImageToolSelectedSeedsDocument() : selectedSeeds;
 
+  const requestedDeploymentTarget =
+    workflow.deploymentTarget && typeof workflow.deploymentTarget === "object"
+      ? (workflow.deploymentTarget as Record<string, unknown>)
+      : {};
+  const serverRuntime =
+    requestedDeploymentTarget.runtime === "server" ||
+    (requestedDeploymentTarget.runtime !== "static" && templateContext.templateFamily === "ai-image-tool-platform");
   const deploymentTarget: ShpittoDeploymentTargetDocument = {
-    target: "vercel",
-    staticFirst: true,
+    target:
+      requestedDeploymentTarget.target === "railway" ||
+      requestedDeploymentTarget.target === "docker" ||
+      requestedDeploymentTarget.target === "source" ||
+      requestedDeploymentTarget.target === "cloudflare-pages" ||
+      requestedDeploymentTarget.target === "static-export"
+        ? requestedDeploymentTarget.target
+        : "vercel",
+    staticFirst:
+      typeof requestedDeploymentTarget.staticFirst === "boolean"
+        ? requestedDeploymentTarget.staticFirst
+        : !serverRuntime,
+    runtime: serverRuntime ? "server" : "static",
     framework: "nextjs-app-router",
+    buildCommand: "pnpm build",
+    startCommand: "pnpm start",
   };
 
   return {

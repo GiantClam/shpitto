@@ -1,0 +1,7 @@
+.next
+node_modules
+*.tsbuildinfo
+.shpitto/opencode-session.json
+.shpitto/request.json
+.shpitto/skill-manifest.json
+.shpitto/skill-result.json

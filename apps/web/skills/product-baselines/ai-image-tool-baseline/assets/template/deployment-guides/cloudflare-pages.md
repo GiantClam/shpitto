@@ -1,22 +1,31 @@
-# Deploy To Cloudflare Pages
+# Cloudflare Pages Compatibility
+
+This AI image template is a Next.js server runtime. The existing Cloudflare
+Pages adapter in Shpitto deploys static bundles, so Cloudflare Pages is not a
+supported deployment target for this template.
+
+Do not export this template as a static site: generation, authentication,
+billing webhooks, CMS publication, signed downloads, and server-only provider
+secrets would not work.
+
+To use Cloudflare infrastructure, provide a tested Next.js-on-Workers adapter
+and update the template contract before enabling this target. The current
+template remains deployable through Vercel, Railway, Docker, or source.
 
 ## Prerequisites
 
-1. A Cloudflare account
-2. A database reachable from Cloudflare runtime
-3. Storage and AI provider credentials
-4. Payload compatibility plan if admin mode is enabled
+1. A Cloudflare account for a future Workers adapter
+2. A tested server-compatible Next.js adapter
 
 ## Steps
 
-1. Connect the repository to Cloudflare Pages.
-2. Use the Next.js adapter/runtime that matches the generated template.
-3. Add all required environment variables from `.env.example`.
-4. Add server-only secrets through Cloudflare secret storage.
-5. Configure the production domain and update:
+1. Do not deploy the server template with the static Pages adapter.
+2. After a server adapter is added and verified, add all required environment variables from `.env.example`.
+3. Add server-only secrets through Cloudflare secret storage.
+4. Configure the production domain and update:
    - `NEXT_PUBLIC_APP_URL`
    - `NEXTAUTH_URL`
-6. Deploy and verify the baseline routes.
+5. Deploy and verify the baseline routes and server APIs.
 
 ## Notes
 

@@ -1,0 +1,6 @@
+{
+  "target": "vercel",
+  "staticFirst": false,
+  "framework": "nextjs-app-router",
+  "runtime": "server"
+}

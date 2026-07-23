@@ -21,7 +21,7 @@ afterAll(async () => {
 });
 
 describe("ai-image-tool AI flow smoke", () => {
-  it("materializes prompt input, result preview, replay, and failed-state placeholders", async () => {
+  it("materializes prompt input, result preview, replay, and an honest empty history state", async () => {
     const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), "shpitto-ai-flow-smoke-"));
     temporaryRoots.push(rootDir);
 
@@ -133,13 +133,24 @@ describe("ai-image-tool AI flow smoke", () => {
 
     expect(workspaceComponent).toContain("<textarea");
     expect(workspaceComponent).toContain("fetch('/api/generate'");
-    expect(workspaceComponent).toContain("Run mock generation");
+    expect(workspaceComponent).toContain("Generate image");
     expect(workspaceComponent).toContain("Result preview");
-    expect(workspaceComponent).toContain("failed generation recovered with prompt edits ready for retry");
+    expect(workspaceComponent).toContain("referenceImageUrl");
+    expect(workspaceComponent).toContain("aspectRatio");
+    expect(workspaceComponent).toContain("Download");
+    expect(workspaceComponent).toContain("Latest render failed. Refine the prompt and retry.");
     expect(workspaceComponent).toContain("Retry last failed run");
+    expect(workspaceComponent).toContain("No generations yet. Your rendered images will appear here.");
+    expect(workspaceComponent).not.toContain('type "fail" to test recovery');
+    expect(workspaceComponent).not.toContain("placeholder-1");
     expect(historyComponent).toContain("Replay this run, duplicate the prompt, or export the selected image.");
+    expect(historyComponent).toContain("fetch('/api/generations'");
+    expect(historyComponent).toContain("No generations yet. Create an image to start your history.");
+    expect(historyComponent).not.toContain("getExamples");
     expect(promptGeneratorPage).toContain("PromptGeneratorSurface");
     expect(generateApiRoute).toContain('export async function POST');
-    expect(generateApiRoute).toContain("Mock generation failed. Adjust prompt structure and retry.");
+    expect(generateApiRoute).toContain("REPLICATE_API_TOKEN");
+    expect(generateApiRoute).toContain("AI_PROVIDER_MODE");
+    expect(generateApiRoute).toContain("Mock image generation is preview/test-only");
   });
 });

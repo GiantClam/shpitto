@@ -1,0 +1,6 @@
+.container { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+.section-stack { display: grid; gap: 20px; }
+.card-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 18px; }
+.card-grid > * { grid-column: span 4; }
+@media (max-width: 900px) { .card-grid > * { grid-column: span 6; } }
+@media (max-width: 640px) { .card-grid > * { grid-column: 1 / -1; } }

@@ -17,6 +17,7 @@ type TemplateManifest = {
   requiredRoutes: string[];
   optionalRoutes: string[];
   artifacts: {
+    sourceDirectory: string;
     envExample: string;
     readme: string;
     deploymentGuides: string[];
@@ -45,7 +46,7 @@ describe("ai-image-tool template artifacts", () => {
     expect(manifest.templateId).toBe("ai-image-tool-baseline-v1");
     expect(manifest.defaultLocale).toBe("en");
     expect(manifest.supportedLocales).toEqual(["en"]);
-    expect(manifest.requiredRoutes).toContain("/cms");
+    expect(manifest.requiredRoutes).toContain("/admin");
     expect(manifest.billing.defaultProvider).toBe("stripe");
     expect(manifest.billing.supportedProviders).toContain("stripe");
     expect(manifest.billing.preservedEntities).toContain("ChargeOrder");
@@ -57,7 +58,9 @@ describe("ai-image-tool template artifacts", () => {
     const envExamplePath = path.join(templateRoot, manifest.artifacts.envExample);
     const readmePath = path.join(templateRoot, manifest.artifacts.readme);
     const payloadSchemaPath = path.join(templateRoot, "payload-admin.schema.json");
+    const sourcePackagePath = path.join(templateRoot, manifest.artifacts.sourceDirectory, "package.json");
 
+    expect(fs.existsSync(sourcePackagePath)).toBe(true);
     expect(fs.existsSync(envExamplePath)).toBe(true);
     expect(fs.existsSync(readmePath)).toBe(true);
     expect(fs.existsSync(payloadSchemaPath)).toBe(true);

@@ -13,6 +13,8 @@ dist
 
 # Environment Variables
 .env*
+!apps/web/skills/product-baselines/ai-image-tool-baseline/assets/template/.env.example
+!apps/web/skills/product-baselines/ai-image-tool-baseline/assets/template/source/.env.example
 
 # Logs
 npm-debug.log*
