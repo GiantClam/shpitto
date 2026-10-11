@@ -1,0 +1,646 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "IMPLEMENTATION_ACCEPTANCE",
+  "changeId": "restart-shpitto-video-saas",
+  "stageId": "M3",
+  "checkpointId": null,
+  "gateTaskId": "4.12",
+  "status": "READY_FOR_REVIEW",
+  "candidateId": "working-tree-20260930-m3",
+  "createdAt": "2026-09-30T16:33:49.524Z",
+  "updatedAt": "2026-09-30T16:33:49.524Z",
+  "policy": {
+    "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md"
+  },
+  "prerequisites": [
+    {
+      "stageId": "M2",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260929-m2-repair",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/record.json"
+      ]
+    },
+    {
+      "taskId": "4.1",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.2",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.3",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.4",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.5",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.6",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.7",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.8",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.9",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.10",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.11",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.13",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    }
+  ],
+  "candidate": {
+    "capturedAt": "2026-09-30T16:33:49.505Z",
+    "sourceCommit": null,
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "63fabe1543638d24db36ca57d4eeb365ff7baa02c9a53f0e9c47ca34bcad5b73",
+    "schemaSha256": "5b0b847b266e1690319021b0167f831367e9190d188c88b90b40ca09f8d4c58b",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+    "configurationSha256": "079a422f0057b69e3ee687a8dfb277351abc3aa3167b3055190768fbae4bb270",
+    "contractSha256": "d120afc8c0696c69036ba0f60df2b77c99b3c184517cc984a63c3444f36fea17",
+    "validatorSha256": "e198a1e9b5f4947a83a78e85f488f74c705681b77bbc600eda72521e8545d6a6",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
+    "digestInputs": {
+      "sourceTree": [
+        "src",
+        "tests",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        "tooling",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        "src/config/env.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile",
+        "tooling"
+      ],
+      "contract": [
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "openspec/changes/restart-shpitto-video-saas/specs",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json"
+      ],
+      "validator": [
+        "scripts",
+        "tests",
+        "tooling",
+        "internal/restart/check-acceptance-record.py"
+      ]
+    }
+  },
+  "environments": [
+    {
+      "environmentId": "local-m3-postgres17",
+      "profile": "Local no-cloud Mock profile using standalone Next, PostgreSQL 17.6, persistent local worker and private local storage.",
+      "clockMode": "Probe-controlled clocks for expiry/deadline cases; wall clock for HTTP/browser checks.",
+      "fixtureOrSeed": "Disposable probe fixtures; demo seed for browser walkthrough; no provider or payment requests.",
+      "sanitationNotes": "Credentials and signed URLs omitted from evidence; local fixture accounts only.",
+      "toolVersions": {
+        "node": "v24.15.0",
+        "postgres": "17.6",
+        "next": "16.3.6",
+        "pnpm": "12.6.0"
+      },
+      "effectiveLimits": "Local PostgreSQL and Mock provider only; production email, real providers, Stripe and historical-balance recovery are out of scope."
+    }
+  ],
+  "criterionResults": [
+    {
+      "criterionId": "M3-C01",
+      "mandatory": true,
+      "result": "PASS",
+      "environmentId": "local-m3-postgres17",
+      "expected": "No-cloud sign-in, workspace use, server quote, playable local Mock output, history/credit lineage, private download and restart persistence.",
+      "observed": "Auth/team HTTP probes and the lifecycle/asset probes passed; local Mock worker produced a durable ready MP4 and credit lineage was observed in the browser walkthrough.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-auth-http.log",
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-team-http.log",
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-generation-lifecycle.log",
+        "internal/evidence/M3/local-mvp-status.md"
+      ]
+    },
+    {
+      "criterionId": "M3-C02",
+      "mandatory": true,
+      "result": "PASS",
+      "environmentId": "local-m3-postgres17",
+      "expected": "Team creation, invitation/acceptance, member access, personal-space restrictions and revoked-access behavior are enforced in UI and API.",
+      "observed": "Team HTTP and API-isolation probes passed, including cross-tenant, removal, transfer and stale-session denials; browser member rendering was recorded.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-team-http.log",
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-api-isolation.log",
+        "internal/evidence/M3/local-mvp-status.md"
+      ]
+    },
+    {
+      "criterionId": "M3-C03",
+      "mandatory": true,
+      "result": "PASS",
+      "environmentId": "local-m3-postgres17",
+      "expected": "Cancel/dispatch and repeated callback/settlement races have one terminal business and credit effect; invalid output cannot succeed.",
+      "observed": "Generation-create, lifecycle and race probes passed idempotent replay, one-winner cancel/claim, terminal fencing, quarantine and durable-output success boundaries.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-generation-create.log",
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-generation-lifecycle.log",
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-generation-races.log"
+      ]
+    },
+    {
+      "criterionId": "M3-C04",
+      "mandatory": true,
+      "result": "PASS",
+      "environmentId": "local-m3-postgres17",
+      "expected": "Crash recovery, independent deadline sweep, lease fencing, bounded unknown-submission recovery and late-result quarantine preserve invariants.",
+      "observed": "M3 recovery, lifecycle, races and outbox-lease probes passed cancellation/refund, deadline sweep, unknown exhaustion, materialization limits, stale acknowledgements and unrelated outbox preservation.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-m3-recovery.log",
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-outbox-lease.log",
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-generation-races.log"
+      ]
+    },
+    {
+      "criterionId": "M3-C05",
+      "mandatory": true,
+      "result": "PASS",
+      "environmentId": "local-m3-postgres17",
+      "expected": "Unsafe MIME/size/path/media and cross-tenant/private-download access are rejected by deterministic local checks.",
+      "observed": "Asset probe passed traversal/symlink, foreign workspace, token expiry, active-input deletion and ffprobe validation checks. No public provider/API key surface is used in this profile.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-assets.log",
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-api-isolation.log"
+      ]
+    }
+  ],
+  "commonStandardResults": [
+    {
+      "standard": "build-and-checks",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "typecheck, lint, format check, strict OpenSpec validation and production build.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/typecheck.log",
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/lint.log",
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/format-check.log",
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/openspec.log",
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/build.log"
+      ]
+    },
+    {
+      "standard": "current-digests",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "Candidate and digest footprints were captured after verification.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/commands.json",
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/candidate.json",
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/digest-footprints.json"
+      ]
+    },
+    {
+      "standard": "no-cloud-local-profile",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "All listed local probes and focused unit test exited zero.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/commands.json",
+        "internal/evidence/M3/local-mvp-status.md"
+      ]
+    },
+    {
+      "standard": "independent-review",
+      "applicable": true,
+      "result": "NOT_RUN",
+      "assertions": "Independent verifier/product reviewer decision is required before promotion to PASS.",
+      "evidenceRefs": []
+    }
+  ],
+  "scenarioResults": [
+    {
+      "ids": [
+        "T01",
+        "T02",
+        "T03",
+        "T05",
+        "T05.a",
+        "T09",
+        "T12",
+        "T13",
+        "T14",
+        "T19",
+        "T20",
+        "T49",
+        "T53"
+      ],
+      "mandatory": true,
+      "result": "PASS",
+      "scope": "M3 local vertical slice: auth, team, generation, worker, assets and recovery.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/commands.json",
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/candidate.json",
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/digest-footprints.json",
+        "internal/evidence/M3/local-mvp-status.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-GEN-01",
+        "SC-GEN-03",
+        "SC-GEN-06",
+        "SC-GEN-08",
+        "SC-GEN-10",
+        "SC-GEN-12",
+        "SC-GEN-13",
+        "SC-GEN-17",
+        "SC-GEN-19"
+      ],
+      "mandatory": true,
+      "result": "PASS",
+      "scope": "Generation lifecycle, recovery and private asset boundary scenarios exercised by local probes.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-generation-lifecycle.log",
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-generation-races.log",
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-m3-recovery.log",
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-assets.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-IAM-03",
+        "SC-IAM-04",
+        "SC-IAM-05",
+        "SC-IAM-06",
+        "SC-IAM-07",
+        "SC-IAM-08"
+      ],
+      "mandatory": true,
+      "result": "PASS",
+      "scope": "Team membership, invitation and tenant authorization scenarios.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-team-http.log",
+        "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-api-isolation.log"
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "commandId": "typecheck",
+      "invocation": "corepack.cmd pnpm typecheck",
+      "environmentId": "local-m3-postgres17",
+      "startAt": "2026-09-30T16:33:27.063Z",
+      "endAt": "2026-09-30T16:33:28.797Z",
+      "exitCode": 0,
+      "signal": null,
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/typecheck.log"
+    },
+    {
+      "commandId": "lint",
+      "invocation": "corepack.cmd pnpm lint",
+      "environmentId": "local-m3-postgres17",
+      "startAt": "2026-09-30T16:33:28.799Z",
+      "endAt": "2026-09-30T16:33:29.254Z",
+      "exitCode": 0,
+      "signal": null,
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/lint.log"
+    },
+    {
+      "commandId": "format-check",
+      "invocation": "corepack.cmd pnpm format:check",
+      "environmentId": "local-m3-postgres17",
+      "startAt": "2026-09-30T16:33:29.255Z",
+      "endAt": "2026-09-30T16:33:29.683Z",
+      "exitCode": 0,
+      "signal": null,
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/format-check.log"
+    },
+    {
+      "commandId": "openspec",
+      "invocation": "corepack.cmd pnpm verify:openspec",
+      "environmentId": "local-m3-postgres17",
+      "startAt": "2026-09-30T16:33:29.684Z",
+      "endAt": "2026-09-30T16:33:31.351Z",
+      "exitCode": 0,
+      "signal": null,
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/openspec.log"
+    },
+    {
+      "commandId": "build",
+      "invocation": "corepack.cmd pnpm build",
+      "environmentId": "local-m3-postgres17",
+      "startAt": "2026-09-30T16:33:31.352Z",
+      "endAt": "2026-09-30T16:33:38.734Z",
+      "exitCode": 0,
+      "signal": null,
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/build.log"
+    },
+    {
+      "commandId": "probe-generation-create",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-generation-create.ts",
+      "environmentId": "local-m3-postgres17",
+      "startAt": "2026-09-30T16:33:38.735Z",
+      "endAt": "2026-09-30T16:33:39.448Z",
+      "exitCode": 0,
+      "signal": null,
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-generation-create.log"
+    },
+    {
+      "commandId": "probe-generation-lifecycle",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-generation-lifecycle.ts",
+      "environmentId": "local-m3-postgres17",
+      "startAt": "2026-09-30T16:33:39.449Z",
+      "endAt": "2026-09-30T16:33:41.033Z",
+      "exitCode": 0,
+      "signal": null,
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-generation-lifecycle.log"
+    },
+    {
+      "commandId": "probe-generation-races",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-generation-races.ts",
+      "environmentId": "local-m3-postgres17",
+      "startAt": "2026-09-30T16:33:41.035Z",
+      "endAt": "2026-09-30T16:33:41.975Z",
+      "exitCode": 0,
+      "signal": null,
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-generation-races.log"
+    },
+    {
+      "commandId": "probe-assets",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-assets.ts",
+      "environmentId": "local-m3-postgres17",
+      "startAt": "2026-09-30T16:33:41.976Z",
+      "endAt": "2026-09-30T16:33:42.862Z",
+      "exitCode": 0,
+      "signal": null,
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-assets.log"
+    },
+    {
+      "commandId": "probe-outbox-lease",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-outbox-lease.ts",
+      "environmentId": "local-m3-postgres17",
+      "startAt": "2026-09-30T16:33:42.863Z",
+      "endAt": "2026-09-30T16:33:43.486Z",
+      "exitCode": 0,
+      "signal": null,
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-outbox-lease.log"
+    },
+    {
+      "commandId": "probe-api-isolation",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-api-isolation.ts",
+      "environmentId": "local-m3-postgres17",
+      "startAt": "2026-09-30T16:33:43.487Z",
+      "endAt": "2026-09-30T16:33:44.994Z",
+      "exitCode": 0,
+      "signal": null,
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-api-isolation.log"
+    },
+    {
+      "commandId": "probe-team-http",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-team-http.ts",
+      "environmentId": "local-m3-postgres17",
+      "startAt": "2026-09-30T16:33:44.995Z",
+      "endAt": "2026-09-30T16:33:46.219Z",
+      "exitCode": 0,
+      "signal": null,
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-team-http.log"
+    },
+    {
+      "commandId": "probe-auth-http",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-auth-http.ts",
+      "environmentId": "local-m3-postgres17",
+      "startAt": "2026-09-30T16:33:46.220Z",
+      "endAt": "2026-09-30T16:33:47.439Z",
+      "exitCode": 0,
+      "signal": null,
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-auth-http.log"
+    },
+    {
+      "commandId": "probe-m3-recovery",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-m3-recovery.ts",
+      "environmentId": "local-m3-postgres17",
+      "startAt": "2026-09-30T16:33:47.440Z",
+      "endAt": "2026-09-30T16:33:48.849Z",
+      "exitCode": 0,
+      "signal": null,
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-m3-recovery.log"
+    },
+    {
+      "commandId": "generation-state-unit",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test tests/unit/generation-state.test.ts",
+      "environmentId": "local-m3-postgres17",
+      "startAt": "2026-09-30T16:33:48.850Z",
+      "endAt": "2026-09-30T16:33:49.397Z",
+      "exitCode": 0,
+      "signal": null,
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/generation-state-unit.log"
+    },
+    {
+      "commandId": "candidate-digests",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe scripts/candidate-digests.mjs D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20260930-m3",
+      "environmentId": "local-m3-postgres17",
+      "startAt": "2026-09-30T16:33:49.398Z",
+      "endAt": "2026-09-30T16:33:49.523Z",
+      "exitCode": 0,
+      "signal": null,
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/candidate-digests.log"
+    }
+  ],
+  "coverage": {
+    "status": "NOT_RUN",
+    "ownedModuleManifestRef": null,
+    "denominator": null,
+    "coveredBranches": null,
+    "totalBranches": null,
+    "percent": null,
+    "exclusions": [
+      {
+        "path": "scripts/**",
+        "reason": "Verification drivers are not delivered domain code."
+      }
+    ],
+    "evidenceRef": null
+  },
+  "defects": [],
+  "externalInputs": [
+    {
+      "input": "Production email delivery",
+      "owner": "later M4/M8 integration",
+      "affectedTasks": [
+        "M4",
+        "M8"
+      ],
+      "availability": "OUT_OF_SCOPE",
+      "nextAction": "Use authorized production mail provider during the later production profile.",
+      "authorityRef": "internal/restart/external-inputs.json"
+    },
+    {
+      "input": "Real provider credentials and bounded spend",
+      "owner": "later M4 integration",
+      "affectedTasks": [
+        "5.1-5.10"
+      ],
+      "availability": "OUT_OF_SCOPE",
+      "nextAction": "Run the four-provider matrix only with qualified authorized accounts.",
+      "authorityRef": "internal/restart/external-inputs.json"
+    },
+    {
+      "input": "Historical anomalous balance recovery authority",
+      "owner": "later billing/operations phase",
+      "affectedTasks": [
+        "M5",
+        "M6"
+      ],
+      "availability": "OUT_OF_SCOPE",
+      "nextAction": "Perform audited recovery under its dedicated stage gate.",
+      "authorityRef": "internal/restart/external-inputs.json"
+    },
+    {
+      "input": "Local Mailpit-compatible capture endpoint at http://localhost:8025",
+      "owner": "local verification environment",
+      "affectedTasks": [
+        "4.12"
+      ],
+      "availability": "AVAILABLE",
+      "nextAction": "Start the disposable local capture endpoint and rerun verify-m3 before independent review.",
+      "authorityRef": "internal/restart/external-inputs.json"
+    }
+  ],
+  "commercialAuthorizationRefs": [],
+  "recovery": {
+    "rollbackPoint": "working-tree candidate before M3 promotion",
+    "restoreEvidenceRefs": [],
+    "compatibleSchemaVersions": [
+      "local migrations through 0015"
+    ],
+    "unrelatedWorkProtection": "Probe fixtures are disposable and each probe cleans its own records."
+  },
+  "observation": {
+    "planRef": null,
+    "windowStart": null,
+    "windowEnd": null,
+    "windowRationale": null,
+    "behavioralBaselineDigest": "63fabe1543638d24db36ca57d4eeb365ff7baa02c9a53f0e9c47ca34bcad5b73",
+    "monitoringEvidenceRefs": [],
+    "journeyEvidenceRefs": [
+      "internal/evidence/M3/local-mvp-status.md",
+      "internal/evidence/M3/browser-walkthrough-20261001.json"
+    ],
+    "recoveryUpgradeEvidenceRefs": [
+      "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-m3-recovery.log"
+    ],
+    "recurringWorkerAlertEvidenceRefs": [],
+    "findingRefs": []
+  },
+  "submission": {
+    "implementerId": "codex-m3-evidence",
+    "submittedAt": "2026-09-30T16:33:49.524Z",
+    "reportRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/report.md"
+  },
+  "independentReview": {
+    "reviewerId": null,
+    "reviewedAt": null,
+    "independentFromImplementer": null,
+    "decision": null,
+    "reason": "Awaiting independent verifier/product review.",
+    "evidenceRefs": []
+  },
+  "integrationDecision": {
+    "integratorId": null,
+    "decidedAt": null,
+    "decision": null,
+    "reason": "Awaiting integrator decision after independent review.",
+    "nextEligibleTaskIds": [
+      "5.1",
+      "6.1"
+    ],
+    "blockedTaskIds": []
+  },
+  "invalidation": {
+    "supersedesRecordRef": null,
+    "changedDigestRefs": [],
+    "affectedStages": [],
+    "requiredReruns": [],
+    "carriedEvidence": []
+  }
+}

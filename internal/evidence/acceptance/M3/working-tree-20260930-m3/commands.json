@@ -1,0 +1,162 @@
+[
+  {
+    "commandId": "typecheck",
+    "invocation": "corepack.cmd pnpm typecheck",
+    "environmentId": "local-m3-postgres17",
+    "startAt": "2026-09-30T16:33:27.063Z",
+    "endAt": "2026-09-30T16:33:28.797Z",
+    "exitCode": 0,
+    "signal": null,
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/typecheck.log"
+  },
+  {
+    "commandId": "lint",
+    "invocation": "corepack.cmd pnpm lint",
+    "environmentId": "local-m3-postgres17",
+    "startAt": "2026-09-30T16:33:28.799Z",
+    "endAt": "2026-09-30T16:33:29.254Z",
+    "exitCode": 0,
+    "signal": null,
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/lint.log"
+  },
+  {
+    "commandId": "format-check",
+    "invocation": "corepack.cmd pnpm format:check",
+    "environmentId": "local-m3-postgres17",
+    "startAt": "2026-09-30T16:33:29.255Z",
+    "endAt": "2026-09-30T16:33:29.683Z",
+    "exitCode": 0,
+    "signal": null,
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/format-check.log"
+  },
+  {
+    "commandId": "openspec",
+    "invocation": "corepack.cmd pnpm verify:openspec",
+    "environmentId": "local-m3-postgres17",
+    "startAt": "2026-09-30T16:33:29.684Z",
+    "endAt": "2026-09-30T16:33:31.351Z",
+    "exitCode": 0,
+    "signal": null,
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/openspec.log"
+  },
+  {
+    "commandId": "build",
+    "invocation": "corepack.cmd pnpm build",
+    "environmentId": "local-m3-postgres17",
+    "startAt": "2026-09-30T16:33:31.352Z",
+    "endAt": "2026-09-30T16:33:38.734Z",
+    "exitCode": 0,
+    "signal": null,
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/build.log"
+  },
+  {
+    "commandId": "probe-generation-create",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-generation-create.ts",
+    "environmentId": "local-m3-postgres17",
+    "startAt": "2026-09-30T16:33:38.735Z",
+    "endAt": "2026-09-30T16:33:39.448Z",
+    "exitCode": 0,
+    "signal": null,
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-generation-create.log"
+  },
+  {
+    "commandId": "probe-generation-lifecycle",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-generation-lifecycle.ts",
+    "environmentId": "local-m3-postgres17",
+    "startAt": "2026-09-30T16:33:39.449Z",
+    "endAt": "2026-09-30T16:33:41.033Z",
+    "exitCode": 0,
+    "signal": null,
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-generation-lifecycle.log"
+  },
+  {
+    "commandId": "probe-generation-races",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-generation-races.ts",
+    "environmentId": "local-m3-postgres17",
+    "startAt": "2026-09-30T16:33:41.035Z",
+    "endAt": "2026-09-30T16:33:41.975Z",
+    "exitCode": 0,
+    "signal": null,
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-generation-races.log"
+  },
+  {
+    "commandId": "probe-assets",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-assets.ts",
+    "environmentId": "local-m3-postgres17",
+    "startAt": "2026-09-30T16:33:41.976Z",
+    "endAt": "2026-09-30T16:33:42.862Z",
+    "exitCode": 0,
+    "signal": null,
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-assets.log"
+  },
+  {
+    "commandId": "probe-outbox-lease",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-outbox-lease.ts",
+    "environmentId": "local-m3-postgres17",
+    "startAt": "2026-09-30T16:33:42.863Z",
+    "endAt": "2026-09-30T16:33:43.486Z",
+    "exitCode": 0,
+    "signal": null,
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-outbox-lease.log"
+  },
+  {
+    "commandId": "probe-api-isolation",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-api-isolation.ts",
+    "environmentId": "local-m3-postgres17",
+    "startAt": "2026-09-30T16:33:43.487Z",
+    "endAt": "2026-09-30T16:33:44.994Z",
+    "exitCode": 0,
+    "signal": null,
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-api-isolation.log"
+  },
+  {
+    "commandId": "probe-team-http",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-team-http.ts",
+    "environmentId": "local-m3-postgres17",
+    "startAt": "2026-09-30T16:33:44.995Z",
+    "endAt": "2026-09-30T16:33:46.219Z",
+    "exitCode": 0,
+    "signal": null,
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-team-http.log"
+  },
+  {
+    "commandId": "probe-auth-http",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-auth-http.ts",
+    "environmentId": "local-m3-postgres17",
+    "startAt": "2026-09-30T16:33:46.220Z",
+    "endAt": "2026-09-30T16:33:47.439Z",
+    "exitCode": 0,
+    "signal": null,
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-auth-http.log"
+  },
+  {
+    "commandId": "probe-m3-recovery",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-m3-recovery.ts",
+    "environmentId": "local-m3-postgres17",
+    "startAt": "2026-09-30T16:33:47.440Z",
+    "endAt": "2026-09-30T16:33:48.849Z",
+    "exitCode": 0,
+    "signal": null,
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/probe-m3-recovery.log"
+  },
+  {
+    "commandId": "generation-state-unit",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test tests/unit/generation-state.test.ts",
+    "environmentId": "local-m3-postgres17",
+    "startAt": "2026-09-30T16:33:48.850Z",
+    "endAt": "2026-09-30T16:33:49.397Z",
+    "exitCode": 0,
+    "signal": null,
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/generation-state-unit.log"
+  },
+  {
+    "commandId": "candidate-digests",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe scripts/candidate-digests.mjs D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20260930-m3",
+    "environmentId": "local-m3-postgres17",
+    "startAt": "2026-09-30T16:33:49.398Z",
+    "endAt": "2026-09-30T16:33:49.523Z",
+    "exitCode": 0,
+    "signal": null,
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/candidate-digests.log"
+  }
+]

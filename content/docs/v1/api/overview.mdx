@@ -1,0 +1,79 @@
+---
+release: v1
+title: API contract preview
+section: apis
+status: published
+relatedContracts: [D08, D15, G08, G15]
+---
+
+# API contract preview
+
+The public, third-party API remains deferred. The v1 application exposes
+same-origin routes for its own browser and worker clients. These routes validate
+input, resolve workspace authorization and invoke named domain commands. They
+are the released integration contract for a local or buyer-owned deployment.
+
+## Authentication and mutation rules
+
+Browser mutations require a same-origin `Origin` or `Referer` and an
+`Idempotency-Key`. Responses use `{ok: true, data}` or
+`{ok: false, error: {code, message}}`. Workspace reads and commands require an
+active verified session with membership in the requested workspace.
+
+## Integration examples
+
+Create a team workspace with the authenticated browser session:
+
+```http
+POST /api/workspaces
+Origin: https://template.example
+Idempotency-Key: workspace-create-001
+Content-Type: application/json
+
+{"workspaceName":"Production design team"}
+```
+
+The route implementation is `src/app/api/workspaces/route.ts`. A successful
+response returns the durable workspace ID. Retrying the same key replays the
+same command result without creating a second workspace.
+
+Queue a generation with a server-issued quote and a prompt:
+
+```http
+POST /api/workspaces/{workspaceId}/generations
+Origin: https://template.example
+Idempotency-Key: generation-001
+Content-Type: application/json
+
+{"quote":{"modelId":"mock-video","catalogVersion":1,"quantity":"1","unitCost":"10","totalCost":"10","issuedAt":"2026-10-04T00:00:00.000Z","quoteHash":"<server-issued-hash>"},"input":{"prompt":"A calm ocean at sunrise"}}
+```
+
+The route implementation is
+`src/app/api/workspaces/[workspaceId]/generations/route.ts`. The server checks
+the quote, reserves credits and persists the task before a worker dispatches
+it. A browser cannot provide a provider URL, price, callback or credit amount.
+
+Open local fixture billing only when the deployment profile is `local` or
+`test`:
+
+```http
+POST /api/workspaces/{workspaceId}/billing/checkout
+Origin: http://localhost:3100
+Idempotency-Key: checkout-001
+Content-Type: application/json
+
+{"catalogProductKey":"fixture-pack"}
+```
+
+The route implementation is
+`src/app/api/workspaces/[workspaceId]/billing/checkout/route.ts`. Fixture
+checkout is deliberately unavailable in production. Real provider activation,
+production email, public API credentials and payout authority require their
+own stage evidence.
+
+## Deferred public API scope
+
+There is no supported bearer-token API, public webhook registration, or
+third-party SDK in v1. Do not publish the internal route examples as a public
+compatibility promise. Versioned public API authentication and rate limits are
+deferred until a separate contract, security review and release gate exist.

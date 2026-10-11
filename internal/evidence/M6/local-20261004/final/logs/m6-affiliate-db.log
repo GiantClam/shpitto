@@ -1,0 +1,74 @@
+{"status":"PASS","scope":"local-docker-postgresql-with-injected-authoritative-fixtures","realAccountVerified":false,"disposableDatabase":true,"attributionSealed":true,"transientCandidateRetained":true,"concurrentCanonicalPayments":true,"allHistoricalCustomersRequired":true,"chronologicalFirstPayment":true,"orderedLeasedDelivery":true,"stableDeliveryRetries":true,"equalPartialRefunds":true,"concurrentRefundBasis":true,"persistentReviewCheckpointFences":true,"pendingDenialHold":true,"auditedCommandsAndRollback":true,"asyncBatchFailureAndReadback":true,"reviewedHostedHandoff":true,"persistedFiveMinuteSchedule":true,"verifiedSignalAbuseRelease":true,"olderPaymentConflict":true,"persistentAbuseHold":true,"atomicRollback":true,"rootWorkspaceHooks":true,"rootBillingCanonicalHook":true,"rootBillingCreditFailureRollback":true}
+✔ scripts\probe-m6-affiliate-db.ts (2591.0333ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2597.2349
+ℹ start of coverage report
+ℹ -------------------------------------------------------------------------------------------------------------------------------
+ℹ file                    | line % | branch % | funcs % | uncovered lines
+ℹ -------------------------------------------------------------------------------------------------------------------------------
+ℹ src                     |        |          |         | 
+ℹ  config                 |        |          |         | 
+ℹ   env.ts                |  75.00 |    45.45 |   33.33 | 9-11 42-43 66-80 87-88
+ℹ   plans.ts              | 100.00 |    55.56 |  100.00 | 
+ℹ  contracts              |        |          |         | 
+ℹ   http.ts               |  58.49 |    75.76 |   61.54 | 17-18 21-22 25-35 39-40 46-47 73 81-87 90-106
+ℹ  db                     |        |          |         | 
+ℹ   contracts.ts          |  79.59 |   100.00 |   33.33 | 14-16 21-22 25-29
+ℹ   schema                |        |          |         | 
+ℹ    access.ts            | 100.00 |   100.00 |   50.00 | 
+ℹ    affiliate-inbox.ts   | 100.00 |   100.00 |  100.00 | 
+ℹ    affiliate.ts         | 100.00 |   100.00 |   43.75 | 
+ℹ    asset.ts             | 100.00 |   100.00 |   33.33 | 
+ℹ    auth.ts              | 100.00 |   100.00 |   62.50 | 
+ℹ    billing.ts           |  96.88 |   100.00 |   52.94 | 217-223
+ℹ    commands.ts          | 100.00 |   100.00 |   33.33 | 
+ℹ    credit.ts            | 100.00 |   100.00 |   42.86 | 
+ℹ    generation.ts        | 100.00 |   100.00 |   66.67 | 
+ℹ    index.ts             | 100.00 |   100.00 |  100.00 | 
+ℹ    invitations.ts       | 100.00 |   100.00 |   33.33 | 
+ℹ    operations.ts        | 100.00 |   100.00 |   33.33 | 
+ℹ    operator.ts          | 100.00 |   100.00 |   40.00 | 
+ℹ    ownership.ts         | 100.00 |   100.00 |  100.00 | 
+ℹ    workspace.ts         | 100.00 |   100.00 |   41.18 | 
+ℹ  modules                |        |          |         | 
+ℹ   affiliates            |        |          |         | 
+ℹ    abuse-review.ts      | 100.00 |    80.00 |  100.00 | 
+ℹ    cash-recovery.ts     |  41.67 |   100.00 |    0.00 | 11-24
+ℹ    commands.ts          |  95.81 |    64.77 |  100.00 | 67-73
+ℹ    commission-review.ts |  88.46 |    93.75 |   60.00 | 45-47 50-52
+ℹ    contracts.ts         |  79.66 |    66.67 |   50.00 | 48-59
+ℹ    delivery.ts          |  64.00 |    75.00 |   40.00 | 13-14 17-19 22-25
+ℹ    eligibility.ts       |  41.18 |   100.00 |    0.00 | 6-7 10-17
+ℹ    payout-guard.ts      | 100.00 |    50.00 |  100.00 | 
+ℹ    runtime.ts           |  97.35 |    78.49 |   92.11 | 38-40 147-148 253-256
+ℹ    sync.ts              |  94.44 |    53.25 |   81.82 | 61-63 106-108 158-160
+ℹ   billing               |        |          |         | 
+ℹ    contracts.ts         |  77.78 |    63.16 |   70.00 | 30-31 34-35 41-42 49-50 64-66 70-72 75-80 89-90 105-106
+ℹ    payment-aliases.ts   |  95.24 |    75.00 |  100.00 | 36-37
+ℹ    reconcile-payment.ts |  81.86 |    47.56 |   80.00 | 94-100 102-104 118-122 158-160 173-178 181-187 195-197 216-217 219-223
+ℹ    recovery.ts          |  25.00 |   100.00 |    0.00 | 18-21 25-84 87-88
+ℹ   credits               |        |          |         | 
+ℹ    issue-demo.ts        |  41.67 |   100.00 |    0.00 | 16-20 22-36 39-42 45-48
+ℹ    ledger.ts            |  84.89 |    61.54 |   50.00 | 38-42 60-68 133-139
+ℹ    reversals.ts         |  50.00 |   100.00 |    0.00 | 15-28 31-32
+ℹ   operations            |        |          |         | 
+ℹ    audit.ts             |  72.31 |    66.67 |   75.00 | 14-15 21-22 39-41 55-65
+ℹ    authorize.ts         |  89.47 |    50.00 |   88.89 | 35 44-45 77-78 159-171
+ℹ   shared                |        |          |         | 
+ℹ    commands.ts          |  86.52 |    59.09 |   66.67 | 31-32 43-44 69-70 72-73 86-89
+ℹ    transaction.ts       | 100.00 |   100.00 |  100.00 | 
+ℹ   workspaces            |        |          |         | 
+ℹ    authorize.ts         |  37.33 |   100.00 |    0.00 | 18-35 39-51 58-64 67-75
+ℹ    commands.ts          |  45.13 |    75.00 |   50.00 | 33-34 38-43 91-116 119-145 148-173 176-195
+ℹ    onboard.ts           |  79.17 |    52.63 |   57.14 | 47-55 78-86 90-91 147-149 153 170-171 175-181 186-192
+ℹ    policy.ts            |  39.72 |    50.00 |    9.09 | 27-29 31-33 35-39 42-49 52-57 74-90 93-104 107-116 119-133 136-141
+ℹ -------------------------------------------------------------------------------------------------------------------------------
+ℹ all files               |  82.07 |    69.85 |   59.32 | 
+ℹ -------------------------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

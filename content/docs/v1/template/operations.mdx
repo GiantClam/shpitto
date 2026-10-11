@@ -1,0 +1,86 @@
+---
+title: Operations and safe recovery
+description: Inspect tenant evidence and run audited recovery commands.
+release: v1
+section: template
+status: published
+relatedContracts: [D08, D18, G08, G18]
+---
+
+## Administrative access
+
+Workspace ownership does not grant global administration. An authorized operator
+signs in with the shared account, completes authenticator verification, and opens
+`/admin`. Support can read redacted lists. Operator and superadmin commands require
+a reason, the current resource version, an idempotency key, and successful
+second-factor verification in the same session within the last ten minutes.
+
+Role revocation and account disablement take effect on the next request. Role
+changes and disablement preserve a usable superadmin. Initial ownership and
+emergency recovery use audited server maintenance, never public registration or
+a client-supplied role. See the installation's operator-owner recovery runbook.
+
+## Inspect before acting
+
+Use the Workspaces, Users, Generations, Billings, Audits, and affiliate review
+lists. Filters and pagination are bounded; raw provider bodies, credentials,
+private storage keys, and signed asset URLs do not appear in these projections.
+Tenant detail and recovery inspection require a recorded access purpose.
+
+Recovery evidence correlates tasks, attempts, assets, notifications, outbox
+events, credit reservations, and their release entries. Model health describes
+the selected workspace's recent task sample, not the provider's global service.
+An unavailable/no-success result means this sample cannot prove a successful run.
+Live-disabled models stay disabled. Unknown cost is never a confirmed zero cost.
+
+## Recover a delayed generation
+
+1. Inspect the workspace and record its current version and the reason for access.
+2. Read recovery evidence. Check task status, deadline, attempt and notification
+   identity, pending delivery, and reservation/settlement evidence.
+3. For overdue tasks, use **Sweep expired generation tasks**. This invokes the
+   existing deadline policy and retains its original task settlement keys.
+4. For a stored authenticated notification, use **Replay stored provider
+   notification** with its inbox ID. The server verifies workspace, provider,
+   request, and attempt correlation. It accepts no replacement outcome or body.
+5. Inspect the result, updated version, and audit record. If a response was lost,
+   retry the previous command with its exact key and body. A stale new command
+   must be reviewed against current evidence before resubmission.
+
+Replay never submits a new paid provider job. A completed observation advances
+the existing task into materialization; it does not declare success before
+artifact validation. Failed or late observations cannot rewrite terminal credit
+effects. Audit failure rolls back the associated local recovery transaction.
+
+## Refunds and credit adjustments
+
+Preview a refund before submitting it. Use the returned version and record both
+tenant access purpose and command reason. After a reload or interrupted response,
+**Resume pending refunds** reconstructs the current operator's original command
+from audited server evidence. Once provider dispatch may have begun, retry uses
+authoritative lookup only. An unresolved result remains unknown until reconciled.
+
+Credit adjustments use explicit commands and record ledger, audit, and outbox
+effects together. Negative adjustments cannot consume reserved or already-used
+credits. Historical abnormal-balance recovery requires a separately reviewed
+procedure; this interface does not authorize rewriting ledger history.
+
+## Local rehearsal and external activation
+
+Rehearse with a disposable local Docker database and fixture providers. Verify
+same-command replay, wrong-workspace rejection, missing authentication evidence,
+terminal-credit preservation, and rollback when audit recording fails.
+
+The local M6 evidence does not activate production email, paid generation,
+payment refunds, or FirstPromoter authority. Affiliate configuration alone cannot
+approve commissions or report a payout. Complete the separately scoped real-account
+verification and production adapter setup before enabling those services.
+
+## Health and logs
+
+`GET /api/healthz` checks application configuration and PostgreSQL reachability.
+It returns only `ready`/`not_ready`, the local/production profile, database
+state, and (when ready) elapsed milliseconds. It does not query providers,
+payments, email, object storage or affiliate authority. Keep request IDs and
+bounded status fields for support; never log passwords, cookies, webhook bodies,
+provider URLs, authorization headers or signed download links.

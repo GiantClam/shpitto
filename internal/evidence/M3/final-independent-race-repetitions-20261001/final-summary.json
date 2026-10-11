@@ -1,0 +1,540 @@
+{
+  "status": "PASS",
+  "createdAt": "2026-10-01T02:22:44.8314651Z",
+  "totalProbeRuns": 12,
+  "repetitionsPerProbe": 3,
+  "freshDisposableDatabases": 12,
+  "candidateStable": true,
+  "candidateDigests": {
+    "sourceTreeSha256": "73ec731c971aca355335d6c86a3ba14e8c91e84e9cf8569007cb7abf3f6bd3ab",
+    "schemaSha256": "5b0b847b266e1690319021b0167f831367e9190d188c88b90b40ca09f8d4c58b",
+    "configurationSha256": "5f6bd06fa671a1f727e8663ba540f25f53b2dc15ebaff31fd2593eb0eb3032d7",
+    "contractSha256": "696243adf42cf0ea4631515f9f112346783742b6e0d301eaaed8ef1990db8fc2",
+    "validatorSha256": "84b43b64ce663a6f7fccd2aa4e4ac704419f071af56783b64d7ec9413dab8b69",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a"
+  },
+  "allDatabasesDroppedAndVerifiedAbsent": true,
+  "allTemporaryRootsRemovedAndVerifiedAbsent": true,
+  "databaseNames": [
+    "shpitto_m3_ind_e24ce0439c444752a5e9",
+    "shpitto_m3_ind_29489acf0ac34827ae08",
+    "shpitto_m3_ind_ab24762d1a054c07a88e",
+    "shpitto_m3_ind_c744f8bac2524eb5a937",
+    "shpitto_m3_ind_0c89a9f98dcb47da9709",
+    "shpitto_m3_ind_0401926bed5d490b9596",
+    "shpitto_m3_ind_1efb08a618a44d2fb71f",
+    "shpitto_m3_ind_010440e765df40ea9785",
+    "shpitto_m3_ind_007b0674af6b4f028f35",
+    "shpitto_m3_ind_8bc730937da344d9b791",
+    "shpitto_m3_ind_c86b9eadfaeb483cb04f",
+    "shpitto_m3_ind_7eb865cb8c6745f48d61"
+  ],
+  "probes": [
+    {
+      "probe": "command-contract",
+      "resetRuns": 3,
+      "passRuns": 3
+    },
+    {
+      "probe": "credit-reservation",
+      "resetRuns": 3,
+      "passRuns": 3
+    },
+    {
+      "probe": "generation-replay",
+      "resetRuns": 3,
+      "passRuns": 3
+    },
+    {
+      "probe": "workspaces",
+      "resetRuns": 3,
+      "passRuns": 3
+    }
+  ],
+  "runtime": {
+    "query": "SELECT version(), current_setting('server_version')",
+    "observed": {
+      "version": "PostgreSQL 17.6 on x86_64-windows, compiled by msvc-19.44.35213, 64-bit",
+      "server_version": "17.6"
+    },
+    "observations": 6,
+    "evidenceRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/repetitions.json",
+    "note": "Runtime version was explicitly queried for each of the six supplemental runs. The first six completed run records predate this added metadata query and are preserved."
+  },
+  "assertions": [
+    {
+      "iteration": 1,
+      "probe": "workspaces",
+      "databaseName": "shpitto_m3_ind_e24ce0439c444752a5e9",
+      "assertions": {
+        "caseIds": [
+          "T05.a"
+        ],
+        "lastOwnerAttempts": 10,
+        "rejectedLastOwnerAttempts": 10,
+        "twoOwnerAttempts": 10,
+        "winners": 1,
+        "rejected": 9,
+        "minimumObservedOwners": 1,
+        "exactCommittedOwnerCount": 1,
+        "workspaceVersionDelta": 1,
+        "assertionSource": "scripts/probe-workspaces.ts:96-137",
+        "assertionEvidence": "Full unmodified probe exit 0 plus emitted counters; exact final owner and version assertions are mandatory before PASS."
+      },
+      "cleanup": {
+        "databaseDropped": true,
+        "temporaryAssetsRemoved": true
+      }
+    },
+    {
+      "iteration": 1,
+      "probe": "credit-reservation",
+      "databaseName": "shpitto_m3_ind_29489acf0ac34827ae08",
+      "assertions": {
+        "caseIds": [
+          "T06",
+          "T09",
+          "T12"
+        ],
+        "attempts": 10,
+        "winners": 1,
+        "rejected": 9,
+        "reservations": 1,
+        "exactFinalGrant": {
+          "available": "10",
+          "reserved": "40"
+        },
+        "allocations": 1,
+        "ledgerEntries": 2,
+        "commandResults": 1,
+        "auditEvents": 2,
+        "outboxEvents": 2,
+        "rejectedRequestSideEffects": 0,
+        "assertionSource": "scripts/probe-credit-reservation.ts:118-140",
+        "assertionEvidence": "Full unmodified probe exit 0; deepStrictEqual of every listed final-state count is mandatory before PASS.",
+        "scenarioIds": [
+          "SC-CRD-03",
+          "SC-CRD-04"
+        ]
+      },
+      "cleanup": {
+        "databaseDropped": true,
+        "temporaryAssetsRemoved": true
+      }
+    },
+    {
+      "iteration": 2,
+      "probe": "workspaces",
+      "databaseName": "shpitto_m3_ind_ab24762d1a054c07a88e",
+      "assertions": {
+        "caseIds": [
+          "T05.a"
+        ],
+        "lastOwnerAttempts": 10,
+        "rejectedLastOwnerAttempts": 10,
+        "twoOwnerAttempts": 10,
+        "winners": 1,
+        "rejected": 9,
+        "minimumObservedOwners": 1,
+        "exactCommittedOwnerCount": 1,
+        "workspaceVersionDelta": 1,
+        "assertionSource": "scripts/probe-workspaces.ts:96-137",
+        "assertionEvidence": "Full unmodified probe exit 0 plus emitted counters; exact final owner and version assertions are mandatory before PASS."
+      },
+      "cleanup": {
+        "databaseDropped": true,
+        "temporaryAssetsRemoved": true
+      }
+    },
+    {
+      "iteration": 2,
+      "probe": "credit-reservation",
+      "databaseName": "shpitto_m3_ind_c744f8bac2524eb5a937",
+      "assertions": {
+        "caseIds": [
+          "T06",
+          "T09",
+          "T12"
+        ],
+        "attempts": 10,
+        "winners": 1,
+        "rejected": 9,
+        "reservations": 1,
+        "exactFinalGrant": {
+          "available": "10",
+          "reserved": "40"
+        },
+        "allocations": 1,
+        "ledgerEntries": 2,
+        "commandResults": 1,
+        "auditEvents": 2,
+        "outboxEvents": 2,
+        "rejectedRequestSideEffects": 0,
+        "assertionSource": "scripts/probe-credit-reservation.ts:118-140",
+        "assertionEvidence": "Full unmodified probe exit 0; deepStrictEqual of every listed final-state count is mandatory before PASS.",
+        "scenarioIds": [
+          "SC-CRD-03",
+          "SC-CRD-04"
+        ]
+      },
+      "cleanup": {
+        "databaseDropped": true,
+        "temporaryAssetsRemoved": true
+      }
+    },
+    {
+      "iteration": 3,
+      "probe": "workspaces",
+      "databaseName": "shpitto_m3_ind_0c89a9f98dcb47da9709",
+      "assertions": {
+        "caseIds": [
+          "T05.a"
+        ],
+        "lastOwnerAttempts": 10,
+        "rejectedLastOwnerAttempts": 10,
+        "twoOwnerAttempts": 10,
+        "winners": 1,
+        "rejected": 9,
+        "minimumObservedOwners": 1,
+        "exactCommittedOwnerCount": 1,
+        "workspaceVersionDelta": 1,
+        "assertionSource": "scripts/probe-workspaces.ts:96-137",
+        "assertionEvidence": "Full unmodified probe exit 0 plus emitted counters; exact final owner and version assertions are mandatory before PASS."
+      },
+      "cleanup": {
+        "databaseDropped": true,
+        "temporaryAssetsRemoved": true
+      }
+    },
+    {
+      "iteration": 3,
+      "probe": "credit-reservation",
+      "databaseName": "shpitto_m3_ind_0401926bed5d490b9596",
+      "assertions": {
+        "caseIds": [
+          "T06",
+          "T09",
+          "T12"
+        ],
+        "attempts": 10,
+        "winners": 1,
+        "rejected": 9,
+        "reservations": 1,
+        "exactFinalGrant": {
+          "available": "10",
+          "reserved": "40"
+        },
+        "allocations": 1,
+        "ledgerEntries": 2,
+        "commandResults": 1,
+        "auditEvents": 2,
+        "outboxEvents": 2,
+        "rejectedRequestSideEffects": 0,
+        "assertionSource": "scripts/probe-credit-reservation.ts:118-140",
+        "assertionEvidence": "Full unmodified probe exit 0; deepStrictEqual of every listed final-state count is mandatory before PASS.",
+        "scenarioIds": [
+          "SC-CRD-03",
+          "SC-CRD-04"
+        ]
+      },
+      "cleanup": {
+        "databaseDropped": true,
+        "temporaryAssetsRemoved": true
+      }
+    },
+    {
+      "iteration": 1,
+      "probe": "command-contract",
+      "databaseName": "shpitto_m3_ind_1efb08a618a44d2fb71f",
+      "assertions": {
+        "caseIds": [
+          "T09",
+          "T12"
+        ],
+        "scenarioIds": [
+          "SC-CRD-07"
+        ],
+        "attempts": 10,
+        "businessEffects": 1,
+        "replays": 9,
+        "repeatedSemanticReplays": 20,
+        "committedCommandIdentities": 2,
+        "conflictingPayloadRejected": true,
+        "assertionSource": "scripts/probe-command-contract.ts:49-80",
+        "assertionEvidence": "Unmodified probe assertions and emitted observed replay flags, exit 0."
+      },
+      "cleanup": {
+        "databaseDropped": true,
+        "temporaryAssetsRemoved": true
+      }
+    },
+    {
+      "iteration": 1,
+      "probe": "generation-replay",
+      "databaseName": "shpitto_m3_ind_010440e765df40ea9785",
+      "assertions": {
+        "caseIds": [
+          "T09",
+          "T10",
+          "T11",
+          "T12",
+          "T19",
+          "T20"
+        ],
+        "concurrentCreate": {
+          "attempts": 10,
+          "effects": 1,
+          "replays": 9
+        },
+        "concurrentCancel": {
+          "attempts": 10,
+          "effects": 1,
+          "replays": 9
+        },
+        "concurrentSettle": {
+          "attempts": 10,
+          "effects": 1,
+          "replays": 9
+        },
+        "callbackReplayCount": 20,
+        "terminalEffects": [
+          {
+            "status": "cancelled",
+            "count": "1"
+          },
+          {
+            "status": "succeeded",
+            "count": "1"
+          }
+        ],
+        "financialEffects": [
+          {
+            "entry_type": "consume",
+            "count": "1"
+          },
+          {
+            "entry_type": "grant_issued",
+            "count": "1"
+          },
+          {
+            "entry_type": "release",
+            "count": "1"
+          },
+          {
+            "entry_type": "reserve",
+            "count": "2"
+          }
+        ],
+        "unrelatedRecordsUnchanged": true,
+        "authenticatedProviderWebhookInbox": "NOT_RUN",
+        "assertionSource": "scripts/probe-generation-replay.ts",
+        "assertionEvidence": "Unmodified local Mock/domain probe assertions and emitted exact final-state counts, exit 0."
+      },
+      "cleanup": {
+        "databaseDropped": true,
+        "temporaryAssetsRemoved": true
+      }
+    },
+    {
+      "iteration": 2,
+      "probe": "command-contract",
+      "databaseName": "shpitto_m3_ind_007b0674af6b4f028f35",
+      "assertions": {
+        "caseIds": [
+          "T09",
+          "T12"
+        ],
+        "scenarioIds": [
+          "SC-CRD-07"
+        ],
+        "attempts": 10,
+        "businessEffects": 1,
+        "replays": 9,
+        "repeatedSemanticReplays": 20,
+        "committedCommandIdentities": 2,
+        "conflictingPayloadRejected": true,
+        "assertionSource": "scripts/probe-command-contract.ts:49-80",
+        "assertionEvidence": "Unmodified probe assertions and emitted observed replay flags, exit 0."
+      },
+      "cleanup": {
+        "databaseDropped": true,
+        "temporaryAssetsRemoved": true
+      }
+    },
+    {
+      "iteration": 2,
+      "probe": "generation-replay",
+      "databaseName": "shpitto_m3_ind_8bc730937da344d9b791",
+      "assertions": {
+        "caseIds": [
+          "T09",
+          "T10",
+          "T11",
+          "T12",
+          "T19",
+          "T20"
+        ],
+        "concurrentCreate": {
+          "attempts": 10,
+          "effects": 1,
+          "replays": 9
+        },
+        "concurrentCancel": {
+          "attempts": 10,
+          "effects": 1,
+          "replays": 9
+        },
+        "concurrentSettle": {
+          "attempts": 10,
+          "effects": 1,
+          "replays": 9
+        },
+        "callbackReplayCount": 20,
+        "terminalEffects": [
+          {
+            "status": "cancelled",
+            "count": "1"
+          },
+          {
+            "status": "succeeded",
+            "count": "1"
+          }
+        ],
+        "financialEffects": [
+          {
+            "entry_type": "consume",
+            "count": "1"
+          },
+          {
+            "entry_type": "grant_issued",
+            "count": "1"
+          },
+          {
+            "entry_type": "release",
+            "count": "1"
+          },
+          {
+            "entry_type": "reserve",
+            "count": "2"
+          }
+        ],
+        "unrelatedRecordsUnchanged": true,
+        "authenticatedProviderWebhookInbox": "NOT_RUN",
+        "assertionSource": "scripts/probe-generation-replay.ts",
+        "assertionEvidence": "Unmodified local Mock/domain probe assertions and emitted exact final-state counts, exit 0."
+      },
+      "cleanup": {
+        "databaseDropped": true,
+        "temporaryAssetsRemoved": true
+      }
+    },
+    {
+      "iteration": 3,
+      "probe": "command-contract",
+      "databaseName": "shpitto_m3_ind_c86b9eadfaeb483cb04f",
+      "assertions": {
+        "caseIds": [
+          "T09",
+          "T12"
+        ],
+        "scenarioIds": [
+          "SC-CRD-07"
+        ],
+        "attempts": 10,
+        "businessEffects": 1,
+        "replays": 9,
+        "repeatedSemanticReplays": 20,
+        "committedCommandIdentities": 2,
+        "conflictingPayloadRejected": true,
+        "assertionSource": "scripts/probe-command-contract.ts:49-80",
+        "assertionEvidence": "Unmodified probe assertions and emitted observed replay flags, exit 0."
+      },
+      "cleanup": {
+        "databaseDropped": true,
+        "temporaryAssetsRemoved": true
+      }
+    },
+    {
+      "iteration": 3,
+      "probe": "generation-replay",
+      "databaseName": "shpitto_m3_ind_7eb865cb8c6745f48d61",
+      "assertions": {
+        "caseIds": [
+          "T09",
+          "T10",
+          "T11",
+          "T12",
+          "T19",
+          "T20"
+        ],
+        "concurrentCreate": {
+          "attempts": 10,
+          "effects": 1,
+          "replays": 9
+        },
+        "concurrentCancel": {
+          "attempts": 10,
+          "effects": 1,
+          "replays": 9
+        },
+        "concurrentSettle": {
+          "attempts": 10,
+          "effects": 1,
+          "replays": 9
+        },
+        "callbackReplayCount": 20,
+        "terminalEffects": [
+          {
+            "status": "cancelled",
+            "count": "1"
+          },
+          {
+            "status": "succeeded",
+            "count": "1"
+          }
+        ],
+        "financialEffects": [
+          {
+            "entry_type": "consume",
+            "count": "1"
+          },
+          {
+            "entry_type": "grant_issued",
+            "count": "1"
+          },
+          {
+            "entry_type": "release",
+            "count": "1"
+          },
+          {
+            "entry_type": "reserve",
+            "count": "2"
+          }
+        ],
+        "unrelatedRecordsUnchanged": true,
+        "authenticatedProviderWebhookInbox": "NOT_RUN",
+        "assertionSource": "scripts/probe-generation-replay.ts",
+        "assertionEvidence": "Unmodified local Mock/domain probe assertions and emitted exact final-state counts, exit 0."
+      },
+      "cleanup": {
+        "databaseDropped": true,
+        "temporaryAssetsRemoved": true
+      }
+    }
+  ],
+  "evidenceRefs": [
+    "internal/evidence/M3/final-independent-race-repetitions-20261001/result.json",
+    "internal/evidence/M3/final-independent-race-repetitions-20261001/repetitions.json",
+    "internal/evidence/M3/final-independent-race-repetitions-20261001/commands.json",
+    "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/result.json",
+    "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/repetitions.json",
+    "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/commands.json"
+  ],
+  "mapping": {
+    "T05.a": "Ownership/personal-workspace boundaries: three current workspace repetitions.",
+    "T06/T09/T12": "Credit reservation and durable command contention: three current repetitions each.",
+    "T12.a": "Independent deadline sweep; this supplement does not replace the main verifier generation-races/recovery evidence.",
+    "T12.b": "Stale lease generation; this supplement does not replace the main verifier outbox-lease/recovery evidence."
+  },
+  "limits": "Local Mock/domain and PostgreSQL contention evidence only. Authenticated provider webhook inbox remains M4. This artifact does not grant whole-stage approval."
+}

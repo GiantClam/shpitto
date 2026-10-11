@@ -1,0 +1,36 @@
+{
+  "profile": "local-mock-docs-ui",
+  "status": "PASS",
+  "checks": {
+    "publishedNavigation": "PASS (27 links, v1 selected)",
+    "desktopLayout": {
+      "width": 1440,
+      "scrollWidth": 1440,
+      "overflowing": []
+    },
+    "hydratedSearchAndKeyboardNavigation": "PASS",
+    "searchEmptyAndClear": "PASS",
+    "versionedNavigation": "PASS (only published v1 is selectable)",
+    "mobileLayout": {
+      "width": 390,
+      "scrollWidth": 390,
+      "overflowing": []
+    },
+    "vendorProxyServerRendered": "PASS (200 with hydrated shell markup)",
+    "vendorProxyHydratedSearch": "PASS",
+    "vendorImages": [
+      {
+        "src": "/brand/shpitto-logo-full.png",
+        "loaded": true
+      }
+    ]
+  },
+  "screenshots": [
+    "desktop-1440.png",
+    "mobile-390.png",
+    "vendor-proxy-1440.png"
+  ],
+  "pageErrors": [],
+  "consoleErrors": [],
+  "failedRequests": []
+}

@@ -1,0 +1,1 @@
+{"status":"PASS","raceAttempts":10,"concurrentWinners":1,"concurrentRejected":9,"exactSevenDayExpiry":true,"replayRejected":true,"mismatchRejected":true,"expiryRejected":true,"deletedWorkspaceRejected":true,"rollbackClean":true}

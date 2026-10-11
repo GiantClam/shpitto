@@ -1,0 +1,31 @@
+{"status":"PASS","ownerEscalationRejected":true,"missingStepUpRejected":true,"sameSessionAccepted":true,"differentSessionRejected":true,"expiredSessionRejected":true,"expiredRejected":true,"revocationImmediate":true}
+✔ scripts\probe-operator.ts (815.1037ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 821.3926
+ℹ start of coverage report
+ℹ ---------------------------------------------------------------------------------------------------------------------
+ℹ file              | line % | branch % | funcs % | uncovered lines
+ℹ ---------------------------------------------------------------------------------------------------------------------
+ℹ src               |        |          |         | 
+ℹ  contracts        |        |          |         | 
+ℹ   http.ts         |  33.02 |   100.00 |    0.00 | 17-18 21-22 25-35 38-42 45-49 52-59 63-74 77-78 81-87 90-106
+ℹ  modules          |        |          |         | 
+ℹ   operations      |        |          |         | 
+ℹ    authorize.ts   |  90.91 |    82.76 |   87.50 | 35 142-154
+ℹ   shared          |        |          |         | 
+ℹ    commands.ts    |  25.84 |   100.00 |    0.00 | 20-22 25-83 86-89
+ℹ    transaction.ts | 100.00 |   100.00 |  100.00 | 
+ℹ   workspaces      |        |          |         | 
+ℹ    authorize.ts   |  37.33 |   100.00 |    0.00 | 18-35 39-51 58-64 67-75
+ℹ    commands.ts    |  42.93 |    75.00 |   50.00 | 31-32 36-41 81-82 87-112 115-141 144-169 172-191
+ℹ    policy.ts      |  39.72 |    50.00 |    9.09 | 27-29 31-33 35-39 42-49 52-57 74-90 93-104 107-116 119-133 136-141
+ℹ ---------------------------------------------------------------------------------------------------------------------
+ℹ all files         |  49.02 |    80.43 |   29.79 | 
+ℹ ---------------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

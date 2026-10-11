@@ -1,0 +1,62 @@
+✔ all four selected schemas are inspected, byte-bound, and disabled for live use (1.2274ms)
+✔ strict public DTO rejects every unapproved top-level and nested vendor field (0.6127ms)
+✔ schema or exact-version drift blocks new submission contracts without a silent fallback (0.2398ms)
+✔ safe preset is server-owned and all four mappings fit inspected schema fields (1.2754ms)
+✖ mapping rechecks crop consent instead of trusting a forged validated TypeScript object (0.4547ms)
+✖ normalized observations retain an immutable copy of the accepted catalog (0.5343ms)
+✔ crop consent binds exact authorized ready asset, workspace, dimensions and crop revision (1.7343ms)
+✔ frozen snapshot retains quote, deadline, endpoint and digests independent of later object changes (0.286ms)
+✔ submit normalization distinguishes known rejection from transport uncertainty and malformed success (0.5471ms)
+✔ completed-with-error is failure and provider output remains a candidate (0.2952ms)
+✔ Mock port delegates deterministic identity and observation to existing Mock domain functions (10.2296ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 9
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 476.2793
+
+✖ failing tests:
+
+test at tests\contracts\provider-inputs.test.ts:84:1
+✖ mapping rechecks crop consent instead of trusting a forged validated TypeScript object (0.4547ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///D:/github/shpitto/tests/contracts/provider-inputs.test.ts:87:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /confirm/i,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests\contracts\provider-inputs.test.ts:90:1
+✖ normalized observations retain an immutable copy of the accepted catalog (0.5343ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'other/model'
+  - 'fal-ai/wan/v2.2-a14b/text-to-video'
+  
+      at TestContext.<anonymous> (file:///D:/github/shpitto/tests/contracts/provider-inputs.test.ts:94:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'other/model',
+    expected: 'fal-ai/wan/v2.2-a14b/text-to-video',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

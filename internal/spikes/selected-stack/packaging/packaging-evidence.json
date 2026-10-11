@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1.0",
+  "status": "PASS_STANDALONE_AND_CONTAINER_MEDIA_PROBE",
+  "command": "node packaging/packaging-probe.mjs; node worker/worker-probe.mjs",
+  "environment": "local/standalone-host-tools-and-docker-worker",
+  "observed": {
+    "standaloneOutput": true,
+    "serverSha256": "0a946a3db4ac9b9af5364ebab27f8d1fc2d73895e9deb6ca22d51c680616ab0f",
+    "ffmpegVersion": "ffmpeg version 7.0-essentials_build-www.gyan.dev",
+    "ffprobeVersion": "ffprobe version 7.0-essentials_build-www.gyan.dev",
+    "ffmpegSha256": "473A53126B95174D1E3B67017DF5383BB13BAC9C3DC59011A6274BCA840E3845",
+    "ffprobeSha256": "72C01F83221E3DA073AB2659416C59F96266679044F39B7A58CFA783731EFAF2",
+    "containerProbe": "PASS_CONTAINER_MEDIA_FIXTURE",
+    "workerEvidenceRef": "internal/spikes/selected-stack/packaging/worker-evidence.json"
+  },
+  "proves": [
+    "The selected Next standalone server is materialized and hashable.",
+    "Host FFmpeg and ffprobe versions and checksums are recorded as provenance only.",
+    "The Linux worker image contains FFmpeg and ffprobe and processes a local media fixture."
+  ],
+  "doesNotProve": [
+    "Provider-backed generation or paid account behavior.",
+    "Production deployment capacity or SLA."
+  ]
+}

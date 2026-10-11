@@ -1,0 +1,36 @@
+---
+release: v1
+title: Deployment configuration checklist
+description: Validate production guards and migration order.
+section: template
+status: published
+relatedContracts: [D07, D15, D18, D24, G07, G15, G18, G24]
+---
+
+# Deployment configuration checklist
+
+Before a production profile is considered:
+
+1. Set `NODE_ENV=production` and a canonical HTTPS `APP_URL`.
+2. Store a unique `BETTER_AUTH_SECRET` and database URLs in the host secret
+   manager. Never put them in Docker build arguments or client-exposed variables.
+3. Set `STORAGE_DRIVER=s3` and configure a private R2 or AWS S3 bucket using
+   the shared S3-compatible adapter. Set `GENERATION_DRIVER` and `MAIL_DRIVER`
+   to supported production adapters. Keep bucket public access disabled and
+   grant only the app/worker credentials required for object operations. A
+   passing config guard does not prove provider reachability or storage health.
+4. Confirm that provider webhook secrets, signing keys and account identities
+   match the exact deployed provider configuration. Do not enable a model whose
+   account-backed gate is open.
+5. Stop old workers before applying a migration that changes fields they read.
+   Run `node --experimental-strip-types scripts/migrate.ts` with the direct
+   PostgreSQL connection; request traffic may use the provider's pooled URL.
+6. Verify `/api/healthz`, authenticated sign-in, the supported worker path,
+   private asset access and recovery monitoring before traffic is enabled.
+7. Capture the deployed image digest, source/lockfile digests, migration result,
+   operational owner and rollback image in release evidence.
+
+The health route checks database reachability and reports a bounded profile and
+latency result. It does not assert provider, mail, billing or affiliate health.
+See the [operations guide](./operations) for the separate integration health
+signals and recovery procedures.

@@ -1,0 +1,211 @@
+[
+  {
+    "commandId": "candidate-digests-before",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe scripts/candidate-digests.mjs D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d\\candidate-before",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T17:24:51.245Z",
+    "endAt": "2026-09-30T17:24:51.428Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/candidate-digests-before.log"
+  },
+  {
+    "commandId": "isolated-db-migrate",
+    "invocation": "Not run; prerequisite evidence unavailable.",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T17:24:51.495Z",
+    "endAt": "2026-09-30T17:24:51.495Z",
+    "exitCode": null,
+    "signal": null,
+    "status": "BLOCKED",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/isolated-db-migrate.log"
+  },
+  {
+    "commandId": "typecheck",
+    "invocation": "corepack.cmd pnpm typecheck",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T17:24:51.496Z",
+    "endAt": "2026-09-30T17:24:53.480Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/typecheck.log"
+  },
+  {
+    "commandId": "lint",
+    "invocation": "corepack.cmd pnpm lint",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T17:24:53.481Z",
+    "endAt": "2026-09-30T17:24:53.996Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/lint.log"
+  },
+  {
+    "commandId": "format-check",
+    "invocation": "corepack.cmd pnpm format:check",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T17:24:53.997Z",
+    "endAt": "2026-09-30T17:24:54.516Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/format-check.log"
+  },
+  {
+    "commandId": "openspec",
+    "invocation": "corepack.cmd pnpm verify:openspec",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T17:24:54.518Z",
+    "endAt": "2026-09-30T17:24:56.111Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/openspec.log"
+  },
+  {
+    "commandId": "frozen-lock-install",
+    "invocation": "Not run; prerequisite evidence unavailable.",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T17:24:56.112Z",
+    "endAt": "2026-09-30T17:24:56.112Z",
+    "exitCode": null,
+    "signal": null,
+    "status": "BLOCKED",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/frozen-lock-install.log"
+  },
+  {
+    "commandId": "production-build",
+    "invocation": "Not run; prerequisite evidence unavailable.",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T17:24:56.113Z",
+    "endAt": "2026-09-30T17:24:56.113Z",
+    "exitCode": null,
+    "signal": null,
+    "status": "BLOCKED",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/production-build.log"
+  },
+  {
+    "commandId": "probe-generation-create",
+    "invocation": "Not run; prerequisite evidence unavailable.",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T17:24:56.116Z",
+    "endAt": "2026-09-30T17:24:56.116Z",
+    "exitCode": null,
+    "signal": null,
+    "status": "BLOCKED",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/probe-generation-create.log"
+  },
+  {
+    "commandId": "probe-generation-lifecycle",
+    "invocation": "Not run; prerequisite evidence unavailable.",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T17:24:56.117Z",
+    "endAt": "2026-09-30T17:24:56.117Z",
+    "exitCode": null,
+    "signal": null,
+    "status": "BLOCKED",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/probe-generation-lifecycle.log"
+  },
+  {
+    "commandId": "probe-generation-races",
+    "invocation": "Not run; prerequisite evidence unavailable.",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T17:24:56.118Z",
+    "endAt": "2026-09-30T17:24:56.118Z",
+    "exitCode": null,
+    "signal": null,
+    "status": "BLOCKED",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/probe-generation-races.log"
+  },
+  {
+    "commandId": "probe-assets",
+    "invocation": "Not run; prerequisite evidence unavailable.",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T17:24:56.119Z",
+    "endAt": "2026-09-30T17:24:56.119Z",
+    "exitCode": null,
+    "signal": null,
+    "status": "BLOCKED",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/probe-assets.log"
+  },
+  {
+    "commandId": "probe-outbox-lease",
+    "invocation": "Not run; prerequisite evidence unavailable.",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T17:24:56.119Z",
+    "endAt": "2026-09-30T17:24:56.119Z",
+    "exitCode": null,
+    "signal": null,
+    "status": "BLOCKED",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/probe-outbox-lease.log"
+  },
+  {
+    "commandId": "probe-m3-recovery",
+    "invocation": "Not run; prerequisite evidence unavailable.",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T17:24:56.120Z",
+    "endAt": "2026-09-30T17:24:56.120Z",
+    "exitCode": null,
+    "signal": null,
+    "status": "BLOCKED",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/probe-m3-recovery.log"
+  },
+  {
+    "commandId": "probe-api-isolation",
+    "invocation": "Not run; prerequisite evidence unavailable.",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T17:24:56.120Z",
+    "endAt": "2026-09-30T17:24:56.120Z",
+    "exitCode": null,
+    "signal": null,
+    "status": "BLOCKED",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/probe-api-isolation.log"
+  },
+  {
+    "commandId": "probe-team-http",
+    "invocation": "Not run; prerequisite evidence unavailable.",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T17:24:56.121Z",
+    "endAt": "2026-09-30T17:24:56.121Z",
+    "exitCode": null,
+    "signal": null,
+    "status": "BLOCKED",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/probe-team-http.log"
+  },
+  {
+    "commandId": "probe-auth-http",
+    "invocation": "Not run; prerequisite evidence unavailable.",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T17:24:56.121Z",
+    "endAt": "2026-09-30T17:24:56.121Z",
+    "exitCode": null,
+    "signal": null,
+    "status": "BLOCKED",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/probe-auth-http.log"
+  },
+  {
+    "commandId": "candidate-digests-after",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe scripts/candidate-digests.mjs D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d\\candidate-after",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T17:24:56.122Z",
+    "endAt": "2026-09-30T17:24:56.290Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/candidate-digests-after.log"
+  },
+  {
+    "commandId": "record-integrity",
+    "invocation": "python internal/restart/check-acceptance-record.py D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\record.json --current",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T17:24:56.298Z",
+    "endAt": "2026-09-30T17:24:56.642Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/record-integrity.log"
+  }
+]

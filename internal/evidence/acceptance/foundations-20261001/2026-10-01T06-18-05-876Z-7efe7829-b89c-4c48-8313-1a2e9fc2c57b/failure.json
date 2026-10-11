@@ -1,0 +1,4 @@
+{
+  "status": "FAIL",
+  "reason": "regression-m3-recovery failed: internal/evidence/acceptance/foundations-20261001/2026-10-01T06-18-05-876Z-7efe7829-b89c-4c48-8313-1a2e9fc2c57b/logs/regression-m3-recovery.log\n\n1 !== 0\n"
+}

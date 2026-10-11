@@ -1,0 +1,58 @@
+✔ all four selected schemas are inspected, byte-bound, and disabled for live use (1.2292ms)
+✔ strict public DTO rejects every unapproved top-level and nested vendor field (0.6363ms)
+✔ schema or exact-version drift blocks new submission contracts without a silent fallback (0.2551ms)
+✔ safe preset is server-owned and all four mappings fit inspected schema fields (1.3212ms)
+✔ mapping rechecks crop consent instead of trusting a forged validated TypeScript object (0.1672ms)
+✖ accepted historical contracts map after current registry removal, while new admission is rejected (0.2702ms)
+✖ accepted contract mapping refuses unsupported versions and unsupported version-one presets (0.3726ms)
+✔ normalized observations retain an immutable copy of the accepted catalog (0.2011ms)
+✔ crop consent binds exact authorized ready asset, workspace, dimensions and crop revision (1.7415ms)
+✔ frozen snapshot retains quote, deadline, endpoint and digests independent of later object changes (0.3377ms)
+✔ submit normalization distinguishes known rejection from transport uncertainty and malformed success (0.5623ms)
+✔ completed-with-error is failure and provider output remains a candidate (0.2235ms)
+✔ Mock port delegates deterministic identity and observation to existing Mock domain functions (11.0621ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 11
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 472.8739
+
+✖ failing tests:
+
+test at tests\contracts\provider-inputs.test.ts:90:1
+✖ accepted historical contracts map after current registry removal, while new admission is rejected (0.2702ms)
+  Error [DomainError]: The requested provider model is unavailable.
+      at getProviderModel (file:///D:/github/shpitto/src/config/provider-models.ts:23:21)
+      at validateVideoInput (file:///D:/github/shpitto/src/adapters/providers/input.ts:19:17)
+      at mapProviderInput (file:///D:/github/shpitto/src/adapters/providers/input.ts:87:3)
+      at TestContext.<anonymous> (file:///D:/github/shpitto/tests/contracts/provider-inputs.test.ts:100:22)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    code: 'VALIDATION',
+    publicMessage: 'The requested provider model is unavailable.'
+  }
+
+test at tests\contracts\provider-inputs.test.ts:104:1
+✖ accepted contract mapping refuses unsupported versions and unsupported version-one presets (0.3726ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///D:/github/shpitto/tests/contracts/provider-inputs.test.ts:107:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /version/i,
+    operator: 'throws',
+    diff: 'simple'
+  }

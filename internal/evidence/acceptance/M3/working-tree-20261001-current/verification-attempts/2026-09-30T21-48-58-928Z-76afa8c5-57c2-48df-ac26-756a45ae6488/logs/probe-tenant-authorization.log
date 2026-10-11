@@ -1,0 +1,29 @@
+{"status":"PASS","crossWorkspaceRejected":true,"missingWorkspaceNonDisclosing":true,"resourceMismatchRejected":true,"postRemovalRejected":true,"lastOwnerRaceRejected":true}
+✔ scripts\probe-tenant-authorization.ts (878.11ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 884.2724
+ℹ start of coverage report
+ℹ ---------------------------------------------------------------------------------------------------------------
+ℹ file              | line % | branch % | funcs % | uncovered lines
+ℹ ---------------------------------------------------------------------------------------------------------------
+ℹ src               |        |          |         | 
+ℹ  contracts        |        |          |         | 
+ℹ   http.ts         |  33.02 |   100.00 |    0.00 | 17-18 21-22 25-35 38-42 45-49 52-59 63-74 77-78 81-87 90-106
+ℹ  modules          |        |          |         | 
+ℹ   shared          |        |          |         | 
+ℹ    commands.ts    |  25.84 |   100.00 |    0.00 | 20-22 25-83 86-89
+ℹ    transaction.ts | 100.00 |   100.00 |  100.00 | 
+ℹ   workspaces      |        |          |         | 
+ℹ    authorize.ts   |  78.67 |    83.33 |   75.00 | 32-33 46-50 67-75
+ℹ    commands.ts    |  69.63 |    59.09 |   83.33 | 31-32 38-39 81-82 87-112 162-167 172-191
+ℹ    policy.ts      |  78.01 |    58.33 |   75.00 | 37-38 42-49 100-101 111-112 114-115 119-133
+ℹ ---------------------------------------------------------------------------------------------------------------
+ℹ all files         |  60.65 |    66.13 |   54.76 | 
+ℹ ---------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

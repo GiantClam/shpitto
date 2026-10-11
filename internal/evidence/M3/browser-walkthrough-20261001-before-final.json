@@ -1,0 +1,70 @@
+{
+  "profile": "local-m3-postgres17",
+  "capturedAt": "2026-09-30T22:10:12Z",
+  "application": "http://localhost:3100",
+  "credentialsRef": ".data/demo-credentials.json",
+  "candidateSha256": "1e4072dafe60c18ace16da96d7bd29317993971acb7bbdbd1f9fd397338a7435",
+  "journeys": [
+    {
+      "id": "owner-dashboard",
+      "result": "PASS",
+      "observed": ["owner login", "M3 Acceptance Team workspace", "server quote 10 credits", "credit lineage", "ready private video/mp4 asset", "generation history"]
+    },
+    {
+      "id": "member-invitation",
+      "result": "PASS",
+      "observed": ["member login", "seeded invitation acceptance", "member settings page", "owner and member rows visible"]
+    },
+    {
+      "id": "owner-controls",
+      "result": "PASS",
+      "observed": ["owner member page", "remove control", "verified-member transfer selector", "server-authorized team controls", "ownership transfer succeeded and member role changed", "member removal succeeded and count changed to one"],
+      "submittedActions": [
+        {
+          "action": "transfer-owner",
+          "result": "PASS",
+          "requestMethod": "POST",
+          "path": "/api/workspaces/71089f3b-ff73-4234-abfb-9158409ce0a1/transfer",
+          "responseStatus": 200,
+          "targetUserId": "0M1YN2bwYNaNyJAiOzS9nmo2jZOm9Xy0",
+          "submittedAt": "2026-09-30T22:08:26Z",
+          "postcondition": "demo-member@shpitto.local rendered as owner and demo-owner@shpitto.local rendered as member"
+        },
+        {
+          "action": "remove-member",
+          "result": "PASS",
+          "requestMethod": "POST",
+          "path": "/api/workspaces/71089f3b-ff73-4234-abfb-9158409ce0a1/members/i0ZwSadq4raMJWxy4m2KlxLAUCjUucmP/remove",
+          "responseStatus": 200,
+          "targetUserId": "i0ZwSadq4raMJWxy4m2KlxLAUCjUucmP",
+          "submittedAt": "2026-09-30T22:09:04Z",
+          "postcondition": "team page rendered one member: demo-member@shpitto.local"
+        }
+      ]
+    },
+    {
+      "id": "private-download",
+      "result": "PASS",
+      "observed": ["dashboard download link opened", "local video player rendered the ready MP4"]
+    },
+    {
+      "id": "worker-restart",
+      "result": "PASS",
+      "observed": ["worker stopped", "generation queued with reserved credit", "worker restarted", "same task became SUCCEEDED", "reserved credit returned to zero", "ready asset count increased"]
+    }
+  ],
+  "uiReview": {
+    "result": "PASS",
+    "desktopViewport": "1440x900",
+    "mobileViewport": "390x844",
+    "observed": [
+      "Current candidate inspected at 1440x900: team title, two member rows, invite form, remove control and ownership selector are visible and readable.",
+      "Current candidate inspected at 390x844: navigation, invitation input, member rows and controls remain readable without horizontal overflow.",
+      "Keyboard traversal reached the home link, primary navigation, invite email field, invite button, remove button and ownership selector in order."
+    ]
+  },
+  "limitations": [
+    "Removal and ownership transfer were submitted in the disposable local acceptance workspace after recent owner re-authentication; the demo seed was reset after capture.",
+    "Production email, real providers, Stripe, and historical anomalous-balance recovery are outside this local candidate."
+  ]
+}

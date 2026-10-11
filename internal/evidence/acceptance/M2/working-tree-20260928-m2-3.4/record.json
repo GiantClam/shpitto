@@ -1,0 +1,352 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "IMPLEMENTATION_ACCEPTANCE",
+  "changeId": "restart-shpitto-video-saas",
+  "stageId": "M2",
+  "checkpointId": null,
+  "gateTaskId": "3.4",
+  "status": "PASS",
+  "candidateId": "working-tree-20260928-m2-3.4",
+  "createdAt": "2026-09-28T09:10:00Z",
+  "updatedAt": "2026-09-28T10:05:00Z",
+  "policy": {
+    "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+    "sha256": "b597a035c61da01296d71979c1c16c4136f78c3e3d523b55158f0a2ca3de4ff0"
+  },
+  "prerequisites": [
+    {
+      "taskId": "3.3",
+      "requiredProfile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260928-m2-3.3",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.3/record.json",
+        "internal/restart/m2-task-3.3-evidence.md"
+      ]
+    }
+  ],
+  "candidate": {
+    "sourceCommit": "6ad44be7b6f12fe028637f0300040bada826c47d",
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "04916decaa520207b86fac9086790aee3e5760170ca6934044620234cc878c60",
+    "schemaSha256": "e0ba145d8b12e5962260c10580fb305f31098d16467a82d5e82e81ae3cab49d0",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+    "configurationSha256": "37e8c3722f3d056a7610383391a3ce89caac63230e8c372b1b90c1d2fb7d7f10",
+    "contractSha256": "b8ef3892ca9fffb41902009c9388dc560b2621175de1efcb5bc024f2051cd6eb",
+    "validatorSha256": "2a566cd8e923b8c8d452699cda7978866fc2415688c44c39b7c7e7d4f6a9aabb",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF",
+    "digestInputs": {
+      "sourceTree": [
+        "src",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".dockerignore",
+        ".env.example",
+        "src/config/env.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile"
+      ],
+      "contract": [
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json"
+      ],
+      "validator": [
+        "scripts",
+        "internal/restart/check-acceptance-record.py"
+      ]
+    }
+  },
+  "environments": [
+    {
+      "environmentId": "local-m2-invitations",
+      "profile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "toolVersions": {
+        "node": "24.15.0",
+        "pnpm": "12.6.0",
+        "docker": "29.8.0",
+        "postgres": "15-alpine",
+        "python": "3.x",
+        "openspec": "1.0"
+      },
+      "accountOrProgram": "none",
+      "effectiveLimits": "No provider, payment, payout, publication or hosted-service calls",
+      "fixtureOrSeed": "verified owner/invitee/mismatch users, generated 32-byte tokens, exact seven-day expiry and concurrent acceptance",
+      "clockMode": "system clock plus controlled expired timestamp",
+      "sanitationNotes": "Raw token is retained only in disposable outbox payload and omitted from this record"
+    }
+  ],
+  "criterionResults": [
+    {
+      "criterionId": "3.4-C01",
+      "environmentId": "local-m2-invitations",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Only a current team owner can create a seven-day email-bound invitation with hashed single-use token",
+      "observed": "Owner-only command generated a 32-byte token hash, normalized email and exact seven-day expiry; personal workspace operations remain rejected",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.4-evidence.md",
+        "src/modules/workspaces/invitations.ts",
+        "src/db/schema/invitations.ts"
+      ]
+    },
+    {
+      "criterionId": "3.4-C02",
+      "environmentId": "local-m2-invitations",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Invitation creation and durable mail intent commit atomically",
+      "observed": "One mail_outbox row was committed per invitation and an injected transaction failure left no invitation row",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.4-evidence.md",
+        "scripts/probe-invitations.ts",
+        "src/db/migrations/0002_workspace_invitations.sql"
+      ]
+    },
+    {
+      "criterionId": "3.4-C03",
+      "environmentId": "local-m2-invitations",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Verified matching email accepts once; concurrent/replayed, mismatched and expired tokens are denied safely",
+      "observed": "Exactly one concurrent acceptance won; replay, mismatch, expiry and deleted-workspace acceptance were rejected and membership count remained one",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.4-evidence.md",
+        "scripts/probe-invitations.ts",
+        "src/modules/workspaces/invitations.ts"
+      ]
+    },
+    {
+      "criterionId": "3.4-C04",
+      "environmentId": "local-m2-invitations",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Invitation APIs use current sessions and validated JSON without exposing raw tokens in creation response",
+      "observed": "Creation route strips token from response; acceptance requires session and token string; malformed JSON returns 400",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.4-evidence.md",
+        "src/app/api/workspaces/[workspaceId]/invitations/route.ts",
+        "src/app/api/invitations/accept/route.ts"
+      ]
+    }
+  ],
+  "commonStandardResults": [
+    {
+      "standard": "scope",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Invitation and mail intent only; centralized authorization, delivery workers and credits remain later tasks"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.4-evidence.md"
+      ]
+    },
+    {
+      "standard": "build-and-checks",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Full root verification, migration boundary checks, build and invitation PostgreSQL probe passed"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.4-evidence.md"
+      ]
+    },
+    {
+      "standard": "coverage",
+      "applicable": true,
+      "result": "NOT_APPLICABLE",
+      "reason": "M2 aggregate branch coverage is established at task 3.12; invitation race/replay/expiry cases are covered by the disposable probe",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.4-evidence.md"
+      ]
+    },
+    {
+      "standard": "defects",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "No open P0/P1 defect is recorded for task 3.4"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.4-evidence.md"
+      ]
+    },
+    {
+      "standard": "isolation-security",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Tokens are hashed in domain rows, raw delivery token is internal outbox data, acceptance binds normalized email and active verified user"
+      ],
+      "evidenceRefs": [
+        "src/modules/workspaces/invitations.ts",
+        "src/db/schema/invitations.ts"
+      ]
+    },
+    {
+      "standard": "evidence-and-recovery",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Current digests, exact-expiry fixture, concurrency results and rollback evidence are recorded"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.4-evidence.md",
+        "scripts/probe-invitations.ts"
+      ]
+    }
+  ],
+  "scenarioResults": [
+    {
+      "ids": [
+        "T05",
+        "SC-IAM-05",
+        "SC-IAM-06"
+      ],
+      "profile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "environmentId": "local-m2-invitations",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Single-use invitation acceptance is exact-once and expired/mismatched tokens do not create membership",
+      "observed": "One concurrent winner, replay/mismatch/expiry/deleted-workspace rejection, durable outbox commit and rollback cleanup passed",
+      "iteration": "single generated fixture run",
+      "commandRef": "m2-3.4-invitation-probe",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.4-evidence.md",
+        "scripts/probe-invitations.ts"
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "commandId": "m2-3.4-invitation-probe",
+      "invocation": "DATABASE_URL=<redacted-local-credential> corepack pnpm db:probe:invitations",
+      "environmentId": "local-m2-invitations",
+      "startAt": "2026-09-28T09:00:00Z",
+      "endAt": "2026-09-28T09:40:04Z",
+      "exitCode": 0,
+      "assertionRef": "concurrentWinners=1, exactSevenDayExpiry=true, replayRejected=true, mismatchRejected=true, expiryRejected=true, deletedWorkspaceRejected=true, rollbackClean=true"
+    },
+    {
+      "commandId": "m2-3.4-verify",
+      "invocation": "corepack pnpm verify",
+      "environmentId": "local-m2-invitations",
+      "startAt": "2026-09-28T08:50:00Z",
+      "endAt": "2026-09-28T08:54:00Z",
+      "exitCode": 0,
+      "assertionRef": "full root verification and Next build passed"
+    },
+    {
+      "commandId": "m2-3.4-record-check",
+      "invocation": "python -B internal/restart/check-acceptance-record.py internal/evidence/acceptance/M2/working-tree-20260928-m2-3.4/record.json",
+      "environmentId": "local-m2-invitations",
+      "startAt": "2026-09-28T09:40:10Z",
+      "endAt": "2026-09-28T09:40:11Z",
+      "exitCode": 0,
+      "assertionRef": "record schema and digest shape check"
+    }
+  ],
+  "coverage": {
+    "status": "NOT_APPLICABLE",
+    "reason": "M2 coverage denominator is established at task 3.12",
+    "ownedModuleManifestRef": null,
+    "denominator": null,
+    "coveredBranches": null,
+    "totalBranches": null,
+    "percent": null,
+    "exclusions": [],
+    "evidenceRef": "internal/restart/m2-task-3.4-evidence.md"
+  },
+  "defects": [],
+  "externalInputs": [],
+  "commercialAuthorizationRefs": [],
+  "recovery": {
+    "rollbackPoint": "6ad44be7b6f12fe028637f0300040bada826c47d plus current uncommitted M2 patch",
+    "restoreEvidenceRefs": [
+      "internal/restart/m2-task-3.4-evidence.md"
+    ],
+    "compatibleSchemaVersions": [
+      "domain=3"
+    ],
+    "unrelatedWorkProtection": "Generated fixture rows are cleaned from the disposable database"
+  },
+  "observation": {
+    "planRef": "internal/restart/verification-plan.md",
+    "windowStart": null,
+    "windowEnd": null,
+    "windowRationale": "Task-level invitation probe; no time-window behavior is claimed",
+    "behavioralBaselineDigest": null,
+    "monitoringEvidenceRefs": [],
+    "journeyEvidenceRefs": [],
+    "recoveryUpgradeEvidenceRefs": [],
+    "recurringWorkerAlertEvidenceRefs": [],
+    "findingRefs": []
+  },
+  "submission": {
+    "implementerId": "m2_3_4_invitations",
+    "submittedAt": "2026-09-28T09:10:00Z",
+    "reportRef": "internal/restart/m2-task-3.4-evidence.md"
+  },
+  "independentReview": {
+    "reviewerId": "m2-gpt6-sol-review-20260928",
+    "reviewedAt": "2026-09-28T10:05:00Z",
+    "independentFromImplementer": true,
+    "decision": "PASS",
+    "reason": "Independent gpt-6-sol review recomputed all candidate digests exactly, reran the disposable PostgreSQL invitation probe, and found the owner/team gate, personal-workspace rejection, hashed single-use token, normalized email, exact seven-day expiry, transactional mail outbox, concurrent exact-once acceptance, replay/mismatch/expiry/deleted-workspace rejection, active verified session, malformed JSON handling and safe route responses sound.",
+    "evidenceRefs": [
+      "internal/restart/m2-task-3.4-evidence.md",
+      "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.4/record.json",
+      "src/modules/workspaces/invitations.ts",
+      "src/db/schema/invitations.ts",
+      "src/db/migrations/0002_workspace_invitations.sql",
+      "src/app/api/workspaces/[workspaceId]/invitations/route.ts",
+      "src/app/api/invitations/accept/route.ts",
+      "scripts/probe-invitations.ts"
+    ]
+  },
+  "integrationDecision": {
+    "integratorId": "root",
+    "decidedAt": "2026-09-28T10:06:00Z",
+    "decision": "PASS",
+    "reason": "The current candidate passed the independent gpt-6-sol review, exact digest verification, full repository verification and the disposable PostgreSQL invitation probe. Task 3.4 is accepted and task 3.5 is unlocked; the M2 gate remains open.",
+    "nextEligibleTaskIds": [
+      "3.5"
+    ],
+    "blockedTaskIds": []
+  },
+  "invalidation": {
+    "supersedesRecordRef": null,
+    "changedDigestRefs": [],
+    "affectedStages": [],
+    "requiredReruns": [],
+    "carriedEvidence": []
+  }
+}

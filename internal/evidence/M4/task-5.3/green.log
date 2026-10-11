@@ -1,0 +1,4 @@
+node --experimental-strip-types --test tests/contracts/fal.test.ts
+tests 5
+pass 5
+fail 0

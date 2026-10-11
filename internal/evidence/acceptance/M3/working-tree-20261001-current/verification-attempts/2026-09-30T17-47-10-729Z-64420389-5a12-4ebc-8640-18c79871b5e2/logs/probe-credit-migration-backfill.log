@@ -1,0 +1,31 @@
+{"status":"PASS","legacyAllocationLinked":true,"allBucketsAndTimestampsPreserved":true,"openingSnapshots":2,"legacyProofRequired":true,"unknownLegacyReservedUnchanged":"10","legacySettlementDisabled":true,"modernMissingAndPartialLedgerStillHeld":true,"migrationReplayUnchanged":true,"postUpgradeReservation":true,"temporaryDatabaseRemoved":true}
+✔ scripts\probe-credit-migration-backfill.ts (1866.7223ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1874.8949
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------------------------------------
+ℹ file              | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------------------------------------
+ℹ src               |        |          |         | 
+ℹ  config           |        |          |         | 
+ℹ   models.ts       |  86.27 |    33.33 |   80.00 | 40-41 60-61 82-83 85-86 89-90 94-95 97-98
+ℹ  contracts        |        |          |         | 
+ℹ   http.ts         |  55.66 |    75.00 |   53.85 | 17-18 21-22 25-35 39-40 45-49 73 81-87 90-106
+ℹ  modules          |        |          |         | 
+ℹ   credits         |        |          |         | 
+ℹ    allocate.ts    |  97.00 |    68.97 |   87.50 | 175-179 198
+ℹ    queries.ts     | 100.00 |    90.00 |  100.00 | 
+ℹ    reserve.ts     | 100.00 |   100.00 |  100.00 | 
+ℹ   shared          |        |          |         | 
+ℹ    commands.ts    |  82.02 |    28.57 |   66.67 | 31-32 41-46 69-70 72-73 86-89
+ℹ    transaction.ts |  84.62 |   100.00 |    0.00 | 12-13
+ℹ ------------------------------------------------------------------------------------------------
+ℹ all files         |  86.76 |    64.81 |   72.22 | 
+ℹ ------------------------------------------------------------------------------------------------
+ℹ end of coverage report

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "mode": "mock",
+  "provider": "lemon-squeezy",
+  "merchantId": "local-vendor-fixture",
+  "hostedCheckoutUrl": null,
+  "merchantAffiliateProgram": "lemon-squeezy",
+  "approvals": {
+    "merchantApproval": {"status": "unresolved", "evidence": null},
+    "payoutOnboarding": {"status": "unresolved", "evidence": null},
+    "sourcePrice": {"status": "unresolved", "evidence": null},
+    "licenseLimits": {"status": "unresolved", "evidence": null},
+    "refundPolicy": {"status": "unresolved", "evidence": null},
+    "supportScope": {"status": "unresolved", "evidence": null},
+    "sourceAffiliateTerms": {"status": "unresolved", "evidence": null},
+    "separateServices": {"status": "unresolved", "evidence": null},
+    "publicationAuthorization": {"status": "unresolved", "evidence": null}
+  }
+}

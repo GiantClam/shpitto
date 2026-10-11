@@ -1,0 +1,124 @@
+- button "Open Next.js Dev Tools":
+  - text: Rendering
+  - generic: .
+  - generic: .
+  - generic: .
+- alert
+- button "Skip to content"
+- banner:
+  - button "Close menu":
+  - heading [level=6]
+  - button "Toggle light/dark mode":
+  - button "Refresh":
+  - button "Profile":
+    - text: superadmin
+- main:
+  - menu:
+    - menuitem "Dashboard":
+      - paragraph: Dashboard
+    - menuitem "Workspaces":
+      - paragraph: Workspaces
+    - menuitem "Users":
+      - paragraph: Users
+    - menuitem "Generations":
+      - paragraph: Generations
+    - menuitem "Billings":
+      - paragraph: Billings
+    - menuitem "Audits":
+      - paragraph: Audits
+    - menuitem "Affiliate reviews":
+      - paragraph: Affiliate reviews
+    - menuitem "Affiliate holds":
+      - paragraph: Affiliate holds
+  - paragraph: Operations center
+  - heading "Review and act with context" [level=1]
+  - paragraph:
+    - text: Your current role is
+    - strong: superadmin
+    - text: . Resource views are redacted and paginated. Every request checks your current server authority.
+  - link "Return to workspace":
+    - /url: /dashboard
+  - heading "Operator second-factor verification" [level=2]
+  - paragraph: Verify a code from your authenticator for this session. Privileged commands require verification within the last ten minutes.
+  - text: Authenticator code
+  - textbox "Authenticator code"
+  - button "Verify authenticator code"
+  - status: Command verification expires at 2026/10/4 17:10:19.
+  - heading "Workspace inspection" [level=2]
+  - paragraph: Provide the support purpose before opening tenant details. Recovery retains settled outcomes and labels unknown provider cost.
+  - text: Workspace ID
+  - textbox "Workspace ID": c8258df0-c0b6-4c7e-b613-0b54ee317435
+  - text: Access purpose
+  - textbox "Access purpose": Local M6 recovery acceptance
+  - button "Read workspace and versions"
+  - button "Read recovery evidence"
+  - heading "Named administrative command" [level=2]
+  - paragraph: Use the current version from the relevant view. A stale version has no effect. Negative credit adjustments also require an unused grant.
+  - text: Command
+  - combobox "Command":
+    - option "Change workspace status" [selected]
+    - option "Disable account"
+    - option "Adjust credits"
+    - option "Request refund"
+    - option "Sweep expired generation tasks"
+    - option "Replay stored provider notification"
+    - option "Change global role"
+  - text: Workspace ID
+  - textbox "Workspace ID"
+  - text: Status
+  - combobox "Status":
+    - option "Suspended" [selected]
+    - option "Active"
+  - text: Expected workspace version
+  - spinbutton "Expected workspace version"
+  - text: Recorded reason
+  - textbox "Recorded reason"
+  - button "Execute workspace status"
+  - heading "Resume pending refunds" [level=2]
+  - paragraph: Recover your persisted refund commands after a reload or interrupted response. Recovery uses the original reason, amount, version and command key, even when the billing version has since changed.
+  - text: Workspace ID
+  - textbox "Workspace ID"
+  - text: Access purpose
+  - textbox "Access purpose"
+  - button "Read my pending refund commands"
+  - heading "Workspace records" [level=2]
+  - paragraph: Read memberships, subscription state, credit grants and immutable ledger entries for one workspace. Each page records your access purpose.
+  - text: Workspace ID
+  - textbox "Workspace ID"
+  - text: Access purpose
+  - textbox "Access purpose"
+  - text: Records
+  - combobox "Records":
+    - option "Memberships" [selected]
+    - option "Subscriptions"
+    - option "Credit grants"
+    - option "Credit ledger"
+  - button "Read workspace records"
+  - heading "Affiliate review and hosted settlement" [level=2]
+  - paragraph: Review commission evidence and unresolved holds before approval. A hosted handoff records a reviewed visit; it never means funds were transferred.
+  - status: "Integration: disabled. Affiliate tracking is disabled."
+  - generic "Integration and account checkpoint status"
+  - paragraph:
+    - link "Commission reviews":
+      - /url: "#/affiliate-reviews"
+    - text: ·
+    - link "Review holds":
+      - /url: "#/affiliate-holds"
+  - text: Affiliate command
+  - combobox "Affiliate command":
+    - option "Approve commission review" [selected]
+    - option "Deny commission review"
+    - option "Release a verified legitimate abuse hold"
+    - option "Review hosted payout handoff"
+    - option "Review campaign policy"
+  - text: Workspace ID
+  - textbox "Workspace ID"
+  - text: Commission review ID
+  - textbox "Commission review ID"
+  - text: Expected review version
+  - spinbutton "Expected review version"
+  - text: Recorded review reason
+  - textbox "Recorded review reason"
+  - button "Execute affiliate approve"
+  - heading "Recovery evidence" [level=2]
+  - generic: "{ \"workspaceId\": \"c8258df0-c0b6-4c7e-b613-0b54ee317435\", \"tasks\": [], \"pendingOutbox\": 1, \"webhookInbox\": [], \"assets\": [], \"outbox\": [], \"modelHealth\": [ { \"modelKey\": \"mock-video\", \"provider\": \"mock\", \"configuration\": \"local_fixture\", \"evidenceScope\": \"selected_workspace_tasks\", \"sampleCount\": 0, \"observation\": { \"status\": \"unavailable\", \"reason\": \"no_success_evidence\", \"unknownAgeSeconds\": null } }, { \"modelKey\": \"replicate-wan22-t2v\", \"provider\": \"replicate\", \"configuration\": \"live_disabled\", \"evidenceScope\": \"selected_workspace_tasks\", \"sampleCount\": 0, \"observation\": { \"status\": \"unavailable\", \"reason\": \"no_success_evidence\", \"unknownAgeSeconds\": null } }, { \"modelKey\": \"replicate-wan22-i2v\", \"provider\": \"replicate\", \"configuration\": \"live_disabled\", \"evidenceScope\": \"selected_workspace_tasks\", \"sampleCount\": 0, \"observation\": { \"status\": \"unavailable\", \"reason\": \"no_success_evidence\", \"unknownAgeSeconds\": null } }, { \"modelKey\": \"fal-wan22-t2v\", \"provider\": \"fal\", \"configuration\": \"live_disabled\", \"evidenceScope\": \"selected_workspace_tasks\", \"sampleCount\": 0, \"observation\": { \"status\": \"unavailable\", \"reason\": \"no_success_evidence\", \"unknownAgeSeconds\": null } }, { \"modelKey\": \"fal-wan22-i2v\", \"provider\": \"fal\", \"configuration\": \"live_disabled\", \"evidenceScope\": \"selected_workspace_tasks\", \"sampleCount\": 0, \"observation\": { \"status\": \"unavailable\", \"reason\": \"no_success_evidence\", \"unknownAgeSeconds\": null } } ], \"bounded\": { \"taskLimit\": 100, \"correlationLimit\": 100, \"scope\": \"selected_workspace_tasks\" }, \"providerCostStates\": {} }"

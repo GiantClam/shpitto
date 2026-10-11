@@ -1,0 +1,218 @@
+{
+  "schemaVersion": "1.0",
+  "stageId": "M2",
+  "generatedAt": "2026-09-29T05:58:46.709Z",
+  "inclusion": [
+    "src/adapters/mail/index.ts",
+    "src/adapters/mail/invitation.ts",
+    "src/adapters/mail/local.ts",
+    "src/adapters/mail/mailpit.ts",
+    "src/config/models.ts",
+    "src/contracts/http.ts",
+    "src/lib/auth.ts",
+    "src/modules/billing/hold-policy.ts",
+    "src/modules/credits/allocate.ts",
+    "src/modules/credits/expiry.ts",
+    "src/modules/credits/issue-demo.ts",
+    "src/modules/credits/ledger.ts",
+    "src/modules/credits/queries.ts",
+    "src/modules/credits/reserve.ts",
+    "src/modules/credits/settle.ts",
+    "src/modules/operations/authorize.ts",
+    "src/modules/operations/status-commands.ts",
+    "src/modules/shared/commands.ts",
+    "src/modules/shared/transaction.ts",
+    "src/modules/workspaces/access-state.ts",
+    "src/modules/workspaces/authorize.ts",
+    "src/modules/workspaces/commands.ts",
+    "src/modules/workspaces/invitations.ts",
+    "src/modules/workspaces/onboard.ts",
+    "src/modules/workspaces/policy.ts"
+  ],
+  "minimumBranchPercent": 80,
+  "policy": "All delivered modules, authentication lifecycle, mail adapter, quote and HTTP domain contracts. A missing source in LCOV fails the gate; no exclusion based on low coverage.",
+  "exclusions": [
+    {
+      "path": "src/adapters/mail/contracts.ts",
+      "reason": "Type-only declarations erased before execution; no runtime statements or branches."
+    },
+    {
+      "path": "src/db/schema/**",
+      "reason": "Declarative Drizzle schema; database constraints are verified by integration probes."
+    },
+    {
+      "path": "src/app/**",
+      "reason": "UI and route adapters have separate request-level mandatory scenarios; domain code remains included."
+    },
+    {
+      "path": "scripts/**",
+      "reason": "Verification drivers, not delivered domain code."
+    },
+    {
+      "path": "node_modules/**",
+      "reason": "Third-party implementation."
+    }
+  ],
+  "inputs": [
+    {
+      "path": "src/adapters/mail/index.ts",
+      "sha256": "53e1637cda06380e1324095adcc81c9e8b5731dc2b5254e355d2771974c61938"
+    },
+    {
+      "path": "src/adapters/mail/invitation.ts",
+      "sha256": "7caacd371d61a410e2a69d3a30d0fa115a8008bda14fd81eab8897bd1f251225"
+    },
+    {
+      "path": "src/adapters/mail/local.ts",
+      "sha256": "7cc401a16ca7681c724f6fbb8731fc1ba4c52bc21a314b6830639593cdfe14c0"
+    },
+    {
+      "path": "src/adapters/mail/mailpit.ts",
+      "sha256": "994259e97f4be7b8d0c357274bab6250a13abbf7854d1ceaf1ffa9bde20489a0"
+    },
+    {
+      "path": "src/config/models.ts",
+      "sha256": "64ce6b82a07a510330335b520d294f9f41b52f35b8377faab5c56d2d0c8a1c12"
+    },
+    {
+      "path": "src/contracts/http.ts",
+      "sha256": "726cab66be6d0ed436b66066ed316887871e4d81f9104df1d31824c50afa4e2b"
+    },
+    {
+      "path": "src/lib/auth.ts",
+      "sha256": "cc359fccac9b2fc84a4f96370d1ab9adcbfb93712de5efb697b9a40af8c9a5ad"
+    },
+    {
+      "path": "src/modules/billing/hold-policy.ts",
+      "sha256": "6be2a0751d3153aec78cdabff75adf9f42ec872234205986faae4ac2779bd4c9"
+    },
+    {
+      "path": "src/modules/credits/allocate.ts",
+      "sha256": "70193b1b62fe493a1e987af75d8af04c38abe7c9223c6434da37c2e16a380707"
+    },
+    {
+      "path": "src/modules/credits/expiry.ts",
+      "sha256": "684436e1927b32dc78fb1b737adce4c671ab71d3121d890dada2cb08fb6b8f2d"
+    },
+    {
+      "path": "src/modules/credits/issue-demo.ts",
+      "sha256": "f5e99f0b905c2ea171b012e19b4e2e5cd558a767844b4cba6f7a2d0a38fdf846"
+    },
+    {
+      "path": "src/modules/credits/ledger.ts",
+      "sha256": "723a412ffd28ac6fc4090bbc525caf0b9079e4c0122ac218a7df224a7af8cb23"
+    },
+    {
+      "path": "src/modules/credits/queries.ts",
+      "sha256": "f02b50a707de5837761e5edd5f04fc190d803ab87d07f5d5538f2ddb4013c301"
+    },
+    {
+      "path": "src/modules/credits/reserve.ts",
+      "sha256": "32e769c6f02dfa3ff6fb4c14de8ab33ee6a313fe7ec7ef84bc82cf9f1f9b0336"
+    },
+    {
+      "path": "src/modules/credits/settle.ts",
+      "sha256": "e8b15e9c13014e585e7a1deb18f6a8a22a5f8ed1744e373188c24334a7051132"
+    },
+    {
+      "path": "src/modules/operations/authorize.ts",
+      "sha256": "f156fcb482f001c6e53f73250182751a3138783d423a35a4113b5411f331008b"
+    },
+    {
+      "path": "src/modules/operations/status-commands.ts",
+      "sha256": "3f86f798185942fcff49111fb2497e6c993c1ebe6c3a33f81b593395cedaec97"
+    },
+    {
+      "path": "src/modules/shared/commands.ts",
+      "sha256": "70e84bee4054d5fd3f34f23f958b38ee5434417d645485df9c4a9f57dd8d1310"
+    },
+    {
+      "path": "src/modules/shared/transaction.ts",
+      "sha256": "a4b1112fef6bf8de9ff51ae3399d83f6243079afb419300d3a576d09fcdaafed"
+    },
+    {
+      "path": "src/modules/workspaces/access-state.ts",
+      "sha256": "f2d339ddb625f8b99cceaf42e0557ca351324402957dd3a73d9c243de2521be8"
+    },
+    {
+      "path": "src/modules/workspaces/authorize.ts",
+      "sha256": "950bb52561dfa7ca02300d623e0add322142f90c3e28069047473d9f84c1ef2d"
+    },
+    {
+      "path": "src/modules/workspaces/commands.ts",
+      "sha256": "22082c408ea99e36cc3a059525267f3b10c8b0f5e2f45632e487d4089fdcfefa"
+    },
+    {
+      "path": "src/modules/workspaces/invitations.ts",
+      "sha256": "af87e2584976697bc4b7c2233559e9570ce148cdeb156b42795e5113d3a222b0"
+    },
+    {
+      "path": "src/modules/workspaces/onboard.ts",
+      "sha256": "b403226d939956fce193365bcdff44a984ca4dd0f4f121db15eed3c926a91d31"
+    },
+    {
+      "path": "src/modules/workspaces/policy.ts",
+      "sha256": "4c115bb4e154bf12ff96c84c592955fbcc247c23953c61ed093792fcf56c93e1"
+    },
+    {
+      "path": "tests/unit/m2-contracts.test.ts",
+      "sha256": "69adbba94863dbfd9476f4c6337c6902de9383d783e4c6d9ad9776b0d58e394c"
+    },
+    {
+      "path": "tests/unit/m2-policy.test.ts",
+      "sha256": "20f559b9d4f1134a1b60e9b427f5a16e040f85823f79ca487616eefae082c8a5"
+    },
+    {
+      "path": "scripts/probe-m2-foundation.ts",
+      "sha256": "d859921f73834785d7d4194d6f99dd61b0ed227ba189cb0bc549bd05f90589a1"
+    },
+    {
+      "path": "scripts/probe-onboarding.ts",
+      "sha256": "ad4a1d8fdba041e632528652af904320d1e51a14a542ad7b891046d9a87da3e9"
+    },
+    {
+      "path": "scripts/probe-workspaces.ts",
+      "sha256": "b48e334902c5722f064c1e45042238fa857e21428bb59b17232ef3ac9ebc14bb"
+    },
+    {
+      "path": "scripts/probe-invitations.ts",
+      "sha256": "7ab2b9b9473702ff9a85f481c67499718fb80b4d5613ab748fce2bb70acfc744"
+    },
+    {
+      "path": "scripts/probe-tenant-authorization.ts",
+      "sha256": "87a9ff821737f153d2974af334241692ce4c4960160d01c9d5ae9786f3f0c6f6"
+    },
+    {
+      "path": "scripts/probe-operator.ts",
+      "sha256": "b98fc9bc153fdd3ea88c4e72cd4127b832131f5345542a3b532babd932eab08b"
+    },
+    {
+      "path": "scripts/probe-access-states.ts",
+      "sha256": "967cd838cb5434be7a7387fa83aad6a49645a43f01dd2324e13d190b95b3bdca"
+    },
+    {
+      "path": "scripts/probe-command-contract.ts",
+      "sha256": "19167fa7c36b7b91b2cf72e66eff438642ab2f2efb3b3e9d677c4882aa697113"
+    },
+    {
+      "path": "scripts/probe-credit-ledger.ts",
+      "sha256": "60a03aeb8dae7d8e6223148127770172f39ddb6d7d4d81af296682d7b751b433"
+    },
+    {
+      "path": "scripts/probe-credit-reservation.ts",
+      "sha256": "0dc69f6040c8952c18205fa8098b32de80100814b3f87507c71c2ce543fc2279"
+    },
+    {
+      "path": "scripts/probe-credit-refund.ts",
+      "sha256": "1fef2f5157a500ff0308d3d36319b76c35e21b6fb1f1555562cc55e6f9d24417"
+    },
+    {
+      "path": "scripts/probe-credit-migration-backfill.ts",
+      "sha256": "4a05b9fdb22e1ea983a1f66ecc48ecf06d4ffe4d28169c483d48255853fdac61"
+    },
+    {
+      "path": "scripts/probe-auth-lifecycle.ts",
+      "sha256": "1f24cc1b2338ed79d7d6eabbab528a65b33a7c9f55413d319306bfa15f72fe4a"
+    }
+  ]
+}

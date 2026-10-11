@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {readFileSync} from 'node:fs';
+import path from 'node:path';
+
+const root = process.cwd();
+const candidateId = process.env.SHPITTO_CANDIDATE_ID?.trim() || 'local-candidate-20261007-completion';
+const base = path.join(root, 'internal/evidence/m8');
+const manifest = JSON.parse(readFileSync(path.join(base, 'artifact-manifest', candidateId, 'manifest.json'), 'utf8'));
+const journey = JSON.parse(readFileSync(path.join(base, 'local-demo', candidateId, 'result.json'), 'utf8'));
+const docker = JSON.parse(readFileSync(path.join(base, 'docker', candidateId, 'result.json'), 'utf8'));
+const docs = JSON.parse(readFileSync(path.join(base, 'local-completion/docs-ui/result.json'), 'utf8'));
+const hash = createHash('sha256').update(readFileSync(path.join(root, manifest.zip.path))).digest('hex');
+assert.equal(manifest.status, 'IN_PROGRESS');
+assert.equal(manifest.candidateId, candidateId);
+assert.equal(hash, manifest.zip.sha256);
+assert.equal(journey.status, 'PASS');
+assert.equal(journey.archive.sha256, manifest.zip.sha256);
+for (const status of Object.values(journey.checks)) assert.equal(status, 'PASS');
+assert.equal(docker.status, 'PASS');
+assert.equal(docker.archive.sha256, manifest.zip.sha256);
+for (const status of Object.values(docker.checks)) assert.equal(status, 'PASS');
+assert.equal(docs.status, 'PASS');
+console.log(JSON.stringify({status: 'PASS', profile: 'local-candidate-evidence', candidateId, archiveSha256: manifest.zip.sha256, journeyChecks: Object.keys(journey.checks).length, dockerChecks: Object.keys(docker.checks).length, docs: docs.status, productionDeployment: 'NOT_RUN', realAccounts: 'NOT_PROVIDED'}, null, 2));

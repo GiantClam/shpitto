@@ -1,0 +1,55 @@
+- banner:
+  - link "Shpitto Video SaaS home":
+    - /url: /
+    - text: Shpitto
+  - navigation "Primary navigation":
+    - link "Home":
+      - /url: /
+    - link "Docs preview":
+      - /url: /docs
+      - text: Docs
+      - generic: preview
+    - link "Dashboard planned":
+      - /url: /dashboard
+      - text: Dashboard
+      - generic: planned
+- main:
+  - paragraph: Local workspace
+  - heading "M3 Approved Acceptance Team" [level=1]
+  - paragraph: Private generation history with durable recovery signals.
+  - generic: active
+  - link "Team access":
+    - /url: /workspaces/08bdcc7f-d4d4-4b1f-b611-f5d50760e481/settings/members
+  - navigation "Choose workspace":
+    - link "M3 Approved Acceptance Team · team":
+      - /url: /dashboard?workspace=08bdcc7f-d4d4-4b1f-b611-f5d50760e481
+    - link "M3 Approved Personal · personal":
+      - /url: /dashboard?workspace=86fc6215-b507-4fac-aa4d-0a7a80802a6f
+  - region "Workspace credits":
+    - generic: Available
+    - strong: "0"
+    - generic: Reserved
+    - strong: "0"
+    - generic: Consumed
+    - strong: "0"
+    - generic: Ledger
+    - strong: Reconciled
+  - heading "Generate a local clip" [level=2]
+  - generic: 10 credits
+  - generic: Prompt
+  - textbox "Prompt":
+    - /placeholder: Describe the clip to render locally
+  - button "Queue generation"
+  - paragraph: Provider integrations are not configured in the local Mock profile.
+  - heading "Credit sources" [level=2]
+  - generic: 0 grants
+  - generic: No credit grants yet.
+  - heading "Private assets" [level=2]
+  - generic: 0 ready
+  - generic: No ready assets yet.
+  - heading "Generation history" [level=2]
+  - generic: 0 recent
+  - generic: No generation tasks yet.
+- contentinfo: Shpitto Video SaaS · staged implementation preview
+- button "Open Next.js Dev Tools":
+- alert

@@ -1,0 +1,484 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "IMPLEMENTATION_ACCEPTANCE",
+  "changeId": "restart-shpitto-video-saas",
+  "stageId": "M2",
+  "checkpointId": null,
+  "gateTaskId": "3.12",
+  "status": "STALE",
+  "candidateId": "working-tree-20260929-m2-3.12",
+  "createdAt": "2026-09-29T03:55:00Z",
+  "updatedAt": "2026-09-29T05:51:44.9051169Z",
+  "policy": {
+    "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md"
+  },
+  "prerequisites": [
+    {
+      "taskId": "3.1",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260928-m2-3.1",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.1/record.json"
+      ]
+    },
+    {
+      "taskId": "3.2",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260928-m2-3.2",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.2/record.json"
+      ]
+    },
+    {
+      "taskId": "3.3",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260928-m2-3.3",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.3/record.json"
+      ]
+    },
+    {
+      "taskId": "3.4",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260928-m2-3.4",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.4/record.json"
+      ]
+    },
+    {
+      "taskId": "3.5",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260928-m2-3.5",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.5/record.json"
+      ]
+    },
+    {
+      "taskId": "3.6",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260928-m2-3.6",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.6/record.json"
+      ]
+    },
+    {
+      "taskId": "3.7",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260928-m2-3.7",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.7/record.json"
+      ]
+    },
+    {
+      "taskId": "3.8",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260928-m2-3.8",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.8/record.json"
+      ]
+    },
+    {
+      "taskId": "3.9",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260928-m2-3.9",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.9/record.json"
+      ]
+    },
+    {
+      "taskId": "3.10",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260928-m2-3.10",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.10/record.json"
+      ]
+    },
+    {
+      "taskId": "3.11",
+      "observedStatus": "READY_FOR_REVIEW",
+      "candidateId": "working-tree-20260929-m2-3.11",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-3.11/record.json",
+        "internal/restart/m2-task-3.11-evidence.md"
+      ]
+    }
+  ],
+  "candidate": {
+    "sourceCommit": null,
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "b1fddbd1e6bf8f02377e787408476844eb61712d23a533d12aac1737aaede00c",
+    "schemaSha256": "e14bccaf614fa5391d1006f2b9b48b0998831f14db6a9a06acc6c552634f49bc",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+    "configurationSha256": "920e9e286310eefc129ca7e5086a4935cfacb7a0d21a6860edf4f33f48b84745",
+    "contractSha256": "b8ef3892ca9fffb41902009c9388dc560b2621175de1efcb5bc024f2051cd6eb",
+    "validatorSha256": "7c6bf26679095b16e5752f1dc19c4389b36367db59508fe50cc3a324924d6b9a",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF",
+    "digestInputs": {
+      "sourceTree": [
+        "src",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".dockerignore",
+        ".env.example",
+        "src/config/env.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile"
+      ],
+      "contract": [
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json"
+      ],
+      "validator": [
+        "scripts",
+        "internal/restart/check-acceptance-record.py"
+      ]
+    }
+  },
+  "environments": [
+    {
+      "environmentId": "local-m2-aggregate-rerun",
+      "profile": "local PostgreSQL 15 in disposable Docker profile",
+      "toolVersions": {
+        "node": "24.15.0",
+        "pnpm": "12.6.0",
+        "docker": "29.8.0",
+        "postgres": "15-alpine"
+      },
+      "accountOrProgram": "none",
+      "effectiveLimits": "No provider, payment, payout, publication or hosted-service calls",
+      "fixtureOrSeed": "Reset probe fixtures with controlled timestamps and generated local IDs",
+      "clockMode": "controlled probe clocks",
+      "sanitationNotes": "Credentials, database URL and generated IDs omitted"
+    }
+  ],
+  "criterionResults": [
+    {
+      "criterionId": "M2-C01",
+      "environmentId": "local-m2-aggregate-rerun",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Persistent account, onboarding, workspace ownership and access-state transitions survive restart and races.",
+      "observed": "Onboarding, workspace, invitation, access-state and operator probes passed; concurrent retries converge and last-owner/step-up checks reject unsafe transitions.",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.12-readiness.md",
+        "scripts/probe-onboarding.ts",
+        "scripts/probe-workspaces.ts",
+        "scripts/probe-invitations.ts",
+        "scripts/probe-access-states.ts",
+        "scripts/probe-operator.ts"
+      ]
+    },
+    {
+      "criterionId": "M2-C02",
+      "environmentId": "local-m2-aggregate-rerun",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Cross-workspace identifiers and suspended/billing-held access are rejected server-side.",
+      "observed": "Tenant authorization and access-state probes passed cross-workspace, resource mismatch, removal, suspension and billing-hold assertions.",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.12-readiness.md",
+        "scripts/probe-tenant-authorization.ts",
+        "scripts/probe-access-states.ts"
+      ]
+    },
+    {
+      "criterionId": "M2-C03",
+      "environmentId": "local-m2-aggregate-rerun",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Ledger grants, FEFO reservations, idempotency and audit/outbox rollback preserve nonnegative tenant-scoped balances.",
+      "observed": "Ledger, command-contract and reservation probes passed replay, mismatch, FEFO, forged-price, stale-catalog, concurrent affordability and rollback assertions.",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.12-readiness.md",
+        "scripts/probe-command-contract.ts",
+        "scripts/probe-credit-ledger.ts",
+        "scripts/probe-credit-reservation.ts"
+      ]
+    },
+    {
+      "criterionId": "M2-C04",
+      "environmentId": "local-m2-aggregate-rerun",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Failure settlement restores source allocations and issues one nonrenewing seven-day subscription compensation grant.",
+      "observed": "Refund probe passed mixed-source refund, late-outcome rejection, compensation lineage, no-renewal, expiry sweep, cancellation and reconciliation-hold assertions.",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.11-evidence.md",
+        "scripts/probe-credit-refund.ts",
+        "scripts/probe-credit-migration-backfill.ts"
+      ]
+    },
+    {
+      "criterionId": "M2-C05",
+      "environmentId": "local-m2-aggregate-rerun",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Onboarding demo funding and projections pass with the required owned-domain branch coverage denominator.",
+      "observed": "Onboarding demo funding and credit projections passed; the M2 credit core-domain coverage report records 110/132 branches (83.33%) against the 80% threshold.",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.12-readiness.md",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-3.12/coverage/owned-modules.json",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-3.12/coverage/summary.json"
+      ]
+    }
+  ],
+  "commonStandardResults": [
+    {
+      "standard": "scope",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "M2 evidence is limited to identity, tenant isolation and credits; provider, payment, generation and admin UI remain later stages."
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.12-readiness.md"
+      ]
+    },
+    {
+      "standard": "build-and-checks",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "All M2 probes and corepack pnpm verify completed successfully, including strict OpenSpec validation and production build."
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.12-readiness.md"
+      ]
+    },
+    {
+      "standard": "coverage",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "The declared M2 credit core-domain manifest reports 110/132 covered branches (83.33%) with Node 24 built-in coverage and an enforced 80% threshold; IAM/operator scenarios remain mandatory evidence outside this financial denominator."
+      ],
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-3.12/coverage/owned-modules.json",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-3.12/coverage/summary.json"
+      ]
+    },
+    {
+      "standard": "defects",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "No open P0/P1 product defect is recorded; the historical allocation risk is corrected and probed."
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.11-evidence.md"
+      ]
+    },
+    {
+      "standard": "isolation-security",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Tenant authorization, workspace locks, ledger writes and access-state denials passed the current disposable probes."
+      ],
+      "evidenceRefs": [
+        "scripts/probe-tenant-authorization.ts",
+        "scripts/probe-credit-ledger.ts",
+        "scripts/probe-access-states.ts"
+      ]
+    },
+    {
+      "standard": "evidence-and-recovery",
+      "applicable": true,
+      "result": "BLOCKED",
+      "assertions": [
+        "Independent review could not run because the configured review-agent service returned HTTP 503 and routed requests to an unavailable legacy model; coverage is now recorded, but independent review remains open."
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.12-readiness.md"
+      ]
+    }
+  ],
+  "scenarioResults": [
+    {
+      "ids": [
+        "T01",
+        "T02",
+        "T03",
+        "T04",
+        "T05",
+        "T06",
+        "T07",
+        "T08",
+        "T09",
+        "T16",
+        "T17",
+        "T18",
+        "T59",
+        "T60",
+        "SC-IAM-01",
+        "SC-IAM-04",
+        "SC-IAM-07",
+        "SC-IAM-10",
+        "SC-IAM-12",
+        "SC-CRD-03",
+        "SC-CRD-08",
+        "SC-CRD-13",
+        "SC-CRD-14"
+      ],
+      "profile": "local-m2-aggregate-rerun",
+      "environmentId": "local-m2-aggregate-rerun",
+      "mandatory": true,
+      "result": "BLOCKED",
+      "expected": "All M2 IAM and credit scenarios pass with current candidate, coverage denominator and independent review.",
+      "observed": "All listed probes and the 83.33% credit core-domain coverage threshold passed; the independent reviewer decision remains unavailable.",
+      "iteration": "single current-tree rerun",
+      "commandRef": "m2-aggregate-probe-rerun-20260929",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.12-readiness.md",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-3.12/coverage/summary.json"
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "commandId": "m2-aggregate-probe-rerun-20260929",
+      "invocation": "DATABASE_URL=<redacted-local-credential> corepack pnpm db:probe:m2 && db:probe:onboarding && db:probe:workspaces && db:probe:invitations && db:probe:tenant-auth && db:probe:operator && db:probe:access-states && db:probe:command-contract && db:probe:credit-ledger && db:probe:credit-reservation && db:probe:credit-refund && db:probe:credit-migration-backfill",
+      "environmentId": "local-m2-aggregate-rerun",
+      "startAt": "2026-09-29T03:45:00Z",
+      "endAt": "2026-09-29T03:50:00Z",
+      "exitCode": 0,
+      "assertionRef": "All listed probes returned status PASS"
+    },
+    {
+      "commandId": "m2-verify-20260929",
+      "invocation": "NODE_ENV=production corepack pnpm verify",
+      "environmentId": "local-m2-aggregate-rerun",
+      "startAt": "2026-09-29T03:51:00Z",
+      "endAt": "2026-09-29T03:53:00Z",
+      "exitCode": 0,
+      "assertionRef": "Typecheck, lint, format, configuration/boundary checks, OpenSpec strict validation and production build passed"
+    },
+    {
+      "commandId": "m2-credit-coverage-20260929",
+      "invocation": "DATABASE_URL=<redacted-local-credential> node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=80 --test-coverage-include=src/modules/credits/**/*.ts --test-reporter=lcov <M2 probe files>",
+      "environmentId": "local-m2-aggregate-rerun",
+      "startAt": "2026-09-29T04:29:18.300957Z",
+      "endAt": "2026-09-29T04:29:33.437646Z",
+      "exitCode": 0,
+      "assertionRef": "Node coverage threshold passed; LCOV reports 110/132 credit-core branches (83.33%)"
+    }
+  ],
+  "coverage": {
+    "status": "PASS",
+    "ownedModuleManifestRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-3.12/coverage/owned-modules.json",
+    "denominator": 132,
+    "coveredBranches": 110,
+    "totalBranches": 132,
+    "percent": 83.33,
+    "exclusions": [
+      "scripts/**",
+      "src/db/schema/**",
+      "src/modules/workspaces/**",
+      "src/modules/operations/**",
+      "src/modules/billing/**"
+    ],
+    "evidenceRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-3.12/coverage/summary.json"
+  },
+  "defects": [],
+  "externalInputs": [
+    {
+      "input": "Independent reviewer using the requested gpt-6-sol route",
+      "owner": "review orchestration",
+      "affectedTasks": [
+        "3.11",
+        "3.12"
+      ],
+      "availability": "BLOCKED",
+      "nextAction": "Retry after the model route is available and verify the actual selected model in the returned execution metadata",
+      "authorityRef": "user instruction in current task"
+    }
+  ],
+  "commercialAuthorizationRefs": [],
+  "recovery": {
+    "rollbackPoint": "current uncommitted M2 patch",
+    "restoreEvidenceRefs": [
+      "internal/restart/m2-task-3.11-evidence.md"
+    ],
+    "compatibleSchemaVersions": [
+      "domain=10"
+    ],
+    "unrelatedWorkProtection": "All probes use disposable/reset local fixtures; no provider, payment or hosted-service state is changed"
+  },
+  "observation": {
+    "planRef": "internal/restart/verification-plan.md",
+    "windowStart": null,
+    "windowEnd": null,
+    "windowRationale": "M2 local aggregate evidence only; no production behavior is claimed",
+    "behavioralBaselineDigest": null,
+    "monitoringEvidenceRefs": [],
+    "journeyEvidenceRefs": [],
+    "recoveryUpgradeEvidenceRefs": [
+      "src/db/migrations/0008_credit_reservations.sql"
+    ],
+    "recurringWorkerAlertEvidenceRefs": [],
+    "findingRefs": []
+  },
+  "submission": {
+    "implementerId": "root",
+    "submittedAt": "2026-09-29T03:55:00Z",
+    "reportRef": "internal/restart/m2-task-3.12-readiness.md"
+  },
+  "independentReview": {
+    "reviewerId": null,
+    "reviewedAt": null,
+    "independentFromImplementer": false,
+    "decision": "BLOCKED",
+    "reason": "Review-agent dispatches returned HTTP 503 and did not execute the requested gpt-6-sol review; no independent decision is available.",
+    "evidenceRefs": []
+  },
+  "integrationDecision": {
+    "integratorId": "root",
+    "decidedAt": "2026-09-29T03:55:00Z",
+    "decision": "BLOCKED",
+    "reason": "M2 cannot pass while task 3.11 lacks an independent review decision; the coverage denominator is now recorded and above threshold.",
+    "nextEligibleTaskIds": [],
+    "blockedTaskIds": [
+      "3.12",
+      "4.1"
+    ]
+  },
+  "invalidation": {
+    "supersedesRecordRef": null,
+    "changedDigestRefs": [],
+    "affectedStages": [],
+    "requiredReruns": [
+      "3.11 independent review",
+      "3.12 aggregate coverage and race review"
+    ],
+    "carriedEvidence": []
+  },
+  "supersessionNote": "Independent gpt-6-sol review rejected this candidate. Source and evidence are being repaired. Prior coverage exclusions and full auth/API scenario PASS claims are withdrawn; see internal/restart/m2-task-3.12-readiness.md. This historical record must not unlock M3."
+}

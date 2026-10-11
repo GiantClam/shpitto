@@ -1,0 +1,8 @@
+{"disposableDatabaseRemoved":true,"databaseName":"m5_billing_probe_842482d16028429b8130a6fa8a7e162a"}
+Failed query: alter table app.billing_cash_events add column economic_loss_key text;
+alter table app.billing_cash_events add column related_external_id text;
+update app.billing_cash_events set economic_loss_key = event_kind || ':' || external_id;
+alter table app.billing_cash_events alter column economic_loss_key set not null;
+create index billing_cash_events_loss_idx on app.billing_cash_events(provider, order_id, economic_loss_key);
+
+params: 

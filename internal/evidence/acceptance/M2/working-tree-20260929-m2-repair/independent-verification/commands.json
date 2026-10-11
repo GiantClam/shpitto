@@ -1,0 +1,198 @@
+[
+  {
+    "name": "suite",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "--test",
+      "--test-concurrency=1",
+      "--experimental-test-coverage",
+      "--test-coverage-branches=80",
+      "--test-coverage-include=src/modules/**/*.ts",
+      "--test-coverage-include=src/adapters/mail/**/*.ts",
+      "--test-coverage-include=src/config/models.ts",
+      "--test-coverage-include=src/contracts/http.ts",
+      "--test-coverage-include=src/lib/auth.ts",
+      "--test-reporter=spec",
+      "--test-reporter=lcov",
+      "--test-reporter-destination=stdout",
+      "--test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M2\\working-tree-20260929-m2-repair\\independent-verification\\m2-all-owned.lcov",
+      "tests/unit/m2-contracts.test.ts",
+      "tests/unit/m2-policy.test.ts",
+      "scripts/probe-m2-foundation.ts",
+      "scripts/probe-onboarding.ts",
+      "scripts/probe-workspaces.ts",
+      "scripts/probe-invitations.ts",
+      "scripts/probe-tenant-authorization.ts",
+      "scripts/probe-operator.ts",
+      "scripts/probe-access-states.ts",
+      "scripts/probe-command-contract.ts",
+      "scripts/probe-credit-ledger.ts",
+      "scripts/probe-credit-reservation.ts",
+      "scripts/probe-credit-refund.ts",
+      "scripts/probe-credit-migration-backfill.ts",
+      "scripts/probe-auth-lifecycle.ts"
+    ],
+    "startedAt": "2026-09-29T05:58:46.713Z",
+    "endedAt": "2026-09-29T05:59:06.785Z",
+    "exitCode": 0,
+    "signal": null,
+    "log": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-verification/suite.log"
+  },
+  {
+    "name": "race-1-workspaces",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-workspaces.ts"
+    ],
+    "startedAt": "2026-09-29T05:59:06.788Z",
+    "endedAt": "2026-09-29T05:59:08.469Z",
+    "exitCode": 0,
+    "signal": null,
+    "log": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-verification/race-1-workspaces.log"
+  },
+  {
+    "name": "race-1-invitations",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-invitations.ts"
+    ],
+    "startedAt": "2026-09-29T05:59:08.473Z",
+    "endedAt": "2026-09-29T05:59:09.883Z",
+    "exitCode": 0,
+    "signal": null,
+    "log": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-verification/race-1-invitations.log"
+  },
+  {
+    "name": "race-1-command-contract",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-command-contract.ts"
+    ],
+    "startedAt": "2026-09-29T05:59:09.884Z",
+    "endedAt": "2026-09-29T05:59:10.963Z",
+    "exitCode": 0,
+    "signal": null,
+    "log": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-verification/race-1-command-contract.log"
+  },
+  {
+    "name": "race-1-credit-reservation",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-credit-reservation.ts"
+    ],
+    "startedAt": "2026-09-29T05:59:10.964Z",
+    "endedAt": "2026-09-29T05:59:12.405Z",
+    "exitCode": 0,
+    "signal": null,
+    "log": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-verification/race-1-credit-reservation.log"
+  },
+  {
+    "name": "race-2-workspaces",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-workspaces.ts"
+    ],
+    "startedAt": "2026-09-29T05:59:12.406Z",
+    "endedAt": "2026-09-29T05:59:14.094Z",
+    "exitCode": 0,
+    "signal": null,
+    "log": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-verification/race-2-workspaces.log"
+  },
+  {
+    "name": "race-2-invitations",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-invitations.ts"
+    ],
+    "startedAt": "2026-09-29T05:59:14.097Z",
+    "endedAt": "2026-09-29T05:59:15.482Z",
+    "exitCode": 0,
+    "signal": null,
+    "log": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-verification/race-2-invitations.log"
+  },
+  {
+    "name": "race-2-command-contract",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-command-contract.ts"
+    ],
+    "startedAt": "2026-09-29T05:59:15.483Z",
+    "endedAt": "2026-09-29T05:59:16.548Z",
+    "exitCode": 0,
+    "signal": null,
+    "log": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-verification/race-2-command-contract.log"
+  },
+  {
+    "name": "race-2-credit-reservation",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-credit-reservation.ts"
+    ],
+    "startedAt": "2026-09-29T05:59:16.549Z",
+    "endedAt": "2026-09-29T05:59:17.998Z",
+    "exitCode": 0,
+    "signal": null,
+    "log": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-verification/race-2-credit-reservation.log"
+  },
+  {
+    "name": "race-3-workspaces",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-workspaces.ts"
+    ],
+    "startedAt": "2026-09-29T05:59:18.001Z",
+    "endedAt": "2026-09-29T05:59:19.704Z",
+    "exitCode": 0,
+    "signal": null,
+    "log": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-verification/race-3-workspaces.log"
+  },
+  {
+    "name": "race-3-invitations",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-invitations.ts"
+    ],
+    "startedAt": "2026-09-29T05:59:19.707Z",
+    "endedAt": "2026-09-29T05:59:21.094Z",
+    "exitCode": 0,
+    "signal": null,
+    "log": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-verification/race-3-invitations.log"
+  },
+  {
+    "name": "race-3-command-contract",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-command-contract.ts"
+    ],
+    "startedAt": "2026-09-29T05:59:21.097Z",
+    "endedAt": "2026-09-29T05:59:22.166Z",
+    "exitCode": 0,
+    "signal": null,
+    "log": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-verification/race-3-command-contract.log"
+  },
+  {
+    "name": "race-3-credit-reservation",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-credit-reservation.ts"
+    ],
+    "startedAt": "2026-09-29T05:59:22.169Z",
+    "endedAt": "2026-09-29T05:59:23.610Z",
+    "exitCode": 0,
+    "signal": null,
+    "log": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-verification/race-3-credit-reservation.log"
+  }
+]

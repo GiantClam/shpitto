@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "profile": "local-docker-disposable",
+  "container": "shpitto-isolated-verification-20261005-postgres-1",
+  "database": "redacted",
+  "backupFile": ".tmp/backup-restore-20261005/shpitto.dump",
+  "backupBytes": 160165,
+  "backupSha256": "a4d72e77aeed863b6d3611061bb17216d0d8a6f5996116410f5e4fdb12b841dd",
+  "verify": "pg_restore --list PASS",
+  "tableEntries": 100,
+  "restore": "pg_restore --clean --if-exists PASS",
+  "markerBefore": "before-restore",
+  "markerAfterRestore": "before-restore",
+  "production": false,
+  "externalAccounts": false,
+  "artifactRetention": "ephemeral-local-only"
+}

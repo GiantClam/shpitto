@@ -1,0 +1,5 @@
+{
+  "sourceRoots": ["src", "scripts"],
+  "extensions": [".ts", ".tsx", ".mjs", ".json"],
+  "requireFinalNewline": true
+}

@@ -1,0 +1,184 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "INDEPENDENT_TASK_REVIEW",
+  "decision": "PASS",
+  "reviewerId": "/root/next_stage_evidence_review",
+  "independentFromImplementer": true,
+  "reviewedAt": "2026-10-01T05:50:13.055Z",
+  "scope": {
+    "taskIds": ["5.2", "6.2"],
+    "description": "Independent source-first and evidence review of the local Replicate T2V/I2V adapter and guarded fixture Checkout/portal commands after final exact-identity and strict-DTO corrections.",
+    "stageApproval": false,
+    "productionAuthorization": false,
+    "currentM3EquivalenceApproval": false
+  },
+  "upstreamFilesInspected": [
+    "openspec/changes/restart-shpitto-video-saas/tasks.md",
+    "openspec/changes/restart-shpitto-video-saas/specs/provider-integrations/spec.md",
+    "openspec/changes/restart-shpitto-video-saas/specs/billing/spec.md",
+    "openspec/changes/restart-shpitto-video-saas/design.md",
+    "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+    "src/adapters/providers/port.ts",
+    "src/adapters/providers/input.ts",
+    "src/adapters/providers/normalize.ts",
+    "src/config/provider-models.ts",
+    "src/modules/billing/contracts.ts",
+    "src/config/plans.ts",
+    "src/modules/shared/commands.ts",
+    "src/modules/workspaces/policy.ts"
+  ],
+  "candidate": {
+    "capturedAt": "2026-10-01T05:50:13.055Z",
+    "sourceTreeSha256": "78de972a7e8dd37f4b40e02ac1f9dc8ef898769e0da40072ac6ce5ca1f414225",
+    "schemaSha256": "21e34616dc7e93fe893070a735742bf2dd1964b09032de75c1d562c53c2f8dfa",
+    "configurationSha256": "950f81069a8c6b2a2788c0473cc98b6a9b6bedcb48a585fe9f1b3c005fb3efd6",
+    "contractSha256": "861a25ab4e70f623440a7abba054afa4460177e42cbe8a001196bc9d12a1a139",
+    "validatorSha256": "6078f8c110bacd335bc7d17e683bc8e57b9b566f71ac6bf7fca30f0cf7a17b86",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+    "captureMethod": "node scripts/candidate-digests.mjs stdout; aggregate acceptance recapture remains required after any register/status update"
+  },
+  "taskReviews": {
+    "5.2": {
+      "status": "PASS",
+      "requirements": [
+        "Pinned Replicate T2V and I2V versions and retained catalog snapshots",
+        "Safe 720p/81-frame/16-fps mapping; I2V uses an authorized image and omits unsupported aspect_ratio",
+        "Injected transport makes exactly one create call with retry=false",
+        "Accepted, definite rejection and unknown outcomes normalize without raw provider leakage",
+        "Status/result require the exact persisted provider ID and reject absent or mismatched identities",
+        "Live rows remain disabled and no Replicate network or paid call is made"
+      ],
+      "implementationRefs": [
+        "src/adapters/providers/replicate/index.ts",
+        "src/adapters/providers/input.ts",
+        "src/adapters/providers/normalize.ts",
+        "src/config/provider-models.ts"
+      ],
+      "testEvidence": {
+        "replicateFocusedPassed": 14,
+        "sharedProviderFocusedPassed": 13,
+        "combinedPassed": 27,
+        "adapterCoverage": {
+          "linePercent": 100,
+          "branchPercent": 89.47,
+          "functionPercent": 100
+        },
+        "typecheck": "PASS",
+        "lint": "PASS",
+        "format": "PASS"
+      },
+      "resolvedFinding": "A RED regression showed status/result bodies without the persisted provider ID were accepted; shared normalization now requires a present exact ID for Replicate and fal.",
+      "limits": [
+        "The adapter does not persist generation attempts, prediction IDs, callbacks, leases or durable media; those remain downstream domain/runtime tasks.",
+        "No live Replicate account, credential, paid request, callback authentication or durable output is claimed."
+      ]
+    },
+    "6.2": {
+      "status": "PASS",
+      "requirements": [
+        "Current owner and active workspace are checked under the existing workspace lock",
+        "Server-owned catalog/customer/price/return values and monthly-or-pack terms are enforced",
+        "Checkout attempts and durable command identity are committed before fixture provider invocation",
+        "Recurring open/unknown slots remain exclusive; permanent packs remain available",
+        "Billing hold denies Checkout while allowing owner Portal recovery",
+        "Unknown Checkout results retry the same persisted attempt/provider identity",
+        "Same-origin authenticated routes reject extra browser-controlled DTO fields"
+      ],
+      "implementationRefs": [
+        "src/adapters/billing/fake.ts",
+        "src/modules/billing/checkout.ts",
+        "src/modules/billing/contracts.ts",
+        "src/app/api/workspaces/[workspaceId]/billing/checkout/route.ts",
+        "src/app/api/workspaces/[workspaceId]/billing/portal/route.ts"
+      ],
+      "testEvidence": {
+        "focusedContractPassed": 4,
+        "postgresVersion": "17.6",
+        "serviceProbePassedCases": 9,
+        "probeDatabaseRemoved": true,
+        "typecheck": "PASS",
+        "lint": "PASS",
+        "format": "PASS",
+        "databaseBoundary": "PASS",
+        "configVerification": "PASS",
+        "openspecStrictValidation": "PASS"
+      },
+      "limits": [
+        "The service probe uses a deterministic local fixture and does not create Stripe objects, call Stripe, receive webhooks or issue credits.",
+        "The retained PostgreSQL probe passed on the isolated loopback cluster; an independent rerun against the current 5432 role could not create a disposable database because that role lacks CREATEDB. This environment limitation does not contradict the retained PASS evidence.",
+        "Portal pending-command crash recovery is not exercised as an external-provider test; authenticated Stripe portal behavior remains downstream work."
+      ]
+    }
+  },
+  "evidenceRefs": [
+    "internal/evidence/M4/task-5.2/README.md",
+    "internal/evidence/M4/task-5.2/combined.log",
+    "internal/evidence/M4/task-5.2/green.log",
+    "internal/evidence/M4/task-5.2/red-exact-id.log",
+    "internal/evidence/M4/task-5.2/shared-normalize.log",
+    "internal/evidence/M4/task-5.2/coverage.log",
+    "internal/evidence/M4/task-5.2/typecheck.log",
+    "internal/evidence/M4/task-5.2/focused-typecheck.log",
+    "internal/evidence/M4/task-5.2/lint.log",
+    "internal/evidence/M4/task-5.2/format.log",
+    "internal/evidence/M5/task-6.2/README.md",
+    "internal/evidence/M5/task-6.2/files.json",
+    "internal/evidence/M5/task-6.2/green-contracts.log",
+    "internal/evidence/M5/task-6.2/green-schema.log",
+    "internal/evidence/M5/task-6.2/checks.log",
+    "tests/contracts/replicate.test.ts",
+    "tests/contracts/billing-checkout.test.ts",
+    "scripts/probe-billing-checkout.ts"
+  ],
+  "independentCommands": [
+    {
+      "command": "node --experimental-strip-types --test tests/contracts/replicate.test.ts",
+      "status": "PASS",
+      "passed": 14,
+      "failed": 0
+    },
+    {
+      "command": "node --experimental-strip-types --test tests/contracts/billing-checkout.test.ts",
+      "status": "PASS",
+      "passed": 4,
+      "failed": 0
+    },
+    {
+      "command": "corepack pnpm typecheck",
+      "status": "PASS"
+    },
+    {
+      "command": "corepack pnpm lint && corepack pnpm format:check && corepack pnpm verify:db-boundary",
+      "status": "PASS"
+    },
+    {
+      "command": "corepack pnpm verify:openspec && corepack pnpm verify:config",
+      "status": "PASS"
+    },
+    {
+      "command": "corepack pnpm build",
+      "status": "PASS",
+      "routeGenerationIncludes": [
+        "/api/workspaces/[workspaceId]/billing/checkout",
+        "/api/workspaces/[workspaceId]/billing/portal"
+      ]
+    },
+    {
+      "command": "node --experimental-strip-types scripts/probe-billing-checkout.ts",
+      "status": "NOT_REPRODUCED",
+      "reason": "Current 5432 database role lacks permission to create a disposable database; retained isolated-cluster evidence passed all nine cases and removed its database."
+    }
+  ],
+  "openBlockingFindings": [],
+  "stageBoundaries": {
+    "M4": "IN_PROGRESS; task 5.2 only; whole-stage criteria and review remain NOT_RUN",
+    "M5": "IN_PROGRESS; task 6.2 only; whole-stage criteria and review remain NOT_RUN",
+    "production": "NOT_AUTHORIZED",
+    "liveProvider": "DISABLED",
+    "stripe": "NOT_CONNECTED"
+  },
+  "nextEligibleTaskIds": ["5.3", "6.3"],
+  "aggregateRecaptureRequired": true,
+  "aggregateRecaptureReason": "The current source/validator digests changed after the prior acceptance candidate; rerun aggregate verification and update current M4/M5 development records before using this review as current-candidate evidence.",
+  "conclusion": "PASS is limited to the bounded local implementation contracts and retained disposable PostgreSQL evidence for tasks 5.2 and 6.2. It does not close M4/M5, current M3 equivalence, or any external-provider/payment gate."
+}

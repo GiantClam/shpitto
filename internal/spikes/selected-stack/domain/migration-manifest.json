@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1.0",
+  "migrationOwner": "drizzle-migration-runner",
+  "databaseProvider": "postgresql",
+  "migrationDirectory": "internal/spikes/selected-stack/domain/migrations",
+  "migrationFiles": [
+    "0000_m0_foundation.sql",
+    "0001_better_auth.sql",
+    "0002_m0_operator_authorization.sql"
+  ],
+  "requestTimeSchemaPush": false,
+  "secondMigrationAuthority": false,
+  "productionBoundary": "M0 includes a production-shaped SQL boundary, RLS probe and disposable persisted operator-role probe; the final reviewed migration chain and step-up policy remain part of the M1 scaffold."
+}

@@ -1,0 +1,6 @@
+✔ local provider is deterministic and idempotent by persisted Checkout key
+✔ local provider retains an unknown response until the same key is reconciled by a stable provider
+✔ portal URL is provider-owned and ignores a caller supplied return destination
+✔ route DTOs reject extra browser-controlled billing fields
+ℹ tests 4
+ℹ pass 4

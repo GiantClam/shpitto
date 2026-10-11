@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0",
+  "release": "v1",
+  "status": "reviewed",
+  "resources": [],
+  "decision": "No shadcn or other copied UI resource is included in the current customer runtime. Existing application components are project-authored or covered by the accepted dependency/license baseline.",
+  "excluded": [
+    {"path": "legacy", "reason": "legacy runtime and history are excluded from customer export"},
+    {"path": "builder/design-systems", "reason": "not part of the new customer runtime"}
+  ],
+  "sourceEvidence": ["internal/restart/provenance.json", "internal/restart/license-report.json"]
+}

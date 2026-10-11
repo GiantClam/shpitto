@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0",
+  "release": "v1",
+  "catalog": "skills/registry.json",
+  "supportedAgents": {
+    "codex": {"discovery": "filesystem", "invocation": "read SKILL.md and follow its evidence contract"},
+    "claude-code": {"discovery": "filesystem", "invocation": "read SKILL.md and follow its evidence contract"},
+    "opencode": {"discovery": "filesystem", "invocation": "read SKILL.md and follow its evidence contract"}
+  },
+  "unsupported": ["runtime agent embedding", "automatic protected-path edits", "self-certifying validation"],
+  "requiredSections": ["Inputs", "Allowed scope", "Protected contracts", "Outputs and evidence", "Recovery", "Escalation"],
+  "skillFiles": [
+    "quick-start", "add-provider", "add-generation-task", "configure-credits", "extend-assets",
+    "deploy-template", "security-review", "upgrade-template", "customize-brand", "create-page",
+    "modify-page", "customize-site"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "databaseName": "foundations_58533e3e57a444db98a1f8f5477927a8",
+  "disposable": true,
+  "version": {
+    "version": "PostgreSQL 17.6 on x86_64-windows, compiled by msvc-19.44.35213, 64-bit",
+    "server_version": "17.6"
+  },
+  "node": "v24.15.0",
+  "productionRequests": false
+}

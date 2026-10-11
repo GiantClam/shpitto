@@ -1,0 +1,69 @@
+{
+  "capturedAt": "2026-10-04T15:04:19.045Z",
+  "sourceCommit": null,
+  "dirtyPatchSha256": null,
+  "sourceTreeSha256": "047a97559635007b8effe6e1828dcd435490c48329058e629bde58bd41856964",
+  "schemaSha256": "ee437f9c6f74b51877c4abb4a6214ec2de98622e3b27b269c16f4de2a4ca8bed",
+  "configurationSha256": "665eefd893188006b48e059485cca9f9a200ea57803fdb6429a84f5f7534d6e6",
+  "contractSha256": "4bc106831b1d8c20e04141367a3179488e32235ce4f83c503350a76780ff398c",
+  "validatorSha256": "920fb9e176bead43bdaa39b25e595625c503f435beb008d88d0cb2c1f9cecf5d",
+  "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+  "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
+  "digestInputs": {
+    "sourceTree": [
+      "internal/contracts/providers",
+      "src",
+      "tests",
+      "content",
+      "skills",
+      "deploy",
+      "scripts",
+      "tooling",
+      ".shpitto",
+      ".github",
+      "package.json",
+      "pnpm-workspace.yaml",
+      "next.config.ts",
+      "tsconfig.json",
+      ".env.example",
+      ".dockerignore",
+      ".gitignore"
+    ],
+    "schema": [
+      "src/db"
+    ],
+    "configuration": [
+      "package.json",
+      "pnpm-workspace.yaml",
+      "next.config.ts",
+      "tsconfig.json",
+      ".env.example",
+      ".dockerignore",
+      "src/config/env.ts",
+      ".github/workflows/verify-root.yml",
+      "deploy/compose.local.yml",
+      "deploy/worker.Dockerfile",
+      "tooling"
+    ],
+    "contract": [
+      "internal/contracts/providers",
+      ".shpitto/contracts",
+      "skills/registry.json",
+      "content/docs/v1/manifest.json",
+      "openspec/changes/restart-shpitto-video-saas/design.md",
+      "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+      "openspec/changes/restart-shpitto-video-saas/traceability.json",
+      "openspec/changes/restart-shpitto-video-saas/specs",
+      "internal/restart/contract-register.md",
+      "internal/restart/integration-matrix.md",
+      "internal/restart/external-inputs.json"
+    ],
+    "validator": [
+      "scripts",
+      "tests",
+      "tooling",
+      "internal/restart/check-acceptance-record.py",
+      "openspec/changes/restart-shpitto-video-saas/traceability.json"
+    ]
+  }
+}

@@ -1,0 +1,139 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "IMPLEMENTATION_ACCEPTANCE",
+  "changeId": "restart-shpitto-video-saas",
+  "stageId": "M2",
+  "checkpointId": null,
+  "gateTaskId": "3.10",
+  "status": "PASS",
+  "candidateId": "working-tree-20260928-m2-3.10",
+  "createdAt": "2026-09-28T15:10:00Z",
+  "updatedAt": "2026-09-28T16:05:00Z",
+  "policy": {
+    "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+    "sha256": "b597a035c61da01296d71979c1c16c4136f78c3e3d523b55158f0a2ca3de4ff0"
+  },
+  "prerequisites": [
+    {
+      "taskId": "3.9",
+      "requiredProfile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260928-m2-3.9",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.9/record.json",
+        "internal/restart/m2-task-3.9-evidence.md"
+      ]
+    }
+  ],
+  "candidate": {
+    "sourceCommit": "6ad44be7b6f12fe028637f0300040bada826c47d",
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "520309d16d05d3417a8be2570046fac6b68efd15258f9c21bb80942303bc6570",
+    "schemaSha256": "5bba780954b1c58a93974ace6b11401e36e584f972dda02882f4d034603b5428",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+    "configurationSha256": "f484d6c34cd15c404899ff07c7aac7dafb4ca59f759311fa4261d4d36f70b881",
+    "contractSha256": "3eeaefb2cdce5f6bebc7da19655e554ec97dea1a590c6ebb75054f7655f65a88",
+    "validatorSha256": "57acdd8c53aeea98e167bafb0f182e8e6cb2cdb98ac0b27ddc2439361a37846f",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF",
+    "digestInputs": {
+      "sourceTree": ["src", "content", "skills", "deploy", "scripts", ".shpitto", ".github", "package.json", "pnpm-workspace.yaml", "next.config.ts", "tsconfig.json", ".env.example", ".dockerignore", ".gitignore"],
+      "schema": ["src/db"],
+      "configuration": ["package.json", "pnpm-workspace.yaml", "next.config.ts", "tsconfig.json", ".dockerignore", ".env.example", "src/config/env.ts", ".github/workflows/verify-root.yml", "deploy/compose.local.yml", "deploy/worker.Dockerfile"],
+      "contract": [".shpitto/contracts", "skills/registry.json", "content/docs/v1/manifest.json", "openspec/changes/restart-shpitto-video-saas/design.md", "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md", "internal/restart/contract-register.md", "internal/restart/integration-matrix.md", "internal/restart/external-inputs.json"],
+      "validator": ["scripts", "internal/restart/check-acceptance-record.py"]
+    }
+  },
+  "environments": [
+    {
+      "environmentId": "local-m2-credit-reservation",
+      "profile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "toolVersions": {"node": "24.15.0", "pnpm": "12.6.0", "docker": "29.8.0", "postgres": "15-alpine", "python": "3.x", "openspec": "1.0"},
+      "accountOrProgram": "none",
+      "effectiveLimits": "No provider, payment, payout, publication or hosted-service calls",
+      "fixtureOrSeed": "workspace with expiring, permanent and expired grants; concurrent reservation race; local and production onboarding profiles",
+      "clockMode": "controlled probe clock",
+      "sanitationNotes": "Generated IDs, local credentials and database URLs omitted"
+    }
+  ],
+  "criterionResults": [
+    {
+      "criterionId": "3.10-C01",
+      "environmentId": "local-m2-credit-reservation",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Server quote cost is immutable and client-supplied displayed prices cannot control a debit; stale or forged quotes are rejected without partial effects",
+      "observed": "The reservation probe accepted the catalog quote, ignored displayed price changes on replay, rejected a forged unit cost and rejected the same quote under the disabled production catalog before writing a reservation",
+      "evidenceRefs": ["internal/restart/m2-task-3.10-evidence.md", "src/config/models.ts", "scripts/probe-credit-reservation.ts"]
+    },
+    {
+      "criterionId": "3.10-C02",
+      "environmentId": "local-m2-credit-reservation",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Concurrent reservations serialize on the workspace account and cannot exceed available funds; the failed request leaves no reservation or ledger effect",
+      "observed": "Two concurrent 40-credit requests against a 50-credit account produced one committed reservation and zero failed race effects",
+      "evidenceRefs": ["internal/restart/m2-task-3.10-evidence.md", "src/modules/credits/allocate.ts", "scripts/probe-credit-reservation.ts"]
+    },
+    {
+      "criterionId": "3.10-C03",
+      "environmentId": "local-m2-credit-reservation",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "FEFO uses eligible expiring grants first, excludes unreserved expired amounts, preserves source expiry on allocations and funds local onboarding exactly once",
+      "observed": "A 40-credit reservation consumed 20 expiring and 20 permanent credits, excluded a past-expiry grant, and concurrent local onboarding retries replayed one demo grant; production profile rejected funding",
+      "evidenceRefs": ["internal/restart/m2-task-3.10-evidence.md", "src/db/schema/workspace.ts", "src/modules/credits/issue-demo.ts", "scripts/probe-credit-reservation.ts"]
+    }
+  ],
+  "commonStandardResults": [
+    {"standard": "scope", "applicable": true, "result": "PASS", "assertions": ["Only quotes, reservations, FEFO allocation and explicitly requested local demo funding were added; settlement/refund/provider/payment work remains deferred"], "evidenceRefs": ["internal/restart/m2-task-3.10-evidence.md"]},
+    {"standard": "build-and-checks", "applicable": true, "result": "PASS", "assertions": ["Typecheck, lint, format, M2 foundation, existing credit/onboarding probes, reservation probe, OpenSpec validation and Next production build passed"], "evidenceRefs": ["internal/restart/m2-task-3.10-evidence.md"]},
+    {"standard": "coverage", "applicable": true, "result": "NOT_APPLICABLE", "reason": "M2 coverage denominator is established at task 3.12; this task has deterministic PostgreSQL race and invariant probes", "evidenceRefs": ["internal/restart/m2-task-3.10-evidence.md"]},
+    {"standard": "defects", "applicable": true, "result": "PASS", "assertions": ["No open P0/P1 defect is recorded for task 3.10"], "evidenceRefs": ["internal/restart/m2-task-3.10-evidence.md"]},
+    {"standard": "isolation-security", "applicable": true, "result": "PASS", "assertions": ["Reservation, allocation, ledger, audit and outbox rows are workspace-owned; production demo funding is rejected and no external service is called"], "evidenceRefs": ["internal/restart/m2-task-3.10-evidence.md", "src/db/migrations/0008_credit_reservations.sql"]},
+    {"standard": "evidence-and-recovery", "applicable": true, "result": "PASS", "assertions": ["Current candidate digests, nine-migration schema, controlled clock, replay and concurrent race outcomes are recorded; a populated pre-3.10 allocation upgrade drill remains explicitly deferred because M2 creates no allocation rows before reservation ownership exists"], "evidenceRefs": ["internal/restart/m2-task-3.10-evidence.md", "scripts/probe-credit-reservation.ts", "src/db/migrations/0008_credit_reservations.sql"]}
+  ],
+  "scenarioResults": [
+    {
+      "ids": ["T06", "T07", "T08", "T09", "SC-CRD-03", "SC-CRD-04", "SC-CRD-05", "SC-CRD-06"],
+      "profile": "local-m2-credit-reservation",
+      "environmentId": "local-m2-credit-reservation",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Quotes are server-authoritative, concurrent reservations are single-effect, FEFO is deterministic and expired unreserved grants are unavailable",
+      "observed": "Reservation probe returned PASS with replayed=true, fefoAllocation=[20,20], expiredUnreservedExcluded=true, forgedPriceRejected=true, staleCatalogRejected=true, concurrentAffordableReservations=1 and failedRaceEffects=0",
+      "iteration": "single controlled-clock fixture run plus concurrent retry",
+      "commandRef": "m2-3.10-credit-reservation-probe",
+      "evidenceRefs": ["internal/restart/m2-task-3.10-evidence.md", "scripts/probe-credit-reservation.ts"]
+    },
+    {
+      "ids": ["T01", "T05", "SC-IAM-01", "SC-IAM-02"],
+      "profile": "local-m2-credit-reservation",
+      "environmentId": "local-m2-credit-reservation",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Funding-pending onboarding can be explicitly completed in local profile with one stable demo grant and no production demo funding",
+      "observed": "Concurrent local onboarding retries converged on one demo grant; production profile rejected the same funding command; the existing onboarding probe retained restart-safe workspace behavior",
+      "iteration": "single controlled-clock fixture run plus concurrent retry",
+      "commandRef": "m2-3.10-credit-reservation-probe",
+      "evidenceRefs": ["internal/restart/m2-task-3.10-evidence.md", "scripts/probe-credit-reservation.ts", "scripts/probe-onboarding.ts"]
+    }
+  ],
+  "commands": [
+    {"commandId": "m2-3.10-credit-reservation-probe", "invocation": "DATABASE_URL=<redacted-local-credential> corepack pnpm db:probe:credit-reservation", "environmentId": "local-m2-credit-reservation", "startAt": "2026-09-28T15:00:00Z", "endAt": "2026-09-28T15:03:00Z", "exitCode": 0, "assertionRef": "replayed=true, FEFO=[20,20], expiredUnreservedExcluded=true, forgedPriceRejected=true, staleCatalogRejected=true, concurrentAffordableReservations=1, failedRaceEffects=0, onboardingDemoGrantSingleEffect=true, productionDemoRejected=true"},
+    {"commandId": "m2-3.10-onboarding-probe", "invocation": "DATABASE_URL=<redacted-local-credential> corepack pnpm db:probe:onboarding", "environmentId": "local-m2-credit-reservation", "startAt": "2026-09-28T15:03:00Z", "endAt": "2026-09-28T15:04:00Z", "exitCode": 0, "assertionRef": "concurrentRetries=3, personalWorkspaces=1, memberships=1, rollbackObserved=true"},
+    {"commandId": "m2-3.10-verify", "invocation": "corepack pnpm verify", "environmentId": "local-m2-credit-reservation", "startAt": "2026-09-28T15:04:00Z", "endAt": "2026-09-28T15:09:00Z", "exitCode": 0, "assertionRef": "root checks, OpenSpec strict validation and Next production build passed"},
+    {"commandId": "m2-3.10-record-check", "invocation": "python -B internal/restart/check-acceptance-record.py internal/evidence/acceptance/M2/working-tree-20260928-m2-3.10/record.json", "environmentId": "local-m2-credit-reservation", "startAt": "2026-09-28T15:10:00Z", "endAt": "2026-09-28T15:10:01Z", "exitCode": 0, "assertionRef": "record schema and digest shape check"}
+  ],
+  "coverage": {"status": "NOT_APPLICABLE", "reason": "M2 coverage denominator is established at task 3.12", "ownedModuleManifestRef": null, "denominator": null, "coveredBranches": null, "totalBranches": null, "percent": null, "exclusions": [], "evidenceRef": "internal/restart/m2-task-3.10-evidence.md"},
+  "defects": [
+    {"defectId": "M2-3.10-LEGACY-ALLOCATION-UPGRADE", "severity": "P2", "mandatoryCriterionAffected": "3.10-C03", "status": "OPEN", "impact": "Migration 0008 requires reservation_id for existing credit_allocations; compatibility with a database containing pre-3.10 allocation rows has not been exercised.", "owner": "domain-owner", "dueDate": "2026-10-02", "correction": "Run a populated allocation upgrade fixture or add a reviewed backfill before any upgrade path is supported.", "regressionEvidenceRefs": ["internal/restart/m2-task-3.10-evidence.md"]}
+  ],
+  "externalInputs": [],
+  "commercialAuthorizationRefs": [],
+  "recovery": {"rollbackPoint": "6ad44be7b6f12fe028637f0300040bada826c47d plus current uncommitted M2 patch", "restoreEvidenceRefs": ["internal/restart/m2-task-3.10-evidence.md"], "compatibleSchemaVersions": ["domain=9"], "unrelatedWorkProtection": "Probe fixtures are cleaned from disposable PostgreSQL; no provider or payment state is changed"},
+  "observation": {"planRef": "internal/restart/verification-plan.md", "windowStart": null, "windowEnd": null, "windowRationale": "Task-level server quote, FEFO, reservation race and profile-guarded demo funding probe; no production behavior is claimed", "behavioralBaselineDigest": null, "monitoringEvidenceRefs": [], "journeyEvidenceRefs": [], "recoveryUpgradeEvidenceRefs": [], "recurringWorkerAlertEvidenceRefs": [], "findingRefs": []},
+  "submission": {"implementerId": "root", "submittedAt": "2026-09-28T15:10:00Z", "reportRef": "internal/restart/m2-task-3.10-evidence.md"},
+  "independentReview": {"reviewerId": "m2-gpt6-sol-review-20260928-3.10", "reviewedAt": "2026-09-28T16:02:00Z", "independentFromImplementer": true, "decision": "PASS", "reason": "Independent gpt-6-sol review reran the four PostgreSQL probes, typecheck/lint/format, full verify, OpenSpec strict validation and the acceptance checker. It inspected quote authority, disabled-catalog rejection, account locking, FEFO ordering, expired-grant exclusion, replay and profile-guarded demo funding, and recomputed all six candidate digests. The only recorded limitation is the explicit P2 populated-allocation upgrade drill gap.", "evidenceRefs": ["internal/restart/m2-task-3.10-evidence.md", "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.10/record.json", "scripts/probe-credit-reservation.ts", "src/config/models.ts", "src/modules/credits/allocate.ts"]},
+  "integrationDecision": {"integratorId": "root", "decidedAt": "2026-09-28T16:05:00Z", "decision": "PASS", "reason": "The exact current candidate passed independent gpt-6-sol review and all required local evidence. Task 3.10 is accepted with one visible P2 upgrade-compatibility follow-up; settlement/refunds remain task 3.11 and later provider/payment work remains deferred.", "nextEligibleTaskIds": ["3.11"], "blockedTaskIds": []},
+  "invalidation": {"supersedesRecordRef": null, "changedDigestRefs": [], "affectedStages": [], "requiredReruns": [], "carriedEvidence": []}
+}

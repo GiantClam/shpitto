@@ -1,0 +1,494 @@
+{
+  "schemaVersion": "1.0",
+  "changeId": "restart-shpitto-video-saas",
+  "date": "2026-10-04",
+  "scope": "Historical M0-M3 approvals are preserved. M4/M5/M6 local development and M7/M8 local documentation/export/preflight slices have current verification. Real-account integration, vendor commerce and whole-stage gates5.10/6.10/7.14/8.15/9.15 remain open.",
+  "enforcementStatus": "Historical records are structurally checked; all three current development records require canonical digests, fresh passing logs and explicit stale M3 applicability. No milestone is promoted by development validation.",
+  "policyRef": "acceptance-gates.md",
+  "recordTemplateRef": "acceptance-record.template.json",
+  "allowedStatuses": [
+    "NOT_STARTED",
+    "IN_PROGRESS",
+    "READY_FOR_REVIEW",
+    "PASS",
+    "FAIL",
+    "BLOCKED",
+    "STALE"
+  ],
+  "implementationTasks": {
+    "total": 105,
+    "completed": 98
+  },
+  "prerequisiteSemantics": "Stage dependencies govern gate completion. Individual tasks can start only according to tasks.md and their own accepted prerequisites; early independent drafting does not close a later stage.",
+  "releaseSemantics": "M8 and task 9.15 complete only after M8-STABLE PASS; BETA PASS does not assert publication or close the task.",
+  "stages": [
+    {
+      "stageId": "M0",
+      "name": "Preservation and feasibility",
+      "gateTaskId": "1.8",
+      "status": "PASS",
+      "prerequisiteStages": [],
+      "prerequisiteTaskIds": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7"
+      ],
+      "criteriaIds": [
+        "M0-C01",
+        "M0-C02",
+        "M0-C03",
+        "M0-C04",
+        "M0-C05"
+      ],
+      "policyRef": "acceptance-gates.md",
+      "commonStandardsRequired": true,
+      "mandatoryScenarioSource": "traceability.json",
+      "candidateId": "working-tree-20260927",
+      "evidenceRecordRefs": [
+        "internal/evidence/acceptance/M0/working-tree-20260927/record.json"
+      ],
+      "reviewDecision": {
+        "decision": "PASS",
+        "reviewerId": "m0_independent_review_hash_fixed",
+        "reviewedAt": "2026-09-27T22:16:40.264386+08:00",
+        "independentFromImplementer": true,
+        "integratorDecision": "PASS",
+        "integratorId": "root",
+        "decidedAt": "2026-09-27T22:16:40.264386+08:00",
+        "recordRef": "internal/evidence/acceptance/M0/working-tree-20260927/record.json"
+      }
+    },
+    {
+      "stageId": "M1",
+      "name": "Reversible archive and scaffold",
+      "gateTaskId": "2.8",
+      "status": "PASS",
+      "prerequisiteStages": [
+        "M0"
+      ],
+      "prerequisiteTaskIds": [
+        "2.1",
+        "2.2",
+        "2.3",
+        "2.4",
+        "2.5",
+        "2.6",
+        "2.7"
+      ],
+      "criteriaIds": [
+        "M1-C01",
+        "M1-C02",
+        "M1-C03",
+        "M1-C04"
+      ],
+      "policyRef": "acceptance-gates.md",
+      "commonStandardsRequired": true,
+      "mandatoryScenarioSource": "traceability.json",
+      "candidateId": "working-tree-20260928-m1",
+      "evidenceRecordRefs": [
+        "internal/evidence/acceptance/M1/working-tree-20260928-m1/record.json",
+        "internal/restart/m1-evidence.md"
+      ],
+      "reviewDecision": {
+        "decision": "PASS",
+        "reviewerId": "m1-gpt6-luna-review-20260928",
+        "reviewedAt": "2026-09-28T02:00:00Z",
+        "independentFromImplementer": true,
+        "integratorDecision": "PASS",
+        "integratorId": "root",
+        "decidedAt": "2026-09-28T02:00:00Z",
+        "recordRef": "internal/evidence/acceptance/M1/working-tree-20260928-m1/record.json"
+      }
+    },
+    {
+      "stageId": "M2",
+      "name": "Identity and credits",
+      "gateTaskId": "3.12",
+      "status": "PASS",
+      "prerequisiteStages": [
+        "M1"
+      ],
+      "prerequisiteTaskIds": [
+        "3.2",
+        "3.3",
+        "3.4",
+        "3.5",
+        "3.6",
+        "3.7",
+        "3.8",
+        "3.9",
+        "3.10",
+        "3.11"
+      ],
+      "criteriaIds": [
+        "M2-C01",
+        "M2-C02",
+        "M2-C03",
+        "M2-C04",
+        "M2-C05"
+      ],
+      "policyRef": "acceptance-gates.md",
+      "commonStandardsRequired": true,
+      "mandatoryScenarioSource": "traceability.json",
+      "candidateId": "working-tree-20260929-m2-repair",
+      "evidenceRecordRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/record.json",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/task-3.11.json",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-review.md",
+        "internal/restart/m2-repair-evidence.md"
+      ],
+      "reviewDecision": {
+        "decision": "PASS",
+        "reviewerId": "/root/m2_independent_sol_generic",
+        "reviewerModelRequested": "gpt-6-sol",
+        "reviewedAt": "2026-09-29T06:07:04Z",
+        "independentFromImplementer": true,
+        "integratorDecision": "PASS",
+        "integratorId": "root",
+        "decidedAt": "2026-09-29T14:10:10.361759+08:00",
+        "recordRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/record.json"
+      }
+    },
+    {
+      "stageId": "M3",
+      "name": "Persistent local product",
+      "gateTaskId": "4.12",
+      "status": "PASS",
+      "prerequisiteStages": [
+        "M2"
+      ],
+      "prerequisiteTaskIds": [
+        "4.1",
+        "4.2",
+        "4.3",
+        "4.4",
+        "4.5",
+        "4.6",
+        "4.7",
+        "4.8",
+        "4.9",
+        "4.10",
+        "4.11",
+        "4.13"
+      ],
+      "criteriaIds": [
+        "M3-C01",
+        "M3-C02",
+        "M3-C03",
+        "M3-C04",
+        "M3-C05"
+      ],
+      "policyRef": "acceptance-gates.md",
+      "commonStandardsRequired": true,
+      "mandatoryScenarioSource": "traceability.json",
+      "candidateId": "working-tree-20261001-current",
+      "evidenceRecordRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/record.json",
+        "internal/evidence/M3/final-stage-review-20261001.json",
+        "internal/evidence/M3/final-stage-review-20261001.md",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/final-integration/decision.json",
+        "internal/evidence/M3/final-independent-race-repetitions-20261001/final-summary.json"
+      ],
+      "reviewDecision": {
+        "decision": "PASS",
+        "reviewerId": "/root/m3_current_review",
+        "reviewedAt": "2026-10-01T02:26:47Z",
+        "independentFromImplementer": true,
+        "integratorDecision": "PASS",
+        "integratorId": "/root",
+        "decidedAt": "2026-10-01T02:27:40.160Z",
+        "recordRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/record.json",
+        "reason": "All mandatory local M3 evidence and independent whole-stage review pass for the unchanged current candidate. Historical M2 obligations are supported by current regressions and independently reset contention evidence.",
+        "independentReviewRef": "internal/evidence/M3/final-stage-review-20261001.json"
+      },
+      "currentDevelopmentImpact": {
+        "status": "STALE",
+        "evidenceRef": "internal/evidence/acceptance/foundations-20261001/m3-impact.json",
+        "reason": "Historical M3 approval remains immutable; the current expanded source/schema requires separately scoped impact/regression evidence."
+      }
+    },
+    {
+      "stageId": "M4",
+      "name": "Real providers and recovery",
+      "gateTaskId": "5.10",
+      "status": "IN_PROGRESS",
+      "prerequisiteStages": [
+        "M3"
+      ],
+      "prerequisiteTaskIds": [
+        "5.1",
+        "5.2",
+        "5.3",
+        "5.4",
+        "5.5",
+        "5.6",
+        "5.7",
+        "5.8",
+        "5.9"
+      ],
+      "criteriaIds": [
+        "M4-C01",
+        "M4-C02",
+        "M4-C03",
+        "M4-C04"
+      ],
+      "policyRef": "acceptance-gates.md",
+      "commonStandardsRequired": true,
+      "mandatoryScenarioSource": "traceability.json",
+      "candidateId": "local-preflight-20261007",
+      "evidenceRecordRefs": [
+        "internal/evidence/acceptance/M4/local-preflight-20261007/record.json",
+        "internal/evidence/M6/local-20261004/final/result.json",
+        "internal/evidence/M6/local-20261004/final/commands.json",
+        "internal/evidence/M6/local-20261004/final/coverage.json",
+        "internal/evidence/M6/local-20261004/README.md",
+        "internal/evidence/M6/local-20261004/independent-review.md"
+      ],
+      "reviewDecision": {
+        "decision": "NOT_RUN",
+        "reason": "Only local development verification is complete; real-account integrated milestone approval remains deferred.",
+        "taskReviewRef": "internal/evidence/M6/local-20261004/independent-review.md"
+      }
+    },
+    {
+      "stageId": "M5",
+      "name": "Payments and cash recovery",
+      "gateTaskId": "6.10",
+      "status": "IN_PROGRESS",
+      "prerequisiteStages": [
+        "M3"
+      ],
+      "prerequisiteTaskIds": [
+        "6.7",
+        "6.8",
+        "6.9"
+      ],
+      "criteriaIds": [
+        "M5-C01",
+        "M5-C02",
+        "M5-C03",
+        "M5-C04",
+        "M5-C05"
+      ],
+      "policyRef": "acceptance-gates.md",
+      "commonStandardsRequired": true,
+      "mandatoryScenarioSource": "traceability.json",
+      "candidateId": "local-preflight-20261007",
+      "evidenceRecordRefs": [
+        "internal/evidence/acceptance/M5/local-preflight-20261007/record.json",
+        "internal/evidence/M6/local-20261004/final/result.json",
+        "internal/evidence/M6/local-20261004/final/commands.json",
+        "internal/evidence/M6/local-20261004/final/coverage.json",
+        "internal/evidence/M6/local-20261004/README.md",
+        "internal/evidence/M6/local-20261004/independent-review.md"
+      ],
+      "reviewDecision": {
+        "decision": "NOT_RUN",
+        "reason": "Only local development verification is complete; real-account integrated milestone approval remains deferred.",
+        "taskReviewRef": "internal/evidence/M6/local-20261004/independent-review.md"
+      }
+    },
+    {
+      "stageId": "M6",
+      "name": "Operations and affiliates",
+      "gateTaskId": "7.14",
+      "status": "IN_PROGRESS",
+      "prerequisiteStages": [
+        "M4",
+        "M5"
+      ],
+      "prerequisiteTaskIds": [
+        "7.2",
+        "7.4",
+        "7.5",
+        "7.12",
+        "7.13",
+        "5.10",
+        "6.10"
+      ],
+      "criteriaIds": [
+        "M6-C01",
+        "M6-C02",
+        "M6-C03",
+        "M6-C04",
+        "M6-C05"
+      ],
+      "policyRef": "acceptance-gates.md",
+      "commonStandardsRequired": true,
+      "mandatoryScenarioSource": "traceability.json",
+      "candidateId": "local-preflight-20261007",
+      "evidenceRecordRefs": [
+        "internal/evidence/acceptance/M6/local-preflight-20261007/record.json",
+        "internal/evidence/M6/local-20261004/final/result.json",
+        "internal/evidence/M6/local-20261004/final/commands.json",
+        "internal/evidence/M6/local-20261004/final/coverage.json",
+        "internal/evidence/M6/local-20261004/README.md",
+        "internal/evidence/M6/local-20261004/independent-review.md"
+      ],
+      "reviewDecision": {
+        "decision": "NOT_RUN",
+        "reason": "Only local development verification is complete; real-account integrated milestone approval remains deferred.",
+        "taskReviewRef": "internal/evidence/M6/local-20261004/independent-review.md"
+      },
+      "localImplementation": {
+        "status": "COMPLETE",
+        "profile": "local-docker-fixtures",
+        "taskIds": [
+          "7.1",
+          "7.2",
+          "7.3",
+          "7.4",
+          "7.5",
+          "7.6",
+          "7.7",
+          "7.8",
+          "7.9",
+          "7.10",
+          "7.11",
+          "7.12",
+          "7.13"
+        ],
+        "evidenceRef": "internal/evidence/M6/local-20261004/README.md",
+        "deferredGate": "7.14",
+        "reason": "Real-account and production integration verification deferred to a separate next phase by user instruction."
+      }
+    },
+    {
+      "stageId": "M7",
+      "name": "Governed Skills and Docs",
+      "gateTaskId": "8.15",
+      "status": "NOT_STARTED",
+      "prerequisiteStages": [
+        "M6"
+      ],
+      "prerequisiteTaskIds": [
+        "8.1",
+        "8.2",
+        "8.3",
+        "8.4",
+        "8.5",
+        "8.6",
+        "8.7",
+        "8.8",
+        "8.9",
+        "8.10",
+        "8.11",
+        "8.12",
+        "8.13",
+        "8.14",
+        "5.10",
+        "6.10",
+        "7.14"
+      ],
+      "criteriaIds": [
+        "M7-C01",
+        "M7-C02",
+        "M7-C03",
+        "M7-C04",
+        "M7-C05"
+      ],
+      "policyRef": "acceptance-gates.md",
+      "commonStandardsRequired": true,
+      "mandatoryScenarioSource": "traceability.json",
+      "candidateId": null,
+      "evidenceRecordRefs": [],
+      "reviewDecision": null
+    },
+    {
+      "stageId": "M8",
+      "name": "Delivery and release",
+      "gateTaskId": "9.15",
+      "status": "NOT_STARTED",
+      "prerequisiteStages": [
+        "M0",
+        "M1",
+        "M2",
+        "M3",
+        "M4",
+        "M5",
+        "M6",
+        "M7"
+      ],
+      "prerequisiteTaskIds": [
+        "9.1",
+        "9.2",
+        "9.3",
+        "9.4",
+        "9.5",
+        "9.6",
+        "9.7",
+        "9.8",
+        "9.9",
+        "9.10",
+        "9.11",
+        "9.12",
+        "9.13",
+        "9.14"
+      ],
+      "criteriaIds": [
+        "M8-C01",
+        "M8-C02",
+        "M8-C03",
+        "M8-C04",
+        "M8-C05",
+        "M8-C06",
+        "M8-C07",
+        "M8-C08",
+        "M8-C09",
+        "M8-C10",
+        "M8-C11"
+      ],
+      "policyRef": "acceptance-gates.md",
+      "commonStandardsRequired": true,
+      "mandatoryScenarioSource": "traceability.json",
+      "candidateId": null,
+      "evidenceRecordRefs": [],
+      "reviewDecision": null,
+      "checkpoints": [
+        {
+          "checkpointId": "M8-RC",
+          "status": "NOT_STARTED",
+          "prerequisiteCheckpoints": [],
+          "criteriaIds": [
+            "M8-C01",
+            "M8-C02",
+            "M8-C03",
+            "M8-C04",
+            "M8-C05"
+          ],
+          "evidenceRecordRefs": []
+        },
+        {
+          "checkpointId": "M8-BETA",
+          "status": "NOT_STARTED",
+          "prerequisiteCheckpoints": [
+            "M8-RC"
+          ],
+          "criteriaIds": [
+            "M8-C06",
+            "M8-C07",
+            "M8-C08"
+          ],
+          "evidenceRecordRefs": []
+        },
+        {
+          "checkpointId": "M8-STABLE",
+          "status": "NOT_STARTED",
+          "prerequisiteCheckpoints": [
+            "M8-BETA"
+          ],
+          "criteriaIds": [
+            "M8-C09",
+            "M8-C10",
+            "M8-C11"
+          ],
+          "evidenceRecordRefs": []
+        }
+      ]
+    }
+  ]
+}

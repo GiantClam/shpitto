@@ -1,0 +1,1167 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "DEVELOPMENT_VERIFICATION",
+  "changeId": "restart-shpitto-video-saas",
+  "stageId": "M4",
+  "checkpointId": null,
+  "gateTaskId": "5.10",
+  "status": "IN_PROGRESS",
+  "candidateId": "local-docker-20261004",
+  "createdAt": "2026-10-04T09:36:19.410Z",
+  "updatedAt": "2026-10-06T04:23:46.308Z",
+  "policy": {
+    "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md"
+  },
+  "prerequisites": [
+    {
+      "stageId": "M3",
+      "observedStatus": "PASS",
+      "requiredProfile": "historical-local-mock",
+      "candidateId": "working-tree-20261001-current",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/record.json"
+      ],
+      "reason": "Historical approval is preserved; current applicability is explicitly stale."
+    }
+  ],
+  "candidate": {
+    "capturedAt": "2026-10-06T04:23:46.308Z",
+    "sourceCommit": null,
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "2c6c26ad6f14165bd82848e48c715afaf8cce573088c9171915b2a334cae3156",
+    "schemaSha256": "ee437f9c6f74b51877c4abb4a6214ec2de98622e3b27b269c16f4de2a4ca8bed",
+    "configurationSha256": "dde4d1ef2bf12691625629902616aa8a78c476894c72476f698bea46a19a5691",
+    "contractSha256": "89106d4d211e7e6559fe432ec93a582cb721f2269614c69c0f1f1c35e79f4667",
+    "validatorSha256": "3196dbf408afde65bfca7d30b30824d4552d62b5fb07329813170277873dd12c",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
+    "digestInputs": {
+      "sourceTree": [
+        "internal/contracts/providers",
+        "src",
+        "tests",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        "tooling",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        "src/config/env.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile",
+        "tooling"
+      ],
+      "contract": [
+        "internal/contracts/providers",
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json",
+        "openspec/changes/restart-shpitto-video-saas/specs",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json"
+      ],
+      "validator": [
+        "scripts",
+        "tests",
+        "tooling",
+        "internal/restart/check-acceptance-record.py",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json"
+      ]
+    }
+  },
+  "environments": [
+    {
+      "environmentId": "local-docker-m6",
+      "profile": "Local Docker PostgreSQL 15; isolated test databases and provider fixtures; production build without external account activation",
+      "commercialCalls": false,
+      "fixtureOrSeed": "Disposable PostgreSQL database; MFA, cash, generation and affiliate fixtures. Browser uses a separate temporary database.",
+      "toolVersions": {
+        "node": "v24.15.0",
+        "database": "PostgreSQL 15-alpine",
+        "productionRequests": false
+      }
+    }
+  ],
+  "criterionResults": [
+    {
+      "criterionId": "M4-C01",
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "expected": "All required milestone profiles and independent whole-stage review pass.",
+      "observed": "Local development verification is recorded separately. Real provider/account/payment/email/hosted-settlement evidence is deferred by user instruction. Production affiliate authority remains unavailable until its adapter and real-account verification are completed in the next phase.",
+      "evidenceRefs": []
+    },
+    {
+      "criterionId": "M4-C02",
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "expected": "All required milestone profiles and independent whole-stage review pass.",
+      "observed": "Local development verification is recorded separately. Real provider/account/payment/email/hosted-settlement evidence is deferred by user instruction. Production affiliate authority remains unavailable until its adapter and real-account verification are completed in the next phase.",
+      "evidenceRefs": []
+    },
+    {
+      "criterionId": "M4-C03",
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "expected": "All required milestone profiles and independent whole-stage review pass.",
+      "observed": "Local development verification is recorded separately. Real provider/account/payment/email/hosted-settlement evidence is deferred by user instruction. Production affiliate authority remains unavailable until its adapter and real-account verification are completed in the next phase.",
+      "evidenceRefs": []
+    },
+    {
+      "criterionId": "M4-C04",
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "expected": "All required milestone profiles and independent whole-stage review pass.",
+      "observed": "Local development verification is recorded separately. Real provider/account/payment/email/hosted-settlement evidence is deferred by user instruction. Production affiliate authority remains unavailable until its adapter and real-account verification are completed in the next phase.",
+      "evidenceRefs": []
+    }
+  ],
+  "commonStandardResults": [
+    {
+      "standard": "current-local-development",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "Current candidate has passing typecheck, static boundaries, unit/contracts, Docker probes and production build. Coverage refers only to the explicit M6 owned-core manifest.",
+      "evidenceRefs": [
+        "internal/evidence/M6/local-20261004/final/result.json",
+        "internal/evidence/M6/local-20261004/final/commands.json",
+        "internal/evidence/M6/local-20261004/final/coverage.json",
+        "internal/evidence/M6/local-20261004/README.md"
+      ]
+    },
+    {
+      "standard": "complete-stage-evidence",
+      "applicable": true,
+      "result": "NOT_RUN",
+      "assertions": "Real provider/account/payment/email/hosted-settlement evidence is deferred by user instruction. Production affiliate authority remains unavailable until its adapter and real-account verification are completed in the next phase.",
+      "evidenceRefs": []
+    }
+  ],
+  "scenarioResults": [
+    {
+      "ids": [
+        "SC-GEN-05"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-06"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T13"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T14"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T20"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-07"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-08"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T11"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T53"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-09"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-10"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T49"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-11"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T09"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T19"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-13"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-14"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-15"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-16"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T02"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-17"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-18"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T01"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T03"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-19"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-20"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-01"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-02"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-03"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-04"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-05"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-06"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-07"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-08"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T22"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-09"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-10"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-11"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T15"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T48"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    }
+  ],
+  "taskResults": [
+    {
+      "taskId": "5.1",
+      "result": "PASS",
+      "scope": "Four inspected provider schema contracts, versioned catalog identity and immutable snapshot helpers; no live dispatch claim. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical.",
+      "evidenceRefs": [
+        "internal/evidence/M6/local-20261004/final/result.json",
+        "internal/evidence/M6/local-20261004/final/commands.json",
+        "internal/evidence/M6/local-20261004/final/coverage.json",
+        "internal/evidence/M6/local-20261004/README.md"
+      ],
+      "historicalEvidenceRefs": [
+        "internal/evidence/M6/local-20261004/final/result.json",
+        "internal/evidence/M6/local-20261004/final/commands.json",
+        "internal/evidence/M6/local-20261004/final/coverage.json",
+        "internal/evidence/M6/local-20261004/README.md"
+      ]
+    },
+    {
+      "taskId": "5.2",
+      "result": "PASS",
+      "scope": "Pinned local Replicate T2V/I2V adapter contracts, safe input mapping, exact persisted request identity validation and fail-closed unknown responses; no live provider claim. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical.",
+      "evidenceRefs": [
+        "internal/evidence/M6/local-20261004/final/result.json",
+        "internal/evidence/M6/local-20261004/final/commands.json",
+        "internal/evidence/M6/local-20261004/final/coverage.json",
+        "internal/evidence/M6/local-20261004/README.md"
+      ],
+      "historicalEvidenceRefs": [
+        "internal/evidence/M6/local-20261004/final/result.json",
+        "internal/evidence/M6/local-20261004/final/commands.json",
+        "internal/evidence/M6/local-20261004/final/coverage.json",
+        "internal/evidence/M6/local-20261004/README.md"
+      ]
+    },
+    {
+      "taskId": "5.3",
+      "result": "PASS",
+      "scope": "Local fal queue T2V/I2V adapter contracts with no-retry header, exact request IDs, tracking-origin checks and disabled live rows; no live provider claim. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical.",
+      "evidenceRefs": [
+        "internal/evidence/M6/local-20261004/final/result.json",
+        "internal/evidence/M6/local-20261004/final/commands.json",
+        "internal/evidence/M6/local-20261004/final/coverage.json",
+        "internal/evidence/M6/local-20261004/README.md"
+      ],
+      "historicalEvidenceRefs": [
+        "internal/evidence/M6/local-20261004/final/result.json",
+        "internal/evidence/M6/local-20261004/final/commands.json",
+        "internal/evidence/M6/local-20261004/final/coverage.json",
+        "internal/evidence/M6/local-20261004/README.md"
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "commandId": "candidate-before",
+      "invocation": "node scripts/candidate-digests.mjs D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\candidate-before",
+      "startAt": "2026-10-04T09:33:42.689Z",
+      "endAt": "2026-10-04T09:33:42.885Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/candidate-before.log"
+    },
+    {
+      "commandId": "frozen-lock-install",
+      "invocation": "node C:/Users/liula/AppData/Local/pnpm/.tools/pnpm/12.6.0/node_modules/pnpm/bin/pnpm.mjs install --frozen-lockfile --offline --ignore-scripts",
+      "startAt": "2026-10-04T09:33:42.885Z",
+      "endAt": "2026-10-04T09:33:43.187Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/frozen-lock-install.log"
+    },
+    {
+      "commandId": "typecheck",
+      "invocation": "node node_modules/typescript/bin/tsc --noEmit",
+      "startAt": "2026-10-04T09:33:43.187Z",
+      "endAt": "2026-10-04T09:33:48.778Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/typecheck.log"
+    },
+    {
+      "commandId": "lint",
+      "invocation": "node scripts/check-source-boundaries.mjs",
+      "startAt": "2026-10-04T09:33:48.778Z",
+      "endAt": "2026-10-04T09:33:48.926Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/lint.log"
+    },
+    {
+      "commandId": "format-check",
+      "invocation": "node scripts/format-check.mjs",
+      "startAt": "2026-10-04T09:33:48.927Z",
+      "endAt": "2026-10-04T09:33:49.047Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/format-check.log"
+    },
+    {
+      "commandId": "verify-config",
+      "invocation": "node scripts/check-config.mjs",
+      "startAt": "2026-10-04T09:33:49.047Z",
+      "endAt": "2026-10-04T09:33:49.147Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/verify-config.log"
+    },
+    {
+      "commandId": "verify-db-boundary",
+      "invocation": "node scripts/check-db-boundaries.mjs",
+      "startAt": "2026-10-04T09:33:49.147Z",
+      "endAt": "2026-10-04T09:33:49.252Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/verify-db-boundary.log"
+    },
+    {
+      "commandId": "verify-m2-foundation",
+      "invocation": "node scripts/check-m2-foundation.mjs",
+      "startAt": "2026-10-04T09:33:49.253Z",
+      "endAt": "2026-10-04T09:33:49.354Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/verify-m2-foundation.log"
+    },
+    {
+      "commandId": "verify-local-services",
+      "invocation": "node scripts/check-local-services.mjs",
+      "startAt": "2026-10-04T09:33:49.354Z",
+      "endAt": "2026-10-04T09:33:49.458Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/verify-local-services.log"
+    },
+    {
+      "commandId": "verify-shells",
+      "invocation": "node scripts/check-shell-boundaries.mjs",
+      "startAt": "2026-10-04T09:33:49.459Z",
+      "endAt": "2026-10-04T09:33:49.562Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/verify-shells.log"
+    },
+    {
+      "commandId": "verify-content-boundaries",
+      "invocation": "node scripts/check-content-boundaries.mjs",
+      "startAt": "2026-10-04T09:33:49.562Z",
+      "endAt": "2026-10-04T09:33:49.665Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/verify-content-boundaries.log"
+    },
+    {
+      "commandId": "verify-root",
+      "invocation": "node scripts/check-root-integrity.mjs",
+      "startAt": "2026-10-04T09:33:49.665Z",
+      "endAt": "2026-10-04T09:33:49.766Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/verify-root.log"
+    },
+    {
+      "commandId": "verify-openspec",
+      "invocation": "node C:/Program Files/nodejs/node_modules/@fission-ai/openspec/bin/openspec.js validate restart-shpitto-video-saas --strict --json --no-interactive",
+      "startAt": "2026-10-04T09:33:49.766Z",
+      "endAt": "2026-10-04T09:33:50.899Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/verify-openspec.log"
+    },
+    {
+      "commandId": "unit-contracts",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\unit-contracts.lcov --test-coverage-include=**/src/** tests/unit/admin-adapters.test.ts tests/unit/asset-cleanup-scheduling.test.ts tests/unit/assets-authorization.test.ts tests/unit/assets-validation.test.ts tests/unit/candidate-digests.test.ts tests/unit/generation-state.test.ts tests/unit/m2-contracts.test.ts tests/unit/m2-policy.test.ts tests/unit/m3-domain-edges.test.ts tests/unit/m3-evidence.test.ts tests/unit/optional-affiliate-env.test.ts tests/unit/outbox-heartbeat.test.ts tests/unit/refund-provider-recovery.test.ts tests/unit/stage-progression.test.ts tests/contracts/affiliate-notification.test.ts tests/contracts/affiliate-wire.test.ts tests/contracts/billing-checkout.test.ts tests/contracts/billing-contracts.test.ts tests/contracts/fal.test.ts tests/contracts/provider-inputs.test.ts tests/contracts/provider-webhooks.test.ts tests/contracts/replicate.test.ts",
+      "startAt": "2026-10-04T09:33:50.899Z",
+      "endAt": "2026-10-04T09:33:58.261Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/unit-contracts.log"
+    },
+    {
+      "commandId": "contracts-provider-inputs",
+      "invocation": "node --experimental-strip-types --test tests/contracts/provider-inputs.test.ts",
+      "startAt": "2026-10-04T09:33:58.262Z",
+      "endAt": "2026-10-04T09:33:58.803Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/contracts-provider-inputs.log"
+    },
+    {
+      "commandId": "contracts-billing-contracts",
+      "invocation": "node --experimental-strip-types --test tests/contracts/billing-contracts.test.ts",
+      "startAt": "2026-10-04T09:33:58.803Z",
+      "endAt": "2026-10-04T09:33:59.038Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/contracts-billing-contracts.log"
+    },
+    {
+      "commandId": "migration",
+      "invocation": "node --experimental-strip-types scripts/migrate.ts",
+      "startAt": "2026-10-04T09:33:59.038Z",
+      "endAt": "2026-10-04T09:34:00.117Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/migration.log"
+    },
+    {
+      "commandId": "billing-schema",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\billing-schema.lcov --test-coverage-include=**/src/** scripts/probe-billing-schema.ts",
+      "startAt": "2026-10-04T09:34:00.118Z",
+      "endAt": "2026-10-04T09:34:01.889Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/billing-schema.log"
+    },
+    {
+      "commandId": "m6-operations",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\m6-operations.lcov --test-coverage-include=**/src/** scripts/probe-m6-operations.ts",
+      "startAt": "2026-10-04T09:34:01.890Z",
+      "endAt": "2026-10-04T09:34:03.704Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/m6-operations.log"
+    },
+    {
+      "commandId": "m6-privileged",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\m6-privileged.lcov --test-coverage-include=**/src/** scripts/probe-m6-privileged.ts",
+      "startAt": "2026-10-04T09:34:03.704Z",
+      "endAt": "2026-10-04T09:34:05.975Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/m6-privileged.log"
+    },
+    {
+      "commandId": "m6-mfa",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\m6-mfa.lcov --test-coverage-include=**/src/** scripts/probe-m6-two-factor.ts",
+      "startAt": "2026-10-04T09:34:05.975Z",
+      "endAt": "2026-10-04T09:34:08.598Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/m6-mfa.log"
+    },
+    {
+      "commandId": "m6-recovery",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\m6-recovery.lcov --test-coverage-include=**/src/** scripts/probe-m6-recovery.ts",
+      "startAt": "2026-10-04T09:34:08.599Z",
+      "endAt": "2026-10-04T09:34:09.902Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/m6-recovery.log"
+    },
+    {
+      "commandId": "m6-affiliate",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\m6-affiliate.lcov --test-coverage-include=**/src/** scripts/probe-m6-affiliate.ts",
+      "startAt": "2026-10-04T09:34:09.903Z",
+      "endAt": "2026-10-04T09:34:10.201Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/m6-affiliate.log"
+    },
+    {
+      "commandId": "m6-affiliate-db",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\m6-affiliate-db.lcov --test-coverage-include=**/src/** scripts/probe-m6-affiliate-db.ts",
+      "startAt": "2026-10-04T09:34:10.202Z",
+      "endAt": "2026-10-04T09:34:13.015Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/m6-affiliate-db.log"
+    },
+    {
+      "commandId": "operator",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\operator.lcov --test-coverage-include=**/src/** scripts/probe-operator.ts",
+      "startAt": "2026-10-04T09:34:13.016Z",
+      "endAt": "2026-10-04T09:34:13.980Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/operator.log"
+    },
+    {
+      "commandId": "access-states",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\access-states.lcov --test-coverage-include=**/src/** scripts/probe-access-states.ts",
+      "startAt": "2026-10-04T09:34:13.981Z",
+      "endAt": "2026-10-04T09:34:15.449Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/access-states.log"
+    },
+    {
+      "commandId": "auth-lifecycle",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\auth-lifecycle.lcov --test-coverage-include=**/src/** scripts/probe-auth-lifecycle.ts",
+      "startAt": "2026-10-04T09:34:15.450Z",
+      "endAt": "2026-10-04T09:34:18.077Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/auth-lifecycle.log"
+    },
+    {
+      "commandId": "billing-reconciliation",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\billing-reconciliation.lcov --test-coverage-include=**/src/** scripts/probe-billing-reconciliation.ts",
+      "startAt": "2026-10-04T09:34:18.078Z",
+      "endAt": "2026-10-04T09:34:20.128Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/billing-reconciliation.log"
+    },
+    {
+      "commandId": "command-contract",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\command-contract.lcov --test-coverage-include=**/src/** scripts/probe-command-contract.ts",
+      "startAt": "2026-10-04T09:34:20.129Z",
+      "endAt": "2026-10-04T09:34:21.117Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/command-contract.log"
+    },
+    {
+      "commandId": "onboarding",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\onboarding.lcov --test-coverage-include=**/src/** scripts/probe-onboarding.ts",
+      "startAt": "2026-10-04T09:34:21.117Z",
+      "endAt": "2026-10-04T09:34:22.107Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/onboarding.log"
+    },
+    {
+      "commandId": "workspaces",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\workspaces.lcov --test-coverage-include=**/src/** scripts/probe-workspaces.ts",
+      "startAt": "2026-10-04T09:34:22.108Z",
+      "endAt": "2026-10-04T09:34:23.280Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/workspaces.log"
+    },
+    {
+      "commandId": "generation-create",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\generation-create.lcov --test-coverage-include=**/src/** scripts/probe-generation-create.ts",
+      "startAt": "2026-10-04T09:34:23.281Z",
+      "endAt": "2026-10-04T09:34:24.316Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/generation-create.log"
+    },
+    {
+      "commandId": "m6-cash-affiliate",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\m6-cash-affiliate.lcov --test-coverage-include=**/src/** scripts/probe-m6-cash-affiliate.ts",
+      "startAt": "2026-10-04T09:34:24.316Z",
+      "endAt": "2026-10-04T09:34:26.196Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/m6-cash-affiliate.log"
+    },
+    {
+      "commandId": "m6-affiliate-notifications",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\m6-affiliate-notifications.lcov --test-coverage-include=**/src/** scripts/probe-m6-affiliate-notifications.ts",
+      "startAt": "2026-10-04T09:34:26.196Z",
+      "endAt": "2026-10-04T09:34:28.038Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/m6-affiliate-notifications.log"
+    },
+    {
+      "commandId": "m6-affiliate-races",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\m6-affiliate-races.lcov --test-coverage-include=**/src/** scripts/probe-m6-affiliate-races.ts",
+      "startAt": "2026-10-04T09:34:28.038Z",
+      "endAt": "2026-10-04T09:34:38.842Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/m6-affiliate-races.log"
+    },
+    {
+      "commandId": "m6-affiliate-referral",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\m6-affiliate-referral.lcov --test-coverage-include=**/src/** scripts/probe-m6-affiliate-referral.ts",
+      "startAt": "2026-10-04T09:34:38.843Z",
+      "endAt": "2026-10-04T09:34:40.346Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/m6-affiliate-referral.log"
+    },
+    {
+      "commandId": "m6-admin-reads",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\m6-admin-reads.lcov --test-coverage-include=**/src/** scripts/probe-m6-admin-reads.ts",
+      "startAt": "2026-10-04T09:34:40.346Z",
+      "endAt": "2026-10-04T09:34:42.217Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/m6-admin-reads.log"
+    },
+    {
+      "commandId": "m6-refund-preview",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\m6-refund-preview.lcov --test-coverage-include=**/src/** scripts/probe-m6-refund-preview.ts",
+      "startAt": "2026-10-04T09:34:42.217Z",
+      "endAt": "2026-10-04T09:34:44.358Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/m6-refund-preview.log"
+    },
+    {
+      "commandId": "m6-workspace-details",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\m6-workspace-details.lcov --test-coverage-include=**/src/** scripts/probe-m6-workspace-details.ts",
+      "startAt": "2026-10-04T09:34:44.359Z",
+      "endAt": "2026-10-04T09:34:46.083Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/m6-workspace-details.log"
+    },
+    {
+      "commandId": "billing-checkout",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\billing-checkout.lcov --test-coverage-include=**/src/** scripts/probe-billing-checkout.ts",
+      "startAt": "2026-10-04T09:34:46.084Z",
+      "endAt": "2026-10-04T09:34:47.760Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/billing-checkout.log"
+    },
+    {
+      "commandId": "provider-recovery",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\provider-recovery.lcov --test-coverage-include=**/src/** scripts/probe-provider-recovery.ts",
+      "startAt": "2026-10-04T09:34:47.761Z",
+      "endAt": "2026-10-04T09:34:48.164Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/provider-recovery.log"
+    },
+    {
+      "commandId": "generation-replay",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\generation-replay.lcov --test-coverage-include=**/src/** scripts/probe-generation-replay.ts",
+      "startAt": "2026-10-04T09:34:48.165Z",
+      "endAt": "2026-10-04T09:34:49.624Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/generation-replay.log"
+    },
+    {
+      "commandId": "generation-lifecycle",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\generation-lifecycle.lcov --test-coverage-include=**/src/** scripts/probe-generation-lifecycle.ts",
+      "startAt": "2026-10-04T09:34:49.625Z",
+      "endAt": "2026-10-04T09:34:51.543Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/generation-lifecycle.log"
+    },
+    {
+      "commandId": "generation-races",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\generation-races.lcov --test-coverage-include=**/src/** scripts/probe-generation-races.ts",
+      "startAt": "2026-10-04T09:34:51.544Z",
+      "endAt": "2026-10-04T09:34:53.162Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/generation-races.log"
+    },
+    {
+      "commandId": "outbox-lease",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\outbox-lease.lcov --test-coverage-include=**/src/** scripts/probe-outbox-lease.ts",
+      "startAt": "2026-10-04T09:34:53.163Z",
+      "endAt": "2026-10-04T09:34:54.076Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/outbox-lease.log"
+    },
+    {
+      "commandId": "assets",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\assets.lcov --test-coverage-include=**/src/** scripts/probe-assets.ts",
+      "startAt": "2026-10-04T09:34:54.076Z",
+      "endAt": "2026-10-04T09:34:55.683Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/assets.log"
+    },
+    {
+      "commandId": "asset-security",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\asset-security.lcov --test-coverage-include=**/src/** scripts/probe-asset-security.ts",
+      "startAt": "2026-10-04T09:34:55.684Z",
+      "endAt": "2026-10-04T09:35:07.952Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/asset-security.log"
+    },
+    {
+      "commandId": "asset-cleanup",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\asset-cleanup.lcov --test-coverage-include=**/src/** scripts/probe-asset-cleanup.ts",
+      "startAt": "2026-10-04T09:35:07.953Z",
+      "endAt": "2026-10-04T09:35:12.607Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/asset-cleanup.log"
+    },
+    {
+      "commandId": "production-build",
+      "invocation": "node node_modules/next/dist/bin/next build",
+      "startAt": "2026-10-04T09:35:12.635Z",
+      "endAt": "2026-10-04T09:35:22.032Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/production-build.log"
+    },
+    {
+      "commandId": "candidate-after",
+      "invocation": "node scripts/candidate-digests.mjs D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\final\\candidate-after",
+      "startAt": "2026-10-04T09:35:22.032Z",
+      "endAt": "2026-10-04T09:35:22.217Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/candidate-after.log"
+    },
+    {
+      "commandId": "verify-skills",
+      "command": "node --experimental-strip-types --test tests/unit/governed-skills.test.ts",
+      "status": "PASS",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/verify-skills.log"
+    },
+    {
+      "commandId": "verify-docs",
+      "command": "node --experimental-strip-types scripts/check-doc-contracts.ts",
+      "status": "PASS",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/verify-docs.log"
+    },
+    {
+      "commandId": "m7-early-typecheck",
+      "command": "tsc --noEmit; next build; boundary checks",
+      "status": "PASS",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/m7-early-typecheck.log"
+    },
+    {
+      "commandId": "m7-customization-local",
+      "command": "node --experimental-strip-types --test tests/customization/four-workflows.test.ts",
+      "status": "PASS",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/m7/customization/local-contract-tests.log"
+    },
+    {
+      "commandId": "m7-docs-export-local",
+      "command": "node --experimental-strip-types scripts/check-doc-contracts.ts; node --experimental-strip-types scripts/export-buyer-docs.ts",
+      "outputRef": "internal/evidence/m7/docs/local-export-tests.log",
+      "status": "PASS",
+      "exitCode": 0
+    },
+    {
+      "commandId": "m8-export-boundaries-local",
+      "command": "node --experimental-strip-types scripts/check-release-boundaries.ts; node --experimental-strip-types --test tests/release/export-boundaries.test.ts",
+      "outputRef": "internal/evidence/m8/export-preflight/preflight.log",
+      "status": "PASS",
+      "exitCode": 0
+    },
+    {
+      "commandId": "full-local-regression",
+      "command": "node --experimental-strip-types --test tests/unit/*.test.ts tests/contracts/*.test.ts tests/customization/*.test.ts tests/docs/*.test.ts tests/release/*.test.ts",
+      "outputRef": "internal/evidence/m7/docs/local-export-tests.log",
+      "status": "PASS",
+      "exitCode": 0
+    }
+  ],
+  "coverage": {
+    "status": "PASS",
+    "scope": "M6 owned core domain only",
+    "coveredBranches": 1318,
+    "totalBranches": 1598,
+    "percent": 82.47809762202753,
+    "ownedModuleManifestRef": "internal/evidence/M6/local-20261004/final/coverage.json",
+    "evidenceRef": "internal/evidence/M6/local-20261004/final/coverage.json"
+  },
+  "defects": [],
+  "externalInputs": [
+    {
+      "availability": "DEFERRED_BY_USER",
+      "requiredInput": "Supported real accounts and enabled production adapters; provider/account/campaign behavior and hosted settlement verification",
+      "affectedTasks": [
+        "5.10",
+        "6.10",
+        "7.14"
+      ],
+      "nextAction": "Run as a separately scoped next-phase verification."
+    }
+  ],
+  "submission": {
+    "implementerId": "/root",
+    "submittedAt": "2026-10-04T09:36:19.410Z",
+    "reportRef": "internal/evidence/M6/local-20261004/README.md"
+  },
+  "independentReview": {
+    "reviewerId": null,
+    "decision": "NOT_RUN",
+    "reason": "Whole-stage review remains open. Local independent review is linked separately.",
+    "evidenceRefs": [
+      "internal/evidence/M6/local-20261004/independent-review.md"
+    ]
+  },
+  "integrationDecision": {
+    "integratorId": "/root",
+    "decidedAt": "2026-10-04T09:36:19.410Z",
+    "decision": "NOT_RUN",
+    "reason": "Local development checks pass. Real provider/account/payment/email/hosted-settlement evidence is deferred by user instruction. Production affiliate authority remains unavailable until its adapter and real-account verification are completed in the next phase.",
+    "nextEligibleTaskIds": [],
+    "blockedTaskIds": [
+      "5.10"
+    ]
+  },
+  "invalidation": {
+    "supersedesRecordRef": "internal/evidence/acceptance/M4/local-docker-20261004/record.json",
+    "affectedStages": [
+      "M3"
+    ],
+    "currentM3Applicability": "STALE",
+    "changedDigestRefs": [
+      "internal/evidence/M6/local-20261004/candidate-impact.json"
+    ],
+    "requiredReruns": [
+      "Current-source common checks and local Docker regressions are retained in final/commands.json.",
+      "A separate complete-stage equivalence review, full required browser journeys and deferred provider/account evidence remain prerequisites for milestone promotion."
+    ],
+    "carriedEvidence": []
+  }
+}

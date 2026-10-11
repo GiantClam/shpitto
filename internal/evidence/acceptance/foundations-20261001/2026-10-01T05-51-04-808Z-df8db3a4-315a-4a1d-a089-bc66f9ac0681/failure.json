@@ -1,0 +1,4 @@
+{
+  "status": "FAIL",
+  "reason": "billing-schema failed: internal/evidence/acceptance/foundations-20261001/2026-10-01T05-51-04-808Z-df8db3a4-315a-4a1d-a089-bc66f9ac0681/logs/billing-schema.log\n\n3221226505 !== 0\n"
+}

@@ -1,0 +1,11 @@
+✔ FirstPromoter V2 wire identities retain workspace UID and independent refund identity (1.4067ms)
+✔ money mapping preserves reviewed zero/two-decimal bases and rejects unsafe or unreviewed amounts (0.2909ms)
+✔ batch acceptance and partial/failed completion cannot become successful commission review (0.2146ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 160.6794

@@ -1,0 +1,227 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "INDEPENDENT_DEVELOPMENT_REVIEW",
+  "decision": "PASS",
+  "independentFromImplementer": true,
+  "reviewerId": "/root/next_stage_evidence_review",
+  "reviewedAt": "2026-10-01T06:44:47.466Z",
+  "scope": {
+    "taskIds": [
+      "M4 task 5.3",
+      "M5 tasks 6.3 and 6.4"
+    ],
+    "description": "Bounded local provider and billing runtime fixes with disposable PostgreSQL evidence.",
+    "stageApproval": false,
+    "productionAuthorization": false,
+    "currentM3EquivalenceApproval": false
+  },
+  "candidate": {
+    "capturedAt": "2026-10-01T06:44:47.466Z",
+    "sourceCommit": null,
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "89b6bbc5e0872ea0402caab2e28e876968ac7182aea2dc998879345942878809",
+    "schemaSha256": "ae5c2ed265b308f8a624e917b2b631038dbeaefb993f183248bee8800af87ffa",
+    "configurationSha256": "5fca500aba3c8fd69c8efe8fc7c96659387af00e1fb88269912c5c2bdb5f7426",
+    "contractSha256": "861a25ab4e70f623440a7abba054afa4460177e42cbe8a001196bc9d12a1a139",
+    "validatorSha256": "f4ce7b165966a957f87fc0e3c48ca5b5b2a6554450d4f433ce4d45ad5e047c75",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
+    "digestInputs": {
+      "sourceTree": [
+        "internal/contracts/providers",
+        "src",
+        "tests",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        "tooling",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        "src/config/env.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile",
+        "tooling"
+      ],
+      "contract": [
+        "internal/contracts/providers",
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json",
+        "openspec/changes/restart-shpitto-video-saas/specs",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json"
+      ],
+      "validator": [
+        "scripts",
+        "tests",
+        "tooling",
+        "internal/restart/check-acceptance-record.py",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json"
+      ]
+    }
+  },
+  "independence": "The reviewer inspected implementation and evidence, reproduced negative validator cases, independently reran focused tests and computed evidence checks. The reviewer did not edit implementation, tests, schemas, the runner, or acceptance records; only these independent review artifacts were written.",
+  "evidenceRefs": [
+    "internal/evidence/acceptance/foundations-20261001/next-tasks-review-5.3-6.3-6.4-final.json",
+    "internal/evidence/acceptance/foundations-20261001/next-tasks-review-5.3-6.3-6.4-final-probe.log",
+    "internal/evidence/acceptance/foundations-20261001/2026-10-01T06-42-45-469Z-be0383a5-1e5e-4e4b-910d-fde3b1dcde5c/result.json"
+  ],
+  "verification": {
+    "commandCount": 55,
+    "uniqueCommandCount": 55,
+    "allCommandsPass": true,
+    "allExitCodesZero": true,
+    "allReferencedEvidencePresent": true,
+    "independentFocusedTests": {
+      "passed": 11,
+      "failed": 0,
+      "commands": [
+        "node --experimental-strip-types --test tests/contracts/fal.test.ts",
+        "node --experimental-strip-types --test tests/contracts/billing-checkout.test.ts"
+      ]
+    },
+    "qualityChecks": [
+      "corepack pnpm typecheck: PASS",
+      "corepack pnpm lint: PASS",
+      "corepack pnpm format:check: PASS",
+      "corepack pnpm build: PASS; /api/webhooks/stripe emitted"
+    ],
+    "billingReconciliationProbe": {
+      "status": "PASS",
+      "cases": 9,
+      "profile": "privileged disposable PostgreSQL 17.6 at 127.0.0.1:55432 with fixture provider",
+      "databaseRemoved": true,
+      "outputRef": "internal/evidence/acceptance/foundations-20261001/next-tasks-review-5.3-6.3-6.4-final-probe.log"
+    },
+    "allReferencedLogsPresent": true,
+    "branchCoveragePercent": 84.34633027522935,
+    "missingOwnedSources": [],
+    "focusedTests": [
+      "node --experimental-strip-types --test tests/contracts/fal.test.ts: PASS (5/5)",
+      "node --experimental-strip-types --test tests/contracts/billing-checkout.test.ts: PASS (6/6)"
+    ],
+    "databaseProbe": {
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/foundations-20261001/next-tasks-review-5.3-6.3-6.4-final-probe.log",
+      "profile": "privileged disposable PostgreSQL 17.6 at 127.0.0.1:55432 with fixture provider",
+      "caseCount": 9,
+      "databaseRemoved": true,
+      "cases": [
+        "verified payment persists inbox and issues one catalog grant",
+        "verified duplicate webhook is acknowledged without a second effect",
+        "invoice and PaymentIntent aliases converge on the original order and grant",
+        "failed webhook delivery is retryable with the same event identity after the transient prerequisite is restored",
+        "stale received inbox rows are reclaimed after the lease and converge without a duplicate grant",
+        "aliases are resolved as exact provider/object/id tuples and cannot cross-pair two orders",
+        "known canonical orders reject mismatched workspace and customer hints before any account lock or financial effect",
+        "forged signature has no durable financial or inbox effect",
+        "refund-before-payment holds the workspace and late payment cannot grant credits"
+      ]
+    },
+    "candidateDigestsMatch": true
+  },
+  "officialSchemaRecheck": {
+    "method": "Independent read-only HTTP GET to manifest official URLs; extract exact selected Replicate version schema or fal OpenAPI JSON, serialize with two-space JSON plus LF, and recompute SHA-256.",
+    "paidRequests": false,
+    "rows": [
+      {
+        "key": "replicate-wan22-t2v",
+        "checkedAt": "2026-10-01T03:28:18.935Z",
+        "httpStatus": 200,
+        "observedVersion": "9f0a607c444c14a25ca46cb94f01d83566e40a7c68ee0d313cb8b8b5e5cf2c09",
+        "schemaSha256": "b167bc49d8aa45e18a2fc14e95cc4b72ab052b42bcecac3c59d6194deb468cc2",
+        "matchesRetained": true
+      },
+      {
+        "key": "replicate-wan22-i2v",
+        "checkedAt": "2026-10-01T03:28:18.905Z",
+        "httpStatus": 200,
+        "observedVersion": "4d9f302ce75125a365469e2fe1b65e50d70de4e0e1e3d438d695db5e8bb32e27",
+        "schemaSha256": "c81011fdc4bf077b2a6738c84cfd51c5d40bd7200cb2c45b3dc937e0bb68b83d",
+        "matchesRetained": true
+      },
+      {
+        "key": "fal-wan22-t2v",
+        "checkedAt": "2026-10-01T03:28:18.401Z",
+        "httpStatus": 200,
+        "observedVersion": null,
+        "schemaSha256": "b23b17eb18956feaaa318cfb77bf8ad7c9ff7af560fe274118bbf594a8a654c7",
+        "matchesRetained": true
+      },
+      {
+        "key": "fal-wan22-i2v",
+        "checkedAt": "2026-10-01T03:28:18.469Z",
+        "httpStatus": 200,
+        "observedVersion": null,
+        "schemaSha256": "012030973ffd700e00516d016e37996b10dd1b969fd2c79da21c92c8e130cef5",
+        "matchesRetained": true
+      }
+    ]
+  },
+  "findings": [
+    {
+      "id": "BIL-ALIAS-EXACT-TUPLE",
+      "status": "PASS",
+      "evidence": "payment-aliases.ts queries each provider/objectKind/externalId tuple; probe case 'aliases are resolved as exact provider/object/id tuples and cannot cross-pair two orders'."
+    },
+    {
+      "id": "BIL-CANONICAL-TENANT-CUSTOMER",
+      "status": "PASS",
+      "evidence": "reconcile-payment.ts checks workspaceId and customerId hints against the canonical order before account lock; probe case 'known canonical orders reject mismatched workspace and customer hints before any account lock or financial effect'."
+    },
+    {
+      "id": "BIL-FAILED-DELIVERY-RETRY",
+      "status": "PASS",
+      "evidence": "inbox.ts resets failed rows and retries with the same delivery identity; probe case 'failed webhook delivery is retryable with the same event identity after the transient prerequisite is restored'."
+    },
+    {
+      "id": "BIL-STALE-RECEIVED-LEASE",
+      "status": "PASS",
+      "evidence": "inbox.ts uses a row lock and 60-second received lease; probe case 'stale received inbox rows are reclaimed after the lease and converge without a duplicate grant'."
+    }
+  ],
+  "currentReview": {
+    "decision": "PASS_BOUNDED_LOCAL_FIXTURE",
+    "source": "internal/evidence/acceptance/foundations-20261001/next-tasks-review-5.3-6.3-6.4-final.json",
+    "probe": "internal/evidence/acceptance/foundations-20261001/next-tasks-review-5.3-6.3-6.4-final-probe.log",
+    "invariants": [
+      "Exact provider/objectKind/externalId tuple alias resolution",
+      "Canonical workspace and customer hint consistency before account lock",
+      "Failed webhook redelivery retry with stable event identity",
+      "Stale received inbox lease recovery with row locking"
+    ],
+    "probeCases": 9,
+    "databaseRemoved": true
+  },
+  "limits": [
+    "PASS is limited to local fixture contracts and disposable PostgreSQL evidence.",
+    "No Stripe account, live fal request, production billing, production email, paid request, or external network evidence was used.",
+    "This review does not approve the M4 or M5 stage gate and does not alter task or stage status."
+  ],
+  "decisionSummary": "The bounded local implementation contracts for M4 task 5.3 and M5 tasks 6.3/6.4 pass independent review. Exact payment alias tuples, canonical workspace/customer consistency, failed webhook retry, and stale received lease recovery are covered by source inspection and a privileged nine-case disposable PostgreSQL probe.",
+  "boundedDecision": "PASS_BOUNDED_LOCAL_FIXTURE"
+}

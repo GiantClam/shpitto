@@ -1,0 +1,72 @@
+$ pnpm typecheck && pnpm lint && pnpm format:check && pnpm verify:config && pnpm verify:db-boundary && pnpm verify:m2-foundation && pnpm verify:local-services && pnpm verify:shells && pnpm verify:content-boundaries && pnpm verify:root && pnpm build
+
+> @shpitto/video-saas@0.1.0 typecheck D:\github\shpitto
+> tsc --noEmit
+
+
+> @shpitto/video-saas@0.1.0 lint D:\github\shpitto
+> node scripts/check-source-boundaries.mjs
+
+Source boundary check passed for src, scripts.
+
+> @shpitto/video-saas@0.1.0 format:check D:\github\shpitto
+> node scripts/format-check.mjs
+
+Format check passed.
+
+> @shpitto/video-saas@0.1.0 verify:config D:\github\shpitto
+> node scripts/check-config.mjs
+
+Configuration contract passed: placeholders are redacted and demo drivers are rejected for production.
+
+> @shpitto/video-saas@0.1.0 verify:db-boundary D:\github\shpitto
+> node scripts/check-db-boundaries.mjs
+
+Database boundary check passed.
+
+> @shpitto/video-saas@0.1.0 verify:m2-foundation D:\github\shpitto
+> node scripts/check-m2-foundation.mjs
+
+M2 identity/workspace foundation contract passed.
+
+> @shpitto/video-saas@0.1.0 verify:local-services D:\github\shpitto
+> node scripts/check-local-services.mjs
+
+Local service contract passed.
+
+> @shpitto/video-saas@0.1.0 verify:shells D:\github\shpitto
+> node scripts/check-shell-boundaries.mjs
+
+Product shell boundary check passed.
+
+> @shpitto/video-saas@0.1.0 verify:content-boundaries D:\github\shpitto
+> node scripts/check-content-boundaries.mjs
+
+Content and export boundary check passed.
+
+> @shpitto/video-saas@0.1.0 verify:root D:\github\shpitto
+> node scripts/check-root-integrity.mjs && pnpm verify:acceptance && pnpm verify:openspec
+
+{
+  "status": "PASS",
+  "packageManager": "pnpm@12.6.0",
+  "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+  "selectedDependencyBaseline": "internal/spikes/selected-stack/package.json",
+  "excludedRoots": [
+    "node_modules",
+    "legacy",
+    "apps",
+    "builder",
+    "packages",
+    "sites",
+    "internal"
+  ]
+}
+
+> @shpitto/video-saas@0.1.0 verify:acceptance D:\github\shpitto
+> python -B internal/restart/check-acceptance-record.py internal/evidence/acceptance/M0/working-tree-20260927/record.json && python -B internal/restart/check-acceptance-record.py internal/evidence/acceptance/M1/working-tree-20260928-m1/record.json
+
+{"record": "D:\\github\\shpitto\\internal\\evidence\\acceptance\\M0\\working-tree-20260927\\record.json", "status": "PASS", "errors": ["criterionResults[0] has an unresolved required result", "criterionResults[1] has an unresolved required result", "criterionResults[2] has an unresolved required result", "criterionResults[3] has an unresolved required result", "criterionResults[4] has an unresolved required result", "scenarioResults[0] has an unresolved required result"]}
+ ELIFECYCLE  Command failed with exit code 1.
+ ELIFECYCLE  Command failed with exit code 1.
+[ELIFECYCLE] Command failed with exit code 1.

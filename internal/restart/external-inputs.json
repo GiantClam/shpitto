@@ -1,0 +1,144 @@
+{
+  "schemaVersion": "1.0",
+  "status": "M0_INPUT_REGISTER_CONTRACTS_FROZEN",
+  "purpose": "Non-secret external prerequisites for implementation and later stage acceptance. No credentials or paid calls are stored here.",
+  "m0Decision": "All external boundaries have one accountable adapter/domain owner. Account, budget and commercial inputs are deliberately deferred to the gate that requires them; their absence does not authorize a substitute live claim.",
+  "recordingRules": [
+    "Use separate local, sandbox/test-mode and live environment identifiers in every later acceptance record.",
+    "Record non-secret account identity, region, entitlement and capped budget only; never store keys, webhook secrets, signed URLs or payment details.",
+    "A missing input blocks its dependent gate and preserves the disabled or deterministic fixture path where the specification allows one."
+  ],
+  "inputs": [
+    {
+      "id": "provider-replicate",
+      "owner": "integration-owner",
+      "requiredBy": [
+        "1.5",
+        "5.1",
+        "5.2",
+        "5.10"
+      ],
+      "purpose": "Replicate T2V/I2V account, supported Wan 2.2 model/version and webhook secret contract",
+      "environment": "sandbox or authorized production account",
+      "status": "T2V_I2V_REAL_OUTPUT_PRIVATE_LIFECYCLE_VERIFIED_WEBHOOK_SETTLEMENT_REQUIRED",
+      "evidenceNeeded": "Read-only account and refreshed contracts plus real Replicate T2V/I2V output and isolated R2 private-lifecycle evidence. Still required: authenticated webhook delivery, real domain reservation settlement, provider cost confirmation where available and independent review.",
+      "budgetRequired": true,
+      "nextAction": "Configure a public callback endpoint or controlled webhook capture, attach an exact Replicate result to a domain task/reservation without another paid create, and record settlement; keep cost explicitly unknown when the provider omits it.",
+      "lastVerifiedAccount": "giantclam",
+      "readOnlyVerificationRef": "internal/evidence/M4/task-5.1/latest-contract-observation.json",
+      "lastVerifiedAt": "2026-10-11T00:16:05.265Z",
+      "realT2VEvidenceRef": "internal/evidence/M4/task-5.10/replicate-t2v-real-smoke.json",
+      "realI2VEvidenceRef": "internal/evidence/M4/task-5.10/replicate-i2v-real-run.json",
+      "privateLifecycleEvidenceRefs": [
+        "internal/evidence/M4/task-5.10/replicate-t2v-private-lifecycle-r2.json",
+        "internal/evidence/M4/task-5.10/replicate-i2v-private-lifecycle-r2.json"
+      ],
+      "providerCostStatus": "UNKNOWN"
+    },
+    {
+      "id": "provider-fal",
+      "owner": "integration-owner",
+      "requiredBy": [
+        "1.5",
+        "5.3",
+        "5.4",
+        "5.10"
+      ],
+      "purpose": "fal.ai T2V/I2V account, supported Wan 2.2 model/version and webhook verification contract",
+      "environment": "sandbox or authorized production account",
+      "status": "T2V_I2V_REAL_OUTPUT_PRIVATE_LIFECYCLE_VERIFIED_WEBHOOK_SETTLEMENT_REQUIRED",
+      "evidenceNeeded": "Real fal T2V and I2V outputs and isolated R2 private application lifecycle are recorded at internal/evidence/M4/task-5.10/. Still required: authenticated webhook delivery, provider cost confirmation, real domain reservation settlement and independent review. The original pre-repair paid attempt remains unresolved.",
+      "budgetRequired": true,
+      "nextAction": "Configure a public callback endpoint or controlled webhook capture, attach one already-authorized provider result to the domain task/reservation, record provider cost if exposed and settle credits.",
+      "lastVerifiedAt": "2026-10-11T00:16:05.265Z",
+      "readOnlyVerificationRef": "internal/evidence/M4/task-5.10/fal-token-read-only-boundary.json",
+      "realEvidenceRef": "internal/evidence/M4/task-5.10/fal-real-run-summary.json",
+      "privateLifecycleEvidenceRef": "internal/evidence/M4/task-5.10/fal-private-lifecycle-r2.json",
+      "providerCostStatus": "UNKNOWN"
+    },
+    {
+      "id": "stripe-test",
+      "owner": "billing-owner",
+      "requiredBy": [
+        "1.5",
+        "6.1",
+        "6.10"
+      ],
+      "purpose": "Stripe test-mode account, product/catalog decisions, webhook signing and test event access",
+      "environment": "Stripe test mode",
+      "status": "OWNER_INPUT_REQUIRED",
+      "evidenceNeeded": "canonical PaymentIntent/Invoice/Checkout identity map and replay/refund fixtures at M5",
+      "budgetRequired": false,
+      "nextAction": "Confirm monthly price, permanent pack catalog and test-mode owner/account"
+    },
+    {
+      "id": "firstpromoter",
+      "owner": "owner/integrations",
+      "requiredBy": [
+        "1.5",
+        "7.8",
+        "7.14"
+      ],
+      "purpose": "Optional buyer affiliate program, campaign, stable UID tracking and review/settlement capabilities",
+      "environment": "supported FirstPromoter V2 account and safe test path",
+      "status": "OPTIONAL_BLOCKER_FOR_ENABLED_PATH",
+      "evidenceNeeded": "native first-payment count, refund/dispute correction and review flow; disabled path remains required",
+      "budgetRequired": false,
+      "nextAction": "Confirm account/plan/campaign eligibility and keep affiliate disabled until verified"
+    },
+    {
+      "id": "vendor-commerce",
+      "owner": "product-owner",
+      "requiredBy": [
+        "1.5",
+        "9.10",
+        "9.13",
+        "9.15"
+      ],
+      "purpose": "Lemon Squeezy vendor account, source license, pricing, support and refund terms",
+      "environment": "vendor sales boundary",
+      "status": "OWNER_INPUT_REQUIRED",
+      "evidenceNeeded": "approved commercial terms and clean per-customer repository/ZIP fulfillment at M8",
+      "budgetRequired": false,
+      "nextAction": "Approve source license, pricing, support/update entitlement and refund language"
+    },
+    {
+      "id": "runtime-hosting",
+      "owner": "release-owner",
+      "requiredBy": [
+        "1.5",
+        "9.4",
+        "9.14",
+        "9.15"
+      ],
+      "purpose": "Vercel/managed PostgreSQL/private object storage/Trigger/Resend and Docker deployment accounts",
+      "environment": "local first; managed and Docker later",
+      "status": "NOT_REQUIRED_FOR_M0",
+      "evidenceNeeded": "same-candidate managed and Docker clean deployment plus measured restore evidence at M8",
+      "budgetRequired": true,
+      "nextAction": "Define staging domains, service tier and capped validation budget before M8"
+    },
+    {
+      "id": "policy-decisions",
+      "owner": "product-owner",
+      "requiredBy": [
+        "1.5",
+        "6.10",
+        "7.14",
+        "9.13",
+        "9.15"
+      ],
+      "purpose": "Price, credit quantities, commission policy/rate, license scope, support and cash-refund terms",
+      "environment": "planning and release records",
+      "status": "OWNER_INPUT_REQUIRED",
+      "evidenceNeeded": "approved versioned policy references before commercial release",
+      "budgetRequired": false,
+      "nextAction": "Resolve remaining business inputs without weakening technical invariants"
+    }
+  ],
+  "rules": [
+    "Missing credentials or budget blocks the dependent real/provider/release evidence; it does not fail M0 local planning by itself.",
+    "Mock and deterministic fixtures cannot be reported as real provider, paid Beta or live affiliate evidence.",
+    "Never store keys, webhook secrets, signed URLs or payment details in this register."
+  ]
+}

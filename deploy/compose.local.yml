@@ -1,0 +1,58 @@
+name: shpitto-local
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: shpitto
+      POSTGRES_PASSWORD: shpitto-local-only
+      POSTGRES_DB: shpitto
+    ports:
+      - "${LOCAL_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - shpitto-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shpitto -d shpitto"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:v1.21.8
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    volumes:
+      - shpitto-mail:/data
+
+  worker:
+    build:
+      context: ..
+      dockerfile: deploy/worker.Dockerfile
+    environment:
+      DATABASE_URL: postgres://shpitto:shpitto-local-only@postgres:5432/shpitto
+      STORAGE_DRIVER: local
+      GENERATION_DRIVER: mock
+      MAIL_DRIVER: local
+      MAIL_SMTP_URL: smtp://mailpit:1025
+      MAIL_HTTP_URL: http://mailpit:8025
+      ASSET_ROOT: /var/lib/shpitto/assets
+    ports:
+      - "8080:8080"
+    init: true
+    volumes:
+      - ../.data/assets:/var/lib/shpitto/assets
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "node", "scripts/worker-health.mjs", "--probe"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  shpitto-postgres:
+  shpitto-mail:

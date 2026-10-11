@@ -1,0 +1,38 @@
+{
+  "recordedAt": "2026-10-01T02:28:34.893Z",
+  "scope": "Post-integration checks after independent whole-stage PASS and the separate integrator decision; no source change or full probe rerun.",
+  "commands": [
+    {
+      "invocation": "python -B internal/restart/check-acceptance-record.py internal/evidence/acceptance/M3/working-tree-20261001-current/record.json --current",
+      "exitCode": 0,
+      "result": "PASS",
+      "recordStatus": "PASS",
+      "errors": []
+    },
+    {
+      "invocation": "corepack pnpm verify:root",
+      "exitCode": 0,
+      "result": "PASS",
+      "checks": [
+        "Root dependency/lock/import integrity",
+        "Historical M0/M1 records and current M3 record",
+        "Strict OpenSpec change validation"
+      ],
+      "openSpecIssues": []
+    }
+  ],
+  "localServiceObservation": {
+    "checkedAt": "2026-10-01T02:28:10.4914827Z",
+    "loginStatus": 200,
+    "appPid": 50216,
+    "workerPids": [
+      27744
+    ]
+  },
+  "evidenceRefs": [
+    "internal/evidence/acceptance/M3/working-tree-20261001-current/record.json",
+    "internal/evidence/acceptance/M3/working-tree-20261001-current/final-integration/decision.json",
+    "internal/evidence/M3/final-stage-review-20261001.json"
+  ],
+  "limits": "HTTP 200 and a running worker are local session observations, not a production deployment or separate human product sign-off."
+}

@@ -1,0 +1,39 @@
+---
+release: v1
+title: Backup, upgrade and restore
+description: Practice recoverable database maintenance.
+section: template
+status: published
+relatedContracts: [D07, D17, D20, G07, G17, G20]
+---
+
+# Backup, upgrade and restore
+
+Use a direct PostgreSQL connection for backup and restore. Backups contain
+credentials, sessions, tenant content and billing records: restrict access,
+encrypt them at rest and retain them according to the buyer's policy.
+
+Create and inspect a custom-format backup:
+
+```sh
+node scripts/maintenance/backup-db.mjs --output .data/backups/shpitto.dump
+node scripts/maintenance/verify-backup.mjs --input .data/backups/shpitto.dump
+```
+
+For an approved restore drill, use a disposable target database. The restore
+command is destructive and requires an explicit confirmation flag:
+
+```sh
+node scripts/maintenance/restore-db.mjs --input .data/backups/shpitto.dump --confirm RESTORE
+```
+
+In production, set `ALLOW_DATABASE_RESTORE=1` only for the approved maintenance
+window. Stop application writers, confirm the target identity out of band,
+restore, rerun the reviewed migration check, start one worker and web process,
+then verify login, workspace isolation, credit ledger reconciliation and private
+asset download. Record elapsed time and data point-in-time; this repository does
+not claim a recovery-point or recovery-time objective.
+
+Application rollback and database restore are different operations. Prefer
+rolling the image back when a schema remains backward compatible. Restore a
+database only from a verified backup and a reviewed incident procedure.

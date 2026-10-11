@@ -1,0 +1,63 @@
+{
+  "date": "2026-09-27",
+  "purpose": "Selected review sources made eligible for source control by narrow ignore exceptions. Hashes describe the current normalized planning baseline, not a claim that historical approval covered later edits.",
+  "originalAttachment": "D:/OpenCode/seo_analyzer/docs/plans/2026-09-26-shpitto-ai-video-saas-template-product-design.md",
+  "files": [
+    {
+      "path": "docs/plans/2026-09-27-shpitto-restart-requirements.md",
+      "sha256": "828bb67619b35153dcf2777026c4a9ba347045b31d813c9a87dfc9453aa659cf"
+    },
+    {
+      "path": "docs/plans/2026-09-27-shpitto-restart-requirements.zh-CN.md",
+      "sha256": "b36c6f102a380011b96dca5223a2fd2c8f2b890ca73baf74ff94e2f97bc68474"
+    },
+    {
+      "path": "docs/plans/2026-09-27-shpitto-restart-prd.zh-CN.md",
+      "sha256": "bf3ad611400a31d7b814bbce79de1cf12d3f976f7236ad5e4d5f2701cbd11a07"
+    },
+    {
+      "path": "docs/plans/2026-09-27-shpitto-restart-plan.zh-CN.md",
+      "sha256": "d7dbb15894c1a621aa6aa24b8193a0a99359d9d953947560f160334b22abaf60"
+    },
+    {
+      "path": "docs/plans/2026-09-27-shpitto-restart-test-spec.zh-CN.md",
+      "sha256": "761daaf2c70f2a85785c3b06032285b7259aa26ac6b4aad6a911ba4a7f15a7c5"
+    },
+    {
+      "path": "docs/plans/2026-09-27-shpitto-admin-foundation-assessment.md",
+      "sha256": "8982ec7cc7a77f3067127ad6ed4f489a3e2f22b46a1e210e6e8c74710010feb8"
+    },
+    {
+      "path": "docs/plans/2026-09-27-shpitto-admin-foundation-assessment.zh-CN.md",
+      "sha256": "ae3f8f8e2ed016aa632eb45028e95824ede2919feae1b25d8a6209b15f38384f"
+    },
+    {
+      "path": "docs/plans/2026-09-27-shpitto-detailed-technical-design.md",
+      "sha256": "081c2b4ecf9ac19443989da77921cb4c8291661466f0f4dde52ea3ef751ca81c"
+    },
+    {
+      "path": "docs/plans/2026-09-27-shpitto-detailed-technical-design.zh-CN.md",
+      "sha256": "d7a79a09c12519dc35f0d33a62a3deb959d0ce508b19071c1d2456bdc650ad50"
+    },
+    {
+      "path": "docs/plans/2026-09-27-shpitto-review-index.zh-CN.md",
+      "sha256": "ec7bedf3be9a6694da4b8a4c4f14f3143616ee0aaa19fdc88bf9efb3be4d90b9"
+    },
+    {
+      "path": ".omx/plans/prd-shpitto-restart.md",
+      "sha256": "fa33fd7eb9fed16eee275aba7b59e3ad879e301f8c0a9cff95952a48b68e9c59"
+    },
+    {
+      "path": ".omx/plans/shpitto-restart-plan.md",
+      "sha256": "d31f1261cf1ad29d7714b23ee45485f96c7962f71f9924971aa03e2a033920da"
+    },
+    {
+      "path": ".omx/plans/test-spec-shpitto-restart.md",
+      "sha256": "ac953671a6acbeb6b31679ba0e46cc025917fbd817bd979278c59f7f65bb4b32"
+    },
+    {
+      "path": ".omx/plans/shpitto-detailed-design-review.md",
+      "sha256": "f83e064721f93ec0cda836569cf3fc16726a0f3fde22b5b623f6a0cb0feff419"
+    }
+  ]
+}

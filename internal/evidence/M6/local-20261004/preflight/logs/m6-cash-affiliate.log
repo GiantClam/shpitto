@@ -1,0 +1,23 @@
+✖ scripts\probe-m6-cash-affiliate.ts (761.2445ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 766.7005
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report
+
+✖ failing tests:
+
+test at scripts\probe-m6-cash-affiliate.ts:1:1
+✖ scripts\probe-m6-cash-affiliate.ts (761.2445ms)
+  'test failed'

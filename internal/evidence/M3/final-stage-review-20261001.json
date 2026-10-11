@@ -1,0 +1,182 @@
+{
+  "schemaVersion": "1.0",
+  "stageId": "M3",
+  "decision": "PASS",
+  "reviewerId": "/root/m3_current_review",
+  "reviewedAt": "2026-10-01T02:26:47Z",
+  "capturedAt": "2026-10-01T02:26:47Z",
+  "independentFromImplementer": true,
+  "independence": "Reviewer performed read-only source and evidence review, independent focused test and read-only integrity/database checks. Reviewer did not implement product, harness, browser, or supplemental test changes and authored only these final review files.",
+  "scope": "Technical acceptance of the exact frozen M3 local PostgreSQL and persistent Mock profile. Integrator decision remains separate.",
+  "verificationAttemptId": "2026-10-01T02-12-59-069Z-0691f958-7be7-407a-a12b-e871950529a9",
+  "candidateDigests": {
+    "sourceTreeSha256": "73ec731c971aca355335d6c86a3ba14e8c91e84e9cf8569007cb7abf3f6bd3ab",
+    "schemaSha256": "5b0b847b266e1690319021b0167f831367e9190d188c88b90b40ca09f8d4c58b",
+    "configurationSha256": "5f6bd06fa671a1f727e8663ba540f25f53b2dc15ebaff31fd2593eb0eb3032d7",
+    "contractSha256": "696243adf42cf0ea4631515f9f112346783742b6e0d301eaaed8ef1990db8fc2",
+    "validatorSha256": "84b43b64ce663a6f7fccd2aa4e4ac704419f071af56783b64d7ec9413dab8b69",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a"
+  },
+  "verification": {
+    "canonicalChecks": {
+      "total": 73,
+      "unique": 73,
+      "criteria": 5,
+      "commonStandards": 7,
+      "scenarioIds": 38,
+      "testFamilies": 23,
+      "preReviewPassed": 72,
+      "remainingPreReview": "independent-review",
+      "independentReviewDecision": "PASS",
+      "allMandatoryIdsMatchTraceability": true,
+      "subcasesReviewed": [
+        "T05.a",
+        "T12.a",
+        "T12.b"
+      ]
+    },
+    "mainAttempt": {
+      "commands": 53,
+      "uniqueCommands": 53,
+      "allPassed": true,
+      "allExitZero": true,
+      "topRecordMatchesAttempt": true,
+      "allRequiredEvidenceRefsExist": true,
+      "isolatedDatabaseRemoved": true
+    },
+    "coverage": {
+      "ownedModules": 38,
+      "reportedOwnedModules": 38,
+      "unownedReports": 0,
+      "branchesHit": 993,
+      "branchesFound": 1166,
+      "percent": 85.16295025728988,
+      "missingSources": [],
+      "malformed": [],
+      "method": "Independently recomputed from all retained LCOV runs using the reviewed merger and owned-module manifest."
+    },
+    "browser": {
+      "decision": "PASS",
+      "journeys": 11,
+      "uiChecks": 8,
+      "desktop": "1440x900",
+      "mobile": "390x844",
+      "artifactsInspected": true,
+      "screenshotsViewed": [
+        "18-team-desktop.jpg",
+        "19-team-mobile.jpg",
+        "20-keyboard-focus.jpg",
+        "08-private-video.jpg",
+        "23-member-removed.jpg"
+      ],
+      "prematureSnapshotsExcluded": true
+    },
+    "supplemental": {
+      "commands": 28,
+      "allPassed": true,
+      "allExitZero": true,
+      "probeRuns": 12,
+      "distinctResetDatabases": 12,
+      "repetitionsPerProbe": 3,
+      "probes": [
+        "workspaces",
+        "credit-reservation",
+        "command-contract",
+        "generation-replay"
+      ],
+      "rawLogOutputsMatchManifests": true,
+      "allRecordedBeforeAndAfterFixtureCountsZero": true,
+      "allScratchDirectoriesAbsent": true,
+      "reportedDatabasesIndependentlyVerifiedAbsent": true
+    },
+    "candidate": {
+      "allSixDigestsMatchCurrent": true,
+      "mainAttemptStable": true,
+      "browserBeforeAfterStable": true,
+      "supplementBeforeAfterStable": true,
+      "traceabilityIncludedInContractAndValidator": true
+    },
+    "independentExecutions": [
+      {
+        "command": "node --experimental-strip-types --test tests/unit/candidate-digests.test.ts",
+        "result": "PASS",
+        "exitCode": 0,
+        "testsPassed": 1
+      },
+      {
+        "command": "python internal/restart/check-acceptance-record.py internal/evidence/acceptance/M3/working-tree-20261001-current/record.json --current",
+        "result": "PASS",
+        "exitCode": 0,
+        "errors": []
+      },
+      {
+        "command": "Read-only SELECT version(), current_setting('server_version'); SELECT datname FROM pg_database WHERE datname = ANY(reported supplemental database names)",
+        "result": "PASS",
+        "postgres": "PostgreSQL 17.6 on x86_64-windows, compiled by msvc-19.44.35213, 64-bit",
+        "reportedDatabasesRemaining": []
+      }
+    ]
+  },
+  "m2Impact": {
+    "decision": "ACCEPTED",
+    "evidenceRef": "internal/evidence/M3/m2-prerequisite-impact-20261001.md",
+    "reason": "Current identity, workspace, operator/hold, durable-command, credit, schema, and HTTP regression evidence plus reset ownership/credit/command races supports continued M2 local obligations. Historical M2 approval remains scoped to its own bytes; no byte-identical carry-forward is claimed."
+  },
+  "findings": [
+    {
+      "id": "traceability-footprint",
+      "status": "RESOLVED",
+      "resolution": "Traceability mapping is now included in contract and validator digests; independent mutation regression test passed."
+    },
+    {
+      "id": "browser-owner-postconditions",
+      "status": "RESOLVED",
+      "resolution": "Premature pre-submit snapshots were excluded. Actual role-reversed snapshot and newly captured one-owner roster, HTTP 200 actions, and revoked-tab denial were inspected."
+    },
+    {
+      "id": "race-repeatability",
+      "status": "RESOLVED",
+      "resolution": "Three independent reset runs each of ownership, credit reservation, duplicate-command and generation replay contention passed with exact final state and cleanup evidence."
+    },
+    {
+      "id": "evidence-mapping-and-runtime",
+      "status": "RESOLVED",
+      "resolution": "Nested subcases are explicitly mapped, credit race labels are corrected, and PostgreSQL version was independently verified."
+    },
+    {
+      "id": "crash-cleanup-attribution",
+      "status": "RESOLVED",
+      "resolution": "Manual crash fixture teardown is not accepted as automatic cleanup proof; separate asset, scheduled cleanup and restart tests supply that evidence."
+    }
+  ],
+  "blockers": [],
+  "openMandatoryFailures": [],
+  "limitations": [
+    "Acceptance covers the local persistent Mock profile only. It does not pass real-provider, payment, cloud email, production storage, authenticated provider webhook, or later release gates.",
+    "Browser evidence uses the repository development server; isolated production build and live HTTP probes cover the same frozen source separately. Viewport checks are limited to 1440x900 and 390x844.",
+    "Expiry and loading evidence uses disclosed scoped fixtures and controlled clocks; this is not a real elapsed-duration or production capacity trial.",
+    "The integrity checker alone is not an evidence-authenticity or canonical-denominator proof; this decision additionally checks actual IDs, raw logs, artifacts, source digests and supplemental records.",
+    "Future source, schema, lockfile, configuration, policy or validator changes require impact assessment and applicable revalidation."
+  ],
+  "evidenceRefs": [
+    "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-10-01T02-12-59-069Z-0691f958-7be7-407a-a12b-e871950529a9/record.json",
+    "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-10-01T02-12-59-069Z-0691f958-7be7-407a-a12b-e871950529a9/commands.json",
+    "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-10-01T02-12-59-069Z-0691f958-7be7-407a-a12b-e871950529a9/digest-freshness.json",
+    "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-10-01T02-12-59-069Z-0691f958-7be7-407a-a12b-e871950529a9/owned-modules.json",
+    "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-10-01T02-12-59-069Z-0691f958-7be7-407a-a12b-e871950529a9/coverage-summary.json",
+    "internal/evidence/M3/browser-walkthrough-20261001.json",
+    "internal/evidence/M3/browser-final-20261001/candidate-provenance.json",
+    "internal/evidence/M3/browser-final-20261001/22-open-member-tab-before-removal.txt",
+    "internal/evidence/M3/browser-final-20261001/23-member-removed.txt",
+    "internal/evidence/M3/browser-final-20261001/23-member-removed.jpg",
+    "internal/evidence/M3/browser-final-20261001/24-revoked-open-tab.txt",
+    "internal/evidence/M3/final-independent-race-repetitions-20261001/final-summary.json",
+    "internal/evidence/M3/final-independent-race-repetitions-20261001/commands.json",
+    "internal/evidence/M3/final-independent-race-repetitions-20261001/repetitions.json",
+    "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/commands.json",
+    "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/repetitions.json",
+    "internal/evidence/M3/m2-prerequisite-impact-20261001.md",
+    "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+    "openspec/changes/restart-shpitto-video-saas/traceability.json"
+  ]
+}

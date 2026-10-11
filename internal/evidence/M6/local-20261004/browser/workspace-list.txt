@@ -1,0 +1,57 @@
+- button "Open Next.js Dev Tools":
+- alert
+- button "Skip to content"
+- banner:
+  - button "Close menu":
+  - heading "Workspaces" [level=6]:
+    - generic: Workspaces
+  - button "Toggle light/dark mode":
+  - button "Refresh":
+  - button "Profile":
+    - text: superadmin
+- main:
+  - menu:
+    - menuitem "Dashboard":
+      - paragraph: Dashboard
+    - menuitem "Workspaces":
+      - paragraph: Workspaces
+    - menuitem "Users":
+      - paragraph: Users
+    - menuitem "Generations":
+      - paragraph: Generations
+    - menuitem "Billings":
+      - paragraph: Billings
+    - menuitem "Audits":
+      - paragraph: Audits
+    - menuitem "Affiliate reviews":
+      - paragraph: Affiliate reviews
+    - menuitem "Affiliate holds":
+      - paragraph: Affiliate holds
+  - text: Search
+  - searchbox "Search" [active]
+  - generic: Status
+  - combobox "Status"
+  - textbox
+  - table:
+    - rowgroup:
+      - row "Id Name Kind Status Billing status Version Member count":
+        - columnheader "Id"
+        - columnheader "Name"
+        - columnheader "Kind"
+        - columnheader "Status"
+        - columnheader "Billing status"
+        - columnheader "Version"
+        - columnheader "Member count"
+    - rowgroup:
+      - row "c8258df0-c0b6-4c7e-b613-0b54ee317435 M6 Local Acceptance team active active 1 1":
+        - cell "c8258df0-c0b6-4c7e-b613-0b54ee317435"
+        - cell "M6 Local Acceptance"
+        - cell "team"
+        - cell "active"
+        - cell "active"
+        - cell "1"
+        - cell "1"
+  - paragraph: "Rows per page:"
+  - combobox "Rows per page:": "25"
+  - textbox: "25"
+  - paragraph: 1-1 of 1

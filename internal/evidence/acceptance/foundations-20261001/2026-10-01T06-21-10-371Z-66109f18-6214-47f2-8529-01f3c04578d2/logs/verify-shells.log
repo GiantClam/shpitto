@@ -1,0 +1,2 @@
+Product shell boundary check passed.
+$ node scripts/check-shell-boundaries.mjs

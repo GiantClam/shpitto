@@ -1,0 +1,33 @@
+{"status":"PASS","scope":"local-pure-contracts-only","databaseVerified":false,"providerVerified":false,"runtimeIntegrationVerified":false,"unavailableAdapterFailsClosed":true,"signedReferralBounds":true,"attributionHelper":true,"chronologicalEligibilityHelper":true,"deliveryIdentityConflicts":true,"incrementalRefundIdentities":true,"firstPaymentPolicyHelper":true,"reviewEvidenceFences":true,"approvedOriginPayoutGuard":true,"abuseDecisionHelper":true}
+✔ scripts\probe-m6-affiliate.ts (156.8024ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 163.2445
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------------
+ℹ file                    | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------------
+ℹ src                     |        |          |         | 
+ℹ  adapters               |        |          |         | 
+ℹ   affiliates            |        |          |         | 
+ℹ    firstpromoter.ts     | 100.00 |   100.00 |  100.00 | 
+ℹ  modules                |        |          |         | 
+ℹ   affiliates            |        |          |         | 
+ℹ    abuse-review.ts      |  90.91 |    72.73 |  100.00 | 10
+ℹ    attribution.ts       | 100.00 |    77.78 |  100.00 | 
+ℹ    commission-review.ts | 100.00 |    91.67 |  100.00 | 
+ℹ    contracts.ts         | 100.00 |    83.33 |  100.00 | 
+ℹ    delivery.ts          | 100.00 |    84.62 |  100.00 | 
+ℹ    eligibility.ts       | 100.00 |    75.00 |   75.00 | 
+ℹ    payout-guard.ts      | 100.00 |    94.44 |  100.00 | 
+ℹ    policy.ts            |  85.71 |    60.00 |   66.67 | 9-10
+ℹ    refunds.ts           |  75.00 |    87.50 |  100.00 | 6-7
+ℹ ------------------------------------------------------------------------
+ℹ all files               |  98.28 |    82.78 |   95.00 | 
+ℹ ------------------------------------------------------------------------
+ℹ end of coverage report

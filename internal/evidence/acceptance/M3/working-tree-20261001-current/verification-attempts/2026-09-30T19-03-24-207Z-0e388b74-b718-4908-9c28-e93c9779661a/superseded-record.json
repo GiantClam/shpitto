@@ -1,0 +1,2506 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "IMPLEMENTATION_ACCEPTANCE",
+  "changeId": "restart-shpitto-video-saas",
+  "stageId": "M3",
+  "checkpointId": null,
+  "gateTaskId": "4.12",
+  "status": "IN_PROGRESS",
+  "candidateId": "working-tree-20261001-current",
+  "verificationAttemptId": "2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be",
+  "createdAt": "2026-09-30T18:56:57.467Z",
+  "updatedAt": "2026-09-30T18:56:57.467Z",
+  "policy": {
+    "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md"
+  },
+  "prerequisites": [
+    {
+      "stageId": "M2",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260929-m2-repair",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/record.json"
+      ]
+    },
+    {
+      "taskId": "4.1",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.2",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.3",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.4",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.5",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.6",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.7",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.8",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.9",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.10",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.11",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.13",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    }
+  ],
+  "candidate": {
+    "capturedAt": "2026-09-30T18:56:57.445Z",
+    "sourceCommit": null,
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "74fcbbd3adc6076f11df0ea9495796d6ddad16ba924b310dc5f5f0040de01072",
+    "schemaSha256": "5b0b847b266e1690319021b0167f831367e9190d188c88b90b40ca09f8d4c58b",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+    "configurationSha256": "079a422f0057b69e3ee687a8dfb277351abc3aa3167b3055190768fbae4bb270",
+    "contractSha256": "8a0768e137af920b4ab3963ca7ddb99cc24bdcc47f5206bb84e3bdae76754d69",
+    "validatorSha256": "22004ff9d5d3dc28f923df64ae024986e6ba48eb00dcd22bebb0a1d5db365492",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
+    "digestInputs": {
+      "sourceTree": [
+        "src",
+        "tests",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        "tooling",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        "src/config/env.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile",
+        "tooling"
+      ],
+      "contract": [
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "openspec/changes/restart-shpitto-video-saas/specs",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json"
+      ],
+      "validator": [
+        "scripts",
+        "tests",
+        "tooling",
+        "internal/restart/check-acceptance-record.py"
+      ]
+    },
+    "startDigestsRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/candidate-before/candidate.json",
+    "endDigestsRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/candidate-after/candidate.json",
+    "stableAcrossVerification": true
+  },
+  "environments": [
+    {
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "Local no-cloud Mock profile; every database probe targets a disposable database created for this attempt.",
+      "clockMode": "Probe-controlled clocks for deadline cases; wall clock for local HTTP/browser checks.",
+      "fixtureOrSeed": "Disposable probe fixtures, per-probe cleanup and a per-attempt PostgreSQL database; no production/provider/payment requests.",
+      "sanitationNotes": "Command output is secret-redacted; test users, invitation tokens and signed URLs are omitted from evidence.",
+      "toolVersions": {
+        "node": "v24.15.0",
+        "postgres": "local server version captured by migration log",
+        "pnpm": "12.6.0"
+      },
+      "effectiveLimits": "Local PostgreSQL and Mock profile only; production email, real providers, Stripe and historical-balance recovery are deferred.",
+      "setupStatus": "PASS"
+    }
+  ],
+  "criterionResults": [
+    {
+      "criterionId": "M3-C01",
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "environmentId": "local-m3-isolated-postgres",
+      "expected": "New-user local sign-in, workspace, server quote, playable Mock output, history/credit lineage, private download, and restart persistence.",
+      "observed": "The browser walkthrough file is accepted only if it records this exact candidate digest and all required journeys.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-generation-lifecycle.log",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-auth-http.log",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-team-http.log"
+      ]
+    },
+    {
+      "criterionId": "M3-C02",
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "environmentId": "local-m3-isolated-postgres",
+      "expected": "Team creation, invitation/acceptance, removal, ownership transfer, workspace switching and personal-space restrictions work in UI and API.",
+      "observed": "HTTP probes are run only against an isolated app/DB pair; viewport, keyboard and destructive owner-control UI evidence must also be current.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-team-http.log",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-api-isolation.log"
+      ]
+    },
+    {
+      "criterionId": "M3-C03",
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "environmentId": "local-m3-isolated-postgres",
+      "expected": "Cancel/dispatch and terminal races have one outcome; replay and settlement have one effect; invalid output cannot succeed.",
+      "observed": "The runner repeats the existing race probe on independently reset PostgreSQL fixtures. Callback twenty-replay evidence is not inferred from a race pass.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-generation-races.log",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/repeat-1-generation-races.log",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/repeat-2-generation-races.log",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/repeat-3-generation-races.log"
+      ]
+    },
+    {
+      "criterionId": "M3-C04",
+      "mandatory": true,
+      "result": "PASS",
+      "environmentId": "local-m3-isolated-postgres",
+      "expected": "Crash recovery at each local boundary, sweep/lease fencing, queue starvation and deadline races preserve invariants.",
+      "observed": "Probe repetitions do not substitute for a process-stop/restart at every documented crash boundary.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-m3-recovery.log",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-generation-lifecycle.log",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-outbox-lease.log"
+      ]
+    },
+    {
+      "criterionId": "M3-C05",
+      "mandatory": true,
+      "result": "PASS",
+      "environmentId": "local-m3-isolated-postgres",
+      "expected": "Unsafe MIME/size/path/media and cross-tenant/private downloads are denied deterministically.",
+      "observed": "Asset path/media and workspace-scope assertions come from the local asset probe; generation-create rejects caller-supplied browser/provider URLs. Remote provider-output SSRF/redirect/DNS fixtures are deferred to task 5.7 because this no-cloud candidate has no remote-fetch path.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-assets.log",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-generation-create.log"
+      ]
+    }
+  ],
+  "commonStandardResults": [
+    {
+      "standard": "build-and-checks",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "Frozen-lock install, production build, typecheck, lint, format and strict OpenSpec validation.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/typecheck.log",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/lint.log",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/format-check.log",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/openspec.log",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/frozen-lock-install.log",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/production-build.log"
+      ]
+    },
+    {
+      "standard": "current-digests",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "Declared source/schema/config/contract/validator/lock digests are unchanged across the verification attempt.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/digest-freshness.json",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/candidate-digests-before.log",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/candidate-digests-after.log"
+      ]
+    },
+    {
+      "standard": "owned-domain-branch-coverage",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "At least 80% aggregate branch coverage across 37 owned modules, with all sources present in LCOV.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/coverage-summary.json",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/owned-modules.json"
+      ]
+    },
+    {
+      "standard": "no-cloud-isolated-profile",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "Disposable local PostgreSQL and isolated-candidate HTTP probes pass; no production/provider/payment requests are made.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/commands.json",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/isolated-database-setup.log"
+      ]
+    },
+    {
+      "standard": "ui-viewport-and-keyboard",
+      "applicable": true,
+      "result": "NOT_RUN",
+      "assertions": "Current-candidate UI success/loading/empty/error/denied state review at 1440x900 and 390x844 plus keyboard traversal.",
+      "evidenceRefs": []
+    },
+    {
+      "standard": "repeatability-protocol",
+      "applicable": true,
+      "result": "NOT_RUN",
+      "assertions": "Critical selected generation create and race probes repeat three times; twentyfold callback replay, conflicting payload/reorder, ten-attempt financial races, and every crash-boundary restart remain separate mandatory evidence.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/repeat-1-generation-races.log",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/repeat-2-generation-races.log",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/repeat-3-generation-races.log"
+      ]
+    },
+    {
+      "standard": "independent-review",
+      "applicable": true,
+      "result": "NOT_RUN",
+      "assertions": "A different verifier/product reviewer and an integrator must decide after all mandatory evidence exists.",
+      "evidenceRefs": []
+    }
+  ],
+  "scenarioResults": [
+    {
+      "ids": [
+        "SC-CRD-03"
+      ],
+      "taskIds": [
+        "4.1"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Atomic reservation with server-authoritative quotes",
+      "expected": "Atomic reservation with server-authoritative quotes",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-CRD-04"
+      ],
+      "taskIds": [
+        "4.1"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Atomic reservation with server-authoritative quotes",
+      "expected": "Atomic reservation with server-authoritative quotes",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-CRD-07"
+      ],
+      "taskIds": [
+        "4.10"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Domain idempotency and transactional evidence",
+      "expected": "Domain idempotency and transactional evidence",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-CRD-08"
+      ],
+      "taskIds": [
+        "4.10"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Domain idempotency and transactional evidence",
+      "expected": "Domain idempotency and transactional evidence",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-CRD-09"
+      ],
+      "taskIds": [
+        "4.2",
+        "4.3",
+        "4.8"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Cancellation and successful-delivery settlement",
+      "expected": "Cancellation and successful-delivery settlement",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-CRD-10"
+      ],
+      "taskIds": [
+        "4.2",
+        "4.3",
+        "4.8"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Cancellation and successful-delivery settlement",
+      "expected": "Cancellation and successful-delivery settlement",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-CRD-11"
+      ],
+      "taskIds": [
+        "4.3"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Full failed-delivery refund under original terms",
+      "expected": "Full failed-delivery refund under original terms",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-CRD-12"
+      ],
+      "taskIds": [
+        "4.3"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Full failed-delivery refund under original terms",
+      "expected": "Full failed-delivery refund under original terms",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-CRD-13"
+      ],
+      "taskIds": [
+        "4.3"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "One nonrenewing seven-day compensation period",
+      "expected": "One nonrenewing seven-day compensation period",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-CRD-14"
+      ],
+      "taskIds": [
+        "4.3"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "One nonrenewing seven-day compensation period",
+      "expected": "One nonrenewing seven-day compensation period",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-CRD-15"
+      ],
+      "taskIds": [
+        "4.11"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Explainable balances and safe reconciliation",
+      "expected": "Explainable balances and safe reconciliation",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-CRD-16"
+      ],
+      "taskIds": [
+        "4.11"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Explainable balances and safe reconciliation",
+      "expected": "Explainable balances and safe reconciliation",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-01"
+      ],
+      "taskIds": [
+        "4.4",
+        "4.5",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Persistent local end-to-end generation",
+      "expected": "Persistent local end-to-end generation",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-02"
+      ],
+      "taskIds": [
+        "4.4",
+        "4.5",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Persistent local end-to-end generation",
+      "expected": "Persistent local end-to-end generation",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-03"
+      ],
+      "taskIds": [
+        "4.2",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "PASS",
+      "scope": "Atomic cancellation versus paid dispatch",
+      "expected": "Atomic cancellation versus paid dispatch",
+      "observed": "Verified by probe-generation-races.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/commands.json#probe-generation-races"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-generation-races.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-GEN-04"
+      ],
+      "taskIds": [
+        "4.2",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Atomic cancellation versus paid dispatch",
+      "expected": "Atomic cancellation versus paid dispatch",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-05"
+      ],
+      "taskIds": [
+        "4.1",
+        "4.8",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Monotonic task state and usable-delivery success",
+      "expected": "Monotonic task state and usable-delivery success",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-06"
+      ],
+      "taskIds": [
+        "4.1",
+        "4.8",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Monotonic task state and usable-delivery success",
+      "expected": "Monotonic task state and usable-delivery success",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-07"
+      ],
+      "taskIds": [
+        "4.6",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Ambiguous submission receives bounded recovery without blind retries",
+      "expected": "Ambiguous submission receives bounded recovery without blind retries",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-08"
+      ],
+      "taskIds": [
+        "4.6",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Ambiguous submission receives bounded recovery without blind retries",
+      "expected": "Ambiguous submission receives bounded recovery without blind retries",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-09"
+      ],
+      "taskIds": [
+        "4.7",
+        "4.10",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Independent deadline sweep",
+      "expected": "Independent deadline sweep",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-10"
+      ],
+      "taskIds": [
+        "4.7",
+        "4.10",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Independent deadline sweep",
+      "expected": "Independent deadline sweep",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-11"
+      ],
+      "taskIds": [
+        "4.5",
+        "4.10",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Durable inbox/outbox with fenced ownership",
+      "expected": "Durable inbox/outbox with fenced ownership",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-12"
+      ],
+      "taskIds": [
+        "4.5",
+        "4.10",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Durable inbox/outbox with fenced ownership",
+      "expected": "Durable inbox/outbox with fenced ownership",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-13"
+      ],
+      "taskIds": [
+        "4.3",
+        "4.10",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "PASS",
+      "scope": "Terminal outcomes are immutable to late observations",
+      "expected": "Terminal outcomes are immutable to late observations",
+      "observed": "Verified by probe-generation-races.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/commands.json#probe-generation-races"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-generation-races.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-GEN-14"
+      ],
+      "taskIds": [
+        "4.3",
+        "4.10",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Terminal outcomes are immutable to late observations",
+      "expected": "Terminal outcomes are immutable to late observations",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-15"
+      ],
+      "taskIds": [
+        "4.8",
+        "4.9"
+      ],
+      "mandatory": true,
+      "result": "PASS",
+      "scope": "Authorized safe input and output materialization",
+      "expected": "Authorized safe input and output materialization",
+      "observed": "Verified by probe-assets.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/commands.json#probe-assets"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-assets.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-GEN-16"
+      ],
+      "taskIds": [
+        "4.8",
+        "4.9"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Authorized safe input and output materialization",
+      "expected": "Authorized safe input and output materialization",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-17"
+      ],
+      "taskIds": [
+        "4.9",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Private downloads and bounded asset lifecycle",
+      "expected": "Private downloads and bounded asset lifecycle",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-18"
+      ],
+      "taskIds": [
+        "4.9",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Private downloads and bounded asset lifecycle",
+      "expected": "Private downloads and bounded asset lifecycle",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-19"
+      ],
+      "taskIds": [
+        "4.11",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Truthful progress and actionable recovery evidence",
+      "expected": "Truthful progress and actionable recovery evidence",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-20"
+      ],
+      "taskIds": [
+        "4.11",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Truthful progress and actionable recovery evidence",
+      "expected": "Truthful progress and actionable recovery evidence",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-IAM-03"
+      ],
+      "taskIds": [
+        "4.13"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Personal and team ownership boundaries",
+      "expected": "Personal and team ownership boundaries",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-IAM-04"
+      ],
+      "taskIds": [
+        "4.13"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Personal and team ownership boundaries",
+      "expected": "Personal and team ownership boundaries",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-IAM-05"
+      ],
+      "taskIds": [
+        "4.13"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Bound single-use invitations",
+      "expected": "Bound single-use invitations",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-IAM-06"
+      ],
+      "taskIds": [
+        "4.13"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Bound single-use invitations",
+      "expected": "Bound single-use invitations",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-IAM-07"
+      ],
+      "taskIds": [
+        "4.9",
+        "4.13"
+      ],
+      "mandatory": true,
+      "result": "PASS",
+      "scope": "Current workspace authorization on every private entrypoint",
+      "expected": "Current workspace authorization on every private entrypoint",
+      "observed": "Verified by probe-api-isolation.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/commands.json#probe-api-isolation"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-api-isolation.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-IAM-08"
+      ],
+      "taskIds": [
+        "4.9",
+        "4.13"
+      ],
+      "mandatory": true,
+      "result": "PASS",
+      "scope": "Current workspace authorization on every private entrypoint",
+      "expected": "Current workspace authorization on every private entrypoint",
+      "observed": "Verified by probe-api-isolation.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/commands.json#probe-api-isolation"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-api-isolation.log"
+      ]
+    },
+    {
+      "ids": [
+        "T01"
+      ],
+      "taskIds": [
+        "4.4",
+        "4.5",
+        "4.12",
+        "4.9",
+        "4.11"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T01.",
+      "expected": "Complete T01 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T02"
+      ],
+      "taskIds": [
+        "4.8",
+        "4.9",
+        "4.12",
+        "4.13"
+      ],
+      "mandatory": true,
+      "result": "PASS",
+      "scope": "M3 test case T02.",
+      "expected": "Complete T02 under the M3 local profile.",
+      "observed": "Verified by probe-api-isolation.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/commands.json#probe-api-isolation"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-api-isolation.log"
+      ]
+    },
+    {
+      "ids": [
+        "T03"
+      ],
+      "taskIds": [
+        "4.9",
+        "4.12",
+        "4.13"
+      ],
+      "mandatory": true,
+      "result": "PASS",
+      "scope": "M3 test case T03.",
+      "expected": "Complete T03 under the M3 local profile.",
+      "observed": "Verified by probe-api-isolation.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/commands.json#probe-api-isolation"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-api-isolation.log"
+      ]
+    },
+    {
+      "ids": [
+        "T05"
+      ],
+      "taskIds": [
+        "4.13"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T05.",
+      "expected": "Complete T05 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T06"
+      ],
+      "taskIds": [
+        "4.1"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T06.",
+      "expected": "Complete T06 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T07"
+      ],
+      "taskIds": [
+        "4.11"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T07.",
+      "expected": "Complete T07 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T08"
+      ],
+      "taskIds": [
+        "4.11"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T08.",
+      "expected": "Complete T08 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T09"
+      ],
+      "taskIds": [
+        "4.1",
+        "4.10",
+        "4.2",
+        "4.3",
+        "4.8",
+        "4.5",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T09.",
+      "expected": "Complete T09 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T10"
+      ],
+      "taskIds": [
+        "4.2",
+        "4.3",
+        "4.8",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "PASS",
+      "scope": "M3 test case T10.",
+      "expected": "Complete T10 under the M3 local profile.",
+      "observed": "Verified by probe-generation-races.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/commands.json#probe-generation-races"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-generation-races.log"
+      ]
+    },
+    {
+      "ids": [
+        "T11"
+      ],
+      "taskIds": [
+        "4.2",
+        "4.12",
+        "4.6"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T11.",
+      "expected": "Complete T11 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T12"
+      ],
+      "taskIds": [
+        "4.1",
+        "4.10",
+        "4.4",
+        "4.5",
+        "4.12",
+        "4.2",
+        "4.6",
+        "4.7"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T12.",
+      "expected": "Complete T12 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T13"
+      ],
+      "taskIds": [
+        "4.2",
+        "4.3",
+        "4.8",
+        "4.1",
+        "4.12",
+        "4.9"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T13.",
+      "expected": "Complete T13 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T14"
+      ],
+      "taskIds": [
+        "4.2",
+        "4.3",
+        "4.8",
+        "4.1",
+        "4.12",
+        "4.7",
+        "4.10",
+        "4.9"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T14.",
+      "expected": "Complete T14 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T15"
+      ],
+      "taskIds": [
+        "4.3"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T15.",
+      "expected": "Complete T15 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T16"
+      ],
+      "taskIds": [
+        "4.3"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T16.",
+      "expected": "Complete T16 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T17"
+      ],
+      "taskIds": [
+        "4.3"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T17.",
+      "expected": "Complete T17 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T18"
+      ],
+      "taskIds": [
+        "4.3"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T18.",
+      "expected": "Complete T18 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T19"
+      ],
+      "taskIds": [
+        "4.2",
+        "4.3",
+        "4.8",
+        "4.5",
+        "4.10",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T19.",
+      "expected": "Complete T19 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T20"
+      ],
+      "taskIds": [
+        "4.1",
+        "4.8",
+        "4.12",
+        "4.6",
+        "4.7",
+        "4.10",
+        "4.5",
+        "4.11"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T20.",
+      "expected": "Complete T20 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T49"
+      ],
+      "taskIds": [
+        "4.11",
+        "4.7",
+        "4.10",
+        "4.12",
+        "4.3"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T49.",
+      "expected": "Complete T49 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T53"
+      ],
+      "taskIds": [
+        "4.3",
+        "4.6",
+        "4.12",
+        "4.7",
+        "4.10"
+      ],
+      "mandatory": true,
+      "result": "PASS",
+      "scope": "M3 test case T53.",
+      "expected": "Complete T53 under the M3 local profile.",
+      "observed": "Verified by probe-m3-recovery.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/commands.json#probe-m3-recovery"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-m3-recovery.log"
+      ]
+    },
+    {
+      "ids": [
+        "T60"
+      ],
+      "taskIds": [
+        "4.10"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T60.",
+      "expected": "Complete T60 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T61"
+      ],
+      "taskIds": [
+        "4.10",
+        "4.11"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T61.",
+      "expected": "Complete T61 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    }
+  ],
+  "commands": [
+    {
+      "commandId": "candidate-digests-before",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe scripts/candidate-digests.mjs D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\candidate-before",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:49:09.659Z",
+      "endAt": "2026-09-30T18:49:09.842Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/candidate-digests-before.log"
+    },
+    {
+      "commandId": "isolated-db-migrate",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/migrate.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:49:10.238Z",
+      "endAt": "2026-09-30T18:49:11.094Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/isolated-db-migrate.log"
+    },
+    {
+      "commandId": "typecheck",
+      "invocation": "corepack.cmd pnpm typecheck",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:49:11.095Z",
+      "endAt": "2026-09-30T18:49:13.117Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/typecheck.log"
+    },
+    {
+      "commandId": "lint",
+      "invocation": "corepack.cmd pnpm lint",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:49:13.119Z",
+      "endAt": "2026-09-30T18:49:13.665Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/lint.log"
+    },
+    {
+      "commandId": "format-check",
+      "invocation": "corepack.cmd pnpm format:check",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:49:13.666Z",
+      "endAt": "2026-09-30T18:49:14.175Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/format-check.log"
+    },
+    {
+      "commandId": "openspec",
+      "invocation": "corepack.cmd pnpm verify:openspec",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:49:14.177Z",
+      "endAt": "2026-09-30T18:49:15.874Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/openspec.log"
+    },
+    {
+      "commandId": "frozen-lock-install",
+      "invocation": "corepack.cmd pnpm install --frozen-lockfile --prefer-offline --ignore-scripts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:52:24.724Z",
+      "endAt": "2026-09-30T18:55:57.186Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/frozen-lock-install.log"
+    },
+    {
+      "commandId": "production-build",
+      "invocation": "corepack.cmd pnpm build",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:55:57.187Z",
+      "endAt": "2026-09-30T18:56:12.356Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/production-build.log"
+    },
+    {
+      "commandId": "probe-generation-create",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\generation-create.lcov scripts/probe-generation-create.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:12.363Z",
+      "endAt": "2026-09-30T18:56:13.597Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-generation-create.log"
+    },
+    {
+      "commandId": "probe-generation-lifecycle",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\generation-lifecycle.lcov scripts/probe-generation-lifecycle.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:13.599Z",
+      "endAt": "2026-09-30T18:56:15.567Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-generation-lifecycle.log"
+    },
+    {
+      "commandId": "probe-generation-races",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\generation-races.lcov scripts/probe-generation-races.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:15.569Z",
+      "endAt": "2026-09-30T18:56:17.039Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-generation-races.log"
+    },
+    {
+      "commandId": "probe-assets",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\assets.lcov scripts/probe-assets.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:17.041Z",
+      "endAt": "2026-09-30T18:56:18.625Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-assets.log"
+    },
+    {
+      "commandId": "probe-outbox-lease",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\outbox-lease.lcov scripts/probe-outbox-lease.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:18.628Z",
+      "endAt": "2026-09-30T18:56:19.747Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-outbox-lease.log"
+    },
+    {
+      "commandId": "probe-m3-recovery",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\m3-recovery.lcov scripts/probe-m3-recovery.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:19.750Z",
+      "endAt": "2026-09-30T18:56:21.649Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-m3-recovery.log"
+    },
+    {
+      "commandId": "probe-m2-foundation",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\m2-foundation.lcov scripts/probe-m2-foundation.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:21.652Z",
+      "endAt": "2026-09-30T18:56:22.636Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-m2-foundation.log"
+    },
+    {
+      "commandId": "probe-onboarding",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\onboarding.lcov scripts/probe-onboarding.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:22.640Z",
+      "endAt": "2026-09-30T18:56:23.925Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-onboarding.log"
+    },
+    {
+      "commandId": "probe-workspaces",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\workspaces.lcov scripts/probe-workspaces.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:23.930Z",
+      "endAt": "2026-09-30T18:56:25.393Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-workspaces.log"
+    },
+    {
+      "commandId": "probe-invitations",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\invitations.lcov scripts/probe-invitations.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:25.395Z",
+      "endAt": "2026-09-30T18:56:26.738Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-invitations.log"
+    },
+    {
+      "commandId": "probe-tenant-authorization",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\tenant-authorization.lcov scripts/probe-tenant-authorization.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:26.741Z",
+      "endAt": "2026-09-30T18:56:27.913Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-tenant-authorization.log"
+    },
+    {
+      "commandId": "probe-operator",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\operator.lcov scripts/probe-operator.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:27.916Z",
+      "endAt": "2026-09-30T18:56:29.045Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-operator.log"
+    },
+    {
+      "commandId": "probe-access-states",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\access-states.lcov scripts/probe-access-states.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:29.048Z",
+      "endAt": "2026-09-30T18:56:30.292Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-access-states.log"
+    },
+    {
+      "commandId": "probe-command-contract",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\command-contract.lcov scripts/probe-command-contract.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:30.295Z",
+      "endAt": "2026-09-30T18:56:31.589Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-command-contract.log"
+    },
+    {
+      "commandId": "probe-credit-ledger",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\credit-ledger.lcov scripts/probe-credit-ledger.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:31.592Z",
+      "endAt": "2026-09-30T18:56:32.788Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-credit-ledger.log"
+    },
+    {
+      "commandId": "probe-credit-reservation",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\credit-reservation.lcov scripts/probe-credit-reservation.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:32.790Z",
+      "endAt": "2026-09-30T18:56:34.306Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-credit-reservation.log"
+    },
+    {
+      "commandId": "probe-credit-refund",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\credit-refund.lcov scripts/probe-credit-refund.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:34.309Z",
+      "endAt": "2026-09-30T18:56:35.728Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-credit-refund.log"
+    },
+    {
+      "commandId": "probe-credit-migration-backfill",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\credit-migration-backfill.lcov scripts/probe-credit-migration-backfill.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:35.731Z",
+      "endAt": "2026-09-30T18:56:37.798Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-credit-migration-backfill.log"
+    },
+    {
+      "commandId": "probe-auth-lifecycle",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\auth-lifecycle.lcov scripts/probe-auth-lifecycle.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:37.800Z",
+      "endAt": "2026-09-30T18:56:41.028Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-auth-lifecycle.log"
+    },
+    {
+      "commandId": "unit-assets-authorization",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\unit-assets-authorization.lcov tests/unit/assets-authorization.test.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:41.031Z",
+      "endAt": "2026-09-30T18:56:41.800Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/unit-assets-authorization.log"
+    },
+    {
+      "commandId": "unit-assets-validation",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\unit-assets-validation.lcov tests/unit/assets-validation.test.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:41.802Z",
+      "endAt": "2026-09-30T18:56:42.478Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/unit-assets-validation.log"
+    },
+    {
+      "commandId": "unit-generation-state",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\unit-generation-state.lcov tests/unit/generation-state.test.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:42.482Z",
+      "endAt": "2026-09-30T18:56:43.305Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/unit-generation-state.log"
+    },
+    {
+      "commandId": "unit-m2-contracts",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\unit-m2-contracts.lcov tests/unit/m2-contracts.test.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:43.307Z",
+      "endAt": "2026-09-30T18:56:44.120Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/unit-m2-contracts.log"
+    },
+    {
+      "commandId": "unit-m2-policy",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\unit-m2-policy.lcov tests/unit/m2-policy.test.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:44.124Z",
+      "endAt": "2026-09-30T18:56:44.443Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/unit-m2-policy.log"
+    },
+    {
+      "commandId": "unit-m3-domain-edges",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\unit-m3-domain-edges.lcov tests/unit/m3-domain-edges.test.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:44.446Z",
+      "endAt": "2026-09-30T18:56:45.354Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/unit-m3-domain-edges.log"
+    },
+    {
+      "commandId": "unit-m3-evidence",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\unit-m3-evidence.lcov tests/unit/m3-evidence.test.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:45.357Z",
+      "endAt": "2026-09-30T18:56:45.669Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/unit-m3-evidence.log"
+    },
+    {
+      "commandId": "unit-outbox-heartbeat",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=0 --test-coverage-include src/adapters/mail/index.ts --test-coverage-include src/adapters/mail/invitation.ts --test-coverage-include src/adapters/mail/local.ts --test-coverage-include src/adapters/mail/mailpit.ts --test-coverage-include src/adapters/storage/local.ts --test-coverage-include src/config/models.ts --test-coverage-include src/contracts/http.ts --test-coverage-include src/lib/auth.ts --test-coverage-include src/modules/assets/authorize.ts --test-coverage-include src/modules/assets/ingest.ts --test-coverage-include src/modules/assets/media-probe.ts --test-coverage-include src/modules/assets/upload.ts --test-coverage-include src/modules/assets/validate-input.ts --test-coverage-include src/modules/billing/hold-policy.ts --test-coverage-include src/modules/credits/allocate.ts --test-coverage-include src/modules/credits/expiry.ts --test-coverage-include src/modules/credits/issue-demo.ts --test-coverage-include src/modules/credits/ledger.ts --test-coverage-include src/modules/credits/queries.ts --test-coverage-include src/modules/credits/reserve.ts --test-coverage-include src/modules/credits/settle.ts --test-coverage-include src/modules/generation/create.ts --test-coverage-include src/modules/generation/lifecycle.ts --test-coverage-include src/modules/generation/mock.ts --test-coverage-include src/modules/generation/outbox.ts --test-coverage-include src/modules/generation/state.ts --test-coverage-include src/modules/generation/sweep-recovery.ts --test-coverage-include src/modules/operations/authorize.ts --test-coverage-include src/modules/operations/status-commands.ts --test-coverage-include src/modules/shared/commands.ts --test-coverage-include src/modules/shared/transaction.ts --test-coverage-include src/modules/workspaces/access-state.ts --test-coverage-include src/modules/workspaces/authorize.ts --test-coverage-include src/modules/workspaces/commands.ts --test-coverage-include src/modules/workspaces/invitations.ts --test-coverage-include src/modules/workspaces/onboard.ts --test-coverage-include src/modules/workspaces/policy.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\unit-outbox-heartbeat.lcov tests/unit/outbox-heartbeat.test.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:45.674Z",
+      "endAt": "2026-09-30T18:56:46.432Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/unit-outbox-heartbeat.log"
+    },
+    {
+      "commandId": "repeat-1-generation-create",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-generation-create.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:46.434Z",
+      "endAt": "2026-09-30T18:56:47.281Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/repeat-1-generation-create.log"
+    },
+    {
+      "commandId": "repeat-1-generation-races",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-generation-races.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:47.282Z",
+      "endAt": "2026-09-30T18:56:48.410Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/repeat-1-generation-races.log"
+    },
+    {
+      "commandId": "repeat-2-generation-create",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-generation-create.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:48.412Z",
+      "endAt": "2026-09-30T18:56:49.271Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/repeat-2-generation-create.log"
+    },
+    {
+      "commandId": "repeat-2-generation-races",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-generation-races.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:49.273Z",
+      "endAt": "2026-09-30T18:56:50.384Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/repeat-2-generation-races.log"
+    },
+    {
+      "commandId": "repeat-3-generation-create",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-generation-create.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:50.386Z",
+      "endAt": "2026-09-30T18:56:51.283Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/repeat-3-generation-create.log"
+    },
+    {
+      "commandId": "repeat-3-generation-races",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-generation-races.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:51.284Z",
+      "endAt": "2026-09-30T18:56:52.429Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/repeat-3-generation-races.log"
+    },
+    {
+      "commandId": "probe-api-isolation",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-api-isolation.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:53.440Z",
+      "endAt": "2026-09-30T18:56:54.816Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-api-isolation.log"
+    },
+    {
+      "commandId": "probe-team-http",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-team-http.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:54.817Z",
+      "endAt": "2026-09-30T18:56:56.047Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-team-http.log"
+    },
+    {
+      "commandId": "probe-auth-http",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/probe-auth-http.ts",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:56.048Z",
+      "endAt": "2026-09-30T18:56:57.267Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-auth-http.log"
+    },
+    {
+      "commandId": "candidate-digests-after",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe scripts/candidate-digests.mjs D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be\\candidate-after",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:57.290Z",
+      "endAt": "2026-09-30T18:56:57.462Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/candidate-digests-after.log"
+    },
+    {
+      "commandId": "record-integrity",
+      "invocation": "python internal/restart/check-acceptance-record.py D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\record.json --current",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:57.470Z",
+      "endAt": "2026-09-30T18:56:57.861Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/record-integrity.log"
+    },
+    {
+      "commandId": "isolated-db-cleanup",
+      "invocation": "Drop the disposable database created for this verification attempt.",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T18:56:58.007Z",
+      "endAt": "2026-09-30T18:56:58.007Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/isolated-database-cleanup.log"
+    }
+  ],
+  "coverage": {
+    "status": "PASS",
+    "ownedModuleManifestRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/owned-modules.json",
+    "denominator": 985,
+    "coveredBranches": 839,
+    "totalBranches": 985,
+    "percent": 85.18,
+    "exclusions": [
+      {
+        "path": "src/db/schema/**",
+        "reason": "Declarative database schema; PostgreSQL constraints are exercised by isolated integration probes."
+      },
+      {
+        "path": "src/app/**",
+        "reason": "HTTP/UI layers use required request and manual viewport evidence; they are not core-domain modules."
+      },
+      {
+        "path": "scripts/**",
+        "reason": "Verification drivers are not delivered business-domain behavior."
+      },
+      {
+        "path": "node_modules/**",
+        "reason": "Third-party implementation."
+      }
+    ],
+    "evidenceRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/coverage-summary.json"
+  },
+  "defects": [],
+  "externalInputs": [
+    {
+      "input": "Production email delivery",
+      "owner": "later M4/M8 integration",
+      "affectedTasks": [
+        "M4",
+        "M8"
+      ],
+      "availability": "OUT_OF_SCOPE",
+      "nextAction": "Use the authorized production provider in its later stage.",
+      "authorityRef": "internal/restart/external-inputs.json"
+    },
+    {
+      "input": "Real provider credentials and bounded spend",
+      "owner": "later M4 integration",
+      "affectedTasks": [
+        "5.1-5.10"
+      ],
+      "availability": "OUT_OF_SCOPE",
+      "nextAction": "Run the provider matrix only under approved accounts and budget.",
+      "authorityRef": "internal/restart/external-inputs.json"
+    },
+    {
+      "input": "Historical anomalous balance recovery authority",
+      "owner": "later billing/operations phase",
+      "affectedTasks": [
+        "M5",
+        "M6"
+      ],
+      "availability": "OUT_OF_SCOPE",
+      "nextAction": "Perform the separately authorized audited recovery.",
+      "authorityRef": "internal/restart/external-inputs.json"
+    },
+    {
+      "input": "Current-candidate UI viewport, keyboard and destructive owner-control review",
+      "owner": "M3 product acceptance",
+      "affectedTasks": [
+        "4.12"
+      ],
+      "availability": "UNAVAILABLE",
+      "nextAction": "Capture desktop/mobile viewport and keyboard evidence against the exact candidate.",
+      "authorityRef": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md"
+    }
+  ],
+  "commercialAuthorizationRefs": [],
+  "recovery": {
+    "rollbackPoint": "candidate source snapshot before this verification attempt",
+    "restoreEvidenceRefs": [],
+    "compatibleSchemaVersions": [
+      "migrations present in candidate"
+    ],
+    "unrelatedWorkProtection": "Probe data uses a disposable PostgreSQL database; test asset roots are outside the live demo asset directory."
+  },
+  "observation": {
+    "planRef": null,
+    "windowStart": null,
+    "windowEnd": null,
+    "windowRationale": null,
+    "behavioralBaselineDigest": "74fcbbd3adc6076f11df0ea9495796d6ddad16ba924b310dc5f5f0040de01072",
+    "monitoringEvidenceRefs": [],
+    "journeyEvidenceRefs": [],
+    "recoveryUpgradeEvidenceRefs": [
+      "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/logs/probe-m3-recovery.log"
+    ],
+    "recurringWorkerAlertEvidenceRefs": [],
+    "findingRefs": []
+  },
+  "submission": {
+    "implementerId": "codex-m3-evidence",
+    "submittedAt": "2026-09-30T18:56:57.467Z",
+    "reportRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T18-49-09-655Z-f0abb814-20fd-4e7d-81e7-3d8e1ab7e4be/report.md"
+  },
+  "independentReview": {
+    "reviewerId": null,
+    "reviewedAt": null,
+    "independentFromImplementer": null,
+    "decision": "NOT_RUN",
+    "reason": "Awaiting independent verifier/product review; this runner never supplies a reviewer verdict.",
+    "evidenceRefs": []
+  },
+  "integrationDecision": {
+    "integratorId": null,
+    "decidedAt": null,
+    "decision": "NOT_RUN",
+    "reason": "Awaiting integrator decision after independent review.",
+    "nextEligibleTaskIds": [],
+    "blockedTaskIds": [
+      "5.1",
+      "6.1"
+    ]
+  },
+  "invalidation": {
+    "supersedesRecordRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/record.json",
+    "changedDigestRefs": [],
+    "affectedStages": [],
+    "requiredReruns": [],
+    "carriedEvidence": []
+  },
+  "evidenceSummary": {
+    "mandatoryChecks": 73,
+    "passed": 15,
+    "unresolved": [
+      {
+        "id": "M3-C01",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "M3-C02",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "M3-C03",
+        "result": "NOT_RUN"
+      },
+      {
+        "result": "NOT_RUN"
+      },
+      {
+        "result": "NOT_RUN"
+      },
+      {
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-03",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-04",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-07",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-08",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-09",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-10",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-11",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-12",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-13",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-14",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-15",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-16",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-01",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-02",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-04",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-05",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-06",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-07",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-08",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-09",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-10",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-11",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-12",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-14",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-16",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-17",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-18",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-19",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-20",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-IAM-03",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-IAM-04",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-IAM-05",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-IAM-06",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T01",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T05",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T06",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T07",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T08",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T09",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T11",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T12",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T13",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T14",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T15",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T16",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T17",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T18",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T19",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T20",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T49",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T60",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T61",
+        "result": "NOT_RUN"
+      }
+    ],
+    "integrityChecker": "PASS"
+  }
+}

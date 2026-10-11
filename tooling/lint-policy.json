@@ -1,0 +1,19 @@
+{
+  "sourceRoots": ["src", "scripts"],
+  "excludedRoots": ["legacy", "apps", "builder", "packages", "sites", "internal", ".next", "node_modules"],
+  "forbiddenImportPrefixes": ["apps/", "builder/", "packages/", "sites/", "legacy/"],
+  "serverBoundaryRoots": ["src/db/", "src/modules/shared/", "src/adapters/"],
+  "forbiddenServerBoundaryImports": ["next/", "react", "react-dom", "react-admin", "better-auth", "@trigger.dev/"],
+  "forbiddenEnvironmentAccessOutside": ["src/config/env.ts"],
+  "environmentPatternScannerFiles": ["scripts/check-source-boundaries.mjs"],
+  "environmentAccessAllowlist": [
+    "scripts/maintenance/backup-db.mjs",
+    "scripts/maintenance/restore-db.mjs",
+    "scripts/create-local-candidate-repo.mjs",
+    "scripts/package-release.ts",
+    "scripts/run-m8-local-preflight.mjs",
+    "scripts/verify-local-candidate.mjs",
+    "scripts/verify-local-fulfillment.mjs"
+    ,"scripts/check-candidate-evidence.mjs"
+  ]
+}

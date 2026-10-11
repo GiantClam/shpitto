@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "1.0",
+  "release": "v1",
+  "registryOwner": "governed-skills",
+  "protectedPaths": [
+    "src/db",
+    "src/modules",
+    "src/adapters",
+    "src/app/api/auth",
+    "src/app/api/billing",
+    "src/app/api/generation",
+    "src/app/api/webhooks",
+    "src/db/migrations",
+    "scripts/check-*",
+    ".shpitto/contracts"
+  ],
+  "skills": [
+    {"id": "quick-start", "scope": "environment setup and local demo", "status": "planned"},
+    {"id": "add-provider", "scope": "provider adapter and catalog contracts", "status": "planned"},
+    {"id": "add-generation-task", "scope": "declared generation task extension", "status": "planned"},
+    {"id": "configure-credits", "scope": "versioned plan and tariff configuration", "status": "planned"},
+    {"id": "extend-assets", "scope": "declared asset type and storage view", "status": "planned"},
+    {"id": "deploy-template", "scope": "supported deployment configuration", "status": "planned"},
+    {"id": "security-review", "scope": "scoped boundary review and fixes", "status": "planned"},
+    {"id": "upgrade-template", "scope": "versioned migration and change set", "status": "planned"},
+    {"id": "customize-brand", "scope": "brand tokens, assets and copy", "status": "planned"},
+    {"id": "create-page", "scope": "approved presentation route", "status": "planned"},
+    {"id": "modify-page", "scope": "declared component or page diff", "status": "planned"},
+    {"id": "customize-site", "scope": "shared shell and approved presentation", "status": "planned"}
+  ]
+}

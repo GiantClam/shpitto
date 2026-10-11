@@ -1,0 +1,35 @@
+✔ all four selected schemas are inspected, byte-bound, and disabled for live use (1.532ms)
+✔ strict public DTO rejects every unapproved top-level and nested vendor field (0.7184ms)
+✔ schema or exact-version drift blocks new submission contracts without a silent fallback (0.2609ms)
+✔ safe preset is server-owned and all four mappings fit inspected schema fields (1.5135ms)
+✔ mapping rechecks crop consent instead of trusting a forged validated TypeScript object (0.2646ms)
+✔ accepted historical contracts map after current registry removal, while new admission is rejected (1.1863ms)
+✔ accepted contract mapping refuses unsupported versions and unsupported version-one presets (0.2505ms)
+✔ normalized observations retain an immutable copy of the accepted catalog (0.3499ms)
+✔ crop consent binds exact authorized ready asset, workspace, dimensions and crop revision (2.6129ms)
+✔ frozen snapshot retains quote, deadline, endpoint and digests independent of later object changes (0.4164ms)
+✔ submit normalization distinguishes known rejection from transport uncertainty and malformed success (0.2277ms)
+✔ completed-with-error is failure and provider output remains a candidate (0.2407ms)
+✔ Mock port delegates deterministic identity and observation to existing Mock domain functions (12.036ms)
+✔ builds pinned T2V create request with safe schema fields and no automatic retry (3.5598ms)
+✔ builds pinned I2V request with owned image and omits unsupported aspect_ratio (0.4983ms)
+✔ uses configured server-side image resolver and rejects arbitrary image URLs (0.3208ms)
+✔ live I2V requires an explicit server-owned image resolver before any provider call (0.7614ms)
+✔ transport timeout is unknown and never retried or converted to rejection (0.4293ms)
+✔ explicit validation rejection is definitelyRejected while 5xx stays unknown (0.6294ms)
+✔ status and result use exact persisted prediction ID and normalize errors/output (0.4436ms)
+✔ mismatched ID and malformed response are rejected before attachment (0.2013ms)
+✔ status and result responses without the persisted prediction ID are rejected (0.2551ms)
+✔ live mode remains blocked while the catalog row is disabled (0.4388ms)
+✔ request builder only accepts the exact persisted Replicate contract (11.87ms)
+✔ configuration and identity errors fail closed before provider attachment (0.3627ms)
+✔ invalid endpoint/webhook settings, missing IDs and transport errors stay bounded (0.6341ms)
+✔ adapter refuses non-Replicate persisted refs and malformed upstream status responses (0.4532ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 27
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 590.2566

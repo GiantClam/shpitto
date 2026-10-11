@@ -1,0 +1,28 @@
+▶ M3 evidence integrity
+  ✔ browser PASS labels alone cannot stand in for required journeys and UI states (0.8774ms)
+  ✔ browser checks require retained artifacts and observed assertions (0.8315ms)
+  ✔ contradictory or duplicate browser results cannot be hidden by one passing row (0.2215ms)
+  ✔ an additional failed or incomplete browser check prevents approval (0.1386ms)
+  ✔ LCOV branch totals remain branch-based and normalize Windows absolute paths (0.9261ms)
+  ✔ separate verification runs union stable branch IDs without counting repeats twice (0.2754ms)
+  ✔ a missing owned source or malformed branch report fails coverage (0.1717ms)
+  ✔ zero-branch and failed suites cannot claim coverage (0.0954ms)
+  ✔ missing mandatory evidence stays in progress; a recorded failure fails the stage (0.1285ms)
+  ✔ changed candidate bytes make any result stale, never ready for review (0.0511ms)
+✔ M3 evidence integrity (4.5325ms)
+ℹ tests 10
+ℹ suites 1
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 147.1831
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report

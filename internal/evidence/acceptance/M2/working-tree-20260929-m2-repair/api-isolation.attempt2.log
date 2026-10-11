@@ -1,0 +1,1 @@
+GET /api/auth/get-session returned HTTP 500 with a non-JSON body (0 characters).

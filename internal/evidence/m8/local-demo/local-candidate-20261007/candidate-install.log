@@ -1,0 +1,137 @@
+=== extract ===
+
+=== install ===
+✓ Lockfile passes supply-chain policies (verified 9d ago)
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: C:\Users\liula\AppData\Local\pnpm\store\v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 121, reused 121, downloaded 0, added 69
+Progress: resolved 156, reused 155, downloaded 0, added 103
+Progress: resolved 191, reused 191, downloaded 0, added 143
+Progress: resolved 214, reused 214, downloaded 0, added 168
+Progress: resolved 251, reused 250, downloaded 0, added 205
+Progress: resolved 274, reused 274, downloaded 0, added 230
+Progress: resolved 297, reused 297, downloaded 0, added 255
+Progress: resolved 308, reused 308, downloaded 0, added 272
+Progress: resolved 348, reused 348, downloaded 0, added 317
+Progress: resolved 390, reused 390, downloaded 0, added 360
+Progress: resolved 416, reused 416, downloaded 0, added 391
+Progress: resolved 436, reused 436, downloaded 0, added 417
+Progress: resolved 459, reused 459, downloaded 0, added 442
+Progress: resolved 459, reused 459, downloaded 0, added 446
+Progress: resolved 459, reused 459, downloaded 0, added 448
+Packages: +459
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 459, reused 459, downloaded 0, added 459, done
+
+dependencies:
++ @trigger.dev/sdk 4.6.4
++ better-auth 1.7.6
++ drizzle-orm 0.45.3
++ fumadocs-core 16.15.14
++ fumadocs-ui 16.15.14
++ next 16.3.6
++ pg 8.23.0
++ react 19.3.0
++ react-admin 5.15.4
++ react-dom 19.3.0
++ stripe 22.6.2
+
+devDependencies:
++ @types/node 24.0.0
++ @types/react 19.0.0
++ @types/react-dom 19.0.0
++ drizzle-kit 0.31.11
++ typescript 6.0.3
+
+Done in 2m 35.2s using pnpm v12.6.0
+
+=== build ===
+▲ Next.js 16.3.6 (Turbopack)
+✓ Running next.config.ts took 83ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 4.7s
+  Running TypeScript ...
+  Finished TypeScript in 4.7s ...
+  Collecting page data using 31 workers ...
+  Generating static pages using 31 workers (0/29) ...
+  Generating static pages using 31 workers (7/29) 
+  Generating static pages using 31 workers (14/29) 
+  Generating static pages using 31 workers (21/29) 
+✓ Generating static pages using 31 workers (29/29) in 190ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /admin/[[...segments]]
+├ ƒ /api/admin/affiliates/commands/[command]
+├ ƒ /api/admin/affiliates/holds
+├ ƒ /api/admin/affiliates/reviews
+├ ƒ /api/admin/affiliates/status
+├ ƒ /api/admin/audit
+├ ƒ /api/admin/billing
+├ ƒ /api/admin/commands/[command]
+├ ƒ /api/admin/generations
+├ ƒ /api/admin/me
+├ ƒ /api/admin/recovery/[workspaceId]
+├ ƒ /api/admin/recovery/[workspaceId]/sweep
+├ ƒ /api/admin/recovery/[workspaceId]/webhook-replay
+├ ƒ /api/admin/refunds/pending
+├ ƒ /api/admin/refunds/preview
+├ ƒ /api/admin/security
+├ ƒ /api/admin/step-up
+├ ƒ /api/admin/users
+├ ƒ /api/admin/workspaces
+├ ƒ /api/admin/workspaces/[workspaceId]
+├ ƒ /api/admin/workspaces/[workspaceId]/details
+├ ƒ /api/affiliates/referral
+├ ƒ /api/auth/[...all]
+├ ƒ /api/checkout/fixture/[sessionId]
+├ ƒ /api/healthz
+├ ƒ /api/invitations/accept
+├ ƒ /api/onboarding
+├ ƒ /api/webhooks/affiliate
+├ ƒ /api/webhooks/fal/[attemptNonce]
+├ ƒ /api/webhooks/replicate/[attemptNonce]
+├ ƒ /api/webhooks/stripe
+├ ƒ /api/workspaces
+├ ƒ /api/workspaces/[workspaceId]/assets
+├ ƒ /api/workspaces/[workspaceId]/assets/[assetId]
+├ ƒ /api/workspaces/[workspaceId]/assets/[assetId]/download
+├ ƒ /api/workspaces/[workspaceId]/billing
+├ ƒ /api/workspaces/[workspaceId]/billing/checkout
+├ ƒ /api/workspaces/[workspaceId]/billing/portal
+├ ƒ /api/workspaces/[workspaceId]/generations
+├ ƒ /api/workspaces/[workspaceId]/generations/[taskId]/cancel
+├ ƒ /api/workspaces/[workspaceId]/generations/[taskId]/claim
+├ ƒ /api/workspaces/[workspaceId]/invitations
+├ ƒ /api/workspaces/[workspaceId]/leave
+├ ƒ /api/workspaces/[workspaceId]/members/[userId]/demote
+├ ƒ /api/workspaces/[workspaceId]/members/[userId]/remove
+├ ƒ /api/workspaces/[workspaceId]/transfer
+├ ƒ /billing/portal/fixture/[sessionId]
+├ ƒ /checkout/fixture/[sessionId]
+├ ƒ /dashboard
+├ ƒ /dashboard/team
+├ ○ /docs
+├ ○ /docs/api
+├ ○ /docs/releases
+├ ○ /docs/skills
+├ ○ /docs/template
+├ ƒ /invitations/accept
+├ ƒ /login
+├ ƒ /reset-password
+├ ○ /signup
+├ ƒ /workspaces/[w]/billing
+├ ƒ /workspaces/[w]/settings/members
+└ ƒ /workspaces/new
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+$ next build

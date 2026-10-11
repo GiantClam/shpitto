@@ -1,0 +1,758 @@
+[
+  {
+    "iteration": 1,
+    "probe": "command-contract",
+    "databaseName": "shpitto_m3_ind_1efb08a618a44d2fb71f",
+    "environmentId": "iteration-1-command-contract",
+    "assetRoot": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/temporary-assets-41u5zt",
+    "startedAt": "2026-10-01T02:21:33.874Z",
+    "status": "PASS",
+    "scheduling": "10 simultaneous identical semantic commands on independent transactions; one business effect and nine cached results. Then mismatched payload rejection; 20 sequential key-reordered semantic replays also asserted.",
+    "cleanup": {
+      "databaseDropped": true,
+      "temporaryAssetsRemoved": true
+    },
+    "postgresql": {
+      "version": "PostgreSQL 17.6 on x86_64-windows, compiled by msvc-19.44.35213, 64-bit",
+      "server_version": "17.6"
+    },
+    "beforeCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "observed": {
+      "status": "PASS",
+      "replayed": true,
+      "mismatchRejected": true,
+      "bigintAsDecimalString": true,
+      "quantityBoundaryRejected": true,
+      "stableSemanticHash": true,
+      "forgedOriginRejected": true,
+      "raceEffects": 1,
+      "raceAttempts": 10,
+      "replayCount": 20,
+      "raceReplayed": [
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    "assertions": {
+      "caseIds": [
+        "T09",
+        "T12"
+      ],
+      "scenarioIds": [
+        "SC-CRD-07"
+      ],
+      "attempts": 10,
+      "businessEffects": 1,
+      "replays": 9,
+      "repeatedSemanticReplays": 20,
+      "committedCommandIdentities": 2,
+      "conflictingPayloadRejected": true,
+      "assertionSource": "scripts/probe-command-contract.ts:49-80",
+      "assertionEvidence": "Unmodified probe assertions and emitted observed replay flags, exit 0."
+    },
+    "afterCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "endedAt": "2026-10-01T02:21:35.950Z"
+  },
+  {
+    "iteration": 1,
+    "probe": "generation-replay",
+    "databaseName": "shpitto_m3_ind_010440e765df40ea9785",
+    "environmentId": "iteration-1-generation-replay",
+    "assetRoot": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/temporary-assets-rPCe3x",
+    "startedAt": "2026-10-01T02:21:35.951Z",
+    "status": "PASS",
+    "scheduling": "10 simultaneous duplicate creates; 10 simultaneous duplicate cancels; 10 simultaneous identical normalized success observations, followed by 10 deterministic key-reordered sequential replays and a reordered outcome sequence. Fixed fixture clock 2026-09-29T08:00:00Z.",
+    "cleanup": {
+      "databaseDropped": true,
+      "temporaryAssetsRemoved": true
+    },
+    "postgresql": {
+      "version": "PostgreSQL 17.6 on x86_64-windows, compiled by msvc-19.44.35213, 64-bit",
+      "server_version": "17.6"
+    },
+    "fixtureCopySha256": "7ace5deee2697fef232d855ea123d6dd37fd95114ec258b9696ded8163a31b18",
+    "actualAssetRoot": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/temporary-assets-rPCe3x/.data/probe-generation-replay-assets",
+    "beforeCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "observed": {
+      "status": "PASS",
+      "scope": "M3 local Mock/domain repeatability",
+      "normalizedObservationFixture": "local Mock/domain observations; authenticated provider webhook inbox deferred to M4",
+      "callbackReplayCount": 20,
+      "callbackInterleaving": "10 concurrent deliveries followed by 10 deterministic key-reordered sequential replays",
+      "concurrentGenerationAttempts": 10,
+      "concurrentCreateReplay": {
+        "attempts": 10,
+        "effects": 1,
+        "replays": 9
+      },
+      "concurrentCancelReplay": {
+        "attempts": 10,
+        "effects": 1,
+        "replays": 9
+      },
+      "concurrentSettleReplay": {
+        "attempts": 10,
+        "effects": 1,
+        "replays": 9
+      },
+      "conflictingPayloadRejected": true,
+      "reorderedOutcomesQuarantined": 2,
+      "reorderedEventOrder": [
+        "mock-replay-event-late-failure",
+        "mock-replay-event-late-success"
+      ],
+      "terminalEffects": [
+        {
+          "status": "cancelled",
+          "count": "1"
+        },
+        {
+          "status": "succeeded",
+          "count": "1"
+        }
+      ],
+      "financialEffects": [
+        {
+          "entry_type": "consume",
+          "count": "1"
+        },
+        {
+          "entry_type": "grant_issued",
+          "count": "1"
+        },
+        {
+          "entry_type": "release",
+          "count": "1"
+        },
+        {
+          "entry_type": "reserve",
+          "count": "2"
+        }
+      ],
+      "callbackTaskAttempts": 1,
+      "callbackTaskAssets": 1,
+      "unrelatedRecordsUnchanged": true,
+      "authenticatedWebhookInbox": "NOT_RUN"
+    },
+    "assertions": {
+      "caseIds": [
+        "T09",
+        "T10",
+        "T11",
+        "T12",
+        "T19",
+        "T20"
+      ],
+      "concurrentCreate": {
+        "attempts": 10,
+        "effects": 1,
+        "replays": 9
+      },
+      "concurrentCancel": {
+        "attempts": 10,
+        "effects": 1,
+        "replays": 9
+      },
+      "concurrentSettle": {
+        "attempts": 10,
+        "effects": 1,
+        "replays": 9
+      },
+      "callbackReplayCount": 20,
+      "terminalEffects": [
+        {
+          "status": "cancelled",
+          "count": "1"
+        },
+        {
+          "status": "succeeded",
+          "count": "1"
+        }
+      ],
+      "financialEffects": [
+        {
+          "entry_type": "consume",
+          "count": "1"
+        },
+        {
+          "entry_type": "grant_issued",
+          "count": "1"
+        },
+        {
+          "entry_type": "release",
+          "count": "1"
+        },
+        {
+          "entry_type": "reserve",
+          "count": "2"
+        }
+      ],
+      "unrelatedRecordsUnchanged": true,
+      "authenticatedProviderWebhookInbox": "NOT_RUN",
+      "assertionSource": "scripts/probe-generation-replay.ts",
+      "assertionEvidence": "Unmodified local Mock/domain probe assertions and emitted exact final-state counts, exit 0."
+    },
+    "afterCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "endedAt": "2026-10-01T02:21:38.491Z"
+  },
+  {
+    "iteration": 2,
+    "probe": "command-contract",
+    "databaseName": "shpitto_m3_ind_007b0674af6b4f028f35",
+    "environmentId": "iteration-2-command-contract",
+    "assetRoot": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/temporary-assets-DY6Te4",
+    "startedAt": "2026-10-01T02:21:38.492Z",
+    "status": "PASS",
+    "scheduling": "10 simultaneous identical semantic commands on independent transactions; one business effect and nine cached results. Then mismatched payload rejection; 20 sequential key-reordered semantic replays also asserted.",
+    "cleanup": {
+      "databaseDropped": true,
+      "temporaryAssetsRemoved": true
+    },
+    "postgresql": {
+      "version": "PostgreSQL 17.6 on x86_64-windows, compiled by msvc-19.44.35213, 64-bit",
+      "server_version": "17.6"
+    },
+    "beforeCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "observed": {
+      "status": "PASS",
+      "replayed": true,
+      "mismatchRejected": true,
+      "bigintAsDecimalString": true,
+      "quantityBoundaryRejected": true,
+      "stableSemanticHash": true,
+      "forgedOriginRejected": true,
+      "raceEffects": 1,
+      "raceAttempts": 10,
+      "replayCount": 20,
+      "raceReplayed": [
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    "assertions": {
+      "caseIds": [
+        "T09",
+        "T12"
+      ],
+      "scenarioIds": [
+        "SC-CRD-07"
+      ],
+      "attempts": 10,
+      "businessEffects": 1,
+      "replays": 9,
+      "repeatedSemanticReplays": 20,
+      "committedCommandIdentities": 2,
+      "conflictingPayloadRejected": true,
+      "assertionSource": "scripts/probe-command-contract.ts:49-80",
+      "assertionEvidence": "Unmodified probe assertions and emitted observed replay flags, exit 0."
+    },
+    "afterCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "endedAt": "2026-10-01T02:21:40.638Z"
+  },
+  {
+    "iteration": 2,
+    "probe": "generation-replay",
+    "databaseName": "shpitto_m3_ind_8bc730937da344d9b791",
+    "environmentId": "iteration-2-generation-replay",
+    "assetRoot": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/temporary-assets-B8qWY3",
+    "startedAt": "2026-10-01T02:21:40.639Z",
+    "status": "PASS",
+    "scheduling": "10 simultaneous duplicate creates; 10 simultaneous duplicate cancels; 10 simultaneous identical normalized success observations, followed by 10 deterministic key-reordered sequential replays and a reordered outcome sequence. Fixed fixture clock 2026-09-29T08:00:00Z.",
+    "cleanup": {
+      "databaseDropped": true,
+      "temporaryAssetsRemoved": true
+    },
+    "postgresql": {
+      "version": "PostgreSQL 17.6 on x86_64-windows, compiled by msvc-19.44.35213, 64-bit",
+      "server_version": "17.6"
+    },
+    "fixtureCopySha256": "7ace5deee2697fef232d855ea123d6dd37fd95114ec258b9696ded8163a31b18",
+    "actualAssetRoot": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/temporary-assets-B8qWY3/.data/probe-generation-replay-assets",
+    "beforeCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "observed": {
+      "status": "PASS",
+      "scope": "M3 local Mock/domain repeatability",
+      "normalizedObservationFixture": "local Mock/domain observations; authenticated provider webhook inbox deferred to M4",
+      "callbackReplayCount": 20,
+      "callbackInterleaving": "10 concurrent deliveries followed by 10 deterministic key-reordered sequential replays",
+      "concurrentGenerationAttempts": 10,
+      "concurrentCreateReplay": {
+        "attempts": 10,
+        "effects": 1,
+        "replays": 9
+      },
+      "concurrentCancelReplay": {
+        "attempts": 10,
+        "effects": 1,
+        "replays": 9
+      },
+      "concurrentSettleReplay": {
+        "attempts": 10,
+        "effects": 1,
+        "replays": 9
+      },
+      "conflictingPayloadRejected": true,
+      "reorderedOutcomesQuarantined": 2,
+      "reorderedEventOrder": [
+        "mock-replay-event-late-failure",
+        "mock-replay-event-late-success"
+      ],
+      "terminalEffects": [
+        {
+          "status": "cancelled",
+          "count": "1"
+        },
+        {
+          "status": "succeeded",
+          "count": "1"
+        }
+      ],
+      "financialEffects": [
+        {
+          "entry_type": "consume",
+          "count": "1"
+        },
+        {
+          "entry_type": "grant_issued",
+          "count": "1"
+        },
+        {
+          "entry_type": "release",
+          "count": "1"
+        },
+        {
+          "entry_type": "reserve",
+          "count": "2"
+        }
+      ],
+      "callbackTaskAttempts": 1,
+      "callbackTaskAssets": 1,
+      "unrelatedRecordsUnchanged": true,
+      "authenticatedWebhookInbox": "NOT_RUN"
+    },
+    "assertions": {
+      "caseIds": [
+        "T09",
+        "T10",
+        "T11",
+        "T12",
+        "T19",
+        "T20"
+      ],
+      "concurrentCreate": {
+        "attempts": 10,
+        "effects": 1,
+        "replays": 9
+      },
+      "concurrentCancel": {
+        "attempts": 10,
+        "effects": 1,
+        "replays": 9
+      },
+      "concurrentSettle": {
+        "attempts": 10,
+        "effects": 1,
+        "replays": 9
+      },
+      "callbackReplayCount": 20,
+      "terminalEffects": [
+        {
+          "status": "cancelled",
+          "count": "1"
+        },
+        {
+          "status": "succeeded",
+          "count": "1"
+        }
+      ],
+      "financialEffects": [
+        {
+          "entry_type": "consume",
+          "count": "1"
+        },
+        {
+          "entry_type": "grant_issued",
+          "count": "1"
+        },
+        {
+          "entry_type": "release",
+          "count": "1"
+        },
+        {
+          "entry_type": "reserve",
+          "count": "2"
+        }
+      ],
+      "unrelatedRecordsUnchanged": true,
+      "authenticatedProviderWebhookInbox": "NOT_RUN",
+      "assertionSource": "scripts/probe-generation-replay.ts",
+      "assertionEvidence": "Unmodified local Mock/domain probe assertions and emitted exact final-state counts, exit 0."
+    },
+    "afterCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "endedAt": "2026-10-01T02:21:43.168Z"
+  },
+  {
+    "iteration": 3,
+    "probe": "command-contract",
+    "databaseName": "shpitto_m3_ind_c86b9eadfaeb483cb04f",
+    "environmentId": "iteration-3-command-contract",
+    "assetRoot": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/temporary-assets-woX8JN",
+    "startedAt": "2026-10-01T02:21:43.168Z",
+    "status": "PASS",
+    "scheduling": "10 simultaneous identical semantic commands on independent transactions; one business effect and nine cached results. Then mismatched payload rejection; 20 sequential key-reordered semantic replays also asserted.",
+    "cleanup": {
+      "databaseDropped": true,
+      "temporaryAssetsRemoved": true
+    },
+    "postgresql": {
+      "version": "PostgreSQL 17.6 on x86_64-windows, compiled by msvc-19.44.35213, 64-bit",
+      "server_version": "17.6"
+    },
+    "beforeCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "observed": {
+      "status": "PASS",
+      "replayed": true,
+      "mismatchRejected": true,
+      "bigintAsDecimalString": true,
+      "quantityBoundaryRejected": true,
+      "stableSemanticHash": true,
+      "forgedOriginRejected": true,
+      "raceEffects": 1,
+      "raceAttempts": 10,
+      "replayCount": 20,
+      "raceReplayed": [
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    "assertions": {
+      "caseIds": [
+        "T09",
+        "T12"
+      ],
+      "scenarioIds": [
+        "SC-CRD-07"
+      ],
+      "attempts": 10,
+      "businessEffects": 1,
+      "replays": 9,
+      "repeatedSemanticReplays": 20,
+      "committedCommandIdentities": 2,
+      "conflictingPayloadRejected": true,
+      "assertionSource": "scripts/probe-command-contract.ts:49-80",
+      "assertionEvidence": "Unmodified probe assertions and emitted observed replay flags, exit 0."
+    },
+    "afterCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "endedAt": "2026-10-01T02:21:45.248Z"
+  },
+  {
+    "iteration": 3,
+    "probe": "generation-replay",
+    "databaseName": "shpitto_m3_ind_7eb865cb8c6745f48d61",
+    "environmentId": "iteration-3-generation-replay",
+    "assetRoot": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/temporary-assets-j2P5dH",
+    "startedAt": "2026-10-01T02:21:45.248Z",
+    "status": "PASS",
+    "scheduling": "10 simultaneous duplicate creates; 10 simultaneous duplicate cancels; 10 simultaneous identical normalized success observations, followed by 10 deterministic key-reordered sequential replays and a reordered outcome sequence. Fixed fixture clock 2026-09-29T08:00:00Z.",
+    "cleanup": {
+      "databaseDropped": true,
+      "temporaryAssetsRemoved": true
+    },
+    "postgresql": {
+      "version": "PostgreSQL 17.6 on x86_64-windows, compiled by msvc-19.44.35213, 64-bit",
+      "server_version": "17.6"
+    },
+    "fixtureCopySha256": "7ace5deee2697fef232d855ea123d6dd37fd95114ec258b9696ded8163a31b18",
+    "actualAssetRoot": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/temporary-assets-j2P5dH/.data/probe-generation-replay-assets",
+    "beforeCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "observed": {
+      "status": "PASS",
+      "scope": "M3 local Mock/domain repeatability",
+      "normalizedObservationFixture": "local Mock/domain observations; authenticated provider webhook inbox deferred to M4",
+      "callbackReplayCount": 20,
+      "callbackInterleaving": "10 concurrent deliveries followed by 10 deterministic key-reordered sequential replays",
+      "concurrentGenerationAttempts": 10,
+      "concurrentCreateReplay": {
+        "attempts": 10,
+        "effects": 1,
+        "replays": 9
+      },
+      "concurrentCancelReplay": {
+        "attempts": 10,
+        "effects": 1,
+        "replays": 9
+      },
+      "concurrentSettleReplay": {
+        "attempts": 10,
+        "effects": 1,
+        "replays": 9
+      },
+      "conflictingPayloadRejected": true,
+      "reorderedOutcomesQuarantined": 2,
+      "reorderedEventOrder": [
+        "mock-replay-event-late-failure",
+        "mock-replay-event-late-success"
+      ],
+      "terminalEffects": [
+        {
+          "status": "cancelled",
+          "count": "1"
+        },
+        {
+          "status": "succeeded",
+          "count": "1"
+        }
+      ],
+      "financialEffects": [
+        {
+          "entry_type": "consume",
+          "count": "1"
+        },
+        {
+          "entry_type": "grant_issued",
+          "count": "1"
+        },
+        {
+          "entry_type": "release",
+          "count": "1"
+        },
+        {
+          "entry_type": "reserve",
+          "count": "2"
+        }
+      ],
+      "callbackTaskAttempts": 1,
+      "callbackTaskAssets": 1,
+      "unrelatedRecordsUnchanged": true,
+      "authenticatedWebhookInbox": "NOT_RUN"
+    },
+    "assertions": {
+      "caseIds": [
+        "T09",
+        "T10",
+        "T11",
+        "T12",
+        "T19",
+        "T20"
+      ],
+      "concurrentCreate": {
+        "attempts": 10,
+        "effects": 1,
+        "replays": 9
+      },
+      "concurrentCancel": {
+        "attempts": 10,
+        "effects": 1,
+        "replays": 9
+      },
+      "concurrentSettle": {
+        "attempts": 10,
+        "effects": 1,
+        "replays": 9
+      },
+      "callbackReplayCount": 20,
+      "terminalEffects": [
+        {
+          "status": "cancelled",
+          "count": "1"
+        },
+        {
+          "status": "succeeded",
+          "count": "1"
+        }
+      ],
+      "financialEffects": [
+        {
+          "entry_type": "consume",
+          "count": "1"
+        },
+        {
+          "entry_type": "grant_issued",
+          "count": "1"
+        },
+        {
+          "entry_type": "release",
+          "count": "1"
+        },
+        {
+          "entry_type": "reserve",
+          "count": "2"
+        }
+      ],
+      "unrelatedRecordsUnchanged": true,
+      "authenticatedProviderWebhookInbox": "NOT_RUN",
+      "assertionSource": "scripts/probe-generation-replay.ts",
+      "assertionEvidence": "Unmodified local Mock/domain probe assertions and emitted exact final-state counts, exit 0."
+    },
+    "afterCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "endedAt": "2026-10-01T02:21:47.744Z"
+  }
+]

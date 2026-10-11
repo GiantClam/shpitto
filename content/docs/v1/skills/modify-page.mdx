@@ -1,0 +1,40 @@
+---
+release: v1
+title: Skill · modify-page
+section: skills
+status: published
+relatedContracts: [D09, D28, D29, D30, G09, G28, G29]
+---
+
+# Skill · modify-page
+
+declared component or page diff
+
+Canonical invocation: read `skills/modify-page/SKILL.md` and follow its evidence contract.
+
+Modify a declared presentation page while preserving its real contracts.
+
+## Inputs
+- Page/component target, intended behavior and baseline/dirty-work manifest.
+
+## Allowed scope
+Approved presentation components, styles, content, route metadata and the
+declared shared brand tokens. Page-local styles must preserve the default
+shell's color, focus and control-size semantics.
+
+## Protected contracts
+Pricing bindings, checkout, auth, workspace, credits, generation and downloads remain server-owned.
+
+## Outputs and evidence
+Record semantic journey checks, responsive/accessibility checks, exact diff and rollback patch.
+
+## Recovery
+Revert only attributable page changes and identify overlaps before applying a patch.
+
+## Escalation
+Hard-coded prices, mock success, auth bypass or protected imports block completion.
+
+
+## Release boundary
+
+This reference describes the local governed workflow. Changes to external provider accounts, payment services, production email, payouts or protected business contracts require their separate stage evidence and are not authorized by this page.

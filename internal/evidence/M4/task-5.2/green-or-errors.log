@@ -1,0 +1,17 @@
+✔ builds pinned T2V create request with safe schema fields and no automatic retry (2.7368ms)
+✔ builds pinned I2V request with owned image and omits unsupported aspect_ratio (0.4081ms)
+✔ uses configured server-side image resolver and rejects arbitrary image URLs (0.2451ms)
+✔ transport timeout is unknown and never retried or converted to rejection (0.2843ms)
+✔ explicit validation rejection is definitelyRejected while 5xx stays unknown (0.265ms)
+✔ status and result use exact persisted prediction ID and normalize errors/output (0.3336ms)
+✔ mismatched ID and malformed response are rejected before attachment (0.3888ms)
+✔ live mode remains blocked while the catalog row is disabled (0.2152ms)
+✔ request builder only accepts the exact persisted Replicate contract (0.0848ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 462.3008

@@ -1,0 +1,24 @@
+{
+  "status": "SUCCEEDED",
+  "submittedAt": "2026-10-10T00:30:19.899Z",
+  "requestId": "01a12337-c628-7363-93bd-2e526b11514b",
+  "statusUrl": "https://queue.fal.run/fal-ai/wan/requests/01a12337-c628-7363-93bd-2e526b11514b/status",
+  "resultUrl": "https://queue.fal.run/fal-ai/wan/requests/01a12337-c628-7363-93bd-2e526b11514b",
+  "endpoint": "fal-ai/wan/v2.2-a14b/image-to-video",
+  "input": {
+    "resolution": "720p",
+    "numFrames": 81,
+    "framesPerSecond": 16,
+    "aspectRatio": "16:9",
+    "imageUrlSource": "server-owned fixture URL"
+  },
+  "pollCount": 75,
+  "lastObservedAt": "2026-10-10T00:37:25.635Z",
+  "resultKind": "outputCandidates",
+  "outputUrl": "https://v3b.fal.media/files/b/0aadc0db/UO1ZLaEOffvZHfzFnD6ZB_q5hPORM0.mp4",
+  "outputBytes": 4598998,
+  "outputSha256": "6ac44c1e75c0175a84f6fcfc41728d41fefc8c9a40f0136d65881dac86a30085",
+  "outputContentType": "video/mp4",
+  "costState": "UNKNOWN",
+  "costNote": "fal response did not expose a cost field"
+}

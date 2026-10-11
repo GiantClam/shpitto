@@ -1,0 +1,452 @@
+[
+  {
+    "iteration": 1,
+    "probe": "workspaces",
+    "databaseName": "shpitto_m3_ind_e24ce0439c444752a5e9",
+    "environmentId": "iteration-1-workspaces",
+    "assetRoot": "internal/evidence/M3/final-independent-race-repetitions-20261001/temporary-assets-6zmmMD",
+    "startedAt": "2026-10-01T02:19:23.162Z",
+    "status": "PASS",
+    "scheduling": "10 simultaneous last-owner attempts: index mod 3 removal/demotion/unverified transfer; then 10 simultaneous two-owner self-mutations: even removal, odd demotion.",
+    "cleanup": {
+      "databaseDropped": true,
+      "temporaryAssetsRemoved": true
+    },
+    "beforeCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "observed": {
+      "status": "PASS",
+      "personalRejected": 4,
+      "lastOwnerRaceRejected": 10,
+      "twoOwnerRaceAttempts": 10,
+      "twoOwnerRaceWinners": 1,
+      "twoOwnerRaceRejected": 9,
+      "minimumObservedOwners": 1,
+      "transferOwner": "workspace-probe-member-f0080b2d-3e64-4097-89bd-f205d93198cf"
+    },
+    "assertions": {
+      "caseIds": [
+        "T05.a"
+      ],
+      "lastOwnerAttempts": 10,
+      "rejectedLastOwnerAttempts": 10,
+      "twoOwnerAttempts": 10,
+      "winners": 1,
+      "rejected": 9,
+      "minimumObservedOwners": 1,
+      "exactCommittedOwnerCount": 1,
+      "workspaceVersionDelta": 1,
+      "assertionSource": "scripts/probe-workspaces.ts:96-137",
+      "assertionEvidence": "Full unmodified probe exit 0 plus emitted counters; exact final owner and version assertions are mandatory before PASS."
+    },
+    "afterCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "endedAt": "2026-10-01T02:19:25.537Z"
+  },
+  {
+    "iteration": 1,
+    "probe": "credit-reservation",
+    "databaseName": "shpitto_m3_ind_29489acf0ac34827ae08",
+    "environmentId": "iteration-1-credit-reservation",
+    "assetRoot": "internal/evidence/M3/final-independent-race-repetitions-20261001/temporary-assets-hLUbjp",
+    "startedAt": "2026-10-01T02:19:25.538Z",
+    "status": "PASS",
+    "scheduling": "10 simultaneous 40-credit reservation attempts against 50 credits; indexes alternate two independent pools, unique probe-race-0 through probe-race-9 keys; fixed fixture clock 2026-01-01T00:00:00Z.",
+    "cleanup": {
+      "databaseDropped": true,
+      "temporaryAssetsRemoved": true
+    },
+    "beforeCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "observed": {
+      "status": "PASS",
+      "replayed": true,
+      "fefoAllocation": [
+        "20",
+        "20"
+      ],
+      "expiredUnreservedExcluded": true,
+      "forgedPriceRejected": true,
+      "staleCatalogRejected": true,
+      "concurrentAffordableReservations": 1,
+      "raceAttempts": 10,
+      "failedRaceEffects": 0,
+      "onboardingDemoGrantSingleEffect": true,
+      "productionDemoRejected": true
+    },
+    "assertions": {
+      "caseIds": [
+        "T06",
+        "T09",
+        "T12"
+      ],
+      "attempts": 10,
+      "winners": 1,
+      "rejected": 9,
+      "reservations": 1,
+      "exactFinalGrant": {
+        "available": "10",
+        "reserved": "40"
+      },
+      "allocations": 1,
+      "ledgerEntries": 2,
+      "commandResults": 1,
+      "auditEvents": 2,
+      "outboxEvents": 2,
+      "rejectedRequestSideEffects": 0,
+      "assertionSource": "scripts/probe-credit-reservation.ts:118-140",
+      "assertionEvidence": "Full unmodified probe exit 0; deepStrictEqual of every listed final-state count is mandatory before PASS.",
+      "scenarioIds": [
+        "SC-CRD-03",
+        "SC-CRD-04"
+      ]
+    },
+    "afterCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "endedAt": "2026-10-01T02:19:27.876Z"
+  },
+  {
+    "iteration": 2,
+    "probe": "workspaces",
+    "databaseName": "shpitto_m3_ind_ab24762d1a054c07a88e",
+    "environmentId": "iteration-2-workspaces",
+    "assetRoot": "internal/evidence/M3/final-independent-race-repetitions-20261001/temporary-assets-BymWWU",
+    "startedAt": "2026-10-01T02:19:27.876Z",
+    "status": "PASS",
+    "scheduling": "10 simultaneous last-owner attempts: index mod 3 removal/demotion/unverified transfer; then 10 simultaneous two-owner self-mutations: even removal, odd demotion.",
+    "cleanup": {
+      "databaseDropped": true,
+      "temporaryAssetsRemoved": true
+    },
+    "beforeCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "observed": {
+      "status": "PASS",
+      "personalRejected": 4,
+      "lastOwnerRaceRejected": 10,
+      "twoOwnerRaceAttempts": 10,
+      "twoOwnerRaceWinners": 1,
+      "twoOwnerRaceRejected": 9,
+      "minimumObservedOwners": 1,
+      "transferOwner": "workspace-probe-member-f8a2c6b3-8fa9-466e-922d-cfd9298620a8"
+    },
+    "assertions": {
+      "caseIds": [
+        "T05.a"
+      ],
+      "lastOwnerAttempts": 10,
+      "rejectedLastOwnerAttempts": 10,
+      "twoOwnerAttempts": 10,
+      "winners": 1,
+      "rejected": 9,
+      "minimumObservedOwners": 1,
+      "exactCommittedOwnerCount": 1,
+      "workspaceVersionDelta": 1,
+      "assertionSource": "scripts/probe-workspaces.ts:96-137",
+      "assertionEvidence": "Full unmodified probe exit 0 plus emitted counters; exact final owner and version assertions are mandatory before PASS."
+    },
+    "afterCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "endedAt": "2026-10-01T02:19:30.196Z"
+  },
+  {
+    "iteration": 2,
+    "probe": "credit-reservation",
+    "databaseName": "shpitto_m3_ind_c744f8bac2524eb5a937",
+    "environmentId": "iteration-2-credit-reservation",
+    "assetRoot": "internal/evidence/M3/final-independent-race-repetitions-20261001/temporary-assets-YVzQhX",
+    "startedAt": "2026-10-01T02:19:30.197Z",
+    "status": "PASS",
+    "scheduling": "10 simultaneous 40-credit reservation attempts against 50 credits; indexes alternate two independent pools, unique probe-race-0 through probe-race-9 keys; fixed fixture clock 2026-01-01T00:00:00Z.",
+    "cleanup": {
+      "databaseDropped": true,
+      "temporaryAssetsRemoved": true
+    },
+    "beforeCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "observed": {
+      "status": "PASS",
+      "replayed": true,
+      "fefoAllocation": [
+        "20",
+        "20"
+      ],
+      "expiredUnreservedExcluded": true,
+      "forgedPriceRejected": true,
+      "staleCatalogRejected": true,
+      "concurrentAffordableReservations": 1,
+      "raceAttempts": 10,
+      "failedRaceEffects": 0,
+      "onboardingDemoGrantSingleEffect": true,
+      "productionDemoRejected": true
+    },
+    "assertions": {
+      "caseIds": [
+        "T06",
+        "T09",
+        "T12"
+      ],
+      "attempts": 10,
+      "winners": 1,
+      "rejected": 9,
+      "reservations": 1,
+      "exactFinalGrant": {
+        "available": "10",
+        "reserved": "40"
+      },
+      "allocations": 1,
+      "ledgerEntries": 2,
+      "commandResults": 1,
+      "auditEvents": 2,
+      "outboxEvents": 2,
+      "rejectedRequestSideEffects": 0,
+      "assertionSource": "scripts/probe-credit-reservation.ts:118-140",
+      "assertionEvidence": "Full unmodified probe exit 0; deepStrictEqual of every listed final-state count is mandatory before PASS.",
+      "scenarioIds": [
+        "SC-CRD-03",
+        "SC-CRD-04"
+      ]
+    },
+    "afterCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "endedAt": "2026-10-01T02:19:32.487Z"
+  },
+  {
+    "iteration": 3,
+    "probe": "workspaces",
+    "databaseName": "shpitto_m3_ind_0c89a9f98dcb47da9709",
+    "environmentId": "iteration-3-workspaces",
+    "assetRoot": "internal/evidence/M3/final-independent-race-repetitions-20261001/temporary-assets-m9JMRn",
+    "startedAt": "2026-10-01T02:19:32.487Z",
+    "status": "PASS",
+    "scheduling": "10 simultaneous last-owner attempts: index mod 3 removal/demotion/unverified transfer; then 10 simultaneous two-owner self-mutations: even removal, odd demotion.",
+    "cleanup": {
+      "databaseDropped": true,
+      "temporaryAssetsRemoved": true
+    },
+    "beforeCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "observed": {
+      "status": "PASS",
+      "personalRejected": 4,
+      "lastOwnerRaceRejected": 10,
+      "twoOwnerRaceAttempts": 10,
+      "twoOwnerRaceWinners": 1,
+      "twoOwnerRaceRejected": 9,
+      "minimumObservedOwners": 1,
+      "transferOwner": "workspace-probe-member-249f3050-2ea4-422b-a468-5d3c97155b44"
+    },
+    "assertions": {
+      "caseIds": [
+        "T05.a"
+      ],
+      "lastOwnerAttempts": 10,
+      "rejectedLastOwnerAttempts": 10,
+      "twoOwnerAttempts": 10,
+      "winners": 1,
+      "rejected": 9,
+      "minimumObservedOwners": 1,
+      "exactCommittedOwnerCount": 1,
+      "workspaceVersionDelta": 1,
+      "assertionSource": "scripts/probe-workspaces.ts:96-137",
+      "assertionEvidence": "Full unmodified probe exit 0 plus emitted counters; exact final owner and version assertions are mandatory before PASS."
+    },
+    "afterCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "endedAt": "2026-10-01T02:19:34.835Z"
+  },
+  {
+    "iteration": 3,
+    "probe": "credit-reservation",
+    "databaseName": "shpitto_m3_ind_0401926bed5d490b9596",
+    "environmentId": "iteration-3-credit-reservation",
+    "assetRoot": "internal/evidence/M3/final-independent-race-repetitions-20261001/temporary-assets-I2WWBK",
+    "startedAt": "2026-10-01T02:19:34.836Z",
+    "status": "PASS",
+    "scheduling": "10 simultaneous 40-credit reservation attempts against 50 credits; indexes alternate two independent pools, unique probe-race-0 through probe-race-9 keys; fixed fixture clock 2026-01-01T00:00:00Z.",
+    "cleanup": {
+      "databaseDropped": true,
+      "temporaryAssetsRemoved": true
+    },
+    "beforeCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "observed": {
+      "status": "PASS",
+      "replayed": true,
+      "fefoAllocation": [
+        "20",
+        "20"
+      ],
+      "expiredUnreservedExcluded": true,
+      "forgedPriceRejected": true,
+      "staleCatalogRejected": true,
+      "concurrentAffordableReservations": 1,
+      "raceAttempts": 10,
+      "failedRaceEffects": 0,
+      "onboardingDemoGrantSingleEffect": true,
+      "productionDemoRejected": true
+    },
+    "assertions": {
+      "caseIds": [
+        "T06",
+        "T09",
+        "T12"
+      ],
+      "attempts": 10,
+      "winners": 1,
+      "rejected": 9,
+      "reservations": 1,
+      "exactFinalGrant": {
+        "available": "10",
+        "reserved": "40"
+      },
+      "allocations": 1,
+      "ledgerEntries": 2,
+      "commandResults": 1,
+      "auditEvents": 2,
+      "outboxEvents": 2,
+      "rejectedRequestSideEffects": 0,
+      "assertionSource": "scripts/probe-credit-reservation.ts:118-140",
+      "assertionEvidence": "Full unmodified probe exit 0; deepStrictEqual of every listed final-state count is mandatory before PASS.",
+      "scenarioIds": [
+        "SC-CRD-03",
+        "SC-CRD-04"
+      ]
+    },
+    "afterCounts": {
+      "public.user": 0,
+      "app.workspaces": 0,
+      "app.workspace_members": 0,
+      "app.command_results": 0,
+      "app.generation_tasks": 0,
+      "app.credit_grants": 0,
+      "app.credit_reservations": 0,
+      "app.credit_allocations": 0,
+      "app.credit_ledger_entries": 0,
+      "app.audit_events": 0,
+      "app.outbox_events": 0
+    },
+    "endedAt": "2026-10-01T02:19:37.123Z"
+  }
+]

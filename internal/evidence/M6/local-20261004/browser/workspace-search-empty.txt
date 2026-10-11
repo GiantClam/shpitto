@@ -1,0 +1,39 @@
+- button "Open Next.js Dev Tools":
+- alert
+- button "Skip to content"
+- banner:
+  - button "Close menu":
+  - heading "Workspaces" [level=6]:
+    - generic: Workspaces
+  - button "Toggle light/dark mode":
+  - button "Refresh":
+  - button "Profile":
+    - text: superadmin
+- main:
+  - menu:
+    - menuitem "Dashboard":
+      - paragraph: Dashboard
+    - menuitem "Workspaces":
+      - paragraph: Workspaces
+    - menuitem "Users":
+      - paragraph: Users
+    - menuitem "Generations":
+      - paragraph: Generations
+    - menuitem "Billings":
+      - paragraph: Billings
+    - menuitem "Audits":
+      - paragraph: Audits
+    - menuitem "Affiliate reviews":
+      - paragraph: Affiliate reviews
+    - menuitem "Affiliate holds":
+      - paragraph: Affiliate holds
+  - text: Search
+  - searchbox "Search" [active]: does-not-match-m6
+  - generic: Status
+  - combobox "Status"
+  - textbox
+  - button "Add filter":
+    - text: Add filter
+  - paragraph:
+    - text: No Workspaces found using the current filters.
+    - button "Clear filters"

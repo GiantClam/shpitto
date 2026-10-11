@@ -1,0 +1,26 @@
+name: Verify restart root
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Enable pnpm 12
+        run: corepack enable
+      - name: Install the frozen root
+        run: corepack pnpm install --frozen-lockfile --ignore-scripts
+      - name: Verify the restart root
+        run: corepack pnpm verify

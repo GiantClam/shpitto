@@ -1,0 +1,49 @@
+{"status":"PASS","cancelClaimWinnerCount":1,"cancelClaimStatus":"cancelled","terminalStatuses":["quarantined","succeeded"],"terminalStatus":"succeeded","reservation":"consumed","attempts":1,"deadlineSuccessFence":{"successFirst":["succeeded","quarantined"],"deadlineFirst":["failed","quarantined"],"lateSuccessQuarantined":true},"crashAfterReserve":"failed","taskCount":5,"attemptCount":3,"assetCount":2}
+✔ scripts\probe-generation-races.ts (1047.9375ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1053.3173
+ℹ start of coverage report
+ℹ -------------------------------------------------------------------------------------------------------------------------
+ℹ file                 | line % | branch % | funcs % | uncovered lines
+ℹ -------------------------------------------------------------------------------------------------------------------------
+ℹ src                  |        |          |         | 
+ℹ  adapters            |        |          |         | 
+ℹ   storage            |        |          |         | 
+ℹ    local.ts          |  79.41 |    66.67 |   75.00 | 8-9 12-13 22-23 59-62 65-68
+ℹ  config              |        |          |         | 
+ℹ   models.ts          |  86.27 |    33.33 |   80.00 | 40-41 60-61 82-83 85-86 89-90 94-95 97-98
+ℹ  contracts           |        |          |         | 
+ℹ   http.ts            |  55.66 |    80.65 |   53.85 | 17-18 21-22 25-35 39-40 45-49 73 81-87 90-106
+ℹ  modules             |        |          |         | 
+ℹ   assets             |        |          |         | 
+ℹ    ingest.ts         |  88.54 |    19.23 |   80.00 | 21-24 70-71 78-79 92-94
+ℹ    media-probe.ts    |  93.10 |    37.50 |  100.00 | 27-28
+ℹ   billing            |        |          |         | 
+ℹ    hold-policy.ts    |  86.67 |    60.00 |  100.00 | 13-14
+ℹ   credits            |        |          |         | 
+ℹ    allocate.ts       |  89.50 |    29.41 |   66.67 | 39-42 183-199
+ℹ    ledger.ts         |  93.53 |    42.86 |  100.00 | 60-68
+ℹ    queries.ts        |  44.58 |    83.33 |   66.67 | 133-134 139-178 186-322
+ℹ    settle.ts         |  82.18 |    63.64 |   75.00 | 47-48 73-74 93-94 127-145 191-201
+ℹ   generation         |        |          |         | 
+ℹ    create.ts         |  82.59 |    46.15 |  100.00 | 73-74 79-80 87-88 91-97 103-104 106-118 142-143 160-172
+ℹ    lifecycle.ts      |  84.70 |    68.32 |   82.14 | 80-81 90-91 195-217 221-226 229-232 255-289 293-298 477-478 488-489
+ℹ    outbox.ts         |  31.85 |    66.67 |   12.50 | 20-69 84-92 97-116 119-122 125-128 132-135 139-142 146-157
+ℹ    state.ts          |  73.49 |    80.00 |   75.00 | 48-49 64-83
+ℹ    sweep-recovery.ts |  95.12 |    66.67 |   50.00 | 35-36
+ℹ   shared             |        |          |         | 
+ℹ    commands.ts       |  86.52 |    33.33 |  100.00 | 31-32 41-46 69-70 72-73
+ℹ    transaction.ts    | 100.00 |   100.00 |  100.00 | 
+ℹ   workspaces         |        |          |         | 
+ℹ    authorize.ts      |  52.00 |    50.00 |   25.00 | 26-30 32-33 39-51 58-64 67-75
+ℹ    policy.ts         |  53.90 |    44.44 |   27.27 | 27-29 35-39 42-49 52-57 93-104 107-116 119-133 136-141
+ℹ -------------------------------------------------------------------------------------------------------------------------
+ℹ all files            |  73.55 |    56.30 |   68.75 | 
+ℹ -------------------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

@@ -1,0 +1,19 @@
+{
+  "release": "v1",
+  "templateVersion": "0.1.0",
+  "candidatePolicy": "local-candidate-only",
+  "runtime": "Next.js standalone with local Docker fixtures",
+  "defaultDrivers": {
+    "storage": "local",
+    "generation": "mock",
+    "mail": "local",
+    "billing": "fixture"
+  },
+  "deferredExternalGates": [
+    "real provider accounts and durable output",
+    "Stripe test-mode account verification",
+    "FirstPromoter account and hosted settlement",
+    "vendor sales, merchant eligibility and production deployment"
+  ],
+  "releaseStatus": "preflight-only"
+}

@@ -1,0 +1,2 @@
+{"status":"PASS","databaseName":"m6_two_factor_probe_cfe482fecca44ed7938c60b366cda65b","enrollment":true,"invalidCodeRejected":true,"sessionRotation":true,"sameSession":true,"wrongSessionRejected":true,"expiredStepUpRejected":true,"mfaLoginChallenge":true,"roleRevocation":true,"disableRevokesStamps":true,"externalAccountsUsed":false}
+{"disposableDatabaseRemoved":true,"databaseName":"m6_two_factor_probe_cfe482fecca44ed7938c60b366cda65b"}

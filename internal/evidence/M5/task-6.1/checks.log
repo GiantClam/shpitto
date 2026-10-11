@@ -1,0 +1,4 @@
+$ tsc --noEmit
+Source boundary check passed for src, scripts.
+Format check passed.
+Database boundary check passed.

@@ -1,0 +1,65 @@
+{
+  "formatVersion": 1,
+  "rows": [
+    {
+      "key": "replicate-wan22-t2v",
+      "provider": "replicate",
+      "endpoint": "wan-video/wan-2.2-t2v-fast",
+      "version": "c483b1f7b892065bc58ebadb6381abf557f6b1f517d2ff0febb3fb635cf49b4d",
+      "inspectedAt": "2026-10-09T10:04:44.262Z",
+      "sourceUrl": "https://api.replicate.com/v1/models/wan-video/wan-2.2-t2v-fast",
+      "httpStatus": 200,
+      "schemaFile": "replicate-wan22-t2v.schema.json",
+      "schemaSha256": "bb24e298f722cd892bfe9bf608e08796ab249c921b10f87542b47dcdefb89f09",
+      "observedVersion": "c483b1f7b892065bc58ebadb6381abf557f6b1f517d2ff0febb3fb635cf49b4d",
+      "immutableBuild": true,
+      "inspection": "authenticated-read-only-model-version",
+      "liveAccountValidated": false,
+      "createdAt": "2026-01-16T16:41:42.463508Z"
+    },
+    {
+      "key": "replicate-wan22-i2v",
+      "provider": "replicate",
+      "endpoint": "wan-video/wan-2.2-i2v-fast",
+      "version": "4eaf2b01d3bf70d8a2e00b219efeb7cb415855ad18b7dacdc4cae664a73a6eea",
+      "inspectedAt": "2026-10-09T10:04:44.264Z",
+      "sourceUrl": "https://api.replicate.com/v1/models/wan-video/wan-2.2-i2v-fast",
+      "httpStatus": 200,
+      "schemaFile": "replicate-wan22-i2v.schema.json",
+      "schemaSha256": "469876007a77a8e92e9879c714f1273e003deac577a4bd6e699c1eff44440b6c",
+      "observedVersion": "4eaf2b01d3bf70d8a2e00b219efeb7cb415855ad18b7dacdc4cae664a73a6eea",
+      "immutableBuild": true,
+      "inspection": "authenticated-read-only-model-version",
+      "liveAccountValidated": false,
+      "createdAt": "2026-01-16T16:40:50.098789Z"
+    },
+    {
+      "key": "fal-wan22-t2v",
+      "provider": "fal",
+      "endpoint": "fal-ai/wan/v2.2-a14b/text-to-video",
+      "inspectedAt": "2026-10-01T03:05:04.695Z",
+      "sourceUrl": "https://fal.ai/api/openapi/queue/openapi.json?endpoint_id=fal-ai/wan/v2.2-a14b/text-to-video",
+      "httpStatus": 200,
+      "schemaFile": "fal-wan22-t2v.schema.json",
+      "schemaSha256": "b23b17eb18956feaaa318cfb77bf8ad7c9ff7af560fe274118bbf594a8a654c7",
+      "observedVersion": null,
+      "immutableBuild": false,
+      "inspection": "public-schema-only",
+      "liveAccountValidated": false
+    },
+    {
+      "key": "fal-wan22-i2v",
+      "provider": "fal",
+      "endpoint": "fal-ai/wan/v2.2-a14b/image-to-video",
+      "inspectedAt": "2026-10-01T03:05:05.317Z",
+      "sourceUrl": "https://fal.ai/api/openapi/queue/openapi.json?endpoint_id=fal-ai/wan/v2.2-a14b/image-to-video",
+      "httpStatus": 200,
+      "schemaFile": "fal-wan22-i2v.schema.json",
+      "schemaSha256": "012030973ffd700e00516d016e37996b10dd1b969fd2c79da21c92c8e130cef5",
+      "observedVersion": null,
+      "immutableBuild": false,
+      "inspection": "public-schema-only",
+      "liveAccountValidated": false
+    }
+  ]
+}

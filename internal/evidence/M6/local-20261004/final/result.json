@@ -1,0 +1,7 @@
+{
+  "status": "PASS",
+  "candidateUnchanged": true,
+  "coverageStatus": "PASS",
+  "commandCount": 50,
+  "environment": "local Docker PostgreSQL with isolated provider fixtures; no real accounts"
+}

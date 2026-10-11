@@ -1,0 +1,71 @@
+{"status":"FAIL","isolated":true,"results":[{"name":"same-workspace member may download but may not delete another creator asset","status":"PASS"},{"name":"current owner and recorded creator may delete","status":"PASS"},{"name":"foreign workspace and removed creator cannot delete","status":"PASS"},{"name":"creation winning the input lock prevents concurrent deletion","status":"PASS"},{"name":"deletion winning the input lock prevents stale task creation","status":"PASS"},{"name":"an output reused as task input retains the same active-reference protection","status":"PASS"},{"name":"stale materialization lease cannot spend retries or disrupt its successor","status":"PASS"},{"name":"lease expiry while awaiting generation_tasks lock cannot spend retries","status":"PASS"},{"name":"lease expiry while awaiting outbox_events lock cannot spend retries","status":"PASS"},{"name":"publication cannot commit after an asset foreign-key lock crosses the deadline","status":"PASS"},{"name":"dispatch resamples its deadline after the credit_accounts lock","status":"FAIL","error":"The expression evaluated to a falsy value:\n\n  assert.ok(error instanceof DomainError && error.code === 'CONFLICT')\n"},{"name":"cancel resamples its deadline after the credit_accounts lock","status":"FAIL","error":"The expression evaluated to a falsy value:\n\n  assert.ok(error instanceof DomainError && error.code === 'CONFLICT')\n"},{"name":"success resamples its deadline after the credit_accounts lock","status":"FAIL","error":"The expression evaluated to a falsy value:\n\n  assert.ok(error instanceof DomainError && error.code === 'CONFLICT')\n"},{"name":"success resamples its deadline after the generation_tasks lock","status":"FAIL","error":"The expression evaluated to a falsy value:\n\n  assert.ok(error instanceof DomainError && error.code === 'CONFLICT')\n"},{"name":"success resamples its deadline after the credit_reservations lock","status":"FAIL","error":"The expression evaluated to a falsy value:\n\n  assert.ok(error instanceof DomainError && error.code === 'CONFLICT')\n"},{"name":"success resamples its deadline after the outbox_events lock","status":"FAIL","error":"The expression evaluated to a falsy value:\n\n  assert.ok(error instanceof DomainError && error.code === 'CONFLICT')\n"},{"name":"actual worker resamples deadline after materialization lock waits","status":"PASS"},{"name":"actual worker resamples deadline after settlement lock waits","status":"FAIL","error":"Expected values to be strictly equal:\n+ actual - expected\n\n+ Error: Command failed: C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --input-type=module -e \n+         import {processLocalWorkerOnce} from './scripts/local-worker.ts';\n+         import {DomainError} from './src/db/contracts.ts';\n+         try {\n+           await processLocalWorkerOnce({workspaceId: '39e7dd48-91d6-4ab8-b304-c3b1d8f6cddc', runSweep: false});\n+           throw new Error('Worker must reject materialization after its deadline.');\n+         } catch (error) {\n+           if (!(error instanceof DomainError) || error.code !== 'CONFLICT') throw error;\n+         }\n+       \n+ file:///D:/github/shpitto/[eval1]:6\r\n+           throw new Error('Worker must reject materialization after its deadline.');\r\n+                 ^\r\n+ \r\n+ Error: Worker must reject materialization after its deadline.\r\n+     at file:///D:/github/shpitto/[eval1]:6:17\r\n+     at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\r\n+ \r\n+ Node.js v24.15.0\r\n+ \n+     at genericNodeError (node:internal/errors:985:15)\n+     at wrappedFn (node:internal/errors:539:14)\n+     at ChildProcess.exithandler (node:child_process:417:12)\n+     at ChildProcess.emit (node:events:509:28)\n+     at maybeClose (node:internal/child_process:1124:16)\n+     at ChildProcess._handle.onexit (node:internal/child_process:306:5) {\n+   cmd: 'C:\\\\Program Files\\\\nodejs\\\\node.exe --experimental-strip-types --input-type=module -e \\n' +\n+     \"        import {processLocalWorkerOnce} from './scripts/local-worker.ts';\\n\" +\n+     \"        import {DomainError} from './src/db/contracts.ts';\\n\" +\n+     '        try {\\n' +\n+     \"          await processLocalWorkerOnce({workspaceId: '39e7dd48-91d6-4ab8-b304-c3b1d8f6cddc', runSweep: false});\\n\" +\n+     \"          throw new Error('Worker must reject materialization after its deadline.');\\n\" +\n+     '        } catch (error) {\\n' +\n+     \"          if (!(error instanceof DomainError) || error.code !== 'CONFLICT') throw error;\\n\" +\n+     '        }\\n' +\n+     '      ',\n+   code: 1,\n+   killed: false,\n+   signal: null,\n+   stderr: 'file:///D:/github/shpitto/[eval1]:6\\r\\n' +\n+     \"          throw new Error('Worker must reject materialization after its deadline.');\\r\\n\" +\n+     '                ^\\r\\n' +\n+     '\\r\\n' +\n+     'Error: Worker must reject materialization after its deadline.\\r\\n' +\n+     '    at file:///D:/github/shpitto/[eval1]:6:17\\r\\n' +\n+     '    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\\r\\n' +\n+     '\\r\\n' +\n+     'Node.js v24.15.0\\r\\n',\n+   stdout: ''\n+ }\n- null\n"}]}
+AssertionError [ERR_ASSERTION]: Asset security regressions failed.
+
+7 !== 0
+
+    at run (file:///D:/github/shpitto/scripts/probe-asset-security.ts:376:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 7,
+  expected: 0,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+✖ scripts\probe-asset-security.ts (10939.0404ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10943.6868
+ℹ start of coverage report
+ℹ -----------------------------------------------------------------------------------------------------------------------------------------------
+ℹ file                 | line % | branch % | funcs % | uncovered lines
+ℹ -----------------------------------------------------------------------------------------------------------------------------------------------
+ℹ src                  |        |          |         | 
+ℹ  adapters            |        |          |         | 
+ℹ   storage            |        |          |         | 
+ℹ    local.ts          |  85.29 |    68.42 |   87.50 | 8-9 12-13 22-23 59-62
+ℹ  config              |        |          |         | 
+ℹ   models.ts          |  86.27 |    33.33 |   80.00 | 40-41 60-61 82-83 85-86 89-90 94-95 97-98
+ℹ  contracts           |        |          |         | 
+ℹ   http.ts            |  55.66 |    80.65 |   53.85 | 17-18 21-22 25-35 39-40 45-49 73 81-87 90-106
+ℹ  modules             |        |          |         | 
+ℹ   assets             |        |          |         | 
+ℹ    authorize.ts      |  75.71 |    92.86 |   42.86 | 19-21 24-28 31-39
+ℹ    cleanup.ts        |  24.90 |   100.00 |    0.00 | 44-46 48-50 52-54 57-102 104-113 115-123 125-135 137-144 146-149 157-244 248-249
+ℹ    ingest.ts         |  91.67 |    71.43 |   80.00 | 21-24 70-71 78-79
+ℹ    media-probe.ts    |  93.10 |    37.50 |  100.00 | 27-28
+ℹ   billing            |        |          |         | 
+ℹ    hold-policy.ts    |  86.67 |    60.00 |  100.00 | 13-14
+ℹ   credits            |        |          |         | 
+ℹ    allocate.ts       |  89.50 |    29.41 |   66.67 | 39-42 183-199
+ℹ    ledger.ts         |  93.53 |    42.86 |  100.00 | 60-68
+ℹ    queries.ts        |  44.58 |    83.33 |   66.67 | 133-134 139-178 186-322
+ℹ    settle.ts         |  82.18 |    60.00 |   75.00 | 47-48 73-74 93-94 127-145 191-201
+ℹ   generation         |        |          |         | 
+ℹ    create.ts         |  88.26 |    57.14 |  100.00 | 73-74 79-80 87-88 92-93 95-96 103-104 106-118 142-143 161-162
+ℹ    lifecycle.ts      |  82.28 |    41.18 |   82.14 | 72-73 80-81 90-91 122-123 195-217 221-226 229-232 255-289 293-298 467-475 477-478 488-489
+ℹ    mock.ts           |  85.11 |    50.00 |   66.67 | 29-31 40-41 43-44
+ℹ    outbox.ts         |  92.36 |    62.96 |   72.22 | 41-42 45-47 53-55 125-128
+ℹ    state.ts          |  73.49 |    80.00 |   75.00 | 48-49 64-83
+ℹ    sweep-recovery.ts |  36.59 |   100.00 |    0.00 | 16-41
+ℹ   shared             |        |          |         | 
+ℹ    commands.ts       |  86.52 |    33.33 |  100.00 | 31-32 41-46 69-70 72-73
+ℹ    transaction.ts    | 100.00 |   100.00 |  100.00 | 
+ℹ   workspaces         |        |          |         | 
+ℹ    authorize.ts      |  56.00 |    75.00 |   25.00 | 27-28 32-33 39-51 58-64 67-75
+ℹ    policy.ts         |  56.03 |    63.64 |   36.36 | 35-39 42-49 52-57 93-104 107-116 119-133 136-141
+ℹ -----------------------------------------------------------------------------------------------------------------------------------------------
+ℹ all files            |  72.59 |    57.64 |   67.09 | 
+ℹ -----------------------------------------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report
+
+✖ failing tests:
+
+test at scripts\probe-asset-security.ts:1:1
+✖ scripts\probe-asset-security.ts (10939.0404ms)
+  'test failed'

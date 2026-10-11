@@ -1,0 +1,286 @@
+{
+  "date": "2026-09-27",
+  "scope": "Planning artifacts only; no application execution",
+  "cliVersion": "1.8.0",
+  "strictValidation": {
+    "items": [
+      {
+        "id": "restart-shpitto-video-saas",
+        "type": "change",
+        "valid": true,
+        "issues": [],
+        "durationMs": 14
+      }
+    ],
+    "summary": {
+      "totals": {
+        "items": 1,
+        "passed": 1,
+        "failed": 0
+      },
+      "byType": {
+        "change": {
+          "items": 1,
+          "passed": 1,
+          "failed": 0
+        }
+      }
+    },
+    "version": "1.0",
+    "root": {
+      "path": "D:\\github\\shpitto",
+      "source": "nearest"
+    }
+  },
+  "artifactStatus": {
+    "isPlanningComplete": true,
+    "artifacts": [
+      {
+        "id": "proposal",
+        "status": "done"
+      },
+      {
+        "id": "specs",
+        "status": "done"
+      },
+      {
+        "id": "design",
+        "status": "done"
+      },
+      {
+        "id": "tasks",
+        "status": "done"
+      }
+    ]
+  },
+  "implementation": {
+    "total": 105,
+    "completed": 1,
+    "status": "M0_IN_PROGRESS",
+    "applicationTestsExecuted": false,
+    "currentEvidenceRecord": "internal/evidence/acceptance/M0/working-tree-20260927/record.json"
+  },
+  "independentReview": {
+    "verdict": "APPROVE",
+    "scope": "Staged acceptance supplement; English/Chinese policy, records, tasks/design/spec consistency only; no application acceptance",
+    "reviewer": "/root/acceptance_gate_audit",
+    "iterations": 3,
+    "corrections": [
+      "Synchronized 9.15 stable-only completion",
+      "Removed M7 self-entry wording",
+      "Attached each gate Acceptance line to its task",
+      "Separated SC-REL-13 RC and later labels",
+      "Clarified domain lock ordering in both languages"
+    ]
+  },
+  "documentaryChecks": {
+    "status": "passed",
+    "requirements": 80,
+    "scenarios": 175,
+    "tasks": 105,
+    "coverage": {
+      "D": "31/31",
+      "J": "10/10",
+      "T": "62/62",
+      "G": "31/31"
+    },
+    "markdownFiles": 38,
+    "localLinks": 1813,
+    "anchors": 1622,
+    "bilingual": {
+      "core": {
+        "requirements": 31,
+        "scenarios": 62,
+        "tasks": 35
+      },
+      "commercial": {
+        "requirements": 22,
+        "scenarios": 55,
+        "tasks": 24
+      },
+      "delivery": {
+        "requirements": 21,
+        "scenarios": 44,
+        "tasks": 30
+      },
+      "foundation": {
+        "requirements": 6,
+        "scenarios": 14,
+        "tasks": 16
+      }
+    },
+    "baselineFiles": 14,
+    "privateIgnoreProbes": 6,
+    "unknownDependencies": 0,
+    "dependencyCycles": 0,
+    "unmappedScenarios": 0,
+    "errors": []
+  },
+  "artifactHashes": [
+    {
+      "path": "openspec/baseline-manifest.json",
+      "sha256": "912c2678dfb6b1bee929731a4eac3f4ea5b429a1db270a14fecbf7dee221ae4e"
+    },
+    {
+      "path": "openspec/changes/restart-shpitto-video-saas/.openspec.yaml",
+      "sha256": "65ff9df577b54daf8b21917c880c564135cf80d9e6a2de690feb0f4a842393f1"
+    },
+    {
+      "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+      "sha256": "b597a035c61da01296d71979c1c16c4136f78c3e3d523b55158f0a2ca3de4ff0"
+    },
+    {
+      "path": "openspec/changes/restart-shpitto-video-saas/acceptance-record.template.json",
+      "sha256": "6f3a56cfb5f996a048baf558586b826725990ad30de6c4742f0cf231d95d7161"
+    },
+    {
+      "path": "openspec/changes/restart-shpitto-video-saas/acceptance-status.json",
+      "sha256": "85172bdc03a734aee720e1bbf68e08d638a5e857ae7e21d9de03665b1c7780e5"
+    },
+    {
+      "path": "openspec/changes/restart-shpitto-video-saas/design.md",
+      "sha256": "da74b21f27aa1ee4f84fee285fae8f6fb7aeb46e4ac44216b784fa46fff4a0bc"
+    },
+    {
+      "path": "openspec/changes/restart-shpitto-video-saas/proposal.md",
+      "sha256": "d0ce1e65b3dad8db03ea1f974a86f4d8da4ced708a0bc249ca98edc4594f2088"
+    },
+    {
+      "path": "openspec/changes/restart-shpitto-video-saas/specs/affiliate-programs/spec.md",
+      "sha256": "b177bd7d8992dbf1f58c62a15eba8093cd96f3c3fa649656569b23d7a2550b92"
+    },
+    {
+      "path": "openspec/changes/restart-shpitto-video-saas/specs/billing/spec.md",
+      "sha256": "61e9cd8447dc742199cfc0ff03d41f43ac1c9904f39f16e3508369a3652235c3"
+    },
+    {
+      "path": "openspec/changes/restart-shpitto-video-saas/specs/credit-accounting/spec.md",
+      "sha256": "7fc4408876ceca257fc5fa4993b9ff016fa2c78281a4d47fbac93bcb5e92c75f"
+    },
+    {
+      "path": "openspec/changes/restart-shpitto-video-saas/specs/deployment-release/spec.md",
+      "sha256": "aff5be1de940004b87f3a99ffa4a70f25286c7f3bdf0d3c5c7de94ab18cb2a5a"
+    },
+    {
+      "path": "openspec/changes/restart-shpitto-video-saas/specs/developer-documentation/spec.md",
+      "sha256": "541f55fc43cc44cae5ff24e1b3154a2d6e169f48ebfe4ee320fb7f8d0e5d019c"
+    },
+    {
+      "path": "openspec/changes/restart-shpitto-video-saas/specs/generation-lifecycle/spec.md",
+      "sha256": "6ecb2c70caf812d87243ef4077c7cd3e8faa0e1aa9d9fae73e91baa69a88280d"
+    },
+    {
+      "path": "openspec/changes/restart-shpitto-video-saas/specs/governed-skills/spec.md",
+      "sha256": "33a7326bb7e0d54bbdd861b049a47d028ca864ccdfa418e9065d99d410c3c8a9"
+    },
+    {
+      "path": "openspec/changes/restart-shpitto-video-saas/specs/identity-workspaces/spec.md",
+      "sha256": "85b840a829b5f7faac481b2ea7bfb21dfba190b8b97722be0226dd66ec92c813"
+    },
+    {
+      "path": "openspec/changes/restart-shpitto-video-saas/specs/operator-administration/spec.md",
+      "sha256": "5016de5ac6ef79d561b83298733badda4a5a0ba1db047ae8c6ed7d0924b5fcc9"
+    },
+    {
+      "path": "openspec/changes/restart-shpitto-video-saas/specs/provider-integrations/spec.md",
+      "sha256": "109a9d593a3fce765934beaaa768e2531ae3adb2d0812bb999437b4dceb97b3a"
+    },
+    {
+      "path": "openspec/changes/restart-shpitto-video-saas/specs/restart-foundation/spec.md",
+      "sha256": "7be9190b40ac9e232e6e6b9e42e8f3902d39313c5b37426a945320ed2fa6f784"
+    },
+    {
+      "path": "openspec/changes/restart-shpitto-video-saas/specs/template-commerce/spec.md",
+      "sha256": "b18c0a22aaa66a03fd09369fb80e1b1e189d989b6bce93b942c6fd81e6076aca"
+    },
+    {
+      "path": "openspec/changes/restart-shpitto-video-saas/tasks.md",
+      "sha256": "781bed4dbb2a55166e8def1bdafbf9d935e61192189726b1353434c94653954f"
+    },
+    {
+      "path": "openspec/changes/restart-shpitto-video-saas/traceability.json",
+      "sha256": "fb23fea3d2fa25b1843e1fd77e5e6fda402ee768e2854d5e98036f1a63108138"
+    },
+    {
+      "path": "openspec/changes/restart-shpitto-video-saas/traceability.md",
+      "sha256": "7541ff3c1f5be252d26a3b4a345d853751c800579ab516b18862b736f425063c"
+    },
+    {
+      "path": "openspec/config.yaml",
+      "sha256": "e7958a2d739d215fa239820c636d07f90382fcbf4d09d47f89e0f253ad544268"
+    },
+    {
+      "path": "openspec/project.md",
+      "sha256": "b5f03ad5add4fb5c794b8df83279bfe63f19c6c6c32a225440fab8b01cfe357c"
+    },
+    {
+      "path": "openspec/reviews/readiness.md",
+      "sha256": "67a922a7390088ffbd67cff27ab868ab09f20efe04e36d456518295576466d73"
+    },
+    {
+      "path": "openspec/reviews/shpitto-restart-commercial.zh-CN.md",
+      "sha256": "71b2b6d005cc4676f00c6c01676df2f221e13b94444c8120243af661c0b5287a"
+    },
+    {
+      "path": "openspec/reviews/shpitto-restart-core.zh-CN.md",
+      "sha256": "ae3b1e3a21c2323de23e1387e3d6196862ebbc0a2dde77d171f03b7b92deaba0"
+    },
+    {
+      "path": "openspec/reviews/shpitto-restart-delivery.zh-CN.md",
+      "sha256": "b4a5340f629080d994a6a3af7868685e79a1b45d9658427c32edd3daff1e0ab1"
+    },
+    {
+      "path": "openspec/reviews/shpitto-restart.zh-CN.md",
+      "sha256": "2a92b06294f18c708de1f08ce4f77ced7e7d84eb22b08177783a9eadc8b3c9a6"
+    },
+    {
+      "path": "openspec/reviews/stage-acceptance.zh-CN.md",
+      "sha256": "7ffaf9258331ec4c0a76231b0718b8f810b99faa438922cfe03f6173269b76d1"
+    }
+  ],
+  "hashScope": "Current OpenSpec files except this self-referential verification record; prior source-document hashes are in baseline-manifest.json.",
+  "priorIndependentReview": {
+    "verdict": "APPROVE",
+    "scope": "OpenSpec specification and implementation plan",
+    "iteration": 2
+  },
+  "stagedAcceptanceDocumentaryChecks": {
+    "scope": "Documentary acceptance policy and current implementation register; no application test suite",
+    "stages": 9,
+    "criteria": 49,
+    "stageStatuses": {
+      "M0": "IN_PROGRESS",
+      "M1": "NOT_STARTED",
+      "M2": "NOT_STARTED",
+      "M3": "NOT_STARTED",
+      "M4": "NOT_STARTED",
+      "M5": "NOT_STARTED",
+      "M6": "NOT_STARTED",
+      "M7": "NOT_STARTED",
+      "M8": "NOT_STARTED"
+    },
+    "releaseCheckpoints": 3,
+    "tasks": 105,
+    "completedTasks": 1,
+    "errors": []
+  },
+  "acceptanceImplementation": {
+    "stagesPassed": 0,
+    "stagesTotal": 9,
+    "stageStatuses": {
+      "M0": "IN_PROGRESS",
+      "M1": "NOT_STARTED",
+      "M2": "NOT_STARTED",
+      "M3": "NOT_STARTED",
+      "M4": "NOT_STARTED",
+      "M5": "NOT_STARTED",
+      "M6": "NOT_STARTED",
+      "M7": "NOT_STARTED",
+      "M8": "NOT_STARTED"
+    },
+    "releaseCheckpointsPassed": 0,
+    "releaseCheckpointsTotal": 3,
+    "enforcementImplemented": false,
+    "applicationTestsRun": false
+  }
+}

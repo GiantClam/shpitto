@@ -1,0 +1,13 @@
+{
+  "startedAt": "2026-09-29T05:55:07.5542086Z",
+  "exitCode": 0,
+  "command": "node --experimental-strip-types scripts/probe-auth-http.ts",
+  "finishedAt": "2026-09-29T05:55:11.0686779Z",
+  "environment": {
+    "database": "local PostgreSQL shpitto_m2 localhost:55436",
+    "cloudDelivery": false,
+    "appUrl": "http://localhost:3036",
+    "mail": "live Mailpit v1.21.8 http://localhost:8025",
+    "nodeEnv": "development"
+  }
+}

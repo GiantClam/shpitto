@@ -1,0 +1,244 @@
+{
+  "capturedAt": "2026-10-04T15:04:19.142Z",
+  "currentCandidate": {
+    "capturedAt": "2026-10-04T15:04:19.045Z",
+    "sourceCommit": null,
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "047a97559635007b8effe6e1828dcd435490c48329058e629bde58bd41856964",
+    "schemaSha256": "ee437f9c6f74b51877c4abb4a6214ec2de98622e3b27b269c16f4de2a4ca8bed",
+    "configurationSha256": "665eefd893188006b48e059485cca9f9a200ea57803fdb6429a84f5f7534d6e6",
+    "contractSha256": "4bc106831b1d8c20e04141367a3179488e32235ce4f83c503350a76780ff398c",
+    "validatorSha256": "920fb9e176bead43bdaa39b25e595625c503f435beb008d88d0cb2c1f9cecf5d",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
+    "digestInputs": {
+      "sourceTree": [
+        "internal/contracts/providers",
+        "src",
+        "tests",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        "tooling",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        "src/config/env.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile",
+        "tooling"
+      ],
+      "contract": [
+        "internal/contracts/providers",
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json",
+        "openspec/changes/restart-shpitto-video-saas/specs",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json"
+      ],
+      "validator": [
+        "scripts",
+        "tests",
+        "tooling",
+        "internal/restart/check-acceptance-record.py",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json"
+      ]
+    }
+  },
+  "previousM4": {
+    "capturedAt": "2026-10-04T14:14:41.687Z",
+    "sourceCommit": null,
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "622c8ce26aa44d33466a4dda146cc6b2982bae33883c352d5f49842b63b89ed9",
+    "schemaSha256": "ee437f9c6f74b51877c4abb4a6214ec2de98622e3b27b269c16f4de2a4ca8bed",
+    "configurationSha256": "954203345b7deacd83d55f7a85ddecd20edfa62955ab9bc8bd5864991c11b6d1",
+    "contractSha256": "9bb0ebbb45f946228c582bbd4dcb94cae5bac94fbe2a1b460fd9cdfeb6223ae2",
+    "validatorSha256": "92b8dde5e24c19b40609d1729f9f7852a26d598e3072ad0cf5d2ffd00d37611e",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
+    "digestInputs": {
+      "sourceTree": [
+        "internal/contracts/providers",
+        "src",
+        "tests",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        "tooling",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        "src/config/env.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile",
+        "tooling"
+      ],
+      "contract": [
+        "internal/contracts/providers",
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json",
+        "openspec/changes/restart-shpitto-video-saas/specs",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json"
+      ],
+      "validator": [
+        "scripts",
+        "tests",
+        "tooling",
+        "internal/restart/check-acceptance-record.py",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json"
+      ]
+    }
+  },
+  "previousM5": {
+    "capturedAt": "2026-10-04T14:14:41.687Z",
+    "sourceCommit": null,
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "622c8ce26aa44d33466a4dda146cc6b2982bae33883c352d5f49842b63b89ed9",
+    "schemaSha256": "ee437f9c6f74b51877c4abb4a6214ec2de98622e3b27b269c16f4de2a4ca8bed",
+    "configurationSha256": "954203345b7deacd83d55f7a85ddecd20edfa62955ab9bc8bd5864991c11b6d1",
+    "contractSha256": "9bb0ebbb45f946228c582bbd4dcb94cae5bac94fbe2a1b460fd9cdfeb6223ae2",
+    "validatorSha256": "92b8dde5e24c19b40609d1729f9f7852a26d598e3072ad0cf5d2ffd00d37611e",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
+    "digestInputs": {
+      "sourceTree": [
+        "internal/contracts/providers",
+        "src",
+        "tests",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        "tooling",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        "src/config/env.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile",
+        "tooling"
+      ],
+      "contract": [
+        "internal/contracts/providers",
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json",
+        "openspec/changes/restart-shpitto-video-saas/specs",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json"
+      ],
+      "validator": [
+        "scripts",
+        "tests",
+        "tooling",
+        "internal/restart/check-acceptance-record.py",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json"
+      ]
+    }
+  },
+  "currentM3Applicability": "STALE",
+  "reason": "M6 changes auth, migrations, billing, operations, affiliate runtime and UI. Fresh current-source local tests do not relabel historical M3 browser approval.",
+  "reruns": [
+    "Current-source common checks and local Docker regressions are retained in final/commands.json.",
+    "A separate complete-stage equivalence review, full required browser journeys and deferred provider/account evidence remain prerequisites for milestone promotion."
+  ],
+  "earlyM7": {
+    "status": "IMPLEMENTED",
+    "tasks": [
+      "8.1",
+      "8.2",
+      "8.3",
+      "8.4",
+      "8.5",
+      "8.6",
+      "8.7",
+      "8.8",
+      "8.10",
+      "8.11",
+      "8.12"
+    ],
+    "scope": "local contract and documentation preparation only",
+    "externalAccountsDeferred": true,
+    "verificationRefs": [
+      "internal/evidence/M6/local-20261004/final/logs/verify-skills.log",
+      "internal/evidence/M6/local-20261004/final/logs/verify-docs.log",
+      "internal/evidence/m7/customization/local-contract-tests.log",
+      "internal/evidence/m7/docs/local-export-tests.log",
+      "internal/evidence/m8/export-preflight/preflight.log"
+    ],
+    "customization": "local four-workflow contract slice verified; integrated acceptance deferred",
+    "docsExport": "local source-to-buyer export verified",
+    "releasePreflight": "positive allowlist and forbidden-secret scan verified"
+  }
+}

@@ -1,0 +1,24 @@
+[
+  {
+    "case": "changed-source-digest",
+    "exitCode": 1,
+    "result": {
+      "record": "D:\\github\\shpitto\\internal\\evidence\\acceptance\\M2\\working-tree-20260929-m2-repair\\tmp5puyxb_e.json",
+      "status": "READY_FOR_REVIEW",
+      "errors": [
+        "candidate.sourceTreeSha256 does not match current files"
+      ]
+    }
+  },
+  {
+    "case": "unresolved-required-criterion",
+    "exitCode": 1,
+    "result": {
+      "record": "D:\\github\\shpitto\\internal\\evidence\\acceptance\\M2\\working-tree-20260929-m2-repair\\tmprlxg9_hl.json",
+      "status": "PASS",
+      "errors": [
+        "criterionResults[0] has an unresolved required result"
+      ]
+    }
+  }
+]

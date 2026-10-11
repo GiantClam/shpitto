@@ -1,0 +1,1 @@
+This runner does not attach to the live app. Run it only after the isolated HTTP app harness supplies APP_URL and DATABASE_URL.

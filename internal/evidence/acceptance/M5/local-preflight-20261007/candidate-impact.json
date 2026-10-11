@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "stageId": "M5",
+  "candidateId": "local-preflight-20261007",
+  "supersedes": "internal/evidence/acceptance/M5/local-docker-20261004/record.json",
+  "changedScopes": [
+    "scripts/run-m8-local-preflight.mjs",
+    "package.json",
+    "M7 local docs/customization evidence",
+    "M8 local preflight evidence"
+  ],
+  "currentCandidate": {
+    "sourceTreeSha256": "f2704c26040b3cdeb4d01a2c25065e89aa266d954cb1483d189c196e7969e44f",
+    "configurationSha256": "8433cf66e944c435d7e34728841e273546c2205807b7a71da1efd43cc8bb4695",
+    "contractSha256": "028b93571cf200a7b115c10c8bf29fa7cb3e76b0f63f4e6ee68d35ac75ab5670",
+    "validatorSha256": "7d4d041858e282afe94708ab440de4da63a936fa60333654905d7ac12ef92036",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a"
+  },
+  "requiredReruns": [
+    "corepack pnpm verify:m8-local",
+    "corepack pnpm verify:acceptance"
+  ]
+}

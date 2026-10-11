@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "1.0",
+  "release": "v1",
+  "defaults": {
+    "brandSource": "src/config/brand.ts",
+    "brandAssets": ["public/brand/shpitto-logo-full.png", "public/brand/shpitto-icon.png"],
+    "brandReference": "https://shpitto.com",
+    "assetRole": "template-default-fallback",
+    "customerOverrideRequiredForDelivery": true,
+    "brandBaseline": "Shpitto website light baseline: #f4f7fb canvas, #c74336 primary, #dbeafe secondary, #d97757 warm accent, Inter/system sans with semantic component states",
+    "designContract": "DESIGN.md",
+    "tokenSource": "src/config/brand.ts",
+    "runtimeBinding": "src/app/layout.tsx",
+    "sharedShell": [
+      "src/components/shell/site-shell.tsx",
+      "src/components/shell/admin-shell.tsx",
+      "src/app/globals.css",
+      "src/admin/admin-app.tsx",
+      "src/admin/admin.css"
+    ],
+    "navigationSource": "src/config/navigation.ts",
+    "contract": "The Shpitto brand tokens, logo and shared shell are template fallback defaults only. A customer delivery must replace the brand assets and/or tokens through the customization Skills; protected journeys remain unchanged."
+  },
+  "editable": {
+    "brand": ["src/config/brand.ts", "public/brand", "src/components/shell", "src/app/globals.css", "src/admin/admin-app.tsx", "src/admin/admin.css"],
+    "navigation": ["src/config/navigation.ts"],
+    "content": ["content/docs/v1", "src/app/(marketing)"],
+    "presentation": ["src/components", "src/app/(marketing)", "src/app/(auth)", "src/app/(app)", "src/app/docs", "src/admin"]
+  },
+  "protected": [
+    "authentication", "workspace membership", "billing catalog and checkout", "credit ledger",
+    "generation state and provider callbacks", "private asset access", "admin authorization", "validation and export policy"
+  ],
+  "requirements": {
+    "responsive": ["1440x900", "390x844"],
+    "accessibility": ["keyboard navigation", "visible focus", "semantic headings", "actionable error copy"],
+    "preserveJourneys": ["sign-in", "workspace navigation", "generation", "download", "billing"]
+  }
+}

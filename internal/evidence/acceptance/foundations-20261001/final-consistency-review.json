@@ -1,0 +1,156 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "INDEPENDENT_FINAL_CONSISTENCY_REVIEW",
+  "decision": "PASS",
+  "reviewerId": "/root/next_stage_evidence_review",
+  "independentFromImplementer": true,
+  "reviewedAt": "2026-10-01T03:39:48Z",
+  "scope": {
+    "taskIds": ["5.1", "6.1"],
+    "description": "Consistency of final local development records, historical M3 preservation, task progress, local additive migration and restored-service smoke evidence after the bounded source review.",
+    "stageApproval": false,
+    "currentM3EquivalenceApproval": false,
+    "productionAuthorization": false
+  },
+  "candidate": {
+    "sourceTreeSha256": "6505c461336a6bdb8d1486226bee3702b8982623d2958195d38a24962e1aacef",
+    "schemaSha256": "21e34616dc7e93fe893070a735742bf2dd1964b09032de75c1d562c53c2f8dfa",
+    "configurationSha256": "950f81069a8c6b2a2788c0473cc98b6a9b6bedcb48a585fe9f1b3c005fb3efd6",
+    "contractSha256": "861a25ab4e70f623440a7abba054afa4460177e42cbe8a001196bc9d12a1a139",
+    "validatorSha256": "d5384e6a37a2f1c166cc9e22819878b54e6fc9c3719383683b43922ec2893935",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a"
+  },
+  "verification": {
+    "independentRootVerification": {
+      "command": "corepack pnpm verify:root",
+      "exitCode": 0,
+      "status": "PASS",
+      "method": "Independently rerun after final records and task register updates; retained integrator output also inspected."
+    },
+    "sixCurrentCandidateDigestsMatch": true,
+    "completedImplementationTasks": 43,
+    "totalImplementationTasks": 105,
+    "taskCheckboxesAndAcceptanceRegisterAgree": true,
+    "stageRecords": [
+      {
+        "stageId": "M4",
+        "recordKind": "DEVELOPMENT_VERIFICATION",
+        "status": "IN_PROGRESS",
+        "mandatoryCriteria": 4,
+        "uniqueMandatoryScenarioAndTestIds": 43,
+        "scenarioIdsEqualCanonicalTraceabilityUnion": true,
+        "allStageCriteriaAndScenarios": "NOT_RUN",
+        "wholeStageReviewDecision": "NOT_RUN",
+        "wholeStageIntegrationDecision": "NOT_RUN",
+        "referencedPathsChecked": 71,
+        "missingReferencedPaths": []
+      },
+      {
+        "stageId": "M5",
+        "recordKind": "DEVELOPMENT_VERIFICATION",
+        "status": "IN_PROGRESS",
+        "mandatoryCriteria": 5,
+        "uniqueMandatoryScenarioAndTestIds": 28,
+        "scenarioIdsEqualCanonicalTraceabilityUnion": true,
+        "allStageCriteriaAndScenarios": "NOT_RUN",
+        "wholeStageReviewDecision": "NOT_RUN",
+        "wholeStageIntegrationDecision": "NOT_RUN",
+        "referencedPathsChecked": 71,
+        "missingReferencedPaths": []
+      }
+    ],
+    "historicalM3": {
+      "historicalDecision": "PASS",
+      "recordSha256": "e5e3638fd224caefaaa8ccb7752ff1e6e44e49c1f881467ec52166fb214fcf6e",
+      "historicalRecordBytesUnchanged": true,
+      "approvedAndBrowserSourceTreeSha256": "73ec731c971aca355335d6c86a3ba14e8c91e84e9cf8569007cb7abf3f6bd3ab",
+      "currentApplicability": "STALE",
+      "historicalEvidenceRelabeledAsCurrent": false
+    },
+    "localMigration": {
+      "status": "PASS",
+      "migration": "0016_billing_contracts",
+      "appliedAt": "2026-10-01T03:31:32.856Z",
+      "backupRef": ".data/backups/before-billing-0016-1790825491547.dump",
+      "independentlyVerifiedBackupSha256": "d7002be5ea5986b27c6ae12d5243c121154b9dc21f1e5ad1110263cc1b9328f9",
+      "backupExists": true,
+      "existingBeforeAfterCountsEqual": true,
+      "creditBucketsBeforeAfterEqual": true,
+      "preservedCreditBuckets": {
+        "issued": "300",
+        "available": "240",
+        "reserved": "0",
+        "consumed": "60",
+        "expired": "0",
+        "voided": "0"
+      },
+      "addedTables": 6,
+      "restoreRehearsalPerformed": false,
+      "productionChanged": false
+    },
+    "localServices": {
+      "independentLoginHttpCheck": {
+        "checkedAt": "2026-10-01T03:35:47.645Z",
+        "url": "http://localhost:3100/login",
+        "httpStatus": 200
+      },
+      "independentProcessObservation": {
+        "checkedAt": "2026-10-01T03:35:47.645Z",
+        "webPid": 46680,
+        "workerPid": 50228,
+        "mailCapturePid": 53804,
+        "allRunning": true
+      },
+      "independentMailApiCheck": {
+        "checkedAt": "2026-10-01T03:37:12.560Z",
+        "url": "http://localhost:8025/api/v1/search?query=to%3Aconsistency-health%40invalid.test",
+        "httpStatus": 200,
+        "emailSent": false
+      },
+      "reviewedAuthenticatedHttpSmoke": {
+        "checkedAt": "2026-10-01T03:37:27.424Z",
+        "passingChecks": 10,
+        "namedDemoAccounts": 2,
+        "accountLabelsAreAuthorizationRoles": false,
+        "currentAuthorizationRoleMatrixTested": false,
+        "browserInteractionsTested": false,
+        "workspaceCreationTested": false,
+        "credentialsRecorded": false
+      }
+    },
+    "integrationDecisionScope": "Tasks 5.1 and 6.1 local contracts only",
+    "nextEligibleTaskIds": ["5.2", "5.3", "6.2", "6.3"]
+  },
+  "evidenceRefs": [
+    "internal/evidence/acceptance/foundations-20261001/independent-review.json",
+    "internal/evidence/acceptance/foundations-20261001/integration-decision.json",
+    "internal/evidence/acceptance/foundations-20261001/m3-impact.json",
+    "internal/evidence/acceptance/foundations-20261001/README.md",
+    "internal/evidence/acceptance/foundations-20261001/root-verification.log",
+    "internal/evidence/acceptance/foundations-20261001/2026-10-01T03-19-50-513Z-96d12a9e-f027-4b26-ab2b-a14936776d9a/candidate-after/candidate.json",
+    "internal/evidence/acceptance/foundations-20261001/2026-10-01T03-19-50-513Z-96d12a9e-f027-4b26-ab2b-a14936776d9a/result.json",
+    "internal/evidence/acceptance/foundations-20261001/2026-10-01T03-19-50-513Z-96d12a9e-f027-4b26-ab2b-a14936776d9a/local-migration.json",
+    "internal/evidence/acceptance/foundations-20261001/2026-10-01T03-19-50-513Z-96d12a9e-f027-4b26-ab2b-a14936776d9a/local-service-smoke.json",
+    "internal/evidence/acceptance/M4/contract-foundations-20261001/record.json",
+    "internal/evidence/acceptance/M5/contract-foundations-20261001/record.json",
+    "internal/evidence/acceptance/M3/working-tree-20261001-current/record.json",
+    "internal/evidence/M3/browser-walkthrough-20261001.json",
+    "openspec/changes/restart-shpitto-video-saas/tasks.md",
+    "openspec/changes/restart-shpitto-video-saas/acceptance-status.json",
+    "openspec/changes/restart-shpitto-video-saas/traceability.json"
+  ],
+  "resolvedFinalFinding": {
+    "summary": "The initial HTTP smoke labeled fixture account names as roles, which could imply a current owner/non-owner authorization matrix after prior ownership transfer.",
+    "resolution": "The integrator reran all 10 checks using each account's current team link, renamed the field to accountLabel, explicitly set accountLabelsAreAuthorizationRoles to false, and documented the limitation. No application permissions were changed.",
+    "status": "RESOLVED"
+  },
+  "openBlockingFindings": [],
+  "limits": [
+    "This consistency PASS complements the bounded source review; it is not M4/M5 whole-stage approval, current M3 equivalence, or production authorization.",
+    "The authenticated HTTP smoke covers two named fixture accounts and accessible pages. It does not prove current owner/non-owner authorization, browser interaction, invitation acceptance, or workspace creation.",
+    "The migration review verifies retained before/after observations and independently checks the private backup file and digest. No backup restore rehearsal or historical anomalous-balance recovery was performed.",
+    "Local service observations are point-in-time checks, not an uptime guarantee.",
+    "Live provider requests, paid output, Stripe transactions, production email and full downstream acceptance remain outside this review. No live external activation occurred.",
+    "Coverage-mode stdout limitations and official provider-schema provenance limits remain as recorded in independent-review.json."
+  ]
+}

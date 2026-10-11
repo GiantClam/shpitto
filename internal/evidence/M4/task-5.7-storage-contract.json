@@ -1,0 +1,57 @@
+{
+  "status": "PASS_LOCAL_CONTRACT_AND_R2_LIVE",
+  "verifiedAt": "2026-10-10T11:47:23.819Z",
+  "driverContract": {
+    "local": "implemented_and_probe_verified",
+    "s3": "implemented_one_adapter_for_r2_and_aws_s3",
+    "minio": "contract_target_only",
+    "cloudBucketConnectivity": {
+      "r2": "LIVE_PASS",
+      "awsS3": "NOT_RUN"
+    }
+  },
+  "implementation": {
+    "privateObjectStorePort": "src/adapters/storage/port.ts",
+    "localAdapter": "src/adapters/storage/local.ts",
+    "s3CompatibleAdapter": "src/adapters/storage/s3-object-store.ts",
+    "runtimeFactory": "src/adapters/storage/runtime.ts",
+    "productionCleanupSchedule": "src/trigger/cleanup-assets.ts",
+    "migratedPaths": [
+      "input_upload",
+      "provider_materialization",
+      "authorized_download",
+      "asset_delete",
+      "orphan_cleanup"
+    ]
+  },
+  "tests": {
+    "storageContractTests": "tests/contracts/storage.test.ts",
+    "liveProbeContractTests": "tests/contracts/private-storage-live-probe.test.ts",
+    "cleanupScheduleTests": "tests/unit/asset-cleanup-trigger.test.ts",
+    "contractTestsPassed": 10,
+    "assetProbe": "PASS",
+    "cleanupProbe": "PASS",
+    "generationLifecycleProbe": "PASS",
+    "r2LiveAdapter": "PASS",
+    "realFalPrivateLifecycle": "PASS",
+    "realReplicateT2VPrivateLifecycle": "PASS",
+    "realReplicateI2VPrivateLifecycle": "PASS",
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "format": "PASS",
+    "config": "PASS",
+    "openspec": "PASS",
+    "acceptance": "EXPECTED_FAIL_STALE_M4_CANDIDATE_RECORD"
+  },
+  "evidence": {
+    "r2LiveAdapter": "internal/evidence/M4/task-5.7-r2-live-adapter.json",
+    "falPrivateLifecycle": "internal/evidence/M4/task-5.10/fal-private-lifecycle-r2.json",
+    "replicateT2VPrivateLifecycle": "internal/evidence/M4/task-5.10/replicate-t2v-private-lifecycle-r2.json",
+    "replicateI2VPrivateLifecycle": "internal/evidence/M4/task-5.10/replicate-i2v-private-lifecycle-r2.json"
+  },
+  "limitations": [
+    "AWS S3 live connectivity was not run; it remains supported by the same bounded S3 command contract.",
+    "Provider webhook delivery, provider cost confirmation and real domain credit settlement are not proved by the storage evidence.",
+    "Application downloads remain server-streamed after current workspace authorization; presigning can be added later without changing object-key semantics."
+  ]
+}

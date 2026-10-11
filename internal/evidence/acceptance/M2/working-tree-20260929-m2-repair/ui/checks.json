@@ -1,0 +1,581 @@
+{
+  "status": "PASS",
+  "browser": "Codex in-app browser",
+  "checkedAt": "2026-09-29T06:04:12.949Z",
+  "viewports": [
+    "1440x900",
+    "390x844"
+  ],
+  "assertions": [
+    "No horizontal overflow",
+    "All auth controls at least44CSS pixels high",
+    "Associated labels and keyboard focus order",
+    "Visible focus rings",
+    "Empty Enter submission focuses first required field",
+    "Password mismatch client alert without server mutation"
+  ],
+  "results": [
+    {
+      "name": "signup-mobile",
+      "checkedAt": "2026-09-29T06:02:43.675Z",
+      "layout": {
+        "controls": [
+          {
+            "label": "name",
+            "rect": {
+              "height": 44,
+              "width": 286.54168701171875,
+              "x": 44.0625,
+              "y": 392.3333435058594
+            }
+          },
+          {
+            "label": "email",
+            "rect": {
+              "height": 44,
+              "width": 286.54168701171875,
+              "x": 44.0625,
+              "y": 483.125
+            }
+          },
+          {
+            "label": "password",
+            "rect": {
+              "height": 44,
+              "width": 286.54168701171875,
+              "x": 44.0625,
+              "y": 573.9166870117188
+            }
+          },
+          {
+            "label": "Create account",
+            "rect": {
+              "height": 44,
+              "width": 286.54168701171875,
+              "x": 44.0625,
+              "y": 638.7083740234375
+            }
+          }
+        ],
+        "height": 844,
+        "scrollWidth": 375,
+        "width": 390
+      }
+    },
+    {
+      "name": "login-mobile",
+      "checkedAt": "2026-09-29T06:03:05.965Z",
+      "layout": {
+        "controls": [
+          {
+            "label": "email",
+            "rect": {
+              "height": 44,
+              "width": 301.875,
+              "x": 44.0625,
+              "y": 352.3333435058594
+            }
+          },
+          {
+            "label": "password",
+            "rect": {
+              "height": 44,
+              "width": 301.875,
+              "x": 44.0625,
+              "y": 443.125
+            }
+          },
+          {
+            "label": "Sign in",
+            "rect": {
+              "height": 44,
+              "width": 301.875,
+              "x": 44.0625,
+              "y": 507.9166870117187
+            }
+          }
+        ],
+        "height": 844,
+        "scrollWidth": 390,
+        "width": 390
+      }
+    },
+    {
+      "kind": "keyboard",
+      "url": "http://localhost:3036/login",
+      "focus": [
+        {
+          "id": "password",
+          "outline": "solid",
+          "text": null
+        },
+        {
+          "id": "",
+          "outline": "solid",
+          "text": "Sign in"
+        }
+      ],
+      "validation": {
+        "id": "email",
+        "invalid": true,
+        "required": true
+      }
+    },
+    {
+      "name": "reset-request-mobile",
+      "checkedAt": "2026-09-29T06:03:06.185Z",
+      "layout": {
+        "controls": [
+          {
+            "label": "email",
+            "rect": {
+              "height": 44,
+              "width": 301.875,
+              "x": 44.0625,
+              "y": 392.3333435058594
+            }
+          },
+          {
+            "label": "Send reset link",
+            "rect": {
+              "height": 44,
+              "width": 301.875,
+              "x": 44.0625,
+              "y": 457.125
+            }
+          }
+        ],
+        "height": 844,
+        "scrollWidth": 390,
+        "width": 390
+      }
+    },
+    {
+      "kind": "keyboard",
+      "url": "http://localhost:3036/reset-password",
+      "focus": [
+        {
+          "id": "",
+          "outline": "solid",
+          "text": "Send reset link"
+        }
+      ],
+      "validation": {
+        "id": "email",
+        "invalid": true,
+        "required": true
+      }
+    },
+    {
+      "name": "reset-confirm-mobile",
+      "checkedAt": "2026-09-29T06:03:06.378Z",
+      "layout": {
+        "controls": [
+          {
+            "label": "password",
+            "rect": {
+              "height": 44,
+              "width": 301.875,
+              "x": 44.0625,
+              "y": 392.3333435058594
+            }
+          },
+          {
+            "label": "confirmPassword",
+            "rect": {
+              "height": 44,
+              "width": 301.875,
+              "x": 44.0625,
+              "y": 483.125
+            }
+          },
+          {
+            "label": "Save new password",
+            "rect": {
+              "height": 44,
+              "width": 301.875,
+              "x": 44.0625,
+              "y": 547.9166870117188
+            }
+          }
+        ],
+        "height": 844,
+        "scrollWidth": 390,
+        "width": 390
+      }
+    },
+    {
+      "kind": "keyboard",
+      "url": "http://localhost:3036/reset-password?token=browser-layout-invalid-token",
+      "focus": [
+        {
+          "id": "confirmPassword",
+          "outline": "solid",
+          "text": null
+        },
+        {
+          "id": "",
+          "outline": "solid",
+          "text": "Save new password"
+        }
+      ],
+      "validation": {
+        "id": "password",
+        "invalid": true,
+        "required": true
+      }
+    },
+    {
+      "kind": "client-mismatch-alert",
+      "observed": "The passwords do not match.",
+      "serverMutation": false
+    },
+    {
+      "name": "reset-mismatch-mobile",
+      "checkedAt": "2026-09-29T06:03:27.087Z",
+      "layout": {
+        "controls": [
+          {
+            "label": "password",
+            "rect": {
+              "height": 44,
+              "width": 301.875,
+              "x": 44.0625,
+              "y": 392.3333435058594
+            }
+          },
+          {
+            "label": "confirmPassword",
+            "rect": {
+              "height": 44,
+              "width": 301.875,
+              "x": 44.0625,
+              "y": 483.125
+            }
+          },
+          {
+            "label": "Save new password",
+            "rect": {
+              "height": 44,
+              "width": 301.875,
+              "x": 44.0625,
+              "y": 547.9166870117188
+            }
+          }
+        ],
+        "height": 844,
+        "scrollWidth": 390,
+        "width": 390
+      }
+    },
+    {
+      "name": "reset-confirm-desktop",
+      "checkedAt": "2026-09-29T06:03:27.135Z",
+      "layout": {
+        "controls": [
+          {
+            "label": "password",
+            "rect": {
+              "height": 44,
+              "width": 438.6666870117187,
+              "x": 251.0625,
+              "y": 453.6666870117187
+            }
+          },
+          {
+            "label": "confirmPassword",
+            "rect": {
+              "height": 44,
+              "width": 438.6666870117187,
+              "x": 251.0625,
+              "y": 544.4583740234375
+            }
+          },
+          {
+            "label": "Save new password",
+            "rect": {
+              "height": 44,
+              "width": 438.6666870117187,
+              "x": 251.0625,
+              "y": 609.25
+            }
+          }
+        ],
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      }
+    },
+    {
+      "name": "reset-request-desktop",
+      "checkedAt": "2026-09-29T06:03:27.320Z",
+      "layout": {
+        "controls": [
+          {
+            "label": "email",
+            "rect": {
+              "height": 44,
+              "width": 438.6666870117187,
+              "x": 251.0625,
+              "y": 453.6666870117187
+            }
+          },
+          {
+            "label": "Send reset link",
+            "rect": {
+              "height": 44,
+              "width": 438.6666870117187,
+              "x": 251.0625,
+              "y": 518.4583740234375
+            }
+          }
+        ],
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      }
+    },
+    {
+      "kind": "keyboard",
+      "url": "http://localhost:3036/reset-password",
+      "focus": [
+        {
+          "id": "",
+          "outline": "solid",
+          "text": "Send reset link"
+        }
+      ],
+      "validation": {
+        "id": "email",
+        "invalid": true,
+        "required": true
+      }
+    },
+    {
+      "name": "login-desktop",
+      "checkedAt": "2026-09-29T06:03:27.522Z",
+      "layout": {
+        "controls": [
+          {
+            "label": "email",
+            "rect": {
+              "height": 44,
+              "width": 438.6666870117187,
+              "x": 251.0625,
+              "y": 365.6666870117187
+            }
+          },
+          {
+            "label": "password",
+            "rect": {
+              "height": 44,
+              "width": 438.6666870117187,
+              "x": 251.0625,
+              "y": 456.4583435058594
+            }
+          },
+          {
+            "label": "Sign in",
+            "rect": {
+              "height": 44,
+              "width": 438.6666870117187,
+              "x": 251.0625,
+              "y": 521.25
+            }
+          }
+        ],
+        "height": 900,
+        "scrollWidth": 1440,
+        "width": 1440
+      }
+    },
+    {
+      "kind": "keyboard",
+      "url": "http://localhost:3036/login",
+      "focus": [
+        {
+          "id": "password",
+          "outline": "solid",
+          "text": null
+        },
+        {
+          "id": "",
+          "outline": "solid",
+          "text": "Sign in"
+        }
+      ],
+      "validation": {
+        "id": "email",
+        "invalid": true,
+        "required": true
+      }
+    },
+    {
+      "name": "signup-desktop",
+      "checkedAt": "2026-09-29T06:03:27.760Z",
+      "layout": {
+        "controls": [
+          {
+            "label": "name",
+            "rect": {
+              "height": 44,
+              "width": 438.6666870117187,
+              "x": 243.39584350585935,
+              "y": 453.6666870117187
+            }
+          },
+          {
+            "label": "email",
+            "rect": {
+              "height": 44,
+              "width": 438.6666870117187,
+              "x": 243.39584350585935,
+              "y": 544.4583740234375
+            }
+          },
+          {
+            "label": "password",
+            "rect": {
+              "height": 44,
+              "width": 438.6666870117187,
+              "x": 243.39584350585935,
+              "y": 635.25
+            }
+          },
+          {
+            "label": "Create account",
+            "rect": {
+              "height": 44,
+              "width": 438.6666870117187,
+              "x": 243.39584350585935,
+              "y": 700.0416870117188
+            }
+          }
+        ],
+        "height": 900,
+        "scrollWidth": 1425,
+        "width": 1440
+      }
+    },
+    {
+      "kind": "keyboard",
+      "url": "http://localhost:3036/signup",
+      "focus": [
+        {
+          "id": "email",
+          "outline": "solid",
+          "text": null
+        },
+        {
+          "id": "password",
+          "outline": "solid",
+          "text": null
+        },
+        {
+          "id": "",
+          "outline": "solid",
+          "text": "Create account"
+        }
+      ],
+      "validation": {
+        "id": "name",
+        "invalid": true,
+        "required": true
+      }
+    },
+    {
+      "kind": "keyboard",
+      "url": "http://localhost:3036/reset-password?token=browser-layout-invalid-token",
+      "focus": [
+        {
+          "id": "confirmPassword",
+          "outline": "solid",
+          "text": null
+        },
+        {
+          "id": "",
+          "outline": "solid",
+          "text": "Save new password"
+        }
+      ],
+      "validation": {
+        "id": "password",
+        "invalid": true,
+        "required": true
+      }
+    },
+    {
+      "name": "signup-mobile",
+      "checkedAt": "2026-09-29T06:04:11.819Z",
+      "layout": {
+        "controls": [
+          {
+            "label": "name",
+            "rect": {
+              "height": 44,
+              "width": 286.54168701171875,
+              "x": 44.0625,
+              "y": 392.3333435058594
+            }
+          },
+          {
+            "label": "email",
+            "rect": {
+              "height": 44,
+              "width": 286.54168701171875,
+              "x": 44.0625,
+              "y": 483.125
+            }
+          },
+          {
+            "label": "password",
+            "rect": {
+              "height": 44,
+              "width": 286.54168701171875,
+              "x": 44.0625,
+              "y": 573.9166870117188
+            }
+          },
+          {
+            "label": "Create account",
+            "rect": {
+              "height": 44,
+              "width": 286.54168701171875,
+              "x": 44.0625,
+              "y": 638.7083740234375
+            }
+          }
+        ],
+        "height": 844,
+        "scrollWidth": 375,
+        "width": 390
+      }
+    },
+    {
+      "kind": "keyboard",
+      "url": "http://localhost:3036/signup",
+      "focus": [
+        {
+          "id": "email",
+          "outline": "solid",
+          "text": null
+        },
+        {
+          "id": "password",
+          "outline": "solid",
+          "text": null
+        },
+        {
+          "id": "",
+          "outline": "solid",
+          "text": "Create account"
+        }
+      ],
+      "validation": {
+        "id": "name",
+        "invalid": true,
+        "required": true
+      }
+    }
+  ]
+}

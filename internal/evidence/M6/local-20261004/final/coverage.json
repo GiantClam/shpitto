@@ -1,0 +1,228 @@
+{
+  "status": "PASS",
+  "branchesFound": 1598,
+  "branchesHit": 1318,
+  "percent": 82.47809762202753,
+  "missingSources": [],
+  "malformed": [],
+  "ownedModules": [
+    "src/modules/operations/audit.ts",
+    "src/modules/operations/authorization.ts",
+    "src/modules/operations/authorize.ts",
+    "src/modules/operations/bootstrap.ts",
+    "src/modules/operations/commands.ts",
+    "src/modules/operations/integration-health.ts",
+    "src/modules/operations/queries.ts",
+    "src/modules/operations/recovery.ts",
+    "src/modules/operations/status-commands.ts",
+    "src/modules/operations/telemetry.ts",
+    "src/modules/operations/workspace-details.ts",
+    "src/modules/affiliates/abuse-review.ts",
+    "src/modules/affiliates/attribution.ts",
+    "src/modules/affiliates/cash-recovery.ts",
+    "src/modules/affiliates/commands.ts",
+    "src/modules/affiliates/commission-review.ts",
+    "src/modules/affiliates/contracts.ts",
+    "src/modules/affiliates/delivery.ts",
+    "src/modules/affiliates/eligibility.ts",
+    "src/modules/affiliates/notification-http.ts",
+    "src/modules/affiliates/notifications.ts",
+    "src/modules/affiliates/payout-guard.ts",
+    "src/modules/affiliates/policy.ts",
+    "src/modules/affiliates/queries.ts",
+    "src/modules/affiliates/referral-http.ts",
+    "src/modules/affiliates/refunds.ts",
+    "src/modules/affiliates/request.ts",
+    "src/modules/affiliates/runtime.ts",
+    "src/modules/affiliates/sync.ts",
+    "src/adapters/affiliates/firstpromoter-contract.ts",
+    "src/adapters/affiliates/firstpromoter.ts",
+    "src/lib/auth.ts",
+    "src/modules/billing/refund-command.ts",
+    "src/modules/billing/refund-delivery.ts",
+    "src/modules/billing/refund-preview.ts",
+    "src/modules/billing/recovery.ts"
+  ],
+  "reports": [
+    {
+      "path": "src/adapters/affiliates/firstpromoter-contract.ts",
+      "branchesFound": 35,
+      "branchesHit": 35
+    },
+    {
+      "path": "src/modules/affiliates/abuse-review.ts",
+      "branchesFound": 11,
+      "branchesHit": 8
+    },
+    {
+      "path": "src/modules/affiliates/commission-review.ts",
+      "branchesFound": 26,
+      "branchesHit": 24
+    },
+    {
+      "path": "src/modules/affiliates/contracts.ts",
+      "branchesFound": 7,
+      "branchesHit": 7
+    },
+    {
+      "path": "src/modules/affiliates/delivery.ts",
+      "branchesFound": 13,
+      "branchesHit": 11
+    },
+    {
+      "path": "src/modules/affiliates/eligibility.ts",
+      "branchesFound": 16,
+      "branchesHit": 12
+    },
+    {
+      "path": "src/modules/affiliates/notifications.ts",
+      "branchesFound": 74,
+      "branchesHit": 70
+    },
+    {
+      "path": "src/modules/affiliates/runtime.ts",
+      "branchesFound": 294,
+      "branchesHit": 239
+    },
+    {
+      "path": "src/modules/affiliates/sync.ts",
+      "branchesFound": 103,
+      "branchesHit": 74
+    },
+    {
+      "path": "src/modules/operations/audit.ts",
+      "branchesFound": 19,
+      "branchesHit": 16
+    },
+    {
+      "path": "src/modules/operations/integration-health.ts",
+      "branchesFound": 7,
+      "branchesHit": 2
+    },
+    {
+      "path": "src/modules/operations/telemetry.ts",
+      "branchesFound": 13,
+      "branchesHit": 12
+    },
+    {
+      "path": "src/modules/affiliates/cash-recovery.ts",
+      "branchesFound": 12,
+      "branchesHit": 10
+    },
+    {
+      "path": "src/modules/billing/recovery.ts",
+      "branchesFound": 90,
+      "branchesHit": 75
+    },
+    {
+      "path": "src/modules/operations/authorization.ts",
+      "branchesFound": 14,
+      "branchesHit": 14
+    },
+    {
+      "path": "src/modules/operations/authorize.ts",
+      "branchesFound": 37,
+      "branchesHit": 32
+    },
+    {
+      "path": "src/modules/operations/commands.ts",
+      "branchesFound": 69,
+      "branchesHit": 47
+    },
+    {
+      "path": "src/modules/operations/queries.ts",
+      "branchesFound": 83,
+      "branchesHit": 73
+    },
+    {
+      "path": "src/modules/billing/refund-command.ts",
+      "branchesFound": 53,
+      "branchesHit": 41
+    },
+    {
+      "path": "src/modules/billing/refund-delivery.ts",
+      "branchesFound": 51,
+      "branchesHit": 42
+    },
+    {
+      "path": "src/modules/billing/refund-preview.ts",
+      "branchesFound": 61,
+      "branchesHit": 60
+    },
+    {
+      "path": "src/modules/operations/bootstrap.ts",
+      "branchesFound": 28,
+      "branchesHit": 24
+    },
+    {
+      "path": "src/modules/operations/status-commands.ts",
+      "branchesFound": 48,
+      "branchesHit": 45
+    },
+    {
+      "path": "src/lib/auth.ts",
+      "branchesFound": 34,
+      "branchesHit": 29
+    },
+    {
+      "path": "src/modules/operations/recovery.ts",
+      "branchesFound": 58,
+      "branchesHit": 44
+    },
+    {
+      "path": "src/adapters/affiliates/firstpromoter.ts",
+      "branchesFound": 5,
+      "branchesHit": 5
+    },
+    {
+      "path": "src/modules/affiliates/attribution.ts",
+      "branchesFound": 45,
+      "branchesHit": 35
+    },
+    {
+      "path": "src/modules/affiliates/payout-guard.ts",
+      "branchesFound": 18,
+      "branchesHit": 17
+    },
+    {
+      "path": "src/modules/affiliates/policy.ts",
+      "branchesFound": 5,
+      "branchesHit": 3
+    },
+    {
+      "path": "src/modules/affiliates/refunds.ts",
+      "branchesFound": 8,
+      "branchesHit": 7
+    },
+    {
+      "path": "src/modules/affiliates/commands.ts",
+      "branchesFound": 88,
+      "branchesHit": 57
+    },
+    {
+      "path": "src/modules/affiliates/notification-http.ts",
+      "branchesFound": 34,
+      "branchesHit": 30
+    },
+    {
+      "path": "src/modules/affiliates/referral-http.ts",
+      "branchesFound": 58,
+      "branchesHit": 49
+    },
+    {
+      "path": "src/modules/affiliates/request.ts",
+      "branchesFound": 9,
+      "branchesHit": 4
+    },
+    {
+      "path": "src/modules/affiliates/queries.ts",
+      "branchesFound": 40,
+      "branchesHit": 36
+    },
+    {
+      "path": "src/modules/operations/workspace-details.ts",
+      "branchesFound": 32,
+      "branchesHit": 29
+    }
+  ]
+}

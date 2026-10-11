@@ -1,0 +1,52 @@
+▲ Next.js 16.3.6 (Turbopack)
+✓ Running next.config.ts took 58ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 4.4s
+  Running TypeScript ...
+  Finished TypeScript in 4.8s ...
+  Collecting page data using 31 workers ...
+  Generating static pages using 31 workers (0/12) ...
+  Generating static pages using 31 workers (3/12) 
+  Generating static pages using 31 workers (6/12) 
+  Generating static pages using 31 workers (9/12) 
+✓ Generating static pages using 31 workers (12/12) in 441ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /admin/[[...segments]]
+├ ƒ /api/admin/me
+├ ƒ /api/auth/[...all]
+├ ƒ /api/invitations/accept
+├ ƒ /api/onboarding
+├ ƒ /api/workspaces
+├ ƒ /api/workspaces/[workspaceId]/assets
+├ ƒ /api/workspaces/[workspaceId]/assets/[assetId]
+├ ƒ /api/workspaces/[workspaceId]/assets/[assetId]/download
+├ ƒ /api/workspaces/[workspaceId]/generations
+├ ƒ /api/workspaces/[workspaceId]/generations/[taskId]/cancel
+├ ƒ /api/workspaces/[workspaceId]/generations/[taskId]/claim
+├ ƒ /api/workspaces/[workspaceId]/invitations
+├ ƒ /api/workspaces/[workspaceId]/leave
+├ ƒ /api/workspaces/[workspaceId]/members/[userId]/demote
+├ ƒ /api/workspaces/[workspaceId]/members/[userId]/remove
+├ ƒ /api/workspaces/[workspaceId]/transfer
+├ ƒ /dashboard
+├ ƒ /dashboard/team
+├ ○ /docs
+├ ○ /docs/api
+├ ○ /docs/skills
+├ ƒ /invitations/accept
+├ ƒ /login
+├ ƒ /reset-password
+├ ○ /signup
+├ ƒ /workspaces/[w]/settings/members
+└ ƒ /workspaces/new
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+$ next build

@@ -1,0 +1,18 @@
+{"status":"PASS","migrationRows":16,"fixtureMembershipRows":3,"drizzleWorkspaceRows":2,"fixtureMismatchObserved":true,"crossTenantRejected":true,"crossTenantConstraint":"credit_allocations_grant_workspace_fk","rollbackObserved":true,"rollbackRows":0,"conventions":{"applicationIds":"uuid","betterAuthIds":"text","timestamps":"UTC timestamptz","quantities":"nonnegative bigint; decimal strings at JSON boundary"}}
+✔ scripts\probe-m2-foundation.ts (670.2373ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 675.9661
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report

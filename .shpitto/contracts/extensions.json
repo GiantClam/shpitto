@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1.0",
+  "release": "v1",
+  "engineeringChangeRequired": [
+    "authentication", "memberships", "billing", "webhooks", "credits", "generation-state",
+    "database", "migrations", "validation-policy", "export-policy"
+  ],
+  "extensionKinds": {
+    "add-provider": {"requiredEvidence": ["capability matrix", "safe submit/reconcile probe", "cost-unknown handling", "recovery test"]},
+    "add-generation-task": {"requiredEvidence": ["versioned DTO", "state transitions", "credit impact", "asset policy"]},
+    "configure-credits": {"requiredEvidence": ["versioned catalog", "expiry rules", "ledger regression", "concurrency regression"]},
+    "extend-assets": {"requiredEvidence": ["ownership", "ingestion validation", "retention", "private download"]}
+  }
+}

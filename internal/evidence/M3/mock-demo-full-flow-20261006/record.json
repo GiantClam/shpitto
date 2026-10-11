@@ -1,0 +1,56 @@
+{
+  "recordKind": "DEVELOPMENT_VERIFICATION",
+  "status": "IN_PROGRESS",
+  "profile": "local-mock",
+  "capturedAt": "2026-10-06T06:32:31.262Z",
+  "candidateRef": "candidate/candidate.json",
+  "scope": "Default UI/brand/shared shell and complete credential-free Mock demo journey",
+  "environment": {
+    "web": "http://localhost:3100",
+    "postgres": "isolated Docker PostgreSQL host port 55434",
+    "worker": "isolated Docker worker http://localhost:8080/healthz",
+    "mail": "isolated Docker Mailpit ports 1025/8025",
+    "cloudCredentials": false,
+    "realProviderOrPayment": false
+  },
+  "checks": [
+    {"id": "default-ui-baseline", "status": "PASS", "evidence": "login/dashboard/team/billing/admin browser snapshots; shared token contract, runtime CSS projection and React-admin theme wiring unit test"},
+    {"id": "demo-seed-and-login", "status": "PASS", "evidence": "scripts/demo-seed.ts --reset; live Next.js HTTP auth probe; seeded login page shows owner/member credentials and invitation entry"},
+    {"id": "personal-and-team-workspace", "status": "PASS", "evidence": "live team HTTP probe; browser completed M3 Demo Personal setup and switched back to M3 Acceptance Team"},
+    {"id": "invitation-and-member-management", "status": "PASS", "evidence": "live team HTTP probe; seeded invitation page; members page has owner roster and invite controls"},
+    {"id": "mock-success-and-download", "status": "PASS", "evidence": "browser queue -> restart/reload -> succeeded state, consumed credits and private video/mp4 download link"},
+    {"id": "mock-failure-cancel-unknown-recovery", "status": "PASS", "evidence": "generation lifecycle probe and generation races probe on disposable migrated PostgreSQL"},
+    {"id": "credit-lineage-and-assets", "status": "PASS", "evidence": "credit-ledger, generation-create and assets probes"},
+    {"id": "fixture-billing", "status": "PASS", "evidence": "billing checkout probe and browser local fixture checkout with simulated paid event; page states no real charge"},
+    {"id": "operations-and-denied-state", "status": "PASS", "evidence": "operator probe plus browser /admin access-unavailable state for non-operator demo account"},
+    {"id": "restart-persistence", "status": "PASS", "evidence": "worker health, app reload and persisted task/credit/asset records"}
+  ],
+  "commands": [
+    "corepack pnpm verify:openspec",
+    "corepack pnpm typecheck",
+    "corepack pnpm build",
+    "node --experimental-strip-types --test tests/unit/brand-shell.test.ts",
+    "corepack pnpm verify:skills",
+    "corepack pnpm verify:customization",
+    "corepack pnpm verify:docs",
+    "corepack pnpm verify:content-boundaries",
+    "corepack pnpm verify:release-boundaries",
+    "corepack pnpm db:migrate",
+    "corepack pnpm db:probe:auth-http",
+    "corepack pnpm db:probe:team-http",
+    "corepack pnpm db:probe:api-isolation",
+    "corepack pnpm db:probe:generation-lifecycle",
+    "corepack pnpm db:probe:generation-races",
+    "corepack pnpm db:probe:assets",
+    "corepack pnpm db:probe:generation-create",
+    "corepack pnpm db:probe:credit-ledger",
+    "node --experimental-strip-types scripts/probe-billing-checkout.ts",
+    "corepack pnpm db:probe:billing-reconciliation",
+    "corepack pnpm db:probe:operator"
+  ],
+  "limitations": [
+    "This record is local/mock evidence only.",
+    "Real model/provider accounts, real Stripe transactions, production mail, hosted storage, affiliate settlement and production deployment remain later-stage evidence.",
+    "Historical M3/M4/M5/M6 records are intentionally stale after the shared UI/spec changes and require independent review before any stage promotion."
+  ]
+}

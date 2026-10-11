@@ -1,0 +1,26 @@
+- banner:
+  - link "Shpitto Video SaaS home":
+    - /url: /
+    - text: Shpitto
+  - navigation "Primary navigation":
+    - link "Home":
+      - /url: /
+    - link "Docs preview":
+      - /url: /docs
+      - text: Docs
+      - generic: preview
+    - link "Dashboard planned":
+      - /url: /dashboard
+      - text: Dashboard
+      - generic: planned
+- main:
+  - paragraph: Workspace access
+  - heading "Create a team workspace" [level=1]
+  - paragraph: Personal workspace ownership remains immutable. Collaboration starts in a separate team workspace.
+  - heading "Team workspace" [level=2]
+  - generic: No members
+  - textbox "Team name"
+  - button "Create team"
+- contentinfo: Shpitto Video SaaS · staged implementation preview
+- button "Open Next.js Dev Tools":
+- alert

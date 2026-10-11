@@ -1,0 +1,19 @@
+{
+  "status": "IN_PROGRESS",
+  "profile": "local-contract",
+  "workflows": ["customize-brand", "create-page", "modify-page", "customize-site"],
+  "passed": [
+    "presentation/protected path classification",
+    "protected semantic bypass rejection",
+    "shared journey marker presence",
+    "scoped recovery contract"
+  ],
+  "deferred": [
+    "integrated auth/credits/generation/billing/admin browser journeys",
+    "full M4 real-provider profile",
+    "full M5 Stripe test-mode profile",
+    "full M6 FirstPromoter profile"
+  ],
+  "reason": "The local contract slice is verified; task 8.9 cannot close until M4, M5 and M6 predecessor gates are accepted.",
+  "testCommand": "node --experimental-strip-types --test tests/customization/four-workflows.test.ts"
+}

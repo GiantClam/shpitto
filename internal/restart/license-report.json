@@ -1,0 +1,198 @@
+{
+  "schemaVersion": "1.0",
+  "status": "DIRECT_LICENSE_METADATA_AND_CONTAINER_MEDIA_PROVENANCE_COLLECTED",
+  "source": "internal/spikes/selected-stack/package.json and installed direct package manifests",
+  "packages": [
+    {
+      "name": "@trigger.dev/sdk",
+      "requested": "4.6.4",
+      "resolved": "4.6.4",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/triggerdotdev/trigger.dev",
+        "directory": "packages/trigger-sdk"
+      }
+    },
+    {
+      "name": "better-auth",
+      "requested": "1.7.6",
+      "resolved": "1.7.6",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/better-auth/better-auth.git",
+        "directory": "packages/better-auth"
+      }
+    },
+    {
+      "name": "drizzle-orm",
+      "requested": "0.45.3",
+      "resolved": "0.45.3",
+      "license": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/drizzle-team/drizzle-orm.git"
+      }
+    },
+    {
+      "name": "fumadocs-core",
+      "requested": "16.15.14",
+      "resolved": "16.15.14",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "github:fuma-nama/fumadocs"
+      }
+    },
+    {
+      "name": "fumadocs-ui",
+      "requested": "16.15.14",
+      "resolved": "16.15.14",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "github:fuma-nama/fumadocs"
+      }
+    },
+    {
+      "name": "next",
+      "requested": "16.3.6",
+      "resolved": "16.3.6",
+      "license": "MIT",
+      "repository": "vercel/next.js"
+    },
+    {
+      "name": "pg",
+      "requested": "8.23.0",
+      "resolved": "8.23.0",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git://github.com/brianc/node-postgres.git",
+        "directory": "packages/pg"
+      }
+    },
+    {
+      "name": "react",
+      "requested": "19.3.0",
+      "resolved": "19.3.0",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/react/react.git",
+        "directory": "packages/react"
+      }
+    },
+    {
+      "name": "react-admin",
+      "requested": "5.15.4",
+      "resolved": "5.15.4",
+      "license": "MIT",
+      "repository": "marmelab/react-admin"
+    },
+    {
+      "name": "react-dom",
+      "requested": "19.3.0",
+      "resolved": "19.3.0",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/react/react.git",
+        "directory": "packages/react-dom"
+      }
+    },
+    {
+      "name": "stripe",
+      "requested": "22.6.2",
+      "resolved": "22.6.2",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/stripe/stripe-node"
+      }
+    },
+    {
+      "name": "@types/node",
+      "requested": "24.0.0",
+      "resolved": "24.0.0",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/node"
+      }
+    },
+    {
+      "name": "@types/react",
+      "requested": "19.0.0",
+      "resolved": "19.0.0",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/react"
+      }
+    },
+    {
+      "name": "@types/react-dom",
+      "requested": "19.0.0",
+      "resolved": "19.0.0",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/react-dom"
+      }
+    },
+    {
+      "name": "drizzle-kit",
+      "requested": "0.31.11",
+      "resolved": "0.31.11",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/drizzle-team/drizzle-orm.git"
+      }
+    },
+    {
+      "name": "typescript",
+      "requested": "6.0.3",
+      "resolved": "6.0.3",
+      "license": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/microsoft/TypeScript.git"
+      }
+    }
+  ],
+  "missingDirectManifests": [],
+  "mediaBinaryProvenance": {
+    "status": "HOST_AND_CONTAINER_PROVENANCE_COLLECTED",
+    "ffmpeg": {
+      "version": "7.0-essentials_build-www.gyan.dev",
+      "path": "D:/soft/ffmpeg/bin/ffmpeg.exe",
+      "sha256": "473A53126B95174D1E3B67017DF5383BB13BAC9C3DC59011A6274BCA840E3845",
+      "licenseNote": "Host binary provenance only; redistribution rights and container inclusion remain unverified"
+    },
+    "ffprobe": {
+      "version": "7.0-essentials_build-www.gyan.dev",
+      "path": "D:/soft/ffmpeg/bin/ffprobe.exe",
+      "sha256": "72C01F83221E3DA073AB2659416C59F96266679044F39B7A58CFA783731EFAF2",
+      "licenseNote": "Host binary provenance only; redistribution rights and container inclusion remain unverified"
+    },
+    "containerProbe": "PASS_CONTAINER_MEDIA_FIXTURE",
+    "containerEvidenceRef": "internal/spikes/selected-stack/packaging/worker-evidence.json",
+    "containerImage": "shpitto-m0-worker:20260927",
+    "containerImageId": "sha256:53d69735b3f2606907f0d2832d40a8841cfb3f8c15138b35f7a4b84d9e309cd4",
+    "containerBaseImageDigest": "debian@sha256:3783cc01769c7b2b1b83a5c5ad96c815348e28ed7da68e2e3687004faa906251",
+    "containerFfmpeg": {
+      "version": "ffmpeg version 5.1.9-0+deb12u1 Copyright (c) 2000-2026 the FFmpeg developers",
+      "licenseNote": "Debian ffmpeg package; retain Debian package copyright and license notices for a shipped image."
+    },
+    "containerFfprobe": {
+      "version": "ffprobe version 5.1.9-0+deb12u1 Copyright (c) 2007-2026 the FFmpeg developers",
+      "licenseNote": "Debian ffmpeg package includes ffprobe; retain Debian package copyright and license notices for a shipped image."
+    }
+  }
+}

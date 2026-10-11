@@ -1,0 +1,1 @@
+{"status":"PASS","crossWorkspace":"denied","tokenExpiry":"denied","traversal":"denied","activeInputDeletion":"denied","orphanRetention":{"recentBefore24h":"retained","exactBoundary":"deleted","rowless":"deleted","failedRemovalRetried":"deleted","foreignWorkspace":"retained"},"symlink":"denied","mediaProbe":{"format":"mov,mp4,m4a,3gp,3g2,mj2","durationMs":200,"hasVideo":true}}

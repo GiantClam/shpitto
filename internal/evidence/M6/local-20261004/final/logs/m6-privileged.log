@@ -1,0 +1,81 @@
+{"status":"PASS","databaseName":"m6_privileged_probe_6de524e16958436f95933826656265f1","count":11,"cases":["bootstrap dry-run has no effects; verified identity and concurrent one-time latch enforced","unverified and disabled identities cannot receive superadmin; historical unverified roles cannot satisfy the surviving owner guard","legacy disable shares final-owner protection and audited domain command; all target sessions are revoked","positive owner demotion and concurrent demotion/disable preserve one owner; returned role version matches persistence","out-of-band recovery rejects new appointments/stale versions, invalidates sessions and cannot reopen bootstrap","refund stale version has no external effect; concurrent retry submits once; settled retry returns confirmed result with one audit/outbox","ambiguous response retains durable unknown intent and prevents another refund","never-claimed durable refund survives a pre-dispatch crash and concurrent recovery submits once","post-submit audit failure rolls back cash/result; expired delivery reconciles by authoritative lookup without resubmission","unknown refund without authoritative lookup remains unknown and never triggers a second create call","browser reload recovers the original pending key/body/version with semantic-hash verification; other actors cannot replay that identity"]}
+{"disposableDatabaseRemoved":true,"databaseName":"m6_privileged_probe_6de524e16958436f95933826656265f1"}
+✔ scripts\probe-m6-privileged.ts (2048.0071ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2053.7114
+ℹ start of coverage report
+ℹ ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ file                    | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ src                     |        |          |         | 
+ℹ  adapters               |        |          |         | 
+ℹ   billing               |        |          |         | 
+ℹ    refunds.ts           |  36.36 |   100.00 |    0.00 | 13-33
+ℹ  config                 |        |          |         | 
+ℹ   env.ts                |  75.00 |    33.33 |   33.33 | 9-11 42-43 66-80 87-88
+ℹ   plans.ts              | 100.00 |    55.56 |  100.00 | 
+ℹ  contracts              |        |          |         | 
+ℹ   http.ts               |  58.49 |    70.00 |   61.54 | 17-18 21-22 25-35 39-40 46-47 73 81-87 90-106
+ℹ  db                     |        |          |         | 
+ℹ   client.ts             |  89.29 |   100.00 |   50.00 | 26-28
+ℹ   contracts.ts          |  79.59 |   100.00 |   33.33 | 14-16 21-22 25-29
+ℹ   schema                |        |          |         | 
+ℹ    access.ts            | 100.00 |   100.00 |   50.00 | 
+ℹ    affiliate-inbox.ts   | 100.00 |   100.00 |  100.00 | 
+ℹ    affiliate.ts         | 100.00 |   100.00 |   43.75 | 
+ℹ    asset.ts             | 100.00 |   100.00 |   33.33 | 
+ℹ    auth.ts              | 100.00 |   100.00 |   62.50 | 
+ℹ    billing.ts           |  96.88 |   100.00 |   52.94 | 217-223
+ℹ    commands.ts          | 100.00 |   100.00 |   33.33 | 
+ℹ    credit.ts            | 100.00 |   100.00 |   42.86 | 
+ℹ    generation.ts        | 100.00 |   100.00 |   66.67 | 
+ℹ    index.ts             | 100.00 |   100.00 |  100.00 | 
+ℹ    invitations.ts       | 100.00 |   100.00 |   33.33 | 
+ℹ    operations.ts        | 100.00 |   100.00 |   33.33 | 
+ℹ    operator.ts          | 100.00 |   100.00 |   40.00 | 
+ℹ    ownership.ts         | 100.00 |   100.00 |  100.00 | 
+ℹ    workspace.ts         | 100.00 |   100.00 |   41.18 | 
+ℹ  modules                |        |          |         | 
+ℹ   affiliates            |        |          |         | 
+ℹ    abuse-review.ts      |  27.27 |   100.00 |    0.00 | 4-11
+ℹ    cash-recovery.ts     |  95.83 |    33.33 |  100.00 | 20
+ℹ    commission-review.ts |  55.77 |   100.00 |    0.00 | 24-28 31-42 45-47 50-52
+ℹ    contracts.ts         |  74.58 |   100.00 |    0.00 | 43-45 48-59
+ℹ    delivery.ts          |  52.00 |   100.00 |    0.00 | 8-10 13-14 17-19 22-25
+ℹ    eligibility.ts       |  41.18 |   100.00 |    0.00 | 6-7 10-17
+ℹ    runtime.ts           |  25.29 |    14.29 |   13.64 | 21 38-40 42-46 56-58 60-62 64-66 68-76 83-88 95-110 114-128 130-132 134-138 141-181 185-198 201-206 210-264 267-286 289-316 320-327 331-340
+ℹ   billing               |        |          |         | 
+ℹ    contracts.ts         |  77.78 |    63.16 |   70.00 | 30-31 34-35 41-42 49-50 64-66 70-72 75-80 89-90 105-106
+ℹ    recovery.ts          |  77.27 |     8.82 |   15.38 | 40-42 59-69 80-83 87-88
+ℹ    refund-command.ts    |  54.29 |    66.67 |   50.00 | 21-24 27-56 92-105
+ℹ    refund-delivery.ts   | 100.00 |    82.35 |  100.00 | 
+ℹ    refund-preview.ts    |  80.36 |    18.75 |   66.67 | 28-38
+ℹ    refund-retry.ts      |  97.87 |    66.67 |  100.00 | 26
+ℹ   credits               |        |          |         | 
+ℹ    reversals.ts         |  50.00 |   100.00 |    0.00 | 15-28 31-32
+ℹ   generation            |        |          |         | 
+ℹ    outbox.ts            |  74.52 |    52.94 |   47.06 | 41-42 45-47 53-55 97-116 119-122 125-128 132-135
+ℹ   operations            |        |          |         | 
+ℹ    audit.ts             |  90.77 |    75.00 |  100.00 | 14-15 21-22 40-41
+ℹ    authorization.ts     | 100.00 |   100.00 |  100.00 | 
+ℹ    authorize.ts         |  89.47 |    52.63 |   88.89 | 35 44-45 77-78 159-171
+ℹ    bootstrap.ts         | 100.00 |    85.71 |  100.00 | 
+ℹ    commands.ts          |  57.98 |    74.42 |   61.54 | 29-32 62-65 100 114-135 137-145 148-181 184-188
+ℹ    status-commands.ts   |  33.87 |    62.50 |   23.08 | 29-30 34-37 39-44 46-60 81-101 103-121 124-130 133-139 141-168 171-177 180-186
+ℹ   shared                |        |          |         | 
+ℹ    commands.ts          |  91.01 |    68.00 |  100.00 | 31-32 43-44 69-70 72-73
+ℹ    transaction.ts       | 100.00 |   100.00 |  100.00 | 
+ℹ   workspaces            |        |          |         | 
+ℹ    authorize.ts         |  37.33 |   100.00 |    0.00 | 18-35 39-51 58-64 67-75
+ℹ    commands.ts          |  44.10 |    75.00 |   50.00 | 33-34 38-43 85-86 91-116 119-145 148-173 176-195
+ℹ    policy.ts            |  39.72 |    50.00 |    9.09 | 27-29 31-33 35-39 42-49 52-57 74-90 93-104 107-116 119-133 136-141
+ℹ ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ all files               |  72.16 |    65.27 |   46.03 | 
+ℹ ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0",
+  "release": "v1",
+  "status": "candidate-scoped",
+  "required": [
+    "candidateId", "capturedAt", "sourceTreeSha256", "schemaSha256", "configurationSha256",
+    "contractSha256", "validatorSha256", "lockfileSha256", "policyVersion", "checks", "review"
+  ],
+  "check": {"required": ["id", "status", "exitCode", "outputRef"]},
+  "review": {"required": ["reviewerId", "independentFromImplementer", "decision"]},
+  "exportRule": "export and deploy entrypoints must reject absent, failed or stale evidence"
+}

@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "profile": "local-candidate-evidence",
+  "candidateId": "local-candidate-20261007-completion",
+  "archiveSha256": "c4a1dcb111811a9ae4a0a956045e59880ad937ff6efbadff4af47ca4beb1dbad",
+  "journeyChecks": 15,
+  "dockerChecks": 5,
+  "docs": "PASS",
+  "productionDeployment": "NOT_RUN",
+  "realAccounts": "NOT_PROVIDED"
+}

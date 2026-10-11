@@ -1,0 +1,11 @@
+Error: ENOSPC: no space left on device, copyfile 'D:\github\shpitto\.turbo\cache\ebe454b8db3990f2.tar.zst' -> 'C:\Users\liula\AppData\Local\Temp\shpitto-m3-verification-6UvWn3\candidate\.turbo\cache\ebe454b8db3990f2.tar.zst'
+    at copyFileSync (node:fs:3105:11)
+    at copyFile (node:internal/fs/cp/cp-sync:101:3)
+    at onFile (node:internal/fs/cp/cp-sync:83:25)
+    at getStats (node:internal/fs/cp/cp-sync:72:12)
+    at copyDir (node:internal/fs/cp/cp-sync:176:9)
+    at onDir (node:internal/fs/cp/cp-sync:136:25)
+    at getStats (node:internal/fs/cp/cp-sync:68:12)
+    at copyDir (node:internal/fs/cp/cp-sync:176:9)
+    at onDir (node:internal/fs/cp/cp-sync:136:25)
+    at getStats (node:internal/fs/cp/cp-sync:68:12)

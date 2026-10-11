@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "1.0",
+  "status": "RELOCATED_VERIFIED",
+  "sourceRoot": "D:\\github\\shpitto",
+  "proposedDestination": "legacy/shpitto-platform",
+  "movePolicy": "Move only the exact files in the reviewed pre-move manifest; preserve ignored/private/generated state at its recorded source location.",
+  "retainAtRoot": [
+    ".git",
+    "openspec",
+    "docs/plans/approved-baselines",
+    "AGENTS.md",
+    "internal/restart"
+  ],
+  "legacyCandidates": [
+    "apps",
+    "builder",
+    "packages",
+    "sites"
+  ],
+  "privateOrIgnored": [
+    ".cache",
+    ".codex",
+    ".env",
+    ".env.example",
+    ".git",
+    ".gstack",
+    ".omx",
+    ".opencode",
+    ".playwright-cli",
+    ".tmp",
+    ".turbo",
+    ".vercel",
+    "node_modules"
+  ],
+  "collisionPolicy": "Reject any destination collision or changed hash; never overwrite unrelated work.",
+  "rollback": "Use pre-move hashes and literal paths. Stop if root or destination differs from the manifest.",
+  "sourceInventoryRef": "pre-move-manifest.json",
+  "relocationJournalRef": "relocation-journal.json",
+  "postMoveManifestRef": "post-move-manifest.json"
+}

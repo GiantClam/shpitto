@@ -1,0 +1,111 @@
+{
+  "status": "M4_REAL_ROWS_PARTIAL",
+  "verifiedAt": "2026-10-11T00:16:05.265Z",
+  "scope": "Four real provider output rows plus isolated private application storage lifecycle",
+  "rows": [
+    {
+      "provider": "replicate",
+      "mode": "t2v",
+      "endpoint": "wan-video/wan-2.2-t2v-fast",
+      "version": "c483b1f7b892065bc58ebadb6381abf557f6b1f517d2ff0febb3fb635cf49b4d",
+      "schemaSha256": "bb24e298f722cd892bfe9bf608e08796ab249c921b10f87542b47dcdefb89f09",
+      "requestId": "wxrfrzbt1drmt0d141n98vhsxr",
+      "output": {
+        "path": "internal/evidence/M4/task-5.10/replicate-t2v-wxrfrzbt1drmt0d141n98vhsxr.mp4",
+        "bytes": 6336892,
+        "sha256": "dcd63e34952a28c8f897f30c15b5d325f8bd004d76aa6f547e216ff52d4affef",
+        "codec": "mpeg4",
+        "width": 1280,
+        "height": 720,
+        "durationSeconds": 5.0625,
+        "framesPerSecond": 16
+      },
+      "privateLifecycleEvidence": "replicate-t2v-private-lifecycle-r2.json",
+      "authorizedDownload": "PASS",
+      "costStatus": "UNKNOWN"
+    },
+    {
+      "provider": "replicate",
+      "mode": "i2v",
+      "endpoint": "wan-video/wan-2.2-i2v-fast",
+      "version": "4eaf2b01d3bf70d8a2e00b219efeb7cb415855ad18b7dacdc4cae664a73a6eea",
+      "schemaSha256": "469876007a77a8e92e9879c714f1273e003deac577a4bd6e699c1eff44440b6c",
+      "requestId": "0kwz3zvawxrmt0d15168x8c3rm",
+      "inputImage": {
+        "path": "internal/evidence/M4/task-5.10/replicate-i2v-test-image.jpg",
+        "bytes": 177425,
+        "sha256": "50d542f6b28a0f0ab01a924097a38dc82e95ea00cfa2b1e35a66e8f9590481bd",
+        "sourceHost": "images.unsplash.com"
+      },
+      "output": {
+        "path": "internal/evidence/M4/task-5.10/replicate-i2v-real-0kwz3zvawxrmt0d15168x8c3rm.mp4",
+        "bytes": 1243405,
+        "sha256": "9bbe15a33f782148a1c7b944dd5b67915f99c2a18fd8dc72d5c3857f40a63c25",
+        "codec": "h264",
+        "width": 1168,
+        "height": 784,
+        "durationSeconds": 5.0625,
+        "framesPerSecond": 16
+      },
+      "privateLifecycleEvidence": "replicate-i2v-private-lifecycle-r2.json",
+      "authorizedDownload": "PASS",
+      "costStatus": "UNKNOWN"
+    },
+    {
+      "provider": "fal",
+      "mode": "t2v",
+      "endpoint": "fal-ai/wan/v2.2-a14b/text-to-video",
+      "schemaSha256": "b23b17eb18956feaaa318cfb77bf8ad7c9ff7af560fe274118bbf594a8a654c7",
+      "requestId": "01a1232d-b908-7442-b7df-6558dd769706",
+      "output": {
+        "path": "internal/evidence/M4/task-5.10/fal-t2v-real-01a1232d-b908-7442-b7df-6558dd769706.mp4",
+        "bytes": 2668103,
+        "sha256": "893f56d9a586c3bf35bad7dd00ff0224ae4c6f5f399766e3827b2133f6e41f31",
+        "codec": "h264",
+        "width": 1280,
+        "height": 720,
+        "durationSeconds": 5.066574,
+        "framesPerSecond": 16
+      },
+      "privateLifecycleEvidence": "fal-private-lifecycle-r2.json",
+      "authorizedDownload": "PASS",
+      "costStatus": "UNKNOWN"
+    },
+    {
+      "provider": "fal",
+      "mode": "i2v",
+      "endpoint": "fal-ai/wan/v2.2-a14b/image-to-video",
+      "schemaSha256": "012030973ffd700e00516d016e37996b10dd1b969fd2c79da21c92c8e130cef5",
+      "requestId": "01a12337-c628-7363-93bd-2e526b11514b",
+      "output": {
+        "path": "internal/evidence/M4/task-5.10/fal-i2v-real-01a12337-c628-7363-93bd-2e526b11514b.mp4",
+        "bytes": 4598998,
+        "sha256": "6ac44c1e75c0175a84f6fcfc41728d41fefc8c9a40f0136d65881dac86a30085",
+        "codec": "h264",
+        "width": 1280,
+        "height": 720,
+        "durationSeconds": 5.066574,
+        "framesPerSecond": 16
+      },
+      "privateLifecycleEvidence": "fal-private-lifecycle-r2.json",
+      "authorizedDownload": "PASS",
+      "costStatus": "UNKNOWN"
+    }
+  ],
+  "crossRowChecks": {
+    "allFourPlayableOutputs": "PASS",
+    "allFourPrivateLifecycle": "PASS",
+    "r2LiveAdapter": "PASS",
+    "authenticatedPolling": "PASS",
+    "authenticatedCallbacks": "NOT_RUN_NO_PUBLIC_CALLBACK_ENDPOINT",
+    "realDomainReservationSettlement": "NOT_RUN_PROVIDER_MODELS_REMAIN_DISABLED_IN_PRODUCT_CATALOG",
+    "providerCostConfirmation": "UNKNOWN_PROVIDER_RESPONSES_EXPOSED_NO_BILLABLE_AMOUNT",
+    "independentReview": "REQUIRED",
+    "gate": "BLOCKED"
+  },
+  "notes": [
+    "The Replicate I2V request was the only additional controlled provider request in this continuation; its output was downloaded before provider retention removed it.",
+    "Private lifecycle probes used only retained output files, disposable PostgreSQL databases, isolated workspaces and fresh object-key prefixes; they did not read or delete existing business objects.",
+    "The four-row evidence does not by itself close M4. The acceptance contract requires callback evidence, domain reservation settlement and an independent review in addition to playable outputs."
+  ]
+}

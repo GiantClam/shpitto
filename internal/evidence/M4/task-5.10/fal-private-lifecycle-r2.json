@@ -1,0 +1,52 @@
+{
+  "status": "PASS_REAL_PROVIDER_PRIVATE_LIFECYCLE",
+  "startedAt": "2026-10-11T00:21:57.656Z",
+  "finishedAt": "2026-10-11T00:22:16.061Z",
+  "profile": "Cloudflare R2 through the shared S3-compatible adapter",
+  "isolation": {
+    "disposableDatabase": true,
+    "isolatedWorkspace": true,
+    "freshObjectKeysOnly": true,
+    "existingBusinessObjectsReadOrDeleted": false
+  },
+  "providerOutputs": [
+    {
+      "source": "internal/evidence/M4/task-5.10/fal-t2v-real-01a1232d-b908-7442-b7df-6558dd769706.mp4",
+      "modelKey": "fal-wan22-t2v",
+      "taskId": "5e343311-0a10-43fd-b214-64724c32628f",
+      "assetId": "be640607-53a0-4a7b-bd36-2d9c9336fa4c",
+      "objectKey": "tasks/5e343311-0a10-43fd-b214-64724c32628f/outputs/be640607-53a0-4a7b-bd36-2d9c9336fa4c.mp4",
+      "bytes": "2668103",
+      "sha256": "893f56d9a586c3bf35bad7dd00ff0224ae4c6f5f399766e3827b2133f6e41f31"
+    },
+    {
+      "source": "internal/evidence/M4/task-5.10/fal-i2v-real-01a12337-c628-7363-93bd-2e526b11514b.mp4",
+      "modelKey": "fal-wan22-i2v",
+      "taskId": "3583252f-de9d-4e64-9aad-f7ab198949b7",
+      "assetId": "6f3d0c03-dc28-43f7-af84-571eb0195706",
+      "objectKey": "tasks/3583252f-de9d-4e64-9aad-f7ab198949b7/outputs/6f3d0c03-dc28-43f7-af84-571eb0195706.mp4",
+      "bytes": "4598998",
+      "sha256": "6ac44c1e75c0175a84f6fcfc41728d41fefc8c9a40f0136d65881dac86a30085"
+    }
+  ],
+  "checks": {
+    "disposableDatabaseMigration": "PASS",
+    "realProviderOutputMaterialization": "PASS",
+    "readyAssetPublication": "PASS",
+    "currentMembershipAuthorization": "PASS",
+    "sixtySecondTokenBinding": "PASS",
+    "authorizedObjectHash": "PASS",
+    "authorizedAssetDeletion": "PASS",
+    "scheduledS3OrphanCleanup": "PASS",
+    "exactProbeObjectCleanup": "PASS"
+  },
+  "cleanup": {
+    "remainingAttemptedObjectKeys": [],
+    "cursorRemoved": true
+  },
+  "limitations": [
+    "This reuses already-captured fal provider output files and creates no provider request.",
+    "It proves application storage, publication, authorization and cleanup, not provider webhook delivery, cost confirmation or credit settlement.",
+    "Independent M4 review remains open."
+  ]
+}

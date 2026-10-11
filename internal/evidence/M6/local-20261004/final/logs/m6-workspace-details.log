@@ -1,0 +1,52 @@
+{"status":"PASS","database":"isolated local Docker PostgreSQL","sections":["memberships","subscriptions","grants","ledger"],"deterministicPagination":true,"tenantIsolation":true,"recordedPurpose":true,"redactedFields":true,"exactBigIntegers":true,"suspendedWorkspaceRead":true,"supportAndOwnerDenied":true,"revokedAndWrongSessionDenied":true,"queryBoundsEnforced":true}
+✔ scripts\probe-m6-workspace-details.ts (1491.6614ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1498.8766
+ℹ start of coverage report
+ℹ ----------------------------------------------------------------------------------------------------------------
+ℹ file                    | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------------------------------------------------------------
+ℹ src                     |        |          |         | 
+ℹ  config                 |        |          |         | 
+ℹ   env.ts                |  75.00 |    45.45 |   33.33 | 9-11 42-43 66-80 87-88
+ℹ   plans.ts              | 100.00 |    62.50 |  100.00 | 
+ℹ  contracts              |        |          |         | 
+ℹ   http.ts               |  55.66 |    80.65 |   53.85 | 17-18 21-22 25-35 38-42 46-47 73 81-87 90-106
+ℹ  db                     |        |          |         | 
+ℹ   client.ts             |  89.29 |   100.00 |   50.00 | 26-28
+ℹ   contracts.ts          |  79.59 |   100.00 |   33.33 | 14-16 21-22 25-29
+ℹ   schema                |        |          |         | 
+ℹ    access.ts            | 100.00 |   100.00 |   50.00 | 
+ℹ    affiliate-inbox.ts   | 100.00 |   100.00 |  100.00 | 
+ℹ    affiliate.ts         | 100.00 |   100.00 |   43.75 | 
+ℹ    asset.ts             | 100.00 |   100.00 |   33.33 | 
+ℹ    auth.ts              | 100.00 |   100.00 |   62.50 | 
+ℹ    billing.ts           |  96.88 |   100.00 |   52.94 | 217-223
+ℹ    commands.ts          | 100.00 |   100.00 |   33.33 | 
+ℹ    credit.ts            | 100.00 |   100.00 |   42.86 | 
+ℹ    generation.ts        | 100.00 |   100.00 |   66.67 | 
+ℹ    index.ts             | 100.00 |   100.00 |  100.00 | 
+ℹ    invitations.ts       | 100.00 |   100.00 |   33.33 | 
+ℹ    operations.ts        | 100.00 |   100.00 |   33.33 | 
+ℹ    operator.ts          | 100.00 |   100.00 |   40.00 | 
+ℹ    ownership.ts         | 100.00 |   100.00 |  100.00 | 
+ℹ    workspace.ts         | 100.00 |   100.00 |   41.18 | 
+ℹ  modules                |        |          |         | 
+ℹ   billing               |        |          |         | 
+ℹ    contracts.ts         |  77.78 |    63.16 |   70.00 | 30-31 34-35 41-42 49-50 64-66 70-72 75-80 89-90 105-106
+ℹ   operations            |        |          |         | 
+ℹ    audit.ts             |  52.31 |   100.00 |   50.00 | 20-24 27-52
+ℹ    authorize.ts         |  75.44 |    79.31 |   66.67 | 35 127-145 148-156 159-171
+ℹ    workspace-details.ts | 100.00 |    90.63 |  100.00 | 
+ℹ   shared                |        |          |         | 
+ℹ    transaction.ts       | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------------------------------------------------------------
+ℹ all files               |  89.33 |    84.80 |   51.92 | 
+ℹ ----------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

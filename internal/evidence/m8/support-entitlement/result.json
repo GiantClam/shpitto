@@ -1,0 +1,47 @@
+{
+  "status": "PASS",
+  "profile": "local-vendor-commerce",
+  "generatedAt": "2026-10-07T09:07:34.779Z",
+  "scenarios": [
+    "SC-COM-01",
+    "SC-COM-02",
+    "SC-COM-04",
+    "SC-COM-05",
+    "SC-COM-06"
+  ],
+  "checks": {
+    "localHttpJourney": "PASS",
+    "isolatedSourceOrders": "PASS",
+    "entitlementAndRenewal": "PASS",
+    "publicCommerceFailClosed": "PASS"
+  },
+  "sourceHashes": {
+    "vendor/sales/commerce.mjs": "4779304018e5d32c092430a3510fbec1845d3190f7a0387d9d1260ef8bdf7e05",
+    "vendor/sales/commerce.config.json": "05a2de38fc3f4e673175e6478333a47554883e75b3376fe81d85aaf836169559",
+    "vendor/sales/server.mjs": "95e2c715171a271e193f28e8df2e097d6381f194075aa01d99af06b37bd28a99",
+    "vendor/sales/content/legal/source-license.md": "8ffae22441ff8e839ac2f2f2a4c7b6febbae812dbfc3c17bebbb5b0737746cc0",
+    "vendor/sales/content/legal/support-and-services.md": "60b97639b2b8c9a1c824a53b9e661d482a7e0756b5ab1a0319a4521d4431e046",
+    "internal/vendor/entitlement-schema.json": "11d13b9e02a7027e8913548a580a02aff89bc3d0b721441c543ce0afe839e8d5",
+    "scripts/verify-local-fulfillment.mjs": "6a9c1e6c017e46cd79fd3e53c569613bee131643d1fd8922c4bb1fe8fcbd7224",
+    "tests/vendor/commerce.test.mjs": "ddd5f6c02ea6770e7f292eba01cfd39eadbcf58e8d681c413baa19810cbc9ca1",
+    "tests/vendor/fulfillment.test.mjs": "1d6675c5247f79e38b2f69abf0c5b8cc369f9bb099b650bd98c9f2dffeaedce4"
+  },
+  "publicCommerce": "BLOCKED",
+  "vendorAccount": "NOT_PROVIDED",
+  "commercialTerms": "DRAFT_NOT_APPROVED",
+  "blockers": [
+    "hostedMode",
+    "merchantIdentity",
+    "hostedCheckoutUrl",
+    "merchantApproval",
+    "payoutOnboarding",
+    "sourcePrice",
+    "licenseLimits",
+    "refundPolicy",
+    "supportScope",
+    "sourceAffiliateTerms",
+    "separateServices",
+    "publicationAuthorization"
+  ],
+  "note": "Local checks only. No real charge, affiliate settlement, external invitation or publication was performed."
+}

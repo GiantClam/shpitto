@@ -1,0 +1,362 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "IMPLEMENTATION_ACCEPTANCE",
+  "changeId": "restart-shpitto-video-saas",
+  "stageId": "M2",
+  "checkpointId": null,
+  "gateTaskId": "3.6",
+  "status": "PASS",
+  "candidateId": "working-tree-20260928-m2-3.6",
+  "createdAt": "2026-09-28T11:30:00Z",
+  "updatedAt": "2026-09-28T11:55:00Z",
+  "policy": {
+    "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+    "sha256": "b597a035c61da01296d71979c1c16c4136f78c3e3d523b55158f0a2ca3de4ff0"
+  },
+  "prerequisites": [
+    {
+      "taskId": "3.5",
+      "requiredProfile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260928-m2-3.5",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.5/record.json",
+        "internal/restart/m2-task-3.5-evidence.md"
+      ]
+    }
+  ],
+  "candidate": {
+    "sourceCommit": "6ad44be7b6f12fe028637f0300040bada826c47d",
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "0d05704e242b61c3d17de6d961026831cf15189e31482c45c9165ddf532f7b4f",
+    "schemaSha256": "c23186923bb555454c0482fd47ea4a62a6ae4eb9d6aef6538ff7bd92f8099f39",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+    "configurationSha256": "bc279174a0c27eaca66f8db62ab0eafaac4787e3fe2b99bf0a01923f806bf16f",
+    "contractSha256": "b8ef3892ca9fffb41902009c9388dc560b2621175de1efcb5bc024f2051cd6eb",
+    "validatorSha256": "89fd8743e08f2ba92dd95e6ec1bb35b6afdc14671df26b5d33d209252f2b2fd8",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF",
+    "digestInputs": {
+      "sourceTree": [
+        "src",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".dockerignore",
+        ".env.example",
+        "src/config/env.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile"
+      ],
+      "contract": [
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json"
+      ],
+      "validator": [
+        "scripts",
+        "internal/restart/check-acceptance-record.py"
+      ]
+    }
+  },
+  "environments": [
+    {
+      "environmentId": "local-m2-operator-controls",
+      "profile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "toolVersions": {
+        "node": "24.15.0",
+        "pnpm": "12.6.0",
+        "docker": "29.8.0",
+        "postgres": "15-alpine",
+        "python": "3.x",
+        "openspec": "1.0"
+      },
+      "accountOrProgram": "none",
+      "effectiveLimits": "No provider, payment, payout, publication or hosted-service calls",
+      "fixtureOrSeed": "workspace owner without role, operator role, three live sessions, server-created step-up and revoked role",
+      "clockMode": "controlled probe clock",
+      "sanitationNotes": "Generated IDs and local credentials omitted"
+    }
+  ],
+  "criterionResults": [
+    {
+      "criterionId": "3.6-C01",
+      "environmentId": "local-m2-operator-controls",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Global operator roles are explicit and independent from workspace ownership",
+      "observed": "A workspace owner without an operator_roles row was denied; support/operator/superadmin roles are persisted in the app schema and revoked_at is rechecked per request",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.6-evidence.md",
+        "src/db/schema/operator.ts",
+        "src/db/migrations/0003_operator_controls.sql",
+        "src/modules/operations/authorize.ts",
+        "src/app/api/admin/me/route.ts",
+        "scripts/probe-operator.ts"
+      ]
+    },
+    {
+      "criterionId": "3.6-C02",
+      "environmentId": "local-m2-operator-controls",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Privileged commands require a server-created trusted second-factor stamp for the same live session within ten minutes",
+      "observed": "Missing step-up, different session and expired live session were rejected; same-session stamp succeeded; step-up expiry at ten minutes was rejected",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.6-evidence.md",
+        "src/db/schema/operator.ts",
+        "src/db/migrations/0003_operator_controls.sql",
+        "src/modules/operations/authorize.ts",
+        "src/app/api/admin/me/route.ts",
+        "scripts/probe-operator.ts"
+      ]
+    },
+    {
+      "criterionId": "3.6-C03",
+      "environmentId": "local-m2-operator-controls",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Role revocation takes effect immediately even when the session remains live",
+      "observed": "Revoked operator role was denied immediately in the same session",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.6-evidence.md",
+        "src/db/schema/operator.ts",
+        "src/db/migrations/0003_operator_controls.sql",
+        "src/modules/operations/authorize.ts",
+        "src/app/api/admin/me/route.ts",
+        "scripts/probe-operator.ts"
+      ]
+    },
+    {
+      "criterionId": "3.6-C04",
+      "environmentId": "local-m2-operator-controls",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Admin session summary is exposed only through authenticated operator authorization",
+      "observed": "The admin/me route derives user and session identity from Better Auth and requires the operator plus trusted step-up gate",
+      "evidenceRefs": [
+        "src/app/api/admin/me/route.ts",
+        "src/app/api/workspaces/_shared.ts",
+        "src/modules/operations/authorize.ts"
+      ]
+    }
+  ],
+  "commonStandardResults": [
+    {
+      "standard": "scope",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Operator role and trusted-session boundary only; admin screens, provider-specific 2FA and access-state matrix remain later tasks"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.6-evidence.md"
+      ]
+    },
+    {
+      "standard": "build-and-checks",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Typecheck, lint, format, full verify, migration checks and operator PostgreSQL probe passed"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.6-evidence.md"
+      ]
+    },
+    {
+      "standard": "coverage",
+      "applicable": true,
+      "result": "NOT_APPLICABLE",
+      "reason": "M2 aggregate branch coverage is established at task 3.12; mandatory operator denial and step-up cases are covered by the disposable probe",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.6-evidence.md"
+      ]
+    },
+    {
+      "standard": "defects",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "No open P0/P1 defect is recorded for task 3.6"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.6-evidence.md"
+      ]
+    },
+    {
+      "standard": "isolation-security",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Roles are global rows independent of workspace ownership; step-up rows bind user and live session and are checked server-side"
+      ],
+      "evidenceRefs": [
+        "src/db/schema/operator.ts",
+        "src/modules/operations/authorize.ts"
+      ]
+    },
+    {
+      "standard": "evidence-and-recovery",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Current candidate digests, role escalation, session binding, expiry and revocation outcomes are recorded"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.6-evidence.md",
+        "scripts/probe-operator.ts"
+      ]
+    }
+  ],
+  "scenarioResults": [
+    {
+      "ids": [
+        "T04",
+        "T59",
+        "SC-IAM-09",
+        "SC-IAM-10"
+      ],
+      "profile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "environmentId": "local-m2-operator-controls",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Workspace ownership cannot grant global administration and trusted step-up is bound to the live session and ten-minute window",
+      "observed": "Owner escalation, missing/different/expired-session step-up, ten-minute expiry and immediate role revocation were rejected; same-session step-up succeeded",
+      "iteration": "single generated fixture run",
+      "commandRef": "m2-3.6-operator-probe",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.6-evidence.md",
+        "scripts/probe-operator.ts"
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "commandId": "m2-3.6-operator-probe",
+      "invocation": "DATABASE_URL=<redacted-local-credential> corepack pnpm db:probe:operator",
+      "environmentId": "local-m2-operator-controls",
+      "startAt": "2026-09-28T11:20:00Z",
+      "endAt": "2026-09-28T11:50:04Z",
+      "exitCode": 0,
+      "assertionRef": "ownerEscalationRejected=true, missingStepUpRejected=true, sameSessionAccepted=true, differentSessionRejected=true, expiredSessionRejected=true, expiredRejected=true, revocationImmediate=true"
+    },
+    {
+      "commandId": "m2-3.6-verify",
+      "invocation": "corepack pnpm verify",
+      "environmentId": "local-m2-operator-controls",
+      "startAt": "2026-09-28T11:21:00Z",
+      "endAt": "2026-09-28T11:25:00Z",
+      "exitCode": 0,
+      "assertionRef": "full root verification and Next build passed"
+    },
+    {
+      "commandId": "m2-3.6-record-check",
+      "invocation": "python -B internal/restart/check-acceptance-record.py internal/evidence/acceptance/M2/working-tree-20260928-m2-3.6/record.json",
+      "environmentId": "local-m2-operator-controls",
+      "startAt": "2026-09-28T11:50:10Z",
+      "endAt": "2026-09-28T11:50:11Z",
+      "exitCode": 0,
+      "assertionRef": "record schema and digest shape check"
+    }
+  ],
+  "coverage": {
+    "status": "NOT_APPLICABLE",
+    "reason": "M2 coverage denominator is established at task 3.12",
+    "ownedModuleManifestRef": null,
+    "denominator": null,
+    "coveredBranches": null,
+    "totalBranches": null,
+    "percent": null,
+    "exclusions": [],
+    "evidenceRef": "internal/restart/m2-task-3.6-evidence.md"
+  },
+  "defects": [],
+  "externalInputs": [],
+  "commercialAuthorizationRefs": [],
+  "recovery": {
+    "rollbackPoint": "6ad44be7b6f12fe028637f0300040bada826c47d plus current uncommitted M2 patch",
+    "restoreEvidenceRefs": [
+      "internal/restart/m2-task-3.6-evidence.md"
+    ],
+    "compatibleSchemaVersions": [
+      "domain=4"
+    ],
+    "unrelatedWorkProtection": "Generated fixture users, sessions and workspaces are cleaned up in the disposable database"
+  },
+  "observation": {
+    "planRef": "internal/restart/verification-plan.md",
+    "windowStart": null,
+    "windowEnd": null,
+    "windowRationale": "Task-level operator authorization probe; no time-window behavior is claimed",
+    "behavioralBaselineDigest": null,
+    "monitoringEvidenceRefs": [],
+    "journeyEvidenceRefs": [],
+    "recoveryUpgradeEvidenceRefs": [],
+    "recurringWorkerAlertEvidenceRefs": [],
+    "findingRefs": []
+  },
+  "submission": {
+    "implementerId": "root",
+    "submittedAt": "2026-09-28T11:30:00Z",
+    "reportRef": "internal/restart/m2-task-3.6-evidence.md"
+  },
+  "independentReview": {
+    "reviewerId": "m2-gpt6-sol-review-20260928-3.6",
+    "reviewedAt": "2026-09-28T11:55:00Z",
+    "independentFromImplementer": true,
+    "decision": "PASS",
+    "reason": "Independent gpt-6-sol review recomputed all six candidate digests exactly, reran the operator PostgreSQL probe and full repository verification, and additionally confirmed unverified and disabled operators are denied. The review found global role separation, active verified-user checks, live session binding, ten-minute step-up freshness and immediate role revocation enforced server-side. The server-only recordTrustedSecondFactor seam has no provider/credential proof yet; production 2FA provider wiring remains explicitly deferred to later operator scope.",
+    "evidenceRefs": [
+      "internal/restart/m2-task-3.6-evidence.md",
+      "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.6/record.json",
+      "src/db/schema/operator.ts",
+      "src/modules/operations/authorize.ts",
+      "src/app/api/admin/me/route.ts",
+      "src/app/api/workspaces/_shared.ts",
+      "scripts/probe-operator.ts",
+      "openspec/changes/restart-shpitto-video-saas/specs/identity-workspaces/spec.md"
+    ]
+  },
+  "integrationDecision": {
+    "integratorId": "root",
+    "decidedAt": "2026-09-28T11:56:00Z",
+    "decision": "PASS",
+    "reason": "The exact current candidate passed independent gpt-6-sol review, all digest and record checks, the operator authorization probe, disabled/unverified denial checks and full repository verification. Task 3.6 is accepted and task 3.7 is unlocked; the M2 gate remains open. The server-only second-factor recording seam is retained as an explicit boundary for later real provider wiring.",
+    "nextEligibleTaskIds": [
+      "3.7"
+    ],
+    "blockedTaskIds": []
+  },
+  "invalidation": {
+    "supersedesRecordRef": null,
+    "changedDigestRefs": [],
+    "affectedStages": [],
+    "requiredReruns": [],
+    "carriedEvidence": []
+  }
+}

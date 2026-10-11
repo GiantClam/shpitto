@@ -1,0 +1,29 @@
+---
+release: v1
+title: Local billing fixtures
+description: Exercise checkout and cash recovery without a payment account.
+section: template
+status: published
+relatedContracts: [D11, D12, D21, D22, G11, G12, G20, G21]
+---
+
+# Local billing fixtures
+
+The local catalog contains two non-chargeable products: `fixture-monthly` and
+`fixture-pack`. Their sample amounts exist only to exercise request validation,
+checkout attempts, signed local fixture outcomes, webhook inbox processing,
+reconciliation and credit ledger behavior. The production catalog is empty
+until a separately reviewed payment adapter and account profile are configured.
+
+Open the workspace Billing page and select a fixture product. The checkout page
+can complete or fail the fixture, and the portal handoff remains on the
+application origin. A completed fixture event does not represent a Stripe
+payment. Duplicate event delivery should converge on the same business effects;
+refund and dispute outcomes are represented as recovery events and retain their
+own ledger identities.
+
+The authenticated checkout route accepts only a catalog product key. The server
+owns customer identity, amount, currency, price reference and checkout URL. Do
+not add provider identifiers or a browser-selected return URL to the request.
+See the [API contract examples](../api/overview) and the
+[billing recovery operations](./operations).

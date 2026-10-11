@@ -1,0 +1,39 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Recovery must match provider, request and attempt nonce, not just provider request ID.
++ actual - expected
+
+  [
+    {
+      provider: 'replicate',
+      status: 'processed'
+    },
++   {
++     provider: 'fal',
++     status: 'failed'
++   },
++   {
++     provider: 'replicate',
++     status: 'failed'
++   }
+  ]
+
+    at file:///D:/github/shpitto/scripts/probe-m6-recovery.ts:40:12
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async NodePgSession.transaction (file:///D:/github/shpitto/node_modules/.pnpm/drizzle-orm@0.45.3_@opentel_005c41c1a6de5e76c5fdb464aca028b4/node_modules/drizzle-orm/node-postgres/session.js:186:22)
+    at async file:///D:/github/shpitto/scripts/probe-m6-recovery.ts:16:3 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [
+    { provider: 'replicate', status: 'processed' },
+    { provider: 'fal', status: 'failed' },
+    { provider: 'replicate', status: 'failed' }
+  ],
+  expected: [ { provider: 'replicate', status: 'processed' } ],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.15.0

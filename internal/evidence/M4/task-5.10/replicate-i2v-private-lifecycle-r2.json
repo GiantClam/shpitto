@@ -1,0 +1,43 @@
+{
+  "status": "PASS_REAL_PROVIDER_PRIVATE_LIFECYCLE",
+  "startedAt": "2026-10-11T00:15:55.835Z",
+  "finishedAt": "2026-10-11T00:16:05.265Z",
+  "profile": "Cloudflare R2 through the shared S3-compatible adapter",
+  "isolation": {
+    "disposableDatabase": true,
+    "isolatedWorkspace": true,
+    "freshObjectKeysOnly": true,
+    "existingBusinessObjectsReadOrDeleted": false
+  },
+  "providerOutputs": [
+    {
+      "source": "internal/evidence/M4/task-5.10/replicate-i2v-real-0kwz3zvawxrmt0d15168x8c3rm.mp4",
+      "modelKey": "replicate-wan22-i2v",
+      "taskId": "59a26291-9fe5-4f6c-9bb2-5b5207b984c0",
+      "assetId": "d2b7c168-c86b-4217-b137-420b8c3d948e",
+      "objectKey": "tasks/59a26291-9fe5-4f6c-9bb2-5b5207b984c0/outputs/d2b7c168-c86b-4217-b137-420b8c3d948e.mp4",
+      "bytes": "1243405",
+      "sha256": "9bbe15a33f782148a1c7b944dd5b67915f99c2a18fd8dc72d5c3857f40a63c25"
+    }
+  ],
+  "checks": {
+    "disposableDatabaseMigration": "PASS",
+    "realProviderOutputMaterialization": "PASS",
+    "readyAssetPublication": "PASS",
+    "currentMembershipAuthorization": "PASS",
+    "sixtySecondTokenBinding": "PASS",
+    "authorizedObjectHash": "PASS",
+    "authorizedAssetDeletion": "PASS",
+    "scheduledS3OrphanCleanup": "PASS",
+    "exactProbeObjectCleanup": "PASS"
+  },
+  "cleanup": {
+    "remainingAttemptedObjectKeys": [],
+    "cursorRemoved": true
+  },
+  "limitations": [
+    "This reuses already-captured replicate provider output files and creates no provider request.",
+    "It proves application storage, publication, authorization and cleanup, not provider webhook delivery, cost confirmation or credit settlement.",
+    "Independent M4 review remains open."
+  ]
+}

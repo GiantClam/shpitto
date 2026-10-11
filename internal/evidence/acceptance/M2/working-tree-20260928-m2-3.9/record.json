@@ -1,0 +1,353 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "IMPLEMENTATION_ACCEPTANCE",
+  "changeId": "restart-shpitto-video-saas",
+  "stageId": "M2",
+  "checkpointId": null,
+  "gateTaskId": "3.9",
+  "status": "PASS",
+  "candidateId": "working-tree-20260928-m2-3.9",
+  "createdAt": "2026-09-28T14:10:00Z",
+  "updatedAt": "2026-09-28T14:40:00Z",
+  "policy": {
+    "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+    "sha256": "b597a035c61da01296d71979c1c16c4136f78c3e3d523b55158f0a2ca3de4ff0"
+  },
+  "prerequisites": [
+    {
+      "taskId": "3.8",
+      "requiredProfile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260928-m2-3.8",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.8/record.json",
+        "internal/restart/m2-task-3.8-evidence.md"
+      ]
+    }
+  ],
+  "candidate": {
+    "sourceCommit": "6ad44be7b6f12fe028637f0300040bada826c47d",
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "1a52fdd5a3ee484ee26984cd8f412cf8bbb9a93b15a0ca2001302a072fcd83c6",
+    "schemaSha256": "ba086390bbfd989dcff1d2da9657722074773cff6466a97b492c20b9ac1823f6",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+    "configurationSha256": "059a7d691a4fd1c87f579a1078a506534483aa220dc7921a2dc85f4024ec76e7",
+    "contractSha256": "b8ef3892ca9fffb41902009c9388dc560b2621175de1efcb5bc024f2051cd6eb",
+    "validatorSha256": "243198080c6c003d9372fbe6c1ae5174220846ce4abcf4106d40ef7451ed0be8",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF",
+    "digestInputs": {
+      "sourceTree": [
+        "src",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".dockerignore",
+        ".env.example",
+        "src/config/env.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile"
+      ],
+      "contract": [
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json"
+      ],
+      "validator": [
+        "scripts",
+        "internal/restart/check-acceptance-record.py"
+      ]
+    }
+  },
+  "environments": [
+    {
+      "environmentId": "local-m2-credit-ledger",
+      "profile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "toolVersions": {
+        "node": "24.15.0",
+        "pnpm": "12.6.0",
+        "docker": "29.8.0",
+        "postgres": "15-alpine",
+        "python": "3.x",
+        "openspec": "1.0"
+      },
+      "accountOrProgram": "none",
+      "effectiveLimits": "No provider, payment, payout, publication or hosted-service calls",
+      "fixtureOrSeed": "two workspaces, workspace credit accounts, one manual grant, injected audit/outbox failures and cross-tenant ledger attempt",
+      "clockMode": "controlled probe clock",
+      "sanitationNotes": "Generated IDs and local credentials omitted"
+    }
+  ],
+  "criterionResults": [
+    {
+      "criterionId": "3.9-C01",
+      "environmentId": "local-m2-credit-ledger",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Grant bucket equality and immutable ledger explanation are preserved with workspace-owned lineage and business uniqueness",
+      "observed": "A 100-unit manual grant produced one available ledger delta; the probe verified issued = available + reserved + consumed + expired + voided and replayed the business result without a second grant",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.9-evidence.md",
+        "src/db/schema/credit.ts",
+        "src/modules/credits/ledger.ts",
+        "scripts/probe-credit-ledger.ts"
+      ]
+    },
+    {
+      "criterionId": "3.9-C02",
+      "environmentId": "local-m2-credit-ledger",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Ledger and allocation lineage cannot cross workspaces",
+      "observed": "The composite grant/workspace foreign key rejected an insert using the grant from the other workspace",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.9-evidence.md",
+        "src/db/schema/credit.ts",
+        "src/db/migrations/0007_credit_ledger_audit.sql",
+        "scripts/probe-credit-ledger.ts"
+      ]
+    },
+    {
+      "criterionId": "3.9-C03",
+      "environmentId": "local-m2-credit-ledger",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Audit and outbox failures roll back the grant, ledger and companion effects atomically",
+      "observed": "Injected failure after audit and after outbox each rolled back all failed grant rows; the successful command retained exactly one grant, ledger, audit and outbox row",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.9-evidence.md",
+        "src/modules/credits/ledger.ts",
+        "scripts/probe-credit-ledger.ts"
+      ]
+    }
+  ],
+  "commonStandardResults": [
+    {
+      "standard": "scope",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Grant ledger, lineage FK and audit/outbox atomic foundation only; quotes, FEFO, reservations, generation and provider settlement remain later tasks"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.9-evidence.md"
+      ]
+    },
+    {
+      "standard": "build-and-checks",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Typecheck, lint, format, full verify, eight-migration foundation and credit-ledger PostgreSQL probe passed"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.9-evidence.md"
+      ]
+    },
+    {
+      "standard": "coverage",
+      "applicable": true,
+      "result": "NOT_APPLICABLE",
+      "reason": "M2 coverage denominator is established at task 3.12; grant and rollback transitions are covered by the disposable PostgreSQL probe",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.9-evidence.md"
+      ]
+    },
+    {
+      "standard": "defects",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "No open P0/P1 defect is recorded for task 3.9"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.9-evidence.md"
+      ]
+    },
+    {
+      "standard": "isolation-security",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Composite workspace lineage and restricted foreign keys prevent cross-tenant ledger rows; payloads are serialized without secrets"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.9-evidence.md",
+        "src/db/schema/credit.ts"
+      ]
+    },
+    {
+      "standard": "evidence-and-recovery",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Current candidate digests, migration version 8, replay, lineage rejection and injected rollback outcomes are recorded"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.9-evidence.md",
+        "scripts/probe-credit-ledger.ts"
+      ]
+    }
+  ],
+  "scenarioResults": [
+    {
+      "ids": [
+        "T06",
+        "T07",
+        "T09",
+        "T60",
+        "T61",
+        "SC-CRD-01",
+        "SC-CRD-02",
+        "SC-CRD-07",
+        "SC-CRD-08"
+      ],
+      "profile": "local-m2-credit-ledger",
+      "environmentId": "local-m2-credit-ledger",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Ledger projections reconcile, tenant lineage is enforced, semantic replay is single-effect and audit/outbox failures roll back the full command",
+      "observed": "Credit-ledger probe passed replay, mismatch rejection, bucket equality, injected audit/outbox rollback and cross-tenant rejection",
+      "iteration": "single generated fixture run",
+      "commandRef": "m2-3.9-credit-ledger-probe",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.9-evidence.md",
+        "scripts/probe-credit-ledger.ts"
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "commandId": "m2-3.9-credit-ledger-probe",
+      "invocation": "DATABASE_URL=<redacted-local-credential> corepack pnpm db:probe:credit-ledger",
+      "environmentId": "local-m2-credit-ledger",
+      "startAt": "2026-09-28T14:00:00Z",
+      "endAt": "2026-09-28T14:02:00Z",
+      "exitCode": 0,
+      "assertionRef": "replayed=true, mismatchRejected=true, bucketEquality=true, auditRollback=true, outboxRollback=true, crossTenantRejected=true, ledgerRows=1, auditRows=1, outboxRows=1"
+    },
+    {
+      "commandId": "m2-3.9-m2-foundation-probe",
+      "invocation": "DATABASE_URL=<redacted-local-credential> corepack pnpm db:probe:m2",
+      "environmentId": "local-m2-credit-ledger",
+      "startAt": "2026-09-28T14:02:00Z",
+      "endAt": "2026-09-28T14:03:00Z",
+      "exitCode": 0,
+      "assertionRef": "eight migrations apply idempotently and existing tenant-lineage invariants remain PASS"
+    },
+    {
+      "commandId": "m2-3.9-verify",
+      "invocation": "corepack pnpm verify",
+      "environmentId": "local-m2-credit-ledger",
+      "startAt": "2026-09-28T14:04:00Z",
+      "endAt": "2026-09-28T14:08:00Z",
+      "exitCode": 0,
+      "assertionRef": "full root verification and Next build passed"
+    },
+    {
+      "commandId": "m2-3.9-record-check",
+      "invocation": "python -B internal/restart/check-acceptance-record.py internal/evidence/acceptance/M2/working-tree-20260928-m2-3.9/record.json",
+      "environmentId": "local-m2-credit-ledger",
+      "startAt": "2026-09-28T14:09:00Z",
+      "endAt": "2026-09-28T14:09:01Z",
+      "exitCode": 0,
+      "assertionRef": "record schema and digest shape check"
+    }
+  ],
+  "coverage": {
+    "status": "NOT_APPLICABLE",
+    "reason": "M2 coverage denominator is established at task 3.12",
+    "ownedModuleManifestRef": null,
+    "denominator": null,
+    "coveredBranches": null,
+    "totalBranches": null,
+    "percent": null,
+    "exclusions": [],
+    "evidenceRef": "internal/restart/m2-task-3.9-evidence.md"
+  },
+  "defects": [],
+  "externalInputs": [],
+  "commercialAuthorizationRefs": [],
+  "recovery": {
+    "rollbackPoint": "6ad44be7b6f12fe028637f0300040bada826c47d plus current uncommitted M2 patch",
+    "restoreEvidenceRefs": [
+      "internal/restart/m2-task-3.9-evidence.md"
+    ],
+    "compatibleSchemaVersions": [
+      "domain=8"
+    ],
+    "unrelatedWorkProtection": "Generated credit users, workspaces, grants, ledger, audit and outbox rows are cleaned up in the disposable database"
+  },
+  "observation": {
+    "planRef": "internal/restart/verification-plan.md",
+    "windowStart": null,
+    "windowEnd": null,
+    "windowRationale": "Task-level credit-ledger and injected rollback probe; no production or hosted-service behavior is claimed",
+    "behavioralBaselineDigest": null,
+    "monitoringEvidenceRefs": [],
+    "journeyEvidenceRefs": [],
+    "recoveryUpgradeEvidenceRefs": [],
+    "recurringWorkerAlertEvidenceRefs": [],
+    "findingRefs": []
+  },
+  "submission": {
+    "implementerId": "root",
+    "submittedAt": "2026-09-28T14:10:00Z",
+    "reportRef": "internal/restart/m2-task-3.9-evidence.md"
+  },
+  "independentReview": {
+    "reviewerId": "m2-gpt6-sol-review-20260928-3.9",
+    "reviewedAt": "2026-09-28T14:39:00Z",
+    "independentFromImplementer": true,
+    "decision": "PASS",
+    "reason": "Independent gpt-6-sol review recomputed all six candidate digests exactly, reran the acceptance checker, credit-ledger and M2 foundation PostgreSQL probes and full repository verification. Code inspection confirmed grant bucket invariants, composite workspace lineage FKs, credit-account FOR UPDATE locking, semantic business-key replay/conflict handling and atomic audit/outbox rollback. No 3.10 or later provider/generation/settlement claim is made.",
+    "evidenceRefs": [
+      "internal/restart/m2-task-3.9-evidence.md",
+      "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.9/record.json",
+      "src/db/schema/credit.ts",
+      "src/modules/credits/ledger.ts",
+      "scripts/probe-credit-ledger.ts"
+    ]
+  },
+  "integrationDecision": {
+    "integratorId": "root",
+    "decidedAt": "2026-09-28T14:40:00Z",
+    "decision": "PASS",
+    "reason": "The exact current candidate passed independent gpt-6-sol review, all digest and record checks, eight-migration foundation verification, credit-ledger replay/lineage/rollback probe and full repository verification. Task 3.9 is accepted and task 3.10 is now eligible; the M2 gate remains open. Server quotes, FEFO/reservations, settlement/refunds, generation, provider and payment work remain later scope.",
+    "nextEligibleTaskIds": [
+      "3.10"
+    ],
+    "blockedTaskIds": []
+  },
+  "invalidation": {
+    "supersedesRecordRef": null,
+    "changedDigestRefs": [],
+    "affectedStages": [],
+    "requiredReruns": [],
+    "carriedEvidence": []
+  }
+}

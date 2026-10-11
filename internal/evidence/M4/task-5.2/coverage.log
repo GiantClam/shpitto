@@ -1,0 +1,35 @@
+✔ builds pinned T2V create request with safe schema fields and no automatic retry (3.1941ms)
+✔ builds pinned I2V request with owned image and omits unsupported aspect_ratio (0.4316ms)
+✔ uses configured server-side image resolver and rejects arbitrary image URLs (0.2358ms)
+✔ live I2V requires an explicit server-owned image resolver before any provider call (0.5258ms)
+✔ transport timeout is unknown and never retried or converted to rejection (0.2154ms)
+✔ explicit validation rejection is definitelyRejected while 5xx stays unknown (0.2611ms)
+✔ status and result use exact persisted prediction ID and normalize errors/output (0.4788ms)
+✔ mismatched ID and malformed response are rejected before attachment (0.2145ms)
+✔ status and result responses without the persisted prediction ID are rejected (0.2292ms)
+✔ live mode remains blocked while the catalog row is disabled (0.2364ms)
+✔ request builder only accepts the exact persisted Replicate contract (12.2629ms)
+✔ configuration and identity errors fail closed before provider attachment (0.3456ms)
+✔ invalid endpoint/webhook settings, missing IDs and transport errors stay bounded (0.6313ms)
+✔ adapter refuses non-Replicate persisted refs and malformed upstream status responses (0.4463ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 523.7513
+ℹ start of coverage report
+ℹ --------------------------------------------------------------
+ℹ file          | line % | branch % | funcs % | uncovered lines
+ℹ --------------------------------------------------------------
+ℹ src           |        |          |         | 
+ℹ  adapters     |        |          |         | 
+ℹ   providers   |        |          |         | 
+ℹ    replicate  |        |          |         | 
+ℹ     index.ts  | 100.00 |    89.47 |  100.00 | 
+ℹ --------------------------------------------------------------
+ℹ all files     | 100.00 |    89.47 |  100.00 | 
+ℹ --------------------------------------------------------------
+ℹ end of coverage report

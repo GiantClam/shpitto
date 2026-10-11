@@ -1,0 +1,14 @@
+✔ only explicit local/test profiles expose fixture monthly subscriptions and permanent packs (0.939ms)
+✔ catalog snapshots are stable, frozen, strict and separate cash from credits (0.3787ms)
+✔ domain snapshots can describe a future reviewed Stripe mapping without enabling a production product (0.2587ms)
+✔ checkout input cannot smuggle customer, price, tenant, interval or redirects (0.259ms)
+✔ money and credit quantities cross JSON as canonical bounded decimal strings (0.205ms)
+✔ canonical aliases distinguish transport objects without accepting unknown identity fields (0.1614ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 138.97

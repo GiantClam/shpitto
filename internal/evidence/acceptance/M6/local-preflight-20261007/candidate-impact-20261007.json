@@ -1,0 +1,43 @@
+{
+  "status": "PASS",
+  "stageId": "M6",
+  "candidateId": "local-preflight-20261007",
+  "capturedAt": "2026-10-07T05:47:16.7788868Z",
+  "supersedes": "internal/evidence/acceptance/M6/local-preflight-20261007/candidate-impact.json",
+  "changedScopes": [
+    "template-version.json",
+    "scripts/package-release.ts",
+    "scripts/create-local-candidate-repo.mjs",
+    "scripts/verify-local-candidate.mjs",
+    "scripts/verify-local-fulfillment.mjs",
+    "tests/release/local-candidate.test.ts",
+    "M8 local candidate evidence",
+    "M8 local fulfillment evidence",
+    "vendor/sales/source.config.ts",
+    "vendor/sales/app/docs/navigation.json",
+    "scripts/check-vendor-docs.mjs",
+    "scripts/mjs-modules.d.ts",
+    "tests/docs/vendor-docs.test.ts",
+    "tooling/lint-policy.json",
+    "M7/M8 review packets",
+    "next-env.d.ts",
+    "skills/create-page/SKILL.md",
+    "skills/customize-brand/SKILL.md",
+    "skills/customize-site/SKILL.md",
+    "skills/modify-page/SKILL.md"
+  ],
+  "currentCandidate": {
+    "sourceTreeSha256": "791a79096f7793a838d7735120977e015c9e9e3f0a21570c44d47b2a0ef9babe",
+    "configurationSha256": "b8271ffaccb315cb63d8436f1c7a11f990c3b2c63352a1fcf3f608adbf57aa3f",
+    "contractSha256": "1ebf58a6af7d1eaa05eaa234343a8661ab529c69cbc1c6a627850e36b522372a",
+    "validatorSha256": "bd887a2726959f32338b8a1b19a3bc01217437b553dbeb6682cb0d9110a02173",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a"
+  },
+  "requiredReruns": [
+    "corepack pnpm verify:m8-local",
+    "corepack pnpm export:candidate",
+    "corepack pnpm verify:candidate-local",
+    "corepack pnpm verify:fulfillment-local",
+    "corepack pnpm verify:acceptance"
+  ]
+}

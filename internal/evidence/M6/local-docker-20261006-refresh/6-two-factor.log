@@ -1,0 +1,4 @@
+[2026-10-06T12:20:29.8759196+08:00] db:probe:m6-two-factor
+$ node --experimental-strip-types scripts/probe-m6-two-factor.ts
+{"status":"PASS","databaseName":"m6_two_factor_probe_8c12173ef87e40bdb9fc455448c56f2b","enrollment":true,"invalidCodeRejected":true,"sessionRotation":true,"sameSession":true,"wrongSessionRejected":true,"expiredStepUpRejected":true,"mfaLoginChallenge":true,"roleRevocation":true,"disableRevokesStamps":true,"externalAccountsUsed":false}
+{"disposableDatabaseRemoved":true,"databaseName":"m6_two_factor_probe_8c12173ef87e40bdb9fc455448c56f2b"}

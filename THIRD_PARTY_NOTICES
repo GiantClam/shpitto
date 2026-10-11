@@ -1,0 +1,9 @@
+Shpitto v1 customer runtime resource notice
+
+No separately copied UI resource is included in the current governed Skills or
+presentation contract slice. Dependency and binary license evidence is retained
+in internal/restart/provenance.json and internal/restart/license-report.json and
+must be regenerated for a release export.
+
+Legacy, vendor, internal evidence and uncertain-provenance resources are not
+customer runtime content.

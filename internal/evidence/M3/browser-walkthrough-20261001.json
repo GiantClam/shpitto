@@ -1,0 +1,280 @@
+{
+  "profile": "local-m3-postgres17-mock",
+  "capturedAt": "2026-10-01T02:13:56.041Z",
+  "observationWindowStart": "2026-10-01T02:05:35.212Z",
+  "application": "http://localhost:3100",
+  "credentialsRef": ".data/m3-approved-credentials.json",
+  "candidateSha256": "73ec731c971aca355335d6c86a3ba14e8c91e84e9cf8569007cb7abf3f6bd3ab",
+  "provenanceRef": "internal/evidence/M3/browser-final-20261001/candidate-provenance.json",
+  "journeys": [
+    {
+      "id": "fresh-user-generation",
+      "result": "PASS",
+      "observed": [
+        "Created and email-verified a new local account; an incorrect password shows a controlled error.",
+        "Explicit personal setup creates one workspace and 100 demo credits.",
+        "Generation creates one durable task; after application and worker restart it succeeds with one playable private output and 90 available / 0 reserved / 10 consumed."
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/browser-final-20261001/01-signup-verification-notice.txt",
+        "internal/evidence/M3/browser-final-20261001/02-login-error.txt",
+        "internal/evidence/M3/browser-final-20261001/03-pending-personal-setup.txt",
+        "internal/evidence/M3/browser-final-20261001/04-personal-created-empty.txt",
+        "internal/evidence/M3/browser-final-20261001/07-restart-generation-success.txt",
+        "internal/evidence/M3/browser-final-20261001/08-private-video-metadata.json"
+      ]
+    },
+    {
+      "id": "team-creation",
+      "result": "PASS",
+      "observed": [
+        "The fresh user submitted Create team through the UI; the new team renders one owner and owner controls."
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/browser-final-20261001/10-team-created.txt"
+      ]
+    },
+    {
+      "id": "invitation-creation",
+      "result": "PASS",
+      "observed": [
+        "The owner submitted Invite member and received a local acceptance link with Invitation created feedback."
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/browser-final-20261001/11-invitation-created.txt"
+      ]
+    },
+    {
+      "id": "member-invitation",
+      "result": "PASS",
+      "observed": [
+        "The default member account signed in through the UI and accepted the fresh invitation.",
+        "Both member and owner rows render; member session has no invite/remove/transfer controls."
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/browser-final-20261001/12-member-accepted.txt"
+      ]
+    },
+    {
+      "id": "invitation-replay-expiry",
+      "result": "PASS",
+      "observed": [
+        "A second acceptance of the consumed invitation is denied as invalid or expired.",
+        "A separately created owned invitation was aged in a scoped fixture while preserving its seven-day lifetime; the matching account is denied and does not join."
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/browser-final-20261001/13-invitation-replay-denied.txt",
+        "internal/evidence/M3/browser-final-20261001/14-expiry-invitation-created.txt",
+        "internal/evidence/M3/browser-final-20261001/expiry-fixture.json",
+        "internal/evidence/M3/browser-final-20261001/15-invitation-expired-denied.txt"
+      ]
+    },
+    {
+      "id": "owner-controls",
+      "result": "PASS",
+      "observed": [
+        "Recent owner authentication preceded actual POST ownership transfer to the verified member.",
+        "The new owner then submitted member removal; the roster has one owner.",
+        "Service output records HTTP200 for both submitted actions."
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/browser-final-20261001/18-owner-controls-before-submit.txt",
+        "internal/evidence/M3/browser-final-20261001/22-open-member-tab-before-removal.txt",
+        "internal/evidence/M3/browser-final-20261001/23-member-removed.txt",
+        "internal/evidence/M3/browser-final-20261001/25-owner-actions-http.txt"
+      ],
+      "submittedActions": [
+        {
+          "action": "transfer-owner",
+          "result": "PASS",
+          "requestMethod": "POST",
+          "path": "/api/workspaces/08bdcc7f-d4d4-4b1f-b611-f5d50760e481/transfer",
+          "responseStatus": 200,
+          "targetUserId": "0M1YN2bwYNaNyJAiOzS9nmo2jZOm9Xy0",
+          "submittedAt": "2026-10-01T02:10:58.527Z",
+          "postcondition": "demo-member@shpitto.local became owner and the fresh reviewer became member."
+        },
+        {
+          "action": "remove-member",
+          "result": "PASS",
+          "requestMethod": "POST",
+          "path": "/api/workspaces/08bdcc7f-d4d4-4b1f-b611-f5d50760e481/members/F2X2tLnzgfp1Lvbvpwh3EvWeXzIaUY6X/remove",
+          "responseStatus": 200,
+          "targetUserId": "F2X2tLnzgfp1Lvbvpwh3EvWeXzIaUY6X",
+          "submittedAt": "2026-10-01T02:11:24.828Z",
+          "postcondition": "One remaining member, demo-member@shpitto.local as owner."
+        }
+      ]
+    },
+    {
+      "id": "workspace-switching",
+      "result": "PASS",
+      "observed": [
+        "Workspace navigation switched between personal and team selections.",
+        "Personal selection shows the owned task/output and consumed credits; the new team shows zero grants, tasks and assets."
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/browser-final-20261001/16-personal-workspace-selected.txt",
+        "internal/evidence/M3/browser-final-20261001/17-team-workspace-selected.txt"
+      ]
+    },
+    {
+      "id": "personal-space-denial",
+      "result": "PASS",
+      "observed": [
+        "Personal settings show a single immutable owner with no invite, remove or transfer controls.",
+        "Positive collaboration remains available in the separate team workspace."
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/browser-final-20261001/09-personal-space-controls-denied.txt",
+        "internal/evidence/M3/browser-final-20261001/18-owner-controls-before-submit.txt"
+      ]
+    },
+    {
+      "id": "revoked-open-tab",
+      "result": "PASS",
+      "observed": [
+        "A member page was opened before removal.",
+        "After reauthenticating the removed account through the UI, the original tab was reloaded and shows Workspace unavailable with no member roster."
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/browser-final-20261001/22-open-member-tab-before-removal.txt",
+        "internal/evidence/M3/browser-final-20261001/24-revoked-open-tab.txt"
+      ]
+    },
+    {
+      "id": "private-download",
+      "result": "PASS",
+      "observed": [
+        "Opened Download from the current private dashboard.",
+        "Native video player delivers the two-second 320x180 clip; DOM media metadata reports readyState4 and no error."
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/browser-final-20261001/08-private-video-metadata.json",
+        "internal/evidence/M3/browser-final-20261001/08-private-video.jpg"
+      ]
+    },
+    {
+      "id": "application-worker-restart",
+      "result": "PASS",
+      "observed": [
+        "Stopped only the identified owned worker, queued a durable task with 10 reserved credits, and restarted the owned application.",
+        "Restarted the worker; the same task ID became succeeded, reservation consumed once, one grant remained and one ready output appeared.",
+        "Process snapshots identify distinct app/worker processes before and after restart."
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/browser-final-20261001/06-task-queued-before-restart.txt",
+        "internal/evidence/M3/browser-final-20261001/07-restart-generation-success.txt",
+        "internal/evidence/M3/browser-final-20261001/service-processes-before.json",
+        "internal/evidence/M3/browser-final-20261001/service-processes-after.json",
+        "internal/evidence/M3/browser-final-20261001/candidate-provenance.json"
+      ]
+    }
+  ],
+  "uiReview": {
+    "result": "PASS",
+    "desktopViewport": "1440x900",
+    "mobileViewport": "390x844",
+    "checks": [
+      {
+        "id": "success",
+        "result": "PASS",
+        "observed": [
+          "Personal setup, task completion, invitation acceptance, ownership transfer and removal produced their expected final states."
+        ],
+        "evidenceRefs": [
+          "internal/evidence/M3/browser-final-20261001/04-personal-created-empty.txt",
+          "internal/evidence/M3/browser-final-20261001/07-restart-generation-success.txt",
+          "internal/evidence/M3/browser-final-20261001/12-member-accepted.txt",
+          "internal/evidence/M3/browser-final-20261001/22-open-member-tab-before-removal.txt",
+          "internal/evidence/M3/browser-final-20261001/23-member-removed.txt"
+        ]
+      },
+      {
+        "id": "loading",
+        "result": "PASS",
+        "observed": [
+          "A scoped owned-row wait exposed Queueing… with a disabled submit button; the wait released without modifying data."
+        ],
+        "evidenceRefs": [
+          "internal/evidence/M3/browser-final-20261001/05-generation-loading.txt",
+          "internal/evidence/M3/browser-final-20261001/05-generation-loading.jpg"
+        ]
+      },
+      {
+        "id": "empty",
+        "result": "PASS",
+        "observed": [
+          "New personal workspace shows no ready assets and no tasks; fresh team has no grants, assets or tasks."
+        ],
+        "evidenceRefs": [
+          "internal/evidence/M3/browser-final-20261001/04-personal-created-empty.txt",
+          "internal/evidence/M3/browser-final-20261001/17-team-workspace-selected.txt"
+        ]
+      },
+      {
+        "id": "error",
+        "result": "PASS",
+        "observed": [
+          "Incorrect password reports Invalid email or password and permits retry."
+        ],
+        "evidenceRefs": [
+          "internal/evidence/M3/browser-final-20261001/02-login-error.txt"
+        ]
+      },
+      {
+        "id": "denied",
+        "result": "PASS",
+        "observed": [
+          "Consumed and expired invitation attempts show an actionable denial; removed-member page shows Workspace unavailable."
+        ],
+        "evidenceRefs": [
+          "internal/evidence/M3/browser-final-20261001/13-invitation-replay-denied.txt",
+          "internal/evidence/M3/browser-final-20261001/15-invitation-expired-denied.txt",
+          "internal/evidence/M3/browser-final-20261001/24-revoked-open-tab.txt"
+        ]
+      },
+      {
+        "id": "desktop",
+        "result": "PASS",
+        "observed": [
+          "Actual 1440x900 DOM viewport has no horizontal overflow; title, roster, invitation and ownership controls are readable."
+        ],
+        "evidenceRefs": [
+          "internal/evidence/M3/browser-final-20261001/18-team-desktop.jpg",
+          "internal/evidence/M3/browser-final-20261001/18-desktop-metrics.json"
+        ]
+      },
+      {
+        "id": "mobile",
+        "result": "PASS",
+        "observed": [
+          "Actual 390x844 DOM viewport has no horizontal overflow; menu, long names, stacked input/buttons and ownership selector fit."
+        ],
+        "evidenceRefs": [
+          "internal/evidence/M3/browser-final-20261001/19-team-mobile.jpg",
+          "internal/evidence/M3/browser-final-20261001/19-mobile-metrics.json"
+        ]
+      },
+      {
+        "id": "keyboard",
+        "result": "PASS",
+        "observed": [
+          "Real Tab presses traversed primary navigation, invite email/button, remove, select and transfer controls; each reached element has visible auto outline."
+        ],
+        "evidenceRefs": [
+          "internal/evidence/M3/browser-final-20261001/20-keyboard.json",
+          "internal/evidence/M3/browser-final-20261001/20-keyboard-focus.jpg"
+        ]
+      }
+    ]
+  },
+  "limitations": [
+    "Local Mock profile only; production email, real providers, Stripe and historical anomalous-balance recovery remain later-stage scope.",
+    "Browser acceptance uses the repository dev server; the isolated verifier separately builds and runs the identical frozen source in production mode.",
+    "Scoped timing fixtures and shared browser authentication are documented in candidate-provenance.json."
+  ],
+  "evidenceCorrections": [
+    "Independent review rejected stale pre-submit tab snapshots. Transfer evidence uses the actual role-reversed open tab; removal evidence was recaptured from the new owner after the HTTP200 response and navigation completed. The premature snapshot is explicitly excluded."
+  ]
+}

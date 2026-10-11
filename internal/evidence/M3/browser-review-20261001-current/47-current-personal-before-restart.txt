@@ -1,0 +1,81 @@
+- banner:
+  - link "Shpitto Video SaaS home":
+    - /url: /
+    - text: Shpitto
+  - navigation "Primary navigation":
+    - link "Home":
+      - /url: /
+    - link "Docs preview":
+      - /url: /docs
+      - text: Docs
+      - generic: preview
+    - link "Dashboard planned":
+      - /url: /dashboard
+      - text: Dashboard
+      - generic: planned
+- main:
+  - paragraph: Local workspace
+  - heading "M3 Final Personal" [level=1]
+  - paragraph: Private generation history with durable recovery signals.
+  - generic: active
+  - link "Team access":
+    - /url: /dashboard/team
+  - navigation "Choose workspace":
+    - link "M3 Final Personal · personal":
+      - /url: /dashboard?workspace=eda7cf25-dbaf-4da7-b623-60f88377debf
+  - region "Workspace credits":
+    - generic: Available
+    - strong: "90"
+    - generic: Reserved
+    - strong: "0"
+    - generic: Consumed
+    - strong: "10"
+    - generic: Ledger
+    - strong: Reconciled
+  - heading "Generate a local clip" [level=2]
+  - generic: 10 credits
+  - generic: Prompt
+  - textbox "Prompt":
+    - /placeholder: Describe the clip to render locally
+  - button "Queue generation"
+  - strong: Persisted task state
+  - generic: succeeded
+  - text: c8fca347-3e31-435a-9553-f74c2272bf21
+  - generic: deadline 2026-10-01T02:23:37.807Z · next action 2026-10-01T01:53:37.925Z
+  - paragraph: Provider integrations are not configured in the local Mock profile.
+  - heading "Credit sources" [level=2]
+  - generic: 1 grants
+  - article:
+    - strong: demo
+    - generic: grant 21f817be-372c-4610-8d00-250d7518fdef
+    - generic: 90 available · 0 reserved · 10 consumed · 0 expired · 0 voided
+    - generic: expires 2026-10-08T01:52:21.677Z · reconciled
+    - generic: ledger projection 90 available · 0 reserved · 10 consumed · 0 expired · 0 voided
+    - generic: "allocation lineage: 1cedaa36-df97-416b-ab5d-de6c2ac5ae15 (10, consumed, expires 2026-10-08T01:52:21.677Z)"
+  - heading "Private assets" [level=2]
+  - generic: 1 ready
+  - article:
+    - strong: output
+    - generic: video/mp4 · 36097 bytes
+    - link "Download":
+      - /url: /api/workspaces/eda7cf25-dbaf-4da7-b623-60f88377debf/assets/5d541870-060f-4bf0-85ec-9f009c810865/download?token=[redacted]
+  - heading "Generation history" [level=2]
+  - generic: 1 recent
+  - article:
+    - strong: video
+    - generic: c8fca347-3e31-435a-9553-f74c2272bf21
+    - generic: persisted state succeeded · version 5 · materialization attempts 1
+    - generic: no failure recorded
+    - generic: Private output was delivered and the task is terminal.
+    - generic "Recovery evidence":
+      - generic: recovery version 5 · next action 2026-10-01T01:53:37.925Z
+      - generic: "attempt 1bd3c1ac-e216-4da3-bf70-d3b2a06565f1 · #1 · succeeded · probes 0 · reconcile by 2026-10-01T02:53:37.791Z"
+      - generic: reservation d0ad3d61-f404-42c5-86b6-d4fd62a74767 · consumed · 10 credits
+      - generic: event 28fdf3a9-8b5d-4542-8703-df0c290151b5 · credit.reservation_consumed · pending
+      - generic: command 235e94c3-edbb-4906-9cb7-16a46a5fddf1 · generation.settle · committed
+    - generic: succeeded
+    - generic: deadline 2026-10-01T02:23:37.807Z
+    - generic: next action 2026-10-01T01:53:37.925Z
+- contentinfo: Shpitto Video SaaS · staged implementation preview
+- button "Open Next.js Dev Tools":
+- alert

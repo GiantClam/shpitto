@@ -1,0 +1,24 @@
+▶ M3 evidence integrity
+  ✔ LCOV branch totals remain branch-based and normalize Windows absolute paths (1.342ms)
+  ✔ separate verification runs union stable branch IDs without counting repeats twice (0.3146ms)
+  ✔ a missing owned source or malformed branch report fails coverage (0.1646ms)
+  ✔ zero-branch and failed suites cannot claim coverage (0.0722ms)
+  ✔ missing mandatory evidence stays in progress; a recorded failure fails the stage (0.1037ms)
+  ✔ changed candidate bytes make any result stale, never ready for review (0.0993ms)
+✔ M3 evidence integrity (3.4514ms)
+ℹ tests 6
+ℹ suites 1
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 156.4343
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report

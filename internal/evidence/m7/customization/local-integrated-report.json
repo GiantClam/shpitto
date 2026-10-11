@@ -1,0 +1,37 @@
+{
+  "status": "PASS",
+  "profile": "local-mock-integrated",
+  "tasks": ["8.9"],
+  "workflowChecks": {
+    "customize-brand": "PASS",
+    "create-page": "PASS",
+    "modify-page": "PASS",
+    "customize-site": "PASS"
+  },
+  "contractChecks": [
+    "presentation paths remain editable",
+    "protected billing and database paths reject presentation classification",
+    "semantic bypass and stale evidence are rejected",
+    "rollback overlap detection preserves unrelated dirty work"
+  ],
+  "integratedJourneyEvidence": {
+    "auth": "internal/evidence/M6/local-20261004/final/logs/auth-lifecycle.log",
+    "credits": "internal/evidence/M6/local-20261004/logs/credit-command-review.log",
+    "generation": "internal/evidence/M6/local-20261004/final/logs/generation-lifecycle.log",
+    "billing": "internal/evidence/M6/local-20261004/final/logs/billing-reconciliation.log",
+    "admin": "internal/evidence/M6/local-20261004/final/logs/m6-admin-reads.log"
+  },
+  "commands": [
+    {
+      "command": "node --experimental-strip-types --test tests/customization/four-workflows.test.ts",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/customization/local-contract-tests.log"
+    }
+  ],
+  "deferred": [
+    "M4 real provider and durable output evidence",
+    "M5 Stripe test-mode account evidence",
+    "M6 FirstPromoter account and hosted settlement evidence"
+  ],
+  "note": "This record closes the local/mock customization slice only. It is not an M7 gate promotion."
+}

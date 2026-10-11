@@ -1,0 +1,14 @@
+{
+  "observedAt": "2026-10-01T01:54:37.197Z",
+  "videos": [
+    {
+      "duration": 2,
+      "ended": true,
+      "error": null,
+      "paused": true,
+      "readyState": 4,
+      "videoHeight": 180,
+      "videoWidth": 320
+    }
+  ]
+}

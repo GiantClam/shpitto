@@ -1,0 +1,2 @@
+Configuration contract passed: placeholders are redacted and demo drivers are rejected for production.
+$ node scripts/check-config.mjs

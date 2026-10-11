@@ -1,0 +1,27 @@
+- banner:
+  - link "Shpitto Video SaaS home":
+    - /url: /
+    - text: Shpitto
+  - navigation "Primary navigation":
+    - link "Home":
+      - /url: /
+    - link "Docs preview":
+      - /url: /docs
+      - text: Docs
+      - generic: preview
+    - link "Dashboard planned":
+      - /url: /dashboard
+      - text: Dashboard
+      - generic: planned
+- main:
+  - paragraph: Workspace
+  - heading "Create a workspace to begin" [level=1]
+  - paragraph: Generation tasks, credits and assets are isolated by workspace.
+  - navigation "Choose workspace"
+  - link "Create a team workspace":
+    - /url: /workspaces/new
+  - link "Accept an invitation":
+    - /url: /invitations/accept
+- contentinfo: Shpitto Video SaaS · staged implementation preview
+- button "Open Next.js Dev Tools":
+- alert

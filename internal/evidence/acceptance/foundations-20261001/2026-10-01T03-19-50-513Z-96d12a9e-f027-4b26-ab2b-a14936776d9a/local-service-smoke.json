@@ -1,0 +1,59 @@
+{
+  "status": "PASS",
+  "checkedAt": "2026-10-01T03:37:27.424Z",
+  "scope": "Two named demo-account HTTP smoke checks after local additive migration; not a current owner/non-owner permission matrix, browser or whole-stage approval.",
+  "accountLabelsAreAuthorizationRoles": false,
+  "checks": [
+    {
+      "accountLabel": "owner",
+      "check": "authenticated-session",
+      "status": "PASS"
+    },
+    {
+      "accountLabel": "owner",
+      "check": "/dashboard",
+      "status": "PASS"
+    },
+    {
+      "accountLabel": "owner",
+      "check": "/dashboard/team",
+      "status": "PASS"
+    },
+    {
+      "accountLabel": "owner",
+      "check": "/workspaces/new",
+      "status": "PASS"
+    },
+    {
+      "accountLabel": "owner",
+      "check": "/workspaces/71089f3b-ff73-4234-abfb-9158409ce0a1/settings/members",
+      "status": "PASS"
+    },
+    {
+      "accountLabel": "member",
+      "check": "authenticated-session",
+      "status": "PASS"
+    },
+    {
+      "accountLabel": "member",
+      "check": "/dashboard",
+      "status": "PASS"
+    },
+    {
+      "accountLabel": "member",
+      "check": "/dashboard/team",
+      "status": "PASS"
+    },
+    {
+      "accountLabel": "member",
+      "check": "/workspaces/new",
+      "status": "PASS"
+    },
+    {
+      "accountLabel": "member",
+      "check": "/workspaces/08bdcc7f-d4d4-4b1f-b611-f5d50760e481/settings/members",
+      "status": "PASS"
+    }
+  ],
+  "credentialsRecorded": false
+}

@@ -1,0 +1,32 @@
+schema: spec-driven
+
+context: |
+  Shpitto is restarting as an independently deployable AI video SaaS source template for developers.
+  The current checkout contains the legacy website-generation platform. Target application paths are not implemented yet.
+  D01-D31 and journeys J1-J10 are preserved in the baseline documents listed in project.md.
+  One restart change contains twelve capability specs and dependency-gated milestones M0-M8.
+  English proposal/specs/design/tasks are normative. Complete Chinese review companions preserve the same IDs.
+  Selected stack: Next.js, React, TypeScript, PostgreSQL, Drizzle, Better Auth, React-admin OSS, Fumadocs/MDX,
+  Stripe, Trigger.dev, private S3-compatible storage, Resend/SMTP, Replicate/fal.ai and optional FirstPromoter V2.
+  Domain commands own workspace, credit, payment, task and audit invariants; Drizzle is the sole migration owner.
+  Vendor Lemon Squeezy source sales and buyer Stripe video subscriptions/affiliate accounts are separate businesses.
+  Preserve legacy source/history/local authored state before relocation; exclude legacy, vendor business and private state from customer exports.
+  Public generation APIs, customer API keys, embedded coding agents and a general-purpose website builder are outside V1.
+  Selected versions are a planning baseline, not verified runtime compatibility. Missing external evidence is not a passed gate.
+  Current authorization is planning. Do not infer implementation, publishing, paid calls or live payouts from it.
+
+rules:
+  proposal:
+    - Use current spec-driven schema sections and enumerate all capability directories.
+    - Distinguish confirmed scope, selected engineering defaults, external inputs and execution evidence.
+  specs:
+    - Use SHALL or MUST, observable WHEN/THEN scenarios, stable REQ and SC identifiers, and D/J/T/G trace links.
+    - Include rejection, replay, concurrency and recovery; keep implementation mechanics in design.
+  design:
+    - Record alternatives, one authority per domain, transaction boundaries, external side-effect recovery and rollback.
+    - Resolve behavior ambiguity before affected implementation; phase-specific external inputs remain gated.
+  tasks:
+    - Use unchecked numbered tasks with target paths, predecessors and concrete evidence.
+    - M4 and M5 may run in parallel after M3 and shared schema/ledger/provider contracts freeze.
+    - Plan application checks; do not run them merely because a planning document contains them.
+

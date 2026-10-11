@@ -1,0 +1,40 @@
+---
+release: v1
+title: Skill · extend-assets
+section: skills
+status: published
+relatedContracts: [D09, D28, D29, D30, G09, G28, G29]
+---
+
+# Skill · extend-assets
+
+declared asset type and storage view
+
+Canonical invocation: read `skills/extend-assets/SKILL.md` and follow its evidence contract.
+
+Add a declared asset type while preserving private ownership and media validation.
+
+## Inputs
+- MIME, size, path, retention, download and ingestion requirements.
+
+## Allowed scope
+Asset declarations, presentation metadata and isolated validation fixtures.
+
+## Protected contracts
+Do not make objects public, accept caller-supplied ownership, weaken MIME/size/path
+checks or bypass tenant authorization.
+
+## Outputs and evidence
+Record ownership, ingestion, retention, private download and cleanup evidence.
+
+## Recovery
+Remove only the new asset declaration and its disposable objects; preserve existing
+customer assets and unrelated work.
+
+## Escalation
+Storage, migration, ownership or download policy changes require engineering review.
+
+
+## Release boundary
+
+This reference describes the local governed workflow. Changes to external provider accounts, payment services, production email, payouts or protected business contracts require their separate stage evidence and are not authorized by this page.

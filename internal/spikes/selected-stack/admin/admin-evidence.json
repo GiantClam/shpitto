@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "1.0",
+  "status": "PASSED_DISPOSABLE_AUTHORIZATION_AND_POSTGRES_CHAIN",
+  "commands": [
+    "node admin/authorization-probe.mjs",
+    "node admin/auth-admin-domain-probe.mjs",
+    "M0_DATABASE_URL=postgres://postgres:<disposable>@127.0.0.1:<port>/postgres node admin/admin-postgres-chain-probe.mjs"
+  ],
+  "environment": "local/disposable-memory-auth plus local/disposable-postgresql-17 chain",
+  "observed": {
+    "sessionAuthenticated": true,
+    "sessionDoesNotGrantGlobalOperator": true,
+    "memberRead": true,
+    "crossTenantIdSubstitutionDenied": true,
+    "explicitOperatorRead": true,
+    "roleRevocationObservedOnNextRequest": true,
+    "reactAdminClientContract": true,
+    "genericAdminWrites": false,
+    "persistentOperatorRole": true,
+    "betterAuthSessionReloadedAfterPoolRestart": true,
+    "domainCommandAuthorized": true,
+    "duplicateDomainCommandSuppressed": true,
+    "atomicLedgerAuditOutboxEffect": true,
+    "chainEvidenceRef": "admin-postgres-chain-evidence.json"
+  },
+  "proves": [
+    "React-admin is treated as a presentation/client contract behind server authorization.",
+    "A workspace ID substitution cannot cross the membership boundary.",
+    "A persisted operator role authorizes cross-workspace read access and is denied again after revocation.",
+    "The authorized operator command reaches the Drizzle transaction boundary with one ledger/audit/outbox effect and duplicate suppression."
+  ],
+  "doesNotProve": [
+    "Final production endpoint middleware or browser session cookie configuration.",
+    "Final operator role administration, step-up implementation and release migration promotion; those remain M1 work."
+  ]
+}

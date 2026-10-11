@@ -1,0 +1,69 @@
+{
+  "status": "REPLICATE_I2V_REAL_OUTPUT_VERIFIED",
+  "provider": "replicate",
+  "modelKey": "replicate-wan22-i2v",
+  "requestId": "0kwz3zvawxrmt0d15168x8c3rm",
+  "submittedAt": "2026-10-11T00:10:57.636Z",
+  "completedAt": "2026-10-11T00:12:29.225Z",
+  "providerStatus": "completed",
+  "polls": 17,
+  "input": {
+    "prompt": "A slow cinematic camera move across the scene, stable motion, no text",
+    "resolution": "720p",
+    "numFrames": 81,
+    "framesPerSecond": 16,
+    "aspectRatio": "16:9",
+    "imageUrlHost": "images.unsplash.com",
+    "imageUrlHasQuery": true,
+    "imageFixture": {
+      "path": "internal/evidence/M4/task-5.10/replicate-i2v-test-image.jpg",
+      "bytes": 177425,
+      "sha256": "50d542f6b28a0f0ab01a924097a38dc82e95ea00cfa2b1e35a66e8f9590481bd"
+    }
+  },
+  "output": {
+    "path": "internal/evidence/M4/task-5.10/replicate-i2v-real-0kwz3zvawxrmt0d15168x8c3rm.mp4",
+    "bytes": 1243405,
+    "sha256": "9bbe15a33f782148a1c7b944dd5b67915f99c2a18fd8dc72d5c3857f40a63c25"
+  },
+  "requestShape": {
+    "createRequests": 1,
+    "readRequests": 18,
+    "retryFlags": [
+      false
+    ]
+  },
+  "limitations": [
+    "This provider smoke verifies real Replicate I2V execution and retrieval. Application-owned R2 publication, callback, reservation settlement, cost confirmation and independent review remain separate evidence."
+  ],
+  "providerResponse": {
+    "httpStatus": 200,
+    "model": "wan-video/wan-2.2-i2v-fast",
+    "version": "hidden",
+    "status": "succeeded",
+    "dataRemoved": false,
+    "createdAt": "2026-10-11T00:10:59.175Z",
+    "startedAt": "2026-10-11T00:11:13.709061023Z",
+    "completedAt": "2026-10-11T00:12:26.410733038Z",
+    "metrics": {
+      "predictTime": 72.701672017,
+      "totalTime": 87.235733038,
+      "videoOutputCount": 1,
+      "modelVariant": "base",
+      "resolutionTarget": "720p"
+    }
+  },
+  "costEvidence": {
+    "state": "unknown",
+    "reason": "The prediction response exposes no billable amount; no account billing export was queried."
+  },
+  "mediaValidation": {
+    "ffprobeStatus": 0,
+    "codec": "h264",
+    "width": 1168,
+    "height": 784,
+    "frameRate": "16/1",
+    "durationSeconds": 5.0625,
+    "containerBytes": 1243405
+  }
+}

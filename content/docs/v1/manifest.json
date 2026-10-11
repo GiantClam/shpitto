@@ -1,0 +1,120 @@
+{
+  "version": "v1",
+  "source": "content/docs/v1",
+  "audience": "developers",
+  "navigation": [
+    {
+      "title": "Overview",
+      "path": "index.mdx"
+    },
+    {
+      "title": "Template",
+      "path": "template/index.mdx"
+    },
+    {
+      "title": "Operations",
+      "path": "template/operations.mdx"
+    },
+    {
+      "title": "Local acceptance journey",
+      "path": "template/local-journey.mdx"
+    },
+    {
+      "title": "Local generation and credit lifecycle",
+      "path": "template/generation.mdx"
+    },
+    {
+      "title": "Local billing fixtures",
+      "path": "template/billing-fixtures.mdx"
+    },
+    {
+      "title": "Managed deployment reference",
+      "path": "template/deploy-managed.mdx"
+    },
+    {
+      "title": "Standalone Docker application",
+      "path": "template/deploy-docker.mdx"
+    },
+    {
+      "title": "Deployment configuration checklist",
+      "path": "template/deployment-checklist.mdx"
+    },
+    {
+      "title": "Backup, upgrade and restore",
+      "path": "template/upgrade-recovery.mdx"
+    },
+    {
+      "title": "Affiliates",
+      "path": "template/affiliates.mdx"
+    },
+    {
+      "title": "Affiliate settlement",
+      "path": "template/affiliate-settlement.mdx"
+    },
+    {
+      "title": "Skills",
+      "path": "skills/overview.mdx"
+    },
+    {
+      "title": "API",
+      "path": "api/overview.mdx"
+    },
+    {
+      "title": "Releases",
+      "path": "releases/index.mdx"
+    },
+    {
+      "title": "Skill · quick-start",
+      "path": "skills/quick-start.mdx"
+    },
+    {
+      "title": "Skill · add-provider",
+      "path": "skills/add-provider.mdx"
+    },
+    {
+      "title": "Skill · add-generation-task",
+      "path": "skills/add-generation-task.mdx"
+    },
+    {
+      "title": "Skill · configure-credits",
+      "path": "skills/configure-credits.mdx"
+    },
+    {
+      "title": "Skill · extend-assets",
+      "path": "skills/extend-assets.mdx"
+    },
+    {
+      "title": "Skill · deploy-template",
+      "path": "skills/deploy-template.mdx"
+    },
+    {
+      "title": "Skill · security-review",
+      "path": "skills/security-review.mdx"
+    },
+    {
+      "title": "Skill · upgrade-template",
+      "path": "skills/upgrade-template.mdx"
+    },
+    {
+      "title": "Skill · customize-brand",
+      "path": "skills/customize-brand.mdx"
+    },
+    {
+      "title": "Skill · create-page",
+      "path": "skills/create-page.mdx"
+    },
+    {
+      "title": "Skill · modify-page",
+      "path": "skills/modify-page.mdx"
+    },
+    {
+      "title": "Skill · customize-site",
+      "path": "skills/customize-site.mdx"
+    }
+  ],
+  "runtimePolicy": "Trusted repository source only; end-user content is never evaluated as MDX.",
+  "search": {
+    "mode": "published-only",
+    "source": "content/docs/v1"
+  }
+}

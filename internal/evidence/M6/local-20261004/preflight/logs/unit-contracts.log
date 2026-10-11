@@ -1,0 +1,241 @@
+✔ notification parsing retains only a bounded signal and never provider-supplied approval or PII (1.6498ms)
+✔ notification authorization rejects missing, wrong and oversized shared secrets (0.2177ms)
+✔ FirstPromoter V2 wire identities retain workspace UID and independent refund identity (1.6275ms)
+✔ money mapping preserves reviewed zero/two-decimal bases and rejects unsafe or unreviewed amounts (0.4239ms)
+✔ batch acceptance and partial/failed completion cannot become successful commission review (0.2475ms)
+✔ local provider is deterministic and idempotent by persisted Checkout key (0.9371ms)
+✔ local provider retains an unknown response until the same key is reconciled by a stable provider (0.1455ms)
+✔ portal URL is provider-owned and ignores a caller supplied return destination (0.142ms)
+✔ route DTOs reject extra browser-controlled billing fields (0.5669ms)
+✔ fixture webhook verifies raw bytes and rejects tampering or stale signatures (1.0116ms)
+✔ fixture webhook parser retains only supported event envelope (0.1556ms)
+✔ only explicit local/test profiles expose fixture monthly subscriptions and permanent packs (1.3443ms)
+✔ catalog snapshots are stable, frozen, strict and separate cash from credits (0.5235ms)
+✔ domain snapshots can describe a future reviewed Stripe mapping without enabling a production product (0.3016ms)
+✔ checkout input cannot smuggle customer, price, tenant, interval or redirects (0.2234ms)
+✔ money and credit quantities cross JSON as canonical bounded decimal strings (0.2005ms)
+✔ canonical aliases distinguish transport objects without accepting unknown identity fields (0.7595ms)
+✔ builds fal T2V queue request with safe mapping and no retry (3.8333ms)
+✔ builds fal I2V request with authorized image and validates tracking origins (0.5234ms)
+✔ status and result require exact request ID and completed result video (0.4876ms)
+✔ missing IDs, foreign tracking URLs and live disabled rows fail closed (0.8419ms)
+✔ configuration and provider identity errors remain bounded (0.2538ms)
+✔ all four selected schemas are inspected, byte-bound, and disabled for live use (1.4596ms)
+✔ strict public DTO rejects every unapproved top-level and nested vendor field (0.7945ms)
+✔ schema or exact-version drift blocks new submission contracts without a silent fallback (0.2583ms)
+✔ safe preset is server-owned and all four mappings fit inspected schema fields (2.0269ms)
+✔ mapping rechecks crop consent instead of trusting a forged validated TypeScript object (0.2341ms)
+✔ accepted historical contracts map after current registry removal, while new admission is rejected (1.0694ms)
+✔ accepted contract mapping refuses unsupported versions and unsupported version-one presets (0.1804ms)
+✔ normalized observations retain an immutable copy of the accepted catalog (0.2515ms)
+✔ crop consent binds exact authorized ready asset, workspace, dimensions and crop revision (2.1506ms)
+✔ frozen snapshot retains quote, deadline, endpoint and digests independent of later object changes (0.3693ms)
+✔ submit normalization distinguishes known rejection from transport uncertainty and malformed success (0.2145ms)
+✔ completed-with-error is failure and provider output remains a candidate (0.3346ms)
+✔ Mock port delegates deterministic identity and observation to existing Mock domain functions (14.5266ms)
+✔ Replicate raw-body HMAC binds event, timestamp, exact request and attempt (16.9197ms)
+✔ fal ED25519 verification rejects altered raw bytes and accepts the signed digest (3.8173ms)
+✔ health and telemetry remain redacted and bounded (0.2746ms)
+✔ remote output fetch follows only bounded public HTTPS redirects and MIME limits (3.4332ms)
+✔ builds pinned T2V create request with safe schema fields and no automatic retry (3.7169ms)
+✔ builds pinned I2V request with owned image and omits unsupported aspect_ratio (0.6271ms)
+✔ uses configured server-side image resolver and rejects arbitrary image URLs (0.2655ms)
+✔ live I2V requires an explicit server-owned image resolver before any provider call (0.7944ms)
+✔ transport timeout is unknown and never retried or converted to rejection (0.2896ms)
+✔ explicit validation rejection is definitelyRejected while 5xx stays unknown (0.2875ms)
+✔ status and result use exact persisted prediction ID and normalize errors/output (0.4751ms)
+✔ mismatched ID and malformed response are rejected before attachment (0.2025ms)
+✔ status and result responses without the persisted prediction ID are rejected (0.1867ms)
+✔ live mode remains blocked while the catalog row is disabled (0.1963ms)
+✔ request builder only accepts the exact persisted Replicate contract (13.0239ms)
+✔ configuration and identity errors fail closed before provider attachment (0.3491ms)
+✔ invalid endpoint/webhook settings, missing IDs and transport errors stay bounded (0.7441ms)
+✔ adapter refuses non-Replicate persisted refs and malformed upstream status responses (0.4743ms)
+✔ admin lists forward allowlisted filters and use truthful partial pagination (19.6722ms)
+✔ workspace detail sends the encoded target and recorded access purpose (0.4687ms)
+✔ the terminal list page reports its known exact total for the paginator (0.3651ms)
+✔ admin failures preserve status so revoked authority invalidates the session (0.8451ms)
+✔ unsupported detail, query fields and generic mutations fail without network access (0.3821ms)
+✔ named commands retain expected version and the same key across exact retries (1.0405ms)
+✔ incomplete privileged envelope has no transport effect (0.1578ms)
+✔ the first credit adjustment can use the persisted zero account version (0.2208ms)
+✔ recovery sweep uses the versioned tenant route and stable command key (0.3022ms)
+✔ affiliate actions use named versioned requests and stable retries (0.5326ms)
+✔ affiliate views use bounded redacted lists and reject generic writes (0.675ms)
+✔ affiliate route queries reject unsupported fields, unbounded pages and invalid target IDs (1.5707ms)
+✔ cleanup ticks independently, skips overlap, survives failure, and stops cleanly (2.7499ms)
+✔ asset download links bind the resource and expire at the 60-second boundary (2.6473ms)
+✔ input image validation decodes a bounded PNG (203.5967ms)
+✔ input image validation rejects signature-only, spoofed, oversized and non-image inputs (192.9068ms)
+✔ changing mandatory traceability mappings invalidates contract and validator digests (717.3441ms)
+✔ generation task states are monotonic and terminal states cannot reopen (1.9197ms)
+✔ accepted input snapshots reject browser/provider URLs and foreign or non-ready assets (0.5596ms)
+▶ session HTTP contracts
+  ✔ envelopes retain payload and expose only the supplied safe error (1.0761ms)
+  ✔ JSON bodies accept objects and empty input while rejecting other JSON shapes (0.5362ms)
+  ✔ idempotency keys enforce ASCII character and length bounds (0.3009ms)
+  ✔ decimal quantities preserve arbitrarily large exact integers (0.2049ms)
+  ✔ serialization recursively preserves quantities and UTC timestamps (1.3441ms)
+  ✔ canonical identity sorts object keys, preserves array order and rejects unsupported values (7.2049ms)
+  ✔ request command identity accepts matching sources and rejects conflicts or missing keys (16.8168ms)
+  ✔ mutations require a matching origin or a valid same-origin referer (1.2419ms)
+✔ session HTTP contracts (29.659ms)
+▶ server-owned model quotes
+  ✔ local and test catalogs remain isolated from the disabled production mock (0.1762ms)
+  ✔ quotes use the server price, bounded quantities and a deterministic supplied clock (0.5675ms)
+  ✔ creation rejects invalid quantities and unavailable catalog entries (0.2558ms)
+  ✔ validation rejects stale versions, production mock use and tampered monetary fields (0.352ms)
+✔ server-owned model quotes (1.5056ms)
+✔ access decisions preserve the complete E02 principal and hold matrix (1.31ms)
+✔ billing hold rejects only new financial work and preserves permitted actions (0.62ms)
+✔ invitation mail preserves a URL-encoded token, recipient and expiry (2.391ms)
+✔ generation input snapshots reject unsafe and ambiguous shapes (2.7044ms)
+✔ mock provider covers delayed, failed and successful observations (0.6821ms)
+✔ asset media boundaries fail before any database write (98.5826ms)
+✔ lifecycle timeouts use the exact boundary and reject invalid clocks (0.2274ms)
+✔ heartbeat serializes renewal and fences a lost lease (0.3772ms)
+▶ M3 evidence integrity
+  ✔ browser PASS labels alone cannot stand in for required journeys and UI states (0.7436ms)
+  ✔ browser checks require retained artifacts and observed assertions (0.7512ms)
+  ✔ contradictory or duplicate browser results cannot be hidden by one passing row (0.2105ms)
+  ✔ an additional failed or incomplete browser check prevents approval (0.1314ms)
+  ✔ LCOV branch totals remain branch-based and normalize Windows absolute paths (0.8632ms)
+  ✔ separate verification runs union stable branch IDs without counting repeats twice (0.3237ms)
+  ✔ a missing owned source or malformed branch report fails coverage (0.2287ms)
+  ✔ zero-branch and failed suites cannot claim coverage (0.096ms)
+  ✔ missing mandatory evidence stays in progress; a recorded failure fails the stage (0.1892ms)
+  ✔ changed candidate bytes make any result stale, never ready for review (0.0863ms)
+✔ M3 evidence integrity (4.4072ms)
+✔ disabled affiliate integration does not make core production config depend on affiliate credentials (1.5184ms)
+✔ outbox heartbeat serializes renewals, skips timer backlog, and drains on stop (0.8476ms)
+✔ outbox heartbeat records lease loss and rejects later explicit renewals (1.9511ms)
+✔ fixture lookup requires an observed result and never creates cash evidence (1.6472ms)
+✔ current development keeps historical predecessor approval and incomplete gates distinct (1.84ms)
+✔ source changes and narrowed validator footprints fail current development validation (0.2926ms)
+✔ omitted or duplicated stage criteria cannot hide incomplete stage evidence (0.1644ms)
+✔ stage register drift and unreviewed carry-forward are rejected (0.921ms)
+✔ development records cannot promote unrun criteria into a stage PASS (0.104ms)
+✔ missing, failed or evidence-free required commands invalidate development verification (0.1394ms)
+✔ M6 current development requires retained operations, recovery, privileged, MFA and affiliate probes (0.1668ms)
+✔ carry-forward needs existing proof and independent reviewed equivalence (0.3059ms)
+ℹ tests 114
+ℹ suites 3
+ℹ pass 114
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8984.5878
+ℹ start of coverage report
+ℹ -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ file                           | line % | branch % | funcs % | uncovered lines
+ℹ -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ src                            |        |          |         | 
+ℹ  adapters                      |        |          |         | 
+ℹ   affiliates                   |        |          |         | 
+ℹ    firstpromoter-contract.ts   | 100.00 |   100.00 |  100.00 | 
+ℹ   billing                      |        |          |         | 
+ℹ    fake.ts                     | 100.00 |   100.00 |  100.00 | 
+ℹ    refunds.ts                  |  87.88 |    62.50 |  100.00 | 23-26
+ℹ    stripe-webhooks.ts          |  86.21 |    55.00 |  100.00 | 18-19 25-26 35-36 43-44 66-67 74-75
+ℹ   mail                         |        |          |         | 
+ℹ    index.ts                    | 100.00 |   100.00 |  100.00 | 
+ℹ    invitation.ts               | 100.00 |   100.00 |  100.00 | 
+ℹ    local.ts                    | 100.00 |   100.00 |  100.00 | 
+ℹ    mailpit.ts                  |  32.56 |    50.00 |    0.00 | 9-11 14-31 36-43
+ℹ   providers                    |        |          |         | 
+ℹ    fal                         |        |          |         | 
+ℹ     index.ts                   |  85.71 |    69.64 |   81.25 | 82-83 96-98 101-103 121-122 133-135 146-148 151-157
+ℹ     webhook.ts                 |  96.67 |    48.84 |  100.00 | 25 35-36
+ℹ    input.ts                    |  89.92 |    84.34 |  100.00 | 10-11 30-31 39-40 49-50 80-81 102-103
+ℹ    mock.ts                     | 100.00 |    86.36 |  100.00 | 
+ℹ    normalize.ts                | 100.00 |    90.38 |  100.00 | 
+ℹ    replicate                   |        |          |         | 
+ℹ     index.ts                   |  99.34 |    88.31 |  100.00 | 144
+ℹ     webhook.ts                 |  90.32 |    44.74 |   88.89 | 38-39 87-93
+ℹ   storage                      |        |          |         | 
+ℹ    local.ts                    |  39.71 |    57.14 |   37.50 | 8-9 12-13 22-23 27-35 37-47 50-56 59-62 65-68
+ℹ    s3.ts                       |  96.05 |    61.70 |  100.00 | 30-31 75
+ℹ  admin                         |        |          |         | 
+ℹ   affiliate-commands.ts        | 100.00 |    50.00 |  100.00 | 
+ℹ   auth-provider.ts             |  77.27 |    66.67 |   16.67 | 10-11 15 19-20
+ℹ   commands.ts                  |  79.41 |    77.78 |   33.33 | 26-28 31-34
+ℹ   data-provider.ts             | 100.00 |    83.72 |   45.45 | 
+ℹ   http.ts                      | 100.00 |    70.00 |   75.00 | 
+ℹ  app                           |        |          |         | 
+ℹ   api                          |        |          |         | 
+ℹ    admin                       |        |          |         | 
+ℹ     affiliates                 |        |          |         | 
+ℹ      _shared.ts                |  93.33 |    88.24 |  100.00 | 14
+ℹ  config                        |        |          |         | 
+ℹ   env.ts                       |  95.45 |    78.26 |   83.33 | 42-43 87-88
+ℹ   models.ts                    | 100.00 |   100.00 |  100.00 | 
+ℹ   plans.ts                     | 100.00 |   100.00 |  100.00 | 
+ℹ   provider-models.ts           | 100.00 |   100.00 |  100.00 | 
+ℹ  contracts                     |        |          |         | 
+ℹ   http.ts                      | 100.00 |   100.00 |  100.00 | 
+ℹ  db                            |        |          |         | 
+ℹ   client.ts                    |  60.71 |   100.00 |    0.00 | 15-22 26-28
+ℹ   contracts.ts                 |  79.59 |   100.00 |   33.33 | 14-16 21-22 25-29
+ℹ   schema                       |        |          |         | 
+ℹ    access.ts                   |  80.95 |   100.00 |    0.00 | 17-20
+ℹ    affiliate-inbox.ts          |  88.46 |   100.00 |    0.00 | 23-25
+ℹ    affiliate.ts                |  76.97 |   100.00 |    0.00 | 27-32 49-53 69-76 96-101 118-123 136-138 161-164
+ℹ    asset.ts                    |  71.43 |   100.00 |    0.00 | 25-34
+ℹ    auth.ts                     |  89.19 |   100.00 |    0.00 | 15 28-29 47-48 59 72-73
+ℹ    billing.ts                  |  70.54 |   100.00 |    0.00 | 20-24 37-43 62-71 88-94 113-121 132-136 155-160 175-179 194-198 217-223
+ℹ    commands.ts                 |  78.13 |   100.00 |    0.00 | 25-31
+ℹ    credit.ts                   |  79.41 |   100.00 |    0.00 | 22-29 43-44 63-66
+ℹ    generation.ts               |  71.55 |   100.00 |    0.00 | 39-47 66-76 88-94 110-115
+ℹ    index.ts                    | 100.00 |   100.00 |  100.00 | 
+ℹ    invitations.ts              |  72.92 |   100.00 |    0.00 | 20-27 43-47
+ℹ    operations.ts               |  80.49 |   100.00 |    0.00 | 16-18 33-37
+ℹ    operator.ts                 |  81.08 |   100.00 |    0.00 | 15-17 29-32
+ℹ    ownership.ts                | 100.00 |   100.00 |  100.00 | 
+ℹ    workspace.ts                |  70.23 |   100.00 |    0.00 | 17-22 31-33 44-45 55 74-79 99-106 118-130
+ℹ  modules                       |        |          |         | 
+ℹ   affiliates                   |        |          |         | 
+ℹ    abuse-review.ts             |  27.27 |   100.00 |    0.00 | 4-11
+ℹ    commission-review.ts        |  55.77 |   100.00 |    0.00 | 24-28 31-42 45-47 50-52
+ℹ    contracts.ts                |  79.66 |   100.00 |   50.00 | 48-59
+ℹ    delivery.ts                 |  52.00 |   100.00 |    0.00 | 8-10 13-14 17-19 22-25
+ℹ    eligibility.ts              |  41.18 |   100.00 |    0.00 | 6-7 10-17
+ℹ    notifications.ts            |  40.45 |    95.00 |   40.00 | 33-42 45-80 83-89
+ℹ    runtime.ts                  |  21.76 |   100.00 |    0.00 | 21 38-40 42-46 48-50 52-54 56-58 60-62 64-66 68-76 80-91 95-110 114-128 130-132 134-138 141-181 185-198 201-206 210-264 267-286 289-316 320-327 331-340
+ℹ    sync.ts                     |  14.81 |   100.00 |    0.00 | 16-18 22-30 34-116 120-162
+ℹ   assets                       |        |          |         | 
+ℹ    authorize.ts                |  61.43 |    90.91 |   60.00 | 42-47 50-70
+ℹ    cleanup.ts                  |  24.90 |   100.00 |    0.00 | 44-46 48-50 52-54 57-102 104-113 115-123 125-135 137-144 146-149 157-244 248-249
+ℹ    ingest.ts                   |  50.00 |    58.82 |   40.00 | 46-61 63-68 70-95
+ℹ    media-probe.ts              |  96.55 |    16.67 |   50.00 | 20
+ℹ    validate-input.ts           |  96.83 |    88.46 |  100.00 | 57-58
+ℹ   billing                      |        |          |         | 
+ℹ    contracts.ts                | 100.00 |   100.00 |  100.00 | 
+ℹ    hold-policy.ts              | 100.00 |   100.00 |  100.00 | 
+ℹ   credits                      |        |          |         | 
+ℹ    allocate.ts                 |  23.50 |   100.00 |    0.00 | 39-42 44-51 53-171 175-179 183-199
+ℹ    ledger.ts                   |  30.94 |   100.00 |    0.00 | 38-42 44-48 51-129 133-139
+ℹ    queries.ts                  |  36.22 |   100.00 |    0.00 | 103-119 121-127 131-135 139-178 186-322
+ℹ    settle.ts                   |  25.25 |   100.00 |    0.00 | 45-49 51-58 61-187 191-201
+ℹ   generation                   |        |          |         | 
+ℹ    create.ts                   |  50.60 |    97.37 |   44.44 | 122-124 126-128 130-145 147-223 227-251
+ℹ    lifecycle.ts                |  31.94 |   100.00 |   10.00 | 31-44 46-54 59-64 72-111 117-121 143-206 224-246 250-255 284-318 322-327 343-363 366-387 391-398 415-458 462-467 490-564 568-573
+ℹ    mock.ts                     | 100.00 |   100.00 |  100.00 | 
+ℹ    outbox.ts                   |  62.42 |    75.00 |   58.82 | 83-93 97-116 119-122 125-128 132-135 139-142 146-157
+ℹ    state.ts                    |  97.59 |    80.00 |  100.00 | 75-76
+ℹ    sweep-recovery.ts           |  36.59 |   100.00 |    0.00 | 16-41
+ℹ   operations                   |        |          |         | 
+ℹ    audit.ts                    |  26.15 |   100.00 |    0.00 | 12-17 20-24 27-52 55-65
+ℹ    integration-health.ts       |  85.71 |    28.57 |   50.00 | 22 26-28
+ℹ    telemetry.ts                | 100.00 |    81.82 |  100.00 | 
+ℹ   shared                       |        |          |         | 
+ℹ    commands.ts                 |  30.34 |   100.00 |   33.33 | 20-22 25-83
+ℹ    transaction.ts              |  84.62 |   100.00 |    0.00 | 12-13
+ℹ   workspaces                   |        |          |         | 
+ℹ    access-state.ts             |  85.29 |   100.00 |   66.67 | 88-102
+ℹ    authorize.ts                |  37.33 |   100.00 |    0.00 | 18-35 39-51 58-64 67-75
+ℹ    policy.ts                   |  31.21 |   100.00 |    0.00 | 27-29 31-33 35-39 42-49 52-57 60-71 74-90 93-104 107-116 119-133 136-141
+ℹ -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ all files                      |  60.02 |    82.51 |   42.16 | 
+ℹ -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

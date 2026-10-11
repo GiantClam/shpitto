@@ -1,0 +1,198 @@
+[
+  {
+    "id": "candidate-before",
+    "command": [
+      "node",
+      "scripts/candidate-digests.mjs",
+      "D:\\github\\shpitto\\internal\\evidence\\M3\\final-independent-race-repetitions-20261001\\candidate-before"
+    ],
+    "startedAt": "2026-10-01T02:19:23.000Z",
+    "endedAt": "2026-10-01T02:19:23.160Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/logs/candidate-before.log"
+  },
+  {
+    "id": "iteration-1-workspaces-migration",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "scripts/migrate.ts"
+    ],
+    "startedAt": "2026-10-01T02:19:23.474Z",
+    "endedAt": "2026-10-01T02:19:24.326Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/logs/iteration-1-workspaces-migration.log"
+  },
+  {
+    "id": "iteration-1-workspaces",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "scripts/probe-workspaces.ts"
+    ],
+    "startedAt": "2026-10-01T02:19:24.393Z",
+    "endedAt": "2026-10-01T02:19:25.339Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/logs/iteration-1-workspaces.log"
+  },
+  {
+    "id": "iteration-1-credit-reservation-migration",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "scripts/migrate.ts"
+    ],
+    "startedAt": "2026-10-01T02:19:25.858Z",
+    "endedAt": "2026-10-01T02:19:26.605Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/logs/iteration-1-credit-reservation-migration.log"
+  },
+  {
+    "id": "iteration-1-credit-reservation",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "scripts/probe-credit-reservation.ts"
+    ],
+    "startedAt": "2026-10-01T02:19:26.674Z",
+    "endedAt": "2026-10-01T02:19:27.690Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/logs/iteration-1-credit-reservation.log"
+  },
+  {
+    "id": "iteration-2-workspaces-migration",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "scripts/migrate.ts"
+    ],
+    "startedAt": "2026-10-01T02:19:28.269Z",
+    "endedAt": "2026-10-01T02:19:28.995Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/logs/iteration-2-workspaces-migration.log"
+  },
+  {
+    "id": "iteration-2-workspaces",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "scripts/probe-workspaces.ts"
+    ],
+    "startedAt": "2026-10-01T02:19:29.060Z",
+    "endedAt": "2026-10-01T02:19:30.003Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/logs/iteration-2-workspaces.log"
+  },
+  {
+    "id": "iteration-2-credit-reservation-migration",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "scripts/migrate.ts"
+    ],
+    "startedAt": "2026-10-01T02:19:30.496Z",
+    "endedAt": "2026-10-01T02:19:31.232Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/logs/iteration-2-credit-reservation-migration.log"
+  },
+  {
+    "id": "iteration-2-credit-reservation",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "scripts/probe-credit-reservation.ts"
+    ],
+    "startedAt": "2026-10-01T02:19:31.299Z",
+    "endedAt": "2026-10-01T02:19:32.300Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/logs/iteration-2-credit-reservation.log"
+  },
+  {
+    "id": "iteration-3-workspaces-migration",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "scripts/migrate.ts"
+    ],
+    "startedAt": "2026-10-01T02:19:32.811Z",
+    "endedAt": "2026-10-01T02:19:33.533Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/logs/iteration-3-workspaces-migration.log"
+  },
+  {
+    "id": "iteration-3-workspaces",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "scripts/probe-workspaces.ts"
+    ],
+    "startedAt": "2026-10-01T02:19:33.606Z",
+    "endedAt": "2026-10-01T02:19:34.606Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/logs/iteration-3-workspaces.log"
+  },
+  {
+    "id": "iteration-3-credit-reservation-migration",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "scripts/migrate.ts"
+    ],
+    "startedAt": "2026-10-01T02:19:35.134Z",
+    "endedAt": "2026-10-01T02:19:35.913Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/logs/iteration-3-credit-reservation-migration.log"
+  },
+  {
+    "id": "iteration-3-credit-reservation",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "scripts/probe-credit-reservation.ts"
+    ],
+    "startedAt": "2026-10-01T02:19:35.977Z",
+    "endedAt": "2026-10-01T02:19:36.932Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/logs/iteration-3-credit-reservation.log"
+  },
+  {
+    "id": "candidate-after",
+    "command": [
+      "node",
+      "scripts/candidate-digests.mjs",
+      "D:\\github\\shpitto\\internal\\evidence\\M3\\final-independent-race-repetitions-20261001\\candidate-after"
+    ],
+    "startedAt": "2026-10-01T02:19:37.123Z",
+    "endedAt": "2026-10-01T02:19:37.274Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/logs/candidate-after.log"
+  }
+]

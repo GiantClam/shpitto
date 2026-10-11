@@ -1,0 +1,41 @@
+---
+release: v1
+title: Standalone Docker application
+description: Build and run the buyer-owned Next.js container.
+section: template
+status: published
+relatedContracts: [D01, D07, D15, D18, G01, G07, G15, G18]
+---
+
+# Standalone Docker application
+
+The root `Dockerfile` builds the Next.js standalone output with Node 24 and
+copies only the runtime, static files, and reviewed migration inputs. The web
+container is application-only: PostgreSQL, private storage, provider execution,
+mail, and scheduled recovery are separate dependencies in production.
+
+Build from the repository root:
+
+```sh
+docker build --tag shpitto-v1:local .
+```
+
+Run with buyer-owned runtime values supplied by a secret manager or a protected
+environment file. At minimum, set `APP_URL`, `DATABASE_URL`,
+`BETTER_AUTH_SECRET`, `STORAGE_DRIVER`, `GENERATION_DRIVER`, and `MAIL_DRIVER`.
+For production set `STORAGE_DRIVER=s3` and configure the shared S3-compatible
+endpoint, region, private bucket and access credentials. R2 and AWS S3 use the
+same adapter; credentials remain server-side.
+The build-only secret in the Dockerfile is a nonfunctional placeholder and is
+not copied into the runtime stage. Do not use the local Mock drivers in a
+production environment.
+
+Apply reviewed migrations before starting web and worker processes. The
+`scripts/migrate.ts` runner uses the Drizzle migration directory and a
+PostgreSQL advisory lock. Take a backup before an upgrade and keep the previous
+image available for application rollback. Do not roll back schema by deleting
+tables or editing credit history.
+
+This candidate has a local Docker build preflight only. Clean exported-image
+installation, external worker setup, production health, and restore compatibility
+remain M8 release-gate work.

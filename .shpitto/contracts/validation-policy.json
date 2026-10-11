@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1.0",
+  "release": "v1",
+  "owner": "release-engineering",
+  "trustedSource": "pinned validator worktree outside candidate edits",
+  "requiredDigests": ["sourceTreeSha256", "schemaSha256", "configurationSha256", "contractSha256", "validatorSha256", "lockfileSha256"],
+  "requiredChecks": ["typecheck", "lint", "format-check", "boundary-checks", "relevant-domain-tests"],
+  "reject": ["missing evidence", "failed evidence", "stale digest", "candidate-modified validator", "skipped mandatory check"],
+  "policyRevision": "requires independent review against the prior trusted baseline"
+}

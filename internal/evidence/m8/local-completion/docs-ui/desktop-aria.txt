@@ -1,0 +1,189 @@
+- link "Skip to content":
+  - /url: "#main-content"
+- banner:
+  - link "Shpitto home":
+    - /url: /
+    - img "Shpitto"
+  - navigation "Primary navigation":
+    - link "Home":
+      - /url: /
+    - link "Docs preview":
+      - /url: /docs
+    - link "Dashboard":
+      - /url: /dashboard
+  - link "Log in":
+    - /url: /login
+  - link "Start building":
+    - /url: /dashboard
+- complementary "Documentation navigation":
+  - text: Documentation version
+  - combobox "Documentation version":
+    - option "v1 · current documentation" [selected]
+  - text: Search published documentation
+  - searchbox "Search published documentation"
+  - navigation "Published documentation":
+    - heading "Template" [level=2]
+    - list:
+      - listitem:
+        - link "Template":
+          - /url: /docs/v1/template
+      - listitem:
+        - link "Operations":
+          - /url: /docs/v1/template/operations
+      - listitem:
+        - link "Local acceptance journey":
+          - /url: /docs/v1/template/local-journey
+      - listitem:
+        - link "Local generation and credit lifecycle":
+          - /url: /docs/v1/template/generation
+      - listitem:
+        - link "Local billing fixtures":
+          - /url: /docs/v1/template/billing-fixtures
+      - listitem:
+        - link "Managed deployment reference":
+          - /url: /docs/v1/template/deploy-managed
+      - listitem:
+        - link "Standalone Docker application":
+          - /url: /docs/v1/template/deploy-docker
+      - listitem:
+        - link "Deployment configuration checklist":
+          - /url: /docs/v1/template/deployment-checklist
+      - listitem:
+        - link "Backup, upgrade and restore":
+          - /url: /docs/v1/template/upgrade-recovery
+      - listitem:
+        - link "Affiliates":
+          - /url: /docs/v1/template/affiliates
+      - listitem:
+        - link "Affiliate settlement":
+          - /url: /docs/v1/template/affiliate-settlement
+    - heading "Skills" [level=2]
+    - list:
+      - listitem:
+        - link "Skills":
+          - /url: /docs/v1/skills/overview
+      - listitem:
+        - link "Skill · quick-start":
+          - /url: /docs/v1/skills/quick-start
+      - listitem:
+        - link "Skill · add-provider":
+          - /url: /docs/v1/skills/add-provider
+      - listitem:
+        - link "Skill · add-generation-task":
+          - /url: /docs/v1/skills/add-generation-task
+      - listitem:
+        - link "Skill · configure-credits":
+          - /url: /docs/v1/skills/configure-credits
+      - listitem:
+        - link "Skill · extend-assets":
+          - /url: /docs/v1/skills/extend-assets
+      - listitem:
+        - link "Skill · deploy-template":
+          - /url: /docs/v1/skills/deploy-template
+      - listitem:
+        - link "Skill · security-review":
+          - /url: /docs/v1/skills/security-review
+      - listitem:
+        - link "Skill · upgrade-template":
+          - /url: /docs/v1/skills/upgrade-template
+      - listitem:
+        - link "Skill · customize-brand":
+          - /url: /docs/v1/skills/customize-brand
+      - listitem:
+        - link "Skill · create-page":
+          - /url: /docs/v1/skills/create-page
+      - listitem:
+        - link "Skill · modify-page":
+          - /url: /docs/v1/skills/modify-page
+      - listitem:
+        - link "Skill · customize-site":
+          - /url: /docs/v1/skills/customize-site
+    - heading "APIs" [level=2]
+    - list:
+      - listitem:
+        - link "API":
+          - /url: /docs/v1/api/overview
+    - heading "Releases" [level=2]
+    - list:
+      - listitem:
+        - link "Overview":
+          - /url: /docs/v1
+      - listitem:
+        - link "Releases":
+          - /url: /docs/v1/releases
+- main "Local acceptance journey":
+  - text: Developer documentation v1 · published docs
+  - paragraph: Local template preview. Real provider, payment and production verification remain separate release gates.
+  - heading "Local acceptance journey Copy Anchor Link" [level=1]:
+    - link "Local acceptance journey":
+      - /url: "#local-acceptance-journey"
+    - button "Copy Anchor Link"
+  - paragraph: The local profile is for product acceptance without provider credentials. It uses PostgreSQL, local asset storage, Mailpit and Mock generation. It does not charge a card or send production email.
+  - heading "Start a clean local profile Copy Anchor Link" [level=2]:
+    - link "Start a clean local profile":
+      - /url: "#start-a-clean-local-profile"
+    - button "Copy Anchor Link"
+  - list:
+    - listitem: Install Node.js 24, Corepack/pnpm 12.6 and Docker Compose v2.
+    - listitem:
+      - text: Copy
+      - code: .env.example
+      - text: to
+      - code: .env.local
+      - text: . Set a private local
+      - code: BETTER_AUTH_SECRET
+      - text: and point
+      - code: DATABASE_URL
+      - text: to the PostgreSQL service.
+    - listitem:
+      - text: Run
+      - code: pnpm services:up
+      - text: ", then"
+      - code: pnpm db:migrate
+      - text: and
+      - code: pnpm dev
+      - text: .
+    - listitem:
+      - text: Open the app on the origin configured by
+      - code: APP_URL
+      - text: . The worker health page is available at
+      - code: WORKER_HEALTH_URL
+      - text: .
+  - paragraph:
+    - text: Use
+    - code: pnpm demo:seed
+    - text: to create the local acceptance owner, member, team and invitation. The seed command writes credentials and the invitation token under
+    - code: .data/demo-credentials.json
+    - text: ; keep that file local and do not attach it to reports. The command refuses production and non-local application origins.
+  - heading "Exercise the integrated application Copy Anchor Link" [level=2]:
+    - link "Exercise the integrated application":
+      - /url: "#exercise-the-integrated-application"
+    - button "Copy Anchor Link"
+  - paragraph: Sign in as the seeded owner and open the seeded team workspace. The dashboard shows its credit grant and the Mock generation panel. Submit a prompt and verify that the persisted task advances to success and that a private video asset can be downloaded through the app.
+  - paragraph: Open Team Settings to inspect membership. The member account must sign in with the invited email before accepting the invitation. Replaying the accepted token must be rejected.
+  - paragraph:
+    - text: In Billing, use a local fixture product to open checkout. The fixture page can simulate paid, failed, refunded and disputed results; the inbox, reconciliation case, order, subscription and credit ledger remain local database state. See the
+    - link "API examples":
+      - /url: /docs/v1/api/overview
+    - text: for the request shapes and the
+    - link "operations guide":
+      - /url: /docs/v1/template/operations
+    - text: for recovery boundaries.
+  - heading "Administrative acceptance Copy Anchor Link" [level=2]:
+    - link "Administrative acceptance":
+      - /url: "#administrative-acceptance"
+    - button "Copy Anchor Link"
+  - paragraph:
+    - text: Global admin is separate from workspace ownership. Bootstrap a local operator only through the audited
+    - code: pnpm ops:owner bootstrap
+    - text: command after identifying the account's database user ID. Review the command's dry-run output, record a local change reference, then use
+    - code: "--apply"
+    - text: only in the disposable local profile. The operator must enroll and complete second-factor authentication before privileged commands. Read-only lists expose redacted data; privileged commands require a reason, current version, idempotency key and recent same-session step-up.
+  - paragraph: This journey proves only the Mock/local profile. Real Replicate, fal.ai, Stripe, FirstPromoter, production email and hosted payout checks remain separate gates.
+  - text: "Source:"
+  - code: content/docs/v1/template/local-journey.mdx
+- contentinfo:
+  - paragraph: Shpitto · code you own, workflows you reuse.
+  - link "Read the template contract":
+    - /url: /docs
+- alert

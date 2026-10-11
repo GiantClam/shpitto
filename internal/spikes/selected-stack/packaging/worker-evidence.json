@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "1.0",
+  "status": "PASS_CONTAINER_MEDIA_FIXTURE",
+  "command": "node worker/worker-probe.mjs",
+  "environment": {
+    "dockerServer": "29.8.0",
+    "dockerPlatform": "linux/x86_64",
+    "image": "shpitto-m0-worker:20260927",
+    "imageId": "sha256:53d69735b3f2606907f0d2832d40a8841cfb3f8c15138b35f7a4b84d9e309cd4",
+    "baseImage": "debian:bookworm-slim",
+    "baseImageDigest": "debian@sha256:3783cc01769c7b2b1b83a5c5ad96c815348e28ed7da68e2e3687004faa906251"
+  },
+  "observed": {
+    "ffmpegVersion": "ffmpeg version 5.1.9-0+deb12u1 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffprobeVersion": "ffprobe version 5.1.9-0+deb12u1 Copyright (c) 2007-2026 the FFmpeg developers",
+    "inputProbe": {
+      "programs": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 320,
+          "height": 180
+        }
+      ],
+      "format": {
+        "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
+        "duration": "1.000000"
+      }
+    },
+    "outputProbe": {
+      "programs": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 160,
+          "height": 90
+        }
+      ],
+      "format": {
+        "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
+        "duration": "1.000000"
+      }
+    },
+    "inputSha256": "9b624d37d987de66d88261e03fbf15312a405245260800162f5eec79d8a342c7",
+    "outputSha256": "a06037c82f709cf02e656405f63056452f9775bf11024d9e406302e8d87783c5",
+    "runOutputSha256": "d85ffaeadff33738fb6a6e755423483605a2dd76d93159f80a0259c1d94c2d4e"
+  },
+  "proves": [
+    "The Linux worker image contains FFmpeg and ffprobe.",
+    "The container generates a local media fixture and transcodes it without host binaries.",
+    "The output fixture is inspected and hashed inside the container run."
+  ],
+  "doesNotProve": [
+    "Provider-backed generation or paid account behavior.",
+    "Production deployment capacity or SLA."
+  ],
+  "redistribution": {
+    "baseImageLicense": "Debian GNU/Linux base image; retain Debian notices for shipped image.",
+    "ffmpegLicense": "Debian ffmpeg package; retain Debian package copyright and license notices for shipped image.",
+    "policy": "Evidence supports prototype feasibility; final image notice inventory remains a release packaging task."
+  }
+}

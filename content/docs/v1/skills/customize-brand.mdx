@@ -1,0 +1,51 @@
+---
+release: v1
+title: Skill · customize-brand
+section: skills
+status: published
+relatedContracts: [D09, D28, D29, D30, G09, G28, G29]
+---
+
+# Skill · customize-brand
+
+brand tokens, assets and copy
+
+Canonical invocation: read `skills/customize-brand/SKILL.md` and follow its evidence contract.
+
+Change approved brand tokens, assets and copy across the shared presentation
+shells. The default template ships a complete Shpitto baseline for evaluation
+and local preview. It is a fallback, not a customer's final visual identity;
+customer delivery requires this Skill to define the customer's own visual
+assets and tokens.
+
+## Inputs
+- Customer brand name, colors, logo/font assets, copy and responsive/accessibility intent.
+- The fallback token contract in `src/config/brand.ts` (warm light canvas,
+  coral primary, peach secondary, warm accent, Aptos/Segoe UI typography,
+  border/status/focus colors and control spacing).
+
+## Allowed scope
+`src/config/brand.ts`, `public/brand`, approved shell presentation paths,
+`src/app/globals.css` token bindings and marketing copy. Do not scatter one-off
+colors or control dimensions into a page when a shared token exists.
+
+## Protected contracts
+Preserve sign-in, workspace, generation, download and billing actions and all auth,
+ledger, provider, storage and validator paths.
+
+## Outputs and evidence
+Record a scoped manifest naming the customer assets, desktop/mobile screenshots
+or assertions, keyboard focus checks, consistent navigation/control dimensions
+and a recovery patch. The manifest must distinguish template fallback assets
+from customer-selected assets.
+
+## Recovery
+Revert only the brand-attributable files after checking overlaps.
+
+## Escalation
+A request that changes a protected flow becomes an engineering change.
+
+
+## Release boundary
+
+This reference describes the local governed workflow. Changes to external provider accounts, payment services, production email, payouts or protected business contracts require their separate stage evidence and are not authorized by this page.

@@ -1,0 +1,12 @@
+{
+  "environment": {
+    "nodeEnv": "development",
+    "database": "local PostgreSQL shpitto_m2 localhost:55436",
+    "mail": "injected recording adapter and Mailpit HTTP contract fixture",
+    "appUrl": "http://localhost:3036"
+  },
+  "command": "node --experimental-strip-types scripts/probe-auth-lifecycle.ts",
+  "startedAt": "2026-09-29T05:52:00.7269291Z",
+  "finishedAt": "2026-09-29T05:52:03.4078672Z",
+  "exitCode": 0
+}

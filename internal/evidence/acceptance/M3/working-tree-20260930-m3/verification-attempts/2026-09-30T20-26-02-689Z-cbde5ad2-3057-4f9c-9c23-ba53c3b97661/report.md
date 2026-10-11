@@ -1,0 +1,3 @@
+# M3 verification attempt 2026-09-30T20-26-02-689Z-cbde5ad2-3057-4f9c-9c23-ba53c3b97661
+
+Status: FAIL. This record is derived from current command results and explicit missing-evidence checks. It does not grant independent review or integrator approval. Current source candidate stability: PASS. Owned branch coverage: 85.09% (816/959), threshold 80%. 1 owned sources missing from LCOV. Callback replay, contention and implemented crash-boundary evidence passed; authenticated remote webhook inbox evidence remains deferred to M4. Independent review and integrator decision remain unresolved. Production email, real providers, Stripe, and historical-balance recovery remain out of scope.

@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "1.0",
+  "reviewedAt": "2026-10-01T06:44:47.466Z",
+  "reviewer": "/root/next_stage_evidence_review",
+  "scope": ["M4 task 5.3", "M5 tasks 6.3 and 6.4"],
+  "decision": "PASS_BOUNDED_LOCAL_FIXTURE",
+  "decisionSummary": "The bounded local implementation contracts for M4 task 5.3 and M5 tasks 6.3/6.4 pass independent review. Exact payment alias tuples, canonical workspace/customer consistency, failed webhook retry, and stale received lease recovery are covered by source inspection and a privileged nine-case disposable PostgreSQL probe.",
+  "ownerLayer": "runtime",
+  "upstreamFilesInspected": [
+    "openspec/changes/restart-shpitto-video-saas/specs/billing/spec.md",
+    "openspec/changes/restart-shpitto-video-saas/tasks.md",
+    "internal/restart/evidence-index.json",
+    "internal/evidence/M4/task-5.3/README.md",
+    "internal/evidence/M5/task-6.3-6.4/README.md",
+    "src/modules/billing/payment-aliases.ts",
+    "src/modules/billing/reconcile-payment.ts",
+    "src/modules/billing/inbox.ts",
+    "src/db/schema/billing.ts"
+  ],
+  "whyNotHigherLayer": "The billing specification was inspected first. The reviewed behavior is implemented in the runtime query, tenant consistency, and inbox lease/replay paths; the source and database probe are therefore the appropriate evidence owners.",
+  "reviewedInvariants": [
+    {
+      "id": "BIL-ALIAS-EXACT-TUPLE",
+      "status": "PASS",
+      "evidence": "payment-aliases.ts queries each provider/objectKind/externalId tuple; probe case 'aliases are resolved as exact provider/object/id tuples and cannot cross-pair two orders'."
+    },
+    {
+      "id": "BIL-CANONICAL-TENANT-CUSTOMER",
+      "status": "PASS",
+      "evidence": "reconcile-payment.ts checks workspaceId and customerId hints against the canonical order before account lock; probe case 'known canonical orders reject mismatched workspace and customer hints before any account lock or financial effect'."
+    },
+    {
+      "id": "BIL-FAILED-DELIVERY-RETRY",
+      "status": "PASS",
+      "evidence": "inbox.ts resets failed rows and retries with the same delivery identity; probe case 'failed webhook delivery is retryable with the same event identity after the transient prerequisite is restored'."
+    },
+    {
+      "id": "BIL-STALE-RECEIVED-LEASE",
+      "status": "PASS",
+      "evidence": "inbox.ts uses a row lock and 60-second received lease; probe case 'stale received inbox rows are reclaimed after the lease and converge without a duplicate grant'."
+    }
+  ],
+  "verification": {
+    "focusedTests": [
+      "node --experimental-strip-types --test tests/contracts/fal.test.ts: PASS (5/5)",
+      "node --experimental-strip-types --test tests/contracts/billing-checkout.test.ts: PASS (6/6)"
+    ],
+    "qualityChecks": [
+      "corepack pnpm typecheck: PASS",
+      "corepack pnpm lint: PASS",
+      "corepack pnpm format:check: PASS",
+      "corepack pnpm build: PASS; /api/webhooks/stripe emitted"
+    ],
+    "databaseProbe": {
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/foundations-20261001/next-tasks-review-5.3-6.3-6.4-final-probe.log",
+      "profile": "privileged disposable PostgreSQL 17.6 at 127.0.0.1:55432 with fixture provider",
+      "caseCount": 9,
+      "databaseRemoved": true,
+      "cases": [
+        "verified payment persists inbox and issues one catalog grant",
+        "verified duplicate webhook is acknowledged without a second effect",
+        "invoice and PaymentIntent aliases converge on the original order and grant",
+        "failed webhook delivery is retryable with the same event identity after the transient prerequisite is restored",
+        "stale received inbox rows are reclaimed after the lease and converge without a duplicate grant",
+        "aliases are resolved as exact provider/object/id tuples and cannot cross-pair two orders",
+        "known canonical orders reject mismatched workspace and customer hints before any account lock or financial effect",
+        "forged signature has no durable financial or inbox effect",
+        "refund-before-payment holds the workspace and late payment cannot grant credits"
+      ]
+    }
+  },
+  "candidateDigest": {
+    "capturedAt": "2026-10-01T06:44:47.466Z",
+    "sourceTreeSha256": "89b6bbc5e0872ea0402caab2e28e876968ac7182aea2dc998879345942878809",
+    "schemaSha256": "ae5c2ed265b308f8a624e917b2b631038dbeaefb993f183248bee8800af87ffa",
+    "configurationSha256": "5fca500aba3c8fd69c8efe8fc7c96659387af00e1fb88269912c5c2bdb5f7426",
+    "contractSha256": "861a25ab4e70f623440a7abba054afa4460177e42cbe8a001196bc9d12a1a139",
+    "validatorSha256": "f4ce7b165966a957f87fc0e3c48ca5b5b2a6554450d4f433ce4d45ad5e047c75",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a"
+  },
+  "limits": [
+    "PASS is limited to local fixture contracts and disposable PostgreSQL evidence.",
+    "No Stripe account, live fal request, production billing, production email, paid request, or external network evidence was used.",
+    "This review does not approve the M4 or M5 stage gate and does not alter task or stage status."
+  ]
+}

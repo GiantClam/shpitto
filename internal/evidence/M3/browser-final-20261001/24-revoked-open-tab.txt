@@ -1,0 +1,26 @@
+- banner:
+  - link "Shpitto Video SaaS home":
+    - /url: /
+    - text: Shpitto
+  - navigation "Primary navigation":
+    - link "Home":
+      - /url: /
+    - link "Docs preview":
+      - /url: /docs
+      - text: Docs
+      - generic: preview
+    - link "Dashboard planned":
+      - /url: /dashboard
+      - text: Dashboard
+      - generic: planned
+- main:
+  - paragraph: Workspace access
+  - heading "Workspace unavailable" [level=1]
+  - paragraph: Membership is checked again for every private operation.
+  - link "Choose a team":
+    - /url: /dashboard/team
+  - link "Create a team workspace":
+    - /url: /workspaces/new
+- contentinfo: Shpitto Video SaaS · staged implementation preview
+- button "Open Next.js Dev Tools":
+- alert

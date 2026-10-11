@@ -1,0 +1,10 @@
+✔ generation task states are monotonic and terminal states cannot reopen (1.0873ms)
+✔ accepted input snapshots reject browser/provider URLs and foreign or non-ready assets (0.3784ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 460.9214

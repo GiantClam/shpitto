@@ -1,0 +1,65 @@
+{
+  "capturedAt": "2026-10-01T01:18:44.991Z",
+  "sourceCommit": null,
+  "dirtyPatchSha256": null,
+  "sourceTreeSha256": "5cbdfad98b98f20e9bc0010fc5b759c86637f7d97df8192709d8f49921e5e99c",
+  "schemaSha256": "5b0b847b266e1690319021b0167f831367e9190d188c88b90b40ca09f8d4c58b",
+  "configurationSha256": "5f6bd06fa671a1f727e8663ba540f25f53b2dc15ebaff31fd2593eb0eb3032d7",
+  "contractSha256": "8a0768e137af920b4ab3963ca7ddb99cc24bdcc47f5206bb84e3bdae76754d69",
+  "validatorSha256": "e8225b30d6c224fedcbe26dbd07e203c0ff15318ee53f9d291be534efad6fa2a",
+  "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+  "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
+  "digestInputs": {
+    "sourceTree": [
+      "src",
+      "tests",
+      "content",
+      "skills",
+      "deploy",
+      "scripts",
+      "tooling",
+      ".shpitto",
+      ".github",
+      "package.json",
+      "pnpm-workspace.yaml",
+      "next.config.ts",
+      "tsconfig.json",
+      ".env.example",
+      ".dockerignore",
+      ".gitignore"
+    ],
+    "schema": [
+      "src/db"
+    ],
+    "configuration": [
+      "package.json",
+      "pnpm-workspace.yaml",
+      "next.config.ts",
+      "tsconfig.json",
+      ".env.example",
+      ".dockerignore",
+      "src/config/env.ts",
+      ".github/workflows/verify-root.yml",
+      "deploy/compose.local.yml",
+      "deploy/worker.Dockerfile",
+      "tooling"
+    ],
+    "contract": [
+      ".shpitto/contracts",
+      "skills/registry.json",
+      "content/docs/v1/manifest.json",
+      "openspec/changes/restart-shpitto-video-saas/design.md",
+      "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+      "openspec/changes/restart-shpitto-video-saas/specs",
+      "internal/restart/contract-register.md",
+      "internal/restart/integration-matrix.md",
+      "internal/restart/external-inputs.json"
+    ],
+    "validator": [
+      "scripts",
+      "tests",
+      "tooling",
+      "internal/restart/check-acceptance-record.py"
+    ]
+  }
+}

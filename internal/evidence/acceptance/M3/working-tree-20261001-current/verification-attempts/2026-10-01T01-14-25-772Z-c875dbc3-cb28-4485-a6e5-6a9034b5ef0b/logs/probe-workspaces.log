@@ -1,0 +1,29 @@
+{"status":"PASS","personalRejected":4,"lastOwnerRaceRejected":10,"twoOwnerRaceAttempts":10,"twoOwnerRaceWinners":1,"twoOwnerRaceRejected":9,"minimumObservedOwners":1,"transferOwner":"workspace-probe-member-d80060ff-b069-4a02-b19d-4204de3996f5"}
+✔ scripts\probe-workspaces.ts (897.0446ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 902.7085
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------------------------------------
+ℹ file              | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------------------------------------
+ℹ src               |        |          |         | 
+ℹ  contracts        |        |          |         | 
+ℹ   http.ts         |  55.66 |    66.67 |   46.15 | 17-18 21-22 25-35 39-40 45-49 73 81-87 90-106
+ℹ  modules          |        |          |         | 
+ℹ   shared          |        |          |         | 
+ℹ    commands.ts    |  86.52 |    60.00 |   66.67 | 31-32 43-44 69-70 72-73 86-89
+ℹ    transaction.ts | 100.00 |   100.00 |  100.00 | 
+ℹ   workspaces      |        |          |         | 
+ℹ    authorize.ts   |  69.33 |    75.00 |   50.00 | 26-30 32-33 58-64 67-75
+ℹ    commands.ts    | 100.00 |    98.04 |  100.00 | 
+ℹ    policy.ts      |  98.58 |    94.00 |  100.00 | 114-115
+ℹ ------------------------------------------------------------------------------------------------
+ℹ all files         |  86.34 |    85.81 |   78.72 | 
+ℹ ------------------------------------------------------------------------------------------------
+ℹ end of coverage report

@@ -1,0 +1,30 @@
+{
+  "name": "@shpitto/selected-stack-spike",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "pnpm@12.6.0",
+  "scripts": {
+    "build": "next build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@trigger.dev/sdk": "4.6.4",
+    "better-auth": "1.7.6",
+    "drizzle-orm": "0.45.3",
+    "fumadocs-core": "16.15.14",
+    "fumadocs-ui": "16.15.14",
+    "next": "16.3.6",
+    "pg": "8.23.0",
+    "react": "19.3.0",
+    "react-admin": "5.15.4",
+    "react-dom": "19.3.0",
+    "stripe": "22.6.2"
+  },
+  "devDependencies": {
+    "@types/node": "24.0.0",
+    "@types/react": "19.0.0",
+    "@types/react-dom": "19.0.0",
+    "drizzle-kit": "0.31.11",
+    "typescript": "6.0.3"
+  }
+}

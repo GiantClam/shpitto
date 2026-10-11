@@ -1,0 +1,46 @@
+---
+title: Affiliate review and settlement
+description: Evidence required before a hosted settlement handoff.
+release: v1
+section: template
+status: published
+relatedContracts: [D15, G24, G25]
+---
+
+# Affiliate review and settlement
+
+An operator must complete MFA and verify a new authenticator code within ten
+minutes before a privileged command. Review, deny, campaign change, abuse release
+and hosted handoff commands require a reason, current version and idempotency
+key. Successful domain changes, audit and durable delivery intent commit together.
+
+Review reads refresh the provider account and commission evidence. Scheduled
+reconciliation targets five-minute intervals; a handoff needs a just-in-time
+refresh within 60 seconds. Account, program, campaign revision, policy version,
+review version and checkpoint generation must still match after external reads.
+Missing history, unresolved holds, in-flight or failed denials and stale evidence
+prevent approval. An asynchronous batch being accepted is not a completed denial.
+
+The server returns only a reviewed HTTPS dashboard URL from an approved origin.
+The browser must never accept a caller-provided settlement URL. A recorded visit
+to that dashboard does not prove that money was paid. The integration does not
+invent a direct payout API and cannot prevent an account administrator from
+bypassing this application's review inside the provider dashboard.
+
+Before real settlement, the buyer must separately verify the account, campaign,
+payout method, country eligibility, tax/compliance requirements and automatic
+disbursement setting. The real-account stage must retain provider status meanings
+and exercise completed, partial, failed and stopped batches. No real payout is
+part of local Docker acceptance.
+
+Cash refunds use unique refund references and the original sale reference, wait
+for sale acknowledgement, preserve currency/basis and cannot exceed the original
+cash amount. Task-credit refunds remain local. Shared refund/dispute economic
+loss must be deduplicated, and a won dispute following an affiliate reversal or
+denial requires a manual correction hold rather than silently recreating a
+commission.
+
+Verified self-referrals, more than three attributed workspaces in 24 hours and
+reused lawfully obtained verified instrument signals require review. Missing
+signals remain unknown. Legitimate users can be released with an audited reason;
+there is no global account cap and no raw card storage.

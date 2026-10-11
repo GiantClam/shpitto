@@ -1,0 +1,1 @@
+{"status":"PASS","replayed":true,"fefoAllocation":["20","20"],"expiredUnreservedExcluded":true,"forgedPriceRejected":true,"staleCatalogRejected":true,"concurrentAffordableReservations":1,"raceAttempts":10,"failedRaceEffects":0,"onboardingDemoGrantSingleEffect":true,"productionDemoRejected":true}

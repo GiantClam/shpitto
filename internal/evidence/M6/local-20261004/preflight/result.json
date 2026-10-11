@@ -1,0 +1,7 @@
+{
+  "status": "FAIL",
+  "candidateUnchanged": true,
+  "coverageStatus": "FAIL",
+  "commandCount": 45,
+  "environment": "local Docker PostgreSQL with isolated provider fixtures; no real accounts"
+}

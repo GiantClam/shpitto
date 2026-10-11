@@ -1,0 +1,49 @@
+{
+  "reviewerId": "/root/m2_independent_sol_generic",
+  "reviewedAt": "2026-09-29T06:07:04Z",
+  "candidateId": "working-tree-20260929-m2-repair",
+  "sourceTreeSha256": "9a2f3e2edae55f3b21b933ebee91944791b903adc9106a3e680f35203b59b7fe",
+  "supersedesProvisionalSourceTreeSha256": "a4a53f4c71b8ad2e58c1f9339b8fc3a612ed4b3b0768efcbdf0cf1ad9fed6227",
+  "independentFromImplementer": true,
+  "task3_11Decision": "PASS",
+  "m2AggregateDecision": "PASS",
+  "decisionScope": "Local M2 profile and exact candidate bytes; integrator decision remains separate",
+  "verification": {
+    "candidateDigestsMatchCurrentBytes": true,
+    "acceptanceRecordChecksPassed": true,
+    "independentCommand": "node scripts/verify-m2.mjs internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-verification",
+    "suiteExitCode": 0,
+    "passingTests": 28,
+    "branchCoverage": "575/620 (92.74%)",
+    "missingOwnedFiles": 0,
+    "raceRepetitionsPassed": 12,
+    "liveHttpAndMailpitEvidenceReviewed": true,
+    "apiDeniedRequestsReviewed": 35,
+    "finalVerifyExitCode": 0,
+    "uiViewportsReviewed": ["1440x900", "390x844"],
+    "uiScreenshotsVisuallyInspected": ["signup-mobile.png", "login-desktop.png", "reset-confirm-mobile.png", "reset-mismatch-mobile.png"],
+    "preUiToFinalChangedFiles": ["src/app/globals.css", "src/components/auth/auth-form.tsx"],
+    "unchangedOwnedDomainAndTestInputs": 40,
+    "sourceChangesMadeByReviewer": false,
+    "persistentProductDataChanges": false,
+    "disposableFixturesCreatedAndCleaned": true
+  },
+  "scopeLimits": [
+    "Unknown historical reserved credits and already-ledgered grants without pre-ledger proof remain held for audited recovery.",
+    "T49 operator recovery and browser workspace journeys are deferred to tasks 4.11 and 4.13.",
+    "Production email delivery, payment, and provider generation are outside this local M2 review."
+  ],
+  "evidenceRefs": [
+    "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/candidate.json",
+    "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/task-3.11.json",
+    "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/record.json",
+    "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-verification/commands.json",
+    "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-verification/coverage-summary.json",
+    "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/coverage-carry-equivalence.json",
+    "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/ui/checks.json",
+    "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/auth-http.log",
+    "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/auth-live-mailpit.log",
+    "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/api-isolation.log",
+    "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verify.log"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "checkedAt": "2026-09-29T06:04:56.909352+00:00",
+  "unchangedFiles": 40,
+  "changedFiles": [],
+  "scope": "Exact owned-domain and test footprint equality before/after auth-only CSS and class change",
+  "evidenceRefs": [
+    "internal\\evidence\\acceptance\\M2\\working-tree-20260929-m2-repair\\verification-attempt1\\owned-modules.json",
+    "internal\\evidence\\acceptance\\M2\\working-tree-20260929-m2-repair\\independent-verification\\owned-modules.json"
+  ]
+}

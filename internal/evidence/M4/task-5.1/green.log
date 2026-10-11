@@ -1,0 +1,37 @@
+✔ all four selected schemas are inspected, byte-bound, and disabled for live use (1.289ms)
+✔ strict public DTO rejects every unapproved top-level and nested vendor field (0.6539ms)
+✔ schema or exact-version drift blocks new submission contracts without a silent fallback (0.2169ms)
+✔ safe preset is server-owned and all four mappings fit inspected schema fields (1.6969ms)
+✔ mapping rechecks crop consent instead of trusting a forged validated TypeScript object (0.128ms)
+✔ accepted historical contracts map after current registry removal, while new admission is rejected (0.8369ms)
+✔ accepted contract mapping refuses unsupported versions and unsupported version-one presets (0.1436ms)
+✔ normalized observations retain an immutable copy of the accepted catalog (0.217ms)
+✔ crop consent binds exact authorized ready asset, workspace, dimensions and crop revision (1.5219ms)
+✔ frozen snapshot retains quote, deadline, endpoint and digests independent of later object changes (0.3043ms)
+✔ submit normalization distinguishes known rejection from transport uncertainty and malformed success (0.2188ms)
+✔ completed-with-error is failure and provider output remains a candidate (0.2967ms)
+✔ Mock port delegates deterministic identity and observation to existing Mock domain functions (11.041ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 485.941
+ℹ start of coverage report
+ℹ --------------------------------------------------------------------------------------------
+ℹ file                  | line % | branch % | funcs % | uncovered lines
+ℹ --------------------------------------------------------------------------------------------
+ℹ src                   |        |          |         | 
+ℹ  adapters             |        |          |         | 
+ℹ   providers           |        |          |         | 
+ℹ    input.ts           |  89.92 |    82.05 |  100.00 | 10-11 30-31 39-40 49-50 80-81 102-103
+ℹ    mock.ts            | 100.00 |    86.36 |  100.00 | 
+ℹ    normalize.ts       | 100.00 |    84.00 |  100.00 | 
+ℹ  config               |        |          |         | 
+ℹ   provider-models.ts  | 100.00 |   100.00 |  100.00 | 
+ℹ --------------------------------------------------------------------------------------------
+ℹ all files             |  95.54 |    84.57 |  100.00 | 
+ℹ --------------------------------------------------------------------------------------------
+ℹ end of coverage report
