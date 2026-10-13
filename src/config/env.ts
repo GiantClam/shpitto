@@ -1,3 +1,5 @@
+import {parseProviderWorkerConfig, type ProviderWorkerConfig} from './provider-worker.ts';
+
 const SAMPLE_VALUES = new Set([
   '',
   'replace-me',
@@ -34,6 +36,7 @@ type ServerEnv = Readonly<{
   replicateWebhookAccountId: string;
   falWebhookPublicKeyPem: string;
   falWebhookAccountId: string;
+  falWebhookBaseUrl: string;
   affiliateReferralSecret: string;
   affiliateWebhookSecret: string;
   affiliateProgramId: string;
@@ -73,6 +76,7 @@ export function getServerEnv(): ServerEnv {
     replicateWebhookAccountId: read('REPLICATE_WEBHOOK_ACCOUNT_ID'),
     falWebhookPublicKeyPem: read('FAL_WEBHOOK_PUBLIC_KEY_PEM'),
     falWebhookAccountId: read('FAL_WEBHOOK_ACCOUNT_ID'),
+    falWebhookBaseUrl: read('FAL_WEBHOOK_BASE_URL'),
     affiliateReferralSecret: read('AFFILIATE_REFERRAL_SECRET'),
     affiliateWebhookSecret: read('AFFILIATE_WEBHOOK_SECRET'),
     affiliateProgramId: read('AFFILIATE_PROGRAM_ID'),
@@ -97,7 +101,7 @@ export function getServerEnv(): ServerEnv {
     // Their absent credentials must not prevent the core application starting.
     const optional = new Set([
       'billingWebhookSecret', 'affiliateReferralSecret', 'affiliateWebhookSecret', 'affiliateProgramId',
-      'replicateWebhookSecret', 'replicateWebhookAccountId', 'falWebhookPublicKeyPem', 'falWebhookAccountId',
+      'replicateWebhookSecret', 'replicateWebhookAccountId', 'falWebhookPublicKeyPem', 'falWebhookAccountId', 'falWebhookBaseUrl',
     ]);
     const missing = Object.entries(values)
       .filter(([name, value]) =>
@@ -121,4 +125,17 @@ export function getRuntimeProfile(): 'local' | 'acceptance' | 'production' {
   const profile = read('SHPTITTO_RUNTIME_PROFILE');
   if (profile === 'acceptance' && nodeEnv === 'production') return 'acceptance';
   return nodeEnv === 'production' ? 'production' : 'local';
+}
+
+/** Worker controls are server-only and paused unless explicitly bound to an isolated project/workspace. */
+export function getProviderWorkerConfig(): ProviderWorkerConfig {
+  const env = getServerEnv();
+  return parseProviderWorkerConfig({runtimeProfile: env.runtimeProfile, generationDriver: env.generationDriver, storageDriver: env.storageDriver,
+    railwayProjectId: read('RAILWAY_PROJECT_ID'), expectedProjectId: read('SHPITTO_PROVIDER_WORKER_PROJECT_ID'), workspaceId: read('SHPITTO_PROVIDER_WORKER_WORKSPACE_ID'),
+    state: read('SHPITTO_PROVIDER_WORKER_STATE'), allowCreate: read('SHPITTO_PROVIDER_WORKER_ALLOW_CREATE'), modelKeys: read('SHPITTO_PROVIDER_WORKER_MODEL_KEYS'), pollMs: read('SHPITTO_PROVIDER_WORKER_POLL_MS')});
+}
+
+export function getProviderCredentials() {
+  return Object.freeze({replicateToken: read('REPLICATE_API_TOKEN'), falToken: read('FAL_KEY'),
+    replicateWebhookBaseUrl: read('REPLICATE_WEBHOOK_BASE_URL'), falWebhookBaseUrl: read('FAL_WEBHOOK_BASE_URL'), port: read('PORT') || '8080'});
 }

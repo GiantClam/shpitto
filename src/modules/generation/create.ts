@@ -1,4 +1,6 @@
 import {randomUUID} from 'node:crypto';
+import {getProviderModel} from '../../config/provider-models.ts';
+import {providerInputFromSnapshot} from './provider-input.ts';
 
 import {and, eq} from 'drizzle-orm';
 
@@ -52,6 +54,8 @@ export type CreateGenerationInput = Readonly<{
   input: ReadyInputSnapshot;
   mode?: string;
   profile?: CatalogProfile;
+  /** A trusted runtime workspace allowlist, never accepted from a browser DTO. */
+  acceptanceWorkspaceId?: string;
   now?: Date;
   /** Trusted server-side resolver for asset readiness/ownership. Never supplied by a browser route. */
   authorizeReadyInput?: (tx: TransactionDatabase, actor: WorkspaceActor, workspaceId: string, input: ReadyInputSnapshot) => Promise<void>;
@@ -155,6 +159,9 @@ async function createInTransaction(
   if (Number.isNaN(now.getTime())) throw new DomainError('VALIDATION', 'A valid creation timestamp is required.');
   const profile = input.profile ?? 'local';
   const model = assertCurrentServerQuote(input.quote, profile);
+  if (profile === 'acceptance' && input.acceptanceWorkspaceId !== input.workspaceId) throw new DomainError('FORBIDDEN', 'This workspace is not admitted to provider acceptance.');
+  const providerContract = profile === 'acceptance' ? getProviderModel(model.id) : null;
+  if (providerContract) providerInputFromSnapshot(model.id, inputSnapshot);
   await assertGenerationAllowed(tx, input);
   if (inputSnapshot.assetId) {
     if (!input.authorizeReadyInput) {
@@ -189,7 +196,7 @@ async function createInTransaction(
     mode: input.mode ?? 'video',
     modelKey: model.id,
     catalogVersion: input.quote.catalogVersion,
-    catalogSnapshot: serializeJsonValue(input.quote),
+    catalogSnapshot: serializeJsonValue(providerContract ? {...input.quote, providerContract} : input.quote),
     inputSnapshot: serializeJsonValue(inputSnapshot),
     policySnapshot: serializeJsonValue(policy),
     quotedCredits: BigInt(input.quote.totalCost),

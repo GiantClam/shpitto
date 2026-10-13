@@ -64,5 +64,11 @@
     "privateLifecycle": "internal/evidence/M4/task-5.10/fal-private-lifecycle-r2.json",
     "storageAdapter": "internal/evidence/M4/task-5.7-r2-live-adapter.json"
   },
-  "privateLifecycleVerifiedAt": "2026-10-10T11:56:33.271Z"
+  "privateLifecycleVerifiedAt": "2026-10-10T11:56:33.271Z",
+  "subsequentWorkerVerification": {
+    "recordRef": "internal/evidence/M4/task-5.10/railway-worker/fal-authorized-bootstrap-20261013.json",
+    "status": "PASS_SCOPED_FAL_T2V_LIVE_PIPELINE",
+    "verifiedAt": "2026-10-13T10:14:55.424195+00:00",
+    "fullM4Acceptance": false
+  }
 }

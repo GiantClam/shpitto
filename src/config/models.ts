@@ -1,3 +1,4 @@
+import {providerModels} from './provider-models.ts';
 import {semanticHash} from '../contracts/http.ts';
 import {DomainError} from '../db/contracts.ts';
 
@@ -33,6 +34,8 @@ const DEFAULT_MODEL: ModelCatalogEntry = Object.freeze({
 /** The local catalog is deliberately small until the generation adapter gate. */
 export function getModelCatalog(profile: CatalogProfile = 'local'): ReadonlyMap<string, ModelCatalogEntry> {
   if (profile === 'production') return new Map();
+  // Acceptance credits exercise the domain ledger; they are not published provider prices.
+  if (profile === 'acceptance') return new Map(providerModels.map((model) => [model.modelKey, Object.freeze({id: model.modelKey, label: `Acceptance ${model.provider} ${model.mode}`, enabled: true, creditsPerUnit: 10n, maxQuantity: 1n})]));
   return new Map([[DEFAULT_MODEL.id, DEFAULT_MODEL]]);
 }
 

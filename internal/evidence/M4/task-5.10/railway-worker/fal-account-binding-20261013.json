@@ -1,0 +1,9 @@
+{
+  "accountBindingConfirmed": true,
+  "accountIdSha256": "b366c2459f3c54347ddfea7716dd7a616138aff1dd3d57f7a970cc4dc0a51007",
+  "source": "JWKS-verified owned request callback",
+  "webConfigured": true,
+  "workerReferenced": true,
+  "accountIdPrinted": false,
+  "paidCreatesEnabled": false
+}

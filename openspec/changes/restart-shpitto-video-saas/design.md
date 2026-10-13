@@ -165,6 +165,17 @@ Source commerce uses a separate vendor Lemon Squeezy program and per-customer cl
 
 Pre-mortems: (1) an unknown paid submission retried by a recovered worker doubles spend—prove stale-lease and no-resubmit cases; (2) refund-before-paid or old network responses grant credits—prove canonical reducer/fencing cases; (3) commission denial remains asynchronous while payout opens—prove account checkpoint and denial-confirmation gates.
 
+## fal.ai webhook verification
+
+The fal.ai integration uses the provider-documented webhook protocol. Submission sends the final HTTPS callback URL through the queue request webhook parameter. The receiver verifies the raw request body with fal.ai JWKS keys from `https://rest.fal.ai/.well-known/jwks.json`, caches the key set for no more than 24 hours, validates the request ID, user identity, timestamp and signature headers, and acknowledges the inbox before asynchronous materialization or settlement. The receiver returns a bounded 2xx response quickly and treats duplicate deliveries as idempotent. Operators do not copy a PEM public key from the fal.ai console; the provider JWKS endpoint is the source of truth. Production provider catalog enablement remains separate from the acceptance profile and requires the M4 evidence gate.
+### Isolated Railway provider worker
+
+The Railway Demo/acceptance deployment uses a separate Node worker process, not the local Mock worker or a new backend domain authority. It reuses the same PostgreSQL task/reservation/outbox commands, provider adapters and private S3-compatible storage. Activation requires an explicit acceptance profile, matching Railway project binding and a single workspace allowlist. New paid creates are disabled by default. Before any provider POST the worker persists a submission-start fence; a restarted or stale owner may only reconcile that attempt, never create again. Input capabilities cover only an already-authorized workspace image and expire within one hour. Outputs pass bounded download, media validation and ready-asset publication before settlement; missing provider costs remain UNKNOWN.
+
+An explicitly authorized one-shot acceptance probe may bootstrap an unconfirmed Fal account only in the isolated Demo project. It seeds a fresh workspace, enforces the approved preset and reference-price ceiling, persists a pre-POST fence and the exact API-returned request ID, and never retries an ambiguous paid create. Only a JWKS-verified callback correlated to that persisted request/attempt may establish the account binding. The ordinary worker paid-create guard remains unchanged; background creates remain disabled, and temporary recovery is restricted to that newly seeded workspace. Fixture authentication identities and unknown provider costs must remain explicitly labeled in evidence.
+
+Independent deadline sweep and workspace-scoped cleanup run outside dispatch polling. Worker startup applies migrations through the existing locked migration runner and fails closed on missing schema/media tools. Deployment health and fixture restart evidence do not imply real provider callbacks, real-account M4 completion or hosted Trigger acceptance; task 5.10 remains open until all existing mandatory evidence and independent review are current.
+
 ## Migration Plan
 
 1. M0 inventories root/Git/local authored files, establishes the relocation/preservation map and disposable selected-stack evidence, and checks configured hosting dependencies read-only. Preserve work before choosing the exact move list.

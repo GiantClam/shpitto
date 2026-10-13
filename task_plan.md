@@ -133,3 +133,29 @@ Objective: make OpenCode session continuity, workflow correlation, and long-runn
 6. Run focused tests, typecheck, lint, and generated-template smoke checks; record residual credential-dependent gaps.
 
 Completed in this phase: native session flags and persistence, workflow correlation, in-flight heartbeat updates, task-class timeouts, Docker/source adapters, generated Docker packaging, and truthful Cloudflare capability metadata. Focused verification and the independent source build pass; the full web suite remains environment-dependent because it includes external provider tests and pre-existing legacy failures.
+
+## 2026-10-13 Railway Provider Worker (active)
+
+Scope: implement and deploy one isolated acceptance provider worker. No paid inference is authorized by this deployment task; keep submissions paused initially. Preserve unrelated .env.example deletions. No new dependencies, production mail, or existing business-object reads/deletes.
+
+1. Inspect provider/lifecycle/OpenSpec contracts and Railway target (in progress).
+2. Add regression tests for submission fencing, scoped runtime admission, transport bounds and recovery.
+3. Implement workspace-scoped real dispatch/poll/materialization/settlement and separate health/sweep loops.
+4. Repair official fal JWKS authentication in parallel, without weakening production admission.
+5. Run typecheck, lint, format, provider/storage/worker contracts and disposable PostgreSQL integration.
+6. Deploy separate Railway worker with create requests disabled; verify identity, health, tools and restart.
+7. Save deployment evidence and update OpenSpec task 5.10 without claiming full M4 PASS.
+
+
+## 2026-10-13 Worker Completion Evidence
+
+Worker and companion Web deployed and health-checked; worker restarted successfully while paused. 145 contracts and 13 disposable PostgreSQL integration cases pass; fresh R2 signed input probe cleaned up. Independent bootstrap/adoption review fixes verified. No new paid generation. Full acceptance is blocked by stale M4 candidate digests and missing full live/hosted/independent stage evidence. Evidence saved under internal/evidence/M4/task-5.10/railway-worker/.
+
+
+## 2026-10-13 Authorized Fal T2V Bootstrap
+
+User authorized exactly one 720p/81-frame/16-FPS Fal T2V request with reference cost ~$0.41 and authorization budget USD1. Create a fresh seeded acceptance identity/workspace/reservation; retain an exclusive run record and durable submit fence. No blind retry on ambiguity. Establish account binding only from a JWKS-verified callback tied to the exact request ID returned by the authenticated create. Production worker remains create-disabled; only assigned-workspace recovery/polling may run. Preserve private output for Demo evidence, never print keys/signed URLs/session tokens.
+
+## 2026-10-13 Authorized One-Shot Verification Complete
+
+Exactly one Fal T2V create was accepted and never retried. Confirmed the account only from the signed, persisted-request callback, then bound both Railway services. Real worker/R2 publication, one seeded reservation consumption, HTTP authorization, scheduled fresh-fixture cleanup and restart retention passed. Worker is paused/create-disabled with effective scope unassigned. Full M4 remains open: current candidate digests are stale and the complete matrix/hosted-runner/whole-stage review is not asserted. Do not issue another paid create under this consumed authorization.

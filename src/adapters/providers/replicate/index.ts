@@ -1,3 +1,6 @@
+import {permitsAcceptanceSubmission} from '../admission.ts';
+import type {AcceptanceSubmissionScope} from '../port.ts';
+
 import {DomainError} from '../../../db/contracts.ts';
 import {getProviderModel} from '../../../config/provider-models.ts';
 import {mapProviderInput, validateVideoInput} from '../input.ts';
@@ -27,6 +30,7 @@ export type ReplicateAdapterOptions = Readonly<{
   webhookBaseUrl?: string;
   webhookSecret?: string;
   webhookAccountId?: string;
+  acceptanceScope?: AcceptanceSubmissionScope;
   resolveOwnedImageUrl?: (image: Readonly<{assetId: string; cropSha256: string}>) => Promise<string>;
 }>;
 
@@ -94,7 +98,7 @@ export function createReplicateProvider(options: ReplicateAdapterOptions): Provi
     },
     async submit(context): Promise<SubmitResult> {
       if (context.catalog.provider !== 'replicate') throw new DomainError('VALIDATION', 'The submission catalog is not a Replicate contract.');
-      if (options.mode === 'live' && !context.catalog.liveEnabled) throw new DomainError('CONFLICT', 'The Replicate catalog row is disabled pending live account evidence.');
+      if (options.mode === 'live' && !context.catalog.liveEnabled && !permitsAcceptanceSubmission(context, options.acceptanceScope)) throw new DomainError('CONFLICT', 'The Replicate catalog row is disabled pending live account evidence.');
       const version = context.catalog.modelVersion;
       if (!version) throw new DomainError('CONFLICT', 'The persisted Replicate version is missing.');
       const ownedImageUrl = await imageUrl(options, context);

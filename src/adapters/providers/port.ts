@@ -114,3 +114,6 @@ export interface ProviderPort {
   readResult(ref: ProviderRequestRef): Promise<ProviderResult>;
   verifyWebhook(rawBody: Uint8Array, headers: Headers, ref?: ProviderRequestRef): Promise<VerifiedObservation>;
 }
+
+/** Only the trusted worker runtime may issue this scoped acceptance authority. */
+export type AcceptanceSubmissionScope = Readonly<{workspaceId: string; modelKeys: readonly string[]}>;

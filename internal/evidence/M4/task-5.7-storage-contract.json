@@ -53,5 +53,11 @@
     "AWS S3 live connectivity was not run; it remains supported by the same bounded S3 command contract.",
     "Provider webhook delivery, provider cost confirmation and real domain credit settlement are not proved by the storage evidence.",
     "Application downloads remain server-streamed after current workspace authorization; presigning can be added later without changing object-key semantics."
-  ]
+  ],
+  "subsequentScheduledCleanupVerification": {
+    "recordRef": "internal/evidence/M4/task-5.10/railway-worker/fal-authorized-bootstrap-20261013.json",
+    "status": "PASS_SCOPED_FAL_T2V_LIVE_PIPELINE",
+    "verifiedAt": "2026-10-13T10:14:55.424195+00:00",
+    "fullM4Acceptance": false
+  }
 }

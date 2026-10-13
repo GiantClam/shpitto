@@ -1,0 +1,62 @@
+{
+  "status": "PASS_FAL_KEY_AUTHENTICATION_ACCOUNT_BINDING_PENDING",
+  "verifiedAt": "2026-10-13T08:40:15.398491+00:00",
+  "scope": "read-only credential/JWKS/deployed worker verification",
+  "configuredKey": {
+    "web": "PRESENT",
+    "worker": "PRESENT",
+    "sameKeyAcrossServices": true,
+    "valuesRecorded": false
+  },
+  "authentication": {
+    "endpoint": "https://api.fal.ai/v1/models/pricing",
+    "method": "GET",
+    "negativeControlStatus": 401,
+    "configuredKeyStatus": 200,
+    "passed": true,
+    "eligiblePricingRows": [
+      {
+        "endpoint_id": "fal-ai/wan/v2.2-a14b/text-to-video",
+        "unit_price": 0.08,
+        "unit": "seconds",
+        "currency": "USD"
+      },
+      {
+        "endpoint_id": "fal-ai/wan/v2.2-a14b/image-to-video",
+        "unit_price": 0.08,
+        "unit": "seconds",
+        "currency": "USD"
+      }
+    ],
+    "pricingIsNotBillableRunEvidence": true
+  },
+  "jwks": {
+    "keyCount": 2,
+    "fetchedAt": "2026-10-13T08:35:48.426Z",
+    "source": "fixed official Fal JWKS endpoint"
+  },
+  "runtime": {
+    "keyLoaded": true,
+    "healthStatus": 200,
+    "state": "paused",
+    "paidCreatesEnabled": false,
+    "errors": 0
+  },
+  "callbackGuard": {
+    "passed": false,
+    "code": "INFRASTRUCTURE",
+    "reason": "Fal account binding must be configured before a paid request."
+  },
+  "accountBinding": {
+    "status": "NOT_CONFIRMED",
+    "sourceRequired": "expected X-Fal-Webhook-User-Id from a provider-authenticated callback correlated to an account-owned request; never inferred from API-key ID"
+  },
+  "safety": {
+    "queuePostRequests": 0,
+    "newProviderGenerations": 0,
+    "existingBusinessObjectsReadOrDeleted": false,
+    "secretValuesRecorded": false
+  },
+  "gateEffect": "5.10_REMAINS_OPEN",
+  "nextStep": "Approve one bounded account-confirmation callback run in a fresh acceptance workspace, or provide an already authenticated matching callback identity. Do not weaken the worker account-binding guard."
+}

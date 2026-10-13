@@ -6,6 +6,7 @@ import {getServerEnv} from '../../../../../config/env.ts';
 import {DomainError} from '../../../../../db/contracts.ts';
 import {getAuthDatabase} from '../../../../../lib/auth.ts';
 import {generationTasks, submissionAttempts} from '../../../../../db/schema/generation.ts';
+import {adoptVerifiedProviderRequest} from '../../../../../modules/generation/lifecycle.ts';
 import {ingestProviderWebhook} from '../../../../../modules/generation/provider-webhooks.ts';
 import {safeError, safeSuccess} from '../../../workspaces/_shared.ts';
 
@@ -32,7 +33,7 @@ export async function POST(request: Request, context: RouteContext) {
     const row = (await db.select({attempt: submissionAttempts, task: generationTasks})
       .from(submissionAttempts)
       .innerJoin(generationTasks, and(eq(generationTasks.id, submissionAttempts.taskId), eq(generationTasks.workspaceId, submissionAttempts.workspaceId)))
-      .where(and(eq(submissionAttempts.provider, 'replicate'), eq(submissionAttempts.providerRequestId, requestId), eq(submissionAttempts.clientReference, attemptNonce)))
+      .where(and(eq(submissionAttempts.provider, 'replicate'), eq(submissionAttempts.clientReference, attemptNonce)))
       .limit(1))[0];
     if (!row) throw new DomainError('CONFLICT', 'Provider request is not linked to the supplied attempt.');
     const catalog = getProviderModel(row.task.modelKey);
@@ -41,6 +42,7 @@ export async function POST(request: Request, context: RouteContext) {
       expectedAccountId: getServerEnv().replicateWebhookAccountId || undefined,
       expectedAttemptNonce: attemptNonce,
     });
+    await adoptVerifiedProviderRequest(db, verified);
     const result = await ingestProviderWebhook(db, {provider: 'replicate', rawBody, verified});
     return safeSuccess(result, result.duplicate ? 200 : 202);
   } catch (error) {

@@ -1,11 +1,13 @@
 import {and, eq} from 'drizzle-orm';
 
+import {getFalJwks} from '../../../../../adapters/providers/fal/jwks.ts';
 import {verifyFalWebhook} from '../../../../../adapters/providers/fal/webhook.ts';
 import {getProviderModel} from '../../../../../config/provider-models.ts';
 import {getServerEnv} from '../../../../../config/env.ts';
 import {DomainError} from '../../../../../db/contracts.ts';
 import {getAuthDatabase} from '../../../../../lib/auth.ts';
 import {generationTasks, submissionAttempts} from '../../../../../db/schema/generation.ts';
+import {adoptVerifiedProviderRequest} from '../../../../../modules/generation/lifecycle.ts';
 import {ingestProviderWebhook} from '../../../../../modules/generation/provider-webhooks.ts';
 import {safeError, safeSuccess} from '../../../workspaces/_shared.ts';
 
@@ -36,15 +38,21 @@ export async function POST(request: Request, context: RouteContext) {
     const row = (await db.select({attempt: submissionAttempts, task: generationTasks})
       .from(submissionAttempts)
       .innerJoin(generationTasks, and(eq(generationTasks.id, submissionAttempts.taskId), eq(generationTasks.workspaceId, submissionAttempts.workspaceId)))
-      .where(and(eq(submissionAttempts.provider, 'fal'), eq(submissionAttempts.providerRequestId, requestId), eq(submissionAttempts.clientReference, attemptNonce)))
+      .where(and(eq(submissionAttempts.provider, 'fal'), eq(submissionAttempts.clientReference, attemptNonce)))
       .limit(1))[0];
     if (!row) throw new DomainError('CONFLICT', 'Provider request is not linked to the supplied attempt.');
+    if (!row.attempt.providerRequestId && !getServerEnv().falWebhookAccountId) throw new DomainError('INFRASTRUCTURE', 'Unidentified Fal requests require a configured account binding.');
     const catalog = getProviderModel(row.task.modelKey);
+    const env = getServerEnv();
+    const jwks = env.falWebhookPublicKeyPem.trim() ? undefined : await getFalJwks();
     const verified = verifyFalWebhook(rawBody, request.headers, {provider: 'fal', modelKey: row.task.modelKey, requestId, catalog}, {
-      publicKeyPem: getServerEnv().falWebhookPublicKeyPem,
-      expectedAccountId: getServerEnv().falWebhookAccountId || undefined,
+      publicKeyPem: env.falWebhookPublicKeyPem,
+      jwks,
+      jwksFetchedAt: jwks?.fetchedAt,
+      expectedAccountId: env.falWebhookAccountId || undefined,
       expectedAttemptNonce: attemptNonce,
     });
+    await adoptVerifiedProviderRequest(db, verified);
     const result = await ingestProviderWebhook(db, {provider: 'fal', rawBody, verified});
     return safeSuccess(result, result.duplicate ? 200 : 202);
   } catch (error) {

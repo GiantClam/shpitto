@@ -50,7 +50,8 @@ export function normalizeResult(ref: ProviderRequestRef, value: unknown): Provid
   const body = record(value);
   assertIdentity(ref, body);
   if (body.error || ['failed', 'canceled', 'ERROR'].includes(String(body.status))) return Object.freeze({kind: 'failed', code: `${ref.provider}.result_failed`});
-  const location = ref.provider === 'replicate' ? body.output : record(body.video).url;
+  const falPayload = record(body.payload);
+  const location = ref.provider === 'replicate' ? body.output : (record(body.video).url ?? record(falPayload.video).url);
   if (typeof location === 'string' && location.length <= 8192) {
     try {
       const url = new URL(location);

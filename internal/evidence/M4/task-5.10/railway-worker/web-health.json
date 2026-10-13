@@ -1,0 +1,9 @@
+{
+  "httpStatus": 200,
+  "body": {
+    "status": "ready",
+    "profile": "acceptance",
+    "database": "ready",
+    "latencyMs": 79
+  }
+}

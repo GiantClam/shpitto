@@ -1,0 +1,3 @@
+$ node scripts/check-stage-progression.mjs
+M4: Current candidate sourceTreeSha256 mismatch. Current candidate configurationSha256 mismatch. Current candidate contractSha256 mismatch. Current candidate validatorSha256 mismatch.
+[ELIFECYCLE] Command failed with exit code 1.

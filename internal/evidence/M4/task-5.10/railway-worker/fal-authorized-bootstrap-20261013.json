@@ -1,0 +1,158 @@
+{
+  "status": "PASS_SCOPED_FAL_T2V_LIVE_PIPELINE",
+  "verifiedAt": "2026-10-13T10:14:55.424195+00:00",
+  "runId": "c051d17d-5515-4de9-b324-4aa01ae81bda",
+  "project": {
+    "id": "b0abc207-4d5b-4f64-903f-ec7d929b35c4",
+    "name": "shpitto-m4-staging",
+    "purpose": "isolated Demo/M4 acceptance"
+  },
+  "authorization": {
+    "maximumPaidPosts": 1,
+    "budgetUsd": 1,
+    "referenceEstimateUsd": 0.405,
+    "priceReference": {
+      "endpoint_id": "fal-ai/wan/v2.2-a14b/text-to-video",
+      "unit_price": 0.08,
+      "unit": "seconds",
+      "currency": "USD"
+    },
+    "automaticCreateRetry": false,
+    "paidPostCounterSource": "local transport receipt; not a provider invoice",
+    "actualProviderCostStatus": "UNKNOWN",
+    "actualProviderBillConfirmed": false
+  },
+  "scope": {
+    "workspaceId": "d41b8970-0182-4e52-9412-66be74fb68ae",
+    "taskId": "3d7b1ee2-06c2-4836-af4c-13d721f647ef",
+    "reservationId": "37616010-535f-4167-828d-da21c8f6b5db",
+    "seededAuthenticationFixture": true,
+    "seededDemoCredits": true,
+    "productionEmailSent": false,
+    "existingBusinessObjectsReadOrDeleted": false,
+    "historicalBalanceRecovery": false,
+    "readyOutputPreserved": true
+  },
+  "request": {
+    "provider": "fal",
+    "modelKey": "fal-wan22-t2v",
+    "endpoint": "fal-ai/wan/v2.2-a14b/text-to-video",
+    "preset": {
+      "resolution": "720p",
+      "numFrames": 81,
+      "framesPerSecond": 16
+    },
+    "providerRequestId": "01a13498-43f7-74f0-be1a-cbc5360a1555",
+    "attemptId": "6ad59158-1eeb-4a33-98ab-2371ca28f72a",
+    "submissionInputSha256": "21c7ae89e69f6b781d131916b11f7e68f2b32224bc2bdfc70efaf6221fdf17a9",
+    "observedPaidPosts": 1,
+    "databaseAttempts": 1
+  },
+  "accountBinding": {
+    "accountBindingConfirmed": true,
+    "accountIdSha256": "b366c2459f3c54347ddfea7716dd7a616138aff1dd3d57f7a970cc4dc0a51007",
+    "source": "JWKS-verified owned request callback",
+    "webConfigured": true,
+    "workerReferenced": true,
+    "accountIdPrinted": false,
+    "paidCreatesEnabled": false
+  },
+  "output": {
+    "assetId": "2fa7803e-2040-40c3-99ac-afdb62d9387a",
+    "objectKey": "tasks/3d7b1ee2-06c2-4836-af4c-13d721f647ef/outputs/2fa7803e-2040-40c3-99ac-afdb62d9387a.mp4",
+    "bytes": "3852245",
+    "sha256": "fe1091e51f99b2a4b1f0319b2f217ee58157ba6a02c8e013c5c61a7ce087c0dd",
+    "durationMs": 5067,
+    "mime": "video/mp4",
+    "media": {
+      "programs": [],
+      "streams": [
+        {
+          "width": 1280,
+          "height": 720,
+          "r_frame_rate": "48000/1001",
+          "avg_frame_rate": "1769472/110681",
+          "nb_frames": "81"
+        }
+      ],
+      "format": {
+        "duration": "5.067000"
+      }
+    },
+    "source": "real Fal output downloaded/materialized/published through application worker into private R2"
+  },
+  "checks": {
+    "jwksVerifiedOwnedRequestCallback": true,
+    "inboxProcessed": true,
+    "oneReservationConsumption": true,
+    "consumedDemoCredits": "10",
+    "ownerHttpDownload": 200,
+    "outsiderHttpDownload": 403,
+    "anonymousHttpDownload": 401,
+    "expiredCapabilityHttpDownload": 403,
+    "wrongAssetCapabilityHttpDownload": 403,
+    "privateObjectAndDownloadedByteHashesMatch": true,
+    "scheduledOrphanCleanup": true,
+    "syntheticCleanupRowAgeHours": 25,
+    "realRetentionDwellTimeProven": false,
+    "readyOutputRetainedAfterCleanupAndWorkerRestart": true,
+    "temporaryAuthSessionsRemaining": 0,
+    "unsignedS3ApiResponse": 400,
+    "unsignedS3CheckIsPublicBucketPolicyAudit": false,
+    "paidCreateAdmissionAfterAccountBinding": "PASS"
+  },
+  "finalRuntime": {
+    "httpStatus": 200,
+    "status": "ready",
+    "state": "paused",
+    "createsEnabled": false,
+    "scope": "unassigned",
+    "errors": 0,
+    "workerDeploymentId": "2bf5deba-ac0f-42ae-ba9a-be93de1ebfc7",
+    "webDeploymentId": "fb696a0c-d924-4c6a-809a-10bcc3916032",
+    "rawWorkspaceSetting": "retained but dormant; paused parser exposes no active workspace"
+  },
+  "verification": {
+    "relatedContractTests": {
+      "passed": 115,
+      "failed": 0,
+      "files": 11
+    },
+    "probeRegressionTests": {
+      "passed": 3,
+      "failed": 0,
+      "tdd": "RED/GREEN metadata and scheduled-observation regressions"
+    },
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "format": "PASS",
+    "configuration": "PASS",
+    "databaseBoundary": "PASS",
+    "productionBuild": "PASS",
+    "strictOpenSpecValidation": "PASS",
+    "productionDependencyAudit": "PASS_ZERO_KNOWN_VULNERABILITIES",
+    "fullAcceptance": "BLOCKED_CURRENT_CANDIDATE_DIGESTS_STALE"
+  },
+  "source": {
+    "submittedProbeSha256": "5bd23d90f33cb8d7d8fceae23ed57eb4ae5f3605da17a3fd6b692d4888c8da88",
+    "currentBootstrapSha256": "61ebafaaa3834b25041de4495d968d90acc5ad629a5323c185e3851927c95a55",
+    "currentRuntimeVerifierSha256": "cdb812dde6c3945ffb28a56c59680557dd63222cb3aa8a393c99b725cda5e9e8",
+    "cleanupObservationProbeSha256": "6cf54eba07a1e3087cfac2255592ef3d2a3e0d8ac099675753395105f8ec7511",
+    "cleanupFreshnessHardening": "Offline regression plus captured-clock cross-check; the already deleted fixture was not recreated or re-aged."
+  },
+  "independentReview": {
+    "beforeSubmit": "no HIGH/CRITICAL blockers",
+    "afterRuntimeVerifier": "no HIGH/CRITICAL blockers",
+    "mediumFollowup": "Provenance labels and cleanup freshness were hardened with regression tests; a lost receipt still must never trigger another POST."
+  },
+  "fullM4Acceptance": false,
+  "m4GateEffect": "TASK_5.10_REMAINS_OPEN",
+  "limitations": [
+    "One live Fal T2V application run is not the complete four-row/hosted-runner/whole-stage gate.",
+    "Authentication identities and demo credit funding were seeded, not a new real signup/email journey.",
+    "Provider costs remain UNKNOWN; the authenticated price estimate is not an invoice.",
+    "The cleanup fixture uses synthetic database age; it does not prove a real 24-hour wait.",
+    "The prior M4 source/configuration/contract/validator digests are stale and were not blindly refreshed as PASS."
+  ],
+  "secretValuesRecorded": false
+}

@@ -1,0 +1,15 @@
+[32m✔ replicate-wan22-t2v is submitted once, materialized privately and settles UNKNOWN cost [90m(1850.680746ms)[39m[39m
+[32m✔ fal-wan22-t2v is submitted once, materialized privately and settles UNKNOWN cost [90m(405.018524ms)[39m[39m
+[32m✔ definitive provider failure releases the original reservation [90m(230.041856ms)[39m[39m
+[32m✔ unknown submission recovers for at most 24 probes without a second create [90m(1322.15546ms)[39m[39m
+[32m✔ a persisted network-start marker blocks restart and stale lease re-submission [90m(290.989765ms)[39m[39m
+[32m✔ authenticated inbox completion and polling have only one terminal ledger effect [90m(436.473318ms)[39m[39m
+[32m✔ paused or unadmitted worker has no effect on another workspace [90m(134.018942ms)[39m[39m
+[34mℹ tests 7[39m
+[34mℹ suites 0[39m
+[34mℹ pass 7[39m
+[34mℹ fail 0[39m
+[34mℹ cancelled 0[39m
+[34mℹ skipped 0[39m
+[34mℹ todo 0[39m
+[34mℹ duration_ms 5664.252158[39m

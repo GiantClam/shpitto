@@ -145,7 +145,7 @@ export async function cleanupOrphanedAssetsDetailed(db: AppDatabase, input: Clea
     }
   }
 
-  const liveRows = await db.select({objectKey: assets.objectKey}).from(assets).where(ne(assets.state, 'deleted'));
+  const liveRows = await db.select({objectKey: assets.objectKey}).from(assets).where(and(eq(assets.workspaceId, input.workspaceId), ne(assets.state, 'deleted')));
   const referenced = new Set(liveRows.map((row) => row.objectKey));
   const physicalKeys = new Set<string>();
   for (const prefix of prefixes) {

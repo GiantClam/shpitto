@@ -89,7 +89,8 @@
     "verify:root": "node scripts/check-root-integrity.mjs && pnpm verify:acceptance && pnpm verify:openspec",
     "verify:acceptance": "node scripts/check-stage-progression.mjs",
     "verify:openspec": "openspec validate restart-shpitto-video-saas --strict --json --no-interactive",
-    "verify": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm verify:config && pnpm verify:db-boundary && pnpm verify:m2-foundation && pnpm verify:local-services && pnpm verify:shells && pnpm verify:content-boundaries && pnpm verify:root && pnpm build"
+    "verify": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm verify:config && pnpm verify:db-boundary && pnpm verify:m2-foundation && pnpm verify:local-services && pnpm verify:shells && pnpm verify:content-boundaries && pnpm verify:root && pnpm build",
+    "worker:provider": "node --experimental-strip-types scripts/provider-worker.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1141.0",

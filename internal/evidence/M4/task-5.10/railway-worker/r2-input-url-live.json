@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "verifiedAt": "2026-10-13T04:48:36.242Z",
+  "scope": "fresh worker input object only",
+  "signedGetStatus": 200,
+  "exactHash": true,
+  "cleanedUp": true,
+  "existingBusinessObjectsReadOrDeleted": false,
+  "providerRequestsCreated": 0,
+  "signedUrlRecorded": false
+}

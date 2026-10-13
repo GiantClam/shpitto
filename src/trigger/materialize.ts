@@ -1,3 +1,4 @@
+import type {PrivateObjectStore} from '../adapters/storage/port.ts';
 import {getPrivateObjectStore} from '../adapters/storage/runtime.ts';
 import {fetchPrivateProviderOutput, type RemoteFetch} from '../adapters/storage/s3.ts';
 import type {AppDatabase} from '../db/client.ts';
@@ -11,11 +12,12 @@ export async function materializeProviderOutput(db: AppDatabase, input: Readonly
   workspaceId: string;
   taskId: string;
   root?: string;
+  store?: PrivateObjectStore;
   outboxLease?: OutboxLease;
   now?: Date;
   fetcher?: RemoteFetch;
 }>): Promise<MaterializeOutputResult> {
-  const store = getPrivateObjectStore();
+  const store = input.store ?? getPrivateObjectStore();
   const source = input.candidate.kind === 'remote'
     ? await fetchPrivateProviderOutput(input.candidate.url, input.fetcher)
     : Object.freeze({bytes: new Uint8Array(await store.get(input.candidate.objectKey)), mime: 'video/mp4', sha256: '', finalUrl: input.candidate.objectKey});

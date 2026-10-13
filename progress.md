@@ -61,3 +61,25 @@
 9. Updated the template feature gate and Cloudflare guide so the commercial export reports the actual Vercel/Railway/Docker/source matrix and blocks static Pages deployment for the server runtime.
 10. Re-ran the productized OpenCode worker test with a test-only 10-second CLI timeout; it passed. The offline suite then passed 129 test files / 1,036 tests with 3 files / 4 tests skipped. The excluded failures are the known legacy MVP/prompt/refine contract tests and provider-backed `.local`/`.live` tests.
 11. Final verification passed again: web TypeScript, targeted ESLint, and `git diff --check`. The generated source `.next` cache was removed after build verification so lifecycle resource tests remain deterministic.
+
+## 2026-10-13 Railway Worker Progress
+
+Started from local HEAD a865777 with existing fal/OpenSpec modifications and two unrelated .env.example deletions. Applying existing restart change; no archive. Parallel bounded fal authentication patch assigned; leader owns worker/lifecycle/deployment implementation and final validation.
+
+
+## 2026-10-13 Worker Completion Evidence
+
+Worker and companion Web deployed and health-checked; worker restarted successfully while paused. 145 contracts and 13 disposable PostgreSQL integration cases pass; fresh R2 signed input probe cleaned up. Independent bootstrap/adoption review fixes verified. No new paid generation. Full acceptance is blocked by stale M4 candidate digests and missing full live/hosted/independent stage evidence. Evidence saved under internal/evidence/M4/task-5.10/railway-worker/.
+
+
+## 2026-10-13 Authorized Fal T2V Bootstrap
+
+User authorized exactly one 720p/81-frame/16-FPS Fal T2V request with reference cost ~$0.41 and authorization budget USD1. Create a fresh seeded acceptance identity/workspace/reservation; retain an exclusive run record and durable submit fence. No blind retry on ambiguity. Establish account binding only from a JWKS-verified callback tied to the exact request ID returned by the authenticated create. Production worker remains create-disabled; only assigned-workspace recovery/polling may run. Preserve private output for Demo evidence, never print keys/signed URLs/session tokens.
+
+## 2026-10-13 Authorized Fal T2V Live Verification
+
+- Completed one paid submission (reference USD0.405, actual cost UNKNOWN), authentic signed callback/account confirmation, private R2 publication and seeded credit consumption.
+- Owner HTTP200/hash, outsider403, anonymous401, expired403 and wrong-asset403 pass; actual video metadata was measured.
+- One freshly created orphan was removed by the 60-second scheduler under synthetic DB age; ready output survived cleanup and a worker restart. All temporary auth sessions are removed.
+- Final Railway worker is healthy, paused and create-disabled. Production catalog, production mail, historical balances and existing business objects were not changed.
+- 115 related contracts, typecheck/lint/format/config/DB boundaries/build/OpenSpec/audit pass. Full acceptance still fails on stale M4 source/configuration/contract/validator fingerprints. No blind PASS refresh or full M4 completion claim.

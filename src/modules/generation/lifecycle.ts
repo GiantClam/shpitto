@@ -8,6 +8,7 @@ import {auditEvents, outboxEvents} from '../../db/schema/credit.ts';
 import {assets} from '../../db/schema/asset.ts';
 import {generationQuarantine, generationTasks, submissionAttempts} from '../../db/schema/generation.ts';
 import {creditAccounts, creditReservations} from '../../db/schema/workspace.ts';
+import type {VerifiedObservation} from '../../adapters/providers/port.ts';
 import {semanticHash, serializeJsonValue} from '../../contracts/http.ts';
 import {authorizeWorkspaceAccess} from '../workspaces/authorize.ts';
 import type {WorkspaceActor} from '../workspaces/policy.ts';
@@ -205,6 +206,24 @@ async function claimInTransaction(tx: TransactionDatabase, input: ClaimDispatchI
   };
 }
 
+/** At most one live owner may cross this durable network-start fence. Replays return false. */
+export async function beginProviderSubmission(db: AppDatabase, input: Readonly<{
+  actor: WorkspaceActor; workspaceId: string; taskId: string; attemptId: string; outboxLease: OutboxLease; now?: Date;
+}>): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    await lockAccount(tx, input.workspaceId);
+    const task = await lockTask(tx, input.workspaceId, input.taskId);
+    await assertOutboxLeaseInTransaction(tx, input.outboxLease, input.now ?? new Date());
+    if (task.status !== 'dispatching' || task.submissionStartedAt) return false;
+    const attempt = (await tx.select().from(submissionAttempts).where(and(eq(submissionAttempts.id, input.attemptId), eq(submissionAttempts.taskId, task.id), eq(submissionAttempts.workspaceId, input.workspaceId))).for('update').limit(1))[0];
+    if (!attempt || attempt.state !== 'claimed' || attempt.providerRequestId) return false;
+    const now = input.now ?? new Date();
+    assertBeforeDeadline(task, now);
+    await updateTaskFenced(tx, task, input.workspaceId, input, {submissionStartedAt: now, nextActionAt: now}, 'active');
+    return true;
+  });
+}
+
 export type MarkSubmissionUnknownInput = Readonly<{
   actor: WorkspaceActor;
   workspaceId: string;
@@ -212,6 +231,8 @@ export type MarkSubmissionUnknownInput = Readonly<{
   attemptId: string;
   idempotencyKey: string;
   now?: Date;
+  internalWorker?: boolean;
+  outboxLease?: OutboxLease;
 }>;
 
 export type MarkSubmissionUnknownResult = Readonly<{
@@ -222,7 +243,7 @@ export type MarkSubmissionUnknownResult = Readonly<{
 }>;
 
 async function markSubmissionUnknownInTransaction(tx: TransactionDatabase, input: MarkSubmissionUnknownInput): Promise<MarkSubmissionUnknownResult> {
-  await authorizeWorkspaceAccess(tx, input.workspaceId, input.actor);
+  if (!input.internalWorker) await authorizeWorkspaceAccess(tx, input.workspaceId, input.actor);
   await lockAccount(tx, input.workspaceId);
   const task = await lockTask(tx, input.workspaceId, input.taskId);
   if (task.status !== 'dispatching') throw new DomainError('CONFLICT', 'Only dispatching tasks can enter submission_unknown.');
@@ -326,6 +347,32 @@ export async function reconcileSubmissionUnknown(db: AppDatabase, input: Reconci
   }, () => reconcileSubmissionUnknownInTransaction(tx, input)));
 }
 
+/** Recover an accepted request only from a verified provider callback bound to the pre-POST nonce. */
+export async function adoptVerifiedProviderRequest(db: AppDatabase, verified: VerifiedObservation, now = new Date()): Promise<void> {
+  await db.transaction(async (tx) => {
+    const found = (await tx.select({workspaceId: submissionAttempts.workspaceId, taskId: submissionAttempts.taskId, id: submissionAttempts.id}).from(submissionAttempts)
+      .where(and(eq(submissionAttempts.provider, verified.observation.ref.provider), eq(submissionAttempts.clientReference, verified.attemptNonce))).limit(1))[0];
+    if (!found) throw new DomainError('CONFLICT', 'Authenticated callback is not linked to an issued attempt.');
+    await lockAccount(tx, found.workspaceId);
+    const task = await lockTask(tx, found.workspaceId, found.taskId);
+    const attempt = (await tx.select().from(submissionAttempts).where(eq(submissionAttempts.id, found.id)).for('update').limit(1))[0]!;
+    const ref = verified.observation.ref;
+    if (task.modelKey !== ref.modelKey || attempt.provider !== ref.provider) throw new DomainError('CONFLICT', 'Callback contract does not match the issued attempt.');
+    if (attempt.providerRequestId) {
+      if (attempt.providerRequestId !== ref.requestId) throw new DomainError('CONFLICT', 'Callback cannot replace an existing provider request identity.');
+      return;
+    }
+    if (!task.submissionStartedAt || !['claimed', 'submission_unknown', 'failed'].includes(attempt.state)) throw new DomainError('CONFLICT', 'Callback cannot adopt an attempt that never crossed the submit fence.');
+    if (!/^[A-Za-z0-9_-]{1,200}$/.test(ref.requestId)) throw new DomainError('VALIDATION', 'Provider request identity is invalid.');
+    const terminal = isTerminalGenerationState(task.status as GenerationTaskStatus);
+    await tx.update(submissionAttempts).set({providerRequestId: ref.requestId, ...(terminal ? {} : {state: 'submitted'})}).where(eq(submissionAttempts.id, attempt.id));
+    if (!terminal) {
+      // An overdue accepted create is immediately settled by sweep before any materialization.
+      await updateTaskFenced(tx, task, task.workspaceId, {now}, {status: 'submitted', nextActionAt: now}, 'any');
+    }
+  });
+}
+
 export type RecordProviderSubmissionInput = Readonly<{
   actor: WorkspaceActor;
   workspaceId: string;
@@ -350,9 +397,15 @@ export async function recordProviderSubmission(db: AppDatabase, input: RecordPro
     await lockAccount(tx, input.workspaceId);
     const task = await lockTask(tx, input.workspaceId, input.taskId);
     await assertOutboxLeaseInTransaction(tx, input.outboxLease, input.now ?? new Date());
-    if (task.status !== 'dispatching') throw new DomainError('CONFLICT', 'Only dispatching tasks can record a provider submission.');
     const rows = await tx.select().from(submissionAttempts).where(and(eq(submissionAttempts.id, input.attemptId), eq(submissionAttempts.taskId, task.id))).for('update').limit(1);
     const attempt = rows[0];
+    if (attempt?.providerRequestId === input.providerRequestId.trim()) {
+      if (input.statusUrl && !isTrustedProviderTrackingUrl(input.statusUrl, attempt.provider, input.providerRequestId)) throw new DomainError('VALIDATION', 'Provider status URL is outside the trusted provider contract.');
+      if (input.resultUrl && !isTrustedProviderTrackingUrl(input.resultUrl, attempt.provider, input.providerRequestId)) throw new DomainError('VALIDATION', 'Provider result URL is outside the trusted provider contract.');
+      await tx.update(submissionAttempts).set({providerStatusUrl: attempt.providerStatusUrl ?? input.statusUrl ?? null, providerResultUrl: attempt.providerResultUrl ?? input.resultUrl ?? null}).where(eq(submissionAttempts.id, attempt.id));
+      return {taskId: task.id, status: 'submitted' as const, providerRequestId: attempt.providerRequestId};
+    }
+    if (task.status !== 'dispatching') throw new DomainError('CONFLICT', 'Only dispatching tasks can record a provider submission.');
     if (!attempt || attempt.state !== 'claimed') throw new DomainError('CONFLICT', 'The claimed attempt is not available.');
     const now = input.now ?? new Date();
     assertDate(now);
@@ -360,20 +413,20 @@ export async function recordProviderSubmission(db: AppDatabase, input: RecordPro
     if (!input.providerRequestId.trim()) throw new DomainError('VALIDATION', 'Provider request ID is required.');
     const statusUrl = input.statusUrl?.trim() || null;
     const resultUrl = input.resultUrl?.trim() || null;
-    if (statusUrl && !isTrustedProviderTrackingUrl(statusUrl, attempt.provider)) throw new DomainError('VALIDATION', 'Provider status URL is outside the trusted provider contract.');
-    if (resultUrl && !isTrustedProviderTrackingUrl(resultUrl, attempt.provider)) throw new DomainError('VALIDATION', 'Provider result URL is outside the trusted provider contract.');
+    if (statusUrl && !isTrustedProviderTrackingUrl(statusUrl, attempt.provider, input.providerRequestId)) throw new DomainError('VALIDATION', 'Provider status URL is outside the trusted provider contract.');
+    if (resultUrl && !isTrustedProviderTrackingUrl(resultUrl, attempt.provider, input.providerRequestId)) throw new DomainError('VALIDATION', 'Provider result URL is outside the trusted provider contract.');
     await tx.update(submissionAttempts).set({state: 'submitted', providerRequestId: input.providerRequestId.trim(), providerStatusUrl: statusUrl, providerResultUrl: resultUrl}).where(eq(submissionAttempts.id, attempt.id));
     await updateTaskFenced(tx, task, input.workspaceId, input, {status: 'submitted', nextActionAt: now}, 'active');
     return {taskId: task.id, status: 'submitted' as const, providerRequestId: input.providerRequestId.trim()};
   }));
 }
 
-function isTrustedProviderTrackingUrl(value: string, provider: string): boolean {
+function isTrustedProviderTrackingUrl(value: string, provider: string, requestId: string): boolean {
   try {
     const url = new URL(value);
     if (value.length > 2048 || url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) return false;
-    if (provider === 'fal') return url.origin === 'https://queue.fal.run';
-    if (provider === 'replicate') return url.origin === 'https://api.replicate.com';
+    if (provider === 'fal') return url.origin === 'https://queue.fal.run' && (url.pathname.endsWith(`/${encodeURIComponent(requestId)}`) || url.pathname.endsWith(`/${encodeURIComponent(requestId)}/status`));
+    if (provider === 'replicate') return url.origin === 'https://api.replicate.com' && url.pathname === `/v1/predictions/${encodeURIComponent(requestId)}`;
     return false;
   } catch {
     return false;

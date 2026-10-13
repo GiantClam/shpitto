@@ -1,6 +1,6 @@
 import {NextResponse} from 'next/server';
 
-import {getRuntimeProfile} from '../../../../../config/env.ts';
+import {getProviderWorkerConfig, getRuntimeProfile} from '../../../../../config/env.ts';
 import type {ServerQuote} from '../../../../../config/models.ts';
 import {DomainError} from '../../../../../db/contracts.ts';
 import {createGenerationTask, type ReadyInputSnapshot} from '../../../../../modules/generation/create.ts';
@@ -63,6 +63,7 @@ export async function POST(
       input: parseInput(body.input),
       mode,
       profile: getRuntimeProfile(),
+      acceptanceWorkspaceId: getRuntimeProfile() === 'acceptance' ? getProviderWorkerConfig().workspaceId ?? undefined : undefined,
       authorizeReadyInput: async (tx, currentActor, currentWorkspaceId, input) => {
         await authorizeAsset(tx, currentWorkspaceId, input.assetId!, currentActor);
       },

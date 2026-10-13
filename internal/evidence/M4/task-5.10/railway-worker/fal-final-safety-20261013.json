@@ -1,0 +1,21 @@
+{
+  "runId": "c051d17d-5515-4de9-b324-4aa01ae81bda",
+  "workspaceId": "d41b8970-0182-4e52-9412-66be74fb68ae",
+  "taskId": "3d7b1ee2-06c2-4836-af4c-13d721f647ef",
+  "reserveEntries": 1,
+  "consumeEntries": 1,
+  "consumedDemoCredits": "10",
+  "submissionAttempts": 1,
+  "temporaryAuthSessionsRemaining": 0,
+  "falAccountAdmissionGuard": "PASS",
+  "health": {
+    "httpStatus": 200,
+    "status": "ready",
+    "state": "paused",
+    "createsEnabled": false,
+    "scope": "unassigned",
+    "errors": 0
+  },
+  "actualProviderBillConfirmed": false,
+  "secretValuesRecorded": false
+}

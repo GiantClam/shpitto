@@ -37,6 +37,10 @@ test('builds fal T2V queue request with safe mapping and no retry', async () => 
   assert.equal(fake.requests[0].headers.Authorization, undefined);
   assert.equal(fake.requests.length, 1);
   assert.equal(fake.requests[0].url, 'https://queue.fal.run/fal-ai/wan/v2.2-a14b/text-to-video');
+
+  const callbackFake = fakeTransport([{status: 200, body: {request_id: 'fal_req_callback', status_url: 'https://queue.fal.run/fal-ai/wan/v2.2-a14b/text-to-video/requests/fal_req_callback/status', response_url: 'https://queue.fal.run/fal-ai/wan/v2.2-a14b/text-to-video/requests/fal_req_callback'}}]);
+  await createFalProvider({transport: callbackFake.transport, mode: 'test', webhookBaseUrl: 'https://staging.example.test/api/webhooks/fal'}).submit(context(t2v));
+  assert.equal(new URL(callbackFake.requests[0].url).searchParams.get('fal_webhook'), 'https://staging.example.test/api/webhooks/fal/nonce-1');
   assert.equal(fake.requests[0].retry, false);
   assert.equal(fake.requests[0].headers['X-Fal-No-Retry'], '1');
   assert.deepEqual(fake.requests[0].body, {prompt: 'A blue bird over an ocean', resolution: '720p', num_frames: 81, frames_per_second: 16, aspect_ratio: '16:9', interpolator_model: 'none', num_interpolated_frames: 0, enable_safety_checker: true, enable_output_safety_checker: true, enable_prompt_expansion: false});
@@ -87,4 +91,15 @@ test('configuration and provider identity errors remain bounded', async () => {
   const replicate = getProviderModel('replicate-wan22-t2v');
   await assert.rejects(() => provider.getStatus({provider: 'replicate', modelKey: replicate.modelKey, requestId: 'x', catalog: replicate}), /fal request/i);
   assert.equal(mapProviderInput(validateVideoInput(t2v), getProviderModel('fal-wan22-t2v')).aspect_ratio, '16:9');
+});
+
+
+test('same-origin tracking URLs for another request are rejected before polling/result transport', async () => {
+  const fake = fakeTransport([{status: 200, body: {request_id: 'owned', status_url: 'https://queue.fal.run/fal-ai/wan/requests/foreign/status', response_url: 'https://queue.fal.run/fal-ai/wan/requests/foreign'}}]);
+  await assert.rejects(() => createFalProvider({transport: fake.transport, mode: 'test'}).submit(context(t2v)), /tracking URL/);
+  const reads = fakeTransport([{status: 200, body: {video: {url: 'https://provider.example/foreign.mp4'}}}]);
+  const provider = createFalProvider({transport: reads.transport, mode: 'test'});
+  const ref = {provider: 'fal' as const, modelKey: t2v.modelKey, requestId: 'owned', catalog: getProviderModel(t2v.modelKey), resultUrl: 'https://queue.fal.run/fal-ai/wan/requests/foreign'};
+  await assert.rejects(() => provider.readResult(ref), /tracking URL/);
+  assert.equal(reads.requests.length, 0);
 });

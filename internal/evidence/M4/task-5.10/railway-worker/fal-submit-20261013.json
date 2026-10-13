@@ -1,0 +1,13 @@
+{
+  "phase": "submit",
+  "runId": "c051d17d-5515-4de9-b324-4aa01ae81bda",
+  "workspaceId": "d41b8970-0182-4e52-9412-66be74fb68ae",
+  "taskId": "3d7b1ee2-06c2-4836-af4c-13d721f647ef",
+  "attemptId": "6ad59158-1eeb-4a33-98ab-2371ca28f72a",
+  "providerRequestId": "01a13498-43f7-74f0-be1a-cbc5360a1555",
+  "outcome": "accepted",
+  "queuePostRequests": 1,
+  "referenceEstimateUsd": 0.405,
+  "automaticRetry": false,
+  "providerCostStatus": "UNKNOWN"
+}
