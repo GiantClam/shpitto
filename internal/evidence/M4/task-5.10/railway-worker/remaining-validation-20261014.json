@@ -1,0 +1,52 @@
+{
+  "status": "IN_PROGRESS_VALIDATION_REFRESHED",
+  "verifiedAt": "2026-10-14T09:45:00+08:00",
+  "candidateRefresh": {
+    "m4": "PASS_CURRENT_BYTES",
+    "m5": "PASS_CURRENT_BYTES",
+    "m6": "PASS_CURRENT_BYTES",
+    "fullStagePromotion": false
+  },
+  "qualityGates": {
+    "verifyAcceptance": "PASS",
+    "strictOpenSpec": "PASS",
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "format": "PASS",
+    "config": "PASS",
+    "dbBoundary": "PASS",
+    "m2Foundation": "PASS",
+    "localServices": "PASS",
+    "shellBoundaries": "PASS",
+    "contentBoundaries": "PASS",
+    "productionBuild": "PASS",
+    "relatedContracts": "PASS_85"
+  },
+  "railwayDemo": {
+    "projectId": "b0abc207-4d5b-4f64-903f-ec7d929b35c4",
+    "workerHealth": "PASS",
+    "workerState": "paused",
+    "createsEnabled": false,
+    "scope": "unassigned",
+    "webHeadStatus": 200,
+    "newPaidPosts": 0,
+    "secretValuesPrinted": false
+  },
+  "remainingBlockers": [
+    {
+      "id": "ROOT_BASELINE_DIVERGENCE",
+      "status": "OPEN",
+      "details": "verify:root rejects the selected-stack dependency baseline and prototype lockfile digest because the current root application intentionally contains the S3 SDK and a newer Next patch version. This requires a separately reviewed baseline/provenance decision, not a blind acceptance refresh."
+    },
+    {
+      "id": "M4_WHOLE_STAGE",
+      "status": "OPEN",
+      "details": "M4 remains IN_PROGRESS: complete four-row real-provider matrix, hosted-runner acceptance and independent whole-stage review are not claimed. No additional paid provider create was made."
+    }
+  ],
+  "fullM4Acceptance": false,
+  "sourceEvidence": [
+    "internal/evidence/M4/task-5.10/railway-worker/fal-authorized-bootstrap-20261013.json",
+    "internal/evidence/M4/task-5.10/railway-worker/m4-candidate-digest-20261014.json"
+  ]
+}

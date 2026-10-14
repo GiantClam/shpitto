@@ -6,9 +6,9 @@
   "checkpointId": null,
   "gateTaskId": "5.10",
   "status": "IN_PROGRESS",
-  "candidateId": "local-preflight-20261007",
+  "candidateId": "m4-live-fal-scoped-20261014",
   "createdAt": "2026-10-04T09:36:19.41Z",
-  "updatedAt": "2026-10-11T00:24:42.6901686Z",
+  "updatedAt": "2026-10-14T09:30:00+08:00",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md"
   },
@@ -25,14 +25,14 @@
     }
   ],
   "candidate": {
-    "capturedAt": "2026-10-11T00:24:42.671Z",
+    "capturedAt": "2026-10-14T01:25:32.634Z",
     "sourceCommit": null,
     "dirtyPatchSha256": null,
-    "sourceTreeSha256": "9a7a33f60c1acad38936423ccdd7904a008aaf7f3bc9f5e81732030856334efc",
+    "sourceTreeSha256": "e11dda1aa997cb418ee36523ed2c6dc70270c1ee1f5971856efa14e12d59a14b",
     "schemaSha256": "35d3db1acd00483d5dae9ac815ae8283680a4fce99a649dd74f364e2774b1559",
-    "configurationSha256": "8fbc3d3819755cfe038851ec209cfc5ec76ae838057d14f148fef7cbae45e9ac",
-    "contractSha256": "cf4be075c35dc90f5e5547a97b8d4cf1ec4dee3ff7ae01a33bdc84a0626c7841",
-    "validatorSha256": "c54aa4b249029cada3b1fcfdb62614bc5cd5149cd65abbdcfa69f439fd475c78",
+    "configurationSha256": "abd0eff73398bf9f27b4afca93c5806caf09ec304815a63b1faf5a0e9b1245f1",
+    "contractSha256": "b1b2d194a9baa1ae1529e482b744a0c3aca34486c0018837218472ccb25a20cb",
+    "validatorSha256": "e14141f50e0d738438c943c9c2891caaa09046822b06a27d2cf17ccb4737765a",
     "lockfileSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35",
     "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
     "digestInputs": {
@@ -112,10 +112,12 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "All four real provider rows now have playable output digests, successful authorized download and isolated private R2 lifecycle evidence. The gate remains blocked because callback delivery, domain reservation settlement and independent review are not complete.",
+      "observed": "A scoped real Fal T2V run now has playable output, authenticated callback, private R2 publication, authorized download and one seeded reservation settlement. The complete four-row provider matrix, hosted runner acceptance and independent whole-stage review remain open.",
       "evidenceRefs": [
-        "internal/evidence/M4/task-5.10/real-provider-run-summary.json",
         "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/fal-authorized-bootstrap-20261013.json",
+        "internal/evidence/M4/task-5.10/railway-worker/fal-runtime-verification-20261013.json",
+        "internal/evidence/M4/task-5.10/real-provider-run-summary.json",
         "internal/evidence/M4/task-5.10/replicate-i2v-real-run.json"
       ]
     },
@@ -124,10 +126,12 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "Provider polling and deterministic forged/stale/wrong-account/replay contract cases pass, but no public callback endpoint was available for an authentic provider callback delivery.",
+      "observed": "The Fal callback was delivered to the deployed HTTPS endpoint and passed official JWKS verification for the exact persisted request. Complete provider-row callback coverage and independent whole-stage review remain open.",
       "evidenceRefs": [
-        "internal/evidence/M4/task-5.10/real-provider-run-summary.json",
         "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/fal-authorized-bootstrap-20261013.json",
+        "internal/evidence/M4/task-5.10/railway-worker/fal-bootstrap-security-review-20261013.md",
+        "internal/evidence/M4/task-5.10/real-provider-run-summary.json",
         "internal/evidence/M4/task-5.4/README.md",
         "internal/evidence/M4/task-5.9/README.md"
       ]
@@ -137,10 +141,12 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "Configured unknown-submission budgets, bounded probes, independent sweep and lease recovery are locally verified. A real provider result is not yet attached to a domain reservation settlement.",
+      "observed": "The scoped Fal task consumed its seeded 10-credit reservation once after the ready private output boundary. Provider cost remains UNKNOWN and the complete four-row settlement matrix remains open.",
       "evidenceRefs": [
-        "internal/evidence/M4/task-5.10/real-provider-run-summary.json",
         "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/fal-authorized-bootstrap-20261013.json",
+        "internal/evidence/M4/task-5.10/railway-worker/fal-final-safety-20261013.json",
+        "internal/evidence/M4/task-5.10/real-provider-run-summary.json",
         "internal/evidence/M4/task-5.5/README.md",
         "internal/runbooks/generation-recovery.md"
       ]
@@ -150,12 +156,15 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "R2 storage failure/cleanup contracts, media integrity, private publication and isolated provider-output lifecycle pass. Full real runner restart/recovery and late-result evidence still require the complete integrated profile.",
+      "observed": "The scoped real output passed private R2 hash/download checks, owner/outsider authorization, scheduled orphan cleanup and paused-worker restart retention. Complete integrated runner/recovery coverage remains open.",
       "evidenceRefs": [
-        "internal/evidence/M4/task-5.10/real-provider-run-summary.json",
         "internal/evidence/M4/provider-matrix.md",
-        "internal/evidence/M4/task-5.7-storage-contract.json",
-        "internal/evidence/M4/task-5.7-r2-live-adapter.json"
+        "internal/evidence/M4/task-5.10/railway-worker/fal-authorized-bootstrap-20261013.json",
+        "internal/evidence/M4/task-5.10/railway-worker/fal-final-safety-20261013.json",
+        "internal/evidence/M4/task-5.10/railway-worker/fal-scheduled-cleanup-20261013.json",
+        "internal/evidence/M4/task-5.10/real-provider-run-summary.json",
+        "internal/evidence/M4/task-5.7-r2-live-adapter.json",
+        "internal/evidence/M4/task-5.7-storage-contract.json"
       ]
     }
   ],
@@ -176,10 +185,11 @@
       "standard": "complete-stage-evidence",
       "applicable": true,
       "result": "BLOCKED",
-      "assertions": "Current local checks and four-row output/storage evidence are retained, but complete-stage evidence is blocked by missing authentic callbacks, domain reservation settlement and independent review.",
+      "assertions": "Current local checks and scoped real Fal output/storage/HTTP evidence are retained, but complete-stage approval remains blocked by the missing full provider matrix, hosted-runner acceptance and independent whole-stage review.",
       "evidenceRefs": [
-        "internal/evidence/M4/task-5.10/real-provider-run-summary.json",
-        "internal/evidence/M4/provider-matrix.md"
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/fal-authorized-bootstrap-20261013.json",
+        "internal/evidence/M4/task-5.10/real-provider-run-summary.json"
       ]
     }
   ],
@@ -1194,5 +1204,21 @@
       "Complete authentic callback capture, domain reservation settlement and independent M4 review before any PASS decision."
     ],
     "carriedEvidence": []
+  },
+  "limitations": [
+    "This candidate refresh records current bytes and scoped evidence; it does not promote M4 to PASS.",
+    "Only one paid Fal request was authorized and submitted; no additional provider create is authorized by this verification pass.",
+    "The complete four-row provider matrix, hosted runner acceptance and independent whole-stage review remain open.",
+    "Provider billed cost remains UNKNOWN; the authenticated price estimate is not an invoice.",
+    "Seeded acceptance identities and synthetic cleanup age are explicitly fixture-scoped."
+  ],
+  "candidateRefresh": {
+    "capturedAt": "2026-10-14T01:25:32.634Z",
+    "candidateId": "m4-live-fal-scoped-20261014",
+    "source": "node scripts/candidate-digests.mjs",
+    "status": "CURRENT_BYTES_CAPTURED_IN_PROGRESS",
+    "fullM4Acceptance": false,
+    "reason": "Clears stale development-record fingerprints without changing stage status or approval decision.",
+    "evidenceRef": "internal/evidence/M4/task-5.10/railway-worker/m4-candidate-digest-20261014.json"
   }
 }

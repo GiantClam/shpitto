@@ -110,3 +110,7 @@ The productized worker regression now sets `SHPITTO_OPENCODE_TIMEOUT_MS=10000` o
 ## 2026-10-13 Live Fal Runtime Findings
 
 A trusted API-returned request ID plus official JWKS-verified callback can establish the Fal account binding without guessing a key prefix or copying a PEM. The ordinary paid-create guard remains unchanged. The output is 1280x720, 81 frames, duration 5.067 seconds; FFmpeg estimated r_frame_rate is not the requested FPS, so verification checks measured average rate and duration instead. R2 S3 API rejects the unsigned request with HTTP400/InvalidArgument; this is not an independent public-bucket-policy audit. A synthetically aged pending row drives a real scoped scheduler deletion, not a real 24-hour retention wait. Costs and local POST counters retain explicit provenance.
+
+## 2026-10-14 Remaining Validation
+
+The stale current-candidate fingerprint blocker is resolved for all development stages without changing any stage status or approval decision. The remaining root-integrity failure is a baseline-governance mismatch: the current root requires the S3 SDK and uses Next 16.3.8 while the selected-stack prototype records no S3 SDK and Next 16.3.6, and the accepted prototype lockfile digest differs from the root lockfile. This must be resolved by an explicit baseline/provenance review; it must not be hidden by changing validation output or promoting M4.

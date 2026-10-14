@@ -239,19 +239,20 @@
       "policyRef": "acceptance-gates.md",
       "commonStandardsRequired": true,
       "mandatoryScenarioSource": "traceability.json",
-      "candidateId": "local-preflight-20261007",
+      "candidateId": "m4-live-fal-scoped-20261014",
       "evidenceRecordRefs": [
         "internal/evidence/acceptance/M4/local-preflight-20261007/record.json",
         "internal/evidence/M6/local-20261004/final/result.json",
         "internal/evidence/M6/local-20261004/final/commands.json",
         "internal/evidence/M6/local-20261004/final/coverage.json",
         "internal/evidence/M6/local-20261004/README.md",
-        "internal/evidence/M6/local-20261004/independent-review.md"
+        "internal/evidence/M6/local-20261004/independent-review.md",
+        "internal/evidence/M4/task-5.10/railway-worker/m4-candidate-digest-20261014.json"
       ],
       "reviewDecision": {
         "decision": "NOT_RUN",
-        "reason": "Only local development verification is complete; real-account integrated milestone approval remains deferred.",
-        "taskReviewRef": "internal/evidence/M6/local-20261004/independent-review.md"
+        "reason": "A scoped real Fal run and isolated Demo worker evidence are attached. Four-row, hosted-runner and independent whole-stage approval remains deferred.",
+        "taskReviewRef": "internal/evidence/M4/task-5.10/railway-worker/fal-authorized-bootstrap-20261013.json"
       }
     },
     {
@@ -277,18 +278,19 @@
       "policyRef": "acceptance-gates.md",
       "commonStandardsRequired": true,
       "mandatoryScenarioSource": "traceability.json",
-      "candidateId": "local-preflight-20261007",
+      "candidateId": "m5-current-bytes-20261014",
       "evidenceRecordRefs": [
         "internal/evidence/acceptance/M5/local-preflight-20261007/record.json",
         "internal/evidence/M6/local-20261004/final/result.json",
         "internal/evidence/M6/local-20261004/final/commands.json",
         "internal/evidence/M6/local-20261004/final/coverage.json",
         "internal/evidence/M6/local-20261004/README.md",
-        "internal/evidence/M6/local-20261004/independent-review.md"
+        "internal/evidence/M6/local-20261004/independent-review.md",
+        "internal/evidence/M5/current-bytes-20261014.json"
       ],
       "reviewDecision": {
         "decision": "NOT_RUN",
-        "reason": "Only local development verification is complete; real-account integrated milestone approval remains deferred.",
+        "reason": "Current development bytes and retained local evidence are synchronized. Real-account or whole-stage approval remains deferred.",
         "taskReviewRef": "internal/evidence/M6/local-20261004/independent-review.md"
       }
     },
@@ -320,18 +322,19 @@
       "policyRef": "acceptance-gates.md",
       "commonStandardsRequired": true,
       "mandatoryScenarioSource": "traceability.json",
-      "candidateId": "local-preflight-20261007",
+      "candidateId": "m6-current-bytes-20261014",
       "evidenceRecordRefs": [
         "internal/evidence/acceptance/M6/local-preflight-20261007/record.json",
         "internal/evidence/M6/local-20261004/final/result.json",
         "internal/evidence/M6/local-20261004/final/commands.json",
         "internal/evidence/M6/local-20261004/final/coverage.json",
         "internal/evidence/M6/local-20261004/README.md",
-        "internal/evidence/M6/local-20261004/independent-review.md"
+        "internal/evidence/M6/local-20261004/independent-review.md",
+        "internal/evidence/M6/current-bytes-20261014.json"
       ],
       "reviewDecision": {
         "decision": "NOT_RUN",
-        "reason": "Only local development verification is complete; real-account integrated milestone approval remains deferred.",
+        "reason": "Current development bytes and retained local evidence are synchronized. Real-account or whole-stage approval remains deferred.",
         "taskReviewRef": "internal/evidence/M6/local-20261004/independent-review.md"
       },
       "localImplementation": {

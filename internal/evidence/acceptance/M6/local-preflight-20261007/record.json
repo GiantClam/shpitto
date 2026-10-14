@@ -6,9 +6,9 @@
   "checkpointId": null,
   "gateTaskId": "7.14",
   "status": "IN_PROGRESS",
-  "candidateId": "local-preflight-20261007",
+  "candidateId": "m6-current-bytes-20261014",
   "createdAt": "2026-10-04T09:36:19.41Z",
-  "updatedAt": "2026-10-09T11:32:12.5959946Z",
+  "updatedAt": "2026-10-14T09:35:00+08:00",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md"
   },
@@ -37,15 +37,15 @@
     }
   ],
   "candidate": {
-    "capturedAt": "2026-10-10T06:10:05.964Z",
+    "capturedAt": "2026-10-14T01:25:32.634Z",
     "sourceCommit": null,
     "dirtyPatchSha256": null,
-    "sourceTreeSha256": "2669681183c0c4505271f2dd33a75faad44e57cd5cf369e2cd1ecc665307b994",
-    "schemaSha256": "fbd1feddd49b04efdb6fad98ce3572916524a50b3e5503b576e41a9016471ea4",
-    "configurationSha256": "7343b24cdf0a0ef66c42c8b2d494893b639218551a1ffac3511525fc5b1f06f7",
-    "contractSha256": "d27f1838abade2522e698b75dc962cf5c2ad2ad4943ba7fe91e644e9186f296b",
-    "validatorSha256": "a5918a9a09df5a4651f4335811f0bf52a68687662ad07eaabdef45b8bd9841f3",
-    "lockfileSha256": "df8e6721c3c2720a4eec1644cc246d8bc89cc9e4b70e352fa4633b40264940cd",
+    "sourceTreeSha256": "e11dda1aa997cb418ee36523ed2c6dc70270c1ee1f5971856efa14e12d59a14b",
+    "schemaSha256": "35d3db1acd00483d5dae9ac815ae8283680a4fce99a649dd74f364e2774b1559",
+    "configurationSha256": "abd0eff73398bf9f27b4afca93c5806caf09ec304815a63b1faf5a0e9b1245f1",
+    "contractSha256": "b1b2d194a9baa1ae1529e482b744a0c3aca34486c0018837218472ccb25a20cb",
+    "validatorSha256": "e14141f50e0d738438c943c9c2891caaa09046822b06a27d2cf17ccb4737765a",
+    "lockfileSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35",
     "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
     "digestInputs": {
       "sourceTree": [
@@ -1250,5 +1250,14 @@
       "M7 local docs/customization and M8 local candidate packaging/fresh-install/fulfillment rerun on the current candidate."
     ],
     "carriedEvidence": []
+  },
+  "candidateRefresh": {
+    "capturedAt": "2026-10-14T01:25:32.634Z",
+    "candidateId": "m6-current-bytes-20261014",
+    "source": "node scripts/candidate-digests.mjs",
+    "status": "CURRENT_BYTES_CAPTURED_IN_PROGRESS",
+    "fullStageAcceptance": false,
+    "reason": "Synchronizes the development record with current repository bytes without changing status or approval decision.",
+    "evidenceRef": "internal/evidence/M6/current-bytes-20261014.json"
   }
 }

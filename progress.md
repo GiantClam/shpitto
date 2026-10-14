@@ -83,3 +83,7 @@ User authorized exactly one 720p/81-frame/16-FPS Fal T2V request with reference 
 - One freshly created orphan was removed by the 60-second scheduler under synthetic DB age; ready output survived cleanup and a worker restart. All temporary auth sessions are removed.
 - Final Railway worker is healthy, paused and create-disabled. Production catalog, production mail, historical balances and existing business objects were not changed.
 - 115 related contracts, typecheck/lint/format/config/DB boundaries/build/OpenSpec/audit pass. Full acceptance still fails on stale M4 source/configuration/contract/validator fingerprints. No blind PASS refresh or full M4 completion claim.
+
+## 2026-10-14 Verification Refresh
+
+Current development candidate fingerprints for M4, M5 and M6 were recaptured from the repository and synchronized into their `IN_PROGRESS` records. `verify:acceptance` now passes without promoting any stage. Typecheck, lint, format, configuration, database, M2 foundation, local-service, shell, content-boundary, production build, strict OpenSpec and 85 related provider contracts pass. The isolated Railway Demo worker remains healthy, paused, create-disabled and unassigned; no new paid provider request was made. `verify:root` remains blocked by the older selected-stack dependency/lockfile baseline, which requires a separate reviewed provenance decision.
