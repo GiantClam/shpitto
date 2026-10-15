@@ -11,7 +11,7 @@ test('changing mandatory traceability mappings invalidates contract and validato
   const run = (cwd: string) => {
     const result = spawnSync(process.execPath, [script], {cwd, encoding: 'utf8', maxBuffer: 1024 * 1024});
     assert.equal(result.status, 0, result.stderr);
-    return JSON.parse(result.stdout) as {digestInputs: Record<string, string[]>; sourceTreeSha256: string; contractSha256: string; validatorSha256: string};
+    return JSON.parse(result.stdout) as {digestInputs: Record<string, string[]>; sourceTreeSha256: string; configurationSha256: string; contractSha256: string; validatorSha256: string};
   };
   const baseline = run(root);
   const fixture = mkdtempSync(path.join(tmpdir(), 'shpitto-candidate-mapping-'));
@@ -44,6 +44,15 @@ test('changing mandatory traceability mappings invalidates contract and validato
     const providerAfter = run(fixture);
     assert.notEqual(providerAfter.contractSha256, providerBefore.contractSha256);
     assert.notEqual(providerAfter.sourceTreeSha256, providerBefore.sourceTreeSha256);
+    const evolutionDecision = path.join(fixture, 'internal/restart/root-dependency-evolution.md');
+    writeFileSync(evolutionDecision, 'Changed application dependency decision\n', 'utf8');
+    const decisionAfter = run(fixture);
+    assert.notEqual(decisionAfter.contractSha256, providerAfter.contractSha256);
+    const evolutionRegistry = path.join(fixture, 'tooling/root-dependency-baseline.json');
+    writeFileSync(evolutionRegistry, '{"application":{"lockfileSha256":"changed"}}\n', 'utf8');
+    const registryAfter = run(fixture);
+    assert.notEqual(registryAfter.configurationSha256, decisionAfter.configurationSha256);
+    assert.notEqual(registryAfter.validatorSha256, decisionAfter.validatorSha256);
   } finally {
     rmSync(fixture, {recursive: true, force: true});
   }

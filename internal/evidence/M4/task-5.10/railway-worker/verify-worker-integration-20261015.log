@@ -1,0 +1,21 @@
+[32m✔ replicate-wan22-t2v is submitted once, materialized privately and settles UNKNOWN cost [90m(2342.209313ms)[39m[39m
+[32m✔ replicate-wan22-i2v is submitted once, materialized privately and settles UNKNOWN cost [90m(1599.689007ms)[39m[39m
+[32m✔ fal-wan22-t2v is submitted once, materialized privately and settles UNKNOWN cost [90m(980.33731ms)[39m[39m
+[32m✔ fal-wan22-i2v is submitted once, materialized privately and settles UNKNOWN cost [90m(1550.087443ms)[39m[39m
+[32m✔ definitive provider failure releases the original reservation [90m(498.980196ms)[39m[39m
+[32m✔ unknown submission recovers for at most 24 probes without a second create [90m(3452.925297ms)[39m[39m
+[32m✔ a persisted network-start marker blocks restart and stale lease re-submission [90m(469.713812ms)[39m[39m
+[32m✔ authenticated inbox completion and polling have only one terminal ledger effect [90m(1119.717333ms)[39m[39m
+[32m✔ paused or unadmitted worker has no effect on another workspace [90m(257.435914ms)[39m[39m
+[32m✔ verified callback recovers an accepted create whose request ID write was lost [90m(578.326353ms)[39m[39m
+[32m✔ actual PostgreSQL stale-lease callback processing rolls back inbox and task together [90m(681.04566ms)[39m[39m
+[32m✔ terminal inbox drain quarantines a late completion without reopening credits [90m(743.57983ms)[39m[39m
+[32m✔ JPEG image2 support does not permit a forged PNG MIME declaration [90m(362.686267ms)[39m[39m
+[34mℹ tests 13[39m
+[34mℹ suites 0[39m
+[34mℹ pass 13[39m
+[34mℹ fail 0[39m
+[34mℹ cancelled 0[39m
+[34mℹ skipped 0[39m
+[34mℹ todo 0[39m
+[34mℹ duration_ms 16058.230444[39m

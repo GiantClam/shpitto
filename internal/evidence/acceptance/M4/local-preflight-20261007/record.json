@@ -6,9 +6,9 @@
   "checkpointId": null,
   "gateTaskId": "5.10",
   "status": "IN_PROGRESS",
-  "candidateId": "m4-live-fal-scoped-20261014",
+  "candidateId": "m4-verification-20261015",
   "createdAt": "2026-10-04T09:36:19.41Z",
-  "updatedAt": "2026-10-14T09:30:00+08:00",
+  "updatedAt": "2026-10-15T09:40:08.241Z",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md"
   },
@@ -25,14 +25,14 @@
     }
   ],
   "candidate": {
-    "capturedAt": "2026-10-14T01:25:32.634Z",
+    "capturedAt": "2026-10-15T09:40:08.426Z",
     "sourceCommit": null,
     "dirtyPatchSha256": null,
-    "sourceTreeSha256": "e11dda1aa997cb418ee36523ed2c6dc70270c1ee1f5971856efa14e12d59a14b",
+    "sourceTreeSha256": "5c416b63c49d16048c7e21bb5d19eef2ba17eb2f11685e980ddb6d876585d4a7",
     "schemaSha256": "35d3db1acd00483d5dae9ac815ae8283680a4fce99a649dd74f364e2774b1559",
-    "configurationSha256": "abd0eff73398bf9f27b4afca93c5806caf09ec304815a63b1faf5a0e9b1245f1",
-    "contractSha256": "b1b2d194a9baa1ae1529e482b744a0c3aca34486c0018837218472ccb25a20cb",
-    "validatorSha256": "e14141f50e0d738438c943c9c2891caaa09046822b06a27d2cf17ccb4737765a",
+    "configurationSha256": "b4764030932fc478e087f5d5befe99f39dbd4987fa43bf7b5e47d6419a0967e1",
+    "contractSha256": "3e1f9e68bae00fca52d7fcc328da678cd90f5dc36bb9149fc8b041534777fc4f",
+    "validatorSha256": "aca01d323f2737d3bd92d11a1af6a82feb7556e7a2313f9e51f9c5cc316e1eb3",
     "lockfileSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35",
     "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
     "digestInputs": {
@@ -82,7 +82,8 @@
         "openspec/changes/restart-shpitto-video-saas/specs",
         "internal/restart/contract-register.md",
         "internal/restart/integration-matrix.md",
-        "internal/restart/external-inputs.json"
+        "internal/restart/external-inputs.json",
+        "internal/restart/root-dependency-evolution.md"
       ],
       "validator": [
         "scripts",
@@ -118,7 +119,9 @@
         "internal/evidence/M4/task-5.10/railway-worker/fal-authorized-bootstrap-20261013.json",
         "internal/evidence/M4/task-5.10/railway-worker/fal-runtime-verification-20261013.json",
         "internal/evidence/M4/task-5.10/real-provider-run-summary.json",
-        "internal/evidence/M4/task-5.10/replicate-i2v-real-run.json"
+        "internal/evidence/M4/task-5.10/replicate-i2v-real-run.json",
+        "internal/evidence/M4/task-5.10/railway-worker/remaining-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/whole-stage-audit-20261015.md"
       ]
     },
     {
@@ -133,7 +136,9 @@
         "internal/evidence/M4/task-5.10/railway-worker/fal-bootstrap-security-review-20261013.md",
         "internal/evidence/M4/task-5.10/real-provider-run-summary.json",
         "internal/evidence/M4/task-5.4/README.md",
-        "internal/evidence/M4/task-5.9/README.md"
+        "internal/evidence/M4/task-5.9/README.md",
+        "internal/evidence/M4/task-5.10/railway-worker/remaining-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/whole-stage-audit-20261015.md"
       ]
     },
     {
@@ -148,7 +153,9 @@
         "internal/evidence/M4/task-5.10/railway-worker/fal-final-safety-20261013.json",
         "internal/evidence/M4/task-5.10/real-provider-run-summary.json",
         "internal/evidence/M4/task-5.5/README.md",
-        "internal/runbooks/generation-recovery.md"
+        "internal/runbooks/generation-recovery.md",
+        "internal/evidence/M4/task-5.10/railway-worker/remaining-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/whole-stage-audit-20261015.md"
       ]
     },
     {
@@ -164,7 +171,9 @@
         "internal/evidence/M4/task-5.10/railway-worker/fal-scheduled-cleanup-20261013.json",
         "internal/evidence/M4/task-5.10/real-provider-run-summary.json",
         "internal/evidence/M4/task-5.7-r2-live-adapter.json",
-        "internal/evidence/M4/task-5.7-storage-contract.json"
+        "internal/evidence/M4/task-5.7-storage-contract.json",
+        "internal/evidence/M4/task-5.10/railway-worker/remaining-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/whole-stage-audit-20261015.md"
       ]
     }
   ],
@@ -173,12 +182,12 @@
       "standard": "current-local-development",
       "applicable": true,
       "result": "PASS",
-      "assertions": "Current candidate has passing typecheck, static boundaries, unit/contracts, Docker probes and production build. Coverage refers only to the explicit M6 owned-core manifest.",
+      "assertions": "Current typecheck, static/configuration boundaries, the scoped 178-test provider/storage/root suite and production build pass. Thirteen disposable Railway PostgreSQL worker cases use fake provider transport. Historical Docker, unrelated domain probes and M6-only coverage were not rerun or approved as equivalent current stage proof.",
       "evidenceRefs": [
-        "internal/evidence/M6/local-20261004/final/result.json",
-        "internal/evidence/M6/local-20261004/final/commands.json",
-        "internal/evidence/M6/local-20261004/final/coverage.json",
-        "internal/evidence/M6/local-20261004/README.md"
+        "internal/evidence/M4/task-5.10/railway-worker/verify-full-20261015.log",
+        "internal/evidence/M4/task-5.10/railway-worker/verify-related-contracts-20261015.log",
+        "internal/evidence/M4/task-5.10/railway-worker/verify-worker-integration-20261015.log",
+        "internal/evidence/M4/task-5.10/railway-worker/remaining-validation-20261015.json"
       ]
     },
     {
@@ -580,6 +589,45 @@
       "result": "NOT_RUN",
       "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
       "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-13"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Full M4 profile remains unapproved; current local contract/live-storage proof is separately scoped.",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/remaining-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/verify-related-contracts-20261015.log",
+        "internal/evidence/M4/task-5.10/railway-worker/r2-live-adapter-20261015.json"
+      ]
+    },
+    {
+      "ids": [
+        "SC-PRV-14"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Full M4 profile remains unapproved; current local contract/live-storage proof is separately scoped.",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/remaining-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/verify-related-contracts-20261015.log",
+        "internal/evidence/M4/task-5.10/railway-worker/r2-live-adapter-20261015.json"
+      ]
+    },
+    {
+      "ids": [
+        "SC-PRV-15"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Full M4 profile remains unapproved; current local contract/live-storage proof is separately scoped.",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/remaining-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/verify-related-contracts-20261015.log",
+        "internal/evidence/M4/task-5.10/railway-worker/r2-live-adapter-20261015.json"
+      ]
     }
   ],
   "taskResults": [
@@ -647,111 +695,122 @@
     },
     {
       "commandId": "frozen-lock-install",
-      "invocation": "node C:/Users/liula/AppData/Local/pnpm/.tools/pnpm/12.6.0/node_modules/pnpm/bin/pnpm.mjs install --frozen-lockfile --offline --ignore-scripts",
-      "startAt": "2026-10-04T09:33:42.885Z",
-      "endAt": "2026-10-04T09:33:43.187Z",
+      "invocation": "corepack pnpm install --frozen-lockfile --ignore-scripts",
+      "startAt": null,
+      "endAt": "2026-10-15T09:40:08.248Z",
       "exitCode": 0,
       "status": "PASS",
-      "outputRef": "internal/evidence/M6/local-20261004/final/logs/frozen-lock-install.log"
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/verify-frozen-lock-20261015.log",
+      "note": "Start clock not retained; endAt is retained-log modification time."
     },
     {
       "commandId": "typecheck",
-      "invocation": "node node_modules/typescript/bin/tsc --noEmit",
-      "startAt": "2026-10-04T09:33:43.187Z",
-      "endAt": "2026-10-04T09:33:48.778Z",
+      "invocation": "corepack pnpm run typecheck",
+      "startAt": null,
+      "endAt": "2026-10-15T09:40:08.243Z",
       "exitCode": 0,
       "status": "PASS",
-      "outputRef": "internal/evidence/M6/local-20261004/final/logs/typecheck.log"
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/verify-typecheck-20261015.log",
+      "note": "Start clock not retained; endAt is retained-log modification time."
     },
     {
       "commandId": "lint",
-      "invocation": "node scripts/check-source-boundaries.mjs",
-      "startAt": "2026-10-04T09:33:48.778Z",
-      "endAt": "2026-10-04T09:33:48.926Z",
+      "invocation": "corepack pnpm run lint",
+      "startAt": null,
+      "endAt": "2026-10-15T09:40:08.245Z",
       "exitCode": 0,
       "status": "PASS",
-      "outputRef": "internal/evidence/M6/local-20261004/final/logs/lint.log"
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/verify-lint-20261015.log",
+      "note": "Start clock not retained; endAt is retained-log modification time."
     },
     {
       "commandId": "format-check",
-      "invocation": "node scripts/format-check.mjs",
-      "startAt": "2026-10-04T09:33:48.927Z",
-      "endAt": "2026-10-04T09:33:49.047Z",
+      "invocation": "corepack pnpm run format:check",
+      "startAt": null,
+      "endAt": "2026-10-15T09:40:08.245Z",
       "exitCode": 0,
       "status": "PASS",
-      "outputRef": "internal/evidence/M6/local-20261004/final/logs/format-check.log"
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/verify-format-check-20261015.log",
+      "note": "Start clock not retained; endAt is retained-log modification time."
     },
     {
       "commandId": "verify-config",
-      "invocation": "node scripts/check-config.mjs",
-      "startAt": "2026-10-04T09:33:49.047Z",
-      "endAt": "2026-10-04T09:33:49.147Z",
+      "invocation": "corepack pnpm run verify:config",
+      "startAt": null,
+      "endAt": "2026-10-15T09:40:08.245Z",
       "exitCode": 0,
       "status": "PASS",
-      "outputRef": "internal/evidence/M6/local-20261004/final/logs/verify-config.log"
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/verify-verify-config-20261015.log",
+      "note": "Start clock not retained; endAt is retained-log modification time."
     },
     {
       "commandId": "verify-db-boundary",
-      "invocation": "node scripts/check-db-boundaries.mjs",
-      "startAt": "2026-10-04T09:33:49.147Z",
-      "endAt": "2026-10-04T09:33:49.252Z",
+      "invocation": "corepack pnpm run verify:db-boundary",
+      "startAt": null,
+      "endAt": "2026-10-15T09:40:08.245Z",
       "exitCode": 0,
       "status": "PASS",
-      "outputRef": "internal/evidence/M6/local-20261004/final/logs/verify-db-boundary.log"
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/verify-verify-db-boundary-20261015.log",
+      "note": "Start clock not retained; endAt is retained-log modification time."
     },
     {
       "commandId": "verify-m2-foundation",
-      "invocation": "node scripts/check-m2-foundation.mjs",
-      "startAt": "2026-10-04T09:33:49.253Z",
-      "endAt": "2026-10-04T09:33:49.354Z",
+      "invocation": "corepack pnpm run verify:m2-foundation",
+      "startAt": null,
+      "endAt": "2026-10-15T09:40:08.246Z",
       "exitCode": 0,
       "status": "PASS",
-      "outputRef": "internal/evidence/M6/local-20261004/final/logs/verify-m2-foundation.log"
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/verify-verify-m2-foundation-20261015.log",
+      "note": "Start clock not retained; endAt is retained-log modification time."
     },
     {
       "commandId": "verify-local-services",
-      "invocation": "node scripts/check-local-services.mjs",
-      "startAt": "2026-10-04T09:33:49.354Z",
-      "endAt": "2026-10-04T09:33:49.458Z",
+      "invocation": "corepack pnpm run verify:local-services",
+      "startAt": null,
+      "endAt": "2026-10-15T09:40:08.246Z",
       "exitCode": 0,
       "status": "PASS",
-      "outputRef": "internal/evidence/M6/local-20261004/final/logs/verify-local-services.log"
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/verify-verify-local-services-20261015.log",
+      "note": "Start clock not retained; endAt is retained-log modification time."
     },
     {
       "commandId": "verify-shells",
-      "invocation": "node scripts/check-shell-boundaries.mjs",
-      "startAt": "2026-10-04T09:33:49.459Z",
-      "endAt": "2026-10-04T09:33:49.562Z",
+      "invocation": "corepack pnpm run verify:shells",
+      "startAt": null,
+      "endAt": "2026-10-15T09:40:08.246Z",
       "exitCode": 0,
       "status": "PASS",
-      "outputRef": "internal/evidence/M6/local-20261004/final/logs/verify-shells.log"
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/verify-verify-shells-20261015.log",
+      "note": "Start clock not retained; endAt is retained-log modification time."
     },
     {
       "commandId": "verify-content-boundaries",
-      "invocation": "node scripts/check-content-boundaries.mjs",
-      "startAt": "2026-10-04T09:33:49.562Z",
-      "endAt": "2026-10-04T09:33:49.665Z",
+      "invocation": "corepack pnpm run verify:content-boundaries",
+      "startAt": null,
+      "endAt": "2026-10-15T09:40:08.246Z",
       "exitCode": 0,
       "status": "PASS",
-      "outputRef": "internal/evidence/M6/local-20261004/final/logs/verify-content-boundaries.log"
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/verify-verify-content-boundaries-20261015.log",
+      "note": "Start clock not retained; endAt is retained-log modification time."
     },
     {
       "commandId": "verify-root",
-      "invocation": "node scripts/check-root-integrity.mjs",
-      "startAt": "2026-10-04T09:33:49.665Z",
-      "endAt": "2026-10-04T09:33:49.766Z",
+      "invocation": "corepack pnpm run verify (includes verify:root)",
+      "startAt": null,
+      "endAt": "2026-10-15T09:42:26.810Z",
       "exitCode": 0,
       "status": "PASS",
-      "outputRef": "internal/evidence/M6/local-20261004/final/logs/verify-root.log"
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/verify-full-20261015.log"
     },
     {
       "commandId": "verify-openspec",
-      "invocation": "node C:/Program Files/nodejs/node_modules/@fission-ai/openspec/bin/openspec.js validate restart-shpitto-video-saas --strict --json --no-interactive",
-      "startAt": "2026-10-04T09:33:49.766Z",
-      "endAt": "2026-10-04T09:33:50.899Z",
+      "invocation": "corepack pnpm run verify:openspec",
+      "startAt": null,
+      "endAt": "2026-10-15T09:40:08.246Z",
       "exitCode": 0,
       "status": "PASS",
-      "outputRef": "internal/evidence/M6/local-20261004/final/logs/verify-openspec.log"
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/verify-verify-openspec-20261015.log",
+      "note": "Start clock not retained; endAt is retained-log modification time."
     },
     {
       "commandId": "unit-contracts",
@@ -764,21 +823,23 @@
     },
     {
       "commandId": "contracts-provider-inputs",
-      "invocation": "node --experimental-strip-types --test tests/contracts/provider-inputs.test.ts",
-      "startAt": "2026-10-04T09:33:58.262Z",
-      "endAt": "2026-10-04T09:33:58.803Z",
+      "invocation": "Node test suite; see retained related-test-manifest-20261015.json",
+      "startAt": null,
+      "endAt": "2026-10-15T09:40:08.248Z",
       "exitCode": 0,
       "status": "PASS",
-      "outputRef": "internal/evidence/M6/local-20261004/final/logs/contracts-provider-inputs.log"
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/verify-related-contracts-20261015.log",
+      "note": "Start clock not retained; endAt is retained-log modification time."
     },
     {
       "commandId": "contracts-billing-contracts",
-      "invocation": "node --experimental-strip-types --test tests/contracts/billing-contracts.test.ts",
-      "startAt": "2026-10-04T09:33:58.803Z",
-      "endAt": "2026-10-04T09:33:59.038Z",
+      "invocation": "Node test suite; see retained related-test-manifest-20261015.json",
+      "startAt": null,
+      "endAt": "2026-10-15T09:40:08.248Z",
       "exitCode": 0,
       "status": "PASS",
-      "outputRef": "internal/evidence/M6/local-20261004/final/logs/contracts-billing-contracts.log"
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/verify-related-contracts-20261015.log",
+      "note": "Start clock not retained; endAt is retained-log modification time."
     },
     {
       "commandId": "migration",
@@ -1070,12 +1131,13 @@
     },
     {
       "commandId": "production-build",
-      "invocation": "node node_modules/next/dist/bin/next build",
-      "startAt": "2026-10-04T09:35:12.635Z",
-      "endAt": "2026-10-04T09:35:22.032Z",
+      "invocation": "corepack pnpm run build",
+      "startAt": null,
+      "endAt": "2026-10-15T09:40:08.246Z",
       "exitCode": 0,
       "status": "PASS",
-      "outputRef": "internal/evidence/M6/local-20261004/final/logs/production-build.log"
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/verify-build-20261015.log",
+      "note": "Start clock not retained; endAt is retained-log modification time."
     },
     {
       "commandId": "candidate-after",
@@ -1146,22 +1208,26 @@
     }
   ],
   "coverage": {
-    "status": "PASS",
-    "scope": "M6 owned core domain only",
-    "coveredBranches": 1318,
-    "totalBranches": 1598,
-    "percent": 82.47809762202753,
-    "ownedModuleManifestRef": "internal/evidence/M6/local-20261004/final/coverage.json",
-    "evidenceRef": "internal/evidence/M6/local-20261004/final/coverage.json"
+    "status": "NOT_RUN",
+    "scope": "Current M4-owned core branch coverage has not been measured; historical M6 coverage does not satisfy this gate.",
+    "historicalM6Only": {
+      "status": "PASS",
+      "scope": "M6 owned core domain only",
+      "coveredBranches": 1318,
+      "totalBranches": 1598,
+      "percent": 82.47809762202753,
+      "ownedModuleManifestRef": "internal/evidence/M6/local-20261004/final/coverage.json",
+      "evidenceRef": "internal/evidence/M6/local-20261004/final/coverage.json"
+    }
   },
   "defects": [],
   "externalInputs": {
     "availability": "PARTIAL_REAL_PROVIDER_EVIDENCE",
-    "requiredInput": "Authentic provider callback capture, domain reservation settlement and independent whole-stage review",
+    "requiredInput": "Hosted Trigger project/credentials and integration; confirmed Replicate account/authentic callback; remaining application-row reservation evidence; independent full-stage review",
     "affectedTasks": [
       "5.10"
     ],
-    "nextAction": "Obtain a public callback endpoint or controlled provider capture and complete the remaining non-paid integration evidence without a blind resubmit."
+    "nextAction": "Configure missing account/project prerequisites and prove hosted recovery. Reuse exact retained evidence only where ownership and applicability are established. No further paid create is authorized."
   },
   "submission": {
     "implementerId": "/root",
@@ -1196,7 +1262,9 @@
       "internal/evidence/acceptance/M4/local-preflight-20261007/candidate-impact-20261007.json",
       "internal/evidence/M4/task-5.10/real-provider-run-summary.json",
       "internal/evidence/M4/provider-matrix.md",
-      "internal/evidence/M4/task-5.7-storage-contract.json"
+      "internal/evidence/M4/task-5.7-storage-contract.json",
+      "internal/evidence/M4/task-5.10/railway-worker/candidate-digest-20261015.json",
+      "internal/evidence/M4/task-5.10/railway-worker/remaining-validation-20261015.json"
     ],
     "requiredReruns": [
       "Refresh current candidate digests after every source, contract or validator change.",
@@ -1213,12 +1281,77 @@
     "Seeded acceptance identities and synthetic cleanup age are explicitly fixture-scoped."
   ],
   "candidateRefresh": {
-    "capturedAt": "2026-10-14T01:25:32.634Z",
-    "candidateId": "m4-live-fal-scoped-20261014",
+    "capturedAt": "2026-10-15T09:40:08.426Z",
+    "candidateId": "m4-verification-20261015",
     "source": "node scripts/candidate-digests.mjs",
     "status": "CURRENT_BYTES_CAPTURED_IN_PROGRESS",
-    "fullM4Acceptance": false,
-    "reason": "Clears stale development-record fingerprints without changing stage status or approval decision.",
-    "evidenceRef": "internal/evidence/M4/task-5.10/railway-worker/m4-candidate-digest-20261014.json"
+    "fullStageAcceptance": false,
+    "reason": "Current digest capture and selected rerun evidence only; historical commands are explicitly unrerun, with no stage-equivalence or approval claim.",
+    "evidenceRef": "internal/evidence/M4/task-5.10/railway-worker/candidate-digest-20261015.json"
+  },
+  "commandEvidenceApplicability": {
+    "currentExecutionCommandIds": [
+      "typecheck",
+      "lint",
+      "format-check",
+      "verify-config",
+      "verify-db-boundary",
+      "verify-m2-foundation",
+      "verify-local-services",
+      "verify-shells",
+      "verify-content-boundaries",
+      "verify-openspec",
+      "frozen-lock-install",
+      "production-build",
+      "contracts-provider-inputs",
+      "contracts-billing-contracts",
+      "verify-root"
+    ],
+    "historicalCommandsNotRerun": [
+      "candidate-before",
+      "unit-contracts",
+      "migration",
+      "billing-schema",
+      "m6-operations",
+      "m6-privileged",
+      "m6-mfa",
+      "m6-recovery",
+      "m6-affiliate",
+      "m6-affiliate-db",
+      "operator",
+      "access-states",
+      "auth-lifecycle",
+      "billing-reconciliation",
+      "command-contract",
+      "onboarding",
+      "workspaces",
+      "generation-create",
+      "m6-cash-affiliate",
+      "m6-affiliate-notifications",
+      "m6-affiliate-races",
+      "m6-affiliate-referral",
+      "m6-admin-reads",
+      "m6-refund-preview",
+      "m6-workspace-details",
+      "billing-checkout",
+      "provider-recovery",
+      "generation-replay",
+      "generation-lifecycle",
+      "generation-races",
+      "outbox-lease",
+      "assets",
+      "asset-security",
+      "asset-cleanup",
+      "candidate-after",
+      "verify-skills",
+      "verify-docs",
+      "m7-early-typecheck",
+      "m7-customization-local",
+      "m7-docs-export-local",
+      "m8-export-boundaries-local",
+      "full-local-regression",
+      "m8-local-preflight"
+    ],
+    "note": "Fresh candidate capture does not approve historical command equivalence or any stage criterion; whole-stage review remains NOT_RUN."
   }
 }

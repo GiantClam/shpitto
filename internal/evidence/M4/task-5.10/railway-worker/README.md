@@ -45,6 +45,12 @@ Authentication users/demo funding and the cleanup row's 25-hour age are fixtures
 
 Final deployment: worker `2bf5deba-ac0f-42ae-ba9a-be93de1ebfc7`, Web `fb696a0c-d924-4c6a-809a-10bcc3916032`. Worker is paused/create-disabled and exposes no active workspace. Both services have the confirmed account binding; only its SHA-256 fingerprint is recorded. The runtime admission guard now passes, but the authorization permits no additional paid POST.
 
-115 related contracts and the local quality/build/OpenSpec/audit checks pass. Full acceptance remains blocked by stale M4 candidate digests; mandatory complete four-row/hosted-runner/whole-stage review evidence is not replaced by this scoped run. Never update an old PASS record merely to silence the digest mismatch.
+115 related contracts and the local quality/build/OpenSpec/audit checks passed for the October 13 run. The October 14 refresh repaired development-record freshness only; mandatory complete four-row/hosted-runner/whole-stage review evidence is not replaced by that refresh or the scoped live run. Never update an old PASS record merely to silence a digest mismatch.
+
+## Remaining verification (2026-10-15)
+
+The retained owned Fal video passed another private-object hash/media and HTTP negative-capability check, with zero provider calls. The existing deployed worker passed all thirteen disposable PostgreSQL/fake-transport integration tests again. Current local provider/storage/baseline contracts and compatibility checks are retained separately; their counts and provenance are recorded in `remaining-validation-20261015.json`.
+
+`whole-stage-audit-20261015.md` identifies the remaining live/hosted/profile prerequisites. The worker is still paused and create-disabled. Its environment has no Trigger secret/project reference and no confirmed Replicate account binding. Hosted task/schedule registration and deployment wiring also remain unfinished; account configuration alone is insufficient. Do not infer hosted Trigger acceptance or authentic remaining-row settlement from the Railway fixture tests.
 
 Versioned console logs normalize line endings and omit terminal-only trailing padding/blank EOF lines. Original byte-for-byte captures remain in ignored local temporary files; no result, error, timestamp or test assertion is changed.

@@ -1,0 +1,70 @@
+{
+  "status": "PASS_SCOPED_RETAINED_OUTPUT",
+  "observedAt": "2026-10-15T09:40:08.241Z",
+  "observations": [
+    {
+      "event": "owned-video-media-observed",
+      "media": {
+        "programs": [],
+        "streams": [
+          {
+            "width": 1280,
+            "height": 720,
+            "r_frame_rate": "48000/1001",
+            "avg_frame_rate": "1769472/110681",
+            "nb_frames": "81"
+          }
+        ],
+        "format": {
+          "duration": "5.067000"
+        }
+      }
+    },
+    {
+      "event": "owned-download-negative-statuses",
+      "anonymous": 401,
+      "expiredStatus": 403,
+      "wrongAssetStatus": 403
+    },
+    {
+      "seededAuthFixture": true,
+      "actualProviderCostStatus": "UNKNOWN",
+      "postCounterSource": "local-only",
+      "phase": "verify-api",
+      "runId": "c051d17d-5515-4de9-b324-4aa01ae81bda",
+      "workspaceId": "d41b8970-0182-4e52-9412-66be74fb68ae",
+      "taskId": "3d7b1ee2-06c2-4836-af4c-13d721f647ef",
+      "assetId": "2fa7803e-2040-40c3-99ac-afdb62d9387a",
+      "sha256": "fe1091e51f99b2a4b1f0319b2f217ee58157ba6a02c8e013c5c61a7ce087c0dd",
+      "media": {
+        "programs": [],
+        "streams": [
+          {
+            "width": 1280,
+            "height": 720,
+            "r_frame_rate": "48000/1001",
+            "avg_frame_rate": "1769472/110681",
+            "nb_frames": "81"
+          }
+        ],
+        "format": {
+          "duration": "5.067000"
+        }
+      },
+      "http": {
+        "anonymous": 401,
+        "expiredCapability": 403,
+        "wrongAssetCapability": 403,
+        "unsignedR2Head": 400
+      },
+      "unsignedS3CheckIsPublicPolicyAudit": false,
+      "sessionTokensRecorded": false,
+      "providerCalls": 0
+    }
+  ],
+  "ownerAndOutsiderHttpChecks": {
+    "status": "HISTORICAL_OCTOBER_13_ONLY",
+    "evidenceRef": "internal/evidence/M4/task-5.10/railway-worker/fal-authorized-bootstrap-20261013.json"
+  },
+  "fullM4Acceptance": false
+}

@@ -1,0 +1,7 @@
+✓ Lockfile passes supply-chain policies (verified 4d ago)
+Lockfile is up to date, resolution step is skipped
+Update available! 12.6.0 → 12.11.2.
+Changelog: https://pnpm.io/v/12.11.2
+To update, run: Invoke-WebRequest https://get.pnpm.io/install.ps1 -UseBasicParsing | Invoke-Expression
+Already up to date
+Done in 2.3s using pnpm v12.6.0

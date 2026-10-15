@@ -86,7 +86,7 @@
     "services:up": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/dev-services.ts up",
     "services:down": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/dev-services.ts down",
     "services:status": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/dev-services.ts status",
-    "verify:root": "node scripts/check-root-integrity.mjs && pnpm verify:acceptance && pnpm verify:openspec",
+    "verify:root": "node --experimental-strip-types --test tests/unit/root-integrity.test.ts tests/unit/candidate-digests.test.ts && node scripts/check-root-integrity.mjs && pnpm verify:acceptance && pnpm verify:openspec",
     "verify:acceptance": "node scripts/check-stage-progression.mjs",
     "verify:openspec": "openspec validate restart-shpitto-video-saas --strict --json --no-interactive",
     "verify": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm verify:config && pnpm verify:db-boundary && pnpm verify:m2-foundation && pnpm verify:local-services && pnpm verify:shells && pnpm verify:content-boundaries && pnpm verify:root && pnpm build",

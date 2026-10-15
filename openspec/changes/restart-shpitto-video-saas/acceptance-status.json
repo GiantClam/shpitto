@@ -239,7 +239,7 @@
       "policyRef": "acceptance-gates.md",
       "commonStandardsRequired": true,
       "mandatoryScenarioSource": "traceability.json",
-      "candidateId": "m4-live-fal-scoped-20261014",
+      "candidateId": "m4-verification-20261015",
       "evidenceRecordRefs": [
         "internal/evidence/acceptance/M4/local-preflight-20261007/record.json",
         "internal/evidence/M6/local-20261004/final/result.json",
@@ -278,7 +278,7 @@
       "policyRef": "acceptance-gates.md",
       "commonStandardsRequired": true,
       "mandatoryScenarioSource": "traceability.json",
-      "candidateId": "m5-current-bytes-20261014",
+      "candidateId": "m5-verification-20261015",
       "evidenceRecordRefs": [
         "internal/evidence/acceptance/M5/local-preflight-20261007/record.json",
         "internal/evidence/M6/local-20261004/final/result.json",
@@ -322,7 +322,7 @@
       "policyRef": "acceptance-gates.md",
       "commonStandardsRequired": true,
       "mandatoryScenarioSource": "traceability.json",
-      "candidateId": "m6-current-bytes-20261014",
+      "candidateId": "m6-verification-20261015",
       "evidenceRecordRefs": [
         "internal/evidence/acceptance/M6/local-preflight-20261007/record.json",
         "internal/evidence/M6/local-20261004/final/result.json",
