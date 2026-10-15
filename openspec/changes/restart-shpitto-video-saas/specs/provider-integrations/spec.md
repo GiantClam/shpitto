@@ -72,7 +72,7 @@ Trace: D03, D10, D20; J3, J4; T09, T19, T22, T53; G03, G10, G20. Tasks: 5.4.
 
 ### Requirement: REQ-PRV-05 Paid create retries disabled and exact reconciliation
 
-Paid submit SHALL disable SDK/HTTP automatic retries and fal platform retries using X-Fal-No-Retry: 1. No selected endpoint SHALL be assumed to provide create idempotency or missing-ID search. Reconciliation SHALL use authenticated exact IDs or verified callbacks under the generation budget. Trigger retries MUST resume safe status/result recovery rather than repeat creation. A proven endpoint-specific idempotency exception requires separate reviewed evidence before use.
+Paid submit SHALL disable SDK/HTTP automatic retries and fal platform retries using X-Fal-No-Retry: 1. No selected endpoint SHALL be assumed to provide create idempotency or missing-ID search. Reconciliation SHALL use authenticated exact IDs or verified callbacks under the generation budget. Retries from the selected self-hosted worker or optional Trigger runtime MUST resume safe status/result recovery rather than repeat creation. A proven endpoint-specific idempotency exception requires separate reviewed evidence before use.
 
 Trace: D10, D13, D20; J4; T11, T12, T20, T53; G10, G13, G20. Tasks: 5.2, 5.3, 5.5, 5.6.
 

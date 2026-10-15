@@ -7,7 +7,7 @@ import test from 'node:test';
 import {DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, ListObjectsV2Command, PutObjectCommand} from '@aws-sdk/client-s3';
 import {createLocalObjectStore} from '../../src/adapters/storage/local.ts';
 import {createPrivateObjectStore} from '../../src/adapters/storage/port.ts';
-import {createS3ObjectStore, type S3CommandClient, type S3ObjectStoreConfig} from '../../src/adapters/storage/s3-object-store.ts';
+import {createS3ObjectStore, MAX_PRIVATE_OBJECT_BYTES, type S3CommandClient, type S3ObjectStoreConfig} from '../../src/adapters/storage/s3-object-store.ts';
 
 const config: S3ObjectStoreConfig = {endpoint: 'https://account.r2.cloudflarestorage.com', region: 'auto', bucket: 'private-media', accessKeyId: 'fixture-access', secretAccessKey: 'fixture-secret'};
 
@@ -62,4 +62,66 @@ test('runtime factory keeps the S3-compatible deployment under one driver', asyn
     assert.equal(createPrivateObjectStore({storageDriver: 'local', assetRoot: root}).driver, 'local');
     assert.throws(() => createPrivateObjectStore({storageDriver: 's3', assetRoot: root}), /configuration is incomplete/i);
   } finally { await rm(root, {recursive: true, force: true}); }
+});
+
+test('S3 configuration rejects malformed endpoints, embedded credentials and incomplete bucket identity before transport', () => {
+  let calls = 0;
+  const client: S3CommandClient = {async send() { calls++; return {}; }};
+  for (const invalid of [
+    {...config, endpoint: 'not-a-url'}, {...config, endpoint: 'https://user:password@storage.example.test'},
+    {...config, bucket: '?'}, {...config, region: ''}, {...config, accessKeyId: ''}, {...config, secretAccessKey: ''},
+  ]) assert.throws(() => createS3ObjectStore(invalid, client), /invalid|HTTPS|incomplete/i);
+  assert.equal(calls, 0);
+});
+
+test('S3 missing-object variants normalize consistently without swallowing access or transport faults', async () => {
+  for (const error of [{$metadata: {httpStatusCode: 404}}, {name: 'NotFound'}, {name: 'NoSuchKey'}]) {
+    const store = createS3ObjectStore(config, {async send() { throw error; }});
+    assert.equal(await store.head('workspace/output.mp4'), null);
+    await assert.rejects(() => store.get('workspace/output.mp4'), {code: 'NOT_FOUND'});
+  }
+  const fault = new Error('controlled-storage-denial');
+  const store = createS3ObjectStore(config, {async send() { throw fault; }});
+  await assert.rejects(() => store.head('workspace/output.mp4'), (error) => error === fault);
+  await assert.rejects(() => store.get('workspace/output.mp4'), (error) => error === fault);
+  const emptyHead = createS3ObjectStore(config, {async send() { return {}; }});
+  assert.deepEqual(await emptyHead.head('workspace/output.mp4'), {bytes: 0, modifiedAt: null, contentType: undefined});
+});
+
+test('S3 rejects missing, unreadable and declared-oversized response bodies', async () => {
+  for (const response of [{}, {Body: {}}, {Body: {}, ContentLength: MAX_PRIVATE_OBJECT_BYTES + 1}]) {
+    const store = createS3ObjectStore(config, {async send() { return response; }});
+    await assert.rejects(() => store.get('workspace/output.mp4'), /empty|unreadable|bounded size/i);
+  }
+});
+
+test('S3 streamed bodies concatenate bounded chunks and reject overflow before allocating the whole result', async () => {
+  const store = createS3ObjectStore(config, {async send() { return {Body: (async function* () {
+    yield new Uint8Array([1, 2]); yield [3, 4];
+  })()}; }});
+  assert.deepEqual([...await store.get('workspace/output.mp4')], [1, 2, 3, 4]);
+  const chunk = new Uint8Array(1024 * 1024);
+  let produced = 0;
+  const oversized = createS3ObjectStore(config, {async send() { return {Body: (async function* () {
+    for (let i = 0; i < 300; i++) { produced++; yield chunk; }
+  })()}; }});
+  await assert.rejects(() => oversized.get('workspace/output.mp4'), /bounded size/i);
+  assert.equal(produced, 251, 'The stream must stop immediately after crossing the 250MiB bound.');
+});
+
+test('S3 listing validates limits, returned keys and empty pages without widening the requested prefix', async () => {
+  let calls = 0;
+  const store = createS3ObjectStore(config, {async send(command) {
+    calls++;
+    assert.ok(command instanceof ListObjectsV2Command);
+    assert.equal(command.input.Prefix, 'workspace/');
+    assert.equal(command.input.MaxKeys, 1000);
+    assert.equal(command.input.StartAfter, 'workspace/last.mp4');
+    return {};
+  }});
+  for (const limit of [0, -1, 1.5, NaN]) await assert.rejects(() => store.list('workspace', limit), /positive integer/i);
+  assert.equal(calls, 0);
+  assert.deepEqual(await store.list('workspace', 2000, 'workspace/last.mp4'), []);
+  const invalidKeys = createS3ObjectStore(config, {async send() { return {Contents: [{}, {Key: '../escape'}]}; }});
+  await assert.rejects(() => invalidKeys.list('workspace', 10), /invalid/i);
 });

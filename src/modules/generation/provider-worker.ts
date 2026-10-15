@@ -15,7 +15,7 @@ import {processProviderWebhook} from './provider-webhooks.ts';
 import type {ReadyInputSnapshot} from './create.ts';
 import {providerInputFromSnapshot, restoreWorkerSubmissionContext} from './provider-input.ts';
 import {readWorkerInputImage} from './provider-image.ts';
-import {sweepExpiredGenerationTasks} from './sweep-recovery.ts';
+import {drainOverdueGenerationTasks} from './sweep-recovery.ts';
 
 type Task = typeof generationTasks.$inferSelect;
 type Attempt = typeof submissionAttempts.$inferSelect;
@@ -139,11 +139,12 @@ async function countMaterializationFailure(db: AppDatabase, task: Task, lease: O
 }
 
 /** One fenced dispatch/reconciliation cycle restricted to the configured workspace. */
-export async function runProviderWorkerOnce(db: AppDatabase, input: WorkerDependencies): Promise<Readonly<{claimed: boolean; outcome: 'paused' | 'idle' | 'handled'}>> {
+export async function runProviderWorkerOnce(db: AppDatabase, input: WorkerDependencies): Promise<Readonly<{claimed: boolean; outcome: 'paused' | 'idle' | 'handled' | 'recovery_pending'}>> {
   if (input.config.state !== 'active' || !input.config.workspaceId) return {claimed: false, outcome: 'paused'};
   const clock = () => input.now ?? new Date();
   // Restoration settles overdue work before any resumed network/status/materialization operation.
-  await sweepExpiredGenerationTasks(db, clock(), {workspaceId: input.config.workspaceId});
+  const recovery = await drainOverdueGenerationTasks(db, clock(), {workspaceId: input.config.workspaceId});
+  if (!recovery.drained) return {claimed: false, outcome: 'recovery_pending'};
   const lease = await claimOutbox(db, input.owner, clock(), {eventType: 'generation.dispatch', workspaceId: input.config.workspaceId});
   if (!lease) return {claimed: false, outcome: 'idle'};
   const heartbeat = startOutboxHeartbeat(db, lease, {now: clock});

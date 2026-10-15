@@ -9,7 +9,8 @@ import {generationTasks} from '../src/db/schema/generation.ts';
 import {getPrivateObjectStore} from '../src/adapters/storage/runtime.ts';
 import {drainTerminalProviderWebhookInbox} from '../src/modules/generation/provider-webhooks.ts';
 import {runProviderWorkerOnce} from '../src/modules/generation/provider-worker.ts';
-import {sweepExpiredGenerationTasks} from '../src/modules/generation/sweep-recovery.ts';
+import {drainOverdueGenerationTasks} from '../src/modules/generation/sweep-recovery.ts';
+import {startWorkerLoops, startWorkerLoopsAfterBind} from '../src/modules/generation/worker-loops.ts';
 import {cleanupOrphanedAssetsDetailed} from '../src/modules/assets/cleanup.ts';
 
 async function main(): Promise<void> {
@@ -23,57 +24,47 @@ async function main(): Promise<void> {
   const schema = await database.pool.query<{ready: boolean}>("select to_regclass('app.generation_tasks') is not null and to_regclass('app.submission_attempts') is not null and to_regclass('app.provider_webhook_inbox') is not null as ready");
   if (!schema.rows[0]?.ready) { await database.pool.end(); throw new Error('Provider worker database migrations are required.'); }
   let stopping = false;
-  const health = {lastDispatchAt: new Date().toISOString(), lastSweepAt: null as string | null, lastInboxAt: null as string | null, lastCleanupAt: null as string | null, errors: 0};
-  const pending = new Set<Promise<void>>();
-  const timers: ReturnType<typeof setInterval>[] = [];
-  const loop = (name: string, interval: number, run: () => Promise<unknown>): void => {
-    let busy = false;
-    const tick = () => {
-      if (stopping || busy) return;
-      busy = true;
-      const operation = run().then(() => { if (name === 'dispatch') health.lastDispatchAt = new Date().toISOString(); }, (error: unknown) => {
-        health.errors++;
-        console.error(JSON.stringify({event: 'provider-worker-cycle-failed', loop: name, code: error instanceof DomainError ? error.code : 'INFRASTRUCTURE'}));
-      }).finally(() => { busy = false; pending.delete(operation); });
-      pending.add(operation);
-    };
-    timers.push(setInterval(tick, interval));
-    tick();
-  };
+  const scoped = config.state === 'active' && config.workspaceId;
+  let runner: ReturnType<typeof startWorkerLoops> | null = null;
+  const loopOptions: Parameters<typeof startWorkerLoops>[0] = {onError: (name, error) => {
+    console.error(JSON.stringify({event: 'provider-worker-cycle-failed', loop: name, code: error instanceof DomainError ? error.code : 'INFRASTRUCTURE'}));
+  }, loops: scoped ? [
+    {name: 'dispatch', intervalMs: config.pollMs, staleMs: 120_000, run: async () => {
+      const result = await runProviderWorkerOnce(database.db, {config, owner, store});
+      if (result.outcome === 'recovery_pending') throw new DomainError('CONFLICT', 'Overdue recovery must finish before dispatch.');
+    }},
+    {name: 'sweep', intervalMs: 10_000, staleMs: 180_000, run: async () => {
+      const result = await drainOverdueGenerationTasks(database.db, new Date(), {workspaceId: scoped});
+      if (!result.drained) throw new DomainError('CONFLICT', 'Overdue recovery has unfinished work.');
+      const old = await database.db.select({id: generationTasks.id}).from(generationTasks).where(and(eq(generationTasks.workspaceId, scoped), eq(generationTasks.status, 'submission_unknown'), lte(generationTasks.submissionStartedAt, new Date(Date.now() - 30 * 60 * 1000)))).limit(1);
+      if (old.length) console.warn(JSON.stringify({event: 'provider-submission-unknown-over-30-minutes', scope: 'assigned-workspace'}));
+    }},
+    {name: 'inbox', intervalMs: 10_000, staleMs: 120_000, run: () => drainTerminalProviderWebhookInbox(database.db, {workspaceId: scoped, limit: 20})},
+    {name: 'cleanup', intervalMs: 60_000, staleMs: 180_000, run: async () => {
+      const report = await cleanupOrphanedAssetsDetailed(database.db, {workspaceId: scoped, store});
+      if (report.failures.length) throw new DomainError('CONFLICT', 'Asset cleanup has retryable failures.');
+    }},
+  ] : []};
   const server = createServer(async (request, response) => {
     if (request.url !== '/healthz') { response.writeHead(404).end(); return; }
     try {
       await database.pool.query('select 1');
-      const fresh = config.state === 'paused' || Date.now() - new Date(health.lastDispatchAt).getTime() < 120_000;
-      response.writeHead(fresh ? 200 : 503, {'content-type': 'application/json', 'cache-control': 'no-store'}).end(JSON.stringify({status: fresh ? 'ready' : 'degraded', role: 'provider-worker', state: config.state, createsEnabled: config.allowCreate, scope: config.workspaceId ? 'assigned' : 'unassigned', database: 'ready', schema: 'ready', mediaTools: tools, ...health}));
+      const health = runner?.snapshot();
+      const fresh = !stopping && health?.ready === true;
+      response.writeHead(fresh ? 200 : 503, {'content-type': 'application/json', 'cache-control': 'no-store'}).end(JSON.stringify({status: fresh ? 'ready' : 'degraded', role: 'provider-worker', taskRuntime: config.taskRuntime, state: config.state, createsEnabled: config.allowCreate, scope: config.workspaceId ? 'assigned' : 'unassigned', database: 'ready', schema: 'ready', mediaTools: tools, ...health}));
     } catch { response.writeHead(503, {'content-type': 'application/json'}).end(JSON.stringify({status: 'not_ready', role: 'provider-worker', state: config.state, database: 'unavailable'})); }
   });
-  await new Promise<void>((resolve, reject) => { server.once('error', reject); server.listen(port, '0.0.0.0', resolve); });
+  runner = await startWorkerLoopsAfterBind(() => new Promise<void>((resolve, reject) => { server.once('error', reject); server.listen(port, '0.0.0.0', resolve); }), loopOptions).catch(async (error: unknown) => {
+    await database.pool.end();
+    throw error;
+  });
   console.log(JSON.stringify({event: 'provider-worker-ready', state: config.state, createsEnabled: config.allowCreate, scoped: Boolean(config.workspaceId)}));
-  loop('dispatch', config.pollMs, () => runProviderWorkerOnce(database.db, {config, owner, store}));
-  loop('sweep', 10_000, async () => {
-    if (!config.workspaceId) return;
-    await sweepExpiredGenerationTasks(database.db, new Date(), {workspaceId: config.workspaceId});
-    health.lastSweepAt = new Date().toISOString();
-    const old = await database.db.select({id: generationTasks.id}).from(generationTasks).where(and(eq(generationTasks.workspaceId, config.workspaceId), eq(generationTasks.status, 'submission_unknown'), lte(generationTasks.submissionStartedAt, new Date(Date.now() - 30 * 60 * 1000)))).limit(1);
-    if (old.length) console.warn(JSON.stringify({event: 'provider-submission-unknown-over-30-minutes', scope: 'assigned-workspace'}));
-  });
-  loop('inbox', 10_000, async () => {
-    if (!config.workspaceId) return;
-    await drainTerminalProviderWebhookInbox(database.db, {workspaceId: config.workspaceId, limit: 20});
-    health.lastInboxAt = new Date().toISOString();
-  });
-  loop('cleanup', 60_000, async () => {
-    if (!config.workspaceId) return;
-    await cleanupOrphanedAssetsDetailed(database.db, {workspaceId: config.workspaceId, store});
-    health.lastCleanupAt = new Date().toISOString();
-  });
   const shutdown = async () => {
     if (stopping) return;
     stopping = true;
-    for (const timer of timers) clearInterval(timer);
-    server.close();
-    await Promise.all([...pending]);
+    const closed = new Promise<void>((resolve) => { server.close(() => resolve()); });
+    await runner?.stop();
+    await closed;
     await database.pool.end();
   };
   process.once('SIGINT', () => { void shutdown(); });

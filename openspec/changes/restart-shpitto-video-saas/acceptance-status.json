@@ -239,7 +239,7 @@
       "policyRef": "acceptance-gates.md",
       "commonStandardsRequired": true,
       "mandatoryScenarioSource": "traceability.json",
-      "candidateId": "m4-verification-20261015",
+      "candidateId": "m4-local-fixtures-20261015",
       "evidenceRecordRefs": [
         "internal/evidence/acceptance/M4/local-preflight-20261007/record.json",
         "internal/evidence/M6/local-20261004/final/result.json",
@@ -247,11 +247,12 @@
         "internal/evidence/M6/local-20261004/final/coverage.json",
         "internal/evidence/M6/local-20261004/README.md",
         "internal/evidence/M6/local-20261004/independent-review.md",
-        "internal/evidence/M4/task-5.10/railway-worker/m4-candidate-digest-20261014.json"
+        "internal/evidence/M4/task-5.10/railway-worker/m4-local-fixture-candidate-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json"
       ],
       "reviewDecision": {
         "decision": "NOT_RUN",
-        "reason": "A scoped real Fal run and isolated Demo worker evidence are attached. Four-row, hosted-runner and independent whole-stage approval remains deferred.",
+        "reason": "Current M4 local fixtures/coverage and candidate digests are attached. Other listed M6 receipts are historical only. Full provider, selected-runtime, stage-specific applicability and independent whole-stage approval remain deferred.",
         "taskReviewRef": "internal/evidence/M4/task-5.10/railway-worker/fal-authorized-bootstrap-20261013.json"
       }
     },
@@ -278,7 +279,7 @@
       "policyRef": "acceptance-gates.md",
       "commonStandardsRequired": true,
       "mandatoryScenarioSource": "traceability.json",
-      "candidateId": "m5-verification-20261015",
+      "candidateId": "m5-local-fixtures-20261015",
       "evidenceRecordRefs": [
         "internal/evidence/acceptance/M5/local-preflight-20261007/record.json",
         "internal/evidence/M6/local-20261004/final/result.json",
@@ -286,11 +287,11 @@
         "internal/evidence/M6/local-20261004/final/coverage.json",
         "internal/evidence/M6/local-20261004/README.md",
         "internal/evidence/M6/local-20261004/independent-review.md",
-        "internal/evidence/M5/current-bytes-20261014.json"
+        "internal/evidence/M4/task-5.10/railway-worker/m4-local-fixture-candidate-20261015.json"
       ],
       "reviewDecision": {
         "decision": "NOT_RUN",
-        "reason": "Current development bytes and retained local evidence are synchronized. Real-account or whole-stage approval remains deferred.",
+        "reason": "Current M4 local fixtures/coverage and candidate digests are attached. Other listed M6 receipts are historical only. Full provider, selected-runtime, stage-specific applicability and independent whole-stage approval remain deferred.",
         "taskReviewRef": "internal/evidence/M6/local-20261004/independent-review.md"
       }
     },
@@ -322,7 +323,7 @@
       "policyRef": "acceptance-gates.md",
       "commonStandardsRequired": true,
       "mandatoryScenarioSource": "traceability.json",
-      "candidateId": "m6-verification-20261015",
+      "candidateId": "m6-local-fixtures-20261015",
       "evidenceRecordRefs": [
         "internal/evidence/acceptance/M6/local-preflight-20261007/record.json",
         "internal/evidence/M6/local-20261004/final/result.json",
@@ -330,11 +331,11 @@
         "internal/evidence/M6/local-20261004/final/coverage.json",
         "internal/evidence/M6/local-20261004/README.md",
         "internal/evidence/M6/local-20261004/independent-review.md",
-        "internal/evidence/M6/current-bytes-20261014.json"
+        "internal/evidence/M4/task-5.10/railway-worker/m4-local-fixture-candidate-20261015.json"
       ],
       "reviewDecision": {
         "decision": "NOT_RUN",
-        "reason": "Current development bytes and retained local evidence are synchronized. Real-account or whole-stage approval remains deferred.",
+        "reason": "Current M4 local fixtures/coverage and candidate digests are attached. Other listed M6 receipts are historical only. Full provider, selected-runtime, stage-specific applicability and independent whole-stage approval remain deferred.",
         "taskReviewRef": "internal/evidence/M6/local-20261004/independent-review.md"
       },
       "localImplementation": {

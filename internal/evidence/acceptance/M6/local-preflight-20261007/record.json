@@ -6,9 +6,9 @@
   "checkpointId": null,
   "gateTaskId": "7.14",
   "status": "IN_PROGRESS",
-  "candidateId": "m6-verification-20261015",
+  "candidateId": "m6-local-fixtures-20261015",
   "createdAt": "2026-10-04T09:36:19.41Z",
-  "updatedAt": "2026-10-15T09:40:08.241Z",
+  "updatedAt": "2026-10-15T14:12:53.539Z",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md"
   },
@@ -37,14 +37,14 @@
     }
   ],
   "candidate": {
-    "capturedAt": "2026-10-15T09:40:08.426Z",
+    "capturedAt": "2026-10-15T14:12:24.973Z",
     "sourceCommit": null,
     "dirtyPatchSha256": null,
-    "sourceTreeSha256": "5c416b63c49d16048c7e21bb5d19eef2ba17eb2f11685e980ddb6d876585d4a7",
+    "sourceTreeSha256": "cb667e6ba63ee0c4da114d10c63b8b617817634e95ec3d6f5db2d61e63cf5130",
     "schemaSha256": "35d3db1acd00483d5dae9ac815ae8283680a4fce99a649dd74f364e2774b1559",
-    "configurationSha256": "b4764030932fc478e087f5d5befe99f39dbd4987fa43bf7b5e47d6419a0967e1",
-    "contractSha256": "3e1f9e68bae00fca52d7fcc328da678cd90f5dc36bb9149fc8b041534777fc4f",
-    "validatorSha256": "aca01d323f2737d3bd92d11a1af6a82feb7556e7a2313f9e51f9c5cc316e1eb3",
+    "configurationSha256": "678a7bcfdc86ae4c9622b52b97401e533656bfcee5626bc9d7dd484623a5c738",
+    "contractSha256": "edc65807c22f2602b32e8f8ee80d542c1ce14908db5113252cdb8f44532f6f09",
+    "validatorSha256": "7c5718297d9358df3e15aa4a02f4e17b2b86fb47855ab9fa99ce637e577549c4",
     "lockfileSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35",
     "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
     "digestInputs": {
@@ -78,9 +78,15 @@
         ".env.example",
         ".dockerignore",
         "src/config/env.ts",
+        "src/config/task-runtime.ts",
+        "src/config/provider-worker.ts",
         ".github/workflows/verify-root.yml",
         "deploy/compose.local.yml",
         "deploy/worker.Dockerfile",
+        "deploy/provider-worker.Dockerfile",
+        "deploy/railway.provider-worker.json",
+        "scripts/provider-worker-preflight.ts",
+        "scripts/provider-worker-runtime.mjs",
         "tooling"
       ],
       "contract": [
@@ -166,12 +172,11 @@
       "standard": "current-local-development",
       "applicable": true,
       "result": "PASS",
-      "assertions": "Current typecheck, static/configuration boundaries, the scoped 178-test provider/storage/root suite and production build pass. Thirteen disposable Railway PostgreSQL worker cases use fake provider transport. Historical Docker, unrelated domain probes and M6-only coverage were not rerun or approved as equivalent current stage proof.",
+      "assertions": "The current M4-only local suite passes 191 contracts/units, 15 PostgreSQL integration cases and 14 deterministic domain/crash probe groups. Whole-stage HTTP/browser, authentic provider and hosted profiles remain separate; older quality receipts are historical until the current full verification is captured.",
       "evidenceRefs": [
-        "internal/evidence/M4/task-5.10/railway-worker/verify-full-20261015.log",
-        "internal/evidence/M4/task-5.10/railway-worker/verify-related-contracts-20261015.log",
-        "internal/evidence/M4/task-5.10/railway-worker/verify-worker-integration-20261015.log",
-        "internal/evidence/M4/task-5.10/railway-worker/remaining-validation-20261015.json"
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-verification-20261015/coverage.json"
       ]
     },
     {
@@ -1202,6 +1207,176 @@
       "exitCode": 0,
       "status": "PASS",
       "outputRef": "internal/evidence/m8/preflight-report.md"
+    },
+    {
+      "commandId": "m4-local-contracts-and-units",
+      "invocation": "node --experimental-strip-types --experimental-test-coverage --test-concurrency=1 --test-coverage-include src/modules/generation/** --test-coverage-include src/modules/assets/** --test-coverage-include src/adapters/providers/** --test-coverage-include src/adapters/storage/** --test-coverage-include src/adapters/tasks/** --test-coverage-include src/trigger/** --test-coverage-include src/config/provider-models.ts --test-coverage-include src/config/provider-worker.ts --test-coverage-include src/config/models.ts --test-coverage-include src/modules/operations/integration-health.ts --test-coverage-include src/modules/operations/telemetry.ts --test-reporter=spec --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\contracts-and-units-spec.log --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\contracts-and-units.lcov --test tests/contracts/billing-contracts.test.ts tests/contracts/fal-bootstrap-budget.test.ts tests/contracts/fal-jwks.test.ts tests/contracts/fal-runtime-video-metadata.test.ts tests/contracts/fal.test.ts tests/contracts/private-storage-live-probe.test.ts tests/contracts/provider-inbox-fencing.test.ts tests/contracts/provider-inputs.test.ts tests/contracts/provider-output-download.test.ts tests/contracts/provider-webhooks.test.ts tests/contracts/provider-worker.test.ts tests/contracts/replicate.test.ts tests/contracts/storage.test.ts tests/unit/root-integrity.test.ts tests/unit/candidate-digests.test.ts tests/unit/stage-progression.test.ts tests/unit/asset-cleanup-trigger.test.ts tests/unit/asset-cleanup-scheduling.test.ts tests/unit/assets-authorization.test.ts tests/unit/assets-validation.test.ts tests/unit/optional-provider-env.test.ts tests/unit/refund-provider-recovery.test.ts tests/unit/outbox-heartbeat.test.ts tests/contracts/replicate-webhook-boundaries.test.ts tests/unit/recovery-schedule.test.ts",
+      "startAt": "2026-10-15T10:22:54.016Z",
+      "endAt": "2026-10-15T10:23:09.920Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-verification-20261015/contracts-and-units-spec.log",
+      "note": "Fresh disposable local database; fixture-only environment and fake provider transport. This does not prove other stage profiles."
+    },
+    {
+      "commandId": "m4-local-provider-worker-integration",
+      "invocation": "node --experimental-strip-types --experimental-test-coverage --test-concurrency=1 --test-coverage-include src/modules/generation/** --test-coverage-include src/modules/assets/** --test-coverage-include src/adapters/providers/** --test-coverage-include src/adapters/storage/** --test-coverage-include src/adapters/tasks/** --test-coverage-include src/trigger/** --test-coverage-include src/config/provider-models.ts --test-coverage-include src/config/provider-worker.ts --test-coverage-include src/config/models.ts --test-coverage-include src/modules/operations/integration-health.ts --test-coverage-include src/modules/operations/telemetry.ts --test-reporter=spec --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\provider-worker-integration-spec.log --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\provider-worker-integration.lcov --test tests/integration/provider-worker.test.ts",
+      "startAt": "2026-10-15T10:23:09.921Z",
+      "endAt": "2026-10-15T10:23:15.600Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-verification-20261015/provider-worker-integration-spec.log",
+      "note": "Fresh disposable local database; fixture-only environment and fake provider transport. This does not prove other stage profiles."
+    },
+    {
+      "commandId": "m4-local-probe-generation-create",
+      "invocation": "node --experimental-strip-types --experimental-test-coverage --test-concurrency=1 --test-coverage-include src/modules/generation/** --test-coverage-include src/modules/assets/** --test-coverage-include src/adapters/providers/** --test-coverage-include src/adapters/storage/** --test-coverage-include src/adapters/tasks/** --test-coverage-include src/trigger/** --test-coverage-include src/config/provider-models.ts --test-coverage-include src/config/provider-worker.ts --test-coverage-include src/config/models.ts --test-coverage-include src/modules/operations/integration-health.ts --test-coverage-include src/modules/operations/telemetry.ts --test-reporter=spec --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-generation-create-spec.log --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-generation-create.lcov --test scripts/probe-generation-create.ts",
+      "startAt": "2026-10-15T10:23:15.600Z",
+      "endAt": "2026-10-15T10:23:16.506Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-verification-20261015/probe-generation-create-spec.log",
+      "note": "Fresh disposable local database; fixture-only environment and fake provider transport. This does not prove other stage profiles."
+    },
+    {
+      "commandId": "m4-local-probe-generation-lifecycle",
+      "invocation": "node --experimental-strip-types --experimental-test-coverage --test-concurrency=1 --test-coverage-include src/modules/generation/** --test-coverage-include src/modules/assets/** --test-coverage-include src/adapters/providers/** --test-coverage-include src/adapters/storage/** --test-coverage-include src/adapters/tasks/** --test-coverage-include src/trigger/** --test-coverage-include src/config/provider-models.ts --test-coverage-include src/config/provider-worker.ts --test-coverage-include src/config/models.ts --test-coverage-include src/modules/operations/integration-health.ts --test-coverage-include src/modules/operations/telemetry.ts --test-reporter=spec --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-generation-lifecycle-spec.log --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-generation-lifecycle.lcov --test scripts/probe-generation-lifecycle.ts",
+      "startAt": "2026-10-15T10:23:16.507Z",
+      "endAt": "2026-10-15T10:23:18.252Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-verification-20261015/probe-generation-lifecycle-spec.log",
+      "note": "Fresh disposable local database; fixture-only environment and fake provider transport. This does not prove other stage profiles."
+    },
+    {
+      "commandId": "m4-local-probe-generation-races",
+      "invocation": "node --experimental-strip-types --experimental-test-coverage --test-concurrency=1 --test-coverage-include src/modules/generation/** --test-coverage-include src/modules/assets/** --test-coverage-include src/adapters/providers/** --test-coverage-include src/adapters/storage/** --test-coverage-include src/adapters/tasks/** --test-coverage-include src/trigger/** --test-coverage-include src/config/provider-models.ts --test-coverage-include src/config/provider-worker.ts --test-coverage-include src/config/models.ts --test-coverage-include src/modules/operations/integration-health.ts --test-coverage-include src/modules/operations/telemetry.ts --test-reporter=spec --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-generation-races-spec.log --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-generation-races.lcov --test scripts/probe-generation-races.ts",
+      "startAt": "2026-10-15T10:23:18.253Z",
+      "endAt": "2026-10-15T10:23:19.726Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-verification-20261015/probe-generation-races-spec.log",
+      "note": "Fresh disposable local database; fixture-only environment and fake provider transport. This does not prove other stage profiles."
+    },
+    {
+      "commandId": "m4-local-probe-assets",
+      "invocation": "node --experimental-strip-types --experimental-test-coverage --test-concurrency=1 --test-coverage-include src/modules/generation/** --test-coverage-include src/modules/assets/** --test-coverage-include src/adapters/providers/** --test-coverage-include src/adapters/storage/** --test-coverage-include src/adapters/tasks/** --test-coverage-include src/trigger/** --test-coverage-include src/config/provider-models.ts --test-coverage-include src/config/provider-worker.ts --test-coverage-include src/config/models.ts --test-coverage-include src/modules/operations/integration-health.ts --test-coverage-include src/modules/operations/telemetry.ts --test-reporter=spec --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-assets-spec.log --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-assets.lcov --test scripts/probe-assets.ts",
+      "startAt": "2026-10-15T10:23:19.726Z",
+      "endAt": "2026-10-15T10:23:21.197Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-verification-20261015/probe-assets-spec.log",
+      "note": "Fresh disposable local database; fixture-only environment and fake provider transport. This does not prove other stage profiles."
+    },
+    {
+      "commandId": "m4-local-probe-asset-cleanup",
+      "invocation": "node --experimental-strip-types --experimental-test-coverage --test-concurrency=1 --test-coverage-include src/modules/generation/** --test-coverage-include src/modules/assets/** --test-coverage-include src/adapters/providers/** --test-coverage-include src/adapters/storage/** --test-coverage-include src/adapters/tasks/** --test-coverage-include src/trigger/** --test-coverage-include src/config/provider-models.ts --test-coverage-include src/config/provider-worker.ts --test-coverage-include src/config/models.ts --test-coverage-include src/modules/operations/integration-health.ts --test-coverage-include src/modules/operations/telemetry.ts --test-reporter=spec --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-asset-cleanup-spec.log --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-asset-cleanup.lcov --test scripts/probe-asset-cleanup.ts",
+      "startAt": "2026-10-15T10:23:21.197Z",
+      "endAt": "2026-10-15T10:23:28.704Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-verification-20261015/probe-asset-cleanup-spec.log",
+      "note": "Fresh disposable local database; fixture-only environment and fake provider transport. This does not prove other stage profiles."
+    },
+    {
+      "commandId": "m4-local-probe-asset-security",
+      "invocation": "node --experimental-strip-types --experimental-test-coverage --test-concurrency=1 --test-coverage-include src/modules/generation/** --test-coverage-include src/modules/assets/** --test-coverage-include src/adapters/providers/** --test-coverage-include src/adapters/storage/** --test-coverage-include src/adapters/tasks/** --test-coverage-include src/trigger/** --test-coverage-include src/config/provider-models.ts --test-coverage-include src/config/provider-worker.ts --test-coverage-include src/config/models.ts --test-coverage-include src/modules/operations/integration-health.ts --test-coverage-include src/modules/operations/telemetry.ts --test-reporter=spec --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-asset-security-spec.log --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-asset-security.lcov --test scripts/probe-asset-security.ts",
+      "startAt": "2026-10-15T10:23:28.704Z",
+      "endAt": "2026-10-15T10:23:41.045Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-verification-20261015/probe-asset-security-spec.log",
+      "note": "Fresh disposable local database; fixture-only environment and fake provider transport. This does not prove other stage profiles."
+    },
+    {
+      "commandId": "m4-local-probe-outbox-lease",
+      "invocation": "node --experimental-strip-types --experimental-test-coverage --test-concurrency=1 --test-coverage-include src/modules/generation/** --test-coverage-include src/modules/assets/** --test-coverage-include src/adapters/providers/** --test-coverage-include src/adapters/storage/** --test-coverage-include src/adapters/tasks/** --test-coverage-include src/trigger/** --test-coverage-include src/config/provider-models.ts --test-coverage-include src/config/provider-worker.ts --test-coverage-include src/config/models.ts --test-coverage-include src/modules/operations/integration-health.ts --test-coverage-include src/modules/operations/telemetry.ts --test-reporter=spec --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-outbox-lease-spec.log --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-outbox-lease.lcov --test scripts/probe-outbox-lease.ts",
+      "startAt": "2026-10-15T10:23:41.045Z",
+      "endAt": "2026-10-15T10:23:41.857Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-verification-20261015/probe-outbox-lease-spec.log",
+      "note": "Fresh disposable local database; fixture-only environment and fake provider transport. This does not prove other stage profiles."
+    },
+    {
+      "commandId": "m4-local-probe-m3-recovery",
+      "invocation": "node --experimental-strip-types --experimental-test-coverage --test-concurrency=1 --test-coverage-include src/modules/generation/** --test-coverage-include src/modules/assets/** --test-coverage-include src/adapters/providers/** --test-coverage-include src/adapters/storage/** --test-coverage-include src/adapters/tasks/** --test-coverage-include src/trigger/** --test-coverage-include src/config/provider-models.ts --test-coverage-include src/config/provider-worker.ts --test-coverage-include src/config/models.ts --test-coverage-include src/modules/operations/integration-health.ts --test-coverage-include src/modules/operations/telemetry.ts --test-reporter=spec --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-m3-recovery-spec.log --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-m3-recovery.lcov --test scripts/probe-m3-recovery.ts",
+      "startAt": "2026-10-15T10:23:41.857Z",
+      "endAt": "2026-10-15T10:23:43.673Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-verification-20261015/probe-m3-recovery-spec.log",
+      "note": "Fresh disposable local database; fixture-only environment and fake provider transport. This does not prove other stage profiles."
+    },
+    {
+      "commandId": "m4-local-probe-credit-ledger",
+      "invocation": "node --experimental-strip-types --experimental-test-coverage --test-concurrency=1 --test-coverage-include src/modules/generation/** --test-coverage-include src/modules/assets/** --test-coverage-include src/adapters/providers/** --test-coverage-include src/adapters/storage/** --test-coverage-include src/adapters/tasks/** --test-coverage-include src/trigger/** --test-coverage-include src/config/provider-models.ts --test-coverage-include src/config/provider-worker.ts --test-coverage-include src/config/models.ts --test-coverage-include src/modules/operations/integration-health.ts --test-coverage-include src/modules/operations/telemetry.ts --test-reporter=spec --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-credit-ledger-spec.log --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-credit-ledger.lcov --test scripts/probe-credit-ledger.ts",
+      "startAt": "2026-10-15T10:23:43.673Z",
+      "endAt": "2026-10-15T10:23:44.587Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-verification-20261015/probe-credit-ledger-spec.log",
+      "note": "Fresh disposable local database; fixture-only environment and fake provider transport. This does not prove other stage profiles."
+    },
+    {
+      "commandId": "m4-local-probe-credit-reservation",
+      "invocation": "node --experimental-strip-types --experimental-test-coverage --test-concurrency=1 --test-coverage-include src/modules/generation/** --test-coverage-include src/modules/assets/** --test-coverage-include src/adapters/providers/** --test-coverage-include src/adapters/storage/** --test-coverage-include src/adapters/tasks/** --test-coverage-include src/trigger/** --test-coverage-include src/config/provider-models.ts --test-coverage-include src/config/provider-worker.ts --test-coverage-include src/config/models.ts --test-coverage-include src/modules/operations/integration-health.ts --test-coverage-include src/modules/operations/telemetry.ts --test-reporter=spec --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-credit-reservation-spec.log --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-credit-reservation.lcov --test scripts/probe-credit-reservation.ts",
+      "startAt": "2026-10-15T10:23:44.587Z",
+      "endAt": "2026-10-15T10:23:45.700Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-verification-20261015/probe-credit-reservation-spec.log",
+      "note": "Fresh disposable local database; fixture-only environment and fake provider transport. This does not prove other stage profiles."
+    },
+    {
+      "commandId": "m4-local-probe-credit-refund",
+      "invocation": "node --experimental-strip-types --experimental-test-coverage --test-concurrency=1 --test-coverage-include src/modules/generation/** --test-coverage-include src/modules/assets/** --test-coverage-include src/adapters/providers/** --test-coverage-include src/adapters/storage/** --test-coverage-include src/adapters/tasks/** --test-coverage-include src/trigger/** --test-coverage-include src/config/provider-models.ts --test-coverage-include src/config/provider-worker.ts --test-coverage-include src/config/models.ts --test-coverage-include src/modules/operations/integration-health.ts --test-coverage-include src/modules/operations/telemetry.ts --test-reporter=spec --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-credit-refund-spec.log --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-credit-refund.lcov --test scripts/probe-credit-refund.ts",
+      "startAt": "2026-10-15T10:23:45.700Z",
+      "endAt": "2026-10-15T10:23:46.894Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-verification-20261015/probe-credit-refund-spec.log",
+      "note": "Fresh disposable local database; fixture-only environment and fake provider transport. This does not prove other stage profiles."
+    },
+    {
+      "commandId": "m4-local-probe-generation-replay",
+      "invocation": "node --experimental-strip-types --experimental-test-coverage --test-concurrency=1 --test-coverage-include src/modules/generation/** --test-coverage-include src/modules/assets/** --test-coverage-include src/adapters/providers/** --test-coverage-include src/adapters/storage/** --test-coverage-include src/adapters/tasks/** --test-coverage-include src/trigger/** --test-coverage-include src/config/provider-models.ts --test-coverage-include src/config/provider-worker.ts --test-coverage-include src/config/models.ts --test-coverage-include src/modules/operations/integration-health.ts --test-coverage-include src/modules/operations/telemetry.ts --test-reporter=spec --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-generation-replay-spec.log --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-generation-replay.lcov --test scripts/probe-generation-replay.ts",
+      "startAt": "2026-10-15T10:23:46.894Z",
+      "endAt": "2026-10-15T10:23:48.419Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-verification-20261015/probe-generation-replay-spec.log",
+      "note": "Fresh disposable local database; fixture-only environment and fake provider transport. This does not prove other stage profiles."
+    },
+    {
+      "commandId": "m4-local-probe-provider-recovery",
+      "invocation": "node --experimental-strip-types --experimental-test-coverage --test-concurrency=1 --test-coverage-include src/modules/generation/** --test-coverage-include src/modules/assets/** --test-coverage-include src/adapters/providers/** --test-coverage-include src/adapters/storage/** --test-coverage-include src/adapters/tasks/** --test-coverage-include src/trigger/** --test-coverage-include src/config/provider-models.ts --test-coverage-include src/config/provider-worker.ts --test-coverage-include src/config/models.ts --test-coverage-include src/modules/operations/integration-health.ts --test-coverage-include src/modules/operations/telemetry.ts --test-reporter=spec --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-provider-recovery-spec.log --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-provider-recovery.lcov --test scripts/probe-provider-recovery.ts",
+      "startAt": "2026-10-15T10:23:48.419Z",
+      "endAt": "2026-10-15T10:23:48.751Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-verification-20261015/probe-provider-recovery-spec.log",
+      "note": "Fresh disposable local database; fixture-only environment and fake provider transport. This does not prove other stage profiles."
+    },
+    {
+      "commandId": "m4-local-probe-m3-crash-restart",
+      "invocation": "node --experimental-strip-types --experimental-test-coverage --test-concurrency=1 --test-coverage-include src/modules/generation/** --test-coverage-include src/modules/assets/** --test-coverage-include src/adapters/providers/** --test-coverage-include src/adapters/storage/** --test-coverage-include src/adapters/tasks/** --test-coverage-include src/trigger/** --test-coverage-include src/config/provider-models.ts --test-coverage-include src/config/provider-worker.ts --test-coverage-include src/config/models.ts --test-coverage-include src/modules/operations/integration-health.ts --test-coverage-include src/modules/operations/telemetry.ts --test-reporter=spec --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-m3-crash-restart-spec.log --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\.tmp\\m4-local-verification-20261015\\2026-10-15T10-22-51-131Z\\probe-m3-crash-restart.lcov --test scripts/probe-m3-crash-restart.ts",
+      "startAt": "2026-10-15T10:23:48.751Z",
+      "endAt": "2026-10-15T10:24:21.310Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-verification-20261015/probe-m3-crash-restart-spec.log",
+      "note": "Fresh disposable local database; fixture-only environment and fake provider transport. This does not prove other stage profiles."
+    },
+    {
+      "commandId": "self-hosted-default-full-verification",
+      "invocation": "corepack pnpm run verify",
+      "startAt": "2026-10-15T14:12:25.099Z",
+      "endAt": "2026-10-15T14:12:53.539Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/verify-full-post-local-fixtures-20261015.log",
+      "note": "Current local configuration/source verification only, not external profile or stage-specific acceptance."
     }
   ],
   "coverage": {
@@ -1269,31 +1444,33 @@
     "carriedEvidence": []
   },
   "candidateRefresh": {
-    "capturedAt": "2026-10-15T09:40:08.426Z",
-    "candidateId": "m6-verification-20261015",
+    "capturedAt": "2026-10-15T14:12:24.973Z",
+    "candidateId": "m6-local-fixtures-20261015",
     "source": "node scripts/candidate-digests.mjs",
     "status": "CURRENT_BYTES_CAPTURED_IN_PROGRESS",
     "fullStageAcceptance": false,
-    "reason": "Current digest capture and selected rerun evidence only; historical commands are explicitly unrerun, with no stage-equivalence or approval claim.",
-    "evidenceRef": "internal/evidence/M4/task-5.10/railway-worker/candidate-digest-20261015.json"
+    "reason": "M4-only local fixtures and measured owned branch coverage are current; unrerun stage-specific profiles remain historical, with no stage-equivalence or approval claim.",
+    "evidenceRef": "internal/evidence/M4/task-5.10/railway-worker/m4-local-fixture-candidate-20261015.json"
   },
   "commandEvidenceApplicability": {
     "currentExecutionCommandIds": [
-      "typecheck",
-      "lint",
-      "format-check",
-      "verify-config",
-      "verify-db-boundary",
-      "verify-m2-foundation",
-      "verify-local-services",
-      "verify-shells",
-      "verify-content-boundaries",
-      "verify-openspec",
-      "frozen-lock-install",
-      "production-build",
-      "contracts-provider-inputs",
-      "contracts-billing-contracts",
-      "verify-root"
+      "m4-local-contracts-and-units",
+      "m4-local-provider-worker-integration",
+      "m4-local-probe-generation-create",
+      "m4-local-probe-generation-lifecycle",
+      "m4-local-probe-generation-races",
+      "m4-local-probe-assets",
+      "m4-local-probe-asset-cleanup",
+      "m4-local-probe-asset-security",
+      "m4-local-probe-outbox-lease",
+      "m4-local-probe-m3-recovery",
+      "m4-local-probe-credit-ledger",
+      "m4-local-probe-credit-reservation",
+      "m4-local-probe-credit-refund",
+      "m4-local-probe-generation-replay",
+      "m4-local-probe-provider-recovery",
+      "m4-local-probe-m3-crash-restart",
+      "self-hosted-default-full-verification"
     ],
     "historicalCommandsNotRerun": [
       "candidate-before",
@@ -1338,7 +1515,22 @@
       "m7-docs-export-local",
       "m8-export-boundaries-local",
       "full-local-regression",
-      "m8-local-preflight"
+      "m8-local-preflight",
+      "typecheck",
+      "lint",
+      "format-check",
+      "verify-config",
+      "verify-db-boundary",
+      "verify-m2-foundation",
+      "verify-local-services",
+      "verify-shells",
+      "verify-content-boundaries",
+      "verify-openspec",
+      "frozen-lock-install",
+      "production-build",
+      "contracts-provider-inputs",
+      "contracts-billing-contracts",
+      "verify-root"
     ],
     "note": "Fresh candidate capture does not approve historical command equivalence or any stage criterion; whole-stage review remains NOT_RUN."
   }

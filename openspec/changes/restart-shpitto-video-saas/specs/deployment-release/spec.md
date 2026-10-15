@@ -40,14 +40,14 @@ Trace: D01, D16, D29, D30, J1, J9, T46, T47, T55, T58, G01, G16, G29, G30. Tasks
 
 ### Requirement: REQ-REL-03 Two concrete production deployment paths
 
-The release SHALL document and verify Vercel web with Neon PostgreSQL 17, private Cloudflare R2, Trigger.dev Cloud and Resend as its managed reference. It SHALL also support a multi-stage Next standalone Docker application image using the same external database/storage/Trigger/mail contracts, including required public and .next/static output. Buyers SHALL supply their own accounts and secrets. Docker support MUST NOT imply self-hosting all production infrastructure.
+The release SHALL document and verify Vercel web with Neon PostgreSQL 17, private Cloudflare R2 and Resend as its managed reference, with the buyer-owned provider worker as the default task runtime. Trigger.dev Cloud MAY be selected as an optional managed task-runtime profile. It SHALL also support a multi-stage Next standalone Docker application image using the same external database/storage/mail contracts and either supported task runtime, including required public and .next/static output. Buyers SHALL supply their own accounts and secrets. Docker support MUST NOT imply self-hosting all production infrastructure.
 
 Trace: D01, D07, D15, J9, T47, T48, T62, G01, G07, G15, G31. Tasks: 9.5, 9.6, 9.7, 9.14, 9.15.
 
 #### Scenario: SC-REL-05 Deploy the managed reference
 
 - **WHEN** a buyer follows the managed guide using the clean release and buyer-owned accounts
-- **THEN** web, database migrations, Trigger schedules/workers, private storage, mail and configured callbacks work with explicit prerequisites and recorded versions; generation never holds an HTTP request until completion
+- **THEN** web, database migrations, the selected worker runtime, private storage, mail and configured callbacks work with explicit prerequisites and recorded versions; generation never holds an HTTP request until completion
 
 #### Scenario: SC-REL-06 Run the Docker application
 

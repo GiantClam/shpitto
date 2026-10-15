@@ -53,6 +53,13 @@ test('changing mandatory traceability mappings invalidates contract and validato
     const registryAfter = run(fixture);
     assert.notEqual(registryAfter.configurationSha256, decisionAfter.configurationSha256);
     assert.notEqual(registryAfter.validatorSha256, decisionAfter.validatorSha256);
+    const runtimeConfig = path.join(fixture, 'src/config/task-runtime.ts');
+    writeFileSync(runtimeConfig, 'export const mode = "self_hosted";\n', 'utf8');
+    const runtimeBefore = run(fixture);
+    writeFileSync(runtimeConfig, 'export const mode = "trigger";\n', 'utf8');
+    const runtimeAfter = run(fixture);
+    assert.notEqual(runtimeAfter.configurationSha256, runtimeBefore.configurationSha256, 'Task-runtime behavior is part of the configuration footprint.');
+    assert.notEqual(runtimeAfter.sourceTreeSha256, runtimeBefore.sourceTreeSha256);
   } finally {
     rmSync(fixture, {recursive: true, force: true});
   }

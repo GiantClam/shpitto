@@ -24,6 +24,12 @@ import {authorizeAsset} from '../../src/modules/assets/authorize.ts';
 import {claimOutbox} from '../../src/modules/generation/outbox.ts';
 import {adoptVerifiedProviderRequest, beginProviderSubmission, claimDispatch, settleGenerationTask} from '../../src/modules/generation/lifecycle.ts';
 import {drainTerminalProviderWebhookInbox, processProviderWebhook, ingestProviderWebhook} from '../../src/modules/generation/provider-webhooks.ts';
+import {getProviderModel} from '../../src/config/provider-models.ts';
+import {dispatchGeneration} from '../../src/trigger/dispatch.ts';
+import {runOutboxPumpOnce} from '../../src/trigger/outbox.ts';
+import {reconcileProviderRequest} from '../../src/trigger/reconcile.ts';
+import {runRecoverySweep, startRecoverySchedule} from '../../src/trigger/sweep-recovery.ts';
+import {runGenerationTrigger} from '../../src/adapters/tasks/trigger.ts';
 
 const databaseName = `shpitto_worker_probe_${randomUUID().replaceAll('-', '')}`;
 let database: DatabaseHandle;
@@ -97,6 +103,72 @@ async function snapshot(f: Awaited<ReturnType<typeof fixture>>) {
   return rows.rows[0];
 }
 const materialize: NonNullable<Parameters<typeof runProviderWorkerOnce>[1]['materialize']> = (db, input) => materializeOutput(db, {...input, bytes, mime: 'video/mp4'});
+
+test('thin Trigger entrypoints preserve durable dispatch, exact reconciliation and terminal recovery', async () => {
+  const f = await fixture();
+  let dispatchCalls = 0;
+  const pumped = await runGenerationTrigger(database.db, {
+    owner: 'trigger-entrypoint-fixture', workspaceId: f.workspaceId, now: f.now,
+    handle: async (lease) => {
+      dispatchCalls++;
+      assert.equal(lease.eventType, 'generation.dispatch');
+      const dispatch = await dispatchGeneration(database.db, {actor: {userId: f.userId}, workspaceId: f.workspaceId,
+        taskId: f.taskId, idempotencyKey: `trigger-dispatch-${f.taskId}`, provider: 'replicate', outboxLease: lease, now: f.now});
+      assert.equal(dispatch.value.status, 'dispatching');
+      return 'ack';
+    },
+  });
+  assert.deepEqual(pumped, {claimed: true, outcome: 'published'});
+  assert.equal(dispatchCalls, 1);
+  assert.equal((await snapshot(f)).status, 'dispatching');
+  assert.deepEqual(await runGenerationTrigger(database.db, {workspaceId: f.workspaceId, now: f.now, handle: async () => {
+    assert.fail('Acknowledged dispatch must not be scheduled again.');
+  }}), {claimed: false});
+
+  let reads = 0;
+  const provider = createReplicateProvider({mode: 'test', transport: {async request(request) {
+    assert.equal(request.method, 'GET', 'Reconciliation must never call provider create.');
+    assert.equal(request.url, 'https://api.replicate.com/v1/predictions/trigger-owned-request');
+    assert.equal(request.retry, false);
+    reads++;
+    return {status: 200, body: {id: 'trigger-owned-request', status: 'processing'}};
+  }}});
+  const catalog = getProviderModel('replicate-wan22-t2v');
+  const observation = await reconcileProviderRequest(provider, {provider: 'replicate', modelKey: catalog.modelKey, requestId: 'trigger-owned-request', catalog});
+  assert.equal(observation.status, 'running');
+  assert.equal(reads, 1);
+  const overdue = new Date(f.now.getTime() + 91 * 60_000);
+  assert.ok((await runRecoverySweep(database.db, overdue)).failed >= 1);
+  assert.equal((await snapshot(f)).reservation, 'released');
+  assert.equal((await snapshot(f)).available, '100');
+  assert.equal((await runRecoverySweep(database.db, overdue)).failed, 0);
+
+  let stop: (() => Promise<void>) | undefined;
+  try {
+    const completed = new Promise<void>((resolve, reject) => {
+      stop = startRecoverySchedule({db: database.db, intervalMs: 60_000, now: () => overdue,
+        onResult: (result) => { assert.equal(result.failed, 0); resolve(); }, onError: reject});
+    });
+    await completed;
+  } finally { await stop?.(); }
+});
+
+test('Trigger outbox release, failure and thrown handlers preserve lease and reservation boundaries', async () => {
+  for (const outcome of ['release', 'fail', 'throw'] as const) {
+    const f = await fixture();
+    const input = {owner: `trigger-${outcome}`, workspaceId: f.workspaceId, eventType: 'generation.dispatch', now: f.now,
+      handle: async () => {
+        if (outcome === 'throw') throw new Error('controlled-handler-fault');
+        return outcome;
+      }};
+    if (outcome === 'throw') await assert.rejects(() => runOutboxPumpOnce(database.db, input), /controlled-handler-fault/);
+    else assert.deepEqual(await runOutboxPumpOnce(database.db, input), {claimed: true, outcome: outcome === 'release' ? 'released' : 'failed'});
+    const events = await database.pool.query('select status, lease_owner from app.outbox_events where workspace_id=$1 and event_type=$2', [f.workspaceId, 'generation.dispatch']);
+    assert.equal(events.rows[0].status, outcome === 'fail' ? 'failed' : 'pending');
+    assert.equal(events.rows[0].lease_owner, null);
+    assert.equal((await snapshot(f)).reservation, 'active', 'Runner scheduling outcomes are not task settlement.');
+  }
+});
 
 for (const modelKey of ['replicate-wan22-t2v', 'replicate-wan22-i2v', 'fal-wan22-t2v', 'fal-wan22-i2v']) test(`${modelKey} is submitted once, materialized privately and settles UNKNOWN cost`, async () => {
   const f = await fixture(modelKey);
@@ -254,4 +326,30 @@ test('JPEG image2 support does not permit a forged PNG MIME declaration', async 
   const path = join(root, `mime-fixture-${randomUUID()}.jpg`);
   execFileSync('ffmpeg', ['-v', 'error', '-f', 'lavfi', '-i', 'color=c=blue:s=1280x720', '-frames:v', '1', '-threads', '1', path], {timeout: 15_000, windowsHide: true});
   await assert.rejects(async () => uploadInputAsset(database.db, {actor: {userId: f.userId}, workspaceId: f.workspaceId, store: f.store, bytes: new Uint8Array(await readFile(path)), mime: 'image/png', now: f.now}), /decoded safely/);
+});
+
+test('self-hosted restart drains a multi-batch overdue backlog before any provider transport', async () => {
+  const f = await fixture();
+  await issueGrant(database.db, {actorUserId: f.userId, workspaceId: f.workspaceId, commandName: 'worker-fixture.backlog', commandKey: randomUUID(), businessKey: randomUUID(), source: 'demo', amount: 1000n, payload: {fixture: true}});
+  const ids: string[] = [];
+  for (let i = 0; i < 101; i++) {
+    const task = await createGenerationTask(database.db, {actor: {userId: f.userId}, workspaceId: f.workspaceId,
+      idempotencyKey: randomUUID(), quote: createServerQuote('replicate-wan22-t2v', '1', {profile: 'acceptance', now: f.now}),
+      profile: 'acceptance', acceptanceWorkspaceId: f.workspaceId, input: {prompt: 'Overdue restoration fixture', options: {aspectRatio: '16:9'}}, now: f.now});
+    ids.push(task.value.taskId);
+  }
+  await database.pool.query(`update app.generation_tasks set deadline_at=$1,queue_deadline_at=$1 where id=any($2::uuid[]) and workspace_id=$3`, [new Date(f.now.getTime() - 1), ids, f.workspaceId]);
+  let calls = 0;
+  const providerFactory: NonNullable<Parameters<typeof runProviderWorkerOnce>[1]['providerFactory']> = () => createReplicateProvider({mode: 'live', token: 'fixture', acceptanceScope: {workspaceId: f.workspaceId, modelKeys: f.config.modelKeys}, transport: {async request() {
+    calls++;
+    const pending = await database.pool.query(`select count(*)::int as count from app.generation_tasks where id=any($1::uuid[]) and status not in ('failed','succeeded','cancelled')`, [ids]);
+    assert.equal(pending.rows[0].count, 0, 'All overdue batches must settle before the first network operation.');
+    return {status: 422, body: {detail: 'Deterministic fixture rejection'}};
+  }}});
+  await runProviderWorkerOnce(database.db, {...f, owner: 'restored-self-hosted-worker', now: f.now, providerFactory, materialize});
+  const released = await database.pool.query(`select count(*)::int as count from app.credit_reservations where task_id=any($1::uuid[]) and status='released'`, [ids]);
+  assert.equal(released.rows[0].count, 101);
+  assert.equal(calls, 1);
+  await runProviderWorkerOnce(database.db, {...f, owner: 'second-restored-worker', now: f.now, providerFactory, materialize});
+  assert.equal(calls, 1, 'Restart does not resubmit already terminal work.');
 });

@@ -101,14 +101,14 @@ The listed G IDs are supported by each phase. Complete release closure still req
 
 ### M4 — Four real generation paths and production recovery (task 5.10)
 
-**Entry:** M3 PASS; tasks 5.1–5.9 complete; qualified accounts and bounded spend authorized. **Submitter:** integration owner. **Reviewer:** independent integration/recovery reviewer. **Environment:** actual Replicate and fal accounts, Trigger and private S3-compatible storage; safe deterministic fault fixtures alongside live success evidence.
+**Entry:** M3 PASS; tasks 5.1–5.9 complete; qualified accounts and bounded spend authorized. **Submitter:** integration owner. **Reviewer:** independent integration/recovery reviewer. **Environment:** actual Replicate and fal accounts, a buyer-owned provider worker or the optional Trigger runtime, and private S3-compatible storage; safe deterministic fault fixtures alongside live success evidence.
 
 **Mandatory criteria**
 
 1. Replicate T2V, Replicate I2V, fal T2V and fal I2V each produce at least one playable, validated, owned output. For all four, record endpoint/version/schema, request/attempt ID, input/output digest, duration, credits, cost status and successful authorized download. Unknown provider cost stays unknown.
 2. Authentic callbacks and authenticated polling normalize correctly. Forged/stale/wrong-account callbacks fail; duplicate and reordered observations cannot produce duplicate financial effects. All output candidates pass bounded ingestion and integrity checks.
-3. Unknown submission has no blind create retry; maximum 24 probes/60-minute deadline and 30-minute alert are configured. Queue deadline 10 minutes, known inference 60 minutes, materialization 30 minutes/eight attempts, overall 90 minutes hold without retry resetting them. Independent Trigger sweep/lease recovery works; total-outage limits are disclosed and restored overdue work is settled first.
-4. Storage failure after provider success, expired output, stale worker acknowledgements and late output after refund pass the real adapters' contract/fault suites. At least one controlled production-runner restart/recovery drill uses a fixture or an already authorized request, without deliberate extra paid generation.
+3. Unknown submission has no blind create retry; maximum 24 probes/60-minute deadline and 30-minute alert are configured. Queue deadline 10 minutes, known inference 60 minutes, materialization 30 minutes/eight attempts, overall 90 minutes hold without retry resetting them. Independent self-hosted or Trigger sweep/lease recovery works for the selected task runtime; total-outage limits are disclosed and restored overdue work is settled first.
+4. Storage failure after provider success, expired output, stale worker acknowledgements and late output after refund pass the real adapters' contract/fault suites. At least one controlled self-hosted worker or configured Trigger-runner restart/recovery drill uses a fixture or an already authorized request, without deliberate extra paid generation.
 
 **Evidence:** four-row real-provider matrix; PRV scenarios, production GEN profiles; T11–T20/T22/T49/T53 relevant cases; actual media and private object integrity proof. **Gate effect:** supports G03/G10 and real-generation profiles. Unavailable account/budget or one missing row means BLOCKED/FAIL, never a three-of-four pass.
 

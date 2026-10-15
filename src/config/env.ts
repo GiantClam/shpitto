@@ -1,4 +1,5 @@
 import {parseProviderWorkerConfig, type ProviderWorkerConfig} from './provider-worker.ts';
+import {parseTaskRuntime, type TaskRuntime, type TaskRuntimeConfig} from './task-runtime.ts';
 
 const SAMPLE_VALUES = new Set([
   '',
@@ -40,6 +41,9 @@ type ServerEnv = Readonly<{
   affiliateReferralSecret: string;
   affiliateWebhookSecret: string;
   affiliateProgramId: string;
+  taskRuntime: TaskRuntime;
+  triggerProjectRef: string;
+  triggerSecretKey: string;
 }>;
 
 function read(name: string): string {
@@ -81,6 +85,7 @@ export function getServerEnv(): ServerEnv {
     affiliateWebhookSecret: read('AFFILIATE_WEBHOOK_SECRET'),
     affiliateProgramId: read('AFFILIATE_PROGRAM_ID'),
   };
+  const taskRuntime: TaskRuntimeConfig = parseTaskRuntime({mode: read('TASK_RUNTIME'), triggerProjectRef: read('TRIGGER_PROJECT_REF'), triggerSecretKey: read('TRIGGER_SECRET_KEY')});
 
   if (nodeEnv === 'production') {
     if (values.storageDriver === 'local') throw new Error('Production STORAGE_DRIVER (storageDriver) must use the private S3-compatible driver.');
@@ -116,7 +121,7 @@ export function getServerEnv(): ServerEnv {
     }
   }
 
-  return Object.freeze({nodeEnv, runtimeProfile, ...values, mailHttpUrl: read('MAIL_HTTP_URL') || 'http://localhost:8025'});
+  return Object.freeze({nodeEnv, runtimeProfile, ...values, taskRuntime: taskRuntime.mode, triggerProjectRef: taskRuntime.triggerProjectRef, triggerSecretKey: taskRuntime.triggerSecretKey, mailHttpUrl: read('MAIL_HTTP_URL') || 'http://localhost:8025'});
 }
 
 /** Resolve the demo-funding guard without forcing unrelated production secrets during tests. */
@@ -130,7 +135,7 @@ export function getRuntimeProfile(): 'local' | 'acceptance' | 'production' {
 /** Worker controls are server-only and paused unless explicitly bound to an isolated project/workspace. */
 export function getProviderWorkerConfig(): ProviderWorkerConfig {
   const env = getServerEnv();
-  return parseProviderWorkerConfig({runtimeProfile: env.runtimeProfile, generationDriver: env.generationDriver, storageDriver: env.storageDriver,
+  return parseProviderWorkerConfig({runtimeProfile: env.runtimeProfile, generationDriver: env.generationDriver, storageDriver: env.storageDriver, taskRuntime: env.taskRuntime,
     railwayProjectId: read('RAILWAY_PROJECT_ID'), expectedProjectId: read('SHPITTO_PROVIDER_WORKER_PROJECT_ID'), workspaceId: read('SHPITTO_PROVIDER_WORKER_WORKSPACE_ID'),
     state: read('SHPITTO_PROVIDER_WORKER_STATE'), allowCreate: read('SHPITTO_PROVIDER_WORKER_ALLOW_CREATE'), modelKeys: read('SHPITTO_PROVIDER_WORKER_MODEL_KEYS'), pollMs: read('SHPITTO_PROVIDER_WORKER_POLL_MS')});
 }

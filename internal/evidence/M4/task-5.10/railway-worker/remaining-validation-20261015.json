@@ -72,9 +72,10 @@
     },
     {
       "id": "HOSTED_TRIGGER",
-      "status": "OPEN",
-      "details": "No Trigger project/credential configuration or hosted one-minute sweep/lease/deadline/alert/recovery evidence. Railway health is a distinct profile.",
-      "implementationGap": "No trigger.config.ts; hosted dispatch/reconciliation and independent sweep task/schedule registration and deployment wiring remain unfinished. Credentials alone cannot close this profile."
+      "status": "OPTIONAL_NOT_RUN",
+      "details": "Future optional hosted profile only. Missing Trigger credentials/deployment does not block the selected self-hosted baseline.",
+      "implementationGap": "No trigger.config.ts; hosted dispatch/reconciliation and independent sweep task/schedule registration and deployment wiring remain unfinished. Credentials alone cannot close this profile.",
+      "requiredForSelectedRuntime": false
     },
     {
       "id": "WHOLE_STAGE_APPLICABILITY",
@@ -85,6 +86,12 @@
       "id": "M4_WHOLE_STAGE_REVIEW",
       "status": "OPEN",
       "details": "Independent whole-stage review and integrator approval are NOT_RUN; M4 task 5.10 remains unchecked."
+    },
+    {
+      "id": "SELECTED_SELF_HOSTED_RUNTIME",
+      "status": "OPEN",
+      "requiredForSelectedRuntime": true,
+      "details": "Current selected-runtime deployment/restart/overdue-first evidence and independently persisted recovery heartbeat/external alert delivery remain required; local loop/controller fixtures are not deployment proof."
     }
   ],
   "auditRef": "internal/evidence/M4/task-5.10/railway-worker/whole-stage-audit-20261015.md",
@@ -106,5 +113,18 @@
     "findings": "Historical Docker overclaim, stale candidate-refresh metadata and initial audit inventory required correction.",
     "integratorDisposition": "CORRECTED_REPORTING_ONLY",
     "evidenceRef": "internal/evidence/M4/task-5.10/railway-worker/whole-stage-audit-20261015.md"
+  },
+  "subsequentLocalVerification": {
+    "evidenceRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+    "status": "PASS_LOCAL_VERIFICATION_ONLY",
+    "fullM4Acceptance": false,
+    "resolution": "Current owned M4 branch coverage is now measured and passes. This supersedes only the earlier coverage NOT_RUN gap, not hosted/provider/current-M3/whole-stage obligations."
+  },
+  "runtimeAmendment": {
+    "date": "2026-10-15",
+    "selected": "self_hosted",
+    "optionalTrigger": "NOT_EXECUTABLE_NOT_REQUIRED_FOR_BASELINE",
+    "codeDeployment": "NOT_RUN_CURRENT_LOCAL_CANDIDATE",
+    "evidenceRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json"
   }
 }

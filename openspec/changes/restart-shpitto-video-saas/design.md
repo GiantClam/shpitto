@@ -28,9 +28,9 @@ Authority: explicit product decisions → capability behavior and this design �
 | Data/identity | PostgreSQL 17; Drizzle ORM 0.45.3/Kit 0.31.11; pg 8.23.0; Better Auth and Drizzle adapter 1.7.6 | M0/M2 schema generation, reviewed SQL, session/domain integration |
 | Operations/Docs | React-admin OSS 5.15.4; Fumadocs core/ui 16.15.14, MDX 15.4.5 | M0 adapter/build/license slice; M6/M7 behavior |
 | UI/validation | Tailwind/PostCSS 4.3.3; selected shadcn CLI 4.21.0 with copied source provenance; Zod 4.6.5 | M0/M1 source/version/license inventory |
-| Billing/jobs | Stripe 22.6.2; Trigger SDK/build 4.6.4 | M0 contract verification; M4/M5 recovery evidence |
+| Billing/jobs | Stripe 22.6.2; buyer-owned provider worker and recovery loops by default; Trigger SDK/build 4.6.4 as an optional adapter | M0 contract verification; M4/M5 recovery evidence |
 | Storage/mail/media | AWS S3 client/presigner 3.1141.0; Resend 6.30.0; Nodemailer 10.0.10; sharp 0.35.4; worker FFmpeg/ffprobe 7.x | M0 pin media builds/checksums/notices; M3/M4 ingest evidence |
-| Production | Vercel + Neon PostgreSQL 17 + private R2 + Trigger.dev Cloud + Resend; Docker web supports the same contracts | M8 clean export deployment evidence |
+| Production | Vercel + Neon PostgreSQL 17 + private R2 + Resend with a buyer-owned worker by default; Trigger.dev Cloud is an optional managed task-runtime profile | M8 clean export deployment evidence |
 | External products | Replicate/fal.ai four Wan 2.2 paths; buyer FirstPromoter V2; vendor Lemon Squeezy | Endpoint/model register in baseline §10; M4/M6/M8 account-backed evidence |
 
 These are selected versions from the prior design, not freshly installed or verified in this planning task. M0 checks availability, exact lock resolution, license compatibility and upstream changes. Version replacements require a recorded reason and relevant contract regression evidence. Media tool patch/build and testing-tool exact patches are intentionally fixed by the first reviewed lock/build manifest, not guessed here.
@@ -55,7 +55,15 @@ flowchart LR
   DOC --> SALES[Separate vendor sales / Docs]
 ```
 
-`src/app` only validates/authenticates/authorizes and maps DTOs. `src/modules/{workspaces,credits,generation,assets,billing,affiliates,operations}` owns rules; adapters own external protocol translation. Domain code cannot import React, Next request objects or Trigger SDKs; browser code cannot import database/secrets/privileged adapters. `trigger/` and `scripts/local-worker.ts` invoke the same commands.
+`src/app` only validates/authenticates/authorizes and maps DTOs. `src/modules/{workspaces,credits,generation,assets,billing,affiliates,operations}` owns rules; adapters own external protocol translation. Domain code cannot import React, Next request objects or Trigger SDKs; browser code cannot import database/secrets/privileged adapters. The buyer-owned worker is the default task runtime; the optional `trigger/` registration and `src/adapters/tasks/trigger.ts` invoke the same commands without becoming domain authorities.
+
+### 3.1 E06 — Buyer-owned task runtime
+
+The default deployment SHALL run task dispatch, provider polling, callback inbox draining, overdue recovery and orphan cleanup in the buyer-owned provider worker. The worker SHALL use the persisted PostgreSQL outbox, leases, fencing and domain commands already shared by all execution paths. `TASK_RUNTIME=self_hosted` is the default and does not require Trigger.dev credentials.
+
+Trigger.dev SHALL remain an optional task-runtime adapter rather than a required service. `TASK_RUNTIME=trigger` MAY be enabled only after scoped executable registration, configuration and deployment have been verified; project credentials alone do not establish an operational runtime. The current build rejects that selection explicitly. The future Trigger adapter SHALL call the same bounded domain commands and SHALL NOT create a second settlement, storage or authorization authority. An environment SHALL select exactly one task runtime; running the self-hosted worker and Trigger dispatcher for the same outbox scope is not a supported deployment.
+
+This user-approved amendment is dated 2026-10-15. It changes the default orchestration profile, not the generation, credit, provider, storage or webhook contracts. The current real-provider worker remains fenced to its isolated Railway acceptance project, private database and assigned workspace. Generic buyer-owned production/Docker deployment remains an M8 implementation and verification obligation; this amendment does not remove those fences or claim that release profile is operational.
 
 The full table/key/constraint register is baseline §4, including supplements §§6.4, 9.4, 10.7. Composite workspace keys prevent cross-tenant joins; money and credits are different integer quantities, JSON encoded as decimal strings. Auth IDs keep their native text representation. One reviewed Drizzle migration chain manages both auth and domain tables. Deploy migrations use the documented direct connection/advisory lock, never an HTTP request or second CMS migration engine.
 
@@ -120,7 +128,7 @@ Failure without usable delivered video refunds allocations once despite upstream
 | Materialization | 30 minutes; maximum 8 attempts | Private owned object with integrity/media proof |
 | Overall after dispatch | 90 minutes | No retry resets deadline; stale state advance rejected |
 
-Trigger sweeps every minute; local worker every ten seconds. Claim leases with owner/token/generation and compare-and-set completion; a reclaimed lease never grants a new paid-submit right. Sweep is independent of the original job but cannot run through total database/Trigger outage. On restore, expire overdue work before accepting progress. Heartbeat older than three minutes alerts. Boundary races, crashes and stale acknowledgements are required M3/M4 cases.
+The buyer-owned worker runs dispatch, inbox and cleanup loops continuously and runs the independent deadline sweep at least every sixty seconds; local development and the isolated Railway worker use a ten-second interval. A separately verified optional Trigger schedule may provide the same sweep. Claim leases with owner/token/generation and compare-and-set completion; a reclaimed lease never grants a new paid-submit right. Sweep is independent of the original job but cannot run through total database/runner outage. On restore, drain overdue work in bounded batches before accepting progress; an unfinished or nonprogressing backlog defers dispatch. Heartbeat older than three minutes alerts. Independent loop freshness affects readiness, but in-memory readiness alone does not prove durable external heartbeat/alert delivery. Boundary races, crashes and stale acknowledgements are required M3/M4 cases.
 
 ### 8. E04 — Deliberately bounded subscription lifecycle
 
@@ -172,11 +180,11 @@ Pre-mortems: (1) an unknown paid submission retried by a recovered worker double
 The fal.ai integration uses the provider-documented webhook protocol. Submission sends the final HTTPS callback URL through the queue request webhook parameter. The receiver verifies the raw request body with fal.ai JWKS keys from `https://rest.fal.ai/.well-known/jwks.json`, caches the key set for no more than 24 hours, validates the request ID, user identity, timestamp and signature headers, and acknowledges the inbox before asynchronous materialization or settlement. The receiver returns a bounded 2xx response quickly and treats duplicate deliveries as idempotent. Operators do not copy a PEM public key from the fal.ai console; the provider JWKS endpoint is the source of truth. Production provider catalog enablement remains separate from the acceptance profile and requires the M4 evidence gate.
 ### Isolated Railway provider worker
 
-The Railway Demo/acceptance deployment uses a separate Node worker process, not the local Mock worker or a new backend domain authority. It reuses the same PostgreSQL task/reservation/outbox commands, provider adapters and private S3-compatible storage. Activation requires an explicit acceptance profile, matching Railway project binding and a single workspace allowlist. New paid creates are disabled by default. Before any provider POST the worker persists a submission-start fence; a restarted or stale owner may only reconcile that attempt, never create again. Input capabilities cover only an already-authorized workspace image and expire within one hour. Outputs pass bounded download, media validation and ready-asset publication before settlement; missing provider costs remain UNKNOWN.
+The Railway Demo/acceptance deployment uses a separate Node worker process as the default self-hosted task runtime, not the local Mock worker or a new backend domain authority. It reuses the same PostgreSQL task/reservation/outbox commands, provider adapters and private S3-compatible storage. Activation requires an explicit acceptance profile, matching Railway project binding and a single workspace allowlist. New paid creates are disabled by default. Before any provider POST the worker persists a submission-start fence; a restarted or stale owner may only reconcile that attempt, never create again. Input capabilities cover only an already-authorized workspace image and expire within one hour. Outputs pass bounded download, media validation and ready-asset publication before settlement; missing provider costs remain UNKNOWN.
 
 An explicitly authorized one-shot acceptance probe may bootstrap an unconfirmed Fal account only in the isolated Demo project. It seeds a fresh workspace, enforces the approved preset and reference-price ceiling, persists a pre-POST fence and the exact API-returned request ID, and never retries an ambiguous paid create. Only a JWKS-verified callback correlated to that persisted request/attempt may establish the account binding. The ordinary worker paid-create guard remains unchanged; background creates remain disabled, and temporary recovery is restricted to that newly seeded workspace. Fixture authentication identities and unknown provider costs must remain explicitly labeled in evidence.
 
-Independent deadline sweep and workspace-scoped cleanup run outside dispatch polling. Worker startup applies migrations through the existing locked migration runner and fails closed on missing schema/media tools. Deployment health and fixture restart evidence do not imply real provider callbacks, real-account M4 completion or hosted Trigger acceptance; task 5.10 remains open until all existing mandatory evidence and independent review are current.
+Independent deadline sweep and workspace-scoped cleanup run outside dispatch polling. Worker startup applies migrations through the existing locked migration runner and fails closed on missing schema/media tools. Deployment health and fixture restart evidence do not imply real provider callbacks or real-account M4 completion; optional Trigger profile evidence is recorded separately and is not required when the self-hosted runtime is the selected profile. Task 5.10 remains open until all applicable mandatory evidence and independent review are current.
 
 ## Migration Plan
 
@@ -197,7 +205,7 @@ M8-RC, M8-BETA and M8-STABLE are separate checkpoints within existing task 9.15.
 
 ## Open Questions
 
-No unresolved behavior ambiguity is intentionally delegated to an implementation agent. E01-E05 are explicit selected review defaults; changing one updates its spec, scenarios, tasks and both language views before dependent implementation.
+No unresolved behavior ambiguity is intentionally delegated to an implementation agent. E01-E05 are explicit selected review defaults; E06 records the user-approved task-runtime amendment dated 2026-10-15. Changing one updates its spec, scenarios, tasks and applicable review surfaces before dependent implementation.
 
 Remaining inputs have scoped gates:
 

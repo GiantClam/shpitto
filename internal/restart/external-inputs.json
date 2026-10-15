@@ -6,7 +6,9 @@
   "recordingRules": [
     "Use separate local, sandbox/test-mode and live environment identifiers in every later acceptance record.",
     "Record non-secret account identity, region, entitlement and capped budget only; never store keys, webhook secrets, signed URLs or payment details.",
-    "A missing input blocks its dependent gate and preserves the disabled or deterministic fixture path where the specification allows one."
+    "A missing input blocks its dependent gate and preserves the disabled or deterministic fixture path where the specification allows one.",
+    "TASK_RUNTIME=self_hosted is the default. Trigger is an optional future direction; TASK_RUNTIME=trigger is rejected in this build even with credentials. Future Trigger prerequisites are not mandatory baseline M4 blockers for self-hosted execution.",
+    "The isolated Railway worker remains the only runnable real-provider runtime, not generic buyer production support or a proved M8 production entry. Historical receipts retain their original scope and do not establish optional hosted Trigger PASS."
   ],
   "inputs": [
     {
@@ -111,12 +113,36 @@
         "9.14",
         "9.15"
       ],
-      "purpose": "Vercel/managed PostgreSQL/private object storage/Trigger/Resend and Docker deployment accounts",
+      "purpose": "Vercel/managed PostgreSQL/private object storage/Resend, buyer-owned worker hosting and Docker deployment accounts; Trigger only after future optional-profile enablement",
       "environment": "local first; managed and Docker later",
       "status": "NOT_REQUIRED_FOR_M0",
-      "evidenceNeeded": "same-candidate managed and Docker clean deployment plus measured restore evidence at M8",
+      "evidenceNeeded": "Same-candidate managed and Docker clean deployment of the selected task runtime plus measured restore evidence at M8. The current isolated Railway acceptance worker does not establish generic buyer production support or a proved M8 production entry. Trigger deployment evidence applies only after future optional-profile enablement; selection is rejected in this build.",
       "budgetRequired": true,
-      "nextAction": "Define staging domains, service tier and capped validation budget before M8"
+      "nextAction": "Define staging domains, buyer-owned worker scope/connectivity, service tier and capped validation budget before M8; do not request Trigger credentials for the default self-hosted profile"
+    },
+    {
+      "id": "self-hosted-task-runtime",
+      "owner": "integration-owner/release-owner",
+      "requiredBy": ["5.5", "5.6", "5.10", "9.5", "9.14", "9.15"],
+      "purpose": "Default buyer-owned task runtime using shared generation domain commands, durable outbox, fenced leases, inbox processing and recovery",
+      "environment": "local fixtures and isolated Railway acceptance now; the isolated process is the only runnable real-provider runtime and generic buyer production remains pending",
+      "status": "ISOLATED_ACCEPTANCE_IMPLEMENTED_GENERIC_PRODUCTION_PENDING",
+      "evidenceNeeded": "Applicable selected-runtime recovery/provider and restoration evidence remains required, including a production scan interval at most 60 seconds, 60-second leases/20-second heartbeats and stale-owner rejection. Implemented: workspace-scoped drains of up to 10 batches of at most 100 overdue tasks, a no-progress guard, confirmed-empty gating of dispatch via recovery_pending, and independent successful freshness for dispatch/sweep/inbox/cleanup readiness. Local integration coverage asserts 101 overdue settlements before the first fake provider call and no duplicate POST on a second restart. Durable external heartbeat monitoring and alert delivery after three minutes without successful sweep completion remain unimplemented/unverified. Clean-export generic production deployment remains unverified.",
+      "budgetRequired": false,
+      "nextAction": "Keep Railway project/workspace/private-database fences and allowCreate=false for unapproved work. Complete scoped maintenance, durable external heartbeat monitoring/alert delivery and buyer production support without weakening domain contracts; verify selected-runtime restoration and clean-export deployment separately from local fixture coverage. Hosting authorization is tracked separately under runtime-hosting."
+    },
+    {
+      "id": "optional-trigger-task-runtime",
+      "owner": "integration-owner/release-owner",
+      "requiredBy": [],
+      "requiredWhen": "Future optional TASK_RUNTIME=trigger enablement only; that selection is rejected in this build even with credentials and is not required for baseline M4 when self_hosted is selected",
+      "conditionalTaskRefs": ["5.5", "5.6", "9.5", "9.14"],
+      "purpose": "Optional future managed task adapter, not a current executable option or a second domain, settlement or authorization authority",
+      "environment": "separately approved isolated hosted target only",
+      "status": "OPTIONAL_NOT_EXECUTABLE_NOT_DEPLOYED",
+      "evidenceNeeded": "Before future enablement: reviewed project/environment/database/workspace authority and connectivity, narrow task discovery, real registration/configuration, shared-domain recovery at most every 60 seconds, clean-export visibility and hosted restart/sweep evidence. Cleanup core is now in src/modules/assets/cleanup-batch.ts, with compatibility re-exports only under src/trigger; the unverified automatic all-workspace cron was removed. SDK/helper receipts are not hosted PASS.",
+      "budgetRequired": true,
+      "nextAction": "Preserve the explicit TASK_RUNTIME=trigger rejection until scoped registration/deployment is implemented, authorized and verified; never copy Railway identity variables or enable global cleanup as a workaround, and never run two task runtimes for one outbox scope."
     },
     {
       "id": "policy-decisions",
@@ -139,6 +165,7 @@
   "rules": [
     "Missing credentials or budget blocks the dependent real/provider/release evidence; it does not fail M0 local planning by itself.",
     "Mock and deterministic fixtures cannot be reported as real provider, paid Beta or live affiliate evidence.",
-    "Never store keys, webhook secrets, signed URLs or payment details in this register."
+    "Never store keys, webhook secrets, signed URLs or payment details in this register.",
+    "Optional Trigger prerequisites do not block the self-hosted baseline M4 path. All applicable provider, storage, webhook, recovery and independent-review obligations remain mandatory."
   ]
 }

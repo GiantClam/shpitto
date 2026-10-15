@@ -13,7 +13,7 @@ const values = Object.fromEntries(
     }),
 );
 
-const required = ['NODE_ENV', 'APP_URL', 'DATABASE_URL', 'BETTER_AUTH_SECRET', 'STORAGE_DRIVER', 'GENERATION_DRIVER', 'MAIL_DRIVER'];
+const required = ['NODE_ENV', 'APP_URL', 'DATABASE_URL', 'BETTER_AUTH_SECRET', 'STORAGE_DRIVER', 'GENERATION_DRIVER', 'TASK_RUNTIME', 'MAIL_DRIVER'];
 const missing = required.filter((key) => !(key in values));
 const exampleHasNoRealSecret = !/sk_[A-Za-z0-9]{20,}|pk_[A-Za-z0-9]{20,}|BEGIN PRIVATE KEY/.test(example);
 const productionSampleRejected =

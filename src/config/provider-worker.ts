@@ -1,6 +1,7 @@
 import {providerModels} from './provider-models.ts';
 
 export type ProviderWorkerConfig = Readonly<{
+  taskRuntime: 'self_hosted';
   state: 'paused' | 'active';
   workspaceId: string | null;
   allowCreate: boolean;
@@ -10,9 +11,12 @@ export type ProviderWorkerConfig = Readonly<{
 
 export function parseProviderWorkerConfig(input: Readonly<{
   runtimeProfile: string; generationDriver: string; storageDriver: string;
+  taskRuntime?: string;
   railwayProjectId: string; expectedProjectId: string; workspaceId: string;
   state: string; allowCreate: string; modelKeys: string; pollMs: string;
 }>): ProviderWorkerConfig {
+  const taskRuntime = input.taskRuntime || 'self_hosted';
+  if (taskRuntime !== 'self_hosted') throw new Error('Provider worker requires TASK_RUNTIME=self_hosted.');
   const state = input.state || 'paused';
   if (state !== 'paused' && state !== 'active') throw new Error('Provider worker state must be paused or active.');
   if (input.allowCreate && !['true', 'false'].includes(input.allowCreate)) throw new Error('Provider worker allow-create must be true or false.');
@@ -26,7 +30,7 @@ export function parseProviderWorkerConfig(input: Readonly<{
     if (!input.railwayProjectId || !input.expectedProjectId || input.railwayProjectId !== input.expectedProjectId) throw new Error('Provider worker Railway project binding does not match.');
     if (state === 'active' && !/^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(input.workspaceId)) throw new Error('Active provider worker requires an explicit workspace UUID.');
   }
-  return Object.freeze({state, workspaceId: state === 'active' ? input.workspaceId : null, allowCreate: state === 'active' && allowCreate, modelKeys: Object.freeze([...new Set(modelKeys)]), pollMs});
+  return Object.freeze({taskRuntime: 'self_hosted', state, workspaceId: state === 'active' ? input.workspaceId : null, allowCreate: state === 'active' && allowCreate, modelKeys: Object.freeze([...new Set(modelKeys)]), pollMs});
 }
 
 /** A persisted start fence always wins over a later worker's create permission. */

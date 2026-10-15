@@ -31,7 +31,7 @@ The worker inherits credentials through Railway service references. Replicate si
 
 A durable network-start fence is committed before POST. After a crash, missing request identity is reconciled from a provider-authenticated callback bound to that issued nonce, never from prompt/time similarity or a second create. Request-bound status/result URLs are preserved. Overdue work is swept before restored dispatch, and materialization is limited to 30 minutes/eight attempts under the 90-minute overall deadline. Input read capabilities expire within one hour and bind a confirmed workspace-owned crop.
 
-Dispatch, deadline sweep, terminal-inbox draining and workspace cleanup are independent loops. This Railway runner does not assert that the separately required hosted Trigger acceptance has passed. Complete-service outages stop all local loops; restoration and external monitoring are still required.
+Dispatch, deadline sweep, terminal-inbox draining and workspace cleanup are independent loops. The original deployment did not establish hosted Trigger acceptance. The 2026-10-15 runtime amendment makes that profile optional, not a prerequisite for the selected self-hosted baseline. Complete-service outages stop all local loops; restoration and external monitoring are still required.
 
 ## Evidence boundaries
 
@@ -54,3 +54,39 @@ The retained owned Fal video passed another private-object hash/media and HTTP n
 `whole-stage-audit-20261015.md` identifies the remaining live/hosted/profile prerequisites. The worker is still paused and create-disabled. Its environment has no Trigger secret/project reference and no confirmed Replicate account binding. Hosted task/schedule registration and deployment wiring also remain unfinished; account configuration alone is insufficient. Do not infer hosted Trigger acceptance or authentic remaining-row settlement from the Railway fixture tests.
 
 Versioned console logs normalize line endings and omit terminal-only trailing padding/blank EOF lines. Original byte-for-byte captures remain in ignored local temporary files; no result, error, timestamp or test assertion is changed.
+
+## Earlier local regression and coverage
+
+See `local-fixture-validation-before-runtime-default-20261015.json` and `local-fixture-verification-20261015/`: the preceding receipt records 191 contracts/units, 15 fake-transport PostgreSQL integration cases and 14 deterministic probe groups, with 82.31% owned branch coverage. These files are preserved rather than overwritten by the runtime amendment. Local timer tests are not hosted Trigger evidence.
+
+## Self-hosted default amendment and current local verification
+
+`TASK_RUNTIME=self_hosted` is the default without Trigger credentials. This build
+rejects the future optional Trigger selection until scoped executable
+registration/deployment exists. Shared cleanup no longer imports its SDK or
+automatically registers an all-workspace cron. The isolated Railway fences are
+unchanged; generic buyer production deployment remains M8 work.
+
+`local-fixture-validation-20261015.json` points to the new
+`self-hosted-default-verification-20261015/` receipt: 203 contracts/units,
+16 disposable PostgreSQL integration cases and 14 deterministic probe groups
+pass, with 1530/1848 owned branches (82.79%) and zero missing modules. The runner
+blocks local environment-file loading, uses only fresh fixture database/assets,
+fake provider transport and generated local media, and removes its container
+and assets. No existing business objects or paid provider requests are involved.
+
+Regressions cover a 101-task overdue backlog before the first fake provider
+transport call, no-progress dispatch deferral, independent loop freshness,
+shutdown draining, TCP bind failure with zero task operations, and compatibility
+with the scheduled-cleanup receipt validator. The independent code-slice review
+is in `self-hosted-runtime-review-20261015.md`; it is not whole-stage approval.
+
+The independent security-slice review also passed, with 31 local fixture tests;
+see `self-hosted-runtime-security-review-20261015.md`. Unchanged Docs build-tracing
+warnings remain a separate baseline risk. No `.env*` filenames were found in the
+standalone output, but this is not a complete packaged-content audit.
+
+The changed process has not been redeployed or live-restart verified. Durable
+external recovery heartbeat/alert delivery, authentic remaining application
+rows/Replicate binding, current M3 applicability and independent whole-M4 review
+remain open. Missing optional Trigger configuration is not a baseline blocker.

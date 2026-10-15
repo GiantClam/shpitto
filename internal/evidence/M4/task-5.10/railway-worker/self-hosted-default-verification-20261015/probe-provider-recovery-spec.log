@@ -1,0 +1,43 @@
+{
+  "status": "PASS",
+  "profile": "local deterministic provider fixtures",
+  "cases": [
+    "Replicate raw-body HMAC accepts exact signed request and nonce",
+    "fal ED25519 accepts exact signed digest and account binding",
+    "stale callback is rejected before durable observation",
+    "unknown age degrades capability and telemetry stays secret-free"
+  ],
+  "count": 4
+}
+✔ scripts\probe-provider-recovery.ts (156.078ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 160.899
+ℹ start of coverage report
+ℹ ----------------------------------------------------------------------------------------
+ℹ file                      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------------------------------------
+ℹ src                       |        |          |         |
+ℹ  adapters                 |        |          |         |
+ℹ   providers               |        |          |         |
+ℹ    fal                    |        |          |         |
+ℹ     jwks.ts               |  27.17 |   100.00 |   14.29 | 14-31 33-72 80-88
+ℹ     webhook.ts            |  83.93 |    17.95 |   75.00 | 27 30-32 41-42 52 77-85 87-88
+ℹ    normalize.ts           |  56.25 |    60.00 |   66.67 | 11-22 44 50-64
+ℹ    replicate              |        |          |         |
+ℹ     webhook.ts            |  90.32 |    44.74 |   88.89 | 38-39 87-93
+ℹ  config                   |        |          |         |
+ℹ   provider-models.ts      |  73.17 |    60.00 |   50.00 | 28-33 37-41
+ℹ  modules                  |        |          |         |
+ℹ   operations              |        |          |         |
+ℹ    integration-health.ts  |  85.71 |    28.57 |   50.00 | 22 26-28
+ℹ    telemetry.ts           | 100.00 |    92.31 |  100.00 |
+ℹ ----------------------------------------------------------------------------------------
+ℹ all files                 |  69.62 |    43.70 |   64.10 |
+ℹ ----------------------------------------------------------------------------------------
+ℹ end of coverage report

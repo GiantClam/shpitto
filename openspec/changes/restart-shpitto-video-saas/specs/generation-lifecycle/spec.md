@@ -56,7 +56,7 @@ Trace: D03, D20; J3, J4; T13, T14, T20; G03, G20. Tasks: 4.1, 4.3, 4.8.
 
 ### Requirement: REQ-GEN-04 Ambiguous submission receives bounded recovery without blind retries
 
-A timeout, lost response or crash after dispatch claim SHALL preserve an uncertain attempt and MUST NOT cause automatic paid resubmission. Submit timeout SHALL be 30 seconds. Unknown reconciliation SHALL end within 60 minutes from dispatch and at most 24 probes, with an operator alert at 30 minutes. Exact authenticated request/callback evidence may resolve it; prompt/time similarity MUST NOT. Exhaustion SHALL cause audited unrecoverable-delivery failure and full source-aware refund even if upstream cost remains unknown.
+A timeout, lost response or crash after dispatch claim SHALL preserve an uncertain attempt and MUST NOT cause automatic paid resubmission. Submit timeout SHALL be 30 seconds. Unknown reconciliation SHALL end within 60 minutes from dispatch and at most 24 probes, with an operator alert at 30 minutes. Exact authenticated request/callback evidence may resolve it; prompt/time similarity MUST NOT. Exhaustion SHALL cause audited unrecoverable-delivery failure and full source-aware refund even if upstream cost remains unknown. The selected task runtime may be the buyer-owned worker or the optional Trigger adapter; neither runtime may weaken these domain boundaries.
 
 Trace: D13, D20, D21; J4, J6; T11, T12, T20, T53; G13, G20, G21. Tasks: 4.6, 5.4.
 
@@ -72,7 +72,7 @@ Trace: D13, D20, D21; J4, J6; T11, T12, T20, T53; G13, G20, G21. Tasks: 4.6, 5.4
 
 ### Requirement: REQ-GEN-05 Independent deadline sweep
 
-Every nonterminal task SHALL carry immutable accepted recovery budgets, due-action and deadline records. Queued dispatch SHALL expire after ten minutes; known execution after sixty minutes from dispatch; materialization after thirty minutes from first authenticated success, at most eight attempts and no later than dispatch plus ninety minutes. Recovery SHALL scan task state independently of the original job every minute in production and every ten seconds locally. Retries MUST NOT reset deadlines. After total database/runner outage, overdue settlement MUST precede further state advancement; availability during that outage is not promised.
+Every nonterminal task SHALL carry immutable accepted recovery budgets, due-action and deadline records. Queued dispatch SHALL expire after ten minutes; known execution after sixty minutes from dispatch; materialization after thirty minutes from first authenticated success, at most eight attempts and no later than dispatch plus ninety minutes. Recovery SHALL scan task state independently of the original job at least every sixty seconds in production and every ten seconds locally. The buyer-owned worker is the default production recovery authority; an explicitly selected Trigger runtime MAY provide the same scan. Retries MUST NOT reset deadlines. After total database/runner outage, overdue settlement MUST precede further state advancement; availability during that outage is not promised.
 
 Trace: D18, D20; J3, J4; T12, T14, T20, T49, T53, T12.a; G18, G20, G22. Tasks: 4.7, 5.6.
 

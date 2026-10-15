@@ -2,6 +2,11 @@
 
 Status: **LOCAL_CONTRACTS_FROZEN_EXTERNAL_EVIDENCE_DEFERRED**. The selected boundary, DTO shape, adapter responsibility and evidence owner are frozen for implementation. No row claims an account, paid call, payout or production deployment. Account-backed rows remain explicit blockers for their later gates.
 
+The M0 observations below are historical, not a statement that later adapter
+implementation or account-backed receipts do not exist. The runtime amendment
+records the current selected policy without rewriting those observations or
+granting stage approval.
+
 ## Boundary matrix
 
 | Boundary | Internal owner and frozen contract | M0 decision and evidence | Deferred real evidence |
@@ -21,6 +26,21 @@ Status: **LOCAL_CONTRACTS_FROZEN_EXTERNAL_EVIDENCE_DEFERRED**. The selected boun
 3. Local, sandbox/test-mode and live profiles are distinct record environments. A credential or budget is never copied into this repository or the acceptance record.
 4. External dispatch occurs only after a durable local intent and commit. Unknown responses remain unknown until bounded reconciliation resolves them.
 5. The selected stack remains feasible for local implementation: pnpm lock/build, PostgreSQL/Drizzle/RLS, Better Auth persistence, admin/docs and Docker worker probes all have evidence under `internal/spikes/selected-stack/`.
+
+## Task-runtime amendment — October 15, 2026
+
+| Runtime | Current implementation and selected policy | Applicable remaining evidence |
+| --- | --- | --- |
+| Buyer-owned worker | `TASK_RUNTIME=self_hosted` is the default. The only runnable real-provider runtime remains isolated Railway acceptance-only: matching project, private PostgreSQL, one workspace allowlist, creates disabled by default. It shares domain/outbox/lease commands with other adapters; no isolation guard is broadened. | Selected-runtime M4 recovery and provider evidence; generic buyer production activation, M8 production entry and clean-export deployment remain unimplemented/unproved, not inferred from Railway health or fixtures. |
+| Independent recovery | The current Railway worker runs its scoped drain every 10 seconds outside dispatch polling; the production interval must be positive and no greater than 60 seconds. Each drain uses up to 10 batches of at most 100 tasks, stops on no progress and requires an empty confirmation within the budget. Dispatch returns `recovery_pending` before claiming work or making provider calls while incomplete. Readiness tracks successful freshness independently for dispatch, sweep, inbox and cleanup. Local integration coverage asserts 101 overdue settlements before the first fake provider call and no duplicate POST after a second restart. | Selected-runtime deployment/restoration evidence, scoped maintenance, stale leases and concurrent settlement evidence remain applicable. Durable external heartbeat monitoring and alert delivery after three minutes without successful sweep completion remain unimplemented/unverified; in-memory readiness and fixture coverage do not prove them. |
+| Optional future Trigger | `TASK_RUNTIME=trigger` is rejected even with credentials until scoped registration/deployment is verified. There is no executable/deployed optional profile or hosted PASS. Cleanup core moved to `src/modules/assets/cleanup-batch.ts`; the Trigger compatibility file only re-exports it and the unverified automatic all-workspace cron was removed. | Before future enablement: reviewed target authority/connectivity, registration/configuration, safe scope, clean export and hosted recovery proof. Missing Trigger credentials or deployment evidence is not a baseline M4 blocker for self-hosted execution. Never bypass the selector or run two runtimes for one scope. |
+
+The approved runtime choice does not waive real-provider, credit, webhook,
+storage, recovery or independent-review obligations. See the
+[generation recovery runbook](../runbooks/generation-recovery.md) and
+[buyer runtime boundary](../../docs/buyer/local-setup.md#task-runtime-and-production-support-boundary). Historical receipts
+retain their original environment and limitations; no hosted or whole-stage PASS
+is created by this amendment.
 
 ## Review and input ownership
 

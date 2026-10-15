@@ -14,6 +14,15 @@ copies only the runtime, static files, and reviewed migration inputs. The web
 container is application-only: PostgreSQL, private storage, provider execution,
 mail, and scheduled recovery are separate dependencies in production.
 
+Task orchestration defaults to a buyer-owned process with
+`TASK_RUNTIME=self_hosted`, not a required Trigger.dev account. The existing
+local worker image supports local Mock execution; the provider-worker image is
+restricted to the isolated Railway acceptance environment. Neither establishes
+generic production worker support. Do not remove its project, workspace or
+private-database guards. A generic production worker image and clean-export
+deployment remain release-gate work. The optional Trigger selection is rejected
+in this build until scoped registration and deployment have been verified.
+
 Build from the repository root:
 
 ```sh

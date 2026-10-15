@@ -27,6 +27,13 @@ Before a production profile is considered:
    PostgreSQL connection; request traffic may use the provider's pooled URL.
 6. Verify `/api/healthz`, authenticated sign-in, the supported worker path,
    private asset access and recovery monitoring before traffic is enabled.
+   Select exactly one task runtime for each outbox scope. The default is
+   `TASK_RUNTIME=self_hosted`, without Trigger credentials. Require independent
+   recovery at least every 60 seconds, bounded overdue-first backlog draining,
+   stale-lease rejection, and externally monitored successful sweep completion
+   with an alert after three minutes. In-memory readiness is not durable alert
+   delivery. The current isolated Railway worker is not generic buyer production
+   support; `TASK_RUNTIME=trigger` is unavailable in this build.
 7. Capture the deployed image digest, source/lockfile digests, migration result,
    operational owner and rollback image in release evidence.
 

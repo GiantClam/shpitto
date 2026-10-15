@@ -21,6 +21,8 @@ test('worker is paused by default and cannot scan an unassigned workspace', () =
 });
 
 test('active worker requires acceptance profile, exact project and a workspace UUID', () => {
+  assert.equal(parseProviderWorkerConfig(configured).taskRuntime, 'self_hosted');
+  assert.throws(() => parseProviderWorkerConfig({...configured, taskRuntime: 'trigger'}), /TASK_RUNTIME=self_hosted/);
   assert.throws(() => parseProviderWorkerConfig({...configured, runtimeProfile: 'production'}), /acceptance/);
   assert.throws(() => parseProviderWorkerConfig({...configured, state: 'paused', runtimeProfile: 'production'}), /acceptance/);
   assert.throws(() => parseProviderWorkerConfig({...configured, state: 'paused', expectedProjectId: 'wrong-project'}), /project/);

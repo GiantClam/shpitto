@@ -1,0 +1,258 @@
+✔ only explicit local/test profiles expose fixture monthly subscriptions and permanent packs (1.4943ms)
+✔ catalog snapshots are stable, frozen, strict and separate cash from credits (0.5621ms)
+✔ domain snapshots can describe a future reviewed Stripe mapping without enabling a production product (0.3518ms)
+✔ checkout input cannot smuggle customer, price, tenant, interval or redirects (0.2243ms)
+✔ money and credit quantities cross JSON as canonical bounded decimal strings (0.1828ms)
+✔ canonical aliases distinguish transport objects without accepting unknown identity fields (0.2059ms)
+✔ one-shot Fal bootstrap accepts only the authorized model/unit/currency and USD1 reference ceiling (4.9528ms)
+✔ fal JWKS fetches only the official endpoint without redirects or HTTP caching and returns immutable Ed25519 keys (16.1204ms)
+✔ fal JWKS cold-cache and refresh requests are singleflight (0.8342ms)
+✔ fal JWKS accepts the padded base64url Ed25519 x values published by the official endpoint (0.2897ms)
+✔ fal process JWKS loader uses native fetch and the current clock without credentials (0.6802ms)
+✔ fal JWKS refreshes at exactly 24 hours, never uses a future cache time, and protects internal timestamps from callers (0.4842ms)
+✔ fal JWKS expiry failures reject instead of using stale keys, and a later refresh can recover (0.7898ms)
+✔ fal JWKS failed singleflight is cleared and does not cache failures (0.4648ms)
+✔ fal JWKS skips malformed and unsupported keys without preventing a valid rotated key from verifying (0.494ms)
+▶ fal JWKS fails closed for HTTP, JSON, schema, key and declared-size errors without leaking upstream details
+  ✔ HTTP failure (0.3868ms)
+  ✔ redirect (0.1736ms)
+  ✔ missing body (0.1047ms)
+  ✔ empty response (0.1683ms)
+  ✔ invalid JSON (0.1757ms)
+  ✔ invalid UTF-8 (0.1681ms)
+  ✔ non-object document (0.1355ms)
+  ✔ missing keys (0.1874ms)
+  ✔ key-ID map instead of array (0.1501ms)
+  ✔ empty keys (0.1307ms)
+  ✔ no Ed25519 keys (0.1322ms)
+  ✔ malformed Ed25519 key (0.126ms)
+  ✔ oversize content length (0.1864ms)
+  ✔ invalid content length (0.1647ms)
+✔ fal JWKS fails closed for HTTP, JSON, schema, key and declared-size errors without leaking upstream details (3.8964ms)
+✔ fal JWKS rejects responses that have already redirected away from the fixed official origin (0.1745ms)
+✔ fal JWKS reads bounded streamed bytes even without a trustworthy content length (0.9432ms)
+✔ fal JWKS accepts at most 64 KiB, including exact-limit responses (0.3059ms)
+✔ fal JWKS has a total five-second deadline even when fetch ignores abort, and late results cannot poison the cache (0.7503ms)
+✔ fal JWKS five-second deadline also covers a stalled response body and cancels its stream (0.2917ms)
+✔ authorized video inspection checks measured average FPS and duration without confusing estimated base time rate (4.1869ms)
+✔ scheduled cleanup receipt rejects stale observations and unhealthy status (0.2942ms)
+✔ builds fal T2V queue request with safe mapping and no retry (4.2062ms)
+✔ builds fal I2V request with authorized image and validates tracking origins (0.5272ms)
+✔ status and result require exact request ID and completed result video (0.545ms)
+✔ missing IDs, foreign tracking URLs and live disabled rows fail closed (0.8875ms)
+✔ configuration and provider identity errors remain bounded (0.2437ms)
+✔ same-origin tracking URLs for another request are rejected before polling/result transport (0.294ms)
+✔ live probe verifies roundtrip, overwrite, pagination, anonymous denial and exact-key cleanup (3.5041ms)
+✔ live probe accepts the R2 S3 API unsigned-request rejection shape (0.3721ms)
+✔ live probe supports multiple provider media files under one fresh isolated prefix (0.3451ms)
+✔ hash mismatch fails proof and still removes only the generated probe objects (0.8809ms)
+✔ lost put response triggers cleanup of the exact attempted key (0.2308ms)
+✔ cleanup failure cannot produce a passing live evidence record (0.2433ms)
+✔ unauthenticated access success fails proof and preserves cleanup (0.3914ms)
+✔ probe refuses local or insecure transport before storage side effects (1.7142ms)
+✔ inbox domain transition and acknowledgement share an outer transaction and preserve lease-free admin recovery (4.8815ms)
+✔ an inbox marking failure rolls back the domain transition instead of partially committing it (0.7717ms)
+✔ received completion does not swallow domain fencing conflicts or consume the inbox (0.9068ms)
+✔ worker inbox passes its lease to domain commands and locks account/task before lease (1.6573ms)
+✔ expired leases cannot mark received progress events processed, even when no domain transition is needed (0.4825ms)
+✔ terminal completion quarantines through succeeded settlement without reopening or charging (2.4685ms)
+✔ a failed-event inbox marking error rolls back settlement and financial effects (0.5074ms)
+✔ exact binding is required for workspace, task, attempt, provider, request and nonce before any domain effect (1.9129ms)
+✔ stored authenticated identity and status cannot be replaced by caller-supplied observations (2.1838ms)
+✔ processed inbox replays still validate their exact workspace and attempt binding (0.4984ms)
+✔ worker leases must be bound to this dispatch task and authoritative workspace, not just a valid token (0.8679ms)
+✔ materializing completion is a fenced acknowledgement, not a swallowed error or second materialization (0.7537ms)
+✔ lease loss while acknowledging nonterminal completion rolls back the acknowledgement and domain transition (0.7273ms)
+✔ terminal-only inbox drain is workspace-scoped, bounded and independent of dispatch leases (3.0422ms)
+✔ terminal drain selects only exact provider/request/nonce attempt joins and leaves malformed evidence received (0.8743ms)
+✔ terminal drain rejects missing scope and unbounded limits before reading any rows (0.3553ms)
+✔ terminal drain defaults to a twenty-row maximum and reruns have no financial or quarantine duplicates (79.8707ms)
+✔ admin recovery can retry failed inbox rows without a worker lease (0.4872ms)
+✔ a lost inbox identity/state update rolls back its otherwise successful domain transition (0.4045ms)
+✔ terminal drain rechecks task terminality inside its transaction instead of trusting the earlier scan (0.3978ms)
+✔ terminal drain propagates infrastructure failures and rolls back the failing row (0.5684ms)
+✔ invalid processing clocks fail closed before any database reads or mutations (0.212ms)
+✔ authenticated inbox ingestion remains idempotent and rejects event-ID payload substitution (0.8893ms)
+✔ ingestion rejects altered attempt correlation and malformed bounded input before inbox effects (0.688ms)
+✔ all four selected schemas are inspected, byte-bound, and disabled for live use (1.2939ms)
+✔ strict public DTO rejects every unapproved top-level and nested vendor field (0.7999ms)
+✔ schema or exact-version drift blocks new submission contracts without a silent fallback (0.275ms)
+✔ safe preset is server-owned and all four mappings fit inspected schema fields (1.2608ms)
+✔ mapping rechecks crop consent instead of trusting a forged validated TypeScript object (0.1556ms)
+✔ accepted historical contracts map after current registry removal, while new admission is rejected (0.8829ms)
+✔ accepted contract mapping refuses unsupported versions and unsupported version-one presets (0.171ms)
+✔ normalized observations retain an immutable copy of the accepted catalog (0.223ms)
+✔ crop consent binds exact authorized ready asset, workspace, dimensions and crop revision (2.1747ms)
+✔ frozen snapshot retains quote, deadline, endpoint and digests independent of later object changes (0.2916ms)
+✔ submit normalization distinguishes known rejection from transport uncertainty and malformed success (0.2305ms)
+✔ completed-with-error is failure and provider output remains a candidate (0.2932ms)
+✔ Mock port delegates deterministic identity and observation to existing Mock domain functions (11.8956ms)
+✔ provider output download deadline includes DNS and prevents a late request (2.7363ms)
+✔ provider output request deadline aborts the pending HTTP request (0.6146ms)
+✔ provider output stream deadline cancels the unfinished response body (14.4677ms)
+✔ provider output redirects share the original download deadline (0.7633ms)
+✔ provider output abort listener errors are normalized as a download timeout (0.4921ms)
+✔ Replicate raw-body HMAC binds event, timestamp, exact request and attempt (15.4281ms)
+✔ fal ED25519 verification rejects altered raw bytes and accepts the signed digest (3.2489ms)
+✔ fal modern webhook headers bind request ID, user ID, timestamp, and raw body (0.5011ms)
+✔ fal modern JWKS uses the official keys array without a key-ID header and tries rotated Ed25519 keys (1.537ms)
+✔ fal modern account identity comes only from the signed user header, not body account fields (0.8399ms)
+✔ fal body account identity cannot authorize a different signed user (0.6595ms)
+✔ fal modern signatures verify with the padded Ed25519 keys served by official JWKS (0.3957ms)
+✔ fal authentication fails closed for missing configuration, non-fal references, invalid identities and malformed bounded bodies (1.0776ms)
+✔ fal JWKS verification fails closed for untrusted keys and expired, future, missing or invalid cache times (0.8673ms)
+✔ fal modern PEM compatibility is explicit, Ed25519-only, and does not need a JWKS snapshot (1.0243ms)
+✔ fal modern canonical signing preserves the exact timestamp text and enforces the five-minute window (1.796ms)
+✔ fal modern protocol requires its four headers and a strict 64-byte hexadecimal signature (0.8661ms)
+✔ fal modern signatures bind raw bytes and authenticated headers to the exact persisted request and nonce (2.443ms)
+✔ health and telemetry remain redacted and bounded (0.1983ms)
+✔ remote output fetch follows only bounded public HTTPS redirects and MIME limits (2.6503ms)
+✔ worker is paused by default and cannot scan an unassigned workspace (0.713ms)
+✔ active worker requires acceptance profile, exact project and a workspace UUID (0.502ms)
+✔ started submissions, unknown results, restarts and terminals never choose another create (0.1116ms)
+✔ provider HTTP transport is bounded, authenticated and performs no automatic retry (13.6976ms)
+✔ acceptance quotes are single-video fixture credits; production remains disabled (1.268ms)
+✔ replicate live admission is bound to workspace, model and inspected contract (1.0825ms)
+✔ fal live admission is bound to workspace, model and inspected contract (0.5422ms)
+✔ provider input capability binds private key scope, method, host and one-hour expiry (1.0554ms)
+✔ migration isolation rejects connection-target query overrides and environment fallbacks (0.3517ms)
+✔ Replicate verification fails closed before processing for missing authentication and foreign references (14.8836ms)
+✔ Replicate rejects authenticated oversized, empty, malformed and non-object payloads (3.7157ms)
+✔ Replicate request identity is bounded and must match the exact persisted request (0.5442ms)
+✔ Replicate authenticated account and attempt metadata cannot substitute for the persisted binding (1.8391ms)
+✔ Replicate signing secret prefix and explicit raw-secret compatibility preserve exact HMAC authentication (0.1652ms)
+✔ builds pinned T2V create request with safe schema fields and no automatic retry (3.9525ms)
+✔ builds pinned I2V request with owned image and omits unsupported aspect_ratio (0.5311ms)
+✔ uses configured server-side image resolver and rejects arbitrary image URLs (0.337ms)
+✔ live I2V requires an explicit server-owned image resolver before any provider call (0.6606ms)
+✔ transport timeout is unknown and never retried or converted to rejection (0.262ms)
+✔ explicit validation rejection is definitelyRejected while 5xx stays unknown (0.4305ms)
+✔ status and result use exact persisted prediction ID and normalize errors/output (0.6547ms)
+✔ mismatched ID and malformed response are rejected before attachment (0.2442ms)
+✔ status and result responses without the persisted prediction ID are rejected (0.2343ms)
+✔ live mode remains blocked while the catalog row is disabled (0.3162ms)
+✔ request builder only accepts the exact persisted Replicate contract (14.6524ms)
+✔ configuration and identity errors fail closed before provider attachment (0.4833ms)
+✔ invalid endpoint/webhook settings, missing IDs and transport errors stay bounded (0.9307ms)
+✔ adapter refuses non-Replicate persisted refs and malformed upstream status responses (0.4767ms)
+✔ local private object store preserves isolated opaque-key operations (17.4814ms)
+✔ one S3-compatible adapter maps put/get/head/list/delete for R2 or AWS endpoints (1.1546ms)
+✔ S3-compatible adapter rejects insecure endpoint and invalid keys before transport (0.2523ms)
+✔ runtime factory keeps the S3-compatible deployment under one driver (1.2156ms)
+✔ S3 configuration rejects malformed endpoints, embedded credentials and incomplete bucket identity before transport (0.2899ms)
+✔ S3 missing-object variants normalize consistently without swallowing access or transport faults (0.4183ms)
+✔ S3 rejects missing, unreadable and declared-oversized response bodies (0.2199ms)
+✔ S3 streamed bodies concatenate bounded chunks and reject overflow before allocating the whole result (0.7553ms)
+✔ S3 listing validates limits, returned keys and empty pages without widening the requested prefix (0.3862ms)
+Fixture environment: local env-file loading blocked.
+✔ cleanup ticks independently, skips overlap, survives failure, and stops cleanly (2.5865ms)
+✔ production cleanup batches workspaces, persists progress, and wraps (1.4734ms)
+✔ one workspace failure does not prevent later workspace cleanup (0.2407ms)
+✔ asset download links bind the resource and expire at the 60-second boundary (1.9392ms)
+✔ input image validation decodes a bounded PNG (192.8123ms)
+✔ input image validation rejects signature-only, spoofed, oversized and non-image inputs (186.6388ms)
+✔ changing mandatory traceability mappings invalidates contract and validator digests (929.1363ms)
+✔ core production config does not require inactive provider webhook credentials (12.2903ms)
+✔ production storage fails closed without a private S3-compatible configuration (0.5241ms)
+✔ activating either real provider without its own token fails before transport access (0.1636ms)
+✔ acceptance profile is explicit and does not change production catalog behavior (0.2625ms)
+✔ outbox heartbeat serializes renewals, skips timer backlog, and drains on stop (0.8322ms)
+✔ outbox heartbeat records lease loss and rejects later explicit renewals (1.8925ms)
+✔ local recovery scheduling repeats the shared sweep and stop prevents subsequent ticks (38.099ms)
+✔ local recovery scheduling reports query failures and permits safe cancellation (0.3002ms)
+✔ local recovery scheduling defaults remain stoppable without custom callbacks (21.0926ms)
+✔ fixture lookup requires an observed result and never creates cash evidence (1.3617ms)
+✔ the exact existing application dependency evolution passes without rewriting historical proof (151.2679ms)
+✔ root integrity rejects an additional runtime dependency (138.9673ms)
+✔ root integrity rejects a missing runtime dependency (143.8498ms)
+✔ root integrity rejects an optional dependency (140.1777ms)
+✔ root integrity rejects implicit bundling of the whole dependency graph (141.2554ms)
+✔ root integrity rejects a new transitive override (170.124ms)
+✔ root integrity rejects another Next patch (138.335ms)
+✔ root integrity rejects an S3 version range (136.4356ms)
+✔ root integrity rejects a changed development dependency (207.2297ms)
+✔ root integrity rejects a changed package manager (144.2502ms)
+✔ root integrity rejects a changed application lockfile (136.7677ms)
+✔ root integrity rejects rewritten historical dependency proof (136.2456ms)
+✔ root integrity rejects rewritten historical lock proof (179.0967ms)
+✔ root integrity rejects rewritten historical provenance (122.5376ms)
+✔ root integrity rejects legacy workspace discovery (154.5926ms)
+✔ root integrity rejects a changed workspace override (205.177ms)
+✔ root integrity rejects workspace package extensions (145.5913ms)
+✔ root integrity rejects legacy TypeScript inclusion (143.056ms)
+✔ root integrity rejects legacy Docker inclusion (135.3379ms)
+✔ historical provenance remains valid in both LF and CRLF checkouts (269.1605ms)
+✔ the reviewed workspace configuration permits only checkout line-ending differences (146.3306ms)
+✔ current development keeps historical predecessor approval and incomplete gates distinct (1.1485ms)
+✔ source changes and narrowed validator footprints fail current development validation (0.1634ms)
+✔ omitted or duplicated stage criteria cannot hide incomplete stage evidence (0.131ms)
+✔ stage register drift and unreviewed carry-forward are rejected (0.1204ms)
+✔ development records cannot promote unrun criteria into a stage PASS (0.0777ms)
+✔ missing, failed or evidence-free required commands invalidate development verification (0.1104ms)
+✔ M6 current development requires retained operations, recovery, privileged, MFA and affiliate probes (0.136ms)
+✔ carry-forward needs existing proof and independent reviewed equivalence (0.0964ms)
+ℹ tests 191
+ℹ suites 0
+ℹ pass 191
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 14582.8797
+ℹ start of coverage report
+ℹ -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ file                      | line % | branch % | funcs % | uncovered lines
+ℹ -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ src                       |        |          |         |
+ℹ  adapters                 |        |          |         |
+ℹ   providers               |        |          |         |
+ℹ    admission.ts           | 100.00 |   100.00 |  100.00 |
+ℹ    fal                    |        |          |         |
+ℹ     index.ts              |  88.76 |    79.75 |   82.35 | 97-98 111-113 116-118 150-152 165-166 169-175
+ℹ     jwks.ts               | 100.00 |    97.18 |   86.67 |
+ℹ     webhook.ts            | 100.00 |    92.93 |  100.00 |
+ℹ    http.ts                | 100.00 |    88.46 |   66.67 |
+ℹ    input.ts               |  89.92 |    86.42 |  100.00 | 10-11 30-31 39-40 49-50 80-81 102-103
+ℹ    mock.ts                | 100.00 |    86.36 |  100.00 |
+ℹ    normalize.ts           | 100.00 |    91.07 |  100.00 |
+ℹ    replicate              |        |          |         |
+ℹ     index.ts              |  99.35 |    89.87 |  100.00 | 148
+ℹ     webhook.ts            |  90.32 |    96.88 |   88.89 | 38-39 87-93
+ℹ   storage                 |        |          |         |
+ℹ    key.ts                 |  81.82 |    83.33 |  100.00 | 5-6
+ℹ    local.ts               |  90.63 |    72.09 |   86.67 | 16-17 44-50
+ℹ    port.ts                |  80.00 |    57.14 |   50.00 | 23-26 32-34
+ℹ    provider-input-url.ts  |  97.30 |    88.46 |   85.71 | 26
+ℹ    runtime.ts             |  36.00 |   100.00 |    0.00 | 10-25
+ℹ    s3-object-store.ts     | 100.00 |    94.03 |  100.00 |
+ℹ    s3.ts                  |  88.06 |    73.24 |   85.71 | 37-39 74-76 87-90 116-118 121-123
+ℹ  config                   |        |          |         |
+ℹ   models.ts               |  76.19 |    92.31 |   66.67 | 43-44 63-64 83-103
+ℹ   provider-models.ts      | 100.00 |   100.00 |  100.00 |
+ℹ   provider-worker.ts      |  98.00 |    95.24 |   87.50 | 39
+ℹ  modules                  |        |          |         |
+ℹ   assets                  |        |          |         |
+ℹ    authorize.ts           |  61.43 |    90.91 |   60.00 | 42-47 50-70
+ℹ    cleanup.ts             |  31.52 |   100.00 |    0.00 | 43-45 47-49 51-59 61-63 65-68 70-77 79-82 90-179 183-184
+ℹ    ingest.ts              |  32.65 |   100.00 |    0.00 | 16-25 43-98
+ℹ    media-probe.ts         |  45.00 |   100.00 |    0.00 | 17-32 35-40
+ℹ    validate-input.ts      |  97.10 |    86.21 |  100.00 | 59-60
+ℹ   generation              |        |          |         |
+ℹ    create.ts              |  32.56 |   100.00 |    0.00 | 75-79 81-85 88-124 126-128 130-132 134-149 151-230 234-258
+ℹ    lifecycle.ts           |  29.19 |   100.00 |    0.00 | 32-45 47-55 60-65 73-112 114-116 118-122 144-207 211-225 245-267 271-276 279-282 305-339 343-348 352-374 392-422 424-434 437-458 462-469 486-529 533-538 561-635 639-644
+ℹ    mock.ts                |  95.74 |   100.00 |   66.67 | 25-26
+ℹ    outbox.ts              |  69.43 |    69.57 |   64.71 | 97-116 119-122 125-128 132-135 139-142 146-157
+ℹ    provider-input.ts      |  44.83 |   100.00 |    0.00 | 11-16 20-29
+ℹ    provider-webhooks.ts   |  96.76 |    87.74 |  100.00 | 66-71
+ℹ    state.ts               |  59.04 |   100.00 |    0.00 | 33-34 37-41 44-50 64-83
+ℹ    sweep-recovery.ts      |  58.54 |    66.67 |   50.00 | 23-39
+ℹ   operations              |        |          |         |
+ℹ    integration-health.ts  |  85.71 |    28.57 |   50.00 | 22 26-28
+ℹ    telemetry.ts           | 100.00 |    81.82 |  100.00 |
+ℹ  trigger                  |        |          |         |
+ℹ   cleanup-assets.ts       |  75.00 |    73.91 |   57.14 | 38-39 46-51 62-63 68-70 95-105 112-117
+ℹ   sweep-recovery.ts       | 100.00 |    92.86 |  100.00 |
+ℹ -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ all files                 |  68.38 |    87.32 |   70.18 |
+ℹ -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report
