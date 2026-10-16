@@ -144,3 +144,11 @@ export function getProviderCredentials() {
   return Object.freeze({replicateToken: read('REPLICATE_API_TOKEN'), falToken: read('FAL_KEY'),
     replicateWebhookBaseUrl: read('REPLICATE_WEBHOOK_BASE_URL'), falWebhookBaseUrl: read('FAL_WEBHOOK_BASE_URL'), port: read('PORT') || '8080'});
 }
+
+/** Dedicated scope and credentials for the independent acceptance recovery monitor; no provider keys are exposed. */
+export function getRecoveryMonitorEnvironment() {
+  return Object.freeze({projectId: read('RAILWAY_PROJECT_ID'), expectedProjectId: read('SHPITTO_PROVIDER_WORKER_PROJECT_ID'),
+    profile: read('SHPTITTO_RUNTIME_PROFILE'), workspaceId: read('SHPITTO_RECOVERY_MONITOR_WORKSPACE_ID'),
+    workerKey: read('SHPITTO_RECOVERY_MONITOR_KEY') || 'provider-sweep', secret: read('SHPITTO_RECOVERY_ALERT_SECRET'),
+    mode: read('SHPITTO_RECOVERY_MONITOR_MODE') || 'off', appUrl: read('APP_URL'), alertUrl: read('SHPITTO_RECOVERY_ALERT_URL'), databaseUrl: read('DATABASE_URL')});
+}

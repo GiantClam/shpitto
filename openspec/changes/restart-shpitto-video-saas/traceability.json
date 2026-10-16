@@ -3395,6 +3395,52 @@
       "milestones": [
         "M8"
       ]
+    },
+    {
+      "reqId": "REQ-PRV-07",
+      "title": "Portable private object storage for provider output",
+      "capability": "provider-integrations",
+      "path": "specs/provider-integrations/spec.md",
+      "anchor": "requirement-req-prv-07-portable-private-object-storage-for-provider-output",
+      "scenarioIds": [
+        "SC-PRV-13",
+        "SC-PRV-14",
+        "SC-PRV-15"
+      ],
+      "D": [
+        "D03",
+        "D19",
+        "D20"
+      ],
+      "J": [
+        "J3",
+        "J4",
+        "J9"
+      ],
+      "T": [
+        "T02",
+        "T13",
+        "T14",
+        "T15",
+        "T48",
+        "T49",
+        "T53"
+      ],
+      "subcases": [],
+      "G": [
+        "G03",
+        "G10",
+        "G19",
+        "G20"
+      ],
+      "taskIds": [
+        "5.7",
+        "5.9",
+        "5.10"
+      ],
+      "milestones": [
+        "M4"
+      ]
     }
   ],
   "scenarios": [
@@ -6533,6 +6579,69 @@
         "9.13",
         "9.15"
       ]
+    },
+    {
+      "id": "SC-PRV-13",
+      "title": "Local and S3-compatible profiles preserve one asset contract",
+      "requirement": "REQ-PRV-07",
+      "path": "specs/provider-integrations/spec.md",
+      "anchor": "scenario-sc-prv-13-local-and-s3-compatible-profiles-preserve-one-asset-contract",
+      "T": [
+        "T02",
+        "T13",
+        "T14",
+        "T15",
+        "T48",
+        "T49",
+        "T53"
+      ],
+      "taskIds": [
+        "5.7",
+        "5.9",
+        "5.10"
+      ]
+    },
+    {
+      "id": "SC-PRV-14",
+      "title": "Storage publication is recoverable",
+      "requirement": "REQ-PRV-07",
+      "path": "specs/provider-integrations/spec.md",
+      "anchor": "scenario-sc-prv-14-storage-publication-is-recoverable",
+      "T": [
+        "T02",
+        "T13",
+        "T14",
+        "T15",
+        "T48",
+        "T49",
+        "T53"
+      ],
+      "taskIds": [
+        "5.7",
+        "5.9",
+        "5.10"
+      ]
+    },
+    {
+      "id": "SC-PRV-15",
+      "title": "Provider-output downloads terminate within a bounded deadline",
+      "requirement": "REQ-PRV-07",
+      "path": "specs/provider-integrations/spec.md",
+      "anchor": "scenario-sc-prv-15-provider-output-downloads-terminate-within-a-bounded-deadline",
+      "T": [
+        "T02",
+        "T13",
+        "T14",
+        "T15",
+        "T48",
+        "T49",
+        "T53"
+      ],
+      "taskIds": [
+        "5.7",
+        "5.9",
+        "5.10"
+      ]
     }
   ],
   "tasks": [
@@ -7519,7 +7628,7 @@
       "depends": [
         "4.12"
       ],
-      "checked": false,
+      "checked": true,
       "scenarios": [
         "SC-PRV-02",
         "SC-PRV-03",
@@ -7541,7 +7650,7 @@
       "depends": [
         "5.1"
       ],
-      "checked": false,
+      "checked": true,
       "scenarios": [
         "SC-PRV-01",
         "SC-PRV-03",
@@ -7563,7 +7672,7 @@
       "depends": [
         "5.1"
       ],
-      "checked": false,
+      "checked": true,
       "scenarios": [
         "SC-PRV-01",
         "SC-PRV-04",
@@ -7587,7 +7696,7 @@
         "5.2",
         "5.3"
       ],
-      "checked": false,
+      "checked": true,
       "scenarios": [
         "SC-GEN-07",
         "SC-GEN-08",
@@ -7604,14 +7713,14 @@
     },
     {
       "id": "5.5",
-      "title": "Connect Trigger dispatch, outbox pump and fenced recovery jobs.",
+      "title": "Connect shared dispatch, outbox pump and fenced recovery jobs.",
       "milestone": "M4",
       "depends": [
         "5.2",
         "5.3",
         "5.4"
       ],
-      "checked": false,
+      "checked": true,
       "scenarios": [
         "SC-GEN-11",
         "SC-GEN-12",
@@ -7631,7 +7740,7 @@
       "depends": [
         "5.5"
       ],
-      "checked": false,
+      "checked": true,
       "scenarios": [
         "SC-GEN-09",
         "SC-GEN-10",
@@ -7653,13 +7762,16 @@
         "5.4",
         "5.5"
       ],
-      "checked": false,
+      "checked": true,
       "scenarios": [
         "SC-GEN-15",
         "SC-GEN-16",
         "SC-GEN-17",
         "SC-GEN-18",
-        "SC-PRV-11"
+        "SC-PRV-11",
+        "SC-PRV-13",
+        "SC-PRV-14",
+        "SC-PRV-15"
       ],
       "T": [
         "T02",
@@ -7676,7 +7788,7 @@
         "5.6",
         "5.7"
       ],
-      "checked": false,
+      "checked": true,
       "scenarios": [
         "SC-GEN-19",
         "SC-GEN-20",
@@ -7699,7 +7811,7 @@
         "5.7",
         "5.8"
       ],
-      "checked": false,
+      "checked": true,
       "scenarios": [
         "SC-GEN-08",
         "SC-GEN-10",
@@ -7709,7 +7821,10 @@
         "SC-PRV-08",
         "SC-PRV-09",
         "SC-PRV-10",
-        "SC-PRV-11"
+        "SC-PRV-11",
+        "SC-PRV-13",
+        "SC-PRV-14",
+        "SC-PRV-15"
       ],
       "T": [
         "T09",
@@ -7740,14 +7855,17 @@
         "5.8",
         "5.9"
       ],
-      "checked": false,
+      "checked": true,
       "scenarios": [
         "SC-GEN-06",
         "SC-GEN-08",
         "SC-GEN-10",
         "SC-PRV-01",
         "SC-PRV-02",
-        "SC-PRV-12"
+        "SC-PRV-12",
+        "SC-PRV-13",
+        "SC-PRV-14",
+        "SC-PRV-15"
       ],
       "T": [
         "T2",

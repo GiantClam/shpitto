@@ -37,7 +37,7 @@ export function normalizeObservation(ref: ProviderRequestRef, value: unknown, ob
   if (Number.isNaN(new Date(observedAt).getTime())) throw new DomainError('VALIDATION', 'A valid observation time is required.');
   let status: ProviderObservation['status'];
   const states: Record<string, ProviderObservation['status']> = ref.provider === 'replicate'
-    ? {starting: 'queued', processing: 'running', succeeded: 'completed', failed: 'failed', canceled: 'failed'}
+    ? {starting: 'queued', processing: 'running', succeeded: 'completed', failed: 'failed', canceled: 'failed', aborted: 'failed'}
     : {IN_QUEUE: 'queued', IN_PROGRESS: 'running', COMPLETED: 'completed', OK: 'completed', ERROR: 'failed'};
   if (body.error) status = 'failed';
   else if (typeof body.status === 'string' && Object.hasOwn(states, body.status)) status = states[body.status];
@@ -49,7 +49,7 @@ export function normalizeObservation(ref: ProviderRequestRef, value: unknown, ob
 export function normalizeResult(ref: ProviderRequestRef, value: unknown): ProviderResult {
   const body = record(value);
   assertIdentity(ref, body);
-  if (body.error || ['failed', 'canceled', 'ERROR'].includes(String(body.status))) return Object.freeze({kind: 'failed', code: `${ref.provider}.result_failed`});
+  if (body.error || ['failed', 'canceled', 'ERROR'].includes(String(body.status)) || (ref.provider === 'replicate' && body.status === 'aborted')) return Object.freeze({kind: 'failed', code: `${ref.provider}.result_failed`});
   const falPayload = record(body.payload);
   const location = ref.provider === 'replicate' ? body.output : (record(body.video).url ?? record(falPayload.video).url);
   if (typeof location === 'string' && location.length <= 8192) {

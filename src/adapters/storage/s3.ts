@@ -12,13 +12,73 @@ export type RemoteObject = Readonly<{bytes: Uint8Array; mime: string; sha256: st
 export type RemoteFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 export type HostResolver = (hostname: string, options: {all: true; verbatim: true}) => Promise<ReadonlyArray<{address: string; family: number}>>;
 
+function parseIPv4(address: string): readonly [number, number, number, number] | null {
+  const octets = address.split('.').map(Number);
+  return octets.length === 4 && octets.every((part) => Number.isInteger(part) && part >= 0 && part <= 255)
+    ? [octets[0], octets[1], octets[2], octets[3]]
+    : null;
+}
+
+function privateIPv4(address: string): boolean {
+  const octets = parseIPv4(address);
+  if (!octets) return false;
+  const [first, second, third] = octets;
+  return first === 0 || first === 10 || first === 127 || (first === 100 && second >= 64 && second <= 127) ||
+    (first === 169 && second === 254) || (first === 172 && second >= 16 && second <= 31) || (first === 192 && second === 0 && third === 0) ||
+    (first === 192 && second === 0 && third === 2) || (first === 192 && second === 168) || (first === 192 && second === 88 && third === 99) ||
+    (first === 198 && second >= 18 && second <= 19) || (first === 198 && second === 51 && third === 100) ||
+    (first === 203 && second === 0 && third === 113) || first >= 224;
+}
+
+function parseIPv6(address: string): readonly number[] | null {
+  const normalized = address.toLowerCase().replace(/^\[/, '').replace(/\]$/, '').split('%', 1)[0];
+  if (!normalized.includes(':')) return null;
+  const groups = normalized.split('::');
+  if (groups.length > 2) return null;
+  const expand = (part: string): number[] => {
+    if (!part) return [];
+    const tokens = part.split(':');
+    const result: number[] = [];
+    for (const token of tokens) {
+      if (token.includes('.')) {
+        const octets = parseIPv4(token);
+        if (!octets) return [];
+        result.push((octets[0] << 8) | octets[1], (octets[2] << 8) | octets[3]);
+      } else if (/^[0-9a-f]{1,4}$/.test(token)) result.push(Number.parseInt(token, 16));
+      else return [];
+    }
+    return result;
+  };
+  const left = expand(groups[0]);
+  const right = groups.length === 2 ? expand(groups[1]) : [];
+  if (left.length + right.length > 8 || (groups.length === 1 && left.length !== 8)) return null;
+  return [...left, ...Array(8 - left.length - right.length).fill(0), ...right];
+}
+
 function privateAddress(address: string): boolean {
-  const normalized = address.toLowerCase();
-  if (normalized === '::' || normalized === '::1' || normalized.startsWith('::ffff:')) return normalized.startsWith('::ffff:') ? privateAddress(normalized.slice(7)) : true;
-  if (normalized.startsWith('fc') || normalized.startsWith('fd') || normalized.startsWith('fe80:')) return true;
-  const octets = normalized.split('.').map(Number);
-  if (octets.length !== 4 || octets.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return false;
-  return octets[0] === 10 || octets[0] === 127 || (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) || (octets[0] === 192 && octets[1] === 168) || (octets[0] === 169 && octets[1] === 254) || octets[0] === 0;
+  if (!address.includes(':')) {
+    const parsed = parseIPv4(address);
+    return parsed ? privateIPv4(address) : false;
+  }
+  const groups = parseIPv6(address);
+  if (!groups) return true;
+  const allZero = groups.every((group) => group === 0);
+  if (allZero || (groups.slice(0, 7).every((group) => group === 0) && groups[7] === 1)) return true;
+  if (groups.slice(0, 5).every((group) => group === 0) && groups[5] === 0xffff) {
+    return privateIPv4(`${groups[6] >>> 8}.${groups[6] & 255}.${groups[7] >>> 8}.${groups[7] & 255}`);
+  }
+  if ((groups[0] & 0xfe00) === 0xfc00 || (groups[0] & 0xffc0) === 0xfe80 || (groups[0] & 0xffc0) === 0xfec0 || (groups[0] & 0xff00) === 0xff00) return true;
+  if (groups[0] === 0x0100 && groups[1] === 0 && groups[2] === 0 && groups[3] === 0) return true;
+  if (groups[0] === 0x2001 && groups[1] === 0xdb8) return true;
+  if (groups[0] === 0x2001 && groups[1] === 2 && groups[2] === 0) return true;
+  if (groups[0] === 0x2001 && groups[1] === 0) return true;
+  if (groups[0] === 0x2001 && (groups[1] & 0xfff0) === 0x0010) return true;
+  if (groups[0] === 0x3fff && (groups[1] & 0xf000) === 0) return true;
+  if (groups[0] === 0x64 && groups[1] === 0xff9b && groups[2] === 0 && groups[3] === 0 && groups[4] === 0 && groups[5] === 0) {
+    return privateIPv4(`${groups[6] >>> 8}.${groups[6] & 255}.${groups[7] >>> 8}.${groups[7] & 255}`);
+  }
+  if (groups[0] === 0x2002) return privateIPv4(`${groups[1] >>> 8}.${groups[1] & 255}.${groups[2] >>> 8}.${groups[2] & 255}`);
+  return false;
 }
 
 class ProviderOutputTimeoutError extends DomainError {
@@ -53,7 +113,7 @@ async function withDeadline<T>(operation: () => Promise<T>, deadline: number, on
 
 async function assertSafeOrigin(url: URL, resolveHost: HostResolver, deadline: number): Promise<void> {
   if (url.protocol !== 'https:' || url.username || url.password) throw new DomainError('FORBIDDEN', 'Provider output must use HTTPS without URL credentials.');
-  if (privateAddress(url.hostname)) throw new DomainError('FORBIDDEN', 'Provider output cannot target a private or link-local address.');
+  if ((parseIPv4(url.hostname) || parseIPv6(url.hostname)) && privateAddress(url.hostname)) throw new DomainError('FORBIDDEN', 'Provider output cannot target a private or link-local address.');
   let records: ReadonlyArray<{address: string; family: number}>;
   try {
     records = await withDeadline(() => resolveHost(url.hostname, {all: true, verbatim: true}), deadline);
@@ -61,7 +121,10 @@ async function assertSafeOrigin(url: URL, resolveHost: HostResolver, deadline: n
     if (error instanceof ProviderOutputTimeoutError) throw error;
     throw new DomainError('CONFLICT', 'Provider output hostname could not be resolved.');
   }
-  if (records.length === 0 || records.some((record) => privateAddress(record.address))) throw new DomainError('FORBIDDEN', 'Provider output resolves to a private or link-local address.');
+  if (records.length === 0 || records.some((record) => {
+    const address = record.address;
+    return (!parseIPv4(address) && !parseIPv6(address)) || privateAddress(address);
+  })) throw new DomainError('FORBIDDEN', 'Provider output resolves to a private or link-local address.');
 }
 
 function cancelResponse(response: Response): void {

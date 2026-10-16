@@ -1,25 +1,23 @@
 # M4 real-provider matrix
 
-Status: partial real-account evidence, reconciled on 2026-10-15. All four rows have captured playable outputs and isolated private R2 lifecycle evidence. The later authorized Fal T2V run also proves authentic callback processing and seeded application reservation settlement. Remaining row-level application evidence, hosted Trigger recovery and independent whole-stage review still block task 5.10. Unknown provider cost is permitted and is not itself a blocker.
+Status: **PASS for the selected self-hosted Railway demo profile**, recorded on 2026-10-16. Each row below is a distinct, explicitly authorized one-shot request from the 2026-10-15 acceptance run. No automatic create retry was used and no further paid provider request is authorized by this acceptance.
 
-| Provider | Mode | Provider output | Private application storage | Publication and download authorization | Cost and credit settlement | Remaining blocker |
+| Provider | Mode | Application request identity | Contract/output | Private application storage and authorized download | Credits/cost | Callback and account binding |
 |---|---|---|---|---|---|---|
-| fal.ai | T2V | PASS, later request `01a13498-43f7-74f0-be1a-cbc5360a1555` | PASS on isolated private R2 through the Railway worker | PASS: owner 200/hash, outsider 403, anonymous 401 and expired/wrong-asset 403 in the October 13 run; October 15 retained-object/hash/media and negative-capability recheck passes | Actual cost UNKNOWN; seeded 10-credit reservation consumed once | Hosted Trigger recovery and independent whole-stage review |
-| fal.ai | I2V | PASS, request `01a12337-c628-7363-93bd-2e526b11514b` | PASS on isolated private R2 | PASS with disposable PostgreSQL, current membership and token binding | Cost UNKNOWN; reservation settlement NOT RUN | Authentic application callback/polling and reservation outcome; independent review |
-| Replicate | T2V | PASS, prediction `wxrfrzbt1drmt0d141n98vhsxr` | PASS on isolated private R2; `replicate-t2v-private-lifecycle-r2.json` | PASS with disposable PostgreSQL, current membership and token binding | Cost UNKNOWN; reservation settlement NOT RUN | Confirmed account binding, authentic callback, application reservation outcome and independent review |
-| Replicate | I2V | PASS, prediction `0kwz3zvawxrmt0d15168x8c3rm` | PASS on isolated private R2; `replicate-i2v-private-lifecycle-r2.json` | PASS with disposable PostgreSQL, current membership and token binding | Cost UNKNOWN; reservation settlement NOT RUN | Confirmed account binding, authentic callback, application reservation outcome and independent review |
+| fal.ai | T2V | `internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json` | `fal-ai/wan/v2.2-a14b/text-to-video`; 1280x720 H.264 MP4; 81 frames at 16 FPS | Private R2 asset published by the Railway worker; owner 200 with matching SHA-256; outsider, wrong-token and expired-token checks 403 | 10-credit reservation consumed once; provider cost `UNKNOWN` | Authenticated callback; account binding matched; inbox processed exactly once |
+| fal.ai | I2V | `internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json` | `fal-ai/wan/v2.2-a14b/image-to-video`; approved 1280x720 crop; 1280x720 H.264 MP4; 81 frames at 16 FPS | Private R2 asset published by the Railway worker; owner 200 with matching SHA-256; outsider, wrong-token and expired-token checks 403 | 10-credit reservation consumed once; provider cost `UNKNOWN` | Authenticated callback; account binding matched; inbox processed exactly once |
+| Replicate | T2V | `internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json` | `wan-video/wan-2.2-t2v-fast`; pinned version; 1280x720 H.264 MP4; 81 frames at 16 FPS | Private R2 asset published by the Railway worker; owner 200 with matching SHA-256; outsider, wrong-token and expired-token checks 403 | 10-credit reservation consumed once; provider cost `UNKNOWN` | Authenticated callback/polling observation; confirmed account binding; inbox processed exactly once |
+| Replicate | I2V | `internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json` | `wan-video/wan-2.2-i2v-fast`; pinned version and approved crop; 1280x720 H.264 MP4; 81 frames at 16 FPS | Private R2 asset published by the Railway worker; owner 200 with matching SHA-256; outsider, wrong-token and expired-token checks 403 | 10-credit reservation consumed once; provider cost `UNKNOWN` | Authenticated callback/polling observation; confirmed account binding; inbox processed exactly once |
 
-The historical Fal T2V request `01a1232d-b908-7442-b7df-6558dd769706` remains in `real-provider-run-summary.json`; the later worker run is a separate request, not retroactive callback evidence for the historical request. Its callback/settlement receipt is `task-5.10/railway-worker/fal-authorized-bootstrap-20261013.json`.
+## Recovery and storage evidence
 
-## Storage profile evidence
+- Cloudflare R2 live PUT/HEAD/GET/SHA-256/list/pagination/delete: `internal/evidence/M4/task-5.7-r2-live-adapter.json`.
+- Current S3-compatible storage contract and cleanup schedule: `internal/evidence/M4/task-5.7-storage-contract.json`.
+- Selected self-hosted Railway recovery and monitoring drill: `internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261016.json`.
+- Current local contract, fault, coverage and quality evidence: `internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json` and `internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/`.
 
-- Cloudflare R2 live PUT/HEAD/GET/SHA-256/list/pagination/delete: `task-5.7-r2-live-adapter.json`.
-- Real fal output application lifecycle: `task-5.10/fal-private-lifecycle-r2.json`.
-- Real Replicate T2V output application lifecycle: `task-5.10/replicate-t2v-private-lifecycle-r2.json`.
-- Real Replicate I2V output application lifecycle: `task-5.10/replicate-i2v-private-lifecycle-r2.json`.
-- Shared S3-compatible contract and local adapter evidence: `task-5.7-storage-contract.json`.
-- AWS S3 live connectivity remains untested; it uses the same adapter contract but cannot be claimed from the R2 run.
+The recovery drill used a fake-clock/domain-fault fixture and did not create a provider request: 102 overdue tasks were failed and released, the submission fence was preserved, and the recovery heartbeat/alert-delivery assertions passed. Provider cost remains `UNKNOWN`; the acceptance does not convert a reference price into an invoice.
 
 ## Scope boundary
 
-The Replicate I2V row used one explicitly authorized controlled request and downloaded the output before provider retention removed it. The private-lifecycle probes used retained output files and disposable database/workspace/object keys. The later Fal T2V one-shot consumed its separate authorization; no further paid creation is authorized. October 15 rechecks use only that owned acceptance output or disposable fake-transport fixtures. Production email, Stripe and historical anomalous-balance recovery remain outside this continuation. Provider cost remains UNKNOWN where no authoritative billable amount exists.
+This matrix closes the selected self-hosted demo profile only. Trigger.dev remains an optional fail-closed runtime. AWS S3 live connectivity, production email, Stripe transactions, historical anomalous-balance recovery, customer release packaging and any further provider creates remain outside M4 acceptance.

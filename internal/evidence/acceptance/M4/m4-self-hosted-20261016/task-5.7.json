@@ -1,0 +1,14 @@
+{
+  "taskId": "5.7",
+  "stageId": "M4",
+  "status": "PASS",
+  "candidateId": "m4-self-hosted-20261016",
+  "verifiedAt": "2026-10-16T00:13:00.000Z",
+  "profile": "self-hosted Railway demo acceptance",
+  "evidenceRefs": [
+    "internal/evidence/M4/task-5.7-storage-contract.json",
+    "internal/evidence/M4/task-5.7-r2-live-adapter.json",
+    "internal/evidence/M4/provider-matrix.md"
+  ],
+  "note": "Current retained evidence; no new provider request was made while assembling the acceptance record."
+}

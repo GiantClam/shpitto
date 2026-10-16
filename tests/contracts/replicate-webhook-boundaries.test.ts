@@ -2,17 +2,21 @@ import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';
 import test from 'node:test';
 import {getProviderModel} from '../../src/config/provider-models.ts';
-import {verifyReplicateWebhook} from '../../src/adapters/providers/replicate/webhook.ts';
+import {verifyReplicateWebhook, verifyReplicateWebhookWithoutRef} from '../../src/adapters/providers/replicate/webhook.ts';
+import {confirmReplicateAccountBinding} from '../../src/adapters/providers/replicate/account-binding.ts';
+import {createReplicateProvider} from '../../src/adapters/providers/replicate/index.ts';
 
 const now = new Date('2026-10-15T00:00:00.000Z');
-const secret = Buffer.from('isolated-replicate-signature-fixture').toString('base64');
+const secret = `whsec_${Buffer.from('isolated-replicate-signature-fixture').toString('base64')}`;
 const catalog = getProviderModel('replicate-wan22-t2v');
 const ref = {provider: 'replicate' as const, modelKey: catalog.modelKey, requestId: 'owned_request', catalog};
-const options = {secret, expectedAccountId: 'owned_account', expectedAttemptNonce: 'owned_nonce', now};
-const valid = {id: ref.requestId, status: 'processing', account_id: 'owned_account', metadata: {attempt_nonce: 'owned_nonce'}};
+const attemptNonce = '836692a3-3d95-42e7-89a7-24031af547bb';
+const binding = await confirmReplicateAccountBinding({transport: {async request(request) {return {status: 200, body: request.url.endsWith('/account') ? {type: 'user', username: 'owned_account'} : {key: secret}};}}, token: 'fixture-token', webhookSecret: secret, webhookAccountId: 'user:owned_account', now});
+const options = {secret, binding, expectedAttemptNonce: attemptNonce, now};
+const valid = {id: ref.requestId, model: catalog.endpoint, version: catalog.modelVersion, input: {}, output: null, data_removed: false, error: null, status: 'processing', created_at: now.toISOString(), urls: {web: 'https://replicate.com/p/owned_request', get: 'https://api.replicate.com/v1/predictions/owned_request', cancel: 'https://api.replicate.com/v1/predictions/owned_request/cancel'}};
 
-function signed(body: Uint8Array, signingSecret = Buffer.from(secret, 'base64')) {
-  const timestamp = String(Math.floor(now.getTime() / 1000));
+function signed(body: Uint8Array, signingSecret = Buffer.from(secret.slice(6), 'base64'), signedAt = now) {
+  const timestamp = String(Math.floor(signedAt.getTime() / 1000));
   const event = 'isolated_webhook_event';
   const signature = createHmac('sha256', signingSecret).update(`${event}.${timestamp}.${new TextDecoder().decode(body)}`).digest('base64');
   return new Headers({'webhook-id': event, 'webhook-timestamp': timestamp, 'webhook-signature': `v1,${signature}`});
@@ -53,25 +57,49 @@ test('Replicate request identity is bounded and must match the exact persisted r
   }
 });
 
-test('Replicate authenticated account and attempt metadata cannot substitute for the persisted binding', () => {
-  for (const account_id of ['other_account', 42, undefined]) {
-    const body = bytes({...valid, account_id});
-    assert.throws(() => verifyReplicateWebhook(body, signed(body), ref, options), /account identity/i);
-  }
-  const wrongNonce = bytes({...valid, metadata: {attempt_nonce: 'other_nonce'}});
-  assert.throws(() => verifyReplicateWebhook(wrongNonce, signed(wrongNonce), ref, options), /attempt identity/i);
-  for (const metadata of [undefined, [], {attempt_nonce: 42}]) {
-    const body = bytes({...valid, metadata});
-    assert.throws(() => verifyReplicateWebhook(body, signed(body), ref, {...options, expectedAttemptNonce: undefined}), /correlation/i);
-    assert.equal(verifyReplicateWebhook(body, signed(body), ref, options).attemptNonce, 'owned_nonce');
-  }
+test('documented prediction payload needs no fictional fields and cannot override confirmed account or issued route nonce', () => {
   const body = bytes(valid);
-  assert.equal(verifyReplicateWebhook(body, signed(body), ref, {secret, now}).attemptNonce, 'owned_nonce');
+  const verified = verifyReplicateWebhook(body, signed(body), ref, options);
+  assert.equal(verified.accountId, 'user:owned_account');
+  assert.equal(verified.attemptNonce, attemptNonce);
+  assert.equal(verifyReplicateWebhookWithoutRef(body, signed(body), options).attemptNonce, attemptNonce);
+  const invented = bytes({...valid, account_id: 'foreign_account', metadata: {attempt_nonce: 'foreign_nonce'}});
+  assert.equal(verifyReplicateWebhook(invented, signed(invented), ref, options).accountId, 'user:owned_account');
+  assert.throws(() => verifyReplicateWebhook(invented, signed(invented), ref, {...options, expectedAttemptNonce: undefined}), /correlation/i);
+  assert.throws(() => verifyReplicateWebhook(body, signed(body), ref, {...options, expectedAttemptNonce: 'guessable'}), /correlation/i);
 });
 
-test('Replicate signing secret prefix and explicit raw-secret compatibility preserve exact HMAC authentication', () => {
+test('unconfirmed, expired or wrong-key binding cannot authenticate a callback', () => {
   const body = bytes(valid);
-  assert.equal(verifyReplicateWebhook(body, signed(body), ref, {...options, secret: `whsec_${secret}`}).observation.status, 'running');
-  const rawSecret = '???';
-  assert.equal(verifyReplicateWebhook(body, signed(body, Buffer.from(rawSecret, 'utf8')), ref, {...options, secret: rawSecret}).observation.status, 'running');
+  assert.throws(() => verifyReplicateWebhook(body, signed(body), ref, {...options, binding: undefined}), /binding/i);
+  assert.throws(() => verifyReplicateWebhook(body, signed(body), ref, {...options, binding: {...binding}}), /binding/i);
+  assert.throws(() => verifyReplicateWebhook(body, signed(body), ref, {...options, now: new Date(now.getTime() + 300_000)}), /binding/i);
+  assert.throws(() => verifyReplicateWebhook(body, signed(body), ref, {...options, secret: `whsec_${Buffer.from('wrong-key').toString('base64')}`}), /binding/i);
+  assert.throws(() => verifyReplicateWebhook(body, signed(body, Buffer.from('another-account-key')), ref, options), /signature/i);
+});
+
+test('adapter, reference and without-reference webhook entrypoints share confirmed account and explicit nonce context', async () => {
+  const transport = {async request(request: import('../../src/adapters/providers/replicate/index.ts').ReplicateRequest) {return {status: 200, body: request.url.endsWith('/account') ? {type: 'user', username: 'owned_account'} : {key: secret}};}};
+  const config = {transport, token: 'fixture-token', webhookSecret: secret, webhookAccountId: 'user:owned_account'};
+  const currentBinding = await confirmReplicateAccountBinding(config);
+  const current = new Date();
+  const currentOptions = {secret, binding: currentBinding, expectedAttemptNonce: attemptNonce, now: current};
+  const body = bytes(valid);
+  const headers = signed(body, undefined, current);
+  const adapter = createReplicateProvider({...config, mode: 'test'});
+  const verified = await adapter.verifyWebhook(body, headers, ref, {attemptNonce});
+  assert.equal(verified.accountId, verifyReplicateWebhook(body, headers, ref, currentOptions).accountId);
+  assert.equal(verified.attemptNonce, verifyReplicateWebhookWithoutRef(body, headers, currentOptions).attemptNonce);
+  await assert.rejects(() => adapter.verifyWebhook(body, headers, ref), /correlation/i);
+});
+
+test('receiver adapter refuses an unconfirmed token/key association without trusting body fields', async () => {
+  const requests: string[] = [];
+  const provider = createReplicateProvider({mode: 'test', token: 'wrong-token', webhookSecret: secret, webhookAccountId: 'user:owned_account', transport: {async request(request) {
+    requests.push(request.method);
+    return {status: 200, body: request.url.endsWith('/account') ? {type: 'user', username: 'owned_account'} : {key: `whsec_${Buffer.from('wrong-token-key').toString('base64')}`}};
+  }}});
+  const body = bytes({...valid, account_id: 'user:owned_account', metadata: {attempt_nonce: attemptNonce}});
+  await assert.rejects(() => provider.verifyWebhook(body, signed(body), ref, {attemptNonce}), /binding signing key/i);
+  assert.deepEqual(requests, ['GET', 'GET']);
 });

@@ -4,6 +4,7 @@ import test from 'node:test';
 
 import {getProviderModel} from '../../src/config/provider-models.ts';
 import {verifyReplicateWebhook} from '../../src/adapters/providers/replicate/webhook.ts';
+import {confirmReplicateAccountBinding} from '../../src/adapters/providers/replicate/account-binding.ts';
 import {verifyFalWebhook} from '../../src/adapters/providers/fal/webhook.ts';
 import {evaluateIntegrationHealth} from '../../src/modules/operations/integration-health.ts';
 import {redactRecoveryTelemetry} from '../../src/modules/operations/telemetry.ts';
@@ -16,16 +17,19 @@ function ref(provider: 'replicate' | 'fal', requestId: string) {
   return {provider, modelKey, requestId, catalog: getProviderModel(modelKey)} as const;
 }
 
-test('Replicate raw-body HMAC binds event, timestamp, exact request and attempt', () => {
-  const secret = Buffer.from('local-replicate-secret').toString('base64');
-  const body = new TextEncoder().encode(JSON.stringify({id: 'pred_123', status: 'processing', account_id: 'acct_local', metadata: {attempt_nonce: 'nonce-1'}}));
+test('Replicate raw-body HMAC authenticates the confirmed account and exact request with explicit route correlation', async () => {
+  const secret = `whsec_${Buffer.from('local-replicate-secret').toString('base64')}`;
+  const nonce = '5b432c7c-78c0-42a8-a10b-645843bf2001';
+  const binding = await confirmReplicateAccountBinding({transport: {async request(request) {return {status: 200, body: request.url.endsWith('/account') ? {type: 'user', username: 'acct_local'} : {key: secret}};}}, token: 'fixture-token', webhookSecret: secret, webhookAccountId: 'user:acct_local', now});
+  const body = new TextEncoder().encode(JSON.stringify({id: 'pred_123', status: 'processing'}));
   const eventId = 'wh_123';
   const timestamp = Math.floor(now.getTime() / 1000);
-  const signature = createHmac('sha256', Buffer.from(secret, 'base64')).update(`${eventId}.${timestamp}.${new TextDecoder().decode(body)}`).digest('base64');
-  const verified = verifyReplicateWebhook(body, new Headers({'webhook-id': eventId, 'webhook-timestamp': String(timestamp), 'webhook-signature': `v1,${signature}`}), ref('replicate', 'pred_123'), {secret, expectedAccountId: 'acct_local', expectedAttemptNonce: 'nonce-1', now});
+  const signature = createHmac('sha256', Buffer.from(secret.slice(6), 'base64')).update(`${eventId}.${timestamp}.${new TextDecoder().decode(body)}`).digest('base64');
+  const verified = verifyReplicateWebhook(body, new Headers({'webhook-id': eventId, 'webhook-timestamp': String(timestamp), 'webhook-signature': `v1,${signature}`}), ref('replicate', 'pred_123'), {secret, binding, expectedAttemptNonce: nonce, now});
   assert.equal(verified.observation.status, 'running');
-  assert.equal(verified.attemptNonce, 'nonce-1');
-  assert.throws(() => verifyReplicateWebhook(body, new Headers({'webhook-id': eventId, 'webhook-timestamp': String(timestamp - 301), 'webhook-signature': `v1,${signature}`}), ref('replicate', 'pred_123'), {secret, now}), /stale/i);
+  assert.equal(verified.attemptNonce, nonce);
+  assert.equal(verified.accountId, 'user:acct_local');
+  assert.throws(() => verifyReplicateWebhook(body, new Headers({'webhook-id': eventId, 'webhook-timestamp': String(timestamp - 301), 'webhook-signature': `v1,${signature}`}), ref('replicate', 'pred_123'), {secret, binding, expectedAttemptNonce: nonce, now}), /stale/i);
 });
 
 test('fal ED25519 verification rejects altered raw bytes and accepts the signed digest', () => {

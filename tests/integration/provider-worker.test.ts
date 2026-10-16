@@ -17,7 +17,7 @@ import {createServerQuote} from '../../src/config/models.ts';
 import {createGenerationTask} from '../../src/modules/generation/create.ts';
 import {issueGrant} from '../../src/modules/credits/ledger.ts';
 import {runProviderWorkerOnce} from '../../src/modules/generation/provider-worker.ts';
-import {createReplicateProvider} from '../../src/adapters/providers/replicate/index.ts';
+import {createReplicateProvider, type ReplicateRequest, type ReplicateResponse} from '../../src/adapters/providers/replicate/index.ts';
 import {createFalProvider} from '../../src/adapters/providers/fal/index.ts';
 import {materializeOutput} from '../../src/modules/assets/ingest.ts';
 import {authorizeAsset} from '../../src/modules/assets/authorize.ts';
@@ -104,6 +104,20 @@ async function snapshot(f: Awaited<ReturnType<typeof fixture>>) {
 }
 const materialize: NonNullable<Parameters<typeof runProviderWorkerOnce>[1]['materialize']> = (db, input) => materializeOutput(db, {...input, bytes, mime: 'video/mp4'});
 
+// Offline-only documented preflight fixtures; never fall through to fetch or a real provider.
+const replicateBindingFixture = {
+  webhookBaseUrl: 'https://app.example/api/webhooks/replicate',
+  webhookAccountId: 'user:fixture-owner',
+  webhookSecret: `whsec_${Buffer.from('worker-integration-signing-key-fixture').toString('base64')}`,
+};
+function replicatePreflightResponse(request: ReplicateRequest): ReplicateResponse | undefined {
+  if (request.method !== 'GET') return undefined;
+  if (!['https://api.replicate.com/v1/account', 'https://api.replicate.com/v1/webhooks/default/secret'].includes(request.url)) return undefined;
+  assert.equal(request.headers.Authorization, 'Bearer fixture');
+  assert.equal(request.retry, false);
+  return {status: 200, body: request.url.endsWith('/account') ? {type: 'user', username: 'fixture-owner'} : {key: replicateBindingFixture.webhookSecret}};
+}
+
 test('thin Trigger entrypoints preserve durable dispatch, exact reconciliation and terminal recovery', async () => {
   const f = await fixture();
   let dispatchCalls = 0;
@@ -175,7 +189,11 @@ for (const modelKey of ['replicate-wan22-t2v', 'replicate-wan22-i2v', 'fal-wan22
   let creates = 0;
   let reads = 0;
   const factory: NonNullable<Parameters<typeof runProviderWorkerOnce>[1]['providerFactory']> = (context, imageUrl) => {
-    const transport = {async request(request: {method: string}) {
+    const transport = {async request(request: ReplicateRequest) {
+      if (context.catalog.provider === 'replicate') {
+        const preflight = replicatePreflightResponse(request);
+        if (preflight) return preflight;
+      }
       if (request.method === 'POST') {
         creates++;
         const state = await database.pool.query(`select submission_started_at from app.generation_tasks where id=$1`, [f.taskId]);
@@ -187,7 +205,7 @@ for (const modelKey of ['replicate-wan22-t2v', 'replicate-wan22-i2v', 'fal-wan22
         ? {status: 200, body: {id: `fixture-prediction-${modelKey}`, status: reads === 1 ? 'processing' : 'succeeded', output: 'https://provider.example/output.mp4'}}
         : {status: 200, body: {request_id: `fixture-fal-${modelKey}`, status: reads === 1 ? 'IN_PROGRESS' : 'COMPLETED', video: {url: 'https://provider.example/output.mp4'}}};
     }};
-    const options = {transport, mode: 'live' as const, token: 'fixture', acceptanceScope: {workspaceId: f.workspaceId, modelKeys: [modelKey]}, resolveOwnedImageUrl: imageUrl ? async () => imageUrl : undefined};
+    const options = {transport, mode: 'live' as const, token: 'fixture', ...(context.catalog.provider === 'replicate' ? replicateBindingFixture : {}), acceptanceScope: {workspaceId: f.workspaceId, modelKeys: [modelKey]}, resolveOwnedImageUrl: imageUrl ? async () => imageUrl : undefined};
     return context.catalog.provider === 'replicate' ? createReplicateProvider(options) : createFalProvider(options);
   };
   await runProviderWorkerOnce(database.db, {...f, owner: 'first-worker', providerFactory: factory, materialize});
@@ -207,16 +225,58 @@ for (const modelKey of ['replicate-wan22-t2v', 'replicate-wan22-i2v', 'fal-wan22
 test('definitive provider failure releases the original reservation', async () => {
   const f = await fixture();
   let creates = 0;
-  const factory: NonNullable<Parameters<typeof runProviderWorkerOnce>[1]['providerFactory']> = () => createReplicateProvider({mode: 'live', token: 'fixture', acceptanceScope: {workspaceId: f.workspaceId, modelKeys: f.config.modelKeys}, transport: {async request(request) { if (request.method === 'POST') { creates++; return {status: 401}; } throw new Error('No read expected.'); }}});
+  const factory: NonNullable<Parameters<typeof runProviderWorkerOnce>[1]['providerFactory']> = () => createReplicateProvider({mode: 'live', token: 'fixture', ...replicateBindingFixture, acceptanceScope: {workspaceId: f.workspaceId, modelKeys: f.config.modelKeys}, transport: {async request(request) {
+    const preflight = replicatePreflightResponse(request);
+    if (preflight) return preflight;
+    if (request.method === 'POST') { creates++; return {status: 401}; }
+    throw new Error('No prediction read expected after definitive rejection.');
+  }}});
   await runProviderWorkerOnce(database.db, {...f, owner: 'rejected-worker', providerFactory: factory, materialize});
   assert.equal(creates, 1);
   assert.deepEqual(await snapshot(f), {status: 'failed', provider_cost_state: 'unknown', reservation: 'released', available: '100', reserved: '0', consumed: '0'});
 });
 
+test('unconfirmed Replicate binding blocks every paid POST and restart cannot cross the create fence again', async () => {
+  for (const failure of ['unconfigured', 'account', 'key', 'unavailable'] as const) {
+    const f = await fixture();
+    let creates = 0;
+    const factory: NonNullable<Parameters<typeof runProviderWorkerOnce>[1]['providerFactory']> = () => createReplicateProvider({
+      mode: 'live', token: 'fixture', ...replicateBindingFixture,
+      webhookSecret: failure === 'unconfigured' ? undefined : replicateBindingFixture.webhookSecret,
+      acceptanceScope: {workspaceId: f.workspaceId, modelKeys: f.config.modelKeys},
+      transport: {async request(request) {
+        if (request.method === 'POST') { creates++; assert.fail('Unconfirmed binding must never issue a paid create.'); }
+        assert.equal(request.retry, false);
+        assert.equal(request.headers.Authorization, 'Bearer fixture');
+        if (failure === 'unavailable') return {status: 401};
+        if (request.url.endsWith('/account')) return {status: 200, body: {type: 'user', username: failure === 'account' ? 'other-owner' : 'fixture-owner'}};
+        assert.equal(request.url, 'https://api.replicate.com/v1/webhooks/default/secret');
+        return {status: 200, body: {key: `whsec_${Buffer.from('different-account-signing-key').toString('base64')}`}};
+      }},
+    });
+    await assert.rejects(() => runProviderWorkerOnce(database.db, {...f, owner: `binding-${failure}`, providerFactory: factory, materialize}), /binding|verification/i);
+    assert.equal(creates, 0, failure);
+    // The injected factory exercises the adapter's final guard after the durable fence.
+    // The real runtime additionally preflights before claim/fence; recovery stays conservative here.
+    await runProviderWorkerOnce(database.db, {...f, owner: `binding-${failure}-restart`, now: new Date(f.now.getTime() + 2_000), providerFactory: factory, materialize});
+    assert.equal(creates, 0, failure);
+    const state = await snapshot(f);
+    assert.equal(state.status, 'submission_unknown');
+    assert.equal(state.provider_cost_state, 'unknown');
+    assert.equal(state.reservation, 'active');
+  }
+});
+
 test('unknown submission recovers for at most 24 probes without a second create', async () => {
   const f = await fixture();
   let creates = 0;
-  const factory: NonNullable<Parameters<typeof runProviderWorkerOnce>[1]['providerFactory']> = () => createReplicateProvider({mode: 'live', token: 'fixture', acceptanceScope: {workspaceId: f.workspaceId, modelKeys: f.config.modelKeys}, transport: {async request() { creates++; throw new Error('Ambiguous create timeout.'); }}});
+  const factory: NonNullable<Parameters<typeof runProviderWorkerOnce>[1]['providerFactory']> = () => createReplicateProvider({mode: 'live', token: 'fixture', ...replicateBindingFixture, acceptanceScope: {workspaceId: f.workspaceId, modelKeys: f.config.modelKeys}, transport: {async request(request) {
+    const preflight = replicatePreflightResponse(request);
+    if (preflight) return preflight;
+    assert.equal(request.method, 'POST');
+    creates++;
+    throw new Error('Ambiguous create timeout.');
+  }}});
   await runProviderWorkerOnce(database.db, {...f, owner: 'unknown-worker', now: f.now, providerFactory: factory, materialize});
   assert.equal((await snapshot(f)).status, 'submission_unknown');
   for (let i = 1; i <= 24; i++) await runProviderWorkerOnce(database.db, {...f, owner: `unknown-restart-${i}`, now: new Date(f.now.getTime() + i * 151_000), providerFactory: factory, materialize});
@@ -241,7 +301,12 @@ test('a persisted network-start marker blocks restart and stale lease re-submiss
 test('authenticated inbox completion and polling have only one terminal ledger effect', async () => {
   const f = await fixture();
   let creates = 0;
-  const providerFactory: NonNullable<Parameters<typeof runProviderWorkerOnce>[1]['providerFactory']> = (context) => createReplicateProvider({mode: 'live', token: 'fixture', acceptanceScope: {workspaceId: f.workspaceId, modelKeys: f.config.modelKeys}, transport: {async request(request) { if (request.method === 'POST') { creates++; return {status: 201, body: {id: 'callback-fixture'}}; } return {status: 200, body: {id: 'callback-fixture', status: 'processing', output: 'https://provider.example/output.mp4'}}; }}});
+  const providerFactory: NonNullable<Parameters<typeof runProviderWorkerOnce>[1]['providerFactory']> = () => createReplicateProvider({mode: 'live', token: 'fixture', ...replicateBindingFixture, acceptanceScope: {workspaceId: f.workspaceId, modelKeys: f.config.modelKeys}, transport: {async request(request) {
+    const preflight = replicatePreflightResponse(request);
+    if (preflight) return preflight;
+    if (request.method === 'POST') { creates++; return {status: 201, body: {id: 'callback-fixture'}}; }
+    return {status: 200, body: {id: 'callback-fixture', status: 'processing', output: 'https://provider.example/output.mp4'}};
+  }}});
   await runProviderWorkerOnce(database.db, {...f, owner: 'callback-worker', now: f.now, providerFactory, materialize});
   const attempt = (await database.pool.query(`select id,client_reference from app.submission_attempts where task_id=$1 and workspace_id=$2`, [f.taskId, f.workspaceId])).rows[0];
   const catalog = (await import('../../src/config/provider-models.ts')).getProviderModel('replicate-wan22-t2v');
@@ -285,7 +350,11 @@ test('verified callback recovers an accepted create whose request ID write was l
 async function pendingCallbackFixture() {
   const f = await fixture();
   const requestId = `pending-${randomUUID()}`;
-  const providerFactory: NonNullable<Parameters<typeof runProviderWorkerOnce>[1]['providerFactory']> = () => createReplicateProvider({mode: 'live', token: 'fixture', acceptanceScope: {workspaceId: f.workspaceId, modelKeys: f.config.modelKeys}, transport: {async request(request) { return request.method === 'POST' ? {status: 201, body: {id: requestId}} : {status: 200, body: {id: requestId, status: 'processing'}}; }}});
+  const providerFactory: NonNullable<Parameters<typeof runProviderWorkerOnce>[1]['providerFactory']> = () => createReplicateProvider({mode: 'live', token: 'fixture', ...replicateBindingFixture, acceptanceScope: {workspaceId: f.workspaceId, modelKeys: f.config.modelKeys}, transport: {async request(request) {
+    const preflight = replicatePreflightResponse(request);
+    if (preflight) return preflight;
+    return request.method === 'POST' ? {status: 201, body: {id: requestId}} : {status: 200, body: {id: requestId, status: 'processing'}};
+  }}});
   await runProviderWorkerOnce(database.db, {...f, owner: 'pending-callback-worker', now: f.now, providerFactory, materialize});
   const attempt = (await database.pool.query(`select id,client_reference from app.submission_attempts where task_id=$1`, [f.taskId])).rows[0];
   const catalog = (await import('../../src/config/provider-models.ts')).getProviderModel('replicate-wan22-t2v');
@@ -339,17 +408,20 @@ test('self-hosted restart drains a multi-batch overdue backlog before any provid
     ids.push(task.value.taskId);
   }
   await database.pool.query(`update app.generation_tasks set deadline_at=$1,queue_deadline_at=$1 where id=any($2::uuid[]) and workspace_id=$3`, [new Date(f.now.getTime() - 1), ids, f.workspaceId]);
-  let calls = 0;
-  const providerFactory: NonNullable<Parameters<typeof runProviderWorkerOnce>[1]['providerFactory']> = () => createReplicateProvider({mode: 'live', token: 'fixture', acceptanceScope: {workspaceId: f.workspaceId, modelKeys: f.config.modelKeys}, transport: {async request() {
-    calls++;
+  let creates = 0;
+  const providerFactory: NonNullable<Parameters<typeof runProviderWorkerOnce>[1]['providerFactory']> = () => createReplicateProvider({mode: 'live', token: 'fixture', ...replicateBindingFixture, acceptanceScope: {workspaceId: f.workspaceId, modelKeys: f.config.modelKeys}, transport: {async request(request) {
     const pending = await database.pool.query(`select count(*)::int as count from app.generation_tasks where id=any($1::uuid[]) and status not in ('failed','succeeded','cancelled')`, [ids]);
     assert.equal(pending.rows[0].count, 0, 'All overdue batches must settle before the first network operation.');
+    const preflight = replicatePreflightResponse(request);
+    if (preflight) return preflight;
+    assert.equal(request.method, 'POST');
+    creates++;
     return {status: 422, body: {detail: 'Deterministic fixture rejection'}};
   }}});
   await runProviderWorkerOnce(database.db, {...f, owner: 'restored-self-hosted-worker', now: f.now, providerFactory, materialize});
   const released = await database.pool.query(`select count(*)::int as count from app.credit_reservations where task_id=any($1::uuid[]) and status='released'`, [ids]);
   assert.equal(released.rows[0].count, 101);
-  assert.equal(calls, 1);
+  assert.equal(creates, 1);
   await runProviderWorkerOnce(database.db, {...f, owner: 'second-restored-worker', now: f.now, providerFactory, materialize});
-  assert.equal(calls, 1, 'Restart does not resubmit already terminal work.');
+  assert.equal(creates, 1, 'Restart does not resubmit already terminal work.');
 });

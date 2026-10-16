@@ -5,7 +5,7 @@ import {generationTasks, submissionAttempts, providerWebhookInbox} from '../../d
 import {assets} from '../../db/schema/asset.ts';
 import type {ProviderPort, ProviderRequestRef, SubmissionContext} from '../../adapters/providers/port.ts';
 import type {PrivateObjectStore} from '../../adapters/storage/port.ts';
-import {createRuntimeProvider, assertConfiguredProviderCallback} from '../../adapters/providers/runtime.ts';
+import {createRuntimeProvider, preflightConfiguredProviderCallback} from '../../adapters/providers/runtime.ts';
 import {getProviderModel} from '../../config/provider-models.ts';
 import {providerWorkerAction, type ProviderWorkerConfig} from '../../config/provider-worker.ts';
 import {materializeProviderOutput} from '../../trigger/materialize.ts';
@@ -76,7 +76,7 @@ async function handleTask(db: AppDatabase, task: Task, lease: OutboxLease, input
     if (action !== 'submit') throw new DomainError('CONFLICT', 'Provider recovery requires a persisted attempt.');
     if (!input.providerFactory) {
       createRuntimeProvider(task.modelKey, {workspaceId: task.workspaceId, modelKeys: input.config.modelKeys});
-      assertConfiguredProviderCallback(getProviderModel(task.modelKey).provider);
+      await preflightConfiguredProviderCallback(getProviderModel(task.modelKey).provider);
     }
     const claimed = await claimDispatch(db, {...command(task, lease, input.now), provider: getProviderModel(task.modelKey).provider, idempotencyKey: `provider-worker.claim.${task.id}`});
     task = (await taskRow(db, task.workspaceId, task.id))!;
@@ -93,7 +93,7 @@ async function handleTask(db: AppDatabase, task: Task, lease: OutboxLease, input
   const context = restoreWorkerSubmissionContext(task, attempt, image?.authorized);
   const provider = input.providerFactory ? input.providerFactory(context, image?.url) : createRuntimeProvider(task.modelKey, {workspaceId: task.workspaceId, modelKeys: input.config.modelKeys}, image ? async () => image.url : undefined);
   if (action === 'submit') {
-    if (!input.providerFactory) assertConfiguredProviderCallback(context.catalog.provider);
+    if (!input.providerFactory) await preflightConfiguredProviderCallback(context.catalog.provider);
     await renew();
     if (!await beginProviderSubmission(db, {...command(task, lease, input.now), attemptId: attempt.id})) {
       task = (await taskRow(db, task.workspaceId, task.id))!;

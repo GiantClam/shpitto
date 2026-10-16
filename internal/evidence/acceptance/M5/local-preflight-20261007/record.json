@@ -8,7 +8,7 @@
   "status": "IN_PROGRESS",
   "candidateId": "m5-local-fixtures-20261015",
   "createdAt": "2026-10-04T09:36:19.41Z",
-  "updatedAt": "2026-10-15T14:12:53.539Z",
+  "updatedAt": "2026-10-16T00:17:25.564Z",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md"
   },
@@ -25,14 +25,14 @@
     }
   ],
   "candidate": {
-    "capturedAt": "2026-10-15T14:12:24.973Z",
+    "capturedAt": "2026-10-16T00:17:25.564Z",
     "sourceCommit": null,
     "dirtyPatchSha256": null,
-    "sourceTreeSha256": "cb667e6ba63ee0c4da114d10c63b8b617817634e95ec3d6f5db2d61e63cf5130",
-    "schemaSha256": "35d3db1acd00483d5dae9ac815ae8283680a4fce99a649dd74f364e2774b1559",
-    "configurationSha256": "678a7bcfdc86ae4c9622b52b97401e533656bfcee5626bc9d7dd484623a5c738",
-    "contractSha256": "edc65807c22f2602b32e8f8ee80d542c1ce14908db5113252cdb8f44532f6f09",
-    "validatorSha256": "7c5718297d9358df3e15aa4a02f4e17b2b86fb47855ab9fa99ce637e577549c4",
+    "sourceTreeSha256": "1af666b1d04b5f3e957fffbfd7f19835dcd4fef9ff430c8fdfd801f4297e63df",
+    "schemaSha256": "7560a6a5b059bb33a47e7afa878826d73cf57f05a3a6a6f5ffa1ff2eb7f08d0f",
+    "configurationSha256": "dc1d37d6189d092403ee351b5be78b20baf8aa44eeb29c4522a084af4c34cc2e",
+    "contractSha256": "356e6607d07fe741599e0a91119f005f5cb60af990c5f081e95fb93a2bda33e1",
+    "validatorSha256": "529c86a0dd73dc83073f08d8c578b0fdb2cc506e4228c52605f02df6183f4e47",
     "lockfileSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35",
     "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
     "digestInputs": {

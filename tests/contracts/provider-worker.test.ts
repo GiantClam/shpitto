@@ -82,15 +82,20 @@ test('acceptance quotes are single-video fixture credits; production remains dis
 for (const provider of ['replicate', 'fal'] as const) test(`${provider} live admission is bound to workspace, model and inspected contract`, async () => {
   const modelKey = `${provider}-wan22-t2v`;
   const input = validateVideoInput({modelKey, mode: 'text-to-video', prompt: 'Contract fixture', aspectRatio: '16:9'});
-  const context = freezeSubmissionContext({workspaceId, taskId: 'fixture-task', attemptId: 'fixture-attempt', attemptNonce: 'fixture-nonce', input, quote: createServerQuote(modelKey, '1', {profile: 'acceptance'}), createdAt: new Date().toISOString()});
+  const context = freezeSubmissionContext({workspaceId, taskId: 'fixture-task', attemptId: 'fixture-attempt', attemptNonce: '972d2c08-92f7-4840-b832-428284271913', input, quote: createServerQuote(modelKey, '1', {profile: 'acceptance'}), createdAt: new Date().toISOString()});
   let calls = 0;
-  const options = {mode: 'live' as const, token: 'fixture', acceptanceScope: {workspaceId, modelKeys: [modelKey]}, transport: {async request() { calls++; return {status: 401}; }}};
+  const secret = `whsec_${Buffer.from('worker-admission-fixture-key').toString('base64')}`;
+  const options = {mode: 'live' as const, token: 'fixture', webhookSecret: secret, webhookAccountId: 'user:fixture-owner', webhookBaseUrl: 'https://app.example/api/webhooks/replicate', acceptanceScope: {workspaceId, modelKeys: [modelKey]}, transport: {async request(request: {method: string; url: string}) {
+    calls++;
+    if (request.method === 'GET') return {status: 200, body: request.url.endsWith('/account') ? {type: 'user', username: 'fixture-owner'} : {key: secret}};
+    return {status: 401};
+  }}};
   const adapter = provider === 'replicate' ? createReplicateProvider(options) : createFalProvider(options);
   await assert.rejects(() => adapter.submit({...context, workspaceId: 'other-workspace'}), /disabled/);
   await assert.rejects(() => adapter.submit({...context, catalog: {...context.catalog, schemaSha256: 'a'.repeat(64)}}), /drift/);
   assert.equal(calls, 0);
   assert.equal((await adapter.submit(context)).kind, 'definitelyRejected');
-  assert.equal(calls, 1);
+  assert.equal(calls, provider === 'replicate' ? 3 : 1);
 });
 
 test('provider input capability binds private key scope, method, host and one-hour expiry', () => {

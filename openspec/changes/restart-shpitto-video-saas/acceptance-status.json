@@ -2,8 +2,8 @@
   "schemaVersion": "1.0",
   "changeId": "restart-shpitto-video-saas",
   "date": "2026-10-04",
-  "scope": "Historical M0-M3 approvals are preserved. M4/M5/M6 local development and M7/M8 local documentation/export/preflight slices have current verification. Real-account integration, vendor commerce and whole-stage gates5.10/6.10/7.14/8.15/9.15 remain open.",
-  "enforcementStatus": "Historical records are structurally checked; all three current development records require canonical digests, fresh passing logs and explicit stale M3 applicability. No milestone is promoted by development validation.",
+  "scope": "Historical M0-M3 approvals are preserved. M4 self-hosted demo acceptance is PASS for the current candidate. Trigger.dev remains optional; production email, vendor commerce, historical anomalous-balance recovery and further paid provider generation remain outside this gate.",
+  "enforcementStatus": "Current M4 acceptance is bound to the canonical current candidate digests, current traceability, retained live provider rows, selected self-hosted recovery evidence, independent review and integrator PASS.",
   "policyRef": "acceptance-gates.md",
   "recordTemplateRef": "acceptance-record.template.json",
   "allowedStatuses": [
@@ -17,7 +17,7 @@
   ],
   "implementationTasks": {
     "total": 105,
-    "completed": 98
+    "completed": 99
   },
   "prerequisiteSemantics": "Stage dependencies govern gate completion. Individual tasks can start only according to tasks.md and their own accepted prerequisites; early independent drafting does not close a later stage.",
   "releaseSemantics": "M8 and task 9.15 complete only after M8-STABLE PASS; BETA PASS does not assert publication or close the task.",
@@ -215,7 +215,7 @@
       "stageId": "M4",
       "name": "Real providers and recovery",
       "gateTaskId": "5.10",
-      "status": "IN_PROGRESS",
+      "status": "PASS",
       "prerequisiteStages": [
         "M3"
       ],
@@ -239,21 +239,26 @@
       "policyRef": "acceptance-gates.md",
       "commonStandardsRequired": true,
       "mandatoryScenarioSource": "traceability.json",
-      "candidateId": "m4-local-fixtures-20261015",
+      "candidateId": "m4-self-hosted-20261016",
       "evidenceRecordRefs": [
-        "internal/evidence/acceptance/M4/local-preflight-20261007/record.json",
-        "internal/evidence/M6/local-20261004/final/result.json",
-        "internal/evidence/M6/local-20261004/final/commands.json",
-        "internal/evidence/M6/local-20261004/final/coverage.json",
-        "internal/evidence/M6/local-20261004/README.md",
-        "internal/evidence/M6/local-20261004/independent-review.md",
-        "internal/evidence/M4/task-5.10/railway-worker/m4-local-fixture-candidate-20261015.json",
-        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json"
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261016/record.json",
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261016/implementation-acceptance.md",
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261016/independent-review.json",
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261016/integrator.json",
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261016.json"
       ],
       "reviewDecision": {
-        "decision": "NOT_RUN",
-        "reason": "Current M4 local fixtures/coverage and candidate digests are attached. Other listed M6 receipts are historical only. Full provider, selected-runtime, stage-specific applicability and independent whole-stage approval remain deferred.",
-        "taskReviewRef": "internal/evidence/M4/task-5.10/railway-worker/fal-authorized-bootstrap-20261013.json"
+        "decision": "PASS",
+        "reviewerId": "m4-independent-reviewer-20261016",
+        "reviewedAt": "2026-10-16T00:20:00.000Z",
+        "independentFromImplementer": true,
+        "integratorDecision": "PASS",
+        "integratorId": "m4-integrator-20261016",
+        "decidedAt": "2026-10-16T00:22:00.000Z",
+        "recordRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261016/record.json",
+        "independentReviewRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261016/independent-review.json",
+        "reason": "The selected self-hosted Railway demo profile satisfies the current M4 criteria on the exact candidate, with four authorized provider application rows, private R2 publication/download authorization, durable recovery evidence and current M3 equivalence review."
       }
     },
     {

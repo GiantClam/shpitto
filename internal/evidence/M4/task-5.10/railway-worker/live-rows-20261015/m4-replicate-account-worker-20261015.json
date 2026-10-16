@@ -1,0 +1,13 @@
+{
+  "role": "worker",
+  "verifiedAt": "2026-10-15T14:36:37.366Z",
+  "status": "PASS_AUTHENTICATED_ACCOUNT_SIGNING_KEY_BINDING",
+  "projectBound": true,
+  "accountType": "user",
+  "accountIdSha256": "a5dcb2f543f5385c124bec0739976b0c4b5a2d4187f867e52bdd33ed408ec498",
+  "configuredTokenScopeConfirmed": true,
+  "configuredSigningSecretMatched": true,
+  "signingSecretSynchronized": true,
+  "secretValuesRecorded": false,
+  "paidRequests": 0
+}

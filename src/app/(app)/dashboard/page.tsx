@@ -11,7 +11,9 @@ import {getCreditBalance, getGenerationRecoveryProjection, type GenerationRecove
 import {createAssetDownloadToken} from '../../../modules/assets/authorize';
 import {getRuntimeProfile, getServerEnv} from '../../../config/env';
 import {getOnboardingStatus} from '../../../modules/workspaces/onboard';
-import {createServerQuote, DEFAULT_MODEL_ID} from '../../../config/models';
+import {createServerQuote, DEFAULT_MODEL_ID, getModelCatalog} from '../../../config/models';
+import {getProviderModel} from '../../../config/provider-models';
+import type {GenerationModelChoice} from '../../../components/generation/crop-consent';
 import {GenerationPanel, GenerationRefresh, CancelTaskButton} from './generation-panel';
 import {DomainError} from '../../../db/contracts';
 import {authorizeWorkspaceAccess} from '../../../modules/workspaces/authorize';
@@ -78,7 +80,15 @@ export default async function DashboardPage({searchParams}: {searchParams: Promi
   ]);
   const recovery = await getGenerationRecoveryProjection(db, workspace.id, tasks.map((task) => task.id));
   const recoveryByTask = new Map(recovery.map((row) => [row.taskId, row]));
-  const quote = createServerQuote(DEFAULT_MODEL_ID, '1');
+  const acceptanceProfile = getRuntimeProfile() === 'acceptance';
+  const catalogProfile = acceptanceProfile ? 'acceptance' : 'local';
+  const catalog = getModelCatalog(catalogProfile);
+  const modelChoices: readonly GenerationModelChoice[] = Object.freeze([...catalog.values()].map((entry) => Object.freeze({
+    label: entry.label,
+    mode: getProviderModel(entry.id).mode,
+    quote: createServerQuote(entry.id, '1', {profile: catalogProfile}),
+  })));
+  const quote = modelChoices[0]?.quote ?? createServerQuote(DEFAULT_MODEL_ID, '1');
   return (
     <SiteShell>
       <main className="page">
@@ -92,8 +102,8 @@ export default async function DashboardPage({searchParams}: {searchParams: Promi
           <div className="metric"><span>Consumed</span><strong>{balance.consumed}</strong></div>
           <div className={`metric ${balance.held ? 'metric-alert' : ''}`}><span>Ledger</span><strong>{balance.held ? 'Review' : 'Reconciled'}</strong></div>
         </section>
-        <GenerationPanel workspaceId={workspace.id} quote={quote} initialTask={tasks[0] ? {taskId: tasks[0].id, status: tasks[0].status, deadlineAt: tasks[0].deadlineAt.toISOString(), nextActionAt: tasks[0].nextActionAt.toISOString()} : null} />
-        <p className="status-card">Provider integrations are not configured in the local Mock profile.</p>
+        <GenerationPanel workspaceId={workspace.id} quote={quote} modelChoices={modelChoices} initialTask={tasks[0] ? {taskId: tasks[0].id, status: tasks[0].status, deadlineAt: tasks[0].deadlineAt.toISOString(), nextActionAt: tasks[0].nextActionAt.toISOString()} : null} />
+        {!acceptanceProfile ? <p className="status-card">Provider integrations are not configured in the local Mock profile.</p> : <p className="status-card">Provider choices are admitted by the current server quote and acceptance catalog.</p>}
         <GenerationRefresh active={tasks.some((task) => !['succeeded', 'failed', 'cancelled'].includes(task.status))} />
         <section className="credit-section"><div className="section-heading"><h2>Credit sources</h2><span>{balance.rows.length} grants</span></div>{balance.rows.length === 0 ? <div className="status-card">No credit grants yet.</div> : <div className="credit-list">{balance.rows.map((row) => <article className="credit-row" key={row.grantId}><div><strong>{row.source}</strong><small>{row.originAllocationId ? `returned from allocation ${row.originAllocationId}` : `grant ${row.grantId}`}</small></div><div><span>{row.available} available · {row.reserved} reserved · {row.consumed} consumed · {row.expired} expired · {row.voided} voided</span><small>{row.expiresAt ? `expires ${row.expiresAt}` : 'no expiry'} · {row.reconciled ? 'reconciled' : 'review required'}</small><small>ledger projection {row.ledgerAvailable} available · {row.ledgerReserved} reserved · {row.ledgerConsumed} consumed · {row.ledgerExpired} expired · {row.ledgerVoided} voided</small>{row.allocations.length > 0 ? <small>allocation lineage: {row.allocations.map((allocation) => `${allocation.allocationId} (${allocation.amount}, ${allocation.reservationStatus}, ${allocation.sourceExpiry ? `expires ${allocation.sourceExpiry}` : 'no expiry'})`).join(' · ')}</small> : null}</div></article>)}</div>}</section>
         <section className="asset-section"><div className="section-heading"><h2>Private assets</h2><span>{readyAssets.filter((asset) => asset.state === 'ready').length} ready</span></div>{readyAssets.filter((asset) => asset.state === 'ready').length === 0 ? <div className="status-card">No ready assets yet.</div> : <div className="asset-list">{readyAssets.filter((asset) => asset.state === 'ready').map((asset) => { const token = createAssetDownloadToken(getServerEnv().betterAuthSecret, workspace.id, asset.id); return <article className="asset-row" key={asset.id}><div><strong>{asset.purpose}</strong><small>{asset.mime ?? 'binary'} · {asset.bytes?.toString() ?? 'unknown'} bytes</small></div><a className="button button-muted" href={`/api/workspaces/${workspace.id}/assets/${asset.id}/download?token=${encodeURIComponent(token.token)}`}>Download</a></article>; })}</div>}</section>

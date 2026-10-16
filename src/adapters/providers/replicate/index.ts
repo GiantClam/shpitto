@@ -7,6 +7,7 @@ import {mapProviderInput, validateVideoInput} from '../input.ts';
 import {normalizeObservation, normalizeResult, normalizeSubmission} from '../normalize.ts';
 import type {ProviderPort, ProviderRequestRef, SubmissionContext, SubmitResult} from '../port.ts';
 import {verifyReplicateWebhook} from './webhook.ts';
+import {confirmReplicateAccountBinding} from './account-binding.ts';
 
 export type ReplicateRequest = Readonly<{
   method: 'POST' | 'GET';
@@ -29,6 +30,7 @@ export type ReplicateAdapterOptions = Readonly<{
   apiBaseUrl?: string;
   webhookBaseUrl?: string;
   webhookSecret?: string;
+  /** Expected authenticated account, exactly user:username or organization:username. */
   webhookAccountId?: string;
   acceptanceScope?: AcceptanceSubmissionScope;
   resolveOwnedImageUrl?: (image: Readonly<{assetId: string; cropSha256: string}>) => Promise<string>;
@@ -58,9 +60,11 @@ function apiUrl(options: ReplicateAdapterOptions, requestId?: string): string {
 
 function callbackUrl(options: ReplicateAdapterOptions, attemptNonce: string): string | undefined {
   if (!options.webhookBaseUrl) return undefined;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(attemptNonce)) throw new DomainError('CONFLICT', 'Replicate callback requires an issued UUIDv4 attempt nonce.');
   let url: URL;
-  try { url = new URL(`${options.webhookBaseUrl.replace(/\/$/, '')}/${encodeURIComponent(attemptNonce)}`); } catch { throw new DomainError('CONFLICT', 'Replicate webhook base URL is invalid.'); }
-  if (url.protocol !== 'https:' || url.username || url.password) throw new DomainError('CONFLICT', 'Replicate webhook base URL must use HTTPS.');
+  try { url = new URL(options.webhookBaseUrl); } catch { throw new DomainError('CONFLICT', 'Replicate webhook base URL is invalid.'); }
+  if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) throw new DomainError('CONFLICT', 'Replicate webhook base URL must use HTTPS without credentials, query or fragment.');
+  url.pathname = `${url.pathname.replace(/\/$/, '')}/${attemptNonce}`;
   return url.toString();
 }
 
@@ -104,6 +108,10 @@ export function createReplicateProvider(options: ReplicateAdapterOptions): Provi
       const ownedImageUrl = await imageUrl(options, context);
       const input = mapProviderInput(context.input, context.catalog, ownedImageUrl);
       const callback = callbackUrl(options, context.attemptNonce);
+      if (options.mode === 'live') {
+        if (!callback) throw new DomainError('INFRASTRUCTURE', 'Live Replicate account binding requires a callback URL.');
+        await confirmReplicateAccountBinding(options);
+      }
       const body: Record<string, unknown> = {version, input};
       if (callback) {
         body.webhook = callback;
@@ -143,11 +151,14 @@ export function createReplicateProvider(options: ReplicateAdapterOptions): Provi
         return Object.freeze({kind: 'unavailable', evidence: Object.freeze({code: 'replicate.result_unavailable'})});
       }
     },
-    async verifyWebhook(rawBody, headers, ref) {
+    async verifyWebhook(rawBody, headers, ref, context) {
       if (!ref) throw new DomainError('CONFLICT', 'A persisted provider request reference is required before webhook verification (task 5.4).');
+      if (!context) throw new DomainError('CONFLICT', 'Replicate webhook issued attempt correlation is required.');
+      const binding = await confirmReplicateAccountBinding(options);
       return verifyReplicateWebhook(rawBody, headers, ref, {
         secret: options.webhookSecret ?? '',
-        expectedAccountId: options.webhookAccountId,
+        binding,
+        expectedAttemptNonce: context.attemptNonce,
       });
     },
   } satisfies ProviderPort);

@@ -15,7 +15,7 @@ export type IntegrationHealth = Readonly<{
 
 export function evaluateIntegrationHealth(input: IntegrationHealthInput): IntegrationHealth {
   const now = input.now ?? new Date();
-  const unknownAgeSeconds = input.unknownOldestAt ? Math.max(0, Math.round((now.getTime() - input.unknownOldestAt.getTime()) / 1000)) : null;
+  const unknownAgeSeconds = input.unknownOldestAt ? Math.max(0, Math.floor((now.getTime() - input.unknownOldestAt.getTime()) / 1000)) : null;
   if (!input.lastSuccessfulAt) return {provider: input.provider, status: 'unavailable', reason: 'no_success_evidence', unknownAgeSeconds};
   if (unknownAgeSeconds !== null && unknownAgeSeconds >= 1_800) return {provider: input.provider, status: 'degraded', reason: 'unknown_age', unknownAgeSeconds};
   if (input.lastFailureAt && input.lastFailureAt > input.lastSuccessfulAt) return {provider: input.provider, status: 'degraded', reason: 'recent_failures', unknownAgeSeconds};

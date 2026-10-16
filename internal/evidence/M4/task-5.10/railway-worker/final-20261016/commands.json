@@ -1,0 +1,101 @@
+[
+  {
+    "commandId": "typecheck",
+    "invocation": "corepack pnpm typecheck",
+    "startAt": "2026-10-16T00:07:25.6064723Z",
+    "endAt": "2026-10-16T00:07:28.8620588Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M4/task-5.10/railway-worker/final-20261016/typecheck.log"
+  },
+  {
+    "commandId": "lint",
+    "invocation": "corepack pnpm lint",
+    "startAt": "2026-10-16T00:07:28.8688390Z",
+    "endAt": "2026-10-16T00:07:29.3250952Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M4/task-5.10/railway-worker/final-20261016/lint.log"
+  },
+  {
+    "commandId": "format-check",
+    "invocation": "corepack pnpm format:check",
+    "startAt": "2026-10-16T00:07:29.3260165Z",
+    "endAt": "2026-10-16T00:07:29.7739294Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M4/task-5.10/railway-worker/final-20261016/format-check.log"
+  },
+  {
+    "commandId": "verify-db-boundary",
+    "invocation": "corepack pnpm verify:db-boundary",
+    "startAt": "2026-10-16T00:07:29.7744378Z",
+    "endAt": "2026-10-16T00:07:30.1863392Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M4/task-5.10/railway-worker/final-20261016/verify-db-boundary.log"
+  },
+  {
+    "commandId": "verify-config",
+    "invocation": "corepack pnpm verify:config",
+    "startAt": "2026-10-16T00:07:30.1871540Z",
+    "endAt": "2026-10-16T00:07:30.6436848Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M4/task-5.10/railway-worker/final-20261016/verify-config.log"
+  },
+  {
+    "commandId": "verify-openspec",
+    "invocation": "corepack pnpm verify:openspec",
+    "startAt": "2026-10-16T00:07:30.6444516Z",
+    "endAt": "2026-10-16T00:07:32.5175271Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M4/task-5.10/railway-worker/final-20261016/verify-openspec.log"
+  },
+  {
+    "commandId": "frozen-lock-install",
+    "invocation": "corepack pnpm install --frozen-lockfile",
+    "startAt": "2026-10-16T00:07:32.5180726Z",
+    "endAt": "2026-10-16T00:07:32.8636730Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M4/task-5.10/railway-worker/final-20261016/frozen-lock-install.log"
+  },
+  {
+    "commandId": "production-build",
+    "invocation": "corepack pnpm build",
+    "startAt": "2026-10-16T00:07:32.8642782Z",
+    "endAt": "2026-10-16T00:07:48.4959729Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M4/task-5.10/railway-worker/final-20261016/production-build.log"
+  },
+  {
+    "commandId": "billing-schema",
+    "invocation": "node --experimental-strip-types scripts/probe-billing-schema.ts",
+    "startAt": "2026-10-16T00:07:48.4963742Z",
+    "endAt": "2026-10-16T00:07:49.0925323Z",
+    "exitCode": 1,
+    "status": "FAIL",
+    "outputRef": "internal/evidence/M4/task-5.10/railway-worker/final-20261016/billing-schema.log"
+  },
+  {
+    "commandId": "contracts-provider-inputs",
+    "invocation": "node --experimental-strip-types --test tests/contracts/provider-inputs.test.ts",
+    "startAt": "2026-10-16T00:07:49.0928953Z",
+    "endAt": "2026-10-16T00:07:49.6915211Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M4/task-5.10/railway-worker/final-20261016/contracts-provider-inputs.log"
+  },
+  {
+    "commandId": "contracts-billing-contracts",
+    "invocation": "node --experimental-strip-types --test tests/contracts/billing-contracts.test.ts",
+    "startAt": "2026-10-16T00:07:49.6919436Z",
+    "endAt": "2026-10-16T00:07:49.9527422Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M4/task-5.10/railway-worker/final-20261016/contracts-billing-contracts.log"
+  }
+]

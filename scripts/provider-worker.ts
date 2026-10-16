@@ -2,7 +2,7 @@ import {createServer} from 'node:http';
 import {execFileSync} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
 import {and, eq, lte} from 'drizzle-orm';
-import {getProviderWorkerConfig, getProviderCredentials} from '../src/config/env.ts';
+import {getProviderWorkerConfig, getProviderCredentials, getRecoveryMonitorEnvironment} from '../src/config/env.ts';
 import {createDatabase} from '../src/db/client.ts';
 import {DomainError} from '../src/db/contracts.ts';
 import {generationTasks} from '../src/db/schema/generation.ts';
@@ -12,6 +12,7 @@ import {runProviderWorkerOnce} from '../src/modules/generation/provider-worker.t
 import {drainOverdueGenerationTasks} from '../src/modules/generation/sweep-recovery.ts';
 import {startWorkerLoops, startWorkerLoopsAfterBind} from '../src/modules/generation/worker-loops.ts';
 import {cleanupOrphanedAssetsDetailed} from '../src/modules/assets/cleanup.ts';
+import {beginRecoverySweep, writeRecoveryHeartbeat} from '../src/modules/operations/recovery-heartbeat.ts';
 
 async function main(): Promise<void> {
   const config = getProviderWorkerConfig();
@@ -26,6 +27,8 @@ async function main(): Promise<void> {
   let stopping = false;
   const scoped = config.state === 'active' && config.workspaceId;
   let runner: ReturnType<typeof startWorkerLoops> | null = null;
+  const monitor = getRecoveryMonitorEnvironment();
+  const heartbeatScope = scoped ? {workspaceId: scoped, workerKey: monitor.workerKey, expectedAt: new Date()} : null;
   const loopOptions: Parameters<typeof startWorkerLoops>[0] = {onError: (name, error) => {
     console.error(JSON.stringify({event: 'provider-worker-cycle-failed', loop: name, code: error instanceof DomainError ? error.code : 'INFRASTRUCTURE'}));
   }, loops: scoped ? [
@@ -34,10 +37,12 @@ async function main(): Promise<void> {
       if (result.outcome === 'recovery_pending') throw new DomainError('CONFLICT', 'Overdue recovery must finish before dispatch.');
     }},
     {name: 'sweep', intervalMs: 10_000, staleMs: 180_000, run: async () => {
+      const sweepStartedAt = await beginRecoverySweep(database.db, heartbeatScope!);
       const result = await drainOverdueGenerationTasks(database.db, new Date(), {workspaceId: scoped});
       if (!result.drained) throw new DomainError('CONFLICT', 'Overdue recovery has unfinished work.');
       const old = await database.db.select({id: generationTasks.id}).from(generationTasks).where(and(eq(generationTasks.workspaceId, scoped), eq(generationTasks.status, 'submission_unknown'), lte(generationTasks.submissionStartedAt, new Date(Date.now() - 30 * 60 * 1000)))).limit(1);
       if (old.length) console.warn(JSON.stringify({event: 'provider-submission-unknown-over-30-minutes', scope: 'assigned-workspace'}));
+      await writeRecoveryHeartbeat(database.db, {...heartbeatScope!, sweepStartedAt});
     }},
     {name: 'inbox', intervalMs: 10_000, staleMs: 120_000, run: () => drainTerminalProviderWebhookInbox(database.db, {workspaceId: scoped, limit: 20})},
     {name: 'cleanup', intervalMs: 60_000, staleMs: 180_000, run: async () => {

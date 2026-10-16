@@ -9,6 +9,7 @@ import {semanticHash} from '../../src/contracts/http.ts';
 
 const now = '2026-10-01T06:00:00.000Z';
 const workspaceId = '3cfd7229-8b8f-424a-9846-944681e7c6aa';
+const attemptNonce = '972d2c08-92f7-4840-b832-428284271913';
 const t2v = {modelKey: 'replicate-wan22-t2v', mode: 'text-to-video', prompt: 'A blue bird over an ocean', aspectRatio: '16:9'} as const;
 const i2v = {modelKey: 'replicate-wan22-i2v', mode: 'image-to-video', prompt: 'A blue bird over an ocean', aspectRatio: '9:16', image: {assetId: 'e7e3475e-ea2a-4c0d-98e3-de1a2339e154', cropSha256: 'a'.repeat(64), confirmed: true}} as const;
 
@@ -20,7 +21,7 @@ function quote(modelId: string) {
 
 function context(inputValue: typeof t2v | typeof i2v) {
   const input = validateVideoInput(inputValue);
-  return freezeSubmissionContext({input, workspaceId, taskId: 'task-1', attemptId: 'attempt-1', attemptNonce: 'nonce-1', quote: quote(input.modelKey), createdAt: now, authorizedImage: input.image ? {assetId: input.image.assetId, workspaceId, state: 'ready', kind: 'image', cropSha256: input.image.cropSha256, width: 720, height: 1280} : undefined});
+  return freezeSubmissionContext({input, workspaceId, taskId: 'task-1', attemptId: 'attempt-1', attemptNonce, quote: quote(input.modelKey), createdAt: now, authorizedImage: input.image ? {assetId: input.image.assetId, workspaceId, state: 'ready', kind: 'image', cropSha256: input.image.cropSha256, width: 720, height: 1280} : undefined});
 }
 
 function fakeTransport(responses: ReplicateResponse[] | ((request: ReplicateRequest) => Promise<ReplicateResponse>)) {
@@ -41,7 +42,7 @@ test('builds pinned T2V create request with safe schema fields and no automatic 
   assert.deepEqual(fake.requests[0].body, {
     version: getProviderModel('replicate-wan22-t2v').modelVersion,
     input: {prompt: 'A blue bird over an ocean', resolution: '720p', num_frames: 81, frames_per_second: 16, interpolate_output: false, disable_safety_checker: false, aspect_ratio: '16:9', optimize_prompt: false},
-    webhook: 'https://app.example/api/webhooks/replicate/nonce-1',
+    webhook: `https://app.example/api/webhooks/replicate/${attemptNonce}`,
     webhook_events_filter: ['completed'],
   });
   assert.equal(JSON.stringify(fake.requests[0]).includes('Bearer'), false);
@@ -131,6 +132,45 @@ test('live mode remains blocked while the catalog row is disabled', async () => 
   const provider = createReplicateProvider({transport: fake.transport, mode: 'live', token: 'test-token'});
   await assert.rejects(() => provider.submit(context(t2v)), /disabled|live/i);
   assert.equal(fake.requests.length, 0);
+});
+
+test('live Replicate submission confirms exact token/account/key binding before its single POST', async () => {
+  const secret = `whsec_${Buffer.from('live-adapter-fixture-key').toString('base64')}`;
+  const fake = fakeTransport(async request => ({status: request.method === 'POST' ? 201 : 200, body: request.method === 'POST' ? {id: 'pred_live'} : request.url.endsWith('/account') ? {type: 'organization', username: 'fixture-owner'} : {key: secret}}));
+  const provider = createReplicateProvider({transport: fake.transport, mode: 'live', token: 'fixture-token', webhookSecret: secret, webhookAccountId: 'organization:fixture-owner', webhookBaseUrl: 'https://app.example/api/webhooks/replicate', acceptanceScope: {workspaceId, modelKeys: [t2v.modelKey]}});
+  assert.deepEqual(await provider.submit(context(t2v)), {kind: 'accepted', requestId: 'pred_live'});
+  assert.deepEqual(fake.requests.map(request => request.method), ['GET', 'GET', 'POST']);
+  assert.ok(fake.requests.every(request => request.retry === false && request.headers.Authorization === 'Bearer fixture-token'));
+});
+
+test('Replicate never creates with an unusable callback nonce or destination', async () => {
+  for (const change of [{attemptNonce: 'guessable'}, {webhookBaseUrl: 'https://app.example/api/webhooks/replicate?nonce=leaked'}, {webhookBaseUrl: 'https://app.example/api/webhooks/replicate#leaked'}]) {
+    const fake = fakeTransport([{status: 201, body: {id: 'must_not_create'}}]);
+    const provider = createReplicateProvider({transport: fake.transport, mode: 'test', webhookBaseUrl: 'https://app.example/api/webhooks/replicate', ...('webhookBaseUrl' in change ? change : {})});
+    await assert.rejects(() => provider.submit({...context(t2v), ...('attemptNonce' in change ? change : {})}), /nonce|callback|webhook/i);
+    assert.equal(fake.requests.length, 0);
+  }
+});
+
+test('unconfigured, wrong-account, wrong-key and unavailable Replicate preflight all cause zero paid POSTs', async () => {
+  const secret = `whsec_${Buffer.from('live-adapter-negative-key').toString('base64')}`;
+  for (const failure of ['unconfigured', 'noncanonical', 'account', 'key', 'unavailable', 'malformed'] as const) {
+    const fake = fakeTransport(async request => {
+      if (failure === 'unavailable') throw new Error('do not leak provider response or credentials');
+      return {status: 200, body: request.url.endsWith('/account') ? {type: 'user', username: failure === 'account' ? 'other-owner' : 'fixture-owner'} : failure === 'malformed' ? {} : {key: failure === 'key' ? `whsec_${Buffer.from('another-token-key').toString('base64')}` : secret}};
+    });
+    const provider = createReplicateProvider({transport: fake.transport, mode: 'live', token: 'fixture-token', webhookSecret: failure === 'unconfigured' ? undefined : secret, webhookAccountId: failure === 'noncanonical' ? 'fixture-owner' : 'user:fixture-owner', webhookBaseUrl: 'https://app.example/api/webhooks/replicate', acceptanceScope: {workspaceId, modelKeys: [t2v.modelKey]}});
+    await assert.rejects(() => provider.submit(context(t2v)), /binding|verification/i, failure);
+    assert.equal(fake.requests.filter(request => request.method === 'POST').length, 0, failure);
+  }
+});
+
+test('Replicate aborted predictions normalize to failure for both status and result', async () => {
+  const fake = fakeTransport(async () => ({status: 200, body: {id: 'pred_aborted', status: 'aborted', error: null}}));
+  const provider = createReplicateProvider({mode: 'test', transport: fake.transport});
+  const ref = {provider: 'replicate' as const, modelKey: t2v.modelKey, requestId: 'pred_aborted', catalog: getProviderModel(t2v.modelKey)};
+  assert.equal((await provider.getStatus(ref)).status, 'failed');
+  assert.deepEqual(await provider.readResult(ref), {kind: 'failed', code: 'replicate.result_failed'});
 });
 
 test('request builder only accepts the exact persisted Replicate contract', async () => {

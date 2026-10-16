@@ -2,7 +2,7 @@ import {and, eq} from 'drizzle-orm';
 
 import {verifyReplicateWebhook} from '../../../../../adapters/providers/replicate/webhook.ts';
 import {getProviderModel} from '../../../../../config/provider-models.ts';
-import {getServerEnv} from '../../../../../config/env.ts';
+import {getRuntimeReplicateWebhookOptions} from '../../../../../adapters/providers/runtime.ts';
 import {DomainError} from '../../../../../db/contracts.ts';
 import {getAuthDatabase} from '../../../../../lib/auth.ts';
 import {generationTasks, submissionAttempts} from '../../../../../db/schema/generation.ts';
@@ -26,7 +26,7 @@ function requestIdFromBody(rawBody: Uint8Array): string {
 export async function POST(request: Request, context: RouteContext) {
   try {
     const {attemptNonce} = await context.params;
-    if (!/^[A-Za-z0-9._~-]{1,200}$/.test(attemptNonce)) throw new DomainError('VALIDATION', 'attemptNonce is invalid.');
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(attemptNonce)) throw new DomainError('VALIDATION', 'attemptNonce is invalid.');
     const rawBody = new Uint8Array(await request.arrayBuffer());
     const requestId = requestIdFromBody(rawBody);
     const db = getAuthDatabase();
@@ -37,11 +37,9 @@ export async function POST(request: Request, context: RouteContext) {
       .limit(1))[0];
     if (!row) throw new DomainError('CONFLICT', 'Provider request is not linked to the supplied attempt.');
     const catalog = getProviderModel(row.task.modelKey);
-    const verified = verifyReplicateWebhook(rawBody, request.headers, {provider: 'replicate', modelKey: row.task.modelKey, requestId, catalog}, {
-      secret: getServerEnv().replicateWebhookSecret,
-      expectedAccountId: getServerEnv().replicateWebhookAccountId || undefined,
-      expectedAttemptNonce: attemptNonce,
-    });
+    const options = await getRuntimeReplicateWebhookOptions(row.attempt.clientReference);
+    // A known request must match storage. Only missing-ID recovery starts from the signed body ID.
+    const verified = verifyReplicateWebhook(rawBody, request.headers, {provider: 'replicate', modelKey: row.task.modelKey, requestId: row.attempt.providerRequestId ?? requestId, catalog}, options);
     await adoptVerifiedProviderRequest(db, verified);
     const result = await ingestProviderWebhook(db, {provider: 'replicate', rawBody, verified});
     return safeSuccess(result, result.duplicate ? 200 : 202);

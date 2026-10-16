@@ -112,7 +112,7 @@ export interface ProviderPort {
   submit(attempt: SubmissionContext): Promise<SubmitResult>;
   getStatus(ref: ProviderRequestRef): Promise<ProviderObservation>;
   readResult(ref: ProviderRequestRef): Promise<ProviderResult>;
-  verifyWebhook(rawBody: Uint8Array, headers: Headers, ref?: ProviderRequestRef): Promise<VerifiedObservation>;
+  verifyWebhook(rawBody: Uint8Array, headers: Headers, ref?: ProviderRequestRef, context?: Readonly<{attemptNonce: string}>): Promise<VerifiedObservation>;
 }
 
 /** Only the trusted worker runtime may issue this scoped acceptance authority. */

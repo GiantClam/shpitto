@@ -190,6 +190,20 @@
       "when": 1780000026000,
       "tag": "0026_provider_tracking_urls",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "8",
+      "when": 1780000027000,
+      "tag": "0027_recovery_heartbeat",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "8",
+      "when": 1780000028000,
+      "tag": "0028_recovery_incident_expected_at",
+      "breakpoints": true
     }
   ]
 }
