@@ -1,0 +1,284 @@
+{
+  "recordKind": "M4_DEPLOYMENT_AND_INDEPENDENT_REVIEW_SUPPLEMENT",
+  "capturedAt": "2026-10-16T10:42:18.2106615+00:00",
+  "frozenSourceCommit": "ac733fc665d654ce3f485feee45d871f10c79f61",
+  "candidateId": "m4-self-hosted-20261016",
+  "profile": "self-hosted-railway-demo",
+  "deploymentVerification": "PASS",
+  "independentReviewDecision": "REQUEST_CHANGES",
+  "currentM4AcceptanceDisposition": "Revalidation required; the retained structural PASS is not substantive approval from this review.",
+  "projectId": "b0abc207-4d5b-4f64-903f-ec7d929b35c4",
+  "projectName": "shpitto-m4-staging",
+  "environment": "production",
+  "environmentMeaning": "Isolated M4 demo environment, not business production release approval.",
+  "deployments": [
+    {
+      "serviceId": "12f4490f-b89b-4f6b-a270-5c8b5a4b316a",
+      "service": "shpitto-m4-recovery-monitor",
+      "deploymentId": "7abc488c-095c-4bdf-a89d-8e5f5add6949",
+      "status": "SUCCESS",
+      "createdAt": "2026-10-16T10:36:55.274Z",
+      "statusUpdatedAt": "2026-10-16T10:38:13.512Z",
+      "stopped": false,
+      "instances": [
+        {
+          "id": "a69c1220-16cc-473a-a5a9-064d15280f64",
+          "status": "RUNNING"
+        }
+      ],
+      "snapshotId": "aec67ee7-d0a4-4cbc-b0cb-466d412dbe0e",
+      "imageDigest": "sha256:6707fd5602cce993e5ca7f7199151b5b4c8daaaf5e362446b8e5e120dfddae2a",
+      "builder": "DOCKERFILE",
+      "dockerfilePath": "deploy/recovery-monitor.Dockerfile",
+      "deploymentHealthcheckPath": "/healthz",
+      "deploymentHealthcheckTimeout": 300,
+      "serviceHealthcheckPath": "/healthz",
+      "serviceHealthcheckTimeout": 300,
+      "railwayConfigFile": null,
+      "manifestOverrideObservation": "Railway CLI snapshots retain an empty fileServiceManifest; the service HTTP healthcheck setting was applied and verified directly."
+    },
+    {
+      "serviceId": "572448eb-292d-498a-afc6-965b4f5ee5f4",
+      "service": "shpitto-m4-web",
+      "deploymentId": "19316e3e-c7e2-4e8d-bad3-7b2606a14c18",
+      "status": "SUCCESS",
+      "createdAt": "2026-10-16T10:32:15.876Z",
+      "statusUpdatedAt": "2026-10-16T10:37:23.019Z",
+      "stopped": false,
+      "instances": [
+        {
+          "id": "34e1fca9-0571-4210-8718-a9a352087ea9",
+          "status": "RUNNING"
+        }
+      ],
+      "snapshotId": "1a8508a0-3465-47e5-ae17-4e797930cce2",
+      "imageDigest": "sha256:deda2b33e28611f9ba95fdcab35177315d08b14abf56d0ec8c546c0670cbf708",
+      "builder": "DOCKERFILE",
+      "dockerfilePath": "/Dockerfile",
+      "deploymentHealthcheckPath": "/api/healthz",
+      "deploymentHealthcheckTimeout": 300,
+      "serviceHealthcheckPath": "/api/healthz",
+      "serviceHealthcheckTimeout": 300,
+      "railwayConfigFile": null,
+      "manifestOverrideObservation": "Railway CLI snapshots retain an empty fileServiceManifest; the service HTTP healthcheck setting was applied and verified directly."
+    },
+    {
+      "serviceId": "5887fddb-0d43-4509-b41c-ff364abd778f",
+      "service": "shpitto-m4-worker",
+      "deploymentId": "702decbc-636a-4b6b-8c4c-1596633f1577",
+      "status": "SUCCESS",
+      "createdAt": "2026-10-16T10:34:31.519Z",
+      "statusUpdatedAt": "2026-10-16T10:35:27.026Z",
+      "stopped": false,
+      "instances": [
+        {
+          "id": "ecdd219b-e907-4eb6-8617-51ea5d694d28",
+          "status": "RUNNING"
+        }
+      ],
+      "snapshotId": "b78d0c7c-53ef-49be-96fd-e4e1725fa257",
+      "imageDigest": "sha256:16fd9fe5ec1e7f343daa763febf9f4c3591f3005ff1e75db44ef1487c73a4ff7",
+      "builder": "DOCKERFILE",
+      "dockerfilePath": "deploy/provider-worker.Dockerfile",
+      "deploymentHealthcheckPath": "/healthz",
+      "deploymentHealthcheckTimeout": 300,
+      "serviceHealthcheckPath": "/healthz",
+      "serviceHealthcheckTimeout": 300,
+      "railwayConfigFile": null,
+      "manifestOverrideObservation": "Railway CLI snapshots retain an empty fileServiceManifest; the service HTTP healthcheck setting was applied and verified directly."
+    }
+  ],
+  "uploads": [
+    {
+      "role": "worker",
+      "startedAt": "2026-10-16T18:25:56.9088305+08:00",
+      "endedAt": "2026-10-16T18:26:00.582742+08:00",
+      "exitCode": 0
+    },
+    {
+      "role": "worker",
+      "startedAt": "2026-10-16T18:34:29.3110153+08:00",
+      "endedAt": "2026-10-16T18:34:33.4430182+08:00",
+      "exitCode": 0,
+      "reason": "Apply the control-plane healthcheck to the frozen candidate deployment"
+    },
+    {
+      "role": "web",
+      "startedAt": "2026-10-16T18:32:13.7045877+08:00",
+      "endedAt": "2026-10-16T18:32:17.6491753+08:00",
+      "exitCode": 0
+    },
+    {
+      "role": "monitor",
+      "startedAt": "2026-10-16T18:36:53.3259738+08:00",
+      "endedAt": "2026-10-16T18:36:57.196328+08:00",
+      "exitCode": 0
+    }
+  ],
+  "integrity": [
+    {
+      "role": "worker",
+      "deploymentId": "702decbc-636a-4b6b-8c4c-1596633f1577",
+      "httpStatus": 200,
+      "health": {
+        "status": "ready",
+        "role": "provider-worker",
+        "taskRuntime": "self_hosted",
+        "state": "active",
+        "createsEnabled": false,
+        "scope": "assigned",
+        "database": "ready",
+        "schema": "ready",
+        "mediaTools": {
+          "ffmpeg": "ffmpeg version 5.1.9-0+deb12u1 Copyright (c) 2000-2026 the FFmpeg developers",
+          "ffprobe": "ffprobe version 5.1.9-0+deb12u1 Copyright (c) 2007-2026 the FFmpeg developers"
+        },
+        "ready": true,
+        "errors": 0,
+        "loops": {
+          "dispatch": {
+            "lastSuccessAt": "2026-10-16T10:40:48.429Z",
+            "busy": false
+          },
+          "sweep": {
+            "lastSuccessAt": "2026-10-16T10:40:48.437Z",
+            "busy": false
+          },
+          "inbox": {
+            "lastSuccessAt": "2026-10-16T10:40:48.407Z",
+            "busy": false
+          },
+          "cleanup": {
+            "lastSuccessAt": "2026-10-16T10:40:23.515Z",
+            "busy": false
+          }
+        },
+        "lastDispatchAt": "2026-10-16T10:40:48.429Z",
+        "lastSweepAt": "2026-10-16T10:40:48.437Z",
+        "lastInboxAt": "2026-10-16T10:40:48.407Z",
+        "lastCleanupAt": "2026-10-16T10:40:23.515Z"
+      },
+      "comparedFiles": 292,
+      "missingFiles": [],
+      "hashMismatches": null,
+      "passed": true
+    },
+    {
+      "role": "web",
+      "deploymentId": "19316e3e-c7e2-4e8d-bad3-7b2606a14c18",
+      "httpStatus": 200,
+      "health": {
+        "status": "ready",
+        "profile": "acceptance",
+        "database": "ready",
+        "latencyMs": 19
+      },
+      "comparedFiles": 421,
+      "missingFiles": [],
+      "hashMismatches": null,
+      "passed": true
+    },
+    {
+      "role": "monitor",
+      "deploymentId": "7abc488c-095c-4bdf-a89d-8e5f5add6949",
+      "httpStatus": 200,
+      "health": {
+        "status": "ready",
+        "role": "recovery-monitor",
+        "mode": "observe",
+        "providerCreatesEnabled": false,
+        "lastSuccessAt": "2026-10-16T10:40:48.005Z",
+        "errors": 0,
+        "deliveryPending": false
+      },
+      "comparedFiles": 287,
+      "missingFiles": [],
+      "hashMismatches": null,
+      "passed": true
+    }
+  ],
+  "verification": {
+    "passedCases": 363,
+    "formatAndStructuralValidationRef": "evidence-validation.json",
+    "archiveValidationRef": "archive-verification.json",
+    "failedCases": 0,
+    "testFiles": 28,
+    "offlineContracts": {
+      "command": "node --experimental-strip-types --test (23 retained files plus five worker/monitor units)",
+      "testFiles": [
+        "tests/contracts/billing-contracts.test.ts",
+        "tests/contracts/fal-bootstrap-budget.test.ts",
+        "tests/contracts/fal-jwks.test.ts",
+        "tests/contracts/fal-runtime-video-metadata.test.ts",
+        "tests/contracts/fal.test.ts",
+        "tests/contracts/private-storage-live-probe.test.ts",
+        "tests/contracts/provider-inbox-fencing.test.ts",
+        "tests/contracts/provider-inputs.test.ts",
+        "tests/contracts/provider-output-download.test.ts",
+        "tests/contracts/provider-webhooks.test.ts",
+        "tests/contracts/provider-worker.test.ts",
+        "tests/contracts/replicate.test.ts",
+        "tests/contracts/storage.test.ts",
+        "tests/unit/root-integrity.test.ts",
+        "tests/unit/candidate-digests.test.ts",
+        "tests/unit/stage-progression.test.ts",
+        "tests/unit/asset-cleanup-trigger.test.ts",
+        "tests/unit/asset-cleanup-scheduling.test.ts",
+        "tests/unit/assets-authorization.test.ts",
+        "tests/unit/assets-validation.test.ts",
+        "tests/unit/optional-provider-env.test.ts",
+        "tests/unit/refund-provider-recovery.test.ts",
+        "tests/unit/outbox-heartbeat.test.ts",
+        "tests/unit/worker-recovery-probe.test.ts",
+        "tests/unit/worker-loops.test.ts",
+        "tests/unit/task-runtime-env.test.ts",
+        "tests/unit/recovery-monitor-health.test.ts",
+        "tests/unit/recovery-monitor-config.test.ts"
+      ],
+      "startedAt": "2026-10-16T18:31:34.2633496+08:00",
+      "endedAt": "2026-10-16T18:31:38.2303802+08:00",
+      "exitCode": 0,
+      "network": "offline fixtures only"
+    },
+    "fullVerify": {
+      "command": "corepack pnpm verify",
+      "startedAt": "2026-10-16T18:28:41.1153278+08:00",
+      "endedAt": "2026-10-16T18:29:11.1792144+08:00",
+      "exitCode": 0
+    }
+  },
+  "independentReview": {
+    "reviewer": "Dewey",
+    "decision": "REQUEST_CHANGES",
+    "reviewerSessionId": "01a1443b-8021-7f53-bab1-5d303ea55187",
+    "scope": "Read-only independent review of the frozen retained M4 candidate",
+    "implementedByReviewer": false,
+    "originalReportRef": "independent-review.md"
+  },
+  "openHighFindings": [
+    "Current owned-module coverage receipt and denominator",
+    "Mandatory scenario-to-assertion mapping and retained scenario execution",
+    "M3 C01-C06 applicability assessment including affected HTTP/browser behavior",
+    "Controlled selected-runtime recovery execution, invariant assertions and correlated alert/heartbeat receipts"
+  ],
+  "newPaidProviderRequests": 0,
+  "manualBusinessStorageObjectReads": 0,
+  "manualBusinessStorageObjectDeletes": 0,
+  "applicationSourceChanges": 0,
+  "observationRef": "heartbeat-observation.json",
+  "frozenBytesRefs": [
+    "freeze.json",
+    "frozen-runtime-source.tar.gz",
+    "candidate.json",
+    "digest-footprints.json",
+    "acceptance-footprint-archive.json",
+    "acceptance-footprint.tar.gz"
+  ],
+  "limitations": [
+    "Fresh deployment/HTTP health checks do not repeat real provider generation or the complete M4 recovery drill.",
+    "The anonymous route smoke only checks public route availability and is not authenticated tenant or browser acceptance.",
+    "Historical coverage, scenario, review, timestamp and M3 applicability defects are not rewritten as passed.",
+    "M5/M6 remain IN_PROGRESS; no whole-project or business-production release approval is asserted.",
+    "Railway CLI deployment fileServiceManifest remains empty; effective dedicated Dockerfile paths and service/deployment HTTP readiness settings are retained explicitly."
+  ]
+}

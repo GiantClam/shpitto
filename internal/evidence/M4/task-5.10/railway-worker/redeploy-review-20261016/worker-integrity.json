@@ -1,0 +1,47 @@
+{
+  "role": "worker",
+  "deploymentId": "702decbc-636a-4b6b-8c4c-1596633f1577",
+  "httpStatus": 200,
+  "health": {
+    "status": "ready",
+    "role": "provider-worker",
+    "taskRuntime": "self_hosted",
+    "state": "active",
+    "createsEnabled": false,
+    "scope": "assigned",
+    "database": "ready",
+    "schema": "ready",
+    "mediaTools": {
+      "ffmpeg": "ffmpeg version 5.1.9-0+deb12u1 Copyright (c) 2000-2026 the FFmpeg developers",
+      "ffprobe": "ffprobe version 5.1.9-0+deb12u1 Copyright (c) 2007-2026 the FFmpeg developers"
+    },
+    "ready": true,
+    "errors": 0,
+    "loops": {
+      "dispatch": {
+        "lastSuccessAt": "2026-10-16T10:40:48.429Z",
+        "busy": false
+      },
+      "sweep": {
+        "lastSuccessAt": "2026-10-16T10:40:48.437Z",
+        "busy": false
+      },
+      "inbox": {
+        "lastSuccessAt": "2026-10-16T10:40:48.407Z",
+        "busy": false
+      },
+      "cleanup": {
+        "lastSuccessAt": "2026-10-16T10:40:23.515Z",
+        "busy": false
+      }
+    },
+    "lastDispatchAt": "2026-10-16T10:40:48.429Z",
+    "lastSweepAt": "2026-10-16T10:40:48.437Z",
+    "lastInboxAt": "2026-10-16T10:40:48.407Z",
+    "lastCleanupAt": "2026-10-16T10:40:23.515Z"
+  },
+  "comparedFiles": 292,
+  "missingFiles": [],
+  "hashMismatches": null,
+  "passed": true
+}

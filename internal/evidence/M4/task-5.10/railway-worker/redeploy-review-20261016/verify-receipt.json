@@ -1,0 +1,6 @@
+{
+  "command": "corepack pnpm verify",
+  "startedAt": "2026-10-16T10:28:41.1153278+00:00",
+  "endedAt": "2026-10-16T10:29:11.1792144+00:00",
+  "exitCode": 0
+}

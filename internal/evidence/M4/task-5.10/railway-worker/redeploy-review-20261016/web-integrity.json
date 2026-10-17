@@ -1,0 +1,15 @@
+{
+  "role": "web",
+  "deploymentId": "19316e3e-c7e2-4e8d-bad3-7b2606a14c18",
+  "httpStatus": 200,
+  "health": {
+    "status": "ready",
+    "profile": "acceptance",
+    "database": "ready",
+    "latencyMs": 19
+  },
+  "comparedFiles": 421,
+  "missingFiles": [],
+  "hashMismatches": null,
+  "passed": true
+}

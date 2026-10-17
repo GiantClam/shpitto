@@ -1,0 +1,18 @@
+{
+  "capturedAt": "2026-10-16T10:41:22.630753+00:00",
+  "checks": [
+    {
+      "archive": "frozen-runtime-source.tar.gz",
+      "filesVerified": 544,
+      "status": "PASS",
+      "sha256": "3752caef8cf84a26897ff6ccee505acfd08126d194da3a66b65b43f5c7997d87"
+    },
+    {
+      "archive": "acceptance-footprint.tar.gz",
+      "filesVerified": 560,
+      "status": "PASS",
+      "sha256": "1043bb6c3c2e4a3762aa224fdd9c44c0bae0cfd0880c47dbcb8c05e39264258a"
+    }
+  ],
+  "status": "PASS"
+}

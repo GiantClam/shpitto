@@ -1,0 +1,84 @@
+{
+  "capturedAt": "2026-10-16T10:39:35.3562653+00:00",
+  "projectId": "b0abc207-4d5b-4f64-903f-ec7d929b35c4",
+  "projectName": "shpitto-m4-staging",
+  "environment": "production",
+  "scope": "Isolated demo; production is the Railway environment name",
+  "deployments": [
+    {
+      "serviceId": "12f4490f-b89b-4f6b-a270-5c8b5a4b316a",
+      "service": "shpitto-m4-recovery-monitor",
+      "deploymentId": "7abc488c-095c-4bdf-a89d-8e5f5add6949",
+      "status": "SUCCESS",
+      "createdAt": "2026-10-16T10:36:55.274Z",
+      "statusUpdatedAt": "2026-10-16T10:38:13.512Z",
+      "stopped": false,
+      "instances": [
+        {
+          "id": "a69c1220-16cc-473a-a5a9-064d15280f64",
+          "status": "RUNNING"
+        }
+      ],
+      "snapshotId": "aec67ee7-d0a4-4cbc-b0cb-466d412dbe0e",
+      "imageDigest": "sha256:6707fd5602cce993e5ca7f7199151b5b4c8daaaf5e362446b8e5e120dfddae2a",
+      "builder": "DOCKERFILE",
+      "dockerfilePath": "deploy/recovery-monitor.Dockerfile",
+      "deploymentHealthcheckPath": "/healthz",
+      "deploymentHealthcheckTimeout": 300,
+      "serviceHealthcheckPath": "/healthz",
+      "serviceHealthcheckTimeout": 300,
+      "railwayConfigFile": null,
+      "manifestOverrideObservation": "Railway CLI snapshots retain an empty fileServiceManifest; the service HTTP healthcheck setting was applied and verified directly."
+    },
+    {
+      "serviceId": "572448eb-292d-498a-afc6-965b4f5ee5f4",
+      "service": "shpitto-m4-web",
+      "deploymentId": "19316e3e-c7e2-4e8d-bad3-7b2606a14c18",
+      "status": "SUCCESS",
+      "createdAt": "2026-10-16T10:32:15.876Z",
+      "statusUpdatedAt": "2026-10-16T10:37:23.019Z",
+      "stopped": false,
+      "instances": [
+        {
+          "id": "34e1fca9-0571-4210-8718-a9a352087ea9",
+          "status": "RUNNING"
+        }
+      ],
+      "snapshotId": "1a8508a0-3465-47e5-ae17-4e797930cce2",
+      "imageDigest": "sha256:deda2b33e28611f9ba95fdcab35177315d08b14abf56d0ec8c546c0670cbf708",
+      "builder": "DOCKERFILE",
+      "dockerfilePath": "/Dockerfile",
+      "deploymentHealthcheckPath": "/api/healthz",
+      "deploymentHealthcheckTimeout": 300,
+      "serviceHealthcheckPath": "/api/healthz",
+      "serviceHealthcheckTimeout": 300,
+      "railwayConfigFile": null,
+      "manifestOverrideObservation": "Railway CLI snapshots retain an empty fileServiceManifest; the service HTTP healthcheck setting was applied and verified directly."
+    },
+    {
+      "serviceId": "5887fddb-0d43-4509-b41c-ff364abd778f",
+      "service": "shpitto-m4-worker",
+      "deploymentId": "702decbc-636a-4b6b-8c4c-1596633f1577",
+      "status": "SUCCESS",
+      "createdAt": "2026-10-16T10:34:31.519Z",
+      "statusUpdatedAt": "2026-10-16T10:35:27.026Z",
+      "stopped": false,
+      "instances": [
+        {
+          "id": "ecdd219b-e907-4eb6-8617-51ea5d694d28",
+          "status": "RUNNING"
+        }
+      ],
+      "snapshotId": "b78d0c7c-53ef-49be-96fd-e4e1725fa257",
+      "imageDigest": "sha256:16fd9fe5ec1e7f343daa763febf9f4c3591f3005ff1e75db44ef1487c73a4ff7",
+      "builder": "DOCKERFILE",
+      "dockerfilePath": "deploy/provider-worker.Dockerfile",
+      "deploymentHealthcheckPath": "/healthz",
+      "deploymentHealthcheckTimeout": 300,
+      "serviceHealthcheckPath": "/healthz",
+      "serviceHealthcheckTimeout": 300,
+      "railwayConfigFile": null,
+      "manifestOverrideObservation": "Railway CLI snapshots retain an empty fileServiceManifest; the service HTTP healthcheck setting was applied and verified directly."
+    }
+  ]
+}

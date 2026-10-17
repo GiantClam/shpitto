@@ -1,0 +1,18 @@
+{
+  "role": "monitor",
+  "deploymentId": "7abc488c-095c-4bdf-a89d-8e5f5add6949",
+  "httpStatus": 200,
+  "health": {
+    "status": "ready",
+    "role": "recovery-monitor",
+    "mode": "observe",
+    "providerCreatesEnabled": false,
+    "lastSuccessAt": "2026-10-16T10:40:48.005Z",
+    "errors": 0,
+    "deliveryPending": false
+  },
+  "comparedFiles": 287,
+  "missingFiles": [],
+  "hashMismatches": null,
+  "passed": true
+}
