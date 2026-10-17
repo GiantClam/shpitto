@@ -1,7 +1,7 @@
 {
   "status": "PASS",
   "profile": "local-vendor-commerce",
-  "generatedAt": "2026-10-07T09:07:34.779Z",
+  "generatedAt": "2026-10-17T10:20:05.200Z",
   "scenarios": [
     "SC-COM-01",
     "SC-COM-02",

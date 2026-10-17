@@ -2,11 +2,11 @@
   "status": "PASS",
   "profile": "local-docker-candidate-restore",
   "archiveSha256": "c4a1dcb111811a9ae4a0a956045e59880ad937ff6efbadff4af47ca4beb1dbad",
-  "database": "shpitto_candidate_3e42c15d3eb04be8a89180e9de69ea84",
-  "restoredDatabase": "shpitto_candidate_3e42c15d3eb04be8a89180e9de69ea84_restored",
-  "backupMs": 550,
-  "restoreMs": 795,
-  "backupSha256": "9babe6658dc7f8f18d90a47130bd6316d60538acf0ddd6cce060a226e2f71941",
+  "database": "shpitto_candidate_a4182af3cfd945518ad6a6271e902596",
+  "restoredDatabase": "shpitto_candidate_a4182af3cfd945518ad6a6271e902596_restored",
+  "backupMs": 848,
+  "restoreMs": 2030,
+  "backupSha256": "3d638874b3356c5429ab6a5dab369eb5a4f59b7b4eb7c805cdce44ff225b084c",
   "tables": {
     "app.affiliate_attributions": {
       "rows": 0,
@@ -38,19 +38,19 @@
     },
     "app.affiliate_settings": {
       "rows": 1,
-      "sha256": "4e59e209914eb1788ea966f8f876a1c237b3f687f3ea295e2c97ccdfb5f99208"
+      "sha256": "e34ba18bb469a74ab358a3dea6e273cc2394ccfedea9af0cc0cb828bed672389"
     },
     "app.assets": {
       "rows": 1,
-      "sha256": "a4ccf65bb72479db150c4813ea07a8058092cb783984c296e83e43a6e3346733"
+      "sha256": "60701ae23f259f68de82a03d1f9927c43a93fd4d0304cf43179c6a623e831a36"
     },
     "app.audit_events": {
       "rows": 9,
-      "sha256": "29d6c97901c86fd9f439ec30a3d0bca5bdbb9e7d4e2a1d8a7edad2812dad877f"
+      "sha256": "a6dbb6efe54c9cd5ecd145cb12515ddf6fb07caeaaa4cd428f095605d4b86344"
     },
     "app.billing_accounts": {
       "rows": 1,
-      "sha256": "3c9060353859cdfbf9753c3e721760321efe2be3bd0e037fb882062c0058dcd6"
+      "sha256": "f4e4dc02d95877ca01e0b4bd23e3e50ada57865cf8983ca91572d972518a7841"
     },
     "app.billing_cash_events": {
       "rows": 0,
@@ -90,23 +90,23 @@
     },
     "app.command_results": {
       "rows": 10,
-      "sha256": "68c122f8d237b9a90f317f214eaee178ed3b3575ce790757a9632bac780278e1"
+      "sha256": "5e429b14817d06381c22a49157af011101f1abac9694d46d62d4b159044413fb"
     },
     "app.credit_accounts": {
       "rows": 1,
-      "sha256": "3570cddccda157af4d77603192500fd742066910beca981df3c45b3b58c3e4a1"
+      "sha256": "976d294f1b9d94f5118b112e5d7a99ce8ca385dbf977121205c475c494bdfe44"
     },
     "app.credit_allocations": {
       "rows": 4,
-      "sha256": "c5c68a034c1c753f8cdb8d6e29b6f4909ac8e00ae52c3948749c6654431c7f6b"
+      "sha256": "f93dc1316990380efb6be4d3fff21c181a717795ba24337a6325bec51d2ad99e"
     },
     "app.credit_grants": {
       "rows": 1,
-      "sha256": "9392188afe16b039765f313e0990a0e3f0d2cc13d7285e8c43068be0c2a368e6"
+      "sha256": "4d313aa54dd85e4daf6b357ff267fb5c5050c331c9c15df200258e2ab0c886d3"
     },
     "app.credit_ledger_entries": {
       "rows": 8,
-      "sha256": "ee292e65be69365c1735a6e4450fb97266abdb0c8a985521c2cb3cab2bad15f5"
+      "sha256": "720b797732b6d69debe51324b779d70847343aff045cde527978d391e8541a2d"
     },
     "app.credit_legacy_baselines": {
       "rows": 0,
@@ -114,7 +114,7 @@
     },
     "app.credit_reservations": {
       "rows": 4,
-      "sha256": "603d76cf5fa7a3a4df0481787e1d39ea781e2c9a43c3ca7e44153d3083b98cf7"
+      "sha256": "fbead4d1d77ce45a097efb604fbf3fb6c345b261a7a791d43e7cf4843b4c901f"
     },
     "app.generation_quarantine": {
       "rows": 0,
@@ -122,11 +122,11 @@
     },
     "app.generation_tasks": {
       "rows": 4,
-      "sha256": "72b73839dbc96322b24e4af93d29418b178fc024b88d531b7826be49476c9066"
+      "sha256": "e0ba6b10466a1aa7fcc623a472395d988e9284aa0b79ce50f2ba4a4f565a1faf"
     },
     "app.mail_outbox": {
       "rows": 1,
-      "sha256": "2ef8187892eadaa28f0fc9700ed33d1e27e38ae61edc0ec57e106217c2223b1d"
+      "sha256": "7df6f042620b7be2f04842cd3f3a846cf29be97d799152d5581f73963565ed3e"
     },
     "app.operator_recovery_notes": {
       "rows": 0,
@@ -146,7 +146,7 @@
     },
     "app.outbox_events": {
       "rows": 8,
-      "sha256": "ec4e9f78fb39a96783e23574741be81ab36f9adb83f9d6649e39c0a742319b16"
+      "sha256": "cc608290c3f71e26b7dfda1fa1cd6e77173fda2cd0ec22e18cf95e1bd32fa02d"
     },
     "app.provider_webhook_inbox": {
       "rows": 0,
@@ -154,31 +154,31 @@
     },
     "app.schema_ownership": {
       "rows": 1,
-      "sha256": "cc485ec3077a5d69336ec098e1bce943dfe39d4e874618706a908e6880ae4ff3"
+      "sha256": "90e661aaa377a339ebea922e1e3c945a427191afbe590424409aaa54a16e1071"
     },
     "app.submission_attempts": {
       "rows": 1,
-      "sha256": "f9369f6c82e39db0d7630a7e73d5f933c2644717d8799996d8d4c3d12ef373f6"
+      "sha256": "1f03e77a6d95edd6b22796e588099f734d74c5d0215bdf014359183ceafbf456"
     },
     "app.user_access_controls": {
       "rows": 2,
-      "sha256": "0569deba4301b34f946de8abf36b27672b472976b2b8b2ddc7827ecb675c4b01"
+      "sha256": "fbc1d993e1e52a5c231dcfc84709f126d323c3d154f00f62f4c0da777282de18"
     },
     "app.workspace_invitations": {
       "rows": 1,
-      "sha256": "d521f86c00fabd620d982fc98233f518ee72d2b3f8d88d032e6d487347c2c08c"
+      "sha256": "83ea8f6500b9b71c6066b55b0ed0018c705091397e4dfb4a6fda26895420395f"
     },
     "app.workspace_members": {
       "rows": 1,
-      "sha256": "f0f024e7258794d4eba0e2af455a4a8262ba69c8b8ec8efc3b1388f681685fc5"
+      "sha256": "b70cf618374c85b707810e05237261b0a556987bd104954da2eb83ac0c554757"
     },
     "app.workspace_setups": {
       "rows": 2,
-      "sha256": "35550bc840cff3c0c0639c4b2850808f6678134991f62636ee954c2a1c3d6474"
+      "sha256": "bce00770e83757e5539d28b367ceb56cfca736160191d3f1172569c4363ff5a9"
     },
     "app.workspaces": {
       "rows": 1,
-      "sha256": "9d08e7d381ac23b712d2a4de1a2f5dfc643c836c19da1ec1760b3e7ccaacbd80"
+      "sha256": "bd004fa9d379becb23454382d423e29a035d56df090ac0f274225075022bbc84"
     },
     "drizzle.__drizzle_migrations": {
       "rows": 26,
@@ -186,11 +186,11 @@
     },
     "public.account": {
       "rows": 2,
-      "sha256": "38d3e603cef205566ded4fd2ce2200b31ea0176194eeec881a3d9556d2c57144"
+      "sha256": "678bc512db33e473e45fe25f846b84b8fab8cf093f94512a451c65d64b3abe61"
     },
     "public.session": {
       "rows": 1,
-      "sha256": "381db9822aae31eb629fc909c90fa8aa571d2d87d1e1b2ec63714ebf6e7b0be4"
+      "sha256": "785dd17b161f0fde1335c257c0e04182dfe45a85167c46f8b6bee58c2237f49a"
     },
     "public.two_factor": {
       "rows": 0,
@@ -198,7 +198,7 @@
     },
     "public.user": {
       "rows": 2,
-      "sha256": "9fe418a8a4fc231d208d829d9b09475393069712eb2b753466039afb37a217aa"
+      "sha256": "afd07749dc6d6952b7bc0454d590e23f1f9bad51a4a580b7d148b5bb7c03cf14"
     },
     "public.verification": {
       "rows": 0,
@@ -206,8 +206,8 @@
     }
   },
   "assetFiles": {
-    ".cleanup-cursors/fe03a3c8-9587-422f-babb-2f679e2933fe.json": "f755f60a030e4ab480e2f28ad4fd6e31a98c7825bc5cdd6b7b3062a71b12765c",
-    "tasks/29febb14-7440-4d49-9c71-3cb35c403540/outputs/355a8113-1a94-4fd2-9793-3c3dd3f054f6.mp4": "7ace5deee2697fef232d855ea123d6dd37fd95114ec258b9696ded8163a31b18"
+    ".cleanup-cursors/ac253cf5-62a7-4552-bc1f-7404e8e16ea8.json": "f755f60a030e4ab480e2f28ad4fd6e31a98c7825bc5cdd6b7b3062a71b12765c",
+    "tasks/4308a5a6-0e96-41e8-94b0-07f421de8f04/outputs/c7538970-5df2-42d5-8cd1-8d82ae87aa3b.mp4": "7ace5deee2697fef232d855ea123d6dd37fd95114ec258b9696ded8163a31b18"
   },
   "checks": {
     "backupCatalog": "PASS",

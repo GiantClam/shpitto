@@ -9,7 +9,7 @@
       "task": "9.1",
       "check": "export-boundaries",
       "command": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/check-release-boundaries.ts",
-      "startedAt": "2026-10-07T09:07:30.807Z",
+      "startedAt": "2026-10-17T10:19:58.875Z",
       "exitCode": 0,
       "status": "PASS",
       "outputRef": "internal/evidence/m8/export-scan/export-boundaries.log"
@@ -18,7 +18,7 @@
       "task": "9.2",
       "check": "release-boundaries-tests",
       "command": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test tests/release/export-boundaries.test.ts",
-      "startedAt": "2026-10-07T09:07:31.039Z",
+      "startedAt": "2026-10-17T10:19:59.114Z",
       "exitCode": 0,
       "status": "PASS",
       "outputRef": "internal/evidence/m8/export-scan/release-boundaries-tests.log"
@@ -27,7 +27,7 @@
       "task": "9.5",
       "check": "deployment-preflight",
       "command": "C:\\Program Files\\nodejs\\node.exe scripts/check-deployment-preflight.mjs",
-      "startedAt": "2026-10-07T09:07:31.351Z",
+      "startedAt": "2026-10-17T10:19:59.491Z",
       "exitCode": 0,
       "status": "PASS",
       "outputRef": "internal/evidence/m8/managed-preflight/deployment-preflight.log"
@@ -36,7 +36,7 @@
       "task": "9.6",
       "check": "docker-context",
       "command": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/check-release-boundaries.ts",
-      "startedAt": "2026-10-07T09:07:31.436Z",
+      "startedAt": "2026-10-17T10:19:59.604Z",
       "exitCode": 0,
       "status": "PASS",
       "outputRef": "internal/evidence/m8/docker-preflight/docker-context.log"
@@ -45,7 +45,7 @@
       "task": "9.7",
       "check": "format-and-typecheck",
       "command": "C:\\Program Files\\nodejs\\node.exe node_modules/typescript/bin/tsc --noEmit",
-      "startedAt": "2026-10-07T09:07:31.624Z",
+      "startedAt": "2026-10-17T10:19:59.834Z",
       "exitCode": 0,
       "status": "PASS",
       "outputRef": "internal/evidence/m8/config-migration/format-and-typecheck.log"
@@ -54,7 +54,7 @@
       "task": "9.8",
       "check": "backup-restore-scripts",
       "command": "C:\\Program Files\\nodejs\\node.exe scripts/check-deployment-preflight.mjs",
-      "startedAt": "2026-10-07T09:07:33.796Z",
+      "startedAt": "2026-10-17T10:20:04.181Z",
       "exitCode": 0,
       "status": "PASS",
       "outputRef": "internal/evidence/m8/restore-preflight/backup-restore-scripts.log"
@@ -63,7 +63,7 @@
       "task": "9.9",
       "check": "health-and-operations",
       "command": "C:\\Program Files\\nodejs\\node.exe scripts/check-deployment-preflight.mjs",
-      "startedAt": "2026-10-07T09:07:33.894Z",
+      "startedAt": "2026-10-17T10:20:04.289Z",
       "exitCode": 0,
       "status": "PASS",
       "outputRef": "internal/evidence/m8/operations-preflight/health-and-operations.log"
@@ -72,7 +72,7 @@
       "task": "9.4",
       "check": "candidate-runtime-evidence",
       "command": "C:\\Program Files\\nodejs\\node.exe scripts/check-candidate-evidence.mjs",
-      "startedAt": "2026-10-07T09:07:33.988Z",
+      "startedAt": "2026-10-17T10:20:04.396Z",
       "exitCode": 0,
       "status": "PASS",
       "outputRef": "internal/evidence/m8/local-demo/candidate-runtime-evidence.log"
@@ -81,7 +81,7 @@
       "task": "9.10",
       "check": "vendor-commerce-evidence",
       "command": "C:\\Program Files\\nodejs\\node.exe internal/vendor/verify-local.mjs",
-      "startedAt": "2026-10-07T09:07:34.163Z",
+      "startedAt": "2026-10-17T10:20:04.511Z",
       "exitCode": 0,
       "status": "PASS",
       "outputRef": "internal/evidence/m8/commerce-separation/vendor-commerce-evidence.log"

@@ -1,13 +1,13 @@
-✔ default commercial configuration remains mock and cannot open real checkout (0.9961ms)
-✔ hosted checkout requires every explicit prerequisite and approved hosted origin (0.5529ms)
-✔ source orders are isolated from SaaS payments and enforce merchant and mode identity (1.8954ms)
-✔ duplicate delivery is idempotent and order identity conflicts fail closed (0.3146ms)
-✔ expiry preserves acquired source and renewal enables later versions without rewriting past records (0.2761ms)
-✔ hosted order rejection and checkout preview fail closed while business prerequisites are missing (34.9687ms)
-✔ twelve calendar months clamp leap day and early renewals preserve the remaining period (0.2093ms)
-✔ local sales preview exposes a complete fixture journey and never redirects to a payment provider (13.9201ms)
-✔ vendor Docs proxy serves only public Docs/static routes and never forwards cookies (8.785ms)
-✔ fulfillment verifier hashes actual candidate bytes and rejects tampering, identity and path drift (242.6673ms)
+✔ default commercial configuration remains mock and cannot open real checkout (0.9868ms)
+✔ hosted checkout requires every explicit prerequisite and approved hosted origin (0.5038ms)
+✔ source orders are isolated from SaaS payments and enforce merchant and mode identity (2.0917ms)
+✔ duplicate delivery is idempotent and order identity conflicts fail closed (0.3037ms)
+✔ expiry preserves acquired source and renewal enables later versions without rewriting past records (0.2835ms)
+✔ hosted order rejection and checkout preview fail closed while business prerequisites are missing (38.1697ms)
+✔ twelve calendar months clamp leap day and early renewals preserve the remaining period (0.2222ms)
+✔ local sales preview exposes a complete fixture journey and never redirects to a payment provider (15.1832ms)
+✔ vendor Docs proxy serves only public Docs/static routes and never forwards cookies (9.2923ms)
+✔ fulfillment verifier hashes actual candidate bytes and rejects tampering, identity and path drift (286.4594ms)
 ℹ tests 10
 ℹ suites 0
 ℹ pass 10
@@ -15,7 +15,7 @@
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 374.0332
+ℹ duration_ms 430.8472
 ℹ start of coverage report
 ℹ -------------------------------------------------------------------------------
 ℹ file                           | line % | branch % | funcs % | uncovered lines
