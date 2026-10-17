@@ -100,18 +100,18 @@ export function InputCrop({scope, disabled, onChange}: Readonly<{scope: CropScop
   }
 
   const dimensions = scope.aspectRatio === '16:9' ? '1280 × 720' : '720 × 1280';
-  return <fieldset disabled={disabled} aria-describedby="crop-help" style={{display: 'grid', gap: '.75rem', minWidth: 0, margin: 0, padding: '1rem', border: '1px solid var(--color-border-strong)', borderRadius: 'var(--shell-radius-sm)'}}>
+  return <fieldset className="input-crop" disabled={disabled} aria-describedby="crop-help">
     <legend>Image-to-video input</legend>
     <label htmlFor="generation-image">Upload an owned image</label>
-    <input id="generation-image" type="file" accept="image/jpeg,image/png" style={{maxWidth: '100%', minWidth: 0}} onChange={(event) => {
+    <input id="generation-image" type="file" accept="image/jpeg,image/png" onChange={(event) => {
       const file = event.currentTarget.files?.[0];
       event.currentTarget.value = ''; // Allow the same file to be selected after a failed upload.
       void selectImage(file);
     }} />
     <p id="crop-help">JPEG or PNG, up to 20 MiB. Center crop: {scope.aspectRatio}, {dimensions}. Transparent areas become white. Changing image, aspect or model requires a new confirmation.</p>
-    {preview ? <figure style={{margin: 0, minWidth: 0}}>
+    {preview ? <figure className="input-crop-preview">
       <img key={preview.url} src={preview.url} alt={`Normalized ${scope.aspectRatio} center crop to confirm`} width={scope.aspectRatio === '16:9' ? 1280 : 720} height={scope.aspectRatio === '16:9' ? 720 : 1280}
-        style={{display: 'block', maxWidth: '100%', width: 'auto', height: 'auto', maxHeight: '28rem'}} onLoad={() => {if (sameCropRevision(current.current, preview.revision)) setSeen(true);}} onError={() => {
+        className="input-crop-image" onLoad={() => {if (sameCropRevision(current.current, preview.revision)) setSeen(true);}} onError={() => {
           if (!sameCropRevision(current.current, preview.revision)) return;
           setSeen(false); setConfirmed(false); onChange({revision: current.current.revision, consent: null});
           setError('The crop preview could not be displayed. Choose the image again.');

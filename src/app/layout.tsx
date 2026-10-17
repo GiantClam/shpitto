@@ -5,8 +5,8 @@ import {brand, brandCssVariables} from '../config/brand';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Shpitto · Governed website templates',
-  description: 'Shpitto templates with owned code and reusable workflows.',
+  title: 'Shpitto · AI video studio',
+  description: 'Create videos from prompts or still images in your private creative workspace.',
   metadataBase: new URL('https://shpitto.com'),
   icons: {
     icon: '/brand/shpitto-icon.png',

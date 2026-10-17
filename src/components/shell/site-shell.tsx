@@ -1,19 +1,24 @@
 import type {ReactNode} from 'react';
 
 import {brand} from '../../config/brand';
-import {marketingNavigation} from '../../config/navigation';
+import {marketingNavigation, getWorkspaceNavigation} from '../../config/navigation';
 
-export function SiteShell({children}: Readonly<{children: ReactNode}>) {
+type SiteShellProps = Readonly<{children: ReactNode; variant?: 'marketing' | 'workspace'; workspaceId?: string}>;
+
+export function SiteShell({children, variant = 'marketing', workspaceId}: SiteShellProps) {
+  const workspace = variant === 'workspace';
+  const navigation = workspace ? getWorkspaceNavigation(workspaceId) : marketingNavigation;
+  const createHref = workspaceId ? `/dashboard?workspace=${encodeURIComponent(workspaceId)}` : '/dashboard';
   return (
-    <div className="site-shell">
+    <div className={`site-shell site-shell-${variant}`}>
       <a className="skip-link" href="#main-content">Skip to content</a>
       <header className="site-header">
         <div className="site-header-inner">
           <a className="brand" href="/" aria-label={`${brand.productName} home`}>
-            <img className="brand-logo" src="/brand/shpitto-logo-full.png" alt={brand.productName} />
+            <span className="brand-logo-frame"><img className="brand-logo" src="/brand/shpitto-logo-full.png" alt={brand.productName} /></span>
           </a>
           <nav aria-label="Primary navigation">
-            {marketingNavigation.map((item) => (
+            {navigation.map((item) => (
               <a key={item.href} href={item.href}>
                 {item.label}
                 {item.status ? <span className="nav-status">{item.status}</span> : null}
@@ -21,8 +26,8 @@ export function SiteShell({children}: Readonly<{children: ReactNode}>) {
             ))}
           </nav>
           <div className="site-header-actions">
-            <a className="site-login-link" href="/login">Log in</a>
-            <a className="button site-cta" href="/dashboard">Start building</a>
+            {workspace ? <span className="shell-workspace-badge"><span className="shell-status-dot" /> Studio</span> : <a className="site-login-link" href="/login">Log in</a>}
+            <a className="button site-cta" href={createHref}>{workspace ? 'New creation' : 'Start creating'}</a>
           </div>
         </div>
       </header>
@@ -31,8 +36,8 @@ export function SiteShell({children}: Readonly<{children: ReactNode}>) {
       </div>
       <footer className="site-footer">
         <div className="site-footer-inner">
-          <p>{brand.productName} · code you own, workflows you reuse.</p>
-          <a href="/docs">Read the template contract</a>
+          <div><strong>{brand.productName}</strong><p>{brand.tagline}</p></div>
+          <div className="site-footer-links"><a href="/#explore">Explore</a><a href={createHref}>Create a video</a><a href="/docs">Docs</a></div>
         </div>
       </footer>
     </div>

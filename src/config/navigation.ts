@@ -6,9 +6,23 @@ export type NavigationItem = Readonly<{
 
 export const marketingNavigation: readonly NavigationItem[] = [
   {label: 'Home', href: '/'},
-  {label: 'Docs', href: '/docs', status: 'preview'},
-  {label: 'Dashboard', href: '/dashboard'},
+  {label: 'Explore', href: '/#explore'},
+  {label: 'How it works', href: '/#how-it-works'},
+  {label: 'Docs', href: '/docs'},
 ];
+
+export function getWorkspaceNavigation(workspaceId?: string): readonly NavigationItem[] {
+  const dashboard = workspaceId ? `/dashboard?workspace=${encodeURIComponent(workspaceId)}` : '/dashboard';
+  return [
+    {label: 'Create', href: dashboard},
+    {label: 'History', href: `${dashboard}#history`},
+    {label: 'Assets', href: `${dashboard}#assets`},
+    workspaceId ? {label: 'Members', href: `/workspaces/${encodeURIComponent(workspaceId)}/settings/members`} : {label: 'Team', href: '/dashboard/team'},
+    workspaceId ? {label: 'Billing', href: `/workspaces/${encodeURIComponent(workspaceId)}/billing`} : {label: 'Credits', href: `${dashboard}#credits`},
+  ];
+}
+
+export const workspaceNavigation = getWorkspaceNavigation();
 
 export const adminNavigation: readonly NavigationItem[] = [
   {label: 'Overview', href: '/admin'},

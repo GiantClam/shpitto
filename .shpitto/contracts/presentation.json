@@ -7,10 +7,21 @@
     "brandReference": "https://shpitto.com",
     "assetRole": "template-default-fallback",
     "customerOverrideRequiredForDelivery": true,
-    "brandBaseline": "Shpitto website light baseline: #f4f7fb canvas, #c74336 primary, #dbeafe secondary, #d97757 warm accent, Inter/system sans with semantic component states",
+    "brandBaseline": "Shpitto AI media baseline: #f5f1eb editorial canvas, #f16a3f coral primary, #e8dcff violet creative accent, dark studio surfaces, Avenir/system sans with semantic component states",
     "designContract": "DESIGN.md",
     "tokenSource": "src/config/brand.ts",
+    "studioTokenSource": "brand.tokens.studio",
+    "cssProjection": "brandCssVariables in src/config/brand.ts",
+    "tokenContract": "All token values are canonical in src/config/brand.ts. CSS consumes the runtime projection and scoped semantic aliases; do not duplicate numeric token tables or literal :root fallbacks. The brand baseline is descriptive, not a second token source.",
     "runtimeBinding": "src/app/layout.tsx",
+    "logoTreatment": "Preserve customer logo artwork and colors on a light backing in the dark shell; do not invert or recolor the logo with filters.",
+    "sampleArtwork": {
+      "path": "public/media/alpine-studio.png",
+      "origin": "original AI illustration",
+      "visibleLabel": "Sample artwork",
+      "liveProviderResult": false,
+      "contract": "Use descriptive alt text where informative. Do not present sample artwork as a user's output, a live provider result or evidence of shipped image generation."
+    },
     "sharedShell": [
       "src/components/shell/site-shell.tsx",
       "src/components/shell/admin-shell.tsx",
@@ -33,7 +44,19 @@
   ],
   "requirements": {
     "responsive": ["1440x900", "390x844"],
-    "accessibility": ["keyboard navigation", "visible focus", "semantic headings", "actionable error copy"],
+    "accessibility": ["keyboard navigation", "visible focus on light and dark surfaces", "WCAG AA text contrast: 4.5:1 normal text and 3:1 large text", "touch targets at least 44px by 44px", "semantic headings", "actionable error copy", "prefers-reduced-motion support"],
+    "themes": {
+      "light": ["marketing", "auth", "docs"],
+      "studio": ["creation", "team", "billing", "settings"],
+      "contract": "Remap existing semantic roles to studio CSS variables within the shared .site-shell-workspace so shared forms, text, borders, focus and status feedback inherit the dark theme. Avoid dashboard-only fixes and per-route palettes. Dark marketing media previews remain locally scoped."
+    },
+    "generation": {
+      "output": "video",
+      "supportedModes": ["text-to-video", "image-to-video"],
+      "contract": "The shipped runtime is video only. Image input is not image generation. Image-generator visual ambition must not appear as active image-generation tabs, supported APIs or shipped capability claims. Only expose runtime-supported model settings; presentation changes do not enable live providers or new modes."
+    },
+    "marketing": "Demonstrate end-user creative value with truthful copy, metadata and previews. Keep template purchasing, code ownership and engineering guidance in buyer documentation, outside customer creation, sign-in and billing flows.",
+    "workspaceNavigation": "Preserve the selected workspace in creation, history, assets, team, billing and settings links, including header/footer actions. Use the shared navigation contract and encoded workspace identifiers without changing selection or membership checks.",
     "preserveJourneys": ["sign-in", "workspace navigation", "generation", "download", "billing"]
   }
 }

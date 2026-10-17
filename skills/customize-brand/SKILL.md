@@ -6,26 +6,56 @@ and local preview. It is a fallback, not a customer's final visual identity;
 customer delivery requires this Skill to define the customer's own visual
 assets and tokens.
 
-Use `DESIGN.md` with `src/config/brand.ts` as the design contract. Treat its semantic roles,
-type scale, spacing rhythm, surface ladder, component states and motion values
-as one system, following the DESIGN.md pattern of naming reusable decisions
-before writing page CSS.
+Use `DESIGN.md` for application rules and `src/config/brand.ts` as the canonical
+source for all token values. Treat semantic roles, type scale, spacing rhythm,
+surface ladder, component states and motion values as one system, naming
+reusable decisions before writing page CSS. Studio tokens belong to
+`brand.tokens.studio`; `brandCssVariables` in the same file projects both light
+and studio roles into CSS and `src/app/layout.tsx` binds them at runtime.
+`src/app/globals.css` consumes the projection and scopes aliases. Do not
+duplicate numeric token tables or literal `:root` fallbacks in CSS.
 
 ## Inputs
 - Customer brand name, colors, logo/font assets, copy and responsive/accessibility intent.
-- The fallback token contract in `src/config/brand.ts` (cool light canvas,
-  accessible red primary, blue secondary, semantic ink/status/focus colors,
-  Inter/system typography, 4px base rhythm and component state tokens).
+- The fallback token contract in `src/config/brand.ts` (warm editorial canvas,
+  coral primary, violet creative accent, dark studio surfaces, semantic
+  ink/status/focus colors, Avenir/system typography, 4px base rhythm and
+  component state tokens).
 - A visual brief covering mood, density, imagery, primary action, dark/light
   surfaces, responsive intent and reduced-motion behavior.
 - The relevant `DESIGN.md` sections for the brand's component and responsive
   decisions.
+- The shipped capability boundary: video only, with `text-to-video` and
+  `image-to-video`; an image-generator visual direction does not add image
+  generation tabs, APIs or provider access.
 
 ## Allowed scope
 `src/config/brand.ts`, `public/brand`, approved shell presentation paths,
 `src/app/globals.css` token bindings and marketing copy. Do not scatter one-off
 colors, type sizes, radii, shadows, breakpoints or control dimensions into a
 page when a shared token exists.
+
+## Presentation rules
+- Keep marketing, auth and documentation surfaces light. Remap semantic roles
+  inside the shared workspace shell to `brand.tokens.studio` through its CSS
+  projection so creation, team, billing and settings share dark surfaces, text,
+  borders, focus and feedback without per-route palettes.
+- Keep the customer's logo and original colors on a light backing in the dark
+  shell. Do not invert or recolor customer logo artwork with filters.
+- Marketing demonstrates end-user video creation value. Keep template
+  purchasing, code ownership and engineering guidance in buyer documentation,
+  outside customer creation, sign-in and billing flows.
+- Treat `public/media/alpine-studio.png` as original AI sample artwork with a
+  visible `Sample artwork` label and descriptive alt text where informative.
+  Never call it a live provider result, a user's output or proof of supported
+  image generation. Copy, metadata, previews and controls must reflect the
+  shipped video-only capabilities.
+- Preserve selected workspace context in navigation and creation links through
+  the shared navigation contract, including encoded workspace identifiers.
+- Preserve visible keyboard focus and keyboard operation on both themes. Meet
+  WCAG AA text contrast (4.5:1 normal text, 3:1 large text) on actual backgrounds
+  and keep touch targets at least 44px by 44px. Check desktop `1440x900` and
+  mobile `390x844`, including reduced-motion behavior.
 
 ## Protected contracts
 Preserve sign-in, workspace, generation, download and billing actions and all auth,
@@ -36,7 +66,10 @@ Record a scoped manifest naming the customer assets, semantic token map,
 component states, desktop/mobile screenshots or assertions, keyboard focus and
 contrast checks, consistent navigation/control dimensions and a recovery patch.
 The manifest must distinguish template fallback assets from customer-selected
-assets and must state the primary CTA and responsive collapse rules.
+assets and sample artwork. State the primary CTA, supported video mode,
+responsive collapse rules and scoped workspace role mappings. Include checks
+for truthful capability claims, the sample artwork label, logo backing, light
+marketing/auth/docs, dark team/billing/settings and workspace-aware links.
 
 ## Recovery
 Revert only the brand-attributable files after checking overlaps.

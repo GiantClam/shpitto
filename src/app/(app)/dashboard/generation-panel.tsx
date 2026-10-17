@@ -11,7 +11,6 @@ import type {CropChange} from '../../../components/generation/input-crop';
 type Quote = PublicGenerationQuote;
 type InitialTask = Readonly<{taskId: string; status: string; deadlineAt: string; nextActionAt: string}>;
 type CommandResponse = Readonly<{ok?: boolean; error?: string | {message?: string}; data?: unknown}>;
-const selectionStyle = {background: 'var(--color-surface)', color: 'var(--color-text)', border: '1px solid var(--color-border-strong)', borderRadius: 'var(--shell-radius-sm)', minHeight: 'var(--shell-control-height)', minWidth: 0, padding: '.65rem .75rem', width: '100%'};
 
 function errorMessage(body: CommandResponse, fallback: string): string {
   return typeof body.error === 'string' ? body.error : body.error?.message ?? fallback;
@@ -77,23 +76,29 @@ export function GenerationPanel({workspaceId, quote, initialTask, modelChoices}:
     } catch (error) { setState('error'); setMessage(error instanceof Error ? error.message : 'The generation could not be created.'); }
     finally {submitting.current = false;}
   }
-  return <section className="generation-panel">
-    <div className="section-heading"><h2>Generate a clip</h2><span>{model ? `${model.quote.totalCost} credits` : 'No available model'}</span></div>
+  return <section className="generation-panel studio-composer">
+    <div className="composer-heading"><div><span className="composer-kicker">CREATE · VIDEO STUDIO</span><h2>Give your idea a first frame.</h2><p>Describe the scene, choose your canvas and see where the idea takes you.</p></div><div className="composer-cost"><span>ESTIMATED COST</span><strong>{model ? `${model.quote.totalCost} credits` : 'Unavailable'}</strong></div></div>
+    <p className="composer-mode">{imageRequired ? 'Image to video' : 'Text to video'} · Video studio</p>
     <form onSubmit={submit} className="generation-form">
-      <label htmlFor="generation-model">Model</label>
-      <select id="generation-model" style={selectionStyle} value={model ? selectedModelId : ''} disabled={state === 'working'} onChange={(event) => {setSelectedModelId(event.target.value); setCrop(null); setMessage('');}}>
+      <div className="composer-fields">
+        <div className="composer-field"><label htmlFor="generation-model">Model</label>
+      <select id="generation-model" className="studio-select" value={model ? selectedModelId : ''} disabled={state === 'working'} onChange={(event) => {setSelectedModelId(event.target.value); setCrop(null); setMessage('');}}>
         {!model ? <option value="" disabled>Select an available model</option> : null}
         {choices.map((choice) => <option key={choice.quote.modelId} value={choice.quote.modelId}>{choice.label} · {choice.mode === 'image-to-video' ? 'Image to video' : 'Text to video'} · {choice.quote.totalCost} credits</option>)}
       </select>
-      <label htmlFor="generation-aspect">Aspect ratio</label>
-      <select id="generation-aspect" style={selectionStyle} value={aspectRatio} disabled={state === 'working'} onChange={(event) => {setAspectRatio(event.target.value as AspectRatio); setCrop(null); setMessage('');}}>
+        </div>
+        <div className="composer-field"><label htmlFor="generation-aspect">Canvas</label>
+      <select id="generation-aspect" className="studio-select" value={aspectRatio} disabled={state === 'working'} onChange={(event) => {setAspectRatio(event.target.value as AspectRatio); setCrop(null); setMessage('');}}>
         <option value="16:9">16:9 · Landscape</option><option value="9:16">9:16 · Portrait</option>
       </select>
-      <p>Real video preset: approximately five seconds at 720p. Mock is a local simulation.</p>
+        </div>
+      </div>
+      <p className="composer-note"><span>✦</span> Five-second video · 720p · Choose a model and review its credit cost before creating.</p>
       {imageRequired ? <InputCrop key={scopeKey} scope={scope} disabled={state === 'working'} onChange={(change) => setCrop({...change, scopeKey})} /> : null}
-      <label htmlFor="generation-prompt">Prompt</label>
-      <textarea id="generation-prompt" value={prompt} disabled={state === 'working'} onChange={(event) => setPrompt(event.target.value)} maxLength={10000} required placeholder="Describe the clip" />
-      <button className="button" disabled={state === 'working' || !model || !cropReady} type="submit">{state === 'working' ? 'Queueing…' : 'Queue generation'}</button>
+      <div className="prompt-field"><div className="prompt-label-row"><label htmlFor="generation-prompt">Prompt</label><span>Describe subject · motion · light · mood</span></div>
+      <textarea id="generation-prompt" value={prompt} disabled={state === 'working'} onChange={(event) => setPrompt(event.target.value)} maxLength={10000} required placeholder="A midnight product launch in a glass gallery, slow camera push-in, warm reflections, editorial lighting" />
+      </div>
+      <div className="composer-actions"><button className="button" disabled={state === 'working' || !model || !cropReady} type="submit">{state === 'working' ? 'Queueing…' : 'Generate video ↗'}</button><span>Private to your workspace</span></div>
       {!model ? <p role="status">No admitted model quote is available. Refresh or choose an available model.</p> : null}
       {message ? <p role={state === 'error' ? 'alert' : 'status'}>{message}</p> : null}
     </form>
