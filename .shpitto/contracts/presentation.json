@@ -7,7 +7,7 @@
     "brandReference": "https://shpitto.com",
     "assetRole": "template-default-fallback",
     "customerOverrideRequiredForDelivery": true,
-    "brandBaseline": "Shpitto AI media baseline: #f5f1eb editorial canvas, #f16a3f coral primary, #e8dcff violet creative accent, dark studio surfaces, Avenir/system sans with semantic component states",
+    "brandBaseline": "Shpitto creation-first video baseline: dark public creator and workspace surfaces, light auth/docs, #f16a3f coral primary, violet creative accent, Avenir/system sans with semantic component states",
     "designContract": "DESIGN.md",
     "tokenSource": "src/config/brand.ts",
     "studioTokenSource": "brand.tokens.studio",
@@ -16,11 +16,12 @@
     "runtimeBinding": "src/app/layout.tsx",
     "logoTreatment": "Preserve customer logo artwork and colors on a light backing in the dark shell; do not invert or recolor the logo with filters.",
     "sampleArtwork": {
-      "path": "public/media/alpine-studio.png",
-      "origin": "original AI illustration",
+      "paths": ["public/media/alpine-studio.png", "public/media/motion-product.png", "public/media/neon-portrait.png"],
+      "provenance": "public/media/README.md",
+      "origin": "original AI illustrations",
       "visibleLabel": "Sample artwork",
       "liveProviderResult": false,
-      "contract": "Use descriptive alt text where informative. Do not present sample artwork as a user's output, a live provider result or evidence of shipped image generation."
+      "contract": "Use descriptive alt text where informative and a visible Sample artwork label. Do not present sample artwork as a user's output, a live provider result or evidence of shipped image generation. Still samples must not have fake play controls or pretend to be playable video output."
     },
     "sharedShell": [
       "src/components/shell/site-shell.tsx",
@@ -46,16 +47,38 @@
     "responsive": ["1440x900", "390x844"],
     "accessibility": ["keyboard navigation", "visible focus on light and dark surfaces", "WCAG AA text contrast: 4.5:1 normal text and 3:1 large text", "touch targets at least 44px by 44px", "semantic headings", "actionable error copy", "prefers-reduced-motion support"],
     "themes": {
-      "light": ["marketing", "auth", "docs"],
-      "studio": ["creation", "team", "billing", "settings"],
-      "contract": "Remap existing semantic roles to studio CSS variables within the shared .site-shell-workspace so shared forms, text, borders, focus and status feedback inherit the dark theme. Avoid dashboard-only fixes and per-route palettes. Dark marketing media previews remain locally scoped."
+      "light": ["auth", "docs"],
+      "studio": ["public homepage", "creation", "team", "billing", "settings"],
+      "siteShellVariants": {"publicHomepage": "creator", "signedInWorkspace": "workspace"},
+      "contract": "Remap existing semantic roles to studio CSS variables within the shared .site-shell-creator and .site-shell-workspace so shared forms, text, borders, focus and status feedback inherit the dark theme. Avoid dashboard-only fixes and per-route palettes. The public homepage is dark even when its route lives under (marketing)."
+    },
+    "publicHomepage": {
+      "topology": "Creation-first product: persistent desktop tool navigation, compact mobile navigation, concise heading, editable video composer and curated gallery. Avoid giant editorial heroes or promotional stages ahead of the controls. Interaction references inform topology only, never copied brand or assets.",
+      "composer": {
+        "editableFields": ["prompt", "mode", "aspectRatio"],
+        "modes": ["text-to-video", "image-to-video"],
+        "aspectRatios": ["16:9", "9:16"],
+        "fixedPreset": {"durationSeconds": 5, "resolution": "720p"},
+        "primaryAction": "Continue to studio",
+        "destination": "/dashboard",
+        "handoff": "Use the existing dashboard auth guard for guests and signed-in visitors. Helper copy explains sign-in, model selection and credit review in the studio; there is no public cost quote.",
+        "admittedModelAndActualCost": "Only after sign-in, based on current server-backed admission and quoting; public UI must not invent availability or pricing."
+      },
+      "sessionDraft": {
+        "version": 1,
+        "intentFields": ["prompt", "mode", "aspectRatio"],
+        "autosave": "During editing, to retain the draft across tool mode-link navigation and the auth handoff; an explicit mode destination may update the mode.",
+        "autoSubmit": false,
+        "contract": "The serialized session draft contains version: 1 schema metadata plus only prompt, mode and aspectRatio intent fields. Do not carry quotes, prices, model selection, uploads, assets, crop references, consent, workspace identity or other protected state. Restore for editable signed-in review with fresh model admission and actual cost, then require explicit generation. Never start jobs or charge credits on sign-in or restoration. Owned image upload, crop review and consent remain in the signed-in image-to-video flow; workspace selection remains in existing navigation."
+      },
+      "gallery": "Filters must change displayed curated entries and expose selected state. Use prompt replaces only the editable prompt and preserves the currently selected mode and aspectRatio. Only prompt inspiration is reused: the sample image is not uploaded or selected as an owned input. Neither action submits a generation, selects a private asset or grants ownership or consent. Label each sample artwork visibly; do not fake playable output."
     },
     "generation": {
       "output": "video",
       "supportedModes": ["text-to-video", "image-to-video"],
-      "contract": "The shipped runtime is video only. Image input is not image generation. Image-generator visual ambition must not appear as active image-generation tabs, supported APIs or shipped capability claims. Only expose runtime-supported model settings; presentation changes do not enable live providers or new modes."
+      "contract": "The shipped runtime is video only. Image-to-video is the supported image entry and produces video, not images. Do not expose an active image-output tab, image-generation API or promise of image generation. Only expose runtime-supported settings; presentation changes do not enable live providers or new modes."
     },
-    "marketing": "Demonstrate end-user creative value with truthful copy, metadata and previews. Keep template purchasing, code ownership and engineering guidance in buyer documentation, outside customer creation, sign-in and billing flows.",
+    "marketing": "The default public homepage demonstrates end-user creative value through an editable dark video creation surface and curated inspiration, with truthful copy, metadata and previews. Keep template purchasing, code ownership and engineering guidance in buyer documentation, outside customer creation, sign-in and billing flows.",
     "workspaceNavigation": "Preserve the selected workspace in creation, history, assets, team, billing and settings links, including header/footer actions. Use the shared navigation contract and encoded workspace identifiers without changing selection or membership checks.",
     "preserveJourneys": ["sign-in", "workspace navigation", "generation", "download", "billing"]
   }

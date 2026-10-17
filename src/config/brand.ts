@@ -61,10 +61,10 @@ export const brand = Object.freeze({
       warning: '#785800',
     }),
     studio: Object.freeze({
-      canvas: '#111016',
-      surface: '#17151d',
-      surfaceRaised: '#211d2a',
-      surfaceSoft: '#292331',
+      canvas: '#101012',
+      surface: '#171719',
+      surfaceRaised: '#202024',
+      surfaceSoft: '#28282c',
       text: '#f7f1ea',
       textMuted: '#aaa2b0',
       border: '#62596d',
@@ -114,14 +114,14 @@ export const brand = Object.freeze({
   design: Object.freeze({
     version: '1.0',
     density: 'media-first',
-    defaultTheme: 'split-light-studio-dark',
+    defaultTheme: 'creation-first-dark',
     sourceMethod: 'semantic-tokens-and-component-states',
     rules: Object.freeze([
       'Use semantic color roles instead of raw page-local hex values.',
       'Keep one primary action per region and expose visible hover, focus, disabled and error states.',
       'Use the shared spacing rhythm and container widths before adding a new layout value.',
       'Treat media previews, prompt composition and recent outputs as first-class product surfaces.',
-      'Use the light marketing canvas for sales context and the dark studio canvas for creation context.',
+      'Use the dark studio canvas for the public creator and workspace; keep auth and documentation light.',
     ]),
   }),
 });

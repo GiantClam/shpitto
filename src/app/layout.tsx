@@ -20,7 +20,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({children}: {children: ReactNode}) {
   return (
-    <html lang="en" style={brandCssVariables as CSSProperties}>
+    <html lang="en" data-scroll-behavior="smooth" style={brandCssVariables as CSSProperties}>
       <body>{children}</body>
     </html>
   );

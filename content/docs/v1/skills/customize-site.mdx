@@ -13,17 +13,17 @@ shared shell and approved presentation
 Canonical invocation: read `skills/customize-site/SKILL.md` and follow its evidence contract.
 
 Coordinate approved brand, theme, content and page composition changes across
-the site. The marketing, auth, product and admin shells start from the Shpitto
+the site. The public creator, auth, product and admin shells start from the Shpitto
 website baseline as a template fallback. Customer delivery uses this Skill to
 compose the customer's own brand, theme and page presentation over that shell.
 
 Use `DESIGN.md` for visual application rules and `src/config/brand.ts` as the
 canonical source for all token values. The default template is a video creation
-product baseline: use the warm marketing layer for creative value and the dark
-studio layer for prompt, model, aspect ratio and output workflows.
+product baseline: use a dark, creation-first public homepage and workspace for
+prompt, aspect ratio and output workflows, with auth and documentation light.
 Every route should read as part of the same system: the same container, type
 scale, spacing rhythm, surface roles and interaction states should carry across
-marketing, auth, product and operations surfaces.
+public creator, auth, product and operations surfaces.
 
 ## Inputs
 - Customer site intent, brand assets, affected shells, tokens, routes, components and release baseline.
@@ -33,7 +33,7 @@ marketing, auth, product and operations surfaces.
   primary action, responsive topology and motion preference.
 - For video creation surfaces, a media-first brief naming the prompt composer,
   preview/result treatment, supported `text-to-video` or `image-to-video` mode,
-  credits visibility and private asset state.
+  public draft versus signed-in review, and signed-in cost/private asset state.
 - The selected workspace context and its shared navigation contract.
 
 ## Allowed scope
@@ -49,10 +49,15 @@ gradients inside a purposeful media preview are allowed by `DESIGN.md`.
   `brandCssVariables` in `src/config/brand.ts`, bound by `src/app/layout.tsx`.
   CSS consumes those variables and semantic aliases; do not introduce duplicate
   numeric token tables or literal `:root` fallbacks in `src/app/globals.css`.
-- Scope semantic role remapping to the shared workspace shell so team, billing
-  and settings inherit the same dark surfaces, text, borders, focus and status
-  feedback as creation. Keep marketing, auth and documentation light, and keep
-  dark marketing media previews locally scoped.
+- Use shared `SiteShell` variant `creator` for the default dark public homepage
+  and `workspace` for signed-in creation, team, billing and settings. Scope
+  semantic role remapping to both shells so surfaces, text, borders, focus and
+  status feedback stay consistent. Keep auth and documentation light; a route
+  under `(marketing)` does not require a light homepage.
+- Keep desktop tool navigation persistent and mobile navigation compact. Place
+  a concise heading and editable video composer before the curated gallery;
+  avoid giant editorial heroes and promotional stages ahead of the controls.
+  Interaction references inform topology only, never copied assets or branding.
 - Preserve customer logo artwork and colors on a light backing in the dark
   shell. Do not use logo inversion or recoloring filters.
 - Keep selected workspace context in creation, history, assets, team, billing
@@ -60,18 +65,43 @@ gradients inside a purposeful media preview are allowed by `DESIGN.md`.
   contract and encode workspace identifiers without changing membership or
   selection rules.
 - The shipped runtime is video only: `text-to-video` and `image-to-video`.
-  Image input is not image generation. An image-generator visual ambition must
-  not become an active image-generation tab, supported API or capability claim.
-  Expose only model settings supported by the runtime; visual work does not
-  enable live providers or add generation modes.
-- Marketing demonstrates end-user creative value with truthful copy, metadata
-  and previews. Keep template purchasing, code ownership and engineering
+  Image-to-video is the image entry and produces video, not images. Do not offer
+  an active image-output tab, image-generation API or image-generation promise.
+  Visual work does not enable live providers or add generation modes.
+- The public composer must accept prompt edits and offer `text-to-video` /
+  `image-to-video` and `16:9` / `9:16`, with a fixed `5s` / `720p` preset. Its
+  primary action says `Continue to studio` and routes to `/dashboard` through
+  its existing auth guard, supporting guests and signed-in visitors. Helper
+  copy explains sign-in, model selection and credit review. An admitted model
+  and actual cost appear only after sign-in, based on current server-backed
+  admission and quoting; there is no public quote or invented availability.
+- The session draft stores `version: 1` schema metadata and only `prompt`,
+  `mode` and `aspectRatio` intent fields. Autosave during editing to retain the
+  draft across tool mode-link navigation and the auth handoff; an explicit mode
+  destination may update the mode. Do not carry
+  quotes, prices, model selection, uploads, assets, crop references, consent,
+  workspace identity or other protected state. Restore the three intent fields for
+  editable signed-in review, obtain fresh admission and cost, and require an
+  explicit generation action. Never auto-submit, start jobs or charge credits
+  on sign-in or restoration. Keep owned image upload, crop review and consent
+  in the signed-in image-to-video flow.
+- Curated gallery filters must change displayed entries and expose selected
+  state. `Use prompt` replaces only the editable prompt and preserves the
+  currently selected `mode` and `aspectRatio`. This reuses prompt inspiration
+  only, not the sample image as an uploaded or owned
+  input. Neither action submits generation, selects a private asset or grants
+  image ownership or consent.
+- The public product demonstrates end-user creative value with truthful copy,
+  metadata and previews. Keep template purchasing, code ownership and engineering
   guidance in buyer documentation, outside customer creation, sign-in and
   billing flows.
-- Label the original AI illustration at `public/media/alpine-studio.png` as
-  `Sample artwork`, with descriptive alt text where informative. Never present
-  it as a live provider result, user-generated output or evidence of shipped
-  image generation.
+- Label the original AI illustrations at `public/media/alpine-studio.png`,
+  `public/media/motion-product.png` and `public/media/neon-portrait.png` as
+  `Sample artwork`, with descriptive alt text where informative. Their
+  provenance is recorded in `public/media/README.md`. Never present
+  them as live provider results, user-generated outputs or evidence of shipped
+  image generation. Still samples must not have fake play controls or pretend
+  to be playable video output.
 - Require keyboard operation and visible focus, WCAG AA text contrast (4.5:1
   normal text, 3:1 large text), touch targets of at least 44px by 44px and
   reduced-motion support. Verify desktop `1440x900` and mobile `390x844` across
@@ -84,9 +114,16 @@ Keep sign-in, workspace navigation, generation, downloads, billing, admin and i1
 Record the change manifest, customer asset/token overrides, route visual brief,
 all four journey checks, desktop/mobile/accessibility results, shared
 navigation consistency, state coverage (default/hover/focus/disabled/error)
-and recovery patch. Include scoped token mappings, light marketing/auth/docs,
-dark team/billing/settings, logo backing, workspace-aware links, sample artwork
-labeling and truthful video-only capability claims.
+and recovery patch. Include scoped token mappings, dark creator/workspace
+surfaces, light auth/docs, logo backing, workspace-aware links, labeled
+non-playable sample artwork and truthful video-only capability claims. Verify
+public composer edits, supported mode/aspect choices, the fixed preset,
+functional gallery filters and prompt-only preset reuse that preserves the
+selected mode and aspect ratio. Verify autosave across mode-link navigation and
+the `/dashboard` auth handoff for guests and signed-in visitors. The session draft
+contains only the three intent fields plus `version: 1` schema metadata,
+restores for review without auto-submit, and shows admitted models and actual
+cost only after sign-in.
 
 ## Recovery
 Resolve overlapping dirty work, then apply a scoped rollback without repository-wide reset.

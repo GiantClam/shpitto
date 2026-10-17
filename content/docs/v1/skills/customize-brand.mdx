@@ -29,17 +29,17 @@ duplicate numeric token tables or literal `:root` fallbacks in CSS.
 
 ## Inputs
 - Customer brand name, colors, logo/font assets, copy and responsive/accessibility intent.
-- The fallback token contract in `src/config/brand.ts` (warm editorial canvas,
-  coral primary, violet creative accent, dark studio surfaces, semantic
-  ink/status/focus colors, Avenir/system typography, 4px base rhythm and
+- The fallback token contract in `src/config/brand.ts` (dark creator and
+  workspace surfaces, light auth/docs, coral primary, violet creative accent,
+  semantic ink/status/focus colors, Avenir/system typography, 4px base rhythm and
   component state tokens).
 - A visual brief covering mood, density, imagery, primary action, dark/light
   surfaces, responsive intent and reduced-motion behavior.
 - The relevant `DESIGN.md` sections for the brand's component and responsive
   decisions.
 - The shipped capability boundary: video only, with `text-to-video` and
-  `image-to-video`; an image-generator visual direction does not add image
-  generation tabs, APIs or provider access.
+  `image-to-video` as the image entry; no image-output tab, image-generation
+  API, image-generation promise or additional provider access.
 
 ## Allowed scope
 `src/config/brand.ts`, `public/brand`, approved shell presentation paths,
@@ -48,20 +48,47 @@ colors, type sizes, radii, shadows, breakpoints or control dimensions into a
 page when a shared token exists.
 
 ## Presentation rules
-- Keep marketing, auth and documentation surfaces light. Remap semantic roles
-  inside the shared workspace shell to `brand.tokens.studio` through its CSS
-  projection so creation, team, billing and settings share dark surfaces, text,
-  borders, focus and feedback without per-route palettes.
+- The default public homepage is dark and creation-first. Use shared `SiteShell`
+  variant `creator` for the homepage and `workspace` for signed-in creation,
+  team, billing and settings. Remap their semantic roles to `brand.tokens.studio`
+  through its CSS projection. Keep auth and documentation light; the homepage
+  route's `(marketing)` location does not determine its theme.
+- Preserve persistent desktop tool navigation, compact mobile navigation, a
+  concise heading and an editable composer before the curated gallery. Do not
+  replace the working surface with a giant editorial hero. Interaction
+  references may guide topology, but never copy another product's brand or assets.
 - Keep the customer's logo and original colors on a light backing in the dark
   shell. Do not invert or recolor customer logo artwork with filters.
-- Marketing demonstrates end-user video creation value. Keep template
+- The public composer exposes `text-to-video` / `image-to-video`, an editable
+  prompt, `16:9` / `9:16` and the fixed `5s` / `720p` preset. Its primary action
+  says `Continue to studio` and routes to `/dashboard` through the existing auth
+  guard for guests and signed-in visitors. Helper copy explains sign-in, model
+  selection and credit review. Show an admitted model and actual cost only after
+  sign-in using current server-backed admission and quoting; no public quote.
+- Store `version: 1` schema metadata and only `prompt`, `mode` and `aspectRatio`
+  intent fields in the session draft. Autosave during editing to preserve the
+  draft across tool mode-link navigation and the auth handoff; an explicit mode
+  destination may update the mode. Do not carry
+  quotes, prices, model selection, assets, crop references, consent or other
+  protected state. Restore for editable signed-in review with fresh admission
+  and cost; never auto-submit. Image-to-video upload, crop and consent remain
+  in the signed-in flow, and workspace context stays in existing navigation.
+- Gallery filters must change the shown entries and expose selected state.
+  `Use prompt` replaces only the editable prompt and preserves the currently
+  selected `mode` and `aspectRatio`. It reuses prompt inspiration only, without
+  submission, sample image upload, owned input
+  selection or consent.
+- The public product demonstrates end-user video creation value. Keep template
   purchasing, code ownership and engineering guidance in buyer documentation,
   outside customer creation, sign-in and billing flows.
-- Treat `public/media/alpine-studio.png` as original AI sample artwork with a
-  visible `Sample artwork` label and descriptive alt text where informative.
+- Treat `public/media/alpine-studio.png`, `public/media/motion-product.png` and
+  `public/media/neon-portrait.png` as original AI sample artwork, with provenance
+  recorded in `public/media/README.md`. Give each a visible `Sample artwork`
+  label and descriptive alt text where informative.
   Never call it a live provider result, a user's output or proof of supported
-  image generation. Copy, metadata, previews and controls must reflect the
-  shipped video-only capabilities.
+  image generation. Do not give still samples fake play controls or present them
+  as playable outputs. Copy, metadata, previews and controls must reflect the
+  shipped video-only capabilities; image-to-video is the image entry.
 - Preserve selected workspace context in navigation and creation links through
   the shared navigation contract, including encoded workspace identifiers.
 - Preserve visible keyboard focus and keyboard operation on both themes. Meet
@@ -79,9 +106,15 @@ component states, desktop/mobile screenshots or assertions, keyboard focus and
 contrast checks, consistent navigation/control dimensions and a recovery patch.
 The manifest must distinguish template fallback assets from customer-selected
 assets and sample artwork. State the primary CTA, supported video mode,
-responsive collapse rules and scoped workspace role mappings. Include checks
-for truthful capability claims, the sample artwork label, logo backing, light
-marketing/auth/docs, dark team/billing/settings and workspace-aware links.
+responsive collapse rules and scoped creator/workspace role mappings. Include
+checks for truthful capability claims, labeled non-playable sample artwork,
+logo backing, dark creator/team/billing/settings, light auth/docs and
+workspace-aware links. Check public composer editing, the fixed preset, gallery
+filtering and prompt-only reuse that preserves the selected mode and aspect ratio.
+Check the draft's three intent fields plus `version: 1` metadata, autosave
+across mode-link navigation and `/dashboard` handoff for guests and signed-in
+visitors. Review never auto-submits; admitted models and actual cost appear only
+after sign-in.
 
 ## Recovery
 Revert only the brand-attributable files after checking overlaps.

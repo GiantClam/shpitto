@@ -1,13 +1,16 @@
+import type {MediaIconName} from '../components/creation/media-icon';
+
 export type NavigationItem = Readonly<{
   label: string;
   href: string;
   status?: 'preview' | 'planned';
+  icon?: MediaIconName;
 }>;
 
 export const marketingNavigation: readonly NavigationItem[] = [
   {label: 'Home', href: '/'},
   {label: 'Explore', href: '/#explore'},
-  {label: 'How it works', href: '/#how-it-works'},
+  {label: 'Create', href: '/#create'},
   {label: 'Docs', href: '/docs'},
 ];
 
@@ -21,6 +24,12 @@ export function getWorkspaceNavigation(workspaceId?: string): readonly Navigatio
     workspaceId ? {label: 'Billing', href: `/workspaces/${encodeURIComponent(workspaceId)}/billing`} : {label: 'Credits', href: `${dashboard}#credits`},
   ];
 }
+
+export const creatorNavigation: readonly NavigationItem[] = [
+  {label: 'Create', href: '/#create', icon: 'spark'},
+  {label: 'My creations', href: '/dashboard#history', icon: 'folder'},
+  {label: 'Explore', href: '/#explore', icon: 'grid'},
+];
 
 export const workspaceNavigation = getWorkspaceNavigation();
 

@@ -9,6 +9,15 @@ export type PublicGenerationQuote = Readonly<{modelId: string; catalogVersion: n
 /** Server-supplied, already admitted choices and quotes; never a provider catalog snapshot. */
 export type GenerationModelChoice = Readonly<{label: string; mode: VideoInputMode; quote: PublicGenerationQuote}>;
 
+export function generationChoicesForMode(choices: readonly GenerationModelChoice[], mode: VideoInputMode): readonly GenerationModelChoice[] {
+  return choices.filter((choice) => choice.mode === mode);
+}
+
+export function selectGenerationModel(choices: readonly GenerationModelChoice[], mode: VideoInputMode, preferredModelId?: string): GenerationModelChoice | null {
+  const available = generationChoicesForMode(choices, mode);
+  return available.find((choice) => choice.quote.modelId === preferredModelId) ?? available[0] ?? null;
+}
+
 export function cropScopeKey(scope: CropScope): string {
   return JSON.stringify([scope.workspaceId, scope.modelId, scope.catalogVersion, scope.aspectRatio]);
 }

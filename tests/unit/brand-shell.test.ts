@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {brand, brandCssVariables} from '../../src/config/brand.ts';
-import {getWorkspaceNavigation} from '../../src/config/navigation.ts';
+import {creatorNavigation, getWorkspaceNavigation} from '../../src/config/navigation.ts';
 
 test('default brand exposes the shared presentation contract', () => {
   assert.equal(brand.source, 'https://shpitto.com');
@@ -24,7 +24,7 @@ test('default brand exposes the shared presentation contract', () => {
   assert.equal(brandCssVariables['--shell-control-height'], brand.tokens.spacing.controlHeight);
   assert.match(readFileSync('src/app/globals.css', 'utf8'), /color-scheme:\s*light/);
   assert.match(readFileSync('src/app/globals.css', 'utf8'), /prefers-reduced-motion/);
-  assert.match(readFileSync('src/app/globals.css', 'utf8'), /media-hero-stage/);
+  assert.match(readFileSync('src/app/globals.css', 'utf8'), /public-composer/);
   assert.match(readFileSync('src/app/layout.tsx', 'utf8'), /brandCssVariables as CSSProperties/);
   assert.match(readFileSync('src/app/layout.tsx', 'utf8'), /themeColor: brand\.tokens\.colors\.canvas/);
   assert.match(readFileSync('src/components/shell/site-shell.tsx', 'utf8'), /shpitto-logo-full\.png/);
@@ -95,4 +95,14 @@ test('workspace navigation keeps creation, assets, history and billing in the se
   assert.ok(navigation.some((item) => item.href === '/workspaces/team%20%2F%20one/settings/members'));
   assert.ok(!navigation.some((item) => item.href.startsWith('/dashboard/team?')));
   assert.ok(getWorkspaceNavigation().every((item) => !item.href.includes('undefined')));
+});
+
+test('creator navigation separates product destinations from video input modes', () => {
+  assert.deepEqual(creatorNavigation.map((item) => item.label), ['Create', 'My creations', 'Explore']);
+  assert.equal(creatorNavigation[0]?.href, '/#create');
+  assert.equal(creatorNavigation[1]?.href, '/dashboard#history');
+  assert.equal(creatorNavigation[2]?.href, '/#explore');
+  const shell = readFileSync('src/components/shell/site-shell.tsx', 'utf8');
+  assert.match(shell, /aria-current=\{item\.href === createHref/);
+  assert.doesNotMatch(shell, /sidebar-library/);
 });
