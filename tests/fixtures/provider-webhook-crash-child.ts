@@ -56,8 +56,10 @@ async function run(input: WebhookCrashInput): Promise<WebhookCrashResult> {
       return ingestProviderWebhook(db, {provider: 'replicate', rawBody, verified, now});
     }));
     assert.ok(receipts.every(receipt => receipt.workspaceId === input.workspaceId));
-    // Intentionally leave the Pool open: the receiver exits immediately after
-    // committed receipts, without running processing or graceful DB cleanup.
+    // The receipt is already durable before this fixture exits. Close the
+    // transport cleanly so Windows does not turn the intentional crash exit
+    // into an unrelated process teardown error.
+    await pool.end();
     return {phase: 'receive', pid: process.pid, receipts};
   }
   assert.equal(input.phase, 'resume');

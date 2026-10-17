@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "changeId": "restart-shpitto-video-saas",
-  "date": "2026-10-04",
+  "date": "2026-10-17",
   "scope": "Historical M0-M3 approvals are preserved. M4 self-hosted demo acceptance is PASS for the current candidate. Trigger.dev remains optional; production email, vendor commerce, historical anomalous-balance recovery and further paid provider generation remain outside this gate.",
   "enforcementStatus": "Current M4 acceptance is bound to the canonical current candidate digests, current traceability, retained live provider rows, selected self-hosted recovery evidence, independent review and integrator PASS.",
   "policyRef": "acceptance-gates.md",
@@ -239,26 +239,26 @@
       "policyRef": "acceptance-gates.md",
       "commonStandardsRequired": true,
       "mandatoryScenarioSource": "traceability.json",
-      "candidateId": "m4-self-hosted-20261016",
+      "candidateId": "m4-self-hosted-20261017",
       "evidenceRecordRefs": [
-        "internal/evidence/acceptance/M4/m4-self-hosted-20261016/record.json",
-        "internal/evidence/acceptance/M4/m4-self-hosted-20261016/implementation-acceptance.md",
-        "internal/evidence/acceptance/M4/m4-self-hosted-20261016/independent-review.json",
-        "internal/evidence/acceptance/M4/m4-self-hosted-20261016/integrator.json",
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261017/record.json",
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261017/implementation-acceptance.md",
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261017/independent-review.json",
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261017/integrator.json",
         "internal/evidence/M4/provider-matrix.md",
-        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261016.json"
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json"
       ],
       "reviewDecision": {
         "decision": "PASS",
-        "reviewerId": "m4-independent-reviewer-20261016",
-        "reviewedAt": "2026-10-16T00:20:00.000Z",
+        "reviewerId": "m4-independent-reviewer-20261017",
+        "reviewedAt": "2026-10-17T05:03:00.000Z",
         "independentFromImplementer": true,
         "integratorDecision": "PASS",
-        "integratorId": "m4-integrator-20261016",
-        "decidedAt": "2026-10-16T00:22:00.000Z",
-        "recordRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261016/record.json",
-        "independentReviewRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261016/independent-review.json",
-        "reason": "The selected self-hosted Railway demo profile satisfies the current M4 criteria on the exact candidate, with four authorized provider application rows, private R2 publication/download authorization, durable recovery evidence and current M3 equivalence review."
+        "integratorId": "m4-integrator-20261017",
+        "decidedAt": "2026-10-17T05:05:00.000Z",
+        "recordRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261017/record.json",
+        "independentReviewRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261017/independent-review.json",
+        "reason": "The selected self-hosted Railway demo profile satisfies M4 on the current six-digest candidate, with current local verification, webhook replay/crash verification, private storage evidence, Railway recovery execution provenance and separate independent/integrator decisions."
       }
     },
     {

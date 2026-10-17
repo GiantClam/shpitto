@@ -1,0 +1,4 @@
+Starting Container
+2026-10-17T04:00:48.435194126Z [INFO]  event="recovery-monitor-ready" mode="observe" providerCreatesEnabled=false
+2026-10-17T04:09:59.021736584Z [INFO]  event="recovery-monitor-observation" status="delivered" incidentId="c9152460-db55-4ac1-9f3b-b34aba2d30c7" workspaceId="e5f44b9e-4531-480f-a28e-524db7c6c8cf" workerKey="[redacted]"
+

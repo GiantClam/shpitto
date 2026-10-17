@@ -8,7 +8,7 @@
   "status": "IN_PROGRESS",
   "candidateId": "m6-local-fixtures-20261015",
   "createdAt": "2026-10-04T09:36:19.41Z",
-  "updatedAt": "2026-10-16T00:17:25.564Z",
+  "updatedAt": "2026-10-17T05:10:00.000Z",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md"
   },
@@ -37,14 +37,14 @@
     }
   ],
   "candidate": {
-    "capturedAt": "2026-10-16T00:17:25.564Z",
+    "capturedAt": "2026-10-17T04:42:27.599Z",
     "sourceCommit": null,
     "dirtyPatchSha256": null,
-    "sourceTreeSha256": "1af666b1d04b5f3e957fffbfd7f19835dcd4fef9ff430c8fdfd801f4297e63df",
+    "sourceTreeSha256": "5b1aca204c1c44d031e9d2e36b104333ae8332552ceac1c11d09fa3549831d48",
     "schemaSha256": "7560a6a5b059bb33a47e7afa878826d73cf57f05a3a6a6f5ffa1ff2eb7f08d0f",
     "configurationSha256": "dc1d37d6189d092403ee351b5be78b20baf8aa44eeb29c4522a084af4c34cc2e",
     "contractSha256": "356e6607d07fe741599e0a91119f005f5cb60af990c5f081e95fb93a2bda33e1",
-    "validatorSha256": "529c86a0dd73dc83073f08d8c578b0fdb2cc506e4228c52605f02df6183f4e47",
+    "validatorSha256": "d32ba3904c43c006a674c0d06b25a38c28591279da037486741731a72e79bf08",
     "lockfileSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35",
     "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
     "digestInputs": {
@@ -1433,24 +1433,24 @@
     "changedDigestRefs": [
       "internal/evidence/acceptance/M6/local-preflight-20261007/candidate-impact-20261007.json",
       "internal/evidence/M4/task-5.10/railway-worker/candidate-digest-20261015.json",
-      "internal/evidence/M4/task-5.10/railway-worker/remaining-validation-20261015.json"
+      "internal/evidence/M4/task-5.10/railway-worker/remaining-validation-20261015.json",
+      "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/candidate/candidate.json",
+      "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/summary.json"
     ],
     "requiredReruns": [
       "Current-source common checks and local Docker regressions are retained in final/commands.json.",
       "A separate complete-stage equivalence review, full required browser journeys and deferred provider/account evidence remain prerequisites for milestone promotion.",
       "M7 local docs/customization and M8 local release preflight rerun on the current candidate.",
-      "M7 local docs/customization and M8 local candidate packaging/fresh-install/fulfillment rerun on the current candidate."
+      "M7 local docs/customization and M8 local candidate packaging/fresh-install/fulfillment rerun on the current candidate.",
+      "Recheck current candidate digests before any M5/M6 promotion."
     ],
     "carriedEvidence": []
   },
   "candidateRefresh": {
-    "capturedAt": "2026-10-15T14:12:24.973Z",
+    "status": "PASS_CURRENT_DIGEST_REFRESH",
     "candidateId": "m6-local-fixtures-20261015",
-    "source": "node scripts/candidate-digests.mjs",
-    "status": "CURRENT_BYTES_CAPTURED_IN_PROGRESS",
-    "fullStageAcceptance": false,
-    "reason": "M4-only local fixtures and measured owned branch coverage are current; unrerun stage-specific profiles remain historical, with no stage-equivalence or approval claim.",
-    "evidenceRef": "internal/evidence/M4/task-5.10/railway-worker/m4-local-fixture-candidate-20261015.json"
+    "ref": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/candidate/candidate.json",
+    "reason": "Shared verification and fixture bytes changed after the prior development fingerprint; stage remains IN_PROGRESS and no milestone promotion is implied."
   },
   "commandEvidenceApplicability": {
     "currentExecutionCommandIds": [

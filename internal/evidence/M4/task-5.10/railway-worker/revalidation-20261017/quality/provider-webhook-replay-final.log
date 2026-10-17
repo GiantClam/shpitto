@@ -1,0 +1,14 @@
+✔ M4 signed replay/crash race 1: 20 exact replays, ten receivers/processors/settlers (2738.7266ms)
+✔ M4 signed replay/crash race 2: 20 exact replays, ten receivers/processors/settlers (1595.0084ms)
+✔ M4 signed replay/crash race 3: 20 exact replays, ten receivers/processors/settlers (1553.164ms)
+✔ M4 signed identity, issued nonce, account and key rejection leave inbox and credits unchanged (188.9073ms)
+✔ M4 completed/running reordering preserves materialization and terminal immutability (633.058ms)
+✔ M4 late signed completion after refund is quarantined without another provider POST (128.714ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7465.2736

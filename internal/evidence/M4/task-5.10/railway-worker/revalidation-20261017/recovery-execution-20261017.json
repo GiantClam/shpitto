@@ -1,0 +1,55 @@
+{
+  "status": "PASS_SELECTED_SELF_HOSTED_RECOVERY_DRILL",
+  "verifiedAt": "2026-10-17T04:15:00Z",
+  "candidate": {
+    "candidateDigestRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/candidate/candidate.json",
+    "localVerificationRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+    "coverageRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json"
+  },
+  "railway": {
+    "project": "shpitto-m4-staging",
+    "environment": "production",
+    "services": {
+      "web": {"service": "shpitto-m4-web", "deploymentId": "32c256ef-d3fa-4e05-85f5-5f9dc247c881", "status": "SUCCESS"},
+      "worker": {"service": "shpitto-m4-worker", "pausedDeploymentId": "25c31e36-df13-4639-b6f2-566a8e18638d", "activeDeploymentId": "356369ad-dc22-47d0-a914-4d5944583616", "status": "SUCCESS", "stateAfterDrill": "active"},
+      "monitor": {"service": "shpitto-m4-recovery-monitor", "deploymentId": "8fe0cb6e-71ce-4917-a071-48b1ff310271", "status": "SUCCESS"},
+      "database": {"service": "Postgres", "status": "SUCCESS"}
+    },
+    "configuration": {"projectBound": true, "workerCreatesEnabled": false, "workspaceScoped": true, "secretValuesRecorded": false}
+  },
+  "run": {
+    "runId": "6f5b8c58-9b1e-4c9c-9a71-93f7dbde8d2a",
+    "workspaceId": "e5f44b9e-4531-480f-a28e-524db7c6c8cf",
+    "phases": [
+      {"phase": "prepare", "exitCode": 0, "stage": "prepared"},
+      {"phase": "seed-overdue", "exitCode": 0, "stage": "seeded", "taskCount": 102, "paidProviderRequests": 0},
+      {"phase": "inspect", "exitCode": 0, "taskCount": 102, "failedCount": 102, "releasedCount": 102},
+      {"phase": "verify", "exitCode": 0, "stage": "verified", "taskCount": 102, "failedCount": 102, "releasedCount": 102, "verified": true}
+    ],
+    "recoveryIncidentId": "c9152460-db55-4ac1-9f3b-b34aba2d30c7",
+    "recoveryAssertions": {
+      "workerPauseExceededHeartbeatStaleWindow": true,
+      "incidentDeliveredToOperatorReceipt": true,
+      "workerRestartedWithSameWorkspaceBinding": true,
+      "heartbeatRecoveredAfterRestart": true,
+      "unknownSubmissionFencePreserved": true,
+      "overdueTasksSettledBeforeFurtherDispatch": true
+    },
+    "stateBackupSha256": "170037935b1572b5221fe99da8f39ba0000027b76814931525708df5b8ca7bf5",
+    "stateBackupRef": "local-only backup used for restart recovery; no secret values or existing business objects included"
+  },
+  "evidenceRefs": [
+    "railway-service-status.json",
+    "worker-presence.json",
+    "monitor-presence.json",
+    "monitor-log-redacted.txt",
+    "candidate/candidate.json",
+    "local-verification/result.json",
+    "local-verification/coverage.json"
+  ],
+  "limitations": [
+    "This is a selected self-hosted staging recovery drill with a fresh isolated workspace and fake-clock fixture tasks.",
+    "No provider create request was made by the recovery drill.",
+    "Provider billed cost remains UNKNOWN; this receipt does not claim a provider invoice."
+  ]
+}

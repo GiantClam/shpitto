@@ -233,7 +233,7 @@ for (let iteration = 1; iteration <= 3; iteration++) test(`M4 signed replay/cras
   assert.deepEqual(receipts.find(r => !r.duplicate), {eventId: event.verified.eventId, duplicate: false, acknowledged: true, workspaceId: f.workspaceId, taskId: f.taskId, attemptId: f.attemptId, status: 'received'});
   assert.ok(receipts.every(r => r.acknowledged && r.status === 'received'));
 
-  // The receiver has exited with code 86 and no graceful pool cleanup. Read its
+  // The receiver has exited with code 86 after the receipt commit. Read its
   // committed receipt independently before starting any processing process.
   const restarted = new Client({connectionString: databaseUrl});
   type Receipt = {external_event_id: string; status: string; payload_hash: string; processed_at: Date | null; payload: {status: 'completed'; accountId: string; attemptNonce: string}};

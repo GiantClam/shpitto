@@ -1,0 +1,30 @@
+[
+  {
+    "id": "12f4490f-b89b-4f6b-a270-5c8b5a4b316a",
+    "name": "shpitto-m4-recovery-monitor",
+    "deploymentId": "8fe0cb6e-71ce-4917-a071-48b1ff310271",
+    "status": "SUCCESS",
+    "stopped": false
+  },
+  {
+    "id": "6f8be9b5-85ba-4a19-a45b-8f316d42a1bf",
+    "name": "Postgres",
+    "deploymentId": "d46ca3ad-4432-411b-b34a-41c81d63c208",
+    "status": "SUCCESS",
+    "stopped": false
+  },
+  {
+    "id": "572448eb-292d-498a-afc6-965b4f5ee5f4",
+    "name": "shpitto-m4-web",
+    "deploymentId": "32c256ef-d3fa-4e05-85f5-5f9dc247c881",
+    "status": "SUCCESS",
+    "stopped": false
+  },
+  {
+    "id": "5887fddb-0d43-4509-b41c-ff364abd778f",
+    "name": "shpitto-m4-worker",
+    "deploymentId": "356369ad-dc22-47d0-a914-4d5944583616",
+    "status": "SUCCESS",
+    "stopped": false
+  }
+]

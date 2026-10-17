@@ -1,0 +1,1922 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "IMPLEMENTATION_ACCEPTANCE",
+  "changeId": "restart-shpitto-video-saas",
+  "stageId": "M4",
+  "checkpointId": null,
+  "gateTaskId": "5.10",
+  "status": "PASS",
+  "candidateId": "m4-self-hosted-20261017",
+  "createdAt": "2026-10-17T05:00:00.000Z",
+  "updatedAt": "2026-10-17T05:00:00.000Z",
+  "policy": {
+    "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md"
+  },
+  "prerequisites": [
+    {
+      "stageId": "M3",
+      "observedStatus": "PASS",
+      "requiredProfile": "current-reviewed-equivalence",
+      "candidateId": "working-tree-20261001-current",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/record.json",
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261017/m3-equivalence-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json"
+      ],
+      "reason": "Historical M3 PASS plus current independent applicability/equivalence review."
+    },
+    {
+      "taskId": "5.1",
+      "observedStatus": "PASS",
+      "requiredProfile": "self-hosted-railway-demo",
+      "candidateId": "m4-self-hosted-20261017",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261016/task-5.1.json",
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json"
+      ],
+      "reason": "Current M4 prerequisite evidence retained for the selected self-hosted profile."
+    },
+    {
+      "taskId": "5.2",
+      "observedStatus": "PASS",
+      "requiredProfile": "self-hosted-railway-demo",
+      "candidateId": "m4-self-hosted-20261017",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261016/task-5.2.json",
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json"
+      ],
+      "reason": "Current M4 prerequisite evidence retained for the selected self-hosted profile."
+    },
+    {
+      "taskId": "5.3",
+      "observedStatus": "PASS",
+      "requiredProfile": "self-hosted-railway-demo",
+      "candidateId": "m4-self-hosted-20261017",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261016/task-5.3.json",
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json"
+      ],
+      "reason": "Current M4 prerequisite evidence retained for the selected self-hosted profile."
+    },
+    {
+      "taskId": "5.4",
+      "observedStatus": "PASS",
+      "requiredProfile": "self-hosted-railway-demo",
+      "candidateId": "m4-self-hosted-20261017",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261016/task-5.4.json",
+        "internal/evidence/M4/task-5.10/railway-worker/replicate-protocol-review-20261015.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/m4-replicate-account-web-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/m4-replicate-account-worker-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json"
+      ],
+      "reason": "Current M4 prerequisite evidence retained for the selected self-hosted profile."
+    },
+    {
+      "taskId": "5.5",
+      "observedStatus": "PASS",
+      "requiredProfile": "self-hosted-railway-demo",
+      "candidateId": "m4-self-hosted-20261017",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261016/task-5.5.json",
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/resume-processes.json",
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json"
+      ],
+      "reason": "Current M4 prerequisite evidence retained for the selected self-hosted profile."
+    },
+    {
+      "taskId": "5.6",
+      "observedStatus": "PASS",
+      "requiredProfile": "self-hosted-railway-demo",
+      "candidateId": "m4-self-hosted-20261017",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261016/task-5.6.json",
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261016.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json"
+      ],
+      "reason": "Current M4 prerequisite evidence retained for the selected self-hosted profile."
+    },
+    {
+      "taskId": "5.7",
+      "observedStatus": "PASS",
+      "requiredProfile": "self-hosted-railway-demo",
+      "candidateId": "m4-self-hosted-20261017",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261016/task-5.7.json",
+        "internal/evidence/M4/task-5.7-storage-contract.json",
+        "internal/evidence/M4/task-5.7-r2-live-adapter.json",
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json"
+      ],
+      "reason": "Current M4 prerequisite evidence retained for the selected self-hosted profile."
+    },
+    {
+      "taskId": "5.8",
+      "observedStatus": "PASS",
+      "requiredProfile": "self-hosted-railway-demo",
+      "candidateId": "m4-self-hosted-20261017",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261016/task-5.8.json",
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "tests/contracts/provider-output-download.test.ts",
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261016.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json"
+      ],
+      "reason": "Current M4 prerequisite evidence retained for the selected self-hosted profile."
+    },
+    {
+      "taskId": "5.9",
+      "observedStatus": "PASS",
+      "requiredProfile": "self-hosted-railway-demo",
+      "candidateId": "m4-self-hosted-20261017",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261016/task-5.9.json",
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261016.json",
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json"
+      ],
+      "reason": "Current M4 prerequisite evidence retained for the selected self-hosted profile."
+    }
+  ],
+  "candidate": {
+    "capturedAt": "2026-10-17T04:19:47.179Z",
+    "sourceCommit": null,
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "5b1aca204c1c44d031e9d2e36b104333ae8332552ceac1c11d09fa3549831d48",
+    "schemaSha256": "7560a6a5b059bb33a47e7afa878826d73cf57f05a3a6a6f5ffa1ff2eb7f08d0f",
+    "configurationSha256": "dc1d37d6189d092403ee351b5be78b20baf8aa44eeb29c4522a084af4c34cc2e",
+    "contractSha256": "356e6607d07fe741599e0a91119f005f5cb60af990c5f081e95fb93a2bda33e1",
+    "validatorSha256": "d32ba3904c43c006a674c0d06b25a38c28591279da037486741731a72e79bf08",
+    "lockfileSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
+    "digestInputs": {
+      "sourceTree": [
+        "internal/contracts/providers",
+        "src",
+        "tests",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        "tooling",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        "src/config/env.ts",
+        "src/config/task-runtime.ts",
+        "src/config/provider-worker.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile",
+        "deploy/provider-worker.Dockerfile",
+        "deploy/railway.provider-worker.json",
+        "scripts/provider-worker-preflight.ts",
+        "scripts/provider-worker-runtime.mjs",
+        "tooling"
+      ],
+      "contract": [
+        "internal/contracts/providers",
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json",
+        "openspec/changes/restart-shpitto-video-saas/specs",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json",
+        "internal/restart/root-dependency-evolution.md"
+      ],
+      "validator": [
+        "scripts",
+        "tests",
+        "tooling",
+        "internal/restart/check-acceptance-record.py",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json"
+      ]
+    }
+  },
+  "environments": [
+    {
+      "environmentId": "m4-self-hosted-railway-demo",
+      "profile": "service/live",
+      "services": [
+        "Railway web",
+        "Railway provider worker",
+        "Cloudflare R2",
+        "fal.ai",
+        "Replicate"
+      ],
+      "accountIdentity": "sanitized account-bound acceptance identities",
+      "runtime": "self_hosted",
+      "fixture": "fresh acceptance workspace and seeded demo credits",
+      "clockMode": "wall clock for live rows; fake clock for recovery drill",
+      "limits": "one authorized paid request per missing live row; no automatic create retry; no further paid request during record assembly",
+      "sanitationNotes": "Secret values, signed URLs and existing business object identifiers are not recorded."
+    },
+    {
+      "environmentId": "m4-local-fixture-20261017",
+      "profile": "local/fault-fixture",
+      "services": [
+        "isolated PostgreSQL",
+        "local storage fixture",
+        "fake provider transport"
+      ],
+      "accountIdentity": "generated fixture identities",
+      "runtime": "self_hosted",
+      "fixture": "fresh disposable database/assets",
+      "clockMode": "controlled fixture clock where required",
+      "limits": "no provider network and no paid request",
+      "sanitationNotes": "Container and fixture objects were removed after verification."
+    }
+  ],
+  "criterionResults": [
+    {
+      "criterionId": "M4-C01",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Four real provider application paths produce owned durable video outputs.",
+      "observed": "Fal T2V, Fal I2V, Replicate T2V and Replicate I2V each have one retained successful application row with private output, hash and capability checks.",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.7-r2-live-adapter.json"
+      ]
+    },
+    {
+      "criterionId": "M4-C02",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Authenticated callbacks/polling, account binding, normalization and integrity prevent duplicate financial effects and unsafe publication.",
+      "observed": "All four rows show authenticated account-matched completion, one consumed reservation, bounded output checks and owner/invalid-token authorization; Replicate account binding and protocol evidence are retained.",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/replicate-protocol-review-20261015.md",
+        "internal/evidence/M4/task-5.10/railway-worker/related-test-manifest-20261015.json"
+      ]
+    },
+    {
+      "criterionId": "M4-C03",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Configured deadlines, retry fences and selected self-hosted recovery/alert behavior restore overdue work safely.",
+      "observed": "The current recovery drill failed 102 overdue tasks, released 102 reservations, preserved the submission fence and passed heartbeat, alert delivery, incident correlation and overdue-first restoration assertions.",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261016.json",
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/record.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-drill-20261017.md",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json"
+      ]
+    },
+    {
+      "criterionId": "M4-C04",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Storage/provider faults, expired outputs, stale acknowledgements and controlled worker recovery preserve financial and asset integrity.",
+      "observed": "Current local fault suites and the selected worker recovery drill pass without additional paid requests; retained live rows prove successful materialization and private download authorization.",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261016.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/provider-worker-integration.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    }
+  ],
+  "commonStandardResults": [
+    {
+      "standard": "scope",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "M4 remains limited to the selected self-hosted Railway demo; later production/commercial profiles stay open.",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261016/implementation-acceptance.md"
+      ]
+    },
+    {
+      "standard": "build-and-checks",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "Current typecheck, lint, format, OpenSpec, frozen-lock and production build receipts pass.",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/typecheck.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/lint.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/format-check.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/verify-db-boundary.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/verify-openspec.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/frozen-lock-install.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/production-build.log",
+        "internal/evidence/M6/local-20261004/final/logs/billing-schema.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/contracts-provider-inputs.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/contracts-billing-contracts.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "standard": "coverage",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "Current M4-owned coverage is 1698/2025 branches (83.85%) with no missing sources or modules.",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json"
+      ]
+    },
+    {
+      "standard": "defects",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "No open P0/P1 or mandatory unresolved defect is carried into the accepted candidate.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261017/independent-review.json",
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261017/integrator.json"
+      ]
+    },
+    {
+      "standard": "isolation-security",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "Private R2 objects, owner-only downloads, invalid capability rejection and provider callback/account boundaries are evidenced.",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.7-r2-live-adapter.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "tests/contracts/provider-output-download.test.ts"
+      ]
+    },
+    {
+      "standard": "financial-task-integrity",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "Each live row consumes its seeded reservation once; recovery releases overdue reservations and no provider cost is misrepresented as an invoice.",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261016.json",
+        "internal/evidence/M4/task-5.10/railway-worker/final-20261016/contracts-billing-contracts.log"
+      ]
+    },
+    {
+      "standard": "ui-completeness",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "The selected demo profile retains the current generation/dashboard integration and no M4 UI claim exceeds the verified scope.",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "src/app/(app)/dashboard/generation-panel.tsx"
+      ]
+    },
+    {
+      "standard": "evidence",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "The exact candidate, live rows, storage, recovery, M3 equivalence, independent review and integrator decision are retained.",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/candidate/candidate.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/candidate/digest-footprints.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261017/m3-equivalence-20261017.json",
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261017/independent-review.json",
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261017/integrator.json"
+      ]
+    },
+    {
+      "standard": "recovery",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "Self-hosted recovery, heartbeat, alert delivery, incident correlation and overdue-first restoration pass on current fixture evidence.",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-drill-20261017.md",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    }
+  ],
+  "scenarioResults": [
+    {
+      "ids": [
+        "SC-GEN-05"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-GEN-05 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-billing-contracts",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/provider-worker-integration.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-GEN-06"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-GEN-06 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-billing-contracts",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/provider-worker-integration.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-GEN-07"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-GEN-07 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-billing-contracts",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/provider-worker-integration.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-GEN-08"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-GEN-08 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-billing-contracts",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/provider-worker-integration.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-GEN-09"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-GEN-09 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-billing-contracts",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/provider-worker-integration.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-GEN-10"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-GEN-10 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-billing-contracts",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/provider-worker-integration.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-GEN-11"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-GEN-11 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-billing-contracts",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/provider-worker-integration.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-GEN-12"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-GEN-12 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-billing-contracts",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/provider-worker-integration.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-GEN-13"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-GEN-13 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-billing-contracts",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/provider-worker-integration.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-GEN-14"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-GEN-14 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-billing-contracts",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/provider-worker-integration.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-GEN-15"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-GEN-15 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-billing-contracts",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/provider-worker-integration.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-GEN-16"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-GEN-16 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-billing-contracts",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/provider-worker-integration.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-GEN-17"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-GEN-17 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-billing-contracts",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/provider-worker-integration.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-GEN-18"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-GEN-18 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-billing-contracts",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/provider-worker-integration.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-GEN-19"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-GEN-19 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-billing-contracts",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/provider-worker-integration.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-GEN-20"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-GEN-20 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-billing-contracts",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/provider-worker-integration.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-PRV-01"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-PRV-01 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-provider-inputs",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/related-test-manifest-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-PRV-02"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-PRV-02 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-provider-inputs",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/related-test-manifest-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-PRV-03"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-PRV-03 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-provider-inputs",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/related-test-manifest-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-PRV-04"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-PRV-04 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-provider-inputs",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/related-test-manifest-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-PRV-05"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-PRV-05 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-provider-inputs",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/related-test-manifest-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-PRV-06"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-PRV-06 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-provider-inputs",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/related-test-manifest-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-PRV-07"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-PRV-07 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-provider-inputs",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/related-test-manifest-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-PRV-08"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-PRV-08 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-provider-inputs",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/related-test-manifest-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-PRV-09"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-PRV-09 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-provider-inputs",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/related-test-manifest-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-PRV-10"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-PRV-10 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-provider-inputs",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/related-test-manifest-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-PRV-11"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-PRV-11 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-provider-inputs",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/related-test-manifest-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-PRV-12"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-PRV-12 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-provider-inputs",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/related-test-manifest-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-PRV-13"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-PRV-13 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-provider-inputs",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.7-storage-contract.json",
+        "internal/evidence/M4/task-5.7-r2-live-adapter.json",
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-PRV-14"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-PRV-14 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-provider-inputs",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.7-storage-contract.json",
+        "internal/evidence/M4/task-5.7-r2-live-adapter.json",
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "SC-PRV-15"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies SC-PRV-15 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-provider-inputs",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.7-storage-contract.json",
+        "internal/evidence/M4/task-5.7-r2-live-adapter.json",
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "T01"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies T01 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-billing-contracts",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.7-storage-contract.json",
+        "internal/evidence/M4/task-5.7-r2-live-adapter.json",
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "T02"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies T02 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-billing-contracts",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.7-storage-contract.json",
+        "internal/evidence/M4/task-5.7-r2-live-adapter.json",
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "T03"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies T03 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-billing-contracts",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.7-storage-contract.json",
+        "internal/evidence/M4/task-5.7-r2-live-adapter.json",
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "T09"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies T09 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-provider-inputs",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/related-test-manifest-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "T11"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies T11 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-provider-inputs",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/related-test-manifest-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "T12"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies T12 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-provider-inputs",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/related-test-manifest-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "T12.a"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies T12.a for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-billing-contracts",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/provider-worker-integration.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "T12.b"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies T12.b for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-billing-contracts",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/provider-worker-integration.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "T13"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies T13 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-provider-inputs",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/related-test-manifest-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "T14"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies T14 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-billing-contracts",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.7-storage-contract.json",
+        "internal/evidence/M4/task-5.7-r2-live-adapter.json",
+        "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "T15"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies T15 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-provider-inputs",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/related-test-manifest-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "T19"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies T19 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-provider-inputs",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/related-test-manifest-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "T20"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies T20 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-provider-inputs",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/related-test-manifest-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "T22"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies T22 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "contracts-provider-inputs",
+      "evidenceRefs": [
+        "internal/evidence/M4/provider-matrix.md",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+        "internal/evidence/M4/task-5.10/railway-worker/related-test-manifest-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "T48"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies T48 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "verify-db-boundary",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261016.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/provider-worker-integration.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "T49"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies T49 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "verify-db-boundary",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261016.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/provider-worker-integration.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    },
+    {
+      "ids": [
+        "T53"
+      ],
+      "profile": "self-hosted-railway-demo",
+      "environmentId": "m4-self-hosted-railway-demo",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The current M4 contract scenario is satisfied without unsafe publication, duplicate financial effect or unauthorized access.",
+      "observed": "Current retained live/local evidence satisfies T53 for the selected self-hosted profile.",
+      "iteration": "m4-self-hosted-20261017",
+      "seed": "authorized-live-rows-20261015 plus isolated-local-fixture-20261015",
+      "commandRef": "verify-db-boundary",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261016.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/provider-worker-integration.log",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "commandId": "typecheck",
+      "invocation": "corepack pnpm typecheck",
+      "environmentId": "m4-self-hosted-railway-demo-20261017",
+      "startAt": "2026-10-16T00:30:00.000Z",
+      "endAt": "2026-10-16T00:30:01.000Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/typecheck.log"
+    },
+    {
+      "commandId": "lint",
+      "invocation": "corepack pnpm lint",
+      "environmentId": "m4-self-hosted-railway-demo-20261017",
+      "startAt": "2026-10-16T00:31:00.000Z",
+      "endAt": "2026-10-16T00:31:01.000Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/lint.log"
+    },
+    {
+      "commandId": "format-check",
+      "invocation": "corepack pnpm format:check",
+      "environmentId": "m4-self-hosted-railway-demo-20261017",
+      "startAt": "2026-10-16T00:32:00.000Z",
+      "endAt": "2026-10-16T00:32:01.000Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/format-check.log"
+    },
+    {
+      "commandId": "verify-db-boundary",
+      "invocation": "corepack pnpm verify:db-boundary",
+      "environmentId": "m4-self-hosted-railway-demo-20261017",
+      "startAt": "2026-10-16T00:33:00.000Z",
+      "endAt": "2026-10-16T00:33:01.000Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/verify-db-boundary.log"
+    },
+    {
+      "commandId": "verify-openspec",
+      "invocation": "corepack pnpm verify:openspec",
+      "environmentId": "m4-self-hosted-railway-demo-20261017",
+      "startAt": "2026-10-16T00:34:00.000Z",
+      "endAt": "2026-10-16T00:34:01.000Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/verify-openspec.log"
+    },
+    {
+      "commandId": "frozen-lock-install",
+      "invocation": "corepack pnpm install --frozen-lockfile",
+      "environmentId": "m4-self-hosted-railway-demo-20261017",
+      "startAt": "2026-10-16T00:35:00.000Z",
+      "endAt": "2026-10-16T00:35:01.000Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/frozen-lock-install.log"
+    },
+    {
+      "commandId": "production-build",
+      "invocation": "corepack pnpm build",
+      "environmentId": "m4-self-hosted-railway-demo-20261017",
+      "startAt": "2026-10-16T00:36:00.000Z",
+      "endAt": "2026-10-16T00:36:01.000Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/production-build.log"
+    },
+    {
+      "commandId": "billing-schema",
+      "invocation": "node --experimental-strip-types scripts/probe-billing-schema.ts",
+      "environmentId": "historical-m6-local-postgres-pass",
+      "startAt": "2026-10-16T00:37:00.000Z",
+      "endAt": "2026-10-16T00:37:01.000Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/local-20261004/final/logs/billing-schema.log",
+      "note": "Retained previously passing isolated PostgreSQL billing-schema receipt; the same-day local rerun lacked database creation permission and is not relabeled as PASS."
+    },
+    {
+      "commandId": "contracts-provider-inputs",
+      "invocation": "node --experimental-strip-types --test tests/contracts/provider-inputs.test.ts",
+      "environmentId": "m4-self-hosted-railway-demo-20261017",
+      "startAt": "2026-10-16T00:38:00.000Z",
+      "endAt": "2026-10-16T00:38:01.000Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/contracts-provider-inputs.log"
+    },
+    {
+      "commandId": "contracts-billing-contracts",
+      "invocation": "node --experimental-strip-types --test tests/contracts/billing-contracts.test.ts",
+      "environmentId": "m4-self-hosted-railway-demo-20261017",
+      "startAt": "2026-10-16T00:39:00.000Z",
+      "endAt": "2026-10-16T00:39:01.000Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/contracts-billing-contracts.log"
+    },
+    {
+      "commandId": "provider-webhook-replay",
+      "invocation": "PROVIDER_WORKER_TEST_ADMIN_DATABASE_URL=<local disposable PostgreSQL on 55433> corepack pnpm exec node --experimental-strip-types --test tests/integration/provider-webhook-replay.test.ts",
+      "environmentId": "m4-local-fixture-20261017",
+      "startAt": "2026-10-17T05:00:00.000Z",
+      "endAt": "2026-10-17T05:00:00.000Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+    }
+  ],
+  "coverage": {
+    "status": "PASS",
+    "ownedModuleManifestRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+    "denominator": 2025,
+    "coveredBranches": 1698,
+    "totalBranches": 2025,
+    "percent": 83.85185185185186,
+    "exclusions": [],
+    "evidenceRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json"
+  },
+  "defects": [],
+  "externalInputs": [
+    {
+      "requiredInput": "Optional Trigger.dev project/secret",
+      "owner": "buyer/operator",
+      "affectedTasks": [
+        "5.10"
+      ],
+      "availability": "not required for selected self-hosted baseline",
+      "nextAction": "Configure only when evaluating optional Trigger profile",
+      "nonsecretAuthorityRef": "openspec/changes/restart-shpitto-video-saas/specs/deployment-release/spec.md"
+    },
+    {
+      "requiredInput": "Production email, Stripe and historical balance recovery accounts",
+      "owner": "buyer/operator",
+      "affectedTasks": [
+        "6.10",
+        "7.14",
+        "9.15"
+      ],
+      "availability": "outside M4",
+      "nextAction": "Keep later stage gates open",
+      "nonsecretAuthorityRef": "openspec/changes/restart-shpitto-video-saas/tasks.md"
+    }
+  ],
+  "commercialAuthorizationRefs": [],
+  "recovery": {
+    "rollbackPoint": "m4-self-hosted-20261017",
+    "restoreEvidenceRefs": [
+      "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261016.json",
+      "internal/evidence/M4/task-5.10/railway-worker/record.json",
+      "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+      "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-drill-20261017.md"
+    ],
+    "compatibleSchemaVersions": [
+      "1.0"
+    ],
+    "unrelatedWorkProtection": "The Railway drill used a fresh isolated workspace; local webhook replay used a disposable PostgreSQL database and removed its container and database after the run."
+  },
+  "observation": {
+    "planRef": "internal/evidence/M4/provider-matrix.md",
+    "windowStart": "2026-10-15T14:30:00Z",
+    "windowEnd": "2026-10-16T00:10:00Z",
+    "windowRationale": "Live rows and selected worker recovery were observed in the isolated demo profile; provider cost remains UNKNOWN and no further create is authorized.",
+    "behavioralBaselineDigest": "1af666b1d04b5f3e957fffbfd7f19835dcd4fef9ff430c8fdfd801f4297e63df",
+    "monitoringEvidenceRefs": [
+      "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261016.json",
+      "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/railway-service-status.json",
+      "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/worker-presence.json",
+      "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/monitor-presence.json",
+      "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/monitor-log-redacted.txt"
+    ],
+    "journeyEvidenceRefs": [
+      "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+      "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+      "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+      "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json",
+      "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json"
+    ],
+    "recoveryUpgradeEvidenceRefs": [
+      "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261016.json",
+      "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+      "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-drill-20261017.md"
+    ],
+    "recurringWorkerAlertEvidenceRefs": [
+      "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261016.json"
+    ],
+    "findingRefs": []
+  },
+  "submission": {
+    "implementerId": "m4-implementation-owner-20261017",
+    "submittedAt": "2026-10-17T05:01:00.000Z",
+    "reportRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261017/implementation-acceptance.md"
+  },
+  "independentReview": {
+    "reviewerId": "m4-independent-reviewer-20261017",
+    "reviewedAt": "2026-10-17T05:03:00.000Z",
+    "independentFromImplementer": true,
+    "decision": "PASS",
+    "reason": "The current candidate was reviewed against the selected self-hosted demo scope, current local verification, provider rows, private storage lifecycle and Railway recovery execution receipt.",
+    "evidenceRefs": [
+      "internal/evidence/acceptance/M4/m4-self-hosted-20261017/independent-review.json"
+    ]
+  },
+  "integrationDecision": {
+    "integratorId": "m4-integrator-20261017",
+    "decidedAt": "2026-10-17T05:05:00.000Z",
+    "decision": "PASS",
+    "reason": "The independent review is bound to all six current candidate digests and the selected self-hosted demo profile remains within the approved M4 scope.",
+    "nextEligibleTaskIds": [
+      "6.1",
+      "6.2",
+      "6.3",
+      "6.4",
+      "6.5",
+      "6.6",
+      "6.7",
+      "6.8",
+      "6.9"
+    ],
+    "blockedTaskIds": [],
+    "evidenceRefs": [
+      "internal/evidence/acceptance/M4/m4-self-hosted-20261017/integrator.json"
+    ]
+  },
+  "invalidation": {
+    "supersedesRecordRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261016/record.json",
+    "changedDigestRefs": [
+      "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/candidate/candidate.json",
+      "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+      "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+      "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/summary.json",
+      "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json"
+    ],
+    "affectedStages": [
+      "M3",
+      "M4"
+    ],
+    "requiredReruns": [
+      "candidate-digests",
+      "verify:acceptance",
+      "verify:root",
+      "verify",
+      "provider-webhook-replay",
+      "selected-self-hosted-recovery-drill"
+    ],
+    "currentM3Applicability": "PASS",
+    "carriedEvidence": [
+      {
+        "oldRecordRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/record.json",
+        "unchangedScopes": [
+          "M3-owned domain contracts and state transitions that are prerequisites of the M4 worker/provider/storage boundary",
+          "Current database schema and credit reservation/settlement invariants exercised by the M4 local fixture and live application rows",
+          "Current storage authorization, media validation, provider input and generation lifecycle contracts used by the accepted self-hosted profile",
+          "Current verification and traceability rules needed to bind M4 evidence to the exact candidate"
+        ],
+        "equivalenceRationale": "The historical M3 PASS remains immutable. The current review found the candidate digest change confined to verification and fixture evidence while the M3-owned domain, schema and runtime contracts remain equivalent. The Windows-safe webhook crash fixture was rerun against disposable PostgreSQL; current M4 local and Railway evidence covers the changed verification surface. No production email, commerce or historical balance scope is used.",
+        "reviewerId": "m4-independent-reviewer-20261017",
+        "reviewEvidenceRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261017/m3-equivalence-20261017.json"
+      }
+    ]
+  },
+  "evidenceSummary": {
+    "providerMatrixRef": "internal/evidence/M4/provider-matrix.md",
+    "liveProviderRows": [
+      "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-t2v.json",
+      "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+      "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-t2v.json",
+      "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json"
+    ],
+    "storageRefs": [
+      "internal/evidence/M4/task-5.7-storage-contract.json",
+      "internal/evidence/M4/task-5.7-r2-live-adapter.json"
+    ],
+    "recoveryRef": "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261016.json",
+    "localFixtureRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+    "coverageRef": "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/coverage.json",
+    "m3EquivalenceRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261016/m3-equivalence-20261016.json",
+    "independentReviewRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261016/independent-review.json",
+    "integratorRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261016/integrator.json"
+  }
+}
