@@ -1,0 +1,122 @@
+[
+  {
+    "commandId": "frozen-lock-install",
+    "invocation": "corepack pnpm install --frozen-lockfile --prefer-offline --ignore-scripts",
+    "environmentId": "local-docker-m5-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M5/m5-local-fixtures-20261017/logs/frozen-lock-install.log"
+  },
+  {
+    "commandId": "typecheck",
+    "invocation": "corepack pnpm typecheck",
+    "environmentId": "local-docker-m5-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M5/m5-local-fixtures-20261017/logs/typecheck.log"
+  },
+  {
+    "commandId": "lint",
+    "invocation": "corepack pnpm lint",
+    "environmentId": "local-docker-m5-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M5/m5-local-fixtures-20261017/logs/lint.log"
+  },
+  {
+    "commandId": "format-check",
+    "invocation": "corepack pnpm format:check",
+    "environmentId": "local-docker-m5-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M5/m5-local-fixtures-20261017/logs/format-check.log"
+  },
+  {
+    "commandId": "verify-db-boundary",
+    "invocation": "corepack pnpm verify:db-boundary",
+    "environmentId": "local-docker-m5-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M5/m5-local-fixtures-20261017/logs/verify-db-boundary.log"
+  },
+  {
+    "commandId": "verify-openspec",
+    "invocation": "corepack pnpm verify:openspec",
+    "environmentId": "local-docker-m5-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M5/m5-local-fixtures-20261017/logs/verify-openspec.log"
+  },
+  {
+    "commandId": "production-build",
+    "invocation": "corepack pnpm build with production provider/storage/mail profile",
+    "environmentId": "local-docker-m5-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M5/m5-local-fixtures-20261017/logs/production-build.log"
+  },
+  {
+    "commandId": "contracts-provider-inputs",
+    "invocation": "node --experimental-strip-types --test tests/contracts/provider-inputs.test.ts",
+    "environmentId": "local-docker-m5-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M5/m5-local-fixtures-20261017/logs/contracts-provider-inputs.log"
+  },
+  {
+    "commandId": "contracts-billing-contracts",
+    "invocation": "node --experimental-strip-types --test tests/contracts/billing-contracts.test.ts",
+    "environmentId": "local-docker-m5-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M5/m5-local-fixtures-20261017/logs/contracts-billing-contracts.log"
+  },
+  {
+    "commandId": "billing-schema",
+    "invocation": "node --experimental-strip-types scripts/probe-billing-schema.ts on disposable PostgreSQL",
+    "environmentId": "local-docker-m5-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M5/m5-local-fixtures-20261017/logs/billing-schema.log"
+  },
+  {
+    "commandId": "billing-checkout",
+    "invocation": "node --experimental-strip-types scripts/probe-billing-checkout.ts on disposable PostgreSQL",
+    "environmentId": "local-docker-m5-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M5/m5-local-fixtures-20261017/logs/billing-checkout.log"
+  },
+  {
+    "commandId": "billing-reconciliation",
+    "invocation": "node --experimental-strip-types scripts/probe-billing-reconciliation.ts on disposable PostgreSQL",
+    "environmentId": "local-docker-m5-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M5/m5-local-fixtures-20261017/logs/billing-reconciliation.log"
+  }
+]

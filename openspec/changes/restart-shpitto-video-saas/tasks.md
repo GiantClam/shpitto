@@ -483,10 +483,11 @@ SC-BIL-17 has M5 domain/test-mode and M6 operator-UI evidence. SC-OPS-13 has M6 
   - Work: Collect SC-BIL-01–SC-BIL-16, PostgreSQL race evidence, owner UI journey and authorized Stripe test-mode subscription/pack/refund-port evidence. For SC-BIL-17 record domain/adapter proof only; privileged operator UI closure belongs to 7.3 and 7.14. Record blocked external evidence and configuration/terms gaps explicitly.
   - Evidence: SC-BIL-01–SC-BIL-16; SC-BIL-17 domain/adapter subset only; T21, T22, T23, T24, T28, T60, G11, G12.
   - Acceptance: Apply M5 criteria plus common standards in [acceptance-gates.md](acceptance-gates.md); submit the exact-candidate record and obtain independent review/integrator PASS. Partial SC/G profiles cannot close later obligations.
+  - Current verification: `internal/evidence/acceptance/M5/m5-local-fixtures-20261017/record.json` records the current candidate's disposable-PostgreSQL billing probes, contract checks, production build and 80.04% M5-owned branch coverage. The gate remains IN_PROGRESS because authorized Stripe test-mode evidence and independent review are deferred.
 
 ## 7. M6 — Operations and affiliate integration
 
-The completed markers below describe the local implementation and fixture-verification profile only. They do not close real-account or production integration obligations. In particular, the FirstPromoter authority remains unavailable in application routes until the production adapter and supported account mapping are completed and separately verified; configuration alone cannot enable delivery, approval, or settlement. See `internal/evidence/M6/local-20261004/README.md` for the exact local scope, known limitations, and retained evidence. The integrated gate remains open.
+The completed markers below describe the local implementation and fixture-verification profile only. They do not close real-account or production integration obligations. In particular, the FirstPromoter authority remains unavailable in application routes until the production adapter and supported account mapping are completed and separately verified; configuration alone cannot enable delivery, approval, or settlement. See `internal/evidence/M6/m6-local-fixtures-20261017/README.md` for the current candidate evidence and retained limitations. The integrated gate remains open.
 
 - [x] 7.1 Implement global-role and step-up policy ✓ 2026-10-04 (local)
   - Paths: `src/modules/operations/authorization.ts`, `src/lib/auth.ts`, `src/db/schema/operations.ts`, `scripts/bootstrap-operator.ts`.
@@ -572,6 +573,7 @@ The completed markers below describe the local implementation and fixture-verifi
   - Work: Close SC-OPS-01–SC-OPS-12, SC-OPS-14, SC-AFF-01–SC-AFF-24 and the privileged operator-UI portion of SC-BIL-17 with real-DB and authorized provider-backed evidence. SC-OPS-13/T62 is local admin integration/notices only here; final clean customer local/managed/Docker evidence is required at 9.4/9.14/9.15 before full closure. Exercise disabled mode, failed refresh/batches, old-payment conflict, abuse release and hosted test settlement; record blocked account/method facts without authorizing live payout.
   - Evidence: SC-OPS-01–SC-OPS-12, SC-OPS-14, SC-BIL-17 operator UI, SC-AFF-01–SC-AFF-24; SC-OPS-13/T62 local integration subset only; T04, T25, T26, T27, T28, T29, T30, T31, T49, T59, T60, T61, G22, G23, G24, G25, G26, G27, G31 integration subset.
   - Acceptance: Apply M6 criteria plus common standards in [acceptance-gates.md](acceptance-gates.md); submit the exact-candidate record and obtain independent review/integrator PASS. Partial SC/G profiles cannot close later obligations.
+  - Current verification: `internal/evidence/acceptance/M6/m6-local-fixtures-20261017/record.json` records current disposable-PostgreSQL operations, privileged, recovery, affiliate, race and notification probes with 81.75% M6-owned branch coverage. The gate remains IN_PROGRESS because real FirstPromoter account/hosted-settlement evidence and independent review are deferred.
 
 
 ## 8. M7 — Governed customization and developer documentation

@@ -284,20 +284,18 @@
       "policyRef": "acceptance-gates.md",
       "commonStandardsRequired": true,
       "mandatoryScenarioSource": "traceability.json",
-      "candidateId": "m5-local-fixtures-20261015",
+      "candidateId": "m5-local-fixtures-20261017",
       "evidenceRecordRefs": [
-        "internal/evidence/acceptance/M5/local-preflight-20261007/record.json",
-        "internal/evidence/M6/local-20261004/final/result.json",
-        "internal/evidence/M6/local-20261004/final/commands.json",
-        "internal/evidence/M6/local-20261004/final/coverage.json",
-        "internal/evidence/M6/local-20261004/README.md",
-        "internal/evidence/M6/local-20261004/independent-review.md",
-        "internal/evidence/M4/task-5.10/railway-worker/m4-local-fixture-candidate-20261015.json"
+        "internal/evidence/acceptance/M5/m5-local-fixtures-20261017/record.json",
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/M5/m5-local-fixtures-20261017/coverage.json",
+        "internal/evidence/M5/m5-local-fixtures-20261017/commands.json",
+        "internal/evidence/M5/m5-local-fixtures-20261017/candidate/candidate.json"
       ],
       "reviewDecision": {
         "decision": "NOT_RUN",
-        "reason": "Current M4 local fixtures/coverage and candidate digests are attached. Other listed M6 receipts are historical only. Full provider, selected-runtime, stage-specific applicability and independent whole-stage approval remain deferred.",
-        "taskReviewRef": "internal/evidence/M6/local-20261004/independent-review.md"
+        "reason": "Current M5 local fixture evidence is refreshed. Real Stripe test-mode evidence and independent whole-stage review remain deferred; the gate stays IN_PROGRESS.",
+        "taskReviewRef": "internal/evidence/M5/m5-local-fixtures-20261017/README.md"
       }
     },
     {
@@ -328,20 +326,18 @@
       "policyRef": "acceptance-gates.md",
       "commonStandardsRequired": true,
       "mandatoryScenarioSource": "traceability.json",
-      "candidateId": "m6-local-fixtures-20261015",
+      "candidateId": "m6-local-fixtures-20261017",
       "evidenceRecordRefs": [
-        "internal/evidence/acceptance/M6/local-preflight-20261007/record.json",
-        "internal/evidence/M6/local-20261004/final/result.json",
-        "internal/evidence/M6/local-20261004/final/commands.json",
-        "internal/evidence/M6/local-20261004/final/coverage.json",
-        "internal/evidence/M6/local-20261004/README.md",
-        "internal/evidence/M6/local-20261004/independent-review.md",
-        "internal/evidence/M4/task-5.10/railway-worker/m4-local-fixture-candidate-20261015.json"
+        "internal/evidence/acceptance/M6/m6-local-fixtures-20261017/record.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/candidate/candidate.json"
       ],
       "reviewDecision": {
         "decision": "NOT_RUN",
-        "reason": "Current M4 local fixtures/coverage and candidate digests are attached. Other listed M6 receipts are historical only. Full provider, selected-runtime, stage-specific applicability and independent whole-stage approval remain deferred.",
-        "taskReviewRef": "internal/evidence/M6/local-20261004/independent-review.md"
+        "reason": "Current M6 local fixture evidence is refreshed. Real FirstPromoter account/hosted settlement evidence and independent whole-stage review remain deferred; the gate stays IN_PROGRESS.",
+        "taskReviewRef": "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
       },
       "localImplementation": {
         "status": "COMPLETE",

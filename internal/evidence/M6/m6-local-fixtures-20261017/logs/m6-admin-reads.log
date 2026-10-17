@@ -1,0 +1,1 @@
+{"status":"PASS","groups":7,"checks":["live role isolation","redacted bounded user filters","workspace filters and audited tenant access","redacted billing and generation projections","audit payload exclusion","affiliate pagination/status/version projections","disabled/unavailable provider visibility and immediate role revocation"]}
