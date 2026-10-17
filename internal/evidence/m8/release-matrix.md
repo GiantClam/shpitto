@@ -15,3 +15,11 @@ The same archive was built and restarted as a local standalone Docker image.
 
 These records prove only local packaging, local install/build and fixture
 fulfillment. They do not promote M8-RC, M8-BETA or M8-STABLE.
+
+The isolated Railway demo project `shpitto-m4-staging` is separately verified
+for hosted readiness in
+`internal/evidence/m8/railway-staging/hosted-verification-20261017.json`.
+Its Web, self-hosted provider worker and recovery monitor deployments are
+healthy, with paid provider creates disabled. This hosted demo record supports
+the deployment boundary and does not replace the exact 9.3 candidate proof,
+commercial readiness, or the final M8 checkpoint reviews.

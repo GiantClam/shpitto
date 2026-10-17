@@ -22,4 +22,18 @@ Candidate ZIP bytes: `1,754,690`
 - 9.13: Lemon Squeezy merchant qualification, license/pricing/support terms
 - 9.14/9.15: managed and Docker candidate deployment, final RC/BETA/STABLE review
 
+## Hosted demo verification
+
+The isolated Railway demo project `shpitto-m4-staging` has a current hosted
+readiness record at
+`internal/evidence/m8/railway-staging/hosted-verification-20261017.json`.
+The Web service, self-hosted provider worker and recovery monitor are deployed
+with successful Docker deployments. Web, worker and monitor readiness returned
+HTTP 200; the worker passed isolation and migration startup checks with paid
+creates disabled, and the monitor is running in observe mode with provider
+creates disabled. The current application digests match the frozen M4
+self-hosted candidate. This is hosted demo evidence for the deployment
+boundary; it does not satisfy the exact 9.3 managed/Docker release candidate
+proof or close the commercial and final-release gates above.
+
 These are explicit external inputs. Local Mock and fixture evidence is retained as valid partial proof and is not promoted to production readiness.
