@@ -1,12 +1,40 @@
 import {existsSync, readdirSync, statSync} from 'node:fs';
 import path from 'node:path';
 
+// M3 owns the local workspace/generation vertical slice. Later milestone
+// adapters and billing/affiliate/operator modules are verified by their own
+// gates and must not become accidental M3 coverage obligations.
 export const M3_OWNED_SOURCE_ROOTS = [
-  'src/modules',
-  'src/adapters',
+  'src/adapters/mail',
+  'src/adapters/storage/local.ts',
   'src/config/models.ts',
   'src/contracts/http.ts',
   'src/lib/auth.ts',
+  'src/modules/assets',
+  'src/modules/billing/hold-policy.ts',
+  'src/modules/credits/allocate.ts',
+  'src/modules/credits/expiry.ts',
+  'src/modules/credits/issue-demo.ts',
+  'src/modules/credits/ledger.ts',
+  'src/modules/credits/queries.ts',
+  'src/modules/credits/reserve.ts',
+  'src/modules/credits/settle.ts',
+  'src/modules/generation/create.ts',
+  'src/modules/generation/lifecycle.ts',
+  'src/modules/generation/mock.ts',
+  'src/modules/generation/outbox.ts',
+  'src/modules/generation/state.ts',
+  'src/modules/generation/sweep-recovery.ts',
+  'src/modules/operations/authorize.ts',
+  'src/modules/operations/status-commands.ts',
+  'src/modules/shared/commands.ts',
+  'src/modules/shared/transaction.ts',
+  'src/modules/workspaces/access-state.ts',
+  'src/modules/workspaces/authorize.ts',
+  'src/modules/workspaces/commands.ts',
+  'src/modules/workspaces/invitations.ts',
+  'src/modules/workspaces/onboard.ts',
+  'src/modules/workspaces/policy.ts',
 ];
 
 export function assessBrowserEvidence(evidence, artifactExists) {

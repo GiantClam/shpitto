@@ -1,0 +1,334 @@
+{
+  "status": "PASS",
+  "profile": "fresh-candidate-local-runtime",
+  "candidateId": "local-candidate-20261019",
+  "startedAt": "2026-10-19T02:48:31.463Z",
+  "archive": {
+    "path": "internal/evidence/m8/artifact-manifest/local-candidate-20261019/local-candidate-20261019.zip",
+    "bytes": 9606977,
+    "sha256": "b1967ad98000316ad96539b6baa04c6ae499a68175d707429c8e6d91d8f14c07"
+  },
+  "checks": {
+    "archiveDigest": "PASS",
+    "archiveExtractionAndFileDigests": "PASS",
+    "requiredRuntimePaths": "PASS",
+    "customerCommandClosure": "PASS",
+    "frozenOfflineInstall": "PASS",
+    "productionBuild": "PASS",
+    "exportedBuyerChecks": "PASS",
+    "freshMigrationsAndDemoSeed": "PASS",
+    "httpLoginAndDashboard": "PASS",
+    "httpCancellationAndRefund": "PASS",
+    "workerSuccessAndDeadlineFailureRefund": "PASS",
+    "authenticatedPrivateDownload": "PASS",
+    "timedDatabaseAndAssetRestore": "PASS",
+    "restoredQueuedTaskAndDispatch": "PASS",
+    "restartPersistenceAndExactlyOnceCredits": "PASS"
+  },
+  "journey": {
+    "workspaceId": "916b362d-09a4-43b2-b1fb-3016626f56b9",
+    "scenarios": {
+      "cancelled": "d766a2ae-1be9-4594-bb72-efb2bf97df19",
+      "deadlineFailure": "313fa2aa-45e6-4a1d-bfc1-9b49155fa7a0",
+      "succeeded": "10e2e4a3-7617-4353-b529-8246a85ae1da",
+      "restarted": "91a4dc45-7c54-46c3-8bb7-db227bf8caee"
+    },
+    "initialBalance": {
+      "available": "100",
+      "reserved": "0",
+      "consumed": "0"
+    },
+    "finalBalance": {
+      "available": "80",
+      "reserved": "0",
+      "consumed": "20"
+    },
+    "ledger": {
+      "available": "80",
+      "reserved": "0",
+      "consumed": "20"
+    },
+    "privateDownload": {
+      "assetId": "dd44ee2e-ddd0-4a08-bbf2-bb7339669e6c",
+      "bytes": 36097,
+      "sha256": "7ace5deee2697fef232d855ea123d6dd37fd95114ec258b9696ded8163a31b18",
+      "anonymousStatus": 401
+    },
+    "reservationCount": 4,
+    "providerAttempts": [
+      {
+        "task_id": "10e2e4a3-7617-4353-b529-8246a85ae1da",
+        "attempts": 1
+      },
+      {
+        "task_id": "91a4dc45-7c54-46c3-8bb7-db227bf8caee",
+        "attempts": 1
+      }
+    ],
+    "restore": {
+      "status": "PASS",
+      "profile": "local-docker-candidate-restore",
+      "archiveSha256": "b1967ad98000316ad96539b6baa04c6ae499a68175d707429c8e6d91d8f14c07",
+      "database": "shpitto_candidate_09c5ca9cff0a465f9b500093284503f7",
+      "restoredDatabase": "shpitto_candidate_09c5ca9cff0a465f9b500093284503f7_restored",
+      "backupMs": 905,
+      "restoreMs": 1104,
+      "backupSha256": "dc82b582a7f07b98645b6e6892bf03ecc9506eb5d9ea67eee849fa3998488bdc",
+      "tables": {
+        "app.affiliate_attributions": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.affiliate_correction_cases": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.affiliate_delivery_events": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.affiliate_notification_inbox": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.affiliate_payments": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.affiliate_review_actions": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.affiliate_review_records": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.affiliate_settings": {
+          "rows": 1,
+          "sha256": "e5cf5004258e1192d15be0b7220144a96843d9433c0d2c4592690b4263189f0c"
+        },
+        "app.assets": {
+          "rows": 1,
+          "sha256": "c2f7bde5b4e1b587e1553e4075c3b657b0a9278f3c6cf97dc82073d88e180522"
+        },
+        "app.audit_events": {
+          "rows": 9,
+          "sha256": "06171294bd5df22e25189a9e3d50e5eb4c68437f2811338760fd245e75bc4085"
+        },
+        "app.billing_accounts": {
+          "rows": 1,
+          "sha256": "c5ee0b5675fe98b6f20907fdd6da00e9708be2a6dfc4e793106048305e0f4b82"
+        },
+        "app.billing_cash_events": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.billing_checkout_attempts": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.billing_customer_history": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.billing_orders": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.billing_payment_aliases": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.billing_reconciliation_cases": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.billing_refund_requests": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.billing_subscriptions": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.billing_webhook_inbox": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.command_results": {
+          "rows": 10,
+          "sha256": "dfb3e4ff43d7d775388f20b262ee4ce1024e0bc1102e7eede9a6632becf517db"
+        },
+        "app.credit_accounts": {
+          "rows": 1,
+          "sha256": "c61255e0fff5806176839b52dc2d8f2fc5b7e8b8b71d9f284571dcd8867e7296"
+        },
+        "app.credit_allocations": {
+          "rows": 4,
+          "sha256": "152520fb672eff48b94ea320f38a8283ced47052213aa2d5e3e8aecc4f6efec1"
+        },
+        "app.credit_grants": {
+          "rows": 1,
+          "sha256": "5a2cb9cc7ebb764349f1b4ec7de1f19a9f075e3b223a6263bbe90b7ebfcad214"
+        },
+        "app.credit_ledger_entries": {
+          "rows": 8,
+          "sha256": "28583e9d49997a59e96e9f140b3608a24e06a0bd58cee92a0ffa1c13b609064c"
+        },
+        "app.credit_legacy_baselines": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.credit_reservations": {
+          "rows": 4,
+          "sha256": "fc3a92bdb7dc9216efbc2793ddd0ac8bb07cf359854d9a33ff17c89d961c974c"
+        },
+        "app.generation_quarantine": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.generation_tasks": {
+          "rows": 4,
+          "sha256": "0b9f61eb9b6a69e05f10b6e5737e56b076e1850a17d49fa4de52d546710950da"
+        },
+        "app.mail_outbox": {
+          "rows": 1,
+          "sha256": "0dcfb3779e695c01c6b5c75efbcdb8a78d3d77032d9d35041e553c29f89ecb69"
+        },
+        "app.operator_recovery_notes": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.operator_roles": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.operator_step_ups": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.operator_tenant_access": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.outbox_events": {
+          "rows": 8,
+          "sha256": "389adb6b3a43c6392e053f783f5ecd875b122285cfa06aa08de9a6047c92284d"
+        },
+        "app.provider_webhook_inbox": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.recovery_heartbeat_incidents": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.recovery_heartbeats": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "app.schema_ownership": {
+          "rows": 2,
+          "sha256": "dab311b9025714aeab37fce3622f4b754834bfd60c51a5099a396b764d3c2e76"
+        },
+        "app.submission_attempts": {
+          "rows": 1,
+          "sha256": "8ece66077032df83ae1e6133b67bad65aa05ecd3f0369819740e586b8283a0ad"
+        },
+        "app.user_access_controls": {
+          "rows": 2,
+          "sha256": "146c7f2195bb89db966951acba1aab397a4eb967778d1b4ff6f555754a1997bc"
+        },
+        "app.workspace_invitations": {
+          "rows": 1,
+          "sha256": "a97354364fda3bec1213eab5d603063facda8a3903b666edc87cf67d3d7c0125"
+        },
+        "app.workspace_members": {
+          "rows": 1,
+          "sha256": "2f2dd6d421792e7b40432273ed8b39060fe8d69cac238b0524fe76505b6d2973"
+        },
+        "app.workspace_setups": {
+          "rows": 2,
+          "sha256": "65ad4c179da611f23dd71dc8ead9b7f429bf83c5e4a6f376cf31762794dfde56"
+        },
+        "app.workspaces": {
+          "rows": 1,
+          "sha256": "e2f5d2efedda6dc7a3d1128c50bc8a85e8ecb2bfb85ea561af7b79b6562a75d5"
+        },
+        "drizzle.__drizzle_migrations": {
+          "rows": 29,
+          "sha256": "846ef4271cd2945334cbaa8712235ac375c449b7c8ee299076d051d09599e5d6"
+        },
+        "public.account": {
+          "rows": 2,
+          "sha256": "4de328907181aa89015ae5355538d043cfe8504892e274f39ce21230fe28182a"
+        },
+        "public.session": {
+          "rows": 1,
+          "sha256": "c256610e9e4726b3967f21d3cf070e95fd118b6d7769e1cb06438ecf0097fee7"
+        },
+        "public.two_factor": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "public.user": {
+          "rows": 2,
+          "sha256": "781f404ba28444bdb1b59f2d5f14e7a3d497336d8de716bcdde2d163171749fc"
+        },
+        "public.verification": {
+          "rows": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "assetFiles": {
+        ".cleanup-cursors/916b362d-09a4-43b2-b1fb-3016626f56b9.json": "f755f60a030e4ab480e2f28ad4fd6e31a98c7825bc5cdd6b7b3062a71b12765c",
+        "tasks/10e2e4a3-7617-4353-b529-8246a85ae1da/outputs/dd44ee2e-ddd0-4a08-bbf2-bb7339669e6c.mp4": "7ace5deee2697fef232d855ea123d6dd37fd95114ec258b9696ded8163a31b18"
+      },
+      "checks": {
+        "backupCatalog": "PASS",
+        "liveMutationDetected": "PASS",
+        "restoredDomainRows": "PASS",
+        "restoredPrivateMediaBytes": "PASS"
+      },
+      "production": false,
+      "secretsRetained": false
+    },
+    "servicesStoppedAfterRun": true
+  },
+  "fixtureSha256": "7ace5deee2697fef232d855ea123d6dd37fd95114ec258b9696ded8163a31b18",
+  "retained": {
+    "customerRoot": "C:\\Users\\liula\\AppData\\Local\\Temp\\shpitto-m8-Fh2Cfz\\customerRuntime",
+    "databaseName": "shpitto_candidate_09c5ca9cff0a465f9b500093284503f7",
+    "restoredDatabaseName": "shpitto_candidate_09c5ca9cff0a465f9b500093284503f7_restored",
+    "restoredAssetRoot": "C:\\Users\\liula\\AppData\\Local\\Temp\\shpitto-m8-Fh2Cfz\\customerRuntime\\.data\\restore-xhnARG\\assets",
+    "databaseHost": "127.0.0.1",
+    "databasePort": 55432,
+    "servicesRunning": false
+  },
+  "productionDeployment": "NOT_RUN",
+  "realAccounts": "NOT_PROVIDED",
+  "note": "The frozen archive was independently installed, built and exercised with its own local database, web and worker. Deadline failure is induced by expiring one fixture task; real provider failures and production gates remain deferred.",
+  "logs": {
+    "archive-list": "internal/evidence/m8/local-demo/local-candidate-20261019/archive-list.log",
+    "extract": "internal/evidence/m8/local-demo/local-candidate-20261019/extract.log",
+    "install": "internal/evidence/m8/local-demo/local-candidate-20261019/install.log",
+    "build": "internal/evidence/m8/local-demo/local-candidate-20261019/build.log",
+    "buyer-typecheck": "internal/evidence/m8/local-demo/local-candidate-20261019/buyer-typecheck.log",
+    "buyer-lint": "internal/evidence/m8/local-demo/local-candidate-20261019/buyer-lint.log",
+    "buyer-format-check": "internal/evidence/m8/local-demo/local-candidate-20261019/buyer-format-check.log",
+    "buyer-verify-config": "internal/evidence/m8/local-demo/local-candidate-20261019/buyer-verify-config.log",
+    "buyer-verify-db-boundary": "internal/evidence/m8/local-demo/local-candidate-20261019/buyer-verify-db-boundary.log",
+    "buyer-verify-local-services": "internal/evidence/m8/local-demo/local-candidate-20261019/buyer-verify-local-services.log",
+    "buyer-verify-shells": "internal/evidence/m8/local-demo/local-candidate-20261019/buyer-verify-shells.log",
+    "buyer-verify-content-boundaries": "internal/evidence/m8/local-demo/local-candidate-20261019/buyer-verify-content-boundaries.log",
+    "migrate": "internal/evidence/m8/local-demo/local-candidate-20261019/migrate.log",
+    "seed": "internal/evidence/m8/local-demo/local-candidate-20261019/seed.log",
+    "web-initial": "internal/evidence/m8/local-demo/local-candidate-20261019/web-initial.log",
+    "quote": "internal/evidence/m8/local-demo/local-candidate-20261019/quote.log",
+    "journey": "internal/evidence/m8/local-demo/local-candidate-20261019/journey.log",
+    "worker-initial": "internal/evidence/m8/local-demo/local-candidate-20261019/worker-initial.log",
+    "web-restarted": "internal/evidence/m8/local-demo/local-candidate-20261019/web-restarted.log",
+    "worker-restarted": "internal/evidence/m8/local-demo/local-candidate-20261019/worker-restarted.log"
+  },
+  "completedAt": "2026-10-19T02:53:01.413Z"
+}

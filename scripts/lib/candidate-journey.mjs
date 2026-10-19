@@ -49,7 +49,7 @@ export async function runCandidateJourney({candidateRoot, runtimeEnv, logs, secr
     secrets.add(token);
     const dashboard = await request(`/dashboard?workspace=${fixture.workspaceId}`);
     assert.equal(dashboard.status, 200, 'Fresh candidate dashboard failed.');
-    assert.match(await dashboard.text(), /Queue generation/, 'Fresh candidate dashboard did not render the generation form.');
+    assert.match(await dashboard.text(), /Generate video/, 'Fresh candidate dashboard did not render the generation form.');
     checks.httpLoginAndDashboard = 'PASS';
     const workspaceId = fixture.workspaceId;
     const balance = async () => (await db.query(`select sum(available)::text as available, sum(reserved)::text as reserved, sum(consumed)::text as consumed from app.credit_grants where workspace_id = $1`, [workspaceId])).rows[0];

@@ -1,8 +1,8 @@
 {
   "status": "PASS",
   "profile": "local-candidate-evidence",
-  "candidateId": "local-candidate-20261007-completion",
-  "archiveSha256": "c4a1dcb111811a9ae4a0a956045e59880ad937ff6efbadff4af47ca4beb1dbad",
+  "candidateId": "local-candidate-20261019",
+  "archiveSha256": "b1967ad98000316ad96539b6baa04c6ae499a68175d707429c8e6d91d8f14c07",
   "journeyChecks": 15,
   "dockerChecks": 5,
   "docs": "PASS",

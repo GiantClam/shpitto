@@ -144,7 +144,7 @@ async function run(): Promise<void> {
     await database.db.update(authUser).set({emailVerified: true}).where(eq(authUser.id, userId));
     const completedPage = await request(`/dashboard?workspace=${workspaceId}`, undefined, credentials.token);
     const completedHtml = await completedPage.text();
-    assert.match(completedHtml, /Queue generation/);
+    assert.match(completedHtml, /Generate video/);
     assert.doesNotMatch(completedHtml, /Set up your personal workspace/, 'Completed setup must no longer show the onboarding action.');
 
     assert.equal((await request('/api/auth/request-password-reset', {email, redirectTo: '/reset-password'})).status, 200);

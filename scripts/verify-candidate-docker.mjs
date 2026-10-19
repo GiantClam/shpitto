@@ -36,7 +36,11 @@ try {
   writeFileSync(envFile, [
     'NODE_ENV=production', `APP_URL=http://127.0.0.1:${port}`,
     `DATABASE_URL=postgres://shpitto:shpitto-local-only@host.docker.internal:55432/${local.retained.restoredDatabaseName}`,
-    `BETTER_AUTH_SECRET=${randomUUID()}${randomUUID()}`, 'STORAGE_DRIVER=s3-compatible', 'GENERATION_DRIVER=provider',
+    `BETTER_AUTH_SECRET=${randomUUID()}${randomUUID()}`, 'STORAGE_DRIVER=s3-compatible',
+    'STORAGE_S3_ENDPOINT=http://host.docker.internal:9000', 'STORAGE_S3_REGION=local',
+    'STORAGE_S3_BUCKET=shpitto-candidate', 'STORAGE_S3_ACCESS_KEY_ID=local-candidate',
+    'STORAGE_S3_SECRET_ACCESS_KEY=local-candidate-secret', 'STORAGE_S3_FORCE_PATH_STYLE=true',
+    'GENERATION_DRIVER=provider',
     'MAIL_DRIVER=smtp', 'MAIL_SMTP_URL=smtp://host.docker.internal:1025',
   ].join('\n') + '\n', 'utf8');
   await run(['run', '--detach', '--name', name, '--publish', `127.0.0.1:${port}:3000`, '--env-file', envFile, image], 'docker-start');

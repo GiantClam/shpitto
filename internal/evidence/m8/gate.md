@@ -1,15 +1,15 @@
 # M8 gate review packet
 
 Status: `IN_PROGRESS` (local candidate and preflight only)
-Candidate: `local-candidate-20261007-completion`
-Candidate ZIP SHA-256: `c4a1dcb111811a9ae4a0a956045e59880ad937ff6efbadff4af47ca4beb1dbad`
-Candidate ZIP bytes: `1,754,690`
+Candidate: `local-candidate-20261019`
+Candidate ZIP SHA-256: `b1967ad98000316ad96539b6baa04c6ae499a68175d707429c8e6d91d8f14c07`
+Candidate ZIP bytes: `9,606,977`
 
 ## Completed local evidence
 
-- Candidate packaging and allowlist scan: `internal/evidence/m8/artifact-manifest/local-candidate-20261007-completion/`
-- Fresh offline install/build, Mock journey and restore: `internal/evidence/m8/local-demo/local-candidate-20261007-completion/result.json`
-- Exact candidate Docker image: `internal/evidence/m8/docker/local-candidate-20261007-completion/result.json`
+- Candidate packaging and allowlist scan: `internal/evidence/m8/artifact-manifest/local-candidate-20261019/`
+- Fresh offline install/build, Mock journey and restore: `internal/evidence/m8/local-demo/local-candidate-20261019/result.json`
+- Exact candidate local Docker build/readiness/restart: `internal/evidence/m8/docker/local-candidate-20261019/result.json`
 - Local fulfillment and entitlement fixture: `internal/evidence/m8/fulfillment/local-fixture/result.json`
 - Vendor Docs and buyer-guide synchronization: `internal/evidence/m8/vendor-docs/result.json`
 - Deployment, Docker, migration, restore and operations preflight: `internal/evidence/m8/*-preflight/`
@@ -20,7 +20,13 @@ Candidate ZIP bytes: `1,754,690`
 - 6.10: Stripe test-mode account and payment lifecycle evidence
 - 7.14: FirstPromoter account/campaign and operator settlement evidence
 - 9.13: Lemon Squeezy merchant qualification, license/pricing/support terms
-- 9.14/9.15: managed and Docker candidate deployment, final RC/BETA/STABLE review
+- 9.14/9.15: managed deployment, commercial qualification and final RC/BETA/STABLE review
+
+The local candidate itself passed offline install, production build, buyer checks,
+fresh migration and seed, authenticated Mock generation, cancellation/refund,
+deadline failure/refund, private download, backup/restore, restart recovery and
+exactly-once credit assertions. These results are local evidence only and do not
+promote M8-RC, M8-BETA or M8-STABLE.
 
 ## Hosted demo verification
 

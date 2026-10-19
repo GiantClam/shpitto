@@ -1,0 +1,46 @@
+{"status":"PASS","disabledUserDenied":true,"sessionsRevoked":true,"teammateUnaffected":true,"suspendedMemberDenied":true,"operatorAuditAllowed":true,"billingHoldGenerationCheckoutDenied":true,"billingHoldAllowedReadsInvitesPortalSupport":true,"workerSettlementPreserved":true,"removedMemberReplayDenied":["create","claim","cancel","unknown","reconcile","materialize","settle","submit"],"rejectedReplayStateUnchanged":true,"suspendedRemovedMemberWorkerContinues":true}
+✔ scripts\probe-access-states.ts (963.4722ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 968.0782
+ℹ start of coverage report
+ℹ ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ file                  | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ src                   |        |          |         | 
+ℹ  config               |        |          |         | 
+ℹ   models.ts           |  86.67 |    31.25 |   66.67 | 43-44 63-64 85-86 88-89 92-93 97-98 100-101
+ℹ  contracts            |        |          |         | 
+ℹ   http.ts             |  55.66 |    80.65 |   53.85 | 17-18 21-22 25-35 39-40 45-49 73 81-87 90-106
+ℹ  modules              |        |          |         | 
+ℹ   billing             |        |          |         | 
+ℹ    hold-policy.ts     |  86.67 |    83.33 |  100.00 | 13-14
+ℹ   credits             |        |          |         | 
+ℹ    allocate.ts        |  89.50 |    29.41 |   66.67 | 39-42 183-199
+ℹ    ledger.ts          |  93.53 |    42.86 |  100.00 | 60-68
+ℹ    queries.ts         |  46.45 |    83.33 |   66.67 | 133-134 139-178 186-309
+ℹ    settle.ts          |  82.18 |    30.77 |   75.00 | 47-48 73-74 93-94 127-145 191-201
+ℹ   generation          |        |          |         | 
+ℹ    create.ts          |  83.33 |    40.63 |  100.00 | 77-78 83-84 91-92 95-101 107-108 110-122 146-147 167-179
+ℹ    lifecycle.ts       |  84.32 |    36.04 |   89.19 | 97-98 100-103 110-111 120-121 150-151 211-225 279-282 328-338 352-374 403-407 424-434 570-578 580-581 583-589 591-592
+ℹ    outbox.ts          |  31.85 |    66.67 |   12.50 | 20-69 84-92 97-116 119-122 125-128 132-135 139-142 146-157
+ℹ    state.ts           |  73.49 |    80.00 |   75.00 | 48-49 64-83
+ℹ   operations          |        |          |         | 
+ℹ    authorize.ts       |  89.47 |    47.37 |   88.89 | 35 44-45 77-78 159-171
+ℹ    status-commands.ts | 100.00 |    93.75 |  100.00 | 
+ℹ   shared              |        |          |         | 
+ℹ    commands.ts        |  91.01 |    59.09 |  100.00 | 31-32 43-44 69-70 72-73
+ℹ    transaction.ts     | 100.00 |   100.00 |  100.00 | 
+ℹ   workspaces          |        |          |         | 
+ℹ    access-state.ts    |  98.04 |    96.97 |  100.00 | 72-73
+ℹ    authorize.ts       |  58.67 |    87.50 |   25.00 | 27-28 39-51 58-64 67-75
+ℹ    policy.ts          |  56.03 |    78.57 |   36.36 | 35-39 42-49 52-57 93-104 107-116 119-133 136-141
+ℹ ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ all files             |  77.00 |    57.38 |   75.84 | 
+ℹ ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

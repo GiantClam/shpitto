@@ -1,0 +1,81 @@
+[
+  {
+    "name": "cancelled",
+    "at": "2026-10-19T02:52:49.454Z",
+    "taskId": "d766a2ae-1be9-4594-bb72-efb2bf97df19",
+    "balance": {
+      "available": "100",
+      "reserved": "0",
+      "consumed": "0"
+    }
+  },
+  {
+    "name": "success-and-deadline-failure",
+    "at": "2026-10-19T02:52:51.611Z",
+    "succeeded": "10e2e4a3-7617-4353-b529-8246a85ae1da",
+    "failed": "313fa2aa-45e6-4a1d-bfc1-9b49155fa7a0",
+    "failureCode": "generation.deadline_exceeded",
+    "balance": {
+      "available": "90",
+      "reserved": "0",
+      "consumed": "10"
+    }
+  },
+  {
+    "name": "services-stopped-with-queued-task",
+    "at": "2026-10-19T02:52:54.159Z",
+    "taskId": "91a4dc45-7c54-46c3-8bb7-db227bf8caee",
+    "balance": {
+      "available": "80",
+      "reserved": "10",
+      "consumed": "10"
+    }
+  },
+  {
+    "name": "restored-restart-verified",
+    "at": "2026-10-19T02:52:58.967Z",
+    "taskId": "91a4dc45-7c54-46c3-8bb7-db227bf8caee",
+    "balance": {
+      "available": "80",
+      "reserved": "0",
+      "consumed": "20"
+    },
+    "ledger": {
+      "available": "80",
+      "reserved": "0",
+      "consumed": "20"
+    },
+    "reservations": [
+      {
+        "task_id": "10e2e4a3-7617-4353-b529-8246a85ae1da",
+        "status": "consumed",
+        "total_cost": "10"
+      },
+      {
+        "task_id": "313fa2aa-45e6-4a1d-bfc1-9b49155fa7a0",
+        "status": "released",
+        "total_cost": "10"
+      },
+      {
+        "task_id": "91a4dc45-7c54-46c3-8bb7-db227bf8caee",
+        "status": "consumed",
+        "total_cost": "10"
+      },
+      {
+        "task_id": "d766a2ae-1be9-4594-bb72-efb2bf97df19",
+        "status": "released",
+        "total_cost": "10"
+      }
+    ],
+    "dispatched": [
+      {
+        "task_id": "10e2e4a3-7617-4353-b529-8246a85ae1da",
+        "attempts": 1
+      },
+      {
+        "task_id": "91a4dc45-7c54-46c3-8bb7-db227bf8caee",
+        "attempts": 1
+      }
+    ]
+  }
+]

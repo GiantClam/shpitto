@@ -1,0 +1,22 @@
+✔ catalog contains twelve canonical Skills with required sections (1.5622ms)
+✔ protected paths require engineering classification (0.2447ms)
+✔ evidence rejects stale digests and accepts a complete independent record (0.5751ms)
+✔ rollback blocks overlaps and permits a scoped patch (0.0955ms)
+✔ docs manifest exposes published-only versioned sections (3.0138ms)
+✔ docs manifest rejects traversal paths instead of reading outside the release source (2.8458ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 153.033
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report
