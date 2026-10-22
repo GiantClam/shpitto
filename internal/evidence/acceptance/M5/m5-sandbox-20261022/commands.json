@@ -159,12 +159,16 @@
       "invocation": "Read-only observation of the authenticated owner billing page on the existing Acceptance deployment"
     },
     {
-      "outputRef": "coverage-current-exploratory.log",
+      "outputRef": "coverage-owned-current-20261022.log",
       "environmentId": "m5-disposable-postgres-20261022",
-      "commandId": "billing-stripe-current-coverage-exploratory",
-      "invocation": "node --experimental-strip-types --experimental-test-coverage --test <billing contract, Stripe integration and Stripe unit suites>",
+      "commandId": "billing-stripe-current-owned-coverage",
+      "invocation": "node --experimental-strip-types --experimental-test-coverage --test-concurrency=1 --test <billing probes, billing contract, Stripe integration, billing presentation and hold-policy suites>",
       "status": "PASS",
-      "exitCode": 0
+      "exitCode": 0,
+      "supportingOutputRefs": [
+        "coverage-owned-current-20261022.lcov",
+        "coverage-owned-current-20261022.json"
+      ]
     },
     {
       "commandId": "current-owner-member-billing-browser",

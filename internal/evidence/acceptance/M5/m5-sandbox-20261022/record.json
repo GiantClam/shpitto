@@ -923,9 +923,13 @@
     },
     {
       "status": "PASS",
-      "invocation": "node --experimental-strip-types --experimental-test-coverage --test <billing contract, Stripe integration and Stripe unit suites>",
-      "commandId": "billing-stripe-current-coverage-exploratory",
-      "outputRef": "internal/evidence/acceptance/M5/m5-sandbox-20261022/coverage-current-exploratory.log",
+      "invocation": "node --experimental-strip-types --experimental-test-coverage --test-concurrency=1 --test <billing probes, billing contract, Stripe integration, billing presentation and hold-policy suites>",
+      "commandId": "billing-stripe-current-owned-coverage",
+      "outputRef": "internal/evidence/acceptance/M5/m5-sandbox-20261022/coverage-owned-current-20261022.log",
+      "supportingOutputRefs": [
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/coverage-owned-current-20261022.lcov",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/coverage-owned-current-20261022.json"
+      ],
       "endAt": null,
       "exitCode": 0,
       "environmentId": "m5-disposable-postgres-20261022",
@@ -933,12 +937,12 @@
     }
   ],
   "coverage": {
-    "status": "STALE",
+    "status": "PASS",
     "ownedModuleManifestRef": "internal/evidence/M5/m5-local-fixtures-20261017/coverage.json",
-    "denominator": 551,
-    "coveredBranches": 441,
-    "totalBranches": 551,
-    "percent": 80.03629764065336,
+    "denominator": 800,
+    "coveredBranches": 650,
+    "totalBranches": 800,
+    "percent": 81.25,
     "exclusions": [
       {
         "path": "src/adapters/billing/refunds.ts",
@@ -953,8 +957,8 @@
         "reason": "Operator refund recovery UI belongs to M6 task 7.3."
       }
     ],
-    "evidenceRef": "internal/evidence/M5/m5-local-fixtures-20261017/coverage.json",
-    "note": "The 80.04% branch-coverage result belongs to the retained 2026-10-17 candidate and was not recalculated for this refreshed candidate."
+    "evidenceRef": "internal/evidence/acceptance/M5/m5-sandbox-20261022/coverage-owned-current-20261022.json",
+    "note": "Current candidate coverage includes all 15 retained M5 owned modules and the three disposable-PostgreSQL billing probes; 650/800 branches are covered (81.25%)."
   },
   "defects": [
     {
@@ -1087,7 +1091,7 @@
       "stripe-refunds-integration",
       "billing-presentation-unit",
       "acceptance-owner-billing-view-readonly",
-      "billing-stripe-current-coverage-exploratory",
+      "billing-stripe-current-owned-coverage",
       "current-owner-member-billing-browser",
       "stripe-integration-rerun-20261022"
     ],
@@ -1097,6 +1101,6 @@
       "independent whole-stage review",
       "integrator decision"
     ],
-    "note": "Stripe test-mode readbacks and one authorized test refund are recorded. No live Stripe mode or new hosted purchase was used. Current-candidate owner billing UI passed at desktop/mobile sizes; member workspace isolation and owner-only Checkout/Portal API denial passed with zero created checkout attempts. Current native test-runner coverage execution passed with 81.94% branches over all loaded files; this denominator is not equivalent to the M5 owned-module report, so coverage remains STALE. The current rerun of Checkout, reconciliation, refunds and billing presentation suites passed 63/63 tests against disposable PostgreSQL on ports 55432/55433."
+      "note": "Stripe test-mode readbacks and one authorized test refund are recorded. No live Stripe mode or new hosted purchase was used. Current-candidate owner billing UI passed at desktop/mobile sizes; member workspace isolation and owner-only Checkout/Portal API denial passed with zero created checkout attempts. Current owned-module coverage includes all 15 M5 modules and passed 75/75 tests with 650/800 branches covered (81.25%). The coverage run used disposable PostgreSQL billing schema, Checkout and reconciliation probes on ports 55432/55433."
   }
 }
