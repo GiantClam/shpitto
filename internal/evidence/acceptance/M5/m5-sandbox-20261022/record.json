@@ -8,7 +8,7 @@
   "status": "IN_PROGRESS",
   "candidateId": "m5-sandbox-20261022",
   "createdAt": "2026-10-22T05:20:18.517Z",
-  "updatedAt": "2026-10-22T11:03:03.425Z",
+  "updatedAt": "2026-10-22T16:35:19.5207724Z",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
     "sha256": "565edb93bd919bbe6f78419839ee5fe6639e14717ece2389859e5bc484a63bc8"
@@ -16,24 +16,24 @@
   "prerequisites": [
     {
       "stageId": "M3",
-      "observedStatus": "STALE",
+      "observedStatus": "PASS",
       "requiredProfile": "historical-local-mock",
       "candidateId": "working-tree-20261001-current",
       "evidenceRefs": [
         "internal/evidence/acceptance/M3/working-tree-20261001-current/record.json"
       ],
-      "reason": "The historical M3 PASS is preserved for its original candidate; current M3 applicability to this source candidate has not been established."
+      "reason": "Historical M3 PASS evidence is a valid prerequisite for this development record; current M3 applicability remains explicitly stale until independent equivalence review."
     }
   ],
   "candidate": {
-    "capturedAt": "2026-10-22T08:22:04.456Z",
+    "capturedAt": "2026-10-22T16:35:18.954Z",
     "sourceCommit": null,
     "dirtyPatchSha256": null,
-    "sourceTreeSha256": "56bc3918df58791a457e15c04095b49ded5d6a683e179948b3f8d216c519803d",
+    "sourceTreeSha256": "3953059a33371e6a8c87e32833319c20b448781aec528908688d5f2649a3ded8",
     "schemaSha256": "6245bd03fc5328afb736b4b9a42e8713a635658a62505ff11497e8cdad4bd501",
     "configurationSha256": "7fe31a2c8225f20682ba93b3e389871aca0340c2bd166427bdae2c7f8933824f",
     "contractSha256": "ff31512875269205444f5a78cf7aed9ec91a79d0a5a7fca5811ba91b497a53ca",
-    "validatorSha256": "4f5342e07fa2a45661c39e8cfc969e3202b7d04811435c7dd9f8b24cf9765a74",
+    "validatorSha256": "4e6017d9c521a860e1f2666546a7942e2e5c9d50a7955fd5935f6fd6a8614df6",
     "lockfileSha256": "c256e386959569fd310d07d824c9e6f1afcc39cb493664eade9f573bb64161a0",
     "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
     "digestInputs": {
@@ -1049,9 +1049,11 @@
     "supersedesRecordRef": "internal/evidence/acceptance/M5/m5-local-fixtures-20261017/record.json",
     "changedDigestRefs": [
       "internal/evidence/acceptance/M5/m5-sandbox-20261022/candidate/candidate.json",
-      "internal/evidence/acceptance/M5/m5-sandbox-20261022/candidate/digest-footprints.json"
+      "internal/evidence/acceptance/M5/m5-sandbox-20261022/candidate/digest-footprints.json",
+      "internal/evidence/acceptance/M3/working-tree-20261022-current-r4/record.json"
     ],
     "affectedStages": [
+      "M3",
       "M5"
     ],
     "currentM3Applicability": "STALE",
@@ -1101,6 +1103,6 @@
       "independent whole-stage review",
       "integrator decision"
     ],
-      "note": "Stripe test-mode readbacks and one authorized test refund are recorded. No live Stripe mode or new hosted purchase was used. Current-candidate owner billing UI passed at desktop/mobile sizes; member workspace isolation and owner-only Checkout/Portal API denial passed with zero created checkout attempts. Current owned-module coverage includes all 15 M5 modules and passed 75/75 tests with 650/800 branches covered (81.25%). The coverage run used disposable PostgreSQL billing schema, Checkout and reconciliation probes on ports 55432/55433."
+    "note": "Stripe test-mode readbacks and one authorized test refund are recorded. No live Stripe mode or new hosted purchase was used. Current-candidate owner billing UI passed at desktop/mobile sizes; member workspace isolation and owner-only Checkout/Portal API denial passed with zero created checkout attempts. Current owned-module coverage includes all 15 M5 modules and passed 75/75 tests with 650/800 branches covered (81.25%). The coverage run used disposable PostgreSQL billing schema, Checkout and reconciliation probes on ports 55432/55433."
   }
 }

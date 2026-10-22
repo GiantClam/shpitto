@@ -233,7 +233,7 @@ async function run(): Promise<void> {
     const personal = await completePersonalWorkspaceOnboarding(db, userId, 'Root affiliate personal', {referralTouch: rootTouch});
     await completePersonalWorkspaceOnboarding(db, userId, 'Root affiliate personal', {referralTouch: {...rootTouch, touchReference: 'replacement-touch'}});
     assert((await db.select().from(affiliateAttributions).where(eq(affiliateAttributions.workspaceId, personal.workspaceId)))[0]?.touchReference === rootTouch.touchReference, 'Root onboarding hook changed the sealed referral on retry.');
-    await db.insert(creditAccounts).values({workspaceId: team.workspaceId, version: 0n, createdAt: realNow, updatedAt: realNow});
+    await db.insert(creditAccounts).values({workspaceId: team.workspaceId, version: 0n, createdAt: realNow, updatedAt: realNow}).onConflictDoNothing({target: creditAccounts.workspaceId});
     await db.insert(billingCustomerHistory).values({workspaceId: team.workspaceId, provider: 'fixture', customerId: 'root-billing-customer', previousCustomerId: null, validFrom: realNow, validUntil: null, changeReason: 'root hook fixture'});
     const effectivePaidAt = new Date(realNow.getTime() - 600_000).toISOString();
     const paid = await reconcilePayment(db, {provider: 'fixture', eventId: 'root-payment-event', eventType: 'payment_intent.succeeded', workspaceId: team.workspaceId, customerId: 'root-billing-customer', paymentIntentId: 'root-payment-intent', productKey: 'fixture-pack', amountMinor: '900', currency: 'usd', paidAt: effectivePaidAt}, realNow);

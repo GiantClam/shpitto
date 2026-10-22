@@ -1,0 +1,30 @@
+✔ admin lists forward allowlisted filters and use truthful partial pagination (16.7409ms)
+✔ workspace detail sends the encoded target and recorded access purpose (0.4535ms)
+✔ the terminal list page reports its known exact total for the paginator (0.3085ms)
+✔ admin failures preserve status so revoked authority invalidates the session (0.8858ms)
+✔ unsupported detail, query fields and generic mutations fail without network access (0.3719ms)
+✔ named commands retain expected version and the same key across exact retries (0.8416ms)
+✔ incomplete privileged envelope has no transport effect (0.1392ms)
+✔ the first credit adjustment can use the persisted zero account version (0.1847ms)
+✔ recovery sweep uses the versioned tenant route and stable command key (0.2601ms)
+✔ stored-webhook recovery sends only original inbox identity and a stable reviewed envelope (0.3927ms)
+✔ affiliate actions use named versioned requests and stable retries (0.387ms)
+✔ affiliate views use bounded redacted lists and reject generic writes (0.3646ms)
+✔ affiliate route queries reject unsupported fields, unbounded pages and invalid target IDs (1.1104ms)
+✔ template capability fixtures keep common resources and omit unsupported media controls (0.1753ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 179.8679
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report

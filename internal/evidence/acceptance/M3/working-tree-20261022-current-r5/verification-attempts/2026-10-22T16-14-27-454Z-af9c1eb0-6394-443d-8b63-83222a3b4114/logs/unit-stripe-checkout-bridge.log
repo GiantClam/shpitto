@@ -1,0 +1,19 @@
+✔ the bridge preserves verified IDs and terminal Checkout readback (1.0203ms)
+✔ unknown responses remain unresolved and failed responses do not become success (0.4154ms)
+✔ a completed unpaid Checkout never becomes paid or a new open URL (0.0918ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 140.3237
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report

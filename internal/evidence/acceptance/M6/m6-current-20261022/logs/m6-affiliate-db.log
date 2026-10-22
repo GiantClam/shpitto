@@ -1,0 +1,5 @@
+Error: Failed query: insert into "app"."credit_accounts" ("workspace_id", "version", "created_at", "updated_at") values ($1, $2, $3, $4)
+params: 3ecd53b8-2bdc-4bde-8299-a75082462981,0,2026-10-22T15:47:51.730Z,2026-10-22T15:47:51.730Z
+    at NodePgPreparedQuery.queryWithCache (file:///D:/github/shpitto/node_modules/.pnpm/drizzle-orm@0.45.3_@opentel_005c41c1a6de5e76c5fdb464aca028b4/node_modules/drizzle-orm/pg-core/session.js:41:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async run (file:///D:/github/shpitto/scripts/probe-m6-affiliate-db.ts:236:5)

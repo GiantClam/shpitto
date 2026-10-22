@@ -2,8 +2,8 @@
   "schemaVersion": "1.0",
   "changeId": "restart-shpitto-video-saas",
   "date": "2026-10-22",
-  "scope": "Historical M0-M4 approvals are preserved for their recorded candidates. Current M3 applicability remains under revalidation and current M4 candidate mismatches remain a separate stage blocker. M5 now records current-candidate local checks and partial Stripe test-mode subscription/pack/refund evidence; its gate remains IN_PROGRESS.",
-  "enforcementStatus": "Historical PASS decisions do not approve changed source, contract or validator digests. Current M3 applicability is stale and current M4 candidate mismatches remain unresolved. M5 partial test-mode evidence does not approve the stage; the stage checker must continue rejecting stale or incomplete promotion.",
+  "scope": "Current M3 candidate evidence is complete and awaiting independent review. Current M4, M5 and M6 development records remain IN_PROGRESS with external provider/payment/affiliate obligations explicitly preserved.",
+  "enforcementStatus": "Historical PASS decisions remain scoped to their original candidates. Current development records and stage checker reject incomplete or stale promotion.",
   "policyRef": "acceptance-gates.md",
   "recordTemplateRef": "acceptance-record.template.json",
   "allowedStatuses": [
@@ -191,7 +191,9 @@
         "internal/evidence/M3/final-stage-review-20261001.json",
         "internal/evidence/M3/final-stage-review-20261001.md",
         "internal/evidence/acceptance/M3/working-tree-20261001-current/final-integration/decision.json",
-        "internal/evidence/M3/final-independent-race-repetitions-20261001/final-summary.json"
+        "internal/evidence/M3/final-independent-race-repetitions-20261001/final-summary.json",
+        "internal/evidence/acceptance/M3/working-tree-20261022-current-r5/record.json",
+        "internal/evidence/M3/continuation-20261022/current-browser-run-3/browser-journeys-3d719fea/walkthrough.json"
       ],
       "reviewDecision": {
         "decision": "PASS",
@@ -202,7 +204,7 @@
         "integratorId": "/root",
         "decidedAt": "2026-10-01T02:27:40.160Z",
         "recordRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/record.json",
-        "reason": "All mandatory local M3 evidence and independent whole-stage review pass for the unchanged current candidate. Historical M2 obligations are supported by current regressions and independently reset contention evidence.",
+        "reason": "Historical M3 approval remains preserved; current candidate evidence is separately recorded as IN_PROGRESS pending independent revalidation.",
         "independentReviewRef": "internal/evidence/M3/final-stage-review-20261001.json"
       },
       "currentDevelopmentImpact": {
@@ -215,7 +217,7 @@
       "stageId": "M4",
       "name": "Real providers and recovery",
       "gateTaskId": "5.10",
-      "status": "PASS",
+      "status": "IN_PROGRESS",
       "prerequisiteStages": [
         "M3"
       ],
@@ -239,26 +241,24 @@
       "policyRef": "acceptance-gates.md",
       "commonStandardsRequired": true,
       "mandatoryScenarioSource": "traceability.json",
-      "candidateId": "m4-self-hosted-20261017",
+      "candidateId": "m4-current-20261022",
       "evidenceRecordRefs": [
+        "internal/evidence/acceptance/M4/m4-current-20261022/record.json",
+        "internal/evidence/acceptance/M4/m4-current-20261022/README.md",
         "internal/evidence/acceptance/M4/m4-self-hosted-20261017/record.json",
-        "internal/evidence/acceptance/M4/m4-self-hosted-20261017/implementation-acceptance.md",
         "internal/evidence/acceptance/M4/m4-self-hosted-20261017/independent-review.json",
-        "internal/evidence/acceptance/M4/m4-self-hosted-20261017/integrator.json",
-        "internal/evidence/M4/provider-matrix.md",
-        "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json"
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261017/integrator.json"
       ],
       "reviewDecision": {
-        "decision": "PASS",
-        "reviewerId": "m4-independent-reviewer-20261017",
-        "reviewedAt": "2026-10-17T05:03:00.000Z",
-        "independentFromImplementer": true,
-        "integratorDecision": "PASS",
-        "integratorId": "m4-integrator-20261017",
-        "decidedAt": "2026-10-17T05:05:00.000Z",
-        "recordRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261017/record.json",
-        "independentReviewRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261017/independent-review.json",
-        "reason": "The selected self-hosted Railway demo profile satisfies M4 on the current six-digest candidate, with current local verification, webhook replay/crash verification, private storage evidence, Railway recovery execution provenance and separate independent/integrator decisions."
+        "decision": "NOT_RUN",
+        "reviewerId": null,
+        "reviewedAt": null,
+        "independentFromImplementer": null,
+        "integratorDecision": "NOT_RUN",
+        "integratorId": null,
+        "decidedAt": null,
+        "recordRef": "internal/evidence/acceptance/M4/m4-current-20261022/record.json",
+        "reason": "Current candidate local checks are refreshed; authentic provider/hosted recovery evidence and independent review remain open."
       }
     },
     {
@@ -340,18 +340,23 @@
       "policyRef": "acceptance-gates.md",
       "commonStandardsRequired": true,
       "mandatoryScenarioSource": "traceability.json",
-      "candidateId": "m6-local-fixtures-20261017",
+      "candidateId": "m6-current-20261022",
       "evidenceRecordRefs": [
-        "internal/evidence/acceptance/M6/m6-local-fixtures-20261017/record.json",
-        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
-        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json",
-        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
-        "internal/evidence/M6/m6-local-fixtures-20261017/candidate/candidate.json"
+        "internal/evidence/acceptance/M6/m6-current-20261022/record.json",
+        "internal/evidence/acceptance/M6/m6-current-20261022/README.md",
+        "internal/evidence/acceptance/M6/m6-current-20261022/candidate/candidate.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/record.json"
       ],
       "reviewDecision": {
         "decision": "NOT_RUN",
-        "reason": "Current M6 local fixture evidence is refreshed. Real FirstPromoter account/hosted settlement evidence and independent whole-stage review remain deferred; the gate stays IN_PROGRESS.",
-        "taskReviewRef": "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+        "reviewerId": null,
+        "reviewedAt": null,
+        "independentFromImplementer": null,
+        "integratorDecision": "NOT_RUN",
+        "integratorId": null,
+        "decidedAt": null,
+        "recordRef": "internal/evidence/acceptance/M6/m6-current-20261022/record.json",
+        "reason": "Current local M6 fixture evidence is refreshed; real FirstPromoter and independent review remain open."
       },
       "localImplementation": {
         "status": "COMPLETE",
@@ -508,6 +513,15 @@
           "evidenceRecordRefs": []
         }
       ]
+    }
+  ],
+  "currentDevelopmentEvidence": [
+    {
+      "stageId": "M3",
+      "candidateId": "working-tree-20261022-current-r5",
+      "status": "IN_PROGRESS",
+      "recordRef": "internal/evidence/acceptance/M3/working-tree-20261022-current-r5/record.json",
+      "reason": "All current technical and browser evidence passes; independent reviewer and integrator remain open."
     }
   ]
 }

@@ -647,8 +647,8 @@
     },
     {
       "path": "scripts/probe-m6-affiliate-db.ts",
-      "bytes": 33850,
-      "sha256": "0637eb5c17371d10defb0684215e72f088db37db222eba5ab52ec901a7e8e119"
+      "bytes": 33908,
+      "sha256": "7e21fc2e0970048da7ebd0b61dc289d41f001348a604ebd8520c59b57e1bdcae"
     },
     {
       "path": "scripts/probe-m6-affiliate-notifications.ts",
@@ -3815,8 +3815,8 @@
     },
     {
       "path": "scripts/probe-m6-affiliate-db.ts",
-      "bytes": 33850,
-      "sha256": "0637eb5c17371d10defb0684215e72f088db37db222eba5ab52ec901a7e8e119"
+      "bytes": 33908,
+      "sha256": "7e21fc2e0970048da7ebd0b61dc289d41f001348a604ebd8520c59b57e1bdcae"
     },
     {
       "path": "scripts/probe-m6-affiliate-notifications.ts",

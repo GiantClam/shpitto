@@ -1,0 +1,960 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "DEVELOPMENT_VERIFICATION",
+  "changeId": "restart-shpitto-video-saas",
+  "stageId": "M4",
+  "checkpointId": null,
+  "gateTaskId": "5.10",
+  "status": "IN_PROGRESS",
+  "candidateId": "m4-current-20261022",
+  "createdAt": "2026-10-22T15:31:29.2316363Z",
+  "updatedAt": "2026-10-22T16:35:19.5038221Z",
+  "policy": {
+    "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md"
+  },
+  "prerequisites": [
+    {
+      "stageId": "M3",
+      "observedStatus": "PASS",
+      "requiredProfile": "historical-local-mock",
+      "candidateId": "working-tree-20261001-current",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/record.json"
+      ],
+      "reason": "Historical M3 approval is preserved; current-candidate applicability remains a separate review item."
+    }
+  ],
+  "candidate": {
+    "capturedAt": "2026-10-22T16:35:18.483Z",
+    "sourceCommit": null,
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "3953059a33371e6a8c87e32833319c20b448781aec528908688d5f2649a3ded8",
+    "schemaSha256": "6245bd03fc5328afb736b4b9a42e8713a635658a62505ff11497e8cdad4bd501",
+    "configurationSha256": "7fe31a2c8225f20682ba93b3e389871aca0340c2bd166427bdae2c7f8933824f",
+    "contractSha256": "ff31512875269205444f5a78cf7aed9ec91a79d0a5a7fca5811ba91b497a53ca",
+    "validatorSha256": "4e6017d9c521a860e1f2666546a7942e2e5c9d50a7955fd5935f6fd6a8614df6",
+    "lockfileSha256": "c256e386959569fd310d07d824c9e6f1afcc39cb493664eade9f573bb64161a0",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
+    "digestInputs": {
+      "sourceTree": [
+        "internal/contracts/providers",
+        "src",
+        "tests",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        "tooling",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        "src/config/env.ts",
+        "src/config/task-runtime.ts",
+        "src/config/provider-worker.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile",
+        "deploy/provider-worker.Dockerfile",
+        "deploy/railway.provider-worker.json",
+        "scripts/provider-worker-preflight.ts",
+        "scripts/provider-worker-runtime.mjs",
+        "tooling"
+      ],
+      "contract": [
+        "internal/contracts/providers",
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json",
+        "openspec/changes/restart-shpitto-video-saas/specs",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json",
+        "internal/restart/root-dependency-evolution.md"
+      ],
+      "validator": [
+        "scripts",
+        "tests",
+        "tooling",
+        "internal/restart/check-acceptance-record.py",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json"
+      ]
+    }
+  },
+  "environments": [
+    {
+      "environmentId": "m4-current-local-20261022",
+      "profile": "Current candidate local contract/build/PostgreSQL checks only; authentic provider and hosted recovery profiles remain deferred.",
+      "commercialCalls": false,
+      "fixtureOrSeed": "Disposable local PostgreSQL on shpitto-m5-verification-b-20261022; no provider or payment call.",
+      "toolVersions": {
+        "node": "v24.15.0",
+        "pnpm": "12.6.0",
+        "postgres": "15.19 container"
+      },
+      "limits": "Local checks only; no authentic provider callback, hosted deployment, production storage or paid generation.",
+      "setupStatus": "PASS"
+    }
+  ],
+  "criterionResults": [
+    {
+      "criterionId": "M4-C01",
+      "mandatory": true,
+      "result": "BLOCKED",
+      "expected": "All required milestone profiles and independent whole-stage review pass.",
+      "observed": "Current local checks pass, but this candidate has no newly bound authentic provider matrix, selected-runtime hosted recovery, or independent whole-stage review. Historical M4 provider evidence remains retained under its original candidate.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M4/m4-current-20261022/logs/typecheck.log",
+        "internal/evidence/acceptance/M4/m4-current-20261022/logs/production-build.log",
+        "internal/evidence/acceptance/M4/m4-current-20261022/candidate/candidate.json"
+      ]
+    },
+    {
+      "criterionId": "M4-C02",
+      "mandatory": true,
+      "result": "BLOCKED",
+      "expected": "All required milestone profiles and independent whole-stage review pass.",
+      "observed": "Current local checks pass, but this candidate has no newly bound authentic provider matrix, selected-runtime hosted recovery, or independent whole-stage review. Historical M4 provider evidence remains retained under its original candidate.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M4/m4-current-20261022/logs/typecheck.log",
+        "internal/evidence/acceptance/M4/m4-current-20261022/logs/production-build.log",
+        "internal/evidence/acceptance/M4/m4-current-20261022/candidate/candidate.json"
+      ]
+    },
+    {
+      "criterionId": "M4-C03",
+      "mandatory": true,
+      "result": "BLOCKED",
+      "expected": "All required milestone profiles and independent whole-stage review pass.",
+      "observed": "Current local checks pass, but this candidate has no newly bound authentic provider matrix, selected-runtime hosted recovery, or independent whole-stage review. Historical M4 provider evidence remains retained under its original candidate.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M4/m4-current-20261022/logs/typecheck.log",
+        "internal/evidence/acceptance/M4/m4-current-20261022/logs/production-build.log",
+        "internal/evidence/acceptance/M4/m4-current-20261022/candidate/candidate.json"
+      ]
+    },
+    {
+      "criterionId": "M4-C04",
+      "mandatory": true,
+      "result": "BLOCKED",
+      "expected": "All required milestone profiles and independent whole-stage review pass.",
+      "observed": "Current local checks pass, but this candidate has no newly bound authentic provider matrix, selected-runtime hosted recovery, or independent whole-stage review. Historical M4 provider evidence remains retained under its original candidate.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M4/m4-current-20261022/logs/typecheck.log",
+        "internal/evidence/acceptance/M4/m4-current-20261022/logs/production-build.log",
+        "internal/evidence/acceptance/M4/m4-current-20261022/candidate/candidate.json"
+      ]
+    }
+  ],
+  "commonStandardResults": [
+    {
+      "standard": "current-local-development",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "Current candidate frozen-lock install, typecheck, lint, format, database boundary, OpenSpec, provider/billing contract tests, billing schema probe and production build pass.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M4/m4-current-20261022/logs/frozen-lock-install.log",
+        "internal/evidence/acceptance/M4/m4-current-20261022/logs/typecheck.log",
+        "internal/evidence/acceptance/M4/m4-current-20261022/logs/lint.log",
+        "internal/evidence/acceptance/M4/m4-current-20261022/logs/format-check.log",
+        "internal/evidence/acceptance/M4/m4-current-20261022/logs/verify-db-boundary.log",
+        "internal/evidence/acceptance/M4/m4-current-20261022/logs/verify-openspec.log",
+        "internal/evidence/acceptance/M4/m4-current-20261022/logs/contracts-provider-inputs.log",
+        "internal/evidence/acceptance/M4/m4-current-20261022/logs/contracts-billing-contracts.log",
+        "internal/evidence/acceptance/M4/m4-current-20261022/logs/billing-schema.log",
+        "internal/evidence/acceptance/M4/m4-current-20261022/logs/production-build.log"
+      ]
+    },
+    {
+      "standard": "complete-stage-evidence",
+      "applicable": true,
+      "result": "BLOCKED",
+      "assertions": "Authentic provider rows, hosted callback/recovery/monitoring evidence and independent whole-stage review remain unavailable for this current digest.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M4/m4-current-20261022/candidate/candidate.json",
+        "internal/evidence/acceptance/M4/m4-current-20261022/logs/production-build.log"
+      ]
+    }
+  ],
+  "scenarioResults": [
+    {
+      "ids": [
+        "SC-GEN-05"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-06"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T13"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T14"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T20"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-07"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-08"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T11"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T53"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-09"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-10"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T49"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-11"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T09"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T19"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-13"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-14"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-15"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-16"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T02"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-17"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-18"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T01"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T03"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-19"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-20"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-01"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-02"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-03"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-04"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-05"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-06"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-07"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-08"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T22"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-09"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-10"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-11"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T15"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T48"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Complete milestone profile remains unapproved; local regression evidence is separately recorded.",
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-PRV-13"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Full M4 profile remains unapproved; current local contract/live-storage proof is separately scoped.",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/remaining-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/verify-related-contracts-20261015.log",
+        "internal/evidence/M4/task-5.10/railway-worker/r2-live-adapter-20261015.json"
+      ]
+    },
+    {
+      "ids": [
+        "SC-PRV-14"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Full M4 profile remains unapproved; current local contract/live-storage proof is separately scoped.",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/remaining-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/verify-related-contracts-20261015.log",
+        "internal/evidence/M4/task-5.10/railway-worker/r2-live-adapter-20261015.json"
+      ]
+    },
+    {
+      "ids": [
+        "SC-PRV-15"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Full M4 profile remains unapproved; current local contract/live-storage proof is separately scoped.",
+      "evidenceRefs": [
+        "internal/evidence/M4/task-5.10/railway-worker/remaining-validation-20261015.json",
+        "internal/evidence/M4/task-5.10/railway-worker/verify-related-contracts-20261015.log",
+        "internal/evidence/M4/task-5.10/railway-worker/r2-live-adapter-20261015.json"
+      ]
+    }
+  ],
+  "taskResults": [
+    {
+      "taskId": "5.1",
+      "result": "PASS",
+      "scope": "Four inspected provider schema contracts, versioned catalog identity and immutable snapshot helpers; no live dispatch claim. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical.",
+      "evidenceRefs": [
+        "internal/evidence/M6/local-20261004/final/result.json",
+        "internal/evidence/M6/local-20261004/final/commands.json",
+        "internal/evidence/M6/local-20261004/final/coverage.json",
+        "internal/evidence/M6/local-20261004/README.md"
+      ],
+      "historicalEvidenceRefs": [
+        "internal/evidence/M6/local-20261004/final/result.json",
+        "internal/evidence/M6/local-20261004/final/commands.json",
+        "internal/evidence/M6/local-20261004/final/coverage.json",
+        "internal/evidence/M6/local-20261004/README.md"
+      ]
+    },
+    {
+      "taskId": "5.2",
+      "result": "PASS",
+      "scope": "Pinned local Replicate T2V/I2V adapter contracts, safe input mapping, exact persisted request identity validation and fail-closed unknown responses; no live provider claim. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical.",
+      "evidenceRefs": [
+        "internal/evidence/M6/local-20261004/final/result.json",
+        "internal/evidence/M6/local-20261004/final/commands.json",
+        "internal/evidence/M6/local-20261004/final/coverage.json",
+        "internal/evidence/M6/local-20261004/README.md"
+      ],
+      "historicalEvidenceRefs": [
+        "internal/evidence/M6/local-20261004/final/result.json",
+        "internal/evidence/M6/local-20261004/final/commands.json",
+        "internal/evidence/M6/local-20261004/final/coverage.json",
+        "internal/evidence/M6/local-20261004/README.md"
+      ]
+    },
+    {
+      "taskId": "5.3",
+      "result": "PASS",
+      "scope": "Local fal queue T2V/I2V adapter contracts with no-retry header, exact request IDs, tracking-origin checks and disabled live rows; no live provider claim. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical. Current common and affected domain regression evidence is refreshed; original task-specific evidence remains historical.",
+      "evidenceRefs": [
+        "internal/evidence/M6/local-20261004/final/result.json",
+        "internal/evidence/M6/local-20261004/final/commands.json",
+        "internal/evidence/M6/local-20261004/final/coverage.json",
+        "internal/evidence/M6/local-20261004/README.md"
+      ],
+      "historicalEvidenceRefs": [
+        "internal/evidence/M6/local-20261004/final/result.json",
+        "internal/evidence/M6/local-20261004/final/commands.json",
+        "internal/evidence/M6/local-20261004/final/coverage.json",
+        "internal/evidence/M6/local-20261004/README.md"
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "commandId": "frozen-lock-install",
+      "invocation": "Current candidate local verification command",
+      "environmentId": "m4-current-local-20261022",
+      "startAt": "2026-10-22T15:31:29.2316363Z",
+      "endAt": "2026-10-22T15:31:29.2316363Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261022/logs/frozen-lock-install.log"
+    },
+    {
+      "commandId": "typecheck",
+      "invocation": "Current candidate local verification command",
+      "environmentId": "m4-current-local-20261022",
+      "startAt": "2026-10-22T15:31:29.2316363Z",
+      "endAt": "2026-10-22T15:31:29.2316363Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261022/logs/typecheck.log"
+    },
+    {
+      "commandId": "lint",
+      "invocation": "Current candidate local verification command",
+      "environmentId": "m4-current-local-20261022",
+      "startAt": "2026-10-22T15:31:29.2316363Z",
+      "endAt": "2026-10-22T15:31:29.2316363Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261022/logs/lint.log"
+    },
+    {
+      "commandId": "format-check",
+      "invocation": "Current candidate local verification command",
+      "environmentId": "m4-current-local-20261022",
+      "startAt": "2026-10-22T15:31:29.2316363Z",
+      "endAt": "2026-10-22T15:31:29.2316363Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261022/logs/format-check.log"
+    },
+    {
+      "commandId": "verify-db-boundary",
+      "invocation": "Current candidate local verification command",
+      "environmentId": "m4-current-local-20261022",
+      "startAt": "2026-10-22T15:31:29.2316363Z",
+      "endAt": "2026-10-22T15:31:29.2316363Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261022/logs/verify-db-boundary.log"
+    },
+    {
+      "commandId": "verify-openspec",
+      "invocation": "Current candidate local verification command",
+      "environmentId": "m4-current-local-20261022",
+      "startAt": "2026-10-22T15:31:29.2316363Z",
+      "endAt": "2026-10-22T15:31:29.2316363Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261022/logs/verify-openspec.log"
+    },
+    {
+      "commandId": "contracts-provider-inputs",
+      "invocation": "Current candidate local verification command",
+      "environmentId": "m4-current-local-20261022",
+      "startAt": "2026-10-22T15:31:29.2316363Z",
+      "endAt": "2026-10-22T15:31:29.2316363Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261022/logs/contracts-provider-inputs.log"
+    },
+    {
+      "commandId": "contracts-billing-contracts",
+      "invocation": "Current candidate local verification command",
+      "environmentId": "m4-current-local-20261022",
+      "startAt": "2026-10-22T15:31:29.2316363Z",
+      "endAt": "2026-10-22T15:31:29.2316363Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261022/logs/contracts-billing-contracts.log"
+    },
+    {
+      "commandId": "billing-schema",
+      "invocation": "Current candidate local verification command",
+      "environmentId": "m4-current-local-20261022",
+      "startAt": "2026-10-22T15:31:29.2316363Z",
+      "endAt": "2026-10-22T15:31:29.2316363Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261022/logs/billing-schema.log"
+    },
+    {
+      "commandId": "production-build",
+      "invocation": "Current candidate local verification command",
+      "environmentId": "m4-current-local-20261022",
+      "startAt": "2026-10-22T15:31:29.2316363Z",
+      "endAt": "2026-10-22T15:31:29.2316363Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261022/logs/production-build.log"
+    }
+  ],
+  "coverage": {
+    "status": "PASS",
+    "scope": "Current M4 owned core domain/adapters/catalog/worker configuration/recovery telemetry; not other stage coverage.",
+    "coveredBranches": 1530,
+    "totalBranches": 1848,
+    "percent": 82.79220779220779,
+    "ownedModuleManifestRef": "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/coverage.json",
+    "evidenceRef": "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/coverage.json",
+    "historicalM6Only": {
+      "status": "PASS",
+      "scope": "M6 owned core domain only",
+      "coveredBranches": 1318,
+      "totalBranches": 1598,
+      "percent": 82.47809762202753,
+      "ownedModuleManifestRef": "internal/evidence/M6/local-20261004/final/coverage.json",
+      "evidenceRef": "internal/evidence/M6/local-20261004/final/coverage.json"
+    },
+    "missingSources": []
+  },
+  "defects": [],
+  "externalInputs": {
+    "availability": "PARTIAL_REAL_PROVIDER_EVIDENCE",
+    "requiredInput": "Hosted Trigger project/credentials and integration; confirmed Replicate account/authentic callback; remaining application-row reservation evidence; independent full-stage review",
+    "affectedTasks": [
+      "5.10"
+    ],
+    "nextAction": "Configure missing account/project prerequisites and prove hosted recovery. Reuse exact retained evidence only where ownership and applicability are established. No further paid create is authorized."
+  },
+  "submission": {
+    "implementerId": "codex-m4-current-local",
+    "submittedAt": "2026-10-22T15:31:29.2316363Z",
+    "reportRef": "internal/evidence/acceptance/M4/m4-current-20261022/README.md"
+  },
+  "independentReview": {
+    "reviewerId": null,
+    "reviewedAt": null,
+    "independentFromImplementer": null,
+    "decision": "NOT_RUN",
+    "reason": "Awaiting current-candidate independent M4 review.",
+    "evidenceRefs": []
+  },
+  "integrationDecision": {
+    "integratorId": null,
+    "decidedAt": null,
+    "decision": "NOT_RUN",
+    "reason": "Awaiting independent M4 review and current external evidence.",
+    "nextEligibleTaskIds": [],
+    "blockedTaskIds": [
+      "5.10",
+      "6.10",
+      "7.14"
+    ]
+  },
+  "invalidation": {
+    "supersedesRecordRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261017/record.json",
+    "changedDigestRefs": [
+      "internal/evidence/acceptance/M4/m4-current-20261022/candidate/candidate.json",
+      "internal/evidence/acceptance/M3/working-tree-20261022-current-r4/record.json"
+    ],
+    "affectedStages": [
+      "M3",
+      "M4"
+    ],
+    "currentM3Applicability": "STALE",
+    "requiredReruns": [
+      "Obtain independent current-candidate M3 applicability review before promotion.",
+      "Re-run authentic provider matrix and selected self-hosted recovery/monitoring checks on this exact candidate.",
+      "Obtain independent M4 whole-stage review and separate integrator decision."
+    ],
+    "carriedEvidence": []
+  },
+  "limitations": [
+    "This candidate refresh records current bytes and scoped evidence; it does not promote M4 to PASS.",
+    "Only one paid Fal request was authorized and submitted; no additional provider create is authorized by this verification pass.",
+    "The complete four-row provider matrix, selected-runtime recovery acceptance and independent whole-stage review remain open.",
+    "Provider billed cost remains UNKNOWN; the authenticated price estimate is not an invoice.",
+    "Seeded acceptance identities and synthetic cleanup age are explicitly fixture-scoped."
+  ],
+  "candidateRefresh": {
+    "capturedAt": "2026-10-15T14:12:24.973Z",
+    "candidateId": "m4-local-fixtures-20261015",
+    "source": "node scripts/candidate-digests.mjs",
+    "status": "CURRENT_BYTES_CAPTURED_IN_PROGRESS",
+    "fullStageAcceptance": false,
+    "reason": "M4-only local fixtures and measured owned branch coverage are current; unrerun stage-specific profiles remain historical, with no stage-equivalence or approval claim.",
+    "evidenceRef": "internal/evidence/M4/task-5.10/railway-worker/m4-local-fixture-candidate-20261015.json"
+  },
+  "commandEvidenceApplicability": {
+    "currentExecutionCommandIds": [
+      "m4-local-contracts-and-units",
+      "m4-local-provider-worker-integration",
+      "m4-local-probe-generation-create",
+      "m4-local-probe-generation-lifecycle",
+      "m4-local-probe-generation-races",
+      "m4-local-probe-assets",
+      "m4-local-probe-asset-cleanup",
+      "m4-local-probe-asset-security",
+      "m4-local-probe-outbox-lease",
+      "m4-local-probe-m3-recovery",
+      "m4-local-probe-credit-ledger",
+      "m4-local-probe-credit-reservation",
+      "m4-local-probe-credit-refund",
+      "m4-local-probe-generation-replay",
+      "m4-local-probe-provider-recovery",
+      "m4-local-probe-m3-crash-restart",
+      "self-hosted-default-full-verification"
+    ],
+    "historicalCommandsNotRerun": [
+      "candidate-before",
+      "unit-contracts",
+      "migration",
+      "billing-schema",
+      "m6-operations",
+      "m6-privileged",
+      "m6-mfa",
+      "m6-recovery",
+      "m6-affiliate",
+      "m6-affiliate-db",
+      "operator",
+      "access-states",
+      "auth-lifecycle",
+      "billing-reconciliation",
+      "command-contract",
+      "onboarding",
+      "workspaces",
+      "generation-create",
+      "m6-cash-affiliate",
+      "m6-affiliate-notifications",
+      "m6-affiliate-races",
+      "m6-affiliate-referral",
+      "m6-admin-reads",
+      "m6-refund-preview",
+      "m6-workspace-details",
+      "billing-checkout",
+      "provider-recovery",
+      "generation-replay",
+      "generation-lifecycle",
+      "generation-races",
+      "outbox-lease",
+      "assets",
+      "asset-security",
+      "asset-cleanup",
+      "candidate-after",
+      "verify-skills",
+      "verify-docs",
+      "m7-early-typecheck",
+      "m7-customization-local",
+      "m7-docs-export-local",
+      "m8-export-boundaries-local",
+      "full-local-regression",
+      "m8-local-preflight",
+      "typecheck",
+      "lint",
+      "format-check",
+      "verify-config",
+      "verify-db-boundary",
+      "verify-m2-foundation",
+      "verify-local-services",
+      "verify-shells",
+      "verify-content-boundaries",
+      "verify-openspec",
+      "frozen-lock-install",
+      "production-build",
+      "contracts-provider-inputs",
+      "contracts-billing-contracts",
+      "verify-root"
+    ],
+    "note": "Fresh candidate capture does not approve historical command equivalence or any stage criterion; whole-stage review remains NOT_RUN."
+  }
+}
