@@ -8,7 +8,7 @@
   "status": "IN_PROGRESS",
   "candidateId": "m5-sandbox-20261022",
   "createdAt": "2026-10-22T05:20:18.517Z",
-  "updatedAt": "2026-10-22T08:31:53.24Z",
+  "updatedAt": "2026-10-22T11:03:03.425Z",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
     "sha256": "565edb93bd919bbe6f78419839ee5fe6639e14717ece2389859e5bc484a63bc8"
@@ -123,6 +123,17 @@
         "stripeApiVersion": "2026-08-26.dahlia",
         "stripeMode": "test"
       }
+    },
+    {
+      "environmentId": "m5-current-local-ui-20261022",
+      "profile": "Current candidate local Next application with seeded owner/member identities and local PostgreSQL",
+      "commercialCalls": false,
+      "fixtureOrSeed": "Seeded demo identities; owner page read-only; member denial requests used unique idempotency keys and produced zero checkout attempts.",
+      "toolVersions": {
+        "node": "v24.15.0",
+        "browser": "Playwright CLI",
+        "viewportChecks": "1440x900 and 390x844"
+      }
     }
   ],
   "criterionResults": [
@@ -194,7 +205,7 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "The durable owner refund command returned its confirmed result on replay with zero provider calls. A read-only authenticated owner view on the Acceptance deployment showed 2 orders, 1 subscription, 2 grants and a clear recovery state. This deployed build predates the current page change and displays payment amounts as raw minor units; current-candidate UI verification and the member-denial/workspace-isolation journey remain open.",
+      "observed": "The durable owner refund command returned its confirmed result on replay with zero provider calls. Current-candidate local owner UI verification passed at desktop and mobile sizes with formatted cash/refund values, grant details and cash-versus-credit explanation. A member outside the owner workspace received the restricted billing state; Checkout and Portal API attempts returned 403 and created zero checkout attempts. Remaining applicable scenarios, current M3 applicability and independent review/integrator approval remain unresolved.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/M5/m5-local-fixtures-20261017/coverage.json",
@@ -202,7 +213,12 @@
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-command-replay.json",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-ui-observation.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-refunds.log",
-        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/browser-billing-20261022.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-desktop.png",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-mobile.png",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/member-denied-desktop.png",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/member-denial-api.log"
       ]
     }
   ],
@@ -226,11 +242,16 @@
       "standard": "complete-stage-evidence",
       "applicable": true,
       "result": "BLOCKED",
-      "assertions": "Partial Stripe test-mode and database evidence is recorded. An authenticated owner view is observed on a deployed predecessor build; current-candidate owner UI verification, authenticated member denial/workspace isolation, remaining applicable M5 scenarios, current M3 applicability, and independent review/integrator approval remain unresolved.",
+      "assertions": "Partial Stripe test-mode and database evidence is recorded. Current-candidate owner/member billing UI and workspace-isolation evidence now pass locally. Remaining applicable M5 scenarios, current M3 applicability and independent review/integrator approval remain unresolved.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-ui-observation.md",
-        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json"
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/browser-billing-20261022.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-desktop.png",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-mobile.png",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/member-denied-desktop.png",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/member-denial-api.log"
       ]
     }
   ],
@@ -711,13 +732,18 @@
     {
       "taskId": "6.10",
       "result": "BLOCKED",
-      "scope": "The current candidate has partial Stripe test-mode subscription/pack/refund evidence and a confirmed zero-provider-call owner-command replay. A read-only owner billing view was observed on the Acceptance deployment, which predates the current billing page change. Current-candidate owner UI verification, member denial/workspace isolation, remaining applicable scenario profiles, current M3 applicability, independent whole-stage review and integrator approval remain outstanding.",
+      "scope": "The current candidate has partial Stripe test-mode subscription/pack/refund evidence, a confirmed zero-provider-call owner-command replay, and current local owner/member billing UI plus workspace-isolation evidence. Remaining applicable scenario profiles, current M3 applicability, independent whole-stage review and integrator approval remain outstanding.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-database-readback.json",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-command-replay.json",
-        "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-ui-observation.md"
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-ui-observation.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/browser-billing-20261022.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-desktop.png",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-mobile.png",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/member-denied-desktop.png",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/member-denial-api.log"
       ]
     }
   ],
@@ -966,7 +992,7 @@
         "6.10"
       ],
       "availability": "PARTIAL",
-      "nextAction": "The owner view was observed read-only on the Acceptance deployment. Capture the authenticated member-denied/workspace-isolation journey and verify the updated billing presentation against the current candidate without initiating Checkout.",
+      "nextAction": "Current-candidate local owner/member UI and workspace-isolation evidence is captured; the retained Acceptance deployment remains a predecessor build and is read-only historical context.",
       "nonsecretAuthorityRef": "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-ui-observation.md"
     },
     {
@@ -991,10 +1017,15 @@
     "reviewedAt": null,
     "independentFromImplementer": null,
     "decision": "NOT_RUN",
-    "reason": "Whole-stage independent review remains open until current M3 applicability, remaining required M5 scenarios and authenticated owner/member UI evidence are resolved.",
+    "reason": "Whole-stage independent review remains open until current M3 applicability and remaining required M5 scenarios are resolved.",
     "evidenceRefs": [
       "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
-      "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-ui-observation.md"
+      "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-ui-observation.md",
+      "internal/evidence/acceptance/M5/m5-sandbox-20261022/browser-billing-20261022.json",
+      "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-desktop.png",
+      "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-mobile.png",
+      "internal/evidence/acceptance/M5/m5-sandbox-20261022/member-denied-desktop.png",
+      "internal/evidence/acceptance/M5/m5-sandbox-20261022/member-denial-api.log"
     ]
   },
   "integrationDecision": {
@@ -1021,8 +1052,8 @@
     ],
     "currentM3Applicability": "STALE",
     "requiredReruns": [
+      "Repeat the current-candidate owner/member UI check only if the source or billing presentation digest changes.",
       "Close the remaining applicable SC-BIL-01–16 profiles on the current candidate.",
-      "Capture authenticated owner/member billing UI evidence and cash-versus-credit explanation.",
       "Reconcile current M3 applicability and preserve M4 as a separate review lane.",
       "Obtain independent whole-stage review and a separate integrator decision before promotion."
     ],
@@ -1056,15 +1087,16 @@
       "stripe-refunds-integration",
       "billing-presentation-unit",
       "acceptance-owner-billing-view-readonly",
-      "billing-stripe-current-coverage-exploratory"
+      "billing-stripe-current-coverage-exploratory",
+      "current-owner-member-billing-browser",
+      "stripe-integration-rerun-20261022"
     ],
     "historicalCommandsNotRun": [
-      "authenticated member billing browser journey and current-candidate owner billing UI verification",
       "remaining applicable M5 scenario profiles",
       "current M3 applicability review",
       "independent whole-stage review",
       "integrator decision"
     ],
-    "note": "Stripe test-mode readbacks and one authorized test refund are recorded. No live Stripe mode or new hosted purchase was used. The authenticated owner billing view was inspected read-only on the Acceptance deployment; that build predates the local page update. Member and current-candidate UI verification remain open. Current native test-runner coverage execution passed with 81.94% branches over all loaded files; this denominator is not equivalent to the M5 owned-module report, so coverage remains STALE."
+    "note": "Stripe test-mode readbacks and one authorized test refund are recorded. No live Stripe mode or new hosted purchase was used. Current-candidate owner billing UI passed at desktop/mobile sizes; member workspace isolation and owner-only Checkout/Portal API denial passed with zero created checkout attempts. Current native test-runner coverage execution passed with 81.94% branches over all loaded files; this denominator is not equivalent to the M5 owned-module report, so coverage remains STALE. The current rerun of Checkout, reconciliation, refunds and billing presentation suites passed 63/63 tests against disposable PostgreSQL on ports 55432/55433."
   }
 }

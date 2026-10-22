@@ -165,6 +165,33 @@
       "invocation": "node --experimental-strip-types --experimental-test-coverage --test <billing contract, Stripe integration and Stripe unit suites>",
       "status": "PASS",
       "exitCode": 0
+    },
+    {
+      "commandId": "current-owner-member-billing-browser",
+      "invocation": "Playwright current-candidate owner billing desktop/mobile render plus member billing/Checkout/Portal denial",
+      "environmentId": "m5-current-local-ui-20261022",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "browser-billing-20261022.json",
+      "supportingOutputRefs": [
+        "member-denial-api.log",
+        "owner-billing-desktop.png",
+        "owner-billing-mobile.png",
+        "member-denied-desktop.png"
+      ]
+    },
+    {
+      "commandId": "stripe-integration-rerun-20261022",
+      "invocation": "node --experimental-strip-types --test Stripe Checkout, reconciliation, refunds and billing presentation suites",
+      "environmentId": "m5-disposable-postgres-20261022",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "stripe-integration-rerun-20261022.log",
+      "testSummary": {
+        "tests": 63,
+        "passed": 63,
+        "failed": 0
+      }
     }
   ]
 }

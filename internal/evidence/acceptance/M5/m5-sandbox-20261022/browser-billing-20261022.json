@@ -1,0 +1,43 @@
+{
+  "observedAt": "2026-10-22T11:03:03.425Z",
+  "candidateId": "m5-sandbox-20261022",
+  "sourceTreeSha256": "56bc3918df58791a457e15c04095b49ded5d6a683e179948b3f8d216c519803d",
+  "environment": {
+    "profile": "local current candidate",
+    "appUrl": "http://localhost:3100",
+    "database": "local seeded PostgreSQL",
+    "stripeCalls": false,
+    "credentials": "seeded demo owner/member identities; no credential values recorded"
+  },
+  "owner": {
+    "workspaceRole": "owner",
+    "viewportChecks": [
+      {"width": 1440, "height": 900, "result": "PASS", "screenshot": "owner-billing-desktop.png"},
+      {"width": 390, "height": 844, "result": "PASS", "screenshot": "owner-billing-mobile.png"}
+    ],
+    "assertions": [
+      "Billing summary rendered orders, subscriptions, grants and recovery state.",
+      "Cash payments and cash refunds were explicitly separated from video credits.",
+      "Payment history rendered USD 9.00 refunded and USD 25.00 paid using major units.",
+      "Grant details rendered available, reserved, used, reversed and expiry values.",
+      "Monthly subscription and permanent credit pack controls were visible to the owner only."
+    ],
+    "result": "PASS"
+  },
+  "memberIsolation": {
+    "workspaceRole": "member in M3 Browser Review Team",
+    "billingPage": {"status": "PASS", "result": "Billing unavailable / restricted to the current workspace owner", "screenshot": "member-denied-desktop.png"},
+    "checkoutApi": {"status": 403, "code": "FORBIDDEN", "message": "You are not a member of this workspace."},
+    "portalApi": {"status": 403, "code": "FORBIDDEN", "message": "You are not a member of this workspace."},
+    "createdCheckoutAttempts": 0,
+    "result": "PASS"
+  },
+  "scope": {
+    "result": "PARTIAL_M5_EVIDENCE",
+    "remaining": [
+      "Complete applicable SC-BIL-01 through SC-BIL-16 profile closure.",
+      "Reconcile current M3 applicability for this changed candidate.",
+      "Obtain independent whole-stage financial correctness review and separate integrator approval."
+    ]
+  }
+}

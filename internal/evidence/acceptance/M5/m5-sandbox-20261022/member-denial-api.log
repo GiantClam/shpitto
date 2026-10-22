@@ -1,0 +1,7 @@
+Environment: local current candidate at http://localhost:3100
+Actor: seeded member session
+Target workspace: owner-only workspace outside the member's memberships
+
+Checkout POST: HTTP 403 FORBIDDEN - You are not a member of this workspace.
+Portal POST: HTTP 403 FORBIDDEN - You are not a member of this workspace.
+Database assertion: billing_checkout_attempts rows for the two denial idempotency keys = 0.
