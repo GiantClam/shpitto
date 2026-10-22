@@ -1,12 +1,14 @@
 'use client';
 
-import {useState} from 'react';
+import {useRef, useState} from 'react';
 
 type Product = Readonly<{productKey: string; kind: 'subscription' | 'pack'; credits: string; amountMinor: string; currency: string; interval: 'month' | null}>;
 
-export function FixtureBillingPanel({workspaceId, products}: Readonly<{workspaceId: string; products: readonly Product[]}>) {
+export function FixtureBillingPanel({workspaceId, products, mode = 'fixture'}: Readonly<{workspaceId: string; products: readonly Product[]; mode?: 'fixture' | 'stripe_test'}>) {
   const [working, setWorking] = useState<string | null>(null);
   const [message, setMessage] = useState('');
+  const commandKeys = useRef<Record<string, string>>({});
+  const commandKey = (action: string) => commandKeys.current[action] ??= `billing-${crypto.randomUUID()}`;
   async function post(path: string, body: Record<string, unknown>, key: string): Promise<Record<string, unknown>> {
     const response = await fetch(path, {method: 'POST', headers: {'content-type': 'application/json', 'idempotency-key': key}, body: JSON.stringify(body)});
     const payload = await response.json() as {ok?: boolean; data?: Record<string, unknown>; error?: {message?: string}};
@@ -16,8 +18,8 @@ export function FixtureBillingPanel({workspaceId, products}: Readonly<{workspace
   async function checkout(productKey: string): Promise<void> {
     setWorking(productKey); setMessage('');
     try {
-      const data = await post(`/api/workspaces/${workspaceId}/billing/checkout`, {catalogProductKey: productKey}, `fixture-checkout-${productKey}-${crypto.randomUUID()}`);
-      if (typeof data.checkoutUrl !== 'string') throw new Error('The fixture checkout did not return a session URL.');
+      const data = await post(`/api/workspaces/${workspaceId}/billing/checkout`, {catalogProductKey: productKey}, commandKey(productKey));
+      if (typeof data.checkoutUrl !== 'string') throw new Error('Checkout is awaiting verification. Retry this action to check the same purchase.');
       window.location.assign(data.checkoutUrl);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'The checkout could not be opened.');
@@ -27,13 +29,13 @@ export function FixtureBillingPanel({workspaceId, products}: Readonly<{workspace
   async function portal(): Promise<void> {
     setWorking('portal'); setMessage('');
     try {
-      const data = await post(`/api/workspaces/${workspaceId}/billing/portal`, {}, `fixture-portal-${crypto.randomUUID()}`);
-      if (typeof data.portalUrl !== 'string') throw new Error('The fixture portal did not return a URL.');
+      const data = await post(`/api/workspaces/${workspaceId}/billing/portal`, {}, commandKey('portal'));
+      if (typeof data.portalUrl !== 'string') throw new Error('The billing portal did not return a URL.');
       window.location.assign(data.portalUrl);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'The billing portal could not be opened.');
       setWorking(null);
     }
   }
-  return <section className="generation-panel fixture-billing-panel" aria-labelledby="fixture-billing-heading"><div className="section-heading"><h2 id="fixture-billing-heading">Local Mock billing</h2><span>no real charge</span></div><p>Use the fixture products to exercise checkout, webhook reconciliation and recovery state end to end.</p><div className="fixture-product-list">{products.map((product) => <article className="fixture-product" key={product.productKey}><div><strong>{product.kind === 'subscription' ? 'Monthly credits' : 'Permanent credit pack'}</strong><small>{product.credits} credits{product.interval ? ` · renews monthly` : ' · never expires'}</small></div><div className="fixture-product-action"><strong>{product.currency.toUpperCase()} {(Number(product.amountMinor) / 100).toFixed(2)}</strong><button className="button" type="button" disabled={working !== null} onClick={() => checkout(product.productKey)}>{working === product.productKey ? 'Opening…' : 'Open checkout'}</button></div></article>)}</div><button className="button button-muted" type="button" disabled={working !== null} onClick={portal}>{working === 'portal' ? 'Opening…' : 'Open local billing portal'}</button>{message ? <p role="alert">{message}</p> : null}</section>;
+  return <section className="generation-panel fixture-billing-panel" aria-labelledby="fixture-billing-heading"><div className="section-heading"><h2 id="fixture-billing-heading">{mode === 'stripe_test' ? 'Stripe test billing' : 'Local Mock billing'}</h2><span>no real charge</span></div><p>{mode === 'stripe_test' ? 'Use a Stripe test card to try monthly credits or a permanent credit pack. Credits appear after the payment is verified.' : 'Use the fixture products to exercise checkout, webhook reconciliation and recovery state end to end.'}</p><div className="fixture-product-list">{products.map((product) => <article className="fixture-product" key={product.productKey}><div><strong>{product.kind === 'subscription' ? 'Monthly credits' : 'Permanent credit pack'}</strong><small>{product.credits} credits{product.interval ? ` · renews monthly` : ' · never expires'}</small></div><div className="fixture-product-action"><strong>{product.currency.toUpperCase()} {(Number(product.amountMinor) / 100).toFixed(2)}</strong><button className="button" type="button" disabled={working !== null} onClick={() => checkout(product.productKey)}>{working === product.productKey ? 'Opening…' : 'Open checkout'}</button></div></article>)}</div><button className="button button-muted" type="button" disabled={working !== null} onClick={portal}>{working === 'portal' ? 'Opening…' : mode === 'stripe_test' ? 'Open billing portal' : 'Open local billing portal'}</button>{message ? <p role="alert">{message}</p> : null}</section>;
 }

@@ -1,9 +1,9 @@
 {
   "schemaVersion": "1.0",
   "changeId": "restart-shpitto-video-saas",
-  "date": "2026-10-17",
-  "scope": "Historical M0-M3 approvals are preserved. M4 self-hosted demo acceptance is PASS for the current candidate. Trigger.dev remains optional; production email, vendor commerce, historical anomalous-balance recovery and further paid provider generation remain outside this gate.",
-  "enforcementStatus": "Current M4 acceptance is bound to the canonical current candidate digests, current traceability, retained live provider rows, selected self-hosted recovery evidence, independent review and integrator PASS.",
+  "date": "2026-10-22",
+  "scope": "Historical M0-M4 approvals are preserved for their recorded candidates. Current M3 applicability remains under revalidation and current M4 candidate mismatches remain a separate stage blocker. M5 now records current-candidate local checks and partial Stripe test-mode subscription/pack/refund evidence; its gate remains IN_PROGRESS.",
+  "enforcementStatus": "Historical PASS decisions do not approve changed source, contract or validator digests. Current M3 applicability is stale and current M4 candidate mismatches remain unresolved. M5 partial test-mode evidence does not approve the stage; the stage checker must continue rejecting stale or incomplete promotion.",
   "policyRef": "acceptance-gates.md",
   "recordTemplateRef": "acceptance-record.template.json",
   "allowedStatuses": [
@@ -284,18 +284,32 @@
       "policyRef": "acceptance-gates.md",
       "commonStandardsRequired": true,
       "mandatoryScenarioSource": "traceability.json",
-      "candidateId": "m5-local-fixtures-20261017",
+      "candidateId": "m5-sandbox-20261022",
       "evidenceRecordRefs": [
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/record.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/defect-history.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-ui-observation.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-database-readback.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-command-replay.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/candidate/candidate.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/candidate/digest-footprints.json",
         "internal/evidence/acceptance/M5/m5-local-fixtures-20261017/record.json",
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
-        "internal/evidence/M5/m5-local-fixtures-20261017/coverage.json",
-        "internal/evidence/M5/m5-local-fixtures-20261017/commands.json",
-        "internal/evidence/M5/m5-local-fixtures-20261017/candidate/candidate.json"
+        "internal/evidence/M5/m5-local-fixtures-20261017/coverage.json"
       ],
       "reviewDecision": {
         "decision": "NOT_RUN",
-        "reason": "Current M5 local fixture evidence is refreshed. Real Stripe test-mode evidence and independent whole-stage review remain deferred; the gate stays IN_PROGRESS.",
-        "taskReviewRef": "internal/evidence/M5/m5-local-fixtures-20261017/README.md"
+        "reviewerId": null,
+        "reviewedAt": null,
+        "independentFromImplementer": null,
+        "integratorDecision": "NOT_RUN",
+        "integratorId": null,
+        "decidedAt": null,
+        "reason": "Partial Stripe test-mode evidence and the owner-command replay regression are recorded. Authenticated owner/member UI, remaining applicable M5 scenarios, current M3 applicability, independent review and integrator approval remain open.",
+        "taskReviewRef": "internal/evidence/acceptance/M5/m5-sandbox-20261022/record.json"
       }
     },
     {

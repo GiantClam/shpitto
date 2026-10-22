@@ -1,0 +1,285 @@
+✔ local provider is deterministic and idempotent by persisted Checkout key (0.8618ms)
+✔ local provider retains an unknown response until the same key is reconciled by a stable provider (0.1058ms)
+✔ portal URL is provider-owned and ignores a caller supplied return destination (0.1263ms)
+✔ route DTOs reject extra browser-controlled billing fields (0.4866ms)
+✔ fixture webhook verifies raw bytes and rejects tampering or stale signatures (0.6239ms)
+✔ fixture webhook parser retains only supported event envelope (0.0949ms)
+✔ only explicit local/test profiles expose fixture monthly subscriptions and permanent packs (1.2351ms)
+✔ catalog snapshots are stable, frozen, strict and separate cash from credits (0.4317ms)
+✔ domain snapshots can describe a future reviewed Stripe mapping without enabling a production product (0.2703ms)
+✔ checkout input cannot smuggle customer, price, tenant, interval or redirects (0.178ms)
+✔ money and credit quantities cross JSON as canonical bounded decimal strings (0.1322ms)
+✔ canonical aliases distinguish transport objects without accepting unknown identity fields (0.1544ms)
+✔ fixture defaults still create and replay deterministic Checkout and portal (385.1872ms)
+✔ Stripe requires explicit server catalog; fixture terms cannot be relabeled as Stripe (16.6005ms)
+✔ concurrent customer creation and command replay use a persisted stable remote key and one binding (83.3305ms)
+✔ unknown customer provisioning survives process replacement and does not invent a Stripe identity (62.8135ms)
+✔ expired unknown customer intent fails closed beyond provider retention (36.3943ms)
+✔ stale owner cannot bind a customer after the remote provisioning call (29.8148ms)
+✔ Checkout retries retain immutable catalog, customer and provider key across config and customer changes (57.5158ms)
+✔ known Stripe session replays retrieve provider URL and preserve identity on late unknown (63.3972ms)
+✔ late unknown customer response cannot erase a concurrent successful provisioning result (65.6317ms)
+✔ local timeout never releases recurring slot; only provider expiry permits replacement (97.3955ms)
+✔ unknown Checkout cannot be recreated after idempotency retention and still occupies recurring slot (72.111ms)
+✔ concurrent distinct recurring commands create only one remote Checkout (59.1905ms)
+✔ Stripe portal uses real current customer during hold and an immutable server return URL (62.0887ms)
+✔ invalid command identity, member and billing hold fail before customer provisioning (15.8116ms)
+✔ portal without a current Stripe customer never creates a synthetic mapping (11.5177ms)
+✔ known Checkout retrieval unknown or conflicting identity preserves the accepted session (62.7803ms)
+✔ paid session retrieval leaves recurring slot until canonical payment reconciliation (58.8261ms)
+✔ portal lost response retries stored customer and return origin after configuration changes (62.2189ms)
+✔ processed redelivery never executes an economic callback twice (288.9664ms)
+✔ failed delivery is retryable, while changed payload cannot reuse event identity (12.0443ms)
+✔ in-flight duplicate requests receive retryable failure until durable processing finishes (11.4651ms)
+✔ stale processing can resume and the receipt excludes untrusted metadata (6.846ms)
+✔ the application resolves immutable terms, commits its claim before fetch, and grants only once (149.0071ms)
+✔ fixture defaults still reconcile and deduplicate without Stripe evidence or a fence (331.044ms)
+✔ invoice, Checkout, and intent aliases converge; renewal invoice gets a distinct grant and original expiry (186.9477ms)
+✔ historical bound subscription renews and mirrors after current customer replacement (94.0462ms)
+✔ missing service period is a durable hold with no grant, never a perpetual subscription grant (31.295ms)
+✔ a claim commits before remote work and a newer generation or expired lease rejects old apply atomically (73.2138ms)
+✔ refund-before-paid persists cash evidence and late failed/paid deliveries cannot restore entitlement (114.5933ms)
+✔ Stripe needs a fence, persisted catalog binding, verified amounts, currency, and supported paid semantics (226.3814ms)
+✔ a verified canonical paid observation resolves only matching unverified paid cases and releases holds when none remain (153.6547ms)
+✔ second external subscription produces a recovery hold instead of losing evidence to uniqueness rollback (64.1629ms)
+✔ scope rejects forged workspace/customer hints and lifecycle requires a live matching fence (37.309ms)
+✔ equal periods cannot merge distinct invoices or extend the original grant expiry (86.7121ms)
+✔ recovery without its original period retains cash and blocks later complete paid evidence (204.9349ms)
+✔ unsupported recovery keeps its monetary evidence and blocks paid through a matching canonical alias (54.9925ms)
+✔ historical refunds preserve their original order while an unrelated replacement subscription is active (135.0875ms)
+✔ fresh recovery identities cannot exceed the non-replayed original order cash cap (127.2974ms)
+✔ Stripe packs use Checkout snapshots, verified discounted cash, and permanent catalog credit quantities (122.7918ms)
+✔ lifecycle unsupported changes commit holds, while stale fences cannot cancel a subscription (63.7096ms)
+✔ Stripe recovery must carry stable refund/dispute identities rather than delivery identities (66.0283ms)
+✔ a first dispute reversal becomes a hold without fabricating a prior loss (139.8019ms)
+✔ a terminal failed refund after a succeeded refund holds without changing confirmed cash (94.0375ms)
+✔ a terminal canceled refund after a succeeded refund holds without changing confirmed cash (91.4267ms)
+✔ pending then failed refund holding evidence never creates confirmed cash (43.6946ms)
+✔ fixture defaults still execute offline and preserve owner manual recovery (435.9209ms)
+✔ Stripe requires explicit matching provider, without recording an intent or falling back (47.5037ms)
+✔ Stripe binds durable request, historical customer and canonical payment intent and confirms exactly once (88.9432ms)
+✔ owner refund command replays the current confirmed result after the order becomes refunded (68.2763ms)
+✔ owner billing projection separates refunded cash from voided credits and rejects members (65.8705ms)
+✔ Stripe pending cannot create confirmed cash; recovery is read-only (88.013ms)
+✔ Stripe unknown cannot create confirmed cash; recovery is read-only (95.9131ms)
+✔ Stripe failed cannot create confirmed cash; recovery is read-only (60.8621ms)
+✔ mismatched Stripe amountMinor evidence remains unresolved (55.0339ms)
+✔ mismatched Stripe currency evidence remains unresolved (55.2479ms)
+✔ mismatched Stripe customerId evidence remains unresolved (54.3728ms)
+✔ mismatched Stripe paymentIntentId evidence remains unresolved (56.3456ms)
+✔ missing or ambiguous canonical aliases fail closed before any Stripe call (106.1153ms)
+✔ adapter exceptions and unverified failed responses remain unknown, never terminal failure or cash (103.7293ms)
+✔ owner Stripe reconciliation requires authoritative readback, not a supplied external ID (93.7244ms)
+✔ auth, step-up and expected version reject before provider work or refund creation (33.55ms)
+✔ parallel commands submit once, block other unresolved intents, and expired claims only look up (78.3356ms)
+✔ Stripe port refuses fixture-shaped success and mismatched providers on recovery (54.5464ms)
+✔ bridge rejects caller money/order/key drift and never uses caller payment target (53.7618ms)
+✔ lost finalization rejects stale lease and recovers successful cash by read-only lookup (88.4695ms)
+✔ owner readback rechecks ownership before applying external cash evidence (52.722ms)
+✔ changed durable refund binding rejects late successful delivery evidence (50.0743ms)
+✔ formats currency minor units using the currency decimal exponent without losing precision (14.0565ms)
+✔ the bridge preserves verified IDs and terminal Checkout readback (1.4465ms)
+✔ unknown responses remain unresolved and failed responses do not become success (0.5243ms)
+✔ a completed unpaid Checkout never becomes paid or a new open URL (0.121ms)
+✔ factory rejects live/restricted-live/publishable keys and unsafe origins before touching a client (9.545ms)
+✔ customer creation and readback bind workspace and the exact stable provisioning key (1.729ms)
+✔ customer ambiguity remains unknown and lookup never creates or invents a customer (0.4277ms)
+✔ customer readback rejects deleted, live, wrong workspace and wrong provisioning key (0.3748ms)
+✔ pack Checkout binds a validated snapshot and propagates stable correlation to the payment/subscription (1.0735ms)
+✔ subscription Checkout binds a validated snapshot and propagates stable correlation to the payment/subscription (0.337ms)
+✔ invalid snapshots, remote prices and wrong customers never create Checkout (0.7846ms)
+✔ Checkout readback rejects wrong binding, price, live objects and hostile redirect URLs (0.7542ms)
+✔ lost Checkout response stays unknown and retry uses identical provider parameters/key (0.3947ms)
+✔ portal uses the injected configuration and a fixed return destination (0.3587ms)
+✔ portal refuses missing/live/unsafe configuration before creating a session (0.3625ms)
+✔ refund submits only the canonical PaymentIntent and stable request metadata/key (0.6071ms)
+✔ pending/action-required/failed/canceled/unknown refunds never report succeeded (0.5011ms)
+✔ refund rejects wrong amount/currency/payment target/customer/request metadata (0.3263ms)
+✔ refund validates the test PaymentIntent/customer/currency/received amount before any POST (0.2921ms)
+✔ refund lookup is read-only, paginated and refuses incomplete or duplicate matches (0.3265ms)
+✔ provider errors expose only safe fixed codes and no SDK message or raw body (0.8134ms)
+✔ portal refuses proration and validates returned customer/configuration/return URL (0.4512ms)
+✔ completed unpaid and expired Checkout readbacks are successful observations without payment claims (0.354ms)
+✔ customer lookup rejects ambiguous identity, paginates, and stops on incomplete history (0.301ms)
+✔ refund readback permits a null refund customer only after the canonical payment customer is verified (0.2163ms)
+✔ invalid refund intent and absent provider evidence cannot be upgraded to confirmation (0.4276ms)
+✔ Checkout validates frozen snapshot copies across asynchronous preflight (0.2378ms)
+✔ deactivated prices block new Checkout but do not invalidate a bound historical session (0.2425ms)
+✔ portal configuration must explicitly disable cancellation prorations (0.1579ms)
+✔ fixture configuration stays offline even when a Stripe key exists (9.053ms)
+✔ explicit acceptance test catalog is immutable and binds real price identities (0.6671ms)
+✔ live credentials, production activation and unsafe return origins are rejected (0.5839ms)
+✔ empty, tampered, duplicate and fixture catalog terms cannot enable Stripe (0.4892ms)
+✔ authenticated parser minimizes raw identity and rejects live or malformed events (3.7327ms)
+✔ discovery exposes canonical scope; post-claim normalization refetches and ignores all metadata (17.7927ms)
+✔ normalize rejects a different local customer, canonical customer drift, live objects and fence workspace (1.0761ms)
+✔ pack quantity becomes holding evidence without metadata/catalog fallback (0.4693ms)
+✔ pack discount becomes holding evidence without metadata/catalog fallback (0.3037ms)
+✔ pack tax becomes holding evidence without metadata/catalog fallback (0.2876ms)
+✔ pack price becomes holding evidence without metadata/catalog fallback (0.5198ms)
+✔ pack amount becomes holding evidence without metadata/catalog fallback (0.8953ms)
+✔ pack currency becomes holding evidence without metadata/catalog fallback (0.2829ms)
+✔ pack payment becomes holding evidence without metadata/catalog fallback (0.2544ms)
+✔ pack line-price becomes holding evidence without metadata/catalog fallback (0.2235ms)
+✔ initial invoice yields invoice, intent, charge and persisted Checkout aliases with canonical monthly period (1.2692ms)
+✔ recurring invoice accepts parent subscription item detail when top-level line subscription is absent (0.475ms)
+✔ recurring invoice rejects conflicting top-level and parent subscription identities (0.4021ms)
+✔ early subscription discovery retrieves the initial Checkout without metadata binding (0.1829ms)
+✔ early recurring PaymentIntent reverses through invoicePayments when Checkout PI lookup is empty (0.4695ms)
+✔ pack PaymentIntent aliases its canonical Checkout (0.3351ms)
+✔ monthly periods retain Stripe end-of-month anchors across a short month (0.3779ms)
+✔ a longer next month cannot shorten an existing day-30 monthly anchor (0.3499ms)
+✔ initial subscription can use its persisted Checkout binding before a subscription row exists (0.4913ms)
+✔ subscription cannot take a lifecycle binding from a different persisted Checkout (0.461ms)
+✔ nullable SDK shipping total is zero without weakening tax or discount validation (0.3327ms)
+✔ async Checkout success is canonical; unpaid completion emits no payment (1.0368ms)
+✔ pack multiple lines and incomplete pagination become holding evidence (0.4737ms)
+✔ canonical invoice payments, line items and prices reject live mode (0.8278ms)
+✔ canonical refund/customer identity mismatch rejects, regardless of metadata (0.308ms)
+✔ provider failures propagate for durable inbox retry without fabricating payment evidence (0.4659ms)
+✔ subscription Checkout maps its invoice; renewal never aliases the initial Checkout (0.6935ms)
+✔ subscription annual is held (0.4029ms)
+✔ subscription proration is held (0.2449ms)
+✔ subscription multiple is held (0.2321ms)
+✔ subscription discount is held (0.2745ms)
+✔ subscription tax is held (0.2423ms)
+✔ subscription quantity is held (0.2462ms)
+✔ subscription reason is held (0.2661ms)
+✔ subscription payments is held (0.28ms)
+✔ subscription period is held (0.3122ms)
+✔ subscription truncated is held (0.662ms)
+✔ subscription unbound is held (0.309ms)
+✔ refund succeeded uses independent refund identity and original payment amount (0.6011ms)
+✔ terminal failed refund remains holding evidence instead of being silently discarded (0.563ms)
+✔ terminal canceled refund remains holding evidence instead of being silently discarded (0.4177ms)
+✔ refund-before-paid validates canonical Checkout lines and immutable price (0.3493ms)
+✔ recurring refund refetches original invoice period, never the current subscription period (0.5216ms)
+✔ historical recurring refund uses the original invoice terms after current subscription changes (0.4146ms)
+✔ refund invoice alias must point at the same canonical PaymentIntent (0.3228ms)
+✔ charge refund selection emits exactly one independently refetched refund (0.3857ms)
+✔ refund pending emits no cash (0.2733ms)
+✔ refund requires_action emits no cash (0.2174ms)
+✔ refund failed emits holding evidence (0.3006ms)
+✔ refund canceled emits holding evidence (0.2311ms)
+✔ charge refund event lists and refetches individual refunds; cumulative amount is never cash (0.2904ms)
+✔ subscription lifecycle normalization is separate and cannot emit a cash observation (0.3976ms)
+✔ charge.dispute.created parses and discovers the canonical disputed payment (0.1829ms)
+✔ charge.dispute.updated parses and discovers the canonical disputed payment (0.5021ms)
+✔ charge.dispute.closed parses and discovers the canonical disputed payment (0.1039ms)
+✔ canonical dispute needs_response maps one stable recovery phase without metadata authority (0.5073ms)
+✔ canonical dispute under_review maps one stable recovery phase without metadata authority (0.2804ms)
+✔ canonical dispute warning_needs_response maps one stable recovery phase without metadata authority (0.239ms)
+✔ canonical dispute warning_under_review maps one stable recovery phase without metadata authority (0.2428ms)
+✔ canonical dispute lost maps one stable recovery phase without metadata authority (0.2392ms)
+✔ canonical dispute won maps one stable recovery phase without metadata authority (0.3338ms)
+✔ dispute warning_closed cannot create cash loss or restore credits (0.2938ms)
+✔ dispute prevented cannot create cash loss or restore credits (0.1915ms)
+✔ dispute pending cannot create cash loss or restore credits (0.1781ms)
+✔ dispute unknown cannot create cash loss or restore credits (0.164ms)
+✔ dispute live-dispute rejects its canonical payment relationship (0.2339ms)
+✔ dispute live-charge rejects its canonical payment relationship (0.1657ms)
+✔ dispute wrong-intent rejects its canonical payment relationship (0.1947ms)
+✔ dispute wrong-charge rejects its canonical payment relationship (0.1426ms)
+✔ dispute wrong-customer rejects its canonical payment relationship (0.167ms)
+✔ dispute wrong-invoice rejects its canonical payment relationship (0.2155ms)
+✔ dispute wrong-checkout rejects its canonical payment relationship (0.1542ms)
+✔ dispute amount produces holding evidence (0.3044ms)
+✔ dispute currency produces holding evidence (0.6419ms)
+✔ dispute price produces holding evidence (0.2373ms)
+✔ dispute quantity produces holding evidence (0.2052ms)
+✔ dispute with nullable PI still proves the original payment through its canonical Charge (0.2904ms)
+✔ dispute opened, lost and won share one economic loss and retain original expired service period (0.8074ms)
+✔ test ingress verifies raw bytes and returns only transport identity (2.1485ms)
+✔ rotating signature headers accept a valid signature without trusting an invalid sibling (0.2504ms)
+✔ tampering, missing signature, oversized bodies and stale signatures are rejected (0.8317ms)
+✔ signed live events and fixture envelopes cannot activate Stripe reconciliation (0.2382ms)
+ℹ tests 195
+ℹ suites 0
+ℹ pass 195
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3436.0759
+ℹ start of coverage report
+ℹ ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ file                             | line % | branch % | funcs % | uncovered lines
+ℹ ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ src                              |        |          |         |
+ℹ  adapters                        |        |          |         |
+ℹ   billing                        |        |          |         |
+ℹ    fake.ts                       |  92.31 |    75.00 |  100.00 | 38-39 41-44
+ℹ    refunds.ts                    |  91.38 |    89.29 |   80.00 | 42 48-51
+ℹ    stripe-checkout.ts            |  86.84 |    68.75 |   71.43 | 20-21 33-35
+ℹ    stripe-refunds.ts             | 100.00 |    94.44 |  100.00 |
+ℹ    stripe-test-events.ts         | 100.00 |    94.74 |  100.00 |
+ℹ    stripe-test-ingress.ts        | 100.00 |   100.00 |  100.00 |
+ℹ    stripe-webhooks.ts            |  86.21 |    55.00 |  100.00 | 18-19 25-26 35-36 43-44 66-67 74-75
+ℹ  config                          |        |          |         |
+ℹ   env.ts                         |  63.19 |    25.00 |   16.67 | 13-15 60-61 92-123 130-135 139-142 146-150 153-155 159-163
+ℹ   plans.ts                       | 100.00 |   100.00 |  100.00 |
+ℹ   provider-models.ts             |  63.41 |   100.00 |    0.00 | 22-25 28-33 37-41
+ℹ   provider-worker.ts             |  33.33 |   100.00 |    0.00 | 13-34 38-44 48-54
+ℹ   task-runtime.ts                |  89.47 |    28.57 |  100.00 | 13-14
+ℹ  contracts                       |        |          |         |
+ℹ   http.ts                        |  62.26 |    86.49 |   61.54 | 17-18 21-22 25-35 73 81-87 90-106
+ℹ  db                              |        |          |         |
+ℹ   contracts.ts                   |  79.59 |   100.00 |   33.33 | 14-16 21-22 25-29
+ℹ   schema                         |        |          |         |
+ℹ    access.ts                     | 100.00 |   100.00 |   50.00 |
+ℹ    affiliate-inbox.ts            | 100.00 |   100.00 |  100.00 |
+ℹ    affiliate.ts                  | 100.00 |   100.00 |   43.75 |
+ℹ    asset.ts                      | 100.00 |   100.00 |   33.33 |
+ℹ    auth.ts                       | 100.00 |   100.00 |   62.50 |
+ℹ    billing.ts                    |  96.88 |   100.00 |   52.94 | 217-223
+ℹ    commands.ts                   | 100.00 |   100.00 |   33.33 |
+ℹ    credit.ts                     | 100.00 |   100.00 |   42.86 |
+ℹ    generation.ts                 | 100.00 |   100.00 |   66.67 |
+ℹ    index.ts                      | 100.00 |   100.00 |  100.00 |
+ℹ    invitations.ts                | 100.00 |   100.00 |   33.33 |
+ℹ    operations.ts                 | 100.00 |   100.00 |   33.33 |
+ℹ    operator.ts                   | 100.00 |   100.00 |   40.00 |
+ℹ    ownership.ts                  | 100.00 |   100.00 |  100.00 |
+ℹ    workspace.ts                  | 100.00 |   100.00 |   41.18 |
+ℹ  modules                         |        |          |         |
+ℹ   affiliates                     |        |          |         |
+ℹ    abuse-review.ts               |  27.27 |   100.00 |    0.00 | 4-11
+ℹ    cash-recovery.ts              |  95.83 |    33.33 |  100.00 | 20
+ℹ    commission-review.ts          |  55.77 |   100.00 |    0.00 | 24-28 31-42 45-47 50-52
+ℹ    contracts.ts                  |  74.58 |   100.00 |    0.00 | 43-45 48-59
+ℹ    delivery.ts                   |  52.00 |   100.00 |    0.00 | 8-10 13-14 17-19 22-25
+ℹ    eligibility.ts                |  41.18 |   100.00 |    0.00 | 6-7 10-17
+ℹ    runtime.ts                    |  25.00 |    44.44 |   13.64 | 21 38-40 42-46 56-58 60-62 64-66 68-76 80-91 95-110 117-120 122-127 130-132 134-138 141-181 185-198 201-206 210-264 267-286 289-316 320-327 331-340
+ℹ   billing                        |        |          |         |
+ℹ    checkout.ts                   |  99.18 |    85.25 |   95.00 | 242-243
+ℹ    contracts.ts                  | 100.00 |   100.00 |  100.00 |
+ℹ    customer-history.ts           |  97.01 |    75.86 |   92.31 | 163-167
+ℹ    payment-aliases.ts            |  95.24 |    75.00 |  100.00 | 36-37
+ℹ    presentation.ts               | 100.00 |    57.14 |  100.00 |
+ℹ    queries.ts                    | 100.00 |    83.33 |  100.00 |
+ℹ    reconcile-payment.ts          |  96.78 |    82.59 |   95.00 | 108-114 175-176 292-294
+ℹ    reconciliation-fence.ts       | 100.00 |    88.37 |  100.00 |
+ℹ    recovery.ts                   |  97.73 |    74.63 |   92.31 | 87-88
+ℹ    refund-command.ts             | 100.00 |    71.26 |  100.00 |
+ℹ    refund-delivery.ts            | 100.00 |    86.21 |  100.00 |
+ℹ    refund-preview.ts             |  73.21 |    40.00 |   66.67 | 42-56
+ℹ    stripe-test-inbox.ts          |  95.65 |    94.74 |  100.00 | 18-19
+ℹ    stripe-test-reconciliation.ts |  74.40 |    71.15 |   88.89 | 35-36 38-39 42-43 60-68 85-86 89-98 104-106 116-117
+ℹ    subscriptions.ts              |  88.46 |    50.98 |  100.00 | 50-53 73-75 98-102
+ℹ   credits                        |        |          |         |
+ℹ    ledger.ts                     |  93.53 |    46.67 |  100.00 | 60-68
+ℹ    reversals.ts                  |  93.75 |    40.00 |   50.00 | 31-32
+ℹ   generation                     |        |          |         |
+ℹ    outbox.ts                     |  74.52 |    58.82 |   47.06 | 41-42 45-47 53-55 97-116 119-122 125-128 132-135
+ℹ   operations                     |        |          |         |
+ℹ    audit.ts                      |  89.23 |    41.67 |  100.00 | 14-15 21-22 39-41
+ℹ    authorize.ts                  |  90.64 |    75.00 |   88.89 | 35 77-78 159-171
+ℹ   shared                         |        |          |         |
+ℹ    commands.ts                   |  86.52 |    50.00 |   66.67 | 31-32 43-44 69-70 72-73 86-89
+ℹ    transaction.ts                | 100.00 |   100.00 |  100.00 |
+ℹ   workspaces                     |        |          |         |
+ℹ    policy.ts                     |  70.92 |    57.89 |   63.64 | 37-38 42-49 107-116 119-133 136-141
+ℹ ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ all files                        |  86.34 |    81.94 |   68.10 |
+ℹ ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

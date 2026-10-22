@@ -1,0 +1,21 @@
+✔ all four selected schemas are inspected, byte-bound, and disabled for live use (1.2809ms)
+✔ strict public DTO rejects every unapproved top-level and nested vendor field (0.7283ms)
+✔ schema or exact-version drift blocks new submission contracts without a silent fallback (0.2555ms)
+✔ safe preset is server-owned and all four mappings fit inspected schema fields (1.3275ms)
+✔ mapping rechecks crop consent instead of trusting a forged validated TypeScript object (0.1783ms)
+✔ accepted historical contracts map after current registry removal, while new admission is rejected (0.769ms)
+✔ accepted contract mapping refuses unsupported versions and unsupported version-one presets (0.16ms)
+✔ normalized observations retain an immutable copy of the accepted catalog (0.2032ms)
+✔ crop consent binds exact authorized ready asset, workspace, dimensions and crop revision (1.9366ms)
+✔ frozen snapshot retains quote, deadline, endpoint and digests independent of later object changes (0.3468ms)
+✔ submit normalization distinguishes known rejection from transport uncertainty and malformed success (0.2104ms)
+✔ completed-with-error is failure and provider output remains a candidate (0.2443ms)
+✔ Mock port delegates deterministic identity and observation to existing Mock domain functions (10.5778ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 589.3459

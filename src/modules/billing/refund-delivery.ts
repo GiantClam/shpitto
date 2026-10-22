@@ -2,7 +2,7 @@ import {randomUUID} from 'node:crypto';
 
 import {and, eq} from 'drizzle-orm';
 
-import {createFakeBillingRefundProvider, type BillingRefundProvider, type BillingRefundProviderResult} from '../../adapters/billing/refunds.ts';
+import {classifyBillingRefund, selectBillingRefundProvider, type BillingRefundProvider, type BillingRefundProviderResult} from '../../adapters/billing/refunds.ts';
 import type {AppDatabase} from '../../db/client.ts';
 import {DomainError} from '../../db/contracts.ts';
 import {billingAccounts, billingRefundRequests} from '../../db/schema/billing.ts';
@@ -28,7 +28,7 @@ async function claimRefundDelivery(db: AppDatabase, input: DeliveryInput, purpos
     await authorizeOperatorCommand(tx, input.actor, 'operator', now);
     const observed = (await tx.select().from(billingRefundRequests).where(and(eq(billingRefundRequests.id, input.requestId), eq(billingRefundRequests.workspaceId, input.workspaceId))).limit(1))[0];
     if (!observed) throw new DomainError('NOT_FOUND', 'Refund intent was not found.');
-    if (observed.provider !== 'fixture') throw new DomainError('FORBIDDEN', 'Live refund execution is not enabled.');
+    selectBillingRefundProvider(observed.provider, input.provider);
     await recordTenantAccess(tx, {actorUserId: input.actor.userId, workspaceId: input.workspaceId, purpose, now});
     if (observed.status === 'confirmed' || observed.status === 'failed') return {request: observed, lease: null, submit: false};
     const event = (await tx.select().from(outboxEvents).where(and(eq(outboxEvents.businessKey, `billing.refund:${observed.id}`), eq(outboxEvents.workspaceId, input.workspaceId), eq(outboxEvents.eventType, 'billing.refund_requested'))).for('update').limit(1))[0];
@@ -51,7 +51,7 @@ export async function deliverOperatorRefund(db: AppDatabase, input: DeliveryInpu
   const clock = () => input.now ?? new Date();
   const {request, lease, submit} = await claimRefundDelivery(db, input, purpose, clock());
   if (!lease) return resultOf(request);
-  const provider = input.provider ?? createFakeBillingRefundProvider();
+  const provider = selectBillingRefundProvider(request.provider, input.provider);
   const heartbeat = startOutboxHeartbeat(db, lease, {now: clock});
   try {
     await heartbeat.renew();
@@ -60,7 +60,7 @@ export async function deliverOperatorRefund(db: AppDatabase, input: DeliveryInpu
     try { observation = submit ? await provider.createRefund(providerInput) : await provider.lookupRefund?.(providerInput) ?? {unknown: true}; }
     catch { observation = {unknown: true}; }
     // Mismatched observations remain unresolved; they cannot write cash/ledger effects.
-    const confirmed = 'externalId' in observation && Boolean(observation.externalId.trim()) && observation.amountMinor === request.amountMinor ? observation : null;
+    const outcome = classifyBillingRefund(provider, observation, request.amountMinor);
     return await inTransaction(db, async (tx) => {
       const now = clock();
       // Match billing reconciliation's workspace/account order before cash effects.
@@ -70,17 +70,20 @@ export async function deliverOperatorRefund(db: AppDatabase, input: DeliveryInpu
       const current = (await tx.select().from(billingRefundRequests).where(eq(billingRefundRequests.id, request.id)).for('update').limit(1))[0];
       if (!current) throw new DomainError('INFRASTRUCTURE', 'The recorded refund intent is missing.');
       if (current.status === 'confirmed' || current.status === 'failed') return resultOf(current);
-      if (!confirmed) {
-        await tx.update(billingRefundRequests).set({status: 'unknown', updatedAt: now}).where(eq(billingRefundRequests.id, request.id));
-        await tx.update(outboxEvents).set({leaseUntil: null, leaseOwner: null, leaseToken: null, availableAt: new Date(now.getTime() + OUTBOX_LEASE_MS)}).where(eq(outboxEvents.id, lease.id));
-        await recordOperatorAudit(tx, {actorUserId: input.actor.userId, workspaceId: request.workspaceId, commandName: 'operator.billing.refund.unknown', commandKey: `${request.id}:${lease.generation}`, payload: {requestId: request.id, mode: submit ? 'submit' : 'lookup'}, now});
-        return {...resultOf(request), status: 'unknown'};
+      if (current.workspaceId !== request.workspaceId || current.orderId !== request.orderId || current.provider !== request.provider || current.idempotencyKey !== request.idempotencyKey || current.amountMinor !== request.amountMinor || current.currency !== request.currency || (current.externalId && outcome.externalId && current.externalId !== outcome.externalId)) throw new DomainError('CONFLICT', 'The refund binding changed during observation.');
+      if (outcome.status !== 'confirmed') {
+        const externalId = outcome.externalId ?? current.externalId;
+        await tx.update(billingRefundRequests).set({status: outcome.status, externalId, updatedAt: now, resolvedAt: outcome.status === 'failed' ? now : null}).where(eq(billingRefundRequests.id, request.id));
+        await tx.update(outboxEvents).set({status: outcome.status === 'failed' ? 'published' : 'pending', leaseUntil: null, leaseOwner: null, leaseToken: null, availableAt: new Date(now.getTime() + OUTBOX_LEASE_MS)}).where(eq(outboxEvents.id, lease.id));
+        await recordOperatorAudit(tx, {actorUserId: input.actor.userId, workspaceId: request.workspaceId, commandName: `operator.billing.refund.${outcome.status}`, commandKey: `${request.id}:${lease.generation}`, payload: {requestId: request.id, mode: submit ? 'submit' : 'lookup'}, now});
+        return {...resultOf(current), status: outcome.status, externalId};
       }
-      await recordBillingRecoveryInTransaction(tx, {workspaceId: request.workspaceId, orderId: request.orderId, externalId: confirmed.externalId, kind: 'refund', amountMinor: confirmed.amountMinor, actorUserId: input.actor.userId, now});
-      await tx.update(billingRefundRequests).set({status: 'confirmed', externalId: confirmed.externalId, updatedAt: now, resolvedAt: now}).where(eq(billingRefundRequests.id, request.id));
+      const externalId = outcome.externalId!;
+      await recordBillingRecoveryInTransaction(tx, {workspaceId: request.workspaceId, orderId: request.orderId, externalId, kind: 'refund', amountMinor: request.amountMinor, actorUserId: input.actor.userId, now});
+      await tx.update(billingRefundRequests).set({status: 'confirmed', externalId, updatedAt: now, resolvedAt: now}).where(eq(billingRefundRequests.id, request.id));
       await tx.update(outboxEvents).set({status: 'published', leaseUntil: null, leaseOwner: null, leaseToken: null}).where(eq(outboxEvents.id, lease.id));
-      await recordOperatorAudit(tx, {actorUserId: input.actor.userId, workspaceId: request.workspaceId, commandName: 'operator.billing.refund.confirmed', commandKey: request.id, payload: {requestId: request.id, orderId: request.orderId, externalId: confirmed.externalId, amountMinor: confirmed.amountMinor.toString()}, now});
-      return {...resultOf(request), status: 'confirmed', externalId: confirmed.externalId};
+      await recordOperatorAudit(tx, {actorUserId: input.actor.userId, workspaceId: request.workspaceId, commandName: 'operator.billing.refund.confirmed', commandKey: request.id, payload: {requestId: request.id, orderId: request.orderId, externalId, amountMinor: request.amountMinor.toString()}, now});
+      return {...resultOf(request), status: 'confirmed', externalId};
     });
   } finally {await heartbeat.stop();}
 }

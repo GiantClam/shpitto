@@ -1,6 +1,6 @@
 # Shpitto restart implementation tasks
 
-Status: M0-M3 retain their historical approvals. M4 task 5.10 is complete for the selected self-hosted demo profile; M5 tasks 6.1-6.9, M5 task 6.10, and M6 task 7.14 remain IN_PROGRESS. The four real provider rows, private R2 publication/download authorization, reservation settlement, selected self-hosted recovery drill, current M3 applicability review, and independent M4 acceptance evidence are retained under the current M4 candidate. Provider cost remains UNKNOWN where no authoritative billable amount was exposed. Production email, new paid generation beyond the authorized one-shot-per-row validation, Stripe transactions and historical anomalous-balance recovery remain later task scope.
+Status (2026-10-19; M5 evidence refreshed 2026-10-22): M0-M4 retain their historical candidate approvals. Current validation changes require fresh M3 verification and M4 applicability review; the retained October 17 real-provider evidence is not approval of changed bytes. M7 has 53 passing regression/contract tests, an independent source-baseline PASS and four actual workflows passing against stable frozen source. The fresh external trusted preparation passed independent review r3, trusted validation passed, and export validation passed for the same fresh-r4 record/candidate. Deploy validation is BLOCKED because the pinned trusted dependency tree no longer matches its protected checksum; the pin is unchanged and no release or customer delivery occurred. Current M3 is independently BLOCKED, while M4 is PASS only for scoped applicability and remains NOT_RUN for current acceptance. The local-candidate-20261019-trusted-r2 ZIP has passed clean offline install, build, Mock runtime, credits, private downloads, timed database/media restore, restart, local Docker application and fulfillment checks. See internal/evidence/m7/local-current-20261019/continuation/current-status-r2.json. M5 task 6.10, M6 task 7.14 and final M7/M8 gates remain open. Provider cost stays UNKNOWN where no authoritative billable amount was exposed. Additional paid generation, Stripe/FirstPromoter account actions, commercial policy and publication require their existing scoped authority and evidence. M5's authorized Stripe test-mode evidence now includes a completed monthly subscription/pack mapping, one confirmed 900-cent full-unused refund, and a replay regression fix; task 6.10 remains open because current M3 applicability, authenticated owner/member UI, remaining applicable scenarios, independent review and integrator approval are unresolved. No live charge or refund was performed.
 
 Read [proposal](proposal.md), [design](design.md), capability specs and [traceability](traceability.md) before implementation. [Chinese review](../../reviews/shpitto-restart.zh-CN.md) mirrors scope and task IDs.
 
@@ -483,7 +483,7 @@ SC-BIL-17 has M5 domain/test-mode and M6 operator-UI evidence. SC-OPS-13 has M6 
   - Work: Collect SC-BIL-01–SC-BIL-16, PostgreSQL race evidence, owner UI journey and authorized Stripe test-mode subscription/pack/refund-port evidence. For SC-BIL-17 record domain/adapter proof only; privileged operator UI closure belongs to 7.3 and 7.14. Record blocked external evidence and configuration/terms gaps explicitly.
   - Evidence: SC-BIL-01–SC-BIL-16; SC-BIL-17 domain/adapter subset only; T21, T22, T23, T24, T28, T60, G11, G12.
   - Acceptance: Apply M5 criteria plus common standards in [acceptance-gates.md](acceptance-gates.md); submit the exact-candidate record and obtain independent review/integrator PASS. Partial SC/G profiles cannot close later obligations.
-  - Current verification: `internal/evidence/acceptance/M5/m5-local-fixtures-20261017/record.json` records the current candidate's disposable-PostgreSQL billing probes, contract checks, production build and 80.04% M5-owned branch coverage. The gate remains IN_PROGRESS because authorized Stripe test-mode evidence and independent review are deferred.
+  - Current verification: `internal/evidence/acceptance/M5/m5-sandbox-20261022/record.json` records the refreshed current candidate, prior disposable-PostgreSQL billing probes, Stripe test-mode subscription/pack/refund readbacks, the successful owner-command replay, and the replay defect correction. The 900-cent sandbox refund is confirmed against Stripe and Acceptance PostgreSQL; replay returned the same result with zero provider calls. See the evidence directory README and command/log map. Task 6.10 remains unchecked and M5 remains IN_PROGRESS because current M3 applicability is stale, the authenticated owner/member UI journey and remaining applicable scenario profiles are open, and independent whole-stage review plus integrator approval are NOT_RUN.
 
 ## 7. M6 — Operations and affiliate integration
 
@@ -578,7 +578,13 @@ The completed markers below describe the local implementation and fixture-verifi
 
 ## 8. M7 — Governed customization and developer documentation
 
-All tasks are future implementation work. Paths are target paths; evidence is required acceptance output, not a claim that checks have run. Final upstream gates are M3=4.12, M4=5.10, M5=6.10 and M6=7.14; M6 covers admin/local integration, while final exported-profile SC-OPS-13 closes at 9.14/9.15.
+The checked items below retain the explicitly labeled local slices. The October
+19 review found that static evidence checks did not establish an external pinned
+validator execution chain or four actual customization runs. Those gaps require
+current implementation and execution proof before final acceptance; older
+checkmarks do not close them. Final upstream gates are M3=4.12, M4=5.10,
+M5=6.10 and M6=7.14; M6 covers admin/local integration, while final
+exported-profile SC-OPS-13 closes at 9.14/9.15.
 
 - [x] 8.1 Create the twelve-Skill catalog and thin Codex/Claude Code/OpenCode discovery adapters; declare each adapter's supported behavior without a deployed CLI dependency. ✓ 2026-10-04 (local contract slice)
   - Paths: `skills/*/SKILL.md`, `.shpitto/contracts/skills.json`, `docs/buyer/agents.md`.

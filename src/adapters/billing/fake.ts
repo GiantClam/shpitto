@@ -2,15 +2,28 @@ import {createHash} from 'node:crypto';
 
 import type {BillingCatalogSnapshot} from '../../modules/billing/contracts.ts';
 
+export type BillingCustomerInput = Readonly<{workspaceId: string; idempotencyKey: string}>;
+export type BillingCustomerResult = Readonly<{customerId: string}> | Readonly<{unknown: true}>;
+export type BillingCheckoutInput = Readonly<{
+  attemptId: string;
+  workspaceId: string;
+  customerId: string;
+  idempotencyKey: string;
+  catalog: BillingCatalogSnapshot;
+}>;
+export type BillingCheckoutObservation = Readonly<{
+  sessionId: string;
+  url: string | null;
+  status?: 'open' | 'paid' | 'expired' | 'canceled';
+}> | Readonly<{unknown: true}>;
+
 export type BillingCheckoutProvider = Readonly<{
-  provider: 'fixture';
-  createCheckout(input: Readonly<{
-    attemptId: string;
-    workspaceId: string;
-    customerId: string;
-    idempotencyKey: string;
-    catalog: BillingCatalogSnapshot;
-  }>): Promise<Readonly<{sessionId: string; url: string}> | {unknown: true}>;
+  provider: 'fixture' | 'stripe';
+  ensureCustomer?(input: BillingCustomerInput): Promise<BillingCustomerResult>;
+  createCustomer?(input: BillingCustomerInput): Promise<BillingCustomerResult>;
+  retrieveCustomer?(input: Readonly<{workspaceId: string; customerId: string}>): Promise<BillingCustomerResult>;
+  retrieveCheckout?(input: BillingCheckoutInput & Readonly<{sessionId: string}>): Promise<BillingCheckoutObservation>;
+  createCheckout(input: BillingCheckoutInput): Promise<Readonly<{sessionId: string; url: string}> | {unknown: true}>;
   createPortal(input: Readonly<{
     workspaceId: string;
     customerId: string;

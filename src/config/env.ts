@@ -1,5 +1,6 @@
 import {parseProviderWorkerConfig, type ProviderWorkerConfig} from './provider-worker.ts';
 import {parseTaskRuntime, type TaskRuntime, type TaskRuntimeConfig} from './task-runtime.ts';
+import {parseStripeTestConfiguration} from './billing-test.ts';
 
 const SAMPLE_VALUES = new Set([
   '',
@@ -75,7 +76,7 @@ export function getServerEnv(): ServerEnv {
     storageS3ForcePathStyle: read('STORAGE_S3_FORCE_PATH_STYLE').toLowerCase() === 'true',
     workerHealthUrl: read('WORKER_HEALTH_URL') || 'http://localhost:8080/healthz',
     mailSmtpUrl: read('MAIL_SMTP_URL') || 'smtp://localhost:1025',
-    billingWebhookSecret: read('BILLING_WEBHOOK_SECRET') || (nodeEnv === 'production' ? '' : 'local-development-billing-webhook-secret'),
+    billingWebhookSecret: read('BILLING_WEBHOOK_SECRET') || (runtimeProfile === 'production' ? '' : 'local-development-billing-webhook-secret'),
     replicateWebhookSecret: read('REPLICATE_WEBHOOK_SECRET'),
     replicateWebhookAccountId: read('REPLICATE_WEBHOOK_ACCOUNT_ID'),
     falWebhookPublicKeyPem: read('FAL_WEBHOOK_PUBLIC_KEY_PEM'),
@@ -87,7 +88,7 @@ export function getServerEnv(): ServerEnv {
   };
   const taskRuntime: TaskRuntimeConfig = parseTaskRuntime({mode: read('TASK_RUNTIME'), triggerProjectRef: read('TRIGGER_PROJECT_REF'), triggerSecretKey: read('TRIGGER_SECRET_KEY')});
 
-  if (nodeEnv === 'production') {
+  if (runtimeProfile === 'production') {
     if (values.storageDriver === 'local') throw new Error('Production STORAGE_DRIVER (storageDriver) must use the private S3-compatible driver.');
     if (values.storageDriver !== 's3') throw new Error('Production STORAGE_DRIVER must be local or s3.');
     const storageFields = {
@@ -128,8 +129,16 @@ export function getServerEnv(): ServerEnv {
 export function getRuntimeProfile(): 'local' | 'acceptance' | 'production' {
   const nodeEnv = read('NODE_ENV');
   const profile = read('SHPTITTO_RUNTIME_PROFILE');
+  if (profile === 'local') return 'local';
   if (profile === 'acceptance' && nodeEnv === 'production') return 'acceptance';
   return nodeEnv === 'production' ? 'production' : 'local';
+}
+
+/** An installed key alone cannot activate network billing or fixture replacement. */
+export function getStripeTestConfiguration() {
+  return parseStripeTestConfiguration({driver: read('BILLING_DRIVER'), runtimeProfile: getRuntimeProfile(),
+    secretKey: read('STRIPE_SECRET_KEY'), webhookSecret: read('BILLING_WEBHOOK_SECRET'),
+    portalConfigurationId: read('STRIPE_PORTAL_CONFIGURATION_ID'), appUrl: read('APP_URL'), catalogJson: read('STRIPE_TEST_CATALOG_JSON')});
 }
 
 /** Worker controls are server-only and paused unless explicitly bound to an isolated project/workspace. */

@@ -1,0 +1,102 @@
+{
+  "observedAt": "2026-10-22",
+  "profile": "Stripe test mode",
+  "stripeAccountId": "acct_1USYQxRcvKApiJYW",
+  "liveMode": false,
+  "approvedTestProduct": {
+    "productId": "prod_VTWVVAppTxMxUD",
+    "active": true,
+    "prices": [
+      {
+        "priceId": "price_1USZScRcvKApiJYWdi3iaGxJ",
+        "type": "one_time",
+        "amountMinor": 900,
+        "currency": "usd",
+        "active": true,
+        "liveMode": false
+      },
+      {
+        "priceId": "price_1USZScRcvKApiJYWy4uFqr6f",
+        "type": "recurring",
+        "interval": "month",
+        "amountMinor": 2500,
+        "currency": "usd",
+        "active": true,
+        "liveMode": false
+      }
+    ]
+  },
+  "monthlySubscription": {
+    "checkoutSessionId": "cs_test_a15NuYq3j5dKTimGUPj1XRymtTk2n8HUUn8unMkZZc5B1CcYbuBEXT16aH",
+    "checkoutStatus": "complete",
+    "paymentStatus": "paid",
+    "amountMinor": 2500,
+    "currency": "usd",
+    "paymentIntentId": "pi_3USbK4RcvKApiJYW0VOqmtj3",
+    "paymentIntentStatus": "succeeded",
+    "invoiceId": "in_1USbK4RcvKApiJYW8vi59yEG",
+    "invoiceStatus": "paid",
+    "subscriptionId": "sub_1USbK6RcvKApiJYWhSbzldIu",
+    "subscriptionStatus": "active",
+    "servicePeriodStart": "2026-10-20T11:35:16.000Z",
+    "servicePeriodEnd": "2026-11-20T11:35:16.000Z",
+    "liveMode": false,
+    "databaseOrderId": "d0772e3e-441c-426b-bf47-cf20f93fb5b5",
+    "databaseOrderStatus": "paid",
+    "creditGrant": {
+      "issued": "1000",
+      "available": "1000",
+      "reserved": "0",
+      "consumed": "0",
+      "voided": "0",
+      "expiresAt": "2026-11-20T11:35:16.000Z"
+    },
+    "canonicalAliases": [
+      "cs_test_a15NuYq3j5dKTimGUPj1XRymtTk2n8HUUn8unMkZZc5B1CcYbuBEXT16aH",
+      "in_1USbK4RcvKApiJYW8vi59yEG",
+      "pi_3USbK4RcvKApiJYW0VOqmtj3",
+      "ch_3USbK4RcvKApiJYW0dncRW6V"
+    ]
+  },
+  "permanentPack": {
+    "checkoutSessionId": "cs_test_a1g9uije41rFdWHhYlUVlvMkaMmxAjm5hHKgeC5GNbiJVEnTdoy8QMEO85",
+    "paymentIntentId": "pi_3USayKRcvKApiJYW1qghv3zJ",
+    "paymentIntentStatus": "succeeded",
+    "amountMinor": 900,
+    "currency": "usd",
+    "liveMode": false,
+    "databaseOrderId": "6d429f2c-fc8c-4199-8673-828aa5a7faab",
+    "databaseOrderStatus": "refunded",
+    "refundId": "re_3USayKRcvKApiJYW1YypoEnf",
+    "refundStatus": "succeeded",
+    "refundedAmountMinor": 900,
+    "refundCurrency": "usd",
+    "refundRequestId": "d9eccd71-6b65-49e7-9aad-e2b3d6441d03",
+    "refundCashEventCount": 1,
+    "creditGrant": {
+      "issued": "250",
+      "available": "0",
+      "reserved": "0",
+      "consumed": "0",
+      "expired": "0",
+      "voided": "250",
+      "expiresAt": null
+    },
+    "billingAccount": {
+      "status": "active",
+      "holdReason": null
+    }
+  },
+  "unmappedTestSubscription": {
+    "subscriptionId": "sub_1USZSfRcvKApiJYWxAa9pXn9",
+    "status": "active",
+    "liveMode": false,
+    "knownBillingCustomer": false,
+    "databaseSubscriptionMatch": false,
+    "disposition": "unresolved; left unchanged"
+  },
+  "checkoutEnvironment": {
+    "validStripeTestCatalogConfiguration": false,
+    "reason": "The Acceptance environment did not define STRIPE_TEST_CATALOG_JSON."
+  }
+}
