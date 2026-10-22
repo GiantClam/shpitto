@@ -1,0 +1,47 @@
+{"status":"PASS","crossWorkspace":"denied","tokenExpiry":"denied","traversal":"denied","activeInputDeletion":"denied","orphanRetention":{"recentBefore24h":"retained","exactBoundary":"deleted","rowless":"deleted","failedRemovalRetried":"deleted","foreignWorkspace":"retained"},"symlink":"denied","mediaProbe":{"format":"mov,mp4,m4a,3gp,3g2,mj2","durationMs":200,"hasVideo":true}}
+✔ scripts\probe-assets.ts (1165.9076ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1170.9799
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------------------------------------------------------------------------
+ℹ file                 | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------------------------------------------------------------------------
+ℹ src                  |        |          |         | 
+ℹ  adapters            |        |          |         | 
+ℹ   storage            |        |          |         | 
+ℹ    local.ts          |  97.92 |    75.00 |  100.00 | 16-17
+ℹ  config              |        |          |         | 
+ℹ   models.ts          |  86.67 |    31.25 |   66.67 | 43-44 63-64 85-86 88-89 92-93 97-98 100-101
+ℹ  contracts           |        |          |         | 
+ℹ   http.ts            |  55.66 |    75.86 |   53.85 | 17-18 21-22 25-35 39-40 45-49 73 81-87 90-106
+ℹ  modules             |        |          |         | 
+ℹ   assets             |        |          |         | 
+ℹ    authorize.ts      |  92.86 |    63.16 |   85.71 | 58-59 66-67 69
+ℹ    cleanup.ts        |  96.74 |    66.07 |   93.75 | 57-58 170-171 183-184
+ℹ    media-probe.ts    |  85.00 |    40.00 |  100.00 | 30-31 36-39
+ℹ    upload.ts         |  88.89 |    40.00 |   50.00 | 23-25
+ℹ    validate-input.ts |  86.96 |    37.50 |  100.00 | 25-26 48-49 57-61
+ℹ   billing            |        |          |         | 
+ℹ    hold-policy.ts    |  86.67 |    60.00 |  100.00 | 13-14
+ℹ   credits            |        |          |         | 
+ℹ    allocate.ts       |  89.50 |    29.41 |   66.67 | 39-42 183-199
+ℹ    ledger.ts         |  93.53 |    42.86 |  100.00 | 60-68
+ℹ    queries.ts        |  46.45 |    83.33 |   66.67 | 133-134 139-178 186-309
+ℹ   generation         |        |          |         | 
+ℹ    create.ts         |  86.82 |    35.29 |  100.00 | 77-78 83-84 91-92 96-97 99-100 103-105 107-108 110-122 146-147 168-169 176-177
+ℹ   shared             |        |          |         | 
+ℹ    commands.ts       |  86.52 |    28.57 |  100.00 | 31-32 41-46 69-70 72-73
+ℹ    transaction.ts    | 100.00 |   100.00 |  100.00 | 
+ℹ   workspaces         |        |          |         | 
+ℹ    authorize.ts      |  56.00 |    75.00 |   25.00 | 27-28 32-33 39-51 58-64 67-75
+ℹ    policy.ts         |  56.03 |    63.64 |   36.36 | 35-39 42-49 52-57 93-104 107-116 119-133 136-141
+ℹ ------------------------------------------------------------------------------------------------------------------------------------
+ℹ all files            |  77.75 |    56.62 |   77.88 | 
+ℹ ------------------------------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

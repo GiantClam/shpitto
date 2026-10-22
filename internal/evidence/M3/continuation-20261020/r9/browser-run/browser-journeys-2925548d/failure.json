@@ -1,0 +1,6 @@
+{
+  "at": "2026-10-20T04:55:26.182Z",
+  "error": "TypeError: Failed to parse URL from undefined/api/v1/search?query=to%3Abrowser-owner-2925548d%40example.test",
+  "events": [],
+  "errors": []
+}

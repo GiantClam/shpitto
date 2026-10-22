@@ -1,0 +1,435 @@
+{
+  "createdAt": "2026-10-19T06:23:54.858Z",
+  "diagnosticGeneration": "r1",
+  "recordRef": "internal/evidence/M3/continuation-20261019/automated/record.json",
+  "recordStatus": "STALE",
+  "candidateAtEnd": {
+    "capturedAt": "2026-10-19T06:22:58.108Z",
+    "sourceCommit": null,
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "d512a36b77a77ac8f48f6150145f12211c9754da3bbe8b7f9734b9ef39a5fd1e",
+    "schemaSha256": "7560a6a5b059bb33a47e7afa878826d73cf57f05a3a6a6f5ffa1ff2eb7f08d0f",
+    "lockfileSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35",
+    "configurationSha256": "07533fb94ecce587a9ae2639c857fea11c837303a119505715ff703013b985cd",
+    "contractSha256": "8399dde14ccf3615e1bed7fd40d2f5309d29ec06456b843a5b08a0b766fe1a6b",
+    "validatorSha256": "57da9ad4ab793685435a0ce135e218c27eeb8c5e298d1357917db696405fa63e",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
+    "digestInputs": {
+      "sourceTree": [
+        "internal/contracts/providers",
+        "src",
+        "tests",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        "tooling",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        "src/config/env.ts",
+        "src/config/task-runtime.ts",
+        "src/config/provider-worker.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile",
+        "deploy/provider-worker.Dockerfile",
+        "deploy/railway.provider-worker.json",
+        "scripts/provider-worker-preflight.ts",
+        "scripts/provider-worker-runtime.mjs",
+        "tooling"
+      ],
+      "contract": [
+        "internal/contracts/providers",
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json",
+        "openspec/changes/restart-shpitto-video-saas/specs",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json",
+        "internal/restart/root-dependency-evolution.md"
+      ],
+      "validator": [
+        "scripts",
+        "tests",
+        "tooling",
+        "internal/restart/check-acceptance-record.py",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json"
+      ]
+    },
+    "startDigestsRef": "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/candidate-before/candidate.json",
+    "endDigestsRef": "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/candidate-after/candidate.json",
+    "stableAcrossVerification": false
+  },
+  "commands": {
+    "count": 79,
+    "statuses": {
+      "PASS": 79
+    }
+  },
+  "coverage": {
+    "status": "PASS",
+    "ownedModuleManifestRef": "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/owned-modules.json",
+    "denominator": 1228,
+    "coveredBranches": 1032,
+    "totalBranches": 1228,
+    "percent": 84.04,
+    "exclusions": [
+      {
+        "path": "src/db/schema/**",
+        "reason": "Declarative database schema; PostgreSQL constraints are exercised by isolated integration probes."
+      },
+      {
+        "path": "src/app/**",
+        "reason": "HTTP/UI layers use required request and manual viewport evidence; they are not core-domain modules."
+      },
+      {
+        "path": "scripts/**",
+        "reason": "Verification drivers are not delivered business-domain behavior."
+      },
+      {
+        "path": "node_modules/**",
+        "reason": "Third-party implementation."
+      }
+    ],
+    "evidenceRef": "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/coverage-summary.json"
+  },
+  "criteria": [
+    {
+      "criterionId": "M3-C01",
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "environmentId": "local-m3-isolated-postgres",
+      "expected": "New-user local sign-in, workspace, server quote, playable Mock output, history/credit lineage, private download, and restart persistence.",
+      "observed": "The browser walkthrough file is accepted only if it records this exact candidate digest and all required journeys.",
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/probe-generation-lifecycle.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/probe-auth-http.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/probe-team-http.log"
+      ]
+    },
+    {
+      "criterionId": "M3-C02",
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "environmentId": "local-m3-isolated-postgres",
+      "expected": "Team creation, invitation/acceptance, removal, ownership transfer, workspace switching and personal-space restrictions work in UI and API.",
+      "observed": "HTTP probes are run only against an isolated app/DB pair; the current-candidate browser record must also include submitted remove-member and transfer-owner actions with POST route, 200 response, target user and timestamp evidence.",
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/probe-team-http.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/probe-api-isolation.log"
+      ]
+    },
+    {
+      "criterionId": "M3-C03",
+      "mandatory": true,
+      "result": "PASS",
+      "environmentId": "local-m3-isolated-postgres",
+      "expected": "Cancel/dispatch and terminal races have one outcome; replay and settlement have one effect; invalid output cannot succeed.",
+      "observed": "The runner repeats the race probe three times and separately records twenty normalized callback/domain deliveries, conflicting-payload rejection and reordered late-outcome quarantine.",
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/probe-generation-races.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/probe-generation-replay.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/repeat-1-generation-races.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/repeat-2-generation-races.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/repeat-3-generation-races.log"
+      ]
+    },
+    {
+      "criterionId": "M3-C04",
+      "mandatory": true,
+      "result": "PASS",
+      "environmentId": "local-m3-isolated-postgres",
+      "expected": "Crash recovery at each local boundary, sweep/lease fencing, queue starvation and deadline races preserve invariants.",
+      "observed": "The crash probe stops a real child process at each implemented local boundary, restarts through a fresh worker invocation and compares task, reservation, attempt, asset and balance invariants. The remote authenticated webhook inbox boundary is explicitly deferred to M4.",
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/probe-m3-recovery.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/probe-generation-lifecycle.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/probe-outbox-lease.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/probe-m3-crash-restart.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/probe-asset-security.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/probe-asset-cleanup.log"
+      ]
+    },
+    {
+      "criterionId": "M3-C05",
+      "mandatory": true,
+      "result": "PASS",
+      "environmentId": "local-m3-isolated-postgres",
+      "expected": "Unsafe MIME/size/path/media and cross-tenant/private downloads are denied deterministically.",
+      "observed": "Asset path/media and workspace-scope assertions come from the local asset probe; generation-create rejects caller-supplied browser/provider URLs. Remote provider-output SSRF/redirect/DNS fixtures are deferred to task 5.7 because this no-cloud candidate has no remote-fetch path.",
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/probe-assets.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/probe-generation-create.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/probe-asset-security.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/probe-asset-cleanup.log"
+      ]
+    }
+  ],
+  "commonStandards": [
+    {
+      "standard": "build-and-checks",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "Frozen-lock install, production build, typecheck, lint, format and strict OpenSpec validation.",
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/typecheck.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/lint.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/format-check.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/openspec.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/frozen-lock-install.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/production-build.log"
+      ]
+    },
+    {
+      "standard": "current-digests",
+      "applicable": true,
+      "result": "FAIL",
+      "assertions": "Declared source/schema/config/contract/validator/lock digests are unchanged across the verification attempt.",
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/digest-freshness.json",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/candidate-digests-before.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/candidate-digests-after.log"
+      ]
+    },
+    {
+      "standard": "owned-domain-branch-coverage",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "At least 80% aggregate branch coverage across 39 owned modules, with all sources present in LCOV.",
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/coverage-summary.json",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/owned-modules.json"
+      ]
+    },
+    {
+      "standard": "no-cloud-isolated-profile",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "Disposable local PostgreSQL, protocol and isolated-candidate HTTP probes pass; no production/provider/payment requests are made.",
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/commands.json",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/isolated-database-setup.log"
+      ]
+    },
+    {
+      "standard": "ui-viewport-and-keyboard",
+      "applicable": true,
+      "result": "NOT_RUN",
+      "assertions": "Current-candidate UI success/loading/empty/error/denied state review at 1440x900 and 390x844 plus keyboard traversal.",
+      "evidenceRefs": []
+    },
+    {
+      "standard": "repeatability-protocol",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "Critical selected generation race probes repeat three times; twentyfold callback replay, conflicting payload/reorder, ten-attempt financial races, and every implemented crash-boundary restart are recorded separately. Remote authenticated webhook inbox evidence remains deferred to M4.",
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/repeat-1-generation-races.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/repeat-2-generation-races.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/repeat-3-generation-races.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/probe-generation-replay.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/probe-m3-crash-restart.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/probe-credit-reservation.log",
+        "internal/evidence/M3/continuation-20261019/automated/verification-attempts/2026-10-19T06-15-36-336Z-cf40582e-4868-47f4-a19a-74dac9a9c38f/logs/probe-command-contract.log"
+      ]
+    },
+    {
+      "standard": "independent-review",
+      "applicable": true,
+      "result": "NOT_RUN",
+      "assertions": "A different verifier/product reviewer and an integrator must decide after all mandatory evidence exists.",
+      "evidenceRefs": []
+    }
+  ],
+  "unresolved": [
+    {
+      "id": "M3-C01",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "M3-C02",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "current-digests",
+      "result": "FAIL"
+    },
+    {
+      "id": "ui-viewport-and-keyboard",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "independent-review",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "SC-FND-15",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "SC-GEN-01",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "SC-GEN-17",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "SC-IAM-03",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "SC-IAM-04",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "SC-IAM-05",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "SC-IAM-06",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "SC-IAM-07",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "SC-IAM-08",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "SC-REL-14",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "SC-REL-15",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "T01",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "T02",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "T03",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "T05",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "T29",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "T32",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "T47",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "T48",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "T50",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "T56",
+      "result": "NOT_RUN"
+    },
+    {
+      "id": "T62",
+      "result": "NOT_RUN"
+    }
+  ],
+  "independentReview": {
+    "reviewerId": null,
+    "reviewedAt": null,
+    "independentFromImplementer": null,
+    "decision": "NOT_RUN",
+    "reason": "Awaiting independent verifier/product review; this runner never supplies a reviewer verdict.",
+    "evidenceRefs": []
+  },
+  "integrationDecision": {
+    "integratorId": null,
+    "decidedAt": null,
+    "decision": "NOT_RUN",
+    "reason": "Awaiting integrator decision after independent review.",
+    "nextEligibleTaskIds": [],
+    "blockedTaskIds": [
+      "5.1",
+      "6.1"
+    ]
+  },
+  "historicalIntegrity": [
+    {
+      "stageId": "M3",
+      "recordRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/record.json",
+      "currentByteCheck": false,
+      "exitCode": 0,
+      "expectation": "HISTORICAL_RECORD_REMAINS_VALID",
+      "expectationMet": true,
+      "logRef": "internal/evidence/M3/continuation-20261019/m3-historical-record-integrity.log"
+    },
+    {
+      "stageId": "M3",
+      "recordRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/record.json",
+      "currentByteCheck": true,
+      "exitCode": 1,
+      "expectation": "STALE_CURRENT_BYTES_REJECTED",
+      "expectationMet": true,
+      "logRef": "internal/evidence/M3/continuation-20261019/m3-historical-current-rejection.log"
+    },
+    {
+      "stageId": "M4",
+      "recordRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261017/record.json",
+      "currentByteCheck": false,
+      "exitCode": 0,
+      "expectation": "HISTORICAL_RECORD_REMAINS_VALID",
+      "expectationMet": true,
+      "logRef": "internal/evidence/M3/continuation-20261019/m4-historical-record-integrity.log"
+    },
+    {
+      "stageId": "M4",
+      "recordRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261017/record.json",
+      "currentByteCheck": true,
+      "exitCode": 1,
+      "expectation": "STALE_CURRENT_BYTES_REJECTED",
+      "expectationMet": true,
+      "logRef": "internal/evidence/M3/continuation-20261019/m4-historical-current-rejection.log"
+    }
+  ],
+  "browserLaunched": false,
+  "interpretation": "All executed local commands are diagnostic results for r1. Concurrent validator edits invalidated r1 freshness; no gate or r2 acceptance is claimed. The separately prepared browser runtime has not been executed."
+}

@@ -1,0 +1,52 @@
+{
+  "at": "2026-10-20T02:12:58.337Z",
+  "error": "locator.waitFor: Error: strict mode violation: getByRole('alert') resolved to 2 elements:\n    1) <p role=\"alert\">The workspace does not have enough available cred…</p> aka getByText('The workspace does not have')\n    2) <div role=\"alert\" aria-live=\"assertive\" id=\"__next-route-announcer__\"></div> aka locator('[id=\"__next-route-announcer__\"]')\n\nCall log:\n\u001b[2m  - waiting for getByRole('alert') to be visible\u001b[22m\n\n    at D:\\github\\shpitto\\internal\\evidence\\M3\\continuation-20261020\\r6\\browser-harness.mjs:240:1422",
+  "events": [
+    {
+      "name": "fresh-user-signup-and-email-verification",
+      "at": "2026-10-20T02:12:38.421Z"
+    },
+    {
+      "name": "personal-workspace-created",
+      "at": "2026-10-20T02:12:40.081Z",
+      "workspaceId": "56244a2b-808c-4f73-a834-6b406d0452f8"
+    },
+    {
+      "name": "application-worker-restart",
+      "at": "2026-10-20T02:12:44.400Z",
+      "taskId": "b66f57c9-14ba-46ac-a315-e2b30a9e9e04",
+      "status": "succeeded"
+    },
+    {
+      "name": "private-download",
+      "at": "2026-10-20T02:12:44.728Z",
+      "metadata": {
+        "duration": 2,
+        "width": 320,
+        "height": 180,
+        "readyState": 4,
+        "error": null
+      },
+      "anonymousStatus": 401
+    },
+    {
+      "name": "team-creation",
+      "at": "2026-10-20T02:12:46.556Z",
+      "workspaceId": "298a31ce-9a3b-49a8-b6b3-4258361fdf3d"
+    }
+  ],
+  "errors": [
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    },
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    },
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 409 (Conflict)"
+    }
+  ]
+}

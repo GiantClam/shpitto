@@ -28,7 +28,10 @@
       "src/components/shell/admin-shell.tsx",
       "src/app/globals.css",
       "src/admin/admin-app.tsx",
-      "src/admin/admin.css"
+      "src/admin/admin.css",
+      "src/admin/capabilities.ts",
+      "src/admin/resource-view.tsx",
+      "src/components/ui"
     ],
     "navigationSource": "src/config/navigation.ts",
     "contract": "The Shpitto brand tokens, logo and shared shell are template fallback defaults only. A customer delivery must replace the brand assets and/or tokens through the customization Skills; protected journeys remain unchanged."

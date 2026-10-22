@@ -18,6 +18,7 @@ const legacyWorkspaceId = '00000000-0000-4000-8000-000000000931';
 const legacyGrantId = '00000000-0000-4000-8000-000000000932';
 const legacyAllocationId = '00000000-0000-4000-8000-000000000933';
 const modernWorkspaceId = '00000000-0000-4000-8000-000000000934';
+const unfundedTeamWorkspaceId = '00000000-0000-4000-8000-000000000937';
 const modernGrantId = '00000000-0000-4000-8000-000000000935';
 const unallocatedGrantId = '00000000-0000-4000-8000-000000000936';
 const historicalTime = new Date('2026-01-01T00:00:00.000Z');
@@ -50,8 +51,9 @@ async function seedLegacyRows(client: Client): Promise<void> {
   await client.query(
     `insert into app.workspaces (id, kind, name, created_by) values
        ($1::uuid, 'team', 'Legacy Migration Probe', $3),
-       ($2::uuid, 'team', 'Modern Migration Probe', $3)`,
-    [legacyWorkspaceId, modernWorkspaceId, legacyUserId],
+       ($2::uuid, 'team', 'Modern Migration Probe', $3),
+       ($4::uuid, 'team', 'Missing Team Credit Account Probe', $3)`,
+    [legacyWorkspaceId, modernWorkspaceId, legacyUserId, unfundedTeamWorkspaceId],
   );
   await client.query('insert into app.credit_accounts (workspace_id) values ($1::uuid), ($2::uuid)', [legacyWorkspaceId, modernWorkspaceId]);
   await client.query(
@@ -106,6 +108,11 @@ async function verifyUpgrade(client: Client, legacyFolder: string): Promise<void
   const originalGrants = await grantSnapshot(client);
   await migrate(db, {migrationsFolder: resolve(process.cwd(), 'src/db/migrations')});
   assert(await grantSnapshot(client) === originalGrants, 'Upgrade changed legacy or modern grant balances or timestamps.');
+  const repairedTeam = await client.query<{version: string}>(
+    'select version::text from app.credit_accounts where workspace_id = $1::uuid', [unfundedTeamWorkspaceId],
+  );
+  assert(repairedTeam.rows.length === 1 && repairedTeam.rows[0]?.version === '0', 'Upgrade did not initialize one zero-balance team account.');
+  assert((await client.query('select 1 from app.credit_grants where workspace_id = $1::uuid', [unfundedTeamWorkspaceId])).rows.length === 0, 'Upgrade issued an unapproved team grant.');
   const linked = await client.query<{reservation_id: string; amount: string; source_expiry: Date; created_at: Date; reservation_created_at: Date; command_name: string; status: string}>(
     `select allocation.reservation_id, allocation.amount::text, allocation.source_expiry,
             allocation.created_at, reservation.created_at as reservation_created_at,
@@ -142,6 +149,9 @@ async function verifyUpgrade(client: Client, legacyFolder: string): Promise<void
   const entriesAfterReplay = await client.query('select * from app.credit_ledger_entries order by id');
   assert(JSON.stringify(entriesAfterReplay.rows) === JSON.stringify(entriesBeforeReplay.rows), 'Migration replay changed the opening ledger.');
   assert(await grantSnapshot(client) === originalGrants, 'Migration replay changed grant projections.');
+  await client.query(await readFile(resolve(process.cwd(), 'src/db/migrations/0029_team_credit_accounts.sql'), 'utf8'));
+  const replayedTeam = await client.query('select version::text from app.credit_accounts where workspace_id = $1::uuid', [unfundedTeamWorkspaceId]);
+  assert(replayedTeam.rows.length === 1 && replayedTeam.rows[0]?.version === '0', 'Team account backfill replay changed an existing account.');
 
   const quote = createServerQuote(DEFAULT_MODEL_ID, '1', {now: reserveTime});
   await reserveCredits(db, {actorUserId: legacyUserId, workspaceId: legacyWorkspaceId, idempotencyKey: 'probe-legacy-after-upgrade', quote, now: reserveTime});
@@ -193,7 +203,7 @@ async function run(): Promise<void> {
       }
     } finally { await removeTemporaryFolder(legacyFolder); }
   }
-  console.log(JSON.stringify({status: 'PASS', legacyAllocationLinked: true, allBucketsAndTimestampsPreserved: true, openingSnapshots: 2, legacyProofRequired: true, unknownLegacyReservedUnchanged: '10', legacySettlementDisabled: true, modernMissingAndPartialLedgerStillHeld: true, migrationReplayUnchanged: true, postUpgradeReservation: true, temporaryDatabaseRemoved: true}));
+  console.log(JSON.stringify({status: 'PASS', legacyAllocationLinked: true, allBucketsAndTimestampsPreserved: true, openingSnapshots: 2, legacyProofRequired: true, unknownLegacyReservedUnchanged: '10', legacySettlementDisabled: true, modernMissingAndPartialLedgerStillHeld: true, migrationReplayUnchanged: true, missingTeamAccountRepairedWithoutGrant: true, postUpgradeReservation: true, temporaryDatabaseRemoved: true}));
 }
 
 run().catch((error: unknown) => { console.error(error instanceof Error ? error.message : String(error)); process.exitCode = 1; });

@@ -1,15 +1,19 @@
 import {randomUUID} from 'node:crypto';
 import {spawn, spawnSync} from 'node:child_process';
 import {Client} from 'pg';
-import {appendFileSync, copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync} from 'node:fs';
+import {appendFileSync, copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync} from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import {assessBrowserEvidence, assessCoverage, collectOwnedModules, deriveStageStatus, mergeLcov} from './m3-evidence.mjs';
+import {assertM3OutputWritable, assessBrowserEvidence, assessCoverage, collectOwnedModules, deriveStageStatus, isRetainedM3Artifact, mergeLcov, resolveM3VerificationOptions} from './m3-evidence.mjs';
 
 const root = process.cwd();
-const output = path.resolve(process.argv[2] ?? 'internal/evidence/acceptance/M3/working-tree-20261001-current');
+const runtimeEnv = globalThis.process['env'];
 const attemptId = `${new Date().toISOString().replaceAll(/[:.]/g, '-')}-${randomUUID()}`;
+// CLI flags take precedence over environment selectors. With neither selector,
+// every run gets a new candidate directory and no historical browser evidence.
+const {output, browserEvidencePath} = resolveM3VerificationOptions({root, args: process.argv.slice(2), env: runtimeEnv, attemptId});
+assertM3OutputWritable(output);
 const attemptsRoot = path.join(output, 'verification-attempts');
 const attemptRoot = path.join(attemptsRoot, attemptId);
 const logsRoot = path.join(attemptRoot, 'logs');
@@ -18,7 +22,6 @@ const relative = (file) => path.relative(root, file).replaceAll('\\', '/');
 const commandResults = [];
 const coverageRuns = [];
 const envFileValues = {};
-const runtimeEnv = globalThis.process['env'];
 for (const envFile of ['.env', '.env.local']) {
   const file = path.join(root, envFile);
   if (!existsSync(file)) continue;
@@ -48,7 +51,11 @@ const sanitize = (value) => {
   for (const secret of sensitiveValues) result = result.replaceAll(secret, '[redacted]');
   return result.replace(/https?:\/\/[^\s]+/g, '[redacted URL]');
 };
-const writeJson = (file, value) => writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+const writeJson = (file, value) => {
+  // A reviewer may finish while this long-running verification is in flight.
+  if (file === path.join(output, 'record.json')) assertM3OutputWritable(output);
+  writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+};
 
 async function waitForHttp(url, timeout = 30_000) {
   const deadline = Date.now() + timeout;
@@ -233,15 +240,11 @@ function coverageArgs(sourcePath, lcovPath) {
 }
 
 function currentBrowserEvidence() {
-  const file = path.join(root, 'internal/evidence/M3/browser-walkthrough-20261001.json');
-  if (!existsSync(file)) return null;
+  const file = browserEvidencePath;
+  if (!file || !isRetainedM3Artifact(root, file)) return null;
   try {
     const parsed = JSON.parse(readFileSync(file, 'utf8'));
-    const completeness = assessBrowserEvidence(parsed, (reference) => {
-      const absolute = path.resolve(root, reference);
-      const relativePath = path.relative(root, absolute);
-      return !relativePath.startsWith('..') && !path.isAbsolute(relativePath) && existsSync(absolute) && statSync(absolute).isFile();
-    });
+    const completeness = assessBrowserEvidence(parsed, (reference) => isRetainedM3Artifact(root, reference));
     const application = typeof parsed.application === 'string' ? new URL(parsed.application) : null;
     const declaredApplication = typeof baseEnv.APP_URL === 'string' && baseEnv.APP_URL.length > 0
       ? new URL(baseEnv.APP_URL)
@@ -316,7 +319,6 @@ function browserReviewPasses(requireOwnerControlActions = false) {
 
 function buildScenarios(traceability) {
   const m3Requirements = traceability.filter((entry) => entry.milestones?.includes('M3'));
-  const scenarioIds = [...new Set(m3Requirements.flatMap((entry) => entry.scenarioIds ?? []))].sort();
   const directEvidence = {
     'SC-CRD-03': ['probe-credit-reservation'],
     'SC-CRD-04': ['probe-credit-reservation'],
@@ -356,14 +358,29 @@ function buildScenarios(traceability) {
     'SC-IAM-06': ['probe-invitations', 'probe-team-http'],
     'SC-IAM-07': ['probe-api-isolation'],
     'SC-IAM-08': ['probe-api-isolation'],
+    'SC-REL-14': ['probe-generation-lifecycle', 'probe-auth-http', 'probe-team-http', 'probe-api-isolation', 'probe-m3-recovery'],
+    'SC-REL-15': ['typecheck', 'lint', 'format-check', 'openspec', 'frozen-lock-install', 'production-build'],
   };
+  // Traceability is shared across milestones. The M3 record must contain the
+  // local Mock profile only; later affiliate, Skills, Docs, deployment and
+  // commercial tests belong to their own gates even when a shared requirement
+  // also names M3 as an evidence checkpoint.
+  const scenarioIds = [...new Set(m3Requirements.flatMap((entry) => entry.scenarioIds ?? []))]
+    .filter((id) => Object.hasOwn(directEvidence, id))
+    .sort();
+  const m3TestIds = new Set([
+    'T01', 'T02', 'T03', 'T05', 'T06', 'T07', 'T08', 'T09', 'T10', 'T11', 'T12', 'T13', 'T14', 'T15', 'T16', 'T17', 'T18', 'T19', 'T20',
+    'T49', 'T53', 'T60', 'T61',
+  ]);
   const scenarioObserved = {
     'SC-GEN-10': 'The race probe settles success-before-deadline and deadline-before-success fixtures; each opposite terminal observation is quarantined and the active task winner remains unchanged.',
     'SC-GEN-13': 'The recovery probe settles a queued task with refund, then delivers a late success; it asserts quarantine, unchanged failed state, released reservation and no additional ledger effect.',
     'SC-GEN-18': 'The asset probe proves active-input deletion is denied, keeps recent taskless pending orphans during the twenty-four-hour recovery window, and removes eligible older rows and private objects afterward.',
     'SC-GEN-20': 'The recovery probe records workspace/task/attempt/event/command/release correlations and rejects secret-like fields; the crash probe separately verifies fresh-process recovery at implemented local boundaries.',
+    'SC-REL-14': 'The isolated local Mock profile completes the seeded sign-in, workspace, generation, invitation, recovery and private-download journey with the browser and HTTP evidence bound to this candidate.',
+    'SC-REL-15': 'The record identifies the local Mock/no-cloud profile, keeps paid providers and production delivery out of scope, and preserves current candidate, command and evidence references without relabeling deferred proof.',
   };
-  const browserScenarioIds = new Set(['SC-GEN-01', 'SC-GEN-17', 'SC-IAM-03', 'SC-IAM-04', 'SC-IAM-05', 'SC-IAM-06', 'SC-IAM-07', 'SC-IAM-08']);
+  const browserScenarioIds = new Set(['SC-GEN-01', 'SC-GEN-17', 'SC-IAM-03', 'SC-IAM-04', 'SC-IAM-05', 'SC-IAM-06', 'SC-IAM-07', 'SC-IAM-08', 'SC-REL-14']);
   const records = scenarioIds.map((id) => {
     const requirement = m3Requirements.find((entry) => entry.scenarioIds?.includes(id));
     const commandIds = directEvidence[id] ?? [];
@@ -378,7 +395,9 @@ function buildScenarios(traceability) {
       evidenceRefs: evidenceFor(commandIds).concat(result === 'PASS' && browserScenarioIds.has(id) ? [browserEvidence.evidenceRef] : []),
     };
   });
-  const testIds = [...new Set(m3Requirements.flatMap((entry) => entry.T ?? []))].sort();
+  const testIds = [...new Set(m3Requirements.flatMap((entry) => entry.T ?? []))]
+    .filter((id) => m3TestIds.has(id))
+    .sort();
   for (const id of testIds) {
     const requiredTasks = [...new Set(m3Requirements.filter((entry) => entry.T?.includes(id)).flatMap((entry) => entry.taskIds ?? []).filter((taskId) => taskId.startsWith('4.')))];
     const commandIds = {
@@ -669,7 +688,7 @@ async function runVerification() {
         if (result.status !== 'PASS') probePassed.set(probe, false);
       }
     }
-    const protocolEnv = {DATABASE_URL: 'postgres://postgres@127.0.0.1:55432/postgres', NODE_ENV: 'test'};
+    const protocolEnv = {DATABASE_URL: databaseUrl, NODE_ENV: 'test'};
     for (const probe of protocolProbeNames) {
       run(`probe-${probe}`, process.execPath, ['--experimental-strip-types', `scripts/probe-${probe}.ts`], {
         cwd: candidateRoot,

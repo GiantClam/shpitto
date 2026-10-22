@@ -26,7 +26,8 @@ if (provenance.prototype.lockfileSha256 !== baseline.historical.lockfileSha256) 
 const expectedDependencies = {...selectedPackage.dependencies};
 for (const [name, change] of Object.entries(baseline.application.dependencyChanges)) {
   if ((selectedPackage.dependencies[name] ?? null) !== change.from) failures.push(`${name} evolution does not match its historical baseline`);
-  expectedDependencies[name] = change.to;
+  if (change.to === null) delete expectedDependencies[name];
+  else expectedDependencies[name] = change.to;
 }
 
 if (packageJson.packageManager !== selectedPackage.packageManager) {

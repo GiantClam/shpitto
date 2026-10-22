@@ -9,3 +9,63 @@ relatedContracts: [D09, D28, D29, G09, G28, G29]
 # Governed Skills
 
 Skills describe bounded customization workflows. They do not grant arbitrary edits to authentication, billing, ledger, generation or release validators.
+
+## Trusted release validation
+
+Run release checks from an independently reviewed validator directory outside
+the buyer's staging tree. Keep the reviewer pin as a regular file outside both
+trees and the evidence store; keep the evidence store outside both trees too.
+The operator must protect these locations and the trusted process from candidate
+writes using filesystem permissions or an isolated validation account. This
+workflow detects stale bytes and altered checks; it is not an operating-system
+sandbox for arbitrary hostile code running as the operator.
+
+The pin identifies the trusted root, policy version, reviewed lockfile and
+logical dependency-tree checksum, named independent baseline review, and every
+required validator, policy, script and test file with its SHA-256. Compiler
+entrypoints use mode `tool`, shipped controls use `required`, and independent
+test suites absent from the customer package use `overlay`. Pin all imported
+test helpers and script policies too. Candidate modules remain the subject of
+the tests. Each test step pins an exact positive `expectedTests` count for every
+suite. The trusted parent reporter requires each suite and the entire run to
+complete with those counts and no failures, skips, TODOs or cancellations;
+successful early exits and candidate-printed summaries cannot replace tests.
+Dependency checks run against a private materialized copy. All nested files in
+declared source roots are fingerprinted, including directories whose names
+resemble generated top-level paths.
+
+Obtain the pin checksum separately from the reviewer's approved record. Passing
+a checksum calculated from an unreviewed candidate-controlled pin does not
+establish independent approval. The trusted runner refuses a changed pin,
+candidate-modified controls, changed lockfile or altered dependencies.
+
+From the trusted directory, prepare evidence using explicit operator values:
+
+```powershell
+node --experimental-strip-types scripts/lib/trusted-validation.mjs --mode prepare --stage-root $stage --trusted-root $trusted --pin $reviewerPin --pin-sha256 $approvedPinSha256 --evidence-store $evidenceStore --candidate-id $candidateId --implementer-id $implementerId
+```
+
+Preparation retains `candidate.json`, `record.json` and checksummed logs under a
+unique run directory. Successful checks yield `READY_FOR_REVIEW`, not release
+approval. A named independent reviewer examines those exact bytes and adds a
+`candidateReview` to the external pin, including the candidate identity, stage
+root, six digests and `evidenceSha256`. Obtain the updated pin checksum from the
+reviewer before invoking the trusted `scripts/export-release.ts` or
+`scripts/deploy-release.ts` with the same context flags plus `--candidate` and
+`--evidence`. These entrypoints remeasure staging, validate retained outputs and
+rerun mandatory checks. The returned `evidenceRef` points to a durable
+`accepted.json`; `reviewedEvidenceRef` and `freshEvidenceRef` preserve the
+reviewed preparation and fresh execution separately. They validate release
+readiness evidence; deployment still requires the separately authorized action.
+
+An intentional policy or dependency revision requires reviewed rebaselining:
+retain the previous pin outside the trees and evidence store, retain a review
+proof inside the external store, and bind their checksums, replacement file
+checksums, policy, dependencies, rationale and scope in `rebaseline`. Preserve
+prior evidence. The manifest-only `validate:change` CLI checks structure and
+retained output integrity; its PASS never authorizes export or deployment.
+
+The local contract checks cover responsive targets 1440×900 and 390×844,
+keyboard access, visible focus, semantic headings and actionable error copy.
+The integrated journey check remains pending until the M4, M5 and M6 external
+profiles are accepted.

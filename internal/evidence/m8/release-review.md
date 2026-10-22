@@ -1,5 +1,9 @@
 # Local completion review
 
+Historical scope: this review applies only to the October 7 candidate below.
+Later source/validator changes and local evidence gaps are tracked in
+`local-current-20261019/README.md`; its conclusion is not current-tree approval.
+
 Candidate: `local-candidate-20261007-completion`
 
 Archive SHA-256: `c4a1dcb111811a9ae4a0a956045e59880ad937ff6efbadff4af47ca4beb1dbad`

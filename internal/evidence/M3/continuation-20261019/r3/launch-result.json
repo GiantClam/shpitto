@@ -1,0 +1,14 @@
+{
+  "startedAt": "2026-10-19T14:33:06.623Z",
+  "outputRef": "internal/evidence/M3/continuation-20261019/r3/automated",
+  "selectedBrowserRef": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/walkthrough.json",
+  "expectedBrowserCandidateSha256": "e5cf13a5d4af7747fcb83bc10e940e73e731570a0df4dd6361aaced0890a71be",
+  "localDatabaseEndpoint": "127.0.0.1:55432/postgres",
+  "remoteIntegrationSettingsSuppressed": true,
+  "paidOrCloudProviderCallsAuthorized": false,
+  "independentReview": "NOT_RUN",
+  "integrationDecision": "NOT_RUN",
+  "endedAt": "2026-10-19T14:39:40.059Z",
+  "code": 0,
+  "signal": null
+}

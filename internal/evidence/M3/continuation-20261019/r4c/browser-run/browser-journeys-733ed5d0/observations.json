@@ -1,0 +1,89 @@
+{
+  "application": "http://127.0.0.1:3199",
+  "runId": "733ed5d0",
+  "events": [
+    {
+      "name": "fresh-user-signup-and-email-verification",
+      "at": "2026-10-19T15:06:39.013Z"
+    },
+    {
+      "name": "personal-workspace-created",
+      "at": "2026-10-19T15:06:40.607Z",
+      "workspaceId": "e320f40a-7f62-4744-934c-296e27b25165"
+    },
+    {
+      "name": "application-worker-restart",
+      "at": "2026-10-19T15:06:44.775Z",
+      "taskId": "cbee0f3a-b01c-4c15-a75d-0848e1b81769",
+      "status": "succeeded"
+    },
+    {
+      "name": "private-download",
+      "at": "2026-10-19T15:06:45.045Z",
+      "metadata": {
+        "duration": 2,
+        "width": 320,
+        "height": 180,
+        "readyState": 4,
+        "error": null
+      },
+      "anonymousStatus": 401
+    },
+    {
+      "name": "team-creation",
+      "at": "2026-10-19T15:06:46.818Z",
+      "workspaceId": "5380de0e-4041-49d8-92cd-e5a363cb4367"
+    },
+    {
+      "name": "all-browser-journeys-complete",
+      "at": "2026-10-19T15:06:58.633Z",
+      "output": "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0"
+    }
+  ],
+  "errors": [
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    },
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    },
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 409 (Conflict)"
+    }
+  ],
+  "responseObservations": [
+    {
+      "at": "2026-10-19T15:06:49.579Z",
+      "journey": "team-creation",
+      "url": "http://127.0.0.1:3199/api/invitations/accept",
+      "method": "POST",
+      "status": 403,
+      "expected": true,
+      "classification": "expected-authorization-or-conflict-path",
+      "acceptanceImpact": "Expected denial/conflict recorded separately; no success-path criterion is downgraded."
+    },
+    {
+      "at": "2026-10-19T15:06:51.512Z",
+      "journey": "team-creation",
+      "url": "http://127.0.0.1:3199/api/invitations/accept",
+      "method": "POST",
+      "status": 403,
+      "expected": true,
+      "classification": "expected-authorization-or-conflict-path",
+      "acceptanceImpact": "Expected denial/conflict recorded separately; no success-path criterion is downgraded."
+    },
+    {
+      "at": "2026-10-19T15:06:58.356Z",
+      "journey": "team-creation",
+      "url": "http://127.0.0.1:3199/api/workspaces/5380de0e-4041-49d8-92cd-e5a363cb4367/generations",
+      "method": "POST",
+      "status": 409,
+      "expected": false,
+      "classification": "unclassified-response",
+      "acceptanceImpact": "Requires reviewer classification before this response can support acceptance."
+    }
+  ]
+}

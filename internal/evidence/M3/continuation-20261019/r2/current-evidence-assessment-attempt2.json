@@ -1,0 +1,330 @@
+{
+  "createdAt": "2026-10-19T06:41:57.214Z",
+  "status": "LOCAL_EVIDENCE_COMPLETE_REVIEW_PENDING",
+  "freezeRef": "internal/evidence/m7/local-current-20261019/continuation/baseline-r2/candidate.json",
+  "candidate": {
+    "capturedAt": "2026-10-19T06:25:33.426Z",
+    "sourceCommit": null,
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "e5cf13a5d4af7747fcb83bc10e940e73e731570a0df4dd6361aaced0890a71be",
+    "schemaSha256": "7560a6a5b059bb33a47e7afa878826d73cf57f05a3a6a6f5ffa1ff2eb7f08d0f",
+    "configurationSha256": "07533fb94ecce587a9ae2639c857fea11c837303a119505715ff703013b985cd",
+    "contractSha256": "b9b18ecc7f944962df5880e4a0ffa255f2ea1621787cbc623c80e6ce588387b6",
+    "validatorSha256": "e77e8954b8fb3774d56454f92fef306e8a213cb2515a2ca7eceb5a8fec1d7dbf",
+    "lockfileSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
+    "digestInputs": {
+      "sourceTree": [
+        "internal/contracts/providers",
+        "src",
+        "tests",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        "tooling",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        "src/config/env.ts",
+        "src/config/task-runtime.ts",
+        "src/config/provider-worker.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile",
+        "deploy/provider-worker.Dockerfile",
+        "deploy/railway.provider-worker.json",
+        "scripts/provider-worker-preflight.ts",
+        "scripts/provider-worker-runtime.mjs",
+        "tooling"
+      ],
+      "contract": [
+        "internal/contracts/providers",
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json",
+        "openspec/changes/restart-shpitto-video-saas/specs",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json",
+        "internal/restart/root-dependency-evolution.md"
+      ],
+      "validator": [
+        "scripts",
+        "tests",
+        "tooling",
+        "internal/restart/check-acceptance-record.py",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json"
+      ]
+    }
+  },
+  "automatedRef": "internal/evidence/M3/continuation-20261019/r2/automated/record.json",
+  "automatedGeneratedStatus": "IN_PROGRESS",
+  "automatedCommandCount": 79,
+  "automatedCommandsPassed": true,
+  "automatedCoverage": {
+    "status": "PASS",
+    "ownedModuleManifestRef": "internal/evidence/M3/continuation-20261019/r2/automated/verification-attempts/2026-10-19T06-30-18-707Z-35b6b72d-fe59-4684-8921-f3d5c3aa55ce/owned-modules.json",
+    "denominator": 1228,
+    "coveredBranches": 1031,
+    "totalBranches": 1228,
+    "percent": 83.96,
+    "exclusions": [
+      {
+        "path": "src/db/schema/**",
+        "reason": "Declarative database schema; PostgreSQL constraints are exercised by isolated integration probes."
+      },
+      {
+        "path": "src/app/**",
+        "reason": "HTTP/UI layers use required request and manual viewport evidence; they are not core-domain modules."
+      },
+      {
+        "path": "scripts/**",
+        "reason": "Verification drivers are not delivered business-domain behavior."
+      },
+      {
+        "path": "node_modules/**",
+        "reason": "Third-party implementation."
+      }
+    ],
+    "evidenceRef": "internal/evidence/M3/continuation-20261019/r2/automated/verification-attempts/2026-10-19T06-30-18-707Z-35b6b72d-fe59-4684-8921-f3d5c3aa55ce/coverage-summary.json"
+  },
+  "automatedBrowserTimingLimitation": "The automated record was emitted before the new walkthrough. Its unresolved UI rows remain unmodified; this supplement retains actual later UI evidence on the same unchanged candidate.",
+  "walkthroughRef": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/walkthrough.json",
+  "cleanupRef": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/cleanup.json",
+  "browserStructure": {
+    "passed": true,
+    "missing": []
+  },
+  "journeyCount": 11,
+  "uiCheckCount": 8,
+  "ownerActions": [
+    {
+      "action": "remove-member",
+      "valid": true
+    },
+    {
+      "action": "transfer-owner",
+      "valid": true
+    }
+  ],
+  "screenshots": [
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/01-personal-setup-pending.png",
+      "bytes": 71345,
+      "sha256": "45de5a564ab7245571bd1cdceea061b6b356fb9c7e9c3230026b3a5d32d534a9",
+      "width": 1440,
+      "height": 977
+    },
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/02-personal-empty.png",
+      "bytes": 147561,
+      "sha256": "c56b4e5957941098526c6cf96f0ab8d70471a59548b7362f9ab848f8df935f90",
+      "width": 1440,
+      "height": 1953
+    },
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/03-image-mode-no-admitted-model.png",
+      "bytes": 152677,
+      "sha256": "409ede77156805050ba55d48bb69db916c9fbe6086eb53640e73716e1c888c0f",
+      "width": 1440,
+      "height": 2018
+    },
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/04-generation-loading.png",
+      "bytes": 142326,
+      "sha256": "08f8403eaa7313a0fec26d1c5cecb2b8d7e3ae0bd76e3580e00cc2ba86594366",
+      "width": 1440,
+      "height": 1953
+    },
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/05-queued-before-restart.png",
+      "bytes": 185337,
+      "sha256": "42d644e63e97d5a0836449e83d984aae8dd21104635ebb0bca57aaa446c8965d",
+      "width": 1440,
+      "height": 2181
+    },
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/06-generation-success.png",
+      "bytes": 186439,
+      "sha256": "01d01dcff550adc9bb25f0bad959fa328cb874c635b6141a40ad81405ac7d434",
+      "width": 1440,
+      "height": 2311
+    },
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/07-private-video.png",
+      "bytes": 32408,
+      "sha256": "ab59141400026d4a6c5efc9cac120590bfb5758fe3809266d44adb626eeb7733",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/08-personal-controls-denied.png",
+      "bytes": 58146,
+      "sha256": "a4a435a3083cc397d299285dbd330446432b0d0c83feefcb28006a6c6db0977a",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/09-team-created.png",
+      "bytes": 65285,
+      "sha256": "c1621f7367342542a938998957a36bd3892ca43e5deac0e99d660959fa328bd4",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/10-invitation-created.png",
+      "bytes": 68514,
+      "sha256": "4b95330eb5d03693a8d3e5c1feadf8870ef4e7de62e3b0bb60e6c44b38bc3d6f",
+      "width": 1440,
+      "height": 1020
+    },
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/11-member-accepted.png",
+      "bytes": 7707,
+      "sha256": "3f9bba7bf501daa07cfe4ef4414263522599e0a304a7d259d66c3f886f45a53b",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/12-invitation-replay-denied.png",
+      "bytes": 43742,
+      "sha256": "8a2231de814272c832688d750e4f853bbf9af81667130527202e8caef38d7825",
+      "width": 1440,
+      "height": 909
+    },
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/13-invitation-expired-denied.png",
+      "bytes": 41221,
+      "sha256": "ca02504aa7e9ae0cc2d0f692d77407ad8cc88fb59f041c1daccb74e0f1a570b9",
+      "width": 1280,
+      "height": 889
+    },
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/14-personal-selected.png",
+      "bytes": 187879,
+      "sha256": "1bef7f0f124e6e7a3d1a4d52d6a1be814c2370bbc91a8af78c7ca8a0ee79cfc3",
+      "width": 1440,
+      "height": 2311
+    },
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/15-team-selected.png",
+      "bytes": 141261,
+      "sha256": "5d63139992bcfbf70f5244accfcb1abfbd7dd794bd479f6ab05bf54c5282cc82",
+      "width": 1440,
+      "height": 1933
+    },
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/16-owner-before-transfer.png",
+      "bytes": 70961,
+      "sha256": "26578244322c27ae39f3e3ecca4951f06bae2db23c9198afd2d15f18721439ae",
+      "width": 1440,
+      "height": 965
+    },
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/17-original-owner-open-tab-before-removal.png",
+      "bytes": 60401,
+      "sha256": "d95335c8b5c2b662e2884acaea9dcfd30360a67f90d26570d8f0f7c82e91b144",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/18-member-removed-one-owner.png",
+      "bytes": 65425,
+      "sha256": "bb6df563b59ec718b733cad3e7acfcdb691aa06e802327863044e8189bd9b7f0",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/19-revoked-open-tab.png",
+      "bytes": 49393,
+      "sha256": "87c95de6a6407e920d6be29ca7d25d018488475ba2239b2639ff0fd83bd83425",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/20-desktop-image-mode.png",
+      "bytes": 191440,
+      "sha256": "2d43f2899fb21a9d0c54fef138f01bad599d2d65ddb517f39cd926fc55f089c9",
+      "width": 1440,
+      "height": 2376
+    },
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/21-desktop-text-mode.png",
+      "bytes": 186439,
+      "sha256": "01d01dcff550adc9bb25f0bad959fa328cb874c635b6141a40ad81405ac7d434",
+      "width": 1440,
+      "height": 2311
+    },
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/22-mobile-text-mode.png",
+      "bytes": 163592,
+      "sha256": "58ce7cbc6bd512fcbe44d3c90ac8e154b75cd8b6e8156d9a01ccf140d58d0b1f",
+      "width": 390,
+      "height": 3790
+    },
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/23-mobile-image-mode.png",
+      "bytes": 167640,
+      "sha256": "1cf177545121c954aba4c864abb629a055ef20266eec66dfa67cd456a70b9af6",
+      "width": 390,
+      "height": 3881
+    },
+    {
+      "ref": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/24-generation-error.png",
+      "bytes": 158816,
+      "sha256": "8300fe4156e72746d91c83f3bf2e84127d42bc4dadfdb102b7fd1aa4f99483bd",
+      "width": 1440,
+      "height": 2298
+    }
+  ],
+  "realUiExecution": true,
+  "manualVisualApproval": false,
+  "browserErrors": [
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    },
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 409 (Conflict)"
+    }
+  ],
+  "blockedExternalRequests": [],
+  "servicesStopped": true,
+  "databaseDropped": true,
+  "mailServiceStopped": true,
+  "sourceStableAcrossAutomatedAndBrowserEvidence": true,
+  "finalCandidateRef": "internal/evidence/M3/continuation-20261019/r2/candidate-after-browser-attempt2/candidate.json",
+  "paidOrCloudCalls": false,
+  "shippedFilesModifiedByVerifier": false,
+  "independentReview": {
+    "decision": "NOT_RUN",
+    "reviewerId": null
+  },
+  "integrationDecision": {
+    "decision": "NOT_RUN",
+    "integratorId": null
+  },
+  "nextStep": "Independent M3 product/verifier review must inspect this exact-candidate evidence supplement and the original automated record, then a separate integrator decides applicability. M4 carry-forward remains the explicit scoped recommendation only."
+}

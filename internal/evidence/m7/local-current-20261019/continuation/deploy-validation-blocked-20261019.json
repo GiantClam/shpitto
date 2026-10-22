@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "trusted-deploy-validation-attempt",
+  "decision": "BLOCKED",
+  "candidateId": "local-candidate-20261019-trusted-r2",
+  "stageRoot": "D:/github/_tmp/shpitto-m7-staging-20261019-trusted-r2/customerRuntime",
+  "trustedRoot": "D:/github/_tmp/shpitto-trusted-20261019-hoisted-r1",
+  "pinRef": "D:/github/_tmp/shpitto-m7-evidence-20261019/trusted-pin.json",
+  "pinSha256": "c467b27865bae2e7674e4561cf2978f26880867407163ce34ddd6ff617e3db62",
+  "evidenceRef": "D:/github/_tmp/shpitto-m7-evidence-20261019/fresh-r4-20261019-1605/6654cdb7-ca5c-4a08-a8e2-e16c9f2f90a4/record.json",
+  "candidateRef": "D:/github/_tmp/shpitto-m7-evidence-20261019/fresh-r4-20261019-1605/6654cdb7-ca5c-4a08-a8e2-e16c9f2f90a4/candidate.json",
+  "requiredPinnedDependencyTreeSha256": "3d28bccfa1df40207524eb0b41853d92d0b58c7383cd6c2e569ce9c80fb490b3",
+  "observedDependencyTreeSha256": "9f0006267defdfab1217c05b9b67106c94a61a354e73b92f8f0318d908281efa",
+  "failure": "Trusted validation blocked: trusted dependency tree checksum changed",
+  "scope": "The deploy validator was not allowed to create an accepted deployment record. The pin was not changed, no release was published, and no customer delivery occurred.",
+  "relatedEvidence": [
+    "internal/evidence/m7/local-current-20261019/continuation/candidate-review-r3.json",
+    "D:/github/_tmp/shpitto-m7-evidence-20261019/fresh-r4-20261019-1605/7971a118-8b4e-4ad6-828c-7deeeb9b5764/accepted.json",
+    "D:/github/_tmp/shpitto-m7-evidence-20261019/fresh-r4-20261019-1605/85b9379c-f330-41b6-99e6-57cf5eb8a76a/accepted.json"
+  ]
+}

@@ -137,7 +137,6 @@ async function run(): Promise<void> {
     assert.match(html, new RegExp(ownerEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
 
     const now = new Date();
-    await database.pool.query('insert into app.credit_accounts (workspace_id, version, created_at, updated_at) values ($1, 0, $2, $2)', [workspaceId, now]);
     const grant = await issueGrant(database.db, {actorUserId: ownerId, workspaceId, commandName: 'probe.team-http-grant', commandKey: suffix, businessKey: `team-http-${suffix}`, source: 'manual', amount: 731942n, payload: {amount: '731942'}});
     const quote = createServerQuote(DEFAULT_MODEL_ID, '1', {now});
     const createKey = `team-http-create-${suffix}`;

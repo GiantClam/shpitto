@@ -1,0 +1,23 @@
+{
+  "before": {
+    "appPid": 36244,
+    "workerPid": 35748
+  },
+  "after": {
+    "appPid": 82884,
+    "workerPid": 32476
+  },
+  "state": {
+    "id": "2193d0ae-0646-48bd-ac26-ec023d74d891",
+    "status": "succeeded",
+    "reservation_status": "consumed",
+    "ready_outputs": 1
+  },
+  "balance": [
+    {
+      "available": "90",
+      "reserved": "0",
+      "consumed": "10"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "actualScopedReversePatchApplied": true,
+  "attributableFilesRestored": [
+    "src/components/shell/site-shell.tsx"
+  ],
+  "unrelatedDirtyFile": ".data/unrelated-user-note.txt",
+  "unrelatedBeforeSha256": "70a7e7e11604234f8a28665e442250722462f1e6eba48e1337a0c7096d25a310",
+  "unrelatedAfterSha256": "70a7e7e11604234f8a28665e442250722462f1e6eba48e1337a0c7096d25a310",
+  "protectedFilesUnchanged": true
+}

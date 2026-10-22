@@ -1,4 +1,5 @@
 import type {MediaIconName} from '../components/creation/media-icon';
+import type {OperatorRole} from '../admin/capabilities';
 
 export type NavigationItem = Readonly<{
   label: string;
@@ -33,10 +34,16 @@ export const creatorNavigation: readonly NavigationItem[] = [
 
 export const workspaceNavigation = getWorkspaceNavigation();
 
-export const adminNavigation: readonly NavigationItem[] = [
-  {label: 'Overview', href: '/admin'},
-  {label: 'Users', href: '/admin?view=users'},
-  {label: 'Generations', href: '/admin?view=generations'},
-  {label: 'Billing', href: '/admin?view=billing'},
-  {label: 'Audit', href: '/admin?view=audit'},
+export type AdminNavigationItem = Readonly<NavigationItem & {id: string; roles?: readonly OperatorRole[]}>;
+
+export const adminNavigation: readonly AdminNavigationItem[] = [
+  {id: 'overview', label: 'Overview', href: '/admin'},
+  {id: 'workspaces', label: 'Workspaces', href: '/admin?view=workspaces'},
+  {id: 'users', label: 'Users', href: '/admin?view=users'},
+  {id: 'generations', label: 'Generation tasks', href: '/admin?view=generations'},
+  {id: 'billing', label: 'Billing and credits', href: '/admin?view=billing'},
+  {id: 'audit', label: 'Audit', href: '/admin?view=audit'},
+  {id: 'affiliate-reviews', label: 'Affiliate reviews', href: '/admin?view=affiliate-reviews'},
+  {id: 'affiliate-holds', label: 'Affiliate holds', href: '/admin?view=affiliate-holds'},
+  {id: 'operations', label: 'Commands and recovery', href: '/admin?view=operations', roles: ['operator', 'superadmin']},
 ];

@@ -1,0 +1,66 @@
+Skip to content
+Shpitto
+Home
+Explore
+Create
+Docs
+Log in
+Start creating
+Documentation version
+v1 · current documentation
+Search published documentation
+Template
+Template
+Operations
+Local acceptance journey
+Local generation and credit lifecycle
+Local billing fixtures
+Managed deployment reference
+Standalone Docker application
+Deployment configuration checklist
+Backup, upgrade and restore
+Affiliates
+Affiliate settlement
+Skills
+Skills
+Skill · quick-start
+Skill · add-provider
+Skill · add-generation-task
+Skill · configure-credits
+Skill · extend-assets
+Skill · deploy-template
+Skill · security-review
+Skill · upgrade-template
+Skill · customize-brand
+Skill · create-page
+Skill · modify-page
+Skill · customize-site
+APIs
+API
+Releases
+Overview
+Releases
+DEVELOPER DOCUMENTATION
+v1 · published docs
+
+Local template preview. Real provider, payment and production verification remain separate release gates.
+
+Shpitto Video SaaS v1
+Copy Anchor Link
+
+Use the versioned navigation and published-content search to find the template, Skills, API contracts and release guidance. Each page identifies its source release and is also included in the offline buyer guides.
+
+Start with the local acceptance journey, review the twelve governed Skills, or inspect the session-authenticated API contracts.
+
+Documentation is rendered from trusted repository Markdown through Fumadocs. Only published v1 pages enter navigation and search. Executable MDX and raw HTML are not accepted by this template's documentation renderer.
+
+The template supports a complete local Mock journey. Real provider, payment, affiliate, merchant and production-environment verification remain separate release gates; published documentation does not imply a stable product release.
+
+Source: content/docs/v1/index.mdx
+Shpitto
+
+Give your ideas a little motion.
+
+Explore
+Create a video
+Docs

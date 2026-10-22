@@ -3,10 +3,14 @@
   "release": "v1",
   "status": "candidate-scoped",
   "required": [
-    "candidateId", "capturedAt", "sourceTreeSha256", "schemaSha256", "configurationSha256",
+    "candidateId", "capturedAt", "implementerId", "sourceTreeSha256", "schemaSha256", "configurationSha256",
     "contractSha256", "validatorSha256", "lockfileSha256", "policyVersion", "checks", "review"
   ],
-  "check": {"required": ["id", "status", "exitCode", "outputRef"]},
+  "check": {"required": ["id", "status", "exitCode", "outputRef", "outputSha256"]},
   "review": {"required": ["reviewerId", "independentFromImplementer", "decision"]},
-  "exportRule": "export and deploy entrypoints must reject absent, failed or stale evidence"
+  "reviewRule": "reviewerId and implementerId must be nonempty canonical identities, must differ, and review must explicitly assert independence and PASS",
+  "candidateRule": "evidence and current candidate inputs must declare the same nonempty canonical candidateId as well as matching digests",
+  "metadataRule": "all six digest values in evidence and current inputs must be SHA-256 64-hex strings; capturedAt must be a valid date string; policyVersion must be a nonempty canonical string identity",
+  "retainedRule": "the manifest CLI checks READY_FOR_REVIEW/PASS status and retained regular output files with matching checksums; structural validation is not release authorization",
+  "exportRule": "export and deploy entrypoints require an external trusted runner, reviewer-controlled pin with separately supplied checksum, exact staged identity, independent review and fresh mandatory checks; absent, failed or stale evidence blocks release"
 }

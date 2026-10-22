@@ -9,7 +9,7 @@ Status: **READY_FOR_REVIEW — pnpm 12 target prototype, PostgreSQL/Better Auth 
 | Runtime/package manager | Node 24 LTS / pnpm 12.6.0 | Node `v24.15.0` and Corepack-activated pnpm `12.6.0` are available in the isolated prototype |
 | Web | Next.js 16.3.6 / React 19.3.0 / TypeScript 6.0.3 | Not installed as a target app dependency in the legacy root |
 | Data/identity | PostgreSQL 17 / Drizzle 0.45.3 / Better Auth 1.7.6 | Disposable Drizzle migration, forced RLS and Better Auth adapter/pool restart probes passed; final release chain is M1 |
-| Admin/docs | React-admin 5.15.4 / Fumadocs 16.15.14 | Admin isolation and Fumadocs static source/search probes passed in the isolated prototype |
+| Admin/docs | Project-owned shadcn/ui-style admin source / Fumadocs 16.15.14 | Admin isolation, source-owned component boundary and Fumadocs static source/search probes passed in the current implementation |
 | Billing/jobs | Stripe 22.6.2 / Trigger 4.6.4 | Package resolution is locked; account-backed event/recovery evidence remains M5 |
 | Media | S3 client 3.1141.0 / Resend 6.30.0 / sharp 0.35.4 / FFmpeg 7.x | Pinned Debian worker image generated/transcoded/probed a fixture; final shipped notices remain M8 |
 

@@ -1,0 +1,35 @@
+✔ catalog contains twelve canonical Skills with required sections (1.4526ms)
+✔ protected paths require engineering classification (0.2193ms)
+✔ evidence rejects stale digests and accepts a complete independent record (0.4228ms)
+✖ release evidence requires every mandatory check to succeed with a unique identity and output (0.4705ms)
+✔ rollback blocks overlaps and permits a scoped patch (0.101ms)
+✔ docs manifest exposes published-only versioned sections (3.0075ms)
+✔ docs manifest rejects traversal paths instead of reading outside the release source (2.7279ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 6
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 147.7019
+
+✖ failing tests:
+
+test at tests\unit\governed-skills.test.ts:40:1
+✖ release evidence requires every mandatory check to succeed with a unique identity and output (0.4705ms)
+  AssertionError [ERR_ASSERTION]: []
+      at TestContext.<anonymous> (file:///D:/github/shpitto/tests/unit/governed-skills.test.ts:50:13)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [],
+    operator: 'notDeepStrictEqual',
+    diff: 'simple'
+  }

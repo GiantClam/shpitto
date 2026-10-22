@@ -1,0 +1,126 @@
+{
+  "candidateId": "local-candidate-20261021-admin-ui",
+  "capturedFrom": ".playwright-cli",
+  "capturedAt": "2026-10-21",
+  "viewportChecks": [
+    "1440x900",
+    "390x844"
+  ],
+  "files": [
+    {
+      "path": "console-2026-10-21T08-40-42-248Z.log",
+      "bytes": 329,
+      "sha256": "77d7601722b36c2bc2b41898140ed3fbe11898516c02fb3bd24b02f085be81f6"
+    },
+    {
+      "path": "page-2026-10-21T08-51-17-210Z.yml",
+      "bytes": 173,
+      "sha256": "1a63513cbe8177a2bb6b6871af56a12f5f1d8f982750422cff1e5649033b54ea"
+    },
+    {
+      "path": "page-2026-10-21T08-50-20-318Z.yml",
+      "bytes": 3339,
+      "sha256": "9076331d8d07b4a741d6c7e9038fe537886473635847f1b3ade55d64abc95d74"
+    },
+    {
+      "path": "page-2026-10-21T08-49-57-464Z.yml",
+      "bytes": 3360,
+      "sha256": "9405d5c667ab57dedbfe9c43685c7badc39242558dc83436e9c7eddb708dfac9"
+    },
+    {
+      "path": "page-2026-10-21T08-48-42-735Z.png",
+      "bytes": 37062,
+      "sha256": "f038a7f5e1fef227b29bf0556cf19315bea4d7eec0953ee32d28065f37fe3673"
+    },
+    {
+      "path": "page-2026-10-21T08-48-38-909Z.yml",
+      "bytes": 6098,
+      "sha256": "79ef21380c307bee1159d1513e24c8a31980b1d2431e85baca25cc0ae152a9d4"
+    },
+    {
+      "path": "page-2026-10-21T08-48-20-520Z.yml",
+      "bytes": 6097,
+      "sha256": "7c01ab0e82456c5b9d9d93638f2269d9bf26f17cec7b1d285b031fbc9828eee9"
+    },
+    {
+      "path": "page-2026-10-21T08-48-01-491Z.yml",
+      "bytes": 173,
+      "sha256": "2ab9a4315a843ee95ea7329367737507418871a9248743b8bea400a22273c0a5"
+    },
+    {
+      "path": "page-2026-10-21T08-46-32-478Z.yml",
+      "bytes": 6041,
+      "sha256": "8fd1dac9b9fef201603b6ab5bcd91b4581ac0b4f21b6227979ca039ceb24f57c"
+    },
+    {
+      "path": "page-2026-10-21T08-46-15-607Z.yml",
+      "bytes": 6175,
+      "sha256": "83e3cd1652cd95cdadeac1f27782be11d02d443b4a5395cdeddcb0d40bc2eaa6"
+    },
+    {
+      "path": "page-2026-10-21T08-51-36-817Z.yml",
+      "bytes": 173,
+      "sha256": "10bc071eb5762f24b2ea57bed9b9dbb5a628a2e444fdfd49d14595ebd61ab5f4"
+    },
+    {
+      "path": "page-2026-10-21T08-45-49-207Z.yml",
+      "bytes": 3338,
+      "sha256": "04da002b7017739551e63740396cc79264e2f01fc4e4db9dbdb9cf44d8ae2268"
+    },
+    {
+      "path": "page-2026-10-21T08-44-43-325Z.png",
+      "bytes": 109722,
+      "sha256": "cf7ecfe68dde1bfc2142dce4e589119925c6258df1a553993fec41e8e0314c77"
+    },
+    {
+      "path": "page-2026-10-21T08-44-15-536Z.yml",
+      "bytes": 173,
+      "sha256": "6a6172ea9b63c1adcaf760b90cb0e0e9fca57652b239d69edb25158b71617c0a"
+    },
+    {
+      "path": "page-2026-10-21T08-43-35-682Z.yml",
+      "bytes": 2872,
+      "sha256": "3f4d6b211f1eef396026d43eb7ced89556ede36008611229ab8a901989a37bef"
+    },
+    {
+      "path": "page-2026-10-21T08-43-12-911Z.yml",
+      "bytes": 3028,
+      "sha256": "700499bdf73d52a25502b9ac195923cad934b4cc9d8ce0e8dba533b3da35e4f6"
+    },
+    {
+      "path": "page-2026-10-21T08-41-39-032Z.yml",
+      "bytes": 3153,
+      "sha256": "2dcb45c19a8dfad08927d36abf88ff3bea5ae2262b6d6964efeb5b9274bca9d3"
+    },
+    {
+      "path": "page-2026-10-21T08-41-10-169Z.yml",
+      "bytes": 3028,
+      "sha256": "52c334ee69c6491d24931008806446dbe8d6600db42465a4446470eebed8338e"
+    },
+    {
+      "path": "page-2026-10-21T08-40-43-715Z.yml",
+      "bytes": 326,
+      "sha256": "bf6e01c88f9693eea22f979d07600d87c876ddcf19a4ed44a922e4a3067ae5fa"
+    },
+    {
+      "path": "console-2026-10-21T08-44-15-400Z.log",
+      "bytes": 3810,
+      "sha256": "31d7221704ae3c12c9c0ea89b736f481d6c56edad05609d68d48b1bdb3666fa6"
+    },
+    {
+      "path": "console-2026-10-21T08-41-10-028Z.log",
+      "bytes": 658,
+      "sha256": "3ade52fe0e521aa14a6de95a9661c1c515ed16debc374d2e3b5251fae745fb90"
+    },
+    {
+      "path": "page-2026-10-21T08-45-15-165Z.yml",
+      "bytes": 3338,
+      "sha256": "05e13e28ed90145fc392e4b309ec08b546b3b421add1162930c43e13ff1410a3"
+    },
+    {
+      "path": "page-2026-10-21T08-52-00-337Z.yml",
+      "bytes": 8619,
+      "sha256": "287132e59e4120568f701c7df5c8b8855e0ed9cafa5985b0dfa896ae9883d57a"
+    }
+  ]
+}

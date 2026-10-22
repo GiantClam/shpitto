@@ -1,0 +1,6 @@
+{
+  "at": "2026-10-20T04:54:02.961Z",
+  "error": "error: 创建数据库权限不够\n    at D:\\github\\shpitto\\node_modules\\.pnpm\\pg@8.23.0\\node_modules\\pg\\lib\\client.js:694:17\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///D:/github/shpitto/internal/evidence/M3/continuation-20261020/r9/browser-harness.mjs:177:26",
+  "events": [],
+  "errors": []
+}

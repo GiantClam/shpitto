@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "version": "v1",
+  "pages": 27,
+  "search": {
+    "mode": "published-only",
+    "source": "content/docs/v1"
+  }
+}

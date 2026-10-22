@@ -1,0 +1,22 @@
+✔ input image validation decodes a bounded PNG (190.1458ms)
+✔ input image validation rejects signature-only, spoofed, oversized and non-image inputs (185.046ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 525.32
+ℹ start of coverage report
+ℹ ---------------------------------------------------------------------
+ℹ file                 | line % | branch % | funcs % | uncovered lines
+ℹ ---------------------------------------------------------------------
+ℹ src                  |        |          |         | 
+ℹ  modules             |        |          |         | 
+ℹ   assets             |        |          |         | 
+ℹ    validate-input.ts |  97.10 |    86.21 |  100.00 | 59-60
+ℹ ---------------------------------------------------------------------
+ℹ all files            |  97.10 |    86.21 |  100.00 | 
+ℹ ---------------------------------------------------------------------
+ℹ end of coverage report

@@ -1,0 +1,15 @@
+{
+  "trustedRoot": "D:\\github\\_tmp\\shpitto-trusted-20261019-hoisted-r1",
+  "dependencyTreeSha256": "3d28bccfa1df40207524eb0b41853d92d0b58c7383cd6c2e569ce9c80fb490b3",
+  "dependencyLockSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35",
+  "startedAt": "2026-10-19T06:23:46.222Z",
+  "completedAt": "2026-10-19T06:25:09.641Z",
+  "status": "MEASURED",
+  "approval": "NOT_RUN",
+  "install": {
+    "offline": true,
+    "frozenLockfile": true,
+    "ignoreScripts": true,
+    "nodeLinker": "hoisted"
+  }
+}

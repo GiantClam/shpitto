@@ -8,7 +8,7 @@ export class AdminHttpError extends Error {
   }
 }
 
-/** Keep the HTTP status: React-admin uses it to discard revoked permissions. */
+/** Keep the HTTP status so revoked authority can invalidate the current client session. */
 export async function adminRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(url, {...options, credentials: 'same-origin', cache: 'no-store'});
   const payload: unknown = await response.json().catch(() => null);

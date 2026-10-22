@@ -1,0 +1,64 @@
+{
+  "baselineRef": "internal/evidence/m7/local-current-20261019/continuation/baseline-r2/candidate.json",
+  "checks": [
+    {
+      "id": "regression-and-contract-tests",
+      "startedAt": "2026-10-19T06:14:25.001Z",
+      "completedAt": "2026-10-19T06:30:59.980Z",
+      "status": "PASS",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/m7/local-current-20261019/continuation/regression-and-contract-tests-r2-final.log",
+      "tests": 53
+    },
+    {
+      "id": "lint",
+      "startedAt": "2026-10-19T06:14:47.511Z",
+      "completedAt": "2026-10-19T06:14:47.668Z",
+      "status": "PASS",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/m7/local-current-20261019/continuation/lint.log"
+    },
+    {
+      "id": "format",
+      "startedAt": "2026-10-19T06:14:47.669Z",
+      "completedAt": "2026-10-19T06:14:47.804Z",
+      "status": "PASS",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/m7/local-current-20261019/continuation/format.log"
+    },
+    {
+      "id": "docs",
+      "startedAt": "2026-10-19T06:14:47.804Z",
+      "completedAt": "2026-10-19T06:14:47.937Z",
+      "status": "PASS",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/m7/local-current-20261019/continuation/docs.log"
+    },
+    {
+      "id": "release-boundaries",
+      "startedAt": "2026-10-19T06:14:47.938Z",
+      "completedAt": "2026-10-19T06:14:48.251Z",
+      "status": "PASS",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/m7/local-current-20261019/continuation/release-boundaries.log"
+    },
+    {
+      "id": "deployment-preflight",
+      "startedAt": "2026-10-19T06:14:48.252Z",
+      "completedAt": "2026-10-19T06:14:48.374Z",
+      "status": "PASS",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/m7/local-current-20261019/continuation/deployment-preflight.log"
+    },
+    {
+      "id": "typecheck-r2",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/local-current-20261019/continuation/typecheck-r2.log"
+    },
+    {
+      "id": "openspec-r2",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/local-current-20261019/continuation/openspec-r2.json"
+    }
+  ]
+}

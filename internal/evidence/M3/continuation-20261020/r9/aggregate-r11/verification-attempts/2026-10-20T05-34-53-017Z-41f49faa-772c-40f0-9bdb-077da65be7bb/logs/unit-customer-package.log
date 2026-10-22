@@ -1,0 +1,19 @@
+✔ customer package keeps runnable buyer commands without internal evidence tooling (1.8798ms)
+✔ customer package rejects a missing command script or a missing nested command (0.1804ms)
+✔ buyer change validator accepts manifest-only and demands an explicit baseline for evidence (258.2294ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 390.5252
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report

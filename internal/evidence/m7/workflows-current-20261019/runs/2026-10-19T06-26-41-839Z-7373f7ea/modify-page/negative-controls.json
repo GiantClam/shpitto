@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "protectedPathAttempt": {
+    "errors": [
+      "protected path requires engineering-change classification: src/app/api/workspaces/[workspaceId]/billing/checkout/route.ts",
+      "overall workflow requires engineering-change classification: src/app/api/workspaces/[workspaceId]/billing/checkout/route.ts"
+    ],
+    "status": "BLOCKED_BY_SHIPPED_MANIFEST_VALIDATOR"
+  },
+  "overlappingDirtyRollback": {
+    "status": "BLOCKED",
+    "overlaps": [
+      "src/components/billing/fixture-billing-panel.tsx"
+    ],
+    "reason": "Resolve overlapping ownership before applying rollback."
+  }
+}

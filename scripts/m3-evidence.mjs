@@ -1,5 +1,79 @@
-import {existsSync, readdirSync, statSync} from 'node:fs';
+import {existsSync, readFileSync, readdirSync, realpathSync, statSync} from 'node:fs';
 import path from 'node:path';
+
+function containedBy(root, file) {
+  const relativePath = path.relative(root, file);
+  return relativePath !== '..' && !relativePath.startsWith(`..${path.sep}`) && !path.isAbsolute(relativePath);
+}
+
+export function isRetainedM3Artifact(root, reference) {
+  try {
+    const absolute = path.resolve(root, reference);
+    return containedBy(root, absolute)
+      && containedBy(realpathSync(root), realpathSync(absolute))
+      && statSync(absolute).isFile();
+  } catch {
+    return false;
+  }
+}
+
+export function resolveM3VerificationOptions({root, args, env, attemptId}) {
+  let outputArgument;
+  let browserArgument;
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index];
+    const option = argument.split('=', 1)[0];
+    if (['--output', '--browser-evidence'].includes(option)) {
+      const value = argument.includes('=') ? argument.slice(option.length + 1) : args[++index];
+      if (!value?.trim() || value.startsWith('--')) throw new Error(`${option} requires a path.`);
+      if (option === '--output') {
+        if (outputArgument !== undefined) throw new Error('Specify the M3 output directory only once.');
+        outputArgument = value;
+      } else {
+        if (browserArgument !== undefined) throw new Error('Specify the M3 browser evidence only once.');
+        browserArgument = value;
+      }
+    } else if (argument.startsWith('-')) {
+      throw new Error(`Unknown M3 verification option: ${argument}`);
+    } else {
+      if (outputArgument !== undefined) throw new Error('Specify the M3 output directory only once.');
+      if (!argument.trim()) throw new Error('The M3 output directory requires a path.');
+      outputArgument = argument;
+    }
+  }
+  const output = path.resolve(root, outputArgument ?? (env.SHPITTO_M3_OUTPUT?.trim() || `internal/evidence/acceptance/M3/working-tree-${attemptId}`));
+  const browserSelection = browserArgument ?? env.SHPITTO_M3_BROWSER_EVIDENCE?.trim();
+  const browserEvidencePath = browserSelection ? path.resolve(root, browserSelection) : null;
+  if (browserEvidencePath) {
+    if (!containedBy(root, browserEvidencePath) || (existsSync(browserEvidencePath) && !isRetainedM3Artifact(root, browserEvidencePath))) {
+      throw new Error('M3 browser evidence must be retained inside the repository.');
+    }
+  }
+  return {output, browserEvidencePath};
+}
+
+export function assertM3OutputWritable(output) {
+  const recordPath = path.join(output, 'record.json');
+  if (!existsSync(recordPath)) return;
+  let record;
+  try {
+    record = JSON.parse(readFileSync(recordPath, 'utf8'));
+    if (!record || typeof record !== 'object' || Array.isArray(record)) throw new Error('Invalid record.');
+  } catch {
+    throw new Error(`M3 verification cannot read the existing record at ${recordPath}; select a fresh output directory.`);
+  }
+  const reviewed = (decision, actorField, dateField) => decision != null && (
+    typeof decision !== 'object' || Array.isArray(decision)
+    || (decision.decision != null && decision.decision !== 'NOT_RUN')
+    || decision[actorField] != null
+    || decision[dateField] != null
+  );
+  if (record.status === 'PASS'
+    || reviewed(record.independentReview, 'reviewerId', 'reviewedAt')
+    || reviewed(record.integrationDecision, 'integratorId', 'decidedAt')) {
+    throw new Error(`M3 verification will not replace a reviewed or approved record at ${recordPath}; select a fresh output directory.`);
+  }
+}
 
 // M3 owns the local workspace/generation vertical slice. Later milestone
 // adapters and billing/affiliate/operator modules are verified by their own

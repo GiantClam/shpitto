@@ -1,0 +1,27 @@
+Skip to content
+Shpitto
+Home
+Explore
+Create
+Docs
+Log in
+Start creating
+
+LOCAL FIXTURE PORTAL
+
+Billing portal preview
+
+This local portal confirms that the owner handoff works without contacting a real payment provider.
+
+Fixture customer portal
+
+Subscription changes and payment methods are deferred until a real provider account is connected.
+
+Return to workspace
+Shpitto
+
+Give your ideas a little motion.
+
+Explore
+Create a video
+Docs

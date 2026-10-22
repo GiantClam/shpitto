@@ -1,0 +1,32 @@
+✔ four personalization Skills declare the same presentation boundary (1.0371ms)
+✔ presentation paths are editable while business paths are protected (0.2104ms)
+✔ a protected semantic bypass is rejected even when the request is labeled visual (0.1641ms)
+✔ required presentation journeys remain represented in the application (10.1411ms)
+✔ buyer exporter strips trusted frontmatter and preserves release identity (0.8339ms)
+✔ buyer exporter rejects unpublished and secret-bearing pages (0.3767ms)
+✔ current docs source has published metadata on every manifest page (1.3467ms)
+✔ published catalog reads canonical pages and resolves every direct URL (14.2039ms)
+✔ unpublished pages never enter the navigation or full text search (0.6751ms)
+✔ catalog rejects untrusted traversal, release mismatch and executable MDX (0.6358ms)
+✔ relative links stay within the selected published release (7.1261ms)
+✔ skill reference includes invocation, protected boundary and deferred external scope (0.5223ms)
+✔ generated skill pages match the registry and are present in Docs navigation (0.8797ms)
+✔ vendor Docs navigation stays synchronized with the shared source and buyer guides (5.844ms)
+✔ vendor Docs validation rejects navigation drift (3.6967ms)
+✔ release preflight uses positive allowlists and excludes internal/runtime history (138.4925ms)
+✔ release preflight rejects secret-bearing content (129.9899ms)
+✔ catalog contains twelve canonical Skills with required sections (1.4606ms)
+✔ protected paths require engineering classification (0.2122ms)
+✔ evidence rejects stale digests and accepts a complete independent record (0.4949ms)
+✔ rollback blocks overlaps and permits a scoped patch (0.095ms)
+✔ docs manifest exposes published-only versioned sections (3.1486ms)
+✔ docs manifest rejects traversal paths instead of reading outside the release source (2.8156ms)
+✔ fulfillment verifier hashes actual candidate bytes and rejects tampering, identity and path drift (266.7871ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 545.283

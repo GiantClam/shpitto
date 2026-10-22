@@ -21,16 +21,16 @@ Top drivers: (1) minimize the buyer's deployment and customization burden; (2) p
 | Next.js modular monolith + external job runner | One root source product, shared domain code, one transactional database; lowest local/deployment burden. | Module boundaries and worker/web version compatibility need enforcement. | Selected. |
 | Separate API, ledger and worker services | Independent scaling and ownership; useful with multiple backend teams. | Distributed authorization, contracts, deployment and transaction coordination without a current scale requirement. | Preserve adapter seams; no V1 service split. |
 | Payload-led backend and admin | Excellent when editors, drafts, media and publishing workflows dominate operations. | Adds backend/auth/schema/API ownership alongside Better Auth and Drizzle; current operations center on payments, tasks and credits. | No Payload runtime in V1. |
-| Refine Core + custom admin components | Flexible headless administration and consistent product component styling. | More list/form/interaction assembly than React-admin for the agreed operational scope. | No Refine runtime in V1. |
+| Refine Core + custom admin components | Flexible headless administration and consistent product component styling. | More list/form/interaction assembly than the project-owned primitives needed for the template scope. | No Refine runtime in V1. |
 
-React-admin OSS owns admin presentation. Better Auth owns account authentication. Drizzle owns application migrations. Domain services own authorization, task transitions and financial commands. Fumadocs renders source-controlled developer documentation. No framework gains generic write access to the financial or generation tables.
+The delivered image and video templates use project-owned shadcn/ui primitives and application-owned administration routes. `shadcn-admin` is a page-structure and information-architecture reference only; it is not a runtime or complete application dependency. Better Auth owns account authentication. Drizzle owns application migrations. Domain services own authorization, task transitions and financial commands. Fumadocs renders source-controlled developer documentation. No framework gains generic write access to the financial or generation tables.
 
 ### 1.2 Deployment components
 
 ```mermaid
 flowchart LR
   Browser --> Web[Next.js web / internal APIs]
-  Admin[React-admin client] --> Web
+  Admin[Project-owned admin client] --> Web
   Web --> Domain[Domain services]
   Domain --> DB[(PostgreSQL)]
   Pump[Trigger scheduled outbox pump] --> DB
@@ -59,7 +59,7 @@ The no-cloud profile replaces Trigger with a persistent local worker, providers 
 | Database | PostgreSQL 17; upstream patch 17.11 | Same major locally and on Neon; managed patch revisions belong to Neon. No PG18-only feature is needed. |
 | Data access | drizzle-orm 0.45.3; drizzle-kit 0.31.11; pg 8.23.0 | `node-postgres` interactive transactions; one reviewed SQL migration sequence. |
 | Identity | better-auth and @better-auth/drizzle-adapter 1.7.6 | Reuse sessions, email/password, verification/reset and two-factor plugin. Domain owns minimal workspaces/members/invites; no unproven shared Organization-plugin transaction. |
-| Operator UI | react-admin 5.15.4, OSS core | Ready lists/forms/filtering/navigation, custom auth/data providers; MUI/Emotion confined to `/admin`. No Enterprise packages required. |
+| Operator UI | Project-owned shadcn/ui-style primitives and admin composites | Editable source for lists/forms/filtering/navigation, with `shadcn-admin` used only as a page-structure reference. No MUI, Emotion, hosted admin runtime or additional UI dependency is required. |
 | Product UI | tailwindcss and @tailwindcss/postcss 4.3.3; shadcn CLI 4.21.0 | Deliver reviewed component source. Record registry source revision/hash plus notices; a pinned CLI alone does not freeze fetched components. |
 | Docs | fumadocs-core/ui 16.15.14; fumadocs-mdx 15.4.5 | Public source-controlled versioned MDX, static search and shared export content; no runtime CMS. |
 | Schemas | zod 4.6.5 | Request/config contracts, consistent DTO validation and generated interface documentation. |
@@ -71,7 +71,7 @@ The no-cloud profile replaces Trigger with a persistent local worker, providers 
 | Models | Four Wan 2.2 endpoints on Replicate and fal.ai | Section 10 pins provider/mode schema contracts. Provider diversity is delivered; model-family diversity is not a V1 promise. |
 | Verification toolchain | ESLint flat config, TypeScript compiler, Vitest, Playwright, dependency/license scan | Tool choices selected; resolve their compatible exact dev-package patches with the first frozen lockfile. A patch-resolution task is not an unresolved product architecture. |
 
-Compatibility evidence: Better Auth accepts the selected Drizzle 0.45.x pair; its adapter declares `drizzle-orm ^0.45.2`. React-admin supports React 19. Fumadocs UI/Core versions match, target Next 16 and React `^19.2.0`, and MDX accepts Core `^16.15.3`. These declarations support the choice but do not prove the assembled product. [Better Auth metadata](https://registry.npmjs.org/better-auth/1.7.6), [adapter metadata](https://registry.npmjs.org/@better-auth%2fdrizzle-adapter/1.7.6), [React-admin metadata](https://registry.npmjs.org/react-admin/5.15.4), [Fumadocs Core metadata](https://registry.npmjs.org/fumadocs-core/16.15.14), [MDX metadata](https://registry.npmjs.org/fumadocs-mdx/15.4.5).
+Compatibility evidence: Better Auth accepts the selected Drizzle 0.45.x pair; its adapter declares `drizzle-orm ^0.45.2`. Fumadocs UI/Core versions match, target Next 16 and React `^19.2.0`, and MDX accepts Core `^16.15.3`. The administration foundation is source-owned and dependency-free; its local primitives are verified by the project typecheck and focused tests. These declarations and checks support the choice but do not prove every assembled profile. [Better Auth metadata](https://registry.npmjs.org/better-auth/1.7.6), [adapter metadata](https://registry.npmjs.org/@better-auth%2fdrizzle-adapter/1.7.6), [Fumadocs Core metadata](https://registry.npmjs.org/fumadocs-core/16.15.14), [MDX metadata](https://registry.npmjs.org/fumadocs-mdx/15.4.5).
 
 ### Deployment baseline
 
@@ -88,13 +88,13 @@ Use pooled Neon connections for normal interactive transactions and a direct con
 
 | Decision | Fair alternative and advantage | Why selected / accepted cost |
 | --- | --- | --- |
-| React-admin OSS | Refine preserves a single shadcn design system with headless providers. | Ready operator screens save more assembly; accept a separate MUI admin visual layer. No UI-only authorization. |
-| React-admin OSS | Payload provides mature content editing, drafts, publishing, generated APIs and backend facilities. | V1 operations are domain commands, while Docs are versioned source. Avoid a second schema/auth owner and custom CMS operational views. Reconsider only when content workflows become actual requirements. |
+| Project-owned shadcn/ui-style foundation | React-admin or Refine provide ready administration screens. | Buyer customization requires editable source and one visual language across template surfaces; the required resource patterns are small enough to own while keeping server authority unchanged. |
+| Project-owned shadcn/ui-style foundation | Payload provides mature content editing, drafts, publishing, generated APIs and backend facilities. | V1 operations are domain commands, while Docs are versioned source. Avoid a second schema/auth owner and custom CMS operational views. Reconsider only when content workflows become actual requirements. |
 | Fumadocs/MDX | Payload CMS enables non-developer authoring. | Developer-targeted versioned APIs/Skills benefit from code review and release-aligned source. MDX is trusted repository source, never arbitrary user input evaluated at runtime. |
 | Modular monolith | Separate API/ledger services isolate deployment and scaling. | Buyers need a small reproducible deployment; retain extraction seams without distributed financial transactions. |
 | Domain-owned workspace records | Better Auth Organization plugin supplies reusable teams/invitations. | Minimal owner/member scope needs atomic last-owner, personal-workspace and billing invariants. Do not rely on before-hooks across unrelated transactions; reuse auth while implementing only these bounded domain rules. |
 
-React-admin's official Next integration is client-only; load it from a client boundary with SSR disabled. Fumadocs provides MDX compilation. Copying Next standalone output must explicitly include `public` and `.next/static`. [React-admin Next](https://marmelab.com/react-admin/NextJs.html), [Fumadocs MDX](https://www.fumadocs.dev/docs/mdx), [Next standalone](https://nextjs.org/docs/app/api-reference/config/next-config-js/output).
+The administration client is loaded from an application-owned client boundary. Fumadocs provides MDX compilation. Copying Next standalone output must explicitly include `public` and `.next/static`. [Fumadocs MDX](https://www.fumadocs.dev/docs/mdx), [Next standalone](https://nextjs.org/docs/app/api-reference/config/next-config-js/output).
 
 Node 24 and PG17 are maintained release lines at the research date; the exact runtime patch accepted by each managed host is recorded in deployment evidence. [Node releases](https://nodejs.org/en/about/previous-releases), [PostgreSQL support](https://www.postgresql.org/support/versioning/), [TypeScript 6](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-6-0.html).
 
@@ -399,9 +399,9 @@ All monetary/business POST commands require `Idempotency-Key` (UUID or bounded 8
 | POST `/api/admin/commands/:command` | `{targetId,reason,expectedVersion,payload}`→result | Command permission + recent2FA + idempotency + atomic audit. |
 | GET `/api/health/{live,ready}` | Minimal health status | No secret/config values; ready checks schema/DB; integration details only admin. |
 
-React-admin `getList` maps page/perPage/sort/filter to the list contract and returns `{data,total}`. `getOne/getMany/getManyReference` use read endpoints with bounded ID lists/filters. Unsupported `create/update/updateMany/delete/deleteMany` fail locally and on the server for protected resources. Custom action buttons call named commands. There is no generic PATCH of task status, ledger balance or subscription entitlement.
+The application-owned resource adapter maps page/perPage/sort/filter to the list contract and preserves bounded partial pagination. Workspace detail and recovery reads require an explicit access purpose. Unsupported generic writes fail locally; protected changes use named commands. Custom action controls preserve reason, expected version, idempotency, stale-version, duplicate-retry and forbidden outcomes. There is no generic PATCH of task status, ledger balance or subscription entitlement.
 
-`authProvider.checkAuth/getIdentity/getPermissions` uses the real Better Auth session and `GET /api/admin/me` (session, current global role and step-up validity). Client permissions improve usability only; server queries/commands recheck DB role and second-factor freshness. RA field sorting/filter names are mapped through a fixed allowlist; never interpolate client column names into SQL.
+The client auth adapter uses the real Better Auth session and `GET /api/admin/me` (session, current global role and step-up validity). Client permissions improve usability only; server queries/commands recheck DB role and second-factor freshness. Field sorting/filter names are mapped through a fixed allowlist; never interpolate client column names into SQL.
 
 ## 9. Billing, identity, permissions and audit
 
@@ -713,7 +713,7 @@ Health liveness checks process reachability; readiness checks DB/schema and conf
 | M3 — complete Mock slice | Generation state machine, local worker/outbox/inbox, asset adapter/UI | Persistent signup→workspace→Mock success/failure/cancel→download; restart/unknown/crash cases. |
 | M4 — real video | Replicate/fal adapters, catalog, Trigger entrypoints, durable ingestion | All four real provider/mode rows; verified callbacks/status; bounded unknown and materialization recovery. |
 | M5 — Stripe | Checkout/portal/webhooks, orders/subscriptions/grants/recovery | Test-mode subscription/pack/replay/out-of-order/refund/dispute; no browser-return grants. Can run parallel to M4 after M3 contracts. |
-| M6 — operations/affiliate | React-admin resources/data/auth providers, named commands, affiliate adapter | Negative privilege checks, atomic audit, workspace-first-payment reporting and supported payout-review walkthrough. |
+| M6 — operations/affiliate | Project-owned admin resources/capabilities, named commands, affiliate adapter | Negative privilege checks, atomic audit, workspace-first-payment reporting and supported payout-review walkthrough. |
 | M7 — governed Skills/Docs | Twelve Skills, trusted validator/export contract, MDX/API references | Representative customization + negative bypass cases; release-matched tutorials and all12Skill pages. |
 | M8 — deliverable release | Managed/Docker guides, clean export, customer repo package, vendor Docs/sales | Fresh exported deployment; licenses/secrets/history inspection; restore drill; real integration evidence; Beta/stable gates. |
 
@@ -735,14 +735,14 @@ Keep each implementation change reviewable by domain or vertical slice. Shared s
 | Imagined failure | Leading signal | Design response and release proof |
 | --- | --- | --- |
 | Retry creates duplicate provider spend or credits never return | Unknown attempt is treated as retryable HTTP failure; ledger lacks allocation lineage. | Single persisted dispatch, finite recovery, terminal refund transaction; crash/race/expiry tests and real provider ambiguity evidence. |
-| Admin or visual Skill bypasses business rules | Writable generic ledger endpoint; presentation replaces real checkout with mock; candidate disables its own checks. | Read-only RA resources, named audited commands, trusted external baseline/digest and negative semantic customization cases. |
+| Admin or visual Skill bypasses business rules | Writable generic ledger endpoint; presentation replaces real checkout with mock; candidate disables its own checks. | Read-only resource views, named audited commands, trusted external baseline/digest and negative semantic customization cases. |
 | Customer package leaks vendor state or cannot run independently | Broad copy, private package references, local-only ignored config. | Allowlisted export, new customer history, secret/license scan and fresh exported deployment. |
 
 ## 14. ADR and execution handoff
 
-**Decision:** root Next.js modular monolith; PostgreSQL/Drizzle transactional domain; Better Auth authentication; React-admin OSS operations; Fumadocs source-controlled Docs; Trigger production jobs with a persistent local demo driver; two real provider adapters; optional third-party affiliate service. The source package and vendor sales business have separate dependency, data and delivery boundaries.
+**Decision:** root Next.js modular monolith; PostgreSQL/Drizzle transactional domain; Better Auth authentication; project-owned shadcn/ui-style operations for the delivered image and video templates; Fumadocs source-controlled Docs; Trigger production jobs with a persistent local demo driver; two real provider adapters; optional third-party affiliate service. The source package and vendor sales business have separate dependency, data and delivery boundaries.
 
-**Drivers:** source-product simplicity, paid asynchronous correctness, mature open-source reuse. **Alternatives considered:** separate services, Payload-led backend, Refine headless admin and wholesale legacy extraction. **Why chosen:** reuses general infrastructure while keeping one ledger/state/authorization authority and the already confirmed D15 baseline. **Consequences:** two UI systems are accepted (product shadcn, admin MUI); custom domain commands and integration verification remain necessary; no CMS publishing workflow or generic admin CRUD over protected data. **Follow-ups:** verify compatibility/license/account prerequisites, implement the contracts, collect T01–T62 evidence and document any evidence-driven deviation.
+**Drivers:** source-product simplicity, buyer-owned customization, paid asynchronous correctness and mature open-source patterns without a hosted runtime. **Alternatives considered:** separate services, Payload-led backend, React-admin, Refine headless admin and wholesale legacy extraction. **Why chosen:** reuse the shadcn/ui composition model and shadcn-admin page structure while keeping one ledger/state/authorization authority and the already confirmed D15 baseline. **Consequences:** the template owns a small editable admin foundation and must verify common resource patterns; custom domain commands and integration verification remain necessary; no CMS publishing workflow or generic admin CRUD over protected data. **Follow-ups:** collect T01–T62 evidence and document any evidence-driven deviation.
 
 | Execution responsibility | Suggested native-agent role | Reasoning / boundary |
 | --- | --- | --- |

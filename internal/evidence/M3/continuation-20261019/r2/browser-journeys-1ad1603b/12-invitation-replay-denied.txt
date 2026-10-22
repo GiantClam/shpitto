@@ -1,0 +1,30 @@
+Skip to content
+Shpitto
+Home
+Explore
+Create
+Docs
+Log in
+Start creating
+
+TEAM INVITATION
+
+Join a workspace
+
+Sign in with the invited email before accepting. Expired and mismatched tokens are rejected server-side.
+
+Invitation token
+
+Sign in with the invited account first. Open sign in.
+
+Accept invitation
+
+Invitation is invalid or expired.
+
+Shpitto
+
+Give your ideas a little motion.
+
+Explore
+Create a video
+Docs

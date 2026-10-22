@@ -4,6 +4,7 @@ import {commandKey, assertSameOrigin, currentWorkspaceActor, readJson, workspace
 import {getAuthDatabase} from '../../../../../lib/auth.ts';
 import {adjustWorkspaceCredits, disableOperatorUser, setOperatorRole, setWorkspaceAdminStatus} from '../../../../../modules/operations/commands.ts';
 import {requestBillingRefundAsOperator} from '../../../../../modules/billing/refund-command.ts';
+import {getBillingRefundRuntime} from '../../../../../modules/billing/runtime.ts';
 
 export async function POST(request: Request, context: {params: Promise<{command: string}>}) {
   try {
@@ -21,7 +22,7 @@ export async function POST(request: Request, context: {params: Promise<{command:
     if (typeof reason !== 'string' || !Number.isSafeInteger(expectedVersion) || expectedVersion < 0) return NextResponse.json({error: 'reason and nonnegative expectedVersion are required.'}, {status: 400});
     if (command === 'refund') {
       if (typeof body.workspaceId !== 'string' || typeof body.orderId !== 'string' || typeof reason !== 'string' || typeof body.purpose !== 'string' || (body.amountMinor !== undefined && (typeof body.amountMinor !== 'string' || !/^[0-9]+$/.test(body.amountMinor)))) return NextResponse.json({error: 'workspaceId, orderId, reason and purpose are required.'}, {status: 400});
-      const result = await requestBillingRefundAsOperator(db, {actor, workspaceId: body.workspaceId, orderId: body.orderId, expectedVersion, amountMinor: body.amountMinor === undefined ? undefined : BigInt(body.amountMinor), idempotencyKey, reason, purpose: body.purpose});
+      const result = await requestBillingRefundAsOperator(db, {actor, workspaceId: body.workspaceId, orderId: body.orderId, expectedVersion, amountMinor: body.amountMinor === undefined ? undefined : BigInt(body.amountMinor), idempotencyKey, reason, purpose: body.purpose, ...getBillingRefundRuntime(db)});
       return NextResponse.json({...result, amountMinor: result.amountMinor.toString()});
     }
     if (command === 'role') {

@@ -1,0 +1,16 @@
+{
+  "status": "PASS",
+  "protectedPathAttempt": {
+    "errors": [
+      "protected path requires engineering-change classification: src/app/api/workspaces/[workspaceId]/billing/checkout/route.ts"
+    ],
+    "status": "BLOCKED_BY_SHIPPED_MANIFEST_VALIDATOR"
+  },
+  "overlappingDirtyRollback": {
+    "status": "BLOCKED",
+    "overlaps": [
+      "src/config/navigation.ts"
+    ],
+    "reason": "Resolve overlapping ownership before applying rollback."
+  }
+}

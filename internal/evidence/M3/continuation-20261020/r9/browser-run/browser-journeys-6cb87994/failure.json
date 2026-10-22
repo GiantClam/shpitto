@@ -1,0 +1,6 @@
+{
+  "at": "2026-10-20T04:50:28.697Z",
+  "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 'c5007becda43c90c1b61c31cfbcd8a5a42182f2b76edde8b7f1684cddfdf2717'\n- 'd6b6599ea4abf39adfe3bf783c5f9588e822b9b0f4f8668d51a6938c6531012a'\n\n    at file:///D:/github/shpitto/internal/evidence/M3/continuation-20261020/r9/browser-harness.mjs:175:55\n    at ModuleJob.run (node:internal/modules/esm/module_job:437:25)\n    at async node:internal/modules/esm/loader:639:26\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)",
+  "events": [],
+  "errors": []
+}

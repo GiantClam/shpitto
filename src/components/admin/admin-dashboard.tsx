@@ -1,70 +1,24 @@
 'use client';
 
-import {useEffect, useMemo, useState} from 'react';
+import {Badge} from '../ui/badge';
+import {Card, CardContent, CardHeader} from '../ui/card';
+import type {AdminCapabilityManifest, OperatorRole} from '../../admin/capabilities';
 
-type Tab = 'workspaces' | 'users' | 'generations' | 'billing' | 'audit';
-type Page = Readonly<{items: readonly Record<string, unknown>[]; page: number; pageSize: number; hasMore: boolean}>;
-
-const tabs: readonly {id: Tab; label: string; endpoint: string}[] = [
-  {id: 'workspaces', label: 'Workspaces', endpoint: '/api/admin/workspaces'},
-  {id: 'users', label: 'Users', endpoint: '/api/admin/users'},
-  {id: 'generations', label: 'Generations', endpoint: '/api/admin/generations'},
-  {id: 'billing', label: 'Billing', endpoint: '/api/admin/billing'},
-  {id: 'audit', label: 'Audit', endpoint: '/api/admin/audit'},
-];
-
-function display(value: unknown): string {
-  if (value === null || value === undefined) return '—';
-  if (typeof value === 'object') return JSON.stringify(value);
-  return String(value);
-}
-
-export function AdminDashboard() {
-  const [tab, setTab] = useState<Tab>('workspaces');
-  const [page, setPage] = useState<Page | null>(null);
-  const [role, setRole] = useState<string>('');
-  const [error, setError] = useState<string>('');
-  const endpoint = useMemo(() => tabs.find((item) => item.id === tab)?.endpoint ?? tabs[0].endpoint, [tab]);
-
-  useEffect(() => {
-    let active = true;
-    setError('');
-    Promise.all([fetch('/api/admin/me'), fetch(endpoint + '?page=1&pageSize=25')]).then(async ([meResponse, pageResponse]) => {
-      const me = await meResponse.json() as {role?: string; error?: string};
-      const next = await pageResponse.json() as Page & {error?: {message?: string}};
-      if (!active) return;
-      if (!meResponse.ok || !pageResponse.ok) throw new Error(next.error?.message ?? me.error ?? 'The admin data could not be loaded.');
-      setRole(me.role ?? '');
-      setPage(next);
-    }).catch((reason: unknown) => {
-      if (active) { setPage(null); setError(reason instanceof Error ? reason.message : 'The admin data could not be loaded.'); }
-    });
-    return () => { active = false; };
-  }, [endpoint]);
-
-  const columns = page?.items[0] ? Object.keys(page.items[0]) : [];
-  return (
-    <section className="admin-dashboard" aria-label="Operations data">
-      <div className="admin-toolbar">
-        <div>
-          <p className="admin-eyebrow">Current role</p>
-          <strong>{role || 'Unavailable'}</strong>
-        </div>
-        <div className="admin-tabs" role="tablist" aria-label="Admin resources">
-          {tabs.map((item) => <button key={item.id} type="button" role="tab" aria-selected={tab === item.id} onClick={() => setTab(item.id)}>{item.label}</button>)}
-        </div>
-      </div>
-      {error ? <p role="alert" className="status-card status-card-error">{error}</p> : null}
-      {!error && !page ? <p className="status-card">Loading operational data…</p> : null}
-      {page ? (
-        <div className="admin-table-wrap">
-          <table className="admin-table">
-            <thead><tr>{columns.map((column) => <th key={column} scope="col">{column}</th>)}</tr></thead>
-            <tbody>{page.items.map((row, index) => <tr key={String(row.id ?? index) + '-' + index}>{columns.map((column) => <td key={column}>{display(row[column])}</td>)}</tr>)}</tbody>
-          </table>
-          {page.items.length === 0 ? <p className="status-card">No records match this view.</p> : null}
-        </div>
-      ) : null}
-    </section>
-  );
+export function AdminDashboard({role, capabilities, onOpenResource}: Readonly<{
+  role: OperatorRole | null;
+  capabilities: AdminCapabilityManifest;
+  onOpenResource: (resource: 'workspaces' | 'users' | 'generations' | 'billing' | 'audit') => void;
+}>) {
+  const supportedVariantCapabilities = Object.values(capabilities.capabilities).filter((capability) => capability.runtimeSupported);
+  const contractOnlyCapabilities = Object.values(capabilities.capabilities).filter((capability) => !capability.runtimeSupported);
+  return <div className="admin-overview">
+    <div className="admin-page-heading"><div><p className="admin-eyebrow">Operations overview</p><h1>Review the system with context</h1><p>Every read is session-bound and server-authorized. Protected changes stay behind named commands, reason capture, expected versions and idempotency.</p></div><Badge variant={role === 'superadmin' ? 'accent' : 'neutral'}>{role ?? 'checking role'}</Badge></div>
+    <div className="admin-metric-grid">
+      {(['workspaces', 'users', 'generations', 'billing', 'audit'] as const).map((resource) => <button key={resource} className="admin-metric-card" type="button" onClick={() => onOpenResource(resource)}><span>{resource === 'generations' ? 'Generation tasks' : resource[0].toUpperCase() + resource.slice(1)}</span><strong>Open view</strong><small>Server-backed, bounded read</small></button>)}
+    </div>
+    <div className="admin-overview-grid">
+      <Card><CardHeader><p className="admin-eyebrow">Template capability</p><h2>{capabilities.templateLabel}</h2></CardHeader><CardContent><p>Shared administration modules are declared once and variant controls are selected by this manifest.</p><ul className="admin-capability-list"><li><Badge variant="success">Available</Badge> {supportedVariantCapabilities.length} runtime-backed media {supportedVariantCapabilities.length === 1 ? 'capability' : 'capabilities'}</li><li><Badge variant="neutral">Common</Badge> {capabilities.commonModules.length} shared operational modules</li>{Object.values(capabilities.capabilities).map((capability) => <li key={capability.id}><Badge variant={capability.runtimeSupported ? 'success' : 'warning'}>{capability.runtimeSupported ? 'Available' : 'Withheld'}</Badge><span><strong>{capability.label}</strong>{capability.fields.length ? ` · fields: ${capability.fields.join(', ')} · actions: ${capability.actions.join(', ')}` : ` · ${capability.note}`}</span></li>)}</ul></CardContent></Card>
+      <Card><CardHeader><p className="admin-eyebrow">Authority boundary</p><h2>Server outcomes are the source of truth</h2></CardHeader><CardContent><ul className="admin-capability-list"><li>Better Auth owns the session.</li><li>Global operator roles are checked on every request.</li><li>Allowlisted reads and named commands own data access.</li><li>Audit, idempotency, transactions and migrations remain outside the UI layer.</li></ul></CardContent></Card>
+    </div>
+  </div>;
 }

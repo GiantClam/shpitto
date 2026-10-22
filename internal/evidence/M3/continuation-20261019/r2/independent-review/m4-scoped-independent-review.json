@@ -1,0 +1,148 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "M4_SCOPED_APPLICABILITY_REVIEW",
+  "stageId": "M4",
+  "candidateId": "r2-current-20261019",
+  "reviewerId": "codex-independent-reviewer-r2-20261019",
+  "reviewedAt": "2026-10-19T07:21:48Z",
+  "independentFromImplementer": true,
+  "implementerIdsReviewed": ["m4-implementation-owner-20261017", "codex-m3-evidence"],
+  "candidateDigests": {
+    "sourceTreeSha256": "e5cf13a5d4af7747fcb83bc10e940e73e731570a0df4dd6361aaced0890a71be",
+    "schemaSha256": "7560a6a5b059bb33a47e7afa878826d73cf57f05a3a6a6f5ffa1ff2eb7f08d0f",
+    "configurationSha256": "07533fb94ecce587a9ae2639c857fea11c837303a119505715ff703013b985cd",
+    "contractSha256": "b9b18ecc7f944962df5880e4a0ffa255f2ea1621787cbc623c80e6ce588387b6",
+    "validatorSha256": "e77e8954b8fb3774d56454f92fef306e8a213cb2515a2ca7eceb5a8fec1d7dbf",
+    "lockfileSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35"
+  },
+  "candidateDigestRefs": [
+    "internal/evidence/m7/local-current-20261019/continuation/baseline-r2/candidate.json",
+    "internal/evidence/M3/continuation-20261019/r2/candidate-after-browser-attempt2/candidate.json",
+    "internal/evidence/M3/continuation-20261019/r2/automated/record.json"
+  ],
+  "decision": "PASS",
+  "decisionScope": "SCOPED_APPLICABILITY_ONLY",
+  "stageAcceptanceDecision": "NOT_RUN",
+  "historicalM4PassPromoted": false,
+  "historicalComparison": {
+    "baselineRecordRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261017/record.json",
+    "baselineCandidateRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261017/candidate.json",
+    "baselineFootprintRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261017/digest-footprints.json",
+    "baselineIndependentReviewRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261017/independent-review.json",
+    "baselineIntegratorRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261017/integrator.json",
+    "baselineHistoricalStatus": "PASS",
+    "baselineHistoricalStatusPreserved": true,
+    "baselineCandidateDigests": {
+      "sourceTreeSha256": "5b1aca204c1c44d031e9d2e36b104333ae8332552ceac1c11d09fa3549831d48",
+      "schemaSha256": "7560a6a5b059bb33a47e7afa878826d73cf57f05a3a6a6f5ffa1ff2eb7f08d0f",
+      "configurationSha256": "dc1d37d6189d092403ee351b5be78b20baf8aa44eeb29c4522a084af4c34cc2e",
+      "contractSha256": "356e6607d07fe741599e0a91119f005f5cb60af990c5f081e95fb93a2bda33e1",
+      "validatorSha256": "d32ba3904c43c006a674c0d06b25a38c28591279da037486741731a72e79bf08",
+      "lockfileSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35"
+    }
+  },
+  "equivalenceChecks": {
+    "allSixCurrentDigestsMatchR2Baseline": true,
+    "historicalFootprintIntegrityVerified": true,
+    "providerAdapters": {"status": "BYTE_IDENTICAL", "count": 13},
+    "storageAdapters": {"status": "BYTE_IDENTICAL", "count": 7},
+    "generationDomain": {"status": "BYTE_IDENTICAL", "count": 11},
+    "currentM3OwnedModules": {"status": "BYTE_IDENTICAL", "count": 39},
+    "providerContracts": {"status": "BYTE_IDENTICAL", "count": 6},
+    "schemaAndMigrations": {"status": "BYTE_IDENTICAL", "count": 49},
+    "deploymentAndWorkflow": {"status": "BYTE_IDENTICAL", "count": 7},
+    "providerWorkerScripts": {"status": "BYTE_IDENTICAL", "count": 3},
+    "lockfile": {"status": "BYTE_IDENTICAL"},
+    "configurationDifference": ["tooling/lint-policy.json"],
+    "r1ToR2Impact": {
+      "changedPathCount": 4,
+      "changedPaths": [
+        "scripts/validate-change.ts",
+        ".shpitto/contracts/protected-paths.json",
+        "tests/unit/governed-skills.test.ts",
+        "tests/unit/customer-package.test.ts"
+      ],
+      "applicationRuntimeByteIdentical": true,
+      "schemaByteIdentical": true,
+      "configurationByteIdentical": true,
+      "lockfileByteIdentical": true,
+      "affectedRegressionPassCount": 58,
+      "affectedRegressionFailCount": 0
+    },
+    "localContractRun": {
+      "passed": 234,
+      "failed": 0,
+      "skipped": 0,
+      "evidenceRef": "internal/evidence/M3/continuation-20261019/m4-local-contracts.log"
+    }
+  },
+  "carryForwardScopes": [
+    "The four previously retained live provider rows, restricted to their original provider accounts, model versions, request mappings and declared cost limitations.",
+    "The retained private R2 lifecycle evidence, restricted to its original private-storage policy, account binding, model/version mapping and deployment profile.",
+    "Selected retained self-hosted recovery evidence, restricted to the original worker/runtime deployment profile and its declared recovery limitations.",
+    "The 13 provider adapter files, seven storage adapter files, 11 generation-domain modules, 39 current M3-owned modules, six provider contract files, 49 schema/migration files, seven deployment/workflow files and three provider-worker scripts verified byte-identical by footprint-comparison.json.",
+    "The exact r2 lockfile and unchanged dependency boundary."
+  ],
+  "excludedChangedPaths": [
+    "src/app/(app)/dashboard/generation-panel.tsx",
+    "src/app/(app)/dashboard/page.tsx",
+    "src/app/(app)/dashboard/team/page.tsx",
+    "src/app/(app)/workspaces/[w]/billing/page.tsx",
+    "src/app/(app)/workspaces/[w]/settings/members/page.tsx",
+    "src/app/(app)/workspaces/new/page.tsx",
+    "src/app/(marketing)/page.tsx",
+    "src/app/creator-qa-check/page.tsx",
+    "src/app/globals.css",
+    "src/app/layout.tsx",
+    "src/components/creation/creator-home.tsx",
+    "src/components/creation/examples.ts",
+    "src/components/creation/media-icon.tsx",
+    "src/components/generation/creation-draft.ts",
+    "src/components/generation/crop-consent.ts",
+    "src/components/generation/input-crop.tsx",
+    "src/components/shell/site-shell.tsx",
+    "src/config/brand.ts",
+    "src/config/navigation.ts"
+  ],
+  "excludedPathPolicy": "No backend, provider, storage, schema, deployment or financial equivalence is asserted for the 19 changed UI, component and brand paths. Fresh current-candidate M3 automation and browser evidence are required for their behavior.",
+  "historicalLimitationsPreserved": [
+    "AWS S3 live connectivity is outside the retained scope.",
+    "Production email is outside the retained scope.",
+    "Commercial readiness and merchant/commercial authorization are outside the retained scope.",
+    "Stripe transactions and FirstPromoter evidence are outside the retained scope.",
+    "Historical anomalous-balance recovery is outside the retained scope.",
+    "Further paid provider generation is outside the retained scope.",
+    "Current remote service availability and provider-account state were not inspected by this bounded local review.",
+    "No paid or cloud provider calls, live rows, remote deployments or production changes were executed by this review.",
+    "Later release labels are not established by this review."
+  ],
+  "evidenceRefs": [
+    "internal/evidence/M3/continuation-20261019/r2/m4-applicability-recommendation.md",
+    "internal/evidence/M3/continuation-20261019/r2/footprint-comparison.json",
+    "internal/evidence/M3/continuation-20261019/r2/r1-to-r2-impact.json",
+    "internal/evidence/M3/continuation-20261019/r2/affected-regressions.log",
+    "internal/evidence/M3/continuation-20261019/m4-local-contracts.log",
+    "internal/evidence/M3/continuation-20261019/r2/current-evidence-assessment-attempt2.json",
+    "internal/evidence/M3/continuation-20261019/r2/automated/record.json",
+    "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/walkthrough.json",
+    "internal/evidence/acceptance/M4/m4-self-hosted-20261017/record.json",
+    "internal/evidence/acceptance/M4/m4-self-hosted-20261017/candidate.json",
+    "internal/evidence/acceptance/M4/m4-self-hosted-20261017/digest-footprints.json",
+    "internal/evidence/acceptance/M4/m4-self-hosted-20261017/independent-review.json",
+    "internal/evidence/acceptance/M4/m4-self-hosted-20261017/integrator.json",
+    "internal/evidence/M4/provider-matrix.md",
+    "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/result.json",
+    "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/local-verification/coverage.json",
+    "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-execution-20261017.json",
+    "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/recovery-drill-20261017.md",
+    "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log"
+  ],
+  "limitations": [
+    "This is an applicability assessment only and is not an M4 acceptance decision.",
+    "The historical M4 PASS is not promoted, rewritten or reused as a current r2 PASS.",
+    "This review grants no release, commercial or production approval."
+  ],
+  "releaseApproval": false,
+  "commercialApproval": false,
+  "productionApproval": false
+}

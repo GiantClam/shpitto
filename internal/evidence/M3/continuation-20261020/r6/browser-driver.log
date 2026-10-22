@@ -1,0 +1,14 @@
+fresh-user-signup-and-email-verification
+personal-workspace-created
+application-worker-restart
+private-download
+team-creation
+locator.waitFor: Error: strict mode violation: getByRole('alert') resolved to 2 elements:
+    1) <p role="alert">The workspace does not have enough available cred…</p> aka getByText('The workspace does not have')
+    2) <div role="alert" aria-live="assertive" id="__next-route-announcer__"></div> aka locator('[id="__next-route-announcer__"]')
+
+Call log:
+[2m  - waiting for getByRole('alert') to be visible[22m
+
+    at D:\github\shpitto\internal\evidence\M3\continuation-20261020\r6\browser-harness.mjs:240:1422
+Evidence: internal/evidence/M3/continuation-20261020/r6/browser-run/browser-journeys-6fd93793

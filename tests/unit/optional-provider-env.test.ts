@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {getServerEnv} from '../../src/config/env.ts';
+import {getRuntimeProfile, getServerEnv} from '../../src/config/env.ts';
 import {getProviderModel} from '../../src/config/provider-models.ts';
 import {createReplicateProvider} from '../../src/adapters/providers/replicate/index.ts';
 import {createFalProvider} from '../../src/adapters/providers/fal/index.ts';
@@ -84,5 +84,18 @@ test('acceptance profile is explicit and does not change production catalog beha
     assert.equal(getServerEnv().runtimeProfile, 'acceptance');
   } finally {
     for (const [key, value] of Object.entries(previous)) { if (value === undefined) delete process.env[key]; else process.env[key]=value; }
+  }
+});
+
+test('explicit local profile survives a production Next standalone runtime', () => {
+  const keys = ['NODE_ENV', 'SHPTITTO_RUNTIME_PROFILE', 'APP_URL', 'DATABASE_URL', 'BETTER_AUTH_SECRET', 'STORAGE_DRIVER', 'GENERATION_DRIVER', 'MAIL_DRIVER', 'BILLING_WEBHOOK_SECRET'];
+  const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+  try {
+    Object.assign(process.env, {NODE_ENV: 'production', SHPTITTO_RUNTIME_PROFILE: 'local', APP_URL: 'http://127.0.0.1:3199', DATABASE_URL: 'postgres://fixture@localhost/fixture', BETTER_AUTH_SECRET: 'local-standalone-test-secret', STORAGE_DRIVER: 'local', GENERATION_DRIVER: 'mock', MAIL_DRIVER: 'local'});
+    assert.equal(getRuntimeProfile(), 'local');
+    assert.equal(getServerEnv().runtimeProfile, 'local');
+    assert.equal(getServerEnv().billingWebhookSecret, 'local-development-billing-webhook-secret');
+  } finally {
+    for (const [key, value] of Object.entries(previous)) { if (value === undefined) delete process.env[key]; else process.env[key] = value; }
   }
 });

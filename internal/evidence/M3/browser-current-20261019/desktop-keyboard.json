@@ -1,0 +1,128 @@
+[
+  {
+    "tag": "TEXTAREA",
+    "id": "creation-prompt",
+    "role": null,
+    "aria": null,
+    "text": ""
+  },
+  {
+    "tag": "SELECT",
+    "id": null,
+    "role": null,
+    "aria": "Video canvas",
+    "text": "16:99:16"
+  },
+  {
+    "tag": "SUMMARY",
+    "id": null,
+    "role": null,
+    "aria": null,
+    "text": "Model & credits"
+  },
+  {
+    "tag": "BUTTON",
+    "id": null,
+    "role": null,
+    "aria": null,
+    "text": "Continue to studio"
+  },
+  {
+    "tag": "BUTTON",
+    "id": null,
+    "role": null,
+    "aria": null,
+    "text": "All"
+  },
+  {
+    "tag": "BUTTON",
+    "id": null,
+    "role": null,
+    "aria": null,
+    "text": "Cinematic"
+  },
+  {
+    "tag": "BUTTON",
+    "id": null,
+    "role": null,
+    "aria": null,
+    "text": "Product"
+  },
+  {
+    "tag": "BUTTON",
+    "id": null,
+    "role": null,
+    "aria": null,
+    "text": "Portrait"
+  },
+  {
+    "tag": "BUTTON",
+    "id": null,
+    "role": null,
+    "aria": "Use prompt: After hours in Tokyo",
+    "text": "Use prompt"
+  },
+  {
+    "tag": "BUTTON",
+    "id": null,
+    "role": null,
+    "aria": "Use prompt: A quieter kind of escape",
+    "text": "Use prompt"
+  },
+  {
+    "tag": "BUTTON",
+    "id": null,
+    "role": null,
+    "aria": "Use prompt: Made for the spotlight",
+    "text": "Use prompt"
+  },
+  {
+    "tag": "A",
+    "id": null,
+    "role": null,
+    "aria": null,
+    "text": "Help & documentation"
+  },
+  {
+    "tag": "BODY",
+    "id": null,
+    "role": null,
+    "aria": null,
+    "text": "Skip to contentShpittoCREATE SOMETHINGCreateMy creationsExploreFrom idea to firs"
+  },
+  {
+    "tag": "A",
+    "id": null,
+    "role": null,
+    "aria": null,
+    "text": "Skip to content"
+  },
+  {
+    "tag": "A",
+    "id": null,
+    "role": null,
+    "aria": "Shpitto home",
+    "text": "Shpitto"
+  },
+  {
+    "tag": "A",
+    "id": null,
+    "role": null,
+    "aria": null,
+    "text": "Create"
+  },
+  {
+    "tag": "A",
+    "id": null,
+    "role": null,
+    "aria": null,
+    "text": "My creations"
+  },
+  {
+    "tag": "A",
+    "id": null,
+    "role": null,
+    "aria": null,
+    "text": "Explore"
+  }
+]

@@ -8,7 +8,7 @@ import {createDatabase, createMigrationClient} from '../src/db/client.ts';
 import {authSession, authUser} from '../src/db/schema/auth.ts';
 import {billingAccounts} from '../src/db/schema/billing.ts';
 import {operatorRoles, operatorStepUps, OPERATOR_STEP_UP_TTL_MS} from '../src/db/schema/operator.ts';
-import {workspaces} from '../src/db/schema/workspace.ts';
+import {creditAccounts, workspaces} from '../src/db/schema/workspace.ts';
 import {DomainError} from '../src/db/contracts.ts';
 import {
   authorizeOperatorCommand,
@@ -117,6 +117,7 @@ async function run(): Promise<void> {
       revocationImmediate: true,
     }));
   } finally {
+    if (workspaceId) await database.db.delete(creditAccounts).where(eq(creditAccounts.workspaceId, workspaceId));
     if (workspaceId) await database.db.delete(billingAccounts).where(eq(billingAccounts.workspaceId, workspaceId));
     if (workspaceId) await database.db.delete(workspaces).where(eq(workspaces.id, workspaceId));
     await database.db.delete(authUser).where(eq(authUser.id, users.owner));

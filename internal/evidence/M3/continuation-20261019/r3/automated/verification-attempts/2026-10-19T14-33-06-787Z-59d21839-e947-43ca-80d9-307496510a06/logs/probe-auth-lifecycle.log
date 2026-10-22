@@ -1,0 +1,40 @@
+2026-10-19T14:37:55.308Z WARN [Better Auth]: Invalid password
+{"status":"PASS","signupVerifiedThroughEmail":true,"persistentSessionRestart":true,"onboardingRecovered":true,"passwordReset":true,"invalidExpiredReplayedTokensRejected":true,"oldCredentialsAndSessionsRevoked":true,"disabledLoginRejected":true,"mailTransport":"Mailpit HTTP contract fixture","authMail":"injected recording adapter; no external delivery"}
+✔ scripts\probe-auth-lifecycle.ts (2099.3555ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2104.0826
+ℹ start of coverage report
+ℹ ---------------------------------------------------------------------------------------------------------------------
+ℹ file              | line % | branch % | funcs % | uncovered lines
+ℹ ---------------------------------------------------------------------------------------------------------------------
+ℹ src               |        |          |         | 
+ℹ  adapters         |        |          |         | 
+ℹ   mail            |        |          |         | 
+ℹ    local.ts       | 100.00 |   100.00 |  100.00 | 
+ℹ    mailpit.ts     |  76.74 |    66.67 |   75.00 | 29-30 36-43
+ℹ  contracts        |        |          |         | 
+ℹ   http.ts         |  45.28 |    76.47 |   33.33 | 17-18 21-22 25-35 38-42 45-49 52-59 73 81-87 90-106
+ℹ  lib              |        |          |         | 
+ℹ   auth.ts         |  80.95 |    69.23 |   69.23 | 70 74-83 122-128 132 137-139 142-147
+ℹ  modules          |        |          |         | 
+ℹ   credits         |        |          |         | 
+ℹ    issue-demo.ts  |  41.67 |   100.00 |    0.00 | 16-20 22-36 39-42 45-48
+ℹ    ledger.ts      |  30.94 |   100.00 |    0.00 | 38-42 44-48 51-129 133-139
+ℹ   operations      |        |          |         | 
+ℹ    authorize.ts   |  23.98 |   100.00 |    0.00 | 28-31 33-36 38-47 50-80 83-93 96-124 127-145 148-156 159-171
+ℹ   shared          |        |          |         | 
+ℹ    commands.ts    |  25.84 |   100.00 |    0.00 | 20-22 25-83 86-89
+ℹ    transaction.ts | 100.00 |   100.00 |  100.00 | 
+ℹ   workspaces      |        |          |         | 
+ℹ    onboard.ts     |  87.50 |    52.38 |   85.71 | 78-86 90-91 147-149 153 170-171 175-181
+ℹ    policy.ts      |  39.72 |    50.00 |    9.09 | 27-29 31-33 35-39 42-49 52-57 74-90 93-104 107-116 119-133 136-141
+ℹ ---------------------------------------------------------------------------------------------------------------------
+ℹ all files         |  52.32 |    68.60 |   37.14 | 
+ℹ ---------------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

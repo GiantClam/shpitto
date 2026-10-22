@@ -1,0 +1,13 @@
+{
+  "quoteTotalCost": "10",
+  "accountVersion": "0",
+  "grantCount": 0,
+  "status": 409,
+  "body": {
+    "ok": false,
+    "error": {
+      "code": "CONFLICT",
+      "message": "The workspace does not have enough available credits."
+    }
+  }
+}

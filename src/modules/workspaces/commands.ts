@@ -5,7 +5,7 @@ import {and, eq} from 'drizzle-orm';
 import type {AppDatabase} from '../../db/client.ts';
 import {DomainError} from '../../db/contracts.ts';
 import {billingAccounts} from '../../db/schema/billing.ts';
-import {workspaceMembers, workspaces} from '../../db/schema/workspace.ts';
+import {creditAccounts, workspaceMembers, workspaces} from '../../db/schema/workspace.ts';
 import {inTransaction} from '../shared/transaction.ts';
 import {executeDurableCommand, type CommandIdentity} from '../shared/commands.ts';
 import {
@@ -70,6 +70,12 @@ export async function createTeamWorkspace(
         updatedAt: now,
       });
       await tx.insert(workspaceMembers).values({workspaceId, userId: actor.userId, role: 'owner', createdAt: now});
+      await tx.insert(creditAccounts).values({
+        workspaceId,
+        version: 0n,
+        createdAt: now,
+        updatedAt: now,
+      });
       await tx.insert(billingAccounts).values({
         workspaceId,
         status: 'active',

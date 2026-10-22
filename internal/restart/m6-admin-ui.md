@@ -4,7 +4,7 @@ The `/admin` entry checks the live Better Auth identity and current global role 
 
 The security screen enrolls an authenticator through Better Auth using the existing account password, shows the setup key and recovery codes only in component memory, and verifies a code through the privileged step-up endpoint. The operations dashboard supports renewed verification for commands after the ten-minute freshness window.
 
-React-admin supplies the resource routing, authentication integration, read tables, filters and partial pagination. Its client-only hash router keeps resource navigation under `/admin#/workspaces` and the other resource names. Lists cover workspaces, users, generations, billing orders and audit events. Generic create, update and delete adapters are deliberately unavailable; supported changes use named commands.
+The project-owned administration foundation supplies resource routing, session integration, read tables, filters and partial pagination. Resource navigation stays under `/admin?view=...` and uses application-owned routes. Lists cover workspaces, users, generations, billing orders and audit events. Generic create, update and delete actions are deliberately unavailable; supported changes use named commands. The image and video template variants share this shell and declare media capabilities explicitly. `shadcn-admin` is a page-structure reference only.
 
 For an operator or superadmin, the dashboard supports:
 

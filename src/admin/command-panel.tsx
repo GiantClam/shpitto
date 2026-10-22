@@ -1,8 +1,8 @@
 'use client';
 
 import {useState, type FormEvent} from 'react';
-import {usePermissions, useRefresh} from 'react-admin';
 
+import type {OperatorRole} from './capabilities';
 import {executeAdminCommand, previewAdminRefund, readAdminRecovery, type AdminCommand, type AdminCommandInput} from './commands';
 import {adminDataProvider} from './data-provider';
 import {SecurityPanel} from './security-panel';
@@ -31,9 +31,7 @@ function Field({name, label, required = true, type = 'text'}: Readonly<{name: st
   return <label>{label}<input name={name} required={required} type={type} min={type === 'number' ? 0 : undefined} step={type === 'number' ? 1 : undefined} autoComplete="off" /></label>;
 }
 
-export function CommandPanel() {
-  const {permissions} = usePermissions();
-  const refresh = useRefresh();
+export function CommandPanel({permissions}: Readonly<{permissions: OperatorRole | null}>) {
   const [command, setCommand] = useState<AdminCommand>('workspace-status');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
@@ -43,7 +41,7 @@ export function CommandPanel() {
 
   async function run(label: string, action: () => Promise<Record<string, unknown>>) {
     setPending(true); setError(''); setResult(null);
-    try { setResult({label, data: await action()}); refresh(); }
+    try { setResult({label, data: await action()}); }
     catch (reason) { setError(reason instanceof Error ? reason.message : 'The operation could not be completed.'); }
     finally { setPending(false); }
   }
@@ -67,7 +65,7 @@ export function CommandPanel() {
   return <div className="operations-console">
     <header><p className="admin-eyebrow">Operations center</p><h1>Review and act with context</h1><p>Your current role is <strong>{permissions ?? 'loading'}</strong>. Resource views are redacted and paginated. Every request checks your current server authority.</p><a href="/dashboard">Return to workspace</a></header>
     {canCommand ? <>
-      <SecurityPanel onVerified={() => refresh()} />
+      <SecurityPanel onVerified={() => undefined} />
       <section className="operations-card"><h2>Workspace inspection</h2><p>Provide the support purpose before opening tenant details. Recovery retains settled outcomes and labels unknown provider cost.</p><form onSubmit={inspect} className="operations-form"><Field name="workspaceId" label="Workspace ID" /><Field name="purpose" label="Access purpose" /><div className="operations-actions"><button disabled={pending} name="action" value="detail">Read workspace and versions</button><button disabled={pending} name="action" value="recovery">Read recovery evidence</button></div></form></section>
       <section className="operations-card"><h2>Named administrative command</h2><p>Use the current version from the relevant view. A stale version has no effect. Negative credit adjustments also require an unused grant.</p>
         <form key={command} onSubmit={submit} className="operations-form">
@@ -92,7 +90,7 @@ export function CommandPanel() {
       <PendingRefunds />
       <WorkspaceDetails />
     </> : <section className="operations-card"><h2>Support access</h2><p>Use the navigation to review redacted records. Tenant inspection and mutations require an operator or superadmin role.</p></section>}
-    <AffiliatePanel />
+    <AffiliatePanel permissions={permissions} />
     {error ? <p role="alert" className="operations-message">{error}</p> : null}
     {pending ? <p role="status">Loading current evidence…</p> : null}
     {result ? <section className="operations-card" aria-live="polite"><h2>{result.label}</h2><pre>{JSON.stringify(result.data, null, 2)}</pre></section> : null}

@@ -1,0 +1,19 @@
+{
+  "status": "PASS",
+  "profile": "local-preflight",
+  "checks": [
+    "Dockerfile",
+    "vercel.json",
+    "src/app/api/healthz/route.ts",
+    "scripts/migrate.ts",
+    "scripts/maintenance/backup-db.mjs",
+    "scripts/maintenance/restore-db.mjs",
+    "scripts/maintenance/verify-backup.mjs",
+    "content/docs/v1/template/deploy-managed.mdx",
+    "content/docs/v1/template/deploy-docker.mdx",
+    "content/docs/v1/template/deployment-checklist.mdx",
+    "content/docs/v1/template/upgrade-recovery.mdx"
+  ],
+  "productionDeployment": "NOT_RUN",
+  "externalAccounts": "NOT_PROVIDED"
+}

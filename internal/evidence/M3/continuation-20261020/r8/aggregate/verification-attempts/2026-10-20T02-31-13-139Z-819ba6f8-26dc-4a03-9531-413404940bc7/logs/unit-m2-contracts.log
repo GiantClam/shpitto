@@ -1,0 +1,40 @@
+▶ session HTTP contracts
+  ✔ envelopes retain payload and expose only the supplied safe error (1.1239ms)
+  ✔ JSON bodies accept objects and empty input while rejecting other JSON shapes (0.4582ms)
+  ✔ idempotency keys enforce ASCII character and length bounds (0.2524ms)
+  ✔ decimal quantities preserve arbitrarily large exact integers (0.228ms)
+  ✔ serialization recursively preserves quantities and UTC timestamps (1.226ms)
+  ✔ canonical identity sorts object keys, preserves array order and rejects unsupported values (0.4817ms)
+  ✔ request command identity accepts matching sources and rejects conflicts or missing keys (13.7702ms)
+  ✔ mutations require a matching origin or a valid same-origin referer (0.6675ms)
+✔ session HTTP contracts (19.0655ms)
+▶ server-owned model quotes
+  ✔ local and test catalogs remain isolated from the disabled production mock (0.1715ms)
+  ✔ quotes use the server price, bounded quantities and a deterministic supplied clock (0.4955ms)
+  ✔ creation rejects invalid quantities and unavailable catalog entries (0.1652ms)
+  ✔ validation rejects stale versions, production mock use and tampered monetary fields (0.2825ms)
+✔ server-owned model quotes (1.2433ms)
+ℹ tests 12
+ℹ suites 2
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 565.0316
+ℹ start of coverage report
+ℹ ---------------------------------------------------------------
+ℹ file           | line % | branch % | funcs % | uncovered lines
+ℹ ---------------------------------------------------------------
+ℹ src            |        |          |         | 
+ℹ  config        |        |          |         | 
+ℹ   models.ts    | 100.00 |    97.14 |   83.33 | 
+ℹ  contracts     |        |          |         | 
+ℹ   http.ts      | 100.00 |   100.00 |  100.00 | 
+ℹ  modules       |        |          |         | 
+ℹ   shared       |        |          |         | 
+ℹ    commands.ts |  30.34 |   100.00 |   33.33 | 20-22 25-83
+ℹ ---------------------------------------------------------------
+ℹ all files      |  79.33 |    99.02 |   86.36 | 
+ℹ ---------------------------------------------------------------
+ℹ end of coverage report

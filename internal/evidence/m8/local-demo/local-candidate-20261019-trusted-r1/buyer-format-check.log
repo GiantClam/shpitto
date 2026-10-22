@@ -1,0 +1,2 @@
+$ node scripts/format-check.mjs
+Format check passed.

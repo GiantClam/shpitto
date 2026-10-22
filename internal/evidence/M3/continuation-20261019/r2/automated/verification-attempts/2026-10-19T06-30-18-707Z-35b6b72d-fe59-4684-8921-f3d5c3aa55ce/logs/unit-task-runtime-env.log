@@ -1,0 +1,22 @@
+✔ self-hosted task runtime is the default without ambient configuration or Trigger credentials (1.5782ms)
+✔ undeployed Trigger opt-in fails closed rather than accepting a dead dispatcher (0.321ms)
+✔ default production configuration does not require or expose optional Trigger credentials (1.5223ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 171.5455
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------------------------------------
+ℹ file        | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------------------------------------
+ℹ src         |        |          |         | 
+ℹ  contracts  |        |          |         | 
+ℹ   http.ts   |  45.28 |    76.47 |   33.33 | 17-18 21-22 25-35 38-42 45-49 52-59 73 81-87 90-106
+ℹ ------------------------------------------------------------------------------------------------
+ℹ all files   |  45.28 |    76.47 |   33.33 | 
+ℹ ------------------------------------------------------------------------------------------------
+ℹ end of coverage report

@@ -1,0 +1,103 @@
+Skip to content
+Shpitto
+Create
+History
+Assets
+Members
+Billing
+Video studio
+New creation
+
+CREATIVE WORKSPACE
+
+Current personal studio
+
+Create a video from a prompt or an image. Keep every take in your private workspace.
+
+active
+Team access
+Current personal studio · personal
+CREATE · VIDEO STUDIO
+Give your idea a first frame.
+
+Describe the scene, choose your canvas and see where the idea takes you.
+
+ESTIMATED COST
+10 credits
+Text to video
+Image to video
+
+Create from a text prompt
+1 model available
+
+Model
+Mock video · 10 credits
+Canvas
+16:9 · Landscape
+9:16 · Portrait
+
+✦
+Five-second video · 720p · Choose a model and review its credit cost before creating.
+
+Prompt
+Describe subject · motion · light · mood
+Generate video ↗
+Private to your workspace
+Persisted task state
+succeeded
+c41860a0-c0c4-4477-8ff5-86ddfb9ac0a7
+deadline 2026-10-19T07:10:14.442Z · next action 2026-10-19T06:40:14.595Z
+
+Provider integrations are not configured in the local Mock profile.
+
+WORKFLOW
+READY
+A few words. A new perspective.
+
+Start with one clear prompt. Then refine the model, format and input until the result earns a place in your library.
+
+01
+Describe the scene
+Use subject, movement, light and mood.
+02
+Choose a format
+Landscape for campaigns, portrait for social.
+03
+Keep the result
+Private outputs stay attached to this workspace.
+Credits available
+90
+Available
+90
+Reserved
+0
+Consumed
+10
+Ledger
+Reconciled
+Credit sources
+1 grants
+demo
+grant 47cad63f-c313-48ed-b122-3f29c17e99dc
+90 available · 0 reserved · 10 consumed · 0 expired · 0 voided
+expires 2026-10-26T06:40:11.344Z · reconciled
+ledger projection 90 available · 0 reserved · 10 consumed · 0 expired · 0 voided
+allocation lineage: 36ba853d-4d49-4454-8e76-b3203a320caa (10, consumed, expires 2026-10-26T06:40:11.344Z)
+Private assets
+1 ready
+output
+video/mp4 · 36097 bytes
+Download
+Generation history
+1 recent
+text-to-video
+c41860a0-c0c4-4477-8ff5-86ddfb9ac0a7
+persisted state succeeded · version 5 · materialization attempts 1
+no failure recorded
+Private output was delivered and the task is terminal.
+recovery version 5 · next action 2026-10-19T06:40:14.595Zattempt 9cf1d967-a614-43ea-b623-bd178fc160a2 · #1 · succeeded · probes 0 · reconcile by 2026-10-19T07:40:14.409Zreservation 58e586f5-5c50-4feb-bc2c-14c759bbf12b · consumed · 10 creditsevent 5d0c1849-f1f7-40b5-bc1e-1554c8c95c58 · credit.reservation_consumed · pendingcommand 8988d33d-329c-44e5-bb5d-954973f9b7eb · generation.settle · committed
+succeeded
+deadline 2026-10-19T07:10:14.442Z
+next action 2026-10-19T06:40:14.595Z
+Shpitto · Give your ideas a little motion.
+Help & documentation

@@ -1,0 +1,90 @@
+✔ four personalization Skills declare the same presentation boundary (1.5028ms)
+✔ presentation paths are editable while business paths are protected (0.381ms)
+✔ a protected semantic bypass is rejected even when the request is labeled visual (0.5436ms)
+✔ required presentation journeys remain represented in the application (15.2255ms)
+✔ buyer exporter strips trusted frontmatter and preserves release identity (0.9501ms)
+✔ buyer exporter rejects unpublished and secret-bearing pages (0.4127ms)
+✔ current docs source has published metadata on every manifest page (2.2536ms)
+✔ published catalog reads canonical pages and resolves every direct URL (21.3605ms)
+✔ unpublished pages never enter the navigation or full text search (0.8399ms)
+✔ catalog rejects untrusted traversal, release mismatch and executable MDX (0.8834ms)
+✔ relative links stay within the selected published release (8.8269ms)
+✔ skill reference includes invocation, protected boundary and deferred external scope (0.6536ms)
+✔ generated skill pages match the registry and are present in Docs navigation (1.7734ms)
+✔ vendor Docs navigation stays synchronized with the shared source and buyer guides (9.0971ms)
+✔ vendor Docs validation rejects navigation drift (5.6838ms)
+✔ release preflight uses positive allowlists and excludes internal/runtime history (167.4642ms)
+✔ release preflight rejects secret-bearing content (140.7551ms)
+✔ local candidate evidence is explicit and remains non-production (5.1678ms)
+✔ customer package keeps runnable buyer commands without internal evidence tooling (2.3512ms)
+✔ customer package rejects a missing command script or a missing nested command (0.1869ms)
+✖ buyer change validator accepts manifest-only and demands an explicit baseline for evidence (133.3461ms)
+✔ catalog contains twelve canonical Skills with required sections (2.2766ms)
+✔ protected paths require engineering classification (0.496ms)
+✔ validation, release and tooling controls require engineering classification (0.3079ms)
+✔ Windows path aliases cannot bypass protected classification (0.4888ms)
+✔ protected file classification must also reclassify the overall workflow (0.2957ms)
+✔ manifest evidence requires retained outputs and a passing record status (0.8651ms)
+✔ evidence rejects stale digests and accepts a complete independent record (0.2624ms)
+✔ matching digest values must each be SHA-256 strings in both evidence and current candidate (0.5488ms)
+✔ evidence metadata requires a parseable date string and a canonical nonempty policy identity (0.2049ms)
+✔ release evidence requires every mandatory check to succeed with a unique identity and output (0.2886ms)
+✔ release review requires an explicit PASS from an identified reviewer distinct from the implementer (0.1971ms)
+✔ release evidence binds both explicit candidate identities even when all six digests match (0.1463ms)
+✔ release export and deployment reject JSON-only evidence without trusted staging context (0.3771ms)
+✔ rollback blocks overlaps and permits a scoped patch (0.0932ms)
+✔ docs manifest exposes published-only versioned sections (3.6136ms)
+✔ docs manifest rejects traversal paths instead of reading outside the release source (4.084ms)
+✔ trusted checks execute candidate modules and approval binds freshly measured staging (4153.2109ms)
+✔ trusted dependency bytes and candidate lockfile must match the reviewed baseline (136.7905ms)
+✔ successful early exit and forged stdout cannot replace completed trusted tests (1527.303ms)
+✔ generated directory names nested in shipped source remain fingerprinted (1565.3177ms)
+✔ candidate validator, policy and suite edits cannot self-certify (127.2855ms)
+✔ pin integrity and realpath separation are mandatory (66.558ms)
+✔ both external release entrypoints require retained output and reexecute candidate checks (4679.2082ms)
+✔ forged records, tampered outputs and reused staging identities are rejected (1832.0936ms)
+✔ every buyer fingerprint class is measured rather than trusted from old JSON (1935.4625ms)
+✔ policy controls cannot be omitted from the reviewed pin (124.3307ms)
+✔ candidate code cannot rewrite a later trusted check inside the snapshot (491.6881ms)
+✔ candidate code cannot rewrite the private dependency snapshot between trusted checks (504.6951ms)
+✔ candidate identity and externally supplied pin digest are bound (1660.5546ms)
+✔ dependency junctions and their private materialized copies have the same fingerprint (132.6519ms)
+✔ new files introduced into a measured snapshot fail before subsequent checks (491.0688ms)
+✔ rebaseline requires retained independent proof bound to both policies and replacement files (1782.703ms)
+ℹ tests 53
+ℹ suites 0
+ℹ pass 52
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 21573.2822
+
+✖ failing tests:
+
+test at tests\unit\customer-package.test.ts:25:1
+✖ buyer change validator accepts manifest-only and demands an explicit baseline for evidence (133.3461ms)
+  AssertionError [ERR_ASSERTION]: {
+    "status": "BLOCKED",
+    "errors": [
+      "overall classification must use a declared workflow class"
+    ]
+  }
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///D:/github/shpitto/tests/unit/customer-package.test.ts:31:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

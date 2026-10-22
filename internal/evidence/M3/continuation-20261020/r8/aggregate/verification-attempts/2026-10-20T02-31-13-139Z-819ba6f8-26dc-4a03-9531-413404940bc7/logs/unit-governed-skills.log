@@ -1,0 +1,32 @@
+✔ catalog contains twelve canonical Skills with required sections (2.1779ms)
+✔ protected paths require engineering classification (0.5651ms)
+✔ validation, release and tooling controls require engineering classification (0.3034ms)
+✔ Windows path aliases cannot bypass protected classification (0.6177ms)
+✔ protected file classification must also reclassify the overall workflow (0.2842ms)
+✔ manifest evidence requires retained outputs and a passing record status (0.8698ms)
+✔ evidence rejects stale digests and accepts a complete independent record (0.3072ms)
+✔ matching digest values must each be SHA-256 strings in both evidence and current candidate (0.6031ms)
+✔ evidence metadata requires a parseable date string and a canonical nonempty policy identity (0.3207ms)
+✔ release evidence requires every mandatory check to succeed with a unique identity and output (0.3245ms)
+✔ release review requires an explicit PASS from an identified reviewer distinct from the implementer (0.2101ms)
+✔ release evidence binds both explicit candidate identities even when all six digests match (0.1621ms)
+✔ release export and deployment reject JSON-only evidence without trusted staging context (0.422ms)
+✔ rollback blocks overlaps and permits a scoped patch (0.0986ms)
+✔ docs manifest exposes published-only versioned sections (3.8581ms)
+✔ docs manifest rejects traversal paths instead of reading outside the release source (3.5093ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 222.0713
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report

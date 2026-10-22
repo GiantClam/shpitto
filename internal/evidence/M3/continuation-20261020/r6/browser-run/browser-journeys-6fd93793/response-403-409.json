@@ -1,0 +1,57 @@
+{
+  "application": "http://127.0.0.1:3199",
+  "runId": "6fd93793",
+  "observations": [
+    {
+      "at": "2026-10-20T02:12:49.464Z",
+      "journey": "team-creation",
+      "url": "http://127.0.0.1:3199/api/invitations/accept",
+      "method": "POST",
+      "status": 403,
+      "body": {
+        "ok": false,
+        "error": {
+          "code": "FORBIDDEN",
+          "message": "Invitation is invalid or expired."
+        }
+      },
+      "expected": false,
+      "classification": "requires-specific-review",
+      "acceptanceImpact": "Requires reviewer classification before this response can support acceptance."
+    },
+    {
+      "at": "2026-10-20T02:12:51.413Z",
+      "journey": "team-creation",
+      "url": "http://127.0.0.1:3199/api/invitations/accept",
+      "method": "POST",
+      "status": 403,
+      "body": {
+        "ok": false,
+        "error": {
+          "code": "FORBIDDEN",
+          "message": "Invitation is invalid or expired."
+        }
+      },
+      "expected": false,
+      "classification": "requires-specific-review",
+      "acceptanceImpact": "Requires reviewer classification before this response can support acceptance."
+    },
+    {
+      "at": "2026-10-20T02:12:58.324Z",
+      "journey": "team-creation",
+      "url": "http://127.0.0.1:3199/api/workspaces/298a31ce-9a3b-49a8-b6b3-4258361fdf3d/generations",
+      "method": "POST",
+      "status": 409,
+      "body": {
+        "ok": false,
+        "error": {
+          "code": "CONFLICT",
+          "message": "The workspace does not have enough available credits."
+        }
+      },
+      "expected": true,
+      "classification": "verified-zero-credit-denial",
+      "acceptanceImpact": "Expected no-credit rejection on a verified zero-balance team; success-path proof is unaffected."
+    }
+  ]
+}

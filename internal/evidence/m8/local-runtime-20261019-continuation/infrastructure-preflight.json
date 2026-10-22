@@ -1,0 +1,83 @@
+{
+  "startedAt": "2026-10-19T06:06:36.029Z",
+  "scope": "disposable-local-postgresql-infrastructure-only",
+  "requestedContainer": "shpitto-completion-pg-20261007",
+  "container": "shpitto-completion-pg-20261019",
+  "endpoint": {
+    "host": "127.0.0.1",
+    "port": 55432,
+    "database": "postgres"
+  },
+  "recovery": {
+    "desktopLaunchedHiddenBeforePreflight": true,
+    "requestedContainerAbsent": true,
+    "replacementFoundWithCurrentTaskLabel": true,
+    "existingReplacementStarted": true,
+    "existingVolumesPreserved": true,
+    "containersCreated": 0,
+    "volumesCreated": 0
+  },
+  "production": false,
+  "paidOrRemoteProvidersAccessed": false,
+  "candidatesPackagedOrExecuted": false,
+  "credentialsRetained": false,
+  "checks": {
+    "localDockerEngine": "PASS",
+    "disposableContainerIdentity": "PASS",
+    "loopbackPortBinding": "PASS",
+    "declaredLocalCredentials": "PASS",
+    "backupToolVersions": "PASS",
+    "hostAuthenticatedConnection": "PASS",
+    "createDatabase": "PASS",
+    "customArchiveBackup": "PASS",
+    "backupRestoreRoundTrip": "PASS",
+    "probeCleanup": "PASS"
+  },
+  "docker": {
+    "context": "desktop-linux",
+    "serverVersion": "29.8.1"
+  },
+  "databaseInitialization": {
+    "composeDefaultDatabase": "shpitto",
+    "containerDefaultDatabase": "postgres",
+    "administrativeDatabase": "postgres"
+  },
+  "identity": {
+    "id": "8b9b6463e9f3146b4e32a641ca50eb01ec128936366d62581daa0b34337ea256",
+    "createdAt": "2026-10-19T04:43:49.504767059Z",
+    "image": "postgres:15-alpine",
+    "imageId": "sha256:f7d23353e1b15400d22ebe31189f4d314b87a4c129cc400c8c2d8d4ca127bf81",
+    "taskLabel": "spec-current-20261019",
+    "dataVolume": "ba6b83741241d9f8127544f829164fdc294cb113dce6e53897127636aa7c4003",
+    "state": "running"
+  },
+  "tools": {
+    "pg_dump": "pg_dump (PostgreSQL) 15.19",
+    "pg_restore": "pg_restore (PostgreSQL) 15.19",
+    "psql": "psql (PostgreSQL) 15.19"
+  },
+  "readyProbe": "/var/run/postgresql:5432 - accepting connections",
+  "database": {
+    "serverVersion": "15.19",
+    "createDatabasePrivilege": true,
+    "superuser": true
+  },
+  "backup": {
+    "format": "PostgreSQL custom archive",
+    "tableDataCatalogVerified": true
+  },
+  "status": "READY",
+  "cleanup": {
+    "isolatedDatabasesCreated": [
+      "shpitto_infra_cf699af771314b3d9e752696d7914a63",
+      "shpitto_infra_cf699af771314b3d9e752696d7914a63_restore"
+    ],
+    "allProbeDatabasesDropped": true,
+    "temporaryDumpRemoved": true,
+    "containerLeftRunning": true,
+    "existingDatabaseRowsChanged": false,
+    "volumesDeleted": false,
+    "errors": []
+  },
+  "completedAt": "2026-10-19T06:06:39.516Z"
+}

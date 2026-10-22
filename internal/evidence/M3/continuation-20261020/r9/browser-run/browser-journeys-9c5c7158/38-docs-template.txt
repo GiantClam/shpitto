@@ -1,0 +1,62 @@
+Skip to content
+Shpitto
+Home
+Explore
+Create
+Docs
+Log in
+Start creating
+Documentation version
+v1 · current documentation
+Search published documentation
+Template
+Template
+Operations
+Local acceptance journey
+Local generation and credit lifecycle
+Local billing fixtures
+Managed deployment reference
+Standalone Docker application
+Deployment configuration checklist
+Backup, upgrade and restore
+Affiliates
+Affiliate settlement
+Skills
+Skills
+Skill · quick-start
+Skill · add-provider
+Skill · add-generation-task
+Skill · configure-credits
+Skill · extend-assets
+Skill · deploy-template
+Skill · security-review
+Skill · upgrade-template
+Skill · customize-brand
+Skill · create-page
+Skill · modify-page
+Skill · customize-site
+APIs
+API
+Releases
+Overview
+Releases
+DEVELOPER DOCUMENTATION
+v1 · published docs
+
+Local template preview. Real provider, payment and production verification remain separate release gates.
+
+Template
+Copy Anchor Link
+
+The reviewed template provides a persistent local demo, authenticated workspaces, private assets and server-owned commands. Use the operations page for recovery and operator boundaries. The API page contains the current internal integration examples and explicitly labels the deferred public API.
+
+The shipped template fallback presentation mirrors the public Shpitto website's shared UI baseline: a warm light canvas, coral primary, peach secondary, warm accent, Aptos/Segoe UI typography, soft warm shadows, named focus/status states and consistent navigation and control sizing across marketing, auth, product and operations shells. These assets provide the initial template experience; they are not the customer's final visual assets. The customize-brand and customize-site Skills are the supported edit points for replacing it with customer-selected logo, colors, fonts, copy and page composition while preserving sign-in, workspace, generation, download and billing journeys.
+
+Source: content/docs/v1/template/index.mdx
+Shpitto
+
+Give your ideas a little motion.
+
+Explore
+Create a video
+Docs

@@ -1,0 +1,24 @@
+{"status":"PASS","staleRejected":true,"transactionFence":true,"reclaimBlockedDuringFence":true,"heartbeatIntervalMs":20000,"renewedAt30s":true,"acknowledged":true,"attempts":2}
+✔ scripts\probe-outbox-lease.ts (836.3443ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 842.4392
+ℹ start of coverage report
+ℹ --------------------------------------------------------------------------------------------------
+ℹ file          | line % | branch % | funcs % | uncovered lines
+ℹ --------------------------------------------------------------------------------------------------
+ℹ src           |        |          |         | 
+ℹ  contracts    |        |          |         | 
+ℹ   http.ts     |  45.28 |    76.47 |   33.33 | 17-18 21-22 25-35 38-42 45-49 52-59 73 81-87 90-106
+ℹ  modules      |        |          |         | 
+ℹ   generation  |        |          |         | 
+ℹ    outbox.ts  |  55.41 |    71.43 |   55.56 | 20-69 125-128 132-135 146-157
+ℹ --------------------------------------------------------------------------------------------------
+ℹ all files     |  51.33 |    74.19 |   42.86 | 
+ℹ --------------------------------------------------------------------------------------------------
+ℹ end of coverage report

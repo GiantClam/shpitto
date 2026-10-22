@@ -1,0 +1,60 @@
+{
+  "at": "2026-10-20T05:20:45.858Z",
+  "error": "locator.waitFor: Error: strict mode violation: getByRole('alert') resolved to 2 elements:\n    1) <p role=\"alert\">Disposable UI error fixture.</p> aka getByText('Disposable UI error fixture.')\n    2) <div role=\"alert\" aria-live=\"assertive\" id=\"__next-route-announcer__\"></div> aka locator('[id=\"__next-route-announcer__\"]')\n\nCall log:\n\u001b[2m  - waiting for getByRole('alert') to be visible\u001b[22m\n\n    at D:\\github\\shpitto\\internal\\evidence\\M3\\continuation-20261020\\r9\\browser-harness.mjs:301:89",
+  "events": [
+    {
+      "name": "fresh-user-signup-and-email-verification",
+      "at": "2026-10-20T05:20:15.265Z"
+    },
+    {
+      "name": "personal-workspace-created",
+      "at": "2026-10-20T05:20:18.592Z",
+      "workspaceId": "2394c908-7856-4574-ac54-e087d7b33b48"
+    },
+    {
+      "name": "application-worker-restart",
+      "at": "2026-10-20T05:20:22.509Z",
+      "taskId": "71d37ae9-0388-493d-97a7-b89641a02a56",
+      "status": "succeeded"
+    },
+    {
+      "name": "private-download",
+      "at": "2026-10-20T05:20:22.776Z",
+      "metadata": {
+        "duration": 2,
+        "width": 320,
+        "height": 180,
+        "readyState": 4,
+        "error": null
+      },
+      "anonymousStatus": 401
+    },
+    {
+      "name": "team-creation",
+      "at": "2026-10-20T05:20:24.583Z",
+      "workspaceId": "9bb1c937-b473-4f67-9ab0-9a86c8e081ff"
+    }
+  ],
+  "errors": [
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    },
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    },
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 409 (Conflict)"
+    },
+    {
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    }
+  ]
+}

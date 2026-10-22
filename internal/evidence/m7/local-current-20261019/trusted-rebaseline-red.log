@@ -1,0 +1,25 @@
+✖ rebaseline requires retained independent proof bound to both policies and replacement files (1261.7775ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1397.6037
+
+✖ failing tests:
+
+test at tests\unit\trusted-validation.test.ts:136:1
+✖ rebaseline requires retained independent proof bound to both policies and replacement files (1261.7775ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///D:/github/shpitto/tests/unit/trusted-validation.test.ts:153:10)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /rebaseline.*proof|rebaseline.*review/i,
+    operator: 'throws',
+    diff: 'simple'
+  }

@@ -1,0 +1,52 @@
+{
+  "at": "2026-10-20T05:00:16.618Z",
+  "error": "AssertionError [ERR_ASSERTION]: creator-qa-fixture did not render expected marker: Isolated UI fixture\n    at captureRoute (file:///D:/github/shpitto/internal/evidence/M3/continuation-20261020/r9/browser-harness.mjs:125:38)\n    at async file:///D:/github/shpitto/internal/evidence/M3/continuation-20261020/r9/browser-harness.mjs:294:3",
+  "events": [
+    {
+      "name": "fresh-user-signup-and-email-verification",
+      "at": "2026-10-20T04:59:46.728Z"
+    },
+    {
+      "name": "personal-workspace-created",
+      "at": "2026-10-20T04:59:50.061Z",
+      "workspaceId": "f34cdcf1-bb62-4c53-bcc7-330d597a8a58"
+    },
+    {
+      "name": "application-worker-restart",
+      "at": "2026-10-20T04:59:54.188Z",
+      "taskId": "03454aa0-5990-4285-9cb4-6e21271f0df0",
+      "status": "succeeded"
+    },
+    {
+      "name": "private-download",
+      "at": "2026-10-20T04:59:54.458Z",
+      "metadata": {
+        "duration": 2,
+        "width": 320,
+        "height": 180,
+        "readyState": 4,
+        "error": null
+      },
+      "anonymousStatus": 401
+    },
+    {
+      "name": "team-creation",
+      "at": "2026-10-20T04:59:56.215Z",
+      "workspaceId": "0126ca68-1f6c-434d-b2ad-29b97d1b2245"
+    }
+  ],
+  "errors": [
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    },
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    },
+    {
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    }
+  ]
+}

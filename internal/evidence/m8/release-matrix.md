@@ -1,11 +1,17 @@
 # M8 local candidate matrix
 
-Candidate: `local-candidate-20261019`
+Historical candidate: `local-candidate-20261019`
+
+Current applicability (October 19, 2026): the table preserves earlier local
+observations. The latest linked 9.4 rerun is FAIL because disposable PostgreSQL
+was unavailable. Source/validator changes require a new immutable candidate and
+fresh affected verification. See `local-current-20261019/README.md` for the
+current limitations; no current gate approval is inferred from this table.
 
 | Task | Local result | Evidence | External boundary |
 | --- | --- | --- | --- |
 | 9.3 | PASS (local candidate and exact local Docker runtime) | `internal/evidence/m8/artifact-manifest/local-candidate-20261019/manifest.json`, `internal/evidence/m8/docker/local-candidate-20261019/result.json` | Managed deployment and M8 RC remain open |
-| 9.4 | PASS (fresh no-cloud install/build, Mock journey, restore and restart) | `internal/evidence/m8/local-demo/local-candidate-20261019/result.json` | Managed runtime and external adapters not run |
+| 9.4 | FAIL on latest rerun after install/build/checks; PostgreSQL connection unavailable | `internal/evidence/m8/local-demo/local-candidate-20261019/result.json` | Local runtime/restore rerun and final candidate required |
 | 9.11 | PASS (local fulfillment fixture) | `internal/evidence/m8/fulfillment/local-fixture/result.json` | Vendor sales account, paid order and commercial entitlement not provided |
 | 9.12 | PASS (local Docs/source synchronization and hydrated UI) | `internal/evidence/m8/vendor-docs/result.json`, `internal/evidence/m8/local-completion/docs-ui/result.json` | Merchant setup and commercial readiness remain open |
 

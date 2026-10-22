@@ -1,0 +1,8 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - paragraph [ref=e3]: Operations
+    - heading "Sign in to continue" [level=1] [ref=e4]
+    - paragraph [ref=e5]: Administration uses your shared account and a separate global role.
+    - link "Open sign in" [ref=e6] [cursor=pointer]:
+      - /url: /login
+  - alert [ref=e7]

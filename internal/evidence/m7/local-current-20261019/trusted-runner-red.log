@@ -1,0 +1,108 @@
+✖ trusted checks execute candidate modules and approval binds freshly measured staging (4.8756ms)
+✖ candidate validator, policy and suite edits cannot self-certify (2.987ms)
+✖ pin integrity and realpath separation are mandatory (2.8513ms)
+✖ forged records, tampered outputs and reused staging identities are rejected (2.7319ms)
+✖ every buyer fingerprint class is measured rather than trusted from old JSON (2.5595ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 0
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 143.9479
+
+✖ failing tests:
+
+test at tests\unit\trusted-validation.test.ts:56:1
+✖ trusted checks execute candidate modules and approval binds freshly measured staging (4.8756ms)
+  Error: ENOENT: no such file or directory, lstat 'D:\github\shpitto\scripts\lib\trusted-validation.mjs'
+      at cpSyncFn (node:internal/fs/cp/cp-sync:56:13)
+      at cpSync (node:fs:3147:3)
+      at fixture (file:///D:/github/shpitto/tests/unit/trusted-validation.test.ts:26:5)
+      at TestContext.<anonymous> (file:///D:/github/shpitto/tests/unit/trusted-validation.test.ts:57:19)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.start (node:internal/test_runner/test:1096:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'lstat',
+    path: 'D:\\github\\shpitto\\scripts\\lib\\trusted-validation.mjs'
+  }
+
+test at tests\unit\trusted-validation.test.ts:70:1
+✖ candidate validator, policy and suite edits cannot self-certify (2.987ms)
+  Error: ENOENT: no such file or directory, lstat 'D:\github\shpitto\scripts\lib\trusted-validation.mjs'
+      at cpSyncFn (node:internal/fs/cp/cp-sync:56:13)
+      at cpSync (node:fs:3147:3)
+      at fixture (file:///D:/github/shpitto/tests/unit/trusted-validation.test.ts:26:5)
+      at TestContext.<anonymous> (file:///D:/github/shpitto/tests/unit/trusted-validation.test.ts:72:21)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'lstat',
+    path: 'D:\\github\\shpitto\\scripts\\lib\\trusted-validation.mjs'
+  }
+
+test at tests\unit\trusted-validation.test.ts:78:1
+✖ pin integrity and realpath separation are mandatory (2.8513ms)
+  Error: ENOENT: no such file or directory, lstat 'D:\github\shpitto\scripts\lib\trusted-validation.mjs'
+      at cpSyncFn (node:internal/fs/cp/cp-sync:56:13)
+      at cpSync (node:fs:3147:3)
+      at fixture (file:///D:/github/shpitto/tests/unit/trusted-validation.test.ts:26:5)
+      at TestContext.<anonymous> (file:///D:/github/shpitto/tests/unit/trusted-validation.test.ts:79:19)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'lstat',
+    path: 'D:\\github\\shpitto\\scripts\\lib\\trusted-validation.mjs'
+  }
+
+test at tests\unit\trusted-validation.test.ts:87:1
+✖ forged records, tampered outputs and reused staging identities are rejected (2.7319ms)
+  Error: ENOENT: no such file or directory, lstat 'D:\github\shpitto\scripts\lib\trusted-validation.mjs'
+      at cpSyncFn (node:internal/fs/cp/cp-sync:56:13)
+      at cpSync (node:fs:3147:3)
+      at fixture (file:///D:/github/shpitto/tests/unit/trusted-validation.test.ts:26:5)
+      at TestContext.<anonymous> (file:///D:/github/shpitto/tests/unit/trusted-validation.test.ts:88:19)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'lstat',
+    path: 'D:\\github\\shpitto\\scripts\\lib\\trusted-validation.mjs'
+  }
+
+test at tests\unit\trusted-validation.test.ts:101:1
+✖ every buyer fingerprint class is measured rather than trusted from old JSON (2.5595ms)
+  Error: ENOENT: no such file or directory, lstat 'D:\github\shpitto\scripts\lib\trusted-validation.mjs'
+      at cpSyncFn (node:internal/fs/cp/cp-sync:56:13)
+      at cpSync (node:fs:3147:3)
+      at fixture (file:///D:/github/shpitto/tests/unit/trusted-validation.test.ts:26:5)
+      at TestContext.<anonymous> (file:///D:/github/shpitto/tests/unit/trusted-validation.test.ts:102:19)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'lstat',
+    path: 'D:\\github\\shpitto\\scripts\\lib\\trusted-validation.mjs'
+  }

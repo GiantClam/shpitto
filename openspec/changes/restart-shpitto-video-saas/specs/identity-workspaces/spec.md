@@ -24,7 +24,7 @@ Trace: D05, D18; J1, J7; T01, T05; G05, G18. Tasks: 3.2, 3.10, 3.12.
 
 ### Requirement: REQ-IAM-02 Personal and team ownership boundaries
 
-The application SHALL distinguish personal and team workspaces. A personal workspace MUST retain its creator as its sole immutable owner and MUST reject invitations, owner transfer, leaving, removal or demotion. Team owners SHALL manage invitations and members; ownership transfer MUST target an existing active verified member and require recent authentication. Concurrent membership changes MUST never remove the team's last owner. These personal-workspace and transfer restrictions are selected engineering defaults completing the minimal role contract.
+The application SHALL distinguish personal and team workspaces. A personal workspace MUST retain its creator as its sole immutable owner and MUST reject invitations, owner transfer, leaving, removal or demotion. Team owners SHALL manage invitations and members; ownership transfer MUST target an existing active verified member and require recent authentication. Concurrent membership changes MUST never remove the team's last owner. Creating a team MUST atomically initialize exactly one zero-balance credit account without issuing a credit grant. These personal-workspace and transfer restrictions are selected engineering defaults completing the minimal role contract.
 
 Trace: D05; J7; T05, T05.a; G05. Tasks: 3.3, 3.5, 4.13.
 

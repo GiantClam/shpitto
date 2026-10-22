@@ -1,0 +1,23 @@
+✔ freshness uses strictly more than 180 seconds, including a missing first heartbeat (0.5985ms)
+✔ independent monitor delivers only the bounded actionable allowlist with stable idempotency (0.8504ms)
+✔ delivery failure is retryable and never acknowledged as delivered or leaked (0.1679ms)
+✔ late external completion reports superseded when the durable fence rejects it (0.0822ms)
+✔ healthy, leased and delivered observations never invoke external delivery (0.1153ms)
+✔ invalid or unbounded identity and missing expected start fail before database or delivery access (0.4719ms)
+✔ worker identity accepts the receiver slug contract up to 128 characters (0.1225ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 418.8439
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report

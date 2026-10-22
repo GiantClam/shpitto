@@ -3,6 +3,8 @@ import {SiteShell} from '../../components/shell/site-shell';
 import {GenerationPanel} from '../(app)/dashboard/generation-panel';
 import {getRuntimeProfile} from '../../config/env';
 
+export const dynamic = 'force-dynamic';
+
 export default async function CreatorQaCheck({searchParams}: {searchParams: Promise<{models?: string}>}) {
   if (getRuntimeProfile() !== 'local') notFound();
   const quote = {modelId: 'mock-video', catalogVersion: 1, quantity: '1', unitCost: '10', totalCost: '10', issuedAt: '2026-10-17T00:00:00Z', quoteHash: 'isolated-ui-fixture-not-a-server-quote'};

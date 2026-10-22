@@ -1,0 +1,51 @@
+✔ changing mandatory traceability mappings invalidates contract and validator digests (1550.5338ms)
+▶ M3 verification runner safety
+  ✔ defaults to a fresh candidate path without selecting historical browser evidence (0.7359ms)
+  ✔ retains positional output compatibility and supports explicit CLI and environment selection (0.9161ms)
+  ✔ ambiguous or malformed runner options fail before verification starts (0.5081ms)
+  ✔ reviewed, approved, and unreadable records cannot be replaced (8.9799ms)
+  ✔ malformed review and integration metadata fail closed (11.6458ms)
+  ✔ browser evidence and artifact references cannot escape through a directory junction (14.5901ms)
+  ✔ the CLI protects an approved record before creating any attempt logs (236.4854ms)
+✔ M3 verification runner safety (274.8291ms)
+▶ M3 evidence integrity
+  ✔ browser PASS labels alone cannot stand in for required journeys and UI states (0.5712ms)
+  ✔ browser checks require retained artifacts and observed assertions (0.2541ms)
+  ✔ contradictory or duplicate browser results cannot be hidden by one passing row (0.2733ms)
+  ✔ an additional failed or incomplete browser check prevents approval (0.1609ms)
+  ✔ LCOV branch totals remain branch-based and normalize Windows absolute paths (0.5475ms)
+  ✔ separate verification runs union stable branch IDs without counting repeats twice (0.3136ms)
+  ✔ a missing owned source or malformed branch report fails coverage (0.1786ms)
+  ✔ zero-branch and failed suites cannot claim coverage (0.1089ms)
+  ✔ missing mandatory evidence stays in progress; a recorded failure fails the stage (0.1373ms)
+  ✔ changed candidate bytes make any result stale, never ready for review (0.0696ms)
+✔ M3 evidence integrity (2.9168ms)
+✔ the exact existing application dependency evolution passes without rewriting historical proof (236.8543ms)
+✔ root integrity rejects an additional runtime dependency (157.7602ms)
+✔ root integrity rejects a missing runtime dependency (163.3011ms)
+✔ root integrity rejects an optional dependency (190.1713ms)
+✔ root integrity rejects implicit bundling of the whole dependency graph (196.9249ms)
+✔ root integrity rejects a new transitive override (163.7616ms)
+✔ root integrity rejects another Next patch (175.4603ms)
+✔ root integrity rejects an S3 version range (186.2435ms)
+✔ root integrity rejects a changed development dependency (245.0787ms)
+✔ root integrity rejects a changed package manager (250.7749ms)
+✔ root integrity rejects a changed application lockfile (152.411ms)
+✔ root integrity rejects rewritten historical dependency proof (153.4853ms)
+✔ root integrity rejects rewritten historical lock proof (146.0748ms)
+✔ root integrity rejects rewritten historical provenance (148.1964ms)
+✔ root integrity rejects legacy workspace discovery (147.5043ms)
+✔ root integrity rejects a changed workspace override (137.8675ms)
+✔ root integrity rejects workspace package extensions (139.693ms)
+✔ root integrity rejects legacy TypeScript inclusion (155.1175ms)
+✔ root integrity rejects legacy Docker inclusion (149.2825ms)
+✔ historical provenance remains valid in both LF and CRLF checkouts (279.5062ms)
+✔ the reviewed workspace configuration permits only checkout line-ending differences (169.9769ms)
+ℹ tests 39
+ℹ suites 2
+ℹ pass 39
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4034.5324

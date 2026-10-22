@@ -1,0 +1,20 @@
+✔ inspiration filters show reusable original samples, not fake generated videos (0.8813ms)
+✔ public entry is a creation surface, with deliberate authenticated handoff (0.3941ms)
+✔ prompt reuse preserves settings and mode changes keep the URL in sync (0.2056ms)
+✔ video studio exposes input mode directly and limits models to the selected mode (0.1649ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 129.8367
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report

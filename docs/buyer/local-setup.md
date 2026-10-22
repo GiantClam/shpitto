@@ -26,12 +26,18 @@ Compose creates three named volumes: `shpitto-postgres` for database state, `shp
 
 ## Configuration boundary
 
-The local profile sets `STORAGE_DRIVER=local`, `GENERATION_DRIVER=mock` and `MAIL_DRIVER=local`. `src/config/env.ts` rejects these drivers when `NODE_ENV=production`, so a local compose profile cannot silently become a production deployment. Cloud provider keys are not read by the worker image.
+The local profile sets `SHPTITTO_RUNTIME_PROFILE=local`, `STORAGE_DRIVER=local`, `GENERATION_DRIVER=mock` and `MAIL_DRIVER=local`. `src/config/env.ts` rejects these drivers when the runtime profile is `production`, so a local compose profile cannot silently become a production deployment even when a standalone Next.js build reports `NODE_ENV=production`. Cloud provider keys are not read by the worker image.
 
 `TASK_RUNTIME=self_hosted` is the default and does not require Trigger credentials.
 This local Mock profile and the isolated Railway acceptance provider worker do
 not establish generic buyer production support. The runtime and production support boundary below applies before choosing a
 production worker profile.
+
+## Administration UI ownership
+
+The delivered image and video templates include editable administration source under `src/components/ui`, `src/components/admin`, and `src/admin`. The primitives follow the shadcn/ui composition model and the page grouping is informed by shadcn-admin. shadcn-admin is not installed or required at runtime. The template owns its routes, session integration, resource adapter, capability manifest and styles.
+
+Better Auth sessions, server-side operator roles, allowlisted reads, named commands, idempotency, audit records, transactions and Drizzle migrations remain the authority. Customize the shell and shared resource composition in source while preserving those server contracts. The image variant withholds media controls that are not implemented by the current image runtime; the video variant exposes the current video capability fields.
 
 ## Task runtime and production support boundary
 

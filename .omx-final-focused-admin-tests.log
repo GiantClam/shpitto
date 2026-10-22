@@ -1,0 +1,43 @@
+✔ admin lists forward allowlisted filters and use truthful partial pagination (12.6989ms)
+✔ workspace detail sends the encoded target and recorded access purpose (0.3384ms)
+✔ the terminal list page reports its known exact total for the paginator (0.743ms)
+✔ admin failures preserve status so revoked authority invalidates the session (0.6992ms)
+✔ unsupported detail, query fields and generic mutations fail without network access (0.346ms)
+✔ named commands retain expected version and the same key across exact retries (0.7709ms)
+✔ incomplete privileged envelope has no transport effect (0.1224ms)
+✔ the first credit adjustment can use the persisted zero account version (0.216ms)
+✔ recovery sweep uses the versioned tenant route and stable command key (0.2762ms)
+✔ stored-webhook recovery sends only original inbox identity and a stable reviewed envelope (0.454ms)
+✔ affiliate actions use named versioned requests and stable retries (0.5121ms)
+✔ affiliate views use bounded redacted lists and reject generic writes (0.3366ms)
+✔ affiliate route queries reject unsupported fields, unbounded pages and invalid target IDs (0.9734ms)
+✔ template capability fixtures keep common resources and omit unsupported media controls (0.147ms)
+✔ default brand exposes the shared presentation contract (2.4249ms)
+✔ body, status and primary action token pairs meet AA text contrast (0.2083ms)
+✔ studio roles project from the brand contract without a second palette (0.2982ms)
+✔ workspace navigation keeps creation, assets, history and billing in the selected workspace (0.1308ms)
+✔ creator navigation separates product destinations from video input modes (0.5631ms)
+✔ catalog contains twelve canonical Skills with required sections (1.825ms)
+✔ protected paths require engineering classification (0.4468ms)
+✔ validation, release and tooling controls require engineering classification (0.2719ms)
+✔ Windows path aliases cannot bypass protected classification (0.4356ms)
+✔ protected file classification must also reclassify the overall workflow (0.2298ms)
+✔ manifest evidence requires retained outputs and a passing record status (0.7317ms)
+✔ evidence rejects stale digests and accepts a complete independent record (0.2318ms)
+✔ matching digest values must each be SHA-256 strings in both evidence and current candidate (0.5386ms)
+✔ evidence metadata requires a parseable date string and a canonical nonempty policy identity (0.2022ms)
+✔ release evidence requires every mandatory check to succeed with a unique identity and output (0.3654ms)
+✔ release review requires an explicit PASS from an identified reviewer distinct from the implementer (0.2181ms)
+✔ release evidence binds both explicit candidate identities even when all six digests match (0.2303ms)
+✔ release export and deployment reject JSON-only evidence without trusted staging context (0.3721ms)
+✔ rollback blocks overlaps and permits a scoped patch (0.0838ms)
+✔ docs manifest exposes published-only versioned sections (3.1676ms)
+✔ docs manifest rejects traversal paths instead of reading outside the release source (3.0708ms)
+ℹ tests 35
+ℹ suites 0
+ℹ pass 35
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 199.4373

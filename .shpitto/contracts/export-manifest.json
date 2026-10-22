@@ -41,6 +41,8 @@
       "scripts/validate-change.ts",
       "scripts/export-release.ts",
       "scripts/deploy-release.ts",
+      "scripts/lib/trusted-validation.mjs",
+      "scripts/lib/trusted-validation.d.mts",
       "scripts/rollback-customization.ts",
       "scripts/check-source-boundaries.mjs",
       "scripts/format-check.mjs",

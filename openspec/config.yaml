@@ -6,7 +6,8 @@ context: |
   D01-D31 and journeys J1-J10 are preserved in the baseline documents listed in project.md.
   One restart change contains twelve capability specs and dependency-gated milestones M0-M8.
   English proposal/specs/design/tasks are normative. Complete Chinese review companions preserve the same IDs.
-  Selected stack: Next.js, React, TypeScript, PostgreSQL, Drizzle, Better Auth, React-admin OSS, Fumadocs/MDX,
+  Selected stack: Next.js, React, TypeScript, PostgreSQL, Drizzle, Better Auth, project-owned shadcn/ui-style administration,
+  Fumadocs/MDX,
   Stripe, Trigger.dev, private S3-compatible storage, Resend/SMTP, Replicate/fal.ai and optional FirstPromoter V2.
   Domain commands own workspace, credit, payment, task and audit invariants; Drizzle is the sole migration owner.
   Vendor Lemon Squeezy source sales and buyer Stripe video subscriptions/affiliate accounts are separate businesses.

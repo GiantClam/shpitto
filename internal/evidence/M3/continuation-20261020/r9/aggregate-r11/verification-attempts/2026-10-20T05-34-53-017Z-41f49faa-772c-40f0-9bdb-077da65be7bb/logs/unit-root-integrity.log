@@ -1,0 +1,37 @@
+✔ the exact existing application dependency evolution passes without rewriting historical proof (154.5343ms)
+✔ root integrity rejects an additional runtime dependency (132.4746ms)
+✔ root integrity rejects a missing runtime dependency (145.1315ms)
+✔ root integrity rejects an optional dependency (149.0042ms)
+✔ root integrity rejects implicit bundling of the whole dependency graph (142.743ms)
+✔ root integrity rejects a new transitive override (142.9264ms)
+✔ root integrity rejects another Next patch (142.3723ms)
+✔ root integrity rejects an S3 version range (146.0877ms)
+✔ root integrity rejects a changed development dependency (140.587ms)
+✔ root integrity rejects a changed package manager (136.7318ms)
+✔ root integrity rejects a changed application lockfile (142.6314ms)
+✔ root integrity rejects rewritten historical dependency proof (138.0931ms)
+✔ root integrity rejects rewritten historical lock proof (162.4123ms)
+✔ root integrity rejects rewritten historical provenance (132.4974ms)
+✔ root integrity rejects legacy workspace discovery (137.8908ms)
+✔ root integrity rejects a changed workspace override (134.6924ms)
+✔ root integrity rejects workspace package extensions (145.4899ms)
+✔ root integrity rejects legacy TypeScript inclusion (139.5301ms)
+✔ root integrity rejects legacy Docker inclusion (129.0446ms)
+✔ historical provenance remains valid in both LF and CRLF checkouts (278.1597ms)
+✔ the reviewed workspace configuration permits only checkout line-ending differences (129.8881ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3240.9935
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report

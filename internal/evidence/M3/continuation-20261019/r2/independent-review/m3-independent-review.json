@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "M3_INDEPENDENT_EVIDENCE_REVIEW",
+  "stageId": "M3",
+  "candidateId": "r2-current-20261019",
+  "reviewerId": "codex-independent-reviewer-r2-20261019",
+  "reviewedAt": "2026-10-19T07:21:48Z",
+  "independentFromImplementer": true,
+  "implementerIdsReviewed": ["codex-m3-evidence"],
+  "candidateDigests": {
+    "sourceTreeSha256": "e5cf13a5d4af7747fcb83bc10e940e73e731570a0df4dd6361aaced0890a71be",
+    "schemaSha256": "7560a6a5b059bb33a47e7afa878826d73cf57f05a3a6a6f5ffa1ff2eb7f08d0f",
+    "configurationSha256": "07533fb94ecce587a9ae2639c857fea11c837303a119505715ff703013b985cd",
+    "contractSha256": "b9b18ecc7f944962df5880e4a0ffa255f2ea1621787cbc623c80e6ce588387b6",
+    "validatorSha256": "e77e8954b8fb3774d56454f92fef306e8a213cb2515a2ca7eceb5a8fec1d7dbf",
+    "lockfileSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35"
+  },
+  "candidateDigestRefs": [
+    "internal/evidence/M3/continuation-20261019/r2/candidate-after-browser-attempt2/candidate.json",
+    "internal/evidence/m7/local-current-20261019/continuation/baseline-r2/candidate.json",
+    "internal/evidence/M3/continuation-20261019/r2/automated/record.json"
+  ],
+  "decision": "BLOCKED",
+  "scope": "Independent technical evidence review of the current r2 M3 candidate and its submitted local, automated and browser evidence.",
+  "findings": [
+    {
+      "id": "M3-B01",
+      "severity": "BLOCKER",
+      "subject": "Mandatory M3 criterion rows remain NOT_RUN",
+      "detail": "M3-C01 and M3-C02 remain NOT_RUN in the submitted automated acceptance record. Supplemental browser journeys do not rewrite those acceptance rows.",
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/r2/automated/record.json",
+        "internal/evidence/M3/continuation-20261019/r2/current-evidence-assessment-attempt2.json",
+        "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/walkthrough.json"
+      ]
+    },
+    {
+      "id": "M3-B02",
+      "severity": "BLOCKER",
+      "subject": "Mandatory scenario rows remain NOT_RUN",
+      "detail": "The submitted automated record still marks these mandatory rows NOT_RUN: SC-FND-15, SC-GEN-01, SC-GEN-17, SC-IAM-03, SC-IAM-04, SC-IAM-05, SC-IAM-06, SC-IAM-07, SC-IAM-08, SC-REL-14, SC-REL-15, T01, T02, T03, T05, T29, T32, T47, T48, T50, T56 and T62.",
+      "evidenceRefs": ["internal/evidence/M3/continuation-20261019/r2/automated/record.json"]
+    },
+    {
+      "id": "M3-B03",
+      "severity": "BLOCKER",
+      "subject": "Manual visual approval is false",
+      "detail": "The current evidence assessment and browser walkthrough both record manualVisualApproval as false.",
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/r2/current-evidence-assessment-attempt2.json",
+        "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/walkthrough.json"
+      ]
+    },
+    {
+      "id": "M3-B04",
+      "severity": "BLOCKER",
+      "subject": "Browser 403 and 409 observations are unclassified",
+      "detail": "The browser walkthrough records console observations for HTTP 403 Forbidden and HTTP 409 Conflict, but the current evidence does not classify their cause, expectedness, or acceptance impact.",
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/walkthrough.json",
+        "internal/evidence/M3/continuation-20261019/r2/current-evidence-assessment-attempt2.json"
+      ]
+    },
+    {
+      "id": "M3-B05",
+      "severity": "BLOCKER",
+      "subject": "M3 prerequisite task 4.13 is still IN_PROGRESS",
+      "detail": "The automated acceptance record lists task 4.13 as IN_PROGRESS, while the M3 gate requires tasks 4.1 through 4.11 and 4.13 to be complete.",
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/r2/automated/record.json",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md"
+      ]
+    }
+  ],
+  "positiveEvidenceObserved": [
+    {
+      "subject": "Candidate stability",
+      "detail": "Automated and browser evidence bind to the same current sourceTreeSha256 and browser cleanup completed successfully.",
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/r2/automated/record.json",
+        "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/candidate-after.json",
+        "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/cleanup.json"
+      ]
+    },
+    {
+      "subject": "Browser journey coverage",
+      "detail": "The walkthrough records successful local generation, workspace, invitation, ownership, private-download, restart and viewport journeys. These observations do not override unresolved acceptance rows or the manual visual approval requirement.",
+      "evidenceRefs": ["internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/walkthrough.json"]
+    }
+  ],
+  "evidenceRefs": [
+    "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+    "openspec/changes/restart-shpitto-video-saas/acceptance-record.template.json",
+    "internal/evidence/acceptance/M3/working-tree-20261019-current/record.json",
+    "internal/evidence/M3/continuation-20261019/r2/current-evidence-assessment-attempt2.json",
+    "internal/evidence/M3/continuation-20261019/r2/automated/record.json",
+    "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/walkthrough.json",
+    "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b/cleanup.json"
+  ],
+  "limitations": [
+    "This review does not alter the current M3 acceptance record, acceptance register or gate status.",
+    "This review does not provide commercial, release, production or paid-provider approval."
+  ],
+  "releaseApproval": false,
+  "commercialApproval": false,
+  "productionApproval": false
+}

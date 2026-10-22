@@ -1,0 +1,6 @@
+Error: ENOENT: no such file or directory, open 'D:\github\shpitto\internal\evidence\M3\continuation-20261019\r4b\browser-run\browser-runtime-provenance.json'
+    at readFileSync (node:fs:441:20)
+    at file:///D:/github/shpitto/internal/evidence/M3/continuation-20261019/r4b/browser-harness.mjs:144:33
+    at ModuleJob.run (node:internal/modules/esm/module_job:437:25)
+    at async node:internal/modules/esm/loader:639:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)

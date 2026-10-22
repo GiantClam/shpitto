@@ -1,0 +1,50 @@
+✓ Lockfile passes supply-chain policies (verified 1h ago)
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: C:\Users\liula\AppData\Local\pnpm\store\v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 111, reused 111, downloaded 0, added 49
+Progress: resolved 128, reused 128, downloaded 0, added 65
+Progress: resolved 153, reused 153, downloaded 0, added 90
+Progress: resolved 181, reused 181, downloaded 0, added 118
+Progress: resolved 198, reused 198, downloaded 0, added 136
+Progress: resolved 220, reused 220, downloaded 0, added 158
+Progress: resolved 239, reused 239, downloaded 0, added 178
+Progress: resolved 265, reused 264, downloaded 0, added 206
+Progress: resolved 288, reused 288, downloaded 0, added 233
+Progress: resolved 309, reused 309, downloaded 0, added 259
+Progress: resolved 326, reused 326, downloaded 0, added 276
+Progress: resolved 337, reused 337, downloaded 0, added 294
+Progress: resolved 345, reused 345, downloaded 0, added 304
+Progress: resolved 349, reused 349, downloaded 0, added 310
+Progress: resolved 361, reused 361, downloaded 0, added 329
+Progress: resolved 368, reused 368, downloaded 0, added 341
+Progress: resolved 374, reused 374, downloaded 0, added 353
+Progress: resolved 377, reused 376, downloaded 0, added 359
+Progress: resolved 381, reused 381, downloaded 0, added 366
+Packages: +381
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 381, reused 381, downloaded 0, added 381, done
+
+dependencies:
++ @aws-sdk/client-s3 3.1141.0
++ @trigger.dev/sdk 4.6.4
++ better-auth 1.7.6
++ drizzle-orm 0.45.3
++ fumadocs-core 16.15.14
++ fumadocs-ui 16.15.14
++ next 16.3.8
++ pg 8.23.0
++ react 19.3.0
++ react-dom 19.3.0
++ stripe 22.6.2
+
+devDependencies:
++ @types/node 24.0.0
++ @types/react 19.0.0
++ @types/react-dom 19.0.0
++ drizzle-kit 0.31.11
++ typescript 6.0.3
+
+Done in 24.4s using pnpm v12.6.0

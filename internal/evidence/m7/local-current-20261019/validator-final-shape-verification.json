@@ -1,0 +1,18 @@
+{
+  "status": "PASS",
+  "profile": "independent-review-validator-metadata-corrections",
+  "checks": [
+    {"command": "node --experimental-strip-types --test tests/unit/governed-skills.test.ts", "status": "PASS", "exitCode": 0, "tests": 12, "outputRef": "validator-green-metadata-shape.log"},
+    {"command": "node node_modules/typescript/bin/tsc --noEmit --incremental false", "status": "PASS", "exitCode": 0},
+    {"command": "node scripts/check-source-boundaries.mjs", "status": "PASS", "exitCode": 0},
+    {"command": "node scripts/format-check.mjs", "status": "PASS", "exitCode": 0}
+  ],
+  "redEvidence": ["validator-red-digest-shape.log", "validator-red-metadata-shape.log"],
+  "acceptedEvidenceShape": {
+    "digests": "all six values in both evidence and current inputs are 64-hex SHA-256 strings",
+    "capturedAt": "canonical nonempty parseable date string",
+    "policyVersion": "canonical nonempty string identity, without an invented version allowlist"
+  },
+  "authoritativeGatePromotion": false,
+  "note": "This supersedes earlier toy-digest probe fixtures for the repaired metadata shape. Earlier red and green observations retain their original scope. Independent milestone acceptance remains open."
+}

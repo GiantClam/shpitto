@@ -10,7 +10,7 @@ import {DomainError} from '../src/db/contracts.ts';
 import {authUser} from '../src/db/schema/auth.ts';
 import {billingAccounts} from '../src/db/schema/billing.ts';
 import {mailOutbox, workspaceInvitations} from '../src/db/schema/invitations.ts';
-import {workspaceMembers, workspaces} from '../src/db/schema/workspace.ts';
+import {creditAccounts, workspaceMembers, workspaces} from '../src/db/schema/workspace.ts';
 import {createTeamWorkspace} from '../src/modules/workspaces/commands.ts';
 import {acceptTeamInvitation, createTeamInvitation, INVITATION_TTL_MS} from '../src/modules/workspaces/invitations.ts';
 
@@ -152,6 +152,7 @@ async function run(): Promise<void> {
     const deletedWorkspaceOutbox = await database.db.select().from(mailOutbox)
       .where(eq(mailOutbox.invitationId, deletedWorkspaceInvite.invitationId));
     const deletedWorkspaceToken = (deletedWorkspaceOutbox[0]!.payload as {token: string}).token;
+    await database.db.delete(creditAccounts).where(eq(creditAccounts.workspaceId, workspaceId));
     await database.db.delete(billingAccounts).where(eq(billingAccounts.workspaceId, workspaceId));
     await database.db.delete(workspaces).where(eq(workspaces.id, workspaceId));
     await assert.rejects(acceptTeamInvitation(database.db, {userId: users.mismatch}, deletedWorkspaceToken), rejectsCode('FORBIDDEN'));
@@ -171,6 +172,7 @@ async function run(): Promise<void> {
     }));
   } finally {
     await database.db.delete(workspaces).where(eq(workspaces.id, personalId));
+    if (workspaceId) await database.db.delete(creditAccounts).where(eq(creditAccounts.workspaceId, workspaceId));
     if (workspaceId) await database.db.delete(billingAccounts).where(eq(billingAccounts.workspaceId, workspaceId));
     if (workspaceId) await database.db.delete(workspaces).where(eq(workspaces.id, workspaceId));
     await database.db.delete(authUser).where(eq(authUser.id, users.owner));

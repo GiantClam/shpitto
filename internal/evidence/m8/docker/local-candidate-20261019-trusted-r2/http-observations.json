@@ -1,0 +1,141 @@
+{
+  "origin": "http://127.0.0.1:52334",
+  "initialReadiness": {
+    "status": "ready",
+    "profile": "production",
+    "database": "ready",
+    "latencyMs": 22
+  },
+  "restartReadiness": {
+    "status": "ready",
+    "profile": "production",
+    "database": "ready",
+    "latencyMs": 20
+  },
+  "pages": [
+    {
+      "route": "/",
+      "status": 200,
+      "bytes": 33876,
+      "sha256": "49899f45b5419be8c67609794339b4484a62074dfc10aa47084c1063f5cdf02e"
+    },
+    {
+      "route": "/login",
+      "status": 200,
+      "bytes": 18481,
+      "sha256": "0ca5530a5dafb87cdf9e2f820192e0f8bf8e7d30b0b2f79124cebdaf50b09204"
+    },
+    {
+      "route": "/docs/v1",
+      "status": 200,
+      "bytes": 94222,
+      "sha256": "decfac8a477f2a30321e3e8138051c595943a3be7d286707c0b71bb05e8f86d0"
+    },
+    {
+      "route": "/docs/v1/template/local-journey",
+      "status": 200,
+      "bytes": 102329,
+      "sha256": "220b2c37f7c0c5aed495f915963c88aeb051d3d388e07314dbc23548fa23dd17"
+    }
+  ],
+  "brandAssets": [
+    {
+      "route": "/brand/shpitto-logo-full.png",
+      "status": 200,
+      "bytes": 183206,
+      "sha256": "fe488d478dbdfe16e389be9b04f7f2146f2780d25e41696ca71d1b85ff1e5d8b"
+    },
+    {
+      "route": "/brand/shpitto-icon.png",
+      "status": 200,
+      "bytes": 67099,
+      "sha256": "de918ec42b0bff65393c8208c45db9b7075ad00c385e7dfa2550ac968e0fe278"
+    }
+  ],
+  "staticResources": [
+    {
+      "route": "/_next/static/chunks/1n6d4lh7kep_j.css",
+      "status": 200,
+      "bytes": 37164,
+      "sha256": "6491fb545e73365f5d1b48afb59d0eec540ddec1f985f69f304379749c5647d8"
+    },
+    {
+      "route": "/_next/static/chunks/2je-vhvzpd9vl.js",
+      "status": 200,
+      "bytes": 17363,
+      "sha256": "0cd3c4c75350496621c5c405e6987b68bf06d07658eecebaedad83cfa0384f47"
+    },
+    {
+      "route": "/_next/static/chunks/2n64jik7h7-y3.js",
+      "status": 200,
+      "bytes": 27554,
+      "sha256": "868d170f34cf0cf16b0b00d9e39f266510c8b4f446a61bb042e0011ba48c8a32"
+    },
+    {
+      "route": "/_next/static/chunks/3ty4387eani1r.js",
+      "status": 200,
+      "bytes": 228903,
+      "sha256": "1db0fae9f34d9fc580e20d68d541e149a54fc21cde7b29de2d918377a8808317"
+    },
+    {
+      "route": "/_next/static/chunks/096de_ca2wmrd.js",
+      "status": 200,
+      "bytes": 155653,
+      "sha256": "4df2f70616a4a63b64d80c959be6c02d332ecca420af356e299b91221583b4b5"
+    },
+    {
+      "route": "/_next/static/chunks/turbopack-2xefwhdh603mq.js",
+      "status": 200,
+      "bytes": 10946,
+      "sha256": "58f6f5c554499608a06939db175e7d867218ee83c7698f01f82b31e21a651891"
+    },
+    {
+      "route": "/_next/static/chunks/1bajzhy8069pq.js",
+      "status": 200,
+      "bytes": 14373,
+      "sha256": "52bac832e773689e499e878d7919a258de0c78bc73b93c94700a804e23b55880"
+    },
+    {
+      "route": "/_next/static/chunks/0m8kw8pbnygv0.js",
+      "status": 200,
+      "bytes": 28386,
+      "sha256": "1bde047c116f6ef8903a78260f3f897c79ec905226bf199537cd65f775395eab"
+    },
+    {
+      "route": "/_next/static/chunks/0cz1d0mv5g_q7.js",
+      "status": 200,
+      "bytes": 112594,
+      "sha256": "0973c1d64c88adc8e3c950410cb58b288f72118d5965b78049438deb8f2f9683"
+    },
+    {
+      "route": "/_next/static/chunks/1c64ax8jj2kxd.js",
+      "status": 200,
+      "bytes": 3623,
+      "sha256": "8b7e505d72afa8c2cf13f747e33b8c38b58b472f22aa6ecbbaf06c49455b9f78"
+    },
+    {
+      "route": "/_next/static/chunks/09h4dui4lutgr.css",
+      "status": 200,
+      "bytes": 3555,
+      "sha256": "2465016d1a7d527fb56cf7f1bf783226731ecfb57021dcb47512102abc210a7a"
+    },
+    {
+      "route": "/_next/static/chunks/3d6y1vs9jzgu_.js",
+      "status": 200,
+      "bytes": 281,
+      "sha256": "6b1c98dfe9663a0c1c0b3313091d9b9ed8469549ccc978e149c877d5da42459b"
+    },
+    {
+      "route": "/_next/static/chunks/2ow-vkzazt2l1.js",
+      "status": 200,
+      "bytes": 34208,
+      "sha256": "f228d838ed8edccb94c8fcaa0b4cf2e9b84502542a6518f52beabea23ced3fc6"
+    },
+    {
+      "route": "/_next/static/chunks/1qoxh5iyloz_i.js",
+      "status": 200,
+      "bytes": 33745,
+      "sha256": "a637434cfb9338db0d1cb692841c878d7e01d442aa5441a885b138eba3d7a0d0"
+    }
+  ]
+}

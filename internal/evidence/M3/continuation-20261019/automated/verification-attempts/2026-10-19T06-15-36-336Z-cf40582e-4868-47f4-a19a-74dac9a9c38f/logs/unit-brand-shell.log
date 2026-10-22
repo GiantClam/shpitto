@@ -1,0 +1,21 @@
+✔ default brand exposes the shared presentation contract (2.7273ms)
+✔ body, status and primary action token pairs meet AA text contrast (0.2623ms)
+✔ studio roles project from the brand contract without a second palette (0.3571ms)
+✔ workspace navigation keeps creation, assets, history and billing in the selected workspace (0.1401ms)
+✔ creator navigation separates product destinations from video input modes (46.7099ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 357.4442
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report

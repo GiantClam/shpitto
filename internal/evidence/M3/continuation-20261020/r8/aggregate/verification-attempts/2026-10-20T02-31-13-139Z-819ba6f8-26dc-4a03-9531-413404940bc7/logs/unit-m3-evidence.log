@@ -1,0 +1,37 @@
+▶ M3 verification runner safety
+  ✔ defaults to a fresh candidate path without selecting historical browser evidence (1.6638ms)
+  ✔ retains positional output compatibility and supports explicit CLI and environment selection (1.0799ms)
+  ✔ ambiguous or malformed runner options fail before verification starts (0.4958ms)
+  ✔ reviewed, approved, and unreadable records cannot be replaced (5.6988ms)
+  ✔ malformed review and integration metadata fail closed (8.4126ms)
+  ✔ browser evidence and artifact references cannot escape through a directory junction (11.319ms)
+  ✔ the CLI protects an approved record before creating any attempt logs (200.7008ms)
+✔ M3 verification runner safety (230.4623ms)
+▶ M3 evidence integrity
+  ✔ browser PASS labels alone cannot stand in for required journeys and UI states (0.7692ms)
+  ✔ browser checks require retained artifacts and observed assertions (0.2987ms)
+  ✔ contradictory or duplicate browser results cannot be hidden by one passing row (0.289ms)
+  ✔ an additional failed or incomplete browser check prevents approval (0.2209ms)
+  ✔ LCOV branch totals remain branch-based and normalize Windows absolute paths (0.5551ms)
+  ✔ separate verification runs union stable branch IDs without counting repeats twice (0.4144ms)
+  ✔ a missing owned source or malformed branch report fails coverage (0.291ms)
+  ✔ zero-branch and failed suites cannot claim coverage (0.11ms)
+  ✔ missing mandatory evidence stays in progress; a recorded failure fails the stage (0.1565ms)
+  ✔ changed candidate bytes make any result stale, never ready for review (0.0763ms)
+✔ M3 evidence integrity (3.6307ms)
+ℹ tests 17
+ℹ suites 2
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 404.8429
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report

@@ -1,0 +1,17 @@
+{
+  "observedAt": "2026-10-19T04:40:23.283Z",
+  "candidateId": "local-candidate-20261019",
+  "profile": "current-tree-to-frozen-archive-comparison",
+  "fileCount": 455,
+  "archiveDigestMatches": true,
+  "packageTransform": "createCustomerPackage matches scripts/package-release.ts",
+  "sourceMismatches": [
+    {
+      "source": "next-env.d.ts",
+      "reason": "bytes-changed",
+      "archiveSha256": "1862ac4bbbc5192d4bf562161df66ea547ed3e67173100656ab606ae9797db2b",
+      "currentSha256": "1b59d4c6b83807db275d43f3cf2cc8e9323f465fab764eea091cc5becd5bad37"
+    }
+  ],
+  "note": "This is a comparison only; current-file drift requires review or a regenerated candidate. It does not invalidate the archived local runtime observations or approve current-byte equivalence."
+}

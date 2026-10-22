@@ -1,0 +1,88 @@
+{
+  "release": "v1",
+  "baseline": "4506ab089eceaf64ec1bc57c4b5c6ef16ed3e75042292ccbc3bfdd2742a3a9f8",
+  "dirtyWork": [
+    ".data/unrelated-user-note.txt"
+  ],
+  "intent": "A public Studio notes page explains prompt planning using the existing marketing shell, semantic classes and links. Add its marketing navigation entry; add no commands or API.",
+  "classification": "presentation",
+  "changedFiles": [
+    {
+      "path": "src/config/navigation.ts",
+      "classification": "presentation",
+      "reason": "A public Studio notes page explains prompt planning using the existing marketing shell, semantic classes and links. Add its marketing navigation entry; add no commands or API."
+    },
+    {
+      "path": "src/app/(marketing)/studio-notes/page.tsx",
+      "classification": "presentation",
+      "reason": "A public Studio notes page explains prompt planning using the existing marketing shell, semantic classes and links. Add its marketing navigation entry; add no commands or API."
+    }
+  ],
+  "checks": [
+    {
+      "id": "create-page-route-types",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T04-57-44-215Z-add6e97e/logs/create-page-route-types.log"
+    },
+    {
+      "id": "create-page-typecheck",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T04-57-44-215Z-add6e97e/logs/create-page-typecheck.log"
+    },
+    {
+      "id": "create-page-source-boundaries",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T04-57-44-215Z-add6e97e/logs/create-page-source-boundaries.log"
+    },
+    {
+      "id": "create-page-db-boundaries",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T04-57-44-215Z-add6e97e/logs/create-page-db-boundaries.log"
+    },
+    {
+      "id": "create-page-shell-boundaries",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T04-57-44-215Z-add6e97e/logs/create-page-shell-boundaries.log"
+    },
+    {
+      "id": "create-page-content-boundaries",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T04-57-44-215Z-add6e97e/logs/create-page-content-boundaries.log"
+    },
+    {
+      "id": "create-page-format-check",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T04-57-44-215Z-add6e97e/logs/create-page-format-check.log"
+    },
+    {
+      "id": "create-page-probe-auth-lifecycle",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T04-57-44-215Z-add6e97e/logs/create-page-probe-auth-lifecycle.log"
+    },
+    {
+      "id": "create-page-probe-credit-ledger",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T04-57-44-215Z-add6e97e/logs/create-page-probe-credit-ledger.log"
+    },
+    {
+      "id": "create-page-probe-generation-create",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T04-57-44-215Z-add6e97e/logs/create-page-probe-generation-create.log"
+    },
+    {
+      "id": "create-page-probe-billing-reconciliation",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T04-57-44-215Z-add6e97e/logs/create-page-probe-billing-reconciliation.log"
+    },
+    {
+      "id": "create-page-probe-m6-admin-reads",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T04-57-44-215Z-add6e97e/logs/create-page-probe-m6-admin-reads.log"
+    }
+  ],
+  "recovery": {
+    "patchRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T04-57-44-215Z-add6e97e/create-page/customization.patch",
+    "preservesUnrelatedWork": true,
+    "overlaps": []
+  }
+}

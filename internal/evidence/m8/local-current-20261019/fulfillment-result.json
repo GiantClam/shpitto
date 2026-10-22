@@ -1,0 +1,34 @@
+{
+  "status": "PASS",
+  "profile": "local-fulfillment-fixture",
+  "candidateId": "local-candidate-20261019",
+  "checks": {
+    "orderIdentity": "PASS",
+    "artifactDigest": "PASS",
+    "artifactBytes": "PASS",
+    "duplicateReplay": "PASS",
+    "conflictRejection": "PASS",
+    "paymentIsolation": "PASS",
+    "expiryTransition": "PASS",
+    "acquiredVersionRetention": "PASS",
+    "renewalVersion": "PASS",
+    "renewalGapPreserved": "PASS",
+    "customerCopy": "PASS"
+  },
+  "entitlement": {
+    "orderId": "redacted-local-order",
+    "buyerId": "redacted-local-buyer",
+    "candidateId": "local-candidate-20261019",
+    "artifactSha256": "b1967ad98000316ad96539b6baa04c6ae499a68175d707429c8e6d91d8f14c07",
+    "versions": [
+      1,
+      2
+    ],
+    "acquiredSourceRetained": true
+  },
+  "vendorAccount": "NOT_PROVIDED",
+  "commercialTerms": "NOT_PROVIDED",
+  "note": "Actual candidate bytes and local domain rules verified; no merchant charge, external delivery or commercial entitlement was performed.",
+  "verifiedAt": "2026-10-19T04:39:48.053Z",
+  "command": "node --input-type=module (import verifyLocalFulfillment; verifyLocalFulfillment(process.cwd(), local-candidate-20261019))"
+}

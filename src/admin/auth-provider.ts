@@ -1,10 +1,17 @@
-import type {AuthProvider} from 'react-admin';
-
 import {adminRequest} from './http.ts';
 
 type OperatorIdentity = Readonly<{userId: string; role: 'support' | 'operator' | 'superadmin'}>;
 
-export const adminAuthProvider: AuthProvider = {
+export type AdminAuthProvider = Readonly<{
+  login: (params?: unknown) => Promise<never>;
+  logout: () => Promise<string>;
+  checkAuth: (params?: unknown) => Promise<void>;
+  checkError: (error: {status?: number} | null | undefined) => Promise<void>;
+  getPermissions: () => Promise<OperatorIdentity['role']>;
+  getIdentity: () => Promise<Readonly<{id: string; fullName: string}>>;
+}>;
+
+export const adminAuthProvider: AdminAuthProvider = {
   async login() { throw new Error('Sign in through the shared account page.'); },
   async logout() {
     await adminRequest('/api/auth/sign-out', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});

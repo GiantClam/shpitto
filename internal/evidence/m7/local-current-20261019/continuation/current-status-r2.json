@@ -1,0 +1,90 @@
+{
+  "updatedAt": "2026-10-19T08:36:29.041Z",
+  "scope": "local-current-r2-only",
+  "candidateId": "local-candidate-20261019-trusted-r2",
+  "sourceTreeSha256": "54261cba4191fd0088a24a77cac733b6bdef7b4cf8a207f38a7df11e6a2ee2ef",
+  "archive": {
+    "path": "internal/evidence/m8/artifact-manifest/local-candidate-20261019-trusted-r2/local-candidate-20261019-trusted-r2.zip",
+    "bytes": 9658756,
+    "sha256": "cc9750578638109350e05b60865a76e139e752a9bd97ed2a436f279ffac5ea66"
+  },
+  "tests": 53,
+  "sourceBaselineReview": {
+    "decision": "PASS",
+    "evidenceRef": "internal/evidence/m7/local-current-20261019/continuation/baseline-review.json"
+  },
+  "localRuntime": {
+    "status": "PASS",
+    "checks": 15,
+    "backupMs": 976,
+    "restoreMs": 891,
+    "evidenceRef": "internal/evidence/m8/local-demo/local-candidate-20261019-trusted-r2/result.json"
+  },
+  "docker": {
+    "status": "PASS",
+    "evidenceRef": "internal/evidence/m8/docker/local-candidate-20261019-trusted-r2/result.json"
+  },
+  "fourWorkflows": {
+    "status": "PASS",
+    "sourceStableDuringRun": true,
+    "evidenceRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-26-41-839Z-7373f7ea/summary.json"
+  },
+  "fulfillment": {
+    "status": "PASS",
+    "evidenceRef": "internal/evidence/m8/fulfillment/local-candidate-20261019-trusted-r2/result.json"
+  },
+  "trustedPreparation": {
+    "status": "PASS",
+    "decision": "PASS",
+    "evidenceRef": "internal/evidence/m7/local-current-20261019/continuation/candidate-review-r3.json",
+    "recordRef": "D:/github/_tmp/shpitto-m7-evidence-20261019/fresh-r4-20261019-1605/6654cdb7-ca5c-4a08-a8e2-e16c9f2f90a4/record.json",
+    "note": "Independent review r3 supersedes r2 and confirms all six staged digests with the exact pinned default JavaScript ordering."
+  },
+  "trustedValidation": {
+    "status": "PASS",
+    "evidenceRef": "D:/github/_tmp/shpitto-m7-evidence-20261019/fresh-r4-20261019-1605/7971a118-8b4e-4ad6-828c-7deeeb9b5764/accepted.json"
+  },
+  "exportValidation": {
+    "status": "PASS",
+    "evidenceRef": "D:/github/_tmp/shpitto-m7-evidence-20261019/fresh-r4-20261019-1605/85b9379c-f330-41b6-99e6-57cf5eb8a76a/accepted.json"
+  },
+  "deployValidation": {
+    "status": "BLOCKED",
+    "evidenceRef": "internal/evidence/m7/local-current-20261019/continuation/deploy-validation-blocked-20261019.json",
+    "note": "The pinned trusted root dependency tree no longer matches the protected 3d28... checksum after local dependency materialization. The validator correctly refused deployment validation."
+  },
+  "independentCandidateReview": "PASS",
+  "m3CurrentReview": "BLOCKED",
+  "m4ApplicabilityReview": {
+    "decision": "PASS",
+    "scope": "SCOPED_APPLICABILITY_ONLY",
+    "stageAcceptance": "NOT_RUN",
+    "evidenceRefs": [
+      "internal/evidence/M3/continuation-20261019/r2/independent-review/m4-scoped-independent-review.json",
+      "internal/evidence/M3/continuation-20261019/r2/independent-review/m4-scoped-integrator-decision.json"
+    ]
+  },
+  "gatePromotion": false,
+  "openTaskIds": [
+    "6.10",
+    "7.14",
+    "8.15",
+    "9.13",
+    "9.14",
+    "9.15"
+  ],
+  "m3Automated": {
+    "status": "BLOCKED",
+    "automatedChecks": "PASS",
+    "ownedBranchCoveragePercent": 83.96,
+    "browserReview": "BLOCKED",
+    "independentReview": "BLOCKED",
+    "evidenceRef": "internal/evidence/M3/continuation-20261019/r2/automated/record.json",
+    "independentReviewRef": "internal/evidence/M3/continuation-20261019/r2/independent-review/m3-independent-review.json",
+    "integratorDecisionRef": "internal/evidence/M3/continuation-20261019/r2/independent-review/m3-integrator-decision.json"
+  },
+  "independentLocalEvidenceReview": {
+    "decision": "PASS",
+    "evidenceRef": "internal/evidence/m7/local-current-20261019/continuation/local-evidence-review.json"
+  }
+}

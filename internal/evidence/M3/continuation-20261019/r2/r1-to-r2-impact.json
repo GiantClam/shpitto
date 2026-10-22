@@ -1,0 +1,141 @@
+{
+  "createdAt": "2026-10-19T06:27:13.190Z",
+  "freezeRef": "internal/evidence/m7/local-current-20261019/continuation/baseline-r2/candidate.json",
+  "r1Source": "95ad817920e31e3db850155b6d321ab90c79cfeaa90d4d0d5263c9aa297a08e7",
+  "r2Source": "e5cf13a5d4af7747fcb83bc10e940e73e731570a0df4dd6361aaced0890a71be",
+  "allSixDigestsMatchAnnouncedR2": true,
+  "applicationRuntimeByteIdentical": true,
+  "schemaByteIdentical": true,
+  "configurationByteIdentical": true,
+  "lockfileByteIdentical": true,
+  "delta": {
+    "sourceTree": {
+      "changedCount": 4,
+      "changed": [
+        {
+          "path": ".shpitto/contracts/protected-paths.json",
+          "before": {
+            "path": ".shpitto/contracts/protected-paths.json",
+            "bytes": 638,
+            "sha256": "79a78ce3c58486c20a1870ee4a347710b01c46163825ef1dd7fa43bc7846974d"
+          },
+          "after": {
+            "path": ".shpitto/contracts/protected-paths.json",
+            "bytes": 641,
+            "sha256": "b259fea79ac29bafb88653e1ba9381da47891d101584bcee6412bef395867e6d"
+          }
+        },
+        {
+          "path": "scripts/validate-change.ts",
+          "before": {
+            "path": "scripts/validate-change.ts",
+            "bytes": 8749,
+            "sha256": "1722f55325e3f05c1fe7b24e4d09274abd0b8053833ca6360c15ea913fd0331c"
+          },
+          "after": {
+            "path": "scripts/validate-change.ts",
+            "bytes": 9960,
+            "sha256": "179d3e747aab36bbc89ac74f3a4ddcf04ce5252533c06a325360dccd8067cc5f"
+          }
+        },
+        {
+          "path": "tests/unit/customer-package.test.ts",
+          "before": {
+            "path": "tests/unit/customer-package.test.ts",
+            "bytes": 2606,
+            "sha256": "9d84873dc7aaa95470ff0a0a9ea2e802eefd966d13fd2d1d28539189d8b5cffa"
+          },
+          "after": {
+            "path": "tests/unit/customer-package.test.ts",
+            "bytes": 2638,
+            "sha256": "4bb99de139c93f87b22859d70789f3534fb2e44d6218f3cb3875112088636362"
+          }
+        },
+        {
+          "path": "tests/unit/governed-skills.test.ts",
+          "before": {
+            "path": "tests/unit/governed-skills.test.ts",
+            "bytes": 9272,
+            "sha256": "3a7ffd71e402a75f9eed739fed3d2cb35405005c8b01dedd4fa7d6400ed1a552"
+          },
+          "after": {
+            "path": "tests/unit/governed-skills.test.ts",
+            "bytes": 10522,
+            "sha256": "10c570f37311eb261f0a3a92e30cbf7fa2b651cf2e536aeae9e00ebb418bcca9"
+          }
+        }
+      ]
+    },
+    "schema": {
+      "changedCount": 0,
+      "changed": []
+    },
+    "configuration": {
+      "changedCount": 0,
+      "changed": []
+    },
+    "contract": {
+      "changedCount": 1,
+      "changed": [
+        {
+          "path": ".shpitto/contracts/protected-paths.json",
+          "before": {
+            "path": ".shpitto/contracts/protected-paths.json",
+            "bytes": 638,
+            "sha256": "79a78ce3c58486c20a1870ee4a347710b01c46163825ef1dd7fa43bc7846974d"
+          },
+          "after": {
+            "path": ".shpitto/contracts/protected-paths.json",
+            "bytes": 641,
+            "sha256": "b259fea79ac29bafb88653e1ba9381da47891d101584bcee6412bef395867e6d"
+          }
+        }
+      ]
+    },
+    "validator": {
+      "changedCount": 3,
+      "changed": [
+        {
+          "path": "scripts/validate-change.ts",
+          "before": {
+            "path": "scripts/validate-change.ts",
+            "bytes": 8749,
+            "sha256": "1722f55325e3f05c1fe7b24e4d09274abd0b8053833ca6360c15ea913fd0331c"
+          },
+          "after": {
+            "path": "scripts/validate-change.ts",
+            "bytes": 9960,
+            "sha256": "179d3e747aab36bbc89ac74f3a4ddcf04ce5252533c06a325360dccd8067cc5f"
+          }
+        },
+        {
+          "path": "tests/unit/customer-package.test.ts",
+          "before": {
+            "path": "tests/unit/customer-package.test.ts",
+            "bytes": 2606,
+            "sha256": "9d84873dc7aaa95470ff0a0a9ea2e802eefd966d13fd2d1d28539189d8b5cffa"
+          },
+          "after": {
+            "path": "tests/unit/customer-package.test.ts",
+            "bytes": 2638,
+            "sha256": "4bb99de139c93f87b22859d70789f3534fb2e44d6218f3cb3875112088636362"
+          }
+        },
+        {
+          "path": "tests/unit/governed-skills.test.ts",
+          "before": {
+            "path": "tests/unit/governed-skills.test.ts",
+            "bytes": 9272,
+            "sha256": "3a7ffd71e402a75f9eed739fed3d2cb35405005c8b01dedd4fa7d6400ed1a552"
+          },
+          "after": {
+            "path": "tests/unit/governed-skills.test.ts",
+            "bytes": 10522,
+            "sha256": "10c570f37311eb261f0a3a92e30cbf7fa2b651cf2e536aeae9e00ebb418bcca9"
+          }
+        }
+      ]
+    }
+  },
+  "inference": "The runtime/schema/provider subset is unchanged, while validation policy and tests require fresh checks. No stale r1 stage record is promoted."
+}

@@ -1,0 +1,14 @@
+{
+  "sourceRef": "internal/evidence/M3/continuation-20261019/r2/browser-harness.mjs",
+  "sourceSha256": "201a3da1fd99894958da2abab41c230a9790d0274718498e7fd3d033de2b7abf",
+  "retainedRunnerSha256": "6baa51d7d120b199b17ab5d049f7ba11d46d5f4f42de0d0850e8a1a871dec14a",
+  "uiAssertionsPreserved": true,
+  "changes": [
+    "r2 source/build/provenance binding",
+    "Own dynamic local mail service",
+    "External browser requests blocked"
+  ],
+  "realUiInteractions": true,
+  "scriptedResponseFulfillment": false,
+  "inventedManualProof": false
+}

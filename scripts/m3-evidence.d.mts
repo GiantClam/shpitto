@@ -1,6 +1,14 @@
 export type CoverageReport = Readonly<{path: string; branchesFound: number; branchesHit: number}>;
 export type StageEntry = Readonly<{result: string; applicable?: boolean; mandatory?: boolean}>;
 
+export function resolveM3VerificationOptions(input: Readonly<{
+  root: string;
+  args: readonly string[];
+  env: Readonly<Record<string, string | undefined>>;
+  attemptId: string;
+}>): Readonly<{output: string; browserEvidencePath: string | null}>;
+export function assertM3OutputWritable(output: string): void;
+export function isRetainedM3Artifact(root: string, reference: string): boolean;
 export const M3_OWNED_SOURCE_ROOTS: readonly string[];
 export function assessBrowserEvidence(evidence: unknown, artifactExists: (reference: string) => boolean): Readonly<{passed: boolean; missing: string[]}>;
 export function collectOwnedModules(root: string, sourceRoots?: readonly string[]): string[];

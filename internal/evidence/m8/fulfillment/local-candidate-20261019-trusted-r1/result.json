@@ -1,0 +1,32 @@
+{
+  "status": "PASS",
+  "profile": "local-fulfillment-fixture",
+  "candidateId": "local-candidate-20261019-trusted-r1",
+  "checks": {
+    "orderIdentity": "PASS",
+    "artifactDigest": "PASS",
+    "artifactBytes": "PASS",
+    "duplicateReplay": "PASS",
+    "conflictRejection": "PASS",
+    "paymentIsolation": "PASS",
+    "expiryTransition": "PASS",
+    "acquiredVersionRetention": "PASS",
+    "renewalVersion": "PASS",
+    "renewalGapPreserved": "PASS",
+    "customerCopy": "PASS"
+  },
+  "entitlement": {
+    "orderId": "redacted-local-order",
+    "buyerId": "redacted-local-buyer",
+    "candidateId": "local-candidate-20261019-trusted-r1",
+    "artifactSha256": "83d093d9c0854e3a37d976ea976ca1c22685fc682d4b16bf05ea62dcb058d625",
+    "versions": [
+      1,
+      2
+    ],
+    "acquiredSourceRetained": true
+  },
+  "vendorAccount": "NOT_PROVIDED",
+  "commercialTerms": "NOT_PROVIDED",
+  "note": "Actual candidate bytes and local domain rules verified; no merchant charge, external delivery or commercial entitlement was performed."
+}

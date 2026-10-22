@@ -7,7 +7,7 @@ import {migrate} from 'drizzle-orm/node-postgres/migrator';
 import {createDatabase, createMigrationClient} from '../src/db/client.ts';
 import {authUser} from '../src/db/schema/auth.ts';
 import {billingAccounts} from '../src/db/schema/billing.ts';
-import {workspaceMembers, workspaces} from '../src/db/schema/workspace.ts';
+import {creditAccounts, workspaceMembers, workspaces} from '../src/db/schema/workspace.ts';
 import {assertWorkspaceResource, authorizeWorkspaceAccess} from '../src/modules/workspaces/authorize.ts';
 import {createTeamWorkspace, demoteWorkspaceMember, removeWorkspaceMember} from '../src/modules/workspaces/commands.ts';
 import {DomainError} from '../src/db/contracts.ts';
@@ -68,6 +68,7 @@ async function run(): Promise<void> {
     assert(resourceMismatchRejected, 'Cross-workspace resource binding unexpectedly succeeded.');
 
     await database.db.delete(billingAccounts).where(eq(billingAccounts.workspaceId, workspaceTwo));
+    await database.db.delete(creditAccounts).where(eq(creditAccounts.workspaceId, workspaceTwo));
     await database.db.delete(workspaces).where(eq(workspaces.id, workspaceTwo));
     const missingWorkspace = await Promise.allSettled([
       authorizeWorkspaceAccess(database.db, workspaceTwo, {userId: users.member}),
@@ -102,6 +103,8 @@ async function run(): Promise<void> {
       lastOwnerRaceRejected: true,
     }));
   } finally {
+    if (workspaceOne) await database.db.delete(creditAccounts).where(eq(creditAccounts.workspaceId, workspaceOne));
+    if (workspaceTwo) await database.db.delete(creditAccounts).where(eq(creditAccounts.workspaceId, workspaceTwo));
     if (workspaceOne) await database.db.delete(billingAccounts).where(eq(billingAccounts.workspaceId, workspaceOne));
     if (workspaceTwo) await database.db.delete(billingAccounts).where(eq(billingAccounts.workspaceId, workspaceTwo));
     if (workspaceOne) await database.db.delete(workspaces).where(eq(workspaces.id, workspaceOne));

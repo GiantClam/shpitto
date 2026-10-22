@@ -1,0 +1,22 @@
+diff --git a/src/components/shell/site-shell.tsx b/src/components/shell/site-shell.tsx
+index 1dfbc7c..7db9083 100644
+--- a/src/components/shell/site-shell.tsx
++++ b/src/components/shell/site-shell.tsx
+@@ -20,14 +20,14 @@ export function SiteShell({children, variant = 'marketing', workspaceId}: SiteSh
+       <a className="skip-link" href="#main-content">Skip to content</a>
+       <aside className="creator-sidebar">
+         <BrandLogo />
+-        <span className="sidebar-label">CREATE SOMETHING</span>
++        <span className="sidebar-label">YOUR CREATIVE SPACE</span>
+         <nav aria-label="Primary navigation">{tools.map((item) => <a key={item.href} href={item.href} aria-current={item.href === createHref ? 'page' : undefined}><MediaIcon name={item.icon ?? (item.label === 'Create' ? 'spark' : 'folder')} /><span>{item.label}</span></a>)}</nav>
+-        <div className="sidebar-bottom"><div className="sidebar-tip"><MediaIcon name="spark" /><strong>From idea to first take.</strong><p>Start with a prompt.<br />Make it your own.</p><a href={workspace ? createHref : '/#create'}>Start creating<MediaIcon name="arrow" /></a></div><a className="sidebar-help" href="/docs"><MediaIcon name="help" />Help & guides</a></div>
++        <div className="sidebar-bottom"><div className="sidebar-tip"><MediaIcon name="spark" /><strong>Make room for your next idea.</strong><p>Start with a prompt.<br />Make it your own.</p><a href={workspace ? createHref : '/#create'}>Start creating<MediaIcon name="arrow" /></a></div><a className="sidebar-help" href="/docs"><MediaIcon name="help" />Help & guides</a></div>
+       </aside>
+       <div className="tool-shell-body">
+       <header className="creator-topbar"><div className="creator-breadcrumb"><MediaIcon name={workspace ? 'video' : 'home'} /><span>{workspace ? 'Video studio' : 'AI video generator'}</span></div><div className="site-header-actions">{workspace ? <><span className="shell-workspace-badge"><span className="shell-status-dot" /> Private workspace</span><a className="button site-cta" href={createHref}>New creation</a></> : <><a className="site-login-link" href="/login">Log in</a><a className="button site-cta" href="/signup">Get started<MediaIcon name="arrow" /></a></>}</div></header>
+         <div id="main-content" tabIndex={-1}>{children}</div>
+-        <footer className="creator-footer"><span>{brand.productName} · {brand.tagline}</span><a href="/docs">Help & documentation</a></footer>
++        <footer className="creator-footer"><span>{brand.productName} · {brand.tagline}</span><a href="/docs">Studio guides</a></footer>
+       </div>
+     </div>;
+   }

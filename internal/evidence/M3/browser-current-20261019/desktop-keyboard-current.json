@@ -1,0 +1,86 @@
+[
+  {
+    "tag": "TEXTAREA",
+    "id": "creation-prompt",
+    "text": "",
+    "aria": null
+  },
+  {
+    "tag": "SELECT",
+    "id": null,
+    "text": "16:99:16",
+    "aria": "Video canvas"
+  },
+  {
+    "tag": "SUMMARY",
+    "id": null,
+    "text": "Model & credits",
+    "aria": null
+  },
+  {
+    "tag": "BUTTON",
+    "id": null,
+    "text": "Continue to image upload",
+    "aria": null
+  },
+  {
+    "tag": "BUTTON",
+    "id": null,
+    "text": "All",
+    "aria": null
+  },
+  {
+    "tag": "BUTTON",
+    "id": null,
+    "text": "Cinematic",
+    "aria": null
+  },
+  {
+    "tag": "BUTTON",
+    "id": null,
+    "text": "Product",
+    "aria": null
+  },
+  {
+    "tag": "BUTTON",
+    "id": null,
+    "text": "Portrait",
+    "aria": null
+  },
+  {
+    "tag": "BUTTON",
+    "id": null,
+    "text": "Use prompt",
+    "aria": "Use prompt: After hours in Tokyo"
+  },
+  {
+    "tag": "BUTTON",
+    "id": null,
+    "text": "Use prompt",
+    "aria": "Use prompt: A quieter kind of escape"
+  },
+  {
+    "tag": "BUTTON",
+    "id": null,
+    "text": "Use prompt",
+    "aria": "Use prompt: Made for the spotlight"
+  },
+  {
+    "tag": "A",
+    "id": null,
+    "text": "Help & documentation",
+    "aria": null
+  },
+  {
+    "tag": "NEXTJS-PORTAL",
+    "id": null,
+    "text": "",
+    "aria": null
+  },
+  {
+    "tag": "BODY",
+    "id": null,
+    "text": "Skip to contentShpittoCREATE SOMETHINGCreateMy creationsExploreFrom idea to first take.Sta",
+    "aria": null
+  }
+]

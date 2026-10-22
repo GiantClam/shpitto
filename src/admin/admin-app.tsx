@@ -1,49 +1,51 @@
 'use client';
 
-import type {MouseEvent} from 'react';
-import {Admin, Layout, Menu, Resource, defaultLightTheme, type LayoutProps} from 'react-admin';
+import {useEffect, useState} from 'react';
 
-import {brand} from '../config/brand';
-import {adminAuthProvider} from './auth-provider';
-import {adminDataProvider} from './data-provider';
+import {AdminDashboard} from '../components/admin/admin-dashboard';
+import {AdminShell} from '../components/shell/admin-shell';
+import {adminNavigation} from '../config/navigation';
+import {getAdminCapabilities, resolveTemplateKind, type AdminView, type OperatorRole} from './capabilities';
+import {adminRequest} from './http';
+import {AdminResourceView} from './resource-view';
 import {CommandPanel} from './command-panel';
-import {AffiliateHoldList, AffiliateReviewList, AuditList, BillingList, GenerationList, UserList, WorkspaceList} from './resource-lists';
 import './admin.css';
 
-const {colors, typography, spacing} = brand.tokens;
-const basePalette = defaultLightTheme.palette ?? {};
-const lightTheme = {
-  ...defaultLightTheme,
-  palette: {
-    ...basePalette,
-    primary: {...(basePalette.primary ?? {}), main: colors.brand},
-    secondary: {...(basePalette.secondary ?? {}), main: colors.warm},
-    background: {...(basePalette.background ?? {}), default: colors.canvas, paper: colors.surface},
-    text: {...(basePalette.text ?? {}), primary: colors.text, secondary: colors.textMuted},
-    divider: colors.border,
-  },
-  typography: {...defaultLightTheme.typography, fontFamily: typography.body},
-  components: {
-    ...defaultLightTheme.components,
-    MuiButton: {styleOverrides: {root: {borderRadius: spacing.radiusSm, minHeight: spacing.controlHeight, textTransform: 'none'}}},
-    MuiListItemButton: {styleOverrides: {root: {minHeight: spacing.navHeight, fontSize: '0.95rem'}}},
-  },
-};
-
-function Login() {
-  return <main className="operations-console"><h1>Operator sign-in required</h1><p>Continue with the shared account and current global role.</p><a className="button" href="/login">Open sign in</a></main>;
+function viewFromLocation(): AdminView {
+  if (typeof window === 'undefined') return 'overview';
+  const value = new URLSearchParams(window.location.search).get('view');
+  return ['workspaces', 'users', 'generations', 'billing', 'audit', 'affiliate-reviews', 'affiliate-holds', 'operations'].includes(value ?? '') ? value as AdminView : 'overview';
 }
-
-function AdminMenu() {
-  // Returning to the document entry avoids Next/HashRouter history churn at #/.
-  return <Menu><Menu.DashboardItem onClick={(event: MouseEvent) => {event.preventDefault(); window.location.assign('/admin');}} /><Menu.ResourceItems /></Menu>;
-}
-
-function AdminLayout(props: LayoutProps) {return <Layout {...props} menu={AdminMenu} />;}
-
 export default function AdminApp() {
-  return <Admin title="Shpitto operations" dataProvider={adminDataProvider} authProvider={adminAuthProvider} loginPage={Login} dashboard={CommandPanel} layout={AdminLayout} defaultTheme="light" lightTheme={lightTheme} requireAuth>
-    <Resource name="workspaces" list={WorkspaceList} /><Resource name="users" list={UserList} /><Resource name="generations" list={GenerationList} /><Resource name="billing" list={BillingList} /><Resource name="audit" list={AuditList} />
-    <Resource name="affiliate-reviews" options={{label: 'Affiliate reviews'}} list={AffiliateReviewList} /><Resource name="affiliate-holds" options={{label: 'Affiliate holds'}} list={AffiliateHoldList} />
-  </Admin>;
+  const [view, setView] = useState<AdminView>(viewFromLocation);
+  const [role, setRole] = useState<OperatorRole | null>(null);
+  const [error, setError] = useState('');
+  const [templateKind, setTemplateKind] = useState(resolveTemplateKind(typeof window === 'undefined' ? undefined : document.documentElement.dataset.templateKind));
+  const capabilities = getAdminCapabilities(templateKind);
+
+  useEffect(() => {
+    let active = true;
+    adminRequest<{role: OperatorRole}>('/api/admin/me').then((identity) => {if (active) setRole(identity.role);}).catch((reason: unknown) => {if (active) setError(reason instanceof Error ? reason.message : 'Operator access is unavailable.');});
+    const onPopState = () => setView(viewFromLocation());
+    window.addEventListener('popstate', onPopState);
+    return () => {active = false; window.removeEventListener('popstate', onPopState);};
+  }, []);
+
+  function openView(nextView: AdminView) {
+    const path = nextView === 'overview' ? '/admin' : `/admin?view=${encodeURIComponent(nextView)}`;
+    window.history.pushState({}, '', path);
+    setView(nextView);
+  }
+
+  return <AdminShell role={role} activeView={view} navigation={adminNavigation} onNavigate={(href) => {
+    const url = new URL(href, window.location.origin);
+    const nextView = url.searchParams.get('view');
+    openView(nextView ? nextView as AdminView : 'overview');
+  }}>
+    <div className="admin-app-bar"><div><p className="admin-eyebrow">{capabilities.templateLabel}</p><span className="admin-breadcrumb">Operations / {view === 'overview' ? 'Overview' : view.replaceAll('-', ' ')}</span></div><label className="admin-template-switch">Template variant<select value={templateKind} onChange={(event) => setTemplateKind(resolveTemplateKind(event.target.value))}><option value="video">Video</option><option value="image">Image</option></select></label></div>
+    {error ? <div className="admin-state admin-state-error" role="alert"><strong>Operator session unavailable.</strong><span>{error}</span></div> : null}
+    {view === 'overview' ? <AdminDashboard role={role} capabilities={capabilities} onOpenResource={openView} /> : null}
+    {view === 'operations' ? <CommandPanel permissions={role} /> : null}
+    {view !== 'overview' && view !== 'operations' ? <AdminResourceView resource={view} /> : null}
+</AdminShell>;
 }

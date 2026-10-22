@@ -1,0 +1,16 @@
+{
+  "status": "PASS",
+  "packageManager": "pnpm@12.6.0",
+  "lockfileSha256": "c256e386959569fd310d07d824c9e6f1afcc39cb493664eade9f573bb64161a0",
+  "selectedDependencyBaseline": "internal/spikes/selected-stack/package.json",
+  "applicationDependencyEvolution": "tooling/root-dependency-baseline.json",
+  "excludedRoots": [
+    "node_modules",
+    "legacy",
+    "apps",
+    "builder",
+    "packages",
+    "sites",
+    "internal"
+  ]
+}

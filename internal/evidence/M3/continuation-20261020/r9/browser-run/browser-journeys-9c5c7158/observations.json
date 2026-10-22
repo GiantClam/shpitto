@@ -1,0 +1,40 @@
+{
+  "application": "http://127.0.0.1:3199",
+  "runId": "9c5c7158",
+  "events": [
+    {
+      "name": "fresh-user-signup-and-email-verification",
+      "at": "2026-10-20T05:15:44.701Z"
+    },
+    {
+      "name": "personal-workspace-created",
+      "at": "2026-10-20T05:15:48.054Z",
+      "workspaceId": "06bfc1f3-6cef-4512-97d7-69002ae38902"
+    },
+    {
+      "name": "application-worker-restart",
+      "at": "2026-10-20T05:15:51.935Z",
+      "taskId": "3bd6231a-47f2-4db5-b5bb-27f5625ad184",
+      "status": "succeeded"
+    },
+    {
+      "name": "private-download",
+      "at": "2026-10-20T05:15:52.187Z",
+      "metadata": {
+        "duration": 2,
+        "width": 320,
+        "height": 180,
+        "readyState": 4,
+        "error": null
+      },
+      "anonymousStatus": 401
+    },
+    {
+      "name": "team-creation",
+      "at": "2026-10-20T05:15:53.978Z",
+      "workspaceId": "8f4d8069-c250-4d5d-b3d6-df7222bfbab3"
+    }
+  ],
+  "errors": [],
+  "responseObservations": []
+}

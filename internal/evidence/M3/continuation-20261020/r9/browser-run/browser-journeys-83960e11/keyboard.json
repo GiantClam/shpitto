@@ -1,0 +1,148 @@
+{
+  "focus": [
+    {
+      "tag": "A",
+      "id": "",
+      "text": "Shpitto",
+      "aria": "Shpitto home"
+    },
+    {
+      "tag": "A",
+      "id": "",
+      "text": "Create",
+      "aria": null
+    },
+    {
+      "tag": "A",
+      "id": "",
+      "text": "History",
+      "aria": null
+    },
+    {
+      "tag": "A",
+      "id": "",
+      "text": "Assets",
+      "aria": null
+    },
+    {
+      "tag": "A",
+      "id": "",
+      "text": "Members",
+      "aria": null
+    },
+    {
+      "tag": "A",
+      "id": "",
+      "text": "Billing",
+      "aria": null
+    },
+    {
+      "tag": "A",
+      "id": "",
+      "text": "Start creating",
+      "aria": null
+    },
+    {
+      "tag": "A",
+      "id": "",
+      "text": "Help & guides",
+      "aria": null
+    },
+    {
+      "tag": "A",
+      "id": "",
+      "text": "New creation",
+      "aria": null
+    },
+    {
+      "tag": "A",
+      "id": "",
+      "text": "Team access",
+      "aria": null
+    },
+    {
+      "tag": "A",
+      "id": "",
+      "text": "Current personal studio · personal",
+      "aria": null
+    },
+    {
+      "tag": "BUTTON",
+      "id": "",
+      "text": "Text to video",
+      "aria": null
+    },
+    {
+      "tag": "BUTTON",
+      "id": "",
+      "text": "Image to video",
+      "aria": null
+    },
+    {
+      "tag": "SELECT",
+      "id": "generation-model",
+      "text": "Mock video · 10 credits",
+      "aria": null
+    },
+    {
+      "tag": "SELECT",
+      "id": "generation-aspect",
+      "text": "16:9 · Landscape9:16 · Portrait",
+      "aria": null
+    },
+    {
+      "tag": "TEXTAREA",
+      "id": "generation-prompt",
+      "text": "",
+      "aria": null
+    },
+    {
+      "tag": "BUTTON",
+      "id": "",
+      "text": "Generate video ↗",
+      "aria": null
+    },
+    {
+      "tag": "A",
+      "id": "",
+      "text": "Download",
+      "aria": null
+    },
+    {
+      "tag": "A",
+      "id": "",
+      "text": "Help & documentation",
+      "aria": null
+    },
+    {
+      "tag": "BODY",
+      "id": "",
+      "text": "Skip to contentShpittoCREATE SOMETHINGCreateHistoryAssetsMembersBillingFrom idea to first take.Start with a prompt.Make ",
+      "aria": null
+    },
+    {
+      "tag": "A",
+      "id": "",
+      "text": "Skip to content",
+      "aria": null
+    },
+    {
+      "tag": "A",
+      "id": "",
+      "text": "Shpitto",
+      "aria": "Shpitto home"
+    },
+    {
+      "tag": "A",
+      "id": "",
+      "text": "Create",
+      "aria": null
+    },
+    {
+      "tag": "A",
+      "id": "",
+      "text": "History",
+      "aria": null
+    }
+  ]
+}

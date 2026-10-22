@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-20T04:59:04.532Z",
+  "error": "AssertionError [ERR_ASSERTION]: auth-reset-password did not render expected marker: Reset password\n    at captureRoute (file:///D:/github/shpitto/internal/evidence/M3/continuation-20261020/r9/browser-harness.mjs:125:38)\n    at async file:///D:/github/shpitto/internal/evidence/M3/continuation-20261020/r9/browser-harness.mjs:191:3",
+  "events": [
+    {
+      "name": "fresh-user-signup-and-email-verification",
+      "at": "2026-10-20T04:59:01.995Z"
+    }
+  ],
+  "errors": []
+}

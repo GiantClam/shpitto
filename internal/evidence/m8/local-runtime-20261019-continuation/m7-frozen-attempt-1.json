@@ -1,0 +1,29 @@
+{
+  "status": "FAIL",
+  "runRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-12-57-401Z-0995e559",
+  "expectedSourceTreeSha256": "95ad817920e31e3db850155b6d321ab90c79cfeaa90d4d0d5263c9aa297a08e7",
+  "baselineMatched": true,
+  "completedWorkflows": [
+    "customize-brand",
+    "create-page"
+  ],
+  "failedCommands": [
+    {
+      "id": "modify-page-probe-m6-admin-reads",
+      "exitCode": 3221226505,
+      "expectedExit": 0,
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-12-57-401Z-0995e559/logs/modify-page-probe-m6-admin-reads.log",
+      "startedAt": "2026-10-19T06:14:14.233Z",
+      "endedAt": "2026-10-19T06:14:15.282Z"
+    }
+  ],
+  "failure": {
+    "status": "FAIL",
+    "at": "2026-10-19T06:14:15.46Z",
+    "message": "AssertionError [ERR_ASSERTION]: modify-page-probe-m6-admin-reads failed; see internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-12-57-401Z-0995e559/logs/modify-page-probe-m6-admin-reads.log\n\n3221226505 !== 0\n"
+  },
+  "failedProbeLogBytes": 0,
+  "postFailureSixFrozenDigestsMatched": true,
+  "postFailureRemainingWorkflowDatabases": 0,
+  "retry": "unchanged runner; new timestamp run; no shipped edits"
+}

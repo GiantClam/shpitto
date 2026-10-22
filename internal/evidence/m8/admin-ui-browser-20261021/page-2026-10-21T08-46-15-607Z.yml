@@ -1,0 +1,112 @@
+- generic [ref=f3e1]:
+  - button "Open Next.js Dev Tools" [ref=f3e8] [cursor=pointer]
+  - alert [ref=f3e12]
+  - generic [ref=f3e13]:
+    - complementary "Operations navigation" [ref=f3e14]:
+      - generic [ref=f3e15]:
+        - paragraph [ref=f3e16]: Operations
+        - generic [ref=f3e17]: operator access
+      - navigation [ref=f3e18]:
+        - link "Overview" [active] [ref=f3e19] [cursor=pointer]:
+          - /url: /admin
+        - link "Workspaces" [ref=f3e21] [cursor=pointer]:
+          - /url: /admin?view=workspaces
+        - link "Users" [ref=f3e23] [cursor=pointer]:
+          - /url: /admin?view=users
+        - link "Generation tasks" [ref=f3e25] [cursor=pointer]:
+          - /url: /admin?view=generations
+        - link "Billing and credits" [ref=f3e27] [cursor=pointer]:
+          - /url: /admin?view=billing
+        - link "Audit" [ref=f3e29] [cursor=pointer]:
+          - /url: /admin?view=audit
+        - link "Affiliate reviews" [ref=f3e31] [cursor=pointer]:
+          - /url: /admin?view=affiliate-reviews
+        - link "Affiliate holds" [ref=f3e33] [cursor=pointer]:
+          - /url: /admin?view=affiliate-holds
+        - link "Commands and recovery" [ref=f3e35] [cursor=pointer]:
+          - /url: /admin?view=operations
+      - generic [ref=f3e37]:
+        - link "Return to workspace" [ref=f3e38] [cursor=pointer]:
+          - /url: /dashboard
+        - button "Compact" [ref=f3e39] [cursor=pointer]
+    - main [ref=f3e40]:
+      - generic [ref=f3e41]:
+        - generic [ref=f3e42]:
+          - paragraph [ref=f3e43]: Image template
+          - generic [ref=f3e44]: Operations / Overview
+        - generic [ref=f3e45]:
+          - text: Template variant
+          - combobox "Template variant" [ref=f3e46]:
+            - option "Video"
+            - option "Image" [selected]
+      - generic [ref=f3e139]:
+        - generic [ref=f3e140]:
+          - generic [ref=f3e141]:
+            - paragraph [ref=f3e142]: Operations overview
+            - heading "Review the system with context" [level=1] [ref=f3e143]
+            - paragraph [ref=f3e144]: Every read is session-bound and server-authorized. Protected changes stay behind named commands, reason capture, expected versions and idempotency.
+          - generic [ref=f3e145]: operator
+        - generic [ref=f3e146]:
+          - button "Workspaces Open view Server-backed, bounded read" [ref=f3e147] [cursor=pointer]:
+            - generic [ref=f3e148]: Workspaces
+            - strong [ref=f3e149]: Open view
+            - generic [ref=f3e150]: Server-backed, bounded read
+          - button "Users Open view Server-backed, bounded read" [ref=f3e151] [cursor=pointer]:
+            - generic [ref=f3e152]: Users
+            - strong [ref=f3e153]: Open view
+            - generic [ref=f3e154]: Server-backed, bounded read
+          - button "Generation tasks Open view Server-backed, bounded read" [ref=f3e155] [cursor=pointer]:
+            - generic [ref=f3e156]: Generation tasks
+            - strong [ref=f3e157]: Open view
+            - generic [ref=f3e158]: Server-backed, bounded read
+          - button "Billing Open view Server-backed, bounded read" [ref=f3e159] [cursor=pointer]:
+            - generic [ref=f3e160]: Billing
+            - strong [ref=f3e161]: Open view
+            - generic [ref=f3e162]: Server-backed, bounded read
+          - button "Audit Open view Server-backed, bounded read" [ref=f3e163] [cursor=pointer]:
+            - generic [ref=f3e164]: Audit
+            - strong [ref=f3e165]: Open view
+            - generic [ref=f3e166]: Server-backed, bounded read
+        - generic [ref=f3e167]:
+          - generic [ref=f3e168]:
+            - generic [ref=f3e169]:
+              - paragraph [ref=f3e170]: Template capability
+              - heading "Image template" [level=2] [ref=f3e171]
+            - generic [ref=f3e172]:
+              - paragraph [ref=f3e173]: Shared administration modules are declared once and variant controls are selected by this manifest.
+              - list [ref=f3e174]:
+                - listitem [ref=f3e175]:
+                  - generic [ref=f3e176]: Available
+                  - text: 0 runtime-backed media capabilities
+                - listitem [ref=f3e177]:
+                  - generic [ref=f3e178]: Common
+                  - text: 9 shared operational modules
+                - listitem [ref=f3e179]:
+                  - generic [ref=f3e180]: Withheld
+                  - generic [ref=f3e181]:
+                    - strong [ref=f3e182]: Image preview
+                    - text: · Image generation runtime is not shipped in this repository; media controls remain withheld.
+                - listitem [ref=f3e183]:
+                  - generic [ref=f3e184]: Withheld
+                  - generic [ref=f3e185]:
+                    - strong [ref=f3e186]: Image model controls
+                    - text: · Image model controls become available only when an image runtime contract is implemented.
+                - listitem [ref=f3e187]:
+                  - generic [ref=f3e188]: Withheld
+                  - generic [ref=f3e189]:
+                    - strong [ref=f3e190]: Image asset metadata
+                    - text: · Image asset administration is contract-only until image asset endpoints exist.
+                - listitem [ref=f3e191]:
+                  - generic [ref=f3e192]: Withheld
+                  - generic [ref=f3e193]:
+                    - strong [ref=f3e194]: Image recovery evidence
+                    - text: · Image recovery commands are not exposed by the current server contract.
+          - generic [ref=f3e195]:
+            - generic [ref=f3e196]:
+              - paragraph [ref=f3e197]: Authority boundary
+              - heading "Server outcomes are the source of truth" [level=2] [ref=f3e198]
+            - list [ref=f3e200]:
+              - listitem [ref=f3e201]: Better Auth owns the session.
+              - listitem [ref=f3e202]: Global operator roles are checked on every request.
+              - listitem [ref=f3e203]: Allowlisted reads and named commands own data access.
+              - listitem [ref=f3e204]: Audit, idempotency, transactions and migrations remain outside the UI layer.

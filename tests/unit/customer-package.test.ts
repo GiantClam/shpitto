@@ -26,7 +26,7 @@ test('buyer change validator accepts manifest-only and demands an explicit basel
   const directory = mkdtempSync(path.join(os.tmpdir(), 'shpitto-change-cli-'));
   try {
     const manifest = path.join(directory, 'change.json');
-    writeFileSync(manifest, JSON.stringify({release: 'v1', baseline: 'buyer-checkout', dirtyWork: [], intent: 'brand update', changedFiles: [], checks: [], recovery: {patchRef: 'change.patch', preservesUnrelatedWork: true, overlaps: []}}), 'utf8');
+    writeFileSync(manifest, JSON.stringify({release: 'v1', baseline: 'buyer-checkout', dirtyWork: [], intent: 'brand update', classification: 'presentation', changedFiles: [], checks: [], recovery: {patchRef: 'change.patch', preservesUnrelatedWork: true, overlaps: []}}), 'utf8');
     const result = spawnSync(process.execPath, ['--experimental-strip-types', 'scripts/validate-change.ts', '--manifest', manifest], {encoding: 'utf8'});
     assert.equal(result.status, 0, result.stderr);
     assert.equal(JSON.parse(result.stdout).status, 'PASS');

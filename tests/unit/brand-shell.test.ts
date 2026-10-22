@@ -29,8 +29,12 @@ test('default brand exposes the shared presentation contract', () => {
   assert.match(readFileSync('src/app/layout.tsx', 'utf8'), /themeColor: brand\.tokens\.colors\.canvas/);
   assert.match(readFileSync('src/components/shell/site-shell.tsx', 'utf8'), /shpitto-logo-full\.png/);
   assert.match(readFileSync('src/components/shell/site-shell.tsx', 'utf8'), /skip-link/);
-  assert.match(readFileSync('src/admin/admin-app.tsx', 'utf8'), /brand\.tokens/);
-  assert.match(readFileSync('src/admin/admin-app.tsx', 'utf8'), /defaultLightTheme/);
+  assert.match(readFileSync('src/admin/admin-app.tsx', 'utf8'), /AdminShell/);
+  assert.match(readFileSync('src/admin/admin-app.tsx', 'utf8'), /getAdminCapabilities/);
+  assert.doesNotMatch(readFileSync('src/admin/admin-app.tsx', 'utf8'), /react-admin|defaultLightTheme|<Resource/);
+  assert.match(readFileSync('src/admin/capabilities.ts', 'utf8'), /templateKind: 'image'/);
+  assert.match(readFileSync('src/admin/capabilities.ts', 'utf8'), /templateKind: 'video'/);
+  assert.match(readFileSync('src/components/ui/README.md', 'utf8'), /project-owned/);
   assert.match(readFileSync('src/admin/admin.css', 'utf8'), /var\(--color-brand\)/);
   assert.match(readFileSync('src/admin/admin.css', 'utf8'), /var\(--shell-radius-sm\)/);
   assert.match(readFileSync('skills/customize-brand/SKILL.md', 'utf8'), /customer's own visual/);
@@ -48,6 +52,7 @@ test('default brand exposes the shared presentation contract', () => {
   assert.equal(presentation.defaults?.tokenSource, 'src/config/brand.ts');
   assert.equal(presentation.defaults?.runtimeBinding, 'src/app/layout.tsx');
   assert.ok(presentation.defaults?.sharedShell?.includes('src/admin/admin-app.tsx'));
+  assert.ok(presentation.defaults?.sharedShell?.includes('src/admin/capabilities.ts'));
   assert.ok(presentation.editable?.brand?.includes('src/app/globals.css'));
   assert.ok(presentation.editable?.presentation?.includes('src/app/(app)'));
 });

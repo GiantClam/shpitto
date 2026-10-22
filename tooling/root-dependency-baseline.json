@@ -7,11 +7,12 @@
     "provenanceCanonicalSha256": "884e3c76091bbb23f5d5b472653db07e7842256052dfd75cd1409d14b727e65f"
   },
   "application": {
-    "lockfileSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35",
+    "lockfileSha256": "c256e386959569fd310d07d824c9e6f1afcc39cb493664eade9f573bb64161a0",
     "workspaceCanonicalSha256": "2a2a38ca97322a49d331e1976712a8c3e0424b54c3bb176732bc9113bdca5364",
     "dependencyChanges": {
       "@aws-sdk/client-s3": {"from": null, "to": "3.1141.0"},
-      "next": {"from": "16.3.6", "to": "16.3.8"}
+      "next": {"from": "16.3.6", "to": "16.3.8"},
+      "react-admin": {"from": "5.15.4", "to": null}
     }
   }
 }

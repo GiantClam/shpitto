@@ -1,0 +1,4 @@
+error: duplicate key value violates unique constraint "credit_accounts_pkey"
+    at C:\Users\liula\AppData\Local\Temp\shpitto-m3-verification-nsCYrp\candidate\node_modules\.pnpm\pg-pool@3.14.0_pg@8.23.0\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async run (file:///C:/Users/liula/AppData/Local/Temp/shpitto-m3-verification-nsCYrp/candidate/scripts/probe-team-http.ts:140:5)

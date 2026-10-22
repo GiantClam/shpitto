@@ -6,6 +6,7 @@ import {adminAuthProvider} from '../../src/admin/auth-provider.ts';
 import {executeAdminCommand} from '../../src/admin/commands.ts';
 import {executeAffiliateAdminCommand} from '../../src/admin/affiliate-commands.ts';
 import {affiliatePageInput, affiliateUuid} from '../../src/app/api/admin/affiliates/_shared.ts';
+import {getAdminCapabilities} from '../../src/admin/capabilities.ts';
 
 const originalFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = originalFetch; });
@@ -134,4 +135,14 @@ test('affiliate route queries reject unsupported fields, unbounded pages and inv
   assert.throws(() => affiliatePageInput(new Request('http://localhost/api/admin/affiliates/reviews?pageSize=1000')), /1–100/);
   assert.throws(() => affiliatePageInput(new Request('http://localhost/api/admin/affiliates/reviews?page=10001')), /1–10000/);
   assert.throws(() => affiliateUuid('../another-tenant', 'workspaceId'), /must be a UUID/);
+});
+
+test('template capability fixtures keep common resources and omit unsupported media controls', () => {
+  const video = getAdminCapabilities('video');
+  const image = getAdminCapabilities('image');
+  assert.deepEqual(video.resources, image.resources);
+  assert.ok(video.capabilities.mediaPreview.runtimeSupported);
+  assert.deepEqual(image.capabilities.mediaPreview.fields, []);
+  assert.deepEqual(image.capabilities.modelControls.actions, []);
+  assert.match(image.capabilities.recoveryEvidence.note ?? '', /not exposed/i);
 });

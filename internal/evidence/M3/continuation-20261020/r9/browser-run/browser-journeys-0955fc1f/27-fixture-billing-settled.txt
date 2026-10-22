@@ -1,0 +1,62 @@
+Skip to content
+Shpitto
+CREATE SOMETHING
+Create
+History
+Assets
+Members
+Billing
+From idea to first take.
+
+Start with a prompt.
+Make it your own.
+
+Start creating
+Help & guides
+Video studio
+PRIVATE WORKSPACE
+New creation
+
+WORKSPACE BILLING
+
+Current browser team
+
+Owner-only billing state, payment history and credit lineage.
+
+active
+Orders
+1
+Subscriptions
+1
+Credit grants
+1
+Recovery
+Clear
+Local Mock billing
+no real charge
+
+Use the fixture products to exercise checkout, webhook reconciliation and recovery state end to end.
+
+Monthly credits
+1000 credits · renews monthly
+USD 25.00
+Open checkout
+Permanent credit pack
+250 credits · never expires
+USD 9.00
+Open checkout
+Open local billing portal
+Subscriptions
+1
+active
+fixture_subscription_24a0e0ea97b8d594a0d067a6
+No scheduled cancellation
+period ends 2026-11-19T05:18:31.049Z
+Payment history
+1
+paid
+subscription · USD 2500
+refunded 0
+customer fixture_customer_fdc36ece-cb77-459a-9c45-0159d1b6dd5a
+Shpitto · Give your ideas a little motion.
+Help & documentation

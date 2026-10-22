@@ -1,8 +1,8 @@
 'use client';
 
 import {useEffect, useState, type FormEvent} from 'react';
-import {usePermissions, useRefresh} from 'react-admin';
 
+import type {OperatorRole} from './capabilities';
 import {executeAffiliateAdminCommand, type AffiliateAdminCommand} from './affiliate-commands';
 import {adminRequest} from './http';
 
@@ -20,9 +20,7 @@ function inputOf(form: FormData, command: Command): AffiliateAdminCommand {
   return {...common, command, workspaceId: field('workspaceId'), reviewId: field('reviewId')};
 }
 
-export function AffiliatePanel() {
-  const {permissions} = usePermissions();
-  const refresh = useRefresh();
+export function AffiliatePanel({permissions}: Readonly<{permissions: OperatorRole | null}>) {
   const [status, setStatus] = useState<Record<string, unknown> | null>(null);
   const [command, setCommand] = useState<Command>('approve');
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
@@ -40,7 +38,7 @@ export function AffiliatePanel() {
 
   async function execute(input: AffiliateAdminCommand) {
     setPending(true); setError(''); setResult(null);
-    try {setResult(await executeAffiliateAdminCommand(input)); await loadStatus(); refresh();}
+    try {setResult(await executeAffiliateAdminCommand(input)); await loadStatus();}
     catch (reason) {setError(reason instanceof Error ? reason.message : 'Affiliate review could not be completed.');}
     finally {setPending(false);}
   }

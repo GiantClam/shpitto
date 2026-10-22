@@ -1,5 +1,12 @@
 # M3 local MVP acceptance status
 
+Current applicability (2026-10-19): the PASS below belongs to the historical
+October 1 candidate only. Current source, configuration and validator bytes have
+changed. A separate current-candidate run and independent review are required;
+the historical record is preserved and does not approve the current tree.
+See `../acceptance/M3/working-tree-20261019-current/record.json` for the retained
+incomplete attempt. New attempts must use fresh output directories.
+
 Updated: 2026-10-01T02:27:40.160Z. Stage status: PASS. All 73 mandatory checks pass for source `73ec731c971aca355335d6c86a3ba14e8c91e84e9cf8569007cb7abf3f6bd3ab`. Tasks 4.13 and 4.12 are complete after independent whole-stage review and separate integrator approval.
 
 This acceptance covers local PostgreSQL and Mock generation. Production email, real providers, Stripe and historical anomalous-balance recovery remain later stages. Tasks 5.1 and 6.1 are eligible; later stage gates are not approved.

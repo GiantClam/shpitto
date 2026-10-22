@@ -1,0 +1,38 @@
+{
+  "observedAt": "2026-10-19T04:41:18.810Z",
+  "profile": "local-trusted-validator-negative-probe",
+  "status": "FAIL",
+  "cases": [
+    {
+      "id": "empty-checks",
+      "expected": "REJECT",
+      "observed": "ACCEPT",
+      "errors": []
+    },
+    {
+      "id": "missing-required-checks",
+      "expected": "REJECT",
+      "observed": "ACCEPT",
+      "errors": []
+    },
+    {
+      "id": "failed-review",
+      "expected": "REJECT",
+      "observed": "ACCEPT",
+      "errors": []
+    },
+    {
+      "id": "missing-reviewer-id",
+      "expected": "REJECT",
+      "observed": "ACCEPT",
+      "errors": []
+    },
+    {
+      "id": "candidate-identity-drift",
+      "expected": "REJECT",
+      "observed": "ACCEPT",
+      "errors": []
+    }
+  ],
+  "note": "Synthetic malformed evidence only; no gate record was changed."
+}

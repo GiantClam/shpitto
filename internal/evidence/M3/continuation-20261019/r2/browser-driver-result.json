@@ -1,0 +1,9 @@
+{
+  "name": "browser-driver",
+  "startedAt": "2026-10-19T06:37:04.625Z",
+  "completedAt": "2026-10-19T06:37:58.325Z",
+  "exitCode": 1,
+  "signal": null,
+  "outputRef": "internal/evidence/M3/continuation-20261019/r2/browser-driver.log",
+  "outputSha256": "493180bc3cc4c2eb323ecaf7f3b9c2b1f71d6c8ff5c121178c4aa1eb128613cf"
+}

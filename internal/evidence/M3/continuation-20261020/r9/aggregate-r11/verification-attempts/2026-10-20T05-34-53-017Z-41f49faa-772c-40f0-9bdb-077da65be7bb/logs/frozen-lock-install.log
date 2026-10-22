@@ -1,0 +1,50 @@
+✓ Lockfile passes supply-chain policies (verified 9d ago)
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: C:\Users\liula\AppData\Local\pnpm\store\v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 133, reused 133, downloaded 0, added 72
+Progress: resolved 173, reused 173, downloaded 0, added 112
+Progress: resolved 221, reused 221, downloaded 0, added 163
+Progress: resolved 253, reused 253, downloaded 0, added 195
+Progress: resolved 279, reused 279, downloaded 0, added 219
+Progress: resolved 311, reused 311, downloaded 0, added 250
+Progress: resolved 331, reused 331, downloaded 0, added 271
+Progress: resolved 351, reused 351, downloaded 0, added 292
+Progress: resolved 384, reused 384, downloaded 0, added 324
+Progress: resolved 401, reused 401, downloaded 0, added 343
+Progress: resolved 415, reused 415, downloaded 0, added 359
+Progress: resolved 430, reused 430, downloaded 0, added 378
+Progress: resolved 446, reused 446, downloaded 0, added 401
+Progress: resolved 454, reused 453, downloaded 0, added 416
+Progress: resolved 473, reused 473, downloaded 0, added 434
+Progress: resolved 478, reused 478, downloaded 0, added 445
+Progress: resolved 480, reused 479, downloaded 0, added 452
+Progress: resolved 480, reused 480, downloaded 0, added 454
+Packages: +480
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 480, reused 480, downloaded 0, added 480, done
+
+dependencies:
++ @aws-sdk/client-s3 3.1141.0
++ @trigger.dev/sdk 4.6.4
++ better-auth 1.7.6
++ drizzle-orm 0.45.3
++ fumadocs-core 16.15.14
++ fumadocs-ui 16.15.14
++ next 16.3.8
++ pg 8.23.0
++ react 19.3.0
++ react-admin 5.15.4
++ react-dom 19.3.0
++ stripe 22.6.2
+
+devDependencies:
++ @types/node 24.0.0
++ @types/react 19.0.0
++ @types/react-dom 19.0.0
++ drizzle-kit 0.31.11
++ typescript 6.0.3
+
+Done in 3m 26s using pnpm v12.6.0

@@ -10,7 +10,7 @@ import {DomainError} from '../src/db/contracts.ts';
 import {authUser} from '../src/db/schema/auth.ts';
 import {billingAccounts} from '../src/db/schema/billing.ts';
 import {commandResults} from '../src/db/schema/commands.ts';
-import {workspaceMembers, workspaces} from '../src/db/schema/workspace.ts';
+import {creditAccounts, workspaceMembers, workspaces} from '../src/db/schema/workspace.ts';
 import {
   createTeamWorkspace,
   demoteWorkspaceMember,
@@ -85,6 +85,9 @@ async function run(): Promise<void> {
     const replay = await createTeamWorkspace(database.db, {userId: users.owner}, 'Probe team', command);
     assert.equal(replay.workspaceId, teamId);
     assert.equal(replay.replayed, true);
+    const teamCreditAccounts = await database.db.select().from(creditAccounts).where(eq(creditAccounts.workspaceId, teamId));
+    assert.equal(teamCreditAccounts.length, 1, 'Team creation must initialize exactly one credit account.');
+    assert.equal(teamCreditAccounts[0]!.version, 0n, 'Team creation must not grant credits.');
     await assert.rejects(createTeamWorkspace(database.db, {userId: users.owner}, 'Changed name', {...command, payload: {name: 'Changed name'}}), rejectsCode('CONFLICT'));
     const createdTeams = await database.db.select().from(workspaces).where(and(eq(workspaces.createdBy, users.owner), eq(workspaces.kind, 'team')));
     assert.equal(createdTeams.length, 1, 'Idempotent create produced another workspace.');
@@ -169,6 +172,7 @@ async function run(): Promise<void> {
     await database.db.delete(commandResults).where(eq(commandResults.actorUserId, users.owner));
     if (teamId) await database.db.delete(workspaceMembers).where(eq(workspaceMembers.workspaceId, teamId));
     if (personalId) await database.db.delete(workspaceMembers).where(eq(workspaceMembers.workspaceId, personalId));
+    if (teamId) await database.db.delete(creditAccounts).where(eq(creditAccounts.workspaceId, teamId));
     if (teamId) await database.db.delete(billingAccounts).where(eq(billingAccounts.workspaceId, teamId));
     if (personalId) await database.db.delete(billingAccounts).where(eq(billingAccounts.workspaceId, personalId));
     if (teamId) await database.db.delete(workspaces).where(eq(workspaces.id, teamId));

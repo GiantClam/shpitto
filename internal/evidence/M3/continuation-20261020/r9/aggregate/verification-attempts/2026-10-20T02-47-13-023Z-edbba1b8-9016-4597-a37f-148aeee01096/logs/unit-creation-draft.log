@@ -1,0 +1,23 @@
+✔ draft parsing validates the versioned shape and reconstructs only creative fields (2.2995ms)
+✔ session draft handoff saves only allowed fields and clears only the pending draft (0.2672ms)
+✔ invalid and corrupt drafts are never returned or written (0.1605ms)
+✔ unavailable storage, quota errors and blocked cleanup never throw (0.18ms)
+✔ restoration selects only an admitted model of the requested mode and preserves the server quote (0.7466ms)
+✔ restoration never falls back to a different mode or an unadmitted draft model (0.0921ms)
+✔ studio mode selection filters choices and keeps the selected provider model inside that mode (0.1255ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 163.2848
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report

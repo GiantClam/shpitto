@@ -1,0 +1,6 @@
+{
+  "at": "2026-10-20T01:37:09.470Z",
+  "error": "Error: connect ECONNREFUSED 127.0.0.1:55432\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1705:16)",
+  "events": [],
+  "errors": []
+}

@@ -1,0 +1,199 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.34kB 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:24.15.0-bookworm-slim
+#2 DONE 0.8s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 196B done
+#3 DONE 0.0s
+
+#4 [dependencies 1/5] FROM docker.io/library/node:24.15.0-bookworm-slim@sha256:4e6b70dd6cbfc88c8157ba19aa3d9f9cce6ba4703576d55459e45efcbc9c5f5d
+#4 resolve docker.io/library/node:24.15.0-bookworm-slim@sha256:4e6b70dd6cbfc88c8157ba19aa3d9f9cce6ba4703576d55459e45efcbc9c5f5d 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 29.88kB 0.0s done
+#5 DONE 0.0s
+
+#6 [dependencies 3/5] RUN corepack enable
+#6 CACHED
+
+#7 [dependencies 2/5] WORKDIR /app
+#7 CACHED
+
+#8 [dependencies 4/5] COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+#8 CACHED
+
+#9 [dependencies 5/5] RUN pnpm install --frozen-lockfile --prod=false
+#9 CACHED
+
+#10 [build 1/2] COPY . .
+#10 DONE 0.1s
+
+#11 [build 2/2] RUN APP_URL=https://build.invalid   DATABASE_URL=postgres://build:build@127.0.0.1:5432/build   BETTER_AUTH_SECRET=build-only-dummy-secret-never-used-at-runtime   STORAGE_DRIVER=s3-compatible GENERATION_DRIVER=provider MAIL_DRIVER=smtp   MAIL_SMTP_URL=smtp://127.0.0.1:1025 pnpm build
+#11 0.376 $ next build
+#11 0.823 ▲ Next.js 16.3.8 (Turbopack)
+#11 0.902 ✓ Running next.config.ts took 79ms
+#11 0.907 Attention: Next.js now collects completely anonymous telemetry regarding usage.
+#11 0.907 This information is used to shape Next.js' roadmap and prioritize features.
+#11 0.907 You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+#11 0.907 https://nextjs.org/telemetry
+#11 0.907 
+#11 0.917 
+#11 0.954   Creating an optimized production build ...
+#11 8.151 ✓ Compiled successfully in 6.5s
+#11 8.153   Running TypeScript ...
+#11 14.14   Finished TypeScript in 6.0s ...
+#11 14.15   Collecting page data using 31 workers ...
+#11 16.09   Generating static pages using 31 workers (0/58) ...
+#11 16.25   Generating static pages using 31 workers (14/58) 
+#11 16.39   Generating static pages using 31 workers (28/58) 
+#11 16.59   Generating static pages using 31 workers (43/58) 
+#11 16.67 ✓ Generating static pages using 31 workers (58/58) in 579ms
+#11 16.67 Turbopack build encountered 1 warning:
+#11 16.67 ./src/app/docs/_lib/source.ts:29:67
+#11 16.67 Warning: Dynamic filesystem access causes tracing of the whole project
+#11 16.67   [90m27 |[0m ...
+#11 16.67   [90m28 |[0m ...leSync(path.join(root, [32m'content/docs/v1/manifest.json'[0m), [32m'utf8'[0m)) [36mas[0m [33mDocsManifest[0m;
+#11 16.67 [33m[1m>[0m [90m29 |[0m ... (sourcePath) => readFileSync(path.join(root, sourcePath), [32m'utf8'[0m));
+#11 16.67   [90m   |[0m                                  [33m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+#11 16.67   [90m30 |[0m ...
+#11 16.67   [90m31 |[0m ...
+#11 16.67   [90m32 |[0m ...: string, page: [33mPublishedDoc[0m, pages: readonly [33mPublishedDoc[0m[]): string | [36mundefined[0m {
+#11 16.67 
+#11 16.67 Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+#11 16.67 This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+#11 16.67 This can slow down deployments or lead to failures when size limits are exceeded.
+#11 16.67 To resolve this, you can
+#11 16.67 - make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+#11 16.67 - only use them in development, or
+#11 16.67 - opt out by adding an ignore comment to the highlighted call: path.join(/*turbopackIgnore: true*/ ...), or
+#11 16.67 - remove them.
+#11 16.67 
+#11 16.67 Import trace:
+#11 16.67   Server Component:
+#11 16.67     ./src/app/docs/_lib/source.ts
+#11 16.67     ./src/app/docs/[release]/[[...slug]]/page.tsx
+#11 16.67 
+#11 16.67 
+#11 16.67   Finalizing page optimization ...
+#11 17.11 
+#11 17.11 Route (app)
+#11 17.11 ┌ ƒ /
+#11 17.11 ├ ○ /_not-found
+#11 17.11 ├ ƒ /admin/[[...segments]]
+#11 17.11 ├ ƒ /api/admin/affiliates/commands/[command]
+#11 17.11 ├ ƒ /api/admin/affiliates/holds
+#11 17.11 ├ ƒ /api/admin/affiliates/reviews
+#11 17.11 ├ ƒ /api/admin/affiliates/status
+#11 17.11 ├ ƒ /api/admin/audit
+#11 17.11 ├ ƒ /api/admin/billing
+#11 17.11 ├ ƒ /api/admin/commands/[command]
+#11 17.11 ├ ƒ /api/admin/generations
+#11 17.11 ├ ƒ /api/admin/me
+#11 17.11 ├ ƒ /api/admin/recovery/[workspaceId]
+#11 17.11 ├ ƒ /api/admin/recovery/[workspaceId]/sweep
+#11 17.11 ├ ƒ /api/admin/recovery/[workspaceId]/webhook-replay
+#11 17.11 ├ ƒ /api/admin/refunds/pending
+#11 17.11 ├ ƒ /api/admin/refunds/preview
+#11 17.11 ├ ƒ /api/admin/security
+#11 17.11 ├ ƒ /api/admin/step-up
+#11 17.11 ├ ƒ /api/admin/users
+#11 17.11 ├ ƒ /api/admin/workspaces
+#11 17.11 ├ ƒ /api/admin/workspaces/[workspaceId]
+#11 17.11 ├ ƒ /api/admin/workspaces/[workspaceId]/details
+#11 17.11 ├ ƒ /api/affiliates/referral
+#11 17.11 ├ ƒ /api/auth/[...all]
+#11 17.11 ├ ƒ /api/checkout/fixture/[sessionId]
+#11 17.11 ├ ƒ /api/healthz
+#11 17.11 ├ ƒ /api/internal/recovery-alerts
+#11 17.11 ├ ƒ /api/invitations/accept
+#11 17.11 ├ ƒ /api/onboarding
+#11 17.11 ├ ƒ /api/webhooks/affiliate
+#11 17.11 ├ ƒ /api/webhooks/fal/[attemptNonce]
+#11 17.11 ├ ƒ /api/webhooks/replicate/[attemptNonce]
+#11 17.11 ├ ƒ /api/webhooks/stripe
+#11 17.11 ├ ƒ /api/workspaces
+#11 17.11 ├ ƒ /api/workspaces/[workspaceId]/assets
+#11 17.11 ├ ƒ /api/workspaces/[workspaceId]/assets/[assetId]
+#11 17.11 ├ ƒ /api/workspaces/[workspaceId]/assets/[assetId]/download
+#11 17.11 ├ ƒ /api/workspaces/[workspaceId]/billing
+#11 17.11 ├ ƒ /api/workspaces/[workspaceId]/billing/checkout
+#11 17.11 ├ ƒ /api/workspaces/[workspaceId]/billing/portal
+#11 17.11 ├ ƒ /api/workspaces/[workspaceId]/generations
+#11 17.11 ├ ƒ /api/workspaces/[workspaceId]/generations/[taskId]/cancel
+#11 17.11 ├ ƒ /api/workspaces/[workspaceId]/generations/[taskId]/claim
+#11 17.11 ├ ƒ /api/workspaces/[workspaceId]/invitations
+#11 17.11 ├ ƒ /api/workspaces/[workspaceId]/leave
+#11 17.11 ├ ƒ /api/workspaces/[workspaceId]/members/[userId]/demote
+#11 17.11 ├ ƒ /api/workspaces/[workspaceId]/members/[userId]/remove
+#11 17.11 ├ ƒ /api/workspaces/[workspaceId]/transfer
+#11 17.11 ├ ƒ /billing/portal/fixture/[sessionId]
+#11 17.11 ├ ƒ /checkout/fixture/[sessionId]
+#11 17.11 ├ ○ /creator-qa-check
+#11 17.11 ├ ƒ /dashboard
+#11 17.11 ├ ƒ /dashboard/team
+#11 17.11 ├ ○ /docs
+#11 17.11 ├   /docs/[release]/[[...slug]]
+#11 17.11 │ ├ ● /docs/v1
+#11 17.11 │ ├ ● /docs/v1/template
+#11 17.11 │ ├ ● /docs/v1/template/operations
+#11 17.11 │ └ ● [+24 more paths]
+#11 17.11 ├ ○ /docs/api
+#11 17.11 ├ ○ /docs/releases
+#11 17.11 ├ ○ /docs/skills
+#11 17.11 ├ ○ /docs/template
+#11 17.11 ├ ƒ /invitations/accept
+#11 17.11 ├ ƒ /login
+#11 17.11 ├ ƒ /reset-password
+#11 17.11 ├ ○ /signup
+#11 17.11 ├ ƒ /workspaces/[w]/billing
+#11 17.11 ├ ƒ /workspaces/[w]/settings/members
+#11 17.11 └ ƒ /workspaces/new
+#11 17.11 
+#11 17.11 
+#11 17.11 ○  (Static)   prerendered as static content
+#11 17.11 ●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+#11 17.11 ƒ  (Dynamic)  server-rendered on demand
+#11 17.11 
+#11 DONE 17.2s
+
+#12 [runtime 2/9] RUN apt-get update   && apt-get install --no-install-recommends --yes ffmpeg   && rm -rf /var/lib/apt/lists/*
+#12 CACHED
+
+#13 [runtime 3/9] WORKDIR /app
+#13 CACHED
+
+#14 [runtime 4/9] COPY --from=build /app/.next/standalone ./
+#14 DONE 0.2s
+
+#15 [runtime 5/9] COPY --from=build /app/.next/static ./.next/static
+#15 DONE 0.0s
+
+#16 [runtime 6/9] COPY --from=build /app/public ./public
+#16 DONE 0.0s
+
+#17 [runtime 7/9] COPY --from=build /app/content/docs ./content/docs
+#17 DONE 0.0s
+
+#18 [runtime 8/9] COPY --from=build /app/src/db ./src/db
+#18 DONE 0.0s
+
+#19 [runtime 9/9] COPY --from=build /app/scripts/migrate.ts ./scripts/migrate.ts
+#19 DONE 0.0s
+
+#20 exporting to image
+#20 exporting layers
+#20 exporting layers 1.8s done
+#20 exporting manifest sha256:c06110e966db626ea185d12d059ea8d8e517b286a226cd3b6354bb25f6251557 done
+#20 exporting config sha256:a7a5e4b2dbf42dd0b4e72628e497f1aa40c4995173e923e839cf14eddf793877 0.0s done
+#20 exporting attestation manifest sha256:61c51091ae2388ee12bf3d52460e2cdbeb54c7fe9eed1aa8657fa8fa0f468fee 0.0s done
+#20 exporting manifest list sha256:7c7306f3556e7b6fe349eae1040d5fb295a68995102fa88fe8db1befd92a98a1 0.0s done
+#20 naming to docker.io/library/shpitto-candidate:local-candidate-20261019-trusted-r2 done
+#20 unpacking to docker.io/library/shpitto-candidate:local-candidate-20261019-trusted-r2
+#20 unpacking to docker.io/library/shpitto-candidate:local-candidate-20261019-trusted-r2 0.6s done
+#20 DONE 2.5s

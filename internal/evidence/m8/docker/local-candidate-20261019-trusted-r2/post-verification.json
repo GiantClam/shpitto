@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "resultSha256": "8f6429e3bb25bee0afb4510c1d53c177f196042868ec4734b7b84c2659c085f0",
+  "retainedImageId": "sha256:7c7306f3556e7b6fe349eae1040d5fb295a68995102fa88fe8db1befd92a98a1",
+  "scopedContainersRemaining": 0,
+  "credentialScan": "PASS",
+  "filesScanned": 25,
+  "archiveSha256": "cc9750578638109350e05b60865a76e139e752a9bd97ed2a436f279ffac5ea66",
+  "postRunSourceTreeSha256": "e5cf13a5d4af7747fcb83bc10e940e73e731570a0df4dd6361aaced0890a71be",
+  "productionAcceptance": "NOT_CLAIMED",
+  "recordedAt": "2026-10-19T06:32:13.6878000Z"
+}

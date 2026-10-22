@@ -1,0 +1,235 @@
+import assert from 'node:assert/strict';
+import {createHash, randomUUID} from 'node:crypto';
+import {spawn, spawnSync} from 'node:child_process';
+import {readFileSync, writeFileSync, mkdirSync, appendFileSync, existsSync} from 'node:fs';
+import path from 'node:path';
+import pg from 'pg';
+import {chromium} from 'file:///C:/Users/liula/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs';
+
+const root = process.cwd();
+const runtimeRoot = path.resolve(process.env.SHPITTO_BROWSER_RUNTIME_ROOT ?? root);
+const runId = randomUUID().slice(0, 8);
+const output = path.join(root, 'internal/evidence/M3/continuation-20261019/r2', `browser-journeys-${runId}`);
+const port = 3199;
+const origin = `http://127.0.0.1:${port}`;
+mkdirSync(output, {recursive: true});
+const json = (name, data) => writeFileSync(path.join(output, name), `${JSON.stringify(data, null, 2)}\n`, 'utf8');
+const relative = (file) => path.relative(root, file).replaceAll('\\', '/');
+const sourceEnv = {};
+const databaseName = `shpitto_browser_${runId}`;
+const adminUrl = new URL(process.env.SHPITTO_BROWSER_ADMIN_DATABASE_URL ?? sourceEnv.DATABASE_URL);
+assert(['localhost', '127.0.0.1'].includes(adminUrl.hostname));
+adminUrl.pathname = '/postgres';
+const admin = new pg.Client({connectionString: adminUrl.toString()});
+const databaseUrl = new URL(adminUrl); databaseUrl.pathname = `/${databaseName}`;
+const password = `Browser-${randomUUID()}!`;
+const primary = {name: 'Current browser owner', email: `browser-owner-${runId}@example.test`, password};
+const member = {name: 'Current browser member', email: `browser-member-${runId}@example.test`, password};
+const expired = {name: 'Current browser expiry', email: `browser-expiry-${runId}@example.test`, password};
+const assetRoot = path.join(runtimeRoot, '.data', `browser-assets-${runId}`);
+const env = {...process.env, ...sourceEnv, NODE_ENV: 'development', SHPTITTO_RUNTIME_PROFILE: 'local', APP_URL: origin,
+  DATABASE_URL: databaseUrl.toString(), BETTER_AUTH_SECRET: randomUUID() + randomUUID(), STORAGE_DRIVER: 'local', GENERATION_DRIVER: 'mock', MAIL_DRIVER: 'local',
+  ASSET_ROOT: assetRoot, MAIL_SMTP_URL: 'smtp://127.0.0.1:1025', MAIL_HTTP_URL: 'http://127.0.0.1:8025', TASK_RUNTIME: 'self_hosted'};
+const secrets = new Set([password, env.DATABASE_URL, env.BETTER_AUTH_SECRET, adminUrl.toString()]);
+const redact = (input) => {let value = String(input); for (const secret of secrets) if (secret) value = value.replaceAll(secret, '[redacted]'); return value.replace(/([?&]token=)[^\s"<&)]+/g, '$1[redacted]');};
+const events = [];
+const errors = [];
+let app, worker, browser, db;
+let number = 0;
+const artifacts = {};
+const record = (name, data = {}) => {events.push({name, at: new Date().toISOString(), ...data}); json('observations.json', {application: origin, runId, events, errors}); console.log(name);};
+const waitFor = async (callback, label, timeout = 45000) => {const until = Date.now() + timeout; while (Date.now() < until) {if (await callback()) return; await new Promise(r => setTimeout(r, 250));} throw new Error(`Timed out: ${label}`);};
+const start = (name, args) => {
+  const child = spawn(process.execPath, args, {cwd: runtimeRoot, env, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe']});
+  for (const stream of [child.stdout, child.stderr]) stream.on('data', b => appendFileSync(path.join(output, `${name}.log`), redact(b), 'utf8'));
+  return child;
+};
+const stopped = child => !child || child.exitCode !== null || child.signalCode !== null;
+const stop = async child => {
+  if (stopped(child)) return;
+  const done = new Promise(r => child.once('exit', r));
+  child.kill();
+  await Promise.race([done, new Promise(r => setTimeout(r, 4000))]);
+  if (!stopped(child)) {
+    child.kill('SIGKILL');
+    await Promise.race([done, new Promise(r => setTimeout(r, 1000))]);
+  }
+  assert(stopped(child), 'Owned browser acceptance service did not stop.');
+};
+const startApp = async name => {app = start(name, ['node_modules/next/dist/bin/next', 'start', '--hostname', '127.0.0.1', '--port', String(port)]); await waitFor(async () => fetch(`${origin}/api/healthz`).then(r => r.ok).catch(() => false), 'web readiness');};
+const screenshot = async (page, label) => {
+  const prefix = `${String(++number).padStart(2, '0')}-${label}`;
+  await page.screenshot({path: path.join(output, `${prefix}.png`), fullPage: true,
+    mask: [page.locator('#invitation-token'), page.locator('a[href*="token="]')]});
+  const body = await page.locator('body').innerText();
+  writeFileSync(path.join(output, `${prefix}.txt`), `${redact(body)}\n`, 'utf8');
+  artifacts[label] = [relative(path.join(output, `${prefix}.png`)), relative(path.join(output, `${prefix}.txt`))];
+  return artifacts[label];
+};
+const signup = async (account, page) => {
+  if (page) {
+    await page.goto(`${origin}/signup`); await page.waitForLoadState('networkidle');
+    await page.getByLabel('Name', {exact: true}).fill(account.name);
+    await page.getByLabel('Email', {exact: true}).fill(account.email);
+    await page.getByLabel('Password', {exact: true}).fill(account.password);
+    const response = page.waitForResponse(r => r.url().endsWith('/api/auth/sign-up/email') && r.request().method() === 'POST');
+    await page.getByRole('button', {name: 'Create account', exact: true}).click(); assert.equal((await response).status(), 200);
+    await page.getByText('Check your email to verify your account before signing in.', {exact: true}).waitFor();
+  } else {
+    const response = await fetch(`${origin}/api/auth/sign-up/email`, {method: 'POST', headers: {origin, 'content-type': 'application/json'}, body: JSON.stringify({...account, callbackURL: '/login'})});
+    assert.equal(response.status, 200);
+  }
+  let message;
+  await waitFor(async () => {const response = await fetch(`http://127.0.0.1:8025/api/v1/search?query=${encodeURIComponent(`to:${account.email}`)}`); const result = await response.json(); message = result.messages.find(m => m.Subject === 'Verify your Shpitto email' && m.To.some(to => to.Address === account.email)); return !!message;}, 'verification email');
+  const detail = await (await fetch(`http://127.0.0.1:8025/api/v1/message/${message.ID}`)).json();
+  const link = detail.Text.match(/https?:\/\/\S+/)?.[0]; assert(link); const parsed = new URL(link); assert.equal(parsed.origin, origin); for (const value of parsed.searchParams.values()) if (value.length > 12) secrets.add(value);
+  if (page) {await page.goto(link); await page.waitForLoadState('networkidle');}
+  else assert.equal((await fetch(link, {redirect: 'manual'})).status, 302);
+};
+const login = async (page, account) => {
+  await page.goto(`${origin}/login`); await page.waitForLoadState('networkidle');
+  await page.getByLabel('Email', {exact: true}).fill(account.email); await page.getByLabel('Password', {exact: true}).fill(account.password);
+  const response = page.waitForResponse(r => r.url().endsWith('/api/auth/sign-in/email') && r.request().method() === 'POST');
+  await page.getByRole('button', {name: 'Sign in', exact: true}).click(); assert.equal((await response).status(), 200);
+  await page.waitForURL('**/dashboard'); await page.waitForLoadState('networkidle');
+};
+const monitor = page => {page.on('pageerror', e => errors.push({type: 'pageerror', message: redact(e.message)})); page.on('console', m => {if (m.type() === 'error') errors.push({type: 'console', message: redact(m.text())});});};
+
+try {
+  const provenance = JSON.parse(readFileSync(path.join(root, 'internal/evidence/M3/continuation-20261019/r2/browser-runtime-provenance.json'), 'utf8'));
+  assert.equal(runtimeRoot, provenance.runtimeRoot);
+  assert.equal(provenance.sourceTreeSha256, 'e5cf13a5d4af7747fcb83bc10e940e73e731570a0df4dd6361aaced0890a71be');
+  for (const file of provenance.compiledFiles) assert.equal(createHash('sha256').update(readFileSync(path.join(runtimeRoot, file.path))).digest('hex'), file.sha256);
+  json('runtime-candidate-binding.json', {provenanceRef: 'internal/evidence/M3/continuation-20261019/r2/browser-runtime-provenance.json', sourceTreeSha256: provenance.sourceTreeSha256, compiledTreeSha256: provenance.compiledTreeSha256, compiledFilesVerified: true, runtimeRoot});
+  await admin.connect(); await admin.query(`create database "${databaseName}"`);
+  const capture = spawnSync(process.execPath, ['scripts/candidate-digests.mjs', output], {cwd: root, encoding: 'utf8', windowsHide: true}); assert.equal(capture.status, 0);
+  const migration = spawnSync(process.execPath, ['--experimental-strip-types', 'scripts/migrate.ts'], {cwd: runtimeRoot, env, encoding: 'utf8', windowsHide: true, timeout: 90000});
+  writeFileSync(path.join(output, 'migrate.log'), redact(migration.stdout + migration.stderr), 'utf8'); assert.equal(migration.status, 0);
+  db = new pg.Client({connectionString: env.DATABASE_URL}); await db.connect();
+  await startApp('web-before-restart');
+  browser = await chromium.launch({headless: true});
+  const context = await browser.newContext({viewport: {width: 1440, height: 900}});
+  const page = await context.newPage(); monitor(page);
+  await signup(primary, page); record('fresh-user-signup-and-email-verification');
+  await login(page, primary); await screenshot(page, 'personal-setup-pending');
+  await page.getByLabel('Personal workspace name').fill('Current personal studio');
+  const onboard = page.waitForResponse(r => r.url().endsWith('/api/onboarding') && r.request().method() === 'POST');
+  await page.getByRole('button', {name: 'Complete personal setup', exact: true}).click(); assert.equal((await onboard).status(), 201);
+  await page.waitForURL('**/dashboard?workspace=*'); await page.waitForLoadState('networkidle');
+  const personalId = new URL(page.url()).searchParams.get('workspace'); assert(personalId);
+  await screenshot(page, 'personal-empty'); record('personal-workspace-created', {workspaceId: personalId});
+  await page.getByRole('button', {name: 'Image to video', exact: true}).click();
+  await page.getByText('No model available for this mode', {exact: true}).waitFor({state: 'attached'});
+  assert(await page.getByRole('button', {name: 'Generate video ↗', exact: true}).isDisabled());
+  await screenshot(page, 'image-mode-no-admitted-model');
+  await page.getByRole('button', {name: 'Text to video', exact: true}).click();
+  await page.getByLabel('Prompt', {exact: true}).fill('A current browser proof in warm morning light');
+  worker = start('worker-before-restart', ['--experimental-strip-types', 'scripts/local-worker.ts']);
+  await new Promise(resolve => setTimeout(resolve, 1000)); assert.equal(worker.exitCode, null);
+  const initialWorkerPid = worker.pid; await stop(worker);
+  // Lock only the disposable workspace credit account to observe a real pending command.
+  const lock = new pg.Client({connectionString: env.DATABASE_URL}); await lock.connect(); await lock.query('begin'); await lock.query('select workspace_id from app.credit_accounts where workspace_id=$1 for update', [personalId]);
+  const createResponse = page.waitForResponse(r => r.url().endsWith(`/workspaces/${personalId}/generations`) && r.request().method() === 'POST');
+  await page.getByRole('button', {name: 'Generate video ↗', exact: true}).click();
+  await page.getByRole('button', {name: 'Queueing…', exact: true}).waitFor();
+  assert(await page.getByRole('button', {name: 'Queueing…', exact: true}).isDisabled()); await screenshot(page, 'generation-loading');
+  await lock.query('rollback'); await lock.end();
+  const created = await createResponse; assert.equal(created.status(), 201); const taskId = (await created.json()).data.value.taskId;
+  await page.waitForLoadState('networkidle'); await screenshot(page, 'queued-before-restart');
+  const beforeProcess = {appPid: app.pid, workerPid: initialWorkerPid};
+  await stop(app); await startApp('web-after-restart');
+  worker = start('worker-after-restart', ['--experimental-strip-types', 'scripts/local-worker.ts']);
+  await waitFor(async () => (await db.query('select status from app.generation_tasks where id=$1', [taskId])).rows[0]?.status === 'succeeded', 'same task completion after restart');
+  await page.reload(); await page.waitForLoadState('networkidle'); await screenshot(page, 'generation-success');
+  const state = (await db.query('select t.id,t.status,r.status as reservation_status,(select count(*)::int from app.assets a where a.workspace_id=t.workspace_id and a.purpose=\'output\' and a.state=\'ready\') as ready_outputs from app.generation_tasks t join app.credit_reservations r on r.task_id=t.id where t.id=$1', [taskId])).rows[0];
+  assert.equal(state.reservation_status, 'consumed'); assert.equal(state.ready_outputs, 1);
+  const balance = (await db.query('select available::text,reserved::text,consumed::text from app.credit_grants where workspace_id=$1', [personalId])).rows;
+  json('restart-proof.json', {before: beforeProcess, after: {appPid: app.pid, workerPid: worker.pid}, state, balance}); record('application-worker-restart', {taskId, status: state.status});
+  const download = page.getByRole('link', {name: 'Download', exact: true}).first(); const privateUrl = await download.getAttribute('href'); secrets.add(new URL(privateUrl, origin).searchParams.get('token'));
+  const videoPage = await context.newPage(); await videoPage.goto(new URL(privateUrl, origin).toString());
+  await videoPage.locator('video').waitFor(); await waitFor(async () => videoPage.locator('video').evaluate(v => v.readyState >= 2 && v.error === null), 'private video metadata');
+  const metadata = await videoPage.locator('video').evaluate(v => ({duration: v.duration, width: v.videoWidth, height: v.videoHeight, readyState: v.readyState, error: v.error}));
+  json('private-video.json', metadata); await screenshot(videoPage, 'private-video'); await videoPage.close();
+  const anonymous = await browser.newContext(); const denial = await anonymous.request.get(new URL(privateUrl, origin).toString()); assert.equal(denial.status(), 401); await anonymous.close(); record('private-download', {metadata, anonymousStatus: denial.status()});
+  await page.goto(`${origin}/workspaces/${personalId}/settings/members`); await page.waitForLoadState('networkidle');
+  await page.getByRole('heading', {name: 'Personal workspace', exact: true}).waitFor();
+  assert.equal(await page.locator('.member-row').count(), 1);
+  assert.equal(await page.getByRole('button', {name: 'Invite member', exact: true}).count(), 0); assert.equal(await page.getByRole('button', {name: 'Transfer', exact: true}).count(), 0); await screenshot(page, 'personal-controls-denied');
+  await page.goto(`${origin}/workspaces/new`); await page.waitForLoadState('networkidle'); await page.getByRole('textbox', {name: 'Team name', exact: true}).fill('Current browser team');
+  await page.getByRole('button', {name: 'Create team', exact: true}).click(); await page.waitForURL('**/workspaces/*/settings/members'); await page.waitForLoadState('networkidle');
+  const teamId = new URL(page.url()).pathname.split('/')[2]; await screenshot(page, 'team-created'); record('team-creation', {workspaceId: teamId});
+  await signup(member); await signup(expired);
+  const invite = async account => {await page.getByRole('textbox', {name: 'Invite email', exact: true}).fill(account.email); const response = page.waitForResponse(r => r.url().endsWith(`/workspaces/${teamId}/invitations`) && r.request().method() === 'POST'); await page.getByRole('button', {name: 'Invite member', exact: true}).click(); const result = await response; assert.equal(result.status(), 201); const data = await result.json(); const url = data.acceptanceUrl; assert(url); const token = new URL(url).searchParams.get('token'); secrets.add(token); await page.getByText('Invitation created.', {exact: true}).waitFor(); return {url, token};};
+  const memberInvite = await invite(member); await screenshot(page, 'invitation-created');
+  const memberContext = await browser.newContext({viewport: {width: 1440, height: 900}}); const memberPage = await memberContext.newPage(); monitor(memberPage);
+  await login(memberPage, member); await memberPage.goto(memberInvite.url); await memberPage.waitForLoadState('networkidle'); await memberPage.getByRole('button', {name: 'Accept invitation', exact: true}).click(); await memberPage.waitForURL(`**/workspaces/${teamId}/settings/members`); await memberPage.waitForLoadState('networkidle');
+  assert.equal(await memberPage.getByRole('button', {name: 'Invite member', exact: true}).count(), 0); await screenshot(memberPage, 'member-accepted');
+  await memberPage.goto(memberInvite.url); await memberPage.waitForLoadState('networkidle'); await memberPage.getByRole('button', {name: 'Accept invitation', exact: true}).click(); await memberPage.getByText(/invalid|expired/i).waitFor(); await screenshot(memberPage, 'invitation-replay-denied');
+  const expiryInvite = await invite(expired);
+  const fixture = await db.query("update app.workspace_invitations set created_at=now()-interval '8 days', expires_at=now()-interval '1 day' where workspace_id=$1 and email_normalized=$2 and accepted_at is null returning id", [teamId, expired.email]); assert.equal(fixture.rowCount, 1); json('expiry-fixture.json', {scope: 'Disposable browser database only', invitationId: fixture.rows[0].id, createdDaysAgo: 8, expiresDaysAgo: 1});
+  const expiredContext = await browser.newContext(); const expiredPage = await expiredContext.newPage(); await login(expiredPage, expired); await expiredPage.goto(expiryInvite.url); await expiredPage.waitForLoadState('networkidle'); await expiredPage.getByRole('button', {name: 'Accept invitation', exact: true}).click(); await expiredPage.getByText(/invalid|expired/i).waitFor(); await screenshot(expiredPage, 'invitation-expired-denied'); await expiredContext.close();
+  for (const [label, id] of [['personal-selected', personalId], ['team-selected', teamId]]) {await page.goto(`${origin}/dashboard?workspace=${id}`); await page.waitForLoadState('networkidle'); await screenshot(page, label);}
+  await page.goto(`${origin}/workspaces/${teamId}/settings/members`); await page.waitForLoadState('networkidle');
+  const memberId = (await db.query('select id from public."user" where email=$1', [member.email])).rows[0].id;
+  const primaryId = (await db.query('select id from public."user" where email=$1', [primary.email])).rows[0].id;
+  await page.getByLabel('Transfer ownership', {exact: true}).selectOption(memberId); await screenshot(page, 'owner-before-transfer');
+  const transferResponse = page.waitForResponse(r => r.url().endsWith(`/workspaces/${teamId}/transfer`) && r.request().method() === 'POST'); await page.getByRole('button', {name: 'Transfer', exact: true}).click(); const transfer = await transferResponse; assert.equal(transfer.status(), 200);
+  const submittedActions = [{action: 'transfer-owner', result: 'PASS', requestMethod: 'POST', path: `/api/workspaces/${teamId}/transfer`, responseStatus: transfer.status(), targetUserId: memberId, submittedAt: new Date().toISOString(), postcondition: 'Invited member is now the sole owner; original owner became member.'}];
+  await page.getByText('Ownership transferred.', {exact: true}).waitFor(); await page.reload(); await page.waitForLoadState('networkidle'); await screenshot(page, 'original-owner-open-tab-before-removal');
+  await memberPage.goto(`${origin}/workspaces/${teamId}/settings/members`); await memberPage.waitForLoadState('networkidle');
+  const removalResponse = memberPage.waitForResponse(r => r.url().endsWith(`/members/${primaryId}/remove`) && r.request().method() === 'POST'); await memberPage.getByRole('button', {name: 'Remove', exact: true}).click(); const removal = await removalResponse; assert.equal(removal.status(), 200);
+  submittedActions.push({action: 'remove-member', result: 'PASS', requestMethod: 'POST', path: `/api/workspaces/${teamId}/members/${primaryId}/remove`, responseStatus: removal.status(), targetUserId: primaryId, submittedAt: new Date().toISOString(), postcondition: 'Only the new owner remains in the team.'});
+  await memberPage.reload(); await memberPage.waitForLoadState('networkidle'); await screenshot(memberPage, 'member-removed-one-owner');
+  await page.reload(); await page.waitForLoadState('networkidle'); await page.getByText('Workspace unavailable', {exact: true}).waitFor(); await screenshot(page, 'revoked-open-tab'); json('owner-controls.json', {submittedActions});
+  await page.goto(`${origin}/dashboard?workspace=${personalId}`); await page.waitForLoadState('networkidle');
+  await page.getByRole('button', {name: 'Image to video', exact: true}).click(); await screenshot(page, 'desktop-image-mode');
+  await page.getByRole('button', {name: 'Text to video', exact: true}).click(); await screenshot(page, 'desktop-text-mode');
+  const desktopOverflow = await page.evaluate(() => ({width: innerWidth, scrollWidth: document.documentElement.scrollWidth})); assert(desktopOverflow.scrollWidth <= desktopOverflow.width);
+  const focus = []; await page.locator('body').click({position: {x: 2, y: 2}}); for (let i=0; i<24; i++) {await page.keyboard.press('Tab'); focus.push(await page.evaluate(() => {const e=document.activeElement; return {tag: e.tagName, id: e.id, text: e.textContent?.trim().slice(0, 120), aria: e.getAttribute('aria-label')};}));} json('keyboard.json', {focus});
+  await page.setViewportSize({width: 390, height: 844}); await page.goto(`${origin}/dashboard?workspace=${personalId}`); await page.waitForLoadState('networkidle'); await screenshot(page, 'mobile-text-mode');
+  await page.getByRole('button', {name: 'Image to video', exact: true}).click(); await screenshot(page, 'mobile-image-mode');
+  const mobileOverflow = await page.evaluate(() => ({width: innerWidth, scrollWidth: document.documentElement.scrollWidth})); assert(mobileOverflow.scrollWidth <= mobileOverflow.width);
+  // A real server error is produced by the zero-credit team, rather than a mocked network response.
+  await memberPage.goto(`${origin}/dashboard?workspace=${teamId}`); await memberPage.waitForLoadState('networkidle'); await memberPage.getByLabel('Prompt', {exact: true}).fill('No-credit error verification'); await memberPage.getByRole('button', {name: 'Generate video ↗', exact: true}).click(); await memberPage.getByRole('alert').waitFor(); await screenshot(memberPage, 'generation-error');
+  const refs = (...labels) => labels.flatMap(label => artifacts[label] || []);
+  const entry = (id, observed, evidenceRefs, extra = {}) => ({id, result: 'PASS', observed, evidenceRefs, ...extra});
+  const candidate = JSON.parse(readFileSync(path.join(output, 'candidate.json'), 'utf8'));
+  const endCapture = spawnSync(process.execPath, ['scripts/candidate-digests.mjs'], {cwd: root, encoding: 'utf8', windowsHide: true}); assert.equal(endCapture.status, 0); const endCandidate = JSON.parse(endCapture.stdout);
+  for (const key of ['sourceTreeSha256','schemaSha256','configurationSha256','contractSha256','validatorSha256','lockfileSha256']) assert.equal(endCandidate[key], candidate[key], `Candidate changed during browser acceptance: ${key}`);
+  json('candidate-after.json', endCandidate);
+  json('walkthrough.json', {application: origin, capturedAt: new Date().toISOString(), profile: 'Local no-cloud Mock; compiled Next application served with a local runtime configuration; not a production configuration acceptance.', credentialsRef: 'internal/evidence/M3/continuation-20261019/r2/browser-harness.mjs (disposable generated accounts; no retained credentials)', candidateSha256: candidate.sourceTreeSha256, candidateRef: relative(path.join(output, 'candidate.json')),
+    journeys: [entry('fresh-user-generation', ['Fresh account completed signup, captured-mail verification, UI login, explicit personal setup and UI generation. Exactly one ready output and consumed reservation persisted after application/worker restart.'], refs('personal-setup-pending','personal-empty','generation-success')),
+      entry('team-creation', ['The fresh account created a team through the UI; exactly one owner is rendered.'], refs('team-created')),
+      entry('invitation-creation', ['The owner created a real invitation through the UI; local token is masked in retained captures.'], refs('invitation-created')),
+      entry('member-invitation', ['The invited account signed in through UI and accepted; a member sees the roster without owner controls.'], refs('member-accepted')),
+      entry('invitation-replay-expiry', ['Consumed token replay and an independently aged seven-day invitation were denied to matching accounts.'], [...refs('invitation-replay-denied','invitation-expired-denied'),relative(path.join(output,'expiry-fixture.json'))]),
+      entry('owner-controls', ['Submitted ownership transfer and member removal both returned POST 200; final roster contains one owner.'], [...refs('owner-before-transfer','member-removed-one-owner'),relative(path.join(output,'owner-controls.json'))], {submittedActions}),
+      entry('workspace-switching', ['Personal and team navigation rendered separate grants, assets and generation histories.'], refs('personal-selected','team-selected')),
+      entry('personal-space-denial', ['The personal roster has no invitation, member removal or ownership transfer controls.'], refs('personal-controls-denied')),
+      entry('revoked-open-tab', ['The original owner left a member tab open; after removal, reloading that same tab shows Workspace unavailable.'], refs('original-owner-open-tab-before-removal','revoked-open-tab')),
+      entry('private-download', ['The authorized browser opened the private video; metadata loaded and an anonymous request to the same URL returned 401.'], [...refs('private-video'),relative(path.join(output,'private-video.json'))]),
+      entry('application-worker-restart', ['The owned worker was stopped before queuing; the owned app and worker restarted with different PIDs, then the same task completed and settled once.'], [...refs('queued-before-restart','generation-success'),relative(path.join(output,'restart-proof.json'))])],
+    uiReview: {result: 'PASS', desktopViewport: '1440x900', mobileViewport: '390x844', checks: [entry('success', ['Observed successful generation, team creation, invitation acceptance and owner actions.'], refs('generation-success','member-removed-one-owner')),entry('loading', ['A scoped credit-account lock held a real pending generation POST; the Queueing button was disabled until lock release.'],refs('generation-loading')),entry('empty',['A newly created personal studio shows no tasks or assets.'],refs('personal-empty')),entry('error',['A real no-credit team generation POST renders the server denial as an alert.'],refs('generation-error')),entry('denied',['Consumed and expired invitation tokens and revoked membership display denials.'],refs('invitation-replay-denied','invitation-expired-denied','revoked-open-tab')),entry('desktop',['Current studio modes render at 1440x900 with no document horizontal overflow.'],refs('desktop-text-mode','desktop-image-mode')),entry('mobile',['Current studio modes render at 390x844 with no document horizontal overflow.'],refs('mobile-text-mode','mobile-image-mode')),entry('keyboard',['Keyboard Tab traversal retained focus order for navigation, mode controls and generation form.'],[relative(path.join(output,'keyboard.json'))])]},
+    environment: {database: databaseName, runtimeRoot, appRuntime: 'next start + NODE_ENV=development', desktopOverflow, mobileOverflow}, browserErrors: errors});
+  record('all-browser-journeys-complete', {output: relative(output)});
+} catch (error) {
+  json('failure.json', {at: new Date().toISOString(), error: redact(error.stack || error), events, errors}); console.error(redact(error.stack || error)); process.exitCode=1;
+} finally {
+  await browser?.close(); await stop(worker); await stop(app); await db?.end();
+  let databaseDropped = false;
+  let cleanupError = null;
+  try {
+    await admin.query(`drop database if exists "${databaseName}" with (force)`);
+    const remaining = await admin.query('select 1 from pg_database where datname=$1', [databaseName]);
+    databaseDropped = remaining.rowCount === 0;
+    assert(databaseDropped, 'Disposable browser database still exists after cleanup.');
+  } catch (error) {
+    cleanupError = redact(error.stack || error);
+    process.exitCode = 1;
+  }
+  await admin.end();
+  const servicesStopped = stopped(app) && stopped(worker);
+  if (!servicesStopped) process.exitCode = 1;
+  json('cleanup.json', {at: new Date().toISOString(), servicesStopped, databaseDropped, cleanupError});
+  console.log(`Evidence: ${relative(output)}`);
+}

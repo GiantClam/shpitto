@@ -1,0 +1,24 @@
+{
+  "submittedActions": [
+    {
+      "action": "transfer-owner",
+      "result": "PASS",
+      "requestMethod": "POST",
+      "path": "/api/workspaces/5380de0e-4041-49d8-92cd-e5a363cb4367/transfer",
+      "responseStatus": 200,
+      "targetUserId": "Qjme3vFyJPUOEhf2sW8qm1Ydfey0vlAj",
+      "submittedAt": "2026-10-19T15:06:53.465Z",
+      "postcondition": "Invited member is now the sole owner; original owner became member."
+    },
+    {
+      "action": "remove-member",
+      "result": "PASS",
+      "requestMethod": "POST",
+      "path": "/api/workspaces/5380de0e-4041-49d8-92cd-e5a363cb4367/members/tEbk2tGkd7MZj5pXFtLIZaC6cIZSb6Ik/remove",
+      "responseStatus": 200,
+      "targetUserId": "tEbk2tGkd7MZj5pXFtLIZaC6cIZSb6Ik",
+      "submittedAt": "2026-10-19T15:06:54.630Z",
+      "postcondition": "Only the new owner remains in the team."
+    }
+  ]
+}

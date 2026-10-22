@@ -3,7 +3,7 @@
   "release": "v1",
   "paths": [
     "src/db", "src/modules", "src/adapters", "src/app/api/auth", "src/app/api/billing",
-    "src/app/api/generation", "src/app/api/webhooks", "src/app/api/workspaces", "src/db/migrations", "scripts/check-*",
+    "src/app/api/generation", "src/app/api/webhooks", "src/app/api/workspaces", "src/db/migrations", "scripts", "tooling",
     ".shpitto/contracts"
   ],
   "semanticContracts": [

@@ -1,0 +1,6 @@
+{
+  "at": "2026-10-20T04:58:42.957Z",
+  "error": "error: password authentication failed for user \"shpitto\"\n    at parseErrorMessage (D:\\github\\shpitto\\node_modules\\.pnpm\\pg-protocol@1.16.0\\node_modules\\pg-protocol\\dist\\parser.js:306:11)\n    at Parser.handlePacket (D:\\github\\shpitto\\node_modules\\.pnpm\\pg-protocol@1.16.0\\node_modules\\pg-protocol\\dist\\parser.js:143:27)\n    at Parser.parse (D:\\github\\shpitto\\node_modules\\.pnpm\\pg-protocol@1.16.0\\node_modules\\pg-protocol\\dist\\parser.js:37:38)\n    at Socket.<anonymous> (D:\\github\\shpitto\\node_modules\\.pnpm\\pg-protocol@1.16.0\\node_modules\\pg-protocol\\dist\\index.js:12:42)\n    at Socket.emit (node:events:509:28)\n    at addChunk (node:internal/streams/readable:563:12)\n    at readableAddChunkPushByteMode (node:internal/streams/readable:514:3)\n    at Readable.push (node:internal/streams/readable:394:5)\n    at TCP.onStreamRead (node:internal/stream_base_commons:189:23)",
+  "events": [],
+  "errors": []
+}

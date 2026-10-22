@@ -1,0 +1,5 @@
+Error: Timed out: verification email
+    at waitFor (file:///D:/github/shpitto/internal/evidence/M3/continuation-20261019/r2/browser-harness-executed.mjs:42:207)
+    at async signup (file:///D:/github/shpitto/internal/evidence/M3/continuation-20261019/r2/browser-harness-executed.mjs:84:3)
+    at async file:///D:/github/shpitto/internal/evidence/M3/continuation-20261019/r2/browser-harness-executed.mjs:125:3
+Evidence: internal/evidence/M3/continuation-20261019/r2/browser-journeys-e68965f7

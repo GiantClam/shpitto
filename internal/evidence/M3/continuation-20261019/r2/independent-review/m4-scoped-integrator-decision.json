@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "M4_SCOPED_INTEGRATOR_DECISION",
+  "stageId": "M4",
+  "candidateId": "r2-current-20261019",
+  "integratorId": "codex-integrator-r2-20261019",
+  "decidedAt": "2026-10-19T07:21:48Z",
+  "independentReviewRef": "internal/evidence/M3/continuation-20261019/r2/independent-review/m4-scoped-independent-review.json",
+  "independentFromImplementer": true,
+  "candidateDigests": {
+    "sourceTreeSha256": "e5cf13a5d4af7747fcb83bc10e940e73e731570a0df4dd6361aaced0890a71be",
+    "schemaSha256": "7560a6a5b059bb33a47e7afa878826d73cf57f05a3a6a6f5ffa1ff2eb7f08d0f",
+    "configurationSha256": "07533fb94ecce587a9ae2639c857fea11c837303a119505715ff703013b985cd",
+    "contractSha256": "b9b18ecc7f944962df5880e4a0ffa255f2ea1621787cbc623c80e6ce588387b6",
+    "validatorSha256": "e77e8954b8fb3774d56454f92fef306e8a213cb2515a2ca7eceb5a8fec1d7dbf",
+    "lockfileSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35"
+  },
+  "decision": "PASS",
+  "decisionScope": "SCOPED_APPLICABILITY_ONLY",
+  "currentM4AcceptanceDecision": "NOT_RUN",
+  "historicalM4PassPromoted": false,
+  "reason": "The exact r2 digests and comparison references are internally consistent for the listed unchanged scopes and their declared limitations. The decision is limited to applicability and carry-forward scope. M4 acceptance remains NOT_RUN, and current M3 remains BLOCKED.",
+  "nextEligibleTaskIds": [],
+  "blockedTaskIds": ["5.1"],
+  "evidenceRefs": [
+    "internal/evidence/M3/continuation-20261019/r2/independent-review/m4-scoped-independent-review.json",
+    "internal/evidence/M3/continuation-20261019/r2/m4-applicability-recommendation.md",
+    "internal/evidence/M3/continuation-20261019/r2/footprint-comparison.json",
+    "internal/evidence/M3/continuation-20261019/r2/r1-to-r2-impact.json",
+    "internal/evidence/M3/continuation-20261019/r2/independent-review/m3-integrator-decision.json",
+    "internal/evidence/acceptance/M4/m4-self-hosted-20261017/record.json"
+  ],
+  "historicalRecordsChanged": false,
+  "acceptanceRegisterChanged": false,
+  "gateStatusChanged": false,
+  "releaseApproval": false,
+  "commercialApproval": false,
+  "productionApproval": false
+}
