@@ -4,6 +4,14 @@ Candidate: `3953059a33371e6a8c87e32833319c20b448781aec528908688d5f2649a3ded8`
 
 Automated implementation, local database probes, browser journeys, OpenSpec validation, quality checks, Stripe contract/integration tests, and dependency audit are complete for the current candidate. The following items still require an authorized human or external account owner.
 
+## Automated revalidation (2026-10-24)
+
+- The exact candidate digest above was revalidated without changing the candidate inputs.
+- `pnpm verify` passed, including typecheck, lint, format, configuration, database-boundary, root-integrity and production-build checks.
+- `pnpm verify:acceptance` passed.
+- `pnpm verify:openspec` passed.
+- `git diff --check` passed. No tracked application or contract files were changed by verification.
+
 ## M3 Current Revalidation
 
 - Independent reviewer: inspect `internal/evidence/acceptance/M3/working-tree-20261022-current-r5/record.json` and the current browser walkthrough under `internal/evidence/M3/continuation-20261022/current-browser-run-3/`.
