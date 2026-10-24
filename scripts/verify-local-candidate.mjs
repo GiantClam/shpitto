@@ -95,7 +95,9 @@ async function main() {
     const runtimeEnv = {...process.env, NODE_ENV: 'development', DATABASE_URL: databaseUrl.toString(), BETTER_AUTH_SECRET: randomUUID() + randomUUID(), STORAGE_DRIVER: 'local', GENERATION_DRIVER: 'mock', MAIL_DRIVER: 'local', ASSET_ROOT: path.join(candidateRoot, '.data', 'assets')};
     secrets.add(runtimeEnv.BETTER_AUTH_SECRET);
     const journey = await runCandidateJourney({candidateRoot, runtimeEnv, logs, secrets, checks, evidenceDir, archiveSha256: archive.sha256,
-      container: process.env.SHPITTO_CANDIDATE_POSTGRES_CONTAINER || 'shpitto-completion-pg-20261007', onRestore: (value) => {restored = value;}});
+      // The local compose file declares the stable project name `shpitto-local`;
+      // keep an override for dedicated historical restore containers.
+      container: process.env.SHPITTO_CANDIDATE_POSTGRES_CONTAINER || 'shpitto-local-postgres-1', onRestore: (value) => {restored = value;}});
     // Evidence always belongs to the same immutable archive that entered the run.
     assertArchiveManifest(root, manifest);
     const fixtureHash = createHash('sha256').update(readFileSync(path.join(candidateRoot, 'tests/fixtures/video/local-demo.mp4'))).digest('hex');

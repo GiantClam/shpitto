@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "queueKind": "FINAL_MANUAL_ACCEPTANCE_QUEUE",
-  "generatedAt": "2026-10-24T12:47:15.995Z",
+  "generatedAt": "2026-10-24T14:33:24.818Z",
   "checkpointId": "M8-STABLE",
   "policy": "Automated evidence may advance as READY_FOR_REVIEW. Independent review and integration decisions are accumulated here and are the only manual stage-acceptance actions required before final PASS.",
   "entries": [

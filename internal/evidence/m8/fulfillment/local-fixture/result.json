@@ -1,7 +1,7 @@
 {
   "status": "PASS",
   "profile": "local-fulfillment-fixture",
-  "candidateId": "local-candidate-20261019",
+  "candidateId": "local-candidate-20261007-completion",
   "checks": {
     "orderIdentity": "PASS",
     "artifactDigest": "PASS",
@@ -18,8 +18,8 @@
   "entitlement": {
     "orderId": "redacted-local-order",
     "buyerId": "redacted-local-buyer",
-    "candidateId": "local-candidate-20261019",
-    "artifactSha256": "b1967ad98000316ad96539b6baa04c6ae499a68175d707429c8e6d91d8f14c07",
+    "candidateId": "local-candidate-20261007-completion",
+    "artifactSha256": "c4a1dcb111811a9ae4a0a956045e59880ad937ff6efbadff4af47ca4beb1dbad",
     "versions": [
       1,
       2

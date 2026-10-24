@@ -8,7 +8,7 @@
   "status": "IN_PROGRESS",
   "candidateId": "m6-current-20261022",
   "createdAt": "2026-10-22T16:01:37.0099477Z",
-  "updatedAt": "2026-10-24T12:47:15.521Z",
+  "updatedAt": "2026-10-24T14:31:14.175Z",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
     "sha256": "565edb93bd919bbe6f78419839ee5fe6639e14717ece2389859e5bc484a63bc8"
@@ -46,14 +46,14 @@
     }
   ],
   "candidate": {
-    "capturedAt": "2026-10-24T12:47:15.514Z",
+    "capturedAt": "2026-10-24T14:31:14.175Z",
     "sourceCommit": null,
     "dirtyPatchSha256": null,
-    "sourceTreeSha256": "bc83efe9945c91ba27958da4f7ec41782a80862f0f18e1228571049a9fd802fe",
+    "sourceTreeSha256": "28341277db57dd2d90d066360661a9b7c3a37e68a9609c926bd3fa5c8a12a8d6",
     "schemaSha256": "6245bd03fc5328afb736b4b9a42e8713a635658a62505ff11497e8cdad4bd501",
     "configurationSha256": "ee0cd9ce8a54bed48660f21ef3f7ba8d9ea6f29ea795738cc0ca3ea4d00131cd",
     "contractSha256": "eecafda69257bdf404f09f4e1811407f3862d7598bae91053372c74a407a03a8",
-    "validatorSha256": "f6e56fb0105358fcd83816176d0586b6b0cda9b4000660d7468457442a227adf",
+    "validatorSha256": "ceea675497d62e87602f223faa530e269131e8c1cb2590fa4709c0079a8fe557",
     "lockfileSha256": "c256e386959569fd310d07d824c9e6f1afcc39cb493664eade9f573bb64161a0",
     "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
     "digestInputs": {
@@ -1127,7 +1127,9 @@
       "tests/unit/stage-progression.test.ts",
       "tests/unit/final-acceptance-queue.test.ts",
       "package.json",
-      "openspec/changes/restart-shpitto-video-saas/specs/restart-foundation/spec.md"
+      "openspec/changes/restart-shpitto-video-saas/specs/restart-foundation/spec.md",
+      "scripts/lib/candidate-journey.mjs",
+      "scripts/verify-local-candidate.mjs"
     ],
     "affectedStages": [
       "M3",
@@ -1137,13 +1139,15 @@
     "requiredReruns": [
       "Rerun automated stage verification after the deferred manual acceptance policy change.",
       "Regenerate the final manual acceptance queue.",
-      "Continue automated work without waiting for final manual review."
+      "Continue automated work without waiting for final manual review.",
+      "Rebind current development records after the validator-only candidate-runtime fix.",
+      "Keep M8 candidate-local evidence PASS before final release review."
     ],
     "carriedEvidence": [],
     "policyOnlyRebaseline": {
       "status": "PASS",
-      "observedAt": "2026-10-24T12:47:15.521Z",
-      "reason": "Acceptance workflow changed only the review timing; existing automated and external evidence classifications are retained."
+      "observedAt": "2026-10-24T14:31:14.175Z",
+      "reason": "Acceptance workflow timing and validator-only candidate-runtime checks changed; product evidence classifications and external blockers remain unchanged."
     }
   },
   "candidateRefresh": {

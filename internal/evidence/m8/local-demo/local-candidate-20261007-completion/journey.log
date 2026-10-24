@@ -1,8 +1,8 @@
 [
   {
     "name": "cancelled",
-    "at": "2026-10-17T10:26:40.945Z",
-    "taskId": "e14b5b1c-bf24-40a4-8651-de80d380807f",
+    "at": "2026-10-24T14:24:00.232Z",
+    "taskId": "ca3acf2d-3328-499a-bb33-ebb03f59ec9d",
     "balance": {
       "available": "100",
       "reserved": "0",
@@ -11,9 +11,9 @@
   },
   {
     "name": "success-and-deadline-failure",
-    "at": "2026-10-17T10:26:43.074Z",
-    "succeeded": "4308a5a6-0e96-41e8-94b0-07f421de8f04",
-    "failed": "a7831537-32a7-40ce-a29e-8380e73c0538",
+    "at": "2026-10-24T14:24:02.347Z",
+    "succeeded": "552fda9b-c041-40ac-a179-6bd5a3f75e8a",
+    "failed": "4795cc97-67fd-45db-93b1-95fc0d7aa5e4",
     "failureCode": "generation.deadline_exceeded",
     "balance": {
       "available": "90",
@@ -23,8 +23,8 @@
   },
   {
     "name": "services-stopped-with-queued-task",
-    "at": "2026-10-17T10:26:44.295Z",
-    "taskId": "2afb8776-8a65-4385-8332-63fd70c60025",
+    "at": "2026-10-24T14:24:03.543Z",
+    "taskId": "156272dd-b588-4445-9f6b-6d5e84c7d8c8",
     "balance": {
       "available": "80",
       "reserved": "10",
@@ -33,8 +33,8 @@
   },
   {
     "name": "restored-restart-verified",
-    "at": "2026-10-17T10:26:49.764Z",
-    "taskId": "2afb8776-8a65-4385-8332-63fd70c60025",
+    "at": "2026-10-24T14:24:08.083Z",
+    "taskId": "156272dd-b588-4445-9f6b-6d5e84c7d8c8",
     "balance": {
       "available": "80",
       "reserved": "0",
@@ -47,33 +47,33 @@
     },
     "reservations": [
       {
-        "task_id": "2afb8776-8a65-4385-8332-63fd70c60025",
+        "task_id": "156272dd-b588-4445-9f6b-6d5e84c7d8c8",
         "status": "consumed",
         "total_cost": "10"
       },
       {
-        "task_id": "4308a5a6-0e96-41e8-94b0-07f421de8f04",
-        "status": "consumed",
-        "total_cost": "10"
-      },
-      {
-        "task_id": "a7831537-32a7-40ce-a29e-8380e73c0538",
+        "task_id": "4795cc97-67fd-45db-93b1-95fc0d7aa5e4",
         "status": "released",
         "total_cost": "10"
       },
       {
-        "task_id": "e14b5b1c-bf24-40a4-8651-de80d380807f",
+        "task_id": "552fda9b-c041-40ac-a179-6bd5a3f75e8a",
+        "status": "consumed",
+        "total_cost": "10"
+      },
+      {
+        "task_id": "ca3acf2d-3328-499a-bb33-ebb03f59ec9d",
         "status": "released",
         "total_cost": "10"
       }
     ],
     "dispatched": [
       {
-        "task_id": "2afb8776-8a65-4385-8332-63fd70c60025",
+        "task_id": "156272dd-b588-4445-9f6b-6d5e84c7d8c8",
         "attempts": 1
       },
       {
-        "task_id": "4308a5a6-0e96-41e8-94b0-07f421de8f04",
+        "task_id": "552fda9b-c041-40ac-a179-6bd5a3f75e8a",
         "attempts": 1
       }
     ]
