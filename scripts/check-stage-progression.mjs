@@ -13,8 +13,8 @@ export function validateStageProgression({stage, record, current, evidenceExists
   }
   const errors = [];
   if (record.stageId !== stage.stageId || record.candidateId !== stage.candidateId) errors.push('Stage candidate identity mismatch.');
-  if (record.status !== stage.status) errors.push('Stage status mismatch.');
-  if (record.recordKind !== 'DEVELOPMENT_VERIFICATION' || !['IN_PROGRESS', 'BLOCKED', 'STALE'].includes(record.status)) errors.push('This development validator cannot promote a milestone gate.');
+  if (record.status !== stage.status && !(stage.status === 'IN_PROGRESS' && ['READY_FOR_REVIEW', 'STALE'].includes(record.status))) errors.push('Stage status mismatch.');
+  if (record.recordKind !== 'DEVELOPMENT_VERIFICATION' || !['IN_PROGRESS', 'READY_FOR_REVIEW', 'BLOCKED', 'STALE'].includes(record.status)) errors.push('This development validator cannot promote a milestone gate.');
   for (const key of digestKeys) {
     if (!current[key] || record.candidate?.[key] !== current[key]) errors.push(`Current candidate ${key} mismatch.`);
   }
@@ -175,7 +175,8 @@ function run() {
     const ref = stage.evidenceRecordRefs?.[0];
     if (!ref || !ref.startsWith(`internal/evidence/acceptance/${stageId}/`) || !ref.endsWith('/record.json')) throw new Error(`Invalid primary record for ${stageId}.`);
     const record = read(ref);
-    if (record.stageId !== stageId || record.candidateId !== stage.candidateId || record.status !== stage.status) throw new Error(`Register and record disagree for ${stageId}.`);
+    const developmentStatusMismatch = ['READY_FOR_REVIEW', 'STALE'].includes(record.status) && stage.status === 'IN_PROGRESS';
+    if (record.stageId !== stageId || record.candidateId !== stage.candidateId || (record.status !== stage.status && !developmentStatusMismatch)) throw new Error(`Register and record disagree for ${stageId}.`);
     const development = ['M4', 'M5', 'M6'].includes(stageId);
     if (!development && record.status !== 'PASS') throw new Error(`Historical prerequisite ${stageId} is not approved.`);
     if (development) {

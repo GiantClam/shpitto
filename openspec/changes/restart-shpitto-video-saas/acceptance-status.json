@@ -2,10 +2,17 @@
   "schemaVersion": "1.0",
   "changeId": "restart-shpitto-video-saas",
   "date": "2026-10-22",
-  "scope": "Current M3 candidate evidence is complete and awaiting independent review. Current M4, M5 and M6 development records remain IN_PROGRESS with external provider/payment/affiliate obligations explicitly preserved.",
-  "enforcementStatus": "Historical PASS decisions remain scoped to their original candidates. Current development records and stage checker reject incomplete or stale promotion.",
+  "scope": "Current M3 candidate evidence is automated-ready and queued for final manual acceptance. Current M4, M5 and M6 development records remain IN_PROGRESS where provider/payment/affiliate evidence is still incomplete; deferred review does not block unrelated automated verification.",
+  "enforcementStatus": "Historical PASS decisions remain scoped to their original candidates. Current development records and stage checker reject incomplete or stale automated evidence while allowing READY_FOR_REVIEW records to advance into the final manual queue.",
   "policyRef": "acceptance-gates.md",
   "recordTemplateRef": "acceptance-record.template.json",
+  "reviewPolicy": {
+    "automatedStatus": "READY_FOR_REVIEW",
+    "finalManualCheckpoint": "M8-STABLE",
+    "queueRef": "internal/evidence/final-manual-acceptance-queue.json",
+    "deferredActions": ["independent-review", "integration-decision"],
+    "blockingRule": "Deferred manual actions do not block unrelated automated verification; FAIL, BLOCKED and STALE automated evidence still block dependent work."
+  },
   "allowedStatuses": [
     "NOT_STARTED",
     "IN_PROGRESS",

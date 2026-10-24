@@ -228,7 +228,14 @@ export function assessCoverage({ownedModules, reports, malformed = [], suitePass
 
 export function deriveStageStatus({candidateStable, criteria, standards, scenarios, submissionReady}) {
   if (!candidateStable) return 'STALE';
-  const required = [...criteria, ...standards.filter((entry) => entry.applicable), ...scenarios.filter((entry) => entry.mandatory)];
+  // Independent review is intentionally non-blocking during development. It is
+  // collected in the final manual-acceptance queue and is required only when a
+  // record is promoted from READY_FOR_REVIEW to PASS.
+  const required = [
+    ...criteria,
+    ...standards.filter((entry) => entry.applicable && entry.blocking !== false),
+    ...scenarios.filter((entry) => entry.mandatory),
+  ];
   if (required.some((entry) => entry.result === 'FAIL')) return 'FAIL';
   if (required.some((entry) => entry.result !== 'PASS')) return 'IN_PROGRESS';
   return submissionReady ? 'READY_FOR_REVIEW' : 'IN_PROGRESS';

@@ -16,6 +16,14 @@ test('current development keeps historical predecessor approval and incomplete g
   assert.deepEqual(validate({stage, record, current: digests}), []);
 });
 
+test('automatically verified development may queue review without blocking downstream work', () => {
+  assert.deepEqual(validate({stage, record: {...record, status: 'READY_FOR_REVIEW'}, current: digests}), []);
+});
+
+test('validator changes can mark development evidence stale without changing the stage register', () => {
+  assert.deepEqual(validate({stage, record: {...record, status: 'STALE'}, current: digests}), []);
+});
+
 test('source changes and narrowed validator footprints fail current development validation', () => {
   assert.ok(validate({stage, record: {...record, candidate: {...digests, sourceTreeSha256: '0'.repeat(64)}}, current: digests}).some((error: string) => error.includes('sourceTreeSha256')));
   assert.ok(validate({stage, record: {...record, candidate: {...digests, digestInputs: {sourceTree: ['src']}}}, current: digests}).some((error: string) => error.includes('footprint')));

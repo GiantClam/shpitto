@@ -5,10 +5,10 @@
   "stageId": "M4",
   "checkpointId": null,
   "gateTaskId": "5.10",
-  "status": "IN_PROGRESS",
+  "status": "STALE",
   "candidateId": "m4-current-20261022",
   "createdAt": "2026-10-22T15:31:29.2316363Z",
-  "updatedAt": "2026-10-22T16:35:19.5038221Z",
+  "updatedAt": "2026-10-24T12:24:46.347Z",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md"
   },
@@ -25,14 +25,14 @@
     }
   ],
   "candidate": {
-    "capturedAt": "2026-10-22T16:35:18.483Z",
+    "capturedAt": "2026-10-24T12:24:46.331Z",
     "sourceCommit": null,
     "dirtyPatchSha256": null,
-    "sourceTreeSha256": "3953059a33371e6a8c87e32833319c20b448781aec528908688d5f2649a3ded8",
+    "sourceTreeSha256": "bc83efe9945c91ba27958da4f7ec41782a80862f0f18e1228571049a9fd802fe",
     "schemaSha256": "6245bd03fc5328afb736b4b9a42e8713a635658a62505ff11497e8cdad4bd501",
-    "configurationSha256": "7fe31a2c8225f20682ba93b3e389871aca0340c2bd166427bdae2c7f8933824f",
-    "contractSha256": "ff31512875269205444f5a78cf7aed9ec91a79d0a5a7fca5811ba91b497a53ca",
-    "validatorSha256": "4e6017d9c521a860e1f2666546a7942e2e5c9d50a7955fd5935f6fd6a8614df6",
+    "configurationSha256": "ee0cd9ce8a54bed48660f21ef3f7ba8d9ea6f29ea795738cc0ca3ea4d00131cd",
+    "contractSha256": "f6d495fa60ef0c2b13ffdfd36c077abda11441fee6f1c22480fca47bf37415be",
+    "validatorSha256": "f6e56fb0105358fcd83816176d0586b6b0cda9b4000660d7468457442a227adf",
     "lockfileSha256": "c256e386959569fd310d07d824c9e6f1afcc39cb493664eade9f573bb64161a0",
     "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
     "digestInputs": {
@@ -844,8 +844,17 @@
   "invalidation": {
     "supersedesRecordRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261017/record.json",
     "changedDigestRefs": [
-      "internal/evidence/acceptance/M4/m4-current-20261022/candidate/candidate.json",
-      "internal/evidence/acceptance/M3/working-tree-20261022-current-r4/record.json"
+      "scripts/check-stage-progression.mjs",
+      "scripts/m3-evidence.mjs",
+      "scripts/verify-m3.mjs",
+      "scripts/mjs-modules.d.ts",
+      "scripts/final-acceptance-queue.mjs",
+      "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+      "openspec/changes/restart-shpitto-video-saas/acceptance-status.json",
+      "openspec/changes/restart-shpitto-video-saas/acceptance-record.template.json",
+      "tests/unit/stage-progression.test.ts",
+      "tests/unit/final-acceptance-queue.test.ts",
+      "package.json"
     ],
     "affectedStages": [
       "M3",
@@ -853,9 +862,8 @@
     ],
     "currentM3Applicability": "STALE",
     "requiredReruns": [
-      "Obtain independent current-candidate M3 applicability review before promotion.",
-      "Re-run authentic provider matrix and selected self-hosted recovery/monitoring checks on this exact candidate.",
-      "Obtain independent M4 whole-stage review and separate integrator decision."
+      "Rerun automated stage verification after the deferred manual acceptance policy change.",
+      "Regenerate the final manual acceptance queue."
     ],
     "carriedEvidence": []
   },

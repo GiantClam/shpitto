@@ -8,10 +8,21 @@ Companions: [tasks](tasks.md), [capability traceability](traceability.md), [desi
 
 1. Nine milestone gates reuse tasks 1.8, 2.8, 3.12, 4.12, 5.10, 6.10, 7.14, 8.15 and 9.15. There are still 105 implementation tasks. A task checkbox and its stage acceptance are different records.
 2. Every implemented task must satisfy its existing SC/T evidence; the criteria below aggregate that evidence. Minimum checks in this document do not replace other required scenarios. An early profile cannot pass a later profile or the whole G gate.
-3. The implementation owner submits the evidence; a different reviewer checks it; the integrator records the technical decision and next eligible tasks. The product owner receives a stage report and owns commercial policy/release decisions. Within authorized work, technical PASS permits eligible work to continue without another routine user permission prompt. It does not authorize spending, production changes or publication.
+3. The implementation owner submits the evidence; the automated validator records the current candidate result. Independent review and integration decisions are accumulated in the final manual-acceptance queue. A stage becomes `READY_FOR_REVIEW` when all automated evidence passes; only final manual acceptance may promote it to `PASS`. The product owner receives the queue and owns commercial policy/release decisions. Automated readiness does not authorize spending, production changes or publication.
 4. A failed or blocked stage blocks its dependent tasks and release claims. Independent tasks may continue only if their explicit prerequisites are passed and they do not alter a frozen shared contract. M4 and M5 can run in parallel after M3; partial success cannot unlock M6 completion. Early M7 drafting may follow its task dependencies after M1, but M7 final acceptance waits for M6.
 5. A passed stage is scoped to its source, schema, dependency/configuration and policy digests plus evidence environment. Changed relevant bytes/contracts mark affected evidence `STALE`; the reviewer records impact and reruns affected cases and regressions. Cross-cutting auth/ledger/state contracts also reopen dependent stages. Unchanged evidence may be carried forward only with a recorded equivalence argument; a previous commit label alone is insufficient.
 6. Gate checking is a future implementation deliverable under 1.7/2.3 and final packaging 9.14/9.15. The present JSON/Markdown files document the policy; they are not an already installed CI enforcement system.
+
+### Deferred manual acceptance policy
+
+Automated verification and manual acceptance are separate states:
+
+- `IN_PROGRESS`, `BLOCKED`, `FAIL` and `STALE` mean automated work still has a missing prerequisite, an unresolved failure or stale candidate bytes. These states continue to block only the dependent automated work.
+- `READY_FOR_REVIEW` means every applicable automated criterion, scenario, command, coverage threshold, digest check and available sandbox/profile check passed on the exact candidate. It does not require `independentReview` or `integrationDecision` fields to be completed.
+- `PASS` is reserved for the final manual-acceptance decision. A final reviewer checks the accumulated stage records together, and a separate integrator records the cross-stage decision once at the final checkpoint.
+- The generated `internal/evidence/final-manual-acceptance-queue.json` is the single queue for deferred independent reviews, integration decisions and still-missing external inputs. A missing manual decision must not prevent unrelated automated checks from running.
+
+Automated stage work may use a predecessor at `READY_FOR_REVIEW` when its required contracts and automated evidence are available. Final release and commercial claims still require every applicable predecessor to reach `PASS` through the final manual-acceptance queue.
 
 ## 2. Common pass/fail standards
 
@@ -97,11 +108,11 @@ The listed G IDs are supported by each phase. Complete release closure still req
 5. Input/output MIME/size/path/media and private-download checks reject unsafe/cross-tenant content. If the candidate implements remote provider-output fetching, deterministic SSRF/redirect/DNS fixtures are mandatory; a no-cloud Mock candidate with no remote-fetch path must prove that caller-supplied/provider URLs are rejected and must identify remote-fetch protection as deferred to the provider-integration gate. No public API-key product surface is advertised.
 6. The seeded Mock demo exercises team invitation/member management, fixture billing, operations/admin views and each implemented local route's success/loading/empty/error/denied state. The record identifies local/mock evidence and leaves real provider/payment/production rows pending.
 
-**Evidence:** J1/J3/J4/J7 local walkthrough; T01–T20 relevant integrated cases, T49/T53 local recovery, 4.13 UI cases; SC-GEN/CRD/IAM outcomes and restart/crash assertions. **Gate effect:** permits M4/M5 in parallel on frozen shared contracts; Mock evidence cannot pass G03/G10.
+**Evidence:** J1/J3/J4/J7 local walkthrough; T01–T20 relevant integrated cases, T49/T53 local recovery, 4.13 UI cases; SC-GEN/CRD/IAM outcomes and restart/crash assertions. **Gate effect:** automated `READY_FOR_REVIEW` evidence permits M4/M5 in parallel on frozen shared contracts; final manual `PASS` remains queued, and Mock evidence cannot pass G03/G10.
 
 ### M4 — Four real generation paths and production recovery (task 5.10)
 
-**Entry:** M3 PASS; tasks 5.1–5.9 complete; qualified accounts and bounded spend authorized. **Submitter:** integration owner. **Reviewer:** independent integration/recovery reviewer. **Environment:** actual Replicate and fal accounts, a buyer-owned provider worker or the optional Trigger runtime, and private S3-compatible storage; safe deterministic fault fixtures alongside live success evidence.
+**Automated entry:** M3 automated evidence is `READY_FOR_REVIEW` or `PASS`; tasks 5.1–5.9 have their available automated prerequisites. **Final acceptance entry:** M3 is `PASS` in the final manual queue. **Submitter:** integration owner. **Reviewer:** deferred to final manual acceptance. **Environment:** actual Replicate and fal accounts, a buyer-owned provider worker or the optional Trigger runtime, and private S3-compatible storage; safe deterministic fault fixtures alongside live success evidence.
 
 **Mandatory criteria**
 
@@ -114,7 +125,7 @@ The listed G IDs are supported by each phase. Complete release closure still req
 
 ### M5 — Canonical payment and cash recovery (task 6.10)
 
-**Entry:** M3 PASS; tasks 6.1–6.9 complete; fixed test catalog and Stripe test-mode access. **Submitter:** billing owner. **Reviewer:** independent financial correctness reviewer. **Environment:** real local PostgreSQL plus authorized Stripe test mode.
+**Automated entry:** M3 automated evidence is `READY_FOR_REVIEW` or `PASS`; tasks 6.1–6.9 have their available automated prerequisites; fixed test catalog and Stripe test-mode access are available. **Final acceptance entry:** M3 is `PASS` in the final manual queue. **Submitter:** billing owner. **Reviewer:** deferred to final manual acceptance. **Environment:** real local PostgreSQL plus authorized Stripe test mode.
 
 **Mandatory criteria**
 
@@ -128,7 +139,7 @@ The listed G IDs are supported by each phase. Complete release closure still req
 
 ### M6 — Operations and optional affiliate program (task 7.14)
 
-**Entry:** M4 and M5 PASS for the integrated gate; all 7.x predecessors complete. **Submitter:** operations/integration owners. **Reviewer:** independent authorization/financial integration reviewer. **Environment:** local database/admin, actual supported FirstPromoter account/campaign test path and authorized non-live financial fixtures.
+**Automated entry:** M4 and M5 automated evidence is `READY_FOR_REVIEW` or `PASS`; all available 7.x prerequisites are complete. **Final acceptance entry:** M4 and M5 are `PASS` in the final manual queue. **Submitter:** operations/integration owners. **Reviewer:** deferred to final manual acceptance. **Environment:** local database/admin, actual supported FirstPromoter account/campaign test path and authorized non-live financial fixtures.
 
 **Mandatory criteria**
 
@@ -200,20 +211,20 @@ All G01–G31 must have their applicable complete profiles before paid Beta; the
 
 ## 5. Records, status and rework
 
-Use `internal/evidence/acceptance/<stage>/<candidate-id>/record.json` and a short human report during implementation. These paths are proposed implementation outputs, not evidence produced by this planning turn. Each record uses the [template](acceptance-record.template.json): task dependencies, source/schema/lock/config/validator digests, environment, profile-specific cases, expected/actual assertions, commands/logs, defect register, submitter, independent reviewer, integrator decision, unresolved external inputs, recovery location and next allowed tasks. Do not store raw secrets or signed URLs in the report.
+Use `internal/evidence/acceptance/<stage>/<candidate-id>/record.json` and a short report during implementation. These paths are proposed implementation outputs, not evidence produced by this planning turn. Each record uses the [template](acceptance-record.template.json): task dependencies, source/schema/lock/config/validator digests, environment, profile-specific cases, expected/actual assertions, commands/logs, defect register, submitter, deferred review state, unresolved external inputs, recovery location and next allowed tasks. Do not store raw secrets or signed URLs in the report.
 
 | Status | Meaning and transition |
 | --- | --- |
 | NOT_STARTED | No stage implementation evidence yet |
-| IN_PROGRESS | Work/evidence collection is underway; no dependent gate unlock |
-| READY_FOR_REVIEW | Submitter claims mandatory cases complete and evidence available; reviewer has not passed it |
-| PASS | Independent review and integrator confirm every mandatory condition for this exact profile/candidate |
+| IN_PROGRESS | Automated work/evidence collection is underway; only dependent automated work is held |
+| READY_FOR_REVIEW | All automated mandatory cases and evidence pass for the exact candidate; independent review and integration are queued for final manual acceptance |
+| PASS | Final manual acceptance confirms every mandatory condition for this exact profile/candidate and records separate review/integration decisions |
 | FAIL | A mandatory case or integrity condition failed; fix and rerun affected plus regression evidence before review |
 | BLOCKED | Required account/budget/authority/environment/evidence is unavailable; identify owner and next action, do not substitute Mock |
 | STALE | Previously accepted evidence no longer matches relevant source/config/schema/policy; impact review and revalidation required |
 
 For M8, record the three sub-checkpoints separately. Main M8 status becomes PASS only after STABLE PASS. An authorized paid Beta can proceed after BETA PASS while M8 remains IN_PROGRESS.
 
-Each review reports: delivered scope; requirement/case coverage; runnable demo; observed evidence; blockers/defects and proposed corrections; rollback point; exact decision and next permitted tasks. Technical review must be independent of the affected implementation. If staffing requires one person to execute a manual check, a different reviewer must inspect the record before PASS; a second automated agent may provide that technical review, but cannot impersonate a product owner's commercial authorization.
+The final manual review reports: delivered scope; requirement/case coverage; runnable demo; observed evidence; blockers/defects and proposed corrections; rollback point; exact decision and next permitted tasks across the accumulated queue. Technical review must be independent of the affected implementation. A second automated agent may prepare technical findings, but it cannot impersonate a product owner's commercial authorization.
 
 Failure workflow: retain original failing evidence → classify and assign owner → stop dependent work → fix at the owning contract/domain layer → rerun failed case plus affected regressions → refresh digests and downstream impact → independent rereview. No skipping mandatory checks, relabeling a defect to bypass the gate or rolling back unrelated customer work.

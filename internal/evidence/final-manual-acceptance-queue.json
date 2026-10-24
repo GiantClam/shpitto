@@ -1,0 +1,442 @@
+{
+  "schemaVersion": "1.0",
+  "queueKind": "FINAL_MANUAL_ACCEPTANCE_QUEUE",
+  "generatedAt": "2026-10-24T12:24:46.849Z",
+  "checkpointId": "M8-STABLE",
+  "policy": "Automated evidence may advance as READY_FOR_REVIEW. Independent review and integration decisions are accumulated here and are the only manual stage-acceptance actions required before final PASS.",
+  "entries": [
+    {
+      "stageId": "M0",
+      "stageName": "Preservation and feasibility",
+      "recordRef": "internal/evidence/acceptance/M0/working-tree-20260927/record.json",
+      "candidateId": "working-tree-20260927",
+      "recordStatus": "PASS",
+      "automatedStatus": "PASS",
+      "blockingReasons": [],
+      "manualActions": [
+        {
+          "id": "independent-review",
+          "label": "Independent stage review",
+          "owner": "independent reviewer",
+          "status": "COMPLETE",
+          "evidenceRefs": [
+            "internal/restart/evidence-index.json",
+            "internal/evidence/acceptance/M0/working-tree-20260927/record.json",
+            "internal/spikes/selected-stack/admin/admin-postgres-chain-evidence.json",
+            "internal/spikes/selected-stack/domain/migration-manifest.json",
+            "internal/restart/m0-evidence.md"
+          ]
+        },
+        {
+          "id": "integration-decision",
+          "label": "Cross-stage integration decision",
+          "owner": "integrator",
+          "status": "COMPLETE",
+          "evidenceRefs": []
+        }
+      ],
+      "externalInputs": [
+        {}
+      ]
+    },
+    {
+      "stageId": "M1",
+      "stageName": "Reversible archive and scaffold",
+      "recordRef": "internal/evidence/acceptance/M1/working-tree-20260928-m1/record.json",
+      "candidateId": "working-tree-20260928-m1",
+      "recordStatus": "PASS",
+      "automatedStatus": "PASS",
+      "blockingReasons": [],
+      "manualActions": [
+        {
+          "id": "independent-review",
+          "label": "Independent stage review",
+          "owner": "independent reviewer",
+          "status": "COMPLETE",
+          "evidenceRefs": [
+            "internal/restart/m1-evidence.md",
+            "internal/restart/pre-move-manifest.json",
+            "internal/restart/post-move-manifest.json",
+            "internal/restart/relocation-journal.json",
+            "internal/restart/restore.md",
+            "internal/evidence/acceptance/M1/working-tree-20260928-m1/record.json"
+          ]
+        },
+        {
+          "id": "integration-decision",
+          "label": "Cross-stage integration decision",
+          "owner": "integrator",
+          "status": "COMPLETE",
+          "evidenceRefs": []
+        }
+      ],
+      "externalInputs": [
+        {
+          "input": "Better Auth production flows, workspace and credit schema",
+          "availability": "deferred",
+          "owner": "M2 domain owner",
+          "nextAction": "Implement and verify after M1 PASS"
+        },
+        {
+          "input": "Provider, payment, affiliate and deployment accounts",
+          "availability": "deferred",
+          "owner": "M4-M8 owners",
+          "nextAction": "Obtain scoped credentials and budget before live evidence"
+        }
+      ]
+    },
+    {
+      "stageId": "M2",
+      "stageName": "Identity and credits",
+      "recordRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/record.json",
+      "candidateId": "working-tree-20260929-m2-repair",
+      "recordStatus": "PASS",
+      "automatedStatus": "PASS",
+      "blockingReasons": [],
+      "manualActions": [
+        {
+          "id": "independent-review",
+          "label": "Independent stage review",
+          "owner": "independent reviewer",
+          "status": "COMPLETE",
+          "evidenceRefs": [
+            "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-review.md",
+            "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-review.json",
+            "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-verification/commands.json"
+          ]
+        },
+        {
+          "id": "integration-decision",
+          "label": "Cross-stage integration decision",
+          "owner": "integrator",
+          "status": "COMPLETE",
+          "evidenceRefs": []
+        }
+      ],
+      "externalInputs": []
+    },
+    {
+      "stageId": "M3",
+      "stageName": "Persistent local product",
+      "recordRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/record.json",
+      "candidateId": "working-tree-20261001-current",
+      "recordStatus": "PASS",
+      "automatedStatus": "PASS",
+      "blockingReasons": [],
+      "manualActions": [
+        {
+          "id": "independent-review",
+          "label": "Independent stage review",
+          "owner": "independent reviewer",
+          "status": "COMPLETE",
+          "evidenceRefs": [
+            "internal/evidence/M3/final-stage-review-20261001.json",
+            "internal/evidence/M3/final-stage-review-20261001.md",
+            "internal/evidence/M3/final-independent-race-repetitions-20261001/final-summary.json",
+            "internal/evidence/M3/m2-prerequisite-impact-20261001.md"
+          ]
+        },
+        {
+          "id": "integration-decision",
+          "label": "Cross-stage integration decision",
+          "owner": "integrator",
+          "status": "COMPLETE",
+          "evidenceRefs": [
+            "internal/evidence/acceptance/M3/working-tree-20261001-current/final-integration/decision.json"
+          ]
+        }
+      ],
+      "externalInputs": [
+        {
+          "input": "Production email delivery",
+          "availability": "OUT_OF_SCOPE",
+          "owner": "later M4/M8 integration",
+          "nextAction": "Use the authorized production provider in its later stage."
+        },
+        {
+          "input": "Real provider credentials and bounded spend",
+          "availability": "OUT_OF_SCOPE",
+          "owner": "later M4 integration",
+          "nextAction": "Run the provider matrix only under approved accounts and budget."
+        },
+        {
+          "input": "Historical anomalous balance recovery authority",
+          "availability": "OUT_OF_SCOPE",
+          "owner": "later billing/operations phase",
+          "nextAction": "Perform the separately authorized audited recovery."
+        },
+        {
+          "input": "Current-candidate UI viewport, keyboard and destructive owner-control review",
+          "availability": "AVAILABLE",
+          "owner": "M3 product acceptance",
+          "nextAction": "Submit the retained current-candidate browser evidence for independent review."
+        }
+      ]
+    },
+    {
+      "stageId": "M3",
+      "stageName": "Persistent local product",
+      "recordRef": "internal/evidence/acceptance/M3/working-tree-20261022-current-r5/record.json",
+      "candidateId": "working-tree-20261022-current-r5",
+      "recordStatus": "IN_PROGRESS",
+      "automatedStatus": "READY_FOR_REVIEW",
+      "blockingReasons": [],
+      "manualActions": [
+        {
+          "id": "independent-review",
+          "label": "Independent stage review",
+          "owner": "independent reviewer",
+          "status": "PENDING",
+          "evidenceRefs": []
+        },
+        {
+          "id": "integration-decision",
+          "label": "Cross-stage integration decision",
+          "owner": "integrator",
+          "status": "PENDING",
+          "evidenceRefs": []
+        }
+      ],
+      "externalInputs": [
+        {
+          "input": "Production email delivery",
+          "availability": "OUT_OF_SCOPE",
+          "owner": "later M4/M8 integration",
+          "nextAction": "Use the authorized production provider in its later stage."
+        },
+        {
+          "input": "Real provider credentials and bounded spend",
+          "availability": "OUT_OF_SCOPE",
+          "owner": "later M4 integration",
+          "nextAction": "Run the provider matrix only under approved accounts and budget."
+        },
+        {
+          "input": "Historical anomalous balance recovery authority",
+          "availability": "OUT_OF_SCOPE",
+          "owner": "later billing/operations phase",
+          "nextAction": "Perform the separately authorized audited recovery."
+        },
+        {
+          "input": "Current-candidate UI viewport, keyboard and destructive owner-control review",
+          "availability": "AVAILABLE",
+          "owner": "M3 product acceptance",
+          "nextAction": "Independent reviewer must inspect the retained current-candidate walkthrough and decide."
+        }
+      ]
+    },
+    {
+      "stageId": "M4",
+      "stageName": "Real providers and recovery",
+      "recordRef": "internal/evidence/acceptance/M4/m4-current-20261022/record.json",
+      "candidateId": "m4-current-20261022",
+      "recordStatus": "STALE",
+      "automatedStatus": "IN_PROGRESS",
+      "blockingReasons": [
+        "candidate-stale"
+      ],
+      "manualActions": [
+        {
+          "id": "independent-review",
+          "label": "Independent stage review",
+          "owner": "independent reviewer",
+          "status": "PENDING",
+          "evidenceRefs": []
+        },
+        {
+          "id": "integration-decision",
+          "label": "Cross-stage integration decision",
+          "owner": "integrator",
+          "status": "PENDING",
+          "evidenceRefs": []
+        }
+      ],
+      "externalInputs": []
+    },
+    {
+      "stageId": "M4",
+      "stageName": "Real providers and recovery",
+      "recordRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261017/record.json",
+      "candidateId": "m4-self-hosted-20261017",
+      "recordStatus": "PASS",
+      "automatedStatus": "PASS",
+      "blockingReasons": [],
+      "manualActions": [
+        {
+          "id": "independent-review",
+          "label": "Independent stage review",
+          "owner": "independent reviewer",
+          "status": "COMPLETE",
+          "evidenceRefs": [
+            "internal/evidence/acceptance/M4/m4-self-hosted-20261017/independent-review.json"
+          ]
+        },
+        {
+          "id": "integration-decision",
+          "label": "Cross-stage integration decision",
+          "owner": "integrator",
+          "status": "COMPLETE",
+          "evidenceRefs": [
+            "internal/evidence/acceptance/M4/m4-self-hosted-20261017/integrator.json"
+          ]
+        }
+      ],
+      "externalInputs": [
+        {
+          "availability": "not required for selected self-hosted baseline",
+          "owner": "buyer/operator",
+          "nextAction": "Configure only when evaluating optional Trigger profile"
+        },
+        {
+          "availability": "outside M4",
+          "owner": "buyer/operator",
+          "nextAction": "Keep later stage gates open"
+        }
+      ]
+    },
+    {
+      "stageId": "M5",
+      "stageName": "Payments and cash recovery",
+      "recordRef": "internal/evidence/acceptance/M5/m5-sandbox-20261022/record.json",
+      "candidateId": "m5-sandbox-20261022",
+      "recordStatus": "STALE",
+      "automatedStatus": "IN_PROGRESS",
+      "blockingReasons": [
+        "candidate-stale"
+      ],
+      "manualActions": [
+        {
+          "id": "independent-review",
+          "label": "Independent stage review",
+          "owner": "independent reviewer",
+          "status": "PENDING",
+          "evidenceRefs": [
+            "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+            "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-ui-observation.md",
+            "internal/evidence/acceptance/M5/m5-sandbox-20261022/browser-billing-20261022.json",
+            "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-desktop.png",
+            "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-mobile.png",
+            "internal/evidence/acceptance/M5/m5-sandbox-20261022/member-denied-desktop.png",
+            "internal/evidence/acceptance/M5/m5-sandbox-20261022/member-denial-api.log"
+          ]
+        },
+        {
+          "id": "integration-decision",
+          "label": "Cross-stage integration decision",
+          "owner": "integrator",
+          "status": "PENDING",
+          "evidenceRefs": [
+            "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+          ]
+        }
+      ],
+      "externalInputs": [
+        {
+          "availability": "PARTIAL",
+          "owner": "buyer/operator",
+          "nextAction": "Review and configure STRIPE_TEST_CATALOG_JSON before another application-hosted Checkout; existing test-mode sessions and price objects are recorded, and no new purchase is required for this verification pass."
+        },
+        {
+          "availability": "PARTIAL",
+          "owner": "buyer/operator",
+          "nextAction": "Current-candidate local owner/member UI and workspace-isolation evidence is captured; the retained Acceptance deployment remains a predecessor build and is read-only historical context."
+        },
+        {
+          "availability": "DEFERRED_BY_USER",
+          "owner": "buyer/operator",
+          "nextAction": "Keep the later production profile open; it is not an M5 blocker."
+        }
+      ]
+    },
+    {
+      "stageId": "M5",
+      "stageName": "Payments and cash recovery",
+      "recordRef": "internal/evidence/acceptance/M5/m5-local-fixtures-20261017/record.json",
+      "candidateId": "m5-local-fixtures-20261017",
+      "recordStatus": "IN_PROGRESS",
+      "automatedStatus": "IN_PROGRESS",
+      "blockingReasons": [
+        "criteria",
+        "standards",
+        "scenarios"
+      ],
+      "manualActions": [
+        {
+          "id": "independent-review",
+          "label": "Independent stage review",
+          "owner": "independent reviewer",
+          "status": "PENDING",
+          "evidenceRefs": [
+            "internal/evidence/M5/m5-local-fixtures-20261017/README.md"
+          ]
+        },
+        {
+          "id": "integration-decision",
+          "label": "Cross-stage integration decision",
+          "owner": "integrator",
+          "status": "PENDING",
+          "evidenceRefs": [
+            "internal/evidence/M5/m5-local-fixtures-20261017/README.md"
+          ]
+        }
+      ],
+      "externalInputs": [
+        {
+          "availability": "DEFERRED_BY_USER",
+          "owner": "buyer/operator",
+          "nextAction": "Run one authorized test-mode subscription/pack/refund-port verification in a separately scoped phase."
+        },
+        {
+          "availability": "DEFERRED_BY_USER",
+          "owner": "buyer/operator",
+          "nextAction": "Keep the dependent production profile open."
+        }
+      ]
+    },
+    {
+      "stageId": "M6",
+      "stageName": "Operations and affiliates",
+      "recordRef": "internal/evidence/acceptance/M6/m6-current-20261022/record.json",
+      "candidateId": "m6-current-20261022",
+      "recordStatus": "STALE",
+      "automatedStatus": "IN_PROGRESS",
+      "blockingReasons": [
+        "candidate-stale"
+      ],
+      "manualActions": [
+        {
+          "id": "independent-review",
+          "label": "Independent stage review",
+          "owner": "independent reviewer",
+          "status": "PENDING",
+          "evidenceRefs": []
+        },
+        {
+          "id": "integration-decision",
+          "label": "Cross-stage integration decision",
+          "owner": "integrator",
+          "status": "PENDING",
+          "evidenceRefs": []
+        }
+      ],
+      "externalInputs": [
+        {
+          "availability": "DEFERRED_BY_USER",
+          "owner": "buyer/operator",
+          "nextAction": "Configure and verify the real affiliate account in a separately scoped phase; keep application delivery disabled until then."
+        },
+        {
+          "availability": "DEFERRED_BY_USER",
+          "owner": "buyer/operator",
+          "nextAction": "Keep the dependent production profile open."
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "totalRecords": 10,
+    "automatedReady": 6,
+    "automatedPending": 4,
+    "manualReviewPending": 5,
+    "externalInputsPending": 8
+  }
+}
