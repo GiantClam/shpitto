@@ -11,6 +11,7 @@ Automated implementation, local database probes, browser journeys, OpenSpec vali
 - `pnpm verify:acceptance` passed.
 - `pnpm verify:openspec` passed.
 - `git diff --check` passed. No tracked application implementation files were changed by verification; acceptance-policy metadata was rebaselined separately.
+- M7's current-freeze four-workflow runner passed `customize-brand`, `create-page`, `modify-page` and `customize-site` with stable source, disposable PostgreSQL probes, viewport smoke, protected-file preservation and scoped rollback. Evidence: `internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/summary.json`.
 
 ## M3 Current Revalidation
 

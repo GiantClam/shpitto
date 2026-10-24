@@ -1,5 +1,5 @@
-✔ release preflight uses positive allowlists and excludes internal/runtime history (135.3291ms)
-✔ release preflight rejects secret-bearing content (131.6236ms)
+✔ release preflight uses positive allowlists and excludes internal/runtime history (141.2462ms)
+✔ release preflight rejects secret-bearing content (137.2624ms)
 ℹ tests 2
 ℹ suites 0
 ℹ pass 2
@@ -7,4 +7,4 @@
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 397.6705
+ℹ duration_ms 393.3355

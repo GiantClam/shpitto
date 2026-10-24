@@ -1,0 +1,114 @@
+{
+  "status": "PASS",
+  "capturedAt": "2026-10-24T14:45:56.896Z",
+  "observations": [
+    {
+      "viewportId": "desktop",
+      "width": 1440,
+      "height": 900,
+      "reducedMotion": "reduce",
+      "layout": {
+        "viewportWidth": 1440,
+        "documentWidth": 1440,
+        "headingCount": 1,
+        "buttonCount": 0,
+        "overflow": false
+      },
+      "keyboard": [
+        {
+          "tag": "A",
+          "text": "Skip to content",
+          "href": "#main-content",
+          "outline": "solid"
+        },
+        {
+          "tag": "A",
+          "text": "Shpitto",
+          "href": "/",
+          "outline": "solid"
+        },
+        {
+          "tag": "A",
+          "text": "Home",
+          "href": "/",
+          "outline": "solid"
+        },
+        {
+          "tag": "A",
+          "text": "Explore",
+          "href": "/#explore",
+          "outline": "solid"
+        },
+        {
+          "tag": "A",
+          "text": "Create",
+          "href": "/#create",
+          "outline": "solid"
+        },
+        {
+          "tag": "A",
+          "text": "Studio notes",
+          "href": "/studio-notes",
+          "outline": "solid"
+        }
+      ],
+      "browserErrors": [],
+      "source": "Actual candidate React modules compiled to static markup; no hydration or routed application server",
+      "catalog": null
+    },
+    {
+      "viewportId": "mobile",
+      "width": 390,
+      "height": 844,
+      "reducedMotion": "reduce",
+      "layout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "headingCount": 1,
+        "buttonCount": 0,
+        "overflow": false
+      },
+      "keyboard": [
+        {
+          "tag": "A",
+          "text": "Skip to content",
+          "href": "#main-content",
+          "outline": "solid"
+        },
+        {
+          "tag": "A",
+          "text": "Shpitto",
+          "href": "/",
+          "outline": "solid"
+        },
+        {
+          "tag": "A",
+          "text": "Home",
+          "href": "/",
+          "outline": "solid"
+        },
+        {
+          "tag": "A",
+          "text": "Explore",
+          "href": "/#explore",
+          "outline": "solid"
+        },
+        {
+          "tag": "A",
+          "text": "Create",
+          "href": "/#create",
+          "outline": "solid"
+        },
+        {
+          "tag": "A",
+          "text": "Studio notes",
+          "href": "/studio-notes",
+          "outline": "solid"
+        }
+      ],
+      "browserErrors": [],
+      "source": "Actual candidate React modules compiled to static markup; no hydration or routed application server",
+      "catalog": null
+    }
+  ]
+}

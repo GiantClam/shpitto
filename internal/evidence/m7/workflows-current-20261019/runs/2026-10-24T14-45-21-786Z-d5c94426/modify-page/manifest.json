@@ -1,0 +1,83 @@
+{
+  "release": "v1",
+  "baseline": "28341277db57dd2d90d066360661a9b7c3a37e68a9609c926bd3fa5c8a12a8d6",
+  "dirtyWork": [
+    ".data/unrelated-user-note.txt"
+  ],
+  "intent": "Clarify local fixture pricing copy while retaining product catalog amounts, credit quantities, checkout handlers, disabled states and portal bindings exactly.",
+  "classification": "presentation",
+  "changedFiles": [
+    {
+      "path": "src/components/billing/fixture-billing-panel.tsx",
+      "classification": "presentation",
+      "reason": "Clarify local fixture pricing copy while retaining product catalog amounts, credit quantities, checkout handlers, disabled states and portal bindings exactly."
+    }
+  ],
+  "checks": [
+    {
+      "id": "modify-page-route-types",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/modify-page-route-types.log"
+    },
+    {
+      "id": "modify-page-typecheck",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/modify-page-typecheck.log"
+    },
+    {
+      "id": "modify-page-source-boundaries",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/modify-page-source-boundaries.log"
+    },
+    {
+      "id": "modify-page-db-boundaries",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/modify-page-db-boundaries.log"
+    },
+    {
+      "id": "modify-page-shell-boundaries",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/modify-page-shell-boundaries.log"
+    },
+    {
+      "id": "modify-page-content-boundaries",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/modify-page-content-boundaries.log"
+    },
+    {
+      "id": "modify-page-format-check",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/modify-page-format-check.log"
+    },
+    {
+      "id": "modify-page-probe-auth-lifecycle",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/modify-page-probe-auth-lifecycle.log"
+    },
+    {
+      "id": "modify-page-probe-credit-ledger",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/modify-page-probe-credit-ledger.log"
+    },
+    {
+      "id": "modify-page-probe-generation-create",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/modify-page-probe-generation-create.log"
+    },
+    {
+      "id": "modify-page-probe-billing-reconciliation",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/modify-page-probe-billing-reconciliation.log"
+    },
+    {
+      "id": "modify-page-probe-m6-admin-reads",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/modify-page-probe-m6-admin-reads.log"
+    }
+  ],
+  "recovery": {
+    "patchRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/modify-page/customization.patch",
+    "preservesUnrelatedWork": true,
+    "overlaps": []
+  }
+}

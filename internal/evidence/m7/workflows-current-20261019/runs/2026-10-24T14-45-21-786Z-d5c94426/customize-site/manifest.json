@@ -1,0 +1,83 @@
+{
+  "release": "v1",
+  "baseline": "28341277db57dd2d90d066360661a9b7c3a37e68a9609c926bd3fa5c8a12a8d6",
+  "dirtyWork": [
+    ".data/unrelated-user-note.txt"
+  ],
+  "intent": "Refresh the shared creator/workspace shell helper copy using existing semantic styling, dimensions, navigation destinations and action semantics.",
+  "classification": "presentation",
+  "changedFiles": [
+    {
+      "path": "src/components/shell/site-shell.tsx",
+      "classification": "presentation",
+      "reason": "Refresh the shared creator/workspace shell helper copy using existing semantic styling, dimensions, navigation destinations and action semantics."
+    }
+  ],
+  "checks": [
+    {
+      "id": "customize-site-route-types",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-site-route-types.log"
+    },
+    {
+      "id": "customize-site-typecheck",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-site-typecheck.log"
+    },
+    {
+      "id": "customize-site-source-boundaries",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-site-source-boundaries.log"
+    },
+    {
+      "id": "customize-site-db-boundaries",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-site-db-boundaries.log"
+    },
+    {
+      "id": "customize-site-shell-boundaries",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-site-shell-boundaries.log"
+    },
+    {
+      "id": "customize-site-content-boundaries",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-site-content-boundaries.log"
+    },
+    {
+      "id": "customize-site-format-check",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-site-format-check.log"
+    },
+    {
+      "id": "customize-site-probe-auth-lifecycle",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-site-probe-auth-lifecycle.log"
+    },
+    {
+      "id": "customize-site-probe-credit-ledger",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-site-probe-credit-ledger.log"
+    },
+    {
+      "id": "customize-site-probe-generation-create",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-site-probe-generation-create.log"
+    },
+    {
+      "id": "customize-site-probe-billing-reconciliation",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-site-probe-billing-reconciliation.log"
+    },
+    {
+      "id": "customize-site-probe-m6-admin-reads",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-site-probe-m6-admin-reads.log"
+    }
+  ],
+  "recovery": {
+    "patchRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/customize-site/customization.patch",
+    "preservesUnrelatedWork": true,
+    "overlaps": []
+  }
+}

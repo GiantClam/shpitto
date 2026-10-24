@@ -4,6 +4,12 @@ Status: `IN_PROGRESS` (current local implementation and evidence reconciliation)
 Historical candidate: `local-candidate-20261019`
 Environment: local repository, Mock generation, fixture billing, local operator evidence
 
+## Automated refresh, October 24, 2026
+
+The current root freeze `28341277db57dd2d90d066360661a9b7c3a37e68a9609c926bd3fa5c8a12a8d6` was bound explicitly to the four-workflow runner. The run at `internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/` passed `customize-brand`, `create-page`, `modify-page` and `customize-site`, including type generation, typechecking, boundary checks, disposable PostgreSQL probes, viewport smoke, protected-file preservation and scoped rollback. The source remained stable throughout the run.
+
+This refresh proves the current local/mock customization slice only. It does not promote M7: M4, M5 and M6 gate evidence, independent review, real provider/payment/affiliate execution and release deployment remain open.
+
 ## Current r2 continuation
 
 The current local candidate is `local-candidate-20261019-trusted-r2`, archive

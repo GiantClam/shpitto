@@ -661,6 +661,7 @@ exported-profile SC-OPS-13 closes at 9.14/9.15.
   - Depends: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 8.9, 8.10, 8.11, 8.12, 8.13, 8.14, 5.10, 6.10, 7.14.
   - Evidence: SC-SKL-01, SC-SKL-02, SC-SKL-03, SC-SKL-04, SC-SKL-05, SC-SKL-06, SC-SKL-07, SC-SKL-08, SC-SKL-09, SC-SKL-10, SC-SKL-11, SC-SKL-12, SC-SKL-13, SC-SKL-14, SC-SKL-15, SC-SKL-16, SC-SKL-17, SC-DOC-01, SC-DOC-02, SC-DOC-03, SC-DOC-04, SC-DOC-05, SC-DOC-06, SC-DOC-07, SC-DOC-08, T32, T33, T34, T35, T36, T37, T38, T39, T40, T41, T42, T43, T52, T54, T55, T56, T57, T58; record exact release/environment and sanitized results.
   - Acceptance: Apply M7 criteria plus common standards in [acceptance-gates.md](acceptance-gates.md); submit the exact-candidate record as READY_FOR_REVIEW; accumulate independent review and integrator decisions in the final manual-acceptance queue. Partial SC/G profiles cannot close later obligations.
+  - Automated refresh (2026-10-24): current freeze-bound four-workflow evidence passes at `internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/`; M7 remains open because M4/M5/M6 predecessor gates and final independent review are not closed.
 
 ## 9. M8 — Deployment, commercial delivery and release
 

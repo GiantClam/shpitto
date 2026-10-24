@@ -1,0 +1,83 @@
+{
+  "release": "v1",
+  "baseline": "28341277db57dd2d90d066360661a9b7c3a37e68a9609c926bd3fa5c8a12a8d6",
+  "dirtyWork": [
+    ".data/unrelated-user-note.txt"
+  ],
+  "intent": "A fictional Meridian Motion evaluation changes canonical name, tagline and studio canvas. Existing template logo artwork remains labeled as fallback; this is not customer delivery.",
+  "classification": "presentation",
+  "changedFiles": [
+    {
+      "path": "src/config/brand.ts",
+      "classification": "presentation",
+      "reason": "A fictional Meridian Motion evaluation changes canonical name, tagline and studio canvas. Existing template logo artwork remains labeled as fallback; this is not customer delivery."
+    }
+  ],
+  "checks": [
+    {
+      "id": "customize-brand-route-types",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-brand-route-types.log"
+    },
+    {
+      "id": "customize-brand-typecheck",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-brand-typecheck.log"
+    },
+    {
+      "id": "customize-brand-source-boundaries",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-brand-source-boundaries.log"
+    },
+    {
+      "id": "customize-brand-db-boundaries",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-brand-db-boundaries.log"
+    },
+    {
+      "id": "customize-brand-shell-boundaries",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-brand-shell-boundaries.log"
+    },
+    {
+      "id": "customize-brand-content-boundaries",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-brand-content-boundaries.log"
+    },
+    {
+      "id": "customize-brand-format-check",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-brand-format-check.log"
+    },
+    {
+      "id": "customize-brand-probe-auth-lifecycle",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-brand-probe-auth-lifecycle.log"
+    },
+    {
+      "id": "customize-brand-probe-credit-ledger",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-brand-probe-credit-ledger.log"
+    },
+    {
+      "id": "customize-brand-probe-generation-create",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-brand-probe-generation-create.log"
+    },
+    {
+      "id": "customize-brand-probe-billing-reconciliation",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-brand-probe-billing-reconciliation.log"
+    },
+    {
+      "id": "customize-brand-probe-m6-admin-reads",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/logs/customize-brand-probe-m6-admin-reads.log"
+    }
+  ],
+  "recovery": {
+    "patchRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/customize-brand/customization.patch",
+    "preservesUnrelatedWork": true,
+    "overlaps": []
+  }
+}
