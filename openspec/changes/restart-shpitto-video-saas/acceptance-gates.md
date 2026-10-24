@@ -21,8 +21,9 @@ Automated verification and manual acceptance are separate states:
 - `READY_FOR_REVIEW` means every applicable automated criterion, scenario, command, coverage threshold, digest check and available sandbox/profile check passed on the exact candidate. It does not require `independentReview` or `integrationDecision` fields to be completed.
 - `PASS` is reserved for the final manual-acceptance decision. A final reviewer checks the accumulated stage records together, and a separate integrator records the cross-stage decision once at the final checkpoint.
 - The generated `internal/evidence/final-manual-acceptance-queue.json` is the single queue for deferred independent reviews, integration decisions and still-missing external inputs. A missing manual decision must not prevent unrelated automated checks from running.
+- Deferring manual review does not turn `BLOCKED`, `NOT_RUN` or missing external-provider evidence into `PASS`. Those results remain visible and block only the claims and tasks that depend on the missing profile.
 
-Automated stage work may use a predecessor at `READY_FOR_REVIEW` when its required contracts and automated evidence are available. Final release and commercial claims still require every applicable predecessor to reach `PASS` through the final manual-acceptance queue.
+Automated stage work may use a predecessor at `IN_PROGRESS`, `READY_FOR_REVIEW` or `PASS` when the required shared contracts are available and the downstream work does not claim the missing profile. Final stage gates, release and commercial claims still require every applicable predecessor to reach `PASS` through the final manual-acceptance queue.
 
 ## 2. Common pass/fail standards
 
@@ -139,7 +140,7 @@ The listed G IDs are supported by each phase. Complete release closure still req
 
 ### M6 — Operations and optional affiliate program (task 7.14)
 
-**Automated entry:** M4 and M5 automated evidence is `READY_FOR_REVIEW` or `PASS`; all available 7.x prerequisites are complete. **Final acceptance entry:** M4 and M5 are `PASS` in the final manual queue. **Submitter:** operations/integration owners. **Reviewer:** deferred to final manual acceptance. **Environment:** local database/admin, actual supported FirstPromoter account/campaign test path and authorized non-live financial fixtures.
+**Automated entry:** M4 and M5 shared contracts are available and their records are `IN_PROGRESS`, `READY_FOR_REVIEW` or `PASS`; all available 7.x prerequisites may proceed independently of deferred manual review or missing external rows. **Final acceptance entry:** M4 and M5 are `PASS` in the final manual queue. **Submitter:** operations/integration owners. **Reviewer:** deferred to final manual acceptance. **Environment:** local database/admin, actual supported FirstPromoter account/campaign test path and authorized non-live financial fixtures.
 
 **Mandatory criteria**
 

@@ -86,7 +86,7 @@ Trace: D05, D15, D22, D31; J5, J7; T04, T59-T61; G05, G15, G22, G31.
 
 Each milestone SHALL record prerequisites, observed evidence, unresolved inputs and recovery points. Missing, simulated or blocked evidence SHALL NOT satisfy a real-execution gate. Credentials, commercial terms and budgets SHALL block dependent external/release tasks while independent local work may proceed.
 
-Milestones SHALL follow the [staged acceptance contract](../../acceptance-gates.md), with independent review, profile-specific assertions and a recorded integrator decision. Mandatory checks SHALL all pass; failed or blocked dependencies SHALL prevent dependent completion. Changed relevant source/schema/configuration/policy bytes SHALL mark affected evidence stale until reviewed and revalidated. A task checkbox SHALL NOT replace a gate record.
+Milestones SHALL follow the [staged acceptance contract](../../acceptance-gates.md), with automated profile-specific assertions recorded before the final independent review and integrator decision. `READY_FOR_REVIEW` SHALL represent complete automated evidence awaiting the final manual-acceptance queue. Failed, stale or blocked evidence SHALL prevent only claims and automated tasks that depend on the affected profile; unrelated automated work MAY continue when its shared contracts are available. Changed relevant product source/schema/configuration bytes SHALL mark affected evidence stale until reviewed and revalidated, while a review-policy-only change SHALL be recorded as a workflow rebaseline without converting missing behavioral evidence into a pass. A task checkbox SHALL NOT replace a gate record.
 
 Trace: D03, D10, D19, D31; J3, J9; T01, T48, T49, T62; G03, G10, G19, G31.
 
@@ -96,7 +96,7 @@ Trace: D03, D10, D19, D31; J3, J9; T01, T48, T49, T62; G03, G10, G19, G31.
 
 #### Scenario: SC-FND-14 Document readiness differs from implementation
 - **WHEN** OpenSpec validation succeeds but implementation tasks lack observed evidence
-- **THEN** only plan validity is reported, implementation remains incomplete, stage records remain NOT_STARTED without implementation evidence, and no archive/deployment/release completion is claimed; independent review and current profile-specific evidence are required before any implementation gate passes.
+- **THEN** only plan validity is reported, implementation remains incomplete, stage records remain NOT_STARTED without implementation evidence, and no archive/deployment/release completion is claimed; current profile-specific automated evidence is required before a record becomes `READY_FOR_REVIEW`, while independent review and final integration are required only for the final `PASS` decision.
 
 ### Requirement: REQ-FND-07 Demonstrable local template experience
 

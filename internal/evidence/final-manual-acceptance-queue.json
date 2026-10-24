@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "queueKind": "FINAL_MANUAL_ACCEPTANCE_QUEUE",
-  "generatedAt": "2026-10-24T12:24:46.849Z",
+  "generatedAt": "2026-10-24T12:47:15.995Z",
   "checkpointId": "M8-STABLE",
   "policy": "Automated evidence may advance as READY_FOR_REVIEW. Independent review and integration decisions are accumulated here and are the only manual stage-acceptance actions required before final PASS.",
   "entries": [
@@ -178,7 +178,7 @@
       "stageName": "Persistent local product",
       "recordRef": "internal/evidence/acceptance/M3/working-tree-20261022-current-r5/record.json",
       "candidateId": "working-tree-20261022-current-r5",
-      "recordStatus": "IN_PROGRESS",
+      "recordStatus": "READY_FOR_REVIEW",
       "automatedStatus": "READY_FOR_REVIEW",
       "blockingReasons": [],
       "manualActions": [
@@ -229,10 +229,12 @@
       "stageName": "Real providers and recovery",
       "recordRef": "internal/evidence/acceptance/M4/m4-current-20261022/record.json",
       "candidateId": "m4-current-20261022",
-      "recordStatus": "STALE",
+      "recordStatus": "IN_PROGRESS",
       "automatedStatus": "IN_PROGRESS",
       "blockingReasons": [
-        "candidate-stale"
+        "criteria",
+        "standards",
+        "scenarios"
       ],
       "manualActions": [
         {
@@ -298,10 +300,12 @@
       "stageName": "Payments and cash recovery",
       "recordRef": "internal/evidence/acceptance/M5/m5-sandbox-20261022/record.json",
       "candidateId": "m5-sandbox-20261022",
-      "recordStatus": "STALE",
+      "recordStatus": "IN_PROGRESS",
       "automatedStatus": "IN_PROGRESS",
       "blockingReasons": [
-        "candidate-stale"
+        "criteria",
+        "standards",
+        "scenarios"
       ],
       "manualActions": [
         {
@@ -397,10 +401,12 @@
       "stageName": "Operations and affiliates",
       "recordRef": "internal/evidence/acceptance/M6/m6-current-20261022/record.json",
       "candidateId": "m6-current-20261022",
-      "recordStatus": "STALE",
+      "recordStatus": "IN_PROGRESS",
       "automatedStatus": "IN_PROGRESS",
       "blockingReasons": [
-        "candidate-stale"
+        "criteria",
+        "standards",
+        "scenarios"
       ],
       "manualActions": [
         {
