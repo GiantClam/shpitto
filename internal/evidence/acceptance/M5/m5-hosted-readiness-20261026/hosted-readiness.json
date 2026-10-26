@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "M5_HOSTED_READINESS",
+  "date": "2026-10-26",
+  "status": "READY_FOR_AUTHENTICATED_HOSTED_RUN",
+  "stageId": "M5",
+  "taskId": "6.10",
+  "candidateId": "m5-hosted-readiness-20261026",
+  "environment": {
+    "profile": "acceptance",
+    "deployment": "railway",
+    "deploymentId": "a846cdbd-1b40-43f4-b79d-9bd00b931a27",
+    "origin": "https://shpitto-m4-web-production.up.railway.app",
+    "liveStripe": false
+  },
+  "automatedChecks": [
+    {
+      "checkId": "hosted-health",
+      "result": "PASS",
+      "observed": "HTTP 200; profile=acceptance; database=ready",
+      "evidenceRefs": ["README.md"]
+    },
+    {
+      "checkId": "stripe-test-runtime-config",
+      "result": "PASS",
+      "observed": "Production Node profile, acceptance runtime, HTTPS origin, sk_test key prefix, two test catalog prices, test portal and webhook configured",
+      "evidenceRefs": ["README.md"]
+    },
+    {
+      "checkId": "stripe-test-ingress-branch",
+      "result": "PASS",
+      "observed": "Unsigned webhook request returned the dedicated Stripe test verification error",
+      "evidenceRefs": ["README.md"]
+    },
+    {
+      "checkId": "authenticated-hosted-checkout",
+      "result": "BLOCKED",
+      "expected": "Authorized Acceptance owner/member session",
+      "observed": "Seeded identities returned HTTP 401 against the current hosted database",
+      "evidenceRefs": ["README.md"]
+    }
+  ],
+  "claims": {
+    "applicationCreatedCheckout": "NOT_RUN",
+    "subscriptionLifecycle": "NOT_RUN",
+    "refund": "NOT_RUN",
+    "dispute": "NOT_RUN",
+    "webhookReplay": "NOT_RUN"
+  },
+  "humanDecision": {
+    "options": ["PASS", "FAIL", "RETURN_FOR_EVIDENCE"],
+    "recommended": "RETURN_FOR_EVIDENCE",
+    "reason": "Hosted readiness is proven, but authenticated application Checkout evidence is blocked by missing hosted test login."
+  }
+}
