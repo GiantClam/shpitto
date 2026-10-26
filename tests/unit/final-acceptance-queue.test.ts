@@ -38,3 +38,26 @@ test('queue accumulates manual actions without changing automated readiness', ()
   assert.equal(queue.summary.automatedReady, 1);
   assert.equal(queue.summary.manualReviewPending, 1);
 });
+
+test('queue gives humans a complete automated explanation and explicit decision choices', () => {
+  const queue = buildFinalAcceptanceQueue({
+    register: {stages: [{stageId: 'M5', name: 'Payments and cash recovery', evidenceRecordRefs: ['m5/record.json']}]},
+    records: new Map([['m5/record.json', {
+      ...passing,
+      candidateId: 'm5-candidate',
+      candidate: {sourceTreeSha256: 'source-digest'},
+      criterionResults: [{criterionId: 'M5-C01', mandatory: true, result: 'PASS', expected: 'One grant', observed: 'One grant', evidenceRefs: ['billing.json']}],
+      scenarioResults: [{scenarioId: 'T21', mandatory: true, result: 'PASS', expected: 'Replay is idempotent', observed: 'Same result', evidenceRefs: ['replay.json']}],
+      externalInputs: [{input: 'Hosted Stripe lifecycle', availability: 'AVAILABLE', owner: 'billing', nextAction: 'Review evidence'}],
+      submission: {reportRef: 'report.md'},
+    }]]),
+    generatedAt: '2026-10-24T00:00:00.000Z',
+  });
+  const entry = queue.entries[0];
+  assert.equal(entry.automatedExplanation.recommendation, 'HUMAN_DECISION_REQUIRED');
+  assert.equal(entry.automatedExplanation.criteria[0].expected, 'One grant');
+  assert.equal(entry.automatedExplanation.scenarios[0].observed, 'Same result');
+  assert.equal(entry.automatedExplanation.reportRef, 'report.md');
+  assert.deepEqual(entry.humanDecisionGuide.decisionOptions.map((option) => option.id), ['PASS', 'FAIL', 'RETURN_FOR_EVIDENCE']);
+  assert.equal(entry.humanDecisionGuide.noTestRerunRequired, true);
+});
