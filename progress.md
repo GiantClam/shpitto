@@ -98,3 +98,5 @@ Current development candidate fingerprints for M4, M5 and M6 were recaptured fro
 6. Automated verification passed: M4 provider/recovery 128/128; M5 billing suite 68/68 plus 49 schema, 10 Checkout and 18 reconciliation cases; M6 operations, privileged, MFA, recovery and affiliate probes; M7 Skills/customization/Docs/boundaries; M8 local preflight and fresh candidate runtime/restore.
 7. Created `internal/evidence/acceptance/continuation-20261026/` with stage-by-stage automated explanations and `RETURN_FOR_EVIDENCE` recommendations.
 8. Refreshed M4-M6 current candidate fingerprints after evidence/source changes, regenerated the final manual acceptance queue, and confirmed `verify:acceptance` passes without promoting any milestone.
+
+9. Probed the supplied FirstPromoter credentials against read-only Admin API endpoints; all returned HTTP 401. Recorded the sanitized blocker and confirmed no external write side effect was attempted.

@@ -20,6 +20,8 @@ Operations, admin reads, workspace details, privileged commands, MFA, recovery a
 
 The automated result is partial because the real FirstPromoter account, campaign mapping and hosted settlement evidence are unavailable. Recommended human decision: `RETURN_FOR_EVIDENCE`.
 
+The read-only credential probe on 2026-10-26 returned HTTP 401 for promoter campaigns, referrals, commissions and grouped payouts. No external write operation was attempted. Detailed evidence: `internal/evidence/acceptance/M6/firstpromoter-credential-check-20261026.json`.
+
 ## M7
 
 Skills, customization, Docs, vendor Docs, release boundaries, content boundaries, shell boundaries and local-service checks passed. The existing four-workflow local run passed all four workflows and preserved protected files. It explicitly records `independentReview=NOT_RUN`, `gatePromotion=false`, local-mock scope and no real provider/payment execution.

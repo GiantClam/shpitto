@@ -79,6 +79,7 @@
         "affiliate contracts, races, cash and notifications"
       ],
       "blockedClaims": [
+        "valid FirstPromoter Admin API credential",
         "real FirstPromoter account and campaign mapping",
         "hosted affiliate settlement",
         "independent whole-stage review"
@@ -86,11 +87,12 @@
       "evidenceRefs": [
         "internal/evidence/acceptance/M6/m6-current-20261022/record.json",
         "internal/evidence/M6/m6-local-fixtures-20261017/record.json",
+        "internal/evidence/acceptance/M6/firstpromoter-credential-check-20261026.json",
         "internal/evidence/acceptance/continuation-20261026/README.md"
       ],
       "humanDecision": {
         "recommended": "RETURN_FOR_EVIDENCE",
-        "reason": "Local operations and affiliate behavior passes, but real FirstPromoter and hosted settlement evidence is unavailable."
+        "reason": "Local operations and affiliate behavior passes, but the supplied FirstPromoter credential pair was rejected with HTTP 401 before any hosted settlement verification."
       }
     },
     {

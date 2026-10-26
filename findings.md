@@ -154,3 +154,9 @@ The stale current-candidate fingerprint blocker is resolved for all development 
 - M8 local preflight passed for export boundaries, candidate runtime, deployment/Docker/config/restore/operations preflight and vendor commerce separation.
 - The fresh local candidate check passed archive extraction, offline install, build, buyer checks, migration/seed, login/dashboard, cancellation/refund, worker success/deadline refund, private download, backup/restore, restart persistence and exactly-once credit behavior.
 - M8 remains blocked for commercial readiness, real provider/payment/affiliate inputs, managed/production deployment and RC/BETA/STABLE independent review. These are evidence blockers, not failed local code checks.
+
+### FirstPromoter credential probe
+
+- Official Admin API read-only requests using the supplied account/key pair returned HTTP 401 for promoter campaigns, referrals, commissions and grouped payouts.
+- No write endpoint was called; no promoter, sale, refund, settlement or payout side effect occurred.
+- M6 remains `RETURN_FOR_EVIDENCE` until a valid Admin API key/account pair is supplied and the live adapter/account mapping can be verified.
