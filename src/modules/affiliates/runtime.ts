@@ -15,7 +15,11 @@ import {type CommissionReview, type CommissionReviewEvidence, reviewFresh} from 
 import {deliveryIntent} from './delivery.ts';
 import {AFFILIATE_ELIGIBILITY_DELAY_MS} from './eligibility.ts';
 import {createFirstPromoterAuthority} from '../../adapters/affiliates/firstpromoter-live.ts';
-import {getServerEnv} from '../../config/env.ts';
+import {readStripeAffiliateHistory} from '../../adapters/affiliates/stripe-history.ts';
+import {getServerEnv, getStripeTestConfiguration} from '../../config/env.ts';
+import {billingOrders, billingPaymentAliases} from '../../db/schema/billing.ts';
+import Stripe from 'stripe';
+import {STRIPE_TEST_API_VERSION} from '../../adapters/billing/stripe-test.ts';
 
 type Settings = typeof affiliateSettings.$inferSelect;
 type AffiliateTx = TransactionDatabase;
@@ -43,10 +47,10 @@ export function createUnavailableAffiliateAuthority(): AffiliateAuthority {
 }
 
 /** Enable the live authority only when all acceptance/production guard inputs exist. */
-export function createConfiguredAffiliateAuthority(): AffiliateAuthority {
+export function createConfiguredAffiliateAuthority(database?: AppDatabase): AffiliateAuthority {
   const env = getServerEnv();
   if (!env.firstPromoterAccountId || !env.firstPromoterApiKey || !env.affiliateProgramId) return createUnavailableAffiliateAuthority();
-  return createFirstPromoterAuthority({
+  const firstPromoter = createFirstPromoterAuthority({
     accountId: env.firstPromoterAccountId,
     apiKey: env.firstPromoterApiKey,
     programId: env.affiliateProgramId,
@@ -55,6 +59,20 @@ export function createConfiguredAffiliateAuthority(): AffiliateAuthority {
     autoPayoutsDisabledConfirmed: env.firstPromoterAutoPayoutsDisabledConfirmed,
     nativeStripeTrackingDisabledConfirmed: env.firstPromoterNativeStripeTrackingDisabledConfirmed,
   });
+  if (!database) return firstPromoter;
+  return {
+    ...firstPromoter,
+    async readHistory(input) {
+      const stripeConfig = getStripeTestConfiguration();
+      if (!stripeConfig) return {complete: false, customers: input.customers, payments: []};
+      const [orders, aliases] = await Promise.all([
+        database.select().from(billingOrders).where(eq(billingOrders.workspaceId, input.workspaceId)),
+        database.select().from(billingPaymentAliases).where(eq(billingPaymentAliases.workspaceId, input.workspaceId)),
+      ]);
+      const client = new Stripe(stripeConfig.secretKey, {apiVersion: STRIPE_TEST_API_VERSION, maxNetworkRetries: 0, timeout: 20_000});
+      return readStripeAffiliateHistory({workspaceId: input.workspaceId, customers: input.customers, orders, aliases}, client);
+    },
+  };
 }
 
 async function lockWorkspace(tx: AffiliateTx, workspaceId: string) {

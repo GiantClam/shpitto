@@ -227,12 +227,13 @@ function startIndependentSweepLoop(): () => Promise<void> {
 }
 
 /** The local scheduler stays active while the optional provider remains disabled/unavailable. */
-export async function processLocalAffiliateSyncOnce(authority: AffiliateNotificationAuthority = createConfiguredAffiliateAuthority()) {
+export async function processLocalAffiliateSyncOnce(authority?: AffiliateNotificationAuthority) {
   assertLocalProfile();
   const database = createDatabase();
   try {
-    const notifications = await drainAffiliateNotifications(database.db, authority);
-    const result = await runAffiliateSyncCycle(database.db, authority);
+    const resolvedAuthority = authority ?? createConfiguredAffiliateAuthority(database.db);
+    const notifications = await drainAffiliateNotifications(database.db, resolvedAuthority);
+    const result = await runAffiliateSyncCycle(database.db, resolvedAuthority);
     return {...result, notifications};
   } finally {await database.pool.end();}
 }

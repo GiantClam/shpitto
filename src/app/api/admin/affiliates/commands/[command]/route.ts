@@ -17,8 +17,8 @@ export async function POST(request: Request, context: {params: Promise<{command:
     const {command} = await context.params;
     const body = parsed.body;
     if (typeof body.reason !== 'string' || typeof body.expectedVersion !== 'number' || !Number.isSafeInteger(body.expectedVersion) || body.expectedVersion < 0) return NextResponse.json({error: 'reason and current expectedVersion are required.'}, {status: 400});
-    const common = {actor, reason: body.reason, expectedVersion: body.expectedVersion, idempotencyKey: commandKey(request, body), authority: createConfiguredAffiliateAuthority()};
     const db = getAuthDatabase();
+    const common = {actor, reason: body.reason, expectedVersion: body.expectedVersion, idempotencyKey: commandKey(request, body), authority: createConfiguredAffiliateAuthority(db)};
     if (command === 'policy') {
       if ((body.commissionPolicy !== 'first_payment' && body.commissionPolicy !== 'provider_campaign') || typeof body.providerCampaignRevision !== 'string' || typeof body.approvedDashboardOrigin !== 'string' || typeof body.dashboardUrl !== 'string') return NextResponse.json({error: 'A valid commission policy, campaign revision and approved HTTPS dashboard configuration are required.'}, {status: 400});
       return NextResponse.json(serializeJsonValue(await changeAffiliatePolicy(db, {...common, commissionPolicy: body.commissionPolicy, providerCampaignRevision: body.providerCampaignRevision, approvedDashboardOrigin: body.approvedDashboardOrigin, dashboardUrl: body.dashboardUrl})));

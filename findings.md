@@ -167,4 +167,5 @@ The stale current-candidate fingerprint blocker is resolved for all development 
 - Promoter detail confirms accepted promoter `15752036` has referral token `shpitto-203f34`; the Admin API currently returns zero referrals and commissions.
 - Shpitto affiliate settings remain disabled. The audited Superadmin campaign-policy command can bind the account after provider readback passes, but current payout and native-tracking safeguards prevent enablement.
 - FirstPromoter commission history is not canonical Stripe payment history; reconciliation must consume complete local Stripe order/customer records before sale delivery.
+- Added a read-only Stripe test-mode history reader that requires every known Stripe customer PaymentIntent page to reconcile to one local canonical order and payment-intent alias; unknown, missing, duplicated or mismatched payment evidence remains held.
 - Latest Acceptance deployment serves the referral capture code and is healthy; the hosted referral endpoint returns `disabled` with no cookie until Superadmin binds/enables the provider, confirming fail-closed behavior.

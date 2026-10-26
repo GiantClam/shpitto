@@ -106,3 +106,4 @@ Current development candidate fingerprints for M4, M5 and M6 were recaptured fro
 13. Confirmed FirstPromoter native Stripe tracking is still connected in test mode and the PayPal payout method is enabled; added a separate fail-closed flag to prevent duplicate tracking and payout exposure.
 14. Added a disposable local referral-handler probe for FPR-only input, server-side promoter resolution, HttpOnly cookie issuance, disabled mode and mid-request configuration changes; it passes.
 15. Recorded remaining M6 boundaries: affiliate settings still disabled, native Stripe test tracking connected, PayPal payout method enabled, and Stripe canonical order history not yet composed into affiliate reconciliation.
+16. Added and tested the canonical Stripe history reader used by the configured affiliate authority; it fails closed on incomplete or mismatched payment history and never treats FirstPromoter commissions as billing history.
