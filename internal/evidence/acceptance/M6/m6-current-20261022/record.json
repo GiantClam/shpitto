@@ -46,14 +46,14 @@
     }
   ],
   "candidate": {
-    "capturedAt": "2026-10-26T03:50:42.118Z",
+    "capturedAt": "2026-10-26T06:12:10.997Z",
     "sourceCommit": null,
     "dirtyPatchSha256": null,
-    "sourceTreeSha256": "3b44669a46bf182b148d418f2a1a612de4ae72b5dcf16b9b0f2dd2ab441238f9",
+    "sourceTreeSha256": "28934b9a1c6a64393d94c1d8dc3455280f84a25fc8e307d6d802f6843f98c4d1",
     "schemaSha256": "6245bd03fc5328afb736b4b9a42e8713a635658a62505ff11497e8cdad4bd501",
-    "configurationSha256": "435ed271cb3d9fb053ddfb400802e270213d41c68355540ba1ef485473f660bc",
+    "configurationSha256": "939a579011e06ff998ceb77dc8640248ba4dd9f3081d78a5dbbd9e4a0f856132",
     "contractSha256": "2b8a1ec939f2473fe6fbc5105f947c89a85f5952401427fb1da94b324b0d778c",
-    "validatorSha256": "d6fc9e485b6d37fcbb3380d8115605f8e6e1e30e1147dac79721ff2b65fe9ca4",
+    "validatorSha256": "0fb0ec51f1890e40edd19aa5039d97c6c308b8be3fcf4329d3a4cee8cb5a238c",
     "lockfileSha256": "c256e386959569fd310d07d824c9e6f1afcc39cb493664eade9f573bb64161a0",
     "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
     "digestInputs": {

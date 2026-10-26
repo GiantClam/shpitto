@@ -161,3 +161,4 @@ The stale current-candidate fingerprint blocker is resolved for all development 
 - Campaign `45084` (`web template Affiliate Program`) is confirmed. The account currently has zero promoters, referrals and commissions.
 - No write endpoint was called; no promoter, sale, refund, settlement or payout side effect occurred.
 - M6 remains `RETURN_FOR_EVIDENCE` until a disposable test promoter/referral exists and the account's auto-payout setting is explicitly confirmed disabled.
+- The live adapter is deployed to Acceptance and the hosted health endpoint remains ready; runtime credentials are not recorded in evidence.

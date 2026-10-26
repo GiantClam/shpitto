@@ -101,3 +101,4 @@ Current development candidate fingerprints for M4, M5 and M6 were recaptured fro
 
 9. Probed the replacement FirstPromoter credentials against read-only Admin API endpoints; all returned HTTP 200. Confirmed campaign 45084, zero promoters/referrals/commissions and no external write side effect.
 10. Added the fail-closed live FirstPromoter adapter, server-side configuration gate and contract tests; incomplete commission batches cannot be reported as successful.
+11. Deployed the adapter to hosted Acceptance with account/campaign runtime configuration; health remained ready and affiliate writes stayed disabled by the auto-payout safety flag.
