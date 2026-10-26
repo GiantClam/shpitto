@@ -1,0 +1,40 @@
+✔ core production config does not require inactive provider webhook credentials (12.5498ms)
+✔ production storage fails closed without a private S3-compatible configuration (0.6268ms)
+✔ activating either real provider without its own token fails before transport access (0.1749ms)
+✔ acceptance profile is explicit and does not change production catalog behavior (0.3194ms)
+✔ explicit local profile survives a production Next standalone runtime (0.2666ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 485.6894
+ℹ start of coverage report
+ℹ ---------------------------------------------------------------------------------------------------------------------------
+ℹ file              | line % | branch % | funcs % | uncovered lines
+ℹ ---------------------------------------------------------------------------------------------------------------------------
+ℹ src               |        |          |         | 
+ℹ  config           |        |          |         | 
+ℹ   models.ts       |  41.90 |   100.00 |    0.00 | 36-40 43-44 46-55 58-80 83-103
+ℹ  contracts        |        |          |         | 
+ℹ   http.ts         |  45.28 |    76.47 |   33.33 | 17-18 21-22 25-35 38-42 45-49 52-59 73 81-87 90-106
+ℹ  modules          |        |          |         | 
+ℹ   billing         |        |          |         | 
+ℹ    hold-policy.ts |  60.00 |   100.00 |    0.00 | 8-9 12-15
+ℹ   credits         |        |          |         | 
+ℹ    allocate.ts    |  23.50 |   100.00 |    0.00 | 39-42 44-51 53-171 175-179 183-199
+ℹ    queries.ts     |  37.74 |   100.00 |    0.00 | 103-119 121-127 131-135 139-178 186-309
+ℹ   generation      |        |          |         | 
+ℹ    create.ts      |  32.56 |   100.00 |    0.00 | 75-79 81-85 88-124 126-128 130-132 134-149 151-230 234-258
+ℹ   shared          |        |          |         | 
+ℹ    commands.ts    |  25.84 |   100.00 |    0.00 | 20-22 25-83 86-89
+ℹ    transaction.ts |  84.62 |   100.00 |    0.00 | 12-13
+ℹ   workspaces      |        |          |         | 
+ℹ    authorize.ts   |  37.33 |   100.00 |    0.00 | 18-35 39-51 58-64 67-75
+ℹ    policy.ts      |  31.21 |   100.00 |    0.00 | 27-29 31-33 35-39 42-49 52-57 60-71 74-90 93-104 107-116 119-133 136-141
+ℹ ---------------------------------------------------------------------------------------------------------------------------
+ℹ all files         |  34.68 |    84.62 |    7.14 | 
+ℹ ---------------------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

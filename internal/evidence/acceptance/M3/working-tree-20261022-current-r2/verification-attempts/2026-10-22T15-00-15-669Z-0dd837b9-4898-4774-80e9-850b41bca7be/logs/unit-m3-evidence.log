@@ -1,0 +1,37 @@
+▶ M3 verification runner safety
+  ✔ defaults to a fresh candidate path without selecting historical browser evidence (1.2771ms)
+  ✔ retains positional output compatibility and supports explicit CLI and environment selection (0.8185ms)
+  ✔ ambiguous or malformed runner options fail before verification starts (0.3851ms)
+  ✔ reviewed, approved, and unreadable records cannot be replaced (3.8627ms)
+  ✔ malformed review and integration metadata fail closed (5.5375ms)
+  ✔ browser evidence and artifact references cannot escape through a directory junction (7.2774ms)
+  ✔ the CLI protects an approved record before creating any attempt logs (134.5139ms)
+✔ M3 verification runner safety (154.4815ms)
+▶ M3 evidence integrity
+  ✔ browser PASS labels alone cannot stand in for required journeys and UI states (0.4892ms)
+  ✔ browser checks require retained artifacts and observed assertions (0.2803ms)
+  ✔ contradictory or duplicate browser results cannot be hidden by one passing row (0.3217ms)
+  ✔ an additional failed or incomplete browser check prevents approval (0.1504ms)
+  ✔ LCOV branch totals remain branch-based and normalize Windows absolute paths (0.3456ms)
+  ✔ separate verification runs union stable branch IDs without counting repeats twice (0.2375ms)
+  ✔ a missing owned source or malformed branch report fails coverage (0.1637ms)
+  ✔ zero-branch and failed suites cannot claim coverage (0.0755ms)
+  ✔ missing mandatory evidence stays in progress; a recorded failure fails the stage (0.125ms)
+  ✔ changed candidate bytes make any result stale, never ready for review (0.0392ms)
+✔ M3 evidence integrity (2.4502ms)
+ℹ tests 17
+ℹ suites 2
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 291.6723
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report

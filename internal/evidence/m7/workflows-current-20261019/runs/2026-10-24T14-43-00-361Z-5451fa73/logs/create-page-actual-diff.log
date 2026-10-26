@@ -1,0 +1,26 @@
+diff --git a/src/app/(marketing)/studio-notes/page.tsx b/src/app/(marketing)/studio-notes/page.tsx
+new file mode 100644
+index 0000000..3f9951a
+--- /dev/null
++++ b/src/app/(marketing)/studio-notes/page.tsx
+@@ -0,0 +1,8 @@
++import type {Metadata} from 'next';
++import {SiteShell} from '../../../components/shell/site-shell';
++
++export const metadata: Metadata = {title: 'Studio notes | Shpitto', description: 'Plan a focused prompt for your next short video.'};
++
++export default function StudioNotesPage() {
++  return <SiteShell><main className="page"><p className="eyebrow">Studio notes</p><h1>Plan a focused short video.</h1><p>Choose one subject, describe its motion, and select a useful frame before you review the video in your workspace.</p><section className="status-card"><h2>Start with one clear idea</h2><p>Keep the prompt specific. Review your model, credits and any image upload in the existing studio.</p><a className="button" href="/#create">Try a video prompt</a></section></main></SiteShell>;
++}
+diff --git a/src/config/navigation.ts b/src/config/navigation.ts
+index 7ef7f46..08d556b 100644
+--- a/src/config/navigation.ts
++++ b/src/config/navigation.ts
+@@ -12,6 +12,7 @@ export const marketingNavigation: readonly NavigationItem[] = [
+   {label: 'Home', href: '/'},
+   {label: 'Explore', href: '/#explore'},
+   {label: 'Create', href: '/#create'},
++  {label: 'Studio notes', href: '/studio-notes'},
+   {label: 'Docs', href: '/docs'},
+ ];
+ 

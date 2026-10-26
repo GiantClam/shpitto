@@ -1,7 +1,7 @@
 # Standalone application image for the buyer-owned Docker profile.
 FROM node:24.15.0-bookworm-slim AS dependencies
 WORKDIR /app
-RUN corepack enable
+RUN npm install --global pnpm@12.6.0
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile --prod=false
 

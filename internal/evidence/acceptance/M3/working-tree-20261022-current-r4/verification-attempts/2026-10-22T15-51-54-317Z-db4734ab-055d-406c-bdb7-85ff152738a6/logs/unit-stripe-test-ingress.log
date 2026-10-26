@@ -1,0 +1,23 @@
+✔ test ingress verifies raw bytes and returns only transport identity (1.5942ms)
+✔ rotating signature headers accept a valid signature without trusting an invalid sibling (0.2935ms)
+✔ tampering, missing signature, oversized bodies and stale signatures are rejected (0.7642ms)
+✔ signed live events and fixture envelopes cannot activate Stripe reconciliation (0.2123ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 273.593
+ℹ start of coverage report
+ℹ ---------------------------------------------------------------------------------------------------------
+ℹ file        | line % | branch % | funcs % | uncovered lines
+ℹ ---------------------------------------------------------------------------------------------------------
+ℹ src         |        |          |         | 
+ℹ  contracts  |        |          |         | 
+ℹ   http.ts   |  33.02 |   100.00 |    0.00 | 17-18 21-22 25-35 38-42 45-49 52-59 63-74 77-78 81-87 90-106
+ℹ ---------------------------------------------------------------------------------------------------------
+ℹ all files   |  33.02 |   100.00 |    0.00 | 
+ℹ ---------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

@@ -1,0 +1,37 @@
+✔ the exact existing application dependency evolution passes without rewriting historical proof (130.9305ms)
+✔ root integrity rejects an additional runtime dependency (119.5449ms)
+✔ root integrity rejects a missing runtime dependency (133.4236ms)
+✔ root integrity rejects an optional dependency (132.177ms)
+✔ root integrity rejects implicit bundling of the whole dependency graph (140.3187ms)
+✔ root integrity rejects a new transitive override (133.4029ms)
+✔ root integrity rejects another Next patch (125.2419ms)
+✔ root integrity rejects an S3 version range (132.5919ms)
+✔ root integrity rejects a changed development dependency (131.0351ms)
+✔ root integrity rejects a changed package manager (127.8167ms)
+✔ root integrity rejects a changed application lockfile (120.1728ms)
+✔ root integrity rejects rewritten historical dependency proof (126.4127ms)
+✔ root integrity rejects rewritten historical lock proof (131.946ms)
+✔ root integrity rejects rewritten historical provenance (129.7946ms)
+✔ root integrity rejects legacy workspace discovery (142.903ms)
+✔ root integrity rejects a changed workspace override (142.2149ms)
+✔ root integrity rejects workspace package extensions (139.3265ms)
+✔ root integrity rejects legacy TypeScript inclusion (128.2066ms)
+✔ root integrity rejects legacy Docker inclusion (141.5974ms)
+✔ historical provenance remains valid in both LF and CRLF checkouts (255.9333ms)
+✔ the reviewed workspace configuration permits only checkout line-ending differences (131.12ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3030.8724
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report

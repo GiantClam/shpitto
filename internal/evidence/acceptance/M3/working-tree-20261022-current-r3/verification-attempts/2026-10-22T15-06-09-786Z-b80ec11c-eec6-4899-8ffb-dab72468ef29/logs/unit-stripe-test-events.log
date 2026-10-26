@@ -1,0 +1,98 @@
+✔ authenticated parser minimizes raw identity and rejects live or malformed events (2.3793ms)
+✔ discovery exposes canonical scope; post-claim normalization refetches and ignores all metadata (9.6278ms)
+✔ normalize rejects a different local customer, canonical customer drift, live objects and fence workspace (0.6369ms)
+✔ pack quantity becomes holding evidence without metadata/catalog fallback (0.3126ms)
+✔ pack discount becomes holding evidence without metadata/catalog fallback (0.232ms)
+✔ pack tax becomes holding evidence without metadata/catalog fallback (0.2111ms)
+✔ pack price becomes holding evidence without metadata/catalog fallback (0.7636ms)
+✔ pack amount becomes holding evidence without metadata/catalog fallback (0.199ms)
+✔ pack currency becomes holding evidence without metadata/catalog fallback (0.1935ms)
+✔ pack payment becomes holding evidence without metadata/catalog fallback (0.1852ms)
+✔ pack line-price becomes holding evidence without metadata/catalog fallback (0.1799ms)
+✔ initial invoice yields invoice, intent, charge and persisted Checkout aliases with canonical monthly period (0.7461ms)
+✔ recurring invoice accepts parent subscription item detail when top-level line subscription is absent (0.3289ms)
+✔ recurring invoice rejects conflicting top-level and parent subscription identities (0.2998ms)
+✔ early subscription discovery retrieves the initial Checkout without metadata binding (0.1626ms)
+✔ early recurring PaymentIntent reverses through invoicePayments when Checkout PI lookup is empty (0.3315ms)
+✔ pack PaymentIntent aliases its canonical Checkout (0.2205ms)
+✔ monthly periods retain Stripe end-of-month anchors across a short month (0.2898ms)
+✔ a longer next month cannot shorten an existing day-30 monthly anchor (0.2407ms)
+✔ initial subscription can use its persisted Checkout binding before a subscription row exists (0.3779ms)
+✔ subscription cannot take a lifecycle binding from a different persisted Checkout (0.292ms)
+✔ nullable SDK shipping total is zero without weakening tax or discount validation (0.7813ms)
+✔ async Checkout success is canonical; unpaid completion emits no payment (0.3311ms)
+✔ pack multiple lines and incomplete pagination become holding evidence (0.3388ms)
+✔ canonical invoice payments, line items and prices reject live mode (0.6222ms)
+✔ canonical refund/customer identity mismatch rejects, regardless of metadata (0.3272ms)
+✔ provider failures propagate for durable inbox retry without fabricating payment evidence (0.3596ms)
+✔ subscription Checkout maps its invoice; renewal never aliases the initial Checkout (0.384ms)
+✔ subscription annual is held (0.3163ms)
+✔ subscription proration is held (0.1917ms)
+✔ subscription multiple is held (0.1906ms)
+✔ subscription discount is held (0.198ms)
+✔ subscription tax is held (0.1821ms)
+✔ subscription quantity is held (0.1736ms)
+✔ subscription reason is held (0.1821ms)
+✔ subscription payments is held (0.2131ms)
+✔ subscription period is held (0.1922ms)
+✔ subscription truncated is held (0.5613ms)
+✔ subscription unbound is held (0.1945ms)
+✔ refund succeeded uses independent refund identity and original payment amount (0.4456ms)
+✔ terminal failed refund remains holding evidence instead of being silently discarded (0.4125ms)
+✔ terminal canceled refund remains holding evidence instead of being silently discarded (0.3273ms)
+✔ refund-before-paid validates canonical Checkout lines and immutable price (0.2498ms)
+✔ recurring refund refetches original invoice period, never the current subscription period (0.3916ms)
+✔ historical recurring refund uses the original invoice terms after current subscription changes (0.3406ms)
+✔ refund invoice alias must point at the same canonical PaymentIntent (0.2254ms)
+✔ charge refund selection emits exactly one independently refetched refund (0.2738ms)
+✔ refund pending emits no cash (0.2017ms)
+✔ refund requires_action emits no cash (0.1613ms)
+✔ refund failed emits holding evidence (0.247ms)
+✔ refund canceled emits holding evidence (0.1866ms)
+✔ charge refund event lists and refetches individual refunds; cumulative amount is never cash (0.2335ms)
+✔ subscription lifecycle normalization is separate and cannot emit a cash observation (0.6546ms)
+✔ charge.dispute.created parses and discovers the canonical disputed payment (0.1417ms)
+✔ charge.dispute.updated parses and discovers the canonical disputed payment (0.0668ms)
+✔ charge.dispute.closed parses and discovers the canonical disputed payment (0.0538ms)
+✔ canonical dispute needs_response maps one stable recovery phase without metadata authority (0.3662ms)
+✔ canonical dispute under_review maps one stable recovery phase without metadata authority (0.2159ms)
+✔ canonical dispute warning_needs_response maps one stable recovery phase without metadata authority (0.189ms)
+✔ canonical dispute warning_under_review maps one stable recovery phase without metadata authority (0.1518ms)
+✔ canonical dispute lost maps one stable recovery phase without metadata authority (0.1801ms)
+✔ canonical dispute won maps one stable recovery phase without metadata authority (0.2356ms)
+✔ dispute warning_closed cannot create cash loss or restore credits (0.1929ms)
+✔ dispute prevented cannot create cash loss or restore credits (0.121ms)
+✔ dispute pending cannot create cash loss or restore credits (0.1149ms)
+✔ dispute unknown cannot create cash loss or restore credits (0.1085ms)
+✔ dispute live-dispute rejects its canonical payment relationship (0.1851ms)
+✔ dispute live-charge rejects its canonical payment relationship (0.135ms)
+✔ dispute wrong-intent rejects its canonical payment relationship (0.142ms)
+✔ dispute wrong-charge rejects its canonical payment relationship (0.107ms)
+✔ dispute wrong-customer rejects its canonical payment relationship (0.1198ms)
+✔ dispute wrong-invoice rejects its canonical payment relationship (0.1659ms)
+✔ dispute wrong-checkout rejects its canonical payment relationship (0.1278ms)
+✔ dispute amount produces holding evidence (0.5303ms)
+✔ dispute currency produces holding evidence (0.1619ms)
+✔ dispute price produces holding evidence (0.155ms)
+✔ dispute quantity produces holding evidence (0.1462ms)
+✔ dispute with nullable PI still proves the original payment through its canonical Charge (0.196ms)
+✔ dispute opened, lost and won share one economic loss and retain original expired service period (0.5812ms)
+ℹ tests 79
+ℹ suites 0
+ℹ pass 79
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 205.9322
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------------------------------------
+ℹ file        | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------------------------------------
+ℹ src         |        |          |         | 
+ℹ  contracts  |        |          |         | 
+ℹ   http.ts   |  48.11 |    75.00 |   41.67 | 17-18 21-22 25-35 38-42 46-47 52-59 73 81-87 90-106
+ℹ ------------------------------------------------------------------------------------------------
+ℹ all files   |  48.11 |    75.00 |   41.67 | 
+ℹ ------------------------------------------------------------------------------------------------
+ℹ end of coverage report

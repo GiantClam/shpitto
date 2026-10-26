@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "1.0",
+  "stageId": "M3",
+  "verificationAttemptId": "2026-10-22T15-00-15-669Z-0dd837b9-4898-4774-80e9-850b41bca7be",
+  "generatedAt": "2026-10-22T15:01:08.172Z",
+  "inclusion": [
+    "src/adapters/mail/index.ts",
+    "src/adapters/mail/invitation.ts",
+    "src/adapters/mail/local.ts",
+    "src/adapters/mail/mailpit.ts",
+    "src/adapters/storage/local.ts",
+    "src/config/models.ts",
+    "src/contracts/http.ts",
+    "src/lib/auth.ts",
+    "src/modules/assets/authorize.ts",
+    "src/modules/assets/cleanup-batch.ts",
+    "src/modules/assets/cleanup.ts",
+    "src/modules/assets/ingest.ts",
+    "src/modules/assets/media-probe.ts",
+    "src/modules/assets/upload.ts",
+    "src/modules/assets/validate-input.ts",
+    "src/modules/billing/hold-policy.ts",
+    "src/modules/credits/allocate.ts",
+    "src/modules/credits/expiry.ts",
+    "src/modules/credits/issue-demo.ts",
+    "src/modules/credits/ledger.ts",
+    "src/modules/credits/queries.ts",
+    "src/modules/credits/reserve.ts",
+    "src/modules/credits/settle.ts",
+    "src/modules/generation/create.ts",
+    "src/modules/generation/lifecycle.ts",
+    "src/modules/generation/mock.ts",
+    "src/modules/generation/outbox.ts",
+    "src/modules/generation/state.ts",
+    "src/modules/generation/sweep-recovery.ts",
+    "src/modules/operations/authorize.ts",
+    "src/modules/operations/status-commands.ts",
+    "src/modules/shared/commands.ts",
+    "src/modules/shared/transaction.ts",
+    "src/modules/workspaces/access-state.ts",
+    "src/modules/workspaces/authorize.ts",
+    "src/modules/workspaces/commands.ts",
+    "src/modules/workspaces/invitations.ts",
+    "src/modules/workspaces/onboard.ts",
+    "src/modules/workspaces/policy.ts"
+  ],
+  "minimumBranchPercent": 80,
+  "policy": "Include all delivered workspace, credit, generation, asset, adapter and shared HTTP/auth domain modules. Every included source must appear in merged LCOV; missing files fail coverage.",
+  "exclusions": [
+    {
+      "path": "src/adapters/mail/contracts.ts",
+      "reason": "Type-only declarations have no executable branches."
+    },
+    {
+      "path": "src/db/schema/**",
+      "reason": "Declarative database schema, verified by isolated PostgreSQL assertions."
+    },
+    {
+      "path": "src/app/**",
+      "reason": "HTTP/UI layers require request and manual viewport evidence."
+    },
+    {
+      "path": "scripts/**",
+      "reason": "Verification drivers are not delivered domain behavior."
+    },
+    {
+      "path": "node_modules/**",
+      "reason": "Third-party implementation."
+    }
+  ]
+}

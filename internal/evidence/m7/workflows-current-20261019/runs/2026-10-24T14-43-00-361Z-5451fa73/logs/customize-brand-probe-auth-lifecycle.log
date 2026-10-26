@@ -1,0 +1,2 @@
+{"status":"PASS","signupVerifiedThroughEmail":true,"persistentSessionRestart":true,"onboardingRecovered":true,"passwordReset":true,"invalidExpiredReplayedTokensRejected":true,"oldCredentialsAndSessionsRevoked":true,"disabledLoginRejected":true,"mailTransport":"Mailpit HTTP contract fixture","authMail":"injected recording adapter; no external delivery"}
+2026-10-24T14:43:11.604Z WARN [Better Auth]: Invalid password

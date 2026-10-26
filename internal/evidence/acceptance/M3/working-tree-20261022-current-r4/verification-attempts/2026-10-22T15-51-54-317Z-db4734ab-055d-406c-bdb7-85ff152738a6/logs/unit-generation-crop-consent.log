@@ -1,0 +1,21 @@
+✔ center crop previews the exact approved landscape and portrait dimensions (1.2017ms)
+✔ confirmation binds the ready upload to exact normalized bytes and current revision (0.4889ms)
+✔ source, aspect, workspace, model and catalog changes reject stale completion and consent (0.2295ms)
+✔ generation payload allows only public aspect and confirmed owned-crop fields (0.2754ms)
+✔ catalog selection uses its matching authoritative quote and projects only public fields (0.2013ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 136.5091
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report

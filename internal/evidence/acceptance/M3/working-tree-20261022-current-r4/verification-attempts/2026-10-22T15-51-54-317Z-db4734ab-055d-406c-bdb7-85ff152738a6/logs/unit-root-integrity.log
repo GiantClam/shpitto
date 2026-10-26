@@ -1,0 +1,37 @@
+✔ the exact existing application dependency evolution passes without rewriting historical proof (142.6186ms)
+✔ root integrity rejects an additional runtime dependency (129.0944ms)
+✔ root integrity rejects a missing runtime dependency (131.036ms)
+✔ root integrity rejects an optional dependency (130.9883ms)
+✔ root integrity rejects implicit bundling of the whole dependency graph (126.9535ms)
+✔ root integrity rejects a new transitive override (129.8197ms)
+✔ root integrity rejects another Next patch (134.5221ms)
+✔ root integrity rejects an S3 version range (128.7385ms)
+✔ root integrity rejects a changed development dependency (125.649ms)
+✔ root integrity rejects a changed package manager (122.4277ms)
+✔ root integrity rejects a changed application lockfile (127.3057ms)
+✔ root integrity rejects rewritten historical dependency proof (128.5481ms)
+✔ root integrity rejects rewritten historical lock proof (124.5731ms)
+✔ root integrity rejects rewritten historical provenance (128.9372ms)
+✔ root integrity rejects legacy workspace discovery (126.9122ms)
+✔ root integrity rejects a changed workspace override (130.8424ms)
+✔ root integrity rejects workspace package extensions (129.6478ms)
+✔ root integrity rejects legacy TypeScript inclusion (131.8656ms)
+✔ root integrity rejects legacy Docker inclusion (127.01ms)
+✔ historical provenance remains valid in both LF and CRLF checkouts (254.7036ms)
+✔ the reviewed workspace configuration permits only checkout line-ending differences (131.4888ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2982.3697
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report
