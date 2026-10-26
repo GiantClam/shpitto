@@ -99,4 +99,5 @@ Current development candidate fingerprints for M4, M5 and M6 were recaptured fro
 7. Created `internal/evidence/acceptance/continuation-20261026/` with stage-by-stage automated explanations and `RETURN_FOR_EVIDENCE` recommendations.
 8. Refreshed M4-M6 current candidate fingerprints after evidence/source changes, regenerated the final manual acceptance queue, and confirmed `verify:acceptance` passes without promoting any milestone.
 
-9. Probed the supplied FirstPromoter credentials against read-only Admin API endpoints; all returned HTTP 401. Recorded the sanitized blocker and confirmed no external write side effect was attempted.
+9. Probed the replacement FirstPromoter credentials against read-only Admin API endpoints; all returned HTTP 200. Confirmed campaign 45084, zero promoters/referrals/commissions and no external write side effect.
+10. Added the fail-closed live FirstPromoter adapter, server-side configuration gate and contract tests; incomplete commission batches cannot be reported as successful.

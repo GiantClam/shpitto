@@ -20,7 +20,7 @@ Operations, admin reads, workspace details, privileged commands, MFA, recovery a
 
 The automated result is partial because the real FirstPromoter account, campaign mapping and hosted settlement evidence are unavailable. Recommended human decision: `RETURN_FOR_EVIDENCE`.
 
-The read-only credential probe on 2026-10-26 returned HTTP 401 for promoter campaigns, referrals, commissions and grouped payouts. No external write operation was attempted. Detailed evidence: `internal/evidence/acceptance/M6/firstpromoter-credential-check-20261026.json`.
+The read-only credential probe on 2026-10-26 now succeeds with HTTP 200 for promoter campaigns, referrals, commissions and grouped payouts. Campaign `45084` (`web template Affiliate Program`) is confirmed, but the account currently has zero promoters, referrals and commissions. Auto-payout disabled has not yet been confirmed. No external write operation was attempted. Detailed evidence: `internal/evidence/acceptance/M6/firstpromoter-credential-check-20261026.json`.
 
 ## M7
 

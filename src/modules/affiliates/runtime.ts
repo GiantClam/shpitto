@@ -14,6 +14,8 @@ import {type AffiliatePayment, type ReferralTouch, workspaceUid} from './contrac
 import {type CommissionReview, type CommissionReviewEvidence, reviewFresh} from './commission-review.ts';
 import {deliveryIntent} from './delivery.ts';
 import {AFFILIATE_ELIGIBILITY_DELAY_MS} from './eligibility.ts';
+import {createFirstPromoterAuthority} from '../../adapters/affiliates/firstpromoter-live.ts';
+import {getServerEnv} from '../../config/env.ts';
 
 type Settings = typeof affiliateSettings.$inferSelect;
 type AffiliateTx = TransactionDatabase;
@@ -37,6 +39,20 @@ export interface AffiliateAuthority {
 export function createUnavailableAffiliateAuthority(): AffiliateAuthority {
   const unavailable = async (): Promise<never> => { throw new DomainError('INFRASTRUCTURE', 'Affiliate provider verification is unavailable.'); };
   return {verifyReference: unavailable, readHistory: unavailable, readAccount: unavailable, readCommission: unavailable, deliver: unavailable, sendReviewAction: unavailable, readReviewAction: unavailable, readAbuseSignals: unavailable};
+}
+
+/** Enable the live authority only when all acceptance/production guard inputs exist. */
+export function createConfiguredAffiliateAuthority(): AffiliateAuthority {
+  const env = getServerEnv();
+  if (!env.firstPromoterAccountId || !env.firstPromoterApiKey || !env.affiliateProgramId) return createUnavailableAffiliateAuthority();
+  return createFirstPromoterAuthority({
+    accountId: env.firstPromoterAccountId,
+    apiKey: env.firstPromoterApiKey,
+    programId: env.affiliateProgramId,
+    campaignRevision: env.affiliateProviderCampaignRevision,
+    baseUrl: env.firstPromoterBaseUrl,
+    autoPayoutsDisabledConfirmed: env.firstPromoterAutoPayoutsDisabledConfirmed,
+  });
 }
 
 async function lockWorkspace(tx: AffiliateTx, workspaceId: string) {

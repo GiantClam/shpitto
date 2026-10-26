@@ -18,7 +18,7 @@ import {materializeOutput} from '../src/modules/assets/ingest.ts';
 import {sweepExpiredGenerationTasks} from '../src/modules/generation/sweep-recovery.ts';
 import {cleanupOrphanedAssetsDetailed, type CleanupOrphanedAssetsReport} from '../src/modules/assets/cleanup.ts';
 import {runAffiliateSyncCycle} from '../src/modules/affiliates/sync.ts';
-import {createUnavailableAffiliateAuthority} from '../src/modules/affiliates/runtime.ts';
+import {createConfiguredAffiliateAuthority} from '../src/modules/affiliates/runtime.ts';
 import {drainAffiliateNotifications, type AffiliateNotificationAuthority} from '../src/modules/affiliates/notifications.ts';
 
 if (existsSync(join(process.cwd(), '.env.local'))) loadEnvFile(join(process.cwd(), '.env.local'));
@@ -227,7 +227,7 @@ function startIndependentSweepLoop(): () => Promise<void> {
 }
 
 /** The local scheduler stays active while the optional provider remains disabled/unavailable. */
-export async function processLocalAffiliateSyncOnce(authority: AffiliateNotificationAuthority = createUnavailableAffiliateAuthority()) {
+export async function processLocalAffiliateSyncOnce(authority: AffiliateNotificationAuthority = createConfiguredAffiliateAuthority()) {
   assertLocalProfile();
   const database = createDatabase();
   try {

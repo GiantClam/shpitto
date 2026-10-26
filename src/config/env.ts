@@ -42,6 +42,11 @@ type ServerEnv = Readonly<{
   affiliateReferralSecret: string;
   affiliateWebhookSecret: string;
   affiliateProgramId: string;
+  affiliateProviderCampaignRevision: string;
+  firstPromoterAccountId: string;
+  firstPromoterApiKey: string;
+  firstPromoterBaseUrl: string;
+  firstPromoterAutoPayoutsDisabledConfirmed: boolean;
   taskRuntime: TaskRuntime;
   triggerProjectRef: string;
   triggerSecretKey: string;
@@ -85,6 +90,11 @@ export function getServerEnv(): ServerEnv {
     affiliateReferralSecret: read('AFFILIATE_REFERRAL_SECRET'),
     affiliateWebhookSecret: read('AFFILIATE_WEBHOOK_SECRET'),
     affiliateProgramId: read('AFFILIATE_PROGRAM_ID'),
+    affiliateProviderCampaignRevision: read('AFFILIATE_PROVIDER_CAMPAIGN_REVISION') || 'first-payment-v1',
+    firstPromoterAccountId: read('FIRSTPROMOTER_ACCOUNT_ID'),
+    firstPromoterApiKey: read('FIRSTPROMOTER_API_KEY'),
+    firstPromoterBaseUrl: read('FIRSTPROMOTER_BASE_URL') || 'https://api.firstpromoter.com/api/v2',
+    firstPromoterAutoPayoutsDisabledConfirmed: read('FIRSTPROMOTER_AUTO_PAYOUTS_DISABLED_CONFIRMED').toLowerCase() === 'true',
   };
   const taskRuntime: TaskRuntimeConfig = parseTaskRuntime({mode: read('TASK_RUNTIME'), triggerProjectRef: read('TRIGGER_PROJECT_REF'), triggerSecretKey: read('TRIGGER_SECRET_KEY')});
 
@@ -106,7 +116,7 @@ export function getServerEnv(): ServerEnv {
     // Optional integrations validate their own configuration when activated.
     // Their absent credentials must not prevent the core application starting.
     const optional = new Set([
-      'billingWebhookSecret', 'affiliateReferralSecret', 'affiliateWebhookSecret', 'affiliateProgramId',
+      'billingWebhookSecret', 'affiliateReferralSecret', 'affiliateWebhookSecret', 'affiliateProgramId', 'firstPromoterAccountId', 'firstPromoterApiKey',
       'replicateWebhookSecret', 'replicateWebhookAccountId', 'falWebhookPublicKeyPem', 'falWebhookAccountId', 'falWebhookBaseUrl',
     ]);
     const missing = Object.entries(values)

@@ -79,8 +79,8 @@
         "affiliate contracts, races, cash and notifications"
       ],
       "blockedClaims": [
-        "valid FirstPromoter Admin API credential",
-        "real FirstPromoter account and campaign mapping",
+        "enrolled test promoter and referral",
+        "confirmed auto-payout disabled setting",
         "hosted affiliate settlement",
         "independent whole-stage review"
       ],
@@ -92,7 +92,7 @@
       ],
       "humanDecision": {
         "recommended": "RETURN_FOR_EVIDENCE",
-        "reason": "Local operations and affiliate behavior passes, but the supplied FirstPromoter credential pair was rejected with HTTP 401 before any hosted settlement verification."
+        "reason": "The FirstPromoter account and campaign are readable, but no promoter/referral test subject exists and auto-payout safety is not yet confirmed."
       }
     },
     {

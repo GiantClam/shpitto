@@ -3,7 +3,7 @@ import {NextResponse} from 'next/server';
 import {serializeJsonValue} from '../../../../../../contracts/http.ts';
 import {getAuthDatabase} from '../../../../../../lib/auth.ts';
 import {changeAffiliatePolicy, handoffAffiliatePayout, releaseAffiliateAbuseHold, runAffiliateReviewCommand} from '../../../../../../modules/affiliates/commands.ts';
-import {createUnavailableAffiliateAuthority} from '../../../../../../modules/affiliates/runtime.ts';
+import {createConfiguredAffiliateAuthority} from '../../../../../../modules/affiliates/runtime.ts';
 import {assertSameOrigin, commandKey, currentWorkspaceActor, readJson, workspaceErrorResponse} from '../../../../workspaces/_shared.ts';
 import {affiliateUuid} from '../../_shared.ts';
 
@@ -17,7 +17,7 @@ export async function POST(request: Request, context: {params: Promise<{command:
     const {command} = await context.params;
     const body = parsed.body;
     if (typeof body.reason !== 'string' || typeof body.expectedVersion !== 'number' || !Number.isSafeInteger(body.expectedVersion) || body.expectedVersion < 0) return NextResponse.json({error: 'reason and current expectedVersion are required.'}, {status: 400});
-    const common = {actor, reason: body.reason, expectedVersion: body.expectedVersion, idempotencyKey: commandKey(request, body), authority: createUnavailableAffiliateAuthority()};
+    const common = {actor, reason: body.reason, expectedVersion: body.expectedVersion, idempotencyKey: commandKey(request, body), authority: createConfiguredAffiliateAuthority()};
     const db = getAuthDatabase();
     if (command === 'policy') {
       if ((body.commissionPolicy !== 'first_payment' && body.commissionPolicy !== 'provider_campaign') || typeof body.providerCampaignRevision !== 'string' || typeof body.approvedDashboardOrigin !== 'string' || typeof body.dashboardUrl !== 'string') return NextResponse.json({error: 'A valid commission policy, campaign revision and approved HTTPS dashboard configuration are required.'}, {status: 400});
