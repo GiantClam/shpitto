@@ -36,11 +36,12 @@ export async function POST(request: Request) {
       authorizationHeader: request.headers.get('authorization') ?? '',
     });
     const db = getAuthDatabase();
+    const allowReseed = process.env.SHPITTO_ACCEPTANCE_BOOTSTRAP_RESEED?.trim() === 'on';
     const existing = await db.select({id: authUser.id}).from(authUser).where(and(
       like(authUser.email, 'acceptance-owner-%@shpitto.local'),
       eq(authUser.emailVerified, true),
     )).limit(1);
-    if (existing[0]) throw new DomainError('CONFLICT', 'Acceptance bootstrap has already been used.');
+    if (existing[0] && !allowReseed) throw new DomainError('CONFLICT', 'Acceptance bootstrap has already been used.');
 
     const runId = randomUUID();
     const owner = {name: 'Acceptance Stripe Owner', email: `acceptance-owner-${runId}@shpitto.local`, password: password()};
