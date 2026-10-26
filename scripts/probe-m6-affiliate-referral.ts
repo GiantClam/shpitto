@@ -24,29 +24,29 @@ const db = database.db;
 const secret = randomUUID() + randomUUID();
 const now = new Date('2026-10-04T08:00:00.000Z');
 const origin = 'http://localhost:3100';
-const body = {affiliateId: 'verified-affiliate', touchReference: 'verified-touch', programId: 'program'};
+const body = {touchReference: 'verified-touch'};
 let verdict: 'verified' | 'invalid' | 'unavailable' | 'throw' = 'verified';
 let reads = 0;
-let verifications = 0;
+let resolutions = 0;
 let duringVerification: (() => Promise<void>) | null = null;
-const dependencies = {secret, programId: 'program', appUrl: origin, production: false, now: () => now, getDatabase: () => {reads += 1; return db;}, authority: {async verifyReference(touch: typeof body) {verifications += 1; assert.equal(touch.touchReference, body.touchReference); await duringVerification?.(); if (verdict === 'throw') throw new Error('Provider unavailable.'); return verdict;}}};
+const dependencies = {secret, programId: 'program', appUrl: origin, production: false, now: () => now, getDatabase: () => {reads += 1; return db;}, authority: {async resolveReferral(input: {touchReference: string; programId: string; capturedAt: Date; expiresAt: Date}) {resolutions += 1; assert.equal(input.touchReference, body.touchReference); assert.equal(input.programId, 'program'); await duringVerification?.(); if (verdict === 'throw' || verdict === 'unavailable') throw new Error('Provider unavailable.'); return verdict === 'invalid' ? null : {...input, affiliateId: 'verified-affiliate'};}}};
 const request = (value: unknown = body, headers: Record<string, string> = {}, url = origin + '/api/affiliates/referral') => new Request(url, {method: 'POST', headers: {'content-type': 'application/json', origin: new URL(url).origin, cookie: 'shpitto_referral=keep-prior', ...headers}, body: typeof value === 'string' ? value : JSON.stringify(value)});
 const retained = (response: Response) => assert.equal(response.headers.get('set-cookie'), null, 'Rejected capture must retain the previous browser touch.');
 const checks: string[] = [];
 try {
   await migrate(db, {migrationsFolder: 'src/db/migrations'});
-  for (const [input, status] of [[request(body, {origin: 'https://foreign.example'}), 403], [request('{'), 400], [request({...body, affiliateId: ' invalid '}), 400], [request({...body, touchReference: '\u0000'}), 400], [request({...body, padding: 'x'.repeat(4096)}), 400], [request({...body, capturedAt: now.toISOString()}), 400]] as const) {
+  for (const [input, status] of [[request(body, {origin: 'https://foreign.example'}), 403], [request('{'), 400], [request({...body, touchReference: ' invalid '}), 400], [request({...body, touchReference: '\u0000'}), 400], [request({...body, padding: 'x'.repeat(4096)}), 400], [request({...body, capturedAt: now.toISOString()}), 400]] as const) {
     const response = await handleAffiliateReferral(input, dependencies);
     assert.equal(response.status, status);
     retained(response);
   }
   assert.equal(reads, 0, 'Invalid origin/body must be rejected before database access.');
-  assert.equal(verifications, 0);
+  assert.equal(resolutions, 0);
   checks.push('same-origin-strict-bounded-input-before-io');
   const disabled = await handleAffiliateReferral(request(), dependencies);
   assert.equal(disabled.status, 200);
   retained(disabled);
-  assert.equal(verifications, 0, 'Disabled database integration must not call provider.');
+  assert.equal(resolutions, 0, 'Disabled database integration must not call provider.');
   await db.update(affiliateSettings).set({enabled: 'enabled', accountId: 'account', programId: 'program'}).where(eq(affiliateSettings.id, 'default'));
   for (const invalid of ['invalid', 'unavailable', 'throw'] as const) {
     verdict = invalid;

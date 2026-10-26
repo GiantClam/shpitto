@@ -14,14 +14,14 @@ type ReferralHttpDependencies = Readonly<{
   appUrl: string;
   production: boolean;
   getDatabase: () => AppDatabase;
-  authority: Pick<AffiliateAuthority, 'verifyReference'>;
+  authority: Pick<AffiliateAuthority, 'resolveReferral'>;
   now?: () => Date;
 }>;
 
 const MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
-const FIELDS = ['affiliateId', 'touchReference', 'programId'];
+const FIELDS = ['touchReference'];
 
-async function readReferral(request: Request): Promise<{affiliateId: string; touchReference: string; programId: string}> {
+async function readReferral(request: Request): Promise<{touchReference: string}> {
   if (request.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase() !== 'application/json') throw new DomainError('VALIDATION', 'A JSON referral is required.');
   const reader = request.body?.getReader();
   if (!reader) throw new DomainError('VALIDATION', 'A JSON referral is required.');
@@ -38,7 +38,7 @@ async function readReferral(request: Request): Promise<{affiliateId: string; tou
   } finally { reader.releaseLock(); }
   const body = parseJsonObject(Buffer.concat(chunks).toString('utf8'));
   if (Object.keys(body).some((field) => !FIELDS.includes(field)) || !FIELDS.every((field) => typeof body[field] === 'string' && body[field].trim() === body[field] && body[field].length > 0 && body[field].length <= 255 && !/[\u0000-\u001f\u007f]/.test(body[field]))) throw new DomainError('VALIDATION', 'Valid referral identifiers are required.');
-  return {affiliateId: body.affiliateId as string, touchReference: body.touchReference as string, programId: body.programId as string};
+  return {touchReference: body.touchReference as string};
 }
 
 function unavailable(): Response {
@@ -53,20 +53,24 @@ export async function handleAffiliateReferral(request: Request, dependencies: Re
     const candidate = await readReferral(request);
     if (!dependencies.secret.trim() || !dependencies.programId) return Response.json({ok: false, status: 'disabled'}, {headers: {'cache-control': 'no-store'}});
     if (dependencies.production && (new URL(request.url).protocol !== 'https:' || new URL(dependencies.appUrl).protocol !== 'https:')) return unavailable();
-    if (candidate.programId !== dependencies.programId) throw new DomainError('VALIDATION', 'The referral program does not match.');
     const db = dependencies.getDatabase();
     const snapshot = (await db.select().from(affiliateSettings).where(eq(affiliateSettings.id, 'default')).limit(1))[0];
     if (snapshot?.enabled !== 'enabled' || !snapshot.accountId || snapshot.programId !== dependencies.programId) return Response.json({ok: false, status: 'disabled'}, {headers: {'cache-control': 'no-store'}});
     const now = dependencies.now ?? (() => new Date());
     const capturedAt = now();
-    let verified: Awaited<ReturnType<AffiliateAuthority['verifyReference']>>;
-    try { verified = await dependencies.authority.verifyReference({...candidate, capturedAt, expiresAt: new Date(capturedAt.getTime() + MAX_AGE_SECONDS * 1000)}); } catch { return unavailable(); }
-    if (verified === 'unavailable') return unavailable();
-    if (verified !== 'verified') return Response.json({ok: false, status: 'invalid', error: 'The referral could not be verified.'}, {status: 400, headers: {'cache-control': 'no-store'}});
+    let resolved: Awaited<ReturnType<NonNullable<AffiliateAuthority['resolveReferral']>>>;
+    try {
+      const resolver = dependencies.authority.resolveReferral;
+      if (!resolver) return unavailable();
+      resolved = await resolver({touchReference: candidate.touchReference, programId: dependencies.programId, capturedAt, expiresAt: new Date(capturedAt.getTime() + MAX_AGE_SECONDS * 1000)});
+    } catch { return unavailable(); }
+    if (!resolved) return Response.json({ok: false, status: 'invalid', error: 'The referral could not be verified.'}, {status: 400, headers: {'cache-control': 'no-store'}});
+    const verified = resolved;
+    if (verified.programId !== dependencies.programId || verified.touchReference !== candidate.touchReference || verified.capturedAt.getTime() !== capturedAt.getTime()) return unavailable();
     return inTransaction(db, async (tx) => {
       const current = (await tx.select().from(affiliateSettings).where(eq(affiliateSettings.id, 'default')).for('update').limit(1))[0];
       if (current?.enabled !== 'enabled' || current.accountId !== snapshot.accountId || current.programId !== snapshot.programId || current.policyVersion !== snapshot.policyVersion) return unavailable();
-      const token = createReferralToken(candidate, dependencies.secret, now());
+      const token = createReferralToken({affiliateId: verified.affiliateId, touchReference: verified.touchReference, programId: verified.programId}, dependencies.secret, now());
       const cookie = 'shpitto_referral=' + token + '; Path=/; Max-Age=' + MAX_AGE_SECONDS + '; HttpOnly; SameSite=Lax' + (dependencies.production ? '; Secure' : '');
       return Response.json({ok: true, status: 'captured'}, {headers: {'set-cookie': cookie, 'cache-control': 'no-store'}});
     });

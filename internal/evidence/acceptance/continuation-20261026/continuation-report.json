@@ -79,8 +79,10 @@
         "affiliate contracts, races, cash and notifications"
       ],
       "blockedClaims": [
-        "enrolled test promoter and referral",
+        "referral capture in hosted app database while affiliate settings remain disabled",
         "confirmed auto-payout disabled setting",
+        "native Stripe tracking disabled to avoid duplicate sale commissions",
+        "canonical Stripe history source wired into affiliate reconciliation",
         "hosted affiliate settlement",
         "independent whole-stage review"
       ],
@@ -92,7 +94,7 @@
       ],
       "humanDecision": {
         "recommended": "RETURN_FOR_EVIDENCE",
-        "reason": "The FirstPromoter account and campaign are readable, but no promoter/referral test subject exists and auto-payout safety is not yet confirmed."
+        "reason": "The accepted promoter and first-charge campaign are verified, but native Stripe tracking remains connected, payout safety is unconfirmed, app affiliate settings are disabled and canonical Stripe history is not yet wired into affiliate reconciliation."
       }
     },
     {

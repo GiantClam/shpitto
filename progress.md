@@ -102,3 +102,7 @@ Current development candidate fingerprints for M4, M5 and M6 were recaptured fro
 9. Probed the replacement FirstPromoter credentials against read-only Admin API endpoints; all returned HTTP 200. Confirmed campaign 45084, zero promoters/referrals/commissions and no external write side effect.
 10. Added the fail-closed live FirstPromoter adapter, server-side configuration gate and contract tests; incomplete commission batches cannot be reported as successful.
 11. Deployed the adapter to hosted Acceptance with account/campaign runtime configuration; health remained ready and affiliate writes stayed disabled by the auto-payout safety flag.
+12. Verified accepted promoter `15752036`, referral token `shpitto-203f34` and campaign `45084`; added automatic first-party capture of `?fpr=` and server-side promoter resolution without trusting browser-supplied IDs.
+13. Confirmed FirstPromoter native Stripe tracking is still connected in test mode and the PayPal payout method is enabled; added a separate fail-closed flag to prevent duplicate tracking and payout exposure.
+14. Added a disposable local referral-handler probe for FPR-only input, server-side promoter resolution, HttpOnly cookie issuance, disabled mode and mid-request configuration changes; it passes.
+15. Recorded remaining M6 boundaries: affiliate settings still disabled, native Stripe test tracking connected, PayPal payout method enabled, and Stripe canonical order history not yet composed into affiliate reconciliation.

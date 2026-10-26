@@ -165,9 +165,12 @@ async function run(): Promise<void> {
       },
       async readAbuseSignals() { return {ownerMatchesAffiliate: false, sameInstrumentFingerprintCount: 1}; },
     };
+    await db.update(affiliateSettings).set({enabled: 'disabled', accountId: null, programId: null, accountSyncStatus: 'pending', accountCheckpointAt: null, accountCheckpointVersion: 0, policyVersion: 1, updatedAt: commandNow}).where(eq(affiliateSettings.id, 'default'));
     const policyInput = {actor, expectedVersion: 1, idempotencyKey: 'affiliate-policy-1', reason: 'Review the fixture manual-payout campaign', commissionPolicy: 'first_payment' as const, providerCampaignRevision: 'first-payment-v1', approvedDashboardOrigin: 'https://app.firstpromoter.com', dashboardUrl: 'https://app.firstpromoter.com/dashboard', authority: commandAuthority, now: commandNow};
     const policy = await changeAffiliatePolicy(db, policyInput);
     assert(policy.version === 2 && (await changeAffiliatePolicy(db, policyInput)).replayed, 'Reviewed campaign command did not preserve version/idempotency.');
+    const configuredAccount = (await db.select().from(affiliateSettings).where(eq(affiliateSettings.id, 'default')))[0]!;
+    assert(configuredAccount.enabled === 'enabled' && configuredAccount.accountId === 'buyer-account' && configuredAccount.programId === 'buyer-program', 'Superadmin campaign review did not bind and enable the verified provider account.');
     assert(conflict((await Promise.allSettled([changeAffiliatePolicy(db, {...policyInput, idempotencyKey: 'stale-policy'})]))[0]!), 'Stale policy update was accepted.');
     const reviewBeforeCommand = (await db.select().from(affiliateReviewRecords).where(eq(affiliateReviewRecords.id, reviewed!.id)))[0]!;
     const approvalInput = {actor, workspaceId, reviewId: reviewed!.id, action: 'approve' as const, expectedVersion: reviewBeforeCommand.reviewVersion, idempotencyKey: 'affiliate-approve-audit-fault', reason: 'Approve a verified first-payment commission', authority: commandAuthority, now: commandNow};

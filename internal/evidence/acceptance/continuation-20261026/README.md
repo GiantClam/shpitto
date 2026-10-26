@@ -20,7 +20,7 @@ Operations, admin reads, workspace details, privileged commands, MFA, recovery a
 
 The automated result is partial because the real FirstPromoter account, campaign mapping and hosted settlement evidence are unavailable. Recommended human decision: `RETURN_FOR_EVIDENCE`.
 
-The read-only credential probe on 2026-10-26 now succeeds with HTTP 200 for promoter campaigns, referrals, commissions and grouped payouts. Campaign `45084` (`web template Affiliate Program`) is confirmed, but the account currently has zero promoters, referrals and commissions. The live adapter is deployed to Acceptance with auto-payout safety still fail-closed. Auto-payout disabled has not yet been confirmed. No external write operation was attempted. Detailed evidence: `internal/evidence/acceptance/M6/firstpromoter-credential-check-20261026.json`.
+The read-only credential probe on 2026-10-26 succeeds with HTTP 200. Campaign `45084` now shows `20% commission for first charge`, and accepted promoter `15752036` has referral token `shpitto-203f34`. The FirstPromoter dashboard also shows native Stripe tracking connected in test mode and a PayPal payout method enabled. Shpitto affiliate settings remain disabled, and the app keeps writes blocked until duplicate tracking and payout safety are resolved. The live adapter also does not treat FirstPromoter commissions as canonical Stripe history. No external referral, sale, refund or payout was created. Detailed evidence: `internal/evidence/acceptance/M6/firstpromoter-credential-check-20261026.json`.
 
 ## M7
 

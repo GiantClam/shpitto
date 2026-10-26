@@ -1,6 +1,7 @@
 import type {CSSProperties, ReactNode} from 'react';
 import type {Metadata, Viewport} from 'next';
 
+import {AffiliateReferralCapture} from '../components/affiliates/referral-capture';
 import {brand, brandCssVariables} from '../config/brand';
 import './globals.css';
 
@@ -21,7 +22,7 @@ export const viewport: Viewport = {
 export default function RootLayout({children}: {children: ReactNode}) {
   return (
     <html lang="en" data-scroll-behavior="smooth" style={brandCssVariables as CSSProperties}>
-      <body>{children}</body>
+      <body><AffiliateReferralCapture />{children}</body>
     </html>
   );
 }

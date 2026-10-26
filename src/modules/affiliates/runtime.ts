@@ -27,6 +27,7 @@ export type AffiliateActionRequest = Readonly<{actionReference: string; action: 
 /** Trusted server ports normalize verified remote identities; no runtime adapter is enabled by this module. */
 export interface AffiliateAuthority {
   verifyReference(touch: ReferralTouch): Promise<'verified' | 'invalid' | 'unavailable'>;
+  resolveReferral?(input: Readonly<{touchReference: string; programId: string; capturedAt: Date; expiresAt: Date}>): Promise<ReferralTouch | null>;
   readHistory(input: Readonly<{workspaceId: string; customers: readonly CustomerIdentity[]}>): Promise<AffiliateHistory>;
   readAccount(): Promise<Readonly<{accountId: string; programId: string; campaignRevision: string; automaticPayouts: boolean; firstPaymentOnly: boolean; complete: boolean; checkedAt: Date}>>;
   readCommission(input: Readonly<{workspaceId: string; paymentReference: string}>): Promise<Readonly<{accountId: string; programId: string; paymentReference: string; status: 'eligible' | 'approved' | 'denied' | 'pending'; checkedAt: Date}>>;
@@ -38,7 +39,7 @@ export interface AffiliateAuthority {
 
 export function createUnavailableAffiliateAuthority(): AffiliateAuthority {
   const unavailable = async (): Promise<never> => { throw new DomainError('INFRASTRUCTURE', 'Affiliate provider verification is unavailable.'); };
-  return {verifyReference: unavailable, readHistory: unavailable, readAccount: unavailable, readCommission: unavailable, deliver: unavailable, sendReviewAction: unavailable, readReviewAction: unavailable, readAbuseSignals: unavailable};
+  return {verifyReference: unavailable, resolveReferral: unavailable, readHistory: unavailable, readAccount: unavailable, readCommission: unavailable, deliver: unavailable, sendReviewAction: unavailable, readReviewAction: unavailable, readAbuseSignals: unavailable};
 }
 
 /** Enable the live authority only when all acceptance/production guard inputs exist. */
@@ -52,6 +53,7 @@ export function createConfiguredAffiliateAuthority(): AffiliateAuthority {
     campaignRevision: env.affiliateProviderCampaignRevision,
     baseUrl: env.firstPromoterBaseUrl,
     autoPayoutsDisabledConfirmed: env.firstPromoterAutoPayoutsDisabledConfirmed,
+    nativeStripeTrackingDisabledConfirmed: env.firstPromoterNativeStripeTrackingDisabledConfirmed,
   });
 }
 

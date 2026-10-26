@@ -17,7 +17,9 @@ function page(input: Query) {
 export async function readAffiliateAdminStatus(db: AppDatabase, actor: WorkspaceActor) {
   await requireCurrentOperator(db, actor, 'support');
   const config = (await db.select().from(affiliateSettings).where(eq(affiliateSettings.id, 'default')).limit(1))[0];
-  return {enabled: config?.enabled === 'enabled', integrationStatus: config?.enabled === 'enabled' ? 'unavailable' : 'disabled', commissionPolicy: config?.commissionPolicy ?? 'first_payment', policyVersion: config?.policyVersion ?? 1, providerCampaignRevision: config?.providerCampaignRevision ?? 'first-payment-v1', accountSyncStatus: config?.accountSyncStatus ?? 'pending', accountCheckpointAt: config?.accountCheckpointAt?.toISOString() ?? null, dashboardUrl: config?.dashboardUrl ?? null};
+  const enabled = config?.enabled === 'enabled';
+  const accountSyncStatus = config?.accountSyncStatus ?? 'pending';
+  return {enabled, integrationStatus: !enabled ? 'disabled' : accountSyncStatus === 'succeeded' ? 'ready' : accountSyncStatus, accountId: config?.accountId ?? null, programId: config?.programId ?? null, commissionPolicy: config?.commissionPolicy ?? 'first_payment', policyVersion: config?.policyVersion ?? 1, providerCampaignRevision: config?.providerCampaignRevision ?? 'first-payment-v1', accountSyncStatus, accountCheckpointAt: config?.accountCheckpointAt?.toISOString() ?? null, dashboardUrl: config?.dashboardUrl ?? null};
 }
 
 export async function listAffiliateReviews(db: AppDatabase, actor: WorkspaceActor, input: Query = {}) {

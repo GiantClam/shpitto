@@ -158,7 +158,12 @@ The stale current-candidate fingerprint blocker is resolved for all development 
 ### FirstPromoter account readback
 
 - The supplied account/key pair now authenticates successfully: promoter campaigns, referrals, commissions and grouped payouts all return HTTP 200.
-- Campaign `45084` (`web template Affiliate Program`) is confirmed. The account currently has zero promoters, referrals and commissions.
+- Campaign `45084` (`web template Affiliate Program`) is confirmed. An accepted promoter exists; referrals and commissions are still zero.
 - No write endpoint was called; no promoter, sale, refund, settlement or payout side effect occurred.
 - M6 remains `RETURN_FOR_EVIDENCE` until a disposable test promoter/referral exists and the account's auto-payout setting is explicitly confirmed disabled.
 - The live adapter is deployed to Acceptance and the hosted health endpoint remains ready; runtime credentials are not recorded in evidence.
+- The owner updated campaign `45084` to `20% commission for first charge`; accepted promoter `15752036` and referral token `shpitto-203f34` resolve to that campaign.
+- The FirstPromoter dashboard still shows native Stripe tracking connected in test mode and the PayPal payout method enabled. A separate fail-closed flag blocks custom sale/refund tracking until duplicate tracking and payout are confirmed safe.
+- Promoter detail confirms accepted promoter `15752036` has referral token `shpitto-203f34`; the Admin API currently returns zero referrals and commissions.
+- Shpitto affiliate settings remain disabled. The audited Superadmin campaign-policy command can bind the account after provider readback passes, but current payout and native-tracking safeguards prevent enablement.
+- FirstPromoter commission history is not canonical Stripe payment history; reconciliation must consume complete local Stripe order/customer records before sale delivery.

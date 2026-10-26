@@ -133,10 +133,10 @@ export async function changeAffiliatePolicy(db: AppDatabase, input: Envelope & R
     await authorizeOperatorCommand(tx, input.actor, 'superadmin', now);
     const execution = await executeDurableCommand(tx, command, async () => {
       const config = (await tx.select().from(affiliateSettings).where(eq(affiliateSettings.id, 'default')).for('update').limit(1))[0];
-      if (!config || config.policyVersion !== input.expectedVersion || remote.accountId !== config.accountId || remote.programId !== config.programId) throw new DomainError('CONFLICT', 'Affiliate policy or account identity changed.');
+      if (!config || config.policyVersion !== input.expectedVersion || (config.accountId !== null && remote.accountId !== config.accountId) || (config.programId !== null && remote.programId !== config.programId)) throw new DomainError('CONFLICT', 'Affiliate policy or account identity changed.');
       const version = config.policyVersion + 1;
-      await tx.update(affiliateSettings).set({commissionPolicy: input.commissionPolicy, providerCampaignRevision: input.providerCampaignRevision, reviewedCampaignRevision: input.providerCampaignRevision, approvedDashboardOrigin: origin.origin, dashboardUrl: dashboard.toString(), policyVersion: version, accountCheckpointVersion: config.accountCheckpointVersion + 1, accountSyncStatus: 'pending', accountCheckpointAt: null, updatedAt: now}).where(eq(affiliateSettings.id, 'default'));
-      const result = {policyVersion: version, version, status: 'reviewed'};
+      await tx.update(affiliateSettings).set({enabled: 'enabled', accountId: remote.accountId, programId: remote.programId, commissionPolicy: input.commissionPolicy, providerCampaignRevision: input.providerCampaignRevision, reviewedCampaignRevision: input.providerCampaignRevision, approvedDashboardOrigin: origin.origin, dashboardUrl: dashboard.toString(), policyVersion: version, accountCheckpointVersion: config.accountCheckpointVersion + 1, accountSyncStatus: 'pending', accountCheckpointAt: null, updatedAt: now}).where(eq(affiliateSettings.id, 'default'));
+      const result = {accountId: remote.accountId, programId: remote.programId, policyVersion: version, version, status: 'reviewed'};
       await audited(tx, input, command, result);
       return result;
     });

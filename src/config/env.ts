@@ -47,6 +47,7 @@ type ServerEnv = Readonly<{
   firstPromoterApiKey: string;
   firstPromoterBaseUrl: string;
   firstPromoterAutoPayoutsDisabledConfirmed: boolean;
+  firstPromoterNativeStripeTrackingDisabledConfirmed: boolean;
   taskRuntime: TaskRuntime;
   triggerProjectRef: string;
   triggerSecretKey: string;
@@ -95,6 +96,7 @@ export function getServerEnv(): ServerEnv {
     firstPromoterApiKey: read('FIRSTPROMOTER_API_KEY'),
     firstPromoterBaseUrl: read('FIRSTPROMOTER_BASE_URL') || 'https://api.firstpromoter.com/api/v2',
     firstPromoterAutoPayoutsDisabledConfirmed: read('FIRSTPROMOTER_AUTO_PAYOUTS_DISABLED_CONFIRMED').toLowerCase() === 'true',
+    firstPromoterNativeStripeTrackingDisabledConfirmed: read('FIRSTPROMOTER_NATIVE_STRIPE_TRACKING_DISABLED_CONFIRMED').toLowerCase() === 'true',
   };
   const taskRuntime: TaskRuntimeConfig = parseTaskRuntime({mode: read('TASK_RUNTIME'), triggerProjectRef: read('TRIGGER_PROJECT_REF'), triggerSecretKey: read('TRIGGER_SECRET_KEY')});
 
