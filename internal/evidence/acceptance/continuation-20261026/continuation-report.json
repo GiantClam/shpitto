@@ -1,0 +1,175 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "ACCEPTANCE_CONTINUATION_REPORT",
+  "date": "2026-10-26",
+  "status": "PARTIAL_READY_FOR_REVIEW",
+  "candidateId": "acceptance-continuation-20261026",
+  "policy": {
+    "automatedEvidenceFirst": true,
+    "humanDecisionOptions": ["PASS", "FAIL", "RETURN_FOR_EVIDENCE"],
+    "noTestRerunRequired": true,
+    "stageStatusPromotion": false
+  },
+  "stages": [
+    {
+      "stageId": "M4",
+      "taskId": "5.10",
+      "automatedStatus": "PARTIAL_READY_FOR_REVIEW",
+      "automatedConclusion": "Local provider and recovery automation passed 128/128 tests.",
+      "passedChecks": [
+        "provider input contracts",
+        "local and S3 materialization",
+        "webhook replay and crash races",
+        "reservation settlement and late completion quarantine",
+        "self-hosted restart recovery"
+      ],
+      "blockedClaims": [
+        "current authentic provider matrix",
+        "selected-runtime hosted recovery",
+        "independent whole-stage review"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M4/m4-current-20261022/record.json",
+        "internal/evidence/M4/task-5.10/railway-worker/",
+        "internal/evidence/acceptance/continuation-20261026/README.md"
+      ],
+      "humanDecision": {
+        "recommended": "RETURN_FOR_EVIDENCE",
+        "reason": "Automated local provider and recovery behavior passes, but the current candidate lacks complete authentic hosted/provider matrix evidence and independent whole-stage review."
+      }
+    },
+    {
+      "stageId": "M5",
+      "taskId": "6.10",
+      "automatedStatus": "PARTIAL_READY_FOR_REVIEW",
+      "automatedConclusion": "Local Stripe billing automation passed 68/68 tests; billing schema, Checkout and reconciliation probes passed 49, 10 and 18 cases respectively; hosted authenticated Checkout/Portal evidence is recorded.",
+      "passedChecks": [
+        "billing schema and tenant invariants",
+        "Checkout and Portal command idempotency",
+        "subscription slot and reconciliation fencing",
+        "refund and dispute recovery rules",
+        "hosted owner/member login and billing authorization"
+      ],
+      "blockedClaims": [
+        "hosted subscription lifecycle",
+        "hosted refund",
+        "hosted dispute",
+        "hosted webhook replay"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M5/m5-hosted-checkout-20261026/hosted-checkout.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/record.json",
+        "internal/evidence/acceptance/continuation-20261026/README.md"
+      ],
+      "humanDecision": {
+        "recommended": "RETURN_FOR_EVIDENCE",
+        "reason": "The authenticated hosted Checkout/Portal slice is proven, but the full 6.10 hosted lifecycle, refund, dispute and webhook replay scope is not complete."
+      }
+    },
+    {
+      "stageId": "M6",
+      "taskId": "7.14",
+      "automatedStatus": "PARTIAL_READY_FOR_REVIEW",
+      "automatedConclusion": "Operations, admin, privileged, MFA, recovery and affiliate automation passed on disposable local PostgreSQL.",
+      "passedChecks": [
+        "operations and admin reads",
+        "privileged command replay and rollback",
+        "MFA and role revocation",
+        "recovery and webhook replay controls",
+        "affiliate contracts, races, cash and notifications"
+      ],
+      "blockedClaims": [
+        "real FirstPromoter account and campaign mapping",
+        "hosted affiliate settlement",
+        "independent whole-stage review"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M6/m6-current-20261022/record.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/record.json",
+        "internal/evidence/acceptance/continuation-20261026/README.md"
+      ],
+      "humanDecision": {
+        "recommended": "RETURN_FOR_EVIDENCE",
+        "reason": "Local operations and affiliate behavior passes, but real FirstPromoter and hosted settlement evidence is unavailable."
+      }
+    },
+    {
+      "stageId": "M7",
+      "taskId": "8.15",
+      "automatedStatus": "PARTIAL_READY_FOR_REVIEW",
+      "automatedConclusion": "Skills, customization, Docs, vendor Docs and boundary checks pass; the four local workflows pass within local-mock scope.",
+      "passedChecks": [
+        "12 governed Skills contract",
+        "four customization workflows",
+        "published-only Docs and vendor parity",
+        "release/content/shell/local-service boundaries"
+      ],
+      "blockedClaims": [
+        "M4/M5/M6 predecessor gate closure",
+        "current candidate independent review",
+        "real provider/payment execution"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/m7/workflows-current-20261019/runs/2026-10-24T14-45-21-786Z-d5c94426/summary.json",
+        "internal/evidence/acceptance/continuation-20261026/README.md"
+      ],
+      "humanDecision": {
+        "recommended": "RETURN_FOR_EVIDENCE",
+        "reason": "The local governed workflow scope passes, but predecessor gates and independent review remain open."
+      }
+    },
+    {
+      "stageId": "M8",
+      "taskIds": ["9.13", "9.14", "9.15"],
+      "automatedStatus": "PARTIAL_READY_FOR_REVIEW",
+      "automatedConclusion": "Local preflight and fresh candidate installation/build/runtime/restore checks pass.",
+      "passedChecks": [
+        "export and release boundaries",
+        "fresh candidate offline install and production build",
+        "local login, cancellation, refund and worker lifecycle",
+        "private download and exactly-once credits",
+        "backup/restore and restart persistence"
+      ],
+      "blockedClaims": [
+        "merchant eligibility and approved commercial terms",
+        "managed/production deployment",
+        "real external accounts and settlement",
+        "M8 RC/BETA/STABLE independent review"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/m8/local-demo/local-candidate-20261007-completion/result.json",
+        "internal/evidence/m8/release-review.md",
+        "internal/evidence/acceptance/continuation-20261026/README.md"
+      ],
+      "humanDecision": {
+        "recommended": "RETURN_FOR_EVIDENCE",
+        "reason": "The local candidate is verified, but commercial inputs, managed/production profiles and final checkpoint review are missing."
+      }
+    }
+  ],
+  "globalHumanDecisionGuide": {
+    "options": [
+      {
+        "id": "PASS",
+        "meaning": "Accept only the exact automated scope described in the selected stage packet."
+      },
+      {
+        "id": "FAIL",
+        "meaning": "Reject the observed evidence or behavior."
+      },
+      {
+        "id": "RETURN_FOR_EVIDENCE",
+        "meaning": "Request the named missing scenario, account input or independent review."
+      }
+    ],
+    "instruction": "Review evidence references and explanations. Do not rerun tests as a substitute for evidence review."
+  },
+  "safetyBoundary": {
+    "liveStripe": false,
+    "realRefund": false,
+    "realPayout": false,
+    "merchantPublication": false,
+    "newPaidProviderCreate": false,
+    "realFirstPromoterAccount": false
+  }
+}

@@ -1,7 +1,7 @@
 ⚠ You are using a non-standard "NODE_ENV" value in your environment. This creates inconsistencies in the project and is strongly advised against. Read more: https://nextjs.org/docs/messages/non-standard-node-env
 ▲ Next.js 16.3.6
-- Local:         http://127.0.0.1:57283
-- Network:       http://127.0.0.1:57283
-✓ Ready in 180ms
-✓ Running next.config.ts took 49ms
+- Local:         http://127.0.0.1:53520
+- Network:       http://127.0.0.1:53520
+✓ Ready in 156ms
+✓ Running next.config.ts took 35ms
 ⚠ "next start" does not work with "output: standalone" configuration. Use "node .next/standalone/server.js" instead.

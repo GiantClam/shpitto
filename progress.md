@@ -87,3 +87,14 @@ User authorized exactly one 720p/81-frame/16-FPS Fal T2V request with reference 
 ## 2026-10-14 Verification Refresh
 
 Current development candidate fingerprints for M4, M5 and M6 were recaptured from the repository and synchronized into their `IN_PROGRESS` records. `verify:acceptance` now passes without promoting any stage. Typecheck, lint, format, configuration, database, M2 foundation, local-service, shell, content-boundary, production build, strict OpenSpec and 85 related provider contracts pass. The isolated Railway Demo worker remains healthy, paused, create-disabled and unassigned; no new paid provider request was made. `verify:root` remains blocked by the older selected-stack dependency/lockfile baseline, which requires a separate reviewed provenance decision.
+## 2026-10-26 Acceptance Gate Continuation
+
+1. Confirmed the prior M5 hosted Checkout evidence and committed the recoverable Acceptance bootstrap plus evidence packet as `d55ef01a`.
+2. Re-read the existing planning files and OpenSpec task dependencies before starting the remaining-gates pass.
+3. Appended a scoped plan, findings and completion rule for automated evidence plus human decision recommendations.
+4. Next: inventory gate records and run the independent local checks for M4-M8 before changing any status or evidence record.
+
+5. Repaired the local verification environment by starting Docker Desktop, binding disposable PostgreSQL instances to ports 55432 and 55433, and starting the documented local services.
+6. Automated verification passed: M4 provider/recovery 128/128; M5 billing suite 68/68 plus 49 schema, 10 Checkout and 18 reconciliation cases; M6 operations, privileged, MFA, recovery and affiliate probes; M7 Skills/customization/Docs/boundaries; M8 local preflight and fresh candidate runtime/restore.
+7. Created `internal/evidence/acceptance/continuation-20261026/` with stage-by-stage automated explanations and `RETURN_FOR_EVIDENCE` recommendations.
+8. Refreshed M4-M6 current candidate fingerprints after evidence/source changes, regenerated the final manual acceptance queue, and confirmed `verify:acceptance` passes without promoting any milestone.

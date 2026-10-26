@@ -114,3 +114,43 @@ A trusted API-returned request ID plus official JWKS-verified callback can estab
 ## 2026-10-14 Remaining Validation
 
 The stale current-candidate fingerprint blocker is resolved for all development stages without changing any stage status or approval decision. The remaining root-integrity failure is a baseline-governance mismatch: the current root requires the S3 SDK and uses Next 16.3.8 while the selected-stack prototype records no S3 SDK and Next 16.3.6, and the accepted prototype lockfile digest differs from the root lockfile. This must be resolved by an explicit baseline/provenance review; it must not be hidden by changing validation output or promoting M4.
+## 2026-10-26 Acceptance Gate Continuation Findings
+
+1. The hosted Acceptance environment is usable for authenticated Stripe test Checkout and Portal verification. The bootstrap recovery path was exercised once, then disabled and its secret removed. No live Stripe key or real funds were used.
+2. M5 hosted evidence now proves owner/member login, owner Checkout/Portal creation, member authorization denial and bootstrap cleanup. It does not prove the full 6.10 subscription lifecycle, refund, dispute or webhook replay scope.
+3. The OpenSpec task file explicitly keeps M4, M5 and M6 development records `IN_PROGRESS` where whole-stage or external-provider evidence remains incomplete. Existing checked implementation rows do not automatically close the corresponding milestone gate.
+4. M6 has local operations and affiliate probes, but the real FirstPromoter account and hosted settlement evidence remain external inputs. These cannot be synthesized from local fixtures without violating the acceptance contract.
+5. M7 depends on M4, M5 and M6 gate closure and still requires exact current skill/workflow/provenance/docs evidence plus independent review.
+6. M8 tasks 9.13, 9.14 and 9.15 remain blocked by commercial inputs, exact candidate/profile proof and final RC/BETA/STABLE review. A hosted readiness deployment alone cannot close those tasks.
+7. The correct output for the remaining work is a set of automated evidence packages with explicit partial conclusions and human recommendations, not automatic checkbox promotion.
+
+### Inventory snapshot
+
+- The final queue currently has 10 records: M0-M3 are automated-ready or PASS; the current M4, M5 and M6 records are `IN_PROGRESS` with blocked criteria/scenarios; M7 and M8 have no current evidence record in the register.
+- M4 current record has 10 retained local commands passing, coverage passing, four blocked criteria and 46 unrun scenarios.
+- M5 current record has 18 retained local commands passing, coverage passing, five blocked criteria and 28 blocked scenarios; the new hosted Checkout packet covers only the authenticated hosted slice.
+- M6 current record has 19 retained local commands passing, coverage passing, five blocked criteria and 39 blocked scenarios; FirstPromoter and hosted settlement remain external.
+- The queue generator only consumes `evidenceRecordRefs` from `acceptance-status.json`, so supplemental evidence packets need explicit queue integration or a separate continuation report to be visible to reviewers.
+
+### Fresh verification attempt
+
+- TypeScript, source boundaries, format, config, database boundaries and strict OpenSpec validation passed.
+- The combined M4 provider integration invocation failed before exercising provider logic because `APP_URL` was empty and the test constructed `new URL('')`.
+- The combined M5 Stripe integration invocation failed before exercising billing logic because disposable PostgreSQL ports `55432` and `55433` were not running.
+- These failures are environment blockers. They must be repaired by loading the repository's test environment and starting the documented disposable services before interpreting provider/billing behavior.
+
+### Repaired local verification
+
+- Docker Desktop was started and the documented local services became healthy. The main disposable PostgreSQL was bound to `55432`; a second ephemeral PostgreSQL was bound to `55433` for the hard-coded refund suite.
+- M4 provider/recovery suite: 128/128 tests passed after supplying non-production dummy HTTPS S3 signing inputs. No provider network call or paid create was made.
+- M5 Stripe/billing suite: 68/68 tests passed; billing schema, Checkout and reconciliation probes added 49 + 10 + 18 passing cases.
+- M6 probes passed for operations, admin reads, workspace details, privileged commands, MFA, recovery, affiliate contracts, affiliate PostgreSQL, affiliate races, referral HTTP, cash affiliate and notifications. All used disposable local PostgreSQL; real FirstPromoter was not contacted.
+- One M6 recovery probe initially failed because it used the PostgreSQL `postgres` database without the migrated application schema. Re-running against the migrated `shpitto` database passed; no source change was required.
+
+### M7 and M8 automated continuation
+
+- M7 Skills, customization, Docs, vendor Docs, release boundaries, content boundaries, shell boundaries and local-service checks all passed.
+- The existing four-workflow M7 run is `LOCAL_WORKFLOWS_EXECUTED`: all four workflows passed, but it explicitly records no independent review, no gate promotion, and no real provider/payment execution.
+- M8 local preflight passed for export boundaries, candidate runtime, deployment/Docker/config/restore/operations preflight and vendor commerce separation.
+- The fresh local candidate check passed archive extraction, offline install, build, buyer checks, migration/seed, login/dashboard, cancellation/refund, worker success/deadline refund, private download, backup/restore, restart persistence and exactly-once credit behavior.
+- M8 remains blocked for commercial readiness, real provider/payment/affiliate inputs, managed/production deployment and RC/BETA/STABLE independent review. These are evidence blockers, not failed local code checks.

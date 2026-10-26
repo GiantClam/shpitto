@@ -2,7 +2,7 @@
   "status": "PASS",
   "profile": "fresh-candidate-local-runtime",
   "candidateId": "local-candidate-20261007-completion",
-  "startedAt": "2026-10-24T14:19:54.791Z",
+  "startedAt": "2026-10-26T03:39:07.562Z",
   "archive": {
     "path": "internal/evidence/m8/artifact-manifest/local-candidate-20261007-completion/local-candidate-20261007-completion.zip",
     "bytes": 1754690,
@@ -26,12 +26,12 @@
     "restartPersistenceAndExactlyOnceCredits": "PASS"
   },
   "journey": {
-    "workspaceId": "b86f2f0d-29c1-4bf8-9d1f-fc3241e5c669",
+    "workspaceId": "98e0b278-4a29-45e4-8666-848c22a72aed",
     "scenarios": {
-      "cancelled": "ca3acf2d-3328-499a-bb33-ebb03f59ec9d",
-      "deadlineFailure": "4795cc97-67fd-45db-93b1-95fc0d7aa5e4",
-      "succeeded": "552fda9b-c041-40ac-a179-6bd5a3f75e8a",
-      "restarted": "156272dd-b588-4445-9f6b-6d5e84c7d8c8"
+      "cancelled": "6546d96e-41a4-4b20-a823-da8fa3c39a8b",
+      "deadlineFailure": "92f2c23d-ee53-4db6-975f-59317f382c76",
+      "succeeded": "560b065a-1093-458b-845a-8b9ccab95020",
+      "restarted": "b079859d-85e3-4f58-9ffb-e9a26f0aa48f"
     },
     "initialBalance": {
       "available": "100",
@@ -49,7 +49,7 @@
       "consumed": "20"
     },
     "privateDownload": {
-      "assetId": "aa4a4bfa-bf4a-4025-a561-552f76f0b081",
+      "assetId": "ba3ced73-91eb-459a-b140-2f38ec11ead1",
       "bytes": 36097,
       "sha256": "7ace5deee2697fef232d855ea123d6dd37fd95114ec258b9696ded8163a31b18",
       "anonymousStatus": 401
@@ -57,11 +57,11 @@
     "reservationCount": 4,
     "providerAttempts": [
       {
-        "task_id": "156272dd-b588-4445-9f6b-6d5e84c7d8c8",
+        "task_id": "560b065a-1093-458b-845a-8b9ccab95020",
         "attempts": 1
       },
       {
-        "task_id": "552fda9b-c041-40ac-a179-6bd5a3f75e8a",
+        "task_id": "b079859d-85e3-4f58-9ffb-e9a26f0aa48f",
         "attempts": 1
       }
     ],
@@ -69,11 +69,11 @@
       "status": "PASS",
       "profile": "local-docker-candidate-restore",
       "archiveSha256": "c4a1dcb111811a9ae4a0a956045e59880ad937ff6efbadff4af47ca4beb1dbad",
-      "database": "shpitto_candidate_48eb4e1fde814da6a1a2ba8cf855d329",
-      "restoredDatabase": "shpitto_candidate_48eb4e1fde814da6a1a2ba8cf855d329_restored",
-      "backupMs": 851,
-      "restoreMs": 977,
-      "backupSha256": "67263789cf4f88e7656d45ff6fa97151cf05bc003b6516c6fc43e0344f1a143c",
+      "database": "shpitto_candidate_3982c97354a545a2ba3b51b2548df6eb",
+      "restoredDatabase": "shpitto_candidate_3982c97354a545a2ba3b51b2548df6eb_restored",
+      "backupMs": 838,
+      "restoreMs": 930,
+      "backupSha256": "6456e2c96ba69b4e92fca58df9439066cc62786ff36c8beb82364cf0e2329555",
       "tables": {
         "app.affiliate_attributions": {
           "rows": 0,
@@ -105,19 +105,19 @@
         },
         "app.affiliate_settings": {
           "rows": 1,
-          "sha256": "291f68ae96bc303cf738b938f83c5adf4174ba8a5b12c483480b03d5fb674682"
+          "sha256": "42359589dbc8d07568b2bec01807fb1eb6ade999b48bd83c6d844ceb2469c490"
         },
         "app.assets": {
           "rows": 1,
-          "sha256": "9e872e6c1eafbbe367febf447368ea43ad5ab325694cfbf42a253c1e09ab7efe"
+          "sha256": "b65775f2082fef0cb3b30cc7a7b9fb372500ca7373d6bd07b15e2cf7f9325faf"
         },
         "app.audit_events": {
           "rows": 9,
-          "sha256": "374459a38642cc2bf8bc3a07baf9e22de35f9b6b55826077a5da4437e1ea0706"
+          "sha256": "468aa05494b9c6c43096d415d096931be8cc0bd74f330b52e24bb174269b4b1a"
         },
         "app.billing_accounts": {
           "rows": 1,
-          "sha256": "b71ef49b75df0290e78d1808f521c6fff279c7dfbddb39eaafce1c19faf5c882"
+          "sha256": "d2055c19c4fdd720ee929ffdc03b4bc074f91543837e643952b1184b6657ca73"
         },
         "app.billing_cash_events": {
           "rows": 0,
@@ -157,23 +157,23 @@
         },
         "app.command_results": {
           "rows": 10,
-          "sha256": "f072192a721927202d9d14d6e8c2aeb052d6ece2241a4c216aff3cc3173390ef"
+          "sha256": "da5c1f8ec38d821a26d197d9b145156be0b88da25c94d5bc89782561312f2592"
         },
         "app.credit_accounts": {
           "rows": 1,
-          "sha256": "9ea59b5ebcd03e61ec6fdd6e71e1db0a2804001f009ab83cf6dab57336930834"
+          "sha256": "f257e3e2357e77286bb0a1771e61cec8f148c68a4a98f0b94c0d58191e866c39"
         },
         "app.credit_allocations": {
           "rows": 4,
-          "sha256": "bf54f60227a9861542c182f63c381fa985b7e8b5a64a366e9c6ebcffcf56c655"
+          "sha256": "a9ef1ccb100ccb06bb8edc6fd1fcaa139d0344999bf1056c3cc2b2f8161a7e97"
         },
         "app.credit_grants": {
           "rows": 1,
-          "sha256": "2a7289f281a66ab5a6195e5ab20b699fca2c0c503222800d9ce3a6a6a07ef4b3"
+          "sha256": "bb3adb96622ff93eb2c71cd6342082156aeb54e0223bf3bee8a8c9a49bdda39f"
         },
         "app.credit_ledger_entries": {
           "rows": 8,
-          "sha256": "3dbb50539ea98319bbcc49d22c3a7540fa5a5cf5a8601e898af2111961686a1f"
+          "sha256": "de93d91e0829ad1ec25ff0b0566209e05bfa10753c05fe12a3ff6f9f03a5f3ca"
         },
         "app.credit_legacy_baselines": {
           "rows": 0,
@@ -181,7 +181,7 @@
         },
         "app.credit_reservations": {
           "rows": 4,
-          "sha256": "f87cde4d6e2b98b58f0f8b1ece0144fc212d2c53e1520ed6fb6d936457834bf3"
+          "sha256": "4a955e6e7c26499b4988e7f34d6344e5740440df44f9e9f9f1731846457bd4af"
         },
         "app.generation_quarantine": {
           "rows": 0,
@@ -189,11 +189,11 @@
         },
         "app.generation_tasks": {
           "rows": 4,
-          "sha256": "d0b404c6e6a4f522bc2179458753161a21bfe1cb7507560c7c1f02089c4c5057"
+          "sha256": "58868c833417dce3c3f5dca4b6e88fe84a0e606865a3d63452ff12585c1cdeb1"
         },
         "app.mail_outbox": {
           "rows": 1,
-          "sha256": "3abc925393185d25a0e91f331603eadeefeabe28dac6af8d7d28f6a82536db4b"
+          "sha256": "19919d2e95fbdf1db256d77022e92949561f2067bae5c533419cf6df65cb1fab"
         },
         "app.operator_recovery_notes": {
           "rows": 0,
@@ -213,7 +213,7 @@
         },
         "app.outbox_events": {
           "rows": 8,
-          "sha256": "e62767a1fe73b4978cbea1a38eb42c7b75d43d4c64a9abccf05bfa509bb9c1aa"
+          "sha256": "9c0cdd559cb4e852b8981c37515451acaac0d76fafdffa31e0e5381637289ac4"
         },
         "app.provider_webhook_inbox": {
           "rows": 0,
@@ -221,31 +221,31 @@
         },
         "app.schema_ownership": {
           "rows": 1,
-          "sha256": "af2f0689b8b8a26d55e3fa2cfda39153f93ed44f0819a41b64b412c1e733caa0"
+          "sha256": "81b31bacf53f3d624ed30cc7f07c9cd2b7182fd19507b171d1daa4be6948fa5e"
         },
         "app.submission_attempts": {
           "rows": 1,
-          "sha256": "6a9129a5cd6714132070528ce388630b4236c238720bddb00a3e5c1e05d66164"
+          "sha256": "5cfa63c217410ee59b961f62412a63005daf889bf424ee73d87416a6ec66d843"
         },
         "app.user_access_controls": {
           "rows": 2,
-          "sha256": "33916bf81c33067d4b6ee68d3e655a79985677102ae8f7ac07545497ff18349a"
+          "sha256": "6614ce22ee2dc372bf1ea8fe66e62de46ac84daeeadaf307d69261e7258eb9cf"
         },
         "app.workspace_invitations": {
           "rows": 1,
-          "sha256": "745424e77cf539ccd38e7e454e1021251ec6b54f1372bde7485771207c46f965"
+          "sha256": "86db667026ff2c9642b8df17964c9b9ba691cede18abdb9fc4d869a76e55b8df"
         },
         "app.workspace_members": {
           "rows": 1,
-          "sha256": "041bd4ee8e6392b10deb1c42f000a6a50d2a9a7171c6450ce14f91f2b32ed260"
+          "sha256": "ea8c9bc51bb738645ab87048680057cb71f3a9df6fbc924417c02afd3a686d2d"
         },
         "app.workspace_setups": {
           "rows": 2,
-          "sha256": "0864e2b33dd4067d499bac1f2b1bd4980514ae061e70d1007c8c481d60fa10a0"
+          "sha256": "4546fad311fc7ee111b533a504e8f5585f98a04897ac9cb2b56a90993c1a740e"
         },
         "app.workspaces": {
           "rows": 1,
-          "sha256": "192e81a722fe505c06feff22f969f61332e4bc2c50fcfd893a142d6feee91b20"
+          "sha256": "19e99a941cc8c8cfbba0a2430c91892f1d72f0862b77ad11cca5dcd26d37d099"
         },
         "drizzle.__drizzle_migrations": {
           "rows": 26,
@@ -253,11 +253,11 @@
         },
         "public.account": {
           "rows": 2,
-          "sha256": "3b2639c7f92af935c2f7083d90f627325afa4db96cdac90ea4e84169d1eecd62"
+          "sha256": "b620f90bbc30eed0b378f5f8a59c0d6c97db31cdf975907f5fabc3c1ec8b1697"
         },
         "public.session": {
           "rows": 1,
-          "sha256": "6718f7c514a2b20a3c405db688ed3fc81630e5427801f649046467a1eba7df5e"
+          "sha256": "cc0d8a2ab5980f87899410bf9ecfdc7e402ad5b978d00119fee8fed4f4f3fdd0"
         },
         "public.two_factor": {
           "rows": 0,
@@ -265,7 +265,7 @@
         },
         "public.user": {
           "rows": 2,
-          "sha256": "49d6bdafcb0b9d14a94cead0983b64afbfbd055833b22d4da343cabae8c5ceb7"
+          "sha256": "32f9b55745696f11e4ad31a600c96523e4d3668da52a095e4001aa06721207d8"
         },
         "public.verification": {
           "rows": 0,
@@ -273,8 +273,8 @@
         }
       },
       "assetFiles": {
-        ".cleanup-cursors/b86f2f0d-29c1-4bf8-9d1f-fc3241e5c669.json": "f755f60a030e4ab480e2f28ad4fd6e31a98c7825bc5cdd6b7b3062a71b12765c",
-        "tasks/552fda9b-c041-40ac-a179-6bd5a3f75e8a/outputs/aa4a4bfa-bf4a-4025-a561-552f76f0b081.mp4": "7ace5deee2697fef232d855ea123d6dd37fd95114ec258b9696ded8163a31b18"
+        ".cleanup-cursors/98e0b278-4a29-45e4-8666-848c22a72aed.json": "f755f60a030e4ab480e2f28ad4fd6e31a98c7825bc5cdd6b7b3062a71b12765c",
+        "tasks/560b065a-1093-458b-845a-8b9ccab95020/outputs/ba3ced73-91eb-459a-b140-2f38ec11ead1.mp4": "7ace5deee2697fef232d855ea123d6dd37fd95114ec258b9696ded8163a31b18"
       },
       "checks": {
         "backupCatalog": "PASS",
@@ -314,5 +314,5 @@
     "web-restarted": "internal/evidence/m8/local-demo/local-candidate-20261007-completion/web-restarted.log",
     "worker-restarted": "internal/evidence/m8/local-demo/local-candidate-20261007-completion/worker-restarted.log"
   },
-  "completedAt": "2026-10-24T14:24:27.261Z"
+  "completedAt": "2026-10-26T03:43:37.240Z"
 }

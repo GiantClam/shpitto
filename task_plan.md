@@ -159,3 +159,34 @@ User authorized exactly one 720p/81-frame/16-FPS Fal T2V request with reference 
 ## 2026-10-13 Authorized One-Shot Verification Complete
 
 Exactly one Fal T2V create was accepted and never retried. Confirmed the account only from the signed, persisted-request callback, then bound both Railway services. Real worker/R2 publication, one seeded reservation consumption, HTTP authorization, scheduled fresh-fixture cleanup and restart retention passed. Worker is paused/create-disabled with effective scope unassigned. Full M4 remains open: current candidate digests are stale and the complete matrix/hosted-runner/whole-stage review is not asserted. Do not issue another paid create under this consumed authorization.
+
+## 2026-10-26 Acceptance Gate Continuation
+
+### Objective
+
+Apply the evidence-first workflow to the remaining M4-M8 work: run available automated checks, exercise authorized hosted Acceptance paths without live money, write complete explanation packages, and recommend a human decision without asking reviewers to rerun tests.
+
+### Scope
+
+- M4 / task 5.10: refresh current automated and hosted worker evidence without another paid provider create.
+- M5 / task 6.10: extend authenticated hosted Stripe test evidence; keep missing lifecycle/refund/dispute/webhook scenarios visible.
+- M6 / task 7.14: run local and hosted-safe operations checks; record FirstPromoter and hosted settlement as external blockers if unavailable.
+- M7 / task 8.15: verify governed skills, customization workflows, provenance and documentation against predecessor status.
+- M8 / tasks 9.13-9.15: verify release/export/deployment prerequisites and record commercial and exact-candidate blockers.
+
+### Execution phases
+
+1. Inventory current gate records, queue entries, scripts and dependency edges.
+2. Run independent local checks in parallel and capture exit codes and output references.
+3. Run authorized hosted checks sequentially where the Acceptance environment supports them; do not use live keys, real funds or another paid provider create.
+4. Create or update one evidence packet per gate with automated explanations, missing-claim blockers and human decision options.
+5. Regenerate the final manual acceptance queue and verify that recommendations match the evidence.
+6. Review the diff, run focused regression checks, commit using the Lore protocol and report remaining external/manual work.
+
+### Completion rule
+
+An automated PASS proves only the recorded scope. A gate remains `IN_PROGRESS` when a mandatory scenario, external account, exact release digest, independent review or integration decision is missing. Human reviewers choose `PASS`, `FAIL` or `RETURN_FOR_EVIDENCE` from the package; they do not rerun tests as a substitute for evidence review.
+
+### Current phase
+
+Phase 1: complete. Phases 2-6 completed for automated evidence continuation; external inputs and independent human decisions remain open by design.
