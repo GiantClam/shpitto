@@ -93,7 +93,9 @@ try {
   for(const call of [listAffiliateReviews,listAffiliateHolds]) for(const input of [{page:10001},{pageSize:0},{status:'invalid'}]) await assert.rejects(()=>call(db,support,input),code('VALIDATION'));
   assert.equal((await readAffiliateAdminStatus(db,support)).integrationStatus,'disabled');
   await db.update(affiliateSettings).set({enabled:'enabled',accountId:'local',programId:'local',accountCheckpointAt:now}).where(eq(affiliateSettings.id,'default'));
-  assert.equal((await readAffiliateAdminStatus(db,support)).integrationStatus,'unavailable','Configuration cannot fabricate a live provider integration.');
+  const configuredStatus=await readAffiliateAdminStatus(db,support);
+  assert.equal(configuredStatus.integrationStatus,'pending','Configuration without provider readback must remain pending.');
+  assert.equal(configuredStatus.accountSyncStatus,'pending','Configuration cannot fabricate a successful provider sync.');
   await db.update(operatorRoles).set({revokedAt:now}).where(eq(operatorRoles.userId,'support'));
   await assert.rejects(()=>listAffiliateReviews(db,support),code('FORBIDDEN'));
   console.log(JSON.stringify({status:'PASS',groups:7,checks:['live role isolation','redacted bounded user filters','workspace filters and audited tenant access','redacted billing and generation projections','audit payload exclusion','affiliate pagination/status/version projections','disabled/unavailable provider visibility and immediate role revocation']}));

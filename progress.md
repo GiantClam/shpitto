@@ -107,3 +107,18 @@ Current development candidate fingerprints for M4, M5 and M6 were recaptured fro
 14. Added a disposable local referral-handler probe for FPR-only input, server-side promoter resolution, HttpOnly cookie issuance, disabled mode and mid-request configuration changes; it passes.
 15. Recorded remaining M6 boundaries: affiliate settings still disabled, native Stripe test tracking connected, PayPal payout method enabled, and Stripe canonical order history not yet composed into affiliate reconciliation.
 16. Added and tested the canonical Stripe history reader used by the configured affiliate authority; it fails closed on incomplete or mismatched payment history and never treats FirstPromoter commissions as billing history.
+
+## 2026-10-27 Acceptance Manual Handoff
+
+1. Started the local Next.js application on `http://127.0.0.1:3000`; `/api/healthz` returned HTTP 200 with `status=ready`, `profile=local` and `database=ready`.
+2. Confirmed the hosted Acceptance origin is `https://shpitto-m4-web-production.up.railway.app` and opened its login page for the operator.
+3. Manual Superadmin sign-in and 2FA remain pending. Credentials and one-time codes must be entered by the operator directly in the visible browser session; no secret values are recorded in evidence.
+
+## 2026-10-28 Acceptance Continuation
+
+1. Re-ran M5 local billing schema, Checkout and reconciliation probes: 49, 10 and 18 cases passed.
+2. Re-ran Stripe Checkout, reconciliation, refund and inbox integration suites: 67/67 tests passed after starting the dedicated disposable PostgreSQL fixture on port 55433.
+3. Re-ran M6 operations, admin reads, privileged, MFA, recovery, affiliate database, race, cash/dispute, notification and referral probes; all passed on disposable Docker PostgreSQL.
+4. Corrected the admin-read probe to assert the actual fail-closed `pending` provider state instead of incorrectly expecting `unavailable` after configuration without a successful provider checkpoint.
+5. Selected the existing verified Acceptance owner identity and applied the audited one-time Superadmin bootstrap. Password and second-factor evidence remain operator-owned.
+6. Added `internal/evidence/acceptance/continuation-20261028/` with automated explanations and human decision recommendations. M4, M5 and M6 remain partial until the named hosted and independent evidence is reviewed.
