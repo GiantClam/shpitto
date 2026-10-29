@@ -301,6 +301,7 @@
       "evidenceRecordRefs": [
         "internal/evidence/acceptance/M5/m5-current-20261029/record.json",
         "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
         "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/record.json",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
@@ -324,7 +325,7 @@
         "integratorDecision": "NOT_RUN",
         "integratorId": null,
         "decidedAt": null,
-        "reason": "Fixture-only local billing probes were rerun at 2026-10-29T05:39Z. Schema, Checkout, reconciliation, fake-provider Stripe Checkout, reconciliation, inbox, and billing presentation passed. An aipc Docker Postgres fixture archive records additional credit and billing probe exits of 0 and does not close M5. Stripe refunds integration remains 21 pass and 1 fail and is not PASS. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. Hosted Stripe acceptance, live charges, FirstPromoter and independent review remain open. Current M3 applicability is STALE.",
+        "reason": "Fixture-only local billing probes were rerun at 2026-10-29T05:39Z. Schema, Checkout, reconciliation, fake-provider Stripe Checkout, reconciliation, inbox, and billing presentation passed. An aipc Docker Postgres fixture archive records additional credit and billing probe exits of 0 and does not close M5. Stripe refunds integration remains 21 pass and 1 fail and is not PASS. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. The hosted Stripe test-mode acceptance-pack embedded payment is PASS_paid_and_reconciled at internal/evidence/acceptance/stripe-test-pack-20261029/ and does not close M5. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live charges, FirstPromoter, and independent review remain open. Current M3 applicability is STALE.",
         "taskReviewRef": "internal/evidence/acceptance/M5/m5-current-20261029/record.json",
         "recordRef": "internal/evidence/acceptance/M5/m5-current-20261029/record.json"
       }
