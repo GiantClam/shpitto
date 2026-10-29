@@ -7,6 +7,8 @@ RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 COPY src ./src
 COPY scripts/migrate.ts scripts/provider-worker.ts scripts/provider-worker-runtime.mjs scripts/provider-worker-preflight.ts ./scripts/
 COPY scripts/probe-provider-acceptance.ts ./scripts/probe-provider-acceptance.ts
+COPY scripts/probe-write-b64-file.ts ./scripts/probe-write-b64-file.ts
+COPY scripts/probe-fal-account-bootstrap.ts ./scripts/probe-fal-account-bootstrap.ts
 COPY scripts/probe-worker-recovery-acceptance.ts ./scripts/probe-worker-recovery-acceptance.ts
 COPY tests/integration/provider-worker.test.ts ./tests/integration/provider-worker.test.ts
 COPY tests/fixtures/video/local-demo.mp4 ./tests/fixtures/video/local-demo.mp4

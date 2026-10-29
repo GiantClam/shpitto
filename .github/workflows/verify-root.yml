@@ -17,7 +17,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: pnpm
       - name: Enable pnpm 12
         run: corepack enable
       - name: Install the frozen root

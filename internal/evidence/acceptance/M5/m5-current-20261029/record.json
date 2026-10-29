@@ -8,7 +8,7 @@
   "status": "IN_PROGRESS",
   "candidateId": "m5-current-20261029",
   "createdAt": "2026-10-29T04:05:00.000Z",
-  "updatedAt": "2026-10-29T08:24:57.549Z",
+  "updatedAt": "2026-10-29T15:03:09.780Z",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
     "sha256": "3e31e7cb16379171305c558b80dddb930b26fbfa46147cc0d5c6aa319ef64a40"
@@ -26,14 +26,14 @@
     }
   ],
   "candidate": {
-    "capturedAt": "2026-10-29T07:44:34.564Z",
-    "sourceCommit": "f59f1f094dab084374331de9ad2b7a6fb7ed081e",
+    "capturedAt": "2026-10-29T15:03:09.780Z",
+    "sourceCommit": "9c90026af539680c703bc5c91fb69258bb3042b7",
     "dirtyPatchSha256": null,
-    "sourceTreeSha256": "bf491d2dfb3c6260e89a4db2c07220cef98fa4ac3e162d9890a085c6294532ca",
+    "sourceTreeSha256": "0b0f0b6ae0c0e0ed45baaa7f3ecdedc325923edaa31c6c340817b789bfa6f045",
     "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
-    "configurationSha256": "ce96987b2cd7fb4821f36de2e05ba80455a37b566d77ca343f9320d55e56bb59",
-    "contractSha256": "6acfb80fc1a8d6b4dc0f699f1c3d5280a0b44905c1eff6a0b199c19adad601ac",
-    "validatorSha256": "75f77bdd963c83e06ad2c1b8033838d3c38bd0726c06b8bd383ad462a9e47a73",
+    "configurationSha256": "00880866584cbf06cfacfe0f774f35c7a36d3b8339fc3e3146e34dd007638c58",
+    "contractSha256": "64a37e1dc089372f0177d144ea8f2f2489c4a0ba3e75abe5bd6adc215f14514b",
+    "validatorSha256": "af945003119ea9722efe3093818cbe31bdc3c6a4a2f47cebc8783595fbc164b9",
     "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
     "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
     "digestInputs": {
@@ -130,7 +130,7 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. Owner-command replay, authenticated billing UI, the $25 subscription, refunds, and live charges were not run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
+      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md. Sign-in is /login and /sign-in is 404. The page shows account active, one paid credit pack at USD 9.00, 250 credits available, zero subscriptions, and Recovery Clear. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md. The member signed in via /login. The billing page shows Billing unavailable and that the view is restricted to the current workspace owner, with no cash or credit controls. Mobile layout, refund-command replay, the $25 subscription, and live charges were not closed. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
@@ -155,7 +155,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -163,7 +167,7 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. Owner-command replay, authenticated billing UI, the $25 subscription, refunds, and live charges were not run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
+      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md. Sign-in is /login and /sign-in is 404. The page shows account active, one paid credit pack at USD 9.00, 250 credits available, zero subscriptions, and Recovery Clear. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md. The member signed in via /login. The billing page shows Billing unavailable and that the view is restricted to the current workspace owner, with no cash or credit controls. Mobile layout, refund-command replay, the $25 subscription, and live charges were not closed. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
@@ -188,7 +192,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -196,7 +204,7 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. Owner-command replay, authenticated billing UI, the $25 subscription, refunds, and live charges were not run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
+      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md. Sign-in is /login and /sign-in is 404. The page shows account active, one paid credit pack at USD 9.00, 250 credits available, zero subscriptions, and Recovery Clear. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md. The member signed in via /login. The billing page shows Billing unavailable and that the view is restricted to the current workspace owner, with no cash or credit controls. Mobile layout, refund-command replay, the $25 subscription, and live charges were not closed. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
@@ -221,7 +229,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -229,7 +241,7 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. Owner-command replay, authenticated billing UI, the $25 subscription, refunds, and live charges were not run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
+      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md. Sign-in is /login and /sign-in is 404. The page shows account active, one paid credit pack at USD 9.00, 250 credits available, zero subscriptions, and Recovery Clear. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md. The member signed in via /login. The billing page shows Billing unavailable and that the view is restricted to the current workspace owner, with no cash or credit controls. Mobile layout, refund-command replay, the $25 subscription, and live charges were not closed. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
@@ -254,7 +266,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -262,7 +278,7 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. Owner-command replay, authenticated billing UI, the $25 subscription, refunds, and live charges were not run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
+      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md. Sign-in is /login and /sign-in is 404. The page shows account active, one paid credit pack at USD 9.00, 250 credits available, zero subscriptions, and Recovery Clear. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md. The member signed in via /login. The billing page shows Billing unavailable and that the view is restricted to the current workspace owner, with no cash or credit controls. Mobile layout, refund-command replay, the $25 subscription, and live charges were not closed. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
@@ -287,7 +303,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     }
   ],
@@ -320,7 +340,7 @@
       "standard": "complete-stage-evidence",
       "applicable": true,
       "result": "BLOCKED",
-      "assertions": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. Owner-command replay, authenticated billing UI, the $25 subscription, refunds, and live charges were not run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
+      "assertions": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. The hosted Stripe test-mode acceptance-pack path is PASS_paid_and_reconciled (embedded Checkout, livemode false, 900 cents, 250 credits) and is archived at internal/evidence/acceptance/stripe-test-pack-20261029/. Hosted Checkout Session URLs are not PASS. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md. Sign-in is /login and /sign-in is 404. The page shows account active, one paid credit pack at USD 9.00, 250 credits available, zero subscriptions, and Recovery Clear. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md. The member signed in via /login. The billing page shows Billing unavailable and that the view is restricted to the current workspace owner, with no cash or credit controls. Mobile layout, refund-command replay, the $25 subscription, and live charges were not closed. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
         "internal/evidence/acceptance/M5/m5-current-20261029/digest-delta.json",
@@ -348,7 +368,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/billing-checkout.log",
@@ -358,7 +378,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -367,7 +391,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/billing-checkout.log",
@@ -377,7 +401,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -386,7 +414,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "The observed unmapped test subscription has no known local customer or subscription match and was left unchanged; the full required subscription-recovery scenario remains blocked. The scenario remains BLOCKED for full M5 acceptance. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "The observed unmapped test subscription has no known local customer or subscription match and was left unchanged; the full required subscription-recovery scenario remains blocked. The scenario remains BLOCKED for full M5 acceptance. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json",
@@ -396,7 +424,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -405,7 +437,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-checkout.log",
@@ -414,7 +446,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -423,7 +459,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json",
@@ -433,7 +469,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -442,7 +482,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
@@ -451,7 +491,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -460,7 +504,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
@@ -470,7 +514,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -479,7 +527,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-checkout.log",
@@ -488,7 +536,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -497,7 +549,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
@@ -506,7 +558,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -515,7 +571,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
@@ -524,7 +580,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -533,7 +593,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Existing Stripe test-mode subscription and pack objects map to one paid order/grant each; this is partial purchase evidence, not a full lifecycle profile. The scenario remains BLOCKED for full M5 acceptance. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Existing Stripe test-mode subscription and pack objects map to one paid order/grant each; this is partial purchase evidence, not a full lifecycle profile. The scenario remains BLOCKED for full M5 acceptance. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json",
@@ -544,7 +604,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -553,7 +617,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
@@ -562,7 +626,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -571,7 +639,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json",
@@ -580,7 +648,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -589,7 +661,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json",
@@ -598,7 +670,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -607,7 +683,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
@@ -616,7 +692,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -625,7 +705,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
@@ -634,7 +714,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -643,7 +727,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
@@ -652,7 +736,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -661,7 +749,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "The full-unused test refund succeeded once and voided only its 250-credit grant; other refund and dispute profiles remain open. The scenario remains BLOCKED for full M5 acceptance. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "The full-unused test refund succeeded once and voided only its 250-credit grant; other refund and dispute profiles remain open. The scenario remains BLOCKED for full M5 acceptance. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-database-readback.json",
@@ -672,7 +760,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -681,7 +773,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
@@ -691,7 +783,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -700,7 +796,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
@@ -709,7 +805,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -718,7 +818,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-database-readback.json",
@@ -728,7 +828,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -737,7 +841,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
@@ -746,7 +850,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -755,7 +863,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/billing-reconciliation.log",
@@ -764,7 +872,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -773,7 +885,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
@@ -783,7 +895,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -792,7 +908,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/billing-reconciliation.log",
@@ -801,7 +917,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -810,7 +930,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "The confirmed owner refund command replay returned the persisted request with zero provider calls; authenticated browser UI evidence remains open. The scenario remains BLOCKED for full M5 acceptance. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "The confirmed owner refund command replay returned the persisted request with zero provider calls; authenticated browser UI evidence remains open. The scenario remains BLOCKED for full M5 acceptance. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-command-replay.json",
@@ -821,7 +941,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -830,7 +954,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-ui-observation.md",
@@ -839,7 +963,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     },
     {
@@ -848,7 +976,7 @@
       ],
       "mandatory": true,
       "result": "BLOCKED",
-      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. Hosted Checkout Session URLs, owner-command replay, authenticated billing UI, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not run and remain outside this result.",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. The hosted Stripe test-mode acceptance-pack embedded payment and post-pay readback are recorded at internal/evidence/acceptance/stripe-test-pack-20261029/ and do not close this scenario. The signed-in owner billing page is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md and does not close this scenario. The member billing denial is recorded at internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md and does not close this scenario. Hosted Checkout Session URLs, mobile layout, refund-command replay, the $25 subscription, refunds, live Stripe charges, FirstPromoter account settlement and current M3 equivalence were not closed and remain outside this result.",
       "evidenceRefs": [
         "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-command-replay.json",
@@ -857,7 +985,11 @@
         "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
         "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
         "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+        "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
       ]
     }
   ],
@@ -1243,17 +1375,18 @@
       "Hosted Checkout Session URLs, the $25 subscription, refunds, owner-command replay, and authenticated billing UI remain open. The 2026-10-29 acceptance-pack embedded test-mode payment is PASS_paid_and_reconciled and does not close M5. The M4 four-path rows and recovery drill do not close M5.",
       "Repair or explicitly reclassify the local Stripe refund step-up failure before claiming that suite.",
       "Real FirstPromoter account and hosted settlement evidence.",
+      "Recompute owned-module branch coverage on this digest before a coverage PASS claim.",
       "Recompute owned-module branch coverage on this digest before a coverage PASS claim."
     ],
     "carriedEvidence": []
   },
   "candidateRefresh": {
-    "capturedAt": "2026-10-29T07:44:34.564Z",
+    "capturedAt": "2026-10-29T15:03:09.780Z",
     "candidateId": "m5-current-20261029",
-    "source": "node scripts/candidate-digests.mjs",
+    "source": "GitHub PR merge-ref archive capture using scripts/candidate-digests.mjs canonical digest inputs",
     "status": "CURRENT_BYTES_CAPTURED_IN_PROGRESS",
     "fullStageAcceptance": false,
-    "sourceCommit": "f59f1f094dab084374331de9ad2b7a6fb7ed081e"
+    "sourceCommit": "9c90026af539680c703bc5c91fb69258bb3042b7"
   },
   "commandEvidenceApplicability": {
     "currentExecutionCommandIds": [
@@ -1280,14 +1413,15 @@
     "notRerun": [
       "authentic-provider-matrix",
       "owner-command-replay",
-      "billing-ui",
       "firstpromoter-account",
       "owned-module-coverage",
       "current-m3-equivalence",
       "hosted-checkout-session-url",
       "stripe-test-subscription",
       "hosted-stripe-refund",
-      "live-stripe"
+      "live-stripe",
+      "mobile-billing-layout",
+      "refund-command-replay"
     ]
   },
   "limitations": [
@@ -1298,7 +1432,10 @@
     "The 2026-10-29T05:39Z local Stripe refunds suite is a retained failure (21 pass, 1 fail), not a PASS command. No live Stripe charge was made.",
     "An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
     "The server-side email auth Turnstile request gate in src/lib/auth.ts moved sourceTree and validator digests. A focused unit test covers sign-up without an HTTP request when Turnstile is disabled, and still requires a request and token when Turnstile is enabled. Retained command logs from source tree 03a98cc01995e498df99f181b887c687d1ab5e05c90c86a91819ecb9b35005aa were not re-executed for this fix. This does not close the stage, enable acceptance bootstrap, or change Stripe live/test policy. Acceptance bootstrap was turned off after the 2026-10-29 test-mode payment.",
-    "The 2026-10-29 Stripe test-mode acceptance-pack payment is PASS_paid_and_reconciled for the embedded Checkout path only. Hosted Checkout Session URLs opened an incomplete link. The billing-return screenshot is a signed-out page and does not prove the billing UI. No live charge, $25 subscription, refund, or FirstPromoter write is claimed. SHPITTO_ACCEPTANCE_BOOTSTRAP_ENABLED and RESEED were off after pay. BILLING_DRIVER stayed stripe_test. This does not close M5."
+    "The 2026-10-29 Stripe test-mode acceptance-pack payment is PASS_paid_and_reconciled for the embedded Checkout path only. Hosted Checkout Session URLs opened an incomplete link. The billing-return screenshot is a signed-out page and does not prove the billing UI. No live charge, $25 subscription, refund, or FirstPromoter write is claimed. SHPITTO_ACCEPTANCE_BOOTSTRAP_ENABLED and RESEED were off after pay. BILLING_DRIVER stayed stripe_test. This does not close M5.",
+    "The signed-in owner billing page for workspace 88e1b0a0-a097-4a8c-b274-f5b8f0ab80d1 is recorded. Sign-in uses /login; /sign-in returns 404. The page shows account active, one paid credit pack at USD 9.00, 250 credits available, zero subscriptions, and Recovery Clear. It does not close member-denial UI, mobile layout, refund-command replay, or M5.",
+    "The member billing denial for workspace 88e1b0a0-a097-4a8c-b274-f5b8f0ab80d1 is recorded. The member signed in via /login. The page shows Billing unavailable and that the view is restricted to the current workspace owner, with no cash or credit controls. It does not close mobile layout, refund-command replay, or M5.",
+    "Candidate digest refreshed after CI and OpenSpec verification tooling changes. This development record remains IN_PROGRESS and does not constitute stage approval."
   ],
   "localFixtureRerun": {
     "closesStage": false,
@@ -1497,11 +1634,14 @@
       "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
       "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
       "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-      "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+      "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+      "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+      "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+      "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+      "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md"
     ],
     "notProven": [
       "hosted Checkout Session URL",
-      "authenticated billing UI",
       "owner-command replay",
       "$25 subscription",
       "refunds",
@@ -1509,7 +1649,50 @@
       "FirstPromoter",
       "M5 stage approval",
       "M7",
-      "M8"
-    ]
+      "M8",
+      "mobile billing layout",
+      "refund-command replay"
+    ],
+    "ownerBillingUi": {
+      "status": "RECORDED",
+      "closesStage": false,
+      "signInPath": "/login",
+      "signInAlias": {
+        "path": "/sign-in",
+        "httpStatus": 404
+      },
+      "url": "https://shpitto-m4-web-production.up.railway.app/workspaces/88e1b0a0-a097-4a8c-b274-f5b8f0ab80d1/billing",
+      "accountStatus": "active",
+      "orders": 1,
+      "orderLabel": "Credit pack paid",
+      "cashPaid": "USD 9.00",
+      "cashRefunded": "USD 0.00",
+      "grantsAvailable": 250,
+      "subscriptions": 0,
+      "recovery": "Clear",
+      "screenshot": "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-owner-signed-in.png",
+      "note": "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+      "notClosed": [
+        "mobile layout",
+        "refund-command replay",
+        "M5 stage PASS"
+      ]
+    },
+    "memberBillingDenial": {
+      "status": "RECORDED",
+      "closesStage": false,
+      "signInPath": "/login",
+      "url": "https://shpitto-m4-web-production.up.railway.app/workspaces/88e1b0a0-a097-4a8c-b274-f5b8f0ab80d1/billing",
+      "heading": "Billing unavailable",
+      "message": "This billing view is restricted to the current workspace owner.",
+      "cashOrCreditControls": false,
+      "screenshot": "internal/evidence/acceptance/stripe-test-pack-20261029/billing-ui-member-denied.png",
+      "note": "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md",
+      "notClosed": [
+        "mobile layout",
+        "refund-command replay",
+        "M5 stage PASS"
+      ]
+    }
   }
 }
