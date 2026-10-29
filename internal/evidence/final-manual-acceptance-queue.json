@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "queueKind": "FINAL_MANUAL_ACCEPTANCE_QUEUE",
-  "generatedAt": "2026-10-29T04:08:12.961Z",
+  "generatedAt": "2026-10-29T04:57:06.550Z",
   "checkpointId": "M8-STABLE",
   "policy": "Automated evidence produces a complete explanation package and may advance as READY_FOR_REVIEW. Human reviewers choose PASS, FAIL or RETURN_FOR_EVIDENCE from that package; they do not rerun tests as a substitute for reviewing evidence. Independent review and integration decisions are accumulated here and are the only manual stage-acceptance actions required before final PASS.",
   "entries": [
@@ -7579,8 +7579,16 @@
               "pnpm": "12.6.0",
               "postgres": "16.15"
             },
-            "limits": "Local checks plus, for M4 only, unauthenticated hosted health reads. No paid provider create and no live Stripe charge.",
+            "limits": "These local commands performed no paid provider create and no live Stripe charge. The later hosted four-path create is recorded as a separate environment.",
             "setupStatus": "PASS"
+          },
+          {
+            "environmentId": "m4-hosted-four-path-20261029",
+            "profile": "Railway worker shpitto-m4-worker, production. One controlled paid POST for each of the four generation paths.",
+            "commercialCalls": true,
+            "fixtureOrSeed": "Supplied run-control facts and retained per-path verify JSON. Provider secrets are not stored in this record.",
+            "limits": "Prepare and submit used SHPITTO_PROVIDER_WORKER_STATE=paused and ALLOW_CREATE=false. Settle and verify used STATE=active, ALLOW_CREATE=false, and WORKSPACE_ID pinned to that path workspace. After all four paths, STATE=paused and ALLOW_CREATE=false; healthz confirmed state=paused and createsEnabled=false. Provider cost status is UNKNOWN.",
+            "setupStatus": "RECORDED"
           }
         ],
         "criteria": [
@@ -7593,7 +7601,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The four authentic provider rows, hosted callback/recovery drill and independent whole-stage review were not re-run.",
+            "observed": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Point-in-time public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The 2026-10-29 hosted four-path create/settle/verify on Railway worker shpitto-m4-worker (production) is recorded in hostedFourPathCreate: one paid POST per path, stage verified, task succeeded, reservation consumed, quoted credits 10, private hash PASS, owner HTTP 200, outsider/wrong/expired token 403, authenticated account callback true, and provider cost status UNKNOWN. The fal T2V file stores task success under taskSuatus. After all four paths the worker was returned to STATE=paused and ALLOW_CREATE=false, and healthz confirmed state=paused and createsEnabled=false. The four success rows are recorded. This criterion stays BLOCKED because independent whole-stage review was not run and the retained files do not confirm provider dollar cost.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -7603,7 +7611,11 @@
               "internal/evidence/acceptance/M4/m4-current-20261029/logs/frozen-lock-install.log",
               "internal/evidence/acceptance/M4/m4-current-20261029/logs/typecheck.log",
               "internal/evidence/acceptance/M4/m4-current-20261029/logs/lint.log",
-              "internal/evidence/acceptance/M4/m4-current-20261029/logs/format-check.log"
+              "internal/evidence/acceptance/M4/m4-current-20261029/logs/format-check.log",
+              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-t2v_6e3d.json",
+              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/fal-wan22-t2v_68bb.json",
+              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/fal-wan22-i2v_bda3.json",
+              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-i2v_ee33.json"
             ]
           },
           {
@@ -7615,7 +7627,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The four authentic provider rows, hosted callback/recovery drill and independent whole-stage review were not re-run.",
+            "observed": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Point-in-time public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The 2026-10-29 hosted four-path create/settle/verify on Railway worker shpitto-m4-worker (production) is recorded in hostedFourPathCreate: one paid POST per path, stage verified, task succeeded, reservation consumed, quoted credits 10, private hash PASS, owner HTTP 200, outsider/wrong/expired token 403, authenticated account callback true, and provider cost status UNKNOWN. The fal T2V file stores task success under taskSuatus. After all four paths the worker was returned to STATE=paused and ALLOW_CREATE=false, and healthz confirmed state=paused and createsEnabled=false. Authenticated account callbacks are recorded for each path. Forged, stale, and wrong-account callback failures, and duplicate or reordered financial idempotence, were not re-run. This criterion stays BLOCKED.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -7625,7 +7637,11 @@
               "internal/evidence/acceptance/M4/m4-current-20261029/logs/frozen-lock-install.log",
               "internal/evidence/acceptance/M4/m4-current-20261029/logs/typecheck.log",
               "internal/evidence/acceptance/M4/m4-current-20261029/logs/lint.log",
-              "internal/evidence/acceptance/M4/m4-current-20261029/logs/format-check.log"
+              "internal/evidence/acceptance/M4/m4-current-20261029/logs/format-check.log",
+              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-t2v_6e3d.json",
+              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/fal-wan22-t2v_68bb.json",
+              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/fal-wan22-i2v_bda3.json",
+              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-i2v_ee33.json"
             ]
           },
           {
@@ -7637,7 +7653,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The four authentic provider rows, hosted callback/recovery drill and independent whole-stage review were not re-run.",
+            "observed": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Point-in-time public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The 2026-10-29 hosted four-path create/settle/verify on Railway worker shpitto-m4-worker (production) is recorded in hostedFourPathCreate: one paid POST per path, stage verified, task succeeded, reservation consumed, quoted credits 10, private hash PASS, owner HTTP 200, outsider/wrong/expired token 403, authenticated account callback true, and provider cost status UNKNOWN. The fal T2V file stores task success under taskSuatus. After all four paths the worker was returned to STATE=paused and ALLOW_CREATE=false, and healthz confirmed state=paused and createsEnabled=false. Each retained row records automaticRetry false. Probe, deadline, and alert configuration, and an independent sweep or lease recovery drill, were not re-verified. This criterion stays BLOCKED.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -7647,7 +7663,11 @@
               "internal/evidence/acceptance/M4/m4-current-20261029/logs/frozen-lock-install.log",
               "internal/evidence/acceptance/M4/m4-current-20261029/logs/typecheck.log",
               "internal/evidence/acceptance/M4/m4-current-20261029/logs/lint.log",
-              "internal/evidence/acceptance/M4/m4-current-20261029/logs/format-check.log"
+              "internal/evidence/acceptance/M4/m4-current-20261029/logs/format-check.log",
+              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-t2v_6e3d.json",
+              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/fal-wan22-t2v_68bb.json",
+              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/fal-wan22-i2v_bda3.json",
+              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-i2v_ee33.json"
             ]
           },
           {
@@ -7659,7 +7679,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The four authentic provider rows, hosted callback/recovery drill and independent whole-stage review were not re-run.",
+            "observed": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Point-in-time public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The 2026-10-29 hosted four-path create/settle/verify on Railway worker shpitto-m4-worker (production) is recorded in hostedFourPathCreate: one paid POST per path, stage verified, task succeeded, reservation consumed, quoted credits 10, private hash PASS, owner HTTP 200, outsider/wrong/expired token 403, authenticated account callback true, and provider cost status UNKNOWN. The fal T2V file stores task success under taskSuatus. After all four paths the worker was returned to STATE=paused and ALLOW_CREATE=false, and healthz confirmed state=paused and createsEnabled=false. Storage-failure, expired-output, stale-acknowledgement, and late-after-refund fault suites, and a controlled restart or recovery drill, were not re-verified. Recovery-monitor ready output was not re-read. This criterion stays BLOCKED.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -7669,7 +7689,11 @@
               "internal/evidence/acceptance/M4/m4-current-20261029/logs/frozen-lock-install.log",
               "internal/evidence/acceptance/M4/m4-current-20261029/logs/typecheck.log",
               "internal/evidence/acceptance/M4/m4-current-20261029/logs/lint.log",
-              "internal/evidence/acceptance/M4/m4-current-20261029/logs/format-check.log"
+              "internal/evidence/acceptance/M4/m4-current-20261029/logs/format-check.log",
+              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-t2v_6e3d.json",
+              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/fal-wan22-t2v_68bb.json",
+              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/fal-wan22-i2v_bda3.json",
+              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-i2v_ee33.json"
             ]
           }
         ],
@@ -7714,13 +7738,17 @@
             "result": "BLOCKED",
             "expected": null,
             "observed": null,
-            "assertions": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The four authentic provider rows, hosted callback/recovery drill and independent whole-stage review were not re-run.",
+            "assertions": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Point-in-time public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The 2026-10-29 hosted four-path create/settle/verify on Railway worker shpitto-m4-worker (production) is recorded in hostedFourPathCreate: one paid POST per path, stage verified, task succeeded, reservation consumed, quoted credits 10, private hash PASS, owner HTTP 200, outsider/wrong/expired token 403, authenticated account callback true, and provider cost status UNKNOWN. The fal T2V file stores task success under taskSuatus. After all four paths the worker was returned to STATE=paused and ALLOW_CREATE=false, and healthz confirmed state=paused and createsEnabled=false. Complete stage evidence stays BLOCKED. The recovery drill, negative callback and financial-idempotence cases, deadline and sweep configuration, recovery-monitor ready output, owned-module coverage, current M3 equivalence, and independent review remain open.",
             "commandRef": null,
             "iteration": null,
             "seed": null,
             "evidenceRefs": [
               "internal/evidence/acceptance/M4/m4-current-20261029/README.md",
-              "internal/evidence/acceptance/M4/m4-current-20261029/digest-delta.json"
+              "internal/evidence/acceptance/M4/m4-current-20261029/digest-delta.json",
+              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-t2v_6e3d.json",
+              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/fal-wan22-t2v_68bb.json",
+              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/fal-wan22-i2v_bda3.json",
+              "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261029/replicate-wan22-i2v_ee33.json"
             ]
           }
         ],

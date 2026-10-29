@@ -270,7 +270,7 @@
         "integratorId": null,
         "decidedAt": null,
         "recordRef": "internal/evidence/acceptance/M4/m4-current-20261029/record.json",
-        "reason": "Current-candidate local verification was rerun and rebound. Hosted provider, Stripe acceptance, FirstPromoter and independent review remain open. Current M3 applicability is STALE."
+        "reason": "Current-candidate local verification was rerun and rebound. The 2026-10-29 hosted four-path create/settle/verify is recorded and does not close M4. Hosted recovery, negative callback and financial idempotence, deadline and sweep evidence, recovery-monitor ready output, Stripe acceptance, FirstPromoter and independent review remain open. Provider cost is UNKNOWN. Current M3 applicability is STALE."
       }
     },
     {
