@@ -263,6 +263,31 @@ test('portal refuses proration and validates returned customer/configuration/ret
   }
 });
 
+function stripeJsClientSecret(sessionId: string, payload: Readonly<Record<string, string>>): string {
+  const json = JSON.stringify(payload);
+  const padded = json + ' '.repeat(3 - (json.length % 3));
+  let encoded = '';
+  for (const char of padded) encoded += String.fromCharCode(5 ^ char.charCodeAt(0));
+  return `${sessionId}_secret_${encodeURIComponent(btoa(encoded))}`;
+}
+
+test('embedded Checkout accepts the percent-encoded client secret Stripe.js mounts', async () => {
+  const {client, adapter} = harness();
+  const secret = stripeJsClientSecret('cs_test_UnitSession', {uiMode: 'embedded_page', redirectOnCompletion: 'always', apiKey: 'pk_test_51Unit', marker: '0'});
+  assert.match(secret, /%(?:2B|2F|3D)/i);
+  client.checkout.sessions.create = async () => ({...session(), client_secret: secret});
+  const created = await adapter().createCheckout(checkoutInput());
+  assert.equal(created.status, 'succeeded');
+  if (created.status === 'succeeded') assert.equal(created.value.clientSecret, secret);
+  client.checkout.sessions.retrieve = async () => ({...session(), client_secret: secret});
+  const read = await adapter().retrieveCheckout({...checkoutInput(), sessionId: 'cs_test_UnitSession'});
+  assert.equal(read.status, 'succeeded');
+  for (const clientSecret of ['cs_test_UnitSession_secret_A', 'cs_test_UnitSession_secret_%00', 'cs_test_UnitSession_secret_bad suffix', `cs_test_Other_secret_${secret.split('_secret_')[1]}`]) {
+    client.checkout.sessions.create = async () => ({...session(), client_secret: clientSecret});
+    assert.equal((await adapter().createCheckout(checkoutInput())).status, 'failed', clientSecret);
+  }
+});
+
 test('historical hosted Checkout can be read back without becoming an embedded client secret', async () => {
   const {client, adapter} = harness();
   client.checkout.sessions.retrieve = async () => ({...session(), ui_mode: 'hosted_page', url: 'https://checkout.stripe.com/c/pay/cs_test_UnitSession', client_secret: null});

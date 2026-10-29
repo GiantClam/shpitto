@@ -197,10 +197,24 @@ function verifyPrice(price: Price, catalog: BillingCatalogSnapshot, creating: bo
   else requireValue(price.type === 'recurring' && price.recurring?.interval === 'month' && price.recurring.interval_count === 1 && price.recurring.usage_type === 'licensed');
 }
 
+/**
+ * Stripe.js splits on `_secret_` and decodes the suffix with decodeURIComponent + base64.
+ * The suffix is percent-encoded base64 (`%2B`, `%2F`, `%3D`), not only `[A-Za-z0-9]`.
+ * Rejecting that shape turns a payable embedded_page session into a failed verification.
+ */
+const EMBEDDED_CLIENT_SECRET_SUFFIX = /^(?:[A-Za-z0-9]|%(?:2[BbFf]|3[Dd])){1,4096}$/;
+
 function checkoutClientSecret(session: Session): string | null {
   const secret = session.client_secret;
   if (secret == null) return null;
-  requireValue(secret.startsWith(`${session.id}_secret_`) && /^cs_test_[A-Za-z0-9]+_secret_[A-Za-z0-9]+$/.test(secret));
+  const prefix = `${session.id}_secret_`;
+  const suffix = secret.startsWith(prefix) ? secret.slice(prefix.length) : '';
+  requireValue(EMBEDDED_CLIENT_SECRET_SUFFIX.test(suffix));
+  try {
+    requireValue(atob(decodeURIComponent(suffix)).length > 0);
+  } catch {
+    throw new AdapterFault('binding_mismatch');
+  }
   return secret;
 }
 

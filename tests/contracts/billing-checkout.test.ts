@@ -87,14 +87,27 @@ test('checkout credentials stay reusable only while the provider session is open
   deepEqual(checkoutClientFields({status: 'expired', observation: {sessionId: 'cs_test_UnitSession', url: 'https://checkout.stripe.com/c/pay/cs_test_UnitSession', clientSecret: secret, status: 'expired'}}), {checkoutUrl: null, clientSecret: null});
 });
 
+function stripeJsClientSecret(sessionId: string): string {
+  const json = JSON.stringify({uiMode: 'embedded_page', redirectOnCompletion: 'always', apiKey: 'pk_test_51Unit', marker: '0'});
+  const padded = json + ' '.repeat(3 - (json.length % 3));
+  let encoded = '';
+  for (const char of padded) encoded += String.fromCharCode(5 ^ char.charCodeAt(0));
+  return `${sessionId}_secret_${encodeURIComponent(btoa(encoded))}`;
+}
+
 test('billing UI mounts embedded checkout when a client secret is present', () => {
   const secret = 'cs_test_UnitSession_secret_UnitSecret';
+  const encoded = stripeJsClientSecret('cs_test_UnitSession');
   const publishableKey = 'pk_test_UnitPublishable';
+  equal(/%(?:2B|2F|3D)/i.test(encoded), true);
   deepEqual(resolveCheckoutHandoff({clientSecret: secret, publishableKey, checkoutUrl: 'https://checkout.stripe.com/c/pay/cs_test_UnitSession'}), {action: 'embed', clientSecret: secret, publishableKey});
+  deepEqual(resolveCheckoutHandoff({clientSecret: encoded, publishableKey, checkoutUrl: 'https://checkout.stripe.com/c/pay/cs_test_UnitSession'}), {action: 'embed', clientSecret: encoded, publishableKey});
   deepEqual(resolveCheckoutHandoff({clientSecret: secret, publishableKey: null, checkoutUrl: 'http://localhost:3100/checkout/fixture/abc'}), {action: 'missing_publishable_key'});
+  deepEqual(resolveCheckoutHandoff({clientSecret: encoded, publishableKey: null}), {action: 'missing_publishable_key'});
   deepEqual(resolveCheckoutHandoff({checkoutUrl: 'http://localhost:3100/checkout/fixture/abc', clientSecret: null}), {action: 'redirect', url: 'http://localhost:3100/checkout/fixture/abc'});
   deepEqual(resolveCheckoutHandoff({checkoutUrl: null, clientSecret: null}), {action: 'pending'});
   deepEqual(resolveCheckoutHandoff({clientSecret: 'not-a-client-secret', checkoutUrl: 'https://checkout.stripe.com/c/pay/cs_test_UnitSession'}), {action: 'pending'});
+  deepEqual(resolveCheckoutHandoff({clientSecret: 'cs_test_UnitSession_secret_%00', publishableKey, checkoutUrl: 'https://checkout.stripe.com/c/pay/cs_test_UnitSession'}), {action: 'pending'});
 });
 
 test('fixture webhook parser retains only supported event envelope', () => {

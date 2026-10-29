@@ -44,8 +44,12 @@ test('completed Checkout does not reissue an embedded client secret', async () =
 test('unknown responses remain unresolved and failed responses do not become success', async () => {
   const unknown = createStripeCheckoutProvider(adapter({createCheckout: async () => ({status: 'unknown', code: 'provider_unavailable'})}));
   assert.deepEqual(await unknown.createCheckout({} as never), {unknown: true});
-  const failed = createStripeCheckoutProvider(adapter({createCustomer: async () => ({status: 'failed', code: 'binding_mismatch'})}));
-  await assert.rejects(failed.createCustomer!({workspaceId: 'w', idempotencyKey: 'customer-key'}), /could not be verified/);
+  const failed = createStripeCheckoutProvider(adapter({
+    createCustomer: async () => ({status: 'failed', code: 'binding_mismatch'}),
+    createCheckout: async () => ({status: 'failed', code: 'binding_mismatch'}),
+  }));
+  await assert.rejects(failed.createCustomer!({workspaceId: 'w', idempotencyKey: 'customer-key'}), /The Stripe test operation could not be verified/);
+  await assert.rejects(failed.createCheckout({} as never), /The Stripe test operation could not be verified/);
 });
 
 test('a completed unpaid Checkout never becomes paid or a new open URL', async () => {
