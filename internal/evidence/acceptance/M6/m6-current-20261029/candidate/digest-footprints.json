@@ -7,8 +7,8 @@
     },
     {
       "path": ".env.example",
-      "bytes": 2959,
-      "sha256": "966a1cc09ab233a6cd13d4e0fa4c03e04a425e3aa63249e19600f7aa84d63f6a"
+      "bytes": 3130,
+      "sha256": "1eff22262fe468393c5e5bc18b55cd0f37b0490339117f37506d4e0c4ba1f132"
     },
     {
       "path": ".github/workflows/verify-root.yml",
@@ -952,8 +952,8 @@
     },
     {
       "path": "src/adapters/billing/fake.ts",
-      "bytes": 3496,
-      "sha256": "445febf40d9c6322266c914abb2ee173ae64b32ba5e9d393e18e44674674c1d3"
+      "bytes": 3672,
+      "sha256": "d09c3c5311208d43536641b667c8071540e210ec0ede8178e46e83b30ef82bec"
     },
     {
       "path": "src/adapters/billing/refunds.ts",
@@ -962,8 +962,8 @@
     },
     {
       "path": "src/adapters/billing/stripe-checkout.ts",
-      "bytes": 1928,
-      "sha256": "5f91e018a00980b7405d87aef42f7b4753bd0a96bee04a3ba20aa45f11968ea7"
+      "bytes": 2073,
+      "sha256": "99c5cd68d15cdd03ff30796a5c83f9c7cff8e7af55f5014e42cd9bd065bf03cb"
     },
     {
       "path": "src/adapters/billing/stripe-refunds.ts",
@@ -982,8 +982,8 @@
     },
     {
       "path": "src/adapters/billing/stripe-test.ts",
-      "bytes": 24051,
-      "sha256": "4fb893a0213829c2825f4eb95c764d7493118c7784a402de3399ce1fd8e658fb"
+      "bytes": 25423,
+      "sha256": "fe1a52c77ec6a13d1f2b4e4652e7fa3762a7fdc0a74c503ccb92100d6d071a9a"
     },
     {
       "path": "src/adapters/billing/stripe-webhooks.ts",
@@ -1467,8 +1467,8 @@
     },
     {
       "path": "src/app/api/workspaces/[workspaceId]/billing/checkout/route.ts",
-      "bytes": 1634,
-      "sha256": "8d011e46d067f997b8f019a2782d28e6c4edb9d8289baee2ebb240011a3e7283"
+      "bytes": 1754,
+      "sha256": "04b2b9feb87c392f7a0a718d5af4d9876ca07d9989f811eaed4a1404e6f67e79"
     },
     {
       "path": "src/app/api/workspaces/[workspaceId]/billing/portal/route.ts",
@@ -1646,9 +1646,14 @@
       "sha256": "e6f59e44acc3770ef78c6533f76945bc7fadd92f5dbd32a66a29c013e784a2f6"
     },
     {
+      "path": "src/components/billing/checkout-handoff.ts",
+      "bytes": 1197,
+      "sha256": "aab98b0ba1cc885ef646e68b5e9fbc586c86aa7ddd9e81ee1a58952d67ab795d"
+    },
+    {
       "path": "src/components/billing/fixture-billing-panel.tsx",
-      "bytes": 3871,
-      "sha256": "952efe440fcce41c851bd8347604e31be9a419028a21ead46f47699dcf5947cd"
+      "bytes": 6720,
+      "sha256": "43a57467c07e6a4d13b8e9fee9addf9fcbd234f73322612bb180f47e71a242a1"
     },
     {
       "path": "src/components/creation/creator-home.tsx",
@@ -1747,8 +1752,8 @@
     },
     {
       "path": "src/config/billing-test.ts",
-      "bytes": 2534,
-      "sha256": "dd157db4df894e701778b949d2eafbbc6f26e620e7b7bafeafdfdffb549a51a6"
+      "bytes": 2858,
+      "sha256": "6f85de6f52965becc0c4a7d5827ea599af7eff8dc0f6d1db2ca00b0db187c846"
     },
     {
       "path": "src/config/brand.ts",
@@ -1762,8 +1767,8 @@
     },
     {
       "path": "src/config/env.ts",
-      "bytes": 9804,
-      "sha256": "91db279fe4cd88ffae33f6898107f2ed1fb1636028bec49f934ea1c4c1e2c4a0"
+      "bytes": 9856,
+      "sha256": "3515b0b314c1cec8b4637cdbd0253569e84a3f320ce1976b49c00445fbc1869a"
     },
     {
       "path": "src/config/models.ts",
@@ -2217,8 +2222,8 @@
     },
     {
       "path": "src/modules/billing/checkout.ts",
-      "bytes": 16120,
-      "sha256": "d2551e62f2344f1a052acdbafe909933d9f88bbb0a64d757f6ea2476f62954eb"
+      "bytes": 17593,
+      "sha256": "7507ce19d25f56f996fbdd121aa033107152bdf516f68139ee5ee614509e729d"
     },
     {
       "path": "src/modules/billing/contracts.ts",
@@ -2582,8 +2587,8 @@
     },
     {
       "path": "tests/contracts/billing-checkout.test.ts",
-      "bytes": 4834,
-      "sha256": "551db74384d4c481b71de7fc326db43b7413b9b3721606fc54809e9863532f3d"
+      "bytes": 8538,
+      "sha256": "50e71afa1d82e3d9c116550081b1ae59a25410558fd7f18a65caae97721c9d0d"
     },
     {
       "path": "tests/contracts/billing-contracts.test.ts",
@@ -2962,18 +2967,18 @@
     },
     {
       "path": "tests/unit/stripe-checkout-bridge.test.ts",
-      "bytes": 2433,
-      "sha256": "d5d39f598bf10a3f7f8e9cae76b25dc7ae50ccab4106eddc3fac0ee596ad9972"
+      "bytes": 3964,
+      "sha256": "48c7d366af91757b579d711c8cbca9bd2880f19033e9df2a9b83434628f7ee19"
     },
     {
       "path": "tests/unit/stripe-test-adapter.test.ts",
-      "bytes": 23819,
-      "sha256": "178d40090af7470bf8d01b80f64cb88ec57cd7374d34b665117c54ceb152f492"
+      "bytes": 25692,
+      "sha256": "633c6528596ef1572ca7ea464e7aa918f9a0f47d959db57bbc316fe476e38a57"
     },
     {
       "path": "tests/unit/stripe-test-config.test.ts",
-      "bytes": 2245,
-      "sha256": "5e608c8ae4c3b5158483086a6ae4e1905cd88936838dbeabe100e9bd1c2c7720"
+      "bytes": 2531,
+      "sha256": "ce4cb1f9ec450728b264be15829970fef076b81facc1d83243fe0203455cc57d"
     },
     {
       "path": "tests/unit/stripe-test-events.test.ts",
@@ -3311,8 +3316,8 @@
     },
     {
       "path": ".env.example",
-      "bytes": 2959,
-      "sha256": "966a1cc09ab233a6cd13d4e0fa4c03e04a425e3aa63249e19600f7aa84d63f6a"
+      "bytes": 3130,
+      "sha256": "1eff22262fe468393c5e5bc18b55cd0f37b0490339117f37506d4e0c4ba1f132"
     },
     {
       "path": ".github/workflows/verify-root.yml",
@@ -3366,8 +3371,8 @@
     },
     {
       "path": "src/config/env.ts",
-      "bytes": 9804,
-      "sha256": "91db279fe4cd88ffae33f6898107f2ed1fb1636028bec49f934ea1c4c1e2c4a0"
+      "bytes": 9856,
+      "sha256": "3515b0b314c1cec8b4637cdbd0253569e84a3f320ce1976b49c00445fbc1869a"
     },
     {
       "path": "src/config/provider-worker.ts",
@@ -4195,8 +4200,8 @@
     },
     {
       "path": "tests/contracts/billing-checkout.test.ts",
-      "bytes": 4834,
-      "sha256": "551db74384d4c481b71de7fc326db43b7413b9b3721606fc54809e9863532f3d"
+      "bytes": 8538,
+      "sha256": "50e71afa1d82e3d9c116550081b1ae59a25410558fd7f18a65caae97721c9d0d"
     },
     {
       "path": "tests/contracts/billing-contracts.test.ts",
@@ -4575,18 +4580,18 @@
     },
     {
       "path": "tests/unit/stripe-checkout-bridge.test.ts",
-      "bytes": 2433,
-      "sha256": "d5d39f598bf10a3f7f8e9cae76b25dc7ae50ccab4106eddc3fac0ee596ad9972"
+      "bytes": 3964,
+      "sha256": "48c7d366af91757b579d711c8cbca9bd2880f19033e9df2a9b83434628f7ee19"
     },
     {
       "path": "tests/unit/stripe-test-adapter.test.ts",
-      "bytes": 23819,
-      "sha256": "178d40090af7470bf8d01b80f64cb88ec57cd7374d34b665117c54ceb152f492"
+      "bytes": 25692,
+      "sha256": "633c6528596ef1572ca7ea464e7aa918f9a0f47d959db57bbc316fe476e38a57"
     },
     {
       "path": "tests/unit/stripe-test-config.test.ts",
-      "bytes": 2245,
-      "sha256": "5e608c8ae4c3b5158483086a6ae4e1905cd88936838dbeabe100e9bd1c2c7720"
+      "bytes": 2531,
+      "sha256": "ce4cb1f9ec450728b264be15829970fef076b81facc1d83243fe0203455cc57d"
     },
     {
       "path": "tests/unit/stripe-test-events.test.ts",

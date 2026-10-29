@@ -13,8 +13,8 @@ type DeletedCustomer = Pick<Stripe.DeletedCustomer, 'id' | 'deleted'>;
 type Price = Pick<Stripe.Price, 'id' | 'livemode' | 'active' | 'currency' | 'unit_amount' | 'billing_scheme' | 'tiers_mode' | 'transform_quantity' | 'type'> & Readonly<{
   recurring: Readonly<{interval: string; interval_count: number; usage_type: string}> | null;
 }>;
-type Session = Omit<Pick<Stripe.Checkout.Session, 'id' | 'livemode' | 'metadata' | 'client_reference_id' | 'mode' | 'status' | 'payment_status' | 'currency' | 'amount_total' | 'expires_at' | 'url'>, 'mode' | 'status' | 'payment_status'> & Readonly<{
-  mode: string | null; status: string | null; payment_status: string;
+type Session = Omit<Pick<Stripe.Checkout.Session, 'id' | 'livemode' | 'metadata' | 'client_reference_id' | 'mode' | 'status' | 'payment_status' | 'currency' | 'amount_total' | 'expires_at' | 'url' | 'client_secret' | 'ui_mode'>, 'mode' | 'status' | 'payment_status' | 'ui_mode'> & Readonly<{
+  mode: string | null; status: string | null; payment_status: string; ui_mode: string | null;
   customer: Reference; payment_intent: Reference; subscription: Reference;
   line_items?: Page<Readonly<{quantity: number | null; price: Reference}>>;
 }>;
@@ -61,7 +61,7 @@ export type StripeTestCustomerInput = Readonly<{workspaceId: string; idempotency
 export type StripeTestCustomerReadInput = Readonly<{workspaceId: string; customerId: string; idempotencyKey?: string}>;
 export type StripeTestCheckoutInput = Readonly<{workspaceId: string; customerId: string; attemptId: string; idempotencyKey: string; catalog: BillingCatalogSnapshot}>;
 export type StripeTestCheckout = Readonly<{
-  sessionId: string; customerId: string; url: string | null;
+  sessionId: string; customerId: string; url: string | null; clientSecret: string | null;
   status: 'open' | 'complete' | 'expired'; paymentStatus: 'paid' | 'unpaid' | 'no_payment_required';
   paymentIntentId: string | null; subscriptionId: string | null; expiresAt: number;
 }>;
@@ -197,7 +197,14 @@ function verifyPrice(price: Price, catalog: BillingCatalogSnapshot, creating: bo
   else requireValue(price.type === 'recurring' && price.recurring?.interval === 'month' && price.recurring.interval_count === 1 && price.recurring.usage_type === 'licensed');
 }
 
-function checkoutValue(session: Session, input: StripeTestCheckoutInput, sessionId?: string): StripeTestCheckout {
+function checkoutClientSecret(session: Session): string | null {
+  const secret = session.client_secret;
+  if (secret == null) return null;
+  requireValue(secret.startsWith(`${session.id}_secret_`) && /^cs_test_[A-Za-z0-9]+_secret_[A-Za-z0-9]+$/.test(secret));
+  return secret;
+}
+
+function checkoutValue(session: Session, input: StripeTestCheckoutInput, sessionId?: string, creating = false): StripeTestCheckout {
   requireValue(session.livemode === false && /^cs_test_[A-Za-z0-9]+$/.test(session.id) && (!sessionId || session.id === sessionId));
   requireValue(reference(session.customer) === input.customerId && session.client_reference_id === input.attemptId);
   boundMetadata(session.metadata, checkoutMetadata(input));
@@ -209,13 +216,22 @@ function checkoutValue(session: Session, input: StripeTestCheckoutInput, session
   requireValue(session.status === 'open' || session.status === 'complete' || session.status === 'expired');
   requireValue(session.payment_status === 'paid' || session.payment_status === 'unpaid' || session.payment_status === 'no_payment_required');
   requireValue(Number.isSafeInteger(session.expires_at) && session.expires_at > 0 && (session.payment_status !== 'paid' || session.status === 'complete'));
-  const url = session.url ? providerUrl(session.url, 'checkout.stripe.com') : null;
-  requireValue(session.status !== 'open' || url);
+  const embedded = session.ui_mode === 'embedded_page';
+  const hosted = session.ui_mode === 'hosted_page' || session.ui_mode == null;
+  if (!embedded && !hosted) throw new AdapterFault('unrecognized_response', 'unknown');
+  if (creating) requireValue(embedded);
+  const clientSecret = checkoutClientSecret(session);
+  const hostedUrl = session.url ? providerUrl(session.url, 'checkout.stripe.com') : null;
+  // Embedded sessions must not hand the browser a hosted Checkout URL. Those links stay incomplete
+  // while the test account cannot accept charges; the client secret is the payable surface.
+  if (embedded) requireValue(hostedUrl === null);
+  if (!embedded) requireValue(clientSecret === null && (session.status !== 'open' || hostedUrl));
+  if (embedded && session.status === 'open') requireValue(clientSecret);
   const paymentIntentId = reference(session.payment_intent);
   const subscriptionId = reference(session.subscription);
   if (paymentIntentId) identifier(paymentIntentId, 'pi_');
   if (subscriptionId) identifier(subscriptionId, 'sub_');
-  return {sessionId: session.id, customerId: input.customerId, url, status: session.status, paymentStatus: session.payment_status, paymentIntentId, subscriptionId, expiresAt: session.expires_at};
+  return {sessionId: session.id, customerId: input.customerId, url: embedded ? null : hostedUrl, clientSecret: embedded && session.status === 'open' ? clientSecret : null, status: session.status, paymentStatus: session.payment_status, paymentIntentId, subscriptionId, expiresAt: session.expires_at};
 }
 
 function refundInput(input: StripeTestRefundInput): StripeTestRefundInput {
@@ -245,7 +261,9 @@ function refundValue(refund: Refund, input: StripeTestRefundInput, refundId?: st
  * authorization, ledger, environment, persistence or automatic retry authority. Reuse the exact key
  * and parameters only within the caller's approved retry window. Persist returned IDs for readback.
  * Lookup scans at most ten pages of 100 records and never creates missing objects. Unknown is not
- * evidence of absence. Checkout/portal URLs support Stripe's standard hosted domains only.
+ * evidence of absence. New Checkout sessions use embedded_page and return a client secret for
+ * Stripe.js Embedded Checkout. Historical hosted session URLs, when read back, must still use
+ * checkout.stripe.com. Portal URLs support billing.stripe.com only.
  */
 export function createStripeTestAdapter(config: StripeTestAdapterConfig) {
   if (typeof config.secretKey !== 'string' || !/^(sk|rk)_test_[A-Za-z0-9]+$/.test(config.secretKey)) throw new TypeError('A Stripe test secret key is required.');
@@ -312,10 +330,10 @@ export function createStripeTestAdapter(config: StripeTestAdapterConfig) {
           customer: input.customerId, client_reference_id: input.attemptId, mode: input.catalog.kind === 'pack' ? 'payment' : 'subscription',
           line_items: [{price: input.catalog.priceReference, quantity: 1}], metadata,
           ...(input.catalog.kind === 'pack' ? {payment_intent_data: {metadata}} : {subscription_data: {metadata}}),
-          ui_mode: 'hosted_page', success_url: `${returnUrl(input.workspaceId)}?checkout=return`, cancel_url: `${returnUrl(input.workspaceId)}?checkout=canceled`,
+          ui_mode: 'embedded_page', redirect_on_completion: 'always', return_url: `${returnUrl(input.workspaceId)}?checkout=return&session_id={CHECKOUT_SESSION_ID}`,
           allow_promotion_codes: false, automatic_tax: {enabled: false}, adaptive_pricing: {enabled: false}, expand: ['line_items.data.price'],
         };
-        return checkoutValue(await client.checkout.sessions.create(params, {idempotencyKey: input.idempotencyKey}), input);
+        return checkoutValue(await client.checkout.sessions.create(params, {idempotencyKey: input.idempotencyKey}), input, undefined, true);
       });
     },
     retrieveCheckout(raw: StripeTestCheckoutInput & Readonly<{sessionId: string}>): Promise<StripeTestResult<StripeTestCheckout>> {

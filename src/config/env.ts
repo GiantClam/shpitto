@@ -150,7 +150,8 @@ export function getRuntimeProfile(): 'local' | 'acceptance' | 'production' {
 export function getStripeTestConfiguration() {
   return parseStripeTestConfiguration({driver: read('BILLING_DRIVER'), runtimeProfile: getRuntimeProfile(),
     secretKey: read('STRIPE_SECRET_KEY'), webhookSecret: read('BILLING_WEBHOOK_SECRET'),
-    portalConfigurationId: read('STRIPE_PORTAL_CONFIGURATION_ID'), appUrl: read('APP_URL'), catalogJson: read('STRIPE_TEST_CATALOG_JSON')});
+    portalConfigurationId: read('STRIPE_PORTAL_CONFIGURATION_ID'), appUrl: read('APP_URL'), catalogJson: read('STRIPE_TEST_CATALOG_JSON'),
+    publishableKey: read('STRIPE_PUBLISHABLE_KEY')});
 }
 
 /** Worker controls are server-only and paused unless explicitly bound to an isolated project/workspace. */

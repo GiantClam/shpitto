@@ -14,6 +14,8 @@ export type BillingCheckoutInput = Readonly<{
 export type BillingCheckoutObservation = Readonly<{
   sessionId: string;
   url: string | null;
+  /** Present for an open embedded Checkout Session. Absent for fixture and historical hosted sessions. */
+  clientSecret?: string | null;
   status?: 'open' | 'paid' | 'expired' | 'canceled';
 }> | Readonly<{unknown: true}>;
 
@@ -23,7 +25,7 @@ export type BillingCheckoutProvider = Readonly<{
   createCustomer?(input: BillingCustomerInput): Promise<BillingCustomerResult>;
   retrieveCustomer?(input: Readonly<{workspaceId: string; customerId: string}>): Promise<BillingCustomerResult>;
   retrieveCheckout?(input: BillingCheckoutInput & Readonly<{sessionId: string}>): Promise<BillingCheckoutObservation>;
-  createCheckout(input: BillingCheckoutInput): Promise<Readonly<{sessionId: string; url: string}> | {unknown: true}>;
+  createCheckout(input: BillingCheckoutInput): Promise<Readonly<{sessionId: string; url: string | null; clientSecret?: string | null}> | {unknown: true}>;
   createPortal(input: Readonly<{
     workspaceId: string;
     customerId: string;

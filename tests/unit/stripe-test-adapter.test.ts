@@ -31,7 +31,7 @@ function checkoutMetadata(kind: 'pack' | 'subscription' = 'pack') {
 }
 
 function session(kind: 'pack' | 'subscription' = 'pack') {
-  return {id: 'cs_test_UnitSession', livemode: false, customer: customerId, metadata: checkoutMetadata(kind), client_reference_id: 'attempt-one', mode: kind === 'pack' ? 'payment' : 'subscription', status: 'open', payment_status: 'unpaid', currency: 'usd', amount_total: 900, expires_at: 1800000000, url: 'https://checkout.stripe.com/c/pay/cs_test_UnitSession', payment_intent: kind === 'pack' ? 'pi_UnitPayment' : null, subscription: null, line_items: {has_more: false, data: [{quantity: 1, price: {id: 'price_UnitPrice'}}]}};
+  return {id: 'cs_test_UnitSession', livemode: false, customer: customerId, metadata: checkoutMetadata(kind), client_reference_id: 'attempt-one', mode: kind === 'pack' ? 'payment' : 'subscription', status: 'open', payment_status: 'unpaid', currency: 'usd', amount_total: 900, expires_at: 1800000000, ui_mode: 'embedded_page', url: null, client_secret: 'cs_test_UnitSession_secret_UnitSecret', payment_intent: kind === 'pack' ? 'pi_UnitPayment' : null, subscription: null, line_items: {has_more: false, data: [{quantity: 1, price: {id: 'price_UnitPrice'}}]}};
 }
 
 const refundInput = {workspaceId, customerId, requestId: 'request-one', orderId: 'order-one', paymentIntentId: 'pi_UnitPayment', amountMinor: '900', currency: 'usd', idempotencyKey: 'refund:request-one'};
@@ -119,9 +119,17 @@ for (const kind of ['pack', 'subscription'] as const) {
     assert.deepEqual(params.line_items, [{price: input.catalog.priceReference, quantity: 1}]);
     assert.deepEqual(params.metadata, checkoutMetadata(kind));
     assert.deepEqual(params[kind === 'pack' ? 'payment_intent_data' : 'subscription_data'], {metadata: checkoutMetadata(kind)});
-    assert.equal(new URL(params.success_url as string).origin, appUrl);
-    assert.equal(new URL(params.cancel_url as string).origin, appUrl);
-    assert.equal(params.ui_mode, 'hosted_page');
+    assert.equal(params.success_url, undefined);
+    assert.equal(params.cancel_url, undefined);
+    assert.equal(params.ui_mode, 'embedded_page');
+    assert.equal(params.redirect_on_completion, 'always');
+    const returnUrl = new URL(params.return_url as string);
+    assert.equal(returnUrl.origin, appUrl);
+    assert.equal(returnUrl.pathname, `/workspaces/${workspaceId}/billing`);
+    assert.equal(returnUrl.searchParams.get('checkout'), 'return');
+    assert.equal(returnUrl.searchParams.get('session_id'), '{CHECKOUT_SESSION_ID}');
+    assert.equal(result.value.url, null);
+    assert.equal(result.value.clientSecret, 'cs_test_UnitSession_secret_UnitSecret');
     assert.deepEqual(await adapter().retrieveCheckout({...input, sessionId: result.value.sessionId}), result);
   });
 }
@@ -142,10 +150,12 @@ test('invalid snapshots, remote prices and wrong customers never create Checkout
 
 test('Checkout readback rejects wrong binding, price, live objects and hostile redirect URLs', async () => {
   const {client, adapter} = harness();
-  for (const patch of [{customer: 'cus_Wrong'}, {livemode: true}, {metadata: {...checkoutMetadata(), attemptId: 'other'}}, {line_items: {has_more: true, data: []}}, {line_items: {has_more: false, data: [{quantity: 1, price: {id: 'price_Wrong'}}]}}, {url: 'https://checkout.stripe.com.evil.test/steal'}, {amount_total: 901}]) {
+  for (const patch of [{customer: 'cus_Wrong'}, {livemode: true}, {metadata: {...checkoutMetadata(), attemptId: 'other'}}, {line_items: {has_more: true, data: []}}, {line_items: {has_more: false, data: [{quantity: 1, price: {id: 'price_Wrong'}}]}}, {url: 'https://checkout.stripe.com.evil.test/steal'}, {url: 'https://checkout.stripe.com/c/pay/cs_test_UnitSession'}, {client_secret: null}, {client_secret: 'cs_test_Other_secret_UnitSecret'}, {amount_total: 901}]) {
     client.checkout.sessions.retrieve = async () => ({...session(), ...patch});
     assert.equal((await adapter().retrieveCheckout({...checkoutInput(), sessionId: 'cs_test_UnitSession'})).status, 'failed');
   }
+  client.checkout.sessions.retrieve = async () => ({...session(), ui_mode: 'elements'});
+  assert.deepEqual(await adapter().retrieveCheckout({...checkoutInput(), sessionId: 'cs_test_UnitSession'}), {status: 'unknown', code: 'unrecognized_response'});
 });
 
 test('lost Checkout response stays unknown and retry uses identical provider parameters/key', async () => {
@@ -253,6 +263,19 @@ test('portal refuses proration and validates returned customer/configuration/ret
   }
 });
 
+test('historical hosted Checkout can be read back without becoming an embedded client secret', async () => {
+  const {client, adapter} = harness();
+  client.checkout.sessions.retrieve = async () => ({...session(), ui_mode: 'hosted_page', url: 'https://checkout.stripe.com/c/pay/cs_test_UnitSession', client_secret: null});
+  const result = await adapter().retrieveCheckout({...checkoutInput(), sessionId: 'cs_test_UnitSession'});
+  assert.equal(result.status, 'succeeded');
+  if (result.status === 'succeeded') {
+    assert.equal(result.value.url, 'https://checkout.stripe.com/c/pay/cs_test_UnitSession');
+    assert.equal(result.value.clientSecret, null);
+  }
+  client.checkout.sessions.create = async () => ({...session(), ui_mode: 'hosted_page', url: 'https://checkout.stripe.com/c/pay/cs_test_UnitSession', client_secret: null});
+  assert.equal((await adapter().createCheckout(checkoutInput())).status, 'failed');
+});
+
 test('completed unpaid and expired Checkout readbacks are successful observations without payment claims', async () => {
   const {client, adapter} = harness();
   for (const status of ['complete', 'expired']) {
@@ -263,6 +286,7 @@ test('completed unpaid and expired Checkout readbacks are successful observation
       assert.equal(result.value.status, status);
       assert.equal(result.value.paymentStatus, 'unpaid');
       assert.equal(result.value.url, null);
+      assert.equal(result.value.clientSecret, null);
     }
   }
 });

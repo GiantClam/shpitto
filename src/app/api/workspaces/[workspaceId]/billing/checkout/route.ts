@@ -1,7 +1,7 @@
-import {getRuntimeProfile} from '../../../../../../config/env.ts';
+import {getRuntimeProfile, getStripeTestConfiguration} from '../../../../../../config/env.ts';
 import {DomainError} from '../../../../../../db/contracts.ts';
 import {getAuthDatabase} from '../../../../../../lib/auth.ts';
-import {openCheckout} from '../../../../../../modules/billing/checkout.ts';
+import {openCheckout, presentCheckoutResult} from '../../../../../../modules/billing/checkout.ts';
 import {getBillingRuntime} from '../../../../../../modules/billing/runtime.ts';
 import {parseCheckoutRequest} from '../../../../../../modules/billing/contracts.ts';
 import {assertSameOrigin, commandKey, currentWorkspaceActor, readJson, safeError, safeSuccess, workspaceIdFromParams} from '../../../_shared.ts';
@@ -24,7 +24,7 @@ export async function POST(request: Request, context: {params: Promise<{workspac
       profile: getRuntimeProfile() === 'acceptance' ? 'test' : (getRuntimeProfile() === 'production' ? 'production' : 'local'),
       ...getBillingRuntime(),
     });
-    return safeSuccess(result, result.replayed ? 200 : 201);
+    return safeSuccess(presentCheckoutResult(result, getStripeTestConfiguration()?.publishableKey), result.replayed ? 200 : 201);
   } catch (error) {
     return safeError(error);
   }

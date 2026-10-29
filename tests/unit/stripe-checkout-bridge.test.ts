@@ -18,7 +18,27 @@ test('the bridge preserves verified IDs and terminal Checkout readback', async (
   const provider = createStripeCheckoutProvider(adapter());
   assert.equal(provider.provider, 'stripe');
   assert.deepEqual(await provider.createCustomer!({workspaceId: 'w', idempotencyKey: 'customer-key'}), {customerId: 'cus_test'});
-  assert.deepEqual(await provider.retrieveCheckout!({sessionId: 'cs_test_a'} as never), {sessionId: 'cs_test_a', url: null, status: 'paid'});
+  assert.deepEqual(await provider.retrieveCheckout!({sessionId: 'cs_test_a'} as never), {sessionId: 'cs_test_a', url: null, clientSecret: null, status: 'paid'});
+});
+
+test('embedded Checkout exposes the client secret and does not require a hosted url', async () => {
+  const secret = 'cs_test_a_secret_Unit';
+  const provider = createStripeCheckoutProvider(adapter({
+    createCheckout: async () => ({status: 'succeeded', value: {sessionId: 'cs_test_a', status: 'open', paymentStatus: 'unpaid', url: null, clientSecret: secret}}),
+    retrieveCheckout: async () => ({status: 'succeeded', value: {sessionId: 'cs_test_a', status: 'open', paymentStatus: 'unpaid', url: null, clientSecret: secret}}),
+  }));
+  assert.deepEqual(await provider.createCheckout({} as never), {sessionId: 'cs_test_a', url: null, clientSecret: secret});
+  assert.deepEqual(await provider.retrieveCheckout!({} as never), {sessionId: 'cs_test_a', url: null, clientSecret: secret, status: 'open'});
+});
+
+test('a hosted url without a client secret is not a usable new Checkout', async () => {
+  const provider = createStripeCheckoutProvider(adapter());
+  assert.deepEqual(await provider.createCheckout({} as never), {unknown: true});
+});
+
+test('completed Checkout does not reissue an embedded client secret', async () => {
+  const provider = createStripeCheckoutProvider(adapter({retrieveCheckout: async () => ({status: 'succeeded', value: {sessionId: 'cs_test_a', status: 'complete', paymentStatus: 'paid', url: null, clientSecret: 'cs_test_a_secret_Unit'}})}));
+  assert.deepEqual(await provider.retrieveCheckout!({} as never), {sessionId: 'cs_test_a', url: null, clientSecret: null, status: 'paid'});
 });
 
 test('unknown responses remain unresolved and failed responses do not become success', async () => {
