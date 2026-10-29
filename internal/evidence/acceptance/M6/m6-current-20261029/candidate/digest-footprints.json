@@ -2067,8 +2067,8 @@
     },
     {
       "path": "src/lib/auth.ts",
-      "bytes": 9299,
-      "sha256": "9b40ba66000ca68f06a9b80677a4752dbac5702644c506c5e301d3a90a5eafc0"
+      "bytes": 9326,
+      "sha256": "d9f9911248c5b124e6543f953ec267e4a531349ebc2e3d26df9bfc19cb6250cb"
     },
     {
       "path": "src/lib/demo.ts",
@@ -2799,6 +2799,11 @@
       "path": "tests/unit/assets-validation.test.ts",
       "bytes": 1196,
       "sha256": "efb2a8c6ced1eb7d76e837fee9e96f46af285bb6383bbb483dea51665818cfc8"
+    },
+    {
+      "path": "tests/unit/auth-turnstile-request.test.ts",
+      "bytes": 3481,
+      "sha256": "6a1775ebb5d9906571f3474f058ddafc71db69db4db89e5a0088bb9ac08e0636"
     },
     {
       "path": "tests/unit/billing-presentation.test.ts",
@@ -4402,6 +4407,11 @@
       "path": "tests/unit/assets-validation.test.ts",
       "bytes": 1196,
       "sha256": "efb2a8c6ced1eb7d76e837fee9e96f46af285bb6383bbb483dea51665818cfc8"
+    },
+    {
+      "path": "tests/unit/auth-turnstile-request.test.ts",
+      "bytes": 3481,
+      "sha256": "6a1775ebb5d9906571f3474f058ddafc71db69db4db89e5a0088bb9ac08e0636"
     },
     {
       "path": "tests/unit/billing-presentation.test.ts",

@@ -40,16 +40,18 @@ function authSchema() {
   } as const;
 }
 
-function rejectDisabledEmailSignIn(database: AppDatabase): MiddlewareHandler {
+export function rejectDisabledEmailSignIn(database: AppDatabase): MiddlewareHandler {
   return async (input) => {
     const context = input as typeof input & Readonly<{path?: string; body?: unknown}>;
     if (!context.body || typeof context.body !== 'object') return;
     const security = await readSecurityPolicy(database);
     if (['/sign-up/email', '/sign-in/email', '/request-password-reset'].includes(context.path ?? '')) {
-      if (!input.request) throw APIError.from('BAD_REQUEST', {code: 'TURNSTILE_REQUEST_INVALID', message: 'The authentication request is invalid.'});
       const body = context.body as {turnstileToken?: unknown; email?: unknown};
       const action = context.path === '/sign-up/email' ? 'signup' : context.path === '/sign-in/email' ? 'login' : 'password-reset';
-      if (security.turnstileEnabled) await verifyTurnstile(await readSecuritySettings(database), body.turnstileToken, new URL(getServerEnv().appUrl).hostname, action);
+      if (security.turnstileEnabled) {
+        if (!input.request) throw APIError.from('BAD_REQUEST', {code: 'TURNSTILE_REQUEST_INVALID', message: 'The authentication request is invalid.'});
+        await verifyTurnstile(await readSecuritySettings(database), body.turnstileToken, new URL(getServerEnv().appUrl).hostname, action);
+      }
       delete body.turnstileToken;
       if (context.path === '/sign-in/email' && security.emailVerificationEnabled && typeof body.email === 'string') {
         const verified = await database.select({emailVerified: authUser.emailVerified}).from(authUser).where(eq(authUser.email, body.email.trim().toLowerCase())).limit(1);
