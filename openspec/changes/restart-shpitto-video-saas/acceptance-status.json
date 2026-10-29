@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0",
   "changeId": "restart-shpitto-video-saas",
-  "date": "2026-10-22",
-  "scope": "Current M3 candidate evidence is automated-ready and queued for final manual acceptance. Current M4, M5 and M6 development records remain IN_PROGRESS where provider/payment/affiliate evidence is still incomplete; deferred review does not block unrelated automated verification.",
+  "date": "2026-10-29",
+  "scope": "Historical M0-M3 approvals remain on their original candidates. Current M3 applicability for the 2026-10-29 M4/M5/M6 development records is STALE. Those records were rebound to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e and remain IN_PROGRESS.",
   "enforcementStatus": "Historical PASS decisions remain scoped to their original candidates. Current development records and stage checker reject incomplete or stale automated evidence while allowing READY_FOR_REVIEW records to advance into the final manual queue.",
   "policyRef": "acceptance-gates.md",
   "recordTemplateRef": "acceptance-record.template.json",
@@ -10,7 +10,10 @@
     "automatedStatus": "READY_FOR_REVIEW",
     "finalManualCheckpoint": "M8-STABLE",
     "queueRef": "internal/evidence/final-manual-acceptance-queue.json",
-    "deferredActions": ["independent-review", "integration-decision"],
+    "deferredActions": [
+      "independent-review",
+      "integration-decision"
+    ],
     "blockingRule": "Deferred manual actions do not block unrelated automated verification; FAIL, BLOCKED and STALE automated evidence still block dependent work."
   },
   "allowedStatuses": [
@@ -248,8 +251,11 @@
       "policyRef": "acceptance-gates.md",
       "commonStandardsRequired": true,
       "mandatoryScenarioSource": "traceability.json",
-      "candidateId": "m4-current-20261022",
+      "candidateId": "m4-current-20261029",
       "evidenceRecordRefs": [
+        "internal/evidence/acceptance/M4/m4-current-20261029/record.json",
+        "internal/evidence/acceptance/M4/m4-current-20261029/README.md",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
         "internal/evidence/acceptance/M4/m4-current-20261022/record.json",
         "internal/evidence/acceptance/M4/m4-current-20261022/README.md",
         "internal/evidence/acceptance/M4/m4-self-hosted-20261017/record.json",
@@ -264,8 +270,8 @@
         "integratorDecision": "NOT_RUN",
         "integratorId": null,
         "decidedAt": null,
-        "recordRef": "internal/evidence/acceptance/M4/m4-current-20261022/record.json",
-        "reason": "Current candidate local checks are refreshed; authentic provider/hosted recovery evidence and independent review remain open."
+        "recordRef": "internal/evidence/acceptance/M4/m4-current-20261029/record.json",
+        "reason": "The 2026-10-29 hosted four-path create and the selected self-hosted recovery drill are recorded and do not close M4. The aipc fixture archive restates them and is not a stage approval. Recovery-monitor ready output was re-read after the drill. Web SHPITTO_RECOVERY_* observe recipient env was missing at drill start and restored mid-drill before delivery. Negative callback and financial idempotence, numeric deadline and probe configuration, storage-failure fault suites, Stripe acceptance, FirstPromoter, coverage and independent review remain open. Provider cost is UNKNOWN. Current M3 applicability is STALE."
       }
     },
     {
@@ -291,8 +297,14 @@
       "policyRef": "acceptance-gates.md",
       "commonStandardsRequired": true,
       "mandatoryScenarioSource": "traceability.json",
-      "candidateId": "m5-sandbox-20261022",
+      "candidateId": "m5-current-20261029",
       "evidenceRecordRefs": [
+        "internal/evidence/acceptance/M5/m5-current-20261029/record.json",
+        "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/RUN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_OWNER_SIGNED_IN.md",
+        "internal/evidence/acceptance/stripe-test-pack-20261029/BILLING_UI_MEMBER_DENIED.md",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/record.json",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json",
@@ -315,8 +327,9 @@
         "integratorDecision": "NOT_RUN",
         "integratorId": null,
         "decidedAt": null,
-        "reason": "Partial Stripe test-mode evidence and the owner-command replay regression are recorded. Authenticated owner/member UI, remaining applicable M5 scenarios, current M3 applicability, independent review and integrator approval remain open.",
-        "taskReviewRef": "internal/evidence/acceptance/M5/m5-sandbox-20261022/record.json"
+        "reason": "Fixture-only local billing probes were rerun at 2026-10-29T05:39Z. Schema, Checkout, reconciliation, fake-provider Stripe Checkout, reconciliation, inbox, and billing presentation passed. An aipc Docker Postgres fixture archive records additional credit and billing probe exits of 0 and does not close M5. Stripe refunds integration remains 21 pass and 1 fail and is not PASS. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. The hosted Stripe test-mode acceptance-pack embedded payment is PASS_paid_and_reconciled at internal/evidence/acceptance/stripe-test-pack-20261029/ and does not close M5. The signed-in owner billing page is recorded and does not close M5. The member billing denial is recorded and does not close M5. Mobile layout, refund-command replay, hosted Checkout Session URLs, the $25 subscription, refunds, live charges, FirstPromoter, and independent review remain open. Current M3 applicability is STALE.",
+        "taskReviewRef": "internal/evidence/acceptance/M5/m5-current-20261029/record.json",
+        "recordRef": "internal/evidence/acceptance/M5/m5-current-20261029/record.json"
       }
     },
     {
@@ -347,8 +360,11 @@
       "policyRef": "acceptance-gates.md",
       "commonStandardsRequired": true,
       "mandatoryScenarioSource": "traceability.json",
-      "candidateId": "m6-current-20261022",
+      "candidateId": "m6-current-20261029",
       "evidenceRecordRefs": [
+        "internal/evidence/acceptance/M6/m6-current-20261029/record.json",
+        "internal/evidence/acceptance/M6/m6-current-20261029/README.md",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
         "internal/evidence/acceptance/M6/m6-current-20261022/record.json",
         "internal/evidence/acceptance/M6/m6-current-20261022/README.md",
         "internal/evidence/acceptance/M6/m6-current-20261022/candidate/candidate.json",
@@ -362,8 +378,8 @@
         "integratorDecision": "NOT_RUN",
         "integratorId": null,
         "decidedAt": null,
-        "recordRef": "internal/evidence/acceptance/M6/m6-current-20261022/record.json",
-        "reason": "Current local M6 fixture evidence is refreshed; real FirstPromoter and independent review remain open."
+        "recordRef": "internal/evidence/acceptance/M6/m6-current-20261029/record.json",
+        "reason": "Fixture-only local operations, privileged, MFA, recovery, affiliate, database, race, cash-affiliate, notification and referral probes passed at 2026-10-29T05:39Z. An aipc Docker Postgres fixture archive records those probes plus refund preview, admin reads, workspace details, and two-factor stdout, with realAccountVerified false and no FirstPromoter write. Real FirstPromoter account, hosted settlement and independent review remain open. Current M3 applicability is STALE. This does not close M6."
       },
       "localImplementation": {
         "status": "COMPLETE",

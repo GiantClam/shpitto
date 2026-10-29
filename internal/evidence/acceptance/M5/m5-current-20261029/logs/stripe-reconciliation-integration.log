@@ -1,0 +1,30 @@
+✔ fixture defaults still reconcile and deduplicate without Stripe evidence or a fence (234.023716ms)
+✔ invoice, Checkout, and intent aliases converge; renewal invoice gets a distinct grant and original expiry (69.938736ms)
+✔ historical bound subscription renews and mirrors after current customer replacement (34.799555ms)
+✔ missing service period is a durable hold with no grant, never a perpetual subscription grant (9.341985ms)
+✔ a claim commits before remote work and a newer generation or expired lease rejects old apply atomically (37.484134ms)
+✔ refund-before-paid persists cash evidence and late failed/paid deliveries cannot restore entitlement (37.030911ms)
+✔ Stripe needs a fence, persisted catalog binding, verified amounts, currency, and supported paid semantics (59.469227ms)
+✔ a verified canonical paid observation resolves only matching unverified paid cases and releases holds when none remain (42.763735ms)
+✔ second external subscription produces a recovery hold instead of losing evidence to uniqueness rollback (18.921262ms)
+✔ scope rejects forged workspace/customer hints and lifecycle requires a live matching fence (11.727176ms)
+✔ equal periods cannot merge distinct invoices or extend the original grant expiry (34.994896ms)
+✔ recovery without its original period retains cash and blocks later complete paid evidence (60.580018ms)
+✔ unsupported recovery keeps its monetary evidence and blocks paid through a matching canonical alias (18.703208ms)
+✔ historical refunds preserve their original order while an unrelated replacement subscription is active (42.348028ms)
+✔ fresh recovery identities cannot exceed the non-replayed original order cash cap (43.183922ms)
+✔ Stripe packs use Checkout snapshots, verified discounted cash, and permanent catalog credit quantities (36.179488ms)
+✔ lifecycle unsupported changes commit holds, while stale fences cannot cancel a subscription (17.987056ms)
+✔ Stripe recovery must carry stable refund/dispute identities rather than delivery identities (19.05494ms)
+✔ a first dispute reversal becomes a hold without fabricating a prior loss (38.892932ms)
+✔ a terminal failed refund after a succeeded refund holds without changing confirmed cash (31.787506ms)
+✔ a terminal canceled refund after a succeeded refund holds without changing confirmed cash (38.097092ms)
+✔ pending then failed refund holding evidence never creates confirmed cash (11.38879ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1541.976766

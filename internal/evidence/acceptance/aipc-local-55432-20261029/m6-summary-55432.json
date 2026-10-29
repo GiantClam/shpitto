@@ -1,0 +1,50 @@
+[
+    {
+        "probe":  "probe-m6-admin-reads",
+        "exit":  0,
+        "ms":  1324,
+        "last":  "{\"status\":\"PASS\",\"groups\":7,\"checks\":[\"live role isolation\",\"redacted bounded user filters\",\"workspace filters and audited tenant access\",\"redacted billing and generation projections\",\"audit payload e"
+    },
+    {
+        "probe":  "probe-m6-affiliate-notifications",
+        "exit":  0,
+        "ms":  1295,
+        "last":  "}"
+    },
+    {
+        "probe":  "probe-m6-affiliate-races",
+        "exit":  0,
+        "ms":  8418,
+        "last":  "{\"status\":\"PASS\",\"scope\":\"local-docker-disposable-postgresql\",\"realAccountVerified\":false,\"checks\":[\"hold-after-enqueue\",\"hold-during-request\",\"checkpoint-during-request\",\"lost-batch-response-readback"
+    },
+    {
+        "probe":  "probe-m6-affiliate-referral",
+        "exit":  0,
+        "ms":  1041,
+        "last":  "{\"status\":\"PASS\",\"scope\":\"shared-referral-http-handler-local-docker\",\"realAccountVerified\":false,\"checks\":[\"same-origin-strict-bounded-input-before-io\",\"disabled-invalid-unavailable-retain-prior-cooki"
+    },
+    {
+        "probe":  "probe-m6-cash-affiliate",
+        "exit":  0,
+        "ms":  1347,
+        "last":  "{\"disposableDatabaseRemoved\":true,\"databaseName\":\"m6_cash_probe_b8288f85cc4a49d3b148e280cdc1fee6\"}"
+    },
+    {
+        "probe":  "probe-m6-operations",
+        "exit":  0,
+        "ms":  1427,
+        "last":  "{\"disposableDatabaseRemoved\":true,\"databaseName\":\"m6_operations_probe_479f5f7d0f0e45fe80ea5c960449cafd\"}"
+    },
+    {
+        "probe":  "probe-m6-privileged",
+        "exit":  0,
+        "ms":  1964,
+        "last":  "{\"disposableDatabaseRemoved\":true,\"databaseName\":\"m6_privileged_probe_b31165d49ce8448cb51076c972e64846\"}"
+    },
+    {
+        "probe":  "probe-m6-workspace-details",
+        "exit":  0,
+        "ms":  1246,
+        "last":  "{\"status\":\"PASS\",\"database\":\"isolated local Docker PostgreSQL\",\"sections\":[\"memberships\",\"subscriptions\",\"grants\",\"ledger\"],\"deterministicPagination\":true,\"tenantIsolation\":true,\"recordedPurpose\":true"
+    }
+]

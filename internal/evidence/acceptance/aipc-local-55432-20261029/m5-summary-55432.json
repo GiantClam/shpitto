@@ -1,0 +1,50 @@
+[
+    {
+        "probe":  "probe-credit-reservation",
+        "exit":  0,
+        "ms":  883,
+        "last":  "{\"status\":\"PASS\",\"replayed\":true,\"fefoAllocation\":[\"20\",\"20\"],\"expiredUnreservedExcluded\":true,\"forgedPriceRejected\":true,\"staleCatalogRejected\":true,\"concurrentAffordableReservati"
+    },
+    {
+        "probe":  "probe-credit-refund",
+        "exit":  0,
+        "ms":  835,
+        "last":  "{\"status\":\"PASS\",\"replayCount\":20,\"conflictingPayloadRejected\":true,\"replayed\":true,\"lateOutcomeRejected\":true,\"expiredSubscriptionCompensated\":true,\"compensationLineageRetained\":t"
+    },
+    {
+        "probe":  "probe-billing-checkout",
+        "exit":  0,
+        "ms":  1172,
+        "last":  "{\"disposableDatabaseRemoved\":true,\"databaseName\":\"m5_checkout_probe_a97a2f4ef4b1420fa4b4ee553ab8284d\"}"
+    },
+    {
+        "probe":  "probe-credit-migration-backfill",
+        "exit":  0,
+        "ms":  1028,
+        "last":  "{\"status\":\"PASS\",\"legacyAllocationLinked\":true,\"allBucketsAndTimestampsPreserved\":true,\"openingSnapshots\":2,\"legacyProofRequired\":true,\"unknownLegacyReservedUnchanged\":\"10\",\"legacy"
+    },
+    {
+        "probe":  "probe-m6-recovery",
+        "exit":  0,
+        "ms":  870,
+        "last":  "{\"status\":\"PASS\",\"database\":\"PostgreSQL\",\"crossProviderRequestCollision\":true,\"wrongAttemptNonce\":true,\"foreignTaskDenied\":true,\"sweepReplay\":true,\"staleVersionRejected\":true,\"sema"
+    },
+    {
+        "probe":  "probe-m6-affiliate",
+        "exit":  0,
+        "ms":  151,
+        "last":  "{\"status\":\"PASS\",\"scope\":\"local-pure-contracts-only\",\"databaseVerified\":false,\"providerVerified\":false,\"runtimeIntegrationVerified\":false,\"unavailableAdapterFailsClosed\":true,\"sign"
+    },
+    {
+        "probe":  "probe-m6-affiliate-db",
+        "exit":  0,
+        "ms":  1917,
+        "last":  "{\"status\":\"PASS\",\"scope\":\"local-docker-postgresql-with-injected-authoritative-fixtures\",\"realAccountVerified\":false,\"disposableDatabase\":true,\"attributionSealed\":true,\"transientCan"
+    },
+    {
+        "probe":  "probe-m6-refund-preview",
+        "exit":  0,
+        "ms":  1729,
+        "last":  "{\"status\":\"PASS\",\"scope\":\"local-docker-monetary-preview-and-command-boundaries\",\"realAccountVerified\":false,\"checks\":[\"owner-and-operator-preview-distinguish-paid-exposed-held-and-"
+    }
+]

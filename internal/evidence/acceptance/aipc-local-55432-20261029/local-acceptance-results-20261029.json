@@ -1,0 +1,126 @@
+{
+    "m4_hosted":  {
+                      "recovery_drill":  {
+                                             "workspace":  "fc4b6bb4-eccc-431e-ac49-bc8241bd1b90",
+                                             "monitor_ready":  "deliveryPending=false",
+                                             "runId":  "9b0d0a5d-2bf7-4958-832e-40fef041dfb0",
+                                             "verify":  "102/102/102 verified:true",
+                                             "incident":  "9525d623-9d2b-4856-930c-ed43b30e62bf"
+                                         },
+                      "four_path":  "already RECORDED PASS (prior)"
+                  },
+    "m6":  [
+               {
+                   "status":  "PASS",
+                   "probe":  "probe-m6-recovery",
+                   "exit":  0
+               },
+               {
+                   "scope":  "local-pure-contracts-only",
+                   "status":  "PASS",
+                   "probe":  "probe-m6-affiliate",
+                   "exit":  0
+               },
+               {
+                   "status":  "PASS",
+                   "probe":  "probe-m6-affiliate-db",
+                   "exit":  0
+               },
+               {
+                   "status":  "PASS",
+                   "probe":  "probe-m6-refund-preview",
+                   "exit":  0
+               },
+               {
+                   "status":  "PASS",
+                   "probe":  "probe-m6-admin-reads",
+                   "exit":  0
+               },
+               {
+                   "status":  "PASS",
+                   "probe":  "probe-m6-affiliate-notifications",
+                   "exit":  0
+               },
+               {
+                   "status":  "PASS",
+                   "probe":  "probe-m6-affiliate-races",
+                   "exit":  0
+               },
+               {
+                   "status":  "PASS",
+                   "probe":  "probe-m6-affiliate-referral",
+                   "exit":  0
+               },
+               {
+                   "status":  "PASS",
+                   "probe":  "probe-m6-cash-affiliate",
+                   "exit":  0
+               },
+               {
+                   "status":  "PASS",
+                   "probe":  "probe-m6-operations",
+                   "exit":  0
+               },
+               {
+                   "status":  "PASS",
+                   "probe":  "probe-m6-privileged",
+                   "exit":  0
+               },
+               {
+                   "status":  "PASS",
+                   "probe":  "probe-m6-workspace-details",
+                   "exit":  0
+               }
+           ],
+    "still_blocked":  [
+                          "Live Stripe charge / refund / payout (needs explicit capped auth)",
+                          "Real FirstPromoter account verification / settlement",
+                          "M6 two-factor / human review gates",
+                          "M7–M8 (not authorized for live paths)"
+                      ],
+    "note":  "Fixture-only local probes. No live Stripe charges, refunds, payouts, or real FirstPromoter.",
+    "date":  "2026-10-29",
+    "m5":  [
+               {
+                   "status":  "PASS",
+                   "probe":  "probe-billing-schema",
+                   "exit":  0
+               },
+               {
+                   "status":  "PASS",
+                   "probe":  "probe-billing-reconciliation",
+                   "exit":  0
+               },
+               {
+                   "status":  "PASS",
+                   "probe":  "probe-credit-ledger",
+                   "exit":  0
+               },
+               {
+                   "status":  "PASS",
+                   "probe":  "probe-credit-reservation",
+                   "exit":  0
+               },
+               {
+                   "status":  "PASS",
+                   "probe":  "probe-credit-refund",
+                   "exit":  0
+               },
+               {
+                   "status":  "PASS",
+                   "probe":  "probe-billing-checkout",
+                   "exit":  0
+               },
+               {
+                   "status":  "PASS",
+                   "probe":  "probe-credit-migration-backfill",
+                   "exit":  0
+               },
+               {
+                   "status":  "PASS",
+                   "probe":  "probe-provider-recovery",
+                   "exit":  0
+               }
+           ],
+    "database":  "postgres://127.0.0.1:55432/postgres (disposable local Docker)"
+}

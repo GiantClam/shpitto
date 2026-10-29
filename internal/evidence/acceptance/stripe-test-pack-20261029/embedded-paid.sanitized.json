@@ -1,0 +1,21 @@
+{
+  "id": "cs_test_a14dakOqKBk0AhWBmOKGGupRbOhIRzuhpmbNL6synH6RexEdy6e3Vm5qyl",
+  "object": "checkout.session",
+  "status": "complete",
+  "payment_status": "paid",
+  "amount_total": 900,
+  "currency": "usd",
+  "livemode": false,
+  "mode": "payment",
+  "customer": "cus_VWs570jIOh5FPU",
+  "payment_intent": "pi_3UVoXjRcvKApiJYW1qeWiwg4",
+  "created": 1793261173,
+  "metadata": {
+    "attemptId": "3efbaf91-10ec-4494-adee-58992793aee9",
+    "catalogHash": "b6bfb6297c034d9a4fe368a2485f5bcf7b5d994c2d10ef53d70b129a2f151011",
+    "customerId": "cus_VWs570jIOh5FPU",
+    "idempotencyKey": "checkout:3efbaf91-10ec-4494-adee-58992793aee9",
+    "productKey": "acceptance-pack",
+    "workspaceId": "88e1b0a0-a097-4a8c-b274-f5b8f0ab80d1"
+  }
+}
