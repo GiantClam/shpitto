@@ -8,7 +8,7 @@
   "status": "IN_PROGRESS",
   "candidateId": "m6-current-20261029",
   "createdAt": "2026-10-29T04:05:00.000Z",
-  "updatedAt": "2026-10-29T15:24:16.744Z",
+  "updatedAt": "2026-10-29T15:16:43.950Z",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
     "sha256": "3e31e7cb16379171305c558b80dddb930b26fbfa46147cc0d5c6aa319ef64a40"
@@ -46,14 +46,14 @@
     }
   ],
   "candidate": {
-    "capturedAt": "2026-10-29T15:24:16.744Z",
-    "sourceCommit": "05d9acc8d599d25b8e02345abd67c155d26bfa48",
+    "capturedAt": "2026-10-29T15:16:43.950Z",
+    "sourceCommit": "bac9e63dd71eddadef826e568c51f4422e7d0158",
     "dirtyPatchSha256": null,
-    "sourceTreeSha256": "b1e673c53daf43e761f9a2a196129e8612c6eed631d9bd50065b8b3b848fa120",
+    "sourceTreeSha256": "332afba8d79fd57bef8ba7300bda8c6bba66cfb3a66b0a69411cd39c29111a22",
     "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
-    "configurationSha256": "9f7eae51ae4819c717c3243b2b869156de5149484daa70ad259dba57b1c47af1",
+    "configurationSha256": "00880866584cbf06cfacfe0f774f35c7a36d3b8339fc3e3146e34dd007638c58",
     "contractSha256": "64a37e1dc089372f0177d144ea8f2f2489c4a0ba3e75abe5bd6adc215f14514b",
-    "validatorSha256": "4e7deadccb322c6e49304c48089cf8b62955d9ad3571ac16a9eea318108dd2a6",
+    "validatorSha256": "f674140fa40691c2996676c1501af7a72995ee2d87b10790a67bb186ab695cb2",
     "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
     "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
     "digestInputs": {
@@ -1204,12 +1204,12 @@
     "carriedEvidence": []
   },
   "candidateRefresh": {
-    "capturedAt": "2026-10-29T15:24:16.744Z",
+    "capturedAt": "2026-10-29T15:16:43.950Z",
     "candidateId": "m6-current-20261029",
-    "source": "GitHub PR #6 merge-ref archive capture using scripts/candidate-digests.mjs canonical digest inputs",
+    "source": "GitHub PR #5 merge-ref archive capture using scripts/candidate-digests.mjs canonical digest inputs",
     "status": "CURRENT_BYTES_CAPTURED_IN_PROGRESS",
     "fullStageAcceptance": false,
-    "sourceCommit": "05d9acc8d599d25b8e02345abd67c155d26bfa48"
+    "sourceCommit": "bac9e63dd71eddadef826e568c51f4422e7d0158"
   },
   "commandEvidenceApplicability": {
     "currentExecutionCommandIds": [

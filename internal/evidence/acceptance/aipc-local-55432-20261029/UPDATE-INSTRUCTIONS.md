@@ -37,7 +37,7 @@ Also previously: probe-provider-recovery (M4 local) PASS
 
 ## Do NOT mark stages PASS
 Keep M4/M5/M6 IN_PROGRESS. M7/M8 NOT_STARTED.
-Preserve open defect M5-LOCAL-REFUND-STEPUP-20261029 if still present.
+Defect M5-LOCAL-REFUND-STEPUP-20261029 is CLOSED on the M5 current record. Do not reopen it from this archive, and do not mark M5 PASS.
 Never invent PASS for live Stripe / real FP / standard M4-C01–C04 / independent review.
 
 ## Update

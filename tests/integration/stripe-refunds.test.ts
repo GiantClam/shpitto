@@ -247,10 +247,17 @@ test('auth, step-up and expected version reject before provider work or refund c
   const h = harness((input) => remote(input));
   await assert.rejects(requestBillingRefundAsOperator(db, {...command(f), expectedVersion: 2, provider: h.provider}), /version/i);
   await assert.rejects(requestBillingRefundAsOperator(db, {...command(f), actor: {...f.actor, sessionId: 'wrong-session'}, provider: h.provider}), /session/i);
-  await pool.query('delete from app.operator_step_ups where user_id=$1', [f.actor.userId]);
-  await assert.rejects(requestBillingRefundAsOperator(db, {...command(f), provider: h.provider}), /factor|step.up/i);
-  assert.equal(h.calls.length, 0);
-  assert.equal((await facts(f)).requests.length, 0);
+  // REQ-SEC-04: a missing stamp rejects a privileged refund only while operator 2FA enforcement is enabled.
+  // A fresh migrated database leaves two_factor_required false until an operator exists at migration time.
+  await pool.query("update app.security_settings set two_factor_required = true where id = 'default'");
+  try {
+    await pool.query('delete from app.operator_step_ups where user_id=$1', [f.actor.userId]);
+    await assert.rejects(requestBillingRefundAsOperator(db, {...command(f), provider: h.provider}), /factor|step.up/i);
+    assert.equal(h.calls.length, 0);
+    assert.equal((await facts(f)).requests.length, 0);
+  } finally {
+    await pool.query("update app.security_settings set two_factor_required = false where id = 'default'");
+  }
 });
 
 test('parallel commands submit once, block other unresolved intents, and expired claims only look up', async () => {

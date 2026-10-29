@@ -2767,8 +2767,8 @@
     },
     {
       "path": "tests/integration/stripe-refunds.test.ts",
-      "bytes": 22736,
-      "sha256": "5075906aab02ef098175cb8d96d43af484233088ad9fa0f7ba9a1dda743b6abc"
+      "bytes": 23198,
+      "sha256": "fbe7eaf3d57a1f9e267c9395f4dfb3a872aa82215670f216d8e5f86594b4174a"
     },
     {
       "path": "tests/release/export-boundaries.test.ts",
@@ -4380,8 +4380,8 @@
     },
     {
       "path": "tests/integration/stripe-refunds.test.ts",
-      "bytes": 22736,
-      "sha256": "5075906aab02ef098175cb8d96d43af484233088ad9fa0f7ba9a1dda743b6abc"
+      "bytes": 23198,
+      "sha256": "fbe7eaf3d57a1f9e267c9395f4dfb3a872aa82215670f216d8e5f86594b4174a"
     },
     {
       "path": "tests/release/export-boundaries.test.ts",

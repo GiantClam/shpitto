@@ -1,0 +1,12 @@
+Candidate/source base: `6afbf913b8991c8ebf8ff02464d9d676449fb4b6` (same dependency/configuration source inputs as integrated candidate `0927667df20a799de4b2fefaadbf7a833f49cbce`; later differences are M5 evidence records outside digest inputs).
+Environment: Windows Node 24.15.0, pnpm 12.6.0, canonical LF lockfile bytes.
+
+Command: `corepack pnpm exec node scripts/check-root-integrity.mjs`
+Start: `2026-10-29T10:56:49.183Z`; exit: 0.
+Result: PASS; package manager is `pnpm@12.6.0`; application lock SHA-256 is `a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee`; historical prototype/provenance and reviewed Nodemailer `10.2.1` dependency evolution are consistent.
+
+Command: `node --experimental-strip-types --test tests/unit/root-integrity.test.ts tests/unit/candidate-digests.test.ts`
+Start: `2026-10-29T10:56:49.183Z`; end: `2026-10-29T10:56:53.929Z`; exit: 0.
+Result: 22 passed, 0 failed. The suite covers the accepted dependency graph, exact lock pin, historical proof immutability, LF/CRLF checkout behavior, workspace isolation, and candidate digest invalidation.
+
+Scope: dependency-baseline verification only. It does not approve M4, M5, M6, or any release stage.
