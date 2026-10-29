@@ -1,0 +1,1149 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "DEVELOPMENT_VERIFICATION",
+  "changeId": "restart-shpitto-video-saas",
+  "stageId": "M6",
+  "checkpointId": null,
+  "gateTaskId": "7.14",
+  "status": "IN_PROGRESS",
+  "candidateId": "m6-current-20261029",
+  "createdAt": "2026-10-29T04:05:00.000Z",
+  "updatedAt": "2026-10-29T04:05:00.000Z",
+  "policy": {
+    "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+    "sha256": "3e31e7cb16379171305c558b80dddb930b26fbfa46147cc0d5c6aa319ef64a40"
+  },
+  "prerequisites": [
+    {
+      "stageId": "M3",
+      "observedStatus": "PASS",
+      "requiredProfile": "historical-local-mock",
+      "candidateId": "working-tree-20261001-current",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/record.json"
+      ],
+      "reason": "Historical M3 approval is preserved. Current-candidate M3 applicability stays STALE until a separate equivalence review."
+    },
+    {
+      "stageId": "M4",
+      "observedStatus": "IN_PROGRESS",
+      "requiredProfile": "current-development",
+      "candidateId": "m4-current-20261029",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M4/m4-current-20261029/record.json"
+      ],
+      "reason": "M4 local and point-in-time hosted health evidence is refreshed. Authentic provider acceptance remains open."
+    },
+    {
+      "stageId": "M5",
+      "observedStatus": "IN_PROGRESS",
+      "requiredProfile": "current-development",
+      "candidateId": "m5-current-20261029",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M5/m5-current-20261029/record.json"
+      ],
+      "reason": "M5 local fixture evidence is refreshed. Hosted Stripe acceptance and the failed local refund step-up case remain open."
+    }
+  ],
+  "candidate": {
+    "capturedAt": "2026-10-29T04:03:24.442Z",
+    "sourceCommit": "f59f1f094dab084374331de9ad2b7a6fb7ed081e",
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "03a98cc01995e498df99f181b887c687d1ab5e05c90c86a91819ecb9b35005aa",
+    "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
+    "configurationSha256": "ce96987b2cd7fb4821f36de2e05ba80455a37b566d77ca343f9320d55e56bb59",
+    "contractSha256": "6acfb80fc1a8d6b4dc0f699f1c3d5280a0b44905c1eff6a0b199c19adad601ac",
+    "validatorSha256": "1a12444f81e38581a7b56f9f0a741a88bf53b6da8b31c97942a0f5cc02923802",
+    "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
+    "digestInputs": {
+      "sourceTree": [
+        "internal/contracts/providers",
+        "src",
+        "tests",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        "tooling",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        "src/config/env.ts",
+        "src/config/task-runtime.ts",
+        "src/config/provider-worker.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile",
+        "deploy/provider-worker.Dockerfile",
+        "deploy/railway.provider-worker.json",
+        "scripts/provider-worker-preflight.ts",
+        "scripts/provider-worker-runtime.mjs",
+        "tooling"
+      ],
+      "contract": [
+        "internal/contracts/providers",
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json",
+        "openspec/changes/restart-shpitto-video-saas/specs",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json",
+        "internal/restart/root-dependency-evolution.md"
+      ],
+      "validator": [
+        "scripts",
+        "tests",
+        "tooling",
+        "internal/restart/check-acceptance-record.py",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json"
+      ]
+    }
+  },
+  "environments": [
+    {
+      "environmentId": "m6-current-local-20261029",
+      "profile": "Disposable local PostgreSQL 16 on 127.0.0.1:55432 and 55433. No provider create, live Stripe charge, or FirstPromoter write.",
+      "commercialCalls": false,
+      "fixtureOrSeed": "Commands create and drop disposable databases, except the recovery probe which rolls back inside the migrated local shpitto database.",
+      "toolVersions": {
+        "node": "v24.22.2",
+        "pnpm": "12.6.0",
+        "postgres": "16.15"
+      },
+      "limits": "Local checks plus, for M4 only, unauthenticated hosted health reads. No paid provider create and no live Stripe charge.",
+      "setupStatus": "PASS"
+    }
+  ],
+  "criterionResults": [
+    {
+      "criterionId": "M6-C01",
+      "mandatory": true,
+      "result": "BLOCKED",
+      "expected": "All required milestone profiles and independent whole-stage review pass.",
+      "observed": "Local operations, privileged, MFA, recovery, affiliate fixture, race, cash-affiliate and notification probes passed on disposable PostgreSQL. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M6/m6-current-20261029/README.md",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/frozen-lock-install.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/typecheck.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/lint.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log"
+      ]
+    },
+    {
+      "criterionId": "M6-C02",
+      "mandatory": true,
+      "result": "BLOCKED",
+      "expected": "All required milestone profiles and independent whole-stage review pass.",
+      "observed": "Local operations, privileged, MFA, recovery, affiliate fixture, race, cash-affiliate and notification probes passed on disposable PostgreSQL. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M6/m6-current-20261029/README.md",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/frozen-lock-install.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/typecheck.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/lint.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log"
+      ]
+    },
+    {
+      "criterionId": "M6-C03",
+      "mandatory": true,
+      "result": "BLOCKED",
+      "expected": "All required milestone profiles and independent whole-stage review pass.",
+      "observed": "Local operations, privileged, MFA, recovery, affiliate fixture, race, cash-affiliate and notification probes passed on disposable PostgreSQL. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M6/m6-current-20261029/README.md",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/frozen-lock-install.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/typecheck.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/lint.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log"
+      ]
+    },
+    {
+      "criterionId": "M6-C04",
+      "mandatory": true,
+      "result": "BLOCKED",
+      "expected": "All required milestone profiles and independent whole-stage review pass.",
+      "observed": "Local operations, privileged, MFA, recovery, affiliate fixture, race, cash-affiliate and notification probes passed on disposable PostgreSQL. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M6/m6-current-20261029/README.md",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/frozen-lock-install.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/typecheck.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/lint.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log"
+      ]
+    },
+    {
+      "criterionId": "M6-C05",
+      "mandatory": true,
+      "result": "BLOCKED",
+      "expected": "All required milestone profiles and independent whole-stage review pass.",
+      "observed": "Local operations, privileged, MFA, recovery, affiliate fixture, race, cash-affiliate and notification probes passed on disposable PostgreSQL. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M6/m6-current-20261029/README.md",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/frozen-lock-install.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/typecheck.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/lint.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log"
+      ]
+    }
+  ],
+  "commonStandardResults": [
+    {
+      "standard": "current-local-development",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "The commands recorded for m6-current-20261029 exited 0 and their logs are retained. This standard does not cover hosted provider, Stripe acceptance, or FirstPromoter rows.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M6/m6-current-20261029/README.md",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/frozen-lock-install.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/typecheck.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/lint.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/verify-db-boundary.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/verify-openspec.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/production-build.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/contracts-provider-inputs.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/contracts-billing-contracts.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/billing-schema.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-operations.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-privileged.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-mfa.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-recovery.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-affiliate.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-affiliate-db.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-affiliate-races.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-cash-affiliate.log",
+        "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-affiliate-notifications.log"
+      ]
+    },
+    {
+      "standard": "complete-stage-evidence",
+      "applicable": true,
+      "result": "BLOCKED",
+      "assertions": "Local operations, privileged, MFA, recovery, affiliate fixture, race, cash-affiliate and notification probes passed on disposable PostgreSQL. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M6/m6-current-20261029/README.md",
+        "internal/evidence/acceptance/M6/m6-current-20261029/digest-delta.json"
+      ]
+    }
+  ],
+  "scenarioResults": [
+    {
+      "ids": [
+        "SC-OPS-01"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-02"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-03"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-04"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-05"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-06"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-07"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-08"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-09"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-10"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-11"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-12"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-13"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-14"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-01"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-02"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-03"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-04"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-05"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-06"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-07"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-08"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-09"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-10"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-11"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-12"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-13"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-14"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-15"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-16"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-17"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-18"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-19"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-20"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-21"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-22"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-23"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-24"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-BIL-17"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    }
+  ],
+  "taskResults": [
+    {
+      "taskId": "7.1",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.2",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.3",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.4",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.5",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.6",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.7",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.8",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.9",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.10",
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.11",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.12",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.13",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "commandId": "frozen-lock-install",
+      "invocation": "pnpm install --frozen-lockfile --prefer-offline --ignore-scripts",
+      "environmentId": "m6-current-local-20261029",
+      "startAt": "2026-10-29T04:00:31.356Z",
+      "endAt": "2026-10-29T04:00:31.451Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/frozen-lock-install.log"
+    },
+    {
+      "commandId": "typecheck",
+      "invocation": "pnpm typecheck",
+      "environmentId": "m6-current-local-20261029",
+      "startAt": "2026-10-29T04:00:31.453Z",
+      "endAt": "2026-10-29T04:00:40.772Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/typecheck.log"
+    },
+    {
+      "commandId": "lint",
+      "invocation": "pnpm lint",
+      "environmentId": "m6-current-local-20261029",
+      "startAt": "2026-10-29T04:00:40.774Z",
+      "endAt": "2026-10-29T04:00:40.919Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/lint.log"
+    },
+    {
+      "commandId": "format-check",
+      "invocation": "pnpm format:check",
+      "environmentId": "m6-current-local-20261029",
+      "startAt": "2026-10-29T04:00:40.921Z",
+      "endAt": "2026-10-29T04:00:41.022Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/format-check.log"
+    },
+    {
+      "commandId": "verify-db-boundary",
+      "invocation": "pnpm verify:db-boundary",
+      "environmentId": "m6-current-local-20261029",
+      "startAt": "2026-10-29T04:00:41.024Z",
+      "endAt": "2026-10-29T04:00:41.113Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/verify-db-boundary.log"
+    },
+    {
+      "commandId": "verify-openspec",
+      "invocation": "pnpm verify:openspec",
+      "environmentId": "m6-current-local-20261029",
+      "startAt": "2026-10-29T04:00:41.114Z",
+      "endAt": "2026-10-29T04:00:41.747Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/verify-openspec.log"
+    },
+    {
+      "commandId": "production-build",
+      "invocation": "pnpm build",
+      "environmentId": "m6-current-local-20261029",
+      "startAt": "2026-10-29T04:01:01.139Z",
+      "endAt": "2026-10-29T04:01:26.117Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/production-build.log"
+    },
+    {
+      "commandId": "contracts-provider-inputs",
+      "invocation": "node --experimental-strip-types --test tests/contracts/provider-inputs.test.ts",
+      "environmentId": "m6-current-local-20261029",
+      "startAt": "2026-10-29T04:00:41.749Z",
+      "endAt": "2026-10-29T04:00:42.284Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/contracts-provider-inputs.log"
+    },
+    {
+      "commandId": "contracts-billing-contracts",
+      "invocation": "node --experimental-strip-types --test tests/contracts/billing-contracts.test.ts",
+      "environmentId": "m6-current-local-20261029",
+      "startAt": "2026-10-29T04:00:42.286Z",
+      "endAt": "2026-10-29T04:00:42.403Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/contracts-billing-contracts.log"
+    },
+    {
+      "commandId": "billing-schema",
+      "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-billing-schema.ts",
+      "environmentId": "m6-current-local-20261029",
+      "startAt": "2026-10-29T04:00:42.404Z",
+      "endAt": "2026-10-29T04:00:43.275Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/billing-schema.log"
+    },
+    {
+      "commandId": "m6-operations",
+      "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-operations.ts",
+      "environmentId": "m6-current-local-20261029",
+      "startAt": "2026-10-29T04:00:50.255Z",
+      "endAt": "2026-10-29T04:00:51.178Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-operations.log"
+    },
+    {
+      "commandId": "m6-privileged",
+      "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-privileged.ts",
+      "environmentId": "m6-current-local-20261029",
+      "startAt": "2026-10-29T04:00:51.179Z",
+      "endAt": "2026-10-29T04:00:52.220Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-privileged.log"
+    },
+    {
+      "commandId": "m6-mfa",
+      "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-two-factor.ts",
+      "environmentId": "m6-current-local-20261029",
+      "startAt": "2026-10-29T04:00:52.222Z",
+      "endAt": "2026-10-29T04:00:53.785Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-mfa.log"
+    },
+    {
+      "commandId": "m6-recovery",
+      "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-recovery.ts",
+      "environmentId": "m6-current-local-20261029",
+      "startAt": "2026-10-29T04:00:53.787Z",
+      "endAt": "2026-10-29T04:00:54.486Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-recovery.log"
+    },
+    {
+      "commandId": "m6-affiliate",
+      "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-affiliate.ts",
+      "environmentId": "m6-current-local-20261029",
+      "startAt": "2026-10-29T04:00:54.488Z",
+      "endAt": "2026-10-29T04:00:54.560Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-affiliate.log"
+    },
+    {
+      "commandId": "m6-affiliate-db",
+      "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-affiliate-db.ts",
+      "environmentId": "m6-current-local-20261029",
+      "startAt": "2026-10-29T04:00:54.561Z",
+      "endAt": "2026-10-29T04:00:55.713Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-affiliate-db.log"
+    },
+    {
+      "commandId": "m6-affiliate-races",
+      "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-affiliate-races.ts",
+      "environmentId": "m6-current-local-20261029",
+      "startAt": "2026-10-29T04:00:55.715Z",
+      "endAt": "2026-10-29T04:00:59.290Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-affiliate-races.log"
+    },
+    {
+      "commandId": "m6-cash-affiliate",
+      "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-cash-affiliate.ts",
+      "environmentId": "m6-current-local-20261029",
+      "startAt": "2026-10-29T04:00:59.291Z",
+      "endAt": "2026-10-29T04:01:00.204Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-cash-affiliate.log"
+    },
+    {
+      "commandId": "m6-affiliate-notifications",
+      "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-m6-affiliate-notifications.ts",
+      "environmentId": "m6-current-local-20261029",
+      "startAt": "2026-10-29T04:01:00.206Z",
+      "endAt": "2026-10-29T04:01:01.138Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M6/m6-current-20261029/logs/m6-affiliate-notifications.log"
+    }
+  ],
+  "coverage": {
+    "status": "NOT_RERUN",
+    "scope": "Owned-module branch coverage was not recomputed on this candidate. Earlier coverage files stay historical and are not current-digest proof.",
+    "historicalEvidenceRefs": [
+      "internal/evidence/M6/local-20261004/final/coverage.json"
+    ],
+    "missingSources": []
+  },
+  "defects": [],
+  "externalInputs": [
+    {
+      "requiredInput": "Supported FirstPromoter account, buyer campaign and hosted settlement authority",
+      "owner": "buyer/operator",
+      "affectedTasks": [
+        "7.14"
+      ],
+      "availability": "DEFERRED_BY_USER",
+      "nextAction": "Configure and verify the real affiliate account in a separately scoped phase; keep application delivery disabled until then.",
+      "nonsecretAuthorityRef": "openspec/changes/restart-shpitto-video-saas/tasks.md"
+    },
+    {
+      "requiredInput": "Production email account",
+      "owner": "buyer/operator",
+      "affectedTasks": [
+        "7.14",
+        "9.15"
+      ],
+      "availability": "DEFERRED_BY_USER",
+      "nextAction": "Keep the dependent production profile open.",
+      "nonsecretAuthorityRef": "openspec/changes/restart-shpitto-video-saas/tasks.md"
+    }
+  ],
+  "submission": {
+    "implementerId": "codex-current-candidate-refresh",
+    "submittedAt": "2026-10-29T04:05:00.000Z",
+    "reportRef": "internal/evidence/acceptance/M6/m6-current-20261029/README.md"
+  },
+  "independentReview": {
+    "reviewerId": null,
+    "reviewedAt": null,
+    "independentFromImplementer": null,
+    "decision": "NOT_RUN",
+    "reason": "Independent whole-stage review is queued for final manual acceptance and was not performed for this digest.",
+    "evidenceRefs": []
+  },
+  "integrationDecision": {
+    "integratorId": null,
+    "decidedAt": null,
+    "decision": "NOT_RUN",
+    "reason": "No integrator approval is recorded for this development refresh.",
+    "nextEligibleTaskIds": [],
+    "blockedTaskIds": [
+      "7.14"
+    ],
+    "evidenceRefs": []
+  },
+  "invalidation": {
+    "supersedesRecordRef": "internal/evidence/acceptance/M6/m6-current-20261022/record.json",
+    "changedDigestRefs": [
+      "internal/evidence/acceptance/M6/m6-current-20261029/digest-delta.json"
+    ],
+    "affectedStages": [
+      "M3",
+      "M6"
+    ],
+    "currentM3Applicability": "STALE",
+    "requiredReruns": [
+      "Independent review of current M3 applicability before any equivalence carry.",
+      "Authentic provider matrix and hosted recovery without an unauthorized paid create.",
+      "Hosted Stripe acceptance-profile lifecycle, refund readback and owner-command replay.",
+      "Repair or explicitly reclassify the local Stripe refund step-up failure before claiming that suite.",
+      "Real FirstPromoter account and hosted settlement evidence.",
+      "Recompute owned-module branch coverage on this digest before a coverage PASS claim."
+    ],
+    "carriedEvidence": []
+  },
+  "candidateRefresh": {
+    "capturedAt": "2026-10-29T04:03:24.442Z",
+    "candidateId": "m6-current-20261029",
+    "source": "node scripts/candidate-digests.mjs",
+    "status": "CURRENT_BYTES_CAPTURED_IN_PROGRESS",
+    "fullStageAcceptance": false,
+    "sourceCommit": "f59f1f094dab084374331de9ad2b7a6fb7ed081e"
+  },
+  "commandEvidenceApplicability": {
+    "currentExecutionCommandIds": [
+      "frozen-lock-install",
+      "typecheck",
+      "lint",
+      "format-check",
+      "verify-db-boundary",
+      "verify-openspec",
+      "production-build",
+      "contracts-provider-inputs",
+      "contracts-billing-contracts",
+      "billing-schema",
+      "m6-operations",
+      "m6-privileged",
+      "m6-mfa",
+      "m6-recovery",
+      "m6-affiliate",
+      "m6-affiliate-db",
+      "m6-affiliate-races",
+      "m6-cash-affiliate",
+      "m6-affiliate-notifications"
+    ],
+    "failedNotClaimed": [],
+    "notRerun": [
+      "authentic-provider-matrix",
+      "hosted-stripe-acceptance-readback",
+      "owner-command-replay",
+      "billing-ui",
+      "firstpromoter-account",
+      "owned-module-coverage",
+      "current-m3-equivalence"
+    ]
+  },
+  "limitations": [
+    "This record rebinds development evidence to the current digests. It does not promote the stage to PASS or READY_FOR_REVIEW.",
+    "Current M3 applicability is STALE. The historical M3 PASS record was not modified.",
+    "Hosted web health was ready. Worker health was ready with creates disabled at 2026-10-29T04:04:19Z, and a later deployment of the same commit was BUILDING. Recovery-monitor ready output was not re-read.",
+    "No paid provider create, live Stripe charge, refund, payout, or FirstPromoter write was performed.",
+    "Stripe acceptance-profile and FirstPromoter account rows were not re-run."
+  ]
+}

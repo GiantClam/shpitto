@@ -1,0 +1,50 @@
+{
+  "observedAt": "2026-10-29T04:04:19.000Z",
+  "projectId": "b0abc207-4d5b-4f64-903f-ec7d929b35c4",
+  "projectName": "shpitto-m4-staging",
+  "environmentId": "1e28b0c2-6c37-49c3-8151-951fd453ef05",
+  "sourceCommit": "f59f1f094dab084374331de9ad2b7a6fb7ed081e",
+  "sourceBranch": "codex/restart-shpitto-m0",
+  "paidProviderCreatesEnabled": false,
+  "liveStripeChargesPerformed": false,
+  "services": {
+    "web": {
+      "serviceId": "572448eb-292d-498a-afc6-965b4f5ee5f4",
+      "deploymentId": "460b006a-12a4-4462-8a89-6d095375e080",
+      "deploymentStatus": "SUCCESS",
+      "createdAt": "2026-10-29T03:51:47.995Z",
+      "url": "https://shpitto-m4-web-production.up.railway.app/api/healthz",
+      "observedStatusCode": 200,
+      "body": {
+        "status": "ready",
+        "profile": "acceptance",
+        "database": "ready",
+        "latencyMs": 28
+      }
+    },
+    "worker": {
+      "serviceId": "5887fddb-0d43-4509-b41c-ff364abd778f",
+      "observedDeploymentId": "5e1f9f38-d769-46b4-a6e4-17f54d3c9016",
+      "observedDeploymentStatus": "SUCCESS",
+      "url": "https://shpitto-m4-worker-production.up.railway.app/healthz",
+      "observedAt": "2026-10-29T04:04:19.000Z",
+      "observedStatusCode": 200,
+      "createsEnabled": false,
+      "ready": true,
+      "laterDeployment": {
+        "deploymentId": "b8d71086-60c7-4816-922f-f405da3982e5",
+        "statusWhenRecorded": "BUILDING",
+        "createdAt": "2026-10-29T04:04:36.069Z",
+        "note": "A newer deployment of the same commit started building after this health read. The read is point-in-time evidence, not a stable post-rebuild recovery proof."
+      }
+    },
+    "recoveryMonitor": {
+      "serviceId": "12f4490f-b89b-4f6b-a270-5c8b5a4b316a",
+      "deploymentId": "77908ddd-3f2b-41a7-83fc-9d10089e6aaf",
+      "deploymentStatus": "SUCCESS",
+      "createdAt": "2026-10-29T03:51:48.603Z",
+      "publicHealth": "NOT_OBSERVED",
+      "note": "The recovery monitor has no public domain in this environment. Deployment status was SUCCESS and the container logged startup; a ready health body was not re-read."
+    }
+  }
+}

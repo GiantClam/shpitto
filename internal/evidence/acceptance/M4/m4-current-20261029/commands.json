@@ -1,0 +1,138 @@
+{
+  "schemaVersion": "1.0",
+  "candidateId": "m4-current-20261029",
+  "commands": [
+    {
+      "commandId": "frozen-lock-install",
+      "invocation": "pnpm install --frozen-lockfile --prefer-offline --ignore-scripts",
+      "environmentId": "m4-current-local-20261029",
+      "startAt": "2026-10-29T04:00:31.356Z",
+      "endAt": "2026-10-29T04:00:31.451Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/frozen-lock-install.log"
+    },
+    {
+      "commandId": "typecheck",
+      "invocation": "pnpm typecheck",
+      "environmentId": "m4-current-local-20261029",
+      "startAt": "2026-10-29T04:00:31.453Z",
+      "endAt": "2026-10-29T04:00:40.772Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/typecheck.log"
+    },
+    {
+      "commandId": "lint",
+      "invocation": "pnpm lint",
+      "environmentId": "m4-current-local-20261029",
+      "startAt": "2026-10-29T04:00:40.774Z",
+      "endAt": "2026-10-29T04:00:40.919Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/lint.log"
+    },
+    {
+      "commandId": "format-check",
+      "invocation": "pnpm format:check",
+      "environmentId": "m4-current-local-20261029",
+      "startAt": "2026-10-29T04:00:40.921Z",
+      "endAt": "2026-10-29T04:00:41.022Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/format-check.log"
+    },
+    {
+      "commandId": "verify-db-boundary",
+      "invocation": "pnpm verify:db-boundary",
+      "environmentId": "m4-current-local-20261029",
+      "startAt": "2026-10-29T04:00:41.024Z",
+      "endAt": "2026-10-29T04:00:41.113Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/verify-db-boundary.log"
+    },
+    {
+      "commandId": "verify-openspec",
+      "invocation": "pnpm verify:openspec",
+      "environmentId": "m4-current-local-20261029",
+      "startAt": "2026-10-29T04:00:41.114Z",
+      "endAt": "2026-10-29T04:00:41.747Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/verify-openspec.log"
+    },
+    {
+      "commandId": "production-build",
+      "invocation": "pnpm build",
+      "environmentId": "m4-current-local-20261029",
+      "startAt": "2026-10-29T04:01:01.139Z",
+      "endAt": "2026-10-29T04:01:26.117Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/production-build.log"
+    },
+    {
+      "commandId": "contracts-provider-inputs",
+      "invocation": "node --experimental-strip-types --test tests/contracts/provider-inputs.test.ts",
+      "environmentId": "m4-current-local-20261029",
+      "startAt": "2026-10-29T04:00:41.749Z",
+      "endAt": "2026-10-29T04:00:42.284Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/contracts-provider-inputs.log"
+    },
+    {
+      "commandId": "contracts-billing-contracts",
+      "invocation": "node --experimental-strip-types --test tests/contracts/billing-contracts.test.ts",
+      "environmentId": "m4-current-local-20261029",
+      "startAt": "2026-10-29T04:00:42.286Z",
+      "endAt": "2026-10-29T04:00:42.403Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/contracts-billing-contracts.log"
+    },
+    {
+      "commandId": "billing-schema",
+      "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-billing-schema.ts",
+      "environmentId": "m4-current-local-20261029",
+      "startAt": "2026-10-29T04:00:42.404Z",
+      "endAt": "2026-10-29T04:00:43.275Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/billing-schema.log"
+    },
+    {
+      "commandId": "hosted-web-health",
+      "invocation": "curl --max-time 20 https://shpitto-m4-web-production.up.railway.app/api/healthz",
+      "environmentId": "hosted-acceptance-20261029",
+      "startAt": "2026-10-29T04:03:44.000Z",
+      "endAt": "2026-10-29T04:03:44.000Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/hosted-web-health.log"
+    },
+    {
+      "commandId": "hosted-worker-health",
+      "invocation": "curl --max-time 20 https://shpitto-m4-worker-production.up.railway.app/healthz",
+      "environmentId": "hosted-acceptance-20261029",
+      "startAt": "2026-10-29T04:04:19.000Z",
+      "endAt": "2026-10-29T04:04:19.000Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M4/m4-current-20261029/logs/hosted-worker-health.log"
+    }
+  ]
+}

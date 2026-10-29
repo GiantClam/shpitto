@@ -1,0 +1,1029 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "DEVELOPMENT_VERIFICATION",
+  "changeId": "restart-shpitto-video-saas",
+  "stageId": "M5",
+  "checkpointId": null,
+  "gateTaskId": "6.10",
+  "status": "IN_PROGRESS",
+  "candidateId": "m5-current-20261029",
+  "createdAt": "2026-10-29T04:05:00.000Z",
+  "updatedAt": "2026-10-29T04:05:00.000Z",
+  "policy": {
+    "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+    "sha256": "3e31e7cb16379171305c558b80dddb930b26fbfa46147cc0d5c6aa319ef64a40"
+  },
+  "prerequisites": [
+    {
+      "stageId": "M3",
+      "observedStatus": "PASS",
+      "requiredProfile": "historical-local-mock",
+      "candidateId": "working-tree-20261001-current",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/record.json"
+      ],
+      "reason": "Historical M3 approval is preserved. Current-candidate M3 applicability stays STALE until a separate equivalence review."
+    }
+  ],
+  "candidate": {
+    "capturedAt": "2026-10-29T04:03:24.442Z",
+    "sourceCommit": "f59f1f094dab084374331de9ad2b7a6fb7ed081e",
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "03a98cc01995e498df99f181b887c687d1ab5e05c90c86a91819ecb9b35005aa",
+    "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
+    "configurationSha256": "ce96987b2cd7fb4821f36de2e05ba80455a37b566d77ca343f9320d55e56bb59",
+    "contractSha256": "6acfb80fc1a8d6b4dc0f699f1c3d5280a0b44905c1eff6a0b199c19adad601ac",
+    "validatorSha256": "1a12444f81e38581a7b56f9f0a741a88bf53b6da8b31c97942a0f5cc02923802",
+    "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
+    "digestInputs": {
+      "sourceTree": [
+        "internal/contracts/providers",
+        "src",
+        "tests",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        "tooling",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        "src/config/env.ts",
+        "src/config/task-runtime.ts",
+        "src/config/provider-worker.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile",
+        "deploy/provider-worker.Dockerfile",
+        "deploy/railway.provider-worker.json",
+        "scripts/provider-worker-preflight.ts",
+        "scripts/provider-worker-runtime.mjs",
+        "tooling"
+      ],
+      "contract": [
+        "internal/contracts/providers",
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json",
+        "openspec/changes/restart-shpitto-video-saas/specs",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json",
+        "internal/restart/root-dependency-evolution.md"
+      ],
+      "validator": [
+        "scripts",
+        "tests",
+        "tooling",
+        "internal/restart/check-acceptance-record.py",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json"
+      ]
+    }
+  },
+  "environments": [
+    {
+      "environmentId": "m5-current-local-20261029",
+      "profile": "Disposable local PostgreSQL 16 on 127.0.0.1:55432 and 55433. No provider create, live Stripe charge, or FirstPromoter write.",
+      "commercialCalls": false,
+      "fixtureOrSeed": "Commands create and drop disposable databases, except the recovery probe which rolls back inside the migrated local shpitto database.",
+      "toolVersions": {
+        "node": "v24.22.2",
+        "pnpm": "12.6.0",
+        "postgres": "16.15"
+      },
+      "limits": "Local checks plus, for M4 only, unauthenticated hosted health reads. No paid provider create and no live Stripe charge.",
+      "setupStatus": "PASS"
+    }
+  ],
+  "criterionResults": [
+    {
+      "criterionId": "M5-C01",
+      "mandatory": true,
+      "result": "BLOCKED",
+      "expected": "All required milestone profiles and independent whole-stage review pass.",
+      "observed": "Local billing schema, Checkout and reconciliation probes passed, as did fake-provider Stripe Checkout and reconciliation integration suites and the billing presentation unit. The Stripe refunds integration suite failed its operator step-up case (21/22). Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/typecheck.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/lint.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log"
+      ]
+    },
+    {
+      "criterionId": "M5-C02",
+      "mandatory": true,
+      "result": "BLOCKED",
+      "expected": "All required milestone profiles and independent whole-stage review pass.",
+      "observed": "Local billing schema, Checkout and reconciliation probes passed, as did fake-provider Stripe Checkout and reconciliation integration suites and the billing presentation unit. The Stripe refunds integration suite failed its operator step-up case (21/22). Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/typecheck.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/lint.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log"
+      ]
+    },
+    {
+      "criterionId": "M5-C03",
+      "mandatory": true,
+      "result": "BLOCKED",
+      "expected": "All required milestone profiles and independent whole-stage review pass.",
+      "observed": "Local billing schema, Checkout and reconciliation probes passed, as did fake-provider Stripe Checkout and reconciliation integration suites and the billing presentation unit. The Stripe refunds integration suite failed its operator step-up case (21/22). Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/typecheck.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/lint.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log"
+      ]
+    },
+    {
+      "criterionId": "M5-C04",
+      "mandatory": true,
+      "result": "BLOCKED",
+      "expected": "All required milestone profiles and independent whole-stage review pass.",
+      "observed": "Local billing schema, Checkout and reconciliation probes passed, as did fake-provider Stripe Checkout and reconciliation integration suites and the billing presentation unit. The Stripe refunds integration suite failed its operator step-up case (21/22). Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/typecheck.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/lint.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log"
+      ]
+    },
+    {
+      "criterionId": "M5-C05",
+      "mandatory": true,
+      "result": "BLOCKED",
+      "expected": "All required milestone profiles and independent whole-stage review pass.",
+      "observed": "Local billing schema, Checkout and reconciliation probes passed, as did fake-provider Stripe Checkout and reconciliation integration suites and the billing presentation unit. The Stripe refunds integration suite failed its operator step-up case (21/22). Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/typecheck.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/lint.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log"
+      ]
+    }
+  ],
+  "commonStandardResults": [
+    {
+      "standard": "current-local-development",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "The commands recorded for m5-current-20261029 exited 0 and their logs are retained. This standard does not cover hosted provider, Stripe acceptance, or FirstPromoter rows.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/typecheck.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/lint.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/verify-db-boundary.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/verify-openspec.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/production-build.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/contracts-provider-inputs.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/contracts-billing-contracts.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/billing-schema.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/billing-checkout.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/billing-reconciliation.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/stripe-checkout-integration.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/stripe-reconciliation-integration.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/billing-presentation-unit.log"
+      ]
+    },
+    {
+      "standard": "complete-stage-evidence",
+      "applicable": true,
+      "result": "BLOCKED",
+      "assertions": "Local billing schema, Checkout and reconciliation probes passed, as did fake-provider Stripe Checkout and reconciliation integration suites and the billing presentation unit. The Stripe refunds integration suite failed its operator step-up case (21/22). Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
+        "internal/evidence/acceptance/M5/m5-current-20261029/digest-delta.json"
+      ]
+    }
+  ],
+  "scenarioResults": [
+    {
+      "ids": [
+        "SC-BIL-01"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/billing-checkout.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-BIL-02"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/billing-checkout.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-checkout.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-BIL-03"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "The observed unmapped test subscription has no known local customer or subscription match and was left unchanged; the full required subscription-recovery scenario remains blocked. The scenario remains BLOCKED for full M5 acceptance. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/billing-reconciliation.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "T21"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-checkout.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "T23"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-checkout.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "T24"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-BIL-04"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/billing-reconciliation.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-BIL-05"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-checkout.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-BIL-06"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "T22"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-BIL-07"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Existing Stripe test-mode subscription and pack objects map to one paid order/grant each; this is partial purchase evidence, not a full lifecycle profile. The scenario remains BLOCKED for full M5 acceptance. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-database-readback.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-BIL-08"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "T07"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "T08"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-BIL-09"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-BIL-10"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "T26"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-BIL-11"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "The full-unused test refund succeeded once and voided only its 250-credit grant; other refund and dispute profiles remain open. The scenario remains BLOCKED for full M5 acceptance. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-database-readback.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-refunds.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-BIL-12"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-refunds.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-BIL-13"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "T28"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-database-readback.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-refunds.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-BIL-14"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-BIL-15"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/billing-reconciliation.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-BIL-16"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-reconciliation.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/billing-reconciliation.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "T60"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/billing-reconciliation.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-BIL-17"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "The confirmed owner refund command replay returned the persisted request with zero provider calls; authenticated browser UI evidence remains open. The scenario remains BLOCKED for full M5 acceptance. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-command-replay.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-database-readback.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-refunds.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "T04"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-ui-observation.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "T30"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile. Current-candidate supporting logs are also indexed in internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json; this record does not close the full scenario or milestone profile. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-command-replay.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md"
+      ]
+    }
+  ],
+  "taskResults": [
+    {
+      "taskId": "6.1",
+      "result": "PASS",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/M5/m5-local-fixtures-20261017/commands.json",
+        "internal/evidence/M5/m5-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "6.2",
+      "result": "PASS",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/M5/m5-local-fixtures-20261017/commands.json",
+        "internal/evidence/M5/m5-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "6.3",
+      "result": "PASS",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/M5/m5-local-fixtures-20261017/commands.json",
+        "internal/evidence/M5/m5-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "6.4",
+      "result": "PASS",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/M5/m5-local-fixtures-20261017/commands.json",
+        "internal/evidence/M5/m5-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "6.5",
+      "result": "PASS",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/M5/m5-local-fixtures-20261017/commands.json",
+        "internal/evidence/M5/m5-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "6.6",
+      "result": "PASS",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/M5/m5-local-fixtures-20261017/commands.json",
+        "internal/evidence/M5/m5-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "6.7",
+      "result": "PASS",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/M5/m5-local-fixtures-20261017/commands.json",
+        "internal/evidence/M5/m5-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "6.8",
+      "result": "PASS",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/M5/m5-local-fixtures-20261017/commands.json",
+        "internal/evidence/M5/m5-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "6.9",
+      "result": "BLOCKED",
+      "scope": "Current M5 local schema, Checkout, webhook, reconciliation and recovery probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open. Current owner-command replay regression and Acceptance replay evidence are recorded for this candidate. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/M5/m5-local-fixtures-20261017/README.md",
+        "internal/evidence/M5/m5-local-fixtures-20261017/commands.json",
+        "internal/evidence/M5/m5-local-fixtures-20261017/coverage.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-refunds.log",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-command-replay.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/defect-history.md"
+      ]
+    },
+    {
+      "taskId": "6.10",
+      "result": "BLOCKED",
+      "scope": "The current candidate has partial Stripe test-mode subscription/pack/refund evidence, a confirmed zero-provider-call owner-command replay, and current local owner/member billing UI plus workspace-isolation evidence. Remaining applicable scenario profiles, current M3 applicability, independent whole-stage review and integrator approval remain outstanding. Exact-candidate refresh on 2026-10-29 rebound this record to commit f59f1f094dab084374331de9ad2b7a6fb7ed081e. Hosted provider creates, live Stripe charges, Stripe acceptance readback, owner-command replay, billing UI, FirstPromoter account settlement and current M3 equivalence were not re-run and remain outside this result.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-test-objects.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/stripe-database-readback.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-command-replay.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-ui-observation.md",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/browser-billing-20261022.json",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-desktop.png",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-mobile.png",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/member-denied-desktop.png",
+        "internal/evidence/acceptance/M5/m5-sandbox-20261022/member-denial-api.log"
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "commandId": "frozen-lock-install",
+      "invocation": "pnpm install --frozen-lockfile --prefer-offline --ignore-scripts",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T04:00:31.356Z",
+      "endAt": "2026-10-29T04:00:31.451Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log"
+    },
+    {
+      "commandId": "typecheck",
+      "invocation": "pnpm typecheck",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T04:00:31.453Z",
+      "endAt": "2026-10-29T04:00:40.772Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/typecheck.log"
+    },
+    {
+      "commandId": "lint",
+      "invocation": "pnpm lint",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T04:00:40.774Z",
+      "endAt": "2026-10-29T04:00:40.919Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/lint.log"
+    },
+    {
+      "commandId": "format-check",
+      "invocation": "pnpm format:check",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T04:00:40.921Z",
+      "endAt": "2026-10-29T04:00:41.022Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log"
+    },
+    {
+      "commandId": "verify-db-boundary",
+      "invocation": "pnpm verify:db-boundary",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T04:00:41.024Z",
+      "endAt": "2026-10-29T04:00:41.113Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/verify-db-boundary.log"
+    },
+    {
+      "commandId": "verify-openspec",
+      "invocation": "pnpm verify:openspec",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T04:00:41.114Z",
+      "endAt": "2026-10-29T04:00:41.747Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/verify-openspec.log"
+    },
+    {
+      "commandId": "production-build",
+      "invocation": "pnpm build",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T04:01:01.139Z",
+      "endAt": "2026-10-29T04:01:26.117Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/production-build.log"
+    },
+    {
+      "commandId": "contracts-provider-inputs",
+      "invocation": "node --experimental-strip-types --test tests/contracts/provider-inputs.test.ts",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T04:00:41.749Z",
+      "endAt": "2026-10-29T04:00:42.284Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/contracts-provider-inputs.log"
+    },
+    {
+      "commandId": "contracts-billing-contracts",
+      "invocation": "node --experimental-strip-types --test tests/contracts/billing-contracts.test.ts",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T04:00:42.286Z",
+      "endAt": "2026-10-29T04:00:42.403Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/contracts-billing-contracts.log"
+    },
+    {
+      "commandId": "billing-schema",
+      "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-billing-schema.ts",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T04:00:42.404Z",
+      "endAt": "2026-10-29T04:00:43.275Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/billing-schema.log"
+    },
+    {
+      "commandId": "billing-checkout",
+      "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-billing-checkout.ts",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T04:00:43.277Z",
+      "endAt": "2026-10-29T04:00:44.067Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/billing-checkout.log"
+    },
+    {
+      "commandId": "billing-reconciliation",
+      "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-billing-reconciliation.ts",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T04:00:44.069Z",
+      "endAt": "2026-10-29T04:00:45.077Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/billing-reconciliation.log"
+    },
+    {
+      "commandId": "stripe-checkout-integration",
+      "invocation": "node --experimental-strip-types --test tests/integration/stripe-checkout.test.ts",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T04:00:45.079Z",
+      "endAt": "2026-10-29T04:00:46.232Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/stripe-checkout-integration.log"
+    },
+    {
+      "commandId": "stripe-reconciliation-integration",
+      "invocation": "node --experimental-strip-types --test tests/integration/stripe-reconciliation.test.ts",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T04:00:46.234Z",
+      "endAt": "2026-10-29T04:00:47.804Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/stripe-reconciliation-integration.log"
+    },
+    {
+      "commandId": "billing-presentation-unit",
+      "invocation": "node --experimental-strip-types --test tests/unit/billing-presentation.test.ts",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T04:00:49.400Z",
+      "endAt": "2026-10-29T04:00:49.525Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/billing-presentation-unit.log"
+    }
+  ],
+  "coverage": {
+    "status": "NOT_RERUN",
+    "scope": "Owned-module branch coverage was not recomputed on this candidate. Earlier coverage files stay historical and are not current-digest proof.",
+    "historicalEvidenceRefs": [
+      "internal/evidence/acceptance/M5/m5-sandbox-20261022/coverage-owned-current-20261022.json"
+    ],
+    "missingSources": []
+  },
+  "defects": [
+    {
+      "id": "M5-LOCAL-REFUND-STEPUP-20261029",
+      "severity": "P2",
+      "status": "OPEN",
+      "mandatoryCriterionAffected": false,
+      "summary": "stripe-refunds integration: deleting operator_step_ups did not reject the operator refund command while the optional two-factor policy is off. 21 of 22 tests passed. No live Stripe call was made, and the suite is not recorded as PASS.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M5/m5-current-20261029/logs/stripe-refunds-integration.log"
+      ]
+    }
+  ],
+  "externalInputs": [
+    {
+      "requiredInput": "Approved Stripe test catalog configured for the Acceptance application profile",
+      "owner": "buyer/operator",
+      "affectedTasks": [
+        "6.10"
+      ],
+      "availability": "PARTIAL",
+      "nextAction": "Review and configure STRIPE_TEST_CATALOG_JSON before another application-hosted Checkout; existing test-mode sessions and price objects are recorded, and no new purchase is required for this verification pass.",
+      "nonsecretAuthorityRef": "openspec/changes/restart-shpitto-video-saas/tasks.md"
+    },
+    {
+      "requiredInput": "Authorized Acceptance owner and member test logins for the read-only billing UI journey",
+      "owner": "buyer/operator",
+      "affectedTasks": [
+        "6.10"
+      ],
+      "availability": "PARTIAL",
+      "nextAction": "Current-candidate local owner/member UI and workspace-isolation evidence is captured; the retained Acceptance deployment remains a predecessor build and is read-only historical context.",
+      "nonsecretAuthorityRef": "internal/evidence/acceptance/M5/m5-sandbox-20261022/owner-billing-ui-observation.md"
+    },
+    {
+      "requiredInput": "Production email account",
+      "owner": "buyer/operator",
+      "affectedTasks": [
+        "7.14",
+        "9.15"
+      ],
+      "availability": "DEFERRED_BY_USER",
+      "nextAction": "Keep the later production profile open; it is not an M5 blocker.",
+      "nonsecretAuthorityRef": "openspec/changes/restart-shpitto-video-saas/tasks.md"
+    }
+  ],
+  "submission": {
+    "implementerId": "codex-current-candidate-refresh",
+    "submittedAt": "2026-10-29T04:05:00.000Z",
+    "reportRef": "internal/evidence/acceptance/M5/m5-current-20261029/README.md"
+  },
+  "independentReview": {
+    "reviewerId": null,
+    "reviewedAt": null,
+    "independentFromImplementer": null,
+    "decision": "NOT_RUN",
+    "reason": "Independent whole-stage review is queued for final manual acceptance and was not performed for this digest.",
+    "evidenceRefs": []
+  },
+  "integrationDecision": {
+    "integratorId": null,
+    "decidedAt": null,
+    "decision": "NOT_RUN",
+    "reason": "No integrator approval is recorded for this development refresh.",
+    "nextEligibleTaskIds": [],
+    "blockedTaskIds": [
+      "6.10"
+    ],
+    "evidenceRefs": []
+  },
+  "invalidation": {
+    "supersedesRecordRef": "internal/evidence/acceptance/M5/m5-sandbox-20261022/record.json",
+    "changedDigestRefs": [
+      "internal/evidence/acceptance/M5/m5-current-20261029/digest-delta.json"
+    ],
+    "affectedStages": [
+      "M3",
+      "M5"
+    ],
+    "currentM3Applicability": "STALE",
+    "requiredReruns": [
+      "Independent review of current M3 applicability before any equivalence carry.",
+      "Authentic provider matrix and hosted recovery without an unauthorized paid create.",
+      "Hosted Stripe acceptance-profile lifecycle, refund readback and owner-command replay.",
+      "Repair or explicitly reclassify the local Stripe refund step-up failure before claiming that suite.",
+      "Real FirstPromoter account and hosted settlement evidence.",
+      "Recompute owned-module branch coverage on this digest before a coverage PASS claim."
+    ],
+    "carriedEvidence": []
+  },
+  "candidateRefresh": {
+    "capturedAt": "2026-10-29T04:03:24.442Z",
+    "candidateId": "m5-current-20261029",
+    "source": "node scripts/candidate-digests.mjs",
+    "status": "CURRENT_BYTES_CAPTURED_IN_PROGRESS",
+    "fullStageAcceptance": false,
+    "sourceCommit": "f59f1f094dab084374331de9ad2b7a6fb7ed081e"
+  },
+  "commandEvidenceApplicability": {
+    "currentExecutionCommandIds": [
+      "frozen-lock-install",
+      "typecheck",
+      "lint",
+      "format-check",
+      "verify-db-boundary",
+      "verify-openspec",
+      "production-build",
+      "contracts-provider-inputs",
+      "contracts-billing-contracts",
+      "billing-schema",
+      "billing-checkout",
+      "billing-reconciliation",
+      "stripe-checkout-integration",
+      "stripe-reconciliation-integration",
+      "billing-presentation-unit"
+    ],
+    "failedNotClaimed": [
+      "stripe-refunds-integration"
+    ],
+    "notRerun": [
+      "authentic-provider-matrix",
+      "hosted-stripe-acceptance-readback",
+      "owner-command-replay",
+      "billing-ui",
+      "firstpromoter-account",
+      "owned-module-coverage",
+      "current-m3-equivalence"
+    ]
+  },
+  "limitations": [
+    "This record rebinds development evidence to the current digests. It does not promote the stage to PASS or READY_FOR_REVIEW.",
+    "Current M3 applicability is STALE. The historical M3 PASS record was not modified.",
+    "Hosted web health was ready. Worker health was ready with creates disabled at 2026-10-29T04:04:19Z, and a later deployment of the same commit was BUILDING. Recovery-monitor ready output was not re-read.",
+    "No paid provider create, live Stripe charge, refund, payout, or FirstPromoter write was performed.",
+    "The local Stripe refunds suite is a retained failure, not a PASS command."
+  ]
+}
