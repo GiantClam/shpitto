@@ -982,8 +982,8 @@
     },
     {
       "path": "src/adapters/billing/stripe-test.ts",
-      "bytes": 25423,
-      "sha256": "fe1a52c77ec6a13d1f2b4e4652e7fa3762a7fdc0a74c503ccb92100d6d071a9a"
+      "bytes": 25981,
+      "sha256": "6150908036df176fb953dda382d9afdd8c8cc84e638743ac245728345d05c546"
     },
     {
       "path": "src/adapters/billing/stripe-webhooks.ts",
@@ -1647,8 +1647,8 @@
     },
     {
       "path": "src/components/billing/checkout-handoff.ts",
-      "bytes": 1197,
-      "sha256": "aab98b0ba1cc885ef646e68b5e9fbc586c86aa7ddd9e81ee1a58952d67ab795d"
+      "bytes": 1618,
+      "sha256": "7e435dcb3c6e2912ba0a5213638263ac7670ae9688a02cad5110bd1fc1078197"
     },
     {
       "path": "src/components/billing/fixture-billing-panel.tsx",
@@ -2587,8 +2587,8 @@
     },
     {
       "path": "tests/contracts/billing-checkout.test.ts",
-      "bytes": 8538,
-      "sha256": "50e71afa1d82e3d9c116550081b1ae59a25410558fd7f18a65caae97721c9d0d"
+      "bytes": 9593,
+      "sha256": "cdd4cf91a2f3adb9fa0565527011305af43b49a08efcad663ca4935fb9c04692"
     },
     {
       "path": "tests/contracts/billing-contracts.test.ts",
@@ -2967,13 +2967,13 @@
     },
     {
       "path": "tests/unit/stripe-checkout-bridge.test.ts",
-      "bytes": 3964,
-      "sha256": "48c7d366af91757b579d711c8cbca9bd2880f19033e9df2a9b83434628f7ee19"
+      "bytes": 4190,
+      "sha256": "73414c442c9b2b021a993f6d145c29f5c9457660fe4b565ab8d98499d46ca130"
     },
     {
       "path": "tests/unit/stripe-test-adapter.test.ts",
-      "bytes": 25692,
-      "sha256": "633c6528596ef1572ca7ea464e7aa918f9a0f47d959db57bbc316fe476e38a57"
+      "bytes": 27338,
+      "sha256": "44b05cdb432314f9c8c378b4b8d0afb66b1fd93dcc4da5e1286ec4e720542ed3"
     },
     {
       "path": "tests/unit/stripe-test-config.test.ts",
@@ -4200,8 +4200,8 @@
     },
     {
       "path": "tests/contracts/billing-checkout.test.ts",
-      "bytes": 8538,
-      "sha256": "50e71afa1d82e3d9c116550081b1ae59a25410558fd7f18a65caae97721c9d0d"
+      "bytes": 9593,
+      "sha256": "cdd4cf91a2f3adb9fa0565527011305af43b49a08efcad663ca4935fb9c04692"
     },
     {
       "path": "tests/contracts/billing-contracts.test.ts",
@@ -4580,13 +4580,13 @@
     },
     {
       "path": "tests/unit/stripe-checkout-bridge.test.ts",
-      "bytes": 3964,
-      "sha256": "48c7d366af91757b579d711c8cbca9bd2880f19033e9df2a9b83434628f7ee19"
+      "bytes": 4190,
+      "sha256": "73414c442c9b2b021a993f6d145c29f5c9457660fe4b565ab8d98499d46ca130"
     },
     {
       "path": "tests/unit/stripe-test-adapter.test.ts",
-      "bytes": 25692,
-      "sha256": "633c6528596ef1572ca7ea464e7aa918f9a0f47d959db57bbc316fe476e38a57"
+      "bytes": 27338,
+      "sha256": "44b05cdb432314f9c8c378b4b8d0afb66b1fd93dcc4da5e1286ec4e720542ed3"
     },
     {
       "path": "tests/unit/stripe-test-config.test.ts",
