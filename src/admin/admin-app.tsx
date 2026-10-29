@@ -9,12 +9,13 @@ import {getAdminCapabilities, resolveTemplateKind, type AdminView, type Operator
 import {adminRequest} from './http';
 import {AdminResourceView} from './resource-view';
 import {CommandPanel} from './command-panel';
+import {SecuritySettingsPanel} from './security-settings-panel';
 import './admin.css';
 
 function viewFromLocation(): AdminView {
   if (typeof window === 'undefined') return 'overview';
   const value = new URLSearchParams(window.location.search).get('view');
-  return ['workspaces', 'users', 'generations', 'billing', 'audit', 'affiliate-reviews', 'affiliate-holds', 'operations'].includes(value ?? '') ? value as AdminView : 'overview';
+  return ['workspaces', 'users', 'generations', 'billing', 'audit', 'affiliate-reviews', 'affiliate-holds', 'operations', 'security-settings'].includes(value ?? '') ? value as AdminView : 'overview';
 }
 export default function AdminApp() {
   const [view, setView] = useState<AdminView>(viewFromLocation);
@@ -46,6 +47,7 @@ export default function AdminApp() {
     {error ? <div className="admin-state admin-state-error" role="alert"><strong>Operator session unavailable.</strong><span>{error}</span></div> : null}
     {view === 'overview' ? <AdminDashboard role={role} capabilities={capabilities} onOpenResource={openView} /> : null}
     {view === 'operations' ? <CommandPanel permissions={role} /> : null}
-    {view !== 'overview' && view !== 'operations' ? <AdminResourceView resource={view} /> : null}
+    {view === 'security-settings' ? <SecuritySettingsPanel /> : null}
+    {view !== 'overview' && view !== 'operations' && view !== 'security-settings' ? <AdminResourceView resource={view} /> : null}
 </AdminShell>;
 }

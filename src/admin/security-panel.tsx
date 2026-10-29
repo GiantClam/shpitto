@@ -4,7 +4,7 @@ import {useEffect, useState, type FormEvent} from 'react';
 
 import {adminRequest} from './http';
 
-export type AdminSecurity = Readonly<{userId: string; role: string; twoFactorEnabled: boolean; mfaComplete: boolean; stepUpExpiresAt: string | null}>;
+export type AdminSecurity = Readonly<{userId: string; role: string; twoFactorEnabled: boolean; twoFactorRequired: boolean; mfaComplete: boolean; stepUpExpiresAt: string | null}>;
 
 export function SecurityPanel({onVerified}: Readonly<{onVerified: (security: AdminSecurity) => void}>) {
   const [security, setSecurity] = useState<AdminSecurity | null>(null);
@@ -44,7 +44,7 @@ export function SecurityPanel({onVerified}: Readonly<{onVerified: (security: Adm
   let secret = '';
   try {secret = enrollment ? new URL(enrollment.totpURI).searchParams.get('secret') ?? '' : '';}
   catch { /* A malformed setup URI is reported by the missing setup key below. */ }
-  return <section className="operations-card"><h2>Operator second-factor verification</h2><p>Verify a code from your authenticator for this session. Privileged commands require verification within the last ten minutes.</p>
+  return <section className="operations-card"><h2>Operator second-factor verification</h2><p>{security?.twoFactorRequired ? 'Verify a code from your authenticator for this session. Privileged commands require verification within the last ten minutes.' : 'Two-factor is optional for this installation. You can still add an authenticator for extra protection.'}</p>
     {!security && !error ? <p role="status">Loading security status…</p> : null}
     {security && !security.twoFactorEnabled && !enrollment ? <form onSubmit={enroll} className="operations-form"><p>Set up an authenticator for your existing account.</p><label>Current password<input name="password" type="password" autoComplete="current-password" required /></label><button disabled={pending}>Set up authenticator</button></form> : null}
     {enrollment ? <div><p>Add a time-based account to your authenticator using this setup key, then save the recovery codes before verifying.</p><p>Setup key: <code>{secret || 'Unavailable — retry setup.'}</code></p><details><summary>One-time recovery codes</summary><pre>{enrollment.backupCodes.join('\n')}</pre></details></div> : null}

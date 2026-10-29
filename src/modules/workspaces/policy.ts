@@ -4,6 +4,7 @@ import type {AppDatabase} from '../../db/client.ts';
 import {DomainError} from '../../db/contracts.ts';
 import {authUser} from '../../db/schema/auth.ts';
 import {userAccessControls} from '../../db/schema/access.ts';
+import {readSecurityPolicy} from '../security/settings.ts';
 import {workspaceMembers, workspaces} from '../../db/schema/workspace.ts';
 import type {TransactionDatabase} from '../shared/transaction.ts';
 
@@ -67,7 +68,8 @@ export async function requireActiveVerifiedUser(db: WorkspaceQueryDatabase, user
     .where(eq(authUser.id, userId)).limit(1);
   const user = rows[0];
   if (!user) fail('FORBIDDEN', 'Current user is not available.');
-  if (user.authDisabledAt || user.accessStatus === 'disabled' || !user.emailVerified) fail('FORBIDDEN', 'A verified active user is required.');
+  const security = await readSecurityPolicy(db);
+  if (user.authDisabledAt || user.accessStatus === 'disabled' || security.emailVerificationEnabled && !user.emailVerified) fail('FORBIDDEN', 'An active user is required.');
 }
 
 export async function requireCurrentMembership(

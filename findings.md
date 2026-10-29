@@ -169,3 +169,44 @@ The stale current-candidate fingerprint blocker is resolved for all development 
 - FirstPromoter commission history is not canonical Stripe payment history; reconciliation must consume complete local Stripe order/customer records before sale delivery.
 - Added a read-only Stripe test-mode history reader that requires every known Stripe customer PaymentIntent page to reconcile to one local canonical order and payment-intent alias; unknown, missing, duplicated or mismatched payment evidence remains held.
 - Latest Acceptance deployment serves the referral capture code and is healthy; the hosted referral endpoint returns `disabled` with no cookie until Superadmin binds/enables the provider, confirming fail-closed behavior.
+
+## 2026-10-28 Configurable security controls findings
+
+1. The admin shell already has a server-authorized `/api/admin/security` surface and a client-side security panel, but no persisted global security-settings resource or settings navigation.
+2. Better Auth currently hardcodes `requireEmailVerification: true` and the operations authorization layer hardcodes `twoFactorEnabled` plus a trusted session step-up for operator access. Both policies must become database-backed while retaining strict defaults when no setting exists.
+3. The existing mail adapter intentionally fails in production when no real transport is configured. Optional SMTP therefore requires an explicit disabled mode and truthful UI status; it must not pretend that password recovery or verification email delivery works.
+4. Turnstile is absent from the current dependency graph. It can be integrated with native `fetch` against Cloudflare Siteverify and a client-side widget script, avoiding a new package.
+5. Security secrets cannot be returned to the browser. SMTP credentials and the Turnstile secret need encrypted-at-rest storage derived from `BETTER_AUTH_SECRET`, with write-only form fields and presence/status projections.
+6. Existing admin entry currently blocks the whole admin app until MFA is complete. Optional 2FA requires the entry gate and command authorization to consult one shared security policy, otherwise the UI setting would not change behavior.
+
+## 2026-10-29 First-user Superadmin claim findings
+
+1. The OpenSpec contradicted the confirmed setup decision: operator requirements forced verified email and 2FA and prohibited all public first-user role assignment, while the security-controls delta made these controls optional.
+2. The fresh-install path needs durable database state rather than a user-count check in a callback. A one-row owner-state record and the existing advisory transaction lock serialize registration, bootstrap and claim closure across concurrent requests and process restarts.
+3. Migration 0031 opens public claiming only when the installation has no users, no operator roles and no prior bootstrap/claim audit. Existing accounts keep it closed. Existing operator roles without a prior Superadmin remain uninitialized so an authenticated server-side bootstrap can establish the first owner.
+4. A claim is accepted only from the user identity in a successful Better Auth credential response and only if the matching credential account is persisted. Failed sign-in, duplicate signup, client role input and client user IDs do not claim ownership. A successful login can complete a claim after an interrupted post-signup hook.
+5. Operator role assignment, owner-state closure and audit commit in one transaction under the shared ownership lock. Existing role mutation/disablement guards continue to protect the final active Superadmin.
+6. Shared-database HTTP probes must not temporarily close an open fresh-install claim; a forced process exit could leave a test-only state change behind. The auth/team probes now require an isolated database with claiming already closed, while the dedicated owner-claim probe creates and removes its own disposable databases.
+
+### Local evidence
+
+- The dedicated owner-claim probe passes concurrent signup, untrusted role input, failed and duplicate auth, successful-login recovery, restart, upgrade lockout, legacy operator bootstrap and audit checks.
+- The privileged and security-settings PostgreSQL probes pass; the 2FA probe passes with claim state explicitly closed.
+- Real local HTTP auth and team/invitation probes pass against an isolated Next.js instance and disposable PostgreSQL database. A separate concurrent HTTP run confirmed exactly one owner, one audit record, winner access and loser denial.
+- Typecheck, source-boundary, format, database-boundary, config, M2 foundation, shell/content boundaries, strict OpenSpec and production build pass.
+- `verify:acceptance` still rejects the historical M4-M6 development records because their exact-candidate fingerprints predate the current broad working-tree changes. No milestone status was promoted.
+
+### Decisions
+
+- Fresh installs default optional security controls off. Migration preserves existing operator 2FA enforcement when an active operator role already exists; email verification defaults off so missing SMTP cannot block signup or login.
+- Turnstile applies to signup, login and password-reset request routes when enabled; token verification is server-side and tied to the configured hostname/origin.
+- Settings changes are superadmin-only and audited through a named command or equivalent durable audit event.
+
+### Implementation status
+
+1. Added `app.security_settings` with independent SMTP, email verification, 2FA and Turnstile flags plus encrypted secret columns.
+2. Added native AES-GCM secret encryption derived from `BETTER_AUTH_SECRET`; public settings projections expose configuration status only.
+3. Added a superadmin-only `/api/admin/security-settings` route and a Security settings view in the admin shell.
+4. Added server-side Cloudflare Siteverify checks for signup, login and password-reset requests and a client widget that only renders when enabled.
+5. Changed Better Auth and operator authorization to consult the stored optional policies at request time while preserving strict behavior when enabled.
+6. Added SMTP delivery through Nodemailer when the stored SMTP URL is enabled; local Mailpit behavior remains available for local development.

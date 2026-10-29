@@ -15,9 +15,20 @@ import {authAccount, authSession, authTwoFactor, authUser, authVerification} fro
 import {operatorStepUps} from '../db/schema/operator.ts';
 import {DomainError} from '../db/contracts.ts';
 import {recordTrustedSecondFactor, requireOperatorIdentity} from '../modules/operations/authorize.ts';
+import {claimInitialOperatorOwner} from '../modules/operations/bootstrap.ts';
 import {ensurePendingOnboarding} from '../modules/workspaces/onboard.ts';
+import {readSecurityPolicy, readSecuritySettings} from '../modules/security/settings.ts';
+import {verifyTurnstile} from '../modules/security/turnstile.ts';
 
 export type AuthDatabase = Pick<DatabaseHandle, 'db'>;
+
+function returnedAuthUserId(result: unknown): string | undefined {
+  if (!result || result instanceof APIError || typeof result !== 'object') return undefined;
+  const user = (result as Readonly<{user?: unknown}>).user;
+  if (!user || typeof user !== 'object') return undefined;
+  const userId = (user as Readonly<{id?: unknown}>).id;
+  return typeof userId === 'string' && userId.length > 0 ? userId : undefined;
+}
 
 function authSchema() {
   return {
@@ -32,7 +43,20 @@ function authSchema() {
 function rejectDisabledEmailSignIn(database: AppDatabase): MiddlewareHandler {
   return async (input) => {
     const context = input as typeof input & Readonly<{path?: string; body?: unknown}>;
-    if (context.path !== '/sign-in/email' || !context.body || typeof context.body !== 'object') return;
+    if (!context.body || typeof context.body !== 'object') return;
+    const security = await readSecurityPolicy(database);
+    if (['/sign-up/email', '/sign-in/email', '/request-password-reset'].includes(context.path ?? '')) {
+      if (!input.request) throw APIError.from('BAD_REQUEST', {code: 'TURNSTILE_REQUEST_INVALID', message: 'The authentication request is invalid.'});
+      const body = context.body as {turnstileToken?: unknown; email?: unknown};
+      const action = context.path === '/sign-up/email' ? 'signup' : context.path === '/sign-in/email' ? 'login' : 'password-reset';
+      if (security.turnstileEnabled) await verifyTurnstile(await readSecuritySettings(database), body.turnstileToken, new URL(getServerEnv().appUrl).hostname, action);
+      delete body.turnstileToken;
+      if (context.path === '/sign-in/email' && security.emailVerificationEnabled && typeof body.email === 'string') {
+        const verified = await database.select({emailVerified: authUser.emailVerified}).from(authUser).where(eq(authUser.email, body.email.trim().toLowerCase())).limit(1);
+        if (verified[0] && !verified[0].emailVerified) throw APIError.from('FORBIDDEN', {code: 'EMAIL_NOT_VERIFIED', message: 'Verify your email before signing in.'});
+      }
+    }
+    if (context.path !== '/sign-in/email') return;
     const email = (context.body as {email?: unknown}).email;
     if (typeof email !== 'string') return;
     const rows = await database.select({
@@ -49,7 +73,7 @@ function rejectDisabledEmailSignIn(database: AppDatabase): MiddlewareHandler {
 
 export function createAuth(database: AppDatabase, options: Readonly<{mailAdapter?: MailAdapter}> = {}) {
   const env = getServerEnv();
-  const mail = options.mailAdapter ?? createConfiguredMailAdapter();
+  const mail = options.mailAdapter ?? createConfiguredMailAdapter(database);
   const sendAuthEmail = async (to: string, subject: string, body: string): Promise<void> => {
     const result = await mail.send({to, subject, body});
     if (!result.ok) throw APIError.from('SERVICE_UNAVAILABLE', {code: 'EMAIL_DELIVERY_UNAVAILABLE', message: 'Email delivery is temporarily unavailable. Please try again.'});
@@ -66,6 +90,25 @@ export function createAuth(database: AppDatabase, options: Readonly<{mailAdapter
     hooks: {
       before: rejectDisabledEmailSignIn(database),
       after: createAuthMiddleware(async (context) => {
+        if (context.path === '/sign-up/email') {
+          const result = context.context.returned;
+          if (!result || result instanceof APIError) return;
+          const createdSession = context.context.newSession ?? context.context.session;
+          const registeredUserId = returnedAuthUserId(result) ?? createdSession?.user.id;
+          if (!registeredUserId) return;
+          await claimInitialOperatorOwner(database, registeredUserId);
+          if ((await readSecurityPolicy(database)).emailVerificationEnabled) {
+            if (createdSession?.session?.id) await database.delete(authSession).where(eq(authSession.id, createdSession.session.id));
+          }
+          return;
+        }
+        if (context.path === '/sign-in/email') {
+          const result = context.context.returned;
+          if (!result || result instanceof APIError) return;
+          const authenticatedUserId = returnedAuthUserId(result) ?? (context.context.newSession ?? context.context.session)?.user.id;
+          if (authenticatedUserId) await claimInitialOperatorOwner(database, authenticatedUserId);
+          return;
+        }
         if (!['/two-factor/verify-totp', '/two-factor/verify-backup-code', '/two-factor/disable'].includes(context.path)) return;
         const result = context.context.returned;
         if (!result || result instanceof APIError || typeof result !== 'object') return;
@@ -104,13 +147,19 @@ export function createAuth(database: AppDatabase, options: Readonly<{mailAdapter
     },
     emailAndPassword: {
       enabled: true,
-      requireEmailVerification: true,
+      requireEmailVerification: false,
       revokeSessionsOnPasswordReset: true,
-      sendResetPassword: async ({user, url}) => sendAuthEmail(user.email, 'Reset your Shpitto password', `Reset your password: ${url}\n\nIf you did not request this change, you can ignore this email.`),
+      sendResetPassword: async ({user, url}) => {
+        try { await sendAuthEmail(user.email, 'Reset your Shpitto password', `Reset your password: ${url}\n\nIf you did not request this change, you can ignore this email.`); }
+        catch { console.warn('Password reset email delivery failed.'); }
+      },
     },
     emailVerification: {
       sendOnSignUp: true,
-      sendVerificationEmail: async ({user, url}) => sendAuthEmail(user.email, 'Verify your Shpitto email', `Verify your email address: ${url}\n\nIf you did not create this account, you can ignore this email.`),
+      sendVerificationEmail: async ({user, url}) => {
+        try { await sendAuthEmail(user.email, 'Verify your Shpitto email', `Verify your email address: ${url}\n\nIf you did not create this account, you can ignore this email.`); }
+        catch { console.warn('Email verification delivery failed.'); }
+      },
     },
     plugins: [bearer(), twoFactor({issuer: 'Shpitto'}), nextCookies()],
   });

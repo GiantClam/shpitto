@@ -22,9 +22,11 @@ Trace: D05, D22, D31, J7, T02, T03, T04, T59, G05, G22, G31. Tasks: 7.1, 7.2.
 - **WHEN** an active operator role is revoked or an operator opens tenant support detail
 - **THEN** the next privileged request is denied after revocation; permitted tenant support access records its actor, purpose and target without creating an impersonated user session
 
-### Requirement: REQ-OPS-02 Verified privileged sessions and controlled role bootstrap
+### Requirement: REQ-OPS-02 Policy-controlled privileged sessions and one-time owner initialization
 
-Operator sessions SHALL require verified email and completed second-factor authentication. Privileged commands SHALL additionally require the same live session's trusted server-recorded successful second-factor step-up within ten minutes. Only a superadmin SHALL grant or revoke global roles with a reason and current step-up. All role mutations and account disablement SHALL share an atomic guard preserving at least one active administrative owner with the superadmin role; a disabled account SHALL NOT bypass restrictions through a retained role. Initial bootstrap SHALL be a one-time audited server action disabled after initialization; public signup SHALL never assign global privilege. Lost-credential recovery SHALL follow a separate documented, audited out-of-band procedure requiring independently verified administrative server access, never a public bootstrap bypass.
+Operator sessions SHALL require verified email only while email-verification enforcement is enabled and SHALL require completed second-factor authentication only while operator 2FA enforcement is enabled. While 2FA enforcement is enabled, privileged commands SHALL additionally require the same live session's trusted server-recorded successful second-factor step-up within ten minutes. Only a superadmin SHALL grant or revoke global roles with a reason and the currently configured authentication policy. All role mutations and account disablement SHALL share an atomic guard preserving at least one active administrative owner with the superadmin role; a disabled account SHALL NOT bypass restrictions through a retained role.
+
+A fresh installation SHALL persist an open one-time owner-claim state before registration. A successful email/password signup or login SHALL submit only the user identity returned by that successful credential response to one serialized server-side claim; exactly that persisted credential account may be appointed Superadmin in the same transaction as claim closure and audit. Failed authentication, duplicate signup, client-supplied user IDs, and client-supplied roles SHALL NOT claim or alter ownership. The client SHALL NOT choose or submit the role. Disabled SMTP, email verification, 2FA and Turnstile SHALL NOT block this initial claim or password-authenticated admin access. Once ownership is initialized, signup replay, later signup, process restart and concurrent registration SHALL NOT reopen or duplicate the claim. An installation that already contains any user when this capability is introduced SHALL keep automatic claiming closed and SHALL use the audited server bootstrap. Lost-credential recovery SHALL follow a separate documented, audited out-of-band procedure requiring independently verified administrative server access, never a public bootstrap bypass.
 
 Trace: D22, D31, J7, T04, T59, T60, T61, G22, G31. Tasks: 7.1, 7.3, 7.4.
 
@@ -35,13 +37,23 @@ Trace: D22, D31, J7, T04, T59, T60, T61, G22, G31. Tasks: 7.1, 7.3, 7.4.
 
 #### Scenario: SC-OPS-04 Bootstrap and final superadmin
 
-- **WHEN** public signup requests a global role, bootstrap is rerun after initialization, or concurrent role edits would remove the final superadmin
-- **THEN** the system rejects those operations and preserves a valid administrative recovery owner with audited authorized role changes
+- **WHEN** a signup body requests a global role, server bootstrap is rerun after initialization, or concurrent role edits would remove the final superadmin
+- **THEN** the system ignores or rejects client-selected privilege, rejects repeated bootstrap, and preserves a valid administrative recovery owner with audited authorized role changes
 
 #### Scenario: SC-OPS-14 Active administrative owner survives concurrent disablement
 
 - **WHEN** role removal/demotion races with account disablement across the remaining active superadmins, or the sole active superadmin is targeted for disablement
 - **THEN** a shared atomic guard rejects any result leaving no active administrative owner; an independently authenticated, audited out-of-band recovery procedure handles lost credentials without making public signup or the disabled bootstrap privileged
+
+#### Scenario: SC-OPS-15 Fresh-install first owner claim
+
+- **WHEN** two email/password registrations race on a fresh installation whose owner claim is open, with SMTP, email verification and operator 2FA disabled
+- **THEN** exactly one successful password account wins the serialized claim, receives one active superadmin role and one audit record, can enter administration with its password session, and every other registration remains unprivileged
+
+#### Scenario: SC-OPS-16 Claim replay, restart and upgrade safety
+
+- **WHEN** signup is duplicated, authentication fails, registration is retried after the first claim, the application restarts, or an existing installation with users applies the claim-state migration
+- **THEN** failed or repeated requests do not assign a role or consume an open claim; after initialization later registrations receive no global role, and an uninitialized upgraded installation can be initialized only through the audited server bootstrap
 
 ### Requirement: REQ-OPS-03 Operational projections with clear evidence
 

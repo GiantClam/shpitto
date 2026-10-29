@@ -13,6 +13,7 @@ import {mailOutbox, workspaceInvitations} from '../src/db/schema/invitations.ts'
 import {creditAccounts, workspaceMembers, workspaces} from '../src/db/schema/workspace.ts';
 import {createTeamWorkspace} from '../src/modules/workspaces/commands.ts';
 import {acceptTeamInvitation, createTeamInvitation, INVITATION_TTL_MS} from '../src/modules/workspaces/invitations.ts';
+import {readSecuritySettings, updateSecuritySettings} from '../src/modules/security/settings.ts';
 
 const suffix = randomUUID();
 const users = {
@@ -37,7 +38,9 @@ async function run(): Promise<void> {
   let workspaceId = '';
   const personalId = randomUUID();
   const now = new Date();
+  const originalSettings = await readSecuritySettings(database.db);
   try {
+    await updateSecuritySettings(database.db, {expectedVersion: originalSettings.version, emailVerificationEnabled: true, twoFactorRequired: false, turnstileEnabled: false, turnstileSiteKey: '', smtpEnabled: false});
     await database.db.insert(authUser).values([
       {id: users.owner, name: 'Invitation Probe Owner', email: `${users.owner}@example.test`, emailVerified: true, createdAt: now, updatedAt: now},
       {id: users.invited, name: 'Invitation Probe Invited', email: `${users.invited}@example.test`, emailVerified: true, createdAt: now, updatedAt: now},
@@ -171,6 +174,8 @@ async function run(): Promise<void> {
       rollbackClean: true,
     }));
   } finally {
+    const currentSettings = await readSecuritySettings(database.db);
+    await updateSecuritySettings(database.db, {expectedVersion: currentSettings.version, emailVerificationEnabled: originalSettings.emailVerificationEnabled, twoFactorRequired: originalSettings.twoFactorRequired, turnstileEnabled: originalSettings.turnstileEnabled, turnstileSiteKey: originalSettings.turnstileSiteKey ?? '', turnstileSecretKey: originalSettings.turnstileSecretKey ?? undefined, clearTurnstileSecret: originalSettings.turnstileSecretKey === null, smtpEnabled: originalSettings.smtpEnabled, smtpUrl: originalSettings.smtpUrl ?? undefined, clearSmtpUrl: originalSettings.smtpUrl === null, smtpFromEmail: originalSettings.smtpFromEmail ?? '', smtpFromName: originalSettings.smtpFromName ?? 'Shpitto'});
     await database.db.delete(workspaces).where(eq(workspaces.id, personalId));
     if (workspaceId) await database.db.delete(creditAccounts).where(eq(creditAccounts.workspaceId, workspaceId));
     if (workspaceId) await database.db.delete(billingAccounts).where(eq(billingAccounts.workspaceId, workspaceId));

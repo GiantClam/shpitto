@@ -16,6 +16,7 @@ import {inTransaction, type TransactionDatabase} from '../shared/transaction.ts'
 import {authorizeOperatorCommand} from './authorize.ts';
 import {assertRoleMutationPreservesOwner, lockAdministrativeOwnership, requireSurvivingAdministrativeOwner} from './authorization.ts';
 import {recordOperatorAudit, recordTenantAccess, validateExpectedVersion, validateOperatorReason} from './audit.ts';
+import {readSecurityPolicy} from '../security/settings.ts';
 import type {WorkspaceActor} from '../workspaces/policy.ts';
 
 export type OperatorCommandResult = Readonly<{changed: boolean; version: number; replayed?: boolean}>;
@@ -55,7 +56,8 @@ export async function setOperatorRole(
       if (currentVersion !== expectedVersion) throw new DomainError('CONFLICT', 'The operator role version is stale.');
       if (input.role === 'superadmin') {
         const targetAccess = (await tx.select({status: userAccessControls.status}).from(userAccessControls).where(eq(userAccessControls.userId, targetUserId)).for('update').limit(1))[0];
-        if (!target[0]!.emailVerified || target[0]!.disabledAt || targetAccess?.status === 'disabled') throw new DomainError('FORBIDDEN', 'A superadmin appointment requires an active verified identity.');
+        const security = await readSecurityPolicy(tx);
+        if (security.emailVerificationEnabled && !target[0]!.emailVerified || target[0]!.disabledAt || targetAccess?.status === 'disabled') throw new DomainError('FORBIDDEN', 'A superadmin appointment requires an active eligible identity.');
       }
       await assertRoleMutationPreservesOwner(tx, targetUserId, input.role, now);
       if (input.role === null) {

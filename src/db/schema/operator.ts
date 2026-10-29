@@ -1,4 +1,4 @@
-import {check, index, integer, text, timestamp, uniqueIndex} from 'drizzle-orm/pg-core';
+import {boolean, check, index, integer, text, timestamp, uniqueIndex} from 'drizzle-orm/pg-core';
 import {sql} from 'drizzle-orm';
 
 import {authSession, authUser} from './auth.ts';
@@ -15,6 +15,31 @@ export const operatorRoles = appSchema.table('operator_roles', {
   activeRoleIndex: index('operator_roles_active_idx').on(table.role, table.revokedAt),
   roleCheck: check('operator_roles_role_check', sql`${table.role} in ('support', 'operator', 'superadmin')`),
   versionCheck: check('operator_roles_version_check', sql`${table.version} > 0`),
+}));
+
+/** Durable installation state for the one-time initial Superadmin decision. */
+export const operatorOwnerState = appSchema.table('operator_owner_state', {
+  id: text('id').primaryKey(),
+  firstUserClaimOpen: boolean('first_user_claim_open').notNull().default(false),
+  initialized: boolean('initialized').notNull().default(false),
+  initializedByUserId: text('initialized_by_user_id').references(() => authUser.id, {onDelete: 'restrict'}),
+  initializationMethod: text('initialization_method'),
+  initializedAt: timestamp('initialized_at', {withTimezone: true}),
+  version: integer('version').notNull().default(1),
+  updatedAt: timestamp('updated_at', {withTimezone: true}).notNull(),
+}, (table) => ({
+  singletonCheck: check('operator_owner_state_singleton_check', sql`${table.id} = 'default'`),
+  versionCheck: check('operator_owner_state_version_check', sql`${table.version} > 0`),
+  methodCheck: check('operator_owner_state_method_check', sql`${table.initializationMethod} is null or ${table.initializationMethod} in ('first_registration', 'server_bootstrap', 'preexisting')`),
+  lifecycleCheck: check('operator_owner_state_lifecycle_check', sql`
+    (${table.firstUserClaimOpen} = false or ${table.initialized} = false)
+    and (
+      (${table.initialized} = false and ${table.initializedByUserId} is null and ${table.initializationMethod} is null and ${table.initializedAt} is null)
+      or
+      (${table.initialized} = true and ${table.initializationMethod} is not null and ${table.initializedAt} is not null)
+    )
+    and (${table.initialized} = false or ${table.initializationMethod} = 'preexisting' or ${table.initializedByUserId} is not null)
+  `),
 }));
 
 export const operatorStepUps = appSchema.table('operator_step_ups', {

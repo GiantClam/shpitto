@@ -72,7 +72,7 @@ Trace: D05; J3, J5, J7; T02, T03; G05. Tasks: 3.5, 4.9, 4.13.
 
 ### Requirement: REQ-IAM-05 Separate global operator authority
 
-Global operations SHALL require an explicitly assigned support/operator/superadmin role independent of workspace ownership. Every operator request MUST recheck current authority; privileged commands MUST also require trusted successful second-factor verification for the same live session within ten minutes. Merely enabling 2FA MUST NOT count as step-up verification. These authentication controls SHALL be shared with the operator capability without creating a second identity store.
+Global operations SHALL require an explicitly assigned support/operator/superadmin role independent of workspace ownership. Every operator request MUST recheck current authority. While operator 2FA enforcement is enabled, privileged commands MUST also require trusted successful second-factor verification for the same live session within ten minutes; merely enrolling or enabling 2FA MUST NOT count as step-up verification. While enforcement is disabled, password-authenticated operator sessions retain role and audit checks without a second-factor stamp. These authentication controls SHALL be shared with the operator capability without creating a second identity store.
 
 Trace: D22, D31; J7; T04, T59; G22, G31. Tasks: 3.6.
 
@@ -83,8 +83,8 @@ Trace: D22, D31; J7; T04, T59; G22, G31. Tasks: 3.6.
 
 #### Scenario: SC-IAM-10 Step-up binds user and live session
 
-- **WHEN** a privileged command carries only an enabled-2FA flag, a different-session stamp or a stamp older than ten minutes
-- **THEN** the command is denied until that live session completes trusted second-factor verification
+- **WHEN** 2FA enforcement is enabled and a privileged command carries only an enabled-2FA flag, a different-session stamp or a stamp older than ten minutes
+- **THEN** the command is denied until that live session completes trusted second-factor verification; disabling enforcement removes only the step-up requirement and does not remove role or audit authorization
 
 ### Requirement: REQ-IAM-06 Explicit disabled-account and workspace-hold effects
 

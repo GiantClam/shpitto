@@ -7,9 +7,11 @@ import {getServerEnv} from '../src/config/env.ts';
 import {createDatabase} from '../src/db/client.ts';
 import {userAccessControls} from '../src/db/schema/access.ts';
 import {authUser, authVerification} from '../src/db/schema/auth.ts';
+import {readSecuritySettings, updateSecuritySettings} from '../src/modules/security/settings.ts';
 import {billingAccounts} from '../src/db/schema/billing.ts';
 import {commandResults} from '../src/db/schema/commands.ts';
 import {auditEvents, creditLedgerEntries, outboxEvents} from '../src/db/schema/credit.ts';
+import {operatorOwnerState, operatorRoles} from '../src/db/schema/operator.ts';
 import {creditAccounts, creditGrants, workspaceMembers, workspaceSetups, workspaces} from '../src/db/schema/workspace.ts';
 
 const env = getServerEnv();
@@ -69,7 +71,14 @@ async function run(): Promise<void> {
   let userId: string | undefined;
   let workspaceId: string | undefined;
   let teamWorkspaceId: string | undefined;
+  const originalSettings = await readSecuritySettings(database.db);
+  const originalOwnerState = (await database.db.select().from(operatorOwnerState).where(eq(operatorOwnerState.id, 'default')))[0]!;
+  if (originalOwnerState.firstUserClaimOpen) {
+    await database.pool.end();
+    throw new Error('Auth HTTP probe requires a disposable app database with first-user claiming closed.');
+  }
   try {
+    await updateSecuritySettings(database.db, {expectedVersion: originalSettings.version, emailVerificationEnabled: true, twoFactorRequired: false, turnstileEnabled: false, turnstileSiteKey: '', smtpEnabled: false});
     for (const page of ['/signup', '/login', '/reset-password']) {
       assert.equal((await request(page)).status, 200, `Authentication page ${page} is unavailable.`);
     }
@@ -167,6 +176,8 @@ async function run(): Promise<void> {
     console.log(JSON.stringify({status: 'PASS', appTransport: 'live Next.js HTTP', mailTransport: 'live Mailpit HTTP send and capture', signup: true, emailVerification: true, persistentLogin: true, onboardingExplicitAction: true, teamMemberPersonalSetup: true, dashboardGetHasNoMutation: true, onboardingAuthOriginKeyGuards: true, serverSelectedLocalFunding: true, onboardingConcurrentSingleWorkspaceGrant: true, onboardingSemanticConflict: true, onboardingNormalizedReplay: true, onboardingReplayReauthorizes: true, onboardingGrantRetry: true, onboardingRetry: true, resetPageCompletionForm: true, passwordReset: true, tokenReplayDenied: true, oldCredentialsAndSessionDenied: true, disabledLoginDenied: true, cloudDelivery: false}));
   } finally {
     try {
+      const currentSettings = await readSecuritySettings(database.db);
+      await updateSecuritySettings(database.db, {expectedVersion: currentSettings.version, emailVerificationEnabled: originalSettings.emailVerificationEnabled, twoFactorRequired: originalSettings.twoFactorRequired, turnstileEnabled: originalSettings.turnstileEnabled, turnstileSiteKey: originalSettings.turnstileSiteKey ?? '', turnstileSecretKey: originalSettings.turnstileSecretKey ?? undefined, clearTurnstileSecret: originalSettings.turnstileSecretKey === null, smtpEnabled: originalSettings.smtpEnabled, smtpUrl: originalSettings.smtpUrl ?? undefined, clearSmtpUrl: originalSettings.smtpUrl === null, smtpFromEmail: originalSettings.smtpFromEmail ?? '', smtpFromName: originalSettings.smtpFromName ?? 'Shpitto'});
       if (userId) {
         await database.db.delete(commandResults).where(eq(commandResults.actorUserId, userId));
         await database.db.delete(authVerification).where(eq(authVerification.value, userId));
@@ -182,6 +193,8 @@ async function run(): Promise<void> {
           await database.db.delete(creditAccounts).where(eq(creditAccounts.workspaceId, workspace.id));
           await database.db.delete(workspaces).where(eq(workspaces.id, workspace.id));
         }
+        await database.db.delete(auditEvents).where(eq(auditEvents.actorUserId, userId));
+        await database.db.delete(operatorRoles).where(eq(operatorRoles.userId, userId));
         await database.db.delete(authUser).where(eq(authUser.id, userId));
       }
       const messages = await capturedMessages();

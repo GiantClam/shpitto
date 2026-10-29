@@ -2,7 +2,7 @@ export type TemplateKind = 'image' | 'video';
 export type OperatorRole = 'support' | 'operator' | 'superadmin';
 
 export type AdminResourceName = 'workspaces' | 'users' | 'generations' | 'billing' | 'audit' | 'affiliate-reviews' | 'affiliate-holds';
-export type AdminView = 'overview' | AdminResourceName | 'operations';
+export type AdminView = 'overview' | AdminResourceName | 'operations' | 'security-settings';
 
 export type AdminCapability = Readonly<{
   id: string;

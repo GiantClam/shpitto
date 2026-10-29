@@ -1,4 +1,7 @@
 import {getServerEnv} from '../../config/env.ts';
+import type {AppDatabase} from '../../db/client.ts';
+import {readSecuritySettings} from '../../modules/security/settings.ts';
+import nodemailer from 'nodemailer';
 import type {AdapterResult, MailAdapter} from '../contracts.ts';
 
 /** Local capture transport; messages remain inside the configured Mailpit instance. */
@@ -32,12 +35,23 @@ export class MailpitMailAdapter implements MailAdapter {
 }
 
 /** Production transports must be explicitly implemented; local capture cannot masquerade as delivery. */
-export function createConfiguredMailAdapter(): MailAdapter {
+export function createConfiguredMailAdapter(database: AppDatabase): MailAdapter {
   const env = getServerEnv();
-  if (env.nodeEnv === 'production' || env.mailDriver !== 'local') {
-    return {
-      send: async () => ({ok: false, error: {code: 'MAIL_DRIVER_UNAVAILABLE', retryable: false, message: 'The configured email transport is unavailable.'}}),
-    };
-  }
-  return new MailpitMailAdapter(env.mailHttpUrl);
+  const local = new MailpitMailAdapter(env.mailHttpUrl);
+  return {
+    send: async (message) => {
+      const settings = await readSecuritySettings(database);
+      if (settings.smtpEnabled && settings.smtpUrl) {
+        try {
+          const transport = nodemailer.createTransport(settings.smtpUrl);
+          await transport.sendMail({from: settings.smtpFromEmail ? {address: settings.smtpFromEmail, name: settings.smtpFromName ?? 'Shpitto'} : undefined, to: message.to, subject: message.subject, text: message.body});
+          return {ok: true, value: undefined};
+        } catch {
+          return {ok: false, error: {code: 'MAIL_DELIVERY_FAILED', retryable: true, message: 'Email delivery is temporarily unavailable.'}};
+        }
+      }
+      if (env.nodeEnv !== 'production' && env.mailDriver === 'local') return local.send(message);
+      return {ok: false, error: {code: 'MAIL_DRIVER_UNAVAILABLE', retryable: false, message: 'The configured email transport is unavailable.'}};
+    },
+  };
 }

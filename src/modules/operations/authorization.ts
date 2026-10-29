@@ -5,6 +5,7 @@ import {authUser} from '../../db/schema/auth.ts';
 import {userAccessControls} from '../../db/schema/access.ts';
 import {operatorRoles} from '../../db/schema/operator.ts';
 import type {TransactionDatabase} from '../shared/transaction.ts';
+import {readSecurityPolicy} from '../security/settings.ts';
 
 export async function lockAdministrativeOwnership(tx: TransactionDatabase): Promise<void> {
   await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended('operator-owner-administration', 0))`);
@@ -32,7 +33,8 @@ export async function requireSurvivingAdministrativeOwner(
       eq(operatorRoles.role, 'superadmin'),
       isNull(operatorRoles.revokedAt),
     ));
-  const survivor = rows.some((row) => row.userId !== targetUserId && row.emailVerified && !row.disabledAt && row.accessStatus !== 'disabled');
+  const security = await readSecurityPolicy(tx);
+  const survivor = rows.some((row) => row.userId !== targetUserId && (!security.emailVerificationEnabled || row.emailVerified) && !row.disabledAt && row.accessStatus !== 'disabled');
   if (!survivor) throw new DomainError('CONFLICT', 'At least one active superadmin must remain.');
 }
 

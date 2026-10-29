@@ -16,6 +16,7 @@ import {
   requireCurrentOperator,
 } from '../src/modules/operations/authorize.ts';
 import {createTeamWorkspace} from '../src/modules/workspaces/commands.ts';
+import {readSecuritySettings, updateSecuritySettings} from '../src/modules/security/settings.ts';
 
 const suffix = randomUUID();
 const users = {
@@ -50,9 +51,11 @@ function forbidden(result: PromiseSettledResult<unknown>): boolean {
 async function run(): Promise<void> {
   await migrateDatabase();
   const database = createDatabase({max: 8});
+  const originalSettings = await readSecuritySettings(database.db);
   let workspaceId = '';
   try {
     const now = new Date();
+    await updateSecuritySettings(database.db, {expectedVersion: originalSettings.version, emailVerificationEnabled: true, twoFactorRequired: true, turnstileEnabled: false, turnstileSiteKey: '', smtpEnabled: false, smtpFromEmail: originalSettings.smtpFromEmail ?? '', smtpFromName: originalSettings.smtpFromName ?? 'Shpitto'});
     const expiry = new Date(now.getTime() + 60 * 60 * 1000);
     await database.db.insert(authUser).values([
       {id: users.owner, name: 'Operator probe owner', email: `${users.owner}@example.test`, emailVerified: true, createdAt: now, updatedAt: now},
@@ -117,6 +120,8 @@ async function run(): Promise<void> {
       revocationImmediate: true,
     }));
   } finally {
+    const currentSettings = await readSecuritySettings(database.db);
+    await updateSecuritySettings(database.db, {expectedVersion: currentSettings.version, emailVerificationEnabled: originalSettings.emailVerificationEnabled, twoFactorRequired: originalSettings.twoFactorRequired, turnstileEnabled: originalSettings.turnstileEnabled, turnstileSiteKey: originalSettings.turnstileSiteKey ?? '', turnstileSecretKey: originalSettings.turnstileSecretKey ?? undefined, clearTurnstileSecret: originalSettings.turnstileSecretKey === null, smtpEnabled: originalSettings.smtpEnabled, smtpUrl: originalSettings.smtpUrl ?? undefined, clearSmtpUrl: originalSettings.smtpUrl === null, smtpFromEmail: originalSettings.smtpFromEmail ?? '', smtpFromName: originalSettings.smtpFromName ?? 'Shpitto'});
     if (workspaceId) await database.db.delete(creditAccounts).where(eq(creditAccounts.workspaceId, workspaceId));
     if (workspaceId) await database.db.delete(billingAccounts).where(eq(billingAccounts.workspaceId, workspaceId));
     if (workspaceId) await database.db.delete(workspaces).where(eq(workspaces.id, workspaceId));

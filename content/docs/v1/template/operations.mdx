@@ -10,15 +10,48 @@ relatedContracts: [D08, D18, G08, G18]
 ## Administrative access
 
 Workspace ownership does not grant global administration. An authorized operator
-signs in with the shared account, completes authenticator verification, and opens
-`/admin`. Support can read redacted lists. Operator and superadmin commands require
-a reason, the current resource version, an idempotency key, and successful
-second-factor verification in the same session within the last ten minutes.
+signs in with the shared account and opens `/admin`. SMTP delivery and operator
+two-factor enforcement are optional installation settings. When two-factor
+enforcement is enabled, operator and superadmin commands require successful
+same-session verification within the last ten minutes. In every mode, commands
+require a reason, the current resource version, an idempotency key and server-side
+role authorization.
 
 Role revocation and account disablement take effect on the next request. Role
-changes and disablement preserve a usable superadmin. Initial ownership and
-emergency recovery use audited server maintenance, never public registration or
-a client-supplied role. See the installation's operator-owner recovery runbook.
+changes and disablement preserve a usable superadmin. On a fresh installation,
+the first successful password registration to win the server-side claim is
+automatically assigned the Superadmin role. Concurrent registration creates one initial
+owner, and later registration or restart cannot reopen the claim. The signup
+request cannot select a role. Installations that already contained users before
+this capability use the audited `pnpm ops:owner bootstrap` maintenance command.
+On a public deployment, complete this first registration before sharing the app
+URL; the first account to claim ownership will be the Superadmin. Emergency
+recovery remains an audited server procedure.
+
+## Configure optional security
+
+Open **Security settings** as a superadmin. SMTP delivery, email verification,
+operator 2FA and Cloudflare Turnstile can be enabled independently. Password
+signup and sign-in remain available when the optional controls are off.
+
+For SMTP, enter an `smtp://` or `smtps://` URL, a sender email and an optional
+sender name. SMTP URLs and Turnstile secret keys are encrypted in the database;
+the admin page never returns their values. Leave a secret field blank to keep the
+stored value. Email verification requires a working delivery path; password
+reset and verification requests report delivery failure when SMTP is unavailable.
+
+For Turnstile, add the site's public site key and private secret key from the
+Cloudflare widget configured for the deployed hostname. When enabled, signup,
+password sign-in and password-reset requests require a valid server-verified
+challenge for that hostname and action. Do not expose the secret key in browser
+code or screenshots.
+
+When operator 2FA enforcement is enabled, operators without an enrolled
+authenticator are directed to the enrollment step before protected admin views
+open. Turning enforcement off allows password-authenticated operator sessions;
+role checks, audit records and command idempotency remain required. If
+`BETTER_AUTH_SECRET` is rotated, re-enter configured SMTP and Turnstile secrets
+so they can be encrypted with the new key.
 
 ## Inspect before acting
 

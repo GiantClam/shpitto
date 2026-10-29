@@ -146,6 +146,49 @@ Scope: implement and deploy one isolated acceptance provider worker. No paid inf
 6. Deploy separate Railway worker with create requests disabled; verify identity, health, tools and restart.
 7. Save deployment evidence and update OpenSpec task 5.10 without claiming full M4 PASS.
 
+## 2026-10-28 Configurable security controls
+
+### Objective
+
+Allow the template admin backend to configure optional SMTP/email verification, optional 2FA enforcement, and Cloudflare Turnstile without exposing secrets or bypassing server-side authorization. On a fresh installation, the first successful password signup may claim initial Superadmin ownership exactly once; existing installations keep claiming closed and retain audited server bootstrap.
+
+### Constraints
+
+- SMTP and 2FA are optional enhancements; authentication must still work when either is disabled.
+- Turnstile is fail-closed when enabled and fail-open only when explicitly disabled.
+- SMTP and Turnstile secret values are write-only from the admin UI and are encrypted at rest.
+- Only an authenticated superadmin may change security settings.
+- Existing Acceptance/production instances must not be silently reconfigured by the feature.
+- First-user claiming is enabled only by migration on an empty installation; upgrades with any existing account keep it closed.
+- Failed authentication, duplicate signup, and client-selected role or identity values must never claim ownership.
+- No new dependency unless the existing runtime cannot support the feature.
+
+### Phases
+
+1. Contract and storage: add versioned security settings and operator-owner state schemas, encrypted-secret helper and server-side public/private projections.
+2. Runtime policy: make email verification and operator step-up policy dynamic; atomically claim first-user ownership on successful credential auth, preserving upgrade behavior and audited server bootstrap.
+3. Turnstile: add server verification, auth-route coverage and client widget support for signup, login and reset requests.
+4. Admin UI/API: add superadmin-only security settings view with secret write-only fields and configuration status.
+5. Tests and documentation: add contract/integration coverage, migration checks, OpenSpec updates and buyer setup guidance.
+6. Verification: run format, lint, typecheck, focused auth/admin tests and disposable PostgreSQL probes.
+
+### Current phase
+
+Local implementation and verification complete. Hosted deployment, acceptance-gate review and independent stage decisions remain separate.
+
+### Phase status
+
+- Phase 1: complete. Security settings schema, encrypted-secret helper and migration are present.
+- Phase 2: complete for email verification and operator 2FA policy wiring.
+- Phase 3: complete for native Turnstile client/server integration and unit coverage.
+- Phase 4: complete locally. Superadmin-only API and admin UI expose the optional controls with audited versioned updates.
+- Phase 5: complete locally. OpenSpec and buyer operations docs cover optional controls, fresh-install ownership and upgrade bootstrap.
+- Phase 6: complete locally for targeted verification. Dedicated PostgreSQL probes cover claim races, failed auth, restart, upgrades, bootstrap, security settings and 2FA; HTTP auth/team flows, typecheck, format, source boundaries, database boundaries, config, OpenSpec and production build pass.
+
+### Completion rule
+
+The local feature is complete when settings persist safely, auth behavior follows the configured policy, Turnstile rejects invalid enabled-mode requests, secrets never appear in responses/logs/evidence, the admin UI configures options through the supported API, and the one-time Superadmin claim is atomic, failure-safe, restart-safe and closed for upgrades. Hosted deployment and M6 acceptance remain separately gated.
+
 
 ## 2026-10-13 Worker Completion Evidence
 

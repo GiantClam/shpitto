@@ -12,7 +12,8 @@ import {getServerEnv} from '../src/config/env.ts';
 import {createDatabase} from '../src/db/client.ts';
 import {DomainError} from '../src/db/contracts.ts';
 import {authSession, authUser} from '../src/db/schema/auth.ts';
-import {operatorRoles, operatorStepUps, OPERATOR_STEP_UP_TTL_MS} from '../src/db/schema/operator.ts';
+import {securitySettings} from '../src/db/schema/security.ts';
+import {operatorOwnerState, operatorRoles, operatorStepUps, OPERATOR_STEP_UP_TTL_MS} from '../src/db/schema/operator.ts';
 import {createAuth} from '../src/lib/auth.ts';
 import {authorizeOperatorCommand, requireCurrentOperator, requireOperatorIdentity} from '../src/modules/operations/authorize.ts';
 
@@ -47,6 +48,8 @@ async function run(): Promise<void> {
     try { await migrate(drizzle(migration), {migrationsFolder: 'src/db/migrations'}); } finally { await migration.end(); }
     const database = createDatabase({connectionString: databaseUrl.toString(), max: 8}); pool = database.pool;
     const db = database.db;
+    await db.update(securitySettings).set({twoFactorRequired: true, version: 2, updatedAt: new Date()}).where(eq(securitySettings.id, 'default'));
+    await db.update(operatorOwnerState).set({firstUserClaimOpen: false, version: 2, updatedAt: new Date()}).where(eq(operatorOwnerState.id, 'default'));
     const auth = createAuth(db, {mailAdapter: new LocalMailAdapter()});
     const cookies = new Map<string, string>();
     function cookieHeaders(): Headers { return new Headers({cookie: [...cookies].map(([key, value]) => `${key}=${value}`).join('; '), origin: new URL(env.appUrl).origin, 'content-type': 'application/json'}); }

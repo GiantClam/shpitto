@@ -122,3 +122,24 @@ Current development candidate fingerprints for M4, M5 and M6 were recaptured fro
 4. Corrected the admin-read probe to assert the actual fail-closed `pending` provider state instead of incorrectly expecting `unavailable` after configuration without a successful provider checkpoint.
 5. Selected the existing verified Acceptance owner identity and applied the audited one-time Superadmin bootstrap. Password and second-factor evidence remain operator-owned.
 6. Added `internal/evidence/acceptance/continuation-20261028/` with automated explanations and human decision recommendations. M4, M5 and M6 remain partial until the named hosted and independent evidence is reviewed.
+
+## 2026-10-28 Configurable Security Controls
+
+1. Confirmed the requested template behavior: SMTP and 2FA are optional security enhancements; Cloudflare Turnstile is an additional configurable protection.
+2. Started a scoped implementation plan covering persisted security settings, encrypted secrets, dynamic Better Auth policy, Turnstile verification, superadmin-only settings UI/API and focused regression tests.
+3. Existing code review found hardcoded email verification and operator MFA gates plus no security-settings resource; implementation remains pending.
+
+4. Added the `app.security_settings` migration and Drizzle schema with independent SMTP, email verification, 2FA and Turnstile controls.
+5. Added encrypted-at-rest secret storage, server-side Turnstile verification, optional SMTP delivery and dynamic Better Auth/operator policy checks.
+6. Added the superadmin-only Security settings API and admin view with write-only secret inputs.
+7. Added security-control unit tests: 5/5 passed. Typecheck, format, source boundaries, production build and strict OpenSpec validation passed.
+
+## 2026-10-29 First-user Owner Claim and Security Controls
+
+1. Resolved the OpenSpec conflict: SMTP, email verification, operator 2FA and Turnstile remain optional; a fresh installation's first successful password registration wins the one-time Superadmin claim; upgrades remain closed to public claiming and use audited server bootstrap.
+2. Added `app.operator_owner_state` migration 0031. It opens the claim only for a clean installation and preserves existing roles/bootstrap state. Existing operator-only installations remain uninitialized but publicly closed, allowing an authorized server bootstrap to promote the selected existing identity.
+3. Implemented atomic claim under the shared operator-owner advisory lock. The matching persisted credential account, Superadmin role, closed state and audit event commit together. Failed auth and duplicate signup cannot claim; a successful login can complete an interrupted signup claim.
+4. Added `scripts/probe-first-owner-claim.ts` and `db:probe:first-owner-claim`. Its disposable PostgreSQL cases cover concurrent claims, role-input tampering, failed/duplicate auth, retry after interruption, restart, existing-install lockout and server-bootstrap recovery.
+5. Removed shared-database claim-state toggles from auth/team probes. Those probes now require an isolated database with claiming closed, so interrupted test processes cannot silently change initial ownership state.
+6. Verification passed: first-owner claim probe, M6 privileged probe, security-settings probe, 2FA probe, auth-lifecycle probe, live auth HTTP and team HTTP probes, concurrent real HTTP signup/admin authorization, TypeScript, source-boundary, format, database-boundary, config, M2 foundation, shell/content boundaries, strict OpenSpec and production build.
+7. The production build emits the existing broad Docs filesystem tracing warnings in `src/app/docs/_lib/source.ts`; build succeeds. `verify:acceptance` remains blocked on stale exact-candidate fingerprints for M4-M6 records. No stage status, hosted service or production/Acceptance database was changed.

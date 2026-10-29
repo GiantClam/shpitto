@@ -10,6 +10,7 @@ import {DomainError} from '../src/db/contracts.ts';
 import {authUser} from '../src/db/schema/auth.ts';
 import {billingAccounts} from '../src/db/schema/billing.ts';
 import {commandResults} from '../src/db/schema/commands.ts';
+import {securitySettings} from '../src/db/schema/security.ts';
 import {creditAccounts, workspaceMembers, workspaces} from '../src/db/schema/workspace.ts';
 import {
   createTeamWorkspace,
@@ -45,7 +46,9 @@ async function run(): Promise<void> {
   }));
   let personalId = '';
   let teamId = '';
+  const securityRow = (await database.db.select().from(securitySettings).where(eq(securitySettings.id, 'default')).limit(1))[0]!;
   try {
+    await database.db.update(securitySettings).set({emailVerificationEnabled: true, version: securityRow.version + 1, updatedAt: new Date()}).where(eq(securitySettings.id, 'default'));
     await database.db.insert(authUser).values(userRows);
     const rejectsCode = (code: DomainError['code']) => (error: unknown) => error instanceof DomainError && error.code === code;
     for (const workspaceName of ['', 'x'.repeat(101), 'invalid\nname']) {
@@ -169,6 +172,7 @@ async function run(): Promise<void> {
     assert.equal((await database.db.select().from(workspaceMembers).where(eq(workspaceMembers.workspaceId, teamId))).length, 1);
     console.log(JSON.stringify({status: 'PASS', personalRejected: personalAttempts.length, lastOwnerRaceRejected: race.length, twoOwnerRaceAttempts: twoOwnerRace.length, twoOwnerRaceWinners: ownershipWinners.length, twoOwnerRaceRejected: ownershipLosers.length, minimumObservedOwners: Math.min(...observedOwnerCounts), transferOwner: users.member}));
   } finally {
+    await database.db.update(securitySettings).set({emailVerificationEnabled: securityRow.emailVerificationEnabled, version: securityRow.version + 2, updatedAt: new Date()}).where(eq(securitySettings.id, 'default'));
     await database.db.delete(commandResults).where(eq(commandResults.actorUserId, users.owner));
     if (teamId) await database.db.delete(workspaceMembers).where(eq(workspaceMembers.workspaceId, teamId));
     if (personalId) await database.db.delete(workspaceMembers).where(eq(workspaceMembers.workspaceId, personalId));

@@ -211,6 +211,20 @@
       "when": 1780000029000,
       "tag": "0029_team_credit_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "8",
+      "when": 1780000030000,
+      "tag": "0030_security_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "8",
+      "when": 1780000031000,
+      "tag": "0031_operator_owner_state",
+      "breakpoints": true
     }
   ]
 }

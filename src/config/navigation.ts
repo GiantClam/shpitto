@@ -46,4 +46,5 @@ export const adminNavigation: readonly AdminNavigationItem[] = [
   {id: 'affiliate-reviews', label: 'Affiliate reviews', href: '/admin?view=affiliate-reviews'},
   {id: 'affiliate-holds', label: 'Affiliate holds', href: '/admin?view=affiliate-holds'},
   {id: 'operations', label: 'Commands and recovery', href: '/admin?view=operations', roles: ['operator', 'superadmin']},
+  {id: 'security-settings', label: 'Security settings', href: '/admin?view=security-settings', roles: ['superadmin']},
 ];

@@ -3441,6 +3441,81 @@
       "milestones": [
         "M4"
       ]
+    },
+    {
+      "reqId": "REQ-SEC-01",
+      "title": "Optional security controls",
+      "capability": "operator-administration",
+      "path": "specs/security-controls/spec.md",
+      "anchor": "requirement-req-sec-01-optional-security-controls",
+      "scenarioIds": ["SC-SEC-01", "SC-SEC-02"],
+      "D": ["D22", "D31"],
+      "J": ["J7"],
+      "T": ["T04", "T59"],
+      "subcases": [],
+      "G": ["G22", "G31"],
+      "taskIds": ["7.1", "7.3", "7.14"],
+      "milestones": ["M6"]
+    },
+    {
+      "reqId": "REQ-SEC-02",
+      "title": "Superadmin-only security settings and encrypted secrets",
+      "capability": "operator-administration",
+      "path": "specs/security-controls/spec.md",
+      "anchor": "requirement-req-sec-02-superadmin-only-settings-and-secret-handling",
+      "scenarioIds": ["SC-SEC-03", "SC-SEC-04"],
+      "D": ["D22", "D31"],
+      "J": ["J7"],
+      "T": ["T04", "T59", "T61"],
+      "subcases": [],
+      "G": ["G22", "G31"],
+      "taskIds": ["7.1", "7.3", "7.14"],
+      "milestones": ["M6"]
+    },
+    {
+      "reqId": "REQ-SEC-03",
+      "title": "Server-side Cloudflare Turnstile verification",
+      "capability": "operator-administration",
+      "path": "specs/security-controls/spec.md",
+      "anchor": "requirement-req-sec-03-server-side-turnstile-verification",
+      "scenarioIds": ["SC-SEC-05"],
+      "D": ["D22", "D31"],
+      "J": ["J7"],
+      "T": ["T04", "T59"],
+      "subcases": [],
+      "G": ["G22", "G31"],
+      "taskIds": ["7.1", "7.3", "7.14"],
+      "milestones": ["M6"]
+    },
+    {
+      "reqId": "REQ-SEC-04",
+      "title": "Optional operator 2FA policy",
+      "capability": "operator-administration",
+      "path": "specs/security-controls/spec.md",
+      "anchor": "requirement-req-sec-04-optional-operator-2fa-policy",
+      "scenarioIds": ["SC-SEC-06"],
+      "D": ["D22", "D31"],
+      "J": ["J7"],
+      "T": ["T04", "T59"],
+      "subcases": [],
+      "G": ["G22", "G31"],
+      "taskIds": ["7.1", "7.3", "7.14"],
+      "milestones": ["M6"]
+    },
+    {
+      "reqId": "REQ-SEC-05",
+      "title": "Truthful SMTP behavior",
+      "capability": "operator-administration",
+      "path": "specs/security-controls/spec.md",
+      "anchor": "requirement-req-sec-05-truthful-smtp-behavior",
+      "scenarioIds": ["SC-SEC-07"],
+      "D": ["D15", "D31"],
+      "J": ["J7"],
+      "T": ["T04", "T59"],
+      "subcases": [],
+      "G": ["G22", "G31"],
+      "taskIds": ["7.1", "7.3", "7.14"],
+      "milestones": ["M6"]
     }
   ],
   "scenarios": [
@@ -5841,6 +5916,40 @@
       ]
     },
     {
+      "id": "SC-OPS-15",
+      "title": "Fresh-install first owner claim",
+      "requirement": "REQ-OPS-02",
+      "path": "specs/operator-administration/spec.md",
+      "anchor": "scenario-sc-ops-15-fresh-install-first-owner-claim",
+      "T": [
+        "T04",
+        "T59",
+        "T60",
+        "T61"
+      ],
+      "taskIds": [
+        "7.1",
+        "7.14"
+      ]
+    },
+    {
+      "id": "SC-OPS-16",
+      "title": "Claim replay, restart and upgrade safety",
+      "requirement": "REQ-OPS-02",
+      "path": "specs/operator-administration/spec.md",
+      "anchor": "scenario-sc-ops-16-claim-replay-restart-and-upgrade-safety",
+      "T": [
+        "T04",
+        "T59",
+        "T60",
+        "T61"
+      ],
+      "taskIds": [
+        "7.1",
+        "7.14"
+      ]
+    },
+    {
       "id": "SC-OPS-05",
       "title": "Trace an operational failure",
       "requirement": "REQ-OPS-03",
@@ -6642,7 +6751,14 @@
         "5.9",
         "5.10"
       ]
-    }
+    },
+    {"id":"SC-SEC-01","title":"Optional security controls disabled","requirement":"REQ-SEC-01","path":"specs/security-controls/spec.md","anchor":"scenario-sc-sec-01-optional-controls-disabled","T":["T04","T59"],"taskIds":["7.1","7.3","7.14"]},
+    {"id":"SC-SEC-02","title":"One security control enabled","requirement":"REQ-SEC-01","path":"specs/security-controls/spec.md","anchor":"scenario-sc-sec-02-one-control-enabled","T":["T04","T59"],"taskIds":["7.1","7.3","7.14"]},
+    {"id":"SC-SEC-03","title":"Non-superadmin cannot read settings","requirement":"REQ-SEC-02","path":"specs/security-controls/spec.md","anchor":"scenario-sc-sec-03-support-or-operator-reads-settings","T":["T04","T59"],"taskIds":["7.3","7.14"]},
+    {"id":"SC-SEC-04","title":"Secrets remain encrypted and write-only","requirement":"REQ-SEC-02","path":"specs/security-controls/spec.md","anchor":"scenario-sc-sec-04-secret-write-and-readback","T":["T04","T59","T61"],"taskIds":["7.3","7.14"]},
+    {"id":"SC-SEC-05","title":"Turnstile rejects invalid, missing and foreign-host tokens","requirement":"REQ-SEC-03","path":"specs/security-controls/spec.md","anchor":"scenario-sc-sec-05-invalid-turnstile-request","T":["T04","T59"],"taskIds":["7.1","7.3","7.14"]},
+    {"id":"SC-SEC-06","title":"Operator 2FA enforcement changes at runtime","requirement":"REQ-SEC-04","path":"specs/security-controls/spec.md","anchor":"scenario-sc-sec-06-enable-or-disable-2fa-enforcement","T":["T04","T59"],"taskIds":["7.1","7.3","7.14"]},
+    {"id":"SC-SEC-07","title":"Email verification requires a truthful delivery path","requirement":"REQ-SEC-05","path":"specs/security-controls/spec.md","anchor":"scenario-sc-sec-07-password-reset-without-smtp","T":["T04","T59"],"taskIds":["7.1","7.3","7.14"]}
   ],
   "tasks": [
     {
@@ -8106,7 +8222,12 @@
         "SC-OPS-02",
         "SC-OPS-03",
         "SC-OPS-04",
-        "SC-OPS-14"
+        "SC-OPS-14",
+        "SC-OPS-15",
+        "SC-OPS-16",
+        "SC-SEC-01",
+        "SC-SEC-02",
+        "SC-SEC-06"
       ],
       "T": [
         "T04",
@@ -8151,7 +8272,11 @@
         "SC-OPS-04",
         "SC-OPS-07",
         "SC-OPS-08",
-        "SC-OPS-09"
+        "SC-OPS-09",
+        "SC-SEC-03",
+        "SC-SEC-04",
+        "SC-SEC-05",
+        "SC-SEC-07"
       ],
       "T": [
         "T60",
@@ -8415,7 +8540,16 @@
         "SC-OPS-11",
         "SC-OPS-12",
         "SC-OPS-13",
-        "SC-OPS-14"
+        "SC-OPS-14",
+        "SC-OPS-15",
+        "SC-OPS-16",
+        "SC-SEC-01",
+        "SC-SEC-02",
+        "SC-SEC-03",
+        "SC-SEC-04",
+        "SC-SEC-05",
+        "SC-SEC-06",
+        "SC-SEC-07"
       ],
       "T": [
         "T04",

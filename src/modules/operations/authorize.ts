@@ -7,6 +7,7 @@ import {DomainError} from '../../db/contracts.ts';
 import {authSession, authUser} from '../../db/schema/auth.ts';
 import {userAccessControls} from '../../db/schema/access.ts';
 import {operatorRoles, operatorStepUps, OPERATOR_STEP_UP_TTL_MS, type OperatorRole} from '../../db/schema/operator.ts';
+import {readSecurityPolicy} from '../security/settings.ts';
 import type {TransactionDatabase} from '../shared/transaction.ts';
 import type {WorkspaceActor} from '../workspaces/policy.ts';
 
@@ -63,7 +64,8 @@ export async function requireOperatorIdentity(
     .leftJoin(userAccessControls, eq(userAccessControls.userId, authUser.id))
     .where(eq(authUser.id, actor.userId)).limit(1);
   const user = users[0];
-  if (!user || !user.emailVerified || user.authDisabledAt || user.accessStatus === 'disabled') throw new DomainError('FORBIDDEN', 'Operator access is unavailable.');
+  const security = await readSecurityPolicy(db);
+  if (!user || security.emailVerificationEnabled && !user.emailVerified || user.authDisabledAt || user.accessStatus === 'disabled') throw new DomainError('FORBIDDEN', 'Operator access is unavailable.');
 
   const rows = await db.select({role: operatorRoles.role})
     .from(operatorRoles)
@@ -86,6 +88,8 @@ export async function requireCurrentOperator(
   now = new Date(),
 ): Promise<Readonly<{userId: string; sessionId: string; role: OperatorRole}>> {
   const operator = await requireOperatorIdentity(db, actor, minimumRole, now);
+  const settings = await readSecurityPolicy(db);
+  if (!settings.twoFactorRequired) return operator;
   const user = (await db.select({enabled: authUser.twoFactorEnabled}).from(authUser).where(eq(authUser.id, actor.userId)).limit(1))[0];
   const completed = (await db.select({id: operatorStepUps.id}).from(operatorStepUps).where(and(eq(operatorStepUps.userId, actor.userId), eq(operatorStepUps.sessionId, operator.sessionId), lte(operatorStepUps.verifiedAt, now))).limit(1))[0];
   if (!user?.enabled || !completed) throw new DomainError('FORBIDDEN', 'Complete second-factor verification for this session.');
@@ -108,7 +112,8 @@ export async function recordTrustedSecondFactor(
     .leftJoin(userAccessControls, eq(userAccessControls.userId, authUser.id))
     .where(eq(authUser.id, actor.userId)).limit(1);
   const user = users[0];
-  if (!user || !user.emailVerified || user.authDisabledAt || user.accessStatus === 'disabled') throw new DomainError('FORBIDDEN', 'A verified active user is required.');
+  const security = await readSecurityPolicy(db);
+  if (!user || security.emailVerificationEnabled && !user.emailVerified || user.authDisabledAt || user.accessStatus === 'disabled') throw new DomainError('FORBIDDEN', 'An active user is required.');
   const expiresAt = new Date(now.getTime() + OPERATOR_STEP_UP_TTL_MS);
   const stepUpId = randomUUID();
   await db.insert(operatorStepUps).values({
@@ -129,6 +134,8 @@ export async function requireTrustedStepUp(
   now = new Date(),
 ): Promise<Date> {
   const sessionId = await requireLiveSession(db, actor, now);
+  const settings = await readSecurityPolicy(db);
+  if (!settings.twoFactorRequired) return new Date(now.getTime() + OPERATOR_STEP_UP_TTL_MS);
   const rows = await db.select({expiresAt: operatorStepUps.expiresAt})
     .from(operatorStepUps)
     .where(and(

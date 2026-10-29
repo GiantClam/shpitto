@@ -10,6 +10,8 @@ import {createServerQuote, DEFAULT_MODEL_ID} from '../src/config/models.ts';
 import {issueGrant} from '../src/modules/credits/ledger.ts';
 import {createGenerationTask} from '../src/modules/generation/create.ts';
 import {cancelGenerationTask} from '../src/modules/generation/lifecycle.ts';
+import {readSecuritySettings, updateSecuritySettings} from '../src/modules/security/settings.ts';
+import {operatorOwnerState} from '../src/db/schema/operator.ts';
 
 const env = getServerEnv();
 const base = new URL(env.appUrl);
@@ -108,7 +110,14 @@ async function run(): Promise<void> {
   let ownerId = '';
   let memberId = '';
   let workspaceId = '';
+  const originalSettings = await readSecuritySettings(database.db);
+  const originalOwnerState = (await database.db.select().from(operatorOwnerState).where(eq(operatorOwnerState.id, 'default')))[0]!;
+  if (originalOwnerState.firstUserClaimOpen) {
+    await database.pool.end();
+    throw new Error('Team HTTP probe requires a disposable app database with first-user claiming closed.');
+  }
   try {
+    await updateSecuritySettings(database.db, {expectedVersion: originalSettings.version, emailVerificationEnabled: true, twoFactorRequired: false, turnstileEnabled: false, turnstileSiteKey: '', smtpEnabled: false});
     const owner = await signupAndLogin(ownerEmail, ownerPassword);
     ownerId = owner.userId;
     const created = await request('/api/workspaces', {workspaceName: `HTTP team ${suffix}`}, owner.token);
@@ -233,6 +242,8 @@ async function run(): Promise<void> {
     assert.deepEqual(await businessSnapshot(), beforeReplays, 'Rejected replays changed business state.');
     console.log(JSON.stringify({status: 'PASS', createTeam: true, invite: true, accept: true, teamPageMembers: 2, suspendedDashboardAndRostersNoPrivateMarkers: true, activeWorkspaceChoicesOnly: true, billingHoldDashboardAndRosterReads: true, disabledAndUnverifiedLiveSessionPagesDenied: true, removedMemberCreateCancelReplay403: true, rejectedReplayStateUnchanged: true}));
   } finally {
+    const currentSettings = await readSecuritySettings(database.db);
+    await updateSecuritySettings(database.db, {expectedVersion: currentSettings.version, emailVerificationEnabled: originalSettings.emailVerificationEnabled, twoFactorRequired: originalSettings.twoFactorRequired, turnstileEnabled: originalSettings.turnstileEnabled, turnstileSiteKey: originalSettings.turnstileSiteKey ?? '', turnstileSecretKey: originalSettings.turnstileSecretKey ?? undefined, clearTurnstileSecret: originalSettings.turnstileSecretKey === null, smtpEnabled: originalSettings.smtpEnabled, smtpUrl: originalSettings.smtpUrl ?? undefined, clearSmtpUrl: originalSettings.smtpUrl === null, smtpFromEmail: originalSettings.smtpFromEmail ?? '', smtpFromName: originalSettings.smtpFromName ?? 'Shpitto'});
     await cleanupUsers([ownerId, memberId].filter(Boolean));
     await database.pool.end();
   }

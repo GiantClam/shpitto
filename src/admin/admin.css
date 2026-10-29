@@ -78,6 +78,17 @@
 .admin-state-error { background: color-mix(in oklab, var(--color-danger) 6%, var(--color-surface) 94%); border-style: solid; border-color: var(--color-danger); }
 .admin-pagination { align-items: center; border-top: 1px solid var(--color-border); color: var(--color-text-muted); display: flex; font-size: var(--type-body-sm); gap: 1rem; justify-content: space-between; margin-top: 1rem; padding-top: 1rem; }
 .admin-pagination > div { display: flex; flex-wrap: wrap; gap: .5rem; }
+.admin-settings-form { display: grid; gap: 1rem; padding: 1.25rem; }
+.admin-settings-form .ui-label { max-width: 52rem; }
+.admin-settings-form small { color: var(--color-text-subtle); line-height: 1.45; }
+.admin-security-toggle { align-items: flex-start; display: flex; gap: .75rem; max-width: 52rem; }
+.admin-security-toggle > input { flex: 0 0 1rem; height: 1rem; margin: .2rem 0 0; width: 1rem; }
+.admin-security-toggle > span { display: grid; gap: .3rem; }
+.admin-security-toggle strong { color: var(--color-text); font-size: var(--type-body-sm); }
+.admin-security-toggle-compact { align-items: center; }
+.admin-security-toggle-compact > input { margin-top: 0; }
+.admin-settings-fieldset { border: 1px solid var(--color-border); border-radius: var(--shell-radius-sm); display: grid; gap: 1rem; max-width: 52rem; padding: 1rem; }
+.admin-settings-fieldset legend { color: var(--color-ink); font-weight: 700; padding: 0 .35rem; }
 
 @media (max-width: 1050px) { .admin-metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .admin-shell { display: block; } .admin-sidebar { border-bottom: 1px solid var(--color-border); border-right: 0; padding: 1rem; position: static; } .admin-sidebar nav { flex-direction: row; margin: 1rem 0; overflow-x: auto; } .admin-sidebar nav a { flex-shrink: 0; } .admin-sidebar-footer { align-items: center; display: flex; justify-content: space-between; } .admin-content { padding: 1.5rem 1rem; } .admin-app-bar, .admin-page-heading, .admin-resource-header { flex-direction: column; } .admin-resource-meta { text-align: left; } .admin-metric-grid, .admin-overview-grid { grid-template-columns: 1fr; } .admin-pagination { align-items: flex-start; flex-direction: column; } }

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {createServer} from 'node:http';
 
-import {eq} from 'drizzle-orm';
+import {eq, inArray} from 'drizzle-orm';
 import {drizzle} from 'drizzle-orm/node-postgres';
 import {migrate} from 'drizzle-orm/node-postgres/migrator';
 
@@ -13,8 +13,12 @@ import {createDatabase, createMigrationClient} from '../src/db/client.ts';
 import {userAccessControls} from '../src/db/schema/access.ts';
 import {authSession, authUser, authVerification} from '../src/db/schema/auth.ts';
 import {billingAccounts} from '../src/db/schema/billing.ts';
+import {auditEvents} from '../src/db/schema/credit.ts';
+import {operatorOwnerState, operatorRoles} from '../src/db/schema/operator.ts';
+import {securitySettings} from '../src/db/schema/security.ts';
 import {creditAccounts, workspaceSetups, workspaces} from '../src/db/schema/workspace.ts';
 import {createAuth} from '../src/lib/auth.ts';
+import {readSecuritySettings, updateSecuritySettings} from '../src/modules/security/settings.ts';
 import {completePersonalWorkspaceOnboarding, getOnboardingStatus} from '../src/modules/workspaces/onboard.ts';
 
 const mail = new LocalMailAdapter();
@@ -115,9 +119,35 @@ async function run(): Promise<void> {
   let instance = createAuth(database.db, {mailAdapter: mail});
   let userId: string | undefined;
   let workspaceId: string | undefined;
+  const originalFetch = globalThis.fetch;
+  const originalSettings = await readSecuritySettings(database.db);
+  const originalOwnerState = (await database.db.select().from(operatorOwnerState).where(eq(operatorOwnerState.id, 'default')))[0]!;
+  if (originalOwnerState.firstUserClaimOpen) {
+    await database.pool.end();
+    throw new Error('Auth lifecycle probe requires a disposable app database with first-user claiming closed.');
+  }
+  const priorVerificationIds = new Set((await database.db.select({id: authVerification.id}).from(authVerification)).map((row) => row.id));
   try {
-    const signup = await instance.handler(authRequest('/sign-up/email', {name: 'Auth lifecycle probe', email, password: oldPassword, callbackURL: '/login'}));
+    const settings = await readSecuritySettings(database.db);
+    await updateSecuritySettings(database.db, {expectedVersion: settings.version, emailVerificationEnabled: true, twoFactorRequired: false, turnstileEnabled: true, turnstileSiteKey: 'site-key-test', turnstileSecretKey: 'turnstile-secret-test', smtpEnabled: false});
+    instance = createAuth(database.db, {mailAdapter: mail});
+    let verifyCalls = 0;
+    globalThis.fetch = async (input, init) => {
+      verifyCalls += 1;
+      assert(String(input).includes('/turnstile/v0/siteverify'));
+      assert(String(init?.body).includes('turnstile-secret-test'));
+      const responseToken = new URLSearchParams(String(init?.body)).get('response');
+      const action = responseToken === 'valid-verification-token' ? 'email-verification' : 'signup';
+      return new Response(JSON.stringify({success: true, hostname: new URL(env.appUrl).hostname, action}), {status: 200, headers: {'content-type': 'application/json'}});
+    };
+    await expectCode(await instance.handler(authRequest('/sign-up/email', {name: 'Missing Turnstile token', email: `missing-${email}`, password: oldPassword, callbackURL: '/login'})), 400, 'TURNSTILE_REQUIRED');
+    const signup = await instance.handler(authRequest('/sign-up/email', {name: 'Auth lifecycle probe', email, password: oldPassword, callbackURL: '/login', turnstileToken: 'valid-turnstile-token'}));
     assert.equal(signup.status, 200);
+    assert.equal(verifyCalls, 1);
+    globalThis.fetch = originalFetch;
+    const currentSettings = await readSecuritySettings(database.db);
+    await updateSecuritySettings(database.db, {expectedVersion: currentSettings.version, emailVerificationEnabled: true, twoFactorRequired: false, turnstileEnabled: false, turnstileSiteKey: '', smtpEnabled: false});
+    instance = createAuth(database.db, {mailAdapter: mail});
     const account = (await database.db.select().from(authUser).where(eq(authUser.email, email)))[0];
     assert(account, 'Better Auth signup did not persist its user.');
     userId = account.id;
@@ -127,7 +157,10 @@ async function run(): Promise<void> {
     await expectCode(await instance.handler(authRequest('/sign-in/email', {email, password: oldPassword})), 403, 'EMAIL_NOT_VERIFIED');
 
     const brokenMail = createAuth(database.db, {mailAdapter: {send: async () => ({ok: false, error: {code: 'OFFLINE', message: 'Fixture unavailable', retryable: true}})}});
-    await expectCode(await brokenMail.handler(authRequest('/send-verification-email', {email, callbackURL: '/login'})), 503, 'EMAIL_DELIVERY_UNAVAILABLE');
+    const capturedBeforeFailedResend = mail.messages.length;
+    const unavailableVerification = await brokenMail.handler(authRequest('/send-verification-email', {email, callbackURL: '/login'}));
+    assert.equal(unavailableVerification.status, 200, 'Verification resend response remains generic when delivery is unavailable.');
+    assert.equal(mail.messages.length, capturedBeforeFailedResend, 'Failed delivery must not be reported as a captured email.');
     const invalidVerification = await instance.handler(authRequest('/verify-email?token=invalid&callbackURL=%2Flogin'));
     assert.equal(invalidVerification.status, 302);
     assert.match(invalidVerification.headers.get('location') ?? '', /error=/);
@@ -151,6 +184,12 @@ async function run(): Promise<void> {
     assert.equal((await restoredSession.json() as {user: {id: string}}).user.id, userId);
     assert.deepEqual(await completePersonalWorkspaceOnboarding(database.db, userId), {status: 'complete', workspaceId, created: false});
 
+    const unavailableMailAuth = createAuth(database.db, {mailAdapter: {send: async () => ({ok: false, error: {code: 'OFFLINE', message: 'Fixture unavailable', retryable: true}})}});
+    const knownResetResponse = await unavailableMailAuth.handler(authRequest('/request-password-reset', {email, redirectTo: '/reset-password'}));
+    const unknownResetResponse = await unavailableMailAuth.handler(authRequest('/request-password-reset', {email: `missing-${email}`, redirectTo: '/reset-password'}));
+    assert.equal(knownResetResponse.status, 200);
+    assert.equal(unknownResetResponse.status, 200);
+    assert.deepEqual(await knownResetResponse.json(), await unknownResetResponse.json(), 'Unavailable mail must not reveal whether the account exists.');
     const resetRequest = await instance.handler(authRequest('/request-password-reset', {email, redirectTo: '/reset-password'}));
     assert.equal(resetRequest.status, 200);
     const resetCallback = await instance.handler(new Request(lastMailLink('Reset your Shpitto password')));
@@ -182,14 +221,33 @@ async function run(): Promise<void> {
     await expectCode(await instance.handler(authRequest('/reset-password', {token: expiredToken, newPassword: oldPassword})), 400, 'INVALID_TOKEN');
     console.log(JSON.stringify({status: 'PASS', signupVerifiedThroughEmail: true, persistentSessionRestart: true, onboardingRecovered: true, passwordReset: true, invalidExpiredReplayedTokensRejected: true, oldCredentialsAndSessionsRevoked: true, disabledLoginRejected: true, mailTransport: 'Mailpit HTTP contract fixture', authMail: 'injected recording adapter; no external delivery'}));
   } finally {
+    globalThis.fetch = originalFetch;
+    const currentSettings = await readSecuritySettings(database.db);
+    await updateSecuritySettings(database.db, {
+      expectedVersion: currentSettings.version,
+      emailVerificationEnabled: originalSettings.emailVerificationEnabled,
+      twoFactorRequired: originalSettings.twoFactorRequired,
+      turnstileEnabled: originalSettings.turnstileEnabled,
+      turnstileSiteKey: originalSettings.turnstileSiteKey ?? '',
+      turnstileSecretKey: originalSettings.turnstileSecretKey ?? undefined,
+      clearTurnstileSecret: originalSettings.turnstileSecretKey === null,
+      smtpEnabled: originalSettings.smtpEnabled,
+      smtpUrl: originalSettings.smtpUrl ?? undefined,
+      clearSmtpUrl: originalSettings.smtpUrl === null,
+      smtpFromEmail: originalSettings.smtpFromEmail ?? '',
+      smtpFromName: originalSettings.smtpFromName ?? 'Shpitto',
+    });
     if (userId) {
-      await database.db.delete(authVerification).where(eq(authVerification.value, userId));
+      const newVerificationIds = (await database.db.select({id: authVerification.id}).from(authVerification)).map((row) => row.id).filter((id) => !priorVerificationIds.has(id));
+      if (newVerificationIds.length) await database.db.delete(authVerification).where(inArray(authVerification.id, newVerificationIds));
       await database.db.delete(workspaceSetups).where(eq(workspaceSetups.userId, userId));
       if (workspaceId) {
         await database.db.delete(billingAccounts).where(eq(billingAccounts.workspaceId, workspaceId));
         await database.db.delete(creditAccounts).where(eq(creditAccounts.workspaceId, workspaceId));
         await database.db.delete(workspaces).where(eq(workspaces.id, workspaceId));
       }
+      await database.db.delete(auditEvents).where(eq(auditEvents.actorUserId, userId));
+      await database.db.delete(operatorRoles).where(eq(operatorRoles.userId, userId));
       await database.db.delete(authUser).where(eq(authUser.id, userId));
     }
     await database.pool.end();

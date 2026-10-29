@@ -15,6 +15,7 @@ import {userAccessControls} from '../src/db/schema/access.ts';
 import {billingAccounts, billingCashEvents, billingCustomerHistory, billingOrders, billingRefundRequests} from '../src/db/schema/billing.ts';
 import {auditEvents, outboxEvents} from '../src/db/schema/credit.ts';
 import {operatorRoles} from '../src/db/schema/operator.ts';
+import {securitySettings} from '../src/db/schema/security.ts';
 import {requestBillingRefundAsOperator} from '../src/modules/billing/refund-command.ts';
 import {deliverOperatorRefund} from '../src/modules/billing/refund-delivery.ts';
 import {readPendingOperatorRefunds} from '../src/modules/billing/refund-retry.ts';
@@ -48,6 +49,7 @@ async function run(): Promise<void> {
     try { await migrate(drizzle(migration), {migrationsFolder: 'src/db/migrations'}); } finally { await migration.end(); }
     const database = createDatabase({connectionString: databaseUrl.toString(), max: 8}); pool = database.pool;
     const db = database.db;
+    await db.update(securitySettings).set({emailVerificationEnabled: true, twoFactorRequired: true, version: 2, updatedAt: now}).where(eq(securitySettings.id, 'default'));
     await db.insert(authUser).values(['owner', 'second', 'operator', 'unverified'].map((id) => ({id, name: id, email: `${id}@example.test`, emailVerified: id !== 'unverified', twoFactorEnabled: id !== 'unverified', createdAt: now, updatedAt: now})));
     const bootstrap = {mode: 'bootstrap' as const, targetUserId: 'owner', reason: 'Initialize disposable test owner', changeReference: 'local-probe-ticket'};
     await assert.rejects(administerOperatorOwner(db, {...bootstrap, targetUserId: 'unverified', apply: true}), forbidden);

@@ -46,14 +46,18 @@ the [API examples](../api/overview) for the request shapes and the
 
 ## Administrative acceptance
 
-Global admin is separate from workspace ownership. Bootstrap a local operator
-only through the audited `pnpm ops:owner bootstrap` command after identifying
+Global admin is separate from workspace ownership. On a new installation, the
+first successful password registration to win the server-side claim becomes Superadmin;
+registration concurrency, replay and restart cannot create another initial
+owner. For an upgraded installation that already contains users but has no
+global owner, use the audited `pnpm ops:owner bootstrap` command after identifying
 the account's database user ID. Review the command's dry-run output, record a
 local change reference, then use `--apply` only in the disposable local profile.
-The operator must enroll and complete second-factor authentication before
-privileged commands. Read-only lists expose redacted data; privileged commands
-require a reason, current version, idempotency key and recent same-session
-step-up.
+The installed template can configure optional SMTP, email verification, operator
+2FA and Cloudflare Turnstile from the superadmin Security settings view. Read-only
+lists expose redacted data; privileged commands require a reason, current
+version, idempotency key and server-side role authorization. When 2FA enforcement
+is enabled, commands also require recent same-session step-up verification.
 
 This journey proves only the Mock/local profile. Real Replicate, fal.ai, Stripe,
 FirstPromoter, production email and hosted payout checks remain separate gates.
