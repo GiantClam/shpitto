@@ -1,0 +1,80 @@
+▲ Next.js 16.3.6 (Turbopack)
+- Environments: .env.local, .env
+✓ Running next.config.ts took 27ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 1047ms
+  Running TypeScript ...
+  Finished TypeScript in 2.5s ...
+  Collecting page data using 31 workers ...
+  Generating static pages using 31 workers (0/27) ...
+  Generating static pages using 31 workers (6/27) 
+  Generating static pages using 31 workers (13/27) 
+  Generating static pages using 31 workers (20/27) 
+✓ Generating static pages using 31 workers (27/27) in 226ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /admin/[[...segments]]
+├ ƒ /api/admin/affiliates/commands/[command]
+├ ƒ /api/admin/affiliates/holds
+├ ƒ /api/admin/affiliates/reviews
+├ ƒ /api/admin/affiliates/status
+├ ƒ /api/admin/audit
+├ ƒ /api/admin/billing
+├ ƒ /api/admin/commands/[command]
+├ ƒ /api/admin/generations
+├ ƒ /api/admin/me
+├ ƒ /api/admin/recovery/[workspaceId]
+├ ƒ /api/admin/recovery/[workspaceId]/sweep
+├ ƒ /api/admin/recovery/[workspaceId]/webhook-replay
+├ ƒ /api/admin/refunds/pending
+├ ƒ /api/admin/refunds/preview
+├ ƒ /api/admin/security
+├ ƒ /api/admin/step-up
+├ ƒ /api/admin/users
+├ ƒ /api/admin/workspaces
+├ ƒ /api/admin/workspaces/[workspaceId]
+├ ƒ /api/admin/workspaces/[workspaceId]/details
+├ ƒ /api/affiliates/referral
+├ ƒ /api/auth/[...all]
+├ ƒ /api/invitations/accept
+├ ƒ /api/onboarding
+├ ƒ /api/webhooks/affiliate
+├ ƒ /api/webhooks/fal/[attemptNonce]
+├ ƒ /api/webhooks/replicate/[attemptNonce]
+├ ƒ /api/webhooks/stripe
+├ ƒ /api/workspaces
+├ ƒ /api/workspaces/[workspaceId]/assets
+├ ƒ /api/workspaces/[workspaceId]/assets/[assetId]
+├ ƒ /api/workspaces/[workspaceId]/assets/[assetId]/download
+├ ƒ /api/workspaces/[workspaceId]/billing
+├ ƒ /api/workspaces/[workspaceId]/billing/checkout
+├ ƒ /api/workspaces/[workspaceId]/billing/portal
+├ ƒ /api/workspaces/[workspaceId]/generations
+├ ƒ /api/workspaces/[workspaceId]/generations/[taskId]/cancel
+├ ƒ /api/workspaces/[workspaceId]/generations/[taskId]/claim
+├ ƒ /api/workspaces/[workspaceId]/invitations
+├ ƒ /api/workspaces/[workspaceId]/leave
+├ ƒ /api/workspaces/[workspaceId]/members/[userId]/demote
+├ ƒ /api/workspaces/[workspaceId]/members/[userId]/remove
+├ ƒ /api/workspaces/[workspaceId]/transfer
+├ ƒ /dashboard
+├ ƒ /dashboard/team
+├ ○ /docs
+├ ○ /docs/api
+├ ○ /docs/skills
+├ ƒ /invitations/accept
+├ ƒ /login
+├ ƒ /reset-password
+├ ○ /signup
+├ ƒ /workspaces/[w]/billing
+├ ƒ /workspaces/[w]/settings/members
+└ ƒ /workspaces/new
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

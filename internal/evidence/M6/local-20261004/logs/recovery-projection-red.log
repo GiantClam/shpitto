@@ -1,0 +1,35 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: A refund from another reservation sharing the grant must not appear as this active task refund.
++ actual - expected
+
++ {
++   amount: '20',
++   businessKey: '04cce0a3-16c5-4677-89ff-7ea88e838b2e:failed',
++   createdAt: 2026-10-04T09:02:43.990Z,
++   entryType: 'refund',
++   id: 'f06d5122-f088-4680-b03f-596f71af54d4'
++ }
+- null
+
+    at file:///D:/github/shpitto/scripts/probe-m6-recovery.ts:159:12
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async NodePgSession.transaction (file:///D:/github/shpitto/node_modules/.pnpm/drizzle-orm@0.45.3_@opentel_005c41c1a6de5e76c5fdb464aca028b4/node_modules/drizzle-orm/node-postgres/session.js:186:22)
+    at async file:///D:/github/shpitto/scripts/probe-m6-recovery.ts:25:3 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: {
+    id: 'f06d5122-f088-4680-b03f-596f71af54d4',
+    entryType: 'refund',
+    amount: '20',
+    businessKey: '04cce0a3-16c5-4677-89ff-7ea88e838b2e:failed',
+    createdAt: 2026-10-04T09:02:43.990Z
+  },
+  expected: null,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.15.0

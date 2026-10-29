@@ -1,0 +1,26 @@
+✔ fixture defaults still create and replay deterministic Checkout and portal (255.469345ms)
+✔ Stripe requires explicit server catalog; fixture terms cannot be relabeled as Stripe (7.016719ms)
+✔ concurrent customer creation and command replay use a persisted stable remote key and one binding (44.862858ms)
+✔ unknown customer provisioning survives process replacement and does not invent a Stripe identity (22.340001ms)
+✔ expired unknown customer intent fails closed beyond provider retention (12.632475ms)
+✔ stale owner cannot bind a customer after the remote provisioning call (8.804041ms)
+✔ Checkout retries retain immutable catalog, customer and provider key across config and customer changes (30.807499ms)
+✔ known Stripe session replays retrieve provider URL and preserve identity on late unknown (27.49038ms)
+✔ late unknown customer response cannot erase a concurrent successful provisioning result (21.84148ms)
+✔ local timeout never releases recurring slot; only provider expiry permits replacement (40.912549ms)
+✔ unknown Checkout cannot be recreated after idempotency retention and still occupies recurring slot (21.453097ms)
+✔ concurrent distinct recurring commands create only one remote Checkout (22.153834ms)
+✔ Stripe portal uses real current customer during hold and an immutable server return URL (17.405579ms)
+✔ invalid command identity, member and billing hold fail before customer provisioning (4.56893ms)
+✔ portal without a current Stripe customer never creates a synthetic mapping (3.187785ms)
+✔ known Checkout retrieval unknown or conflicting identity preserves the accepted session (17.636206ms)
+✔ paid session retrieval leaves recurring slot until canonical payment reconciliation (17.339475ms)
+✔ portal lost response retries stored customer and return origin after configuration changes (17.78389ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1125.050066

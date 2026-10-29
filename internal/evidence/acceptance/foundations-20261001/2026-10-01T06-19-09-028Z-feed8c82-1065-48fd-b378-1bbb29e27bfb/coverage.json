@@ -1,0 +1,323 @@
+{
+  "status": "FAIL",
+  "branchesFound": 1606,
+  "branchesHit": 1360,
+  "percent": 84.68244084682442,
+  "missingSources": [
+    "src/modules/billing/inbox.ts",
+    "src/modules/billing/payment-aliases.ts",
+    "src/modules/billing/reconcile-payment.ts"
+  ],
+  "malformed": [],
+  "ownedModules": [
+    "src/adapters/billing/fake.ts",
+    "src/adapters/billing/stripe-webhooks.ts",
+    "src/adapters/mail/index.ts",
+    "src/adapters/mail/invitation.ts",
+    "src/adapters/mail/local.ts",
+    "src/adapters/mail/mailpit.ts",
+    "src/adapters/providers/fal/index.ts",
+    "src/adapters/providers/input.ts",
+    "src/adapters/providers/mock.ts",
+    "src/adapters/providers/normalize.ts",
+    "src/adapters/providers/replicate/index.ts",
+    "src/adapters/storage/local.ts",
+    "src/config/models.ts",
+    "src/contracts/http.ts",
+    "src/lib/auth.ts",
+    "src/modules/assets/authorize.ts",
+    "src/modules/assets/cleanup.ts",
+    "src/modules/assets/ingest.ts",
+    "src/modules/assets/media-probe.ts",
+    "src/modules/assets/upload.ts",
+    "src/modules/assets/validate-input.ts",
+    "src/modules/billing/checkout.ts",
+    "src/modules/billing/hold-policy.ts",
+    "src/modules/billing/inbox.ts",
+    "src/modules/billing/payment-aliases.ts",
+    "src/modules/billing/reconcile-payment.ts",
+    "src/modules/credits/allocate.ts",
+    "src/modules/credits/expiry.ts",
+    "src/modules/credits/issue-demo.ts",
+    "src/modules/credits/ledger.ts",
+    "src/modules/credits/queries.ts",
+    "src/modules/credits/reserve.ts",
+    "src/modules/credits/settle.ts",
+    "src/modules/generation/create.ts",
+    "src/modules/generation/lifecycle.ts",
+    "src/modules/generation/mock.ts",
+    "src/modules/generation/outbox.ts",
+    "src/modules/generation/state.ts",
+    "src/modules/generation/sweep-recovery.ts",
+    "src/modules/operations/authorize.ts",
+    "src/modules/operations/status-commands.ts",
+    "src/modules/shared/commands.ts",
+    "src/modules/shared/transaction.ts",
+    "src/modules/workspaces/access-state.ts",
+    "src/modules/workspaces/authorize.ts",
+    "src/modules/workspaces/commands.ts",
+    "src/modules/workspaces/invitations.ts",
+    "src/modules/workspaces/onboard.ts",
+    "src/modules/workspaces/policy.ts",
+    "src/config/provider-models.ts",
+    "src/config/plans.ts",
+    "src/modules/billing/contracts.ts"
+  ],
+  "reports": [
+    {
+      "path": "src/contracts/http.ts",
+      "branchesFound": 65,
+      "branchesHit": 65
+    },
+    {
+      "path": "src/modules/credits/issue-demo.ts",
+      "branchesFound": 7,
+      "branchesHit": 5
+    },
+    {
+      "path": "src/modules/credits/ledger.ts",
+      "branchesFound": 23,
+      "branchesHit": 19
+    },
+    {
+      "path": "src/modules/shared/commands.ts",
+      "branchesFound": 27,
+      "branchesHit": 19
+    },
+    {
+      "path": "src/modules/shared/transaction.ts",
+      "branchesFound": 2,
+      "branchesHit": 2
+    },
+    {
+      "path": "src/modules/workspaces/onboard.ts",
+      "branchesFound": 31,
+      "branchesHit": 23
+    },
+    {
+      "path": "src/modules/workspaces/policy.ts",
+      "branchesFound": 54,
+      "branchesHit": 52
+    },
+    {
+      "path": "src/modules/workspaces/authorize.ts",
+      "branchesFound": 14,
+      "branchesHit": 14
+    },
+    {
+      "path": "src/modules/workspaces/commands.ts",
+      "branchesFound": 51,
+      "branchesHit": 50
+    },
+    {
+      "path": "src/modules/workspaces/invitations.ts",
+      "branchesFound": 37,
+      "branchesHit": 36
+    },
+    {
+      "path": "src/modules/operations/authorize.ts",
+      "branchesFound": 29,
+      "branchesHit": 24
+    },
+    {
+      "path": "src/config/models.ts",
+      "branchesFound": 34,
+      "branchesHit": 34
+    },
+    {
+      "path": "src/modules/billing/hold-policy.ts",
+      "branchesFound": 6,
+      "branchesHit": 6
+    },
+    {
+      "path": "src/modules/credits/allocate.ts",
+      "branchesFound": 39,
+      "branchesHit": 31
+    },
+    {
+      "path": "src/modules/credits/queries.ts",
+      "branchesFound": 46,
+      "branchesHit": 34
+    },
+    {
+      "path": "src/modules/credits/settle.ts",
+      "branchesFound": 47,
+      "branchesHit": 42
+    },
+    {
+      "path": "src/modules/generation/create.ts",
+      "branchesFound": 60,
+      "branchesHit": 51
+    },
+    {
+      "path": "src/modules/generation/lifecycle.ts",
+      "branchesFound": 149,
+      "branchesHit": 107
+    },
+    {
+      "path": "src/modules/generation/outbox.ts",
+      "branchesFound": 41,
+      "branchesHit": 30
+    },
+    {
+      "path": "src/modules/generation/state.ts",
+      "branchesFound": 20,
+      "branchesHit": 16
+    },
+    {
+      "path": "src/modules/operations/status-commands.ts",
+      "branchesFound": 52,
+      "branchesHit": 48
+    },
+    {
+      "path": "src/modules/workspaces/access-state.ts",
+      "branchesFound": 34,
+      "branchesHit": 34
+    },
+    {
+      "path": "src/modules/credits/reserve.ts",
+      "branchesFound": 1,
+      "branchesHit": 1
+    },
+    {
+      "path": "src/modules/credits/expiry.ts",
+      "branchesFound": 8,
+      "branchesHit": 6
+    },
+    {
+      "path": "src/adapters/mail/local.ts",
+      "branchesFound": 3,
+      "branchesHit": 3
+    },
+    {
+      "path": "src/adapters/mail/mailpit.ts",
+      "branchesFound": 9,
+      "branchesHit": 6
+    },
+    {
+      "path": "src/lib/auth.ts",
+      "branchesFound": 19,
+      "branchesHit": 17
+    },
+    {
+      "path": "src/adapters/storage/local.ts",
+      "branchesFound": 27,
+      "branchesHit": 24
+    },
+    {
+      "path": "src/modules/assets/cleanup.ts",
+      "branchesFound": 100,
+      "branchesHit": 85
+    },
+    {
+      "path": "src/modules/assets/ingest.ts",
+      "branchesFound": 43,
+      "branchesHit": 33
+    },
+    {
+      "path": "src/modules/assets/media-probe.ts",
+      "branchesFound": 15,
+      "branchesHit": 11
+    },
+    {
+      "path": "src/modules/generation/mock.ts",
+      "branchesFound": 11,
+      "branchesHit": 11
+    },
+    {
+      "path": "src/modules/generation/sweep-recovery.ts",
+      "branchesFound": 5,
+      "branchesHit": 5
+    },
+    {
+      "path": "src/modules/assets/authorize.ts",
+      "branchesFound": 25,
+      "branchesHit": 24
+    },
+    {
+      "path": "src/modules/assets/upload.ts",
+      "branchesFound": 5,
+      "branchesHit": 2
+    },
+    {
+      "path": "src/modules/assets/validate-input.ts",
+      "branchesFound": 26,
+      "branchesHit": 23
+    },
+    {
+      "path": "src/adapters/mail/index.ts",
+      "branchesFound": 1,
+      "branchesHit": 1
+    },
+    {
+      "path": "src/adapters/mail/invitation.ts",
+      "branchesFound": 2,
+      "branchesHit": 2
+    },
+    {
+      "path": "src/adapters/billing/fake.ts",
+      "branchesFound": 8,
+      "branchesHit": 8
+    },
+    {
+      "path": "src/adapters/billing/stripe-webhooks.ts",
+      "branchesFound": 20,
+      "branchesHit": 11
+    },
+    {
+      "path": "src/config/plans.ts",
+      "branchesFound": 12,
+      "branchesHit": 12
+    },
+    {
+      "path": "src/modules/billing/contracts.ts",
+      "branchesFound": 47,
+      "branchesHit": 47
+    },
+    {
+      "path": "src/adapters/providers/fal/index.ts",
+      "branchesFound": 56,
+      "branchesHit": 39
+    },
+    {
+      "path": "src/adapters/providers/input.ts",
+      "branchesFound": 80,
+      "branchesHit": 67
+    },
+    {
+      "path": "src/adapters/providers/normalize.ts",
+      "branchesFound": 49,
+      "branchesHit": 41
+    },
+    {
+      "path": "src/config/provider-models.ts",
+      "branchesFound": 12,
+      "branchesHit": 12
+    },
+    {
+      "path": "src/adapters/providers/mock.ts",
+      "branchesFound": 22,
+      "branchesHit": 19
+    },
+    {
+      "path": "src/adapters/providers/replicate/index.ts",
+      "branchesFound": 76,
+      "branchesHit": 68
+    },
+    {
+      "path": "src/modules/billing/checkout.ts",
+      "branchesFound": 56,
+      "branchesHit": 40
+    }
+  ],
+  "exclusions": [
+    {
+      "path": "src/adapters/providers/port.ts",
+      "reason": "Type-only interface and DTO definitions; no runtime implementation."
+    },
+    {
+      "path": "src/db/schema/**",
+      "reason": "Declarative schemas are exercised by disposable PostgreSQL constraints."
+    }
+  ]
+}

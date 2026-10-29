@@ -1,0 +1,62 @@
+Skip to content
+Shpitto
+Home
+Explore
+Create
+Docs
+Log in
+Start creating
+Documentation version
+v1 · current documentation
+Search published documentation
+Template
+Template
+Operations
+Local acceptance journey
+Local generation and credit lifecycle
+Local billing fixtures
+Managed deployment reference
+Standalone Docker application
+Deployment configuration checklist
+Backup, upgrade and restore
+Affiliates
+Affiliate settlement
+Skills
+Skills
+Skill · quick-start
+Skill · add-provider
+Skill · add-generation-task
+Skill · configure-credits
+Skill · extend-assets
+Skill · deploy-template
+Skill · security-review
+Skill · upgrade-template
+Skill · customize-brand
+Skill · create-page
+Skill · modify-page
+Skill · customize-site
+APIs
+API
+Releases
+Overview
+Releases
+DEVELOPER DOCUMENTATION
+v1 · published docs
+
+Local template preview. Real provider, payment and production verification remain separate release gates.
+
+Releases
+Copy Anchor Link
+
+The v1 documentation source is published from the repository and exported to buyer guidance. Each page carries a release marker and related contract IDs; the export keeps only published source pages and strips trusted frontmatter. External provider, payment, affiliate and production deployment evidence remains profile-specific and is not implied by this local source.
+
+The local candidate supports PostgreSQL, local assets, Mailpit and Mock generation. Managed Vercel/Neon/R2/Trigger/Resend and standalone Docker are documented as buyer-owned deployment profiles; their production activation remains a separate evidence gate.
+
+Source: content/docs/v1/releases/index.mdx
+Shpitto
+
+Give your ideas a little motion.
+
+Explore
+Create a video
+Docs

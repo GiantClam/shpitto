@@ -1,0 +1,27 @@
+✔ CLI requires exact UUID, phase and the three missing rows only (4.0225ms)
+✔ submit requires confirmation; I2V prepare requires local crop path and consent (0.2647ms)
+✔ state can authorize only its exact fresh seeded row/run (0.5742ms)
+✔ started local or durable fence, nonqueued task or nonzero count prohibits create (1.2192ms)
+✔ single create reserves count before I/O; concurrent and ambiguous retries fail closed (0.7833ms)
+✔ failed count persistence sends zero requests and consumes local guard (0.1675ms)
+✔ account preflight failure starts neither fence nor POST; successful preflight precedes fence (0.5323ms)
+✔ a rejected durable fence sends zero POSTs and a successful fence permits exactly one (0.2712ms)
+✔ report uses a closed schema and omits all secrets, bodies, keys and signed locations (0.3664ms)
+✔ output inspection retains only bounded decoded dimensions and duration (0.9151ms)
+✔ output inspection supports seek-required MP4 with trailing movie metadata (212.286ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 384.4474
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report

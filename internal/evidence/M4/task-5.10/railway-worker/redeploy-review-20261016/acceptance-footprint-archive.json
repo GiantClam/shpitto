@@ -1,0 +1,12 @@
+{
+  "capturedAt": "2026-10-16T10:37:53.008Z",
+  "sourceCommit": "ac733fc665d654ce3f485feee45d871f10c79f61",
+  "path": "acceptance-footprint.tar.gz",
+  "files": 560,
+  "bytes": 792642,
+  "sha256": "1043bb6c3c2e4a3762aa224fdd9c44c0bae0cfd0880c47dbcb8c05e39264258a",
+  "convention": "Reviewed working-tree bytes. CRLF/LF differences from frozen Git blobs must not be silently normalized when comparing declared acceptance digests.",
+  "manifestRef": "digest-footprints.json",
+  "candidateRef": "candidate.json",
+  "note": "Evidence of exact reviewed bytes only; it does not repair missing scenario, coverage, M3 applicability or recovery execution proof."
+}

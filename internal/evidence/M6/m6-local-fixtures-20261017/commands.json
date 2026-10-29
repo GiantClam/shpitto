@@ -1,0 +1,192 @@
+[
+  {
+    "commandId": "frozen-lock-install",
+    "invocation": "corepack pnpm install --frozen-lockfile --prefer-offline --ignore-scripts",
+    "environmentId": "local-docker-m6-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/frozen-lock-install.log"
+  },
+  {
+    "commandId": "typecheck",
+    "invocation": "corepack pnpm typecheck",
+    "environmentId": "local-docker-m6-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/typecheck.log"
+  },
+  {
+    "commandId": "lint",
+    "invocation": "corepack pnpm lint",
+    "environmentId": "local-docker-m6-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/lint.log"
+  },
+  {
+    "commandId": "format-check",
+    "invocation": "corepack pnpm format:check",
+    "environmentId": "local-docker-m6-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/format-check.log"
+  },
+  {
+    "commandId": "verify-db-boundary",
+    "invocation": "corepack pnpm verify:db-boundary",
+    "environmentId": "local-docker-m6-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/verify-db-boundary.log"
+  },
+  {
+    "commandId": "verify-openspec",
+    "invocation": "corepack pnpm verify:openspec",
+    "environmentId": "local-docker-m6-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/verify-openspec.log"
+  },
+  {
+    "commandId": "production-build",
+    "invocation": "corepack pnpm build with production provider/storage/mail profile",
+    "environmentId": "local-docker-m6-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/production-build.log"
+  },
+  {
+    "commandId": "contracts-provider-inputs",
+    "invocation": "node --experimental-strip-types --test tests/contracts/provider-inputs.test.ts",
+    "environmentId": "local-docker-m6-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/contracts-provider-inputs.log"
+  },
+  {
+    "commandId": "contracts-billing-contracts",
+    "invocation": "node --experimental-strip-types --test tests/contracts/billing-contracts.test.ts",
+    "environmentId": "local-docker-m6-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/contracts-billing-contracts.log"
+  },
+  {
+    "commandId": "billing-schema",
+    "invocation": "node --experimental-strip-types scripts/probe-billing-schema.ts on disposable PostgreSQL",
+    "environmentId": "local-docker-m6-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/billing-schema.log"
+  },
+  {
+    "commandId": "m6-operations",
+    "invocation": "node --experimental-strip-types scripts/probe-m6-operations.ts on disposable PostgreSQL",
+    "environmentId": "local-docker-m6-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/m6-operations.log"
+  },
+  {
+    "commandId": "m6-privileged",
+    "invocation": "node --experimental-strip-types scripts/probe-m6-privileged.ts on disposable PostgreSQL",
+    "environmentId": "local-docker-m6-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/m6-privileged.log"
+  },
+  {
+    "commandId": "m6-mfa",
+    "invocation": "node --experimental-strip-types scripts/probe-m6-two-factor.ts on disposable PostgreSQL",
+    "environmentId": "local-docker-m6-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/m6-mfa.log"
+  },
+  {
+    "commandId": "m6-recovery",
+    "invocation": "migrated disposable PostgreSQL + node --experimental-strip-types scripts/probe-m6-recovery.ts",
+    "environmentId": "local-docker-m6-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/m6-recovery.log"
+  },
+  {
+    "commandId": "m6-affiliate",
+    "invocation": "node --experimental-strip-types scripts/probe-m6-affiliate.ts local pure contract profile",
+    "environmentId": "local-docker-m6-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/m6-affiliate.log"
+  },
+  {
+    "commandId": "m6-affiliate-db",
+    "invocation": "node --experimental-strip-types scripts/probe-m6-affiliate-db.ts on disposable PostgreSQL",
+    "environmentId": "local-docker-m6-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/m6-affiliate-db.log"
+  },
+  {
+    "commandId": "m6-affiliate-races",
+    "invocation": "node --experimental-strip-types scripts/probe-m6-affiliate-races.ts on disposable PostgreSQL",
+    "environmentId": "local-docker-m6-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/m6-affiliate-races.log"
+  },
+  {
+    "commandId": "m6-cash-affiliate",
+    "invocation": "node --experimental-strip-types scripts/probe-m6-cash-affiliate.ts on disposable PostgreSQL",
+    "environmentId": "local-docker-m6-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/m6-cash-affiliate.log"
+  },
+  {
+    "commandId": "m6-affiliate-notifications",
+    "invocation": "node --experimental-strip-types scripts/probe-m6-affiliate-notifications.ts on disposable PostgreSQL",
+    "environmentId": "local-docker-m6-20261017",
+    "startAt": "2026-10-17T05:36:16.473Z",
+    "endAt": "2026-10-17T05:36:16.473Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/m6-affiliate-notifications.log"
+  }
+]

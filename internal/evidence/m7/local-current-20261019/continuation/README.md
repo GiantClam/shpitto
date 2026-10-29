@@ -1,0 +1,29 @@
+# Current trusted validation continuation
+
+Scope: local implementation and exact candidate evidence. No M7/M8 acceptance is asserted.
+
+The trusted runner now requires an external reviewer pin and separately supplied checksum, disjoint real paths, pinned tools and policies, private dependency copies, unchanged source and dependencies after each check, and durable accepted records. The manifest CLI checks retained output bytes and declares that its result is not release authorization.
+
+Independent review identified three additional defects. The new regression tests first failed for successful early test exit, omitted nested source directories and presentation classification of validation controls. The fixes require per-suite and aggregate parent-runner completion summaries with reviewed test counts, measure all nested files under shipped roots, and classify scripts/tooling as engineering changes. Candidate stdout is encoded as a stdout event and cannot impersonate a completion summary.
+
+Verification: 51 regression and contract tests passed; typecheck, source boundaries, formatting, published Docs, buyer/vendor parity, release boundaries, deployment preflight and strict OpenSpec validation passed. Retained outputs and timestamps are in checks.json. Canonical trusted-validation instructions are in content/docs/v1/skills/overview.mdx and synchronized buyer guides.
+
+Freeze: baseline/candidate.json records sourceTreeSha256 95ad817920e31e3db850155b6d321ab90c79cfeaa90d4d0d5263c9aa297a08e7. Four actual customization workflows passed against that freeze with sourceStableDuringRun=true; see internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/summary.json. Its viewport evidence is a static React/CSS smoke, not an authenticated browser or checkout acceptance.
+
+The fresh ZIP local-candidate-20261019-trusted-r1 has SHA-256 83d093d9c0854e3a37d976ea976ca1c22685fc682d4b16bf05ea62dcb058d625. Exact-archive offline install, build, all exported buyer checks, authenticated Mock journeys, credits, private download, timed database/media restore and restart persistence passed. Backup took 918 ms and restore 2089 ms. The clean-history repository and all eleven local fulfillment checks also passed. Their retained packets are under internal/evidence/m8 with this candidate ID.
+
+The first external tool setup materialized pnpm aliases without their sibling module-resolution layout. Direct Next type generation rejected that setup with a missing helper module. Its unused draft pin is explicitly NOT_RUN and has never approved a release. A separate external trusted root is being installed from the same frozen lockfile offline with a hoisted layout. Real trusted execution and independent exact-record review remain pending; unit fixtures do not replace them.
+
+External Stripe, FirstPromoter, merchant/commercial inputs, exact managed production proof and final RC/BETA/STABLE reviews remain open. Current M3 automated verification and M4 applicability are being reconciled separately without paid provider reruns.
+
+## R2 current continuation
+
+The r1 freeze described above was superseded by the source baseline in baseline-r2/candidate.json: e5cf13a5d4af7747fcb83bc10e940e73e731570a0df4dd6361aaced0890a71be. Two further independent review findings were reproduced and repaired: Windows path aliases and failure to reclassify the overall workflow. The validator rejects ambiguous repository paths, compares protected classes conservatively across case variants, and requires engineering-change on both file and workflow. The protected-path contract agrees with the implementation.
+
+The final r2 regression and contract suite passed 53 tests; the valid CLI fixture now supplies the classification already required by its contract. Independent baseline review passed separately, including 32 targeted tests, seventeen rejection probes, all 24 pinned inputs, suite completion counts and the reviewed dependency digest. The independently authored record is baseline-review.json. This review approves the validator baseline only.
+
+The real external runner uses a separately installed frozen offline dependency tree whose protected pin records digest `3d28bccfa1df40207524eb0b41853d92d0b58c7383cd6c2e569ce9c80fb490b3`. The fresh trusted preparation record passed independent review in `candidate-review-r3.json`; trusted validation and export validation also produced PASS records in the fresh-r4 evidence store. Deploy validation is currently BLOCKED because the pinned trusted root materialized with a different dependency-tree digest. The pin was not changed and no release or customer delivery occurred. See `deploy-validation-blocked-20261019.json`.
+
+Current archive local-candidate-20261019-trusted-r2 has SHA-256 cc9750578638109350e05b60865a76e139e752a9bd97ed2a436f279ffac5ea66 (9658756 bytes). All fifteen local runtime checks, clean repository and eleven fulfillment checks passed. Backup took 976 ms and restore 891 ms. All four actual workflows passed 79 commands against unchanged frozen source, with every disposable database removed. Eight Docker application checks passed against the exact independently extracted ZIP, including Docs, fourteen static resources, asset bytes and restart. The network-disabled initial build failed while fetching the package manager; the normal build retry passed without source changes.
+
+The current evidence index is current-status-r2.json. The earlier r1 artifacts and failed experiments retain their original identities and are not approvals of r2. Current M3 is blocked by the independent review packet under `internal/evidence/M3/continuation-20261019/r2/independent-review/`; M4 has a scoped applicability PASS only, with acceptance still NOT_RUN. Deploy validation, external M5/M6, commercial and managed obligations remain separately tracked.

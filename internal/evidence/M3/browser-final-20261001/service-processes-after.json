@@ -1,0 +1,27 @@
+[
+  {
+    "ProcessId": 49400,
+    "ParentProcessId": 45872,
+    "CommandLine": "\"C:\\WINDOWS\\system32\\cmd.exe\" /d /s /c next dev \"--port\" \"3100\""
+  },
+  {
+    "ProcessId": 50216,
+    "ParentProcessId": 17332,
+    "CommandLine": "\"C:\\Program Files\\nodejs\\node.exe\" D:\\github\\shpitto\\node_modules\\.pnpm\\next@16.3.6_@opentelemetry+_0cb38907e26065ed270f7dfb48327f5a\\node_modules\\next\\dist\\server\\lib\\start-server.js"
+  },
+  {
+    "ProcessId": 47448,
+    "ParentProcessId": 30936,
+    "CommandLine": "\"C:\\WINDOWS\\system32\\cmd.exe\" /d /s /c node --experimental-strip-types scripts/local-worker.ts"
+  },
+  {
+    "ProcessId": 27744,
+    "ParentProcessId": 47448,
+    "CommandLine": "node  --experimental-strip-types scripts/local-worker.ts"
+  },
+  {
+    "ProcessId": 38592,
+    "ParentProcessId": 3188,
+    "CommandLine": "\"C:\\Users\\liula\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe\" -Command \"try { [Console]::OutputEncoding=[System.Text.Encoding]::UTF8 } catch {}\nGet-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'scripts/local-worker.ts|next dev.*3100|next.*start-server.js' } | Select-Object ProcessId,ParentProcessId,CommandLine | ConvertTo-Json | Set-Content -LiteralPath 'internal/evidence/M3/browser-final-20261001/service-processes-after.json' -Encoding utf8\""
+  }
+]

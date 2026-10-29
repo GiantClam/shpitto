@@ -1,0 +1,23 @@
+✔ fixture configuration stays offline even when a Stripe key exists (7.4354ms)
+✔ explicit acceptance test catalog is immutable and binds real price identities (0.6004ms)
+✔ live credentials, production activation and unsafe return origins are rejected (0.4708ms)
+✔ empty, tampered, duplicate and fixture catalog terms cannot enable Stripe (0.3759ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 158.183
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------------------------------------
+ℹ file        | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------------------------------------
+ℹ src         |        |          |         | 
+ℹ  contracts  |        |          |         | 
+ℹ   http.ts   |  48.11 |    73.68 |   41.67 | 17-18 21-22 25-35 38-42 46-47 52-59 73 81-87 90-106
+ℹ ------------------------------------------------------------------------------------------------
+ℹ all files   |  48.11 |    73.68 |   41.67 | 
+ℹ ------------------------------------------------------------------------------------------------
+ℹ end of coverage report

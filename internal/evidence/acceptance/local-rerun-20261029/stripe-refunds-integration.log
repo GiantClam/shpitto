@@ -1,0 +1,47 @@
+✔ fixture defaults still execute offline and preserve owner manual recovery (387.008341ms)
+✔ Stripe requires explicit matching provider, without recording an intent or falling back (21.893452ms)
+✔ Stripe binds durable request, historical customer and canonical payment intent and confirms exactly once (39.309846ms)
+✔ owner refund command replays the current confirmed result after the order becomes refunded (33.676752ms)
+✔ owner billing projection separates refunded cash from voided credits and rejects members (49.870944ms)
+✔ Stripe pending cannot create confirmed cash; recovery is read-only (38.032785ms)
+✔ Stripe unknown cannot create confirmed cash; recovery is read-only (41.024064ms)
+✔ Stripe failed cannot create confirmed cash; recovery is read-only (19.400834ms)
+✔ mismatched Stripe amountMinor evidence remains unresolved (18.605966ms)
+✔ mismatched Stripe currency evidence remains unresolved (24.011518ms)
+✔ mismatched Stripe customerId evidence remains unresolved (19.156147ms)
+✔ mismatched Stripe paymentIntentId evidence remains unresolved (22.152902ms)
+✔ missing or ambiguous canonical aliases fail closed before any Stripe call (36.042721ms)
+✔ adapter exceptions and unverified failed responses remain unknown, never terminal failure or cash (43.30043ms)
+✔ owner Stripe reconciliation requires authoritative readback, not a supplied external ID (28.557782ms)
+✖ auth, step-up and expected version reject before provider work or refund creation (20.132599ms)
+✔ parallel commands submit once, block other unresolved intents, and expired claims only look up (30.155861ms)
+✔ Stripe port refuses fixture-shaped success and mismatched providers on recovery (14.92184ms)
+✔ bridge rejects caller money/order/key drift and never uses caller payment target (16.423743ms)
+✔ lost finalization rejects stale lease and recovers successful cash by read-only lookup (34.688117ms)
+✔ owner readback rechecks ownership before applying external cash evidence (18.716332ms)
+✔ changed durable refund binding rejects late successful delivery evidence (17.992644ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 21
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1584.160587
+
+✖ failing tests:
+
+test at tests/integration/stripe-refunds.test.ts:245:1
+✖ auth, step-up and expected version reject before provider work or refund creation (20.132599ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///workspace/tests/integration/stripe-refunds.test.ts:251:3)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /factor|step.up/i,
+    operator: 'rejects',
+    diff: 'simple'
+  }

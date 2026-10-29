@@ -1,0 +1,31 @@
+{"status":"PASS","disabledUserDenied":true,"sessionsRevoked":true,"teammateUnaffected":true,"suspendedMemberDenied":true,"operatorAuditAllowed":true,"billingHoldGenerationCheckoutDenied":true,"billingHoldAllowedReadsInvitesPortalSupport":true,"workerSettlementPreserved":true}
+✔ scripts\probe-access-states.ts (866.6972ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 872.6323
+ℹ start of coverage report
+ℹ -------------------------------------------------------------------------------------------------------
+ℹ file                  | line % | branch % | funcs % | uncovered lines
+ℹ -------------------------------------------------------------------------------------------------------
+ℹ src                   |        |          |         | 
+ℹ  modules              |        |          |         | 
+ℹ   billing             |        |          |         | 
+ℹ    hold-policy.ts     |  73.33 |   100.00 |   50.00 | 12-15
+ℹ   operations          |        |          |         | 
+ℹ    authorize.ts       |  88.31 |    47.06 |   87.50 | 35 44-45 73-74 142-154
+ℹ    status-commands.ts | 100.00 |    92.16 |  100.00 | 
+ℹ   shared              |        |          |         | 
+ℹ    transaction.ts     | 100.00 |   100.00 |  100.00 | 
+ℹ   workspaces          |        |          |         | 
+ℹ    access-state.ts    |  98.04 |    96.97 |  100.00 | 72-73
+ℹ    authorize.ts       |  58.67 |    87.50 |   25.00 | 27-28 39-51 58-64 67-75
+ℹ    policy.ts          |  56.03 |    69.23 |   36.36 | 35-39 42-49 52-57 93-104 107-116 119-133 136-141
+ℹ -------------------------------------------------------------------------------------------------------
+ℹ all files             |  83.07 |    85.04 |   73.91 | 
+ℹ -------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

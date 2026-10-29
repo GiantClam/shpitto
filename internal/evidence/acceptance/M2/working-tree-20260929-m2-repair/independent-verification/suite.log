@@ -1,0 +1,99 @@
+{"status":"PASS","disabledUserDenied":true,"sessionsRevoked":true,"teammateUnaffected":true,"suspendedMemberDenied":true,"operatorAuditAllowed":true,"billingHoldGenerationCheckoutDenied":true,"billingHoldAllowedReadsInvitesPortalSupport":true,"workerSettlementPreserved":true}
+✔ scripts\probe-access-states.ts (1150.8118ms)
+2026-09-29T05:58:50.475Z WARN [Better Auth]: Invalid password
+{"status":"PASS","signupVerifiedThroughEmail":true,"persistentSessionRestart":true,"onboardingRecovered":true,"passwordReset":true,"invalidExpiredReplayedTokensRejected":true,"oldCredentialsAndSessionsRevoked":true,"disabledLoginRejected":true,"mailTransport":"Mailpit HTTP contract fixture","authMail":"injected recording adapter; no external delivery"}
+✔ scripts\probe-auth-lifecycle.ts (2655.6906ms)
+{"status":"PASS","replayed":true,"mismatchRejected":true,"bigintAsDecimalString":true,"quantityBoundaryRejected":true,"stableSemanticHash":true,"forgedOriginRejected":true,"raceEffects":1,"raceAttempts":10,"replayCount":20,"raceReplayed":[false,true,true,true,true,true,true,true,true,true]}
+✔ scripts\probe-command-contract.ts (1099.3872ms)
+{"status":"PASS","replayed":true,"mismatchRejected":true,"bucketEquality":true,"auditRollback":true,"outboxRollback":true,"crossTenantRejected":true,"ledgerRows":1,"auditRows":1,"outboxRows":1}
+✔ scripts\probe-credit-ledger.ts (1093.1256ms)
+{"status":"PASS","legacyAllocationLinked":true,"allBucketsAndTimestampsPreserved":true,"openingSnapshots":2,"legacyProofRequired":true,"unknownLegacyReservedUnchanged":"10","legacySettlementDisabled":true,"modernMissingAndPartialLedgerStillHeld":true,"migrationReplayUnchanged":true,"postUpgradeReservation":true,"temporaryDatabaseRemoved":true}
+✔ scripts\probe-credit-migration-backfill.ts (1611.4043ms)
+{"status":"PASS","replayCount":20,"conflictingPayloadRejected":true,"replayed":true,"lateOutcomeRejected":true,"expiredSubscriptionCompensated":true,"compensationLineageRetained":true,"compensationNoRenewalBeforeAndAfterExpiry":true,"exactSevenDayExpiry":true,"purchaseRefunded":true,"successConsumed":true,"cancelledExpiredNoCompensation":true,"expirySweepApplied":true,"reconciliationHoldVisible":true,"allSettlementAndExpiryCommandsBlockedOnHold":true,"reservationBlockedOnHold":true,"compensationCount":1,"balanceHeld":false,"ledgerRows":25}
+✔ scripts\probe-credit-refund.ts (1295.9523ms)
+{"status":"PASS","replayed":true,"fefoAllocation":["20","20"],"expiredUnreservedExcluded":true,"forgedPriceRejected":true,"staleCatalogRejected":true,"concurrentAffordableReservations":1,"raceAttempts":10,"failedRaceEffects":0,"onboardingDemoGrantSingleEffect":true,"productionDemoRejected":true}
+✔ scripts\probe-credit-reservation.ts (1460.0121ms)
+{"status":"PASS","raceAttempts":10,"concurrentWinners":1,"concurrentRejected":9,"exactSevenDayExpiry":true,"replayRejected":true,"mismatchRejected":true,"expiryRejected":true,"deletedWorkspaceRejected":true,"rollbackClean":true}
+✔ scripts\probe-invitations.ts (1415.9732ms)
+{"status":"PASS","migrationRows":11,"fixtureMembershipRows":3,"drizzleWorkspaceRows":2,"fixtureMismatchObserved":true,"crossTenantRejected":true,"crossTenantConstraint":"credit_allocations_grant_workspace_fk","rollbackObserved":true,"rollbackRows":0,"conventions":{"applicationIds":"uuid","betterAuthIds":"text","timestamps":"UTC timestamptz","quantities":"nonnegative bigint; decimal strings at JSON boundary"}}
+✔ scripts\probe-m2-foundation.ts (759.8691ms)
+{"status":"PASS","concurrentRetries":3,"personalWorkspaces":1,"memberships":1,"rollbackObserved":true,"restartSafe":true,"demoCreditsIssued":false}
+✔ scripts\probe-onboarding.ts (1821.1503ms)
+{"status":"PASS","ownerEscalationRejected":true,"missingStepUpRejected":true,"sameSessionAccepted":true,"differentSessionRejected":true,"expiredSessionRejected":true,"expiredRejected":true,"revocationImmediate":true}
+✔ scripts\probe-operator.ts (1051.5155ms)
+{"status":"PASS","crossWorkspaceRejected":true,"missingWorkspaceNonDisclosing":true,"resourceMismatchRejected":true,"postRemovalRejected":true,"lastOwnerRaceRejected":true}
+✔ scripts\probe-tenant-authorization.ts (1324.1233ms)
+{"status":"PASS","personalRejected":4,"lastOwnerRaceRejected":10,"twoOwnerRaceAttempts":10,"twoOwnerRaceWinners":1,"twoOwnerRaceRejected":9,"minimumObservedOwners":1,"transferOwner":"workspace-probe-member-8d8e3a09-a871-4de6-bc6a-45c21f3f84a6"}
+✔ scripts\probe-workspaces.ts (1688.0002ms)
+▶ session HTTP contracts
+  ✔ envelopes retain payload and expose only the supplied safe error (0.9682ms)
+  ✔ JSON bodies accept objects and empty input while rejecting other JSON shapes (0.34ms)
+  ✔ idempotency keys enforce ASCII character and length bounds (0.187ms)
+  ✔ decimal quantities preserve arbitrarily large exact integers (0.172ms)
+  ✔ serialization recursively preserves quantities and UTC timestamps (0.8947ms)
+  ✔ canonical identity sorts object keys, preserves array order and rejects unsupported values (5.6718ms)
+  ✔ request command identity accepts matching sources and rejects conflicts or missing keys (10.592ms)
+  ✔ mutations require a matching origin or a valid same-origin referer (0.5034ms)
+✔ session HTTP contracts (20.1018ms)
+▶ server-owned model quotes
+  ✔ local and test catalogs remain isolated from the disabled production mock (0.1535ms)
+  ✔ quotes use the server price, bounded quantities and a deterministic supplied clock (0.4455ms)
+  ✔ creation rejects invalid quantities and unavailable catalog entries (0.1492ms)
+  ✔ validation rejects stale versions, production mock use and tampered monetary fields (0.2227ms)
+✔ server-owned model quotes (1.0639ms)
+✔ access decisions preserve the complete E02 principal and hold matrix (0.7312ms)
+✔ billing hold rejects only new financial work and preserves permitted actions (0.35ms)
+✔ invitation mail preserves a URL-encoded token, recipient and expiry (1.4934ms)
+ℹ tests 28
+ℹ suites 2
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 18974.2919
+ℹ start of coverage report
+ℹ ---------------------------------------------------------------------------------
+ℹ file                  | line % | branch % | funcs % | uncovered lines
+ℹ ---------------------------------------------------------------------------------
+ℹ src                   |        |          |         | 
+ℹ  adapters             |        |          |         | 
+ℹ   mail                |        |          |         | 
+ℹ    index.ts           | 100.00 |   100.00 |  100.00 | 
+ℹ    invitation.ts      | 100.00 |   100.00 |  100.00 | 
+ℹ    local.ts           | 100.00 |   100.00 |  100.00 | 
+ℹ    mailpit.ts         |  76.74 |    66.67 |   75.00 | 29-30 36-43
+ℹ  config               |        |          |         | 
+ℹ   models.ts           | 100.00 |   100.00 |  100.00 | 
+ℹ  contracts            |        |          |         | 
+ℹ   http.ts             | 100.00 |   100.00 |  100.00 | 
+ℹ  lib                  |        |          |         | 
+ℹ   auth.ts             |  86.07 |    89.47 |   66.67 | 97-103 107 112-114 117-122
+ℹ  modules              |        |          |         | 
+ℹ   billing             |        |          |         | 
+ℹ    hold-policy.ts     | 100.00 |   100.00 |  100.00 | 
+ℹ   credits             |        |          |         | 
+ℹ    allocate.ts        |  99.45 |    84.85 |  100.00 | 181
+ℹ    expiry.ts          | 100.00 |    75.00 |  100.00 | 
+ℹ    issue-demo.ts      |  91.67 |    71.43 |   75.00 | 39-42
+ℹ    ledger.ts          | 100.00 |    83.33 |  100.00 | 
+ℹ    queries.ts         | 100.00 |   100.00 |  100.00 | 
+ℹ    reserve.ts         | 100.00 |   100.00 |  100.00 | 
+ℹ    settle.ts          |  97.96 |    89.36 |  100.00 | 47-48 93-94
+ℹ   operations          |        |          |         | 
+ℹ    authorize.ts       |  90.91 |    82.76 |   87.50 | 35 142-154
+ℹ    status-commands.ts | 100.00 |    92.16 |  100.00 | 
+ℹ   shared              |        |          |         | 
+ℹ    commands.ts        |  95.51 |    81.48 |  100.00 | 69-70 72-73
+ℹ    transaction.ts     | 100.00 |   100.00 |  100.00 | 
+ℹ   workspaces          |        |          |         | 
+ℹ    access-state.ts    | 100.00 |   100.00 |  100.00 | 
+ℹ    authorize.ts       |  88.00 |   100.00 |   75.00 | 67-75
+ℹ    commands.ts        | 100.00 |    98.08 |  100.00 | 
+ℹ    invitations.ts     |  98.37 |    97.30 |  100.00 | 152-154
+ℹ    onboard.ts         | 100.00 |    86.67 |  100.00 | 
+ℹ    policy.ts          |  98.58 |    96.30 |  100.00 | 114-115
+ℹ ---------------------------------------------------------------------------------
+ℹ all files             |  97.24 |    92.74 |   94.56 | 
+ℹ ---------------------------------------------------------------------------------
+ℹ end of coverage report

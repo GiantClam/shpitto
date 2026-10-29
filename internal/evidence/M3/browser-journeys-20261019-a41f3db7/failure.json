@@ -1,0 +1,6 @@
+{
+  "at": "2026-10-19T04:44:56.268Z",
+  "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n1 !== 0\n\n    at file:///D:/github/shpitto/.data/m3-browser-acceptance.mjs:96:112\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)",
+  "events": [],
+  "errors": []
+}

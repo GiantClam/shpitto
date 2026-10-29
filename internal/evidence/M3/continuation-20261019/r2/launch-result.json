@@ -1,0 +1,17 @@
+{
+  "startedAt": "2026-10-19T06:30:18.558Z",
+  "freezeRef": "internal/evidence/m7/local-current-20261019/continuation/baseline-r2/candidate.json",
+  "expectedSourceTreeSha256": "e5cf13a5d4af7747fcb83bc10e940e73e731570a0df4dd6361aaced0890a71be",
+  "outputRef": "internal/evidence/M3/continuation-20261019/r2/automated",
+  "selectedBrowserRef": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-final/walkthrough.json",
+  "selectedBrowserPurpose": "Real current UI capture will be retained separately after the automated attempt; this run supplies no UI proof.",
+  "localDatabaseEndpoint": "127.0.0.1:55432/postgres",
+  "container": "shpitto-completion-pg-20261019",
+  "remoteIntegrationSettingsSuppressed": true,
+  "paidOrCloudProviderCallsAuthorized": false,
+  "independentReview": "NOT_RUN",
+  "integrationDecision": "NOT_RUN",
+  "endedAt": "2026-10-19T06:37:04.224Z",
+  "code": 0,
+  "signal": null
+}

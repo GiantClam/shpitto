@@ -1,0 +1,38 @@
+[
+  {
+    "serviceId": "12f4490f-b89b-4f6b-a270-5c8b5a4b316a",
+    "serviceName": "shpitto-m4-recovery-monitor",
+    "railwayConfigFile": null,
+    "rootDirectory": null,
+    "builder": "RAILPACK",
+    "healthcheckPath": null,
+    "healthcheckTimeout": null,
+    "startCommand": null,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  },
+  {
+    "serviceId": "572448eb-292d-498a-afc6-965b4f5ee5f4",
+    "serviceName": "shpitto-m4-web",
+    "railwayConfigFile": null,
+    "rootDirectory": null,
+    "builder": "RAILPACK",
+    "healthcheckPath": null,
+    "healthcheckTimeout": null,
+    "startCommand": null,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  },
+  {
+    "serviceId": "5887fddb-0d43-4509-b41c-ff364abd778f",
+    "serviceName": "shpitto-m4-worker",
+    "railwayConfigFile": null,
+    "rootDirectory": null,
+    "builder": "RAILPACK",
+    "healthcheckPath": null,
+    "healthcheckTimeout": null,
+    "startCommand": null,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  }
+]

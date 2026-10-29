@@ -1,0 +1,1094 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "DEVELOPMENT_VERIFICATION",
+  "changeId": "restart-shpitto-video-saas",
+  "stageId": "M6",
+  "checkpointId": null,
+  "gateTaskId": "7.14",
+  "status": "IN_PROGRESS",
+  "candidateId": "m6-local-fixtures-20261017",
+  "createdAt": "2026-10-17T05:36:16.473Z",
+  "updatedAt": "2026-10-17T05:36:16.473Z",
+  "policy": {
+    "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+    "sha256": "565edb93bd919bbe6f78419839ee5fe6639e14717ece2389859e5bc484a63bc8"
+  },
+  "prerequisites": [
+    {
+      "stageId": "M3",
+      "observedStatus": "PASS",
+      "requiredProfile": "historical-local-mock",
+      "candidateId": "working-tree-20261001-current",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/record.json"
+      ],
+      "reason": "Historical M3 approval is preserved; current applicability remains explicitly stale."
+    },
+    {
+      "stageId": "M4",
+      "observedStatus": "PASS",
+      "requiredProfile": "m4-self-hosted-20261017",
+      "candidateId": "m4-self-hosted-20261017",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M4/m4-self-hosted-20261017/record.json"
+      ],
+      "reason": "Current self-hosted M4 candidate is PASS."
+    },
+    {
+      "stageId": "M5",
+      "observedStatus": "IN_PROGRESS",
+      "requiredProfile": "m5-local-fixtures-20261017",
+      "candidateId": "m5-local-fixtures-20261017",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M5/m5-local-fixtures-20261017/record.json"
+      ],
+      "reason": "M5 local fixture verification is current but the integrated gate remains open."
+    }
+  ],
+  "candidate": {
+    "capturedAt": "2026-10-17T05:33:03.202Z",
+    "sourceCommit": "a190cb585a6c79556c144dfb4c690b93cd071b8b",
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "5b1aca204c1c44d031e9d2e36b104333ae8332552ceac1c11d09fa3549831d48",
+    "schemaSha256": "7560a6a5b059bb33a47e7afa878826d73cf57f05a3a6a6f5ffa1ff2eb7f08d0f",
+    "configurationSha256": "dc1d37d6189d092403ee351b5be78b20baf8aa44eeb29c4522a084af4c34cc2e",
+    "contractSha256": "356e6607d07fe741599e0a91119f005f5cb60af990c5f081e95fb93a2bda33e1",
+    "validatorSha256": "d32ba3904c43c006a674c0d06b25a38c28591279da037486741731a72e79bf08",
+    "lockfileSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
+    "digestInputs": {
+      "sourceTree": [
+        "internal/contracts/providers",
+        "src",
+        "tests",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        "tooling",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        "src/config/env.ts",
+        "src/config/task-runtime.ts",
+        "src/config/provider-worker.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile",
+        "deploy/provider-worker.Dockerfile",
+        "deploy/railway.provider-worker.json",
+        "scripts/provider-worker-preflight.ts",
+        "scripts/provider-worker-runtime.mjs",
+        "tooling"
+      ],
+      "contract": [
+        "internal/contracts/providers",
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json",
+        "openspec/changes/restart-shpitto-video-saas/specs",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json",
+        "internal/restart/root-dependency-evolution.md"
+      ],
+      "validator": [
+        "scripts",
+        "tests",
+        "tooling",
+        "internal/restart/check-acceptance-record.py",
+        "openspec/changes/restart-shpitto-video-saas/traceability.json"
+      ]
+    }
+  },
+  "environments": [
+    {
+      "environmentId": "local-docker-m6-20261017",
+      "profile": "Disposable PostgreSQL 15 container with isolated probe databases and local fixture providers",
+      "commercialCalls": false,
+      "fixtureOrSeed": "Each probe creates and removes its own disposable database; the recovery probe uses a separately migrated disposable database and rolls back all fixtures.",
+      "toolVersions": {
+        "node": "v24.15.0",
+        "database": "PostgreSQL 15-alpine",
+        "productionRequests": false
+      }
+    }
+  ],
+  "criterionResults": [
+    {
+      "criterionId": "M6-C01",
+      "mandatory": true,
+      "result": "BLOCKED",
+      "expected": "All required milestone profiles and independent whole-stage review pass.",
+      "observed": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Real FirstPromoter account/campaign/hosted-settlement evidence, production email and independent whole-stage review are deferred by user scope.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json"
+      ]
+    },
+    {
+      "criterionId": "M6-C02",
+      "mandatory": true,
+      "result": "BLOCKED",
+      "expected": "All required milestone profiles and independent whole-stage review pass.",
+      "observed": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Real FirstPromoter account/campaign/hosted-settlement evidence, production email and independent whole-stage review are deferred by user scope.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json"
+      ]
+    },
+    {
+      "criterionId": "M6-C03",
+      "mandatory": true,
+      "result": "BLOCKED",
+      "expected": "All required milestone profiles and independent whole-stage review pass.",
+      "observed": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Real FirstPromoter account/campaign/hosted-settlement evidence, production email and independent whole-stage review are deferred by user scope.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json"
+      ]
+    },
+    {
+      "criterionId": "M6-C04",
+      "mandatory": true,
+      "result": "BLOCKED",
+      "expected": "All required milestone profiles and independent whole-stage review pass.",
+      "observed": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Real FirstPromoter account/campaign/hosted-settlement evidence, production email and independent whole-stage review are deferred by user scope.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json"
+      ]
+    },
+    {
+      "criterionId": "M6-C05",
+      "mandatory": true,
+      "result": "BLOCKED",
+      "expected": "All required milestone profiles and independent whole-stage review pass.",
+      "observed": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Real FirstPromoter account/campaign/hosted-settlement evidence, production email and independent whole-stage review are deferred by user scope.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json"
+      ]
+    }
+  ],
+  "commonStandardResults": [
+    {
+      "standard": "current-local-development",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json"
+      ]
+    },
+    {
+      "standard": "complete-stage-evidence",
+      "applicable": true,
+      "result": "BLOCKED",
+      "assertions": "Real FirstPromoter account/campaign/hosted-settlement evidence, production email and independent whole-stage review are deferred by user scope.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    }
+  ],
+  "scenarioResults": [
+    {
+      "ids": [
+        "SC-OPS-01"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-02"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-03"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-04"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-05"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-06"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-07"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-08"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-09"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-10"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-11"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-12"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-13"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-OPS-14"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-01"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-02"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-03"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-04"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-05"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-06"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-07"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-08"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-09"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-10"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-11"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-12"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-13"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-14"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-15"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-16"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-17"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-18"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-19"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-20"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-21"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-22"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-23"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-AFF-24"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    },
+    {
+      "ids": [
+        "SC-BIL-17"
+      ],
+      "mandatory": true,
+      "result": "BLOCKED",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. Complete-stage evidence remains blocked by the deferred external profile.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+      ]
+    }
+  ],
+  "taskResults": [
+    {
+      "taskId": "7.1",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.2",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.3",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.4",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.5",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.6",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.7",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.8",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.9",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.10",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.11",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.12",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    },
+    {
+      "taskId": "7.13",
+      "result": "PASS",
+      "scope": "Current M6 local operations, privileged, recovery, affiliate, race and notification probes pass on disposable PostgreSQL; complete-stage external evidence remains unavailable. This is local implementation/fixture evidence only; the milestone gate task remains open.",
+      "evidenceRefs": [
+        "internal/evidence/M6/m6-local-fixtures-20261017/README.md",
+        "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+        "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "commandId": "frozen-lock-install",
+      "invocation": "corepack pnpm install --frozen-lockfile --prefer-offline --ignore-scripts",
+      "environmentId": "local-docker-m6-20261017",
+      "startAt": "2026-10-17T05:36:16.473Z",
+      "endAt": "2026-10-17T05:36:16.473Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/frozen-lock-install.log"
+    },
+    {
+      "commandId": "typecheck",
+      "invocation": "corepack pnpm typecheck",
+      "environmentId": "local-docker-m6-20261017",
+      "startAt": "2026-10-17T05:36:16.473Z",
+      "endAt": "2026-10-17T05:36:16.473Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/typecheck.log"
+    },
+    {
+      "commandId": "lint",
+      "invocation": "corepack pnpm lint",
+      "environmentId": "local-docker-m6-20261017",
+      "startAt": "2026-10-17T05:36:16.473Z",
+      "endAt": "2026-10-17T05:36:16.473Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/lint.log"
+    },
+    {
+      "commandId": "format-check",
+      "invocation": "corepack pnpm format:check",
+      "environmentId": "local-docker-m6-20261017",
+      "startAt": "2026-10-17T05:36:16.473Z",
+      "endAt": "2026-10-17T05:36:16.473Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/format-check.log"
+    },
+    {
+      "commandId": "verify-db-boundary",
+      "invocation": "corepack pnpm verify:db-boundary",
+      "environmentId": "local-docker-m6-20261017",
+      "startAt": "2026-10-17T05:36:16.473Z",
+      "endAt": "2026-10-17T05:36:16.473Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/verify-db-boundary.log"
+    },
+    {
+      "commandId": "verify-openspec",
+      "invocation": "corepack pnpm verify:openspec",
+      "environmentId": "local-docker-m6-20261017",
+      "startAt": "2026-10-17T05:36:16.473Z",
+      "endAt": "2026-10-17T05:36:16.473Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/verify-openspec.log"
+    },
+    {
+      "commandId": "production-build",
+      "invocation": "corepack pnpm build with production provider/storage/mail profile",
+      "environmentId": "local-docker-m6-20261017",
+      "startAt": "2026-10-17T05:36:16.473Z",
+      "endAt": "2026-10-17T05:36:16.473Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/production-build.log"
+    },
+    {
+      "commandId": "contracts-provider-inputs",
+      "invocation": "node --experimental-strip-types --test tests/contracts/provider-inputs.test.ts",
+      "environmentId": "local-docker-m6-20261017",
+      "startAt": "2026-10-17T05:36:16.473Z",
+      "endAt": "2026-10-17T05:36:16.473Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/contracts-provider-inputs.log"
+    },
+    {
+      "commandId": "contracts-billing-contracts",
+      "invocation": "node --experimental-strip-types --test tests/contracts/billing-contracts.test.ts",
+      "environmentId": "local-docker-m6-20261017",
+      "startAt": "2026-10-17T05:36:16.473Z",
+      "endAt": "2026-10-17T05:36:16.473Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/contracts-billing-contracts.log"
+    },
+    {
+      "commandId": "billing-schema",
+      "invocation": "node --experimental-strip-types scripts/probe-billing-schema.ts on disposable PostgreSQL",
+      "environmentId": "local-docker-m6-20261017",
+      "startAt": "2026-10-17T05:36:16.473Z",
+      "endAt": "2026-10-17T05:36:16.473Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/billing-schema.log"
+    },
+    {
+      "commandId": "m6-operations",
+      "invocation": "node --experimental-strip-types scripts/probe-m6-operations.ts on disposable PostgreSQL",
+      "environmentId": "local-docker-m6-20261017",
+      "startAt": "2026-10-17T05:36:16.473Z",
+      "endAt": "2026-10-17T05:36:16.473Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/m6-operations.log"
+    },
+    {
+      "commandId": "m6-privileged",
+      "invocation": "node --experimental-strip-types scripts/probe-m6-privileged.ts on disposable PostgreSQL",
+      "environmentId": "local-docker-m6-20261017",
+      "startAt": "2026-10-17T05:36:16.473Z",
+      "endAt": "2026-10-17T05:36:16.473Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/m6-privileged.log"
+    },
+    {
+      "commandId": "m6-mfa",
+      "invocation": "node --experimental-strip-types scripts/probe-m6-two-factor.ts on disposable PostgreSQL",
+      "environmentId": "local-docker-m6-20261017",
+      "startAt": "2026-10-17T05:36:16.473Z",
+      "endAt": "2026-10-17T05:36:16.473Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/m6-mfa.log"
+    },
+    {
+      "commandId": "m6-recovery",
+      "invocation": "migrated disposable PostgreSQL + node --experimental-strip-types scripts/probe-m6-recovery.ts",
+      "environmentId": "local-docker-m6-20261017",
+      "startAt": "2026-10-17T05:36:16.473Z",
+      "endAt": "2026-10-17T05:36:16.473Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/m6-recovery.log"
+    },
+    {
+      "commandId": "m6-affiliate",
+      "invocation": "node --experimental-strip-types scripts/probe-m6-affiliate.ts local pure contract profile",
+      "environmentId": "local-docker-m6-20261017",
+      "startAt": "2026-10-17T05:36:16.473Z",
+      "endAt": "2026-10-17T05:36:16.473Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/m6-affiliate.log"
+    },
+    {
+      "commandId": "m6-affiliate-db",
+      "invocation": "node --experimental-strip-types scripts/probe-m6-affiliate-db.ts on disposable PostgreSQL",
+      "environmentId": "local-docker-m6-20261017",
+      "startAt": "2026-10-17T05:36:16.473Z",
+      "endAt": "2026-10-17T05:36:16.473Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/m6-affiliate-db.log"
+    },
+    {
+      "commandId": "m6-affiliate-races",
+      "invocation": "node --experimental-strip-types scripts/probe-m6-affiliate-races.ts on disposable PostgreSQL",
+      "environmentId": "local-docker-m6-20261017",
+      "startAt": "2026-10-17T05:36:16.473Z",
+      "endAt": "2026-10-17T05:36:16.473Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/m6-affiliate-races.log"
+    },
+    {
+      "commandId": "m6-cash-affiliate",
+      "invocation": "node --experimental-strip-types scripts/probe-m6-cash-affiliate.ts on disposable PostgreSQL",
+      "environmentId": "local-docker-m6-20261017",
+      "startAt": "2026-10-17T05:36:16.473Z",
+      "endAt": "2026-10-17T05:36:16.473Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/m6-cash-affiliate.log"
+    },
+    {
+      "commandId": "m6-affiliate-notifications",
+      "invocation": "node --experimental-strip-types scripts/probe-m6-affiliate-notifications.ts on disposable PostgreSQL",
+      "environmentId": "local-docker-m6-20261017",
+      "startAt": "2026-10-17T05:36:16.473Z",
+      "endAt": "2026-10-17T05:36:16.473Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/M6/m6-local-fixtures-20261017/logs/m6-affiliate-notifications.log"
+    }
+  ],
+  "coverage": {
+    "status": "PASS",
+    "ownedModuleManifestRef": "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json",
+    "denominator": 1556,
+    "coveredBranches": 1272,
+    "totalBranches": 1556,
+    "percent": 81.74807197943444,
+    "exclusions": [],
+    "evidenceRef": "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json"
+  },
+  "defects": [],
+  "externalInputs": [
+    {
+      "requiredInput": "Supported FirstPromoter account, buyer campaign and hosted settlement authority",
+      "owner": "buyer/operator",
+      "affectedTasks": [
+        "7.14"
+      ],
+      "availability": "DEFERRED_BY_USER",
+      "nextAction": "Configure and verify the real affiliate account in a separately scoped phase; keep application delivery disabled until then.",
+      "nonsecretAuthorityRef": "openspec/changes/restart-shpitto-video-saas/tasks.md"
+    },
+    {
+      "requiredInput": "Production email account",
+      "owner": "buyer/operator",
+      "affectedTasks": [
+        "7.14",
+        "9.15"
+      ],
+      "availability": "DEFERRED_BY_USER",
+      "nextAction": "Keep the dependent production profile open.",
+      "nonsecretAuthorityRef": "openspec/changes/restart-shpitto-video-saas/tasks.md"
+    }
+  ],
+  "submission": {
+    "implementerId": "codex-local",
+    "submittedAt": "2026-10-17T05:36:16.473Z",
+    "reportRef": "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+  },
+  "independentReview": {
+    "reviewerId": null,
+    "reviewedAt": null,
+    "independentFromImplementer": null,
+    "decision": "NOT_RUN",
+    "reason": "Whole-stage independent review remains open because the required external account/profile evidence is deferred.",
+    "evidenceRefs": [
+      "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+    ]
+  },
+  "integrationDecision": {
+    "integratorId": "codex-local",
+    "decidedAt": "2026-10-17T05:36:16.473Z",
+    "decision": "NOT_RUN",
+    "reason": "The current local fixture profile is retained as IN_PROGRESS; no milestone promotion is claimed.",
+    "nextEligibleTaskIds": [],
+    "blockedTaskIds": [
+      "7.14"
+    ],
+    "evidenceRefs": [
+      "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+    ]
+  },
+  "invalidation": {
+    "supersedesRecordRef": "internal/evidence/acceptance/M6/local-preflight-20261007/record.json",
+    "changedDigestRefs": [
+      "internal/evidence/M6/m6-local-fixtures-20261017/candidate/candidate.json",
+      "internal/evidence/M6/m6-local-fixtures-20261017/coverage.json",
+      "internal/evidence/M6/m6-local-fixtures-20261017/commands.json",
+      "internal/evidence/M6/m6-local-fixtures-20261017/README.md"
+    ],
+    "affectedStages": [
+      "M3"
+    ],
+    "currentM3Applicability": "STALE",
+    "requiredReruns": [
+      "Recheck current candidate digests before any stage promotion.",
+      "Run the deferred external account/profile evidence before independent review.",
+      "Obtain independent whole-stage review and integrator decision."
+    ],
+    "carriedEvidence": []
+  },
+  "candidateRefresh": {
+    "status": "PASS_CURRENT_DIGEST_REFRESH",
+    "candidateId": "m6-local-fixtures-20261017",
+    "ref": "internal/evidence/M6/m6-local-fixtures-20261017/candidate/candidate.json",
+    "reason": "Current candidate digests were captured after the M4 candidate and before this local M5/M6 verification record."
+  },
+  "commandEvidenceApplicability": {
+    "currentExecutionCommandIds": [
+      "typecheck",
+      "lint",
+      "format-check",
+      "verify-db-boundary",
+      "verify-openspec",
+      "frozen-lock-install",
+      "production-build",
+      "billing-schema",
+      "contracts-provider-inputs",
+      "contracts-billing-contracts",
+      "m6-operations",
+      "m6-privileged",
+      "m6-mfa",
+      "m6-recovery",
+      "m6-affiliate",
+      "m6-affiliate-db",
+      "m6-affiliate-races",
+      "m6-cash-affiliate",
+      "m6-affiliate-notifications"
+    ],
+    "historicalCommandsNotRerun": [
+      "browser journeys",
+      "real Stripe account/profile",
+      "real FirstPromoter account/campaign/settlement",
+      "production email",
+      "historical anomalous-balance recovery"
+    ],
+    "note": "All retained current command logs are local and fixture-scoped; no external commercial action is implied."
+  }
+}

@@ -1,0 +1,40 @@
+---
+release: v1
+title: Skill · configure-credits
+section: skills
+status: published
+relatedContracts: [D09, D28, D29, D30, G09, G28, G29]
+---
+
+# Skill · configure-credits
+
+versioned plan and tariff configuration
+
+Canonical invocation: read `skills/configure-credits/SKILL.md` and follow its evidence contract.
+
+Propose a versioned plan or tariff change with explicit expiry and ledger effects.
+
+## Inputs
+- Versioned catalog, grant buckets, expiry policy and authorized owner intent.
+
+## Allowed scope
+Reviewed plan configuration and documentation that references the active catalog.
+
+## Protected contracts
+Prices are server-owned. Do not mutate balances, bypass FEFO, alter reservations
+or issue browser-return grants.
+
+## Outputs and evidence
+Record catalog digest, expiry cases, concurrent reservation tests and replay-safe
+grant/refund evidence.
+
+## Recovery
+Restore the prior catalog version and retain already-recorded ledger facts.
+
+## Escalation
+Any ledger, payment, refund or migration change requires an engineering change.
+
+
+## Release boundary
+
+This reference describes the local governed workflow. Changes to external provider accounts, payment services, production email, payouts or protected business contracts require their separate stage evidence and are not authorized by this page.

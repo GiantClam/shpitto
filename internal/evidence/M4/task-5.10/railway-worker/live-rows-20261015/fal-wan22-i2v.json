@@ -1,0 +1,78 @@
+{
+  "runId": "98adeaa4-7b36-449c-9c54-ff5dd2d65569",
+  "modelKey": "fal-wan22-i2v",
+  "workspaceId": "cbe377ef-cdab-4b7e-b808-42e2ebe0aa44",
+  "taskId": "af2a7b60-c67e-4bc3-b10a-267efafb159c",
+  "attemptId": "54ec81dc-db94-4120-a32a-3535f3a8c513",
+  "providerRequestId": "01a14018-744a-7532-b025-ec45cafa62c6",
+  "phase": "verify",
+  "stage": "verified",
+  "observedPostRequests": 1,
+  "inputSha256": "a4b85c153a00d193c61504b1ffa859a7e843af5ce207e49936c9384897808802",
+  "accountIdSha256": "b366c2459f3c54347ddfea7716dd7a616138aff1dd3d57f7a970cc4dc0a51007",
+  "catalogSnapshotSha256": "617292cb33f3bb979485b5e0b89c3dcfde1a5a6d6cfee51f25057f6db5e3b541",
+  "normalizedInputImageSha256": "03740936dbf2eb233e686119da94a0e335649cf4ba719ba75ec393fb05e07cf0",
+  "reservationId": "08bb8a72-5689-4c53-9805-a7d260a7ca5f",
+  "quotedCredits": "10",
+  "providerCostStatus": "UNKNOWN",
+  "automaticRetry": false,
+  "secretValuesRecorded": false,
+  "postCounterSource": "local pre-transport admission",
+  "profile": "acceptance",
+  "taskRuntime": "self_hosted",
+  "taskStatus": "succeeded",
+  "attemptState": "succeeded",
+  "reservationStatus": "consumed",
+  "callbacks": [
+    {
+      "authenticated": true,
+      "accountMatches": true,
+      "processed": true,
+      "completed": true
+    }
+  ],
+  "contract": {
+    "provider": "fal",
+    "mode": "image-to-video",
+    "endpoint": "fal-ai/wan/v2.2-a14b/image-to-video",
+    "modelVersion": null,
+    "schemaSha256": "012030973ffd700e00516d016e37996b10dd1b969fd2c79da21c92c8e130cef5",
+    "preset": {
+      "resolution": "720p",
+      "numFrames": 81,
+      "framesPerSecond": 16
+    }
+  },
+  "normalizedInputImage": {
+    "sha256": "03740936dbf2eb233e686119da94a0e335649cf4ba719ba75ec393fb05e07cf0",
+    "width": 1280,
+    "height": 720,
+    "cropConfirmed": true
+  },
+  "output": {
+    "assetId": "71e8aff6-cebf-4845-a7f8-632f0a5a592a",
+    "sha256": "636ac8d8c6e2084230ccc577ea4a8fee649693f43c0a2ffe1ef1aeffcda813db",
+    "bytes": "3194626",
+    "mime": "video/mp4",
+    "durationMs": 5067,
+    "width": 1280,
+    "height": 720
+  },
+  "verification": {
+    "ownerHttp": 200,
+    "outsiderHttp": 403,
+    "wrongTokenHttp": 403,
+    "expiredTokenHttp": 403,
+    "privateHash": "PASS",
+    "domainReservationConsumed": true,
+    "authenticatedAccountCallback": true
+  },
+  "actualProviderCostConfirmed": false,
+  "verifiedAt": "2026-10-15T15:18:32.159Z",
+  "authorization": {
+    "source": "User explicitly authorized real provider calls without a monetary ceiling on 2026-10-15.",
+    "executionBound": "One newly submitted request per missing row; no automatic retry after ambiguity."
+  },
+  "applicationEvidenceScope": "Isolated Railway acceptance profile, fresh workspace and demo-credit reservation; actual provider callback, private R2 output and live HTTP authorization.",
+  "fullM4Acceptance": false
+}

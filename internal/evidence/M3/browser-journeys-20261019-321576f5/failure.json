@@ -1,0 +1,48 @@
+{
+  "at": "2026-10-19T04:45:38.336Z",
+  "error": "AssertionError [ERR_ASSERTION]: Candidate changed during browser acceptance: sourceTreeSha256\n+ actual - expected\n\n+ '49e25d5f030ccb8cb8a354601efb5783cfed5da805d94ad80754ceec6f58100f'\n- '542510ca5e51dd56b2211b4538595f43acc0f19aca35fb390c09db7bee42043f'\n\n    at file:///D:/github/shpitto/.data/m3-browser-acceptance.mjs:182:139",
+  "events": [
+    {
+      "name": "fresh-user-signup-and-email-verification",
+      "at": "2026-10-19T04:45:16.671Z"
+    },
+    {
+      "name": "personal-workspace-created",
+      "at": "2026-10-19T04:45:18.745Z",
+      "workspaceId": "c2469c41-ba50-41a1-9f84-f491cfdb3128"
+    },
+    {
+      "name": "application-worker-restart",
+      "at": "2026-10-19T04:45:22.330Z",
+      "taskId": "8ee82e2a-a40d-4a15-9058-340428f95c81",
+      "status": "succeeded"
+    },
+    {
+      "name": "private-download",
+      "at": "2026-10-19T04:45:22.717Z",
+      "metadata": {
+        "duration": 2,
+        "width": 320,
+        "height": 180,
+        "readyState": 4,
+        "error": null
+      },
+      "anonymousStatus": 401
+    },
+    {
+      "name": "team-creation",
+      "at": "2026-10-19T04:45:24.696Z",
+      "workspaceId": "d671098b-4f44-4046-a827-11b0e5ada752"
+    }
+  ],
+  "errors": [
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    },
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 409 (Conflict)"
+    }
+  ]
+}

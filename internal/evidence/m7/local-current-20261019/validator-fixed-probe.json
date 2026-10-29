@@ -1,0 +1,62 @@
+{
+  "observedAt": "2026-10-19T04:47:17.864Z",
+  "profile": "local-trusted-validator-negative-probe-after-repair",
+  "status": "PASS",
+  "validRecordAccepted": true,
+  "cases": [
+    {
+      "id": "empty-checks",
+      "expected": "REJECT",
+      "observed": "REJECT",
+      "errors": [
+        "evidence must include all required checks",
+        "missing successful required check: typecheck",
+        "missing successful required check: lint",
+        "missing successful required check: format-check",
+        "missing successful required check: boundary-checks",
+        "missing successful required check: relevant-domain-tests"
+      ]
+    },
+    {
+      "id": "missing-required-checks",
+      "expected": "REJECT",
+      "observed": "REJECT",
+      "errors": [
+        "missing successful required check: typecheck"
+      ]
+    },
+    {
+      "id": "failed-review",
+      "expected": "REJECT",
+      "observed": "REJECT",
+      "errors": [
+        "an explicit independent PASS from a named reviewer distinct from the implementer is required"
+      ]
+    },
+    {
+      "id": "missing-reviewer-id",
+      "expected": "REJECT",
+      "observed": "REJECT",
+      "errors": [
+        "an explicit independent PASS from a named reviewer distinct from the implementer is required"
+      ]
+    },
+    {
+      "id": "candidate-identity-drift",
+      "expected": "REJECT",
+      "observed": "REJECT",
+      "errors": [
+        "evidence must match the explicit current candidate identity"
+      ]
+    },
+    {
+      "id": "self-review",
+      "expected": "REJECT",
+      "observed": "REJECT",
+      "errors": [
+        "an explicit independent PASS from a named reviewer distinct from the implementer is required"
+      ]
+    }
+  ],
+  "note": "Synthetic evidence shapes only; original failing probe retained. No gate record was changed."
+}

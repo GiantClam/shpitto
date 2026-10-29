@@ -1,0 +1,22 @@
+[
+  {
+    "errors": 0,
+    "lastAt": "2026-10-16T10:40:50.168Z",
+    "httpStatus": 200,
+    "firstAt": "2026-10-16T10:38:48.445Z",
+    "note": "Readiness observation only; no outage, fault injection or controlled recovery was performed.",
+    "deploymentId": "702decbc-636a-4b6b-8c4c-1596633f1577",
+    "role": "worker",
+    "heartbeatAdvanced": true
+  },
+  {
+    "errors": 0,
+    "lastAt": "2026-10-16T10:40:55.173Z",
+    "httpStatus": 200,
+    "firstAt": "2026-10-16T10:39:00.932Z",
+    "note": "Readiness observation only; no outage, fault injection or controlled recovery was performed.",
+    "deploymentId": "7abc488c-095c-4bdf-a89d-8e5f5add6949",
+    "role": "monitor",
+    "heartbeatAdvanced": true
+  }
+]

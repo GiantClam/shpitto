@@ -1,0 +1,3 @@
+# M3 verification attempt 2026-09-30T19-16-35-155Z-921c6f5d-4265-4c8d-9e41-f46ea8573a36
+
+Status: IN_PROGRESS. This record is derived from current command results and explicit missing-evidence checks. It does not grant independent review or integrator approval. Current source candidate stability: PASS. Owned branch coverage: 85.18% (839/985), threshold 80%. 0 owned sources missing from LCOV. Callback twenty-replay evidence, full crash-boundary restart evidence, independent review and integrator decision remain unresolved. Production email, real providers, Stripe, and historical-balance recovery remain out of scope.

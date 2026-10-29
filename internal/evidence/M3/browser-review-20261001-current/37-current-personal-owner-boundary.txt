@@ -1,0 +1,26 @@
+- banner:
+  - link "Shpitto Video SaaS home":
+    - /url: /
+    - text: Shpitto
+  - navigation "Primary navigation":
+    - link "Home":
+      - /url: /
+    - link "Docs preview":
+      - /url: /docs
+      - text: Docs
+      - generic: preview
+    - link "Dashboard planned":
+      - /url: /dashboard
+      - text: Dashboard
+      - generic: planned
+- main:
+  - paragraph: Workspace access
+  - heading "M3 Final Personal members" [level=1]
+  - paragraph: Owner actions remain server-authorized and update active sessions immediately.
+  - heading "Personal workspace" [level=2]
+  - generic: 1 members
+  - text: m3-final-1790819499630@shpitto.local
+  - generic: owner
+- contentinfo: Shpitto Video SaaS · staged implementation preview
+- button "Open Next.js Dev Tools":
+- alert

@@ -1,0 +1,6 @@
+{
+  "startAt": "2026-09-29T05:56:21.5771662Z",
+  "invocation": "corepack pnpm verify",
+  "endAt": "2026-09-29T05:56:27.4093630Z",
+  "exitCode": 1
+}

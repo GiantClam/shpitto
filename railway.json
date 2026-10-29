@@ -5,7 +5,7 @@
     "buildCommand": null
   },
   "deploy": {
-    "startCommand": "pnpm --filter web railway:start",
+    "startCommand": "pnpm start",
     "restartPolicyType": "ALWAYS",
     "restartPolicyMaxRetries": 10
   }

@@ -1,0 +1,26 @@
+{"status":"PASS","replayed":true,"mismatchRejected":true,"bucketEquality":true,"auditRollback":true,"outboxRollback":true,"crossTenantRejected":true,"ledgerRows":1,"auditRows":1,"outboxRows":1}
+✔ scripts\probe-credit-ledger.ts (630.0772ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 635.2875
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------------------------------------
+ℹ file              | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------------------------------------
+ℹ src               |        |          |         | 
+ℹ  contracts        |        |          |         | 
+ℹ   http.ts         |  52.83 |    77.78 |   46.15 | 17-18 21-22 25-35 38-42 45-49 73 81-87 90-106
+ℹ  modules          |        |          |         | 
+ℹ   credits         |        |          |         | 
+ℹ    ledger.ts      | 100.00 |    76.19 |  100.00 | 
+ℹ   shared          |        |          |         | 
+ℹ    transaction.ts | 100.00 |   100.00 |  100.00 | 
+ℹ ------------------------------------------------------------------------------------------------
+ℹ all files         |  80.62 |    78.00 |   63.16 | 
+ℹ ------------------------------------------------------------------------------------------------
+ℹ end of coverage report

@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "ACCEPTANCE_CONTINUATION_REPORT",
+  "date": "2026-10-28",
+  "candidateId": "acceptance-continuation-20261028",
+  "policy": {
+    "automatedEvidenceFirst": true,
+    "humanDecisionOptions": ["PASS", "FAIL", "RETURN_FOR_EVIDENCE"],
+    "stageStatusPromotion": false,
+    "liveStripe": false,
+    "realRefund": false,
+    "realPayout": false
+  },
+  "stages": [
+    {
+      "stageId": "M4",
+      "taskId": "5.10",
+      "automatedStatus": "PARTIAL_READY_FOR_REVIEW",
+      "automatedChecks": ["local provider matrix", "local recovery", "webhook replay and crash races"],
+      "blockedClaims": ["complete current provider matrix", "hosted recovery", "independent whole-stage review"],
+      "humanDecision": {
+        "recommended": "RETURN_FOR_EVIDENCE",
+        "reason": "Local provider and recovery automation is not sufficient to close the current hosted and independent-review obligations."
+      }
+    },
+    {
+      "stageId": "M5",
+      "taskId": "6.10",
+      "automatedStatus": "PARTIAL_READY_FOR_REVIEW",
+      "automatedChecks": {
+        "billingSchema": {"status": "PASS", "count": 49},
+        "checkout": {"status": "PASS", "count": 10},
+        "reconciliation": {"status": "PASS", "count": 18},
+        "stripeIntegration": {"status": "PASS", "count": 67}
+      },
+      "hostedChecks": {
+        "checkout": "PASS",
+        "portal": "PASS",
+        "memberBillingAuthorization": "PASS",
+        "subscriptionLifecycle": "NOT_RUN",
+        "refund": "NOT_RUN",
+        "dispute": "NOT_RUN",
+        "webhookReplay": "NOT_RUN"
+      },
+      "humanDecision": {
+        "recommended": "RETURN_FOR_EVIDENCE",
+        "reason": "The hosted Checkout and Portal slice passes, but the required hosted lifecycle, refund, dispute and webhook replay evidence is missing."
+      }
+    },
+    {
+      "stageId": "M6",
+      "taskId": "7.14",
+      "automatedStatus": "PARTIAL_READY_FOR_REVIEW",
+      "automatedChecks": {
+        "operations": "PASS",
+        "adminReads": "PASS",
+        "privilegedCommands": "PASS",
+        "twoFactor": "PASS",
+        "recovery": "PASS",
+        "affiliateDatabase": "PASS",
+        "affiliateRaces": "PASS",
+        "affiliateCashAndDispute": "PASS",
+        "affiliateNotifications": "PASS",
+        "referralHandler": "PASS"
+      },
+      "hostedChecks": {
+        "superadminBootstrapAudit": "PASS",
+        "passwordAndTwoFactor": "PENDING_OPERATOR",
+        "accountCampaignBinding": "PENDING_OPERATOR",
+        "referralCapture": "NOT_RUN",
+        "stripeSaleReadback": "NOT_RUN",
+        "payout": "NOT_AUTHORIZED"
+      },
+      "humanDecision": {
+        "recommended": "RETURN_FOR_EVIDENCE",
+        "reason": "The local operations and affiliate contracts pass. Hosted referral and sale readback still require the operator's authenticated Superadmin session."
+      }
+    }
+  ],
+  "operatorBootstrap": {
+    "status": "APPLIED",
+    "targetEmail": "acceptance-owner-941c8c83-5689-4af0-9e51-f09faeef18bc@shpitto.local",
+    "role": "superadmin",
+    "version": 1,
+    "changeReference": "ACCEPTANCE-M6-ADMIN-2026-10-28",
+    "passwordChangedByAutomation": false,
+    "sessionCreatedByAutomation": false,
+    "twoFactorStampCreatedByAutomation": false
+  }
+}

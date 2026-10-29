@@ -1,0 +1,56 @@
+{
+  "status": "PASS",
+  "candidateId": "local-candidate-20261019-trusted-r2",
+  "archive": {
+    "path": "internal/evidence/m8/artifact-manifest/local-candidate-20261019-trusted-r2/local-candidate-20261019-trusted-r2.zip",
+    "bytes": 9658756,
+    "sha256": "cc9750578638109350e05b60865a76e139e752a9bd97ed2a436f279ffac5ea66"
+  },
+  "expectedSourceTreeSha256": "e5cf13a5d4af7747fcb83bc10e940e73e731570a0df4dd6361aaced0890a71be",
+  "profile": "local-docker-application-only",
+  "image": "shpitto-candidate:local-candidate-20261019-trusted-r2",
+  "imageId": "sha256:7c7306f3556e7b6fe349eae1040d5fb295a68995102fa88fe8db1befd92a98a1",
+  "imageLabels": null,
+  "startedAt": "2026-10-19T06:29:54.930Z",
+  "elapsedMs": 29140,
+  "checks": {
+    "authorizedArchiveAndEveryExtractedFile": "PASS",
+    "exactExtractedCandidateImageBuild": "PASS",
+    "localApplicationAndDatabaseReadiness": "PASS",
+    "standalonePagesAndDocs": "PASS",
+    "brandAssetBytesMatchExactArchive": "PASS",
+    "renderedJavaScriptAndStylesheets": "PASS",
+    "containerRestartAndDocsReadiness": "PASS",
+    "archiveAndBuildContextUnchanged": "PASS"
+  },
+  "staticResourceCount": 14,
+  "container": {
+    "name": "shpitto-candidate-r2-058c82b1",
+    "host": "127.0.0.1",
+    "port": 52334,
+    "noHostMounts": true,
+    "noWorkerStarted": true
+  },
+  "readinessDatabase": {
+    "scope": "declared disposable PostgreSQL administrative database; SELECT 1 only",
+    "container": "shpitto-completion-pg-20261019",
+    "port": 55432,
+    "database": "postgres",
+    "databasesCreated": 0
+  },
+  "productionDeployment": "NOT_RUN",
+  "productionAcceptance": "NOT_CLAIMED",
+  "realAccounts": "NOT_PROVIDED",
+  "remoteProvidersAccessed": false,
+  "note": "Exact ZIP Dockerfile built from a separately extracted verified archive. NODE_ENV=production is the image application mode only. Local HTTP GET readiness, public pages, Docs, static bytes and restart were checked; no host application, worker, payment, provider, mail or storage call was exercised.",
+  "cleanup": {
+    "containerRemoved": true,
+    "temporaryEnvironmentFileRemoved": true,
+    "extractionRemoved": true,
+    "imageRetainedAsEvidence": true,
+    "databaseMutationsPerformed": false,
+    "sharedPostgresContainerPreserved": true,
+    "volumesCreatedOrDeleted": false
+  },
+  "completedAt": "2026-10-19T06:30:25.656Z"
+}

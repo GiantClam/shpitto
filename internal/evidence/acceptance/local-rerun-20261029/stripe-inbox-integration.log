@@ -1,0 +1,13 @@
+✔ processed redelivery never executes an economic callback twice (215.123507ms)
+✔ failed delivery is retryable, while changed payload cannot reuse event identity (6.863492ms)
+✔ in-flight duplicate requests receive retryable failure until durable processing finishes (4.306393ms)
+✔ stale processing can resume and the receipt excludes untrusted metadata (3.128053ms)
+✔ the application resolves immutable terms, commits its claim before fetch, and grants only once (62.560058ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 909.587573

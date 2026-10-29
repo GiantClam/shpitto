@@ -1,0 +1,51 @@
+{
+  "status": "PASS",
+  "before": {
+    "sha256": "0c68d47f99bd13ad617da4c5cc7cf0e64479d8284c012117318596cf408ca021",
+    "nodes": [
+      {
+        "sha256": "f3a8a20a547b95e75ee7914197ef9300f7806cf9a4af2176b9e33674bd041817",
+        "source": "async function post(path: string, body: Record<string, unknown>, key: string): Promise<Record<string, unknown>> {\n    const response = await fetch(path, {method: 'POST', headers: {'content-type': 'application/json', 'idempotency-key': key}, body: JSON.stringify(body)});\n    const payload = await response.json() as {ok?: boolean; data?: Record<string, unknown>; error?: {message?: string}};\n    if (!response.ok || !payload.ok || !payload.data) throw new Error(payload.error?.message ?? 'The billing action could not be completed.');\n    return payload.data;\n  }"
+      },
+      {
+        "sha256": "0cedfb20f2e32684f4858c399c8f913bc703d5ec62d38602d5349a91f3a0ce96",
+        "source": "async function checkout(productKey: string): Promise<void> {\n    setWorking(productKey); setMessage('');\n    try {\n      const data = await post(`/api/workspaces/${workspaceId}/billing/checkout`, {catalogProductKey: productKey}, `fixture-checkout-${productKey}-${crypto.randomUUID()}`);\n      if (typeof data.checkoutUrl !== 'string') throw new Error('The fixture checkout did not return a session URL.');\n      window.location.assign(data.checkoutUrl);\n    } catch (error) {\n      setMessage(error instanceof Error ? error.message : 'The checkout could not be opened.');\n      setWorking(null);\n    }\n  }"
+      },
+      {
+        "sha256": "69bc7204fdbc1274e572201425311519fd512248db478272279268206219af86",
+        "source": "async function portal(): Promise<void> {\n    setWorking('portal'); setMessage('');\n    try {\n      const data = await post(`/api/workspaces/${workspaceId}/billing/portal`, {}, `fixture-portal-${crypto.randomUUID()}`);\n      if (typeof data.portalUrl !== 'string') throw new Error('The fixture portal did not return a URL.');\n      window.location.assign(data.portalUrl);\n    } catch (error) {\n      setMessage(error instanceof Error ? error.message : 'The billing portal could not be opened.');\n      setWorking(null);\n    }\n  }"
+      },
+      {
+        "sha256": "836e42732a015b106db1b8fcff46edb815f45f49e6e40d19e96e51bc79606b4b",
+        "source": "products.map((product) => <article className=\"fixture-product\" key={product.productKey}><div><strong>{product.kind === 'subscription' ? 'Monthly credits' : 'Permanent credit pack'}</strong><small>{product.credits} credits{product.interval ? ` · renews monthly` : ' · never expires'}</small></div><div className=\"fixture-product-action\"><strong>{product.currency.toUpperCase()} {(Number(product.amountMinor) / 100).toFixed(2)}</strong><button className=\"button\" type=\"button\" disabled={working !== null} onClick={() => checkout(product.productKey)}>{working === product.productKey ? 'Opening…' : 'Open checkout'}</button></div></article>)"
+      }
+    ]
+  },
+  "after": {
+    "sha256": "0c68d47f99bd13ad617da4c5cc7cf0e64479d8284c012117318596cf408ca021",
+    "nodes": [
+      {
+        "sha256": "f3a8a20a547b95e75ee7914197ef9300f7806cf9a4af2176b9e33674bd041817",
+        "source": "async function post(path: string, body: Record<string, unknown>, key: string): Promise<Record<string, unknown>> {\n    const response = await fetch(path, {method: 'POST', headers: {'content-type': 'application/json', 'idempotency-key': key}, body: JSON.stringify(body)});\n    const payload = await response.json() as {ok?: boolean; data?: Record<string, unknown>; error?: {message?: string}};\n    if (!response.ok || !payload.ok || !payload.data) throw new Error(payload.error?.message ?? 'The billing action could not be completed.');\n    return payload.data;\n  }"
+      },
+      {
+        "sha256": "0cedfb20f2e32684f4858c399c8f913bc703d5ec62d38602d5349a91f3a0ce96",
+        "source": "async function checkout(productKey: string): Promise<void> {\n    setWorking(productKey); setMessage('');\n    try {\n      const data = await post(`/api/workspaces/${workspaceId}/billing/checkout`, {catalogProductKey: productKey}, `fixture-checkout-${productKey}-${crypto.randomUUID()}`);\n      if (typeof data.checkoutUrl !== 'string') throw new Error('The fixture checkout did not return a session URL.');\n      window.location.assign(data.checkoutUrl);\n    } catch (error) {\n      setMessage(error instanceof Error ? error.message : 'The checkout could not be opened.');\n      setWorking(null);\n    }\n  }"
+      },
+      {
+        "sha256": "69bc7204fdbc1274e572201425311519fd512248db478272279268206219af86",
+        "source": "async function portal(): Promise<void> {\n    setWorking('portal'); setMessage('');\n    try {\n      const data = await post(`/api/workspaces/${workspaceId}/billing/portal`, {}, `fixture-portal-${crypto.randomUUID()}`);\n      if (typeof data.portalUrl !== 'string') throw new Error('The fixture portal did not return a URL.');\n      window.location.assign(data.portalUrl);\n    } catch (error) {\n      setMessage(error instanceof Error ? error.message : 'The billing portal could not be opened.');\n      setWorking(null);\n    }\n  }"
+      },
+      {
+        "sha256": "836e42732a015b106db1b8fcff46edb815f45f49e6e40d19e96e51bc79606b4b",
+        "source": "products.map((product) => <article className=\"fixture-product\" key={product.productKey}><div><strong>{product.kind === 'subscription' ? 'Monthly credits' : 'Permanent credit pack'}</strong><small>{product.credits} credits{product.interval ? ` · renews monthly` : ' · never expires'}</small></div><div className=\"fixture-product-action\"><strong>{product.currency.toUpperCase()} {(Number(product.amountMinor) / 100).toFixed(2)}</strong><button className=\"button\" type=\"button\" disabled={working !== null} onClick={() => checkout(product.productKey)}>{working === product.productKey ? 'Opening…' : 'Open checkout'}</button></div></article>)"
+      }
+    ]
+  },
+  "semanticBypass": {
+    "attempt": "Replace the catalog-bound checkout callback with presentation-only fake success",
+    "status": "REJECTED_BY_LOCAL_AST_INVARIANT",
+    "mutatedBindingSha256": "e9d97a9705fbaf6edab531f01250eff8ab6ea90919df727d4f0b9f2ff37b0269",
+    "shippedValidatorSemanticApproval": "NOT_CLAIMED"
+  }
+}

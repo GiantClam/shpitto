@@ -1,0 +1,33 @@
+✔ worker readiness requires independent recovery success, not just a fresh dispatcher (2.1065ms)
+✔ worker loops skip overlapping cycles and drain outstanding work on shutdown (0.2592ms)
+✔ worker loops contain default error reporting and reject unsafe recovery cadence (0.4899ms)
+✔ actual health snapshot preserves scheduled cleanup receipt compatibility (0.2475ms)
+✔ failed TCP bind starts no dispatch or maintenance operation (6.7228ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 655.7577
+ℹ start of coverage report
+ℹ -------------------------------------------------------------------------------------------------------------------------
+ℹ file            | line % | branch % | funcs % | uncovered lines
+ℹ -------------------------------------------------------------------------------------------------------------------------
+ℹ src             |        |          |         | 
+ℹ  adapters       |        |          |         | 
+ℹ   storage       |        |          |         | 
+ℹ    local.ts     |  20.83 |   100.00 |    0.00 | 11-19 21-29 31-41 44-50 53-56 59-62 65-96
+ℹ  contracts      |        |          |         | 
+ℹ   http.ts       |  45.28 |    76.47 |   33.33 | 17-18 21-22 25-35 38-42 45-49 52-59 73 81-87 90-106
+ℹ  modules        |        |          |         | 
+ℹ   assets        |        |          |         | 
+ℹ    authorize.ts |  37.14 |   100.00 |    0.00 | 19-21 24-28 31-39 42-47 50-70
+ℹ   workspaces    |        |          |         | 
+ℹ    authorize.ts |  37.33 |   100.00 |    0.00 | 18-35 39-51 58-64 67-75
+ℹ    policy.ts    |  31.21 |   100.00 |    0.00 | 27-29 31-33 35-39 42-49 52-57 60-71 74-90 93-104 107-116 119-133 136-141
+ℹ -------------------------------------------------------------------------------------------------------------------------
+ℹ all files       |  34.02 |    80.95 |   10.26 | 
+ℹ -------------------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

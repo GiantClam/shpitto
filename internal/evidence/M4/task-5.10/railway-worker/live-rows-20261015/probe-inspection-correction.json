@@ -1,0 +1,8 @@
+{
+  "scope": "Verification probe only; no application media publication defect.",
+  "observedFailure": "Replicate T2V output has trailing MP4 movie metadata; stream-based ffprobe returned no decoded dimensions.",
+  "correction": "Use a private seekable temporary file with file/pipe protocol allowlist, bounded process timeout and finally cleanup, matching application media-probe policy.",
+  "regressionTest": "tests/unit/provider-acceptance-probe.test.ts: output inspection supports seek-required MP4 with trailing movie metadata",
+  "verification": "The same R2 object passes measured 1280x720 media and authorized HTTP hash verification after probe correction.",
+  "additionalProviderRequests": 0
+}

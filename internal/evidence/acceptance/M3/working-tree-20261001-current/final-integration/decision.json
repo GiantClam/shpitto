@@ -1,0 +1,45 @@
+{
+  "integratorId": "/root",
+  "decidedAt": "2026-10-01T02:27:40.160Z",
+  "decision": "PASS",
+  "candidateDigests": {
+    "sourceTreeSha256": "73ec731c971aca355335d6c86a3ba14e8c91e84e9cf8569007cb7abf3f6bd3ab",
+    "schemaSha256": "5b0b847b266e1690319021b0167f831367e9190d188c88b90b40ca09f8d4c58b",
+    "configurationSha256": "5f6bd06fa671a1f727e8663ba540f25f53b2dc15ebaff31fd2593eb0eb3032d7",
+    "contractSha256": "696243adf42cf0ea4631515f9f112346783742b6e0d301eaaed8ef1990db8fc2",
+    "validatorSha256": "84b43b64ce663a6f7fccd2aa4e4ac704419f071af56783b64d7ec9413dab8b69",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a"
+  },
+  "independentReviewRef": "internal/evidence/M3/final-stage-review-20261001.json",
+  "verificationAttemptId": "2026-10-01T02-12-59-069Z-0691f958-7be7-407a-a12b-e871950529a9",
+  "evidenceRefs": [
+    "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-10-01T02-12-59-069Z-0691f958-7be7-407a-a12b-e871950529a9/report.md",
+    "internal/evidence/M3/final-stage-review-20261001.json",
+    "internal/evidence/M3/final-stage-review-20261001.md",
+    "internal/evidence/M3/final-independent-race-repetitions-20261001/final-summary.json",
+    "internal/evidence/M3/m2-prerequisite-impact-20261001.md",
+    "internal/evidence/M3/browser-walkthrough-20261001.json"
+  ],
+  "observed": {
+    "recordedCommandsPassed": 53,
+    "supplementalProbeRunsPassed": 12,
+    "freshSupplementalDatabases": 12,
+    "ownedBranches": "993/1166",
+    "coveragePercent": 85.16,
+    "browserJourneys": 11,
+    "uiChecks": 8,
+    "candidateDigestsStable": true
+  },
+  "reason": "All mandatory local M3 evidence and independent whole-stage review pass for the unchanged current candidate. Historical M2 obligations are supported by current regressions and independently reset contention evidence.",
+  "nextEligibleTaskIds": [
+    "5.1",
+    "6.1"
+  ],
+  "blockedTaskIds": [],
+  "limits": [
+    "Local PostgreSQL and Mock profile only.",
+    "Production email, real providers, Stripe and historical anomalous-balance recovery remain later-stage obligations.",
+    "The automated attempt record is preserved; final approval and metadata supplements live in the authoritative current record.",
+    "This is technical stage approval, not a claim of separate human sign-off or production deployment."
+  ]
+}

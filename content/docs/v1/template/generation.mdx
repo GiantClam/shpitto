@@ -1,0 +1,30 @@
+---
+release: v1
+title: Local generation and credit lifecycle
+description: Exercise the durable Mock generation lifecycle.
+section: template
+status: published
+relatedContracts: [D08, D10, D13, D20, G08, G10, G13, G20]
+---
+
+# Local generation and credit lifecycle
+
+In the local profile, the dashboard creates a server-side quote for one
+`mock-video` unit. The generation route validates that quote against the current
+catalog, authorizes the workspace, reserves credits and stores the task,
+reservation, durable command result and dispatch event in one transaction.
+
+The browser sends a prompt or an authorized ready asset ID. It cannot choose a
+provider URL, provider payload, callback URL or credit price. A worker consumes
+the outbox event, writes a private output asset, and settles the task only after
+asset validation. The visible `succeeded` state therefore means the output is
+owned by the workspace and ready for download.
+
+If the queue is interrupted, the worker resumes the persisted outbox and
+deadline records. An ambiguous external submission is not retried blindly in a
+real-provider profile; it remains `submission_unknown` until the bounded
+reconciliation policy resolves it. Local Mock runs exercise state handling but
+do not establish vendor behavior or account eligibility.
+
+Use the [local journey](./local-journey) to start the app. For exact request
+and response envelopes, see the [generation route example](../api/overview).

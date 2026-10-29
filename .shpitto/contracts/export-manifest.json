@@ -1,0 +1,92 @@
+{
+  "schemaVersion": "1.0",
+  "release": "v1",
+  "customerRuntime": {
+    "include": [
+      "src",
+      "public",
+      "content/docs",
+      "skills",
+      "deploy",
+      "scripts/migrate.ts",
+      "scripts/maintenance",
+      "scripts/local-worker.ts",
+      "scripts/local-worker-runtime.mjs",
+      "scripts/worker-health.mjs",
+      "scripts/provider-worker.ts",
+      "scripts/provider-worker-preflight.ts",
+      "scripts/provider-worker-runtime.mjs",
+      "tests/integration/provider-worker.test.ts",
+      "tests/fixtures/video/local-demo.mp4",
+      "Dockerfile",
+      "vercel.json",
+      "package.json",
+      "pnpm-lock.yaml",
+      "pnpm-workspace.yaml",
+      "next.config.ts",
+      "next-env.d.ts",
+      "template-version.json",
+      "tsconfig.json",
+      ".env.example",
+      ".dockerignore",
+      "THIRD_PARTY_NOTICES",
+      "DESIGN.md",
+      ".shpitto/contracts",
+      "tooling/lint-policy.json",
+      "tooling/format-policy.json",
+      "scripts/dev-services.ts",
+      "scripts/demo-seed.ts",
+      "scripts/operator-owner.ts",
+      "scripts/local-mail-capture.mjs",
+      "scripts/validate-change.ts",
+      "scripts/export-release.ts",
+      "scripts/deploy-release.ts",
+      "scripts/lib/trusted-validation.mjs",
+      "scripts/lib/trusted-validation.d.mts",
+      "scripts/rollback-customization.ts",
+      "scripts/check-source-boundaries.mjs",
+      "scripts/format-check.mjs",
+      "scripts/check-config.mjs",
+      "scripts/check-db-boundaries.mjs",
+      "scripts/check-local-services.mjs",
+      "scripts/check-shell-boundaries.mjs",
+      "scripts/check-content-boundaries.mjs"
+    ],
+    "exclude": [
+      "apps",
+      "builder",
+      "legacy",
+      "internal",
+      "openspec",
+      ".omx",
+      ".git",
+      "vendor",
+      "node_modules",
+      ".env",
+      ".env.local",
+      "*.log"
+    ]
+  },
+  "buyerGuidance": {
+    "include": [
+      "docs/buyer",
+      "content/docs"
+    ],
+    "exclude": [
+      "internal",
+      "legacy",
+      "vendor",
+      ".omx",
+      ".git",
+      "*.env",
+      "*.log"
+    ]
+  },
+  "forbiddenContent": [
+    "-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----",
+    "sk_live_[A-Za-z0-9]",
+    "whsec_[A-Za-z0-9]"
+  ],
+  "validatorOwner": "release-engineering",
+  "status": "preflight-only"
+}

@@ -1,0 +1,2 @@
+Local service contract passed.
+$ node scripts/check-local-services.mjs

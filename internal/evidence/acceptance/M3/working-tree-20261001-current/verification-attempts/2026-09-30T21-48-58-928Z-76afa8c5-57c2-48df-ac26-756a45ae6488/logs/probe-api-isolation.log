@@ -1,0 +1,1 @@
+{"status":"PASS","workspaceRoutes":5,"methodVariants":8,"deniedRequests":35,"crossTenant":true,"unauthenticated":true,"forgedOrigin":true,"removedMemberLiveSession":true,"workspaceOwnerNotOperator":true,"staleSessionRefreshNotRecentAuthentication":true,"recentSessionTransfer":true,"rejectedRequestsPreserveBusinessState":true,"fixturesRemoved":true}

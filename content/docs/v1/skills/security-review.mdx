@@ -1,0 +1,39 @@
+---
+release: v1
+title: Skill · security-review
+section: skills
+status: published
+relatedContracts: [D09, D28, D29, D30, G09, G28, G29]
+---
+
+# Skill · security-review
+
+scoped boundary review and fixes
+
+Canonical invocation: read `skills/security-review/SKILL.md` and follow its evidence contract.
+
+Review a bounded change for authorization, tenant isolation, secrets and unsafe imports.
+
+## Inputs
+- Baseline, dirty-work manifest, diff and applicable protected contracts.
+
+## Allowed scope
+Review findings, safe presentation fixes and scoped remediation evidence.
+
+## Protected contracts
+Do not weaken authentication, CSRF/same-origin checks, tenant predicates, private
+downloads, webhook verification or validator policy.
+
+## Outputs and evidence
+Record findings, severity, affected paths, checks, residual risk and reviewer identity.
+
+## Recovery
+Apply only attributable remediation or produce a scoped patch; preserve unrelated changes.
+
+## Escalation
+P0/P1, secret exposure or protected contract changes block ordinary customization.
+
+
+## Release boundary
+
+This reference describes the local governed workflow. Changes to external provider accounts, payment services, production email, payouts or protected business contracts require their separate stage evidence and are not authorized by this page.

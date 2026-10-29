@@ -1,0 +1,25 @@
+{"status":"PASS","replayCount":20,"conflictingPayloadRejected":true,"replayed":true,"lateOutcomeRejected":true,"expiredSubscriptionCompensated":true,"compensationLineageRetained":true,"compensationNoRenewalBeforeAndAfterExpiry":true,"exactSevenDayExpiry":true,"purchaseRefunded":true,"successConsumed":true,"cancelledExpiredNoCompensation":true,"expirySweepApplied":true,"reconciliationHoldVisible":true,"allSettlementAndExpiryCommandsBlockedOnHold":true,"reservationBlockedOnHold":true,"compensationCount":1,"balanceHeld":false,"ledgerRows":25}
+✔ scripts\probe-credit-refund.ts (857.4187ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 862.3735
+ℹ start of coverage report
+ℹ --------------------------------------------------------------------------------------------------------
+ℹ file                 | line % | branch % | funcs % | uncovered lines
+ℹ --------------------------------------------------------------------------------------------------------
+ℹ src                  |        |          |         | 
+ℹ  config              |        |          |         | 
+ℹ   env.ts             |  64.29 |    25.00 |   18.18 | 12-14 59-60 91-122 129-133 137-141 144-146 150-154
+ℹ   models.ts          |  86.67 |    31.25 |   66.67 | 43-44 63-64 85-86 88-89 92-93 97-98 100-101
+ℹ   provider-models.ts |  63.41 |   100.00 |    0.00 | 22-25 28-33 37-41
+ℹ   provider-worker.ts |  33.33 |   100.00 |    0.00 | 13-34 38-44 48-54
+ℹ   task-runtime.ts    |  89.47 |    28.57 |  100.00 | 13-14
+ℹ --------------------------------------------------------------------------------------------------------
+ℹ all files            |  67.29 |    31.11 |   29.17 | 
+ℹ --------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

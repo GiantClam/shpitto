@@ -1,0 +1,97 @@
+Skip to content
+Shpitto
+CREATE SOMETHING
+Create
+History
+Assets
+Members
+Billing
+From idea to first take.
+
+Start with a prompt.
+Make it your own.
+
+Start creating
+Help & guides
+Video studio
+PRIVATE WORKSPACE
+New creation
+
+CREATIVE WORKSPACE
+
+Current personal studio
+
+Create a video from a prompt or an image. Keep every take in your private workspace.
+
+active
+Team access
+Current personal studio · personal
+CREATE · VIDEO STUDIO
+Give your idea a first frame.
+
+Describe the scene, choose your canvas and see where the idea takes you.
+
+ESTIMATED COST
+10 credits
+Text to video
+Image to video
+
+Create from a text prompt
+1 model available
+
+Model
+Mock video · 10 credits
+Canvas
+16:9 · Landscape
+9:16 · Portrait
+
+✦
+Five-second video · 720p · Choose a model and review its credit cost before creating.
+
+Prompt
+Describe subject · motion · light · mood
+Queueing…
+Private to your workspace
+
+Provider integrations are not configured in the local Mock profile.
+
+WORKFLOW
+READY
+A few words. A new perspective.
+
+Start with one clear prompt. Then refine the model, format and input until the result earns a place in your library.
+
+01
+Describe the scene
+Use subject, movement, light and mood.
+02
+Choose a format
+Landscape for campaigns, portrait for social.
+03
+Keep the result
+Private outputs stay attached to this workspace.
+Credits available
+100
+Available
+100
+Reserved
+0
+Consumed
+0
+Ledger
+Reconciled
+Credit sources
+1 grants
+demo
+grant 47cad63f-c313-48ed-b122-3f29c17e99dc
+100 available · 0 reserved · 0 consumed · 0 expired · 0 voided
+expires 2026-10-26T06:40:11.344Z · reconciled
+ledger projection 100 available · 0 reserved · 0 consumed · 0 expired · 0 voided
+Private assets
+0 ready
+No ready assets yet.
+Generation history
+0 recent
+No generation tasks yet.
+Shpitto · Give your ideas a little motion.
+Help & documentation

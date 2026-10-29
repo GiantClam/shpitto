@@ -1,0 +1,2 @@
+Content and export boundary check passed.
+$ node scripts/check-content-boundaries.mjs

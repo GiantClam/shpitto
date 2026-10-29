@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "candidateId": "local-candidate-20261019",
+  "archive": {
+    "path": "internal/evidence/m8/artifact-manifest/local-candidate-20261019/local-candidate-20261019.zip",
+    "bytes": 9606977,
+    "sha256": "b1967ad98000316ad96539b6baa04c6ae499a68175d707429c8e6d91d8f14c07"
+  },
+  "imageId": "sha256:b38a5dc54f8e803308304c8e1014874415281deb3ca9ad6de8e0146991aa036f",
+  "elapsedMs": 7536,
+  "checks": {
+    "frozenCandidateImageBuild": "PASS",
+    "productionCoreReadiness": "PASS",
+    "standalonePagesAndDocs": "PASS",
+    "publicBrandAndStaticAssets": "PASS",
+    "containerRestart": "PASS"
+  },
+  "staticResourceCount": 14,
+  "profile": "local-docker-standalone-production-core",
+  "realAccounts": "NOT_PROVIDED",
+  "productionDeployment": "NOT_RUN",
+  "note": "The immutable candidate Dockerfile was built and run locally with a restored disposable database. External adapters are configured by kind but not contacted. Hosting, live provider/payment/mail behavior and production recovery remain separate gates."
+}

@@ -1,0 +1,12 @@
+{
+  "application": "http://127.0.0.1:3199",
+  "runId": "e6afd0f4",
+  "events": [
+    {
+      "name": "fresh-user-signup-and-email-verification",
+      "at": "2026-10-20T04:59:01.995Z"
+    }
+  ],
+  "errors": [],
+  "responseObservations": []
+}

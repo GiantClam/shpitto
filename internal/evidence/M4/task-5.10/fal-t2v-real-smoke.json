@@ -1,0 +1,40 @@
+{
+  "status": "UNRESOLVED_AFTER_SINGLE_PAID_POST",
+  "profile": "fal-real-t2v-smoke",
+  "checkedAt": "2026-10-09T11:35:00Z",
+  "endpoint": "fal-ai/wan/v2.2-a14b/text-to-video",
+  "authScheme": "Key",
+  "input": {
+    "resolution": "720p",
+    "num_frames": 81,
+    "frames_per_second": 16,
+    "aspect_ratio": "16:9",
+    "interpolator_model": "none",
+    "num_interpolated_frames": 0,
+    "enable_safety_checker": true,
+    "enable_output_safety_checker": true,
+    "enable_prompt_expansion": false
+  },
+  "paidQueuePosts": 1,
+  "providerGenerationRuns": 1,
+  "resultStatus": "NOT_CONFIRMED",
+  "pollingHttpStatus": 405,
+  "requestIdPersisted": false,
+  "outputDownloaded": false,
+  "costState": "UNKNOWN",
+  "duplicateRetry": false,
+  "gateEffect": "5.10_REMAINS_OPEN",
+  "notes": [
+    "A single paid queue submission was attempted; no second submission was made.",
+    "The request remains unresolved because the original runner did not persist its request identity before the 405 polling response.",
+    "The adapter now follows fal returned dynamic status_url/response_url values, uses Authorization: Key, and persists both URLs atomically with providerRequestId.",
+    "Before another paid request, reconcile or explicitly abandon the existing provider request and obtain an operator-approved real-run window."
+  ],
+  "adapterRepair": {
+    "completedAt": "2026-10-10T00:00:00Z",
+    "dynamicTrackingUrls": "persisted in submission_attempts.provider_status_url/provider_result_url",
+    "authScheme": "Authorization: Key",
+    "modernWebhookHeaders": "supported with newline canonical payload and hex/Base64 signatures",
+    "verification": "provider contract tests 37/37 and generation lifecycle PostgreSQL probe passed"
+  }
+}

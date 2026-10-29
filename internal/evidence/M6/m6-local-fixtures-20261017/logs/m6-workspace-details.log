@@ -1,0 +1,1 @@
+{"status":"PASS","database":"isolated local Docker PostgreSQL","sections":["memberships","subscriptions","grants","ledger"],"deterministicPagination":true,"tenantIsolation":true,"recordedPurpose":true,"redactedFields":true,"exactBigIntegers":true,"suspendedWorkspaceRead":true,"supportAndOwnerDenied":true,"revokedAndWrongSessionDenied":true,"queryBoundsEnforced":true}

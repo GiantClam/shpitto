@@ -1,0 +1,1198 @@
+[
+  {
+    "id": "baseline-digests",
+    "startedAt": "2026-10-19T06:15:10.255Z",
+    "endedAt": "2026-10-19T06:15:10.478Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/candidate-digests.mjs",
+      "D:\\github\\shpitto\\internal\\evidence\\m7\\workflows-current-20261019\\runs\\2026-10-19T06-15-10-253Z-0810d9ac\\baseline"
+    ],
+    "cwd": "",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/baseline-digests.log"
+  },
+  {
+    "id": "customize-brand-git-init",
+    "startedAt": "2026-10-19T06:15:10.889Z",
+    "endedAt": "2026-10-19T06:15:11.068Z",
+    "executable": "git",
+    "args": [
+      "init",
+      "--quiet"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-brand",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-brand-git-init.log"
+  },
+  {
+    "id": "customize-brand-git-line-endings",
+    "startedAt": "2026-10-19T06:15:11.069Z",
+    "endedAt": "2026-10-19T06:15:11.207Z",
+    "executable": "git",
+    "args": [
+      "config",
+      "core.autocrlf",
+      "false"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-brand",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-brand-git-line-endings.log"
+  },
+  {
+    "id": "customize-brand-git-baseline",
+    "startedAt": "2026-10-19T06:15:11.207Z",
+    "endedAt": "2026-10-19T06:15:11.354Z",
+    "executable": "git",
+    "args": [
+      "add",
+      "--",
+      "src/config/brand.ts"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-brand",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-brand-git-baseline.log"
+  },
+  {
+    "id": "customize-brand-actual-diff",
+    "startedAt": "2026-10-19T06:15:11.355Z",
+    "endedAt": "2026-10-19T06:15:11.489Z",
+    "executable": "git",
+    "args": [
+      "diff",
+      "--binary",
+      "--",
+      "src/config/brand.ts"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-brand",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-brand-actual-diff.log"
+  },
+  {
+    "id": "customize-brand-route-types",
+    "startedAt": "2026-10-19T06:15:11.555Z",
+    "endedAt": "2026-10-19T06:15:11.995Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "node_modules/next/dist/bin/next",
+      "typegen"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-brand",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-brand-route-types.log"
+  },
+  {
+    "id": "customize-brand-typecheck",
+    "startedAt": "2026-10-19T06:15:11.995Z",
+    "endedAt": "2026-10-19T06:15:22.666Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "node_modules/typescript/bin/tsc",
+      "--noEmit"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-brand",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-brand-typecheck.log"
+  },
+  {
+    "id": "customize-brand-source-boundaries",
+    "startedAt": "2026-10-19T06:15:22.667Z",
+    "endedAt": "2026-10-19T06:15:22.965Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/check-source-boundaries.mjs"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-brand",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-brand-source-boundaries.log"
+  },
+  {
+    "id": "customize-brand-db-boundaries",
+    "startedAt": "2026-10-19T06:15:22.965Z",
+    "endedAt": "2026-10-19T06:15:23.079Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/check-db-boundaries.mjs"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-brand",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-brand-db-boundaries.log"
+  },
+  {
+    "id": "customize-brand-shell-boundaries",
+    "startedAt": "2026-10-19T06:15:23.080Z",
+    "endedAt": "2026-10-19T06:15:23.201Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/check-shell-boundaries.mjs"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-brand",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-brand-shell-boundaries.log"
+  },
+  {
+    "id": "customize-brand-content-boundaries",
+    "startedAt": "2026-10-19T06:15:23.202Z",
+    "endedAt": "2026-10-19T06:15:23.324Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/check-content-boundaries.mjs"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-brand",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-brand-content-boundaries.log"
+  },
+  {
+    "id": "customize-brand-format-check",
+    "startedAt": "2026-10-19T06:15:23.325Z",
+    "endedAt": "2026-10-19T06:15:23.471Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/format-check.mjs"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-brand",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-brand-format-check.log"
+  },
+  {
+    "id": "customize-brand-probe-auth-lifecycle",
+    "startedAt": "2026-10-19T06:15:23.472Z",
+    "endedAt": "2026-10-19T06:15:26.825Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-auth-lifecycle.ts"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-brand",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-brand-probe-auth-lifecycle.log"
+  },
+  {
+    "id": "customize-brand-probe-credit-ledger",
+    "startedAt": "2026-10-19T06:15:26.826Z",
+    "endedAt": "2026-10-19T06:15:27.545Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-credit-ledger.ts"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-brand",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-brand-probe-credit-ledger.log"
+  },
+  {
+    "id": "customize-brand-probe-generation-create",
+    "startedAt": "2026-10-19T06:15:27.547Z",
+    "endedAt": "2026-10-19T06:15:28.339Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-generation-create.ts"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-brand",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-brand-probe-generation-create.log"
+  },
+  {
+    "id": "customize-brand-probe-billing-reconciliation",
+    "startedAt": "2026-10-19T06:15:28.340Z",
+    "endedAt": "2026-10-19T06:15:30.969Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-billing-reconciliation.ts"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-brand",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-brand-probe-billing-reconciliation.log"
+  },
+  {
+    "id": "customize-brand-probe-m6-admin-reads",
+    "startedAt": "2026-10-19T06:15:30.969Z",
+    "endedAt": "2026-10-19T06:15:33.128Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-m6-admin-reads.ts"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-brand",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-brand-probe-m6-admin-reads.log"
+  },
+  {
+    "id": "customize-brand-modified-digests",
+    "startedAt": "2026-10-19T06:15:35.622Z",
+    "endedAt": "2026-10-19T06:15:35.878Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/candidate-digests.mjs",
+      "D:\\github\\shpitto\\internal\\evidence\\m7\\workflows-current-20261019\\runs\\2026-10-19T06-15-10-253Z-0810d9ac\\customize-brand\\modified-candidate"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-brand",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-brand-modified-digests.log"
+  },
+  {
+    "id": "customize-brand-rollback-check",
+    "startedAt": "2026-10-19T06:15:35.879Z",
+    "endedAt": "2026-10-19T06:15:36.035Z",
+    "executable": "git",
+    "args": [
+      "apply",
+      "--reverse",
+      "--check",
+      "D:\\github\\shpitto\\internal\\evidence\\m7\\workflows-current-20261019\\runs\\2026-10-19T06-15-10-253Z-0810d9ac\\customize-brand\\customization.patch"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-brand",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-brand-rollback-check.log"
+  },
+  {
+    "id": "customize-brand-rollback-apply",
+    "startedAt": "2026-10-19T06:15:36.036Z",
+    "endedAt": "2026-10-19T06:15:36.184Z",
+    "executable": "git",
+    "args": [
+      "apply",
+      "--reverse",
+      "D:\\github\\shpitto\\internal\\evidence\\m7\\workflows-current-20261019\\runs\\2026-10-19T06-15-10-253Z-0810d9ac\\customize-brand\\customization.patch"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-brand",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-brand-rollback-apply.log"
+  },
+  {
+    "id": "create-page-git-init",
+    "startedAt": "2026-10-19T06:15:37.315Z",
+    "endedAt": "2026-10-19T06:15:37.466Z",
+    "executable": "git",
+    "args": [
+      "init",
+      "--quiet"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/create-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/create-page-git-init.log"
+  },
+  {
+    "id": "create-page-git-line-endings",
+    "startedAt": "2026-10-19T06:15:37.467Z",
+    "endedAt": "2026-10-19T06:15:37.619Z",
+    "executable": "git",
+    "args": [
+      "config",
+      "core.autocrlf",
+      "false"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/create-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/create-page-git-line-endings.log"
+  },
+  {
+    "id": "create-page-git-baseline",
+    "startedAt": "2026-10-19T06:15:37.620Z",
+    "endedAt": "2026-10-19T06:15:37.765Z",
+    "executable": "git",
+    "args": [
+      "add",
+      "--",
+      "src/config/navigation.ts"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/create-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/create-page-git-baseline.log"
+  },
+  {
+    "id": "create-page-git-new-files",
+    "startedAt": "2026-10-19T06:15:37.769Z",
+    "endedAt": "2026-10-19T06:15:37.918Z",
+    "executable": "git",
+    "args": [
+      "add",
+      "--intent-to-add",
+      "--",
+      "src/app/(marketing)/studio-notes/page.tsx"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/create-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/create-page-git-new-files.log"
+  },
+  {
+    "id": "create-page-actual-diff",
+    "startedAt": "2026-10-19T06:15:37.919Z",
+    "endedAt": "2026-10-19T06:15:38.061Z",
+    "executable": "git",
+    "args": [
+      "diff",
+      "--binary",
+      "--",
+      "src/config/navigation.ts",
+      "src/app/(marketing)/studio-notes/page.tsx"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/create-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/create-page-actual-diff.log"
+  },
+  {
+    "id": "create-page-route-types",
+    "startedAt": "2026-10-19T06:15:38.189Z",
+    "endedAt": "2026-10-19T06:15:38.639Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "node_modules/next/dist/bin/next",
+      "typegen"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/create-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/create-page-route-types.log"
+  },
+  {
+    "id": "create-page-typecheck",
+    "startedAt": "2026-10-19T06:15:38.640Z",
+    "endedAt": "2026-10-19T06:15:50.569Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "node_modules/typescript/bin/tsc",
+      "--noEmit"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/create-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/create-page-typecheck.log"
+  },
+  {
+    "id": "create-page-source-boundaries",
+    "startedAt": "2026-10-19T06:15:50.569Z",
+    "endedAt": "2026-10-19T06:15:50.741Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/check-source-boundaries.mjs"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/create-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/create-page-source-boundaries.log"
+  },
+  {
+    "id": "create-page-db-boundaries",
+    "startedAt": "2026-10-19T06:15:50.742Z",
+    "endedAt": "2026-10-19T06:15:50.855Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/check-db-boundaries.mjs"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/create-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/create-page-db-boundaries.log"
+  },
+  {
+    "id": "create-page-shell-boundaries",
+    "startedAt": "2026-10-19T06:15:50.856Z",
+    "endedAt": "2026-10-19T06:15:50.973Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/check-shell-boundaries.mjs"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/create-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/create-page-shell-boundaries.log"
+  },
+  {
+    "id": "create-page-content-boundaries",
+    "startedAt": "2026-10-19T06:15:50.974Z",
+    "endedAt": "2026-10-19T06:15:51.100Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/check-content-boundaries.mjs"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/create-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/create-page-content-boundaries.log"
+  },
+  {
+    "id": "create-page-format-check",
+    "startedAt": "2026-10-19T06:15:51.101Z",
+    "endedAt": "2026-10-19T06:15:51.251Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/format-check.mjs"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/create-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/create-page-format-check.log"
+  },
+  {
+    "id": "create-page-probe-auth-lifecycle",
+    "startedAt": "2026-10-19T06:15:51.252Z",
+    "endedAt": "2026-10-19T06:15:54.492Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-auth-lifecycle.ts"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/create-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/create-page-probe-auth-lifecycle.log"
+  },
+  {
+    "id": "create-page-probe-credit-ledger",
+    "startedAt": "2026-10-19T06:15:54.493Z",
+    "endedAt": "2026-10-19T06:15:55.288Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-credit-ledger.ts"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/create-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/create-page-probe-credit-ledger.log"
+  },
+  {
+    "id": "create-page-probe-generation-create",
+    "startedAt": "2026-10-19T06:15:55.289Z",
+    "endedAt": "2026-10-19T06:15:56.447Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-generation-create.ts"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/create-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/create-page-probe-generation-create.log"
+  },
+  {
+    "id": "create-page-probe-billing-reconciliation",
+    "startedAt": "2026-10-19T06:15:56.448Z",
+    "endedAt": "2026-10-19T06:16:00.134Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-billing-reconciliation.ts"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/create-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/create-page-probe-billing-reconciliation.log"
+  },
+  {
+    "id": "create-page-probe-m6-admin-reads",
+    "startedAt": "2026-10-19T06:16:00.135Z",
+    "endedAt": "2026-10-19T06:16:01.836Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-m6-admin-reads.ts"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/create-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/create-page-probe-m6-admin-reads.log"
+  },
+  {
+    "id": "create-page-modified-digests",
+    "startedAt": "2026-10-19T06:16:04.032Z",
+    "endedAt": "2026-10-19T06:16:04.295Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/candidate-digests.mjs",
+      "D:\\github\\shpitto\\internal\\evidence\\m7\\workflows-current-20261019\\runs\\2026-10-19T06-15-10-253Z-0810d9ac\\create-page\\modified-candidate"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/create-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/create-page-modified-digests.log"
+  },
+  {
+    "id": "create-page-rollback-check",
+    "startedAt": "2026-10-19T06:16:04.297Z",
+    "endedAt": "2026-10-19T06:16:04.443Z",
+    "executable": "git",
+    "args": [
+      "apply",
+      "--reverse",
+      "--check",
+      "D:\\github\\shpitto\\internal\\evidence\\m7\\workflows-current-20261019\\runs\\2026-10-19T06-15-10-253Z-0810d9ac\\create-page\\customization.patch"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/create-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/create-page-rollback-check.log"
+  },
+  {
+    "id": "create-page-rollback-apply",
+    "startedAt": "2026-10-19T06:16:04.444Z",
+    "endedAt": "2026-10-19T06:16:04.593Z",
+    "executable": "git",
+    "args": [
+      "apply",
+      "--reverse",
+      "D:\\github\\shpitto\\internal\\evidence\\m7\\workflows-current-20261019\\runs\\2026-10-19T06-15-10-253Z-0810d9ac\\create-page\\customization.patch"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/create-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/create-page-rollback-apply.log"
+  },
+  {
+    "id": "modify-page-git-init",
+    "startedAt": "2026-10-19T06:16:06.073Z",
+    "endedAt": "2026-10-19T06:16:06.689Z",
+    "executable": "git",
+    "args": [
+      "init",
+      "--quiet"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/modify-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/modify-page-git-init.log"
+  },
+  {
+    "id": "modify-page-git-line-endings",
+    "startedAt": "2026-10-19T06:16:06.691Z",
+    "endedAt": "2026-10-19T06:16:07.127Z",
+    "executable": "git",
+    "args": [
+      "config",
+      "core.autocrlf",
+      "false"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/modify-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/modify-page-git-line-endings.log"
+  },
+  {
+    "id": "modify-page-git-baseline",
+    "startedAt": "2026-10-19T06:16:07.128Z",
+    "endedAt": "2026-10-19T06:16:07.701Z",
+    "executable": "git",
+    "args": [
+      "add",
+      "--",
+      "src/components/billing/fixture-billing-panel.tsx"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/modify-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/modify-page-git-baseline.log"
+  },
+  {
+    "id": "modify-page-actual-diff",
+    "startedAt": "2026-10-19T06:16:07.704Z",
+    "endedAt": "2026-10-19T06:16:08.075Z",
+    "executable": "git",
+    "args": [
+      "diff",
+      "--binary",
+      "--",
+      "src/components/billing/fixture-billing-panel.tsx"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/modify-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/modify-page-actual-diff.log"
+  },
+  {
+    "id": "modify-page-route-types",
+    "startedAt": "2026-10-19T06:16:08.247Z",
+    "endedAt": "2026-10-19T06:16:08.823Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "node_modules/next/dist/bin/next",
+      "typegen"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/modify-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/modify-page-route-types.log"
+  },
+  {
+    "id": "modify-page-typecheck",
+    "startedAt": "2026-10-19T06:16:08.824Z",
+    "endedAt": "2026-10-19T06:16:46.138Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "node_modules/typescript/bin/tsc",
+      "--noEmit"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/modify-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/modify-page-typecheck.log"
+  },
+  {
+    "id": "modify-page-source-boundaries",
+    "startedAt": "2026-10-19T06:16:46.140Z",
+    "endedAt": "2026-10-19T06:16:46.534Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/check-source-boundaries.mjs"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/modify-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/modify-page-source-boundaries.log"
+  },
+  {
+    "id": "modify-page-db-boundaries",
+    "startedAt": "2026-10-19T06:16:46.535Z",
+    "endedAt": "2026-10-19T06:16:46.843Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/check-db-boundaries.mjs"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/modify-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/modify-page-db-boundaries.log"
+  },
+  {
+    "id": "modify-page-shell-boundaries",
+    "startedAt": "2026-10-19T06:16:46.844Z",
+    "endedAt": "2026-10-19T06:16:47.125Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/check-shell-boundaries.mjs"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/modify-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/modify-page-shell-boundaries.log"
+  },
+  {
+    "id": "modify-page-content-boundaries",
+    "startedAt": "2026-10-19T06:16:47.126Z",
+    "endedAt": "2026-10-19T06:16:47.491Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/check-content-boundaries.mjs"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/modify-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/modify-page-content-boundaries.log"
+  },
+  {
+    "id": "modify-page-format-check",
+    "startedAt": "2026-10-19T06:16:47.492Z",
+    "endedAt": "2026-10-19T06:16:47.811Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/format-check.mjs"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/modify-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/modify-page-format-check.log"
+  },
+  {
+    "id": "modify-page-probe-auth-lifecycle",
+    "startedAt": "2026-10-19T06:16:47.812Z",
+    "endedAt": "2026-10-19T06:16:53.291Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-auth-lifecycle.ts"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/modify-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/modify-page-probe-auth-lifecycle.log"
+  },
+  {
+    "id": "modify-page-probe-credit-ledger",
+    "startedAt": "2026-10-19T06:16:53.294Z",
+    "endedAt": "2026-10-19T06:16:54.761Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-credit-ledger.ts"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/modify-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/modify-page-probe-credit-ledger.log"
+  },
+  {
+    "id": "modify-page-probe-generation-create",
+    "startedAt": "2026-10-19T06:16:54.762Z",
+    "endedAt": "2026-10-19T06:16:56.750Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-generation-create.ts"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/modify-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/modify-page-probe-generation-create.log"
+  },
+  {
+    "id": "modify-page-probe-billing-reconciliation",
+    "startedAt": "2026-10-19T06:16:56.754Z",
+    "endedAt": "2026-10-19T06:17:00.209Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-billing-reconciliation.ts"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/modify-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/modify-page-probe-billing-reconciliation.log"
+  },
+  {
+    "id": "modify-page-probe-m6-admin-reads",
+    "startedAt": "2026-10-19T06:17:00.210Z",
+    "endedAt": "2026-10-19T06:17:02.752Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-m6-admin-reads.ts"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/modify-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/modify-page-probe-m6-admin-reads.log"
+  },
+  {
+    "id": "modify-page-modified-digests",
+    "startedAt": "2026-10-19T06:17:04.815Z",
+    "endedAt": "2026-10-19T06:17:05.099Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/candidate-digests.mjs",
+      "D:\\github\\shpitto\\internal\\evidence\\m7\\workflows-current-20261019\\runs\\2026-10-19T06-15-10-253Z-0810d9ac\\modify-page\\modified-candidate"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/modify-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/modify-page-modified-digests.log"
+  },
+  {
+    "id": "modify-page-rollback-check",
+    "startedAt": "2026-10-19T06:17:05.100Z",
+    "endedAt": "2026-10-19T06:17:05.306Z",
+    "executable": "git",
+    "args": [
+      "apply",
+      "--reverse",
+      "--check",
+      "D:\\github\\shpitto\\internal\\evidence\\m7\\workflows-current-20261019\\runs\\2026-10-19T06-15-10-253Z-0810d9ac\\modify-page\\customization.patch"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/modify-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/modify-page-rollback-check.log"
+  },
+  {
+    "id": "modify-page-rollback-apply",
+    "startedAt": "2026-10-19T06:17:05.307Z",
+    "endedAt": "2026-10-19T06:17:05.551Z",
+    "executable": "git",
+    "args": [
+      "apply",
+      "--reverse",
+      "D:\\github\\shpitto\\internal\\evidence\\m7\\workflows-current-20261019\\runs\\2026-10-19T06-15-10-253Z-0810d9ac\\modify-page\\customization.patch"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/modify-page",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/modify-page-rollback-apply.log"
+  },
+  {
+    "id": "customize-site-git-init",
+    "startedAt": "2026-10-19T06:17:06.876Z",
+    "endedAt": "2026-10-19T06:17:07.040Z",
+    "executable": "git",
+    "args": [
+      "init",
+      "--quiet"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-site",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-site-git-init.log"
+  },
+  {
+    "id": "customize-site-git-line-endings",
+    "startedAt": "2026-10-19T06:17:07.041Z",
+    "endedAt": "2026-10-19T06:17:07.183Z",
+    "executable": "git",
+    "args": [
+      "config",
+      "core.autocrlf",
+      "false"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-site",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-site-git-line-endings.log"
+  },
+  {
+    "id": "customize-site-git-baseline",
+    "startedAt": "2026-10-19T06:17:07.184Z",
+    "endedAt": "2026-10-19T06:17:07.347Z",
+    "executable": "git",
+    "args": [
+      "add",
+      "--",
+      "src/components/shell/site-shell.tsx"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-site",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-site-git-baseline.log"
+  },
+  {
+    "id": "customize-site-actual-diff",
+    "startedAt": "2026-10-19T06:17:07.349Z",
+    "endedAt": "2026-10-19T06:17:07.517Z",
+    "executable": "git",
+    "args": [
+      "diff",
+      "--binary",
+      "--",
+      "src/components/shell/site-shell.tsx"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-site",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-site-actual-diff.log"
+  },
+  {
+    "id": "customize-site-route-types",
+    "startedAt": "2026-10-19T06:17:07.660Z",
+    "endedAt": "2026-10-19T06:17:08.162Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "node_modules/next/dist/bin/next",
+      "typegen"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-site",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-site-route-types.log"
+  },
+  {
+    "id": "customize-site-typecheck",
+    "startedAt": "2026-10-19T06:17:08.163Z",
+    "endedAt": "2026-10-19T06:17:19.689Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "node_modules/typescript/bin/tsc",
+      "--noEmit"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-site",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-site-typecheck.log"
+  },
+  {
+    "id": "customize-site-source-boundaries",
+    "startedAt": "2026-10-19T06:17:19.691Z",
+    "endedAt": "2026-10-19T06:17:19.856Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/check-source-boundaries.mjs"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-site",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-site-source-boundaries.log"
+  },
+  {
+    "id": "customize-site-db-boundaries",
+    "startedAt": "2026-10-19T06:17:19.858Z",
+    "endedAt": "2026-10-19T06:17:19.973Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/check-db-boundaries.mjs"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-site",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-site-db-boundaries.log"
+  },
+  {
+    "id": "customize-site-shell-boundaries",
+    "startedAt": "2026-10-19T06:17:19.974Z",
+    "endedAt": "2026-10-19T06:17:20.095Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/check-shell-boundaries.mjs"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-site",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-site-shell-boundaries.log"
+  },
+  {
+    "id": "customize-site-content-boundaries",
+    "startedAt": "2026-10-19T06:17:20.096Z",
+    "endedAt": "2026-10-19T06:17:20.203Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/check-content-boundaries.mjs"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-site",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-site-content-boundaries.log"
+  },
+  {
+    "id": "customize-site-format-check",
+    "startedAt": "2026-10-19T06:17:20.205Z",
+    "endedAt": "2026-10-19T06:17:20.357Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/format-check.mjs"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-site",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-site-format-check.log"
+  },
+  {
+    "id": "customize-site-probe-auth-lifecycle",
+    "startedAt": "2026-10-19T06:17:20.358Z",
+    "endedAt": "2026-10-19T06:17:23.874Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-auth-lifecycle.ts"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-site",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-site-probe-auth-lifecycle.log"
+  },
+  {
+    "id": "customize-site-probe-credit-ledger",
+    "startedAt": "2026-10-19T06:17:23.875Z",
+    "endedAt": "2026-10-19T06:17:24.550Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-credit-ledger.ts"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-site",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-site-probe-credit-ledger.log"
+  },
+  {
+    "id": "customize-site-probe-generation-create",
+    "startedAt": "2026-10-19T06:17:24.551Z",
+    "endedAt": "2026-10-19T06:17:25.370Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-generation-create.ts"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-site",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-site-probe-generation-create.log"
+  },
+  {
+    "id": "customize-site-probe-billing-reconciliation",
+    "startedAt": "2026-10-19T06:17:25.371Z",
+    "endedAt": "2026-10-19T06:17:27.951Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-billing-reconciliation.ts"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-site",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-site-probe-billing-reconciliation.log"
+  },
+  {
+    "id": "customize-site-probe-m6-admin-reads",
+    "startedAt": "2026-10-19T06:17:27.951Z",
+    "endedAt": "2026-10-19T06:17:30.005Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "--experimental-strip-types",
+      "scripts/probe-m6-admin-reads.ts"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-site",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-site-probe-m6-admin-reads.log"
+  },
+  {
+    "id": "customize-site-modified-digests",
+    "startedAt": "2026-10-19T06:17:31.905Z",
+    "endedAt": "2026-10-19T06:17:32.128Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/candidate-digests.mjs",
+      "D:\\github\\shpitto\\internal\\evidence\\m7\\workflows-current-20261019\\runs\\2026-10-19T06-15-10-253Z-0810d9ac\\customize-site\\modified-candidate"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-site",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-site-modified-digests.log"
+  },
+  {
+    "id": "customize-site-rollback-check",
+    "startedAt": "2026-10-19T06:17:32.129Z",
+    "endedAt": "2026-10-19T06:17:32.278Z",
+    "executable": "git",
+    "args": [
+      "apply",
+      "--reverse",
+      "--check",
+      "D:\\github\\shpitto\\internal\\evidence\\m7\\workflows-current-20261019\\runs\\2026-10-19T06-15-10-253Z-0810d9ac\\customize-site\\customization.patch"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-site",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-site-rollback-check.log"
+  },
+  {
+    "id": "customize-site-rollback-apply",
+    "startedAt": "2026-10-19T06:17:32.279Z",
+    "endedAt": "2026-10-19T06:17:32.432Z",
+    "executable": "git",
+    "args": [
+      "apply",
+      "--reverse",
+      "D:\\github\\shpitto\\internal\\evidence\\m7\\workflows-current-20261019\\runs\\2026-10-19T06-15-10-253Z-0810d9ac\\customize-site\\customization.patch"
+    ],
+    "cwd": ".data/m7-four-workflows-2026-10-19T06-15-10-253Z-0810d9ac/customize-site",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/customize-site-rollback-apply.log"
+  },
+  {
+    "id": "end-baseline-digests",
+    "startedAt": "2026-10-19T06:17:32.748Z",
+    "endedAt": "2026-10-19T06:17:32.986Z",
+    "executable": "C:\\Program Files\\nodejs\\node.exe",
+    "args": [
+      "scripts/candidate-digests.mjs",
+      "D:\\github\\shpitto\\internal\\evidence\\m7\\workflows-current-20261019\\runs\\2026-10-19T06-15-10-253Z-0810d9ac\\baseline-after"
+    ],
+    "cwd": "",
+    "exitCode": 0,
+    "expectedExit": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-15-10-253Z-0810d9ac/logs/end-baseline-digests.log"
+  }
+]

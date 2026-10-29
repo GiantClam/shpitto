@@ -1,0 +1,1 @@
+{"status":"PASS","cancelClaimWinnerCount":1,"cancelClaimStatus":"cancelled","terminalStatuses":["quarantined","succeeded"],"terminalStatus":"succeeded","reservation":"consumed","attempts":1,"crashAfterReserve":"failed","taskCount":3,"attemptCount":1,"assetCount":1}

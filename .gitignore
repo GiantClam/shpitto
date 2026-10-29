@@ -6,6 +6,7 @@ node_modules
 # Next.js
 .next
 out
+.data/
 
 # Production
 build
@@ -13,6 +14,7 @@ dist
 
 # Environment Variables
 .env*
+!/.env.example
 !apps/web/skills/product-baselines/ai-image-tool-baseline/assets/template/.env.example
 !apps/web/skills/product-baselines/ai-image-tool-baseline/assets/template/source/.env.example
 
@@ -69,3 +71,51 @@ docs/*
 test-results/
 .tmp-*
 .cache/
+
+# Reviewed restart baselines only; unrelated docs and private agent state stay ignored.
+!docs/
+docs/*
+!docs/plans/
+docs/plans/*
+!docs/plans/2026-09-27-shpitto-restart-requirements.md
+!docs/plans/2026-09-27-shpitto-restart-requirements.zh-CN.md
+!docs/plans/2026-09-27-shpitto-restart-prd.zh-CN.md
+!docs/plans/2026-09-27-shpitto-restart-plan.zh-CN.md
+!docs/plans/2026-09-27-shpitto-restart-test-spec.zh-CN.md
+!docs/plans/2026-09-27-shpitto-admin-foundation-assessment.md
+!docs/plans/2026-09-27-shpitto-admin-foundation-assessment.zh-CN.md
+!docs/plans/2026-09-27-shpitto-detailed-technical-design.md
+!docs/plans/2026-09-27-shpitto-detailed-technical-design.zh-CN.md
+!docs/plans/2026-09-27-shpitto-review-index.zh-CN.md
+!docs/buyer/
+docs/buyer/*
+!docs/buyer/local-setup.md
+!docs/buyer/content-boundary.md
+!.omx/
+.omx/*
+!.omx/plans/
+.omx/plans/*
+!.omx/plans/prd-shpitto-restart.md
+!.omx/plans/shpitto-restart-plan.md
+!.omx/plans/test-spec-shpitto-restart.md
+!.omx/plans/shpitto-detailed-design-review.md
+
+# New single-package restart root; legacy source stays physically preserved but
+# is excluded from installs, builds, containers and generated root artifacts.
+node_modules/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+apps/**/.env*
+apps/**/.shpitto/
+apps/**/test-results/
+builder/**/.env*
+packages/**/.env*
+sites/**/.env*
+
+# Local verification scratch output
+--help/
+.coverage-probe/
+.m3-*.log
+.omx-candidate-*.log

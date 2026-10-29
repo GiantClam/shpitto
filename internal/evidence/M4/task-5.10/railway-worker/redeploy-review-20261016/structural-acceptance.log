@@ -1,0 +1,49 @@
+$ node scripts/check-stage-progression.mjs
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "stageId": "M0",
+      "status": "PASS",
+      "scope": "historical-approved",
+      "recordRef": "internal/evidence/acceptance/M0/working-tree-20260927/record.json"
+    },
+    {
+      "stageId": "M1",
+      "status": "PASS",
+      "scope": "historical-approved",
+      "recordRef": "internal/evidence/acceptance/M1/working-tree-20260928-m1/record.json"
+    },
+    {
+      "stageId": "M2",
+      "status": "PASS",
+      "scope": "historical-approved",
+      "recordRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/record.json"
+    },
+    {
+      "stageId": "M3",
+      "status": "PASS",
+      "scope": "historical-approved",
+      "recordRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/record.json"
+    },
+    {
+      "stageId": "M4",
+      "status": "PASS",
+      "scope": "current-accepted",
+      "recordRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261016/record.json"
+    },
+    {
+      "stageId": "M5",
+      "status": "IN_PROGRESS",
+      "scope": "current-development",
+      "recordRef": "internal/evidence/acceptance/M5/local-preflight-20261007/record.json"
+    },
+    {
+      "stageId": "M6",
+      "status": "IN_PROGRESS",
+      "scope": "current-development",
+      "recordRef": "internal/evidence/acceptance/M6/local-preflight-20261007/record.json"
+    }
+  ],
+  "note": "Validation of IN_PROGRESS development records is not stage approval."
+}

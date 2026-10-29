@@ -1,0 +1,357 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "IMPLEMENTATION_ACCEPTANCE",
+  "changeId": "restart-shpitto-video-saas",
+  "stageId": "M2",
+  "checkpointId": null,
+  "gateTaskId": "3.5",
+  "status": "PASS",
+  "candidateId": "working-tree-20260928-m2-3.5",
+  "createdAt": "2026-09-28T10:20:00Z",
+  "updatedAt": "2026-09-28T11:10:00Z",
+  "policy": {
+    "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+    "sha256": "b597a035c61da01296d71979c1c16c4136f78c3e3d523b55158f0a2ca3de4ff0"
+  },
+  "prerequisites": [
+    {
+      "taskId": "3.4",
+      "requiredProfile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260928-m2-3.4",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.4/record.json",
+        "internal/restart/m2-task-3.4-evidence.md"
+      ]
+    }
+  ],
+  "candidate": {
+    "sourceCommit": "6ad44be7b6f12fe028637f0300040bada826c47d",
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "7fdcbeaca0d91ef87bf9af385666616d7a640a9d017bfbd2323e83d7ea021e9d",
+    "schemaSha256": "e0ba145d8b12e5962260c10580fb305f31098d16467a82d5e82e81ae3cab49d0",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+    "configurationSha256": "d2f666ade342dd02bead9848d3bd762388d2a5fd422a12c06aef4b6f7ceae8fc",
+    "contractSha256": "b8ef3892ca9fffb41902009c9388dc560b2621175de1efcb5bc024f2051cd6eb",
+    "validatorSha256": "4c59a4f237988fd3add0b1c68c73e3ee217e4ae8afa9444b8643815603afe82c",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF",
+    "digestInputs": {
+      "sourceTree": [
+        "src",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".dockerignore",
+        ".env.example",
+        "src/config/env.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile"
+      ],
+      "contract": [
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json"
+      ],
+      "validator": [
+        "scripts",
+        "internal/restart/check-acceptance-record.py"
+      ]
+    }
+  },
+  "environments": [
+    {
+      "environmentId": "local-m2-tenant-authorization",
+      "profile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "toolVersions": {
+        "node": "24.15.0",
+        "pnpm": "12.6.0",
+        "docker": "29.8.0",
+        "postgres": "15-alpine",
+        "python": "3.x",
+        "openspec": "1.0"
+      },
+      "accountOrProgram": "none",
+      "effectiveLimits": "No provider, payment, payout, publication or hosted-service calls",
+      "fixtureOrSeed": "two team workspaces, current member, same live session actor, removed member and concurrent owner mutations",
+      "clockMode": "system clock",
+      "sanitationNotes": "Generated IDs and local credentials omitted"
+    }
+  ],
+  "criterionResults": [
+    {
+      "criterionId": "3.5-C01",
+      "environmentId": "local-m2-tenant-authorization",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Every registered private workspace command resolves current server-side membership or owner status through reusable authorization helpers",
+      "observed": "authorizeWorkspaceAccess and authorizeWorkspaceOwner centralize current user, active verified account, workspace status and owner checks; commands and invitation creation use the shared owner gate",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.5-evidence.md",
+        "src/modules/workspaces/authorize.ts",
+        "src/modules/workspaces/policy.ts",
+        "scripts/probe-tenant-authorization.ts"
+      ]
+    },
+    {
+      "criterionId": "3.5-C02",
+      "environmentId": "local-m2-tenant-authorization",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Cross-workspace workspace or resource identifiers cannot widen access or disclose foreign records",
+      "observed": "A member of workspace one was denied access to workspace two, assertWorkspaceResource rejected an existing foreign workspace resource binding, and a missing workspace returned the same non-disclosing forbidden outcome",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.5-evidence.md",
+        "src/modules/workspaces/authorize.ts",
+        "src/modules/workspaces/policy.ts",
+        "scripts/probe-tenant-authorization.ts"
+      ]
+    },
+    {
+      "criterionId": "3.5-C03",
+      "environmentId": "local-m2-tenant-authorization",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Removing a member takes effect for subsequent requests made with the same still-live actor session",
+      "observed": "After owner removal, the same actor identity was denied by authorizeWorkspaceAccess on the next request",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.5-evidence.md",
+        "src/modules/workspaces/authorize.ts",
+        "src/modules/workspaces/policy.ts",
+        "scripts/probe-tenant-authorization.ts"
+      ]
+    },
+    {
+      "criterionId": "3.5-C04",
+      "environmentId": "local-m2-tenant-authorization",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Concurrent owner mutations cannot leave a team ownerless",
+      "observed": "Concurrent remove and demote attempts against the last owner were rejected and the owner row remained intact",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.5-evidence.md",
+        "scripts/probe-tenant-authorization.ts",
+        "src/modules/workspaces/commands.ts"
+      ]
+    }
+  ],
+  "commonStandardResults": [
+    {
+      "standard": "scope",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Central authorization seam only; workspace suspension matrix, operator roles and future task/credit/asset resources remain later tasks"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.5-evidence.md"
+      ]
+    },
+    {
+      "standard": "build-and-checks",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Typecheck, lint, format, full verify and tenant authorization PostgreSQL probe passed"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.5-evidence.md"
+      ]
+    },
+    {
+      "standard": "coverage",
+      "applicable": true,
+      "result": "NOT_APPLICABLE",
+      "reason": "M2 aggregate branch coverage is established at task 3.12; mandatory tenant isolation and removal/race cases are covered by the disposable probe",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.5-evidence.md"
+      ]
+    },
+    {
+      "standard": "defects",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "No open P0/P1 defect is recorded for task 3.5"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.5-evidence.md"
+      ]
+    },
+    {
+      "standard": "isolation-security",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Authorization resolves current server-side membership and binds resources to the authorized workspace; sessions are not authority"
+      ],
+      "evidenceRefs": [
+        "src/modules/workspaces/authorize.ts",
+        "src/modules/workspaces/policy.ts"
+      ]
+    },
+    {
+      "standard": "evidence-and-recovery",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Current candidate digests, cross-workspace, post-removal and last-owner race outcomes are recorded"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.5-evidence.md",
+        "scripts/probe-tenant-authorization.ts"
+      ]
+    }
+  ],
+  "scenarioResults": [
+    {
+      "ids": [
+        "T02",
+        "T03",
+        "T05.a",
+        "SC-IAM-04",
+        "SC-IAM-07",
+        "SC-IAM-08"
+      ],
+      "profile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "environmentId": "local-m2-tenant-authorization",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Cross-workspace IDs are rejected, removal invalidates subsequent requests and last-owner races preserve one owner",
+      "observed": "Cross-workspace, existing mismatched-resource, missing-workspace non-disclosure, post-removal and concurrent last-owner authorization cases passed",
+      "iteration": "single generated fixture run",
+      "commandRef": "m2-3.5-tenant-authorization-probe",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.5-evidence.md",
+        "scripts/probe-tenant-authorization.ts"
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "commandId": "m2-3.5-tenant-authorization-probe",
+      "invocation": "DATABASE_URL=<redacted-local-credential> corepack pnpm db:probe:tenant-auth",
+      "environmentId": "local-m2-tenant-authorization",
+      "startAt": "2026-09-28T10:15:00Z",
+      "endAt": "2026-09-28T10:50:04Z",
+      "exitCode": 0,
+      "assertionRef": "crossWorkspaceRejected=true, missingWorkspaceNonDisclosing=true, resourceMismatchRejected=true, postRemovalRejected=true, lastOwnerRaceRejected=true"
+    },
+    {
+      "commandId": "m2-3.5-verify",
+      "invocation": "corepack pnpm verify",
+      "environmentId": "local-m2-tenant-authorization",
+      "startAt": "2026-09-28T10:16:00Z",
+      "endAt": "2026-09-28T10:20:00Z",
+      "exitCode": 0,
+      "assertionRef": "full root verification and Next build passed"
+    },
+    {
+      "commandId": "m2-3.5-record-check",
+      "invocation": "python -B internal/restart/check-acceptance-record.py internal/evidence/acceptance/M2/working-tree-20260928-m2-3.5/record.json",
+      "environmentId": "local-m2-tenant-authorization",
+      "startAt": "2026-09-28T10:50:10Z",
+      "endAt": "2026-09-28T10:50:11Z",
+      "exitCode": 0,
+      "assertionRef": "record schema and digest shape check"
+    }
+  ],
+  "coverage": {
+    "status": "NOT_APPLICABLE",
+    "reason": "M2 coverage denominator is established at task 3.12",
+    "ownedModuleManifestRef": null,
+    "denominator": null,
+    "coveredBranches": null,
+    "totalBranches": null,
+    "percent": null,
+    "exclusions": [],
+    "evidenceRef": "internal/restart/m2-task-3.5-evidence.md"
+  },
+  "defects": [],
+  "externalInputs": [],
+  "commercialAuthorizationRefs": [],
+  "recovery": {
+    "rollbackPoint": "6ad44be7b6f12fe028637f0300040bada826c47d plus current uncommitted M2 patch",
+    "restoreEvidenceRefs": [
+      "internal/restart/m2-task-3.5-evidence.md"
+    ],
+    "compatibleSchemaVersions": [
+      "domain=3"
+    ],
+    "unrelatedWorkProtection": "Generated fixture users and workspaces are cleaned up in the disposable database"
+  },
+  "observation": {
+    "planRef": "internal/restart/verification-plan.md",
+    "windowStart": null,
+    "windowEnd": null,
+    "windowRationale": "Task-level authorization probe; no time-window behavior is claimed",
+    "behavioralBaselineDigest": null,
+    "monitoringEvidenceRefs": [],
+    "journeyEvidenceRefs": [],
+    "recoveryUpgradeEvidenceRefs": [],
+    "recurringWorkerAlertEvidenceRefs": [],
+    "findingRefs": []
+  },
+  "submission": {
+    "implementerId": "root",
+    "submittedAt": "2026-09-28T10:20:00Z",
+    "reportRef": "internal/restart/m2-task-3.5-evidence.md"
+  },
+  "independentReview": {
+    "reviewerId": "m2-gpt6-sol-review-20260928-3.5",
+    "reviewedAt": "2026-09-28T11:10:00Z",
+    "independentFromImplementer": true,
+    "decision": "PASS",
+    "reason": "Independent gpt-6-sol review recomputed all six candidate digests exactly, reran the tenant authorization PostgreSQL probe, and found current membership/owner checks, active verified-user checks, resource workspace binding, non-disclosing missing/foreign workspace behavior, live-session removal enforcement and transactional last-owner locking sound across the registered workspace routes.",
+    "evidenceRefs": [
+      "internal/restart/m2-task-3.5-evidence.md",
+      "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.5/record.json",
+      "src/modules/workspaces/authorize.ts",
+      "src/modules/workspaces/policy.ts",
+      "src/modules/workspaces/commands.ts",
+      "src/modules/workspaces/invitations.ts",
+      "scripts/probe-tenant-authorization.ts"
+    ]
+  },
+  "integrationDecision": {
+    "integratorId": "root",
+    "decidedAt": "2026-09-28T11:11:00Z",
+    "decision": "PASS",
+    "reason": "The exact current candidate passed independent gpt-6-sol review, digest verification, the tenant authorization probe and full repository verification. Task 3.5 is accepted and task 3.6 is unlocked; the M2 gate remains open.",
+    "nextEligibleTaskIds": [
+      "3.6"
+    ],
+    "blockedTaskIds": []
+  },
+  "invalidation": {
+    "supersedesRecordRef": null,
+    "changedDigestRefs": [],
+    "affectedStages": [],
+    "requiredReruns": [],
+    "carriedEvidence": []
+  }
+}

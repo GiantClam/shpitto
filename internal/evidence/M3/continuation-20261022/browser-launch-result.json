@@ -1,0 +1,22 @@
+{
+  "startedAt": "2026-10-22T16:11:02.430Z",
+  "completedAt": "2026-10-22T16:11:02.430Z",
+  "sourceTreeSha256": "3953059a33371e6a8c87e32833319c20b448781aec528908688d5f2649a3ded8",
+  "webOrigin": "http://127.0.0.1:3199",
+  "mailOrigin": "http://127.0.0.1:59614",
+  "localMailServiceStopped": true,
+  "browserResult": {
+    "result": {
+      "code": 0,
+      "signal": null
+    },
+    "outputRef": "internal/evidence/M3/continuation-20261022/browser-driver.log",
+    "outputSha256": "0ea12009caa49d495d71685c7bb897152f2bc50b12242cc56edd59dc4a79fd7a"
+  },
+  "evidenceRef": "internal/evidence/M3/continuation-20261022/current-browser-run-3/browser-journeys-3d719fea",
+  "runtimeRoot": "D:\\github\\shpitto",
+  "paidProviderCalls": false,
+  "manualVisualApproval": false,
+  "independentReview": "NOT_RUN",
+  "integrationDecision": "NOT_RUN"
+}

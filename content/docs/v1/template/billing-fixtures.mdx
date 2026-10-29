@@ -1,0 +1,58 @@
+---
+release: v1
+title: Local billing fixtures
+description: Exercise checkout and cash recovery without a payment account.
+section: template
+status: published
+relatedContracts: [D11, D12, D21, D22, G11, G12, G20, G21]
+---
+
+# Local billing fixtures
+
+The local catalog contains two non-chargeable products: `fixture-monthly` and
+`fixture-pack`. Their sample amounts exist only to exercise request validation,
+checkout attempts, signed local fixture outcomes, webhook inbox processing,
+reconciliation and credit ledger behavior. The production catalog is empty
+until a separately reviewed payment adapter and account profile are configured.
+
+Open the workspace Billing page and select a fixture product. The checkout page
+can complete or fail the fixture, and the portal handoff remains on the
+application origin. A completed fixture event does not represent a Stripe
+payment. Duplicate event delivery should converge on the same business effects;
+refund and dispute outcomes are represented as recovery events and retain their
+own ledger identities.
+
+The authenticated checkout route accepts only a catalog product key. The server
+owns customer identity, amount, currency, price reference and checkout URL. Do
+not add provider identifiers or a browser-selected return URL to the request.
+See the [API contract examples](../api/overview) and the
+[billing recovery operations](./operations).
+
+## Isolated Stripe test acceptance
+
+`BILLING_DRIVER=stripe_test` activates the test adapter only with
+`NODE_ENV=production`, `SHPTITTO_RUNTIME_PROFILE=acceptance`, a test secret key,
+an HTTPS `APP_URL`, the endpoint's `BILLING_WEBHOOK_SECRET`, and an explicit
+`STRIPE_PORTAL_CONFIGURATION_ID`. Configure an isolated migrated database and
+buyer-owned Stripe sandbox. An installed Stripe key by itself enables nothing.
+
+`STRIPE_TEST_CATALOG_JSON` contains server-owned, validated catalog snapshots.
+Each snapshot binds one monthly subscription or permanent credit pack to its
+Stripe test Price, currency, integer cash amount, integer credit quantity and
+snapshot hash. Use the catalog contract to construct and validate those terms;
+do not copy browser-supplied prices or infer credits from a payment amount.
+These test terms are not approved commercial pricing.
+
+The owner Billing page opens hosted Stripe Checkout and the configured customer
+portal. Disable subscription updates, schedule cancellation at period end and
+set cancellation proration to `none`. Returning to the application does not
+grant credits. Only signed test events followed by authoritative provider
+readback and fenced database reconciliation can change the ledger.
+
+Checkout and customer retries keep their durable provider keys. Unknown outcomes
+retain their purchase slot and require reconciliation after the conservative
+23-hour retry window. Refunds are operator/domain commands; pending or unknown
+refunds cannot confirm cash or revoke credits. Verify subscription, pack,
+webhook replay, refund and owner/member behavior before closing acceptance.
+Commercial production billing and real email delivery require separate release
+configuration and evidence.

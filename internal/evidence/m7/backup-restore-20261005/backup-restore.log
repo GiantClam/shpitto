@@ -1,0 +1,5 @@
+CREATE TABLE
+INSERT 0 1
+bytes=160165 sha256=a4d72e77aeed863b6d3611061bb17216d0d8a6f5996116410f5e4fdb12b841dd
+verify=PASS tableEntries=100
+restored=before-restore

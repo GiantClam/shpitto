@@ -1,0 +1,58 @@
+{
+  "application": "http://127.0.0.1:3199",
+  "runId": "83960e11",
+  "observations": [
+    {
+      "at": "2026-10-20T05:21:41.162Z",
+      "journey": "team-creation",
+      "url": "http://127.0.0.1:3199/api/invitations/accept",
+      "method": "POST",
+      "status": 403,
+      "body": {
+        "ok": false,
+        "error": {
+          "code": "FORBIDDEN",
+          "message": "Invitation is invalid or expired."
+        }
+      },
+      "expected": true,
+      "classification": "verified-invitation-replay-or-expiry-denial",
+      "acceptanceImpact": "Expected denial for the observed zero-credit or replay/expired-invitation scenario; success-path proof is unaffected."
+    },
+    {
+      "at": "2026-10-20T05:21:43.111Z",
+      "journey": "team-creation",
+      "url": "http://127.0.0.1:3199/api/invitations/accept",
+      "method": "POST",
+      "status": 403,
+      "body": {
+        "ok": false,
+        "error": {
+          "code": "FORBIDDEN",
+          "message": "Invitation is invalid or expired."
+        }
+      },
+      "expected": true,
+      "classification": "verified-invitation-replay-or-expiry-denial",
+      "acceptanceImpact": "Expected denial for the observed zero-credit or replay/expired-invitation scenario; success-path proof is unaffected."
+    },
+    {
+      "at": "2026-10-20T05:21:49.542Z",
+      "journey": "team-creation",
+      "url": "http://127.0.0.1:3199/api/workspaces/f42a36ae-4997-47ba-bf61-86a18a279660/generations",
+      "method": "POST",
+      "status": 409,
+      "body": {
+        "ok": false,
+        "error": {
+          "code": "CONFLICT",
+          "message": "The workspace does not have enough available credits."
+        }
+      },
+      "expected": true,
+      "classification": "verified-zero-credit-denial",
+      "acceptanceImpact": "Expected denial for the observed zero-credit or replay/expired-invitation scenario; success-path proof is unaffected."
+    }
+  ],
+  "observationCount": 3
+}

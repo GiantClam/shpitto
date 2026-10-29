@@ -1,0 +1,1 @@
+{"status":"PASS","replayed":true,"mismatchRejected":true,"bigintAsDecimalString":true,"quantityBoundaryRejected":true,"stableSemanticHash":true,"forgedOriginRejected":true,"raceEffects":1,"raceAttempts":10,"replayCount":20,"raceReplayed":[false,true,true,true,true,true,true,true,true,true]}

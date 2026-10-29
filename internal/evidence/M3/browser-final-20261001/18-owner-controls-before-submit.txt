@@ -1,0 +1,37 @@
+- banner:
+  - link "Shpitto Video SaaS home":
+    - /url: /
+    - text: Shpitto
+  - navigation "Primary navigation":
+    - link "Home":
+      - /url: /
+    - link "Docs preview":
+      - /url: /docs
+      - text: Docs
+      - generic: preview
+    - link "Dashboard planned":
+      - /url: /dashboard
+      - text: Dashboard
+      - generic: planned
+- main:
+  - paragraph: Workspace access
+  - heading "M3 Approved Acceptance Team members" [level=1]
+  - paragraph: Owner actions remain server-authorized and update active sessions immediately.
+  - heading "Team workspace" [level=2]
+  - generic: 2 members
+  - textbox "Invite email":
+    - /placeholder: member@example.com
+  - button "Invite member"
+  - text: demo-member@shpitto.local
+  - generic: member
+  - button "Remove"
+  - text: m3-approved-1790820335213@shpitto.local
+  - generic: owner
+  - generic: Transfer ownership
+  - combobox "Transfer ownership":
+    - option "Select a verified member"
+    - option "demo-member@shpitto.local" [selected]
+  - button "Transfer"
+- contentinfo: Shpitto Video SaaS · staged implementation preview
+- button "Open Next.js Dev Tools":
+- alert

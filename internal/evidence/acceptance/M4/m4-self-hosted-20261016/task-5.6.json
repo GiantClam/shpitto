@@ -1,0 +1,13 @@
+{
+  "taskId": "5.6",
+  "stageId": "M4",
+  "status": "PASS",
+  "candidateId": "m4-self-hosted-20261016",
+  "verifiedAt": "2026-10-16T00:13:00.000Z",
+  "profile": "self-hosted Railway demo acceptance",
+  "evidenceRefs": [
+    "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+    "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261016.json"
+  ],
+  "note": "Current retained evidence; no new provider request was made while assembling the acceptance record."
+}

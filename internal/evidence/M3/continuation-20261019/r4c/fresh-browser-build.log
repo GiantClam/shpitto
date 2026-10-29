@@ -1,0 +1,139 @@
+▲ Next.js 16.3.8 (Turbopack)
+- Environments: .env.local, .env
+✓ Running next.config.ts took 24ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 1654ms
+  Running TypeScript ...
+  Finished TypeScript in 2.6s ...
+  Collecting page data using 31 workers ...
+  Generating static pages using 31 workers (0/58) ...
+  Generating static pages using 31 workers (14/58) 
+  Generating static pages using 31 workers (28/58) 
+  Generating static pages using 31 workers (43/58) 
+✓ Generating static pages using 31 workers (58/58) in 531ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ƒ /admin/[[...segments]]
+├ ƒ /api/admin/affiliates/commands/[command]
+├ ƒ /api/admin/affiliates/holds
+├ ƒ /api/admin/affiliates/reviews
+├ ƒ /api/admin/affiliates/status
+├ ƒ /api/admin/audit
+├ ƒ /api/admin/billing
+├ ƒ /api/admin/commands/[command]
+├ ƒ /api/admin/generations
+├ ƒ /api/admin/me
+├ ƒ /api/admin/recovery/[workspaceId]
+├ ƒ /api/admin/recovery/[workspaceId]/sweep
+├ ƒ /api/admin/recovery/[workspaceId]/webhook-replay
+├ ƒ /api/admin/refunds/pending
+├ ƒ /api/admin/refunds/preview
+├ ƒ /api/admin/security
+├ ƒ /api/admin/step-up
+├ ƒ /api/admin/users
+├ ƒ /api/admin/workspaces
+├ ƒ /api/admin/workspaces/[workspaceId]
+├ ƒ /api/admin/workspaces/[workspaceId]/details
+├ ƒ /api/affiliates/referral
+├ ƒ /api/auth/[...all]
+├ ƒ /api/checkout/fixture/[sessionId]
+├ ƒ /api/healthz
+├ ƒ /api/internal/recovery-alerts
+├ ƒ /api/invitations/accept
+├ ƒ /api/onboarding
+├ ƒ /api/webhooks/affiliate
+├ ƒ /api/webhooks/fal/[attemptNonce]
+├ ƒ /api/webhooks/replicate/[attemptNonce]
+├ ƒ /api/webhooks/stripe
+├ ƒ /api/workspaces
+├ ƒ /api/workspaces/[workspaceId]/assets
+├ ƒ /api/workspaces/[workspaceId]/assets/[assetId]
+├ ƒ /api/workspaces/[workspaceId]/assets/[assetId]/download
+├ ƒ /api/workspaces/[workspaceId]/billing
+├ ƒ /api/workspaces/[workspaceId]/billing/checkout
+├ ƒ /api/workspaces/[workspaceId]/billing/portal
+├ ƒ /api/workspaces/[workspaceId]/generations
+├ ƒ /api/workspaces/[workspaceId]/generations/[taskId]/cancel
+├ ƒ /api/workspaces/[workspaceId]/generations/[taskId]/claim
+├ ƒ /api/workspaces/[workspaceId]/invitations
+├ ƒ /api/workspaces/[workspaceId]/leave
+├ ƒ /api/workspaces/[workspaceId]/members/[userId]/demote
+├ ƒ /api/workspaces/[workspaceId]/members/[userId]/remove
+├ ƒ /api/workspaces/[workspaceId]/transfer
+├ ƒ /billing/portal/fixture/[sessionId]
+├ ƒ /checkout/fixture/[sessionId]
+├ ○ /creator-qa-check
+├ ƒ /dashboard
+├ ƒ /dashboard/team
+├ ○ /docs
+├   /docs/[release]/[[...slug]]
+│ ├ ● /docs/v1
+│ ├ ● /docs/v1/template
+│ ├ ● /docs/v1/template/operations
+│ └ ● [+24 more paths]
+├ ○ /docs/api
+├ ○ /docs/releases
+├ ○ /docs/skills
+├ ○ /docs/template
+├ ƒ /invitations/accept
+├ ƒ /login
+├ ƒ /reset-password
+├ ○ /signup
+├ ƒ /workspaces/[w]/billing
+├ ƒ /workspaces/[w]/settings/members
+└ ƒ /workspaces/new
+
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+
+$ next build
+Turbopack build encountered 2 warnings:
+./src/app/docs/_lib/source.ts:29:67
+Warning: The file pattern ('/ROOT/' <dynamic> | '/ROOT' <dynamic>) matches 19258 files in [project]/
+  [90m27 |[0m ...
+  [90m28 |[0m ...leSync(path.join(root, [32m'content/docs/v1/manifest.json'[0m), [32m'utf8'[0m)) [36mas[0m [33mDocsManifest[0m;
+[33m[1m>[0m [90m29 |[0m ... (sourcePath) => readFileSync(path.join(root, sourcePath), [32m'utf8'[0m));
+  [90m   |[0m                                  [33m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m30 |[0m ...
+  [90m31 |[0m ...
+  [90m32 |[0m ...: string, page: [33mPublishedDoc[0m, pages: readonly [33mPublishedDoc[0m[]): string | [36mundefined[0m {
+
+Overly broad patterns can lead to build performance issues and over bundling.
+
+Import trace:
+  Server Component:
+    ./src/app/docs/_lib/source.ts
+    ./src/app/docs/[release]/[[...slug]]/page.tsx
+
+
+./src/app/docs/_lib/source.ts:29:67
+Warning: Dynamic filesystem access causes tracing of the whole project
+  [90m27 |[0m ...
+  [90m28 |[0m ...leSync(path.join(root, [32m'content/docs/v1/manifest.json'[0m), [32m'utf8'[0m)) [36mas[0m [33mDocsManifest[0m;
+[33m[1m>[0m [90m29 |[0m ... (sourcePath) => readFileSync(path.join(root, sourcePath), [32m'utf8'[0m));
+  [90m   |[0m                                  [33m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m30 |[0m ...
+  [90m31 |[0m ...
+  [90m32 |[0m ...: string, page: [33mPublishedDoc[0m, pages: readonly [33mPublishedDoc[0m[]): string | [36mundefined[0m {
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: path.join(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import trace:
+  Server Component:
+    ./src/app/docs/_lib/source.ts
+    ./src/app/docs/[release]/[[...slug]]/page.tsx
+
+

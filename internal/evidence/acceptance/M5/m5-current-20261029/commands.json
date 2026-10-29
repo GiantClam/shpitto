@@ -1,0 +1,182 @@
+{
+  "schemaVersion": "1.0",
+  "candidateId": "m5-current-20261029",
+  "commands": [
+    {
+      "commandId": "frozen-lock-install",
+      "invocation": "pnpm install --frozen-lockfile --prefer-offline --ignore-scripts",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T04:00:31.356Z",
+      "endAt": "2026-10-29T04:00:31.451Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log"
+    },
+    {
+      "commandId": "typecheck",
+      "invocation": "pnpm typecheck",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T04:00:31.453Z",
+      "endAt": "2026-10-29T04:00:40.772Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/typecheck.log"
+    },
+    {
+      "commandId": "lint",
+      "invocation": "pnpm lint",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T04:00:40.774Z",
+      "endAt": "2026-10-29T04:00:40.919Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/lint.log"
+    },
+    {
+      "commandId": "format-check",
+      "invocation": "pnpm format:check",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T04:00:40.921Z",
+      "endAt": "2026-10-29T04:00:41.022Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/format-check.log"
+    },
+    {
+      "commandId": "verify-db-boundary",
+      "invocation": "pnpm verify:db-boundary",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T04:00:41.024Z",
+      "endAt": "2026-10-29T04:00:41.113Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/verify-db-boundary.log"
+    },
+    {
+      "commandId": "verify-openspec",
+      "invocation": "pnpm verify:openspec",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T04:00:41.114Z",
+      "endAt": "2026-10-29T04:00:41.747Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/verify-openspec.log"
+    },
+    {
+      "commandId": "production-build",
+      "invocation": "pnpm build",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T04:01:01.139Z",
+      "endAt": "2026-10-29T04:01:26.117Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/production-build.log"
+    },
+    {
+      "commandId": "contracts-provider-inputs",
+      "invocation": "node --experimental-strip-types --test tests/contracts/provider-inputs.test.ts",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T04:00:41.749Z",
+      "endAt": "2026-10-29T04:00:42.284Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/logs/contracts-provider-inputs.log"
+    },
+    {
+      "commandId": "contracts-billing-contracts",
+      "invocation": "node --experimental-strip-types --test tests/contracts/billing-contracts.test.ts",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T05:39:10.455Z",
+      "endAt": "2026-10-29T05:39:10.585Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/contracts-billing-contracts.log"
+    },
+    {
+      "commandId": "billing-schema",
+      "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-billing-schema.ts",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T05:39:06.997Z",
+      "endAt": "2026-10-29T05:39:08.461Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/billing-schema.log"
+    },
+    {
+      "commandId": "billing-checkout",
+      "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-billing-checkout.ts",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T05:39:08.462Z",
+      "endAt": "2026-10-29T05:39:09.338Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/billing-checkout.log"
+    },
+    {
+      "commandId": "billing-reconciliation",
+      "invocation": "node --env-file=.env.local --experimental-strip-types scripts/probe-billing-reconciliation.ts",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T05:39:09.338Z",
+      "endAt": "2026-10-29T05:39:10.454Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/billing-reconciliation.log"
+    },
+    {
+      "commandId": "stripe-checkout-integration",
+      "invocation": "node --experimental-strip-types --test tests/integration/stripe-checkout.test.ts",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T05:39:10.585Z",
+      "endAt": "2026-10-29T05:39:11.803Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/stripe-checkout-integration.log"
+    },
+    {
+      "commandId": "stripe-reconciliation-integration",
+      "invocation": "node --experimental-strip-types --test tests/integration/stripe-reconciliation.test.ts",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T05:39:11.803Z",
+      "endAt": "2026-10-29T05:39:13.474Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log"
+    },
+    {
+      "commandId": "billing-presentation-unit",
+      "invocation": "node --experimental-strip-types --test tests/unit/billing-presentation.test.ts",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T05:39:14.414Z",
+      "endAt": "2026-10-29T05:39:14.533Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log"
+    },
+    {
+      "commandId": "stripe-inbox-integration",
+      "invocation": "node --experimental-strip-types --test tests/integration/stripe-inbox.test.ts",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T05:39:13.474Z",
+      "endAt": "2026-10-29T05:39:14.414Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log"
+    }
+  ]
+}

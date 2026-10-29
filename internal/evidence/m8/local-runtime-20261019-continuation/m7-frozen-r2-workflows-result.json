@@ -1,0 +1,67 @@
+{
+  "status": "PASS",
+  "summaryRef": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-26-41-839Z-7373f7ea/summary.json",
+  "summarySha256": "cf93ec68fcd730211f217b7f8d71e3b4f80766bec50fd1e7142cd8991741c0ff",
+  "expectedSourceTreeSha256": "e5cf13a5d4af7747fcb83bc10e940e73e731570a0df4dd6361aaced0890a71be",
+  "sourceStableDuringRun": true,
+  "candidateCurrency": "EXPLICIT_ROOT_FREEZE_BOUND",
+  "commandCount": 79,
+  "failedCommands": 0,
+  "allCommandOutputsExist": true,
+  "workflows": [
+    {
+      "id": "customize-brand",
+      "result": "PASS",
+      "classification": "local-mock",
+      "modifiedSourceTreeSha256": "4b264086a984f37e5eaeba0fa9eed26385364426e57e5506facabf8328eb1896",
+      "files": [
+        "src/config/brand.ts"
+      ],
+      "protectedFilesUnchanged": 416,
+      "evidenceDirectory": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-26-41-839Z-7373f7ea/customize-brand"
+    },
+    {
+      "id": "create-page",
+      "result": "PASS",
+      "classification": "local-mock",
+      "modifiedSourceTreeSha256": "7e68c81c3edfd0946e7c79dd148b0a28035b00e322b9b73627d69cadc343eef5",
+      "files": [
+        "src/config/navigation.ts",
+        "src/app/(marketing)/studio-notes/page.tsx"
+      ],
+      "protectedFilesUnchanged": 416,
+      "evidenceDirectory": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-26-41-839Z-7373f7ea/create-page"
+    },
+    {
+      "id": "modify-page",
+      "result": "PASS",
+      "classification": "local-mock",
+      "modifiedSourceTreeSha256": "56e5f4c06ff9ec4dc197b45b5021710b78b86c0ed62a519cb63ef093d6df43ed",
+      "files": [
+        "src/components/billing/fixture-billing-panel.tsx"
+      ],
+      "protectedFilesUnchanged": 416,
+      "evidenceDirectory": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-26-41-839Z-7373f7ea/modify-page"
+    },
+    {
+      "id": "customize-site",
+      "result": "PASS",
+      "classification": "local-mock",
+      "modifiedSourceTreeSha256": "6b56941845f7d3539c4540112bd3522d5a9578794b11c71d856bd12f4ae6a96d",
+      "files": [
+        "src/components/shell/site-shell.tsx"
+      ],
+      "protectedFilesUnchanged": 416,
+      "evidenceDirectory": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-26-41-839Z-7373f7ea/customize-site"
+    }
+  ],
+  "startedAt": "2026-10-19T06:26:42.07Z",
+  "endedAt": "2026-10-19T06:27:55.178Z",
+  "durationSeconds": 73.108,
+  "postRunSixDigestsMatched": true,
+  "workflowDatabasesCreatedAndDropped": 4,
+  "remainingWorkflowDatabases": 0,
+  "runnerEdited": false,
+  "independentReview": "NOT_RUN",
+  "gatePromotion": false
+}

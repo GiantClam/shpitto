@@ -1,0 +1,323 @@
+$ pnpm typecheck && pnpm lint && pnpm format:check && pnpm verify:config && pnpm verify:db-boundary && pnpm verify:m2-foundation && pnpm verify:local-services && pnpm verify:shells && pnpm verify:content-boundaries && pnpm verify:root && pnpm build
+
+> @shpitto/video-saas@0.1.0 typecheck D:\github\shpitto
+> next typegen && tsc --noEmit
+
+Generating route types...
+✓ Types generated successfully
+
+> @shpitto/video-saas@0.1.0 lint D:\github\shpitto
+> node scripts/check-source-boundaries.mjs
+
+Source boundary check passed for src, scripts.
+
+> @shpitto/video-saas@0.1.0 format:check D:\github\shpitto
+> node scripts/format-check.mjs
+
+Format check passed.
+
+> @shpitto/video-saas@0.1.0 verify:config D:\github\shpitto
+> node scripts/check-config.mjs
+
+Configuration contract passed: placeholders are redacted and demo drivers are rejected for production.
+
+> @shpitto/video-saas@0.1.0 verify:db-boundary D:\github\shpitto
+> node scripts/check-db-boundaries.mjs
+
+Database boundary check passed.
+
+> @shpitto/video-saas@0.1.0 verify:m2-foundation D:\github\shpitto
+> node scripts/check-m2-foundation.mjs
+
+M2 identity/workspace foundation contract passed.
+
+> @shpitto/video-saas@0.1.0 verify:local-services D:\github\shpitto
+> node scripts/check-local-services.mjs
+
+Local service contract passed.
+
+> @shpitto/video-saas@0.1.0 verify:shells D:\github\shpitto
+> node scripts/check-shell-boundaries.mjs
+
+Product shell boundary check passed.
+
+> @shpitto/video-saas@0.1.0 verify:content-boundaries D:\github\shpitto
+> node scripts/check-content-boundaries.mjs
+
+Content and export boundary check passed.
+
+> @shpitto/video-saas@0.1.0 verify:root D:\github\shpitto
+> node --experimental-strip-types --test tests/unit/root-integrity.test.ts tests/unit/candidate-digests.test.ts && node scripts/check-root-integrity.mjs && pnpm verify:acceptance && pnpm verify:openspec
+
+✔ changing mandatory traceability mappings invalidates contract and validator digests (995.1598ms)
+✔ the exact existing application dependency evolution passes without rewriting historical proof (145.8593ms)
+✔ root integrity rejects an additional runtime dependency (132.8425ms)
+✔ root integrity rejects a missing runtime dependency (126.8257ms)
+✔ root integrity rejects an optional dependency (123.9022ms)
+✔ root integrity rejects implicit bundling of the whole dependency graph (131.9441ms)
+✔ root integrity rejects a new transitive override (123.5751ms)
+✔ root integrity rejects another Next patch (127.3271ms)
+✔ root integrity rejects an S3 version range (124.3686ms)
+✔ root integrity rejects a changed development dependency (127.6214ms)
+✔ root integrity rejects a changed package manager (124.8045ms)
+✔ root integrity rejects a changed application lockfile (130.2265ms)
+✔ root integrity rejects rewritten historical dependency proof (127.378ms)
+✔ root integrity rejects rewritten historical lock proof (115.7608ms)
+✔ root integrity rejects rewritten historical provenance (130.9075ms)
+✔ root integrity rejects legacy workspace discovery (127.9879ms)
+✔ root integrity rejects a changed workspace override (138.5458ms)
+✔ root integrity rejects workspace package extensions (121.294ms)
+✔ root integrity rejects legacy TypeScript inclusion (132.0385ms)
+✔ root integrity rejects legacy Docker inclusion (140.8538ms)
+✔ historical provenance remains valid in both LF and CRLF checkouts (265.4076ms)
+✔ the reviewed workspace configuration permits only checkout line-ending differences (110.8638ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2979.5641
+{
+  "status": "PASS",
+  "packageManager": "pnpm@12.6.0",
+  "lockfileSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35",
+  "selectedDependencyBaseline": "internal/spikes/selected-stack/package.json",
+  "applicationDependencyEvolution": "tooling/root-dependency-baseline.json",
+  "excludedRoots": [
+    "node_modules",
+    "legacy",
+    "apps",
+    "builder",
+    "packages",
+    "sites",
+    "internal"
+  ]
+}
+
+> @shpitto/video-saas@0.1.0 verify:acceptance D:\github\shpitto
+> node scripts/check-stage-progression.mjs
+
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "stageId": "M0",
+      "status": "PASS",
+      "scope": "historical-approved",
+      "recordRef": "internal/evidence/acceptance/M0/working-tree-20260927/record.json"
+    },
+    {
+      "stageId": "M1",
+      "status": "PASS",
+      "scope": "historical-approved",
+      "recordRef": "internal/evidence/acceptance/M1/working-tree-20260928-m1/record.json"
+    },
+    {
+      "stageId": "M2",
+      "status": "PASS",
+      "scope": "historical-approved",
+      "recordRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/record.json"
+    },
+    {
+      "stageId": "M3",
+      "status": "PASS",
+      "scope": "historical-approved",
+      "recordRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/record.json"
+    },
+    {
+      "stageId": "M4",
+      "status": "PASS",
+      "scope": "current-accepted",
+      "recordRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261016/record.json"
+    },
+    {
+      "stageId": "M5",
+      "status": "IN_PROGRESS",
+      "scope": "current-development",
+      "recordRef": "internal/evidence/acceptance/M5/local-preflight-20261007/record.json"
+    },
+    {
+      "stageId": "M6",
+      "status": "IN_PROGRESS",
+      "scope": "current-development",
+      "recordRef": "internal/evidence/acceptance/M6/local-preflight-20261007/record.json"
+    }
+  ],
+  "note": "Validation of IN_PROGRESS development records is not stage approval."
+}
+
+> @shpitto/video-saas@0.1.0 verify:openspec D:\github\shpitto
+> openspec validate restart-shpitto-video-saas --strict --json --no-interactive
+
+{
+  "items": [
+    {
+      "id": "restart-shpitto-video-saas",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 13
+    }
+  ],
+  "summary": {
+    "totals": {
+      "items": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "byType": {
+      "change": {
+        "items": 1,
+        "passed": 1,
+        "failed": 0
+      }
+    }
+  },
+  "version": "1.0",
+  "root": {
+    "path": "D:\\github\\shpitto",
+    "source": "nearest"
+  }
+}
+
+> @shpitto/video-saas@0.1.0 build D:\github\shpitto
+> next build
+
+▲ Next.js 16.3.8 (Turbopack)
+- Environments: .env.local, .env
+✓ Running next.config.ts took 24ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 1300ms
+  Running TypeScript ...
+  Finished TypeScript in 2.7s ...
+  Collecting page data using 31 workers ...
+  Generating static pages using 31 workers (0/57) ...
+  Generating static pages using 31 workers (14/57)
+  Generating static pages using 31 workers (28/57)
+  Generating static pages using 31 workers (42/57)
+✓ Generating static pages using 31 workers (57/57) in 529ms
+  Finalizing page optimization ...
+Turbopack build encountered 2 warnings:
+./src/app/docs/_lib/source.ts:29:67
+Warning: The file pattern ('/ROOT/' <dynamic> | '/ROOT' <dynamic>) matches 13836 files in [project]/
+  27 | ...
+  28 | ...leSync(path.join(root, 'content/docs/v1/manifest.json'), 'utf8')) as DocsManifest;
+> 29 | ... (sourcePath) => readFileSync(path.join(root, sourcePath), 'utf8'));
+     |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  30 | ...
+  31 | ...
+  32 | ...: string, page: PublishedDoc, pages: readonly PublishedDoc[]): string | undefined {
+
+Overly broad patterns can lead to build performance issues and over bundling.
+
+Import trace:
+  Server Component:
+    ./src/app/docs/_lib/source.ts
+    ./src/app/docs/[release]/[[...slug]]/page.tsx
+
+
+./src/app/docs/_lib/source.ts:29:67
+Warning: Dynamic filesystem access causes tracing of the whole project
+  27 | ...
+  28 | ...leSync(path.join(root, 'content/docs/v1/manifest.json'), 'utf8')) as DocsManifest;
+> 29 | ... (sourcePath) => readFileSync(path.join(root, sourcePath), 'utf8'));
+     |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  30 | ...
+  31 | ...
+  32 | ...: string, page: PublishedDoc, pages: readonly PublishedDoc[]): string | undefined {
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: path.join(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import trace:
+  Server Component:
+    ./src/app/docs/_lib/source.ts
+    ./src/app/docs/[release]/[[...slug]]/page.tsx
+
+
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /admin/[[...segments]]
+├ ƒ /api/admin/affiliates/commands/[command]
+├ ƒ /api/admin/affiliates/holds
+├ ƒ /api/admin/affiliates/reviews
+├ ƒ /api/admin/affiliates/status
+├ ƒ /api/admin/audit
+├ ƒ /api/admin/billing
+├ ƒ /api/admin/commands/[command]
+├ ƒ /api/admin/generations
+├ ƒ /api/admin/me
+├ ƒ /api/admin/recovery/[workspaceId]
+├ ƒ /api/admin/recovery/[workspaceId]/sweep
+├ ƒ /api/admin/recovery/[workspaceId]/webhook-replay
+├ ƒ /api/admin/refunds/pending
+├ ƒ /api/admin/refunds/preview
+├ ƒ /api/admin/security
+├ ƒ /api/admin/step-up
+├ ƒ /api/admin/users
+├ ƒ /api/admin/workspaces
+├ ƒ /api/admin/workspaces/[workspaceId]
+├ ƒ /api/admin/workspaces/[workspaceId]/details
+├ ƒ /api/affiliates/referral
+├ ƒ /api/auth/[...all]
+├ ƒ /api/checkout/fixture/[sessionId]
+├ ƒ /api/healthz
+├ ƒ /api/internal/recovery-alerts
+├ ƒ /api/invitations/accept
+├ ƒ /api/onboarding
+├ ƒ /api/webhooks/affiliate
+├ ƒ /api/webhooks/fal/[attemptNonce]
+├ ƒ /api/webhooks/replicate/[attemptNonce]
+├ ƒ /api/webhooks/stripe
+├ ƒ /api/workspaces
+├ ƒ /api/workspaces/[workspaceId]/assets
+├ ƒ /api/workspaces/[workspaceId]/assets/[assetId]
+├ ƒ /api/workspaces/[workspaceId]/assets/[assetId]/download
+├ ƒ /api/workspaces/[workspaceId]/billing
+├ ƒ /api/workspaces/[workspaceId]/billing/checkout
+├ ƒ /api/workspaces/[workspaceId]/billing/portal
+├ ƒ /api/workspaces/[workspaceId]/generations
+├ ƒ /api/workspaces/[workspaceId]/generations/[taskId]/cancel
+├ ƒ /api/workspaces/[workspaceId]/generations/[taskId]/claim
+├ ƒ /api/workspaces/[workspaceId]/invitations
+├ ƒ /api/workspaces/[workspaceId]/leave
+├ ƒ /api/workspaces/[workspaceId]/members/[userId]/demote
+├ ƒ /api/workspaces/[workspaceId]/members/[userId]/remove
+├ ƒ /api/workspaces/[workspaceId]/transfer
+├ ƒ /billing/portal/fixture/[sessionId]
+├ ƒ /checkout/fixture/[sessionId]
+├ ƒ /dashboard
+├ ƒ /dashboard/team
+├ ○ /docs
+├   /docs/[release]/[[...slug]]
+│ ├ ● /docs/v1
+│ ├ ● /docs/v1/template
+│ ├ ● /docs/v1/template/operations
+│ └ ● [+24 more paths]
+├ ○ /docs/api
+├ ○ /docs/releases
+├ ○ /docs/skills
+├ ○ /docs/template
+├ ƒ /invitations/accept
+├ ƒ /login
+├ ƒ /reset-password
+├ ○ /signup
+├ ƒ /workspaces/[w]/billing
+├ ƒ /workspaces/[w]/settings/members
+└ ƒ /workspaces/new
+
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand

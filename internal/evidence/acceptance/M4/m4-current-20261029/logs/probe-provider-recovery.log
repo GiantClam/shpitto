@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "profile": "local deterministic provider fixtures",
+  "cases": [
+    "Replicate confirmed account key authenticates the exact signed request; issued URL nonce supplies private correlation",
+    "fal ED25519 accepts exact signed digest and account binding",
+    "stale callback is rejected before durable observation",
+    "unknown age degrades capability and telemetry stays secret-free"
+  ],
+  "count": 4
+}

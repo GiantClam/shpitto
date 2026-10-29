@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "profile": "bounded-local-validator-repair",
+  "authoritativeGatePromotion": false,
+  "changedFiles": [
+    "scripts/validate-change.ts",
+    "tests/unit/governed-skills.test.ts",
+    ".shpitto/contracts/validation-evidence.json"
+  ],
+  "checks": [
+    {"command": "node --experimental-strip-types --test tests/unit/governed-skills.test.ts tests/customization/four-workflows.test.ts tests/docs/vendor-docs.test.ts tests/docs/skill-docs.test.ts tests/docs/published-docs.test.ts tests/docs/export-buyer-docs.test.ts tests/vendor/fulfillment.test.mjs tests/release/export-boundaries.test.ts", "status": "PASS", "exitCode": 0, "tests": 28},
+    {"command": "node node_modules/typescript/bin/tsc --noEmit --incremental false", "status": "PASS", "exitCode": 0},
+    {"command": "node scripts/check-source-boundaries.mjs", "status": "PASS", "exitCode": 0},
+    {"command": "node scripts/format-check.mjs", "status": "PASS", "exitCode": 0}
+  ],
+  "redEvidence": ["validator-negative-probe.json", "validator-red-checks.log", "validator-red-review.log", "validator-red-candidate.log"],
+  "greenEvidence": "validator-fixed-probe.json",
+  "limitations": [
+    "Independent review and milestone prerequisite gates remain open.",
+    "Pinned trusted-validator baseline provenance remains a separate acceptance obligation.",
+    "Prior evidence lacking implementerId, candidate identity or the complete successful check set must be resubmitted."
+  ]
+}

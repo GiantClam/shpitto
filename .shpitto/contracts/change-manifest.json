@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "1.0",
+  "required": ["release", "baseline", "dirtyWork", "intent", "changedFiles", "classification", "checks", "recovery"],
+  "classification": ["presentation", "content", "approved-config", "engineering-change", "blocked"],
+  "changedFile": {"required": ["path", "classification", "reason"]},
+  "check": {"required": ["id", "status", "outputRef"]},
+  "recovery": {"required": ["patchRef", "preservesUnrelatedWork", "overlaps"]}
+}

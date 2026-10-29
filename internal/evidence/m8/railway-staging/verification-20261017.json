@@ -1,0 +1,105 @@
+{
+  "status": "PASS",
+  "capturedAt": "2026-10-17T10:56:08.8308515Z",
+  "checks": [
+    {
+      "commandId": "typecheck",
+      "invocation": "corepack pnpm typecheck",
+      "startAt": "2026-10-17T10:52:59.1258597Z",
+      "endAt": "2026-10-17T10:53:02.2435866Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/m8/railway-staging/typecheck.log"
+    },
+    {
+      "commandId": "lint",
+      "invocation": "corepack pnpm lint",
+      "startAt": "2026-10-17T10:53:02.2461032Z",
+      "endAt": "2026-10-17T10:53:02.6929208Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/m8/railway-staging/lint.log"
+    },
+    {
+      "commandId": "format-check",
+      "invocation": "corepack pnpm format:check",
+      "startAt": "2026-10-17T10:53:02.6931423Z",
+      "endAt": "2026-10-17T10:53:03.0713161Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/m8/railway-staging/format-check.log"
+    },
+    {
+      "commandId": "verify-acceptance",
+      "invocation": "corepack pnpm verify:acceptance",
+      "startAt": "2026-10-17T10:53:03.0715526Z",
+      "endAt": "2026-10-17T10:53:05.8713735Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/m8/railway-staging/verify-acceptance.log"
+    },
+    {
+      "commandId": "verify-openspec",
+      "invocation": "corepack pnpm verify:openspec",
+      "startAt": "2026-10-17T10:53:05.8716097Z",
+      "endAt": "2026-10-17T10:53:08.321158Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/m8/railway-staging/verify-openspec.log"
+    },
+    {
+      "commandId": "contracts-provider-inputs",
+      "invocation": "corepack pnpm exec node --experimental-strip-types --test tests/contracts/provider-inputs.test.ts",
+      "startAt": "2026-10-17T10:53:08.321357Z",
+      "endAt": "2026-10-17T10:53:09.1282904Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/m8/railway-staging/contracts-provider-inputs.log"
+    },
+    {
+      "commandId": "contracts-billing-contracts",
+      "invocation": "corepack pnpm exec node --experimental-strip-types --test tests/contracts/billing-contracts.test.ts",
+      "startAt": "2026-10-17T10:53:09.1284903Z",
+      "endAt": "2026-10-17T10:53:09.6166131Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/m8/railway-staging/contracts-billing-contracts.log"
+    },
+    {
+      "commandId": "provider-webhook-replay",
+      "invocation": "corepack pnpm exec node --experimental-strip-types --test tests/integration/provider-webhook-replay.test.ts",
+      "startAt": "2026-10-17T10:54:21.0471179Z",
+      "endAt": "2026-10-17T10:54:27.7539142Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/m8/railway-staging/provider-webhook-replay.log"
+    },
+    {
+      "commandId": "provider-materialization-faults",
+      "invocation": "corepack pnpm exec node --experimental-strip-types --test tests/integration/provider-materialization-faults.test.ts",
+      "startAt": "2026-10-17T10:54:27.756013Z",
+      "endAt": "2026-10-17T10:54:59.2978748Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/m8/railway-staging/provider-materialization-faults.log"
+    },
+    {
+      "commandId": "verify-root",
+      "invocation": "corepack pnpm verify:root",
+      "startAt": "2026-10-17T10:55:32.1188643Z",
+      "endAt": "2026-10-17T10:55:40.5964340Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/m8/railway-staging/verify-root.log"
+    },
+    {
+      "commandId": "build",
+      "invocation": "corepack pnpm build",
+      "startAt": "2026-10-17T10:55:40.5994951Z",
+      "endAt": "2026-10-17T10:55:53.3579322Z",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "internal/evidence/m8/railway-staging/build.log"
+    }
+  ]
+}

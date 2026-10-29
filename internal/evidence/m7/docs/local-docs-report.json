@@ -1,0 +1,40 @@
+{
+  "status": "PASS",
+  "profile": "local-docs-and-buyer-export",
+  "tasks": ["8.13", "8.14"],
+  "publishedPages": 27,
+  "buyerDocuments": 59,
+  "skillReferences": 12,
+  "checks": {
+    "docsContract": "PASS",
+    "publishedOnlyNavigation": "PASS",
+    "buyerMarkdownExport": "PASS",
+    "frontmatterStripping": "PASS",
+    "secretScan": "PASS",
+    "vendorPrivateContentExclusion": "PASS",
+    "apiExamples": "released-contracts-only"
+  },
+  "commands": [
+    {
+      "command": "node --experimental-strip-types scripts/check-doc-contracts.ts",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/docs/local-export-tests.log"
+    },
+    {
+      "command": "node --experimental-strip-types scripts/export-buyer-docs.ts",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/docs/local-export-tests.log"
+    },
+    {
+      "command": "node --experimental-strip-types --test tests/docs/*.test.ts",
+      "status": "PASS",
+      "outputRef": "internal/evidence/m7/docs/local-export-tests.log"
+    }
+  ],
+  "deferred": [
+    "final vendor Docs navigation after commerce setup",
+    "real provider/payment/affiliate integration examples",
+    "M8 exact-candidate regeneration and release matching"
+  ],
+  "note": "This record closes local documentation and portable buyer export work. It does not assert commercial or production readiness."
+}

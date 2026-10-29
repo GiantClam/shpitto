@@ -1,0 +1,32 @@
+✔ trusted checks execute candidate modules and approval binds freshly measured staging (4575.8244ms)
+✔ trusted dependency bytes and candidate lockfile must match the reviewed baseline (52.4205ms)
+✔ successful early exit and forged stdout cannot replace completed trusted tests (1840.5261ms)
+✔ generated directory names nested in shipped source remain fingerprinted (1863.4027ms)
+✔ candidate validator, policy and suite edits cannot self-certify (205.0248ms)
+✔ pin integrity and realpath separation are mandatory (75.5833ms)
+✔ both external release entrypoints require retained output and reexecute candidate checks (5362.2785ms)
+✔ forged records, tampered outputs and reused staging identities are rejected (1602.8349ms)
+✔ every buyer fingerprint class is measured rather than trusted from old JSON (1571.2781ms)
+✔ policy controls cannot be omitted from the reviewed pin (47.3152ms)
+✔ candidate code cannot rewrite a later trusted check inside the snapshot (389.5324ms)
+✔ candidate code cannot rewrite the private dependency snapshot between trusted checks (383.6299ms)
+✔ candidate identity and externally supplied pin digest are bound (1828.8251ms)
+✔ dependency junctions and their private materialized copies have the same fingerprint (142.5766ms)
+✔ new files introduced into a measured snapshot fail before subsequent checks (1010.2046ms)
+✔ rebaseline requires retained independent proof bound to both policies and replacement files (2908.6169ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 24021.2954
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report

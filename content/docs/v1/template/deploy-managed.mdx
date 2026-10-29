@@ -1,0 +1,49 @@
+---
+release: v1
+title: Managed deployment reference
+description: Buyer-owned Vercel and managed-service deployment boundary.
+section: template
+status: published
+relatedContracts: [D01, D07, D15, D18, G01, G07, G15, G18]
+---
+
+# Managed deployment reference
+
+The planned managed profile separates the Next.js app on Vercel, PostgreSQL on
+Neon, private object storage on R2, a buyer-owned long-running worker,
+and outbound email on Resend. Trigger.dev is an optional future adapter, not a
+required account or baseline M4 prerequisite. Each service and credential belongs to the
+buyer. Keep all services in compatible regions and use the database provider's
+pooled URL for request traffic and its direct URL for migrations and backups.
+
+## Current implementation boundary
+
+The application provides a local filesystem store for demo/acceptance and one
+S3-compatible object-store adapter shared by Cloudflare R2 and AWS S3. The
+managed storage account, Resend and worker hosting still belong to the buyer and
+require deployment-specific credentials and end-to-end verification. The four
+real generation paths, Stripe test mode and FirstPromoter account remain
+separate gates. This page is a preflight reference, not evidence of a
+production deployment.
+
+`TASK_RUNTIME=self_hosted` is the default and requires no Trigger credentials.
+The current real-provider worker is restricted to its isolated Railway
+acceptance project, private database and assigned workspace. It is not a generic
+buyer production worker. Do not bypass its fences to manufacture that profile.
+Generic worker provisioning and clean-export production verification remain M8
+work. This build rejects `TASK_RUNTIME=trigger`, even with project credentials,
+until scoped executable task registration and deployment are verified.
+
+## Configuration review
+
+Set `APP_URL` to the final HTTPS origin, `DATABASE_URL` to the buyer's runtime
+database URL, and `BETTER_AUTH_SECRET` to a unique secret stored in the host's
+secret manager. Production rejects the local/mock driver defaults. Set
+`STORAGE_DRIVER`, `GENERATION_DRIVER` and `MAIL_DRIVER` only after their selected
+production adapters and matching credentials have been reviewed and deployed.
+
+Before routing traffic, verify the health endpoint, run the reviewed Drizzle
+migrations with a direct database connection, and confirm the exact candidate
+in the M8 managed profile. Keep webhook secrets, provider keys, object-store
+credentials and outbound-mail keys out of build arguments, source control,
+browser responses and evidence logs.

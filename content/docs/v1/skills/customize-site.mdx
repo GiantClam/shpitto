@@ -1,0 +1,137 @@
+---
+release: v1
+title: Skill · customize-site
+section: skills
+status: published
+relatedContracts: [D09, D28, D29, D30, G09, G28, G29]
+---
+
+# Skill · customize-site
+
+shared shell and approved presentation
+
+Canonical invocation: read `skills/customize-site/SKILL.md` and follow its evidence contract.
+
+Coordinate approved brand, theme, content and page composition changes across
+the site. The public creator, auth, product and admin shells start from the Shpitto
+website baseline as a template fallback. Customer delivery uses this Skill to
+compose the customer's own brand, theme and page presentation over that shell.
+
+Use `DESIGN.md` for visual application rules and `src/config/brand.ts` as the
+canonical source for all token values. The default template is a video creation
+product baseline: use a dark, creation-first public homepage and workspace for
+prompt, aspect ratio and output workflows, with auth and documentation light.
+Every route should read as part of the same system: the same container, type
+scale, spacing rhythm, surface roles and interaction states should carry across
+public creator, auth, product and operations surfaces.
+
+## Inputs
+- Customer site intent, brand assets, affected shells, tokens, routes, components and release baseline.
+- The shared-shell surfaces and their required loading, empty, error and
+  denied states.
+- A route-level visual brief: hierarchy, content density, media purpose,
+  primary action, responsive topology and motion preference.
+- For video creation surfaces, a media-first brief naming the prompt composer,
+  preview/result treatment, supported `text-to-video` or `image-to-video` mode,
+  public draft versus signed-in review, and signed-in cost/private asset state.
+- The selected workspace context and its shared navigation contract.
+
+## Allowed scope
+Approved marketing/product presentation paths, `src/config/brand.ts`,
+`src/config/navigation.ts`, `src/app/globals.css` and shared shell components.
+Page-local CSS and JavaScript may compose existing primitives, but must not
+introduce a second token vocabulary, unbounded animation, global decorative
+effects, or interaction that changes protected business behavior. Controlled
+gradients inside a purposeful media preview are allowed by `DESIGN.md`.
+
+## Presentation rules
+- Define studio values in `brand.tokens.studio` and project them with
+  `brandCssVariables` in `src/config/brand.ts`, bound by `src/app/layout.tsx`.
+  CSS consumes those variables and semantic aliases; do not introduce duplicate
+  numeric token tables or literal `:root` fallbacks in `src/app/globals.css`.
+- Use shared `SiteShell` variant `creator` for the default dark public homepage
+  and `workspace` for signed-in creation, team, billing and settings. Scope
+  semantic role remapping to both shells so surfaces, text, borders, focus and
+  status feedback stay consistent. Keep auth and documentation light; a route
+  under `(marketing)` does not require a light homepage.
+- Keep desktop tool navigation persistent and mobile navigation compact. Place
+  a concise heading and editable video composer before the curated gallery;
+  avoid giant editorial heroes and promotional stages ahead of the controls.
+  Interaction references inform topology only, never copied assets or branding.
+- Preserve customer logo artwork and colors on a light backing in the dark
+  shell. Do not use logo inversion or recoloring filters.
+- Keep selected workspace context in creation, history, assets, team, billing
+  and settings links, including header/footer actions. Use the shared navigation
+  contract and encode workspace identifiers without changing membership or
+  selection rules.
+- The shipped runtime is video only: `text-to-video` and `image-to-video`.
+  Image-to-video is the image entry and produces video, not images. Do not offer
+  an active image-output tab, image-generation API or image-generation promise.
+  Visual work does not enable live providers or add generation modes.
+- The public composer must accept prompt edits and offer `text-to-video` /
+  `image-to-video` and `16:9` / `9:16`, with a fixed `5s` / `720p` preset. Its
+  primary action says `Continue to studio` and routes to `/dashboard` through
+  its existing auth guard, supporting guests and signed-in visitors. Helper
+  copy explains sign-in, model selection and credit review. An admitted model
+  and actual cost appear only after sign-in, based on current server-backed
+  admission and quoting; there is no public quote or invented availability.
+- The session draft stores `version: 1` schema metadata and only `prompt`,
+  `mode` and `aspectRatio` intent fields. Autosave during editing to retain the
+  draft across tool mode-link navigation and the auth handoff; an explicit mode
+  destination may update the mode. Do not carry
+  quotes, prices, model selection, uploads, assets, crop references, consent,
+  workspace identity or other protected state. Restore the three intent fields for
+  editable signed-in review, obtain fresh admission and cost, and require an
+  explicit generation action. Never auto-submit, start jobs or charge credits
+  on sign-in or restoration. Keep owned image upload, crop review and consent
+  in the signed-in image-to-video flow.
+- Curated gallery filters must change displayed entries and expose selected
+  state. `Use prompt` replaces only the editable prompt and preserves the
+  currently selected `mode` and `aspectRatio`. This reuses prompt inspiration
+  only, not the sample image as an uploaded or owned
+  input. Neither action submits generation, selects a private asset or grants
+  image ownership or consent.
+- The public product demonstrates end-user creative value with truthful copy,
+  metadata and previews. Keep template purchasing, code ownership and engineering
+  guidance in buyer documentation, outside customer creation, sign-in and
+  billing flows.
+- Label the original AI illustrations at `public/media/alpine-studio.png`,
+  `public/media/motion-product.png` and `public/media/neon-portrait.png` as
+  `Sample artwork`, with descriptive alt text where informative. Their
+  provenance is recorded in `public/media/README.md`. Never present
+  them as live provider results, user-generated outputs or evidence of shipped
+  image generation. Still samples must not have fake play controls or pretend
+  to be playable video output.
+- Require keyboard operation and visible focus, WCAG AA text contrast (4.5:1
+  normal text, 3:1 large text), touch targets of at least 44px by 44px and
+  reduced-motion support. Verify desktop `1440x900` and mobile `390x844` across
+  both themes without overlapping copy or controls.
+
+## Protected contracts
+Keep sign-in, workspace navigation, generation, downloads, billing, admin and i18n boundaries intact.
+
+## Outputs and evidence
+Record the change manifest, customer asset/token overrides, route visual brief,
+all four journey checks, desktop/mobile/accessibility results, shared
+navigation consistency, state coverage (default/hover/focus/disabled/error)
+and recovery patch. Include scoped token mappings, dark creator/workspace
+surfaces, light auth/docs, logo backing, workspace-aware links, labeled
+non-playable sample artwork and truthful video-only capability claims. Verify
+public composer edits, supported mode/aspect choices, the fixed preset,
+functional gallery filters and prompt-only preset reuse that preserves the
+selected mode and aspect ratio. Verify autosave across mode-link navigation and
+the `/dashboard` auth handoff for guests and signed-in visitors. The session draft
+contains only the three intent fields plus `version: 1` schema metadata,
+restores for review without auto-submit, and shows admitted models and actual
+cost only after sign-in.
+
+## Recovery
+Resolve overlapping dirty work, then apply a scoped rollback without repository-wide reset.
+
+## Escalation
+Any protected contract or dependency change is classified as engineering work.
+
+
+## Release boundary
+
+This reference describes the local governed workflow. Changes to external provider accounts, payment services, production email, payouts or protected business contracts require their separate stage evidence and are not authorized by this page.

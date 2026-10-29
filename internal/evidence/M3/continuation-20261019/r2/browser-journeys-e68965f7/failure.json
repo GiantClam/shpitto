@@ -1,0 +1,6 @@
+{
+  "at": "2026-10-19T06:37:54.241Z",
+  "error": "Error: Timed out: verification email\n    at waitFor (file:///D:/github/shpitto/internal/evidence/M3/continuation-20261019/r2/browser-harness-executed.mjs:42:207)\n    at async signup (file:///D:/github/shpitto/internal/evidence/M3/continuation-20261019/r2/browser-harness-executed.mjs:84:3)\n    at async file:///D:/github/shpitto/internal/evidence/M3/continuation-20261019/r2/browser-harness-executed.mjs:125:3",
+  "events": [],
+  "errors": []
+}

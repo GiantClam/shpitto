@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.0",
+  "status": "PARTIAL_M0_EVIDENCE",
+  "environment": {
+    "database": "disposable PostgreSQL 17.6 cluster",
+    "port": 55433,
+    "auth": "trust only inside disposable local cluster",
+    "clusterStoppedAfterRun": true
+  },
+  "command": "M0_DATABASE_URL=postgres://postgres@127.0.0.1:55432/postgres node transaction-probe.mjs",
+  "observed": {
+    "duplicateSuppressed": true,
+    "injectedFailureRolledBack": true,
+    "ledgerCount": 1,
+    "auditCount": 1,
+    "outboxCount": 1,
+    "failedLedgerCount": 0
+  },
+  "proves": [
+    "One idempotency key produces one ledger/audit/outbox effect.",
+    "An injected failure after the ledger insert rolls back all three rows.",
+    "The disposable database does not reuse the existing local service or credentials."
+  ],
+  "authAdminEvidenceRefs": [
+    "auth/auth-evidence.json",
+    "admin/admin-evidence.json",
+    "domain/domain-evidence.json"
+  ],
+  "doesNotProve": [
+    "Production Better Auth PostgreSQL migration and persistence",
+    "Production schema or cross-tenant database constraints"
+  ]
+}

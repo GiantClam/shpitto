@@ -1,0 +1,6 @@
+Command: node --experimental-strip-types --test tests/integration/stripe-checkout.test.ts tests/integration/stripe-reconciliation.test.ts tests/integration/stripe-refunds.test.ts tests/unit/billing-presentation.test.ts
+Environment: disposable PostgreSQL on loopback ports 55432 and 55433
+Result: PASS
+Tests: 63
+Passed: 63
+Failed: 0

@@ -1,0 +1,42 @@
+$ pnpm typecheck && pnpm lint && pnpm format:check && pnpm verify:config && pnpm verify:db-boundary && pnpm verify:m2-foundation && pnpm verify:local-services && pnpm verify:shells && pnpm verify:content-boundaries && pnpm verify:root && pnpm build
+
+> @shpitto/video-saas@0.1.0 typecheck D:\github\shpitto
+> tsc --noEmit
+
+
+> @shpitto/video-saas@0.1.0 lint D:\github\shpitto
+> node scripts/check-source-boundaries.mjs
+
+Source boundary check passed for src, scripts.
+
+> @shpitto/video-saas@0.1.0 format:check D:\github\shpitto
+> node scripts/format-check.mjs
+
+Format check passed.
+
+> @shpitto/video-saas@0.1.0 verify:config D:\github\shpitto
+> node scripts/check-config.mjs
+
+Configuration contract passed: placeholders are redacted and demo drivers are rejected for production.
+
+> @shpitto/video-saas@0.1.0 verify:db-boundary D:\github\shpitto
+> node scripts/check-db-boundaries.mjs
+
+Database boundary check passed.
+
+> @shpitto/video-saas@0.1.0 verify:m2-foundation D:\github\shpitto
+> node scripts/check-m2-foundation.mjs
+
+M2 identity/workspace foundation contract passed.
+
+> @shpitto/video-saas@0.1.0 verify:local-services D:\github\shpitto
+> node scripts/check-local-services.mjs
+
+Local service contract passed.
+
+> @shpitto/video-saas@0.1.0 verify:shells D:\github\shpitto
+> node scripts/check-shell-boundaries.mjs
+
+auth shell must either declare deferred authentication or expose the Better Auth sign-in contract
+ ELIFECYCLE  Command failed with exit code 1.
+[ELIFECYCLE] Command failed with exit code 1.

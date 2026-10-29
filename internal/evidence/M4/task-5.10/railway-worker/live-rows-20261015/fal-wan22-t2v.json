@@ -1,0 +1,75 @@
+{
+  "runId": "c051d17d-5515-4de9-b324-4aa01ae81bda",
+  "modelKey": "fal-wan22-t2v",
+  "workspaceId": "d41b8970-0182-4e52-9412-66be74fb68ae",
+  "taskId": "3d7b1ee2-06c2-4836-af4c-13d721f647ef",
+  "attemptId": "6ad59158-1eeb-4a33-98ab-2371ca28f72a",
+  "providerRequestId": "01a13498-43f7-74f0-be1a-cbc5360a1555",
+  "phase": "verify",
+  "stage": "verified",
+  "observedPostRequests": 1,
+  "inputSha256": "21c7ae89e69f6b781d131916b11f7e68f2b32224bc2bdfc70efaf6221fdf17a9",
+  "accountIdSha256": "b366c2459f3c54347ddfea7716dd7a616138aff1dd3d57f7a970cc4dc0a51007",
+  "reservationId": "37616010-535f-4167-828d-da21c8f6b5db",
+  "quotedCredits": "10",
+  "providerCostStatus": "UNKNOWN",
+  "automaticRetry": false,
+  "secretValuesRecorded": false,
+  "postCounterSource": "local transport receipt; not a provider invoice",
+  "profile": "acceptance",
+  "taskRuntime": "self_hosted",
+  "taskStatus": "succeeded",
+  "attemptState": "succeeded",
+  "reservationStatus": "consumed",
+  "callbacks": [
+    {
+      "authenticated": true,
+      "accountMatches": true,
+      "processed": true,
+      "completed": true
+    }
+  ],
+  "contract": {
+    "provider": "fal",
+    "mode": "text-to-video",
+    "endpoint": "fal-ai/wan/v2.2-a14b/text-to-video",
+    "modelVersion": null,
+    "preset": {
+      "resolution": "720p",
+      "numFrames": 81,
+      "framesPerSecond": 16
+    }
+  },
+  "normalizedInputImage": null,
+  "output": {
+    "assetId": "2fa7803e-2040-40c3-99ac-afdb62d9387a",
+    "sha256": "fe1091e51f99b2a4b1f0319b2f217ee58157ba6a02c8e013c5c61a7ce087c0dd",
+    "bytes": "3852245",
+    "mime": "video/mp4",
+    "durationMs": 5067,
+    "width": 1280,
+    "height": 720
+  },
+  "verification": {
+    "ownerHttp": 200,
+    "outsiderHttp": 403,
+    "wrongTokenHttp": 403,
+    "expiredTokenHttp": 403,
+    "privateHash": "PASS",
+    "domainReservationConsumed": true,
+    "authenticatedAccountCallback": true
+  },
+  "actualProviderCostConfirmed": false,
+  "verifiedAt": "2026-10-13T10:14:55.424195+00:00",
+  "authorization": {
+    "source": "Retained user-authorized one-shot Fal T2V application validation.",
+    "executionBound": "No automatic retry; no further paid provider request during acceptance."
+  },
+  "applicationEvidenceScope": "real Fal output downloaded/materialized/published through application worker into private R2",
+  "sourceEvidenceRefs": [
+    "internal/evidence/M4/task-5.10/railway-worker/fal-authorized-bootstrap-20261013.json",
+    "internal/evidence/M4/task-5.10/railway-worker/fal-runtime-verification-20261013.json",
+    "internal/evidence/M4/task-5.10/railway-worker/fal-http-media-20261013.json"
+  ],
+  "fullM4Acceptance": false
+}

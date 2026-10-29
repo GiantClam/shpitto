@@ -1,0 +1,38 @@
+Skip to content
+Shpitto
+Home
+Explore
+Create
+Docs
+Log in
+Start creating
+
+ACCOUNT
+
+Sign in
+Email
+Password
+Sign in
+
+Create an account · Reset password
+
+LOCAL ACCEPTANCE ACCOUNT
+
+Use the owner account to create and manage the seeded team workspace.
+
+OWNER EMAIL
+demo-owner@shpitto.local
+OWNER PASSWORD
+DemoOwner!2026
+MEMBER EMAIL
+demo-member@shpitto.local
+MEMBER PASSWORD
+DemoMember!2026
+Open seeded invitation
+Shpitto
+
+Give your ideas a little motion.
+
+Explore
+Create a video
+Docs

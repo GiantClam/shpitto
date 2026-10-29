@@ -1,0 +1,16 @@
+⚠ You are using a non-standard "NODE_ENV" value in your environment. This creates inconsistencies in the project and is strongly advised against. Read more: https://nextjs.org/docs/messages/non-standard-node-env
+▲ Next.js 16.3.8
+- Local:         http://127.0.0.1:3199
+- Network:       http://127.0.0.1:3199
+✓ Ready in 138ms
+✓ Running next.config.ts took 29ms
+⚠ "next start" does not work with "output: standalone" configuration. Use "node .next/standalone/server.js" instead.
+2026-10-20T04:55:50.988Z ERROR [Better Auth]: Failed to run background task: [Error [APIError]: Email delivery is temporarily unavailable. Please try again.] {
+  status: 'SERVICE_UNAVAILABLE',
+  body: {
+    message: 'Email delivery is temporarily unavailable. Please try again.',
+    code: 'EMAIL_DELIVERY_UNAVAILABLE'
+  },
+  headers: {},
+  statusCode: 503
+}

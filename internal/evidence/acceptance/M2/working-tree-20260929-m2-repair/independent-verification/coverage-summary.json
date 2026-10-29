@@ -1,0 +1,134 @@
+{
+  "branchesFound": 620,
+  "branchesHit": 575,
+  "branchPercent": 92.74193548387096,
+  "missing": [],
+  "reports": [
+    {
+      "path": "src/adapters/mail/index.ts",
+      "branchesFound": 1,
+      "branchesHit": 1
+    },
+    {
+      "path": "src/adapters/mail/invitation.ts",
+      "branchesFound": 2,
+      "branchesHit": 2
+    },
+    {
+      "path": "src/adapters/mail/local.ts",
+      "branchesFound": 3,
+      "branchesHit": 3
+    },
+    {
+      "path": "src/adapters/mail/mailpit.ts",
+      "branchesFound": 9,
+      "branchesHit": 6
+    },
+    {
+      "path": "src/config/models.ts",
+      "branchesFound": 36,
+      "branchesHit": 36
+    },
+    {
+      "path": "src/contracts/http.ts",
+      "branchesFound": 69,
+      "branchesHit": 69
+    },
+    {
+      "path": "src/lib/auth.ts",
+      "branchesFound": 19,
+      "branchesHit": 17
+    },
+    {
+      "path": "src/modules/billing/hold-policy.ts",
+      "branchesFound": 6,
+      "branchesHit": 6
+    },
+    {
+      "path": "src/modules/credits/allocate.ts",
+      "branchesFound": 33,
+      "branchesHit": 28
+    },
+    {
+      "path": "src/modules/credits/expiry.ts",
+      "branchesFound": 8,
+      "branchesHit": 6
+    },
+    {
+      "path": "src/modules/credits/issue-demo.ts",
+      "branchesFound": 7,
+      "branchesHit": 5
+    },
+    {
+      "path": "src/modules/credits/ledger.ts",
+      "branchesFound": 24,
+      "branchesHit": 20
+    },
+    {
+      "path": "src/modules/credits/queries.ts",
+      "branchesFound": 23,
+      "branchesHit": 23
+    },
+    {
+      "path": "src/modules/credits/reserve.ts",
+      "branchesFound": 1,
+      "branchesHit": 1
+    },
+    {
+      "path": "src/modules/credits/settle.ts",
+      "branchesFound": 47,
+      "branchesHit": 42
+    },
+    {
+      "path": "src/modules/operations/authorize.ts",
+      "branchesFound": 29,
+      "branchesHit": 24
+    },
+    {
+      "path": "src/modules/operations/status-commands.ts",
+      "branchesFound": 51,
+      "branchesHit": 47
+    },
+    {
+      "path": "src/modules/shared/commands.ts",
+      "branchesFound": 27,
+      "branchesHit": 22
+    },
+    {
+      "path": "src/modules/shared/transaction.ts",
+      "branchesFound": 2,
+      "branchesHit": 2
+    },
+    {
+      "path": "src/modules/workspaces/access-state.ts",
+      "branchesFound": 36,
+      "branchesHit": 36
+    },
+    {
+      "path": "src/modules/workspaces/authorize.ts",
+      "branchesFound": 14,
+      "branchesHit": 14
+    },
+    {
+      "path": "src/modules/workspaces/commands.ts",
+      "branchesFound": 52,
+      "branchesHit": 51
+    },
+    {
+      "path": "src/modules/workspaces/invitations.ts",
+      "branchesFound": 37,
+      "branchesHit": 36
+    },
+    {
+      "path": "src/modules/workspaces/onboard.ts",
+      "branchesFound": 30,
+      "branchesHit": 26
+    },
+    {
+      "path": "src/modules/workspaces/policy.ts",
+      "branchesFound": 54,
+      "branchesHit": 52
+    }
+  ],
+  "status": "PASS"
+}

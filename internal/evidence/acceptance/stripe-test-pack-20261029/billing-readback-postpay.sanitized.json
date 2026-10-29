@@ -1,0 +1,38 @@
+{
+  "ok": true,
+  "data": {
+    "account": {
+      "workspaceId": "88e1b0a0-a097-4a8c-b274-f5b8f0ab80d1",
+      "status": "active",
+      "holdReason": null,
+      "reconciliationGeneration": "1"
+    },
+    "orders": [
+      {
+        "id": "da90a49b-c55a-4dcb-8fa1-a983769ff9a0",
+        "kind": "pack",
+        "status": "paid",
+        "currency": "usd",
+        "paidMinor": "900",
+        "refundedMinor": "0",
+        "customerId": "cus_VWs570jIOh5FPU",
+        "catalogSnapshot": {
+          "productKey": "acceptance-pack",
+          "amountMinor": "900",
+          "credits": "250"
+        }
+      }
+    ],
+    "grants": [
+      {
+        "id": "7f0a93a4-78f6-4c4a-9468-5a0c4a84ec81",
+        "issued": "250",
+        "available": "250",
+        "source": "purchase"
+      }
+    ],
+    "subscriptions": [],
+    "cases": [],
+    "refundRequests": []
+  }
+}

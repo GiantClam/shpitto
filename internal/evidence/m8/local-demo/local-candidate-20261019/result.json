@@ -1,0 +1,38 @@
+{
+  "status": "FAIL",
+  "profile": "fresh-candidate-local-runtime",
+  "candidateId": "local-candidate-20261019",
+  "startedAt": "2026-10-19T04:34:01.201Z",
+  "archive": {
+    "path": "internal/evidence/m8/artifact-manifest/local-candidate-20261019/local-candidate-20261019.zip",
+    "bytes": 9606977,
+    "sha256": "b1967ad98000316ad96539b6baa04c6ae499a68175d707429c8e6d91d8f14c07"
+  },
+  "checks": {
+    "archiveDigest": "PASS",
+    "archiveExtractionAndFileDigests": "PASS",
+    "requiredRuntimePaths": "PASS",
+    "customerCommandClosure": "PASS",
+    "frozenOfflineInstall": "PASS",
+    "productionBuild": "PASS",
+    "exportedBuyerChecks": "PASS"
+  },
+  "error": "connect ECONNREFUSED 127.0.0.1:55432",
+  "productionDeployment": "NOT_RUN",
+  "realAccounts": "NOT_PROVIDED",
+  "logs": {
+    "archive-list": "internal/evidence/m8/local-demo/local-candidate-20261019/archive-list.log",
+    "extract": "internal/evidence/m8/local-demo/local-candidate-20261019/extract.log",
+    "install": "internal/evidence/m8/local-demo/local-candidate-20261019/install.log",
+    "build": "internal/evidence/m8/local-demo/local-candidate-20261019/build.log",
+    "buyer-typecheck": "internal/evidence/m8/local-demo/local-candidate-20261019/buyer-typecheck.log",
+    "buyer-lint": "internal/evidence/m8/local-demo/local-candidate-20261019/buyer-lint.log",
+    "buyer-format-check": "internal/evidence/m8/local-demo/local-candidate-20261019/buyer-format-check.log",
+    "buyer-verify-config": "internal/evidence/m8/local-demo/local-candidate-20261019/buyer-verify-config.log",
+    "buyer-verify-db-boundary": "internal/evidence/m8/local-demo/local-candidate-20261019/buyer-verify-db-boundary.log",
+    "buyer-verify-local-services": "internal/evidence/m8/local-demo/local-candidate-20261019/buyer-verify-local-services.log",
+    "buyer-verify-shells": "internal/evidence/m8/local-demo/local-candidate-20261019/buyer-verify-shells.log",
+    "buyer-verify-content-boundaries": "internal/evidence/m8/local-demo/local-candidate-20261019/buyer-verify-content-boundaries.log"
+  },
+  "completedAt": "2026-10-19T04:39:18.984Z"
+}

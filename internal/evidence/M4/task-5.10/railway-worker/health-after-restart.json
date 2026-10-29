@@ -1,0 +1,21 @@
+{
+  "httpStatus": 200,
+  "body": {
+    "status": "ready",
+    "role": "provider-worker",
+    "state": "paused",
+    "createsEnabled": false,
+    "scope": "unassigned",
+    "database": "ready",
+    "schema": "ready",
+    "mediaTools": {
+      "ffmpeg": "ffmpeg version 5.1.9-0+deb12u1 Copyright (c) 2000-2026 the FFmpeg developers",
+      "ffprobe": "ffprobe version 5.1.9-0+deb12u1 Copyright (c) 2007-2026 the FFmpeg developers"
+    },
+    "lastDispatchAt": "2026-10-13T07:15:06.986Z",
+    "lastSweepAt": null,
+    "lastInboxAt": null,
+    "lastCleanupAt": null,
+    "errors": 0
+  }
+}

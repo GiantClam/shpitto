@@ -1,0 +1,109 @@
+{
+  "status": "PASS_LIVE_S3_ADAPTER",
+  "startedAt": "2026-10-11T00:22:30.423Z",
+  "finishedAt": "2026-10-11T00:22:47.622Z",
+  "adapter": "src/adapters/storage/s3-object-store.ts",
+  "runtimeFactory": "src/adapters/storage/runtime.ts",
+  "endpoint": "https://9630806d5a588fc350ee64c395005cfa.r2.cloudflarestorage.com",
+  "bucket": "shpitto-private-assets",
+  "prefix": "shpitto-acceptance-e5477888-dae7-4340-880e-f68a9c792e7c",
+  "checks": [
+    {
+      "name": "prefix_initially_empty",
+      "status": "PASS"
+    },
+    {
+      "name": "media_0_put",
+      "status": "PASS"
+    },
+    {
+      "name": "media_0_head",
+      "status": "PASS"
+    },
+    {
+      "name": "media_0_get_sha256",
+      "status": "PASS"
+    },
+    {
+      "name": "media_1_put",
+      "status": "PASS"
+    },
+    {
+      "name": "media_1_head",
+      "status": "PASS"
+    },
+    {
+      "name": "media_1_get_sha256",
+      "status": "PASS"
+    },
+    {
+      "name": "media_2_put",
+      "status": "PASS"
+    },
+    {
+      "name": "media_2_head",
+      "status": "PASS"
+    },
+    {
+      "name": "media_2_get_sha256",
+      "status": "PASS"
+    },
+    {
+      "name": "cleanup_cursor_overwrite",
+      "status": "PASS"
+    },
+    {
+      "name": "prefix_scoped_list",
+      "status": "PASS"
+    },
+    {
+      "name": "list_limit_and_start_after",
+      "status": "PASS"
+    },
+    {
+      "name": "unsigned_s3_get_denied",
+      "status": "PASS",
+      "detail": "HTTP 400; R2 may return 400 InvalidArgument for unsigned S3 API requests, and public/custom-domain routes are checked separately."
+    },
+    {
+      "name": "exact_key_delete_and_absence",
+      "status": "PASS"
+    }
+  ],
+  "media": [
+    {
+      "key": "shpitto-acceptance-e5477888-dae7-4340-880e-f68a9c792e7c/media-0.mp4",
+      "source": "internal/evidence/M4/task-5.10/fal-t2v-real-01a1232d-b908-7442-b7df-6558dd769706.mp4",
+      "bytes": 2668103,
+      "sha256": "893f56d9a586c3bf35bad7dd00ff0224ae4c6f5f399766e3827b2133f6e41f31"
+    },
+    {
+      "key": "shpitto-acceptance-e5477888-dae7-4340-880e-f68a9c792e7c/media-1.mp4",
+      "source": "internal/evidence/M4/task-5.10/fal-i2v-real-01a12337-c628-7363-93bd-2e526b11514b.mp4",
+      "bytes": 4598998,
+      "sha256": "6ac44c1e75c0175a84f6fcfc41728d41fefc8c9a40f0136d65881dac86a30085"
+    },
+    {
+      "key": "shpitto-acceptance-e5477888-dae7-4340-880e-f68a9c792e7c/media-2.mp4",
+      "source": "internal/evidence/M4/task-5.10/replicate-i2v-real-0kwz3zvawxrmt0d15168x8c3rm.mp4",
+      "bytes": 1243405,
+      "sha256": "9bbe15a33f782148a1c7b944dd5b67915f99c2a18fd8dc72d5c3857f40a63c25"
+    }
+  ],
+  "cleanup": {
+    "attemptedKeys": [
+      "shpitto-acceptance-e5477888-dae7-4340-880e-f68a9c792e7c/media-0.mp4",
+      "shpitto-acceptance-e5477888-dae7-4340-880e-f68a9c792e7c/media-1.mp4",
+      "shpitto-acceptance-e5477888-dae7-4340-880e-f68a9c792e7c/media-2.mp4",
+      "shpitto-acceptance-e5477888-dae7-4340-880e-f68a9c792e7c/z-cleanup-cursor.json"
+    ],
+    "remainingKeys": [],
+    "headConfirmedMissing": true,
+    "getConfirmedMissing": true,
+    "listConfirmedEmpty": true,
+    "errors": []
+  },
+  "limitations": [
+    "This probe verifies real object-store operations only. It does not prove database publication, provider callbacks, reservations, cost settlement, or all public bucket access routes."
+  ]
+}

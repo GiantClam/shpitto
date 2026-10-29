@@ -1,0 +1,156 @@
+{
+  "schemaVersion": "1.0",
+  "status": "PROTOTYPE_PNPM12_LOCKED_TYPECHECKED_BUILT_AUTH_DOCS_CONTAINER_MEDIA_PASS_M0_READY_FOR_REVIEW",
+  "scope": "Selected restart stack only; no package has been copied into the legacy app.",
+  "runtime": {
+    "node": {
+      "observed": "24.15.0",
+      "command": "node --version",
+      "status": "AVAILABLE"
+    },
+    "pnpm": {
+      "observed": "12.6.0",
+      "command": "pnpm --version",
+      "status": "TARGET_ACTIVE"
+    },
+    "docker": {
+      "observed": "29.8.0",
+      "command": "docker --version",
+      "status": "AVAILABLE"
+    }
+  },
+  "targetPackages": [
+    {
+      "name": "next",
+      "version": "16.3.6",
+      "source": "approved design",
+      "installedInTargetPrototype": true,
+      "licenseEvidence": {
+        "license": "MIT",
+        "resolved": "16.3.6"
+      }
+    },
+    {
+      "name": "react",
+      "version": "19.3.0",
+      "source": "approved design",
+      "installedInTargetPrototype": true,
+      "licenseEvidence": {
+        "license": "MIT",
+        "resolved": "19.3.0"
+      }
+    },
+    {
+      "name": "typescript",
+      "version": "6.0.3",
+      "source": "approved design",
+      "installedInTargetPrototype": true,
+      "licenseEvidence": {
+        "license": "Apache-2.0",
+        "resolved": "6.0.3"
+      }
+    },
+    {
+      "name": "drizzle-orm",
+      "version": "0.45.3",
+      "source": "approved design",
+      "installedInTargetPrototype": true,
+      "licenseEvidence": {
+        "license": "Apache-2.0",
+        "resolved": "0.45.3"
+      }
+    },
+    {
+      "name": "better-auth",
+      "version": "1.7.6",
+      "source": "approved design",
+      "installedInTargetPrototype": true,
+      "licenseEvidence": {
+        "license": "MIT",
+        "resolved": "1.7.6"
+      }
+    },
+    {
+      "name": "react-admin",
+      "version": "5.15.4",
+      "source": "approved design",
+      "installedInTargetPrototype": true,
+      "licenseEvidence": {
+        "license": "MIT",
+        "resolved": "5.15.4"
+      }
+    },
+    {
+      "name": "fumadocs-core",
+      "version": "16.15.14",
+      "source": "approved design",
+      "installedInTargetPrototype": true,
+      "licenseEvidence": {
+        "license": "MIT",
+        "resolved": "16.15.14"
+      }
+    },
+    {
+      "name": "stripe",
+      "version": "22.6.2",
+      "source": "approved design",
+      "installedInTargetPrototype": true,
+      "licenseEvidence": {
+        "license": "MIT",
+        "resolved": "22.6.2"
+      }
+    },
+    {
+      "name": "@trigger.dev/sdk",
+      "version": "4.6.4",
+      "source": "approved design",
+      "installedInTargetPrototype": true,
+      "licenseEvidence": {
+        "license": "MIT",
+        "resolved": "4.6.4"
+      }
+    }
+  ],
+  "unverified": [
+    "Final production operator-role administration, step-up policy and final release migration chain (M1)",
+    "Account-backed provider, Stripe test-mode, affiliate and vendor contract evidence (M4/M5/M6/M8)",
+    "Final shipped-image notice inventory and redistribution review (M8)"
+  ],
+  "verifiedLocal": [
+    "Disposable PostgreSQL migration applied twice with forced RLS and cross-tenant read/write rejection",
+    "Better Auth Drizzle PostgreSQL persistence across adapter/pool restart",
+    "Disposable PostgreSQL persisted operator role through React-admin authorization and Drizzle domain command",
+    "Single-owner ProviderPort, DTO, schema and lock-order contract register",
+    "Acceptance record checker, evidence index and digest invalidation rules"
+  ],
+  "prototype": {
+    "path": "internal/spikes/selected-stack",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+    "install": {
+      "command": "corepack pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts",
+      "exitCode": 0
+    },
+    "typecheck": {
+      "command": "corepack pnpm run typecheck",
+      "exitCode": 0
+    },
+    "build": {
+      "command": "corepack pnpm run build",
+      "exitCode": 0,
+      "standaloneOutput": true
+    },
+    "peerOverrides": [],
+    "licenseReport": "internal/restart/license-report.json"
+  },
+  "mediaWorker": {
+    "evidenceRef": "internal/spikes/selected-stack/packaging/worker-evidence.json",
+    "image": "shpitto-m0-worker:20260927",
+    "imageId": "sha256:53d69735b3f2606907f0d2832d40a8841cfb3f8c15138b35f7a4b84d9e309cd4",
+    "baseImage": "debian:bookworm-slim",
+    "baseImageDigest": "debian@sha256:3783cc01769c7b2b1b83a5c5ad96c815348e28ed7da68e2e3687004faa906251",
+    "ffmpegVersion": "ffmpeg version 5.1.9-0+deb12u1 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffprobeVersion": "ffprobe version 5.1.9-0+deb12u1 Copyright (c) 2007-2026 the FFmpeg developers",
+    "inputSha256": "9b624d37d987de66d88261e03fbf15312a405245260800162f5eec79d8a342c7",
+    "outputSha256": "a06037c82f709cf02e656405f63056452f9775bf11024d9e406302e8d87783c5"
+  }
+}

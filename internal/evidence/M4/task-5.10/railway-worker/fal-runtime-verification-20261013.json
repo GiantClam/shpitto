@@ -1,0 +1,45 @@
+{
+  "phase": "verify",
+  "runId": "c051d17d-5515-4de9-b324-4aa01ae81bda",
+  "workspaceId": "d41b8970-0182-4e52-9412-66be74fb68ae",
+  "taskId": "3d7b1ee2-06c2-4836-af4c-13d721f647ef",
+  "taskStatus": "succeeded",
+  "reservationStatus": "consumed",
+  "quotedCredits": "10",
+  "providerRequestId": "01a13498-43f7-74f0-be1a-cbc5360a1555",
+  "providerCostStatus": "unknown",
+  "callbacks": [
+    {
+      "eventId": "01a13498-43f7-74f0-be1a-cbc5360a1555",
+      "status": "processed",
+      "observation": "completed",
+      "authenticatedAt": "2026-10-13T09:30:54.208Z",
+      "accountIdSha256": "b366c2459f3c54347ddfea7716dd7a616138aff1dd3d57f7a970cc4dc0a51007"
+    }
+  ],
+  "output": {
+    "assetId": "2fa7803e-2040-40c3-99ac-afdb62d9387a",
+    "objectKey": "tasks/3d7b1ee2-06c2-4836-af4c-13d721f647ef/outputs/2fa7803e-2040-40c3-99ac-afdb62d9387a.mp4",
+    "bytes": "3852245",
+    "sha256": "fe1091e51f99b2a4b1f0319b2f217ee58157ba6a02c8e013c5c61a7ce087c0dd",
+    "durationMs": 5067,
+    "mime": "video/mp4"
+  },
+  "queuePostRequests": 1,
+  "secretValuesRecorded": false,
+  "seededAuthFixture": true,
+  "actualProviderCostStatus": "UNKNOWN",
+  "postCounterSource": "local-only",
+  "verification": {
+    "authorizedHttpDownload": 200,
+    "outsiderHttpDownload": 403,
+    "privateObjectHash": "PASS",
+    "currentMembership": "PASS",
+    "wrongAssetTokenLocal": "REJECTED",
+    "expiredTokenLocal": "REJECTED",
+    "realProviderCallback": "PASS",
+    "domainReservationSettlement": "PASS"
+  },
+  "actualProviderCostConfirmed": false,
+  "source": "seeded non-production acceptance identities; real provider/worker/R2/HTTP paths"
+}

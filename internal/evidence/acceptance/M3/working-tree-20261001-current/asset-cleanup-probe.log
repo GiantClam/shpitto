@@ -1,0 +1,1 @@
+{"status":"PASS","boundedScan":"1000","restartProgress":"resumed","failedRemoval":"retried","recentFiles":"retained","newEarlierFile":"collected","globalReference":"retained","foreignWorkspace":"retained-by-scoped-sweep","symlink":"ignored","traversal":"denied","malformedCursor":"reset","scheduledCaller":"collected-with-empty-queue"}

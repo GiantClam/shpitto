@@ -1,0 +1,22 @@
+[
+  {
+    "role": "worker",
+    "accepted": true,
+    "healthcheckTimeout": 300,
+    "healthcheckPath": "/healthz"
+  },
+  {
+    "role": "web",
+    "accepted": true,
+    "at": "2026-10-16T10:31:14.0564587+00:00",
+    "healthcheckTimeout": 300,
+    "healthcheckPath": "/api/healthz"
+  },
+  {
+    "role": "monitor",
+    "accepted": true,
+    "at": "2026-10-16T10:31:15.0469512+00:00",
+    "healthcheckTimeout": 300,
+    "healthcheckPath": "/healthz"
+  }
+]

@@ -1,0 +1,51 @@
+{"status":"PASS","cancelled":"cancelled","claimReplayed":true,"cancelAfterClaimRejected":true,"unknown":"submission_unknown","secondClaimRejected":true,"failed":"failed","late":"quarantined","failedOutput":"failed","swept":1,"succeeded":"succeeded","worker":"succeeded","headerOnlyRejected":true,"readyAssets":2,"overdueTask":"4c9da854-e935-4262-ba1d-dd4c7a63ee62","recoveryEvidence":{"correlated":true,"secretFree":true,"reservationStatus":"released"},"recoveryProjection":{"correlated":true,"secretFree":true,"status":"failed","reservationStatus":"released","release":"refund"},"trackingUrlsPersisted":true}
+✔ scripts\probe-generation-lifecycle.ts (2022.8989ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2029.984
+ℹ start of coverage report
+ℹ ---------------------------------------------------------------------------------------------------------------------------------------------
+ℹ file                 | line % | branch % | funcs % | uncovered lines
+ℹ ---------------------------------------------------------------------------------------------------------------------------------------------
+ℹ src                  |        |          |         | 
+ℹ  adapters            |        |          |         | 
+ℹ   storage            |        |          |         | 
+ℹ    local.ts          |  75.00 |    78.95 |   75.00 | 16-17 44-50 77-78 81-93
+ℹ  config              |        |          |         | 
+ℹ   models.ts          |  86.67 |    31.25 |   66.67 | 43-44 63-64 85-86 88-89 92-93 97-98 100-101
+ℹ  contracts           |        |          |         | 
+ℹ   http.ts            |  55.66 |    80.65 |   53.85 | 17-18 21-22 25-35 39-40 45-49 73 81-87 90-106
+ℹ  modules             |        |          |         | 
+ℹ   assets             |        |          |         | 
+ℹ    cleanup.ts        |  31.52 |   100.00 |    0.00 | 43-45 47-49 51-59 61-63 65-68 70-77 79-82 90-179 183-184
+ℹ    ingest.ts         |  91.84 |    41.94 |   80.00 | 21-24 72-73 80-81
+ℹ    media-probe.ts    | 100.00 |    70.59 |  100.00 | 
+ℹ   billing            |        |          |         | 
+ℹ    hold-policy.ts    |  86.67 |    60.00 |  100.00 | 13-14
+ℹ   credits            |        |          |         | 
+ℹ    allocate.ts       |  89.50 |    29.41 |   66.67 | 39-42 183-199
+ℹ    ledger.ts         |  93.53 |    42.86 |  100.00 | 60-68
+ℹ    queries.ts        |  86.45 |    45.00 |   88.89 | 133-134 139-178
+ℹ    settle.ts         |  82.18 |    63.64 |   75.00 | 47-48 73-74 93-94 127-145 191-201
+ℹ   generation         |        |          |         | 
+ℹ    create.ts         |  83.33 |    38.71 |  100.00 | 77-78 83-84 91-92 95-101 107-108 110-122 146-147 167-179
+ℹ    lifecycle.ts      |  88.98 |    63.82 |   91.89 | 110-111 120-121 211-225 279-282 319-325 335-338 352-374 403-407 429-433 580-581 591-592
+ℹ    mock.ts           |  91.49 |    57.14 |  100.00 | 40-41 43-44
+ℹ    outbox.ts         |  89.81 |    62.96 |   61.11 | 41-42 45-47 53-55 125-128 132-135
+ℹ    state.ts          |  75.90 |   100.00 |   75.00 | 64-83
+ℹ    sweep-recovery.ts |  74.19 |   100.00 |   25.00 | 18-29 32-33 56-57
+ℹ   shared             |        |          |         | 
+ℹ    commands.ts       |  91.01 |    52.17 |  100.00 | 31-32 43-44 69-70 72-73
+ℹ    transaction.ts    | 100.00 |   100.00 |  100.00 | 
+ℹ   workspaces         |        |          |         | 
+ℹ    authorize.ts      |  52.00 |    50.00 |   25.00 | 26-30 32-33 39-51 58-64 67-75
+ℹ    policy.ts         |  53.90 |    44.44 |   27.27 | 27-29 35-39 42-49 52-57 93-104 107-116 119-133 136-141
+ℹ ---------------------------------------------------------------------------------------------------------------------------------------------
+ℹ all files            |  80.16 |    58.64 |   70.59 | 
+ℹ ---------------------------------------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

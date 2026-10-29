@@ -1,0 +1,28 @@
+[     100ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[     110ms] [LOG] [HMR] connected @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[     615ms] [LOG] [Fast Refresh] rebuilding @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[     733ms] [LOG] [Fast Refresh] done in 224ms @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[    1286ms] [LOG] [Fast Refresh] rebuilding @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[    1332ms] [LOG] [Fast Refresh] done in 155ms @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[   58959ms] [LOG] [Fast Refresh] rebuilding @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[   59144ms] [LOG] [Fast Refresh] done in 295ms @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[  157957ms] [LOG] [Fast Refresh] rebuilding @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[  158019ms] [LOG] [Fast Refresh] done in 7ms @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[  187752ms] [LOG] [Fast Refresh] rebuilding @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[  187783ms] [LOG] [Fast Refresh] done in 11ms @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[  205873ms] [LOG] [Fast Refresh] done in 11ms @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[  205998ms] [LOG] [Fast Refresh] done in 11ms @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[  206385ms] [LOG] [Fast Refresh] done in 11ms @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[  208883ms] [LOG] [Fast Refresh] done in 11ms @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[  226012ms] [LOG] [Fast Refresh] done in 11ms @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[  226056ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[  226066ms] [LOG] [HMR] connected @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[  341044ms] [ERROR] Failed to load resource: net::ERR_INTERNET_DISCONNECTED @ http://127.0.0.1:3101/api/admin/workspaces?page=1&pageSize=25:0
+[  341045ms] [ERROR] Failed to load resource: net::ERR_INTERNET_DISCONNECTED @ http://127.0.0.1:3101/api/admin/workspaces?page=1&pageSize=25:0
+[  341047ms] [ERROR] Failed to load resource: net::ERR_INTERNET_DISCONNECTED @ http://127.0.0.1:3101/brand/shpitto-icon.png:0
+[  421773ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[  421782ms] [LOG] [HMR] connected @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[  441382ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[  441390ms] [LOG] [HMR] connected @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[  464152ms] [LOG] [Fast Refresh] rebuilding @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776
+[  464214ms] [LOG] [Fast Refresh] done in 171ms @ http://127.0.0.1:3101/_next/static/chunks/0_6e_next_dist_1arr6fu._.js:776

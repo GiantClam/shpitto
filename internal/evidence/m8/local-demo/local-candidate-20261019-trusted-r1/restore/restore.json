@@ -1,0 +1,228 @@
+{
+  "status": "PASS",
+  "profile": "local-docker-candidate-restore",
+  "archiveSha256": "83d093d9c0854e3a37d976ea976ca1c22685fc682d4b16bf05ea62dcb058d625",
+  "database": "shpitto_candidate_5594ecaeed7c495eb8f803256e26a553",
+  "restoredDatabase": "shpitto_candidate_5594ecaeed7c495eb8f803256e26a553_restored",
+  "backupMs": 918,
+  "restoreMs": 2089,
+  "backupSha256": "d38eb93050387b4d003d70f6c9ea52cd121a52e8d1802353543955bb4439a46c",
+  "tables": {
+    "app.affiliate_attributions": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.affiliate_correction_cases": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.affiliate_delivery_events": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.affiliate_notification_inbox": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.affiliate_payments": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.affiliate_review_actions": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.affiliate_review_records": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.affiliate_settings": {
+      "rows": 1,
+      "sha256": "e5f5381ae66849324ad3f09bc1b419073aaafc9f0b8b8e5fb46d4ce856ab2963"
+    },
+    "app.assets": {
+      "rows": 1,
+      "sha256": "90566f57ec6cc0d4c9ae78004d58edf07586dec0aa20a2c6e32b0f7e6b78cfeb"
+    },
+    "app.audit_events": {
+      "rows": 9,
+      "sha256": "b59b6d54b5218d17583eb78a8a95886d101e1e583246f406693b0aec80b06d6c"
+    },
+    "app.billing_accounts": {
+      "rows": 1,
+      "sha256": "02f082c1f7c31e375b1f7c6aca9d2b4dab37647bab9fc573fb45f1c77e2a3072"
+    },
+    "app.billing_cash_events": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.billing_checkout_attempts": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.billing_customer_history": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.billing_orders": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.billing_payment_aliases": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.billing_reconciliation_cases": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.billing_refund_requests": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.billing_subscriptions": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.billing_webhook_inbox": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.command_results": {
+      "rows": 10,
+      "sha256": "a113e88ef41aa27d9f64cfd0735e1984ee9ab1137722f68d0b405a34dfabadcd"
+    },
+    "app.credit_accounts": {
+      "rows": 1,
+      "sha256": "53e019b14355d1ec6139d030792b481dfd98c6c14af772e53f8cae422c446c96"
+    },
+    "app.credit_allocations": {
+      "rows": 4,
+      "sha256": "523d396e51106d1be80192cd2b6b6fde1b9dbd9c40ccf99b99c784c7e2121ce9"
+    },
+    "app.credit_grants": {
+      "rows": 1,
+      "sha256": "66bdb21d49f31e0e711cbd2287cb33620a585808631c36fa0cd494b8f743b25f"
+    },
+    "app.credit_ledger_entries": {
+      "rows": 8,
+      "sha256": "4df4740e98571cd3bda5816a0ae0e2e38148c4360c0d534b6bf7afd43714a6a9"
+    },
+    "app.credit_legacy_baselines": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.credit_reservations": {
+      "rows": 4,
+      "sha256": "e95859a22c66b1bc1ae0573ba9c752f8b2c1abf2eff28a400b082c8f33ed698b"
+    },
+    "app.generation_quarantine": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.generation_tasks": {
+      "rows": 4,
+      "sha256": "ef150cb96ea8edb2676235455123c0a21ebea8c30aa698118f511e7512a40084"
+    },
+    "app.mail_outbox": {
+      "rows": 1,
+      "sha256": "d349d747d9f3bc3e066f43f2976b615d6377e27257f0bc12f08845c67e37699c"
+    },
+    "app.operator_recovery_notes": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.operator_roles": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.operator_step_ups": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.operator_tenant_access": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.outbox_events": {
+      "rows": 8,
+      "sha256": "14452c0731bb7d31e11073a30640f5ac094b5dfe3962b42f82247ffb199a87ef"
+    },
+    "app.provider_webhook_inbox": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.recovery_heartbeat_incidents": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.recovery_heartbeats": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "app.schema_ownership": {
+      "rows": 2,
+      "sha256": "fa3382c4da7ae095bcce78c5eb4a41337df6209b4cc0b525e4a4598b95751db8"
+    },
+    "app.submission_attempts": {
+      "rows": 1,
+      "sha256": "becd507de152677500c2b4670aeea432011135dfd79f93786f1c6813ec712985"
+    },
+    "app.user_access_controls": {
+      "rows": 2,
+      "sha256": "1f2e5330150761175634125e03b4946cdb45357651307302166de8ae101ab7af"
+    },
+    "app.workspace_invitations": {
+      "rows": 1,
+      "sha256": "1404600e9e34dd5e3f55414826bbf3956ad9fb670ed9cf53317766bd2dc7787a"
+    },
+    "app.workspace_members": {
+      "rows": 1,
+      "sha256": "1e967102f25ee1b9729c79c454bdefe4f8f43abfb27b3b6bb309ebd070b57fcf"
+    },
+    "app.workspace_setups": {
+      "rows": 2,
+      "sha256": "b201e8d73a39ff2618504af2a6010aa31ccefc0c18d5e6f0c820c4638b2e0d02"
+    },
+    "app.workspaces": {
+      "rows": 1,
+      "sha256": "0a71e8c576206df7cb7585c0f154dc33531477e48a98b988a6b675e2ca9d6f99"
+    },
+    "drizzle.__drizzle_migrations": {
+      "rows": 29,
+      "sha256": "846ef4271cd2945334cbaa8712235ac375c449b7c8ee299076d051d09599e5d6"
+    },
+    "public.account": {
+      "rows": 2,
+      "sha256": "f41c870fa5a188a0a17216fd04df8c88f327b0ad629bcefa941e8589e8f6a42d"
+    },
+    "public.session": {
+      "rows": 1,
+      "sha256": "4df9153ebf21ce2a4b8ce8159f96ef3ef731387b8d0495ecc50ce72850a283a0"
+    },
+    "public.two_factor": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "public.user": {
+      "rows": 2,
+      "sha256": "8e32d0db3618142c399cfd997892406689a0ab824e7b6283408f696d167f8f3c"
+    },
+    "public.verification": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  },
+  "assetFiles": {
+    ".cleanup-cursors/6aa17fab-ad19-4e5d-9380-6827dfcfde4a.json": "f755f60a030e4ab480e2f28ad4fd6e31a98c7825bc5cdd6b7b3062a71b12765c",
+    "tasks/d43f5026-7ed5-458b-b7f6-58478b729549/outputs/64b47385-7e46-48e1-b006-0add1ebe67ed.mp4": "7ace5deee2697fef232d855ea123d6dd37fd95114ec258b9696ded8163a31b18"
+  },
+  "checks": {
+    "backupCatalog": "PASS",
+    "liveMutationDetected": "PASS",
+    "restoredDomainRows": "PASS",
+    "restoredPrivateMediaBytes": "PASS"
+  },
+  "production": false,
+  "secretsRetained": false
+}

@@ -1,0 +1,14 @@
+{
+  "createdAt": "2026-10-19T06:27:13.553Z",
+  "freezeRef": "internal/evidence/m7/local-current-20261019/continuation/baseline-r2/candidate.json",
+  "sourceTreeSha256": "e5cf13a5d4af7747fcb83bc10e940e73e731570a0df4dd6361aaced0890a71be",
+  "tempRoot": "C:\\Users\\liula\\AppData\\Local\\Temp\\shpitto-m3-r2-browser-hhX9aJ",
+  "runtimeRoot": "C:\\Users\\liula\\AppData\\Local\\Temp\\shpitto-m3-r2-browser-hhX9aJ\\candidate",
+  "verifiedSourceFileCount": 550,
+  "dependencySource": "D:\\github\\shpitto\\node_modules",
+  "lockfileMatches": true,
+  "privateEnvFilesCopied": false,
+  "shippedFilesModified": false,
+  "r1CompiledBuildReused": false,
+  "browserPort": 3199
+}

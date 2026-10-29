@@ -1,0 +1,44 @@
+✔ factory rejects live/restricted-live/publishable keys and unsafe origins before touching a client (8.1234ms)
+✔ customer creation and readback bind workspace and the exact stable provisioning key (1.2881ms)
+✔ customer ambiguity remains unknown and lookup never creates or invents a customer (0.351ms)
+✔ customer readback rejects deleted, live, wrong workspace and wrong provisioning key (0.277ms)
+✔ pack Checkout binds a validated snapshot and propagates stable correlation to the payment/subscription (0.9563ms)
+✔ subscription Checkout binds a validated snapshot and propagates stable correlation to the payment/subscription (0.2927ms)
+✔ invalid snapshots, remote prices and wrong customers never create Checkout (0.7036ms)
+✔ Checkout readback rejects wrong binding, price, live objects and hostile redirect URLs (0.6947ms)
+✔ lost Checkout response stays unknown and retry uses identical provider parameters/key (0.3587ms)
+✔ portal uses the injected configuration and a fixed return destination (0.317ms)
+✔ portal refuses missing/live/unsafe configuration before creating a session (0.2731ms)
+✔ refund submits only the canonical PaymentIntent and stable request metadata/key (0.5375ms)
+✔ pending/action-required/failed/canceled/unknown refunds never report succeeded (0.338ms)
+✔ refund rejects wrong amount/currency/payment target/customer/request metadata (0.2899ms)
+✔ refund validates the test PaymentIntent/customer/currency/received amount before any POST (0.2693ms)
+✔ refund lookup is read-only, paginated and refuses incomplete or duplicate matches (0.276ms)
+✔ provider errors expose only safe fixed codes and no SDK message or raw body (0.783ms)
+✔ portal refuses proration and validates returned customer/configuration/return URL (0.3836ms)
+✔ completed unpaid and expired Checkout readbacks are successful observations without payment claims (0.3161ms)
+✔ customer lookup rejects ambiguous identity, paginates, and stops on incomplete history (0.2657ms)
+✔ refund readback permits a null refund customer only after the canonical payment customer is verified (0.1904ms)
+✔ invalid refund intent and absent provider evidence cannot be upgraded to confirmation (0.3498ms)
+✔ Checkout validates frozen snapshot copies across asynchronous preflight (0.235ms)
+✔ deactivated prices block new Checkout but do not invalidate a bound historical session (0.2154ms)
+✔ portal configuration must explicitly disable cancellation prorations (0.1314ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 384.8255
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------------------------------
+ℹ file        | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------------------------------
+ℹ src         |        |          |         | 
+ℹ  contracts  |        |          |         | 
+ℹ   http.ts   |  50.00 |    80.95 |   41.67 | 17-18 21-22 25-35 38-42 52-59 73 81-87 90-106
+ℹ ------------------------------------------------------------------------------------------
+ℹ all files   |  50.00 |    80.95 |   41.67 | 
+ℹ ------------------------------------------------------------------------------------------
+ℹ end of coverage report

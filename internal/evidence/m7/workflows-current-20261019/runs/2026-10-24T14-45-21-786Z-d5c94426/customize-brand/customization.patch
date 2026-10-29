@@ -1,0 +1,26 @@
+diff --git a/src/config/brand.ts b/src/config/brand.ts
+index 44cb0ff..3876325 100644
+--- a/src/config/brand.ts
++++ b/src/config/brand.ts
+@@ -23,9 +23,9 @@ const spacingTokens = Object.freeze({
+  * consume these roles through CSS variables instead of inventing new values.
+  */
+ export const brand = Object.freeze({
+-  name: 'Shpitto',
+-  productName: 'Shpitto',
+-  tagline: 'Give your ideas a little motion.',
++  name: 'Meridian Motion',
++  productName: 'Meridian Motion',
++  tagline: 'Give every idea a moving start.',
+   source: 'https://shpitto.com',
+   assetRole: 'template-default-fallback',
+   customerOverrideRequiredForDelivery: true,
+@@ -61,7 +61,7 @@ export const brand = Object.freeze({
+       warning: '#785800',
+     }),
+     studio: Object.freeze({
+-      canvas: '#101012',
++      canvas: '#11151b',
+       surface: '#171719',
+       surfaceRaised: '#202024',
+       surfaceSoft: '#28282c',

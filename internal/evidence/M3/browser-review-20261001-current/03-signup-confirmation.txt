@@ -1,0 +1,32 @@
+- banner:
+  - link "Shpitto Video SaaS home":
+    - /url: /
+    - text: Shpitto
+  - navigation "Primary navigation":
+    - link "Home":
+      - /url: /
+    - link "Docs preview":
+      - /url: /docs
+      - text: Docs
+      - generic: preview
+    - link "Dashboard planned":
+      - /url: /dashboard
+      - text: Dashboard
+      - generic: planned
+- main:
+  - paragraph: Account
+  - heading "Create your account" [level=1]
+  - generic: Name
+  - textbox "Name": M3 Browser Acceptance
+  - generic: Email
+  - textbox "Email": <redacted>
+  - generic: Password
+  - textbox "Password": <redacted>
+  - button "Create account"
+  - status: Check your email to verify your account before signing in.
+  - paragraph:
+    - link "Already have an account? Sign in":
+      - /url: /login
+- contentinfo: Shpitto Video SaaS · staged implementation preview
+- button "Open Next.js Dev Tools":
+- alert

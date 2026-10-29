@@ -1,0 +1,30 @@
+{
+  "decision": "PASS",
+  "stageId": "M4",
+  "candidateId": "m4-self-hosted-20261016",
+  "candidateDigests": {
+    "sourceTreeSha256": "1af666b1d04b5f3e957fffbfd7f19835dcd4fef9ff430c8fdfd801f4297e63df",
+    "schemaSha256": "7560a6a5b059bb33a47e7afa878826d73cf57f05a3a6a6f5ffa1ff2eb7f08d0f",
+    "configurationSha256": "dc1d37d6189d092403ee351b5be78b20baf8aa44eeb29c4522a084af4c34cc2e",
+    "contractSha256": "356e6607d07fe741599e0a91119f005f5cb60af990c5f081e95fb93a2bda33e1",
+    "validatorSha256": "529c86a0dd73dc83073f08d8c578b0fdb2cc506e4228c52605f02df6183f4e47",
+    "lockfileSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35"
+  },
+  "reviewerId": "m4-independent-reviewer-20261016",
+  "reviewedAt": "2026-10-16T00:20:00.000Z",
+  "independentFromImplementer": true,
+  "scope": "Independent technical review of the selected self-hosted Railway demo M4 candidate.",
+  "assertions": [
+    "Four authorized provider application rows are retained and each shows one successful task/attempt, one consumed reservation, private output publication, hash verification and owner/invalid capability checks.",
+    "R2 live adapter and storage contract evidence are retained without reading or deleting existing business objects.",
+    "The self-hosted recovery drill retains overdue-first recovery, reservation release, submission fencing, heartbeat, alert delivery and incident correlation evidence.",
+    "Current M3 applicability/equivalence is independently recorded; Trigger.dev remains optional and is not required by the selected baseline.",
+    "No open P0/P1 defect or unverified secret value is included."
+  ],
+  "evidenceRefs": [
+    "internal/evidence/M4/provider-matrix.md",
+    "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261016.json",
+    "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+    "internal/evidence/acceptance/M4/m4-self-hosted-20261016/m3-equivalence-20261016.json"
+  ]
+}

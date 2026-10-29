@@ -1,0 +1,176 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "independent-trusted-prepare-candidate-review",
+  "result": "INDEPENDENT TRUSTED PREPARE CANDIDATE REVIEW REJECT",
+  "decision": "REJECT",
+  "reviewerId": "codex:01a152bc-169c-7142-9580-20679ffd80e5",
+  "reviewerAgent": "Codex (GPT-6)",
+  "implementerId": "release-engineering-local",
+  "independentFromImplementer": true,
+  "reviewedAt": "2026-10-19T07:27:07Z",
+  "scope": {
+    "candidateId": "local-candidate-20261019-trusted-r2",
+    "stageRoot": "D:\\github\\_tmp\\shpitto-m7-staging-20261019-trusted-r2\\customerRuntime",
+    "profile": "exact external trusted preparation record, candidate and staged customerRuntime",
+    "noSourceChanges": true,
+    "historicalEvidenceChanged": false,
+    "gatePromotion": false,
+    "releaseAuthorization": false,
+    "customerDelivery": false
+  },
+  "bindings": {
+    "recordRef": "D:\\github\\_tmp\\shpitto-m7-evidence-20261019\\8a0d8e3e-9a07-4039-88e4-7c28b83a8486\\fresh-r2-20261019\\a68c5a14-d238-4b13-98b0-41350f326978\\record.json",
+    "recordSha256": "a0ffc6fea381d783db53130e0ac07cd68d20d0ee1529b914ede48a7bc3ba1371",
+    "candidateRef": "D:\\github\\_tmp\\shpitto-m7-evidence-20261019\\8a0d8e3e-9a07-4039-88e4-7c28b83a8486\\fresh-r2-20261019\\a68c5a14-d238-4b13-98b0-41350f326978\\candidate.json",
+    "candidateSha256": "d09907c61d8dbba55370147e3fab7322426b7a4556854a0a2be521901bdea833",
+    "pinRef": "D:\\github\\_tmp\\shpitto-m7-evidence-20261019\\trusted-pin.json",
+    "pinSha256BeforeReview": "7e46eb202e05ce870a76ff54e664fd54c8a1683bb6e82f76f39590e90aeaa20f",
+    "trustedRoot": "D:\\github\\_tmp\\shpitto-trusted-20261019-hoisted-r1",
+    "trustedFootprintSha256": "c1a282f0c1bb294834eb36f8b4be1404072ae75265d2103f63fe15d21ec2c3ac",
+    "candidateId": "local-candidate-20261019-trusted-r2",
+    "implementerId": "release-engineering-local"
+  },
+  "record": {
+    "status": "READY_FOR_REVIEW",
+    "baselineSha256Declared": "35bf47559182cdd283a540586794598466cc26daaa0d32e460113297cb5e5035",
+    "baselineSha256Recomputed": "35bf47559182cdd283a540586794598466cc26daaa0d32e460113297cb5e5035",
+    "baselineSha256Matches": true,
+    "recordAndCandidateCandidateIdMatch": true,
+    "recordAndCandidateStageRootMatch": true,
+    "stageRootRealpathMatchesExplicitRoot": true
+  },
+  "digestVerification": {
+    "algorithm": "trusted root scripts/lib/trusted-validation.mjs measure/listFiles/aggregate algorithm",
+    "recordAndCandidateDeclared": {
+      "sourceTreeSha256": "54261cba4191fd0088a24a77cac733b6bdef7b4cf8a207f38a7df11e6a2ee2ef",
+      "schemaSha256": "7560a6a5b059bb33a47e7afa878826d73cf57f05a3a6a6f5ffa1ff2eb7f08d0f",
+      "configurationSha256": "256217154779f16bf458938d4f269b30dee976d0525ec2a9cb35e3c0ba67900f",
+      "contractSha256": "8244440f7f57156af574b6f2301973c470d45452a2f00a1a14c65c81a1c52568",
+      "validatorSha256": "9cf864c519f719dc8de812cec85de6b1a87671736ff335caead13d53d844bb7a",
+      "lockfileSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35"
+    },
+    "stageRecomputed": {
+      "sourceTreeSha256": "7282382ec6941925ee49d37242564004f344399376b881357fff1003ba537929",
+      "schemaSha256": "7560a6a5b059bb33a47e7afa878826d73cf57f05a3a6a6f5ffa1ff2eb7f08d0f",
+      "configurationSha256": "d42f5f0af1e140955b9a719121a40add4c9193e0629f1d13d039d71716056b15",
+      "contractSha256": "8244440f7f57156af574b6f2301973c470d45452a2f00a1a14c65c81a1c52568",
+      "validatorSha256": "9cf864c519f719dc8de812cec85de6b1a87671736ff335caead13d53d844bb7a",
+      "lockfileSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35"
+    },
+    "matches": {
+      "sourceTreeSha256": false,
+      "schemaSha256": true,
+      "configurationSha256": false,
+      "contractSha256": true,
+      "validatorSha256": true,
+      "lockfileSha256": true,
+      "allSix": false
+    },
+    "blockingFinding": "The fresh READY_FOR_REVIEW record and candidate do not bind the current staged customerRuntime. The trusted validator recomputation differs for sourceTreeSha256 and configurationSha256. Approval is denied."
+  },
+  "dependencyVerification": {
+    "dependencyLockSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35",
+    "stageLockSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35",
+    "trustedDependencyTreeSha256": "3d28bccfa1df40207524eb0b41853d92d0b58c7383cd6c2e569ce9c80fb490b3",
+    "pinnedDependencyTreeSha256": "3d28bccfa1df40207524eb0b41853d92d0b58c7383cd6c2e569ce9c80fb490b3",
+    "lockMatches": true,
+    "treeMatches": true
+  },
+  "checkOutputs": [
+    {
+      "id": "typecheck",
+      "status": "PASS",
+      "exitCode": 0,
+      "outputSha256": "adba4af9194e10e47dda75ff0fd0f8c2b756474896d0eba5612799c527ff372a",
+      "verified": true
+    },
+    {
+      "id": "lint",
+      "status": "PASS",
+      "exitCode": 0,
+      "outputSha256": "abc3ddbd7ec4b97bbb0679ef5ade6b0c50311f30d46c6b3ae6ec62c8a5cc8992",
+      "verified": true
+    },
+    {
+      "id": "format-check",
+      "status": "PASS",
+      "exitCode": 0,
+      "outputSha256": "f5baac642dc8bcb27d08e1c0070117ded089754d2b77a37f570328ec72fb2bb0",
+      "verified": true
+    },
+    {
+      "id": "boundary-checks",
+      "status": "PASS",
+      "exitCode": 0,
+      "outputSha256": "0f0f84feaf4914ec25de4fee3245c5bda6424f24941c6fe8842ba4d57b347e72",
+      "verified": true
+    },
+    {
+      "id": "relevant-domain-tests",
+      "status": "PASS",
+      "exitCode": 0,
+      "outputSha256": "8c6942f43af609804c8c46f1f03c4cf5db048f3f212fda46ba29db1bfe4024af",
+      "verified": true
+    }
+  ],
+  "stageAndArchiveVerification": {
+    "stageFileCount": 399,
+    "manifestCustomerRuntimeFileCount": 399,
+    "stageManifestMissing": [],
+    "stageManifestExtra": [],
+    "stageManifestChangedCount": 0,
+    "stageManifestAggregateSha256": "7282382ec6941925ee49d37242564004f344399376b881357fff1003ba537929",
+    "stageManifestEquivalent": true,
+    "manifestZipEntryCount": 458,
+    "actualZipEntryCount": 458,
+    "manifestZipBytes": 9658756,
+    "actualZipBytes": 9658756,
+    "manifestZipSha256": "cc9750578638109350e05b60865a76e139e752a9bd97ed2a436f279ffac5ea66",
+    "actualZipSha256": "cc9750578638109350e05b60865a76e139e752a9bd97ed2a436f279ffac5ea66",
+    "zipContentMismatches": 0,
+    "zipExtraEntries": [],
+    "zipEquivalent": true
+  },
+  "pinnedFiles": {
+    "count": 24,
+    "trustedChecksumsMatch": true,
+    "overlayFilesMayBeAbsentInStage": true,
+    "requiredValidatorAndPolicyFilesMatch": true
+  },
+  "pinMutation": {
+    "candidateReviewUpdated": false,
+    "reason": "The all-six-digest requirement failed; the existing candidateReview was preserved.",
+    "pinSha256BeforeReview": "7e46eb202e05ce870a76ff54e664fd54c8a1683bb6e82f76f39590e90aeaa20f",
+    "pinSha256AfterReview": "7e46eb202e05ce870a76ff54e664fd54c8a1683bb6e82f76f39590e90aeaa20f",
+    "existingCandidateReviewRecordSha256": "17e76ef2978f0f22d4f9225e89f4b7781f7e7c86b2207238a784b344a7dd208f",
+    "existingCandidateReviewEvidenceRef": "D:\\github\\_tmp\\shpitto-m7-evidence-20261019\\8a0d8e3e-9a07-4039-88e4-7c28b83a8486\\record.json"
+  },
+  "followUp": {
+    "trustedValidate": "NOT_RUN: blocked by digest mismatch before approval update",
+    "exportValidation": "NOT_RUN: no accepted evidence was produced",
+    "deployValidation": "NOT_RUN: no accepted evidence was produced",
+    "requiredCorrection": "Regenerate the fresh trusted prepare record and candidate from the unchanged stageRoot so sourceTreeSha256 is 7282382ec6941925ee49d37242564004f344399376b881357fff1003ba537929 and configurationSha256 is d42f5f0af1e140955b9a719121a40add4c9193e0629f1d13d039d71716056b15, then submit the replacement record for independent review."
+  },
+  "findings": [
+    {
+      "severity": "BLOCKER",
+      "code": "CURRENT_STAGE_DIGEST_MISMATCH",
+      "message": "Fresh record/candidate digests do not match the current staged customerRuntime under the trusted validator footprint."
+    },
+    {
+      "severity": "PASS",
+      "code": "BASELINE_SHA256_MATCH",
+      "message": "The baselineSha256 recomputed from the current trusted pin using the exact validator algorithm matches the fresh record."
+    },
+    {
+      "severity": "PASS",
+      "code": "STAGE_AND_ZIP_EQUIVALENCE",
+      "message": "The 399-file customerRuntime stage matches the retained manifest, and all 458 ZIP entries and ZIP SHA-256 match the manifest."
+    }
+  ],
+  "limitations": [
+    "No external trusted-pin.json mutation was made.",
+    "No source, history, stage, manifest or ZIP bytes were modified.",
+    "No paid, provider, production, promotion, export or deployment action was performed."
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "1.0",
+  "stageId": "M3",
+  "candidateSourceTreeSha256": "00b6e8f9c91045a8fc1b83193eda55bf1d294db7f2a1b6ce53f5ba1e6cdabf3a",
+  "reviewerAgentId": "01a1573e-60fe-76c2-af15-d16d7f1be8d6",
+  "reviewedAt": "2026-10-20T03:16:30Z",
+  "reviewerDidNotImplementCandidate": true,
+  "reviewMode": "independent read-only technical review; transcribed from the reviewer subagent result",
+  "decision": "BLOCKED",
+  "verified": {
+    "sourceAndSixDigestsStable": true,
+    "automatedCommandsPassed": "79/79",
+    "scenariosPassed": "63/63",
+    "ownedCoreDomainBranchCoverage": "1030/1228 (83.88%)",
+    "zeroCreditAccountPresentWithoutGrant": true,
+    "zeroCreditDenialStatus": 409,
+    "ownershipTransferAndMemberRemoval": "POST 200 each"
+  },
+  "blockingFindings": [
+    {
+      "id": "M3-demo-ui-evidence-gap",
+      "requirementRef": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md#M3",
+      "reason": "The current-candidate browser walkthrough does not explicitly map fixture billing, operations/admin views, or applicable success/loading/empty/error/denied states for each implemented local route required by M3 mandatory criterion 6.",
+      "nextAction": "Capture and map current-candidate browser observations for those views and route states, then repeat independent review."
+    },
+    {
+      "id": "M3-signoff-pending",
+      "reason": "The aggregate record has independentReview and integrationDecision NOT_RUN; the automated walkthrough explicitly records manualVisualApproval=false.",
+      "nextAction": "Obtain actual product/visual review and a separate integrator decision after all mandatory evidence exists."
+    }
+  ],
+  "evidenceRefs": [
+    "internal/evidence/M3/continuation-20261020/r9/aggregate/record.json",
+    "internal/evidence/M3/continuation-20261020/r9/aggregate/verification-attempts/2026-10-20T02-47-13-023Z-edbba1b8-9016-4597-a37f-148aeee01096/commands.json",
+    "internal/evidence/M3/continuation-20261020/r9/aggregate/verification-attempts/2026-10-20T02-47-13-023Z-edbba1b8-9016-4597-a37f-148aeee01096/coverage-summary.json",
+    "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-6b5837e4/walkthrough.json",
+    "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-6b5837e4/owner-controls.json",
+    "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-6b5837e4/zero-credit-denial.json"
+  ],
+  "manualVisualApproval": false,
+  "integratorDecision": "NOT_RUN",
+  "gatePromotion": false
+}

@@ -1,0 +1,59 @@
+{
+  "status": "PASS",
+  "scope": "Local acceptance PostgreSQL only",
+  "appliedAt": "2026-10-01T03:31:32.856Z",
+  "migration": "0016_billing_contracts",
+  "sourceTreeSha256": "6505c461336a6bdb8d1486226bee3702b8982623d2958195d38a24962e1aacef",
+  "backupRef": ".data/backups/before-billing-0016-1790825491547.dump",
+  "backupSha256": "d7002be5ea5986b27c6ae12d5243c121154b9dc21f1e5ad1110263cc1b9328f9",
+  "backupArchiveInspected": true,
+  "before": {
+    "counts": {
+      "workspaces": 6,
+      "workspace_members": 7,
+      "billing_accounts": 6,
+      "credit_accounts": 3,
+      "credit_grants": 3,
+      "credit_reservations": 6,
+      "credit_allocations": 6,
+      "credit_ledger_entries": 15,
+      "generation_tasks": 6,
+      "submission_attempts": 6,
+      "assets": 6
+    },
+    "credits": {
+      "issued": "300",
+      "available": "240",
+      "reserved": "0",
+      "consumed": "60",
+      "expired": "0",
+      "voided": "0"
+    }
+  },
+  "after": {
+    "counts": {
+      "workspaces": 6,
+      "workspace_members": 7,
+      "billing_accounts": 6,
+      "credit_accounts": 3,
+      "credit_grants": 3,
+      "credit_reservations": 6,
+      "credit_allocations": 6,
+      "credit_ledger_entries": 15,
+      "generation_tasks": 6,
+      "submission_attempts": 6,
+      "assets": 6
+    },
+    "credits": {
+      "issued": "300",
+      "available": "240",
+      "reserved": "0",
+      "consumed": "60",
+      "expired": "0",
+      "voided": "0"
+    }
+  },
+  "addedTables": 6,
+  "existingDataPreserved": true,
+  "productionChanged": false
+}

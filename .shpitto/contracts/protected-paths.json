@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1.0",
+  "release": "v1",
+  "paths": [
+    "src/db", "src/modules", "src/adapters", "src/app/api/auth", "src/app/api/billing",
+    "src/app/api/generation", "src/app/api/webhooks", "src/app/api/workspaces", "src/db/migrations", "scripts", "tooling",
+    ".shpitto/contracts"
+  ],
+  "semanticContracts": [
+    "authentication", "authorization", "tenant isolation", "billing", "ledger", "generation lifecycle",
+    "provider reconciliation", "asset ownership", "migration ordering", "validator and export policy"
+  ],
+  "ordinaryCustomization": "must classify and escalate protected changes; it cannot claim completion"
+}

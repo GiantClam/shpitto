@@ -1,0 +1,8 @@
+⚠ You are using a non-standard "NODE_ENV" value in your environment. This creates inconsistencies in the project and is strongly advised against. Read more: https://nextjs.org/docs/messages/non-standard-node-env
+▲ Next.js 16.3.6
+- Local:         http://127.0.0.1:3199
+- Network:       http://127.0.0.1:3199
+✓ Ready in 176ms
+✓ Running next.config.ts took 40ms
+⚠ "next start" does not work with "output: standalone" configuration. Use "node .next/standalone/server.js" instead.
+2026-10-01T01:18:44.750Z WARN [Better Auth]: Invalid password

@@ -1,0 +1,110 @@
+{
+  "status": "PASS_DEPLOYED_PAUSED_PROVIDER_WORKER",
+  "verifiedAt": "2026-10-13T07:20:35.487711+00:00",
+  "project": {
+    "id": "b0abc207-4d5b-4f64-903f-ec7d929b35c4",
+    "name": "shpitto-m4-staging",
+    "environment": "production",
+    "note": "Isolated Demo/acceptance project; environment name does not denote a production business deployment."
+  },
+  "worker": {
+    "serviceName": "shpitto-m4-worker",
+    "serviceId": "5887fddb-0d43-4509-b41c-ff364abd778f",
+    "deploymentId": "4803cfac-5c58-4b56-8296-55b76da0fbde",
+    "status": "SUCCESS",
+    "stopped": false,
+    "imageDigest": "sha256:9d4ecbf4fc0e059e05aea6e5dbb5c83db91961094423bd9f79c791e2f1a72aeb"
+  },
+  "web": {
+    "serviceName": "shpitto-m4-web",
+    "serviceId": "572448eb-292d-498a-afc6-965b4f5ee5f4",
+    "deploymentId": "fbb3369a-3ea0-424b-b1de-6469a873723a",
+    "status": "SUCCESS",
+    "stopped": false,
+    "imageDigest": "sha256:754577dc2240d5be8d7a3c3f552455410bd83b11db448e336e6afad2d1069bcf"
+  },
+  "artifacts": {
+    "worker": {
+      "sourceSnapshotSha256": "73ed9d5b334de1f35d5f205285ed26281ef6f6bebb8f6d373b506626a6183282",
+      "manifest": "worker-source-manifest.json"
+    },
+    "web": {
+      "sourceSnapshotSha256": "ec36b8e100bda72cd736891f639d7d2d790568c255ddc2750d6962be874d041a",
+      "manifest": "web-source-manifest.json"
+    }
+  },
+  "runtime": {
+    "state": "paused",
+    "newPaidCreatesEnabled": false,
+    "workspaceAssigned": false,
+    "database": "ready",
+    "schema": "ready",
+    "mediaTools": {
+      "ffmpeg": "ffmpeg version 5.1.9-0+deb12u1 Copyright (c) 2000-2026 the FFmpeg developers",
+      "ffprobe": "ffprobe version 5.1.9-0+deb12u1 Copyright (c) 2007-2026 the FFmpeg developers"
+    }
+  },
+  "verification": {
+    "contracts": {
+      "passed": 145,
+      "failed": 0,
+      "scope": "provider/storage/worker/JWKS/inbox contracts and policy units"
+    },
+    "postgresqlIntegration": {
+      "passed": 13,
+      "failed": 0,
+      "scope": "new disposable Railway database; fake provider HTTP only, four modes and actual domain transactions"
+    },
+    "r2InputCapability": "PASS_FRESH_OBJECT_GET_HASH_DELETE",
+    "isolationPreflight": "PASS_WRONG_PROJECT_REJECTED_BEFORE_MIGRATIONS",
+    "controlledRestart": "PASS_HEALTH_200_BEFORE_AND_AFTER",
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "format": "PASS",
+    "config": "PASS",
+    "databaseBoundary": "PASS",
+    "productionWebBuild": "PASS",
+    "openspec": "PASS",
+    "dependencyAudit": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0
+    },
+    "fullAcceptance": "FAIL_STALE_M4_CANDIDATE_DIGESTS"
+  },
+  "cleanup": {
+    "remainingDisposableWorkerDatabases": 0,
+    "r2ProbeRemoved": true,
+    "existingBusinessObjectsReadOrDeleted": false
+  },
+  "credentials": {
+    "valuesIncluded": false,
+    "source": "Railway service references",
+    "replicateApiToken": "CONFIGURED",
+    "replicateSigningKey": "CONFIGURED_READ_ONLY_PROVIDER_LOOKUP",
+    "falApiKey": "MISSING",
+    "falAccountBinding": "MISSING"
+  },
+  "costAndScope": {
+    "newProviderPredictionRequests": 0,
+    "providerCostEvidence": "UNKNOWN_REMAINS_UNKNOWN",
+    "productionEmail": "NOT_USED",
+    "historicalBalanceRecovery": "NOT_RUN",
+    "productionCatalog": "DISABLED"
+  },
+  "m4GateEffect": "5.10_REMAINS_OPEN",
+  "limitations": [
+    "The initial paused deployment performed no live inference; a subsequent explicitly authorized one-shot is recorded separately, without claiming whole-stage acceptance.",
+    "Fixture transport/inbox evidence cannot replace real-account M4 callback/settlement evidence.",
+    "Hosted Trigger and independent whole-stage acceptance are not asserted.",
+    "Current source changes invalidate the prior M4 acceptance candidate digests."
+  ],
+  "subsequentAuthorizedLiveVerification": {
+    "recordRef": "internal/evidence/M4/task-5.10/railway-worker/fal-authorized-bootstrap-20261013.json",
+    "status": "PASS_SCOPED_FAL_T2V_LIVE_PIPELINE",
+    "verifiedAt": "2026-10-13T10:14:55.424195+00:00",
+    "fullM4Acceptance": false
+  }
+}

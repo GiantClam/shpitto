@@ -1,0 +1,299 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "IMPLEMENTATION_ACCEPTANCE",
+  "changeId": "restart-shpitto-video-saas",
+  "stageId": "M2",
+  "checkpointId": null,
+  "gateTaskId": "3.2",
+  "status": "PASS",
+  "candidateId": "working-tree-20260928-m2-3.2",
+  "createdAt": "2026-09-28T05:30:00Z",
+  "updatedAt": "2026-09-28T06:20:00Z",
+  "policy": {
+    "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+    "sha256": "b597a035c61da01296d71979c1c16c4136f78c3e3d523b55158f0a2ca3de4ff0"
+  },
+  "prerequisites": [
+    {
+      "taskId": "3.1",
+      "requiredProfile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260928-m2-3.1",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.1/record.json",
+        "internal/restart/m2-task-3.1-evidence.md"
+      ]
+    }
+  ],
+  "candidate": {
+    "sourceCommit": "6ad44be7b6f12fe028637f0300040bada826c47d",
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "e354c83d2230a39795cf266d7e108f47fc67e30b70d67997100280604161d1d0",
+    "schemaSha256": "3dbcdaa780acf7a0af4544c790659c86a2698b08a70cd68f46aa07423c82c206",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+    "configurationSha256": "9122c447358d805d04cafb9de06639f6cbdda4baf094ba893bcec5587722673f",
+    "contractSha256": "b8ef3892ca9fffb41902009c9388dc560b2621175de1efcb5bc024f2051cd6eb",
+    "validatorSha256": "8984e17ef57d7badb8b99a0a0d67366671f135fc06b28b26c6823a3ad804c855",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF",
+    "digestInputs": {
+      "sourceTree": [
+        "src",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": ["src/db"],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".dockerignore",
+        ".env.example",
+        "src/config/env.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile"
+      ],
+      "contract": [
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json"
+      ],
+      "validator": ["scripts", "internal/restart/check-acceptance-record.py"]
+    }
+  },
+  "environments": [
+    {
+      "environmentId": "local-m2-onboarding",
+      "profile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "toolVersions": {
+        "node": "24.15.0",
+        "pnpm": "12.6.0",
+        "docker": "29.8.0",
+        "postgres": "15-alpine",
+        "python": "3.x",
+        "openspec": "1.0"
+      },
+      "accountOrProgram": "none",
+      "effectiveLimits": "No provider, payment, payout, publication or hosted-service calls",
+      "fixtureOrSeed": "Three concurrent retries for one verified fixture user; invalid user rollback; fixed timestamp 2026-09-28T00:00:00Z",
+      "clockMode": "fixed probe timestamp",
+      "sanitationNotes": "Disposable database credentials and generated user IDs are omitted from the record"
+    }
+  ],
+  "criterionResults": [
+    {
+      "criterionId": "3.2-C01",
+      "environmentId": "local-m2-onboarding",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Better Auth uses the persistent Drizzle PostgreSQL adapter and exposes signup, sign-in/session, verification and reset seams",
+      "observed": "Auth factory uses the selected adapter and auth handler; account creation hook persists a pending setup marker",
+      "evidenceRefs": ["internal/restart/m2-task-3.2-evidence.md", "src/lib/auth.ts", "src/app/api/auth/[...all]/route.ts"]
+    },
+    {
+      "criterionId": "3.2-C02",
+      "environmentId": "local-m2-onboarding",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Incomplete setup is retryable and one personal workspace/member pair survives concurrent retries",
+      "observed": "Three concurrent onboarding calls converged to one workspace and one owner membership",
+      "evidenceRefs": ["internal/restart/m2-task-3.2-evidence.md", "scripts/probe-onboarding.ts", "src/modules/workspaces/onboard.ts"]
+    },
+    {
+      "criterionId": "3.2-C03",
+      "environmentId": "local-m2-onboarding",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Invalid onboarding work rolls back setup/workspace rows and does not issue demo credits",
+      "observed": "Invalid-user transaction rollback left zero setup/workspace rows; probe reports demoCreditsIssued=false",
+      "evidenceRefs": ["internal/restart/m2-task-3.2-evidence.md", "scripts/probe-onboarding.ts"]
+    },
+    {
+      "criterionId": "3.2-C04",
+      "environmentId": "local-m2-onboarding",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Onboarding route requires the current authenticated session and accepts a bounded workspace name",
+      "observed": "POST /api/onboarding resolves the Better Auth session, validates workspaceName to 1-100 characters without control characters and delegates to the domain command; static auth and root checks pass",
+      "evidenceRefs": ["internal/restart/m2-task-3.2-evidence.md", "src/app/api/onboarding/route.ts"]
+    }
+  ],
+  "commonStandardResults": [
+    {
+      "standard": "scope",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": ["Task 3.2 claims account/session and personal-workspace onboarding only; teams, invitations, credits and operator policy remain later tasks"],
+      "evidenceRefs": ["internal/restart/m2-task-3.2-evidence.md"]
+    },
+    {
+      "standard": "build-and-checks",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": ["Full root verification and standalone Next build passed after the auth/onboarding routes were added"],
+      "evidenceRefs": ["internal/restart/m2-task-3.2-evidence.md"]
+    },
+    {
+      "standard": "coverage",
+      "applicable": true,
+      "result": "NOT_APPLICABLE",
+      "reason": "M2 aggregate branch coverage is established at task 3.12; task 3.2 supplies mandatory concurrency and rollback cases through the PostgreSQL probe",
+      "evidenceRefs": ["internal/restart/m2-task-3.2-evidence.md"]
+    },
+    {
+      "standard": "defects",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": ["No open P0/P1 defect is recorded for task 3.2"],
+      "evidenceRefs": ["internal/restart/m2-task-3.2-evidence.md"]
+    },
+    {
+      "standard": "isolation-security",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": ["Onboarding is session-bound, workspace IDs are generated server-side and no public generation API key is exposed"],
+      "evidenceRefs": ["internal/restart/m2-task-3.2-evidence.md", "src/app/api/onboarding/route.ts"]
+    },
+    {
+      "standard": "evidence-and-recovery",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": ["Current candidate digests, fixed probe environment, concurrent retry result and rollback result are recorded"],
+      "evidenceRefs": ["internal/restart/m2-task-3.2-evidence.md", "scripts/probe-onboarding.ts"]
+    }
+  ],
+  "scenarioResults": [
+    {
+      "ids": ["T01", "T05", "SC-IAM-01", "SC-IAM-02"],
+      "profile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "environmentId": "local-m2-onboarding",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Account setup can resume after interruption and concurrent retries create exactly one personal workspace/member pair without demo funding",
+      "observed": "The onboarding probe passed three concurrent retries, one workspace/member, rollback cleanup and restart-safe querying",
+      "iteration": "single fixed-clock probe with generated isolated IDs",
+      "commandRef": "m2-3.2-onboarding-probe",
+      "evidenceRefs": ["internal/restart/m2-task-3.2-evidence.md", "scripts/probe-onboarding.ts"]
+    }
+  ],
+  "commands": [
+    {
+      "commandId": "m2-3.2-verify",
+      "invocation": "corepack pnpm verify",
+      "environmentId": "local-m2-onboarding",
+      "startAt": "2026-09-28T05:10:00Z",
+      "endAt": "2026-09-28T05:13:00Z",
+      "exitCode": 0,
+      "assertionRef": "full root verification including auth/onboarding routes and Next production build"
+    },
+    {
+      "commandId": "m2-3.2-onboarding-probe",
+      "invocation": "DATABASE_URL=<redacted-local-credential> corepack pnpm db:probe:onboarding",
+      "environmentId": "local-m2-onboarding",
+      "startAt": "2026-09-28T05:18:00Z",
+      "endAt": "2026-09-28T05:18:03Z",
+      "exitCode": 0,
+      "assertionRef": "concurrentRetries=3, personalWorkspaces=1, memberships=1, rollbackObserved=true, restartSafe=true, demoCreditsIssued=false"
+    },
+    {
+      "commandId": "m2-3.2-record-check",
+      "invocation": "python -B internal/restart/check-acceptance-record.py internal/evidence/acceptance/M2/working-tree-20260928-m2-3.2/record.json",
+      "environmentId": "local-m2-onboarding",
+      "startAt": "2026-09-28T05:30:00Z",
+      "endAt": "2026-09-28T05:30:01Z",
+      "exitCode": 0,
+      "assertionRef": "record schema and digest shape check"
+    }
+  ],
+  "coverage": {
+    "status": "NOT_APPLICABLE",
+    "reason": "M2 core-domain coverage denominator is established at task 3.12",
+    "ownedModuleManifestRef": null,
+    "denominator": null,
+    "coveredBranches": null,
+    "totalBranches": null,
+    "percent": null,
+    "exclusions": [],
+    "evidenceRef": "internal/restart/m2-task-3.2-evidence.md"
+  },
+  "defects": [],
+  "externalInputs": [
+    {
+      "input": "Local mail delivery adapter for verification and reset messages",
+      "owner": "workspace/integration owner",
+      "affectedTasks": ["3.4", "3.2"],
+      "availability": "deferred",
+      "nextAction": "Connect the durable mail intent/outbox adapter in task 3.4",
+      "authorityRef": "openspec/changes/restart-shpitto-video-saas/specs/identity-workspaces/spec.md"
+    }
+  ],
+  "commercialAuthorizationRefs": [],
+  "recovery": {
+    "rollbackPoint": "6ad44be7b6f12fe028637f0300040bada826c47d plus current uncommitted M2 patch",
+    "restoreEvidenceRefs": ["internal/restart/m2-task-3.2-evidence.md"],
+    "compatibleSchemaVersions": ["domain=2"],
+    "unrelatedWorkProtection": "Probe uses generated users and deletes only its own rows in the disposable database"
+  },
+  "observation": {
+    "planRef": "internal/restart/verification-plan.md",
+    "windowStart": null,
+    "windowEnd": null,
+    "windowRationale": "Task-level onboarding probe; no time-window behavior is claimed",
+    "behavioralBaselineDigest": null,
+    "monitoringEvidenceRefs": [],
+    "journeyEvidenceRefs": [],
+    "recoveryUpgradeEvidenceRefs": [],
+    "recurringWorkerAlertEvidenceRefs": [],
+    "findingRefs": []
+  },
+  "submission": {
+    "implementerId": "m2_3_2_auth_onboarding",
+    "submittedAt": "2026-09-28T05:30:00Z",
+    "reportRef": "internal/restart/m2-task-3.2-evidence.md"
+  },
+  "independentReview": {
+    "reviewerId": "m2-gpt6-luna-review-20260928",
+    "reviewedAt": "2026-09-28T06:18:00Z",
+    "independentFromImplementer": true,
+    "decision": "PASS",
+    "reason": "The corrected onboarding route enforces a 1-100 character workspace name, rejects non-string, empty and control-character input, and remains session-bound. Typecheck, lint, format, acceptance-record validation and the disposable PostgreSQL probe pass; all declared candidate digests match.",
+    "evidenceRefs": [
+      "internal/restart/m2-task-3.2-evidence.md",
+      "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.2/record.json",
+      "src/app/api/onboarding/route.ts",
+      "scripts/probe-onboarding.ts"
+    ]
+  },
+  "integrationDecision": {
+    "integratorId": "root",
+    "decidedAt": "2026-09-28T06:20:00Z",
+    "decision": "PASS",
+    "reason": "Independent gpt-6-luna review passed the corrected task 3.2 candidate. Persistent auth seams, pending setup, idempotent personal workspace onboarding, concurrent retry convergence, rollback and bounded route input are accepted. Task 3.3 is eligible; the M2 gate remains open.",
+    "nextEligibleTaskIds": ["3.3"],
+    "blockedTaskIds": []
+  },
+  "invalidation": {
+    "supersedesRecordRef": null,
+    "changedDigestRefs": [],
+    "affectedStages": [],
+    "requiredReruns": [],
+    "carriedEvidence": []
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "1.0",
+  "status": "PASSED_DISPOSABLE_SESSION_PROBE",
+  "command": "node auth/auth-probe.mjs",
+  "environment": "local/disposable-memory-auth",
+  "observed": {
+    "authenticated": true,
+    "sessionUserIdPresent": true,
+    "operatorRoleGrantedByAuth": false,
+    "adapter": "Better Auth public memory adapter",
+    "externalCalls": 0
+  },
+  "proves": [
+    "Better Auth signup and password sign-in produce a durable in-memory session token.",
+    "A session lookup requires an explicit bearer session and does not grant operator role by itself.",
+    "The probe uses no external account, provider or secret."
+  ],
+  "doesNotProve": [
+    "Production PostgreSQL Better Auth migration or persistence.",
+    "Email delivery, verification, reset or 2FA provider behavior."
+  ]
+}

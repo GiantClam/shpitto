@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "1.0",
+  "reviewedAt": "2026-10-01",
+  "reviewer": "/root/next_stage_evidence_review",
+  "supersededBy": "next-tasks-review-5.3-6.3-6.4-final.json",
+  "scope": ["M4 task 5.3", "M5 tasks 6.3 and 6.4"],
+  "decision": "FAIL_REQUIRES_FIX",
+  "decisionSummary": "Task 5.3 passes its bounded local fal queue contract. Tasks 6.3 and 6.4 are not eligible for PASS because canonical alias lookup can cross-pair object kind and external ID, tenant/customer hints are not checked against an existing canonical order, and failed inbox deliveries are never retried on redelivery.",
+  "ownerLayer": "runtime",
+  "upstreamFilesInspected": [
+    "openspec/changes/restart-shpitto-video-saas/specs/billing/spec.md",
+    "openspec/changes/restart-shpitto-video-saas/tasks.md",
+    "internal/restart/evidence-index.json",
+    "internal/evidence/M4/task-5.3/README.md",
+    "internal/evidence/M5/task-6.3-6.4/README.md",
+    "src/modules/billing/payment-aliases.ts",
+    "src/modules/billing/reconcile-payment.ts",
+    "src/modules/billing/inbox.ts",
+    "src/db/schema/billing.ts"
+  ],
+  "whyNotHigherLayer": "The billing specification explicitly requires event alias convergence, mismatched mappings to become recovery cases, durable duplicate-delivery handling, and atomic reconciliation. The observed defects are in the runtime query and delivery-control flow; changing only the specification or evidence would leave the unsafe behavior intact.",
+  "findings": [
+    {
+      "id": "BIL-ALIAS-CROSS-PAIR",
+      "severity": "high",
+      "file": "src/modules/billing/payment-aliases.ts",
+      "lines": "13-17",
+      "description": "findCanonicalOrderId filters objectKind and externalId with independent IN predicates. For aliases (checkout_session, cs1) and (payment_intent, pi1), rows (checkout_session, pi1) or (payment_intent, cs1) can match even though neither row is one of the supplied alias pairs. This can resolve an event to the wrong canonical order.",
+      "specReference": "REQ-BIL-02 / SC-BIL-06",
+      "requiredEvidence": "Exact tuple matching or an equivalent query, plus a regression proving cross-pairs are rejected or become recovery cases."
+    },
+    {
+      "id": "BIL-TENANT-HINT-MISMATCH",
+      "severity": "high",
+      "file": "src/modules/billing/reconcile-payment.ts",
+      "lines": "99-105, 141-156",
+      "description": "When an alias resolves an existing order, resolveOrder returns that order without checking incoming workspaceId or customerId. reconcilePayment locks input.workspaceId before resolution. A known order from workspace B combined with a workspace/customer hint for A can lock A, mutate order B, and attach aliases without rejecting the mismatch.",
+      "specReference": "REQ-BIL-02 / SC-BIL-06; REQ-BIL-06 / SC-BIL-16",
+      "requiredEvidence": "Tenant and customer mismatch tests demonstrating a conflict/recovery result and no cross-workspace economic effect."
+    },
+    {
+      "id": "BIL-FAILED-DELIVERY-NO-RETRY",
+      "severity": "high",
+      "file": "src/modules/billing/inbox.ts",
+      "lines": "33-41",
+      "description": "Any existing inbox row is returned as duplicate, regardless of whether its status is failed. If reconciliation fails after the row is recorded, a verified redelivery cannot retry the failed economic reconciliation and the event remains permanently failed.",
+      "specReference": "REQ-BIL-02 / SC-BIL-04; REQ-BIL-06 / SC-BIL-16",
+      "requiredEvidence": "A failed-row redelivery test showing safe retry, stable event identity, and no duplicate grant after eventual success."
+    }
+  ],
+  "verification": {
+    "passed": [
+      "node --experimental-strip-types --test tests/contracts/fal.test.ts (5/5)",
+      "node --experimental-strip-types --test tests/contracts/billing-checkout.test.ts (6/6)",
+      "corepack pnpm typecheck",
+      "corepack pnpm lint",
+      "corepack pnpm format:check",
+      "corepack pnpm build; /api/webhooks/stripe emitted"
+    ],
+    "priorEvidence": [
+      "internal/evidence/M4/task-5.3/green.log",
+      "internal/evidence/M4/task-5.3/checks.log",
+      "internal/evidence/M5/task-6.3-6.4/green-probe.log",
+      "internal/evidence/M5/task-6.3-6.4/checks.log"
+    ],
+    "blocked": [
+      "node --experimental-strip-types scripts/probe-billing-reconciliation.ts: PostgreSQL CREATEDB permission denied (42501) in the current environment; prior isolated 5/5 probe remains referenced but was not reproduced in this run."
+    ]
+  },
+  "candidateDigest": {
+    "attempt": "internal/evidence/acceptance/foundations-20261001/2026-10-01T06-31-10-421Z-4795c3cf-abf4-4c66-8949-2be9b9a7864d",
+    "sourceTreeSha256": "675a5ee2edc8d7e7c4b10b1ca94e2b04e76aaaba9bf58b76851bdb9d04a23bdc",
+    "schemaSha256": "ae5c2ed265b308f8a624e917b2b631038dbeaefb993f183248bee8800af87ffa",
+    "configurationSha256": "5fca500aba3c8fd69c8efe8fc7c96659387af00e1fb88269912c5c2bdb5f7426",
+    "contractSha256": "861a25ab4e70f623440a7abba054afa4460177e42cbe8a001196bc9d12a1a139",
+    "validatorSha256": "a0740c0402b999f74812fea7438c5ef63370a097a0014245cfc958bdbba82a59",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a"
+  },
+  "limits": [
+    "Local fixture provider only; no Stripe account, live fal request, production email, production billing, paid request, or external network evidence.",
+    "This review does not approve the M4 or M5 stage gate and does not alter task or stage status."
+  ]
+}

@@ -1,0 +1,38 @@
+[
+  {
+    "status": 200,
+    "at": "2026-10-16T10:38:47.3808037+00:00",
+    "path": "/api/healthz",
+    "redirectPath": null
+  },
+  {
+    "status": 200,
+    "at": "2026-10-16T10:38:48.3863314+00:00",
+    "path": "/",
+    "redirectPath": null
+  },
+  {
+    "status": 200,
+    "at": "2026-10-16T10:38:49.3289992+00:00",
+    "path": "/login",
+    "redirectPath": null
+  },
+  {
+    "status": 200,
+    "at": "2026-10-16T10:38:50.5081004+00:00",
+    "path": "/docs",
+    "redirectPath": null
+  },
+  {
+    "status": 200,
+    "at": "2026-10-16T10:38:51.5749594+00:00",
+    "path": "/docs/template",
+    "redirectPath": null
+  },
+  {
+    "status": 200,
+    "at": "2026-10-16T10:38:52.6098325+00:00",
+    "path": "/dashboard",
+    "redirectPath": null
+  }
+]

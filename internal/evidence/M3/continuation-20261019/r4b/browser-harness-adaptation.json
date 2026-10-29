@@ -1,0 +1,10 @@
+{
+  "sourceRef": "internal/evidence/M3/continuation-20261019/r2/browser-harness-executed-attempt2.mjs",
+  "sourceSha256": "6baa51d7d120b199b17ab5d049f7ba11d46d5f4f42de0d0850e8a1a871dec14a",
+  "retainedRunnerRef": "internal/evidence/M3/continuation-20261019/r4b/browser-harness.mjs",
+  "retainedRunnerSha256": "df356e378bb68d1865e6929eb4687ba71c7e57431879d44997d71b45c3af65d7",
+  "currentCandidateBinding": "15cdd980d1b621f173737fae497b8402befbe1a8ca50f7f548cdd61d38ba2dda",
+  "realUiInteractions": true,
+  "scriptedResponseFulfillment": false,
+  "manualVisualApproval": false
+}

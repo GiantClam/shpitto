@@ -1,0 +1,34 @@
+Skip to content
+Workspaces
+superadmin
+
+Dashboard
+
+Workspaces
+
+Users
+
+Generations
+
+Billings
+
+Audits
+
+Affiliate reviews
+
+Affiliate holds
+
+Search
+ 
+Status
+​
+ 
+Id	Name	Kind	Status	Billing status	Version	Member count
+f42a36ae-4997-47ba-bf61-86a18a279660	Current browser team	team	active	active	3	1
+45035dcb-9200-49a0-85c1-d88609b48b13	Current personal studio	personal	active	active	1	1
+
+Rows per page:
+
+25
+
+1-2 of 2

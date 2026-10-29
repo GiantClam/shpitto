@@ -1,3 +1,17 @@
-packages:
-  - "apps/*"
-  - "packages/*"
+# The restart product is a single package. Legacy source is archived under
+# legacy/shpitto-platform and is intentionally outside the workspace graph.
+packages: []
+
+# pnpm 12 denies lifecycle builds by default. The standalone Docker build needs
+# esbuild to compile the reviewed dependency graph; no other package may run a
+# lifecycle script in the buyer image.
+allowBuilds:
+  esbuild: true
+
+# Security-only transitive patch floors; no package or runtime surface is added.
+overrides:
+  ws: 8.21.0
+  source-map-js: 1.2.2
+  sharp: 0.35.5
+  esbuild: 0.25.12
+  decode-uri-component: 0.5.0

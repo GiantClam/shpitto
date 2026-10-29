@@ -1,0 +1,6 @@
+node_modules/
+.next/
+.postgres/
+.m0-db-*/
+*.log
+*.tsbuildinfo

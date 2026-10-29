@@ -1,0 +1,14 @@
+{
+  "taskId": "5.2",
+  "stageId": "M4",
+  "status": "PASS",
+  "candidateId": "m4-self-hosted-20261016",
+  "verifiedAt": "2026-10-16T00:13:00.000Z",
+  "profile": "self-hosted Railway demo acceptance",
+  "evidenceRefs": [
+    "internal/evidence/M4/provider-matrix.md",
+    "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/fal-wan22-i2v.json",
+    "internal/evidence/M4/task-5.10/railway-worker/live-rows-20261015/replicate-wan22-i2v.json"
+  ],
+  "note": "Current retained evidence; no new provider request was made while assembling the acceptance record."
+}

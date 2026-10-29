@@ -1,0 +1,1 @@
+{"status":"PASS","tests":6,"command":"node --experimental-strip-types --test tests/contracts/billing-checkout.test.ts","scope":"local fixture contracts"}

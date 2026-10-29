@@ -1,0 +1,21 @@
+{
+  "projectId": "b0abc207-4d5b-4f64-903f-ec7d929b35c4",
+  "worker": {
+    "httpStatus": 200,
+    "status": "ready",
+    "role": "provider-worker",
+    "state": "paused",
+    "createsEnabled": false,
+    "scope": "unassigned",
+    "database": "ready",
+    "schema": "ready",
+    "errors": 0,
+    "mediaToolsPresent": true,
+    "falKeyLoaded": true,
+    "falAccountBindingLoaded": true,
+    "paidCreateGuard": "PASS"
+  },
+  "webHeadStatus": 200,
+  "secretValuesPrinted": false,
+  "newPaidPosts": 0
+}

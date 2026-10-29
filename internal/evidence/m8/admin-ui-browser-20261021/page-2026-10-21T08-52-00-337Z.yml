@@ -1,0 +1,165 @@
+- generic [ref=f6e1]:
+  - button "Open Next.js Dev Tools" [ref=f6e8] [cursor=pointer]
+  - alert [ref=f6e12]
+  - generic [ref=f6e13]:
+    - complementary "Operations navigation" [ref=f6e14]:
+      - generic [ref=f6e15]:
+        - paragraph [ref=f6e16]: Operations
+        - generic [ref=f6e17]: superadmin access
+      - navigation [ref=f6e18]:
+        - link "Overview" [ref=f6e19] [cursor=pointer]:
+          - /url: /admin
+        - link "Workspaces" [ref=f6e21] [cursor=pointer]:
+          - /url: /admin?view=workspaces
+        - link "Users" [ref=f6e23] [cursor=pointer]:
+          - /url: /admin?view=users
+        - link "Generation tasks" [ref=f6e25] [cursor=pointer]:
+          - /url: /admin?view=generations
+        - link "Billing and credits" [ref=f6e27] [cursor=pointer]:
+          - /url: /admin?view=billing
+        - link "Audit" [ref=f6e29] [cursor=pointer]:
+          - /url: /admin?view=audit
+        - link "Affiliate reviews" [ref=f6e31] [cursor=pointer]:
+          - /url: /admin?view=affiliate-reviews
+        - link "Affiliate holds" [ref=f6e33] [cursor=pointer]:
+          - /url: /admin?view=affiliate-holds
+        - link "Commands and recovery" [active] [ref=f6e35] [cursor=pointer]:
+          - /url: /admin?view=operations
+      - generic [ref=f6e37]:
+        - link "Return to workspace" [ref=f6e38] [cursor=pointer]:
+          - /url: /dashboard
+        - button "Compact" [ref=f6e39] [cursor=pointer]
+    - main [ref=f6e40]:
+      - generic [ref=f6e41]:
+        - generic [ref=f6e42]:
+          - paragraph [ref=f6e43]: Video template
+          - generic [ref=f6e44]: Operations / operations
+        - generic [ref=f6e45]:
+          - text: Template variant
+          - combobox "Template variant" [ref=f6e46]:
+            - option "Video" [selected]
+            - option "Image"
+      - generic [ref=f6e73]:
+        - generic [ref=f6e74]:
+          - paragraph [ref=f6e75]: Operations center
+          - heading "Review and act with context" [level=1] [ref=f6e76]
+          - paragraph [ref=f6e77]:
+            - text: Your current role is
+            - strong [ref=f6e78]: superadmin
+            - text: . Resource views are redacted and paginated. Every request checks your current server authority.
+          - link "Return to workspace" [ref=f6e79] [cursor=pointer]:
+            - /url: /dashboard
+        - generic [ref=f6e80]:
+          - heading "Operator second-factor verification" [level=2] [ref=f6e81]
+          - paragraph [ref=f6e82]: Verify a code from your authenticator for this session. Privileged commands require verification within the last ten minutes.
+          - generic [ref=f6e83]:
+            - generic [ref=f6e84]:
+              - text: Authenticator code
+              - textbox "Authenticator code" [ref=f6e85]
+            - button "Verify authenticator code" [ref=f6e86] [cursor=pointer]
+          - status [ref=f6e87]: Command verification expires at 2026/10/21 16:53:53.
+        - generic [ref=f6e88]:
+          - heading "Workspace inspection" [level=2] [ref=f6e89]
+          - paragraph [ref=f6e90]: Provide the support purpose before opening tenant details. Recovery retains settled outcomes and labels unknown provider cost.
+          - generic [ref=f6e91]:
+            - generic [ref=f6e92]:
+              - text: Workspace ID
+              - textbox "Workspace ID" [ref=f6e93]
+            - generic [ref=f6e94]:
+              - text: Access purpose
+              - textbox "Access purpose" [ref=f6e95]
+            - generic [ref=f6e96]:
+              - button "Read workspace and versions" [ref=f6e97] [cursor=pointer]
+              - button "Read recovery evidence" [ref=f6e98] [cursor=pointer]
+        - generic [ref=f6e99]:
+          - heading "Named administrative command" [level=2] [ref=f6e100]
+          - paragraph [ref=f6e101]: Use the current version from the relevant view. A stale version has no effect. Negative credit adjustments also require an unused grant.
+          - generic [ref=f6e102]:
+            - generic [ref=f6e103]:
+              - text: Command
+              - combobox "Command" [ref=f6e104]:
+                - option "Change workspace status" [selected]
+                - option "Disable account"
+                - option "Adjust credits"
+                - option "Request refund"
+                - option "Sweep expired generation tasks"
+                - option "Replay stored provider notification"
+                - option "Change global role"
+            - generic [ref=f6e105]:
+              - text: Workspace ID
+              - textbox "Workspace ID" [ref=f6e106]
+            - generic [ref=f6e107]:
+              - text: Status
+              - combobox "Status" [ref=f6e108]:
+                - option "Suspended" [selected]
+                - option "Active"
+            - generic [ref=f6e109]:
+              - text: Expected workspace version
+              - spinbutton "Expected workspace version" [ref=f6e110]
+            - generic [ref=f6e111]:
+              - text: Recorded reason
+              - textbox "Recorded reason" [ref=f6e112]
+            - button "Execute workspace status" [ref=f6e113] [cursor=pointer]
+        - generic [ref=f6e114]:
+          - heading "Resume pending refunds" [level=2] [ref=f6e115]
+          - paragraph [ref=f6e116]: Recover your persisted refund commands after a reload or interrupted response. Recovery uses the original reason, amount, version and command key, even when the billing version has since changed.
+          - generic [ref=f6e117]:
+            - generic [ref=f6e118]:
+              - text: Workspace ID
+              - textbox "Workspace ID" [ref=f6e119]
+            - generic [ref=f6e120]:
+              - text: Access purpose
+              - textbox "Access purpose" [ref=f6e121]
+            - button "Read my pending refund commands" [ref=f6e122] [cursor=pointer]
+        - generic [ref=f6e123]:
+          - heading "Workspace records" [level=2] [ref=f6e124]
+          - paragraph [ref=f6e125]: Read memberships, subscription state, credit grants and immutable ledger entries for one workspace. Each page records your access purpose.
+          - generic [ref=f6e126]:
+            - generic [ref=f6e127]:
+              - text: Workspace ID
+              - textbox "Workspace ID" [ref=f6e128]
+            - generic [ref=f6e129]:
+              - text: Access purpose
+              - textbox "Access purpose" [ref=f6e130]
+            - generic [ref=f6e131]:
+              - text: Records
+              - combobox "Records" [ref=f6e132]:
+                - option "Memberships" [selected]
+                - option "Subscriptions"
+                - option "Credit grants"
+                - option "Credit ledger"
+            - button "Read workspace records" [ref=f6e133] [cursor=pointer]
+        - generic [ref=f6e134]:
+          - heading "Affiliate review and hosted settlement" [level=2] [ref=f6e135]
+          - paragraph [ref=f6e136]: Review commission evidence and unresolved holds before approval. A hosted handoff records a reviewed visit; it never means funds were transferred.
+          - status [ref=f6e137]: "Integration: disabled. Affiliate tracking is disabled."
+          - group [ref=f6e138]:
+            - generic "Integration and account checkpoint status" [ref=f6e139]
+          - paragraph [ref=f6e140]:
+            - link "Commission reviews" [ref=f6e141] [cursor=pointer]:
+              - /url: "#/affiliate-reviews"
+            - text: ·
+            - link "Review holds" [ref=f6e142] [cursor=pointer]:
+              - /url: "#/affiliate-holds"
+          - generic [ref=f6e143]:
+            - generic [ref=f6e144]:
+              - text: Affiliate command
+              - combobox "Affiliate command" [ref=f6e145]:
+                - option "Approve commission review" [selected]
+                - option "Deny commission review"
+                - option "Release a verified legitimate abuse hold"
+                - option "Review hosted payout handoff"
+                - option "Review campaign policy"
+            - generic [ref=f6e146]:
+              - text: Workspace ID
+              - textbox "Workspace ID" [ref=f6e147]
+            - generic [ref=f6e148]:
+              - text: Commission review ID
+              - textbox "Commission review ID" [ref=f6e149]
+            - generic [ref=f6e150]:
+              - text: Expected review version
+              - spinbutton "Expected review version" [ref=f6e151]
+            - generic [ref=f6e152]:
+              - text: Recorded review reason
+              - textbox "Recorded review reason" [ref=f6e153]
+            - button "Execute affiliate approve" [ref=f6e154] [cursor=pointer]

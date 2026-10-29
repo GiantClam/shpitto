@@ -1,0 +1,83 @@
+{"status":"PASS","isolated":true,"results":[{"name":"same-workspace member may download but may not delete another creator asset","status":"PASS"},{"name":"current owner and recorded creator may delete","status":"PASS"},{"name":"foreign workspace and removed creator cannot delete","status":"PASS"},{"name":"creation winning the input lock prevents concurrent deletion","status":"PASS"},{"name":"deletion winning the input lock prevents stale task creation","status":"PASS"},{"name":"an output reused as task input retains the same active-reference protection","status":"PASS"},{"name":"stale materialization lease cannot spend retries or disrupt its successor","status":"PASS"},{"name":"lease expiry while awaiting generation_tasks lock cannot spend retries","status":"PASS"},{"name":"lease expiry while awaiting outbox_events lock cannot spend retries","status":"PASS"},{"name":"publication cannot commit after an asset foreign-key lock crosses the deadline","status":"PASS"},{"name":"dispatch resamples its deadline after the credit_accounts lock","status":"PASS"},{"name":"cancel resamples its deadline after the credit_accounts lock","status":"PASS"},{"name":"success resamples its deadline after the credit_accounts lock","status":"PASS"},{"name":"success resamples its deadline after the generation_tasks lock","status":"PASS"},{"name":"success resamples its deadline after the credit_reservations lock","status":"PASS"},{"name":"success resamples its deadline after the outbox_events lock","status":"PASS"},{"name":"success resamples its lease expiry after the credit_reservations lock","status":"PASS"},{"name":"actual worker resamples deadline after materialization lock waits","status":"PASS"},{"name":"actual worker resamples deadline after settlement lock waits","status":"PASS"}]}
+✔ scripts\probe-asset-security.ts (11435.3861ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11440.3768
+ℹ start of coverage report
+ℹ ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ file                    | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ src                     |        |          |         | 
+ℹ  adapters               |        |          |         | 
+ℹ   storage               |        |          |         | 
+ℹ    local.ts             |  85.29 |    68.42 |   87.50 | 8-9 12-13 22-23 59-62
+ℹ  config                 |        |          |         | 
+ℹ   env.ts                |  75.00 |    33.33 |   33.33 | 9-11 42-43 66-80 87-88
+ℹ   models.ts             |  86.27 |    33.33 |   80.00 | 40-41 60-61 82-83 85-86 89-90 94-95 97-98
+ℹ  contracts              |        |          |         | 
+ℹ   http.ts               |  55.66 |    80.65 |   53.85 | 17-18 21-22 25-35 39-40 45-49 73 81-87 90-106
+ℹ  db                     |        |          |         | 
+ℹ   client.ts             |  89.29 |   100.00 |   50.00 | 26-28
+ℹ   contracts.ts          |  79.59 |   100.00 |   33.33 | 14-16 21-22 25-29
+ℹ   schema                |        |          |         | 
+ℹ    access.ts            | 100.00 |   100.00 |   50.00 | 
+ℹ    affiliate-inbox.ts   | 100.00 |   100.00 |  100.00 | 
+ℹ    affiliate.ts         | 100.00 |   100.00 |   43.75 | 
+ℹ    asset.ts             | 100.00 |   100.00 |   33.33 | 
+ℹ    auth.ts              | 100.00 |   100.00 |   62.50 | 
+ℹ    billing.ts           |  96.88 |   100.00 |   52.94 | 217-223
+ℹ    commands.ts          | 100.00 |   100.00 |   33.33 | 
+ℹ    credit.ts            | 100.00 |   100.00 |   42.86 | 
+ℹ    generation.ts        | 100.00 |   100.00 |   66.67 | 
+ℹ    index.ts             | 100.00 |   100.00 |  100.00 | 
+ℹ    invitations.ts       | 100.00 |   100.00 |   33.33 | 
+ℹ    operations.ts        | 100.00 |   100.00 |   33.33 | 
+ℹ    operator.ts          | 100.00 |   100.00 |   40.00 | 
+ℹ    ownership.ts         | 100.00 |   100.00 |  100.00 | 
+ℹ    workspace.ts         | 100.00 |   100.00 |   41.18 | 
+ℹ  modules                |        |          |         | 
+ℹ   affiliates            |        |          |         | 
+ℹ    abuse-review.ts      |  27.27 |   100.00 |    0.00 | 4-11
+ℹ    commission-review.ts |  55.77 |   100.00 |    0.00 | 24-28 31-42 45-47 50-52
+ℹ    contracts.ts         |  74.58 |   100.00 |    0.00 | 43-45 48-59
+ℹ    delivery.ts          |  52.00 |   100.00 |    0.00 | 8-10 13-14 17-19 22-25
+ℹ    eligibility.ts       |  41.18 |   100.00 |    0.00 | 6-7 10-17
+ℹ    notifications.ts     |  26.97 |   100.00 |    0.00 | 16-19 23-30 33-42 45-80 83-89
+ℹ    runtime.ts           |  21.76 |   100.00 |    0.00 | 21 38-40 42-46 48-50 52-54 56-58 60-62 64-66 68-76 80-91 95-110 114-128 130-132 134-138 141-181 185-198 201-206 210-264 267-286 289-316 320-327 331-340
+ℹ    sync.ts              |  14.81 |   100.00 |    0.00 | 16-18 22-30 34-116 120-162
+ℹ   assets                |        |          |         | 
+ℹ    authorize.ts         |  75.71 |    92.86 |   42.86 | 19-21 24-28 31-39
+ℹ    cleanup.ts           |  24.90 |   100.00 |    0.00 | 44-46 48-50 52-54 57-102 104-113 115-123 125-135 137-144 146-149 157-244 248-249
+ℹ    ingest.ts            |  91.67 |    71.43 |   80.00 | 21-24 70-71 78-79
+ℹ    media-probe.ts       |  93.10 |    37.50 |  100.00 | 27-28
+ℹ   billing               |        |          |         | 
+ℹ    hold-policy.ts       |  86.67 |    60.00 |  100.00 | 13-14
+ℹ   credits               |        |          |         | 
+ℹ    allocate.ts          |  89.50 |    29.41 |   66.67 | 39-42 183-199
+ℹ    ledger.ts            |  93.53 |    42.86 |  100.00 | 60-68
+ℹ    queries.ts           |  44.58 |    83.33 |   66.67 | 133-134 139-178 186-322
+ℹ    settle.ts            |  82.18 |    17.39 |   75.00 | 47-48 73-74 93-94 127-145 191-201
+ℹ   generation            |        |          |         | 
+ℹ    create.ts            |  88.45 |    57.14 |  100.00 | 73-74 79-80 87-88 92-93 95-96 103-104 106-118 142-143 161-162
+ℹ    lifecycle.ts         |  80.63 |    60.19 |   83.33 | 96-97 149-150 224-246 250-255 258-261 284-318 322-327 439-457 499-507 509-510 520-521 563
+ℹ    mock.ts              |  85.11 |    50.00 |   66.67 | 29-31 40-41 43-44
+ℹ    outbox.ts            |  89.81 |    61.54 |   66.67 | 41-42 45-47 53-55 119-122 125-128
+ℹ    state.ts             |  73.49 |    80.00 |   75.00 | 48-49 64-83
+ℹ    sweep-recovery.ts    |  36.59 |   100.00 |    0.00 | 16-41
+ℹ   operations            |        |          |         | 
+ℹ    audit.ts             |  26.15 |   100.00 |    0.00 | 12-17 20-24 27-52 55-65
+ℹ   shared                |        |          |         | 
+ℹ    commands.ts          |  86.52 |    33.33 |  100.00 | 31-32 41-46 69-70 72-73
+ℹ    transaction.ts       | 100.00 |   100.00 |  100.00 | 
+ℹ   workspaces            |        |          |         | 
+ℹ    authorize.ts         |  56.00 |    75.00 |   25.00 | 27-28 32-33 39-51 58-64 67-75
+ℹ    policy.ts            |  56.03 |    63.64 |   36.36 | 35-39 42-49 52-57 93-104 107-116 119-133 136-141
+ℹ ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ all files               |  71.04 |    64.01 |   49.22 | 
+ℹ ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

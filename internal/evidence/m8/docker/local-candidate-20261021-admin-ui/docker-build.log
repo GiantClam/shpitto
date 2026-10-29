@@ -1,0 +1,286 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.34kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:24.15.0-bookworm-slim
+#2 DONE 1.9s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 196B done
+#3 DONE 0.0s
+
+#4 [dependencies 1/5] FROM docker.io/library/node:24.15.0-bookworm-slim@sha256:4e6b70dd6cbfc88c8157ba19aa3d9f9cce6ba4703576d55459e45efcbc9c5f5d
+#4 resolve docker.io/library/node:24.15.0-bookworm-slim@sha256:4e6b70dd6cbfc88c8157ba19aa3d9f9cce6ba4703576d55459e45efcbc9c5f5d 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 9.58MB 1.0s done
+#5 DONE 1.0s
+
+#6 [dependencies 2/5] WORKDIR /app
+#6 CACHED
+
+#7 [dependencies 3/5] RUN corepack enable
+#7 CACHED
+
+#8 [dependencies 4/5] COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+#8 DONE 0.0s
+
+#9 [dependencies 5/5] RUN pnpm install --frozen-lockfile --prod=false
+#9 0.438 ! Corepack is about to download https://registry.npmjs.org/pnpm/-/pnpm-12.6.0.tgz
+#9 4.886 Downloading the pnpm 12.6.0 binary for linux-x64...
+#9 15.99 ? Verifying lockfile against supply-chain policies (441 entries)...
+#9 17.28 Update available! 12.6.0 → 12.14.0.
+#9 17.28 Changelog: https://pnpm.io/v/12.14.0
+#9 17.28 To update, run: curl -fsSL https://get.pnpm.io/install.sh | sh -
+#9 17.92 Packages are hard linked from the content-addressable store to the virtual store.
+#9 17.92   Content-addressable store is at: /root/.local/share/pnpm/store/v11
+#9 17.92   Virtual store is at:             node_modules/.pnpm
+#9 18.76 Downloading next@16.3.8: 0.00 B/42.04 MB
+#9 19.83 Progress: resolved 382, reused 0, downloaded 106, added 96
+#9 21.31 Progress: resolved 382, reused 0, downloaded 118, added 96
+#9 21.31 [WARN] Tarball download average speed 12 KiB/s (size 17 KiB) is below 50 KiB/s: https://registry.npmjs.org/hast-util-to-estree/-/hast-util-to-estree-3.1.3.tgz (GET)
+#9 21.34 [WARN] Tarball download average speed 48 KiB/s (size 68 KiB) is below 50 KiB/s: https://registry.npmjs.org/@opentelemetry/core/-/core-2.8.0.tgz (GET)
+#9 22.82 Progress: resolved 382, reused 0, downloaded 130, added 128
+#9 23.84 Downloading next@16.3.8: 10.45 MB/42.04 MB
+#9 23.87 [WARN] Tarball download average speed 20 KiB/s (size 21 KiB) is below 50 KiB/s: https://registry.npmjs.org/motion-utils/-/motion-utils-13.3.0.tgz (GET)
+#9 24.03 [WARN] Tarball download average speed 44 KiB/s (size 45 KiB) is below 50 KiB/s: https://registry.npmjs.org/cjs-module-lexer/-/cjs-module-lexer-2.2.1.tgz (GET)
+#9 24.94 [WARN] Tarball download average speed 14 KiB/s (size 30 KiB) is below 50 KiB/s: https://registry.npmjs.org/unified/-/unified-11.0.5.tgz (GET)
+#9 25.98 [WARN] Tarball download average speed 16 KiB/s (size 40 KiB) is below 50 KiB/s: https://registry.npmjs.org/baseline-browser-mapping/-/baseline-browser-mapping-2.11.26.tgz (GET)
+#9 26.00 [WARN] Tarball download average speed 13 KiB/s (size 22 KiB) is below 50 KiB/s: https://registry.npmjs.org/eventsource-parser/-/eventsource-parser-3.1.1.tgz (GET)
+#9 26.94 [WARN] Tarball download average speed 17 KiB/s (size 20 KiB) is below 50 KiB/s: https://registry.npmjs.org/@smithy/signature-v4/-/signature-v4-5.7.4.tgz (GET)
+#9 26.94 [WARN] Tarball download average speed 12 KiB/s (size 25 KiB) is below 50 KiB/s: https://registry.npmjs.org/property-information/-/property-information-7.2.0.tgz (GET)
+#9 26.95 [WARN] Tarball download average speed 15 KiB/s (size 47 KiB) is below 50 KiB/s: https://registry.npmjs.org/get-tsconfig/-/get-tsconfig-4.14.3.tgz (GET)
+#9 26.96 [WARN] Tarball download average speed 35 KiB/s (size 120 KiB) is below 50 KiB/s: https://registry.npmjs.org/fumadocs-core/-/fumadocs-core-16.15.14.tgz (GET)
+#9 28.09 Progress: resolved 382, reused 0, downloaded 244, added 224
+#9 28.73 [WARN] Tarball download average speed 27 KiB/s (size 80 KiB) is below 50 KiB/s: https://registry.npmjs.org/@smithy/types/-/types-4.19.0.tgz (GET)
+#9 28.80 [WARN] Tarball download average speed 15 KiB/s (size 54 KiB) is below 50 KiB/s: https://registry.npmjs.org/@babel/runtime/-/runtime-7.29.7.tgz (GET)
+#9 28.82 [WARN] Tarball download average speed 49 KiB/s (size 139 KiB) is below 50 KiB/s: https://registry.npmjs.org/tsx/-/tsx-4.23.15.tgz (GET)
+#9 28.85 [WARN] Tarball download average speed 24 KiB/s (size 28 KiB) is below 50 KiB/s: https://registry.npmjs.org/semver/-/semver-7.8.5.tgz (GET)
+#9 29.29 [WARN] Tarball download average speed 34 KiB/s (size 39 KiB) is below 50 KiB/s: https://registry.npmjs.org/@aws-sdk/middleware-sdk-s3/-/middleware-sdk-s3-3.972.77.tgz (GET)
+#9 29.60 Downloading @img/sharp-libvips-linux-x64@1.3.4: 0.00 B/8.21 MB
+#9 30.62 Downloading next@16.3.8: 20.55 MB/42.04 MB
+#9 30.75 [WARN] Tarball download average speed 41 KiB/s (size 47 KiB) is below 50 KiB/s: https://registry.npmjs.org/@radix-ui/react-navigation-menu/-/react-navigation-menu-1.2.22.tgz (GET)
+#9 31.21 Downloading @next/swc-linux-x64-gnu@16.3.8: 0.00 B/33.79 MB
+#9 31.35 [WARN] Tarball download average speed 8 KiB/s (size 14 KiB) is below 50 KiB/s: https://registry.npmjs.org/@better-auth/kysely-adapter/-/kysely-adapter-1.7.6.tgz (GET)
+#9 32.39 Downloading @img/sharp-libvips-linux-x64@1.3.4: 355.50 kB/8.21 MB
+#9 32.58 [WARN] Tarball download average speed 23 KiB/s (size 31 KiB) is below 50 KiB/s: https://registry.npmjs.org/mdast-util-to-hast/-/mdast-util-to-hast-13.2.1.tgz (GET)
+#9 32.58 [WARN] Tarball download average speed 24 KiB/s (size 32 KiB) is below 50 KiB/s: https://registry.npmjs.org/resolve/-/resolve-1.22.12.tgz (GET)
+#9 32.72 [WARN] Tarball download average speed 29 KiB/s (size 34 KiB) is below 50 KiB/s: https://registry.npmjs.org/micromark/-/micromark-4.0.2.tgz (GET)
+#9 32.74 [WARN] Tarball download average speed 49 KiB/s (size 74 KiB) is below 50 KiB/s: https://registry.npmjs.org/@drizzle-team/brocli/-/brocli-0.10.2.tgz (GET)
+#9 32.75 [WARN] Tarball download average speed 30 KiB/s (size 40 KiB) is below 50 KiB/s: https://registry.npmjs.org/@radix-ui/react-scroll-area/-/react-scroll-area-1.2.18.tgz (GET)
+#9 33.42 [WARN] Tarball download average speed 26 KiB/s (size 50 KiB) is below 50 KiB/s: https://registry.npmjs.org/postcss/-/postcss-8.5.23.tgz (GET)
+#9 34.68 Downloading next@16.3.8: 25.34 MB/42.04 MB
+#9 35.44 [WARN] Tarball download average speed 45 KiB/s (size 182 KiB) is below 50 KiB/s: https://registry.npmjs.org/@img/sharp-linux-x64/-/sharp-linux-x64-0.35.5.tgz (GET)
+#9 36.84 Downloading next@16.3.8: 25.38 MB/42.04 MB
+#9 38.56 Downloading @next/swc-linux-x64-gnu@16.3.8: 8.63 MB/33.79 MB
+#9 38.68 ✓ Lockfile passes supply-chain policies (441 entries in 22.7s)
+#9 38.68 Lockfile is up to date, resolution step is skipped
+#9 39.74 Downloading @next/swc-linux-x64-gnu@16.3.8: 14.80 MB/33.79 MB
+#9 41.21 Downloading next@16.3.8: 35.60 MB/42.04 MB
+#9 42.36 Downloading @next/swc-linux-x64-gnu@16.3.8: 18.75 MB/33.79 MB
+#9 43.39 Downloading @next/swc-linux-x64-gnu@16.3.8: 20.16 MB/33.79 MB
+#9 44.51 Downloading @next/swc-linux-x64-gnu@16.3.8: 20.73 MB/33.79 MB
+#9 45.51 Downloading @next/swc-linux-x64-gnu@16.3.8: 22.57 MB/33.79 MB
+#9 46.54 Downloading @next/swc-linux-x64-gnu@16.3.8: 24.01 MB/33.79 MB
+#9 47.56 Downloading @next/swc-linux-x64-gnu@16.3.8: 26.12 MB/33.79 MB
+#9 48.64 Downloading @next/swc-linux-x64-gnu@16.3.8: 28.36 MB/33.79 MB
+#9 49.66 Downloading @next/swc-linux-x64-gnu@16.3.8: 30.59 MB/33.79 MB
+#9 50.66 Downloading @next/swc-linux-x64-gnu@16.3.8: 33.33 MB/33.79 MB
+#9 51.16 Packages: +382
+#9 51.16 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#9 51.20 Progress: resolved 382, reused 0, downloaded 382, added 382, done
+#9 51.21 .../esbuild@0.25.12/node_modules/esbuild postinstall$ node install.js
+#9 51.25 .../esbuild@0.25.12/node_modules/esbuild postinstall: Done
+#9 51.35 
+#9 51.35 dependencies:
+#9 51.35 + @aws-sdk/client-s3 3.1141.0
+#9 51.35 + @trigger.dev/sdk 4.6.4
+#9 51.35 + better-auth 1.7.6
+#9 51.35 + drizzle-orm 0.45.3
+#9 51.35 + fumadocs-core 16.15.14
+#9 51.35 + fumadocs-ui 16.15.14
+#9 51.35 + next 16.3.8
+#9 51.35 + pg 8.23.0
+#9 51.35 + react 19.3.0
+#9 51.35 + react-dom 19.3.0
+#9 51.35 + stripe 22.6.2
+#9 51.35 
+#9 51.35 devDependencies:
+#9 51.35 + @types/node 24.0.0
+#9 51.35 + @types/react 19.0.0
+#9 51.35 + @types/react-dom 19.0.0
+#9 51.35 + drizzle-kit 0.31.11
+#9 51.35 + typescript 6.0.3
+#9 51.35 
+#9 51.36 Done in 35.4s using pnpm v12.6.0
+#9 DONE 51.9s
+
+#10 [build 1/2] COPY . .
+#10 DONE 0.3s
+
+#11 [build 2/2] RUN APP_URL=https://build.invalid   DATABASE_URL=postgres://build:build@127.0.0.1:5432/build   BETTER_AUTH_SECRET=build-only-dummy-secret-never-used-at-runtime   STORAGE_DRIVER=s3-compatible GENERATION_DRIVER=provider MAIL_DRIVER=smtp   MAIL_SMTP_URL=smtp://127.0.0.1:1025 pnpm build
+#11 0.288 $ next build
+#11 0.519 ▲ Next.js 16.3.8 (Turbopack)
+#11 0.537 ✓ Running next.config.ts took 17ms
+#11 0.544 Attention: Next.js now collects completely anonymous telemetry regarding usage.
+#11 0.544 This information is used to shape Next.js' roadmap and prioritize features.
+#11 0.544 You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+#11 0.544 https://nextjs.org/telemetry
+#11 0.545 
+#11 0.554 
+#11 0.588   Creating an optimized production build ...
+#11 6.119 ✓ Compiled successfully in 4.9s
+#11 6.121   Running TypeScript ...
+#11 11.15   Finished TypeScript in 5.0s ...
+#11 11.15   Collecting page data using 31 workers ...
+#11 12.93   Generating static pages using 31 workers (0/57) ...
+#11 13.08   Generating static pages using 31 workers (14/57) 
+#11 13.34   Generating static pages using 31 workers (28/57) 
+#11 13.46   Generating static pages using 31 workers (42/57) 
+#11 13.58 ✓ Generating static pages using 31 workers (57/57) in 651ms
+#11 13.59 Turbopack build encountered 1 warning:
+#11 13.59 ./src/app/docs/_lib/source.ts:29:67
+#11 13.59 Warning: Dynamic filesystem access causes tracing of the whole project
+#11 13.59   [90m27 |[0m ...
+#11 13.59   [90m28 |[0m ...leSync(path.join(root, [32m'content/docs/v1/manifest.json'[0m), [32m'utf8'[0m)) [36mas[0m [33mDocsManifest[0m;
+#11 13.59 [33m[1m>[0m [90m29 |[0m ... (sourcePath) => readFileSync(path.join(root, sourcePath), [32m'utf8'[0m));
+#11 13.59   [90m   |[0m                                  [33m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+#11 13.59   [90m30 |[0m ...
+#11 13.59   [90m31 |[0m ...
+#11 13.59   [90m32 |[0m ...: string, page: [33mPublishedDoc[0m, pages: readonly [33mPublishedDoc[0m[]): string | [36mundefined[0m {
+#11 13.59 
+#11 13.59 Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+#11 13.59 This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+#11 13.59 This can slow down deployments or lead to failures when size limits are exceeded.
+#11 13.59 To resolve this, you can
+#11 13.59 - make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+#11 13.59 - only use them in development, or
+#11 13.59 - opt out by adding an ignore comment to the highlighted call: path.join(/*turbopackIgnore: true*/ ...), or
+#11 13.59 - remove them.
+#11 13.59 
+#11 13.59 Import trace:
+#11 13.59   Server Component:
+#11 13.59     ./src/app/docs/_lib/source.ts
+#11 13.59     ./src/app/docs/[release]/[[...slug]]/page.tsx
+#11 13.59 
+#11 13.59 
+#11 13.59   Finalizing page optimization ...
+#11 14.06 
+#11 14.06 Route (app)
+#11 14.06 ┌ ƒ /
+#11 14.06 ├ ○ /_not-found
+#11 14.06 ├ ƒ /admin/[[...segments]]
+#11 14.06 ├ ƒ /api/admin/affiliates/commands/[command]
+#11 14.06 ├ ƒ /api/admin/affiliates/holds
+#11 14.06 ├ ƒ /api/admin/affiliates/reviews
+#11 14.06 ├ ƒ /api/admin/affiliates/status
+#11 14.06 ├ ƒ /api/admin/audit
+#11 14.06 ├ ƒ /api/admin/billing
+#11 14.06 ├ ƒ /api/admin/commands/[command]
+#11 14.06 ├ ƒ /api/admin/generations
+#11 14.06 ├ ƒ /api/admin/me
+#11 14.06 ├ ƒ /api/admin/recovery/[workspaceId]
+#11 14.06 ├ ƒ /api/admin/recovery/[workspaceId]/sweep
+#11 14.06 ├ ƒ /api/admin/recovery/[workspaceId]/webhook-replay
+#11 14.06 ├ ƒ /api/admin/refunds/pending
+#11 14.06 ├ ƒ /api/admin/refunds/preview
+#11 14.06 ├ ƒ /api/admin/security
+#11 14.06 ├ ƒ /api/admin/step-up
+#11 14.06 ├ ƒ /api/admin/users
+#11 14.06 ├ ƒ /api/admin/workspaces
+#11 14.06 ├ ƒ /api/admin/workspaces/[workspaceId]
+#11 14.06 ├ ƒ /api/admin/workspaces/[workspaceId]/details
+#11 14.06 ├ ƒ /api/affiliates/referral
+#11 14.06 ├ ƒ /api/auth/[...all]
+#11 14.06 ├ ƒ /api/checkout/fixture/[sessionId]
+#11 14.06 ├ ƒ /api/healthz
+#11 14.06 ├ ƒ /api/internal/recovery-alerts
+#11 14.06 ├ ƒ /api/invitations/accept
+#11 14.06 ├ ƒ /api/onboarding
+#11 14.06 ├ ƒ /api/webhooks/affiliate
+#11 14.06 ├ ƒ /api/webhooks/fal/[attemptNonce]
+#11 14.06 ├ ƒ /api/webhooks/replicate/[attemptNonce]
+#11 14.06 ├ ƒ /api/webhooks/stripe
+#11 14.06 ├ ƒ /api/workspaces
+#11 14.06 ├ ƒ /api/workspaces/[workspaceId]/assets
+#11 14.06 ├ ƒ /api/workspaces/[workspaceId]/assets/[assetId]
+#11 14.06 ├ ƒ /api/workspaces/[workspaceId]/assets/[assetId]/download
+#11 14.06 ├ ƒ /api/workspaces/[workspaceId]/billing
+#11 14.06 ├ ƒ /api/workspaces/[workspaceId]/billing/checkout
+#11 14.06 ├ ƒ /api/workspaces/[workspaceId]/billing/portal
+#11 14.06 ├ ƒ /api/workspaces/[workspaceId]/generations
+#11 14.06 ├ ƒ /api/workspaces/[workspaceId]/generations/[taskId]/cancel
+#11 14.06 ├ ƒ /api/workspaces/[workspaceId]/generations/[taskId]/claim
+#11 14.06 ├ ƒ /api/workspaces/[workspaceId]/invitations
+#11 14.06 ├ ƒ /api/workspaces/[workspaceId]/leave
+#11 14.06 ├ ƒ /api/workspaces/[workspaceId]/members/[userId]/demote
+#11 14.06 ├ ƒ /api/workspaces/[workspaceId]/members/[userId]/remove
+#11 14.06 ├ ƒ /api/workspaces/[workspaceId]/transfer
+#11 14.06 ├ ƒ /billing/portal/fixture/[sessionId]
+#11 14.06 ├ ƒ /checkout/fixture/[sessionId]
+#11 14.06 ├ ƒ /creator-qa-check
+#11 14.06 ├ ƒ /dashboard
+#11 14.06 ├ ƒ /dashboard/team
+#11 14.06 ├ ○ /docs
+#11 14.06 ├   /docs/[release]/[[...slug]]
+#11 14.06 │ ├ ● /docs/v1
+#11 14.06 │ ├ ● /docs/v1/template
+#11 14.06 │ ├ ● /docs/v1/template/operations
+#11 14.06 │ └ ● [+24 more paths]
+#11 14.06 ├ ○ /docs/api
+#11 14.06 ├ ○ /docs/releases
+#11 14.06 ├ ○ /docs/skills
+#11 14.06 ├ ○ /docs/template
+#11 14.06 ├ ƒ /invitations/accept
+#11 14.06 ├ ƒ /login
+#11 14.06 ├ ƒ /reset-password
+#11 14.06 ├ ○ /signup
+#11 14.06 ├ ƒ /workspaces/[w]/billing
+#11 14.06 ├ ƒ /workspaces/[w]/settings/members
+#11 14.06 └ ƒ /workspaces/new
+#11 14.06 
+#11 14.06 
+#11 14.06 ○  (Static)   prerendered as static content
+#11 14.06 ●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+#11 14.06 ƒ  (Dynamic)  server-rendered on demand
+#11 14.06 
+#11 DONE 14.2s
+
+#12 [runtime 2/9] RUN apt-get update   && apt-get install --no-install-recommends --yes ffmpeg   && rm -rf /var/lib/apt/lists/*
+#12 CACHED
+
+#13 [runtime 3/9] WORKDIR /app
+#13 CACHED
+
+#14 [runtime 4/9] COPY --from=build /app/.next/standalone ./
+#14 DONE 0.3s
+
+#15 [runtime 5/9] COPY --from=build /app/.next/static ./.next/static
+#15 DONE 0.0s
+
+#16 [runtime 6/9] COPY --from=build /app/public ./public
+#16 DONE 0.0s
+
+#17 [runtime 7/9] COPY --from=build /app/content/docs ./content/docs
+#17 DONE 0.0s
+
+#18 [runtime 8/9] COPY --from=build /app/src/db ./src/db
+#18 DONE 0.0s
+
+#19 [runtime 9/9] COPY --from=build /app/scripts/migrate.ts ./scripts/migrate.ts
+#19 DONE 0.0s
+
+#20 exporting to image
+#20 exporting layers
+#20 exporting layers 1.8s done
+#20 exporting manifest sha256:569a17248d8d89664fef46f2448a1a3784e9c0015b69ac20744ee5dd6faf56f3 done
+#20 exporting config sha256:665bc4729d94a68205064df5beb37a5d116837bd135c5be80a8514f884ac1d0d done
+#20 exporting attestation manifest sha256:a6c8a979f381de0267d49e2861dd10310e1d2611d974b38c404a4ff7daf00f97 0.0s done
+#20 exporting manifest list sha256:d263edf2db421be33f43937bb58aa7e2c1745981af122c04bcf58e5ed4de29de done
+#20 naming to docker.io/library/shpitto-candidate:local-candidate-20261021-admin-ui done
+#20 unpacking to docker.io/library/shpitto-candidate:local-candidate-20261021-admin-ui
+#20 unpacking to docker.io/library/shpitto-candidate:local-candidate-20261021-admin-ui 0.7s done
+#20 DONE 2.5s

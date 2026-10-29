@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "M3_INDEPENDENT_EVIDENCE_REVIEW",
+  "stageId": "M3",
+  "candidateId": "aggregate-r11",
+  "verificationAttemptId": "2026-10-20T05-34-53-017Z-41f49faa-772c-40f0-9bdb-077da65be7bb",
+  "reviewerId": "codex-independent-reviewer-r11-20261020",
+  "reviewedAt": "2026-10-20T05:48:00Z",
+  "independentFromImplementer": true,
+  "reviewerDidNotImplementCandidate": true,
+  "reviewMode": "Independent read-only technical and evidence review of the exact retained candidate.",
+  "decision": "PASS",
+  "candidateDigests": {
+    "sourceTreeSha256": "81f0bcc13a78791ebe867550532f4cea896ef9e8413bdcd2088ffed60aaea40d",
+    "schemaSha256": "6245bd03fc5328afb736b4b9a42e8713a635658a62505ff11497e8cdad4bd501",
+    "configurationSha256": "af9746d4d534513b109e2c9088b645dbac2f0b5d6c08e6e971d04948c35fcf86",
+    "contractSha256": "bb8af3bb50cd9be648bda17570f2da3e18a2138b2bdaa5f4662aecc57eb72e84",
+    "validatorSha256": "f53e4a48eed7f552b97e40cba8b8041363eb4748a7cffc1f0fb8c5176da51afd",
+    "lockfileSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35"
+  },
+  "verified": {
+    "candidateDigestsStable": true,
+    "automatedCommandsPassed": "79/79",
+    "criteriaPassed": "M3-C01 through M3-C05: 5/5",
+    "scenariosPassed": "all recorded scenarios PASS",
+    "ownedCoreDomainBranchCoverage": "1032/1228 (84.04%)",
+    "browserJourneys": "11/11 required journeys PASS",
+    "uiChecks": "8/8 required checks PASS",
+    "routeStateMatrix": "20 route patterns, 13 direct captures, applicable success/loading/empty/error/denied families mapped",
+    "fixtureBilling": "empty, settled, checkout success/invalid and billing portal evidence retained",
+    "operationsAdmin": "admin denied, success, workspace success, loading and error evidence retained",
+    "docsAndCreatorQA": "docs home/skills/template/releases and creator QA fixture evidence retained",
+    "ownershipControls": "member removal and owner transfer POST 200 evidence retained",
+    "http403409": "expected invitation replay/expiry and zero-credit denial observations classified",
+    "manualVisualApproval": false
+  },
+  "resolvedFindings": [
+    {
+      "id": "M3-demo-ui-evidence-gap",
+      "resolution": "The latest retained route-state matrix and walkthrough explicitly map fixture billing, operations/admin views, Docs, creator QA, and every implemented local route's applicable state families for the same candidate digest."
+    },
+    {
+      "id": "M3-signoff-pending",
+      "resolution": "This independent technical review is now recorded separately from the verifier record. Manual visual approval remains false and is not represented as human signoff."
+    }
+  ],
+  "blockingFindings": [],
+  "limitations": [
+    "This is technical acceptance of the local PostgreSQL and persistent Mock profile only.",
+    "Manual visual approval is false; this record does not claim human visual signoff.",
+    "Real providers, Stripe live charges, production email/storage and production release remain outside M3."
+  ],
+  "evidenceRefs": [
+    "internal/evidence/M3/continuation-20261020/r9/aggregate-r11/record.json",
+    "internal/evidence/M3/continuation-20261020/r9/aggregate-r11/verification-attempts/2026-10-20T05-34-53-017Z-41f49faa-772c-40f0-9bdb-077da65be7bb/commands.json",
+    "internal/evidence/M3/continuation-20261020/r9/aggregate-r11/verification-attempts/2026-10-20T05-34-53-017Z-41f49faa-772c-40f0-9bdb-077da65be7bb/coverage-summary.json",
+    "internal/evidence/M3/continuation-20261020/r9/aggregate-r11/verification-attempts/2026-10-20T05-34-53-017Z-41f49faa-772c-40f0-9bdb-077da65be7bb/digest-freshness.json",
+    "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/walkthrough.json",
+    "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/route-state-matrix.json",
+    "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/owner-controls.json",
+    "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/response-403-409.json",
+    "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+    "openspec/changes/restart-shpitto-video-saas/tasks.md"
+  ],
+  "releaseApproval": false,
+  "commercialApproval": false,
+  "productionApproval": false
+}

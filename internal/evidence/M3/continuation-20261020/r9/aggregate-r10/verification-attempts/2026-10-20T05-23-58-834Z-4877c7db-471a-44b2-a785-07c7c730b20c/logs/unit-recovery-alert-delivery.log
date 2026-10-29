@@ -1,0 +1,23 @@
+✔ recovery alert accepts only redacted correlated evidence and exact dedicated scope (1.6729ms)
+✔ header authentication precedes streaming and authenticated stalled bodies have a deadline (36.2399ms)
+✔ external delivery requires configured HTTPS origin and matching durable receipt (1.9018ms)
+✔ contradictory outage ages and future baselines are not accepted as durable evidence (0.2229ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 187.7732
+ℹ start of coverage report
+ℹ ---------------------------------------------------------------------------------------------------
+ℹ file        | line % | branch % | funcs % | uncovered lines
+ℹ ---------------------------------------------------------------------------------------------------
+ℹ src         |        |          |         | 
+ℹ  contracts  |        |          |         | 
+ℹ   http.ts   |  34.91 |   100.00 |   10.00 | 21-22 25-35 38-42 45-49 52-59 63-74 77-78 81-87 90-106
+ℹ ---------------------------------------------------------------------------------------------------
+ℹ all files   |  34.91 |   100.00 |   10.00 | 
+ℹ ---------------------------------------------------------------------------------------------------
+ℹ end of coverage report

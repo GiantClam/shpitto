@@ -1,0 +1,47 @@
+---
+title: Optional affiliate integration
+description: Account ownership, attribution and the local verification boundary.
+release: v1
+section: template
+status: published
+relatedContracts: [D15, G22, G23]
+---
+
+# Optional affiliate integration
+
+Affiliate tracking is disabled by default. Core sign-in, workspace creation,
+generation and billing do not require affiliate credentials. Enabling a database
+setting alone does not activate a provider adapter or validate a referral.
+
+The buyer owns the SaaS FirstPromoter account, program and server credentials.
+The template vendor's source-sale affiliate program is a separate account and
+commerce boundary. Never copy vendor credentials or source-sale referrals into
+the buyer's runtime.
+
+Attribution uses `workspace:<uuid>`. Only the creator's verified, signed,
+HttpOnly first-party referral captured before workspace creation can bind it.
+The last valid touch expires within 30 days. The creation transaction seals the
+candidate, including an unattributed outcome; another member, a later touch or
+a retry cannot replace it. A transient verifier failure retries the original
+candidate only.
+
+After five minutes, reconcile every historical billing-customer mapping and
+all payment pages. Bind the earliest canonical paid time and payment ID while
+holding the workspace lock. Uncertain history stays held. An older payment
+discovered after export opens a correction hold without removing earned product
+credits. Deliver signup before sales and acknowledged sales before refunds.
+
+The default commission policy is `first_payment`, with native By count=1 and
+automatic disbursement disabled. Later commission denials must finish before
+review can clear. A campaign-duration change requires a reviewed provider
+campaign revision; it does not rewrite attribution or historical event IDs.
+
+This build verifies the domain against explicit local authority fixtures.
+The production account adapter remains unavailable until its authoritative
+reference, campaign, payment-history and review readbacks are configured and
+verified in the separate real-account stage. An unavailable adapter must
+return unavailable; it must never claim a delivery or referral was accepted.
+
+FirstPromoter owns commission and payout amounts. Local tables store identities,
+policy versions, delivery/review state and correction holds, not commission
+balances or a second financial ledger.

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1.0",
+  "status": "PASSED_TRANSACTION_MIGRATION_BOUNDARY_RLS_AND_AUTH_POSTGRESQL",
+  "commands": [
+    "node domain/migration-boundary-probe.mjs",
+    "M0_DATABASE_URL=postgres://postgres@127.0.0.1:55433/postgres node transaction-probe.mjs",
+    "M0_DATABASE_URL=postgres://postgres:<disposable>@127.0.0.1:55434/shpitto_m0 node domain/migration-rls-probe.mjs",
+    "M0_DATABASE_URL=postgres://postgres:<disposable>@127.0.0.1:55435/shpitto_m0 node domain/better-auth-pg-probe.mjs",
+    "M0_DATABASE_URL=postgres://postgres:<disposable>@127.0.0.1:<port>/postgres node admin/admin-postgres-chain-probe.mjs"
+  ],
+  "environment": "local/disposable-postgresql-17.6-trust-cluster-and-docker-postgresql-17.6",
+  "observed": {
+    "singleMigrationOwner": true,
+    "requestTimeSchemaPush": false,
+    "secondMigrationAuthority": false,
+    "duplicateSuppressed": true,
+    "injectedFailureRolledBack": true,
+    "ledgerCount": 1,
+    "auditCount": 1,
+    "outboxCount": 1,
+    "failedLedgerCount": 0,
+    "clusterStoppedAfterRun": true,
+    "existingCredentialsReused": false,
+    "productionShapedMigrationRls": true,
+    "migrationRlsRepeatCount": 2,
+    "migrationRlsEvidenceRef": "internal/spikes/selected-stack/domain/migration-rls-evidence.json",
+    "betterAuthPostgres": true,
+    "betterAuthPostgresEvidenceRef": "internal/spikes/selected-stack/domain/better-auth-pg-evidence.json",
+    "operatorAuthorizationPostgresChain": true,
+    "operatorAuthorizationEvidenceRef": "internal/spikes/selected-stack/admin/admin-postgres-chain-evidence.json"
+  },
+  "proves": [
+    "A single idempotency key creates one ledger, audit and outbox effect.",
+    "An injected post-ledger failure rolls back all three effects.",
+    "The disposable migration manifest has one owner and forbids request-time schema push.",
+    "The production-shaped migration applies forced RLS and rejects a cross-tenant insert.",
+    "Better Auth persists a session in PostgreSQL and reloads it through a new adapter instance.",
+    "Better Auth, a persisted operator role, React-admin authorization and one Drizzle credit/audit/outbox command work together across a pool restart with duplicate suppression."
+  ],
+  "doesNotProve": [
+    "Final production operator role administration, step-up implementation and release migration promotion.",
+    "Concurrent production workload behavior beyond the current deterministic transaction and role-lock case."
+  ]
+}

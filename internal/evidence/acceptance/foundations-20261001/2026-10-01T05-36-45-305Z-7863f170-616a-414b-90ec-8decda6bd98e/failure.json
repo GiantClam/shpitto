@@ -1,0 +1,4 @@
+{
+  "status": "FAIL",
+  "reason": "regression-credit-reservation failed: internal/evidence/acceptance/foundations-20261001/2026-10-01T05-36-45-305Z-7863f170-616a-414b-90ec-8decda6bd98e/logs/regression-credit-reservation.log\n\n1 !== 0\n"
+}

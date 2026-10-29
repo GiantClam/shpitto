@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "M5_HOSTED_CHECKOUT",
+  "date": "2026-10-26",
+  "status": "READY_FOR_REVIEW",
+  "stageId": "M5",
+  "taskId": "6.10",
+  "candidateId": "m5-hosted-checkout-20261026",
+  "environment": {
+    "profile": "acceptance",
+    "deployment": "railway",
+    "verificationDeploymentId": "0a1d213a-e093-4803-895c-364bf5128365",
+    "cleanupDeploymentId": "0d28a620-51f1-4701-b87c-4b7d9dc451c3",
+    "origin": "https://shpitto-m4-web-production.up.railway.app",
+    "liveStripe": false,
+    "catalogProductKey": "acceptance-pack",
+    "workspaceId": "c9bb2ace-aaf6-428b-992a-d74e5784ffd7",
+    "ownerEmail": "acceptance-owner-941c8c83-5689-4af0-9e51-f09faeef18bc@shpitto.local",
+    "memberEmail": "acceptance-member-941c8c83-5689-4af0-9e51-f09faeef18bc@shpitto.local"
+  },
+  "automatedChecks": [
+    {
+      "checkId": "hosted-health",
+      "result": "PASS",
+      "expected": "HTTPS hosted Acceptance service is ready with a ready database",
+      "observed": "HTTP 200; status=ready; profile=acceptance; database=ready",
+      "evidenceRefs": ["README.md"]
+    },
+    {
+      "checkId": "acceptance-bootstrap",
+      "result": "PASS",
+      "expected": "One acceptance-only bootstrap creates verified owner/member identities and a workspace",
+      "observed": "HTTP 201; owner/member credentials returned once; credentials were not persisted in evidence",
+      "evidenceRefs": ["README.md"]
+    },
+    {
+      "checkId": "owner-login",
+      "result": "PASS",
+      "expected": "Hosted owner can sign in with the generated verified credentials",
+      "observed": "HTTP 200; user identity present; bearer session used for hosted billing calls",
+      "evidenceRefs": ["README.md"]
+    },
+    {
+      "checkId": "member-login",
+      "result": "PASS",
+      "expected": "Hosted member can sign in with the generated verified credentials",
+      "observed": "HTTP 200; user identity present",
+      "evidenceRefs": ["README.md"]
+    },
+    {
+      "checkId": "owner-checkout",
+      "result": "PASS",
+      "expected": "Owner creates a hosted Stripe test Checkout Session for the server-configured Acceptance product",
+      "observed": "HTTP 201; provider=stripe; status=open; Checkout URL present; sessionId=cs_test_a1dRwrKM1goSlgAwD6wpSxHnw4StwnAR8fOLkiJzaI61Q35qy6lGRnQ2c7",
+      "evidenceRefs": ["README.md"]
+    },
+    {
+      "checkId": "owner-portal",
+      "result": "PASS",
+      "expected": "Owner opens the Stripe test billing Portal",
+      "observed": "HTTP 201; provider=stripe; customer ID present; signed Portal URL present but omitted from evidence",
+      "evidenceRefs": ["README.md"]
+    },
+    {
+      "checkId": "member-billing-authorization",
+      "result": "PASS",
+      "expected": "Non-owner member cannot create Checkout or open the Portal",
+      "observed": "Checkout HTTP 403 FORBIDDEN and Portal HTTP 403 FORBIDDEN; both reported owner-only authorization",
+      "evidenceRefs": ["README.md"]
+    },
+    {
+      "checkId": "bootstrap-disabled",
+      "result": "PASS",
+      "expected": "Bootstrap cannot be reused after evidence collection",
+      "observed": "Final cleanup deployment returned HTTP 403 FORBIDDEN with Acceptance bootstrap is disabled.; bootstrap secret variable was deleted",
+      "evidenceRefs": ["README.md"]
+    }
+  ],
+  "claims": {
+    "authenticatedHostedCheckout": "PASS",
+    "authenticatedHostedPortal": "PASS",
+    "memberBillingAuthorization": "PASS",
+    "subscriptionLifecycle": "NOT_RUN",
+    "refund": "NOT_RUN",
+    "dispute": "NOT_RUN",
+    "webhookReplay": "NOT_RUN"
+  },
+  "automatedExplanation": {
+    "conclusion": "PARTIAL_READY_FOR_REVIEW",
+    "recommendation": "RETURN_FOR_EVIDENCE",
+    "blockingReasons": [
+      "Task 6.10 requires subscription lifecycle, refund, dispute and webhook replay evidence that was not run in this window."
+    ],
+    "checks": [
+      {
+        "id": "hosted-authenticated-billing",
+        "result": "PASS",
+        "explanation": "The hosted Acceptance application authenticated both roles and exercised the real Stripe test Checkout and Portal application paths."
+      },
+      {
+        "id": "authorization-boundary",
+        "result": "PASS",
+        "explanation": "The member session was denied both owner-only billing operations with the expected 403 FORBIDDEN response."
+      },
+      {
+        "id": "full-6.10-scope",
+        "result": "BLOCKED",
+        "explanation": "The evidence does not include a completed subscription lifecycle, refund, dispute or webhook replay run."
+      },
+      {
+        "id": "bootstrap-cleanup",
+        "result": "PASS",
+        "explanation": "The temporary acceptance bootstrap was disabled and its secret variable was deleted after the run."
+      }
+    ]
+  },
+  "humanDecision": {
+    "options": ["PASS", "FAIL", "RETURN_FOR_EVIDENCE"],
+    "recommended": "RETURN_FOR_EVIDENCE",
+    "noTestRerunRequired": true,
+    "reason": "Authenticated hosted Checkout, Portal and member authorization are verified. The full 6.10 lifecycle, refund, dispute and webhook replay evidence is still missing."
+  }
+}

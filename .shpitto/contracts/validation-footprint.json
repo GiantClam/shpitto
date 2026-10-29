@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0",
+  "profile": "buyer-staging",
+  "required": ["src", "src/db", "package.json", "pnpm-lock.yaml", ".shpitto/contracts"],
+  "groups": {
+    "sourceTree": ["src", "public", "content/docs", "skills", "deploy", "scripts", "tests", "docs/buyer", ".shpitto", "tooling", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "next.config.ts", "next-env.d.ts", "tsconfig.json", "template-version.json", "Dockerfile", "vercel.json", ".env.example", ".dockerignore", "THIRD_PARTY_NOTICES", "DESIGN.md"],
+    "schema": ["src/db"],
+    "configuration": ["src/config", "deploy", "tooling", "package.json", "pnpm-workspace.yaml", "next.config.ts", "tsconfig.json", "Dockerfile", "vercel.json", ".env.example", ".dockerignore"],
+    "contract": [".shpitto/contracts", "skills", "content/docs/v1/manifest.json", "template-version.json"]
+  },
+  "note": "Optional shipped roots are measured when present. Generated top-level paths are excluded by enumerating shipped roots; nested directories under a shipped root are always measured. Internal planning and OpenSpec files are not buyer staging prerequisites. Source edits, additions and deletions under these roots change the measured fingerprint."
+}

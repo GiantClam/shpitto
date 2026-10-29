@@ -1,0 +1,142 @@
+{
+  "status": "PASS",
+  "profile": "local-buyer-export",
+  "release": "v1",
+  "documents": [
+    {
+      "title": "Overview",
+      "sourcePath": "content/docs/v1/index.mdx",
+      "outputPath": "docs/buyer/generated/v1/index.md"
+    },
+    {
+      "title": "Template",
+      "sourcePath": "content/docs/v1/template/index.mdx",
+      "outputPath": "docs/buyer/generated/v1/template/index.md"
+    },
+    {
+      "title": "Operations",
+      "sourcePath": "content/docs/v1/template/operations.mdx",
+      "outputPath": "docs/buyer/generated/v1/template/operations.md"
+    },
+    {
+      "title": "Local acceptance journey",
+      "sourcePath": "content/docs/v1/template/local-journey.mdx",
+      "outputPath": "docs/buyer/generated/v1/template/local-journey.md"
+    },
+    {
+      "title": "Local generation and credit lifecycle",
+      "sourcePath": "content/docs/v1/template/generation.mdx",
+      "outputPath": "docs/buyer/generated/v1/template/generation.md"
+    },
+    {
+      "title": "Local billing fixtures",
+      "sourcePath": "content/docs/v1/template/billing-fixtures.mdx",
+      "outputPath": "docs/buyer/generated/v1/template/billing-fixtures.md"
+    },
+    {
+      "title": "Managed deployment reference",
+      "sourcePath": "content/docs/v1/template/deploy-managed.mdx",
+      "outputPath": "docs/buyer/generated/v1/template/deploy-managed.md"
+    },
+    {
+      "title": "Standalone Docker application",
+      "sourcePath": "content/docs/v1/template/deploy-docker.mdx",
+      "outputPath": "docs/buyer/generated/v1/template/deploy-docker.md"
+    },
+    {
+      "title": "Deployment configuration checklist",
+      "sourcePath": "content/docs/v1/template/deployment-checklist.mdx",
+      "outputPath": "docs/buyer/generated/v1/template/deployment-checklist.md"
+    },
+    {
+      "title": "Backup, upgrade and restore",
+      "sourcePath": "content/docs/v1/template/upgrade-recovery.mdx",
+      "outputPath": "docs/buyer/generated/v1/template/upgrade-recovery.md"
+    },
+    {
+      "title": "Affiliates",
+      "sourcePath": "content/docs/v1/template/affiliates.mdx",
+      "outputPath": "docs/buyer/generated/v1/template/affiliates.md"
+    },
+    {
+      "title": "Affiliate settlement",
+      "sourcePath": "content/docs/v1/template/affiliate-settlement.mdx",
+      "outputPath": "docs/buyer/generated/v1/template/affiliate-settlement.md"
+    },
+    {
+      "title": "Skills",
+      "sourcePath": "content/docs/v1/skills/overview.mdx",
+      "outputPath": "docs/buyer/generated/v1/skills/overview.md"
+    },
+    {
+      "title": "API",
+      "sourcePath": "content/docs/v1/api/overview.mdx",
+      "outputPath": "docs/buyer/generated/v1/api/overview.md"
+    },
+    {
+      "title": "Releases",
+      "sourcePath": "content/docs/v1/releases/index.mdx",
+      "outputPath": "docs/buyer/generated/v1/releases/index.md"
+    },
+    {
+      "title": "Skill · quick-start",
+      "sourcePath": "content/docs/v1/skills/quick-start.mdx",
+      "outputPath": "docs/buyer/generated/v1/skills/quick-start.md"
+    },
+    {
+      "title": "Skill · add-provider",
+      "sourcePath": "content/docs/v1/skills/add-provider.mdx",
+      "outputPath": "docs/buyer/generated/v1/skills/add-provider.md"
+    },
+    {
+      "title": "Skill · add-generation-task",
+      "sourcePath": "content/docs/v1/skills/add-generation-task.mdx",
+      "outputPath": "docs/buyer/generated/v1/skills/add-generation-task.md"
+    },
+    {
+      "title": "Skill · configure-credits",
+      "sourcePath": "content/docs/v1/skills/configure-credits.mdx",
+      "outputPath": "docs/buyer/generated/v1/skills/configure-credits.md"
+    },
+    {
+      "title": "Skill · extend-assets",
+      "sourcePath": "content/docs/v1/skills/extend-assets.mdx",
+      "outputPath": "docs/buyer/generated/v1/skills/extend-assets.md"
+    },
+    {
+      "title": "Skill · deploy-template",
+      "sourcePath": "content/docs/v1/skills/deploy-template.mdx",
+      "outputPath": "docs/buyer/generated/v1/skills/deploy-template.md"
+    },
+    {
+      "title": "Skill · security-review",
+      "sourcePath": "content/docs/v1/skills/security-review.mdx",
+      "outputPath": "docs/buyer/generated/v1/skills/security-review.md"
+    },
+    {
+      "title": "Skill · upgrade-template",
+      "sourcePath": "content/docs/v1/skills/upgrade-template.mdx",
+      "outputPath": "docs/buyer/generated/v1/skills/upgrade-template.md"
+    },
+    {
+      "title": "Skill · customize-brand",
+      "sourcePath": "content/docs/v1/skills/customize-brand.mdx",
+      "outputPath": "docs/buyer/generated/v1/skills/customize-brand.md"
+    },
+    {
+      "title": "Skill · create-page",
+      "sourcePath": "content/docs/v1/skills/create-page.mdx",
+      "outputPath": "docs/buyer/generated/v1/skills/create-page.md"
+    },
+    {
+      "title": "Skill · modify-page",
+      "sourcePath": "content/docs/v1/skills/modify-page.mdx",
+      "outputPath": "docs/buyer/generated/v1/skills/modify-page.md"
+    },
+    {
+      "title": "Skill · customize-site",
+      "sourcePath": "content/docs/v1/skills/customize-site.mdx",
+      "outputPath": "docs/buyer/generated/v1/skills/customize-site.md"
+    }
+  ]
+}

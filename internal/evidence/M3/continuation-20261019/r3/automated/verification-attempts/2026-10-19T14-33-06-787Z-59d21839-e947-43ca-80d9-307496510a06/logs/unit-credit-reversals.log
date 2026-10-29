@@ -1,0 +1,26 @@
+✔ credit reversal fails closed when the grant is missing (1.1507ms)
+✔ credit reversal is replay-safe for unavailable or already-voided grants (0.6884ms)
+✔ credit reversal treats an existing ledger business key as a replay (0.134ms)
+✔ credit reversal atomically voids available credits and emits audit/outbox evidence (6.519ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 412.8651
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------------------------------------
+ℹ file              | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------------------------------------
+ℹ src               |        |          |         | 
+ℹ  contracts        |        |          |         | 
+ℹ   http.ts         |  52.83 |    70.83 |   46.15 | 17-18 21-22 25-35 38-42 45-49 73 81-87 90-106
+ℹ  modules          |        |          |         | 
+ℹ   shared          |        |          |         | 
+ℹ    transaction.ts |  84.62 |   100.00 |    0.00 | 12-13
+ℹ ------------------------------------------------------------------------------------------------
+ℹ all files         |  56.30 |    72.00 |   42.86 | 
+ℹ ------------------------------------------------------------------------------------------------
+ℹ end of coverage report

@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.0",
+  "status": "PASSED_FOR_DISPOSABLE_PROTOTYPE_PNPM12",
+  "prototype": "internal/spikes/selected-stack",
+  "environment": {
+    "node": "24.15.0",
+    "pnpm": "12.6.0 (Corepack activated target metadata)",
+    "docker": "29.8.0",
+    "platform": "Windows"
+  },
+  "commands": [
+    {
+      "command": "corepack pnpm install --ignore-workspace --lockfile-only --ignore-scripts",
+      "exitCode": 0,
+      "observed": "Dedicated pnpm-lock.yaml generated; 565 packages resolved; no peer override was added"
+    },
+    {
+      "command": "corepack pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts",
+      "exitCode": 0,
+      "observed": "459 packages installed from frozen lock"
+    },
+    {
+      "command": "corepack pnpm run typecheck",
+      "exitCode": 0,
+      "observed": "TypeScript 6.0.3 noEmit check passed, including Better Auth/Drizzle/React-admin import probe"
+    },
+    {
+      "command": "corepack pnpm run build",
+      "exitCode": 0,
+      "observed": "Next.js 16.3.6 standalone build passed and generated .next/standalone"
+    }
+  ],
+  "additionalProbes": {
+    "auth": "auth/auth-evidence.json",
+    "admin": "admin/admin-evidence.json",
+    "docs": "docs/docs-evidence.json",
+    "domain": "domain/domain-evidence.json",
+    "migrationRls": "domain/migration-rls-evidence.json",
+    "betterAuthPostgres": "domain/better-auth-pg-evidence.json",
+    "packaging": "packaging/packaging-evidence.json",
+    "worker": "packaging/worker-evidence.json"
+  },
+  "limitations": [
+    "Final shipped-image notice inventory and redistribution review remain a later release packaging task.",
+    "Direct dependency license metadata and host/container media provenance are recorded separately.",
+    "This is not the production application and has no provider, payment, affiliate or publication calls."
+  ]
+}

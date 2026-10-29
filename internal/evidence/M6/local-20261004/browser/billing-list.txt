@@ -1,0 +1,66 @@
+- button "Open Next.js Dev Tools":
+- alert
+- button "Skip to content"
+- banner:
+  - button "Close menu":
+  - heading "Billing orders" [level=6]:
+    - generic: Billing orders
+  - button "Toggle light/dark mode":
+  - button "Refresh":
+  - button "Profile":
+    - text: superadmin
+- main:
+  - menu:
+    - menuitem "Dashboard":
+      - paragraph: Dashboard
+    - menuitem "Workspaces":
+      - paragraph: Workspaces
+    - menuitem "Users":
+      - paragraph: Users
+    - menuitem "Generations":
+      - paragraph: Generations
+    - menuitem "Billings" [active]:
+      - paragraph: Billings
+    - menuitem "Audits":
+      - paragraph: Audits
+    - menuitem "Affiliate reviews":
+      - paragraph: Affiliate reviews
+    - menuitem "Affiliate holds":
+      - paragraph: Affiliate holds
+  - generic: Status
+  - combobox "Status"
+  - textbox
+  - table:
+    - rowgroup:
+      - row "Id Workspace Kind Status Currency Paid (minor units) Refunded (minor units) Paid at":
+        - columnheader "Id"
+        - columnheader "Workspace"
+        - columnheader "Kind"
+        - columnheader "Status"
+        - columnheader "Currency"
+        - columnheader "Paid (minor units)"
+        - columnheader "Refunded (minor units)"
+        - columnheader "Paid at"
+    - rowgroup:
+      - row "10f70811-0b71-492d-a32d-3ea57071ad61 c8258df0-c0b6-4c7e-b613-0b54ee317435 pack refunded usd 900 900 2026/10/4":
+        - cell "10f70811-0b71-492d-a32d-3ea57071ad61"
+        - cell "c8258df0-c0b6-4c7e-b613-0b54ee317435"
+        - cell "pack"
+        - cell "refunded"
+        - cell "usd"
+        - cell "900"
+        - cell "900"
+        - cell "2026/10/4"
+      - row "34729dce-4b26-4e2a-9e51-42f480b2f767 c8258df0-c0b6-4c7e-b613-0b54ee317435 pack paid usd 900 0 2026/10/4":
+        - cell "34729dce-4b26-4e2a-9e51-42f480b2f767"
+        - cell "c8258df0-c0b6-4c7e-b613-0b54ee317435"
+        - cell "pack"
+        - cell "paid"
+        - cell "usd"
+        - cell "900"
+        - cell "0"
+        - cell "2026/10/4"
+  - paragraph: "Rows per page:"
+  - combobox "Rows per page:": "25"
+  - textbox: "25"
+  - paragraph: 1-2 of 2

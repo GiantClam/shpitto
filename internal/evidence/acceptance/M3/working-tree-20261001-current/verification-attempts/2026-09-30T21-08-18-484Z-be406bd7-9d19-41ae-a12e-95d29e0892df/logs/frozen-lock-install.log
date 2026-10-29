@@ -1,0 +1,54 @@
+✓ Lockfile passes supply-chain policies (verified 3d ago)
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: C:\Users\liula\AppData\Local\pnpm\store\v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 107, reused 106, downloaded 0, added 47
+Progress: resolved 126, reused 126, downloaded 0, added 70
+Progress: resolved 167, reused 167, downloaded 0, added 107
+Progress: resolved 202, reused 202, downloaded 0, added 136
+Progress: resolved 246, reused 246, downloaded 0, added 171
+Progress: resolved 283, reused 283, downloaded 0, added 206
+Progress: resolved 312, reused 312, downloaded 0, added 235
+Progress: resolved 336, reused 335, downloaded 0, added 260
+Progress: resolved 348, reused 348, downloaded 0, added 277
+Progress: resolved 367, reused 367, downloaded 0, added 295
+Progress: resolved 383, reused 383, downloaded 0, added 321
+Progress: resolved 400, reused 400, downloaded 0, added 338
+Progress: resolved 411, reused 411, downloaded 0, added 357
+Progress: resolved 416, reused 416, downloaded 0, added 366
+Progress: resolved 426, reused 426, downloaded 0, added 379
+Progress: resolved 432, reused 432, downloaded 0, added 389
+Progress: resolved 435, reused 435, downloaded 0, added 397
+Progress: resolved 441, reused 441, downloaded 0, added 407
+Progress: resolved 453, reused 453, downloaded 0, added 420
+Progress: resolved 458, reused 458, downloaded 0, added 428
+Progress: resolved 459, reused 459, downloaded 0, added 430
+Progress: resolved 459, reused 459, downloaded 0, added 432
+Progress: resolved 459, reused 459, downloaded 0, added 434
+Packages: +459
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 459, reused 459, downloaded 0, added 459, done
+
+dependencies:
++ @trigger.dev/sdk 4.6.4
++ better-auth 1.7.6
++ drizzle-orm 0.45.3
++ fumadocs-core 16.15.14
++ fumadocs-ui 16.15.14
++ next 16.3.6
++ pg 8.23.0
++ react 19.3.0
++ react-admin 5.15.4
++ react-dom 19.3.0
++ stripe 22.6.2
+
+devDependencies:
++ @types/node 24.0.0
++ @types/react 19.0.0
++ @types/react-dom 19.0.0
++ drizzle-kit 0.31.11
++ typescript 6.0.3
+
+Done in 3m 17.4s using pnpm v12.6.0

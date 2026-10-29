@@ -1,0 +1,32 @@
+✔ default commercial configuration remains mock and cannot open real checkout (0.9302ms)
+✔ hosted checkout requires every explicit prerequisite and approved hosted origin (0.4851ms)
+✔ source orders are isolated from SaaS payments and enforce merchant and mode identity (2.0659ms)
+✔ duplicate delivery is idempotent and order identity conflicts fail closed (0.3285ms)
+✔ expiry preserves acquired source and renewal enables later versions without rewriting past records (0.3014ms)
+✔ hosted order rejection and checkout preview fail closed while business prerequisites are missing (37.7007ms)
+✔ twelve calendar months clamp leap day and early renewals preserve the remaining period (0.2196ms)
+✔ local sales preview exposes a complete fixture journey and never redirects to a payment provider (14.4944ms)
+✔ vendor Docs proxy serves only public Docs/static routes and never forwards cookies (8.7754ms)
+✔ fulfillment verifier hashes actual candidate bytes and rejects tampering, identity and path drift (263.7659ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 391.7596
+ℹ start of coverage report
+ℹ -------------------------------------------------------------------------------
+ℹ file                           | line % | branch % | funcs % | uncovered lines
+ℹ -------------------------------------------------------------------------------
+ℹ scripts                        |        |          |         | 
+ℹ  verify-local-fulfillment.mjs  | 100.00 |    85.71 |  100.00 | 
+ℹ vendor                         |        |          |         | 
+ℹ  sales                         |        |          |         | 
+ℹ   commerce.mjs                 | 100.00 |    94.68 |  100.00 | 
+ℹ   server.mjs                   |  82.61 |    80.95 |   85.71 | 26-34 67-69
+ℹ -------------------------------------------------------------------------------
+ℹ all files                      |  94.89 |    90.21 |   97.14 | 
+ℹ -------------------------------------------------------------------------------
+ℹ end of coverage report

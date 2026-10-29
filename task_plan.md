@@ -133,3 +133,103 @@ Objective: make OpenCode session continuity, workflow correlation, and long-runn
 6. Run focused tests, typecheck, lint, and generated-template smoke checks; record residual credential-dependent gaps.
 
 Completed in this phase: native session flags and persistence, workflow correlation, in-flight heartbeat updates, task-class timeouts, Docker/source adapters, generated Docker packaging, and truthful Cloudflare capability metadata. Focused verification and the independent source build pass; the full web suite remains environment-dependent because it includes external provider tests and pre-existing legacy failures.
+
+## 2026-10-13 Railway Provider Worker (active)
+
+Scope: implement and deploy one isolated acceptance provider worker. No paid inference is authorized by this deployment task; keep submissions paused initially. Preserve unrelated .env.example deletions. No new dependencies, production mail, or existing business-object reads/deletes.
+
+1. Inspect provider/lifecycle/OpenSpec contracts and Railway target (in progress).
+2. Add regression tests for submission fencing, scoped runtime admission, transport bounds and recovery.
+3. Implement workspace-scoped real dispatch/poll/materialization/settlement and separate health/sweep loops.
+4. Repair official fal JWKS authentication in parallel, without weakening production admission.
+5. Run typecheck, lint, format, provider/storage/worker contracts and disposable PostgreSQL integration.
+6. Deploy separate Railway worker with create requests disabled; verify identity, health, tools and restart.
+7. Save deployment evidence and update OpenSpec task 5.10 without claiming full M4 PASS.
+
+## 2026-10-28 Configurable security controls
+
+### Objective
+
+Allow the template admin backend to configure optional SMTP/email verification, optional 2FA enforcement, and Cloudflare Turnstile without exposing secrets or bypassing server-side authorization. On a fresh installation, the first successful password signup may claim initial Superadmin ownership exactly once; existing installations keep claiming closed and retain audited server bootstrap.
+
+### Constraints
+
+- SMTP and 2FA are optional enhancements; authentication must still work when either is disabled.
+- Turnstile is fail-closed when enabled and fail-open only when explicitly disabled.
+- SMTP and Turnstile secret values are write-only from the admin UI and are encrypted at rest.
+- Only an authenticated superadmin may change security settings.
+- Existing Acceptance/production instances must not be silently reconfigured by the feature.
+- First-user claiming is enabled only by migration on an empty installation; upgrades with any existing account keep it closed.
+- Failed authentication, duplicate signup, and client-selected role or identity values must never claim ownership.
+- No new dependency unless the existing runtime cannot support the feature.
+
+### Phases
+
+1. Contract and storage: add versioned security settings and operator-owner state schemas, encrypted-secret helper and server-side public/private projections.
+2. Runtime policy: make email verification and operator step-up policy dynamic; atomically claim first-user ownership on successful credential auth, preserving upgrade behavior and audited server bootstrap.
+3. Turnstile: add server verification, auth-route coverage and client widget support for signup, login and reset requests.
+4. Admin UI/API: add superadmin-only security settings view with secret write-only fields and configuration status.
+5. Tests and documentation: add contract/integration coverage, migration checks, OpenSpec updates and buyer setup guidance.
+6. Verification: run format, lint, typecheck, focused auth/admin tests and disposable PostgreSQL probes.
+
+### Current phase
+
+Local implementation and verification complete. Hosted deployment, acceptance-gate review and independent stage decisions remain separate.
+
+### Phase status
+
+- Phase 1: complete. Security settings schema, encrypted-secret helper and migration are present.
+- Phase 2: complete for email verification and operator 2FA policy wiring.
+- Phase 3: complete for native Turnstile client/server integration and unit coverage.
+- Phase 4: complete locally. Superadmin-only API and admin UI expose the optional controls with audited versioned updates.
+- Phase 5: complete locally. OpenSpec and buyer operations docs cover optional controls, fresh-install ownership and upgrade bootstrap.
+- Phase 6: complete locally for targeted verification. Dedicated PostgreSQL probes cover claim races, failed auth, restart, upgrades, bootstrap, security settings and 2FA; HTTP auth/team flows, typecheck, format, source boundaries, database boundaries, config, OpenSpec and production build pass.
+
+### Completion rule
+
+The local feature is complete when settings persist safely, auth behavior follows the configured policy, Turnstile rejects invalid enabled-mode requests, secrets never appear in responses/logs/evidence, the admin UI configures options through the supported API, and the one-time Superadmin claim is atomic, failure-safe, restart-safe and closed for upgrades. Hosted deployment and M6 acceptance remain separately gated.
+
+
+## 2026-10-13 Worker Completion Evidence
+
+Worker and companion Web deployed and health-checked; worker restarted successfully while paused. 145 contracts and 13 disposable PostgreSQL integration cases pass; fresh R2 signed input probe cleaned up. Independent bootstrap/adoption review fixes verified. No new paid generation. Full acceptance is blocked by stale M4 candidate digests and missing full live/hosted/independent stage evidence. Evidence saved under internal/evidence/M4/task-5.10/railway-worker/.
+
+
+## 2026-10-13 Authorized Fal T2V Bootstrap
+
+User authorized exactly one 720p/81-frame/16-FPS Fal T2V request with reference cost ~$0.41 and authorization budget USD1. Create a fresh seeded acceptance identity/workspace/reservation; retain an exclusive run record and durable submit fence. No blind retry on ambiguity. Establish account binding only from a JWKS-verified callback tied to the exact request ID returned by the authenticated create. Production worker remains create-disabled; only assigned-workspace recovery/polling may run. Preserve private output for Demo evidence, never print keys/signed URLs/session tokens.
+
+## 2026-10-13 Authorized One-Shot Verification Complete
+
+Exactly one Fal T2V create was accepted and never retried. Confirmed the account only from the signed, persisted-request callback, then bound both Railway services. Real worker/R2 publication, one seeded reservation consumption, HTTP authorization, scheduled fresh-fixture cleanup and restart retention passed. Worker is paused/create-disabled with effective scope unassigned. Full M4 remains open: current candidate digests are stale and the complete matrix/hosted-runner/whole-stage review is not asserted. Do not issue another paid create under this consumed authorization.
+
+## 2026-10-26 Acceptance Gate Continuation
+
+### Objective
+
+Apply the evidence-first workflow to the remaining M4-M8 work: run available automated checks, exercise authorized hosted Acceptance paths without live money, write complete explanation packages, and recommend a human decision without asking reviewers to rerun tests.
+
+### Scope
+
+- M4 / task 5.10: refresh current automated and hosted worker evidence without another paid provider create.
+- M5 / task 6.10: extend authenticated hosted Stripe test evidence; keep missing lifecycle/refund/dispute/webhook scenarios visible.
+- M6 / task 7.14: run local and hosted-safe operations checks; record FirstPromoter and hosted settlement as external blockers if unavailable.
+- M7 / task 8.15: verify governed skills, customization workflows, provenance and documentation against predecessor status.
+- M8 / tasks 9.13-9.15: verify release/export/deployment prerequisites and record commercial and exact-candidate blockers.
+
+### Execution phases
+
+1. Inventory current gate records, queue entries, scripts and dependency edges.
+2. Run independent local checks in parallel and capture exit codes and output references.
+3. Run authorized hosted checks sequentially where the Acceptance environment supports them; do not use live keys, real funds or another paid provider create.
+4. Create or update one evidence packet per gate with automated explanations, missing-claim blockers and human decision options.
+5. Regenerate the final manual acceptance queue and verify that recommendations match the evidence.
+6. Review the diff, run focused regression checks, commit using the Lore protocol and report remaining external/manual work.
+
+### Completion rule
+
+An automated PASS proves only the recorded scope. A gate remains `IN_PROGRESS` when a mandatory scenario, external account, exact release digest, independent review or integration decision is missing. Human reviewers choose `PASS`, `FAIL` or `RETURN_FOR_EVIDENCE` from the package; they do not rerun tests as a substitute for evidence review.
+
+### Current phase
+
+Phase 1: complete. Phases 2-6 completed for automated evidence continuation; external inputs and independent human decisions remain open by design.

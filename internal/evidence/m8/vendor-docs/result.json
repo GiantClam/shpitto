@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "profile": "local-vendor-docs-sync",
+  "release": "v1",
+  "pages": 27,
+  "checks": {
+    "sharedSource": "PASS",
+    "navigationParity": "PASS",
+    "publishedOnly": "PASS",
+    "buyerGuideParity": "PASS",
+    "vendorContentExclusion": "PASS"
+  },
+  "errors": [],
+  "vendorAccount": "NOT_PROVIDED",
+  "commercialTerms": "NOT_PROVIDED",
+  "note": "Local synchronization proof only; Lemon Squeezy merchant setup and commercial readiness remain open."
+}

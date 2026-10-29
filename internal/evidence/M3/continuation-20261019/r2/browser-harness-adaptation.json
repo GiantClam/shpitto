@@ -1,0 +1,17 @@
+{
+  "createdAt": "2026-10-19T06:34:36.012Z",
+  "sourceRef": ".data/m3-browser-acceptance.mjs",
+  "sourceSha256": "d52684d1bbcda10c23c765f2ce3f9355894474fb23afd8dec48df200ce6e70d8",
+  "retainedRunnerRef": "internal/evidence/M3/continuation-20261019/r2/browser-harness.mjs",
+  "retainedRunnerSha256": "201a3da1fd99894958da2abab41c230a9790d0274718498e7fd3d033de2b7abf",
+  "changes": [
+    "Port 3199 and owned packet output",
+    "No ambient env-file loading",
+    "Assets confined to disposable runtime",
+    "Fresh M3 build binding replaces unrelated release-manifest binding",
+    "Updated retained credential provenance"
+  ],
+  "uiInteractionAssertionsPreserved": true,
+  "originalRunnerModified": false,
+  "shippedFilesModified": false
+}

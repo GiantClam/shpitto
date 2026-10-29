@@ -1,0 +1,42 @@
+{
+  "status": "PASS",
+  "profile": "replicate-real-t2v-smoke",
+  "predictionId": "wxrfrzbt1drmt0d141n98vhsxr",
+  "version": "c483b1f7b892065bc58ebadb6381abf557f6b1f517d2ff0febb3fb635cf49b4d",
+  "requestCreatedAt": "2026-10-09T11:26:51.403Z",
+  "completedAt": "2026-10-09T11:28:29.775194975Z",
+  "providerStatus": "succeeded",
+  "metrics": {
+    "character_input_count": 94,
+    "model_variant": "go_fast",
+    "predict_time": 98.328179966,
+    "resolution_target": "720p",
+    "total_time": 98.372194975,
+    "video_output_count": 1
+  },
+  "error": null,
+  "input": {
+    "prompt": "A slow cinematic sunrise over a quiet coastal city, soft morning light, stable camera, no text",
+    "resolution": "720p",
+    "num_frames": 81,
+    "frames_per_second": 16,
+    "aspect_ratio": "16:9",
+    "interpolate_output": false,
+    "disable_safety_checker": false,
+    "optimize_prompt": false
+  },
+  "webhook": "NOT_CONFIGURED_POLLING_USED",
+  "media": {
+    "path": "internal/evidence/M4/task-5.10/replicate-t2v-wxrfrzbt1drmt0d141n98vhsxr.mp4",
+    "bytes": 6336892,
+    "sha256": "dcd63e34952a28c8f897f30c15b5d325f8bd004d76aa6f547e216ff52d4affef",
+    "ffprobeStatus": 0,
+    "ffprobe": "{\r\n    \"programs\": [\r\n\r\n    ],\r\n    \"stream_groups\": [\r\n\r\n    ],\r\n    \"streams\": [\r\n        {\r\n            \"codec_name\": \"mpeg4\",\r\n            \"width\": 1280,\r\n            \"height\": 720,\r\n            \"r_frame_rate\": \"16/1\"\r\n        }\r\n    ],\r\n    \"format\": {\r\n        \"duration\": \"5.062500\",\r\n        \"size\": \"6336892\"\r\n    }\r\n}\r\n"
+  },
+  "paidPredictionCreates": 1,
+  "tokenPersisted": false,
+  "notes": [
+    "One controlled prediction only.",
+    "This smoke test proves provider execution and output retrieval; it does not close 5.10 without I2V, authenticated webhook, private storage ingestion, credit settlement and independent review."
+  ]
+}

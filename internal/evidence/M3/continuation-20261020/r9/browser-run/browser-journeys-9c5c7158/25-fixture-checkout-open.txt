@@ -1,0 +1,36 @@
+Skip to content
+Shpitto
+Home
+Explore
+Create
+Docs
+Log in
+Start creating
+
+LOCAL FIXTURE CHECKOUT
+
+Complete your monthly plan
+
+This is a local Mock payment page. It never contacts Stripe or charges a real account.
+
+fixture-monthly
+open
+AMOUNT
+USD 25.00
+CREDITS
+1000
+WORKSPACE
+8f4d8069-c250-4d5d-b3d6-df7222bfbab3
+
+Current state: open
+
+Simulate successful payment
+Simulate failed payment
+Return to billing
+Shpitto
+
+Give your ideas a little motion.
+
+Explore
+Create a video
+Docs

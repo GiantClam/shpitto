@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "1.0",
+  "reviewedAt": "2026-10-01",
+  "reviewer": "/root/next_stage_evidence_review",
+  "supersededBy": "next-tasks-review-5.3-6.3-6.4-final.json",
+  "scope": ["M4 task 5.3", "M5 tasks 6.3 and 6.4"],
+  "decision": "FAIL_RESIDUAL_RECOVERY_GAP",
+  "decisionSummary": "The three previously reported defects are addressed in the current source snapshot: aliases are queried as exact tuples, canonical order workspace/customer hints are checked before locking, and failed inbox rows can be retried. The review remains blocked because a crash after durable inbox insertion but before reconciliation leaves status=received, and a later verified delivery is still acknowledged as duplicate without retry. The required PostgreSQL regression probe was also unavailable under the current role.",
+  "resolvedFindings": [
+    "BIL-ALIAS-CROSS-PAIR: payment-aliases.ts now queries each exact provider/objectKind/externalId tuple.",
+    "BIL-TENANT-HINT-MISMATCH: reconcile-payment.ts now rejects workspace/customer hints that differ from the canonical order before the account lock.",
+    "BIL-FAILED-DELIVERY-NO-RETRY: inbox.ts now resets failed rows to received and retries reconciliation on redelivery."
+  ],
+  "residualFinding": {
+    "id": "BIL-RECEIVED-CRASH-NO-RETRY",
+    "severity": "high",
+    "file": "src/modules/billing/inbox.ts",
+    "lines": "33-45",
+    "description": "A process crash after the inbox insert commits and before reconcilePayment starts leaves status=received. A later verified delivery sees an existing non-failed row and returns duplicate=true, so the durable observation never reaches reconciliation.",
+    "specReference": "REQ-BIL-02 / SC-BIL-04; REQ-BIL-06 / SC-BIL-16",
+    "requiredEvidence": "Use a row lock plus a bounded retry/lease policy for received rows, or explicitly reconcile stale received rows; add a crash-after-receive redelivery probe proving one eventual grant."
+  },
+  "ownerLayer": "runtime",
+  "upstreamFilesInspected": [
+    "openspec/changes/restart-shpitto-video-saas/specs/billing/spec.md",
+    "internal/restart/evidence-index.json",
+    "src/modules/billing/payment-aliases.ts",
+    "src/modules/billing/reconcile-payment.ts",
+    "src/modules/billing/inbox.ts",
+    "src/db/schema/billing.ts"
+  ],
+  "verification": {
+    "passed": [
+      "node --experimental-strip-types --test tests/contracts/fal.test.ts (5/5)",
+      "node --experimental-strip-types --test tests/contracts/billing-checkout.test.ts (6/6)",
+      "corepack pnpm typecheck",
+      "corepack pnpm lint",
+      "corepack pnpm format:check",
+      "corepack pnpm build; /api/webhooks/stripe emitted"
+    ],
+    "blocked": [
+      "node --experimental-strip-types scripts/probe-billing-reconciliation.ts: PostgreSQL CREATEDB permission denied (42501); prior green-probe evidence predates the current source fixes and does not test the residual crash path."
+    ]
+  },
+  "candidateDigest": {
+    "sourceTreeSha256": "675a5ee2edc8d7e7c4b10b1ca94e2b04e76aaaba9bf58b76851bdb9d04a23bdc",
+    "schemaSha256": "ae5c2ed265b308f8a624e917b2b631038dbeaefb993f183248bee8800af87ffa",
+    "configurationSha256": "5fca500aba3c8fd69c8efe8fc7c96659387af00e1fb88269912c5c2bdb5f7426",
+    "contractSha256": "861a25ab4e70f623440a7abba054afa4460177e42cbe8a001196bc9d12a1a139",
+    "validatorSha256": "a0740c0402b999f74812fea7438c5ef63370a097a0014245cfc958bdbba82a59",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a"
+  },
+  "limits": [
+    "Local fixture provider only; no Stripe account, live fal request, production billing, production email, paid request, or external network evidence.",
+    "This follow-up does not alter task or stage status."
+  ]
+}

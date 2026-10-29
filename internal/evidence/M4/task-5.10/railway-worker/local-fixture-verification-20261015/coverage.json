@@ -1,0 +1,322 @@
+{
+  "status": "PASS",
+  "branchesFound": 1730,
+  "branchesHit": 1424,
+  "percent": 82.3121387283237,
+  "missingSources": [],
+  "malformed": [],
+  "ownedModules": [
+    "src/adapters/providers/admission.ts",
+    "src/adapters/providers/fal/index.ts",
+    "src/adapters/providers/fal/jwks.ts",
+    "src/adapters/providers/fal/webhook.ts",
+    "src/adapters/providers/http.ts",
+    "src/adapters/providers/input.ts",
+    "src/adapters/providers/mock.ts",
+    "src/adapters/providers/normalize.ts",
+    "src/adapters/providers/replicate/index.ts",
+    "src/adapters/providers/replicate/webhook.ts",
+    "src/adapters/providers/runtime.ts",
+    "src/adapters/storage/key.ts",
+    "src/adapters/storage/local.ts",
+    "src/adapters/storage/port.ts",
+    "src/adapters/storage/provider-input-url.ts",
+    "src/adapters/storage/runtime.ts",
+    "src/adapters/storage/s3-object-store.ts",
+    "src/adapters/storage/s3.ts",
+    "src/adapters/tasks/trigger.ts",
+    "src/config/models.ts",
+    "src/config/provider-models.ts",
+    "src/config/provider-worker.ts",
+    "src/modules/assets/authorize.ts",
+    "src/modules/assets/cleanup.ts",
+    "src/modules/assets/ingest.ts",
+    "src/modules/assets/media-probe.ts",
+    "src/modules/assets/upload.ts",
+    "src/modules/assets/validate-input.ts",
+    "src/modules/generation/create.ts",
+    "src/modules/generation/lifecycle.ts",
+    "src/modules/generation/mock.ts",
+    "src/modules/generation/outbox.ts",
+    "src/modules/generation/provider-image.ts",
+    "src/modules/generation/provider-input.ts",
+    "src/modules/generation/provider-webhooks.ts",
+    "src/modules/generation/provider-worker.ts",
+    "src/modules/generation/state.ts",
+    "src/modules/generation/sweep-recovery.ts",
+    "src/modules/operations/integration-health.ts",
+    "src/modules/operations/telemetry.ts",
+    "src/trigger/cleanup-assets.ts",
+    "src/trigger/dispatch.ts",
+    "src/trigger/materialize.ts",
+    "src/trigger/outbox.ts",
+    "src/trigger/reconcile.ts",
+    "src/trigger/sweep-recovery.ts"
+  ],
+  "reports": [
+    {
+      "path": "src/adapters/providers/admission.ts",
+      "branchesFound": 5,
+      "branchesHit": 5
+    },
+    {
+      "path": "src/adapters/providers/fal/index.ts",
+      "branchesFound": 84,
+      "branchesHit": 67
+    },
+    {
+      "path": "src/adapters/providers/fal/jwks.ts",
+      "branchesFound": 71,
+      "branchesHit": 69
+    },
+    {
+      "path": "src/adapters/providers/fal/webhook.ts",
+      "branchesFound": 99,
+      "branchesHit": 92
+    },
+    {
+      "path": "src/adapters/providers/http.ts",
+      "branchesFound": 26,
+      "branchesHit": 23
+    },
+    {
+      "path": "src/adapters/providers/input.ts",
+      "branchesFound": 83,
+      "branchesHit": 70
+    },
+    {
+      "path": "src/adapters/providers/mock.ts",
+      "branchesFound": 22,
+      "branchesHit": 19
+    },
+    {
+      "path": "src/adapters/providers/normalize.ts",
+      "branchesFound": 57,
+      "branchesHit": 52
+    },
+    {
+      "path": "src/adapters/providers/replicate/index.ts",
+      "branchesFound": 81,
+      "branchesHit": 72
+    },
+    {
+      "path": "src/adapters/providers/replicate/webhook.ts",
+      "branchesFound": 64,
+      "branchesHit": 62
+    },
+    {
+      "path": "src/adapters/storage/key.ts",
+      "branchesFound": 6,
+      "branchesHit": 5
+    },
+    {
+      "path": "src/adapters/storage/local.ts",
+      "branchesFound": 54,
+      "branchesHit": 47
+    },
+    {
+      "path": "src/adapters/storage/port.ts",
+      "branchesFound": 11,
+      "branchesHit": 7
+    },
+    {
+      "path": "src/adapters/storage/provider-input-url.ts",
+      "branchesFound": 26,
+      "branchesHit": 23
+    },
+    {
+      "path": "src/adapters/storage/runtime.ts",
+      "branchesFound": 6,
+      "branchesHit": 5
+    },
+    {
+      "path": "src/adapters/storage/s3-object-store.ts",
+      "branchesFound": 67,
+      "branchesHit": 63
+    },
+    {
+      "path": "src/adapters/storage/s3.ts",
+      "branchesFound": 71,
+      "branchesHit": 52
+    },
+    {
+      "path": "src/config/models.ts",
+      "branchesFound": 31,
+      "branchesHit": 25
+    },
+    {
+      "path": "src/config/provider-models.ts",
+      "branchesFound": 12,
+      "branchesHit": 12
+    },
+    {
+      "path": "src/config/provider-worker.ts",
+      "branchesFound": 63,
+      "branchesHit": 60
+    },
+    {
+      "path": "src/modules/assets/authorize.ts",
+      "branchesFound": 26,
+      "branchesHit": 25
+    },
+    {
+      "path": "src/modules/assets/cleanup.ts",
+      "branchesFound": 67,
+      "branchesHit": 55
+    },
+    {
+      "path": "src/modules/assets/ingest.ts",
+      "branchesFound": 36,
+      "branchesHit": 26
+    },
+    {
+      "path": "src/modules/assets/media-probe.ts",
+      "branchesFound": 17,
+      "branchesHit": 12
+    },
+    {
+      "path": "src/modules/assets/validate-input.ts",
+      "branchesFound": 29,
+      "branchesHit": 25
+    },
+    {
+      "path": "src/modules/generation/create.ts",
+      "branchesFound": 50,
+      "branchesHit": 24
+    },
+    {
+      "path": "src/modules/generation/lifecycle.ts",
+      "branchesFound": 187,
+      "branchesHit": 134
+    },
+    {
+      "path": "src/modules/generation/mock.ts",
+      "branchesFound": 9,
+      "branchesHit": 9
+    },
+    {
+      "path": "src/modules/generation/outbox.ts",
+      "branchesFound": 40,
+      "branchesHit": 29
+    },
+    {
+      "path": "src/modules/generation/provider-input.ts",
+      "branchesFound": 12,
+      "branchesHit": 6
+    },
+    {
+      "path": "src/modules/generation/provider-webhooks.ts",
+      "branchesFound": 107,
+      "branchesHit": 96
+    },
+    {
+      "path": "src/modules/generation/state.ts",
+      "branchesFound": 5,
+      "branchesHit": 5
+    },
+    {
+      "path": "src/modules/generation/sweep-recovery.ts",
+      "branchesFound": 7,
+      "branchesHit": 7
+    },
+    {
+      "path": "src/modules/operations/integration-health.ts",
+      "branchesFound": 7,
+      "branchesHit": 2
+    },
+    {
+      "path": "src/modules/operations/telemetry.ts",
+      "branchesFound": 13,
+      "branchesHit": 12
+    },
+    {
+      "path": "src/trigger/cleanup-assets.ts",
+      "branchesFound": 23,
+      "branchesHit": 17
+    },
+    {
+      "path": "src/trigger/sweep-recovery.ts",
+      "branchesFound": 14,
+      "branchesHit": 13
+    },
+    {
+      "path": "src/adapters/providers/runtime.ts",
+      "branchesFound": 1,
+      "branchesHit": 1
+    },
+    {
+      "path": "src/adapters/tasks/trigger.ts",
+      "branchesFound": 3,
+      "branchesHit": 3
+    },
+    {
+      "path": "src/modules/assets/upload.ts",
+      "branchesFound": 10,
+      "branchesHit": 6
+    },
+    {
+      "path": "src/modules/generation/provider-image.ts",
+      "branchesFound": 15,
+      "branchesHit": 11
+    },
+    {
+      "path": "src/modules/generation/provider-worker.ts",
+      "branchesFound": 83,
+      "branchesHit": 58
+    },
+    {
+      "path": "src/trigger/dispatch.ts",
+      "branchesFound": 2,
+      "branchesHit": 2
+    },
+    {
+      "path": "src/trigger/materialize.ts",
+      "branchesFound": 1,
+      "branchesHit": 1
+    },
+    {
+      "path": "src/trigger/outbox.ts",
+      "branchesFound": 25,
+      "branchesHit": 13
+    },
+    {
+      "path": "src/trigger/reconcile.ts",
+      "branchesFound": 2,
+      "branchesHit": 2
+    }
+  ],
+  "sourceRoots": [
+    "src/modules/generation",
+    "src/modules/assets",
+    "src/adapters/providers",
+    "src/adapters/storage",
+    "src/adapters/tasks",
+    "src/trigger",
+    "src/config/provider-models.ts",
+    "src/config/provider-worker.ts",
+    "src/config/models.ts",
+    "src/modules/operations/integration-health.ts",
+    "src/modules/operations/telemetry.ts"
+  ],
+  "exclusions": [
+    {
+      "path": "src/adapters/providers/port.ts",
+      "reason": "Type-only declarations; no executable behavior."
+    },
+    {
+      "path": "src/app/**",
+      "reason": "HTTP/UI layers require separate request and browser evidence; not core-domain coverage."
+    },
+    {
+      "path": "src/db/schema/**",
+      "reason": "Declarative schema is validated through isolated PostgreSQL assertions."
+    },
+    {
+      "path": "scripts/**, tests/**, node_modules/**",
+      "reason": "Verification drivers, tests and third-party implementation are not owned delivered M4 domain behavior."
+    }
+  ],
+  "minimumBranchPercent": 80,
+  "subprocessCoverage": "Crash child assertions execute, but child LCOV is not collected or claimed.",
+  "completeM4Acceptance": false
+}

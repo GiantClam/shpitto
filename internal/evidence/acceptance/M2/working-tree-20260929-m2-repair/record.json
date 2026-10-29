@@ -1,0 +1,521 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "IMPLEMENTATION_ACCEPTANCE",
+  "changeId": "restart-shpitto-video-saas",
+  "stageId": "M2",
+  "checkpointId": null,
+  "gateTaskId": "3.12",
+  "status": "PASS",
+  "candidateId": "working-tree-20260929-m2-repair",
+  "createdAt": "2026-09-29T05:59:40.893175+00:00",
+  "updatedAt": "2026-09-29T06:10:10.361759+00:00",
+  "policy": {
+    "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md"
+  },
+  "prerequisites": [
+    {
+      "taskId": "3.11",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260929-m2-repair",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/task-3.11.json"
+      ]
+    }
+  ],
+  "candidate": {
+    "capturedAt": "2026-09-29T06:04:56.405Z",
+    "sourceCommit": null,
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "9a2f3e2edae55f3b21b933ebee91944791b903adc9106a3e680f35203b59b7fe",
+    "schemaSha256": "8c1c177fb94a028b1dea21709c934ad37374db92cd7a3b96dbadee3ce17bca24",
+    "configurationSha256": "09953514f202ef7cf030aa6d245113b49ec17fecb27168c7755d9a9f43f563ef",
+    "contractSha256": "d120afc8c0696c69036ba0f60df2b77c99b3c184517cc984a63c3444f36fea17",
+    "validatorSha256": "b29a7cb6f30bdde6ae1ebc5e5545b3b47456e651225d872da8a10c11b1b95857",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
+    "digestInputs": {
+      "sourceTree": [
+        "src",
+        "tests",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        "tooling",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        "src/config/env.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile",
+        "tooling"
+      ],
+      "contract": [
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "openspec/changes/restart-shpitto-video-saas/specs",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json"
+      ],
+      "validator": [
+        "scripts",
+        "tests",
+        "tooling",
+        "internal/restart/check-acceptance-record.py"
+      ]
+    }
+  },
+  "environments": [
+    {
+      "environmentId": "local-m2-repair",
+      "profile": "Docker PostgreSQL15; real Next development HTTP and pinned local Mailpit1.21.8; production build separately",
+      "clockMode": "fixed expiry clocks; actual auth token/session timestamps",
+      "fixtureOrSeed": "each probe owns isolated fixtures and cleanup; three independent race resets",
+      "sanitationNotes": "local fixture accounts; no provider or payment requests; secrets omitted",
+      "toolVersions": {
+        "node": "24.15.0",
+        "pnpm": "12.6.0",
+        "dockerServer": "29.8.0",
+        "postgres": "15.19",
+        "next": "16.3.6",
+        "betterAuth": "1.7.6",
+        "mailpit": "1.21.8"
+      },
+      "effectiveLimits": "Local disposable DB fixtures and captured emails only; no cloud/provider/payment requests; three resets of ten attempts per selected race, twenty semantic replays, controlled expiry clocks."
+    }
+  ],
+  "criterionResults": [
+    {
+      "criterionId": "M2-C01",
+      "environmentId": "local-m2-repair",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Persistent signup/session/verification/reset and recoverable onboarding; immutable personal ownership and safe team ownership/invitations.",
+      "observed": "Real handler restart and live Next/Mailpit lifecycle passed. Workspace, invitation, operator and status probes passed; two-owner and invitation races each have ten attempts across three resets.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/suite.log",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/commands.json",
+        "internal/restart/m2-repair-evidence.md",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/auth-http.log",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/auth-lifecycle.log"
+      ]
+    },
+    {
+      "criterionId": "M2-C02",
+      "environmentId": "local-m2-repair",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "All implemented tenant APIs, composite tenant constraints and E02 state matrix.",
+      "observed": "35 HTTP negative cases across current workspace methods; valid local reservation isolates exact tenant FK23503; disabled/member/worker/operator matrix checked.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/suite.log",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/commands.json",
+        "internal/restart/m2-repair-evidence.md",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/api-isolation.log"
+      ]
+    },
+    {
+      "criterionId": "M2-C03",
+      "environmentId": "local-m2-repair",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Immutable ledger buckets, FEFO, source expiry, authoritative quotes and idempotent concurrent effects.",
+      "observed": "Ledger and command probes pass; ten overspend/duplicate attempts per reset produce exact reservation/allocation/ledger/audit/outbox counts. Twenty reordered replays preserve one effect.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/suite.log",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/commands.json",
+        "internal/restart/m2-repair-evidence.md"
+      ]
+    },
+    {
+      "criterionId": "M2-C04",
+      "environmentId": "local-m2-repair",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Source-aware settlement and single nonrenewing seven-day compensation.",
+      "observed": "Refund probe covers mixed sources, success/cancel/failure, late outcome, twenty replays, conflicting evidence, before/at/after expiry, lineage and held command rollback.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/suite.log",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/commands.json",
+        "internal/restart/m2-repair-evidence.md"
+      ]
+    },
+    {
+      "criterionId": "M2-C05",
+      "environmentId": "local-m2-repair",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Once-only nonproduction demo funding, reconciled projections and complete owned-core coverage.",
+      "observed": "Concurrent onboarding funding converges; production rejects demo. Owned coverage575/620=92.74%, missing source list empty. Historical import proves lineage before opening balances.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/suite.log",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/commands.json",
+        "internal/restart/m2-repair-evidence.md",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/coverage-summary.json",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/owned-modules.json"
+      ]
+    }
+  ],
+  "commonStandardResults": [
+    {
+      "standard": "build-and-checks",
+      "applicable": true,
+      "result": "PASS",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verify.log",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verify.metadata.json"
+      ]
+    },
+    {
+      "standard": "owned-domain-coverage",
+      "applicable": true,
+      "result": "PASS",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/owned-modules.json",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/coverage-summary.json"
+      ]
+    },
+    {
+      "standard": "three-reset-ten-attempt-races",
+      "applicable": true,
+      "result": "PASS",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/commands.json"
+      ]
+    },
+    {
+      "standard": "current-digests",
+      "applicable": true,
+      "result": "PASS",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/candidate.json",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/digest-footprints.json"
+      ]
+    },
+    {
+      "standard": "responsive-auth-ui-keyboard",
+      "applicable": true,
+      "result": "PASS",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/ui/checks.json",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/ui/signup-mobile.png",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/ui/signup-desktop.png"
+      ]
+    }
+  ],
+  "scenarioResults": [
+    {
+      "ids": [
+        "T01",
+        "T02",
+        "T03",
+        "T04",
+        "T05",
+        "T05.a",
+        "T09",
+        "T59"
+      ],
+      "scope": "M2 delivered identity/API/domain subset; future generation/download/browser/operator workflows deferred to their gates",
+      "environmentId": "local-m2-repair",
+      "mandatory": true,
+      "result": "PASS",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/suite.log",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/commands.json",
+        "internal/restart/m2-repair-evidence.md",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/auth-http.log",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/auth-lifecycle.log",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/api-isolation.log"
+      ]
+    },
+    {
+      "ids": [
+        "T06",
+        "T07",
+        "T08",
+        "T16",
+        "T17",
+        "T18",
+        "T60"
+      ],
+      "scope": "M2 grant/reservation/settlement fixtures; no real payment or provider events",
+      "environmentId": "local-m2-repair",
+      "mandatory": true,
+      "result": "PASS",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/suite.log",
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/commands.json",
+        "internal/restart/m2-repair-evidence.md"
+      ]
+    },
+    {
+      "ids": [
+        "T49"
+      ],
+      "scope": "Operator recovery flow deferred to4.11; M2 only proves discrepancy detection and holds",
+      "mandatory": false,
+      "result": "NOT_STARTED",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "commandId": "suite",
+      "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=80 --test-coverage-include=src/modules/**/*.ts --test-coverage-include=src/adapters/mail/**/*.ts --test-coverage-include=src/config/models.ts --test-coverage-include=src/contracts/http.ts --test-coverage-include=src/lib/auth.ts --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\M2\\working-tree-20260929-m2-repair\\verification-attempt1\\m2-all-owned.lcov tests/unit/m2-contracts.test.ts tests/unit/m2-policy.test.ts scripts/probe-m2-foundation.ts scripts/probe-onboarding.ts scripts/probe-workspaces.ts scripts/probe-invitations.ts scripts/probe-tenant-authorization.ts scripts/probe-operator.ts scripts/probe-access-states.ts scripts/probe-command-contract.ts scripts/probe-credit-ledger.ts scripts/probe-credit-reservation.ts scripts/probe-credit-refund.ts scripts/probe-credit-migration-backfill.ts scripts/probe-auth-lifecycle.ts",
+      "environmentId": "local-m2-repair",
+      "startAt": "2026-09-29T05:54:13.097Z",
+      "endAt": "2026-09-29T05:54:33.082Z",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/suite.log"
+    },
+    {
+      "commandId": "race-1-workspaces",
+      "invocation": "node --experimental-strip-types scripts/probe-workspaces.ts",
+      "environmentId": "local-m2-repair",
+      "startAt": "2026-09-29T05:54:33.085Z",
+      "endAt": "2026-09-29T05:54:34.763Z",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/race-1-workspaces.log"
+    },
+    {
+      "commandId": "race-1-invitations",
+      "invocation": "node --experimental-strip-types scripts/probe-invitations.ts",
+      "environmentId": "local-m2-repair",
+      "startAt": "2026-09-29T05:54:34.766Z",
+      "endAt": "2026-09-29T05:54:36.131Z",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/race-1-invitations.log"
+    },
+    {
+      "commandId": "race-1-command-contract",
+      "invocation": "node --experimental-strip-types scripts/probe-command-contract.ts",
+      "environmentId": "local-m2-repair",
+      "startAt": "2026-09-29T05:54:36.133Z",
+      "endAt": "2026-09-29T05:54:37.222Z",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/race-1-command-contract.log"
+    },
+    {
+      "commandId": "race-1-credit-reservation",
+      "invocation": "node --experimental-strip-types scripts/probe-credit-reservation.ts",
+      "environmentId": "local-m2-repair",
+      "startAt": "2026-09-29T05:54:37.223Z",
+      "endAt": "2026-09-29T05:54:38.707Z",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/race-1-credit-reservation.log"
+    },
+    {
+      "commandId": "race-2-workspaces",
+      "invocation": "node --experimental-strip-types scripts/probe-workspaces.ts",
+      "environmentId": "local-m2-repair",
+      "startAt": "2026-09-29T05:54:38.709Z",
+      "endAt": "2026-09-29T05:54:40.382Z",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/race-2-workspaces.log"
+    },
+    {
+      "commandId": "race-2-invitations",
+      "invocation": "node --experimental-strip-types scripts/probe-invitations.ts",
+      "environmentId": "local-m2-repair",
+      "startAt": "2026-09-29T05:54:40.383Z",
+      "endAt": "2026-09-29T05:54:41.769Z",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/race-2-invitations.log"
+    },
+    {
+      "commandId": "race-2-command-contract",
+      "invocation": "node --experimental-strip-types scripts/probe-command-contract.ts",
+      "environmentId": "local-m2-repair",
+      "startAt": "2026-09-29T05:54:41.770Z",
+      "endAt": "2026-09-29T05:54:42.836Z",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/race-2-command-contract.log"
+    },
+    {
+      "commandId": "race-2-credit-reservation",
+      "invocation": "node --experimental-strip-types scripts/probe-credit-reservation.ts",
+      "environmentId": "local-m2-repair",
+      "startAt": "2026-09-29T05:54:42.837Z",
+      "endAt": "2026-09-29T05:54:44.279Z",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/race-2-credit-reservation.log"
+    },
+    {
+      "commandId": "race-3-workspaces",
+      "invocation": "node --experimental-strip-types scripts/probe-workspaces.ts",
+      "environmentId": "local-m2-repair",
+      "startAt": "2026-09-29T05:54:44.281Z",
+      "endAt": "2026-09-29T05:54:45.956Z",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/race-3-workspaces.log"
+    },
+    {
+      "commandId": "race-3-invitations",
+      "invocation": "node --experimental-strip-types scripts/probe-invitations.ts",
+      "environmentId": "local-m2-repair",
+      "startAt": "2026-09-29T05:54:45.958Z",
+      "endAt": "2026-09-29T05:54:47.345Z",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/race-3-invitations.log"
+    },
+    {
+      "commandId": "race-3-command-contract",
+      "invocation": "node --experimental-strip-types scripts/probe-command-contract.ts",
+      "environmentId": "local-m2-repair",
+      "startAt": "2026-09-29T05:54:47.346Z",
+      "endAt": "2026-09-29T05:54:48.399Z",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/race-3-command-contract.log"
+    },
+    {
+      "commandId": "race-3-credit-reservation",
+      "invocation": "node --experimental-strip-types scripts/probe-credit-reservation.ts",
+      "environmentId": "local-m2-repair",
+      "startAt": "2026-09-29T05:54:48.400Z",
+      "endAt": "2026-09-29T05:54:49.843Z",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/race-3-credit-reservation.log"
+    },
+    {
+      "commandId": "api-isolation",
+      "invocation": "node --experimental-strip-types scripts/probe-api-isolation.ts",
+      "environmentId": "local-m2-repair",
+      "startAt": "2026-09-29T05:53:23.6224500Z",
+      "endAt": "2026-09-29T05:53:25.8552387Z",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/api-isolation.log"
+    },
+    {
+      "commandId": "auth-lifecycle",
+      "invocation": "node --experimental-strip-types scripts/probe-auth-lifecycle.ts",
+      "environmentId": "local-m2-repair",
+      "startAt": "2026-09-29T05:52:00.7269291Z",
+      "endAt": "2026-09-29T05:52:03.4078672Z",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/auth-lifecycle.log"
+    },
+    {
+      "commandId": "auth-http",
+      "invocation": "node --experimental-strip-types scripts/probe-auth-http.ts",
+      "environmentId": "local-m2-repair",
+      "startAt": "2026-09-29T05:55:07.5542086Z",
+      "endAt": "2026-09-29T05:55:11.0686779Z",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/auth-http.log"
+    },
+    {
+      "commandId": "auth-live-mailpit",
+      "invocation": "node --experimental-strip-types --input-type=module -e <Mailpit adapter send/capture assertions>",
+      "environmentId": "local-m2-repair",
+      "startAt": "2026-09-29T05:52:58.0660583Z",
+      "endAt": "2026-09-29T05:52:58.3054245Z",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/auth-live-mailpit.log"
+    },
+    {
+      "commandId": "verify",
+      "invocation": "corepack pnpm verify",
+      "environmentId": "local-m2-repair",
+      "startAt": "2026-09-29T06:04:24.4765190Z",
+      "endAt": "2026-09-29T06:04:45.7567163Z",
+      "exitCode": 0,
+      "outputRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verify.log"
+    }
+  ],
+  "coverage": {
+    "status": "PASS",
+    "ownedModuleManifestRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/owned-modules.json",
+    "denominator": "All delivered modules plus authentication/mail/quote/HTTP contracts; type-only mail declarations excluded",
+    "coveredBranches": 575,
+    "totalBranches": 620,
+    "percent": 92.74193548387096,
+    "evidenceRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/verification-attempt1/coverage-summary.json"
+  },
+  "defects": [],
+  "externalInputs": [],
+  "commercialAuthorizationRefs": [],
+  "recovery": {
+    "compatibleSchemaVersions": [
+      "domain=11"
+    ],
+    "rollbackPoint": "Preserve database backup and unrelated uncommitted source; forward migration does not rewrite existing ledger",
+    "unrelatedWorkProtection": "No commits or deletion of legacy/unrelated source",
+    "limitations": [
+      "Already-ledgered databases without pre-ledger proof stay held",
+      "Unknown legacy reserved amounts remain reserved for audited recovery"
+    ]
+  },
+  "submission": {
+    "implementerId": "root",
+    "submittedAt": "2026-09-29T05:59:40.893175+00:00",
+    "reportRef": "internal/restart/m2-repair-evidence.md"
+  },
+  "independentReview": {
+    "reviewerId": "/root/m2_independent_sol_generic",
+    "modelRequested": "gpt-6-sol",
+    "reviewedAt": "2026-09-29T06:07:04Z",
+    "independentFromImplementer": true,
+    "decision": "PASS",
+    "reason": "Local M2 profile and exact candidate bytes; integrator decision remains separate",
+    "evidenceRefs": [
+      "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-review.md",
+      "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-review.json",
+      "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/independent-verification/commands.json"
+    ]
+  },
+  "integrationDecision": {
+    "integratorId": "root",
+    "decidedAt": "2026-09-29T06:10:10.361759+00:00",
+    "decision": "PASS",
+    "reason": "Independent tests, full coverage, current bytes, real auth/API/mail and UI/build evidence accepted within the local M2 profile; later integrations remain gated.",
+    "nextEligibleTaskIds": [
+      "4.1"
+    ],
+    "blockedTaskIds": []
+  },
+  "invalidation": {
+    "supersedesRecordRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-3.12/record.json",
+    "affectedStages": [
+      "M2"
+    ],
+    "requiredReruns": [
+      "auth lifecycle",
+      "API tenant isolation",
+      "credit settlement/upgrade",
+      "complete-domain coverage and races",
+      "production build"
+    ],
+    "carriedEvidence": [
+      {
+        "evidenceRefs": [
+          "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/coverage-carry-equivalence.json"
+        ],
+        "reason": "Only auth form class and scoped CSS changed; all owned domain and test file hashes equal the independently tested footprint."
+      }
+    ]
+  }
+}

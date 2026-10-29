@@ -1,0 +1,29 @@
+{"status":"PASS","databaseName":"m5_billing_probe_ac279e1512d54e8f9dd9684343b4d6c1","serverVersion":"15.19","cases":["populated cash fact upgrade derives economic loss identities without rewriting original facts","upgrade preserves existing hold and available/reserved credits","existing billing account inserts retain compatible defaults","customer identity cannot move tenants","one current customer mapping per tenant/provider","historical customer identity cannot be deleted","historical customer interval cannot reopen","replacement predecessor must share tenant","new customer predecessor cannot cross tenants","customer replacement retains original identity","order cannot reference another tenant customer","Stripe order cannot bind fixture catalog terms","refund cannot exceed paid cash","paid cash cannot become negative","cash minor units cannot be fractional","order snapshot cannot be rewritten","invalid persisted catalog snapshot interval","invalid persisted catalog snapshot credits","invalid persisted catalog snapshot amountMinor","invalid persisted catalog snapshot currency","invalid persisted catalog snapshot provider","payment alias is globally canonical","payment alias cannot cross tenants","payment alias cannot be reassigned","three object aliases converge on one order","cash event identity deduplicates observation","cash facts cannot cross tenants","cash fact requires an economic loss identity","cash fact currency matches canonical order","confirmed cash facts cannot mutate","backfilled cash facts remain immutable","confirmed cash facts cannot disappear","confirmed refund projection cannot regress","Stripe Checkout cannot bind fixture catalog terms","unknown recurring attempt keeps live slot","non-authoritative timeout cannot release slot","authoritative terminal evidence releases recurring slot","ten concurrent recurring Checkout inserts have one live slot winner","permanent packs do not occupy the recurring slot","Stripe subscription cannot bind fixture catalog terms","nonterminal subscriptions have a unique workspace slot","period-end cancellation retains the nonterminal slot","only terminal subscriptions release their slot","terminal Checkout cannot reopen","lease metadata cannot be partial","fencing generation cannot move backward","stale reconciliation token/generation has no effect"],"count":47}
+{"disposableDatabaseRemoved":true,"databaseName":"m5_billing_probe_ac279e1512d54e8f9dd9684343b4d6c1"}
+✔ scripts\probe-billing-schema.ts (1549.2978ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1556.6042
+ℹ start of coverage report
+ℹ --------------------------------------------------------------------------------------------------------
+ℹ file            | line % | branch % | funcs % | uncovered lines
+ℹ --------------------------------------------------------------------------------------------------------
+ℹ src             |        |          |         | 
+ℹ  config         |        |          |         | 
+ℹ   plans.ts      | 100.00 |    62.50 |  100.00 | 
+ℹ  contracts      |        |          |         | 
+ℹ   http.ts       |  48.11 |    75.00 |   41.67 | 17-18 21-22 25-35 38-42 46-47 52-59 73 81-87 90-106
+ℹ  db             |        |          |         | 
+ℹ   contracts.ts  |  69.39 |    50.00 |    0.00 | 14-16 21-22 25-29 43-47
+ℹ  modules        |        |          |         | 
+ℹ   billing       |        |          |         | 
+ℹ    contracts.ts |  77.78 |    63.16 |   70.00 | 30-31 34-35 41-42 49-50 64-66 70-72 75-80 89-90 105-106
+ℹ --------------------------------------------------------------------------------------------------------
+ℹ all files       |  67.36 |    67.35 |   50.00 | 
+ℹ --------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

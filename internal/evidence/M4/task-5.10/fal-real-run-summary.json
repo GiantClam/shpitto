@@ -1,0 +1,74 @@
+{
+  "status": "T2V_I2V_REAL_OUTPUT_VERIFIED",
+  "verifiedAt": "2026-10-10T00:38:00Z",
+  "provider": "fal",
+  "endpointProfile": {
+    "t2v": "fal-ai/wan/v2.2-a14b/text-to-video",
+    "i2v": "fal-ai/wan/v2.2-a14b/image-to-video",
+    "authScheme": "Authorization: Key"
+  },
+  "runs": {
+    "t2v": {
+      "requestId": "01a1232d-b908-7442-b7df-6558dd769706",
+      "statusUrl": "https://queue.fal.run/fal-ai/wan/requests/01a1232d-b908-7442-b7df-6558dd769706/status",
+      "resultUrl": "https://queue.fal.run/fal-ai/wan/requests/01a1232d-b908-7442-b7df-6558dd769706",
+      "pollCount": 84,
+      "outputPath": "internal/evidence/M4/task-5.10/fal-t2v-real-01a1232d-b908-7442-b7df-6558dd769706.mp4",
+      "outputBytes": 2668103,
+      "outputSha256": "893f56d9a586c3bf35bad7dd00ff0224ae4c6f5f399766e3827b2133f6e41f31",
+      "media": {
+        "codec": "h264",
+        "width": 1280,
+        "height": 720,
+        "frames": 81,
+        "durationSeconds": 5.066574
+      }
+    },
+    "i2v": {
+      "requestId": "01a12337-c628-7363-93bd-2e526b11514b",
+      "statusUrl": "https://queue.fal.run/fal-ai/wan/requests/01a12337-c628-7363-93bd-2e526b11514b/status",
+      "resultUrl": "https://queue.fal.run/fal-ai/wan/requests/01a12337-c628-7363-93bd-2e526b11514b",
+      "pollCount": 75,
+      "outputPath": "internal/evidence/M4/task-5.10/fal-i2v-real-01a12337-c628-7363-93bd-2e526b11514b.mp4",
+      "outputBytes": 4598998,
+      "outputSha256": "6ac44c1e75c0175a84f6fcfc41728d41fefc8c9a40f0136d65881dac86a30085",
+      "media": {
+        "codec": "h264",
+        "width": 1280,
+        "height": 720,
+        "frames": 81,
+        "durationSeconds": 5.066574
+      }
+    }
+  },
+  "verification": {
+    "dynamicUrlsPersistedByAdapter": true,
+    "statusPollingNo405": true,
+    "resultEndpointWithoutRequestIdSupported": true,
+    "localDownloadedArtifacts": true,
+    "privateR2Materialization": true,
+    "readyAssetPublication": true,
+    "currentMembershipDownloadAuthorization": true,
+    "authorizedDeletionAndScheduledOrphanCleanup": true
+  },
+  "remaining": {
+    "webhookCallback": "NOT_RUN_no_public_callback_endpoint",
+    "privateAppStorageMaterialization": "VERIFIED_R2_DISPOSABLE_DATABASE",
+    "providerCost": "UNKNOWN_provider_response_did_not_expose_cost_field",
+    "creditSettlement": "NOT_RUN_real_provider_task_not_attached_to_domain_reservation",
+    "oldFalAttempt": "UNRESOLVED_original_request_without_persisted_identity",
+    "independentReview": "REQUIRED"
+  },
+  "gateEffect": "5.10_REMAINS_OPEN",
+  "evidence": {
+    "privateLifecycle": "internal/evidence/M4/task-5.10/fal-private-lifecycle-r2.json",
+    "storageAdapter": "internal/evidence/M4/task-5.7-r2-live-adapter.json"
+  },
+  "privateLifecycleVerifiedAt": "2026-10-10T11:56:33.271Z",
+  "subsequentWorkerVerification": {
+    "recordRef": "internal/evidence/M4/task-5.10/railway-worker/fal-authorized-bootstrap-20261013.json",
+    "status": "PASS_SCOPED_FAL_T2V_LIVE_PIPELINE",
+    "verifiedAt": "2026-10-13T10:14:55.424195+00:00",
+    "fullM4Acceptance": false
+  }
+}

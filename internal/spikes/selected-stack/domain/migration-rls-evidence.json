@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "1.0",
+  "status": "PASSED_PRODUCTION_SHAPED_MIGRATION_RLS_PROBE",
+  "command": "M0_DATABASE_URL=postgres://postgres:<disposable>@127.0.0.1:55434/shpitto_m0 node domain/migration-rls-probe.mjs",
+  "environment": {
+    "dockerServer": "29.8.0",
+    "dockerPlatform": "linux/amd64",
+    "postgresImage": "postgres:17-alpine",
+    "postgresImageDigest": "postgres@sha256:f02121de6f74d30d8a94cd1d9584125e2178d7e6c377d8130112d4e52d867995",
+    "databaseWasDisposable": true,
+    "existingCredentialsReused": false
+  },
+  "observed": {
+    "migrationSha256": "9bd12c347f7bd3babd2ef3ed3a0f29b2c4208d886aaca84bb9cc707f9a855147",
+    "migrationAppliedBy": "drizzle-orm/node-postgres",
+    "forceRowLevelSecurity": true,
+    "ownWorkspaceRows": [{"id": "workspace-a"}],
+    "ownLedgerRows": [{"workspace_id": "workspace-a", "amount": 10}],
+    "crossTenantVisibleRows": [],
+    "crossTenantInsertRejected": true,
+    "migrationAppliedTwice": true,
+    "repeatCount": 2,
+    "containerStoppedAfterRun": true
+  },
+  "proves": [
+    "The reviewed SQL migration is applied through the selected Drizzle/PostgreSQL boundary.",
+    "Tenant tables use forced row-level security with a request workspace context.",
+    "A workspace-a role cannot read workspace-b or insert a ledger row for workspace-b.",
+    "Workspace foreign keys and per-workspace idempotency uniqueness are present in the migration."
+  ],
+  "doesNotProve": [
+    "Better Auth production persistence or operator-role tables.",
+    "Concurrent production workload behavior beyond this isolated RLS assertion."
+  ]
+}

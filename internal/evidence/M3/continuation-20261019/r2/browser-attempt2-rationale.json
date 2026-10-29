@@ -1,0 +1,11 @@
+{
+  "createdAt": "2026-10-19T06:39:55.962Z",
+  "priorAttempt": "browser-launch-result.json",
+  "priorFailure": "Email verification lookup timed out because the retained Mailpit harness expected To[].Address; scripts/local-mail-capture.mjs returns To[] strings.",
+  "change": "Only the harness mail-recipient shape adapter and unique attempt output names. Real application registration, captured email, verification URL, browser assertions, exact source/build binding, and cleanup are preserved.",
+  "originalDriverSha256": "3fa4c11ba63e4115c2f79052d189c3096fd713362b1126842ffa55f8e09ed867",
+  "adaptedDriverSha256": "d79642a5f67cf41b5915be39abad4d15a8fbb0c6eeac799e82d82a8f986ecfa0",
+  "originalArtifactsPreserved": true,
+  "shippedFilesModified": false,
+  "inventedManualProof": false
+}

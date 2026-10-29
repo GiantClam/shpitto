@@ -1,0 +1,37 @@
+{
+  "application": "http://127.0.0.1:3199",
+  "runId": "733ed5d0",
+  "observations": [
+    {
+      "at": "2026-10-19T15:06:49.579Z",
+      "journey": "team-creation",
+      "url": "http://127.0.0.1:3199/api/invitations/accept",
+      "method": "POST",
+      "status": 403,
+      "expected": true,
+      "classification": "expected-authorization-or-conflict-path",
+      "acceptanceImpact": "Expected denial/conflict recorded separately; no success-path criterion is downgraded."
+    },
+    {
+      "at": "2026-10-19T15:06:51.512Z",
+      "journey": "team-creation",
+      "url": "http://127.0.0.1:3199/api/invitations/accept",
+      "method": "POST",
+      "status": 403,
+      "expected": true,
+      "classification": "expected-authorization-or-conflict-path",
+      "acceptanceImpact": "Expected denial/conflict recorded separately; no success-path criterion is downgraded."
+    },
+    {
+      "at": "2026-10-19T15:06:58.356Z",
+      "journey": "team-creation",
+      "url": "http://127.0.0.1:3199/api/workspaces/5380de0e-4041-49d8-92cd-e5a363cb4367/generations",
+      "method": "POST",
+      "status": 409,
+      "expected": false,
+      "classification": "unclassified-response",
+      "acceptanceImpact": "Requires reviewer classification before this response can support acceptance."
+    }
+  ],
+  "observationCount": 3
+}

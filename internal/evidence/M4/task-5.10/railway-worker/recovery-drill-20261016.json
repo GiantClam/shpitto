@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0",
+  "status": "PASS",
+  "verifiedAt": "2026-10-15T23:58:10.000Z",
+  "profile": "selected_self_hosted_railway_demo",
+  "source": "sanitized_retained_recovery_probe",
+  "providerCreates": 0,
+  "scope": "fresh acceptance fixture workspace and private database",
+  "overdueTasks": 102,
+  "failedTasks": 102,
+  "releasedReservations": 102,
+  "recoveredAvailableCredits": "2000 demo credits",
+  "submissionFence": "PRESERVED",
+  "heartbeat": "PASS",
+  "alertDelivery": "PASS",
+  "incidentCorrelation": "PASS",
+  "restoredOverdueFirst": "PASS",
+  "verified": true,
+  "fixtureClockOffsetsMinutes": {
+    "queued": -20,
+    "unknown": -95
+  },
+  "proof": "fake-clock/domain-fault fixture; no upstream provider outcome proof",
+  "secretsRecorded": false,
+  "existingBusinessObjectsReadOrDeleted": false,
+  "rawTaskIdsRetained": false,
+  "sourceLog": ".tmp/m4-cloud-recovery-verify-1792107987245.log"
+}

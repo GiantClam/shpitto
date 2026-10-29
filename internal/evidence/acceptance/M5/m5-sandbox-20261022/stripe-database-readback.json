@@ -1,0 +1,42 @@
+(node:67232) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+{
+  "result": "PASS",
+  "environment": "stripe_test acceptance sandbox",
+  "stripeAccountId": "acct_1USYQxRcvKApiJYW",
+  "liveMode": false,
+  "order": {
+    "id": "6d429f2c-fc8c-4199-8673-828aa5a7faab",
+    "status": "refunded",
+    "paidMinor": "900",
+    "refundedMinor": "900",
+    "currency": "usd"
+  },
+  "refund": {
+    "requestId": "d9eccd71-6b65-49e7-9aad-e2b3d6441d03",
+    "stripeRefundId": "re_3USayKRcvKApiJYW1YypoEnf",
+    "status": "succeeded",
+    "amountMinor": "900",
+    "currency": "usd"
+  },
+  "refundCashEvents": 1,
+  "creditGrant": {
+    "issued": "250",
+    "available": "0",
+    "reserved": "0",
+    "consumed": "0",
+    "expired": "0",
+    "voided": "250"
+  },
+  "billingAccount": {
+    "status": "active",
+    "hold_reason": null
+  }
+}

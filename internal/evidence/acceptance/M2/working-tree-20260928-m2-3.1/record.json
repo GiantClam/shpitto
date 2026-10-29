@@ -1,0 +1,312 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "IMPLEMENTATION_ACCEPTANCE",
+  "changeId": "restart-shpitto-video-saas",
+  "stageId": "M2",
+  "checkpointId": null,
+  "gateTaskId": "3.1",
+  "status": "PASS",
+  "candidateId": "working-tree-20260928-m2-3.1",
+  "createdAt": "2026-09-28T03:49:00Z",
+  "updatedAt": "2026-09-28T04:20:00Z",
+  "policy": {
+    "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+    "sha256": "b597a035c61da01296d71979c1c16c4136f78c3e3d523b55158f0a2ca3de4ff0"
+  },
+  "prerequisites": [
+    {
+      "taskId": "M1",
+      "requiredProfile": "local/documentary plus disposable Docker services",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260928-m1",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M1/working-tree-20260928-m1/record.json",
+        "internal/restart/m1-evidence.md"
+      ]
+    }
+  ],
+  "candidate": {
+    "sourceCommit": "6ad44be7b6f12fe028637f0300040bada826c47d",
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "b9a54632417ba6e7c69f530a0afeb3daf376c3fe22f0d739d9ac51fee14755da",
+    "schemaSha256": "3dbcdaa780acf7a0af4544c790659c86a2698b08a70cd68f46aa07423c82c206",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+    "configurationSha256": "7f410bac6266d2027add6b18bc5b2f04bce84dc044fbfe17b6a00493afbf76ff",
+    "contractSha256": "b8ef3892ca9fffb41902009c9388dc560b2621175de1efcb5bc024f2051cd6eb",
+    "validatorSha256": "665fde817dc727b315962c63b7cf079743120591085a59a3c5efda89cde7e83f",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF",
+    "digestInputs": {
+      "sourceTree": [
+        "src",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": ["src/db"],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".dockerignore",
+        ".env.example",
+        "src/config/env.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile"
+      ],
+      "contract": [
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json"
+      ],
+      "validator": ["scripts", "internal/restart/check-acceptance-record.py"]
+    }
+  },
+  "environments": [
+    {
+      "environmentId": "local-m2-foundation",
+      "profile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "toolVersions": {
+        "node": "24.15.0",
+        "pnpm": "12.6.0",
+        "docker": "29.8.0",
+        "postgres": "15-alpine",
+        "python": "3.x",
+        "openspec": "1.0"
+      },
+      "accountOrProgram": "none",
+      "effectiveLimits": "No provider, payment, payout, publication or hosted-service calls",
+      "fixtureOrSeed": "A/B/C users, W1/W2 workspaces, W2 manual grant, fixed clock 2026-01-01T00:00:00Z",
+      "clockMode": "fixed fixture clock",
+      "sanitationNotes": "Database credentials were local disposable values and are not stored in this record"
+    }
+  ],
+  "criterionResults": [
+    {
+      "criterionId": "3.1-C01",
+      "environmentId": "local-m2-foundation",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Better Auth identifiers remain text, application/domain identifiers use UUIDs, timestamps use UTC timestamptz and quantity values use nonnegative bigint with decimal-string JSON boundaries",
+      "observed": "Schema, migration and probe output agree on all four conventions; domain tables use the app schema metadata",
+      "evidenceRefs": ["internal/restart/m2-task-3.1-evidence.md", "src/db/schema/auth.ts", "src/db/schema/workspace.ts"]
+    },
+    {
+      "criterionId": "3.1-C02",
+      "environmentId": "local-m2-foundation",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "The single Drizzle migration sequence applies repeatedly and injected transaction failure leaves no partial workspace",
+      "observed": "Two migration applications produced two journal rows and rollbackRows was zero",
+      "evidenceRefs": ["internal/restart/m2-task-3.1-evidence.md", "src/db/migrations/0001_identity_workspace.sql", "scripts/probe-m2-foundation.ts"]
+    },
+    {
+      "criterionId": "3.1-C03",
+      "environmentId": "local-m2-foundation",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "A/B/C and W1/W2 fixtures persist and a credit allocation cannot reference a grant from another workspace",
+      "observed": "Three membership rows persisted; the Drizzle query read two app.workspaces rows; the fixture mismatch was observed first and the subsequent database insert was rejected by the composite grant/workspace foreign key",
+      "evidenceRefs": ["internal/restart/m2-task-3.1-evidence.md", "tests/fixtures/workspaces.ts", "src/db/schema/workspace.ts"]
+    },
+    {
+      "criterionId": "3.1-C04",
+      "environmentId": "local-m2-foundation",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Root checks continue to pass with one migration owner and no legacy or private-state imports",
+      "observed": "Full pnpm verify, database boundary and M2 foundation checks passed",
+      "evidenceRefs": ["internal/restart/m2-task-3.1-evidence.md", "scripts/check-db-boundaries.mjs", "scripts/check-m2-foundation.mjs"]
+    }
+  ],
+  "commonStandardResults": [
+    {
+      "standard": "scope",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": ["Only task 3.1 foundation outputs are claimed; onboarding, invitations, ledger commands and demo funding remain assigned to 3.2–3.11"],
+      "evidenceRefs": ["internal/restart/m2-task-3.1-evidence.md"]
+    },
+    {
+      "standard": "build-and-checks",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": ["typecheck, lint, format, configuration, database, local-service, shell, content, acceptance, OpenSpec and Next build checks passed"],
+      "evidenceRefs": ["internal/restart/m2-task-3.1-evidence.md"]
+    },
+    {
+      "standard": "coverage",
+      "applicable": true,
+      "result": "NOT_APPLICABLE",
+      "reason": "Task 3.1 delivers schema and fixtures; M2 core-domain branch coverage is required at task 3.12 after behavior tasks are implemented",
+      "evidenceRefs": ["internal/restart/m2-task-3.1-evidence.md"]
+    },
+    {
+      "standard": "defects",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": ["No open P0/P1 defect is recorded for task 3.1"],
+      "evidenceRefs": ["internal/restart/m2-task-3.1-evidence.md"]
+    },
+    {
+      "standard": "isolation-security",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": ["Composite tenant lineage is enforced in PostgreSQL and migration/source boundary checks pass"],
+      "evidenceRefs": ["internal/restart/m2-task-3.1-evidence.md", "src/db/migrations/0001_identity_workspace.sql"]
+    },
+    {
+      "standard": "evidence-and-recovery",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": ["Current scope digests, fixed fixture clock, disposable database probe and rollback result are recorded"],
+      "evidenceRefs": ["internal/restart/m2-task-3.1-evidence.md", "scripts/probe-m2-foundation.ts"]
+    }
+  ],
+  "scenarioResults": [
+    {
+      "ids": ["T02", "T05", "T60", "SC-IAM-02", "SC-CRD-02"],
+      "profile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "environmentId": "local-m2-foundation",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Migration ownership, tenant foreign keys, A/B/C W1/W2 fixtures and interrupted setup rollback are observable without cross-workspace lineage",
+      "observed": "Migration rerun, fixture insertion, composite-FK rejection and transaction rollback all passed",
+      "iteration": "single fixed-clock probe",
+      "commandRef": "m2-3.1-probe",
+      "evidenceRefs": ["internal/restart/m2-task-3.1-evidence.md", "scripts/probe-m2-foundation.ts"]
+    }
+  ],
+  "commands": [
+    {
+      "commandId": "m2-3.1-verify",
+      "invocation": "corepack pnpm verify",
+      "environmentId": "local-m2-foundation",
+      "startAt": "2026-09-28T03:42:00Z",
+      "endAt": "2026-09-28T03:44:00Z",
+      "exitCode": 0,
+      "assertionRef": "full root verification including Next production build"
+    },
+    {
+      "commandId": "m2-3.1-probe",
+      "invocation": "DATABASE_URL=<redacted-local-credential> corepack pnpm db:probe:m2",
+      "environmentId": "local-m2-foundation",
+      "startAt": "2026-09-28T03:45:00Z",
+      "endAt": "2026-09-28T03:45:02Z",
+      "exitCode": 0,
+      "assertionRef": "migrationRows=2, fixtureMembershipRows=3, drizzleWorkspaceRows=2, fixtureMismatchObserved=true, crossTenantRejected=true, rollbackObserved=true, rollbackRows=0"
+    },
+    {
+      "commandId": "m2-3.1-record-check",
+      "invocation": "python -B internal/restart/check-acceptance-record.py internal/evidence/acceptance/M2/working-tree-20260928-m2-3.1/record.json",
+      "environmentId": "local-m2-foundation",
+      "startAt": "2026-09-28T03:49:00Z",
+      "endAt": "2026-09-28T03:49:01Z",
+      "exitCode": 0,
+      "assertionRef": "record schema and digest shape check"
+    }
+  ],
+  "coverage": {
+    "status": "NOT_APPLICABLE",
+    "reason": "No M2 domain command behavior is delivered by task 3.1",
+    "ownedModuleManifestRef": null,
+    "denominator": null,
+    "coveredBranches": null,
+    "totalBranches": null,
+    "percent": null,
+    "exclusions": [],
+    "evidenceRef": "internal/restart/m2-task-3.1-evidence.md"
+  },
+  "defects": [],
+  "externalInputs": [
+    {
+      "input": "Better Auth runtime onboarding and credit commands",
+      "owner": "M2 domain owner",
+      "affectedTasks": ["3.2", "3.3", "3.4", "3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "3.12"],
+      "availability": "deferred",
+      "nextAction": "Implement and verify on top of the accepted foundation",
+      "authorityRef": "openspec/changes/restart-shpitto-video-saas/specs/identity-workspaces/spec.md"
+    }
+  ],
+  "commercialAuthorizationRefs": [],
+  "recovery": {
+    "rollbackPoint": "6ad44be7b6f12fe028637f0300040bada826c47d plus current uncommitted M2 patch",
+    "restoreEvidenceRefs": ["internal/restart/m2-task-3.1-evidence.md"],
+    "compatibleSchemaVersions": ["domain=2"],
+    "unrelatedWorkProtection": "Probe rollback was transaction-scoped; disposable container is isolated from user services"
+  },
+  "observation": {
+    "planRef": "internal/restart/verification-plan.md",
+    "windowStart": null,
+    "windowEnd": null,
+    "windowRationale": "Task-level foundation probe; no time-window behavior is claimed",
+    "behavioralBaselineDigest": null,
+    "monitoringEvidenceRefs": [],
+    "journeyEvidenceRefs": [],
+    "recoveryUpgradeEvidenceRefs": [],
+    "recurringWorkerAlertEvidenceRefs": [],
+    "findingRefs": []
+  },
+  "submission": {
+    "implementerId": "root",
+    "submittedAt": "2026-09-28T03:49:00Z",
+    "reportRef": "internal/restart/m2-task-3.1-evidence.md"
+  },
+  "independentReview": {
+    "reviewerId": "m2-gpt6-luna-review-20260928",
+    "reviewedAt": "2026-09-28T04:18:00Z",
+    "independentFromImplementer": true,
+    "decision": "PASS",
+    "reason": "The corrected Drizzle schema targets appSchema.table for all six domain tables, declares the personal-creator partial unique index and positive version check, and runtime metadata confirms schema=app. The probe now exercises the ORM workspace query and separately proves fixture mismatch and PostgreSQL composite-FK rejection. Current candidate digests match the record; verify:m2-foundation, the acceptance record checker, the recorded full verify and the corrected disposable PostgreSQL probe pass.",
+    "evidenceRefs": [
+      "internal/restart/m2-task-3.1-evidence.md",
+      "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.1/record.json",
+      "src/db/schema/workspace.ts",
+      "scripts/probe-m2-foundation.ts",
+      "scripts/check-m2-foundation.mjs"
+    ]
+  },
+  "integrationDecision": {
+    "integratorId": "root",
+    "decidedAt": "2026-09-28T04:20:00Z",
+    "decision": "PASS",
+    "reason": "The independent gpt-6-luna review passed the corrected task 3.1 candidate. Identity/workspace migration ownership, app-schema ORM parity, tenant lineage constraints, fixture boundaries and rollback evidence are accepted. Task 3.2 is eligible; the M2 gate remains open until tasks 3.2–3.11 and task 3.12 review pass.",
+    "nextEligibleTaskIds": ["3.2"],
+    "blockedTaskIds": []
+  },
+  "invalidation": {
+    "supersedesRecordRef": null,
+    "changedDigestRefs": [
+      "internal/evidence/acceptance/M1/working-tree-20260928-m1/record.json#sourceTreeSha256",
+      "internal/evidence/acceptance/M1/working-tree-20260928-m1/record.json#schemaSha256",
+      "internal/evidence/acceptance/M1/working-tree-20260928-m1/record.json#configurationSha256",
+      "internal/evidence/acceptance/M1/working-tree-20260928-m1/record.json#validatorSha256"
+    ],
+    "affectedStages": [],
+    "requiredReruns": [],
+    "carriedEvidence": [
+      {
+        "oldRecordRef": "internal/evidence/acceptance/M1/working-tree-20260928-m1/record.json",
+        "unchangedScopes": ["contract"],
+        "equivalenceRationale": "The M2 patch does not modify the M1 contract inputs; the current contract digest is identical to the M1 candidate.",
+        "reviewer": "pending independent task review"
+      }
+    ]
+  }
+}

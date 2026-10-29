@@ -1,0 +1,60 @@
+{
+  "verifiedAt": "2026-10-15T14:11:18.291Z",
+  "status": "PASS_LOCAL_VERIFICATION_ONLY",
+  "fullM4Acceptance": false,
+  "candidateRef": "internal/evidence/M4/task-5.10/railway-worker/m4-local-fixture-candidate-20261015.json",
+  "evidenceRef": "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015",
+  "testsPassed": 203,
+  "integrationsPassed": 16,
+  "deterministicProbeGroupsPassed": 14,
+  "branchCoverage": {
+    "status": "PASS",
+    "coveredBranches": 1530,
+    "totalBranches": 1848,
+    "percent": 82.79220779220779,
+    "missingSources": [],
+    "ownedModuleManifestRef": "internal/evidence/M4/task-5.10/railway-worker/self-hosted-default-verification-20261015/coverage.json"
+  },
+  "safety": {
+    "newPaidProviderCalls": 0,
+    "existingBusinessObjectsAccessed": false,
+    "freshDisposableDatabase": true,
+    "localContainerRemoved": true,
+    "localAssetsRemoved": true,
+    "localCredentialFileLoadingBlocked": true,
+    "environmentAllowlisted": true
+  },
+  "qualityGates": {
+    "fullVerification": "PASS_CURRENT_LOCAL_CANDIDATE",
+    "evidenceRef": "internal/evidence/M4/task-5.10/railway-worker/verify-full-post-local-fixtures-20261015.log",
+    "receiptRef": "internal/evidence/M4/task-5.10/railway-worker/verify-full-post-local-fixtures-20261015.json",
+    "productionDependencyAudit": "PASS_ZERO_KNOWN_VULNERABILITIES",
+    "dependencyAuditRef": "internal/evidence/M4/task-5.10/railway-worker/production-dependency-audit-self-hosted-20261015.json",
+    "codeSliceReview": "PASS_NOT_WHOLE_STAGE",
+    "reviewRef": "internal/evidence/M4/task-5.10/railway-worker/self-hosted-runtime-review-20261015.md",
+    "securitySliceReview": "PASS_NOT_WHOLE_STAGE",
+    "securityReviewRef": "internal/evidence/M4/task-5.10/railway-worker/self-hosted-runtime-security-review-20261015.md"
+  },
+  "limits": [
+    "Fake provider transport and local PostgreSQL do not establish authentic provider delivery or optional Trigger runtime evidence.",
+    "Crash subprocess assertions pass; child-process LCOV is not collected or counted as measured child coverage.",
+    "Current M3 HTTP/browser applicability remains stale; selected current M3 domain regressions are not the entire M3 gate.",
+    "New worker-loop controller tests do not prove the changed HTTP/process launcher, redeployment, live shutdown or durable monitoring.",
+    "Unchanged Docs whole-project build tracing warnings remain; no .env filenames were found under standalone output, but exact packaged-content inspection remains required before deployment."
+  ],
+  "remaining": [
+    "Selected self-hosted deployment/restart/overdue-first proof, independently persisted heartbeat and external missing-sweep alert delivery.",
+    "Replicate confirmed account binding and authentic application outcomes for Replicate T2V/I2V and Fal I2V.",
+    "Current M3 applicability and complete scenario/profile evidence.",
+    "Independent whole-stage review and integrator approval.",
+    "Optional Trigger scoped executable registration and deployment before future opt-in; not a self-hosted baseline blocker."
+  ],
+  "priorReceiptRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-before-runtime-default-20261015.json",
+  "selectedTaskRuntime": "self_hosted",
+  "optionalTrigger": "NOT_EXECUTABLE_NOT_REQUIRED_FOR_BASELINE",
+  "commitFormattingRerun": {
+    "previousReceiptRef": "internal/evidence/M4/task-5.10/railway-worker/self-hosted-before-commit-formatting-20261015.json",
+    "sourceChange": "Blank EOF lines only; full local fixtures rerun before final verification.",
+    "completeM4Acceptance": false
+  }
+}

@@ -1,0 +1,4 @@
+[2026-10-06T12:20:22.0209611+08:00] db:probe:m6-operations
+$ node --experimental-strip-types scripts/probe-m6-operations.ts
+{"status":"PASS","ownerDenied":true,"redactedList":true,"tenantAccessAudited":true,"commandReplay":true,"creditAdjustment":true,"creditCommandScopeIsolation":true,"scopedCreditReplay":true,"soleSuperadminGuard":true,"disablement":true,"roleMutation":true,"auditRows":6}
+{"disposableDatabaseRemoved":true,"databaseName":"m6_operations_probe_b17f5f70aee94ff4a19f632a724b3dd7"}

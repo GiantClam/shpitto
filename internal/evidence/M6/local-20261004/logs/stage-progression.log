@@ -1,0 +1,16 @@
+✔ current development keeps historical predecessor approval and incomplete gates distinct (2.3293ms)
+✔ source changes and narrowed validator footprints fail current development validation (0.438ms)
+✔ omitted or duplicated stage criteria cannot hide incomplete stage evidence (0.3535ms)
+✔ stage register drift and unreviewed carry-forward are rejected (0.3888ms)
+✔ development records cannot promote unrun criteria into a stage PASS (0.2637ms)
+✔ missing, failed or evidence-free required commands invalidate development verification (0.3236ms)
+✔ M6 current development requires retained operations, recovery, privileged, MFA and affiliate probes (1.3284ms)
+✔ carry-forward needs existing proof and independent reviewed equivalence (0.2873ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 382.6993

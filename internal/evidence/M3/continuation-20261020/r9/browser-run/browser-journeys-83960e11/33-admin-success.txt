@@ -1,0 +1,102 @@
+Skip to content
+superadmin
+
+Dashboard
+
+Workspaces
+
+Users
+
+Generations
+
+Billings
+
+Audits
+
+Affiliate reviews
+
+Affiliate holds
+
+OPERATIONS CENTER
+
+Review and act with context
+
+Your current role is superadmin. Resource views are redacted and paginated. Every request checks your current server authority.
+
+Return to workspace
+Operator second-factor verification
+
+Verify a code from your authenticator for this session. Privileged commands require verification within the last ten minutes.
+
+Authenticator code
+Verify authenticator code
+
+Command verification expires at 2026/10/20 13:31:55.
+
+Workspace inspection
+
+Provide the support purpose before opening tenant details. Recovery retains settled outcomes and labels unknown provider cost.
+
+Workspace ID
+Access purpose
+Read workspace and versions
+Read recovery evidence
+Named administrative command
+
+Use the current version from the relevant view. A stale version has no effect. Negative credit adjustments also require an unused grant.
+
+Command
+Change workspace status
+Disable account
+Adjust credits
+Request refund
+Sweep expired generation tasks
+Replay stored provider notification
+Change global role
+Workspace ID
+Status
+Suspended
+Active
+Expected workspace version
+Recorded reason
+Execute workspace status
+Resume pending refunds
+
+Recover your persisted refund commands after a reload or interrupted response. Recovery uses the original reason, amount, version and command key, even when the billing version has since changed.
+
+Workspace ID
+Access purpose
+Read my pending refund commands
+Workspace records
+
+Read memberships, subscription state, credit grants and immutable ledger entries for one workspace. Each page records your access purpose.
+
+Workspace ID
+Access purpose
+Records
+Memberships
+Subscriptions
+Credit grants
+Credit ledger
+Read workspace records
+Affiliate review and hosted settlement
+
+Review commission evidence and unresolved holds before approval. A hosted handoff records a reviewed visit; it never means funds were transferred.
+
+Integration: disabled. Affiliate tracking is disabled.
+
+Integration and account checkpoint status
+
+Commission reviews · Review holds
+
+Affiliate command
+Approve commission review
+Deny commission review
+Release a verified legitimate abuse hold
+Review hosted payout handoff
+Review campaign policy
+Workspace ID
+Commission review ID
+Expected review version
+Recorded review reason
+Execute affiliate approve

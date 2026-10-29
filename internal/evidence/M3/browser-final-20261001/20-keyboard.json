@@ -1,0 +1,45 @@
+{
+  "observedAt": "2026-10-01T02:10:58.502Z",
+  "steps": [
+    {
+      "label": "Home",
+      "outline": "auto",
+      "tag": "A"
+    },
+    {
+      "label": "Docspreview",
+      "outline": "auto",
+      "tag": "A"
+    },
+    {
+      "label": "Dashboardplanned",
+      "outline": "auto",
+      "tag": "A"
+    },
+    {
+      "label": "Invite email",
+      "outline": "auto",
+      "tag": "INPUT"
+    },
+    {
+      "label": "Invite member",
+      "outline": "auto",
+      "tag": "BUTTON"
+    },
+    {
+      "label": "Remove",
+      "outline": "auto",
+      "tag": "BUTTON"
+    },
+    {
+      "label": "Select a verified memberdemo-member@shpitto.local",
+      "outline": "auto",
+      "tag": "SELECT"
+    },
+    {
+      "label": "Transfer",
+      "outline": "auto",
+      "tag": "BUTTON"
+    }
+  ]
+}

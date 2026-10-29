@@ -1,0 +1,30 @@
+{"status":"PASS","raceAttempts":10,"concurrentWinners":1,"concurrentRejected":9,"exactSevenDayExpiry":true,"replayRejected":true,"mismatchRejected":true,"expiryRejected":true,"deletedWorkspaceRejected":true,"rollbackClean":true}
+✔ scripts\probe-invitations.ts (851.6657ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 856.957
+ℹ start of coverage report
+ℹ ---------------------------------------------------------------------------------------------------------------
+ℹ file              | line % | branch % | funcs % | uncovered lines
+ℹ ---------------------------------------------------------------------------------------------------------------
+ℹ src               |        |          |         | 
+ℹ  contracts        |        |          |         | 
+ℹ   http.ts         |  33.02 |   100.00 |    0.00 | 17-18 21-22 25-35 38-42 45-49 52-59 63-74 77-78 81-87 90-106
+ℹ  modules          |        |          |         | 
+ℹ   shared          |        |          |         | 
+ℹ    commands.ts    |  25.84 |   100.00 |    0.00 | 20-22 25-83 86-89
+ℹ    transaction.ts | 100.00 |   100.00 |  100.00 | 
+ℹ   workspaces      |        |          |         | 
+ℹ    authorize.ts   |  52.00 |    75.00 |   25.00 | 18-35 47-48 58-64 67-75
+ℹ    commands.ts    |  42.93 |    75.00 |   50.00 | 31-32 36-41 81-82 87-112 115-141 144-169 172-191
+ℹ    invitations.ts |  98.37 |    97.30 |  100.00 | 152-154
+ℹ    policy.ts      |  70.92 |    63.16 |   63.64 | 37-38 42-49 107-116 119-133 136-141
+ℹ ---------------------------------------------------------------------------------------------------------------
+ℹ all files         |  59.20 |    84.72 |   47.92 | 
+ℹ ---------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

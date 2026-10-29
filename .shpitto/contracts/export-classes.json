@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0",
+  "classes": {
+    "customerRuntime": {
+      "include": ["src", "content/docs", "skills", "deploy", "scripts/migrate.ts", "scripts/provider-worker.ts", "scripts/provider-worker-preflight.ts", "scripts/provider-worker-runtime.mjs", "tests/integration/provider-worker.test.ts", "tests/fixtures/video/local-demo.mp4", "package.json", "pnpm-lock.yaml", "next.config.ts", "tsconfig.json"],
+      "exclude": ["internal", "legacy", ".omx", ".git", "vendor", "node_modules", ".env*", "*.log"]
+    },
+    "buyerGuidance": {
+      "include": ["docs/buyer", "content/docs"],
+      "exclude": ["internal", "legacy", ".omx", ".git", "private", "secrets"]
+    },
+    "engineeringEvidence": {
+      "include": ["internal", "openspec", ".omx/plans"],
+      "exclude": ["customerRuntime", "buyerGuidance"]
+    }
+  },
+  "validatorOwner": "release-engineering",
+  "digestRule": "A candidate export is valid only when the trusted validator digest matches the reviewed source and lockfile digests."
+}

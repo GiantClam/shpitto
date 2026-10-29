@@ -1,0 +1,6 @@
+corepack pnpm typecheck: PASS
+node scripts/check-source-boundaries.mjs: PASS
+node scripts/format-check.mjs: PASS
+node --experimental-strip-types --test tests/contracts/billing-checkout.test.ts: PASS (6 tests)
+node --experimental-strip-types scripts/probe-billing-reconciliation.ts: PASS (5 PostgreSQL cases; disposable database removed)
+corepack pnpm build: PASS (route `/api/webhooks/stripe` emitted)

@@ -1,0 +1,24 @@
+{"status":"PASS","replayed":true,"mismatchRejected":true,"bigintAsDecimalString":true,"quantityBoundaryRejected":true,"stableSemanticHash":true,"forgedOriginRejected":true,"raceEffects":1,"raceAttempts":10,"replayCount":20,"raceReplayed":[false,true,true,true,true,true,true,true,true,true]}
+✔ scripts\probe-command-contract.ts (919.9729ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 925.6874
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------------------------------------
+ℹ file           | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------------------------------------
+ℹ src            |        |          |         | 
+ℹ  contracts     |        |          |         | 
+ℹ   http.ts      |  71.70 |    62.16 |   76.92 | 17-18 21-22 25-35 39-40 48 73 84-85 95-96 99-105
+ℹ  modules       |        |          |         | 
+ℹ   shared       |        |          |         | 
+ℹ    commands.ts |  88.76 |    68.00 |   66.67 | 43-44 69-70 72-73 86-89
+ℹ ------------------------------------------------------------------------------------------------
+ℹ all files      |  79.49 |    64.52 |   75.00 | 
+ℹ ------------------------------------------------------------------------------------------------
+ℹ end of coverage report

@@ -1,0 +1,314 @@
+{
+  "status": "FAIL",
+  "branchesFound": 986,
+  "branchesHit": 841,
+  "percent": 85.29411764705883,
+  "missingSources": [],
+  "malformed": [],
+  "reports": [
+    {
+      "path": "src/config/models.ts",
+      "branchesFound": 34,
+      "branchesHit": 34
+    },
+    {
+      "path": "src/contracts/http.ts",
+      "branchesFound": 65,
+      "branchesHit": 65
+    },
+    {
+      "path": "src/modules/billing/hold-policy.ts",
+      "branchesFound": 6,
+      "branchesHit": 6
+    },
+    {
+      "path": "src/modules/credits/allocate.ts",
+      "branchesFound": 39,
+      "branchesHit": 31
+    },
+    {
+      "path": "src/modules/credits/ledger.ts",
+      "branchesFound": 23,
+      "branchesHit": 19
+    },
+    {
+      "path": "src/modules/credits/queries.ts",
+      "branchesFound": 23,
+      "branchesHit": 23
+    },
+    {
+      "path": "src/modules/generation/create.ts",
+      "branchesFound": 57,
+      "branchesHit": 48
+    },
+    {
+      "path": "src/modules/shared/commands.ts",
+      "branchesFound": 27,
+      "branchesHit": 19
+    },
+    {
+      "path": "src/modules/shared/transaction.ts",
+      "branchesFound": 2,
+      "branchesHit": 2
+    },
+    {
+      "path": "src/modules/workspaces/authorize.ts",
+      "branchesFound": 14,
+      "branchesHit": 14
+    },
+    {
+      "path": "src/modules/workspaces/policy.ts",
+      "branchesFound": 54,
+      "branchesHit": 52
+    },
+    {
+      "path": "src/adapters/storage/local.ts",
+      "branchesFound": 26,
+      "branchesHit": 23
+    },
+    {
+      "path": "src/modules/assets/ingest.ts",
+      "branchesFound": 30,
+      "branchesHit": 17
+    },
+    {
+      "path": "src/modules/assets/media-probe.ts",
+      "branchesFound": 15,
+      "branchesHit": 11
+    },
+    {
+      "path": "src/modules/credits/settle.ts",
+      "branchesFound": 47,
+      "branchesHit": 42
+    },
+    {
+      "path": "src/modules/generation/lifecycle.ts",
+      "branchesFound": 117,
+      "branchesHit": 77
+    },
+    {
+      "path": "src/modules/generation/mock.ts",
+      "branchesFound": 11,
+      "branchesHit": 11
+    },
+    {
+      "path": "src/modules/generation/outbox.ts",
+      "branchesFound": 41,
+      "branchesHit": 30
+    },
+    {
+      "path": "src/modules/generation/state.ts",
+      "branchesFound": 20,
+      "branchesHit": 16
+    },
+    {
+      "path": "src/modules/generation/sweep-recovery.ts",
+      "branchesFound": 5,
+      "branchesHit": 5
+    },
+    {
+      "path": "src/modules/assets/authorize.ts",
+      "branchesFound": 17,
+      "branchesHit": 15
+    },
+    {
+      "path": "src/modules/assets/upload.ts",
+      "branchesFound": 5,
+      "branchesHit": 2
+    },
+    {
+      "path": "src/modules/assets/validate-input.ts",
+      "branchesFound": 26,
+      "branchesHit": 23
+    },
+    {
+      "path": "src/modules/credits/issue-demo.ts",
+      "branchesFound": 7,
+      "branchesHit": 5
+    },
+    {
+      "path": "src/modules/workspaces/onboard.ts",
+      "branchesFound": 30,
+      "branchesHit": 24
+    },
+    {
+      "path": "src/modules/workspaces/commands.ts",
+      "branchesFound": 51,
+      "branchesHit": 50
+    },
+    {
+      "path": "src/modules/workspaces/invitations.ts",
+      "branchesFound": 37,
+      "branchesHit": 36
+    },
+    {
+      "path": "src/modules/operations/authorize.ts",
+      "branchesFound": 29,
+      "branchesHit": 24
+    },
+    {
+      "path": "src/modules/operations/status-commands.ts",
+      "branchesFound": 51,
+      "branchesHit": 47
+    },
+    {
+      "path": "src/modules/workspaces/access-state.ts",
+      "branchesFound": 34,
+      "branchesHit": 34
+    },
+    {
+      "path": "src/modules/credits/reserve.ts",
+      "branchesFound": 1,
+      "branchesHit": 1
+    },
+    {
+      "path": "src/modules/credits/expiry.ts",
+      "branchesFound": 8,
+      "branchesHit": 6
+    },
+    {
+      "path": "src/adapters/mail/local.ts",
+      "branchesFound": 3,
+      "branchesHit": 3
+    },
+    {
+      "path": "src/adapters/mail/mailpit.ts",
+      "branchesFound": 9,
+      "branchesHit": 6
+    },
+    {
+      "path": "src/lib/auth.ts",
+      "branchesFound": 19,
+      "branchesHit": 17
+    },
+    {
+      "path": "src/adapters/mail/index.ts",
+      "branchesFound": 1,
+      "branchesHit": 1
+    },
+    {
+      "path": "src/adapters/mail/invitation.ts",
+      "branchesFound": 2,
+      "branchesHit": 2
+    }
+  ],
+  "missingLcovFiles": [],
+  "runs": [
+    {
+      "commandId": "probe-generation-create",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/generation-create.lcov"
+    },
+    {
+      "commandId": "probe-generation-lifecycle",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/generation-lifecycle.lcov"
+    },
+    {
+      "commandId": "probe-generation-races",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/generation-races.lcov"
+    },
+    {
+      "commandId": "probe-assets",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/assets.lcov"
+    },
+    {
+      "commandId": "probe-outbox-lease",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/outbox-lease.lcov"
+    },
+    {
+      "commandId": "probe-m3-recovery",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/m3-recovery.lcov"
+    },
+    {
+      "commandId": "probe-m2-foundation",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/m2-foundation.lcov"
+    },
+    {
+      "commandId": "probe-onboarding",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/onboarding.lcov"
+    },
+    {
+      "commandId": "probe-workspaces",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/workspaces.lcov"
+    },
+    {
+      "commandId": "probe-invitations",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/invitations.lcov"
+    },
+    {
+      "commandId": "probe-tenant-authorization",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/tenant-authorization.lcov"
+    },
+    {
+      "commandId": "probe-operator",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/operator.lcov"
+    },
+    {
+      "commandId": "probe-access-states",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/access-states.lcov"
+    },
+    {
+      "commandId": "probe-command-contract",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/command-contract.lcov"
+    },
+    {
+      "commandId": "probe-credit-ledger",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/credit-ledger.lcov"
+    },
+    {
+      "commandId": "probe-credit-reservation",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/credit-reservation.lcov"
+    },
+    {
+      "commandId": "probe-credit-refund",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/credit-refund.lcov"
+    },
+    {
+      "commandId": "probe-credit-migration-backfill",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/credit-migration-backfill.lcov"
+    },
+    {
+      "commandId": "probe-auth-lifecycle",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/auth-lifecycle.lcov"
+    },
+    {
+      "commandId": "unit-assets-authorization",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/unit-assets-authorization.lcov",
+      "status": "PASS"
+    },
+    {
+      "commandId": "unit-assets-validation",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/unit-assets-validation.lcov",
+      "status": "PASS"
+    },
+    {
+      "commandId": "unit-generation-state",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/unit-generation-state.lcov",
+      "status": "PASS"
+    },
+    {
+      "commandId": "unit-m2-contracts",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/unit-m2-contracts.lcov",
+      "status": "PASS"
+    },
+    {
+      "commandId": "unit-m2-policy",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/unit-m2-policy.lcov",
+      "status": "PASS"
+    },
+    {
+      "commandId": "unit-m3-domain-edges",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/unit-m3-domain-edges.lcov",
+      "status": "PASS"
+    },
+    {
+      "commandId": "unit-m3-evidence",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/unit-m3-evidence.lcov",
+      "status": "PASS"
+    },
+    {
+      "commandId": "unit-outbox-heartbeat",
+      "lcovRef": "internal/evidence/acceptance/M3/working-tree-20260930-m3/verification-attempts/2026-09-30T20-57-18-388Z-7100f9b1-4ff2-492c-9331-792f86c7c663/unit-outbox-heartbeat.lcov",
+      "status": "PASS"
+    }
+  ]
+}

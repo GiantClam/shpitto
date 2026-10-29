@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "1.0",
+  "status": "PASSED_BETTER_AUTH_OPERATOR_ADMIN_DOMAIN_DRIZZLE_CHAIN",
+  "command": "M0_DATABASE_URL=postgres://postgres:<disposable>@127.0.0.1:<port>/postgres node admin/admin-postgres-chain-probe.mjs",
+  "environment": {
+    "profile": "local/disposable-postgresql-17",
+    "databaseWasDisposable": true,
+    "existingCredentialsReused": false,
+    "externalCalls": 0,
+    "migrationFiles": [
+      "0000_m0_foundation.sql",
+      "0001_better_auth.sql",
+      "0002_m0_operator_authorization.sql"
+    ]
+  },
+  "observed": {
+    "betterAuthSessionAuthenticated": true,
+    "betterAuthSessionReloadedAfterPoolRestart": true,
+    "persistentOperatorRole": true,
+    "memberReadAllowed": true,
+    "explicitOperatorReadAllowed": true,
+    "revokedOperatorReadDenied": true,
+    "reloadedOperatorReadAllowed": true,
+    "domainCommandAuthorized": true,
+    "duplicateDomainCommandSuppressed": true,
+    "atomicCounts": {
+      "ledger_count": 1,
+      "audit_count": 1,
+      "outbox_count": 1
+    },
+    "reactAdminClientContract": true,
+    "genericAdminWrites": false,
+    "migrationSha256": "b19e3fae46d50596ebe065e27ff2efc075f610034d946ecd7b9be13734dbacf9",
+    "migrationBundleSha256": "a8937211f5d6ea43d90735087ac44cf261b0fa3b64c61b757bafcf7c931afc72",
+    "migrationFileSha256": {
+      "0000_m0_foundation.sql": "9bd12c347f7bd3babd2ef3ed3a0f29b2c4208d886aaca84bb9cc707f9a855147",
+      "0001_better_auth.sql": "20baba06caf11822d6a9156b3032a76c99bfa5d8a6fbc0763019a3057ba3d3c4",
+      "0002_m0_operator_authorization.sql": "b19e3fae46d50596ebe065e27ff2efc075f610034d946ecd7b9be13734dbacf9"
+    },
+    "migrationManifestSha256": "24761b56f4ff95ecfdc9e6d4a17077afa6a4364265c720f9b51698985fdb417b",
+    "migrationFileCount": 3,
+    "externalCalls": 0,
+    "databaseWasDisposable": true
+  },
+  "proves": [
+    "Better Auth creates and reloads a PostgreSQL-backed session through a new Drizzle adapter/pool.",
+    "A persisted operator role is required for cross-workspace React-admin read authorization and is denied on the next request after revocation.",
+    "The authorized operator command reaches the Drizzle transaction boundary and writes one credit, audit and outbox effect.",
+    "Repeating the same operator command after pool restart is idempotently suppressed.",
+    "React-admin remains a presentation/client contract and generic admin writes remain denied."
+  ],
+  "doesNotProve": [
+    "Final production operator role administration, step-up implementation and release migration promotion; these remain M1 work.",
+    "Concurrent production workload behavior beyond this deterministic transaction and role-lock case."
+  ]
+}

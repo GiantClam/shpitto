@@ -1,0 +1,25 @@
+{
+  "status": "PASS",
+  "profile": "local-docker-20261005",
+  "m3": [
+    "db:probe:workspaces",
+    "db:probe:invitations",
+    "db:probe:tenant-auth",
+    "db:probe:generation-lifecycle",
+    "db:probe:generation-races"
+  ],
+  "m6": [
+    "db:probe:m6-operations",
+    "db:probe:m6-admin-reads",
+    "db:probe:m6-privileged",
+    "db:probe:m6-two-factor",
+    "db:probe:m6-recovery",
+    "db:probe:m6-affiliate",
+    "db:probe:m6-affiliate-db",
+    "db:probe:m6-affiliate-races",
+    "db:probe:m6-cash-affiliate",
+    "db:probe:m6-affiliate-notifications",
+    "db:probe:m6-refund-preview",
+    "db:probe:m6-workspace-details"
+  ]
+}

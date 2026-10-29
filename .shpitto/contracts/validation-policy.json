@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0",
+  "release": "v1",
+  "owner": "release-engineering",
+  "trustedSource": "pinned validator worktree outside candidate edits",
+  "requiredDigests": ["sourceTreeSha256", "schemaSha256", "configurationSha256", "contractSha256", "validatorSha256", "lockfileSha256"],
+  "requiredChecks": ["typecheck", "lint", "format-check", "boundary-checks", "relevant-domain-tests"],
+  "protectedFiles": [".shpitto/contracts/validation-evidence.json", "tooling/lint-policy.json", "tooling/format-policy.json"],
+  "trustedChecks": [
+    {"id": "typecheck", "steps": [{"kind": "tool", "file": "node_modules/next/dist/bin/next", "args": ["typegen"]}, {"kind": "tool", "file": "node_modules/typescript/bin/tsc", "args": ["--noEmit", "--incremental", "false"]}]},
+    {"id": "lint", "steps": [{"kind": "node", "file": "scripts/check-source-boundaries.mjs"}]},
+    {"id": "format-check", "steps": [{"kind": "node", "file": "scripts/format-check.mjs"}]},
+    {"id": "boundary-checks", "steps": [{"kind": "node", "file": "scripts/check-config.mjs"}, {"kind": "node", "file": "scripts/check-db-boundaries.mjs"}, {"kind": "node", "file": "scripts/check-local-services.mjs"}, {"kind": "node", "file": "scripts/check-shell-boundaries.mjs"}, {"kind": "node", "file": "scripts/check-content-boundaries.mjs"}]},
+    {"id": "relevant-domain-tests", "steps": [{"kind": "tests", "files": ["tests/unit/m2-policy.test.ts", "tests/unit/generation-state.test.ts", "tests/unit/assets-authorization.test.ts", "tests/unit/credit-reversals.test.ts", "tests/unit/creation-draft.test.ts"], "expectedTests": {"tests/unit/m2-policy.test.ts": 3, "tests/unit/generation-state.test.ts": 2, "tests/unit/assets-authorization.test.ts": 1, "tests/unit/credit-reversals.test.ts": 4, "tests/unit/creation-draft.test.ts": 7}}]}
+  ],
+  "reject": ["missing evidence", "failed evidence", "stale digest", "candidate-modified validator", "skipped mandatory check"],
+  "policyRevision": "requires independent review against the prior trusted baseline"
+}

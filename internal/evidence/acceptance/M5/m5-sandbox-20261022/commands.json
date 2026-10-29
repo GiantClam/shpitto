@@ -1,0 +1,201 @@
+{
+  "schemaVersion": "1.0",
+  "candidateId": "m5-sandbox-20261022",
+  "note": "Timestamps are omitted because the captured logs do not retain process start/end times. Exit status and output references are preserved; no credentials or connection strings are included. Current working-tree reruns are written to their named logs.",
+  "commands": [
+    {
+      "commandId": "frozen-lock-install",
+      "invocation": "corepack pnpm install --frozen-lockfile --prefer-offline --ignore-scripts",
+      "environmentId": "m5-disposable-postgres-20261022",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "frozen-lock-install.log"
+    },
+    {
+      "commandId": "typecheck",
+      "invocation": "corepack pnpm typecheck",
+      "environmentId": "m5-disposable-postgres-20261022",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "typecheck-current.log",
+      "supportingOutputRefs": [
+        "typegen.log"
+      ]
+    },
+    {
+      "commandId": "lint",
+      "invocation": "corepack pnpm lint",
+      "environmentId": "m5-disposable-postgres-20261022",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "lint-current.log"
+    },
+    {
+      "commandId": "format-check",
+      "invocation": "corepack pnpm format:check",
+      "environmentId": "m5-disposable-postgres-20261022",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "format-check-current.log"
+    },
+    {
+      "commandId": "verify-db-boundary",
+      "invocation": "corepack pnpm verify:db-boundary",
+      "environmentId": "m5-disposable-postgres-20261022",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "verify-db-boundary-current.log"
+    },
+    {
+      "commandId": "verify-openspec",
+      "invocation": "corepack pnpm verify:openspec",
+      "environmentId": "m5-disposable-postgres-20261022",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "verify-openspec-current.log"
+    },
+    {
+      "commandId": "production-build",
+      "invocation": "corepack pnpm build",
+      "environmentId": "m5-disposable-postgres-20261022",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "production-build-current.log"
+    },
+    {
+      "commandId": "contracts-provider-inputs",
+      "invocation": "node --experimental-strip-types --test tests/contracts/provider-inputs.test.ts",
+      "environmentId": "m5-disposable-postgres-20261022",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "contracts-provider-inputs.log"
+    },
+    {
+      "commandId": "contracts-billing-contracts",
+      "invocation": "node --experimental-strip-types --test tests/contracts/billing-contracts.test.ts",
+      "environmentId": "m5-disposable-postgres-20261022",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "contracts-billing-contracts.log"
+    },
+    {
+      "commandId": "billing-schema",
+      "invocation": "node --experimental-strip-types scripts/probe-billing-schema.ts on disposable PostgreSQL",
+      "environmentId": "m5-disposable-postgres-20261022",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "billing-schema.log"
+    },
+    {
+      "commandId": "billing-checkout",
+      "invocation": "node --experimental-strip-types scripts/probe-billing-checkout.ts on disposable PostgreSQL",
+      "environmentId": "m5-disposable-postgres-20261022",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "billing-checkout.log"
+    },
+    {
+      "commandId": "billing-reconciliation",
+      "invocation": "node --experimental-strip-types scripts/probe-billing-reconciliation.ts on disposable PostgreSQL",
+      "environmentId": "m5-disposable-postgres-20261022",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "billing-reconciliation.log"
+    },
+    {
+      "commandId": "stripe-checkout-integration",
+      "invocation": "node --experimental-strip-types --test tests/integration/stripe-checkout.test.ts",
+      "environmentId": "m5-disposable-postgres-20261022",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "stripe-checkout.log"
+    },
+    {
+      "commandId": "stripe-reconciliation-integration",
+      "invocation": "node --experimental-strip-types --test tests/integration/stripe-reconciliation.test.ts",
+      "environmentId": "m5-disposable-postgres-20261022",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "stripe-reconciliation.log"
+    },
+    {
+      "commandId": "stripe-refunds-integration",
+      "invocation": "node --experimental-strip-types --test tests/integration/stripe-refunds.test.ts",
+      "environmentId": "m5-disposable-postgres-20261022",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "stripe-refunds.log"
+    },
+    {
+      "commandId": "acceptance-refund-database-readback",
+      "invocation": "Read-only Stripe test-mode and Acceptance PostgreSQL refund reconciliation assertion",
+      "environmentId": "m5-acceptance-stripe-test-20261022",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "stripe-database-readback.json"
+    },
+    {
+      "commandId": "acceptance-owner-command-replay",
+      "invocation": "Replay the persisted owner refund command with a provider that fails if called",
+      "environmentId": "m5-acceptance-stripe-test-20261022",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "owner-command-replay.json"
+    },
+    {
+      "status": "PASS",
+      "environmentId": "m5-disposable-postgres-20261022",
+      "outputRef": "billing-presentation-unit.log",
+      "exitCode": 0,
+      "commandId": "billing-presentation-unit",
+      "invocation": "node --experimental-strip-types --test tests/unit/billing-presentation.test.ts"
+    },
+    {
+      "status": "PASS",
+      "environmentId": "m5-acceptance-stripe-test-20261022",
+      "outputRef": "owner-billing-ui-observation.md",
+      "exitCode": 0,
+      "commandId": "acceptance-owner-billing-view-readonly",
+      "invocation": "Read-only observation of the authenticated owner billing page on the existing Acceptance deployment"
+    },
+    {
+      "outputRef": "coverage-owned-current-20261022.log",
+      "environmentId": "m5-disposable-postgres-20261022",
+      "commandId": "billing-stripe-current-owned-coverage",
+      "invocation": "node --experimental-strip-types --experimental-test-coverage --test-concurrency=1 --test <billing probes, billing contract, Stripe integration, billing presentation and hold-policy suites>",
+      "status": "PASS",
+      "exitCode": 0,
+      "supportingOutputRefs": [
+        "coverage-owned-current-20261022.lcov",
+        "coverage-owned-current-20261022.json"
+      ]
+    },
+    {
+      "commandId": "current-owner-member-billing-browser",
+      "invocation": "Playwright current-candidate owner billing desktop/mobile render plus member billing/Checkout/Portal denial",
+      "environmentId": "m5-current-local-ui-20261022",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "browser-billing-20261022.json",
+      "supportingOutputRefs": [
+        "member-denial-api.log",
+        "owner-billing-desktop.png",
+        "owner-billing-mobile.png",
+        "member-denied-desktop.png"
+      ]
+    },
+    {
+      "commandId": "stripe-integration-rerun-20261022",
+      "invocation": "node --experimental-strip-types --test Stripe Checkout, reconciliation, refunds and billing presentation suites",
+      "environmentId": "m5-disposable-postgres-20261022",
+      "exitCode": 0,
+      "status": "PASS",
+      "outputRef": "stripe-integration-rerun-20261022.log",
+      "testSummary": {
+        "tests": 63,
+        "passed": 63,
+        "failed": 0
+      }
+    }
+  ]
+}

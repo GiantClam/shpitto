@@ -1,0 +1,43 @@
+{"status":"PASS","staleRejected":true,"transactionFence":true,"reclaimBlockedDuringFence":true,"heartbeatIntervalMs":20000,"renewedAt30s":true,"acknowledged":true,"attempts":2}
+✔ scripts\probe-outbox-lease.ts (553.5545ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 558.5914
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------------------------
+ℹ file                  | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------------------------
+ℹ src                   |        |          |         | 
+ℹ  config               |        |          |         | 
+ℹ   env.ts              |  75.00 |    45.45 |   33.33 | 9-11 42-43 66-80 87-88
+ℹ  db                   |        |          |         | 
+ℹ   client.ts           | 100.00 |   100.00 |  100.00 | 
+ℹ   contracts.ts        |  79.59 |   100.00 |   33.33 | 14-16 21-22 25-29
+ℹ   schema              |        |          |         | 
+ℹ    access.ts          | 100.00 |   100.00 |   50.00 | 
+ℹ    affiliate-inbox.ts | 100.00 |   100.00 |  100.00 | 
+ℹ    affiliate.ts       | 100.00 |   100.00 |   43.75 | 
+ℹ    asset.ts           | 100.00 |   100.00 |   33.33 | 
+ℹ    auth.ts            | 100.00 |   100.00 |   62.50 | 
+ℹ    billing.ts         |  96.88 |   100.00 |   52.94 | 217-223
+ℹ    commands.ts        | 100.00 |   100.00 |   33.33 | 
+ℹ    credit.ts          | 100.00 |   100.00 |   42.86 | 
+ℹ    generation.ts      | 100.00 |   100.00 |   66.67 | 
+ℹ    index.ts           | 100.00 |   100.00 |  100.00 | 
+ℹ    invitations.ts     | 100.00 |   100.00 |   33.33 | 
+ℹ    operations.ts      | 100.00 |   100.00 |   33.33 | 
+ℹ    operator.ts        | 100.00 |   100.00 |   40.00 | 
+ℹ    ownership.ts       | 100.00 |   100.00 |  100.00 | 
+ℹ    workspace.ts       | 100.00 |   100.00 |   41.18 | 
+ℹ  modules              |        |          |         | 
+ℹ   generation          |        |          |         | 
+ℹ    outbox.ts          |  55.41 |    71.43 |   55.56 | 20-69 125-128 132-135 146-157
+ℹ ------------------------------------------------------------------------------------
+ℹ all files             |  92.03 |    89.01 |   46.67 | 
+ℹ ------------------------------------------------------------------------------------
+ℹ end of coverage report

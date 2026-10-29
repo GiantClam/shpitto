@@ -1,0 +1,111 @@
+# customize-brand
+
+Change approved brand tokens, assets and copy across the shared presentation
+shells. The default template ships a complete Shpitto baseline for evaluation
+and local preview. It is a fallback, not a customer's final visual identity;
+customer delivery requires this Skill to define the customer's own visual
+assets and tokens.
+
+Use `DESIGN.md` for application rules and `src/config/brand.ts` as the canonical
+source for all token values. Treat semantic roles, type scale, spacing rhythm,
+surface ladder, component states and motion values as one system, naming
+reusable decisions before writing page CSS. Studio tokens belong to
+`brand.tokens.studio`; `brandCssVariables` in the same file projects both light
+and studio roles into CSS and `src/app/layout.tsx` binds them at runtime.
+`src/app/globals.css` consumes the projection and scopes aliases. Do not
+duplicate numeric token tables or literal `:root` fallbacks in CSS.
+
+## Inputs
+- Customer brand name, colors, logo/font assets, copy and responsive/accessibility intent.
+- The fallback token contract in `src/config/brand.ts` (dark creator and
+  workspace surfaces, light auth/docs, coral primary, violet creative accent,
+  semantic ink/status/focus colors, Avenir/system typography, 4px base rhythm and
+  component state tokens).
+- A visual brief covering mood, density, imagery, primary action, dark/light
+  surfaces, responsive intent and reduced-motion behavior.
+- The relevant `DESIGN.md` sections for the brand's component and responsive
+  decisions.
+- The shipped capability boundary: video only, with `text-to-video` and
+  `image-to-video` as the image entry; no image-output tab, image-generation
+  API, image-generation promise or additional provider access.
+
+## Allowed scope
+`src/config/brand.ts`, `public/brand`, approved shell presentation paths,
+`src/app/globals.css` token bindings and marketing copy. Do not scatter one-off
+colors, type sizes, radii, shadows, breakpoints or control dimensions into a
+page when a shared token exists.
+
+## Presentation rules
+- The default public homepage is dark and creation-first. Use shared `SiteShell`
+  variant `creator` for the homepage and `workspace` for signed-in creation,
+  team, billing and settings. Remap their semantic roles to `brand.tokens.studio`
+  through its CSS projection. Keep auth and documentation light; the homepage
+  route's `(marketing)` location does not determine its theme.
+- Preserve persistent desktop tool navigation, compact mobile navigation, a
+  concise heading and an editable composer before the curated gallery. Do not
+  replace the working surface with a giant editorial hero. Interaction
+  references may guide topology, but never copy another product's brand or assets.
+- Keep the customer's logo and original colors on a light backing in the dark
+  shell. Do not invert or recolor customer logo artwork with filters.
+- The public composer exposes `text-to-video` / `image-to-video`, an editable
+  prompt, `16:9` / `9:16` and the fixed `5s` / `720p` preset. Its primary action
+  says `Continue to studio` and routes to `/dashboard` through the existing auth
+  guard for guests and signed-in visitors. Helper copy explains sign-in, model
+  selection and credit review. Show an admitted model and actual cost only after
+  sign-in using current server-backed admission and quoting; no public quote.
+- Store `version: 1` schema metadata and only `prompt`, `mode` and `aspectRatio`
+  intent fields in the session draft. Autosave during editing to preserve the
+  draft across tool mode-link navigation and the auth handoff; an explicit mode
+  destination may update the mode. Do not carry
+  quotes, prices, model selection, assets, crop references, consent or other
+  protected state. Restore for editable signed-in review with fresh admission
+  and cost; never auto-submit. Image-to-video upload, crop and consent remain
+  in the signed-in flow, and workspace context stays in existing navigation.
+- Gallery filters must change the shown entries and expose selected state.
+  `Use prompt` replaces only the editable prompt and preserves the currently
+  selected `mode` and `aspectRatio`. It reuses prompt inspiration only, without
+  submission, sample image upload, owned input
+  selection or consent.
+- The public product demonstrates end-user video creation value. Keep template
+  purchasing, code ownership and engineering guidance in buyer documentation,
+  outside customer creation, sign-in and billing flows.
+- Treat `public/media/alpine-studio.png`, `public/media/motion-product.png` and
+  `public/media/neon-portrait.png` as original AI sample artwork, with provenance
+  recorded in `public/media/README.md`. Give each a visible `Sample artwork`
+  label and descriptive alt text where informative.
+  Never call it a live provider result, a user's output or proof of supported
+  image generation. Do not give still samples fake play controls or present them
+  as playable outputs. Copy, metadata, previews and controls must reflect the
+  shipped video-only capabilities; image-to-video is the image entry.
+- Preserve selected workspace context in navigation and creation links through
+  the shared navigation contract, including encoded workspace identifiers.
+- Preserve visible keyboard focus and keyboard operation on both themes. Meet
+  WCAG AA text contrast (4.5:1 normal text, 3:1 large text) on actual backgrounds
+  and keep touch targets at least 44px by 44px. Check desktop `1440x900` and
+  mobile `390x844`, including reduced-motion behavior.
+
+## Protected contracts
+Preserve sign-in, workspace, generation, download and billing actions and all auth,
+ledger, provider, storage and validator paths.
+
+## Outputs and evidence
+Record a scoped manifest naming the customer assets, semantic token map,
+component states, desktop/mobile screenshots or assertions, keyboard focus and
+contrast checks, consistent navigation/control dimensions and a recovery patch.
+The manifest must distinguish template fallback assets from customer-selected
+assets and sample artwork. State the primary CTA, supported video mode,
+responsive collapse rules and scoped creator/workspace role mappings. Include
+checks for truthful capability claims, labeled non-playable sample artwork,
+logo backing, dark creator/team/billing/settings, light auth/docs and
+workspace-aware links. Check public composer editing, the fixed preset, gallery
+filtering and prompt-only reuse that preserves the selected mode and aspect ratio.
+Check the draft's three intent fields plus `version: 1` metadata, autosave
+across mode-link navigation and `/dashboard` handoff for guests and signed-in
+visitors. Review never auto-submits; admitted models and actual cost appear only
+after sign-in.
+
+## Recovery
+Revert only the brand-attributable files after checking overlaps.
+
+## Escalation
+A request that changes a protected flow becomes an engineering change.

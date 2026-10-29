@@ -1,0 +1,37 @@
+Candidate check started: archive-list
+Candidate check passed: archive-list
+Candidate check started: archive-extract
+Candidate check passed: archive-extract
+Candidate check started: new-tag-preflight
+Candidate check passed: new-tag-preflight
+Candidate check started: docker-build
+Candidate check started: container-cleanup-verification
+Candidate check passed: container-cleanup-verification
+{
+  "status": "FAIL",
+  "candidateId": "local-candidate-20261019-trusted-r2",
+  "archive": {
+    "path": "internal/evidence/m8/artifact-manifest/local-candidate-20261019-trusted-r2/local-candidate-20261019-trusted-r2.zip",
+    "bytes": 9658756,
+    "sha256": "cc9750578638109350e05b60865a76e139e752a9bd97ed2a436f279ffac5ea66"
+  },
+  "image": "shpitto-candidate:local-candidate-20261019-trusted-r2",
+  "profile": "local-docker-application-only",
+  "checks": {
+    "authorizedArchiveAndEveryExtractedFile": "PASS"
+  },
+  "startedAt": "2026-10-19T06:28:51.547Z",
+  "error": "docker-build failed (exit 1); inspect docker-build.log.",
+  "productionDeployment": "NOT_RUN",
+  "productionAcceptance": "NOT_CLAIMED",
+  "cleanup": {
+    "containerRemoved": true,
+    "temporaryEnvironmentFileRemoved": true,
+    "extractionRemoved": true,
+    "imageRetainedAsEvidence": true,
+    "databaseMutationsPerformed": false,
+    "sharedPostgresContainerPreserved": true,
+    "volumesCreatedOrDeleted": false
+  },
+  "completedAt": "2026-10-19T06:28:56.067Z"
+}

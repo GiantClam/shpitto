@@ -1,0 +1,29 @@
+[
+  {
+    "commandId": "m6-cash-affiliate",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\supplement\\m6-cash-affiliate.lcov --test-coverage-include=**/src/** scripts/probe-m6-cash-affiliate.ts",
+    "startAt": "2026-10-04T09:01:09.358Z",
+    "endAt": "2026-10-04T09:01:10.903Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/supplement/logs/m6-cash-affiliate.log"
+  },
+  {
+    "commandId": "m6-admin-reads",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\supplement\\m6-admin-reads.lcov --test-coverage-include=**/src/** scripts/probe-m6-admin-reads.ts",
+    "startAt": "2026-10-04T09:01:10.904Z",
+    "endAt": "2026-10-04T09:01:12.389Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/supplement/logs/m6-admin-reads.log"
+  },
+  {
+    "commandId": "m6-refund-preview",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\supplement\\m6-refund-preview.lcov --test-coverage-include=**/src/** scripts/probe-m6-refund-preview.ts",
+    "startAt": "2026-10-04T09:01:12.390Z",
+    "endAt": "2026-10-04T09:01:13.965Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/supplement/logs/m6-refund-preview.log"
+  }
+]

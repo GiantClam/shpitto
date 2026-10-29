@@ -1,0 +1,30 @@
+✔ fixture defaults still execute offline and preserve owner manual recovery (401.009ms)
+✔ Stripe requires explicit matching provider, without recording an intent or falling back (49.0227ms)
+✔ Stripe binds durable request, historical customer and canonical payment intent and confirms exactly once (105.315ms)
+✔ owner refund command replays the current confirmed result after the order becomes refunded (65.4574ms)
+✔ owner billing projection separates refunded cash from voided credits and rejects members (63.5561ms)
+✔ Stripe pending cannot create confirmed cash; recovery is read-only (84.5667ms)
+✔ Stripe unknown cannot create confirmed cash; recovery is read-only (85.1935ms)
+✔ Stripe failed cannot create confirmed cash; recovery is read-only (53.6816ms)
+✔ mismatched Stripe amountMinor evidence remains unresolved (49.3091ms)
+✔ mismatched Stripe currency evidence remains unresolved (51.4169ms)
+✔ mismatched Stripe customerId evidence remains unresolved (48.3978ms)
+✔ mismatched Stripe paymentIntentId evidence remains unresolved (48.7264ms)
+✔ missing or ambiguous canonical aliases fail closed before any Stripe call (95.268ms)
+✔ adapter exceptions and unverified failed responses remain unknown, never terminal failure or cash (96.7717ms)
+✔ owner Stripe reconciliation requires authoritative readback, not a supplied external ID (91.3555ms)
+✔ auth, step-up and expected version reject before provider work or refund creation (33.0107ms)
+✔ parallel commands submit once, block other unresolved intents, and expired claims only look up (75.2601ms)
+✔ Stripe port refuses fixture-shaped success and mismatched providers on recovery (52.7933ms)
+✔ bridge rejects caller money/order/key drift and never uses caller payment target (50.6542ms)
+✔ lost finalization rejects stale lease and recovers successful cash by read-only lookup (83.5693ms)
+✔ owner readback rechecks ownership before applying external cash evidence (49.6374ms)
+✔ changed durable refund binding rejects late successful delivery evidence (47.7655ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2407.6229

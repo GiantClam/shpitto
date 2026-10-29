@@ -1,0 +1,11 @@
+{
+  "image": "axllent/mailpit:v1.21.8",
+  "command": "node --experimental-strip-types --input-type=module -e <Mailpit adapter send/capture assertions>",
+  "startedAt": "2026-09-29T05:52:58.0660583Z",
+  "container": "shpitto-m2-mail-proof",
+  "cloudDelivery": false,
+  "exitCode": 0,
+  "finishedAt": "2026-09-29T05:52:58.3054245Z",
+  "imageId": "sha256:96b8894a6f69e22a8d559991072d01e098dabfb0473c463fb19c113b41bc763d",
+  "baseUrl": "http://127.0.0.1:58025"
+}

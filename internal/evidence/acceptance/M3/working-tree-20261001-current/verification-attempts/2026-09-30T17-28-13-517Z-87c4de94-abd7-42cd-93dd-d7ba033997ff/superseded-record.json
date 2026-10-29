@@ -1,0 +1,2202 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "IMPLEMENTATION_ACCEPTANCE",
+  "changeId": "restart-shpitto-video-saas",
+  "stageId": "M3",
+  "checkpointId": null,
+  "gateTaskId": "4.12",
+  "status": "IN_PROGRESS",
+  "candidateId": "working-tree-20261001-current",
+  "verificationAttemptId": "2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d",
+  "createdAt": "2026-09-30T17:24:56.296Z",
+  "updatedAt": "2026-09-30T17:24:56.296Z",
+  "policy": {
+    "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md"
+  },
+  "prerequisites": [
+    {
+      "stageId": "M2",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260929-m2-repair",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/record.json"
+      ]
+    },
+    {
+      "taskId": "4.1",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.2",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.3",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.4",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.5",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.6",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.7",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.8",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.9",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.10",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.11",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    },
+    {
+      "taskId": "4.13",
+      "observedStatus": "PASS",
+      "evidenceRefs": [
+        "openspec/changes/restart-shpitto-video-saas/tasks.md"
+      ]
+    }
+  ],
+  "candidate": {
+    "capturedAt": "2026-09-30T17:24:56.273Z",
+    "sourceCommit": null,
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "5cf616423ec9de45cc28529922f7d6e990118b9e31d41ae656bb2c8901bcfb23",
+    "schemaSha256": "5b0b847b266e1690319021b0167f831367e9190d188c88b90b40ca09f8d4c58b",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+    "configurationSha256": "079a422f0057b69e3ee687a8dfb277351abc3aa3167b3055190768fbae4bb270",
+    "contractSha256": "8a0768e137af920b4ab3963ca7ddb99cc24bdcc47f5206bb84e3bdae76754d69",
+    "validatorSha256": "6779706269ee610cc70ed94f8e59d3389e0ddbdc5a7b87b632df93f85e1aa3c1",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
+    "digestInputs": {
+      "sourceTree": [
+        "src",
+        "tests",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        "tooling",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        "src/config/env.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile",
+        "tooling"
+      ],
+      "contract": [
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "openspec/changes/restart-shpitto-video-saas/specs",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json"
+      ],
+      "validator": [
+        "scripts",
+        "tests",
+        "tooling",
+        "internal/restart/check-acceptance-record.py"
+      ]
+    },
+    "startDigestsRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/candidate-before/candidate.json",
+    "endDigestsRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/candidate-after/candidate.json",
+    "stableAcrossVerification": true
+  },
+  "environments": [
+    {
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "Local no-cloud Mock profile; every database probe targets a disposable database created for this attempt.",
+      "clockMode": "Probe-controlled clocks for deadline cases; wall clock for local HTTP/browser checks.",
+      "fixtureOrSeed": "Disposable probe fixtures, per-probe cleanup and a per-attempt PostgreSQL database; no production/provider/payment requests.",
+      "sanitationNotes": "Command output is secret-redacted; test users, invitation tokens and signed URLs are omitted from evidence.",
+      "toolVersions": {
+        "node": "v24.15.0",
+        "postgres": "local server version captured by migration log",
+        "pnpm": "12.6.0"
+      },
+      "effectiveLimits": "Local PostgreSQL and Mock profile only; production email, real providers, Stripe and historical-balance recovery are deferred.",
+      "setupStatus": "BLOCKED"
+    }
+  ],
+  "criterionResults": [
+    {
+      "criterionId": "M3-C01",
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "environmentId": "local-m3-isolated-postgres",
+      "expected": "New-user local sign-in, workspace, server quote, playable Mock output, history/credit lineage, private download, and restart persistence.",
+      "observed": "Isolated database prerequisite was unavailable; current-candidate evidence was not run against the live database.",
+      "evidenceRefs": []
+    },
+    {
+      "criterionId": "M3-C02",
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "environmentId": "local-m3-isolated-postgres",
+      "expected": "Team creation, invitation/acceptance, removal, ownership transfer, workspace switching and personal-space restrictions work in UI and API.",
+      "observed": "Isolated database prerequisite was unavailable; current-candidate evidence was not run against the live database.",
+      "evidenceRefs": []
+    },
+    {
+      "criterionId": "M3-C03",
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "environmentId": "local-m3-isolated-postgres",
+      "expected": "Cancel/dispatch and terminal races have one outcome; replay and settlement have one effect; invalid output cannot succeed.",
+      "observed": "Isolated database prerequisite was unavailable; current-candidate evidence was not run against the live database.",
+      "evidenceRefs": []
+    },
+    {
+      "criterionId": "M3-C04",
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "environmentId": "local-m3-isolated-postgres",
+      "expected": "Crash recovery at each local boundary, sweep/lease fencing, queue starvation and deadline races preserve invariants.",
+      "observed": "Isolated database prerequisite was unavailable; current-candidate evidence was not run against the live database.",
+      "evidenceRefs": []
+    },
+    {
+      "criterionId": "M3-C05",
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "environmentId": "local-m3-isolated-postgres",
+      "expected": "Unsafe MIME/size/path/media and cross-tenant/private downloads are denied deterministically.",
+      "observed": "Isolated database prerequisite was unavailable; current-candidate evidence was not run against the live database.",
+      "evidenceRefs": []
+    }
+  ],
+  "commonStandardResults": [
+    {
+      "standard": "build-and-checks",
+      "applicable": true,
+      "result": "NOT_RUN",
+      "assertions": "Frozen-lock install, production build, typecheck, lint, format and strict OpenSpec validation.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/typecheck.log",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/lint.log",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/format-check.log",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/openspec.log"
+      ]
+    },
+    {
+      "standard": "current-digests",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": "Declared source/schema/config/contract/validator/lock digests are unchanged across the verification attempt.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/digest-freshness.json",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/candidate-digests-before.log",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/candidate-digests-after.log"
+      ]
+    },
+    {
+      "standard": "owned-domain-branch-coverage",
+      "applicable": true,
+      "result": "NOT_RUN",
+      "assertions": "At least 80% aggregate branch coverage across owned modules.",
+      "evidenceRefs": []
+    },
+    {
+      "standard": "no-cloud-isolated-profile",
+      "applicable": true,
+      "result": "BLOCKED",
+      "assertions": "Disposable local PostgreSQL probes pass; no disposable database could be created on this host.",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/commands.json",
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/isolated-database-setup.log"
+      ]
+    },
+    {
+      "standard": "ui-viewport-and-keyboard",
+      "applicable": true,
+      "result": "NOT_RUN",
+      "assertions": "Current-candidate UI review at 1440x900 and 390x844 plus keyboard traversal.",
+      "evidenceRefs": []
+    },
+    {
+      "standard": "repeatability-protocol",
+      "applicable": true,
+      "result": "NOT_RUN",
+      "assertions": "Critical repeat and callback/restart evidence.",
+      "evidenceRefs": []
+    },
+    {
+      "standard": "independent-review",
+      "applicable": true,
+      "result": "NOT_RUN",
+      "assertions": "A different verifier/product reviewer and an integrator must decide after all mandatory evidence exists.",
+      "evidenceRefs": []
+    }
+  ],
+  "scenarioResults": [
+    {
+      "ids": [
+        "SC-CRD-03"
+      ],
+      "taskIds": [
+        "4.1"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Atomic reservation with server-authoritative quotes",
+      "expected": "Atomic reservation with server-authoritative quotes",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-CRD-04"
+      ],
+      "taskIds": [
+        "4.1"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Atomic reservation with server-authoritative quotes",
+      "expected": "Atomic reservation with server-authoritative quotes",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-CRD-07"
+      ],
+      "taskIds": [
+        "4.10"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Domain idempotency and transactional evidence",
+      "expected": "Domain idempotency and transactional evidence",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-CRD-08"
+      ],
+      "taskIds": [
+        "4.10"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Domain idempotency and transactional evidence",
+      "expected": "Domain idempotency and transactional evidence",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-CRD-09"
+      ],
+      "taskIds": [
+        "4.2",
+        "4.3",
+        "4.8"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Cancellation and successful-delivery settlement",
+      "expected": "Cancellation and successful-delivery settlement",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-CRD-10"
+      ],
+      "taskIds": [
+        "4.2",
+        "4.3",
+        "4.8"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Cancellation and successful-delivery settlement",
+      "expected": "Cancellation and successful-delivery settlement",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-CRD-11"
+      ],
+      "taskIds": [
+        "4.3"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Full failed-delivery refund under original terms",
+      "expected": "Full failed-delivery refund under original terms",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-CRD-12"
+      ],
+      "taskIds": [
+        "4.3"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Full failed-delivery refund under original terms",
+      "expected": "Full failed-delivery refund under original terms",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-CRD-13"
+      ],
+      "taskIds": [
+        "4.3"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "One nonrenewing seven-day compensation period",
+      "expected": "One nonrenewing seven-day compensation period",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-CRD-14"
+      ],
+      "taskIds": [
+        "4.3"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "One nonrenewing seven-day compensation period",
+      "expected": "One nonrenewing seven-day compensation period",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-CRD-15"
+      ],
+      "taskIds": [
+        "4.11"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Explainable balances and safe reconciliation",
+      "expected": "Explainable balances and safe reconciliation",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-CRD-16"
+      ],
+      "taskIds": [
+        "4.11"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Explainable balances and safe reconciliation",
+      "expected": "Explainable balances and safe reconciliation",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-01"
+      ],
+      "taskIds": [
+        "4.4",
+        "4.5",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Persistent local end-to-end generation",
+      "expected": "Persistent local end-to-end generation",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-02"
+      ],
+      "taskIds": [
+        "4.4",
+        "4.5",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Persistent local end-to-end generation",
+      "expected": "Persistent local end-to-end generation",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-03"
+      ],
+      "taskIds": [
+        "4.2",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Atomic cancellation versus paid dispatch",
+      "expected": "Atomic cancellation versus paid dispatch",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/commands.json#probe-generation-races"
+      ],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-04"
+      ],
+      "taskIds": [
+        "4.2",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Atomic cancellation versus paid dispatch",
+      "expected": "Atomic cancellation versus paid dispatch",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-05"
+      ],
+      "taskIds": [
+        "4.1",
+        "4.8",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Monotonic task state and usable-delivery success",
+      "expected": "Monotonic task state and usable-delivery success",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-06"
+      ],
+      "taskIds": [
+        "4.1",
+        "4.8",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Monotonic task state and usable-delivery success",
+      "expected": "Monotonic task state and usable-delivery success",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-07"
+      ],
+      "taskIds": [
+        "4.6",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Ambiguous submission receives bounded recovery without blind retries",
+      "expected": "Ambiguous submission receives bounded recovery without blind retries",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-08"
+      ],
+      "taskIds": [
+        "4.6",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Ambiguous submission receives bounded recovery without blind retries",
+      "expected": "Ambiguous submission receives bounded recovery without blind retries",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-09"
+      ],
+      "taskIds": [
+        "4.7",
+        "4.10",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Independent deadline sweep",
+      "expected": "Independent deadline sweep",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-10"
+      ],
+      "taskIds": [
+        "4.7",
+        "4.10",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Independent deadline sweep",
+      "expected": "Independent deadline sweep",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-11"
+      ],
+      "taskIds": [
+        "4.5",
+        "4.10",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Durable inbox/outbox with fenced ownership",
+      "expected": "Durable inbox/outbox with fenced ownership",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-12"
+      ],
+      "taskIds": [
+        "4.5",
+        "4.10",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Durable inbox/outbox with fenced ownership",
+      "expected": "Durable inbox/outbox with fenced ownership",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-13"
+      ],
+      "taskIds": [
+        "4.3",
+        "4.10",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Terminal outcomes are immutable to late observations",
+      "expected": "Terminal outcomes are immutable to late observations",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/commands.json#probe-generation-races"
+      ],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-14"
+      ],
+      "taskIds": [
+        "4.3",
+        "4.10",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Terminal outcomes are immutable to late observations",
+      "expected": "Terminal outcomes are immutable to late observations",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-15"
+      ],
+      "taskIds": [
+        "4.8",
+        "4.9"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Authorized safe input and output materialization",
+      "expected": "Authorized safe input and output materialization",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/commands.json#probe-assets"
+      ],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-16"
+      ],
+      "taskIds": [
+        "4.8",
+        "4.9"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Authorized safe input and output materialization",
+      "expected": "Authorized safe input and output materialization",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-17"
+      ],
+      "taskIds": [
+        "4.9",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Private downloads and bounded asset lifecycle",
+      "expected": "Private downloads and bounded asset lifecycle",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-18"
+      ],
+      "taskIds": [
+        "4.9",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Private downloads and bounded asset lifecycle",
+      "expected": "Private downloads and bounded asset lifecycle",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-19"
+      ],
+      "taskIds": [
+        "4.11",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Truthful progress and actionable recovery evidence",
+      "expected": "Truthful progress and actionable recovery evidence",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-GEN-20"
+      ],
+      "taskIds": [
+        "4.11",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Truthful progress and actionable recovery evidence",
+      "expected": "Truthful progress and actionable recovery evidence",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-IAM-03"
+      ],
+      "taskIds": [
+        "4.13"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Personal and team ownership boundaries",
+      "expected": "Personal and team ownership boundaries",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-IAM-04"
+      ],
+      "taskIds": [
+        "4.13"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Personal and team ownership boundaries",
+      "expected": "Personal and team ownership boundaries",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-IAM-05"
+      ],
+      "taskIds": [
+        "4.13"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Bound single-use invitations",
+      "expected": "Bound single-use invitations",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-IAM-06"
+      ],
+      "taskIds": [
+        "4.13"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Bound single-use invitations",
+      "expected": "Bound single-use invitations",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-IAM-07"
+      ],
+      "taskIds": [
+        "4.9",
+        "4.13"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Current workspace authorization on every private entrypoint",
+      "expected": "Current workspace authorization on every private entrypoint",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/commands.json#probe-api-isolation"
+      ],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "SC-IAM-08"
+      ],
+      "taskIds": [
+        "4.9",
+        "4.13"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "Current workspace authorization on every private entrypoint",
+      "expected": "Current workspace authorization on every private entrypoint",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/commands.json#probe-api-isolation"
+      ],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T01"
+      ],
+      "taskIds": [
+        "4.4",
+        "4.5",
+        "4.12",
+        "4.9",
+        "4.11"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T01.",
+      "expected": "Complete T01 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T02"
+      ],
+      "taskIds": [
+        "4.8",
+        "4.9",
+        "4.12",
+        "4.13"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T02.",
+      "expected": "Complete T02 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/commands.json#probe-api-isolation"
+      ],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T03"
+      ],
+      "taskIds": [
+        "4.9",
+        "4.12",
+        "4.13"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T03.",
+      "expected": "Complete T03 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/commands.json#probe-api-isolation"
+      ],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T05"
+      ],
+      "taskIds": [
+        "4.13"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T05.",
+      "expected": "Complete T05 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T06"
+      ],
+      "taskIds": [
+        "4.1"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T06.",
+      "expected": "Complete T06 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T07"
+      ],
+      "taskIds": [
+        "4.11"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T07.",
+      "expected": "Complete T07 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T08"
+      ],
+      "taskIds": [
+        "4.11"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T08.",
+      "expected": "Complete T08 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T09"
+      ],
+      "taskIds": [
+        "4.1",
+        "4.10",
+        "4.2",
+        "4.3",
+        "4.8",
+        "4.5",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T09.",
+      "expected": "Complete T09 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T10"
+      ],
+      "taskIds": [
+        "4.2",
+        "4.3",
+        "4.8",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T10.",
+      "expected": "Complete T10 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/commands.json#probe-generation-races"
+      ],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T11"
+      ],
+      "taskIds": [
+        "4.2",
+        "4.12",
+        "4.6"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T11.",
+      "expected": "Complete T11 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T12"
+      ],
+      "taskIds": [
+        "4.1",
+        "4.10",
+        "4.4",
+        "4.5",
+        "4.12",
+        "4.2",
+        "4.6",
+        "4.7"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T12.",
+      "expected": "Complete T12 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T13"
+      ],
+      "taskIds": [
+        "4.2",
+        "4.3",
+        "4.8",
+        "4.1",
+        "4.12",
+        "4.9"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T13.",
+      "expected": "Complete T13 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T14"
+      ],
+      "taskIds": [
+        "4.2",
+        "4.3",
+        "4.8",
+        "4.1",
+        "4.12",
+        "4.7",
+        "4.10",
+        "4.9"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T14.",
+      "expected": "Complete T14 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T15"
+      ],
+      "taskIds": [
+        "4.3"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T15.",
+      "expected": "Complete T15 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T16"
+      ],
+      "taskIds": [
+        "4.3"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T16.",
+      "expected": "Complete T16 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T17"
+      ],
+      "taskIds": [
+        "4.3"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T17.",
+      "expected": "Complete T17 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T18"
+      ],
+      "taskIds": [
+        "4.3"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T18.",
+      "expected": "Complete T18 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T19"
+      ],
+      "taskIds": [
+        "4.2",
+        "4.3",
+        "4.8",
+        "4.5",
+        "4.10",
+        "4.12"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T19.",
+      "expected": "Complete T19 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T20"
+      ],
+      "taskIds": [
+        "4.1",
+        "4.8",
+        "4.12",
+        "4.6",
+        "4.7",
+        "4.10",
+        "4.5",
+        "4.11"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T20.",
+      "expected": "Complete T20 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T49"
+      ],
+      "taskIds": [
+        "4.11",
+        "4.7",
+        "4.10",
+        "4.12",
+        "4.3"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T49.",
+      "expected": "Complete T49 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T53"
+      ],
+      "taskIds": [
+        "4.3",
+        "4.6",
+        "4.12",
+        "4.7",
+        "4.10"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T53.",
+      "expected": "Complete T53 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [
+        "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/commands.json#probe-m3-recovery"
+      ],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T60"
+      ],
+      "taskIds": [
+        "4.10"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T60.",
+      "expected": "Complete T60 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    },
+    {
+      "ids": [
+        "T61"
+      ],
+      "taskIds": [
+        "4.10",
+        "4.11"
+      ],
+      "mandatory": true,
+      "result": "NOT_RUN",
+      "scope": "M3 test case T61.",
+      "expected": "Complete T61 under the M3 local profile.",
+      "observed": "Complete current-candidate evidence was not recorded.",
+      "environmentId": "local-m3-isolated-postgres",
+      "profile": "local-mock",
+      "iteration": null,
+      "seed": null,
+      "commandRef": [],
+      "evidenceRefs": []
+    }
+  ],
+  "commands": [
+    {
+      "commandId": "candidate-digests-before",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe scripts/candidate-digests.mjs D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d\\candidate-before",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T17:24:51.245Z",
+      "endAt": "2026-09-30T17:24:51.428Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/candidate-digests-before.log"
+    },
+    {
+      "commandId": "isolated-db-migrate",
+      "invocation": "Not run; prerequisite evidence unavailable.",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T17:24:51.495Z",
+      "endAt": "2026-09-30T17:24:51.495Z",
+      "exitCode": null,
+      "signal": null,
+      "status": "BLOCKED",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/isolated-db-migrate.log"
+    },
+    {
+      "commandId": "typecheck",
+      "invocation": "corepack.cmd pnpm typecheck",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T17:24:51.496Z",
+      "endAt": "2026-09-30T17:24:53.480Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/typecheck.log"
+    },
+    {
+      "commandId": "lint",
+      "invocation": "corepack.cmd pnpm lint",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T17:24:53.481Z",
+      "endAt": "2026-09-30T17:24:53.996Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/lint.log"
+    },
+    {
+      "commandId": "format-check",
+      "invocation": "corepack.cmd pnpm format:check",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T17:24:53.997Z",
+      "endAt": "2026-09-30T17:24:54.516Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/format-check.log"
+    },
+    {
+      "commandId": "openspec",
+      "invocation": "corepack.cmd pnpm verify:openspec",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T17:24:54.518Z",
+      "endAt": "2026-09-30T17:24:56.111Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/openspec.log"
+    },
+    {
+      "commandId": "frozen-lock-install",
+      "invocation": "Not run; prerequisite evidence unavailable.",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T17:24:56.112Z",
+      "endAt": "2026-09-30T17:24:56.112Z",
+      "exitCode": null,
+      "signal": null,
+      "status": "BLOCKED",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/frozen-lock-install.log"
+    },
+    {
+      "commandId": "production-build",
+      "invocation": "Not run; prerequisite evidence unavailable.",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T17:24:56.113Z",
+      "endAt": "2026-09-30T17:24:56.113Z",
+      "exitCode": null,
+      "signal": null,
+      "status": "BLOCKED",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/production-build.log"
+    },
+    {
+      "commandId": "probe-generation-create",
+      "invocation": "Not run; prerequisite evidence unavailable.",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T17:24:56.116Z",
+      "endAt": "2026-09-30T17:24:56.116Z",
+      "exitCode": null,
+      "signal": null,
+      "status": "BLOCKED",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/probe-generation-create.log"
+    },
+    {
+      "commandId": "probe-generation-lifecycle",
+      "invocation": "Not run; prerequisite evidence unavailable.",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T17:24:56.117Z",
+      "endAt": "2026-09-30T17:24:56.117Z",
+      "exitCode": null,
+      "signal": null,
+      "status": "BLOCKED",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/probe-generation-lifecycle.log"
+    },
+    {
+      "commandId": "probe-generation-races",
+      "invocation": "Not run; prerequisite evidence unavailable.",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T17:24:56.118Z",
+      "endAt": "2026-09-30T17:24:56.118Z",
+      "exitCode": null,
+      "signal": null,
+      "status": "BLOCKED",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/probe-generation-races.log"
+    },
+    {
+      "commandId": "probe-assets",
+      "invocation": "Not run; prerequisite evidence unavailable.",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T17:24:56.119Z",
+      "endAt": "2026-09-30T17:24:56.119Z",
+      "exitCode": null,
+      "signal": null,
+      "status": "BLOCKED",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/probe-assets.log"
+    },
+    {
+      "commandId": "probe-outbox-lease",
+      "invocation": "Not run; prerequisite evidence unavailable.",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T17:24:56.119Z",
+      "endAt": "2026-09-30T17:24:56.119Z",
+      "exitCode": null,
+      "signal": null,
+      "status": "BLOCKED",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/probe-outbox-lease.log"
+    },
+    {
+      "commandId": "probe-m3-recovery",
+      "invocation": "Not run; prerequisite evidence unavailable.",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T17:24:56.120Z",
+      "endAt": "2026-09-30T17:24:56.120Z",
+      "exitCode": null,
+      "signal": null,
+      "status": "BLOCKED",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/probe-m3-recovery.log"
+    },
+    {
+      "commandId": "probe-api-isolation",
+      "invocation": "Not run; prerequisite evidence unavailable.",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T17:24:56.120Z",
+      "endAt": "2026-09-30T17:24:56.120Z",
+      "exitCode": null,
+      "signal": null,
+      "status": "BLOCKED",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/probe-api-isolation.log"
+    },
+    {
+      "commandId": "probe-team-http",
+      "invocation": "Not run; prerequisite evidence unavailable.",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T17:24:56.121Z",
+      "endAt": "2026-09-30T17:24:56.121Z",
+      "exitCode": null,
+      "signal": null,
+      "status": "BLOCKED",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/probe-team-http.log"
+    },
+    {
+      "commandId": "probe-auth-http",
+      "invocation": "Not run; prerequisite evidence unavailable.",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T17:24:56.121Z",
+      "endAt": "2026-09-30T17:24:56.121Z",
+      "exitCode": null,
+      "signal": null,
+      "status": "BLOCKED",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/probe-auth-http.log"
+    },
+    {
+      "commandId": "candidate-digests-after",
+      "invocation": "C:\\Program Files\\nodejs\\node.exe scripts/candidate-digests.mjs D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\verification-attempts\\2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d\\candidate-after",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T17:24:56.122Z",
+      "endAt": "2026-09-30T17:24:56.290Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/candidate-digests-after.log"
+    },
+    {
+      "commandId": "record-integrity",
+      "invocation": "python internal/restart/check-acceptance-record.py D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-current\\record.json --current",
+      "environmentId": "local-m3-isolated-postgres",
+      "startAt": "2026-09-30T17:24:56.298Z",
+      "endAt": "2026-09-30T17:24:56.642Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/logs/record-integrity.log"
+    }
+  ],
+  "coverage": {
+    "status": "NOT_RUN",
+    "ownedModuleManifestRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/owned-modules.json",
+    "denominator": 0,
+    "coveredBranches": 0,
+    "totalBranches": 0,
+    "percent": 0,
+    "exclusions": [
+      {
+        "path": "src/db/schema/**",
+        "reason": "Declarative database schema; PostgreSQL constraints are exercised by isolated integration probes."
+      },
+      {
+        "path": "src/app/**",
+        "reason": "HTTP/UI layers use required request and manual viewport evidence; they are not core-domain modules."
+      },
+      {
+        "path": "scripts/**",
+        "reason": "Verification drivers are not delivered business-domain behavior."
+      },
+      {
+        "path": "node_modules/**",
+        "reason": "Third-party implementation."
+      }
+    ],
+    "evidenceRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/coverage-summary.json"
+  },
+  "defects": [],
+  "externalInputs": [
+    {
+      "input": "Production email delivery",
+      "owner": "later M4/M8 integration",
+      "affectedTasks": [
+        "M4",
+        "M8"
+      ],
+      "availability": "OUT_OF_SCOPE",
+      "nextAction": "Use the authorized production provider in its later stage.",
+      "authorityRef": "internal/restart/external-inputs.json"
+    },
+    {
+      "input": "Real provider credentials and bounded spend",
+      "owner": "later M4 integration",
+      "affectedTasks": [
+        "5.1-5.10"
+      ],
+      "availability": "OUT_OF_SCOPE",
+      "nextAction": "Run the provider matrix only under approved accounts and budget.",
+      "authorityRef": "internal/restart/external-inputs.json"
+    },
+    {
+      "input": "Historical anomalous balance recovery authority",
+      "owner": "later billing/operations phase",
+      "affectedTasks": [
+        "M5",
+        "M6"
+      ],
+      "availability": "OUT_OF_SCOPE",
+      "nextAction": "Perform the separately authorized audited recovery.",
+      "authorityRef": "internal/restart/external-inputs.json"
+    },
+    {
+      "input": "Current-candidate UI viewport, keyboard and destructive owner-control review",
+      "owner": "M3 product acceptance",
+      "affectedTasks": [
+        "4.12"
+      ],
+      "availability": "UNAVAILABLE",
+      "nextAction": "Capture desktop/mobile viewport and keyboard evidence against the exact candidate.",
+      "authorityRef": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md"
+    }
+  ],
+  "commercialAuthorizationRefs": [],
+  "recovery": {
+    "rollbackPoint": "candidate source snapshot before this verification attempt",
+    "restoreEvidenceRefs": [],
+    "compatibleSchemaVersions": [
+      "migrations present in candidate"
+    ],
+    "unrelatedWorkProtection": "Probe data uses a disposable PostgreSQL database; test asset roots are outside the live demo asset directory."
+  },
+  "observation": {
+    "planRef": null,
+    "windowStart": null,
+    "windowEnd": null,
+    "windowRationale": null,
+    "behavioralBaselineDigest": "5cf616423ec9de45cc28529922f7d6e990118b9e31d41ae656bb2c8901bcfb23",
+    "monitoringEvidenceRefs": [],
+    "journeyEvidenceRefs": [],
+    "recoveryUpgradeEvidenceRefs": [],
+    "recurringWorkerAlertEvidenceRefs": [],
+    "findingRefs": []
+  },
+  "submission": {
+    "implementerId": "codex-m3-evidence",
+    "submittedAt": "2026-09-30T17:24:56.296Z",
+    "reportRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/verification-attempts/2026-09-30T17-24-51-240Z-f020e120-7c31-4811-8231-dd44a77f900d/report.md"
+  },
+  "independentReview": {
+    "reviewerId": null,
+    "reviewedAt": null,
+    "independentFromImplementer": null,
+    "decision": "NOT_RUN",
+    "reason": "Awaiting independent verifier/product review; this runner never supplies a reviewer verdict.",
+    "evidenceRefs": []
+  },
+  "integrationDecision": {
+    "integratorId": null,
+    "decidedAt": null,
+    "decision": "NOT_RUN",
+    "reason": "Awaiting integrator decision after independent review.",
+    "nextEligibleTaskIds": [],
+    "blockedTaskIds": [
+      "5.1",
+      "6.1"
+    ]
+  },
+  "invalidation": {
+    "supersedesRecordRef": null,
+    "changedDigestRefs": [],
+    "affectedStages": [],
+    "requiredReruns": [],
+    "carriedEvidence": []
+  },
+  "evidenceSummary": {
+    "mandatoryChecks": 73,
+    "passed": 1,
+    "unresolved": [
+      {
+        "id": "M3-C01",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "M3-C02",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "M3-C03",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "M3-C04",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "M3-C05",
+        "result": "NOT_RUN"
+      },
+      {
+        "result": "NOT_RUN"
+      },
+      {
+        "result": "NOT_RUN"
+      },
+      {
+        "result": "BLOCKED"
+      },
+      {
+        "result": "NOT_RUN"
+      },
+      {
+        "result": "NOT_RUN"
+      },
+      {
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-03",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-04",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-07",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-08",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-09",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-10",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-11",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-12",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-13",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-14",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-15",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-CRD-16",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-01",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-02",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-03",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-04",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-05",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-06",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-07",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-08",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-09",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-10",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-11",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-12",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-13",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-14",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-15",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-16",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-17",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-18",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-19",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-GEN-20",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-IAM-03",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-IAM-04",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-IAM-05",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-IAM-06",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-IAM-07",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "SC-IAM-08",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T01",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T02",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T03",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T05",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T06",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T07",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T08",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T09",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T10",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T11",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T12",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T13",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T14",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T15",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T16",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T17",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T18",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T19",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T20",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T49",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T53",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T60",
+        "result": "NOT_RUN"
+      },
+      {
+        "id": "T61",
+        "result": "NOT_RUN"
+      }
+    ]
+  }
+}

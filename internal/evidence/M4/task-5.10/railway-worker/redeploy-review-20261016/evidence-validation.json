@@ -1,0 +1,9 @@
+{
+  "startedAt": "2026-10-16T10:39:59.8613551+00:00",
+  "endedAt": "2026-10-16T10:40:03.6969725+00:00",
+  "formatCheckExitCode": 0,
+  "structuralAcceptanceExitCode": 0,
+  "gitDiffCheckExitCode": 0,
+  "substantiveIndependentReview": "REQUEST_CHANGES",
+  "note": "A successful structural validator does not overrule the independent review findings."
+}

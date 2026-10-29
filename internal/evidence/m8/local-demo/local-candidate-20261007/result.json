@@ -1,0 +1,25 @@
+{
+  "status": "PASS",
+  "profile": "local-candidate-fresh-install",
+  "candidateId": "local-candidate-20261007",
+  "archive": {
+    "path": "internal/evidence/m8/artifact-manifest/local-candidate-20261007/local-candidate-20261007.zip",
+    "bytes": 1689693,
+    "sha256": "52a25db7edc39fd3b15f5b075551147a4cea840e567c404eca931af21ec1635b"
+  },
+  "checks": {
+    "archiveExtraction": "PASS",
+    "requiredRuntimePaths": "PASS",
+    "frozenOfflineInstall": "PASS",
+    "productionBuild": "PASS"
+  },
+  "mockJourneyEvidence": {
+    "successFailureCancel": "internal/evidence/M6/local-20261004/final/logs/generation-lifecycle.log",
+    "credits": "internal/evidence/M6/local-20261004/logs/credit-command-review.log",
+    "mediaProbe": "internal/evidence/M6/local-20261004/final/logs/worker-container.log",
+    "privateDownload": "internal/evidence/M6/local-20261004/final/logs/assets.log"
+  },
+  "productionDeployment": "NOT_RUN",
+  "realAccounts": "NOT_PROVIDED",
+  "note": "Fresh local candidate install/build passed. This is not managed/Docker production evidence and does not promote M8."
+}

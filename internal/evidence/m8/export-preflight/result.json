@@ -1,0 +1,13 @@
+{
+  "status": "IN_PROGRESS",
+  "profile": "local-export-preflight",
+  "release": "v1",
+  "customerFiles": 302,
+  "buyerFiles": 59,
+  "positiveAllowlist": "PASS",
+  "excludedRoots": ["apps", "builder", "legacy", "internal", "openspec", ".omx", ".git", "vendor", "node_modules"],
+  "forbiddenSecretPatterns": "PASS",
+  "tests": "2/2 PASS",
+  "productionDeployment": "NOT_RUN",
+  "releaseGate": "NOT_RUN"
+}

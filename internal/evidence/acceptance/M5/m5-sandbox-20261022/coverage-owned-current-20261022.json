@@ -1,0 +1,49 @@
+{
+  "status": "PASS",
+  "profile": "current-candidate-m5-owned-modules-with-postgres-probes",
+  "generatedAt": "2026-10-22 11:21:49 UTC",
+  "branchesFound": 800,
+  "branchesHit": 650,
+  "percent": 81.25,
+  "missingSources": [],
+  "malformed": [],
+  "ownedModules": [
+    "src/adapters/billing/fake.ts",
+    "src/adapters/billing/stripe-webhooks.ts",
+    "src/config/plans.ts",
+    "src/modules/billing/checkout.ts",
+    "src/modules/billing/contracts.ts",
+    "src/modules/billing/customer-history.ts",
+    "src/modules/billing/hold-policy.ts",
+    "src/modules/billing/inbox.ts",
+    "src/modules/billing/payment-aliases.ts",
+    "src/modules/billing/queries.ts",
+    "src/modules/billing/reconcile-payment.ts",
+    "src/modules/billing/recovery.ts",
+    "src/modules/billing/refund-command.ts",
+    "src/modules/billing/refund-preview.ts",
+    "src/modules/billing/subscriptions.ts"
+  ],
+  "reports": [
+    {"path": "src/adapters/billing/fake.ts", "branchesFound": 11, "branchesHit": 5},
+    {"path": "src/adapters/billing/stripe-webhooks.ts", "branchesFound": 22, "branchesHit": 12},
+    {"path": "src/config/plans.ts", "branchesFound": 12, "branchesHit": 12},
+    {"path": "src/modules/billing/checkout.ts", "branchesFound": 128, "branchesHit": 113},
+    {"path": "src/modules/billing/contracts.ts", "branchesFound": 48, "branchesHit": 48},
+    {"path": "src/modules/billing/customer-history.ts", "branchesFound": 62, "branchesHit": 48},
+    {"path": "src/modules/billing/hold-policy.ts", "branchesFound": 6, "branchesHit": 6},
+    {"path": "src/modules/billing/inbox.ts", "branchesFound": 23, "branchesHit": 20},
+    {"path": "src/modules/billing/payment-aliases.ts", "branchesFound": 13, "branchesHit": 11},
+    {"path": "src/modules/billing/queries.ts", "branchesFound": 6, "branchesHit": 5},
+    {"path": "src/modules/billing/reconcile-payment.ts", "branchesFound": 241, "branchesHit": 207},
+    {"path": "src/modules/billing/recovery.ts", "branchesFound": 81, "branchesHit": 67},
+    {"path": "src/modules/billing/refund-command.ts", "branchesFound": 84, "branchesHit": 62},
+    {"path": "src/modules/billing/refund-preview.ts", "branchesFound": 15, "branchesHit": 6},
+    {"path": "src/modules/billing/subscriptions.ts", "branchesFound": 48, "branchesHit": 28}
+  ],
+  "exclusions": [
+    {"path": "src/adapters/billing/refunds.ts", "reason": "Operator refund provider execution belongs to M6 task 7.3."},
+    {"path": "src/modules/billing/refund-delivery.ts", "reason": "Operator refund delivery belongs to M6 task 7.3."},
+    {"path": "src/modules/billing/refund-retry.ts", "reason": "Operator refund recovery UI belongs to M6 task 7.3."}
+  ]
+}

@@ -1,0 +1,2 @@
+{"status":"PASS","ownerDenied":true,"redactedList":true,"tenantAccessAudited":true,"commandReplay":true,"creditAdjustment":true,"creditCommandScopeIsolation":true,"scopedCreditReplay":true,"soleSuperadminGuard":true,"disablement":true,"roleMutation":true,"auditRows":6}
+{"disposableDatabaseRemoved":true,"databaseName":"m6_operations_probe_38f1b195bdb849849a16da8d9b6c3b6d"}

@@ -1,0 +1,35 @@
+- banner:
+  - link "Shpitto Video SaaS home":
+    - /url: /
+    - text: Shpitto
+  - navigation "Primary navigation":
+    - link "Home":
+      - /url: /
+    - link "Docs preview":
+      - /url: /docs
+      - text: Docs
+      - generic: preview
+    - link "Dashboard planned":
+      - /url: /dashboard
+      - text: Dashboard
+      - generic: planned
+- main:
+  - paragraph: Team invitation
+  - heading "Join a workspace" [level=1]
+  - paragraph: Sign in with the invited email before accepting. Expired and mismatched tokens are rejected server-side.
+  - generic: Invitation token
+  - textbox "Invitation token": [redacted]
+  - paragraph:
+    - text: Sign in with the invited account first.
+    - link "Open sign in":
+      - /url: /login
+    - text: .
+  - button "Accept invitation"
+  - status: Invitation is invalid or expired.
+  - paragraph:
+    - text: The seeded member account is
+    - strong: demo-member@shpitto.local
+    - text: . Use the password shown on the local sign-in page.
+- contentinfo: Shpitto Video SaaS · staged implementation preview
+- button "Open Next.js Dev Tools":
+- alert

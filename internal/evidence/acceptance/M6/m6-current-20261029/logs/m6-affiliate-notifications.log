@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "environment": "isolated local Docker PostgreSQL",
+  "externalCalls": false,
+  "cases": [
+    "disabled scheduler and ingestion do not invoke provider or write affiliate inbox",
+    "authenticated bounded HTTP intake persists sanitized signal and concurrent duplicates once",
+    "unavailable/foreign readback stays pending; authoritative refresh and replay are fenced",
+    "concurrent claims perform one readback and the ordinary local worker drains the durable inbox",
+    "notification refresh cannot replace the status or version of a durable pending approval action",
+    "policy changes and expired processing leases cannot acknowledge stale evidence"
+  ]
+}

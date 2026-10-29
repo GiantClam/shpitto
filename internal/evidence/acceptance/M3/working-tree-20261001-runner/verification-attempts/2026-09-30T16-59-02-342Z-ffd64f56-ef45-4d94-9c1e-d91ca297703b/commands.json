@@ -1,0 +1,68 @@
+[
+  {
+    "commandId": "candidate-digests-before",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe scripts/candidate-digests.mjs D:\\github\\shpitto\\internal\\evidence\\acceptance\\M3\\working-tree-20261001-runner\\verification-attempts\\2026-09-30T16-59-02-342Z-ffd64f56-ef45-4d94-9c1e-d91ca297703b\\candidate-before",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T16:59:02.345Z",
+    "endAt": "2026-09-30T16:59:02.499Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-runner/verification-attempts/2026-09-30T16-59-02-342Z-ffd64f56-ef45-4d94-9c1e-d91ca297703b/logs/candidate-digests-before.log"
+  },
+  {
+    "commandId": "isolated-db-migrate",
+    "invocation": "Not run; prerequisite evidence unavailable.",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T16:59:02.561Z",
+    "endAt": "2026-09-30T16:59:02.561Z",
+    "exitCode": null,
+    "signal": null,
+    "status": "BLOCKED",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-runner/verification-attempts/2026-09-30T16-59-02-342Z-ffd64f56-ef45-4d94-9c1e-d91ca297703b/logs/isolated-db-migrate.log"
+  },
+  {
+    "commandId": "typecheck",
+    "invocation": "corepack.cmd pnpm typecheck",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T16:59:02.562Z",
+    "endAt": "2026-09-30T16:59:04.411Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-runner/verification-attempts/2026-09-30T16-59-02-342Z-ffd64f56-ef45-4d94-9c1e-d91ca297703b/logs/typecheck.log"
+  },
+  {
+    "commandId": "lint",
+    "invocation": "corepack.cmd pnpm lint",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T16:59:04.412Z",
+    "endAt": "2026-09-30T16:59:04.898Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-runner/verification-attempts/2026-09-30T16-59-02-342Z-ffd64f56-ef45-4d94-9c1e-d91ca297703b/logs/lint.log"
+  },
+  {
+    "commandId": "format-check",
+    "invocation": "corepack.cmd pnpm format:check",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T16:59:04.899Z",
+    "endAt": "2026-09-30T16:59:05.392Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-runner/verification-attempts/2026-09-30T16-59-02-342Z-ffd64f56-ef45-4d94-9c1e-d91ca297703b/logs/format-check.log"
+  },
+  {
+    "commandId": "openspec",
+    "invocation": "corepack.cmd pnpm verify:openspec",
+    "environmentId": "local-m3-isolated-postgres",
+    "startAt": "2026-09-30T16:59:05.395Z",
+    "endAt": "2026-09-30T16:59:06.909Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/M3/working-tree-20261001-runner/verification-attempts/2026-09-30T16-59-02-342Z-ffd64f56-ef45-4d94-9c1e-d91ca297703b/logs/openspec.log"
+  }
+]

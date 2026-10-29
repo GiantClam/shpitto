@@ -1,0 +1,5 @@
+$ tsc --noEmit
+Source boundary check passed for src, scripts.
+Format check passed.
+$ next build
+Compiled successfully; TypeScript and all billing routes generated.

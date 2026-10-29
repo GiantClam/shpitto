@@ -1,0 +1,9 @@
+{
+  "name": "fresh-browser-build",
+  "startedAt": "2026-10-19T06:29:24.908Z",
+  "completedAt": "2026-10-19T06:29:25.732Z",
+  "exitCode": 1,
+  "signal": null,
+  "outputRef": "internal/evidence/M3/continuation-20261019/r2/fresh-browser-build.log",
+  "outputSha256": "35fe0690bcc3ade8974a353382c3d1f99f8d318956cbd464dbda40923a709a78"
+}

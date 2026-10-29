@@ -1,0 +1,31 @@
+✔ access decisions preserve the complete E02 principal and hold matrix (0.9488ms)
+✔ billing hold rejects only new financial work and preserves permitted actions (0.3984ms)
+✔ invitation mail preserves a URL-encoded token, recipient and expiry (1.9702ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 177.5827
+ℹ start of coverage report
+ℹ --------------------------------------------------------------------
+ℹ file               | line % | branch % | funcs % | uncovered lines
+ℹ --------------------------------------------------------------------
+ℹ src                |        |          |         | 
+ℹ  adapters          |        |          |         | 
+ℹ   mail             |        |          |         | 
+ℹ    index.ts        | 100.00 |   100.00 |  100.00 | 
+ℹ    invitation.ts   | 100.00 |   100.00 |  100.00 | 
+ℹ    local.ts        | 100.00 |   100.00 |  100.00 | 
+ℹ    mailpit.ts      |  32.56 |    50.00 |    0.00 | 9-11 14-31 36-43
+ℹ  modules           |        |          |         | 
+ℹ   billing          |        |          |         | 
+ℹ    hold-policy.ts  | 100.00 |   100.00 |  100.00 | 
+ℹ   workspaces       |        |          |         | 
+ℹ    access-state.ts |  85.29 |   100.00 |   66.67 | 88-102
+ℹ --------------------------------------------------------------------
+ℹ all files          |  76.60 |    97.73 |   58.33 | 
+ℹ --------------------------------------------------------------------
+ℹ end of coverage report

@@ -1,0 +1,97 @@
+[
+  {
+    "commandId": "typecheck",
+    "invocation": "corepack pnpm typecheck",
+    "startAt": "2026-10-17T04:25:48.6787909Z",
+    "endAt": "2026-10-17T04:25:51.8971002Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/typecheck.log"
+  },
+  {
+    "commandId": "lint",
+    "invocation": "corepack pnpm lint",
+    "startAt": "2026-10-17T04:25:51.9014867Z",
+    "endAt": "2026-10-17T04:25:52.4952571Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/lint.log"
+  },
+  {
+    "commandId": "format-check",
+    "invocation": "corepack pnpm format:check",
+    "startAt": "2026-10-17T04:25:52.4954754Z",
+    "endAt": "2026-10-17T04:25:53.0402037Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/format-check.log"
+  },
+  {
+    "commandId": "verify-db-boundary",
+    "invocation": "corepack pnpm verify:db-boundary",
+    "startAt": "2026-10-17T04:25:53.0404004Z",
+    "endAt": "2026-10-17T04:25:53.5265331Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/verify-db-boundary.log"
+  },
+  {
+    "commandId": "verify-openspec",
+    "invocation": "corepack pnpm verify:openspec",
+    "startAt": "2026-10-17T04:25:53.5267321Z",
+    "endAt": "2026-10-17T04:25:56.2146753Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/verify-openspec.log"
+  },
+  {
+    "commandId": "frozen-lock-install",
+    "invocation": "corepack pnpm install --frozen-lockfile",
+    "startAt": "2026-10-17T04:25:56.2148923Z",
+    "endAt": "2026-10-17T04:25:56.8777338Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/frozen-lock-install.log"
+  },
+  {
+    "commandId": "production-build",
+    "invocation": "corepack pnpm build",
+    "startAt": "2026-10-17T04:25:56.8779347Z",
+    "endAt": "2026-10-17T04:26:09.8052813Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/production-build.log"
+  },
+  {
+    "commandId": "contracts-provider-inputs",
+    "invocation": "corepack pnpm exec node --experimental-strip-types --test tests/contracts/provider-inputs.test.ts",
+    "startAt": "2026-10-17T04:26:09.8054276Z",
+    "endAt": "2026-10-17T04:26:10.6945612Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/contracts-provider-inputs.log"
+  },
+  {
+    "commandId": "contracts-billing-contracts",
+    "invocation": "corepack pnpm exec node --experimental-strip-types --test tests/contracts/billing-contracts.test.ts",
+    "startAt": "2026-10-17T04:26:10.6947063Z",
+    "endAt": "2026-10-17T04:26:11.2407767Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/contracts-billing-contracts.log"
+  },
+  {
+    "commandId": "provider-webhook-replay",
+    "invocation": "corepack pnpm exec node --experimental-strip-types --test tests/integration/provider-webhook-replay.test.ts",
+    "startAt": "2026-10-17T04:26:11.2409107Z",
+    "endAt": "2026-10-17T04:40:00.000Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay-final.log",
+    "priorAttempt": {
+      "status": "FAIL_ENVIRONMENT",
+      "outputRef": "internal/evidence/M4/task-5.10/railway-worker/revalidation-20261017/quality/provider-webhook-replay.log",
+      "reason": "The required local PostgreSQL port was not running; no application assertion was executed."
+    }
+  }
+]

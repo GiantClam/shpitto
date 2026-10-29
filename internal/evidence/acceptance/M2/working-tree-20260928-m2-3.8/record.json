@@ -1,0 +1,352 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "IMPLEMENTATION_ACCEPTANCE",
+  "changeId": "restart-shpitto-video-saas",
+  "stageId": "M2",
+  "checkpointId": null,
+  "gateTaskId": "3.8",
+  "status": "PASS",
+  "candidateId": "working-tree-20260928-m2-3.8",
+  "createdAt": "2026-09-28T13:00:00Z",
+  "updatedAt": "2026-09-28T13:55:00Z",
+  "policy": {
+    "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+    "sha256": "b597a035c61da01296d71979c1c16c4136f78c3e3d523b55158f0a2ca3de4ff0"
+  },
+  "prerequisites": [
+    {
+      "taskId": "3.7",
+      "requiredProfile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260928-m2-3.7",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.7/record.json",
+        "internal/restart/m2-task-3.7-evidence.md"
+      ]
+    }
+  ],
+  "candidate": {
+    "sourceCommit": "6ad44be7b6f12fe028637f0300040bada826c47d",
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "0f42822c16ead2848bf8d7562be741e2e74ae81ad6096cccd215019a31abb129",
+    "schemaSha256": "4bf7eb3fa35a8df5574097b1bbff38f3bddb6152830e889b0060728cdac00f88",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+    "configurationSha256": "26d8bed9c6d5df1c47675f78c99f3465f02a1d7c92e79f5d162e5c46f705a472",
+    "contractSha256": "b8ef3892ca9fffb41902009c9388dc560b2621175de1efcb5bc024f2051cd6eb",
+    "validatorSha256": "4efb417547e9b8725c57e90986e65c2041390d20e5ab77b6f85270f71c0e8d36",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF",
+    "digestInputs": {
+      "sourceTree": [
+        "src",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".dockerignore",
+        ".env.example",
+        "src/config/env.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile"
+      ],
+      "contract": [
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json"
+      ],
+      "validator": [
+        "scripts",
+        "internal/restart/check-acceptance-record.py"
+      ]
+    }
+  },
+  "environments": [
+    {
+      "environmentId": "local-m2-command-contract",
+      "profile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "toolVersions": {
+        "node": "24.15.0",
+        "pnpm": "12.6.0",
+        "docker": "29.8.0",
+        "postgres": "15-alpine",
+        "python": "3.x",
+        "openspec": "1.0"
+      },
+      "accountOrProgram": "none",
+      "effectiveLimits": "No provider, payment, payout, publication or hosted-service calls",
+      "fixtureOrSeed": "durable command replay fixture with large bigint quantity, mismatched payload and same-origin request cases",
+      "clockMode": "controlled probe clock",
+      "sanitationNotes": "Generated IDs and local credentials omitted"
+    }
+  ],
+  "criterionResults": [
+    {
+      "criterionId": "3.8-C01",
+      "environmentId": "local-m2-command-contract",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Private mutations require authenticated session, trusted same-origin/CSRF signal and bounded idempotency key; errors do not expose raw exceptions",
+      "observed": "Mutation routes call the same-origin gate and command-key parser; safe ok/error envelopes and generic internal failures are defined, and the probe rejects a forged origin",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.8-evidence.md",
+        "src/contracts/http.ts",
+        "src/app/api/workspaces/_shared.ts"
+      ]
+    },
+    {
+      "criterionId": "3.8-C02",
+      "environmentId": "local-m2-command-contract",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Large integer quantities serialize exactly as decimal strings and public API-key generation surfaces remain absent",
+      "observed": "Bigint serialization and decimal-integer validation passed the command-contract probe; API docs retain the session-only boundary",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.8-evidence.md",
+        "src/contracts/http.ts",
+        "src/app/docs/api/page.tsx",
+        "scripts/probe-command-contract.ts"
+      ]
+    },
+    {
+      "criterionId": "3.8-C03",
+      "environmentId": "local-m2-command-contract",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "A committed command result replays after deduplication expiry and mismatched semantic payload reuse is rejected",
+      "observed": "The disposable PostgreSQL probe executed one command, replayed its stored result without invoking the business effect, rejected a changed payload, verified key-order-independent hashes and serialized a two-transaction same-key race to one effect with replay flags [false,true]",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.8-evidence.md",
+        "src/db/schema/commands.ts",
+        "src/db/migrations/0006_command_identity.sql",
+        "src/modules/shared/commands.ts",
+        "scripts/probe-command-contract.ts"
+      ]
+    }
+  ],
+  "commonStandardResults": [
+    {
+      "standard": "scope",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Session DTO, CSRF/same-origin, decimal-string and durable command identity only; credit ledger, audit/outbox and generation settlement remain later tasks"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.8-evidence.md"
+      ]
+    },
+    {
+      "standard": "build-and-checks",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Typecheck, lint, format, full verify, migration foundation and registered PostgreSQL probes passed"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.8-evidence.md"
+      ]
+    },
+    {
+      "standard": "coverage",
+      "applicable": true,
+      "result": "NOT_APPLICABLE",
+      "reason": "M2 coverage denominator is established at task 3.12; command identity transitions are covered by the disposable PostgreSQL probe",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.8-evidence.md"
+      ]
+    },
+    {
+      "standard": "defects",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "No open P0/P1 defect is recorded for task 3.8"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.8-evidence.md"
+      ]
+    },
+    {
+      "standard": "isolation-security",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Command scope binds actor/workspace/name/key, forged origin is denied and generic errors contain no raw provider or secret data"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.8-evidence.md",
+        "src/contracts/http.ts"
+      ]
+    },
+    {
+      "standard": "evidence-and-recovery",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Current candidate digests, migration version 7 and command replay/mismatch outcomes are recorded"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.8-evidence.md",
+        "scripts/probe-command-contract.ts"
+      ]
+    }
+  ],
+  "scenarioResults": [
+    {
+      "ids": [
+        "T02",
+        "T09",
+        "T57",
+        "SC-IAM-13",
+        "SC-IAM-14",
+        "SC-CRD-07"
+      ],
+      "profile": "local-m2-command-contract",
+      "environmentId": "local-m2-command-contract",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Unauthenticated/forged-origin mutations have no business effect, quantities remain exact decimal strings and semantic command replay is durable",
+      "observed": "Command-contract probe passed replay, mismatch rejection, bigint serialization, quantity boundary and stable hash assertions; route source inspection confirms same-origin and idempotency-key enforcement",
+      "iteration": "single generated fixture run",
+      "commandRef": "m2-3.8-command-contract-probe",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.8-evidence.md",
+        "scripts/probe-command-contract.ts"
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "commandId": "m2-3.8-command-contract-probe",
+      "invocation": "DATABASE_URL=<redacted-local-credential> corepack pnpm db:probe:command-contract",
+      "environmentId": "local-m2-command-contract",
+      "startAt": "2026-09-28T12:50:00Z",
+      "endAt": "2026-09-28T12:51:00Z",
+      "exitCode": 0,
+      "assertionRef": "replayed=true, mismatchRejected=true, bigintAsDecimalString=true, quantityBoundaryRejected=true, stableSemanticHash=true, forgedOriginRejected=true, raceEffects=1, raceReplayed=[false,true]"
+    },
+    {
+      "commandId": "m2-3.8-m2-foundation-probe",
+      "invocation": "DATABASE_URL=<redacted-local-credential> corepack pnpm db:probe:m2",
+      "environmentId": "local-m2-command-contract",
+      "startAt": "2026-09-28T12:51:00Z",
+      "endAt": "2026-09-28T12:52:00Z",
+      "exitCode": 0,
+      "assertionRef": "seven migrations apply idempotently and existing tenant-lineage invariants remain PASS"
+    },
+    {
+      "commandId": "m2-3.8-verify",
+      "invocation": "corepack pnpm verify",
+      "environmentId": "local-m2-command-contract",
+      "startAt": "2026-09-28T12:53:00Z",
+      "endAt": "2026-09-28T12:56:00Z",
+      "exitCode": 0,
+      "assertionRef": "full root verification and Next build passed"
+    },
+    {
+      "commandId": "m2-3.8-record-check",
+      "invocation": "python -B internal/restart/check-acceptance-record.py internal/evidence/acceptance/M2/working-tree-20260928-m2-3.8/record.json",
+      "environmentId": "local-m2-command-contract",
+      "startAt": "2026-09-28T12:57:00Z",
+      "endAt": "2026-09-28T12:57:01Z",
+      "exitCode": 0,
+      "assertionRef": "record schema and digest shape check"
+    }
+  ],
+  "coverage": {
+    "status": "NOT_APPLICABLE",
+    "reason": "M2 coverage denominator is established at task 3.12",
+    "ownedModuleManifestRef": null,
+    "denominator": null,
+    "coveredBranches": null,
+    "totalBranches": null,
+    "percent": null,
+    "exclusions": [],
+    "evidenceRef": "internal/restart/m2-task-3.8-evidence.md"
+  },
+  "defects": [],
+  "externalInputs": [],
+  "commercialAuthorizationRefs": [],
+  "recovery": {
+    "rollbackPoint": "6ad44be7b6f12fe028637f0300040bada826c47d plus current uncommitted M2 patch",
+    "restoreEvidenceRefs": [
+      "internal/restart/m2-task-3.8-evidence.md"
+    ],
+    "compatibleSchemaVersions": [
+      "domain=7"
+    ],
+    "unrelatedWorkProtection": "Generated command probe users, workspaces and command results are cleaned up in the disposable database"
+  },
+  "observation": {
+    "planRef": "internal/restart/verification-plan.md",
+    "windowStart": null,
+    "windowEnd": null,
+    "windowRationale": "Task-level command contract probe; no production traffic or hosted-service behavior is claimed",
+    "behavioralBaselineDigest": null,
+    "monitoringEvidenceRefs": [],
+    "journeyEvidenceRefs": [],
+    "recoveryUpgradeEvidenceRefs": [],
+    "recurringWorkerAlertEvidenceRefs": [],
+    "findingRefs": []
+  },
+  "submission": {
+    "implementerId": "root",
+    "submittedAt": "2026-09-28T13:00:00Z",
+    "reportRef": "internal/restart/m2-task-3.8-evidence.md"
+  },
+  "independentReview": {
+    "reviewerId": "m2-gpt6-sol-review-20260928-3.8",
+    "reviewedAt": "2026-09-28T13:54:00Z",
+    "independentFromImplementer": true,
+    "decision": "PASS",
+    "reason": "Independent gpt-6-sol review recomputed all six current candidate digests exactly, reran the acceptance checker, command-contract probe, M2 foundation probe and full repository verification, and confirmed durable replay, semantic mismatch rejection, decimal-string serialization, forged-origin rejection and the two-transaction race proof with one business effect. Existing mutation routes that only validate command keys and static branches that retain legacy error shapes are explicit follow-up boundaries; no 3.9 credit-ledger claim is made.",
+    "evidenceRefs": [
+      "internal/restart/m2-task-3.8-evidence.md",
+      "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.8/record.json",
+      "src/contracts/http.ts",
+      "src/modules/shared/commands.ts",
+      "src/db/schema/commands.ts",
+      "scripts/probe-command-contract.ts"
+    ]
+  },
+  "integrationDecision": {
+    "integratorId": "root",
+    "decidedAt": "2026-09-28T13:55:00Z",
+    "decision": "PASS",
+    "reason": "The exact current candidate passed independent gpt-6-sol review, all digest and record checks, the command-contract race probe, the M2 migration probe and full repository verification. Task 3.8 is accepted and task 3.9 is now eligible; the M2 gate remains open. Durable command persistence is directly proven for the integrated team-workspace command seam; remaining route migrations and uniform legacy error branches stay visible as follow-up work.",
+    "nextEligibleTaskIds": [
+      "3.9"
+    ],
+    "blockedTaskIds": []
+  },
+  "invalidation": {
+    "supersedesRecordRef": null,
+    "changedDigestRefs": [],
+    "affectedStages": [],
+    "requiredReruns": [],
+    "carriedEvidence": []
+  }
+}

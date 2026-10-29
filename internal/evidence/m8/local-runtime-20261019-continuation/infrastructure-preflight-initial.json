@@ -1,0 +1,44 @@
+{
+  "startedAt": "2026-10-19T06:06:14.963Z",
+  "scope": "disposable-local-postgresql-infrastructure-only",
+  "requestedContainer": "shpitto-completion-pg-20261007",
+  "container": "shpitto-completion-pg-20261019",
+  "endpoint": {
+    "host": "127.0.0.1",
+    "port": 55432,
+    "database": "postgres"
+  },
+  "recovery": {
+    "desktopLaunchedHiddenBeforePreflight": true,
+    "requestedContainerAbsent": true,
+    "replacementFoundWithCurrentTaskLabel": true,
+    "existingReplacementStarted": true,
+    "existingVolumesPreserved": true,
+    "containersCreated": 0,
+    "volumesCreated": 0
+  },
+  "production": false,
+  "paidOrRemoteProvidersAccessed": false,
+  "candidatesPackagedOrExecuted": false,
+  "credentialsRetained": false,
+  "checks": {
+    "localDockerEngine": "PASS",
+    "probeCleanup": "PASS"
+  },
+  "docker": {
+    "context": "desktop-linux",
+    "serverVersion": "29.8.1"
+  },
+  "status": "BLOCKED",
+  "error": "Container local DB setting differs from compose.\n+ actual - expected\n\n+ 'postgres'\n- 'shpitto'\n",
+  "cleanup": {
+    "isolatedDatabasesCreated": [],
+    "allProbeDatabasesDropped": true,
+    "temporaryDumpRemoved": false,
+    "containerLeftRunning": true,
+    "existingDatabaseRowsChanged": false,
+    "volumesDeleted": false,
+    "errors": []
+  },
+  "completedAt": "2026-10-19T06:06:15.970Z"
+}

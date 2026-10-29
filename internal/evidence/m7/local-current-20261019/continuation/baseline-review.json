@@ -1,0 +1,956 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "independent-source-baseline-review",
+  "decision": "PASS",
+  "result": "INDEPENDENT REVIEW PASS",
+  "reviewerId": "codex:01a152bc-169c-7142-9580-20679ffd80e5",
+  "reviewerAgent": "Codex (GPT-6)",
+  "implementerId": "release-engineering-local",
+  "independentFromImplementer": true,
+  "reviewedAt": "2026-10-19T06:31:26.650Z",
+  "scope": {
+    "sourceRoot": "D:/github/shpitto",
+    "trustedRoot": "D:/github/_tmp/shpitto-trusted-20261019-hoisted-r1",
+    "description": "Independent review of the current uncommitted trusted validation, release entrypoints, classification and retained-evidence controls, pinned standalone boundary scripts, policy test overlays, governed-skills specification and workflow documentation.",
+    "baselineOnly": true,
+    "candidateApproved": false,
+    "gatePromoted": false,
+    "sourceEditsByReviewer": false,
+    "initialAuthenticBaseline": true,
+    "priorSetupPinUsedAsTrustRoot": false
+  },
+  "findings": [],
+  "reviewedFiles": [
+    {
+      "path": "scripts/lib/trusted-validation.mjs",
+      "sha256": "6e1f1ed7fa3811b7d5c35a5717b61a9eca8ca9e74a05a332c13db54fada5913b"
+    },
+    {
+      "path": "scripts/lib/trusted-validation.d.mts",
+      "sha256": "5f08def0f28a1a0fc48ae2bf1b7d364273224554432b7163643fe9422f78d7e4"
+    },
+    {
+      "path": "scripts/validate-change.ts",
+      "sha256": "179d3e747aab36bbc89ac74f3a4ddcf04ce5252533c06a325360dccd8067cc5f"
+    },
+    {
+      "path": "scripts/export-release.ts",
+      "sha256": "45a6b4159ab997458b7fce07d550dea07a2a7b1955be58c06bca415f35dcc48a"
+    },
+    {
+      "path": "scripts/deploy-release.ts",
+      "sha256": "ea9cfc073f0660d107d4ff81ccb59effde838c718b3d2476cbef5d91cfb22858"
+    },
+    {
+      "path": "scripts/check-source-boundaries.mjs",
+      "sha256": "f9311cd66a60a3a574dba5302666b418a1de3fc29d0412b3bb2d80251df94c2f"
+    },
+    {
+      "path": "scripts/format-check.mjs",
+      "sha256": "4d1114d90f137300db19a0a9a508ffdfc25ef996b88c8d35caab4eb6259b59ce"
+    },
+    {
+      "path": "scripts/check-config.mjs",
+      "sha256": "0e429cfaf667a5b07d30b597e4a7bc95e5626b66574b67af9ec837c5888f29a8"
+    },
+    {
+      "path": "scripts/check-db-boundaries.mjs",
+      "sha256": "79aa2b50763194bf874228cef207cb134374fd70626fccedc2f2c04220242937"
+    },
+    {
+      "path": "scripts/check-local-services.mjs",
+      "sha256": "cf0da244cd62a3dcc3aeca75b84c7e295ae2a77bf65e7d7280aab1e016a0c7b8"
+    },
+    {
+      "path": "scripts/check-shell-boundaries.mjs",
+      "sha256": "76a1dae4e6acb0f2b5c54b2afed893a55ccf8fa6a733cfe98099364ab968ea47"
+    },
+    {
+      "path": "scripts/check-content-boundaries.mjs",
+      "sha256": "80f0ac21a3442421b20a0e7c88c3bc7a6094e493b0865cd254d7d3d7d75462cb"
+    },
+    {
+      "path": "tooling/lint-policy.json",
+      "sha256": "a05e5fbe3ca43e6d409a25fd5c7adc37bbe4dacd11d35a48c6191b41b704b9c3"
+    },
+    {
+      "path": "tooling/format-policy.json",
+      "sha256": "a31771c0840c332d9529e662bd4fd9a3c685a6bf2fbced3fc0e62cfa6a0aa2a9"
+    },
+    {
+      "path": ".shpitto/contracts/validation-policy.json",
+      "sha256": "205752b6354102fa48f2eb88fe9c777ddc37a87158c65fe003ac14e19c120473"
+    },
+    {
+      "path": ".shpitto/contracts/validation-footprint.json",
+      "sha256": "c1a282f0c1bb294834eb36f8b4be1404072ae75265d2103f63fe15d21ec2c3ac"
+    },
+    {
+      "path": ".shpitto/contracts/validation-evidence.json",
+      "sha256": "ec34c301948b13669aaa8524b8d3957596eb7c56ff2704cda3fa1e1d36f6c38d"
+    },
+    {
+      "path": ".shpitto/contracts/change-manifest.json",
+      "sha256": "e14da5e064050337d02bc142ef2b2a3a12d450f3321990c343856b34aad1653d"
+    },
+    {
+      "path": ".shpitto/contracts/protected-paths.json",
+      "sha256": "b259fea79ac29bafb88653e1ba9381da47891d101584bcee6412bef395867e6d"
+    },
+    {
+      "path": "tests/unit/trusted-validation.test.ts",
+      "sha256": "93256b5f8395e772d3b8f40749c61308efc765ca97913350104863a7461d2d6c"
+    },
+    {
+      "path": "tests/unit/governed-skills.test.ts",
+      "sha256": "10c570f37311eb261f0a3a92e30cbf7fa2b651cf2e536aeae9e00ebb418bcca9"
+    },
+    {
+      "path": "tests/unit/m2-policy.test.ts",
+      "sha256": "20f559b9d4f1134a1b60e9b427f5a16e040f85823f79ca487616eefae082c8a5"
+    },
+    {
+      "path": "tests/unit/generation-state.test.ts",
+      "sha256": "b7619a40d7d723d93e4c0448382129daddf838789689628c46d057a2899b2e08"
+    },
+    {
+      "path": "tests/unit/assets-authorization.test.ts",
+      "sha256": "f019b8de282bc774a903a8d8ec18d30d1070658d3c357bbad3d28256f24ee606"
+    },
+    {
+      "path": "tests/unit/credit-reversals.test.ts",
+      "sha256": "793c5bb3c1cc86a8bb77f1e5a5ebd577253b411ac87ed6222a6070fd3822a7fd"
+    },
+    {
+      "path": "tests/unit/creation-draft.test.ts",
+      "sha256": "bc5377f1f63ab864df84efb84decdb49bb0d68efd6da7b2e9b95f64bba4fc9bd"
+    },
+    {
+      "path": "openspec/changes/restart-shpitto-video-saas/specs/governed-skills/spec.md",
+      "sha256": "9dcdc55106c8ea081cadeabe5981c234e2ec2ceeec9bb03fcc794fb85cae5554"
+    },
+    {
+      "path": "content/docs/v1/skills/overview.mdx",
+      "sha256": "b8acdf5fdf9ee2fa4c2af5d256d8114a2c09b869001cf385e099aee7b77a9e00"
+    },
+    {
+      "path": "docs/buyer/customization.md",
+      "sha256": "3030f7e8e2e02336273dc510e513877713af4d24c65f0f313d92f33821115895"
+    }
+  ],
+  "reviewedPin": {
+    "path": "D:/github/_tmp/shpitto-m7-reviewed-pin-20261019-r2.json",
+    "proposalSha256": "22b12f2cc24e94bf002697e942ccfba35f29503ae4c19cf474dcf5e8852e8dfc",
+    "policyVersion": "v1-2026-10-19-r2",
+    "files": [
+      {
+        "path": "scripts/lib/trusted-validation.mjs",
+        "sha256": "6e1f1ed7fa3811b7d5c35a5717b61a9eca8ca9e74a05a332c13db54fada5913b",
+        "mode": "required"
+      },
+      {
+        "path": "scripts/lib/trusted-validation.d.mts",
+        "sha256": "5f08def0f28a1a0fc48ae2bf1b7d364273224554432b7163643fe9422f78d7e4",
+        "mode": "required"
+      },
+      {
+        "path": "scripts/validate-change.ts",
+        "sha256": "179d3e747aab36bbc89ac74f3a4ddcf04ce5252533c06a325360dccd8067cc5f",
+        "mode": "required"
+      },
+      {
+        "path": "scripts/export-release.ts",
+        "sha256": "45a6b4159ab997458b7fce07d550dea07a2a7b1955be58c06bca415f35dcc48a",
+        "mode": "required"
+      },
+      {
+        "path": "scripts/deploy-release.ts",
+        "sha256": "ea9cfc073f0660d107d4ff81ccb59effde838c718b3d2476cbef5d91cfb22858",
+        "mode": "required"
+      },
+      {
+        "path": ".shpitto/contracts/validation-policy.json",
+        "sha256": "205752b6354102fa48f2eb88fe9c777ddc37a87158c65fe003ac14e19c120473",
+        "mode": "required"
+      },
+      {
+        "path": ".shpitto/contracts/validation-footprint.json",
+        "sha256": "c1a282f0c1bb294834eb36f8b4be1404072ae75265d2103f63fe15d21ec2c3ac",
+        "mode": "required"
+      },
+      {
+        "path": ".shpitto/contracts/validation-evidence.json",
+        "sha256": "ec34c301948b13669aaa8524b8d3957596eb7c56ff2704cda3fa1e1d36f6c38d",
+        "mode": "required"
+      },
+      {
+        "path": "tooling/lint-policy.json",
+        "sha256": "a05e5fbe3ca43e6d409a25fd5c7adc37bbe4dacd11d35a48c6191b41b704b9c3",
+        "mode": "required"
+      },
+      {
+        "path": "tooling/format-policy.json",
+        "sha256": "a31771c0840c332d9529e662bd4fd9a3c685a6bf2fbced3fc0e62cfa6a0aa2a9",
+        "mode": "required"
+      },
+      {
+        "path": "scripts/check-source-boundaries.mjs",
+        "sha256": "f9311cd66a60a3a574dba5302666b418a1de3fc29d0412b3bb2d80251df94c2f",
+        "mode": "required"
+      },
+      {
+        "path": "scripts/format-check.mjs",
+        "sha256": "4d1114d90f137300db19a0a9a508ffdfc25ef996b88c8d35caab4eb6259b59ce",
+        "mode": "required"
+      },
+      {
+        "path": "scripts/check-config.mjs",
+        "sha256": "0e429cfaf667a5b07d30b597e4a7bc95e5626b66574b67af9ec837c5888f29a8",
+        "mode": "required"
+      },
+      {
+        "path": "scripts/check-db-boundaries.mjs",
+        "sha256": "79aa2b50763194bf874228cef207cb134374fd70626fccedc2f2c04220242937",
+        "mode": "required"
+      },
+      {
+        "path": "scripts/check-local-services.mjs",
+        "sha256": "cf0da244cd62a3dcc3aeca75b84c7e295ae2a77bf65e7d7280aab1e016a0c7b8",
+        "mode": "required"
+      },
+      {
+        "path": "scripts/check-shell-boundaries.mjs",
+        "sha256": "76a1dae4e6acb0f2b5c54b2afed893a55ccf8fa6a733cfe98099364ab968ea47",
+        "mode": "required"
+      },
+      {
+        "path": "scripts/check-content-boundaries.mjs",
+        "sha256": "80f0ac21a3442421b20a0e7c88c3bc7a6094e493b0865cd254d7d3d7d75462cb",
+        "mode": "required"
+      },
+      {
+        "path": "tests/unit/m2-policy.test.ts",
+        "sha256": "20f559b9d4f1134a1b60e9b427f5a16e040f85823f79ca487616eefae082c8a5",
+        "mode": "overlay"
+      },
+      {
+        "path": "tests/unit/generation-state.test.ts",
+        "sha256": "b7619a40d7d723d93e4c0448382129daddf838789689628c46d057a2899b2e08",
+        "mode": "overlay"
+      },
+      {
+        "path": "tests/unit/assets-authorization.test.ts",
+        "sha256": "f019b8de282bc774a903a8d8ec18d30d1070658d3c357bbad3d28256f24ee606",
+        "mode": "overlay"
+      },
+      {
+        "path": "tests/unit/credit-reversals.test.ts",
+        "sha256": "793c5bb3c1cc86a8bb77f1e5a5ebd577253b411ac87ed6222a6070fd3822a7fd",
+        "mode": "overlay"
+      },
+      {
+        "path": "tests/unit/creation-draft.test.ts",
+        "sha256": "bc5377f1f63ab864df84efb84decdb49bb0d68efd6da7b2e9b95f64bba4fc9bd",
+        "mode": "overlay"
+      },
+      {
+        "path": "node_modules/next/dist/bin/next",
+        "sha256": "e4c6cfdeac3c9e4e260d2a622d6af9565c49d8017c3d55e8dade07ed58fbe9de",
+        "mode": "tool"
+      },
+      {
+        "path": "node_modules/typescript/bin/tsc",
+        "sha256": "8d5fa5bd883fec0979fc2004f1fe1d99aef40570155d550eadc0b03b55513bf0",
+        "mode": "tool"
+      }
+    ],
+    "synchronization": {
+      "capturedAt": "2026-10-19T06:29:34.575Z",
+      "requiredAndOverlayFilesMatchSource": true,
+      "allEntriesRegularAndConfined": true,
+      "pinOutsideSourceTrustedStageAndEvidenceRoots": true,
+      "pairwiseRootSeparation": true,
+      "discrepancies": []
+    },
+    "dependencyLockSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35",
+    "dependencyTreeSha256": "3d28bccfa1df40207524eb0b41853d92d0b58c7383cd6c2e569ce9c80fb490b3",
+    "approvalTransition": "Replace the unapproved NOT_RUN proposal with this reviewer's independently verified baseline PASS. No candidateReview is authorized."
+  },
+  "verification": {
+    "nodeVersion": "v24.15.0",
+    "targetedReviewTests": {
+      "command": "node --experimental-strip-types --test tests/unit/trusted-validation.test.ts tests/unit/governed-skills.test.ts",
+      "exitCode": 0,
+      "tests": 32,
+      "passed": 32,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "output": "✔ catalog contains twelve canonical Skills with required sections (2.0404ms)\n✔ protected paths require engineering classification (0.4209ms)\n✔ validation, release and tooling controls require engineering classification (0.2833ms)\n✔ Windows path aliases cannot bypass protected classification (0.4259ms)\n✔ protected file classification must also reclassify the overall workflow (0.2214ms)\n✔ manifest evidence requires retained outputs and a passing record status (0.8063ms)\n✔ evidence rejects stale digests and accepts a complete independent record (0.241ms)\n✔ matching digest values must each be SHA-256 strings in both evidence and current candidate (0.4653ms)\n✔ evidence metadata requires a parseable date string and a canonical nonempty policy identity (0.1767ms)\n✔ release evidence requires every mandatory check to succeed with a unique identity and output (0.2564ms)\n✔ release review requires an explicit PASS from an identified reviewer distinct from the implementer (0.1825ms)\n✔ release evidence binds both explicit candidate identities even when all six digests match (0.1265ms)\n✔ release export and deployment reject JSON-only evidence without trusted staging context (0.3166ms)\n✔ rollback blocks overlaps and permits a scoped patch (0.083ms)\n✔ docs manifest exposes published-only versioned sections (3.1587ms)\n✔ docs manifest rejects traversal paths instead of reading outside the release source (4.0254ms)\n✔ trusted checks execute candidate modules and approval binds freshly measured staging (4097.9871ms)\n✔ trusted dependency bytes and candidate lockfile must match the reviewed baseline (45.7864ms)\n✔ successful early exit and forged stdout cannot replace completed trusted tests (1428.1902ms)\n✔ generated directory names nested in shipped source remain fingerprinted (1443.4277ms)\n✔ candidate validator, policy and suite edits cannot self-certify (133.643ms)\n✔ pin integrity and realpath separation are mandatory (64.9702ms)\n✔ both external release entrypoints require retained output and reexecute candidate checks (4141.1675ms)\n✔ forged records, tampered outputs and reused staging identities are rejected (1347.6195ms)\n✔ every buyer fingerprint class is measured rather than trusted from old JSON (1534.7836ms)\n✔ policy controls cannot be omitted from the reviewed pin (42.0407ms)\n✔ candidate code cannot rewrite a later trusted check inside the snapshot (327.3407ms)\n✔ candidate code cannot rewrite the private dependency snapshot between trusted checks (316.0182ms)\n✔ candidate identity and externally supplied pin digest are bound (1410.263ms)\n✔ dependency junctions and their private materialized copies have the same fingerprint (43.7908ms)\n✔ new files introduced into a measured snapshot fail before subsequent checks (334.4739ms)\n✔ rebaseline requires retained independent proof bound to both policies and replacement files (1367.0854ms)\nℹ tests 32\nℹ suites 0\nℹ pass 32\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 18264.8427\n"
+    },
+    "manifestClassificationProbes": {
+      "status": "PASS",
+      "capturedAt": "2026-10-19T06:24:57.597Z",
+      "nodeVersion": "v24.15.0",
+      "rejectedProbes": 17,
+      "positiveEngineeringCase": "PASS",
+      "probes": [
+        {
+          "id": "protected-path-or-invalid-alias",
+          "input": {
+            "release": "v1",
+            "baseline": "x",
+            "dirtyWork": [],
+            "intent": "visual",
+            "classification": "presentation",
+            "changedFiles": [
+              {
+                "path": "SRC/DB/schema.ts",
+                "classification": "presentation",
+                "reason": "theme"
+              }
+            ],
+            "checks": [],
+            "recovery": {
+              "patchRef": "patch.diff",
+              "preservesUnrelatedWork": true,
+              "overlaps": []
+            }
+          },
+          "actualErrors": [
+            "protected path requires engineering-change classification: SRC/DB/schema.ts",
+            "overall workflow requires engineering-change classification: SRC/DB/schema.ts"
+          ]
+        },
+        {
+          "id": "protected-path-or-invalid-alias",
+          "input": {
+            "release": "v1",
+            "baseline": "x",
+            "dirtyWork": [],
+            "intent": "visual",
+            "classification": "presentation",
+            "changedFiles": [
+              {
+                "path": "D:\\github\\shpitto\\src\\db\\schema.ts",
+                "classification": "presentation",
+                "reason": "theme"
+              }
+            ],
+            "checks": [],
+            "recovery": {
+              "patchRef": "patch.diff",
+              "preservesUnrelatedWork": true,
+              "overlaps": []
+            }
+          },
+          "actualErrors": [
+            "changed file must use an unambiguous repository-relative path: D:\\github\\shpitto\\src\\db\\schema.ts"
+          ]
+        },
+        {
+          "id": "protected-path-or-invalid-alias",
+          "input": {
+            "release": "v1",
+            "baseline": "x",
+            "dirtyWork": [],
+            "intent": "visual",
+            "classification": "presentation",
+            "changedFiles": [
+              {
+                "path": "\\\\server\\share\\src\\db\\schema.ts",
+                "classification": "presentation",
+                "reason": "theme"
+              }
+            ],
+            "checks": [],
+            "recovery": {
+              "patchRef": "patch.diff",
+              "preservesUnrelatedWork": true,
+              "overlaps": []
+            }
+          },
+          "actualErrors": [
+            "changed file must use an unambiguous repository-relative path: \\\\server\\share\\src\\db\\schema.ts"
+          ]
+        },
+        {
+          "id": "protected-path-or-invalid-alias",
+          "input": {
+            "release": "v1",
+            "baseline": "x",
+            "dirtyWork": [],
+            "intent": "visual",
+            "classification": "presentation",
+            "changedFiles": [
+              {
+                "path": "D:src/db/schema.ts",
+                "classification": "presentation",
+                "reason": "theme"
+              }
+            ],
+            "checks": [],
+            "recovery": {
+              "patchRef": "patch.diff",
+              "preservesUnrelatedWork": true,
+              "overlaps": []
+            }
+          },
+          "actualErrors": [
+            "changed file must use an unambiguous repository-relative path: D:src/db/schema.ts"
+          ]
+        },
+        {
+          "id": "protected-path-or-invalid-alias",
+          "input": {
+            "release": "v1",
+            "baseline": "x",
+            "dirtyWork": [],
+            "intent": "visual",
+            "classification": "presentation",
+            "changedFiles": [
+              {
+                "path": "src/db/schema.ts:stream",
+                "classification": "presentation",
+                "reason": "theme"
+              }
+            ],
+            "checks": [],
+            "recovery": {
+              "patchRef": "patch.diff",
+              "preservesUnrelatedWork": true,
+              "overlaps": []
+            }
+          },
+          "actualErrors": [
+            "changed file must use an unambiguous repository-relative path: src/db/schema.ts:stream"
+          ]
+        },
+        {
+          "id": "protected-path-or-invalid-alias",
+          "input": {
+            "release": "v1",
+            "baseline": "x",
+            "dirtyWork": [],
+            "intent": "visual",
+            "classification": "presentation",
+            "changedFiles": [
+              {
+                "path": "src/app/../db/schema.ts",
+                "classification": "presentation",
+                "reason": "theme"
+              }
+            ],
+            "checks": [],
+            "recovery": {
+              "patchRef": "patch.diff",
+              "preservesUnrelatedWork": true,
+              "overlaps": []
+            }
+          },
+          "actualErrors": [
+            "changed file must use an unambiguous repository-relative path: src/app/../db/schema.ts"
+          ]
+        },
+        {
+          "id": "protected-path-or-invalid-alias",
+          "input": {
+            "release": "v1",
+            "baseline": "x",
+            "dirtyWork": [],
+            "intent": "visual",
+            "classification": "presentation",
+            "changedFiles": [
+              {
+                "path": "src/db./schema.ts",
+                "classification": "presentation",
+                "reason": "theme"
+              }
+            ],
+            "checks": [],
+            "recovery": {
+              "patchRef": "patch.diff",
+              "preservesUnrelatedWork": true,
+              "overlaps": []
+            }
+          },
+          "actualErrors": [
+            "changed file must use an unambiguous repository-relative path: src/db./schema.ts"
+          ]
+        },
+        {
+          "id": "protected-path-or-invalid-alias",
+          "input": {
+            "release": "v1",
+            "baseline": "x",
+            "dirtyWork": [],
+            "intent": "visual",
+            "classification": "presentation",
+            "changedFiles": [
+              {
+                "path": "src/db /schema.ts",
+                "classification": "presentation",
+                "reason": "theme"
+              }
+            ],
+            "checks": [],
+            "recovery": {
+              "patchRef": "patch.diff",
+              "preservesUnrelatedWork": true,
+              "overlaps": []
+            }
+          },
+          "actualErrors": [
+            "changed file must use an unambiguous repository-relative path: src/db /schema.ts"
+          ]
+        },
+        {
+          "id": "protected-path-or-invalid-alias",
+          "input": {
+            "release": "v1",
+            "baseline": "x",
+            "dirtyWork": [],
+            "intent": "visual",
+            "classification": "presentation",
+            "changedFiles": [
+              {
+                "path": "src/db/*",
+                "classification": "presentation",
+                "reason": "theme"
+              }
+            ],
+            "checks": [],
+            "recovery": {
+              "patchRef": "patch.diff",
+              "preservesUnrelatedWork": true,
+              "overlaps": []
+            }
+          },
+          "actualErrors": [
+            "changed file must use an unambiguous repository-relative path: src/db/*"
+          ]
+        },
+        {
+          "id": "protected-path-or-invalid-alias",
+          "input": {
+            "release": "v1",
+            "baseline": "x",
+            "dirtyWork": [],
+            "intent": "visual",
+            "classification": "presentation",
+            "changedFiles": [
+              {
+                "path": "src/NUL/schema.ts",
+                "classification": "presentation",
+                "reason": "theme"
+              }
+            ],
+            "checks": [],
+            "recovery": {
+              "patchRef": "patch.diff",
+              "preservesUnrelatedWork": true,
+              "overlaps": []
+            }
+          },
+          "actualErrors": [
+            "changed file must use an unambiguous repository-relative path: src/NUL/schema.ts"
+          ]
+        },
+        {
+          "id": "protected-path-or-invalid-alias",
+          "input": {
+            "release": "v1",
+            "baseline": "x",
+            "dirtyWork": [],
+            "intent": "visual",
+            "classification": "presentation",
+            "changedFiles": [
+              {
+                "path": "src/db/schema.ts.",
+                "classification": "presentation",
+                "reason": "theme"
+              }
+            ],
+            "checks": [],
+            "recovery": {
+              "patchRef": "patch.diff",
+              "preservesUnrelatedWork": true,
+              "overlaps": []
+            }
+          },
+          "actualErrors": [
+            "changed file must use an unambiguous repository-relative path: src/db/schema.ts."
+          ]
+        },
+        {
+          "id": "protected-path-or-invalid-alias",
+          "input": {
+            "release": "v1",
+            "baseline": "x",
+            "dirtyWork": [],
+            "intent": "visual",
+            "classification": "presentation",
+            "changedFiles": [
+              {
+                "path": "src/db/schema.ts ",
+                "classification": "presentation",
+                "reason": "theme"
+              }
+            ],
+            "checks": [],
+            "recovery": {
+              "patchRef": "patch.diff",
+              "preservesUnrelatedWork": true,
+              "overlaps": []
+            }
+          },
+          "actualErrors": [
+            "changed file must use an unambiguous repository-relative path: src/db/schema.ts "
+          ]
+        },
+        {
+          "id": "missing-overall-classification",
+          "input": {
+            "release": "v1",
+            "baseline": "x",
+            "dirtyWork": [],
+            "intent": "visual",
+            "changedFiles": [],
+            "checks": [],
+            "recovery": {
+              "patchRef": "patch.diff",
+              "preservesUnrelatedWork": true,
+              "overlaps": []
+            }
+          },
+          "actualErrors": [
+            "overall classification must use a declared workflow class"
+          ]
+        },
+        {
+          "id": "invalid-overall-classification",
+          "input": {
+            "release": "v1",
+            "baseline": "x",
+            "dirtyWork": [],
+            "intent": "visual",
+            "classification": "invented",
+            "changedFiles": [],
+            "checks": [],
+            "recovery": {
+              "patchRef": "patch.diff",
+              "preservesUnrelatedWork": true,
+              "overlaps": []
+            }
+          },
+          "actualErrors": [
+            "overall classification must use a declared workflow class"
+          ]
+        },
+        {
+          "id": "invalid-file-classification",
+          "input": {
+            "release": "v1",
+            "baseline": "x",
+            "dirtyWork": [],
+            "intent": "visual",
+            "classification": "presentation",
+            "changedFiles": [
+              {
+                "path": "public/logo.svg",
+                "classification": "invented",
+                "reason": "theme"
+              }
+            ],
+            "checks": [],
+            "recovery": {
+              "patchRef": "patch.diff",
+              "preservesUnrelatedWork": true,
+              "overlaps": []
+            }
+          },
+          "actualErrors": [
+            "changed file classification must use a declared workflow class: public/logo.svg"
+          ]
+        },
+        {
+          "id": "presentation-overall-with-engineering-file",
+          "input": {
+            "release": "v1",
+            "baseline": "x",
+            "dirtyWork": [],
+            "intent": "visual",
+            "classification": "presentation",
+            "changedFiles": [
+              {
+                "path": "src/db/schema.ts",
+                "classification": "engineering-change",
+                "reason": "schema"
+              }
+            ],
+            "checks": [],
+            "recovery": {
+              "patchRef": "patch.diff",
+              "preservesUnrelatedWork": true,
+              "overlaps": []
+            }
+          },
+          "actualErrors": [
+            "overall workflow requires engineering-change classification: src/db/schema.ts"
+          ]
+        },
+        {
+          "id": "presentation-overall-with-unprotected-engineering-file",
+          "input": {
+            "release": "v1",
+            "baseline": "x",
+            "dirtyWork": [],
+            "intent": "visual",
+            "classification": "presentation",
+            "changedFiles": [
+              {
+                "path": "public/logo.svg",
+                "classification": "engineering-change",
+                "reason": "explicit engineering scope"
+              }
+            ],
+            "checks": [],
+            "recovery": {
+              "patchRef": "patch.diff",
+              "preservesUnrelatedWork": true,
+              "overlaps": []
+            }
+          },
+          "actualErrors": [
+            "overall workflow requires engineering-change classification: public/logo.svg"
+          ]
+        }
+      ]
+    },
+    "policyTestReporter": {
+      "status": "PASS",
+      "capturedAt": "2026-10-19T06:26:08.433Z",
+      "command": "node --experimental-strip-types --test --test-reporter <trusted-helper-URL> <five policy suites>",
+      "exitCode": 0,
+      "stderr": "",
+      "counts": [
+        {
+          "file": "tests/unit/m2-policy.test.ts",
+          "expected": 3,
+          "actual": [
+            {
+              "success": true,
+              "counts": {
+                "tests": 3,
+                "failed": 0,
+                "passed": 3,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 3,
+                "suites": 0
+              }
+            }
+          ]
+        },
+        {
+          "file": "tests/unit/generation-state.test.ts",
+          "expected": 2,
+          "actual": [
+            {
+              "success": true,
+              "counts": {
+                "tests": 2,
+                "failed": 0,
+                "passed": 2,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 2,
+                "suites": 0
+              }
+            }
+          ]
+        },
+        {
+          "file": "tests/unit/assets-authorization.test.ts",
+          "expected": 1,
+          "actual": [
+            {
+              "success": true,
+              "counts": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              }
+            }
+          ]
+        },
+        {
+          "file": "tests/unit/credit-reversals.test.ts",
+          "expected": 4,
+          "actual": [
+            {
+              "success": true,
+              "counts": {
+                "tests": 4,
+                "failed": 0,
+                "passed": 4,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 4,
+                "suites": 0
+              }
+            }
+          ]
+        },
+        {
+          "file": "tests/unit/creation-draft.test.ts",
+          "expected": 7,
+          "actual": [
+            {
+              "success": true,
+              "counts": {
+                "tests": 7,
+                "failed": 0,
+                "passed": 7,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 7,
+                "suites": 0
+              }
+            }
+          ]
+        }
+      ],
+      "aggregate": [
+        {
+          "success": true,
+          "counts": {
+            "tests": 17,
+            "failed": 0,
+            "passed": 17,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "topLevel": 17,
+            "suites": 0
+          },
+          "duration_ms": 850.9299
+        }
+      ]
+    },
+    "independentDependencyDigest": {
+      "trustedRoot": "D:/github/_tmp/shpitto-trusted-20261019-hoisted-r1",
+      "startedAt": "2026-10-19T06:26:48.286Z",
+      "completedAt": "2026-10-19T06:27:19.660Z",
+      "elapsedMs": 31373,
+      "dependencyTreeSha256": "3d28bccfa1df40207524eb0b41853d92d0b58c7383cd6c2e569ce9c80fb490b3",
+      "expected": "3d28bccfa1df40207524eb0b41853d92d0b58c7383cd6c2e569ce9c80fb490b3",
+      "matches": true
+    },
+    "sourceStability": {
+      "reviewedFileCount": 29,
+      "changedReviewedFiles": [],
+      "capturedAt": "2026-10-19T06:29:34.575Z"
+    },
+    "manualInspection": [
+      "External pin digest, independent baseline identity, pairwise realpath separation, trusted dependency fingerprint and private dependency snapshot integrity.",
+      "Mandatory requiredDigests, explicit policyRevision, required pin controls and candidate/policy/test self-certification rejection.",
+      "Parent Node test reporter requires exactly one successful per-file summary for each pinned suite and one successful aggregate, exact positive reviewed test counts, and no failures, cancellations, skips or todos. Candidate stdout remains nested in test:stdout.",
+      "Seven current node-kind boundary/format scripts are standalone checks that read candidate files as data and do not execute candidate modules. Candidate subject execution occurs in pinned test overlays.",
+      "Recursive source measurement includes nested generated-looking directory names.",
+      "Retained CLI output realpaths, regular-file constraints and checksums; candidate identity binding; durable accepted.json after fresh validation.",
+      "Protected path case folding, ambiguous repository path rejection and consistent overall engineering-change classification.",
+      "Governed-skills specification, canonical workflow guide and generated buyer documentation match the reviewed trust and completion boundary."
+    ]
+  },
+  "resolvedReviewHistory": [
+    {
+      "id": "protected-path-aliases",
+      "status": "RESOLVED",
+      "originalReproducedAt": "2026-10-19T06:22:45.853Z",
+      "originalValidatorSha256": "1722f55325e3f05c1fe7b24e4d09274abd0b8053833ca6360c15ea913fd0331c",
+      "originalInputs": [
+        {
+          "path": "SRC/DB/schema.ts",
+          "fileClassification": "presentation",
+          "overallClassification": "presentation",
+          "previousIsProtectedPath": false,
+          "previousErrors": []
+        },
+        {
+          "path": "D:\\github\\shpitto\\src\\db\\schema.ts",
+          "fileClassification": "presentation",
+          "overallClassification": "presentation",
+          "previousIsProtectedPath": false,
+          "previousErrors": []
+        }
+      ],
+      "resolution": "Case-fold protected comparisons on every platform and reject ambiguous absolute, drive, UNC, ADS, dot-segment, trailing-dot/space, wildcard and reserved-device paths. Exact final inputs and rejection errors are retained in verification.manifestClassificationProbes."
+    },
+    {
+      "id": "overall-engineering-classification",
+      "status": "RESOLVED",
+      "originalReproducedAt": "2026-10-19T06:22:45.853Z",
+      "originalValidatorSha256": "1722f55325e3f05c1fe7b24e4d09274abd0b8053833ca6360c15ea913fd0331c",
+      "originalInputs": [
+        {
+          "overallClassification": "missing",
+          "changedFiles": [],
+          "previousErrors": []
+        },
+        {
+          "overallClassification": "presentation",
+          "changedFiles": [
+            {
+              "path": "src/db/schema.ts",
+              "classification": "engineering-change",
+              "reason": "schema"
+            }
+          ],
+          "previousErrors": []
+        }
+      ],
+      "resolution": "Require supported overall and file classes, with engineering-change overall whenever a protected path or engineering-change file is present."
+    },
+    {
+      "id": "test-completion",
+      "status": "RESOLVED",
+      "resolution": "The original successful-early-exit/forged-stdout probe fails trusted validation. A trusted parent reporter plus exact per-file and aggregate positive completion counts now enforces completion.",
+      "verification": "The successful early exit and forged stdout regression passes, and all actual policy suites pass with reviewed counts 3/2/1/4/7."
+    },
+    {
+      "id": "nested-source-measurement",
+      "status": "RESOLVED",
+      "resolution": "Nested generated-looking directory names are included under measured source roots.",
+      "verification": "The generated directory names nested in shipped source remain fingerprinted regression passes."
+    },
+    {
+      "id": "durable-acceptance-and-retained-realpaths",
+      "status": "RESOLVED",
+      "resolution": "Freshly accepted PASS records are saved as accepted.json; retained CLI output is checked by confined realpath, regular-file status and digest.",
+      "verification": "Targeted trusted-validation and governed-skills checks pass; release entrypoints retain and reexecute evidence."
+    }
+  ],
+  "trustBoundary": {
+    "roots": "Operator-controlled external pin and separately supplied pin SHA-256 are trust roots.",
+    "isolation": "Filesystem and process isolation are operator requirements. This review does not certify a hostile-code OS sandbox against malicious processes sharing the same OS account.",
+    "testContract": "Per-file and aggregate completion counts are necessary alongside exit status. Changes to pinned suites or expected counts require independent baseline review."
+  },
+  "limitations": [
+    "Only the source/tool baseline and dependency bytes enumerated here are approved.",
+    "No candidate preparation, candidate acceptance, candidateReview, export, deployment or final gate promotion was performed or approved by this review.",
+    "Broad suites were not run, as requested. Verification consists of the retained targeted tests and probes plus source inspection.",
+    "Leader-reported dependency installation and resolution smoke checks are not represented as independently executed installation checks."
+  ]
+}
+

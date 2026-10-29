@@ -1,0 +1,299 @@
+[
+  {
+    "commandId": "candidate-before",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe scripts/candidate-digests.mjs D:\\github\\shpitto\\internal\\evidence\\acceptance\\foundations-20261001\\2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9\\candidate-before",
+    "startAt": "2026-10-01T05:49:18.243Z",
+    "endAt": "2026-10-01T05:49:18.391Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/candidate-before.log"
+  },
+  {
+    "commandId": "migrate",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types scripts/migrate.ts",
+    "startAt": "2026-10-01T05:49:18.658Z",
+    "endAt": "2026-10-01T05:49:19.443Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/migrate.log"
+  },
+  {
+    "commandId": "typecheck",
+    "invocation": "corepack.cmd pnpm typecheck",
+    "startAt": "2026-10-01T05:49:19.444Z",
+    "endAt": "2026-10-01T05:49:21.649Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/typecheck.log"
+  },
+  {
+    "commandId": "lint",
+    "invocation": "corepack.cmd pnpm lint",
+    "startAt": "2026-10-01T05:49:21.650Z",
+    "endAt": "2026-10-01T05:49:22.091Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/lint.log"
+  },
+  {
+    "commandId": "format-check",
+    "invocation": "corepack.cmd pnpm format:check",
+    "startAt": "2026-10-01T05:49:22.091Z",
+    "endAt": "2026-10-01T05:49:22.514Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/format-check.log"
+  },
+  {
+    "commandId": "verify-config",
+    "invocation": "corepack.cmd pnpm verify:config",
+    "startAt": "2026-10-01T05:49:22.515Z",
+    "endAt": "2026-10-01T05:49:22.937Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/verify-config.log"
+  },
+  {
+    "commandId": "verify-db-boundary",
+    "invocation": "corepack.cmd pnpm verify:db-boundary",
+    "startAt": "2026-10-01T05:49:22.938Z",
+    "endAt": "2026-10-01T05:49:23.347Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/verify-db-boundary.log"
+  },
+  {
+    "commandId": "verify-m2-foundation",
+    "invocation": "corepack.cmd pnpm verify:m2-foundation",
+    "startAt": "2026-10-01T05:49:23.348Z",
+    "endAt": "2026-10-01T05:49:23.760Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/verify-m2-foundation.log"
+  },
+  {
+    "commandId": "verify-local-services",
+    "invocation": "corepack.cmd pnpm verify:local-services",
+    "startAt": "2026-10-01T05:49:23.761Z",
+    "endAt": "2026-10-01T05:49:24.172Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/verify-local-services.log"
+  },
+  {
+    "commandId": "verify-shells",
+    "invocation": "corepack.cmd pnpm verify:shells",
+    "startAt": "2026-10-01T05:49:24.173Z",
+    "endAt": "2026-10-01T05:49:24.563Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/verify-shells.log"
+  },
+  {
+    "commandId": "verify-content-boundaries",
+    "invocation": "corepack.cmd pnpm verify:content-boundaries",
+    "startAt": "2026-10-01T05:49:24.564Z",
+    "endAt": "2026-10-01T05:49:24.950Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/verify-content-boundaries.log"
+  },
+  {
+    "commandId": "verify-openspec",
+    "invocation": "corepack.cmd pnpm verify:openspec",
+    "startAt": "2026-10-01T05:49:24.951Z",
+    "endAt": "2026-10-01T05:49:27.516Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/verify-openspec.log"
+  },
+  {
+    "commandId": "regression-m2-foundation",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\foundations-20261001\\2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9\\regression-m2-foundation.lcov --test-coverage-include=**/src/** scripts/probe-m2-foundation.ts",
+    "startAt": "2026-10-01T05:49:27.517Z",
+    "endAt": "2026-10-01T05:49:28.282Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/regression-m2-foundation.log"
+  },
+  {
+    "commandId": "regression-onboarding",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\foundations-20261001\\2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9\\regression-onboarding.lcov --test-coverage-include=**/src/** scripts/probe-onboarding.ts",
+    "startAt": "2026-10-01T05:49:28.282Z",
+    "endAt": "2026-10-01T05:49:29.393Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/regression-onboarding.log"
+  },
+  {
+    "commandId": "regression-workspaces",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\foundations-20261001\\2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9\\regression-workspaces.lcov --test-coverage-include=**/src/** scripts/probe-workspaces.ts",
+    "startAt": "2026-10-01T05:49:29.393Z",
+    "endAt": "2026-10-01T05:49:30.636Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/regression-workspaces.log"
+  },
+  {
+    "commandId": "regression-invitations",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\foundations-20261001\\2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9\\regression-invitations.lcov --test-coverage-include=**/src/** scripts/probe-invitations.ts",
+    "startAt": "2026-10-01T05:49:30.637Z",
+    "endAt": "2026-10-01T05:49:31.843Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/regression-invitations.log"
+  },
+  {
+    "commandId": "regression-tenant-authorization",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\foundations-20261001\\2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9\\regression-tenant-authorization.lcov --test-coverage-include=**/src/** scripts/probe-tenant-authorization.ts",
+    "startAt": "2026-10-01T05:49:31.844Z",
+    "endAt": "2026-10-01T05:49:32.808Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/regression-tenant-authorization.log"
+  },
+  {
+    "commandId": "regression-operator",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\foundations-20261001\\2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9\\regression-operator.lcov --test-coverage-include=**/src/** scripts/probe-operator.ts",
+    "startAt": "2026-10-01T05:49:32.809Z",
+    "endAt": "2026-10-01T05:49:33.739Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/regression-operator.log"
+  },
+  {
+    "commandId": "regression-access-states",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\foundations-20261001\\2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9\\regression-access-states.lcov --test-coverage-include=**/src/** scripts/probe-access-states.ts",
+    "startAt": "2026-10-01T05:49:33.740Z",
+    "endAt": "2026-10-01T05:49:34.871Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/regression-access-states.log"
+  },
+  {
+    "commandId": "regression-command-contract",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\foundations-20261001\\2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9\\regression-command-contract.lcov --test-coverage-include=**/src/** scripts/probe-command-contract.ts",
+    "startAt": "2026-10-01T05:49:34.871Z",
+    "endAt": "2026-10-01T05:49:35.977Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/regression-command-contract.log"
+  },
+  {
+    "commandId": "regression-credit-ledger",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\foundations-20261001\\2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9\\regression-credit-ledger.lcov --test-coverage-include=**/src/** scripts/probe-credit-ledger.ts",
+    "startAt": "2026-10-01T05:49:35.978Z",
+    "endAt": "2026-10-01T05:49:36.947Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/regression-credit-ledger.log"
+  },
+  {
+    "commandId": "regression-credit-reservation",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\foundations-20261001\\2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9\\regression-credit-reservation.lcov --test-coverage-include=**/src/** scripts/probe-credit-reservation.ts",
+    "startAt": "2026-10-01T05:49:36.947Z",
+    "endAt": "2026-10-01T05:49:38.234Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/regression-credit-reservation.log"
+  },
+  {
+    "commandId": "regression-credit-refund",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\foundations-20261001\\2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9\\regression-credit-refund.lcov --test-coverage-include=**/src/** scripts/probe-credit-refund.ts",
+    "startAt": "2026-10-01T05:49:38.234Z",
+    "endAt": "2026-10-01T05:49:39.339Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/regression-credit-refund.log"
+  },
+  {
+    "commandId": "regression-credit-migration-backfill",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\foundations-20261001\\2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9\\regression-credit-migration-backfill.lcov --test-coverage-include=**/src/** scripts/probe-credit-migration-backfill.ts",
+    "startAt": "2026-10-01T05:49:39.339Z",
+    "endAt": "2026-10-01T05:49:40.985Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/regression-credit-migration-backfill.log"
+  },
+  {
+    "commandId": "regression-auth-lifecycle",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\foundations-20261001\\2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9\\regression-auth-lifecycle.lcov --test-coverage-include=**/src/** scripts/probe-auth-lifecycle.ts",
+    "startAt": "2026-10-01T05:49:40.985Z",
+    "endAt": "2026-10-01T05:49:43.430Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/regression-auth-lifecycle.log"
+  },
+  {
+    "commandId": "regression-generation-create",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\foundations-20261001\\2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9\\regression-generation-create.lcov --test-coverage-include=**/src/** scripts/probe-generation-create.ts",
+    "startAt": "2026-10-01T05:49:43.430Z",
+    "endAt": "2026-10-01T05:49:44.383Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/regression-generation-create.log"
+  },
+  {
+    "commandId": "regression-generation-lifecycle",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\foundations-20261001\\2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9\\regression-generation-lifecycle.lcov --test-coverage-include=**/src/** scripts/probe-generation-lifecycle.ts",
+    "startAt": "2026-10-01T05:49:44.384Z",
+    "endAt": "2026-10-01T05:49:46.074Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/regression-generation-lifecycle.log"
+  },
+  {
+    "commandId": "regression-generation-races",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\foundations-20261001\\2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9\\regression-generation-races.lcov --test-coverage-include=**/src/** scripts/probe-generation-races.ts",
+    "startAt": "2026-10-01T05:49:46.074Z",
+    "endAt": "2026-10-01T05:49:47.431Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/regression-generation-races.log"
+  },
+  {
+    "commandId": "regression-assets",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\foundations-20261001\\2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9\\regression-assets.lcov --test-coverage-include=**/src/** scripts/probe-assets.ts",
+    "startAt": "2026-10-01T05:49:47.432Z",
+    "endAt": "2026-10-01T05:49:48.777Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/regression-assets.log"
+  },
+  {
+    "commandId": "regression-asset-cleanup",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\foundations-20261001\\2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9\\regression-asset-cleanup.lcov --test-coverage-include=**/src/** scripts/probe-asset-cleanup.ts",
+    "startAt": "2026-10-01T05:49:48.777Z",
+    "endAt": "2026-10-01T05:49:53.011Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/regression-asset-cleanup.log"
+  },
+  {
+    "commandId": "regression-asset-security",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\foundations-20261001\\2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9\\regression-asset-security.lcov --test-coverage-include=**/src/** scripts/probe-asset-security.ts",
+    "startAt": "2026-10-01T05:49:53.011Z",
+    "endAt": "2026-10-01T05:50:04.644Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/regression-asset-security.log"
+  },
+  {
+    "commandId": "regression-outbox-lease",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\foundations-20261001\\2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9\\regression-outbox-lease.lcov --test-coverage-include=**/src/** scripts/probe-outbox-lease.ts",
+    "startAt": "2026-10-01T05:50:04.644Z",
+    "endAt": "2026-10-01T05:50:05.593Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/regression-outbox-lease.log"
+  },
+  {
+    "commandId": "regression-m3-recovery",
+    "invocation": "C:\\Program Files\\nodejs\\node.exe --experimental-strip-types --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\acceptance\\foundations-20261001\\2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9\\regression-m3-recovery.lcov --test-coverage-include=**/src/** scripts/probe-m3-recovery.ts",
+    "startAt": "2026-10-01T05:50:05.594Z",
+    "endAt": "2026-10-01T05:50:06.516Z",
+    "exitCode": 1,
+    "status": "FAIL",
+    "outputRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T05-49-18-241Z-57451e26-2dd2-4779-be39-d90bcdd240f9/logs/regression-m3-recovery.log"
+  }
+]

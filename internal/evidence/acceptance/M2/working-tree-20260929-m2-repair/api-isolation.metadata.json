@@ -1,0 +1,8 @@
+{
+  "command": "node --experimental-strip-types scripts/probe-api-isolation.ts",
+  "startedAt": "2026-09-29T05:53:23.6224500Z",
+  "endedAt": "2026-09-29T05:53:25.8552387Z",
+  "exitCode": 0,
+  "appUrl": "http://localhost:3036",
+  "log": "api-isolation.log"
+}

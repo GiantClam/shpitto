@@ -1,0 +1,4 @@
+corepack pnpm typecheck: PASS
+node scripts/check-source-boundaries.mjs: PASS
+node scripts/format-check.mjs: PASS
+No network/live fal calls: PASS

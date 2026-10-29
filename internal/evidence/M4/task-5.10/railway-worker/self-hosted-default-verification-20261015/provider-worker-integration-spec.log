@@ -1,0 +1,86 @@
+✔ thin Trigger entrypoints preserve durable dispatch, exact reconciliation and terminal recovery (534.0149ms)
+✔ Trigger outbox release, failure and thrown handlers preserve lease and reservation boundaries (92.7304ms)
+✔ replicate-wan22-t2v is submitted once, materialized privately and settles UNKNOWN cost (230.4854ms)
+✔ replicate-wan22-i2v is submitted once, materialized privately and settles UNKNOWN cost (860.2204ms)
+✔ fal-wan22-t2v is submitted once, materialized privately and settles UNKNOWN cost (198.7209ms)
+✔ fal-wan22-i2v is submitted once, materialized privately and settles UNKNOWN cost (897.6645ms)
+✔ definitive provider failure releases the original reservation (58.5376ms)
+✔ unknown submission recovers for at most 24 probes without a second create (397.6378ms)
+✔ a persisted network-start marker blocks restart and stale lease re-submission (52.8679ms)
+✔ authenticated inbox completion and polling have only one terminal ledger effect (200.5718ms)
+✔ paused or unadmitted worker has no effect on another workspace (29.0187ms)
+✔ verified callback recovers an accepted create whose request ID write was lost (54.1091ms)
+✔ actual PostgreSQL stale-lease callback processing rolls back inbox and task together (75.589ms)
+✔ terminal inbox drain quarantines a late completion without reopening credits (85.2341ms)
+✔ JPEG image2 support does not permit a forged PNG MIME declaration (187.3938ms)
+✔ self-hosted restart drains a multi-batch overdue backlog before any provider transport (2544.475ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7225.2108
+ℹ start of coverage report
+ℹ ----------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ file                      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ src                       |        |          |         |
+ℹ  adapters                 |        |          |         |
+ℹ   providers               |        |          |         |
+ℹ    admission.ts           | 100.00 |    66.67 |  100.00 |
+ℹ    fal                    |        |          |         |
+ℹ     index.ts              |  83.71 |    57.14 |   82.35 | 62-63 65 76-77 97-98 111-113 116-118 137-139 150-152 164-166 169-175
+ℹ     jwks.ts               |  27.17 |   100.00 |   14.29 | 14-31 33-72 80-88
+ℹ     webhook.ts            |  25.00 |   100.00 |    0.00 | 22-28 30-32 34-43 45-53 55-90 92-98 101-112
+ℹ    http.ts                |  19.15 |   100.00 |    0.00 | 10-47
+ℹ    input.ts               |  84.87 |    57.41 |  100.00 | 10-11 27-28 30-31 39-40 49-50 52-53 61-62 80-81 102-103
+ℹ    normalize.ts           |  96.88 |    68.29 |  100.00 | 44 63
+ℹ    replicate              |        |          |         |
+ℹ     index.ts              |  83.23 |    47.62 |   78.57 | 61-62 64 80-81 89-91 94-97 109-111 129-131 142-144 147-151
+ℹ     webhook.ts            |  26.88 |   100.00 |    0.00 | 18-22 24-30 32-40 42-61 63-70 73-84 87-93
+ℹ    runtime.ts             |  37.93 |   100.00 |    0.00 | 10-18 21-29
+ℹ   storage                 |        |          |         |
+ℹ    key.ts                 |  63.64 |    60.00 |  100.00 | 5-6 9-10
+ℹ    local.ts               |  70.83 |    76.47 |   58.33 | 16-17 44-50 59-62 77-78 81-93
+ℹ    port.ts                |  74.29 |    66.67 |   50.00 | 24-25 29-35
+ℹ    provider-input-url.ts  | 100.00 |    58.33 |   85.71 |
+ℹ    runtime.ts             |  36.00 |   100.00 |    0.00 | 10-25
+ℹ    s3-object-store.ts     |  31.17 |   100.00 |    0.00 | 21-27 29-40 42-45 48-77
+ℹ    s3.ts                  |  19.40 |   100.00 |    0.00 | 15-22 26-27 30-32 34-52 54-65 67-69 71-97 101-134
+ℹ   tasks                   |        |          |         |
+ℹ    trigger.ts             | 100.00 |   100.00 |  100.00 |
+ℹ  config                   |        |          |         |
+ℹ   env.ts                  |  65.75 |    25.00 |   20.00 | 12-14 59-60 91-122 129-133 137-141 144-146
+ℹ   models.ts               |  85.71 |    33.33 |   83.33 | 39 43-44 63-64 85-86 88-89 92-93 97-98 100-101
+ℹ   provider-models.ts      |  80.49 |    57.14 |   75.00 | 28-33 39-40
+ℹ   provider-worker.ts      |  85.19 |    53.13 |   71.43 | 43 48-54
+ℹ   task-runtime.ts         |  89.47 |    28.57 |  100.00 | 13-14
+ℹ  modules                  |        |          |         |
+ℹ   assets                  |        |          |         |
+ℹ    authorize.ts           |  45.71 |    80.00 |   20.00 | 19-21 24-28 31-39 50-70
+ℹ    ingest.ts              |  88.78 |    20.83 |   80.00 | 21-24 72-73 80-81 94-96
+ℹ    media-probe.ts         |  95.00 |    40.00 |  100.00 | 30-31
+ℹ    upload.ts              |  88.89 |    60.00 |   50.00 | 23-25
+ℹ    validate-input.ts      |  94.20 |    71.43 |  100.00 | 25-26 59-60
+ℹ   generation              |        |          |         |
+ℹ    create.ts              |  91.47 |    40.00 |  100.00 | 77-78 83-84 91-92 96-97 99-100 107-108 116-117 119-120 146-147 168-169 176-177
+ℹ    lifecycle.ts           |  86.34 |    60.84 |   91.89 | 110-111 120-121 150-151 279-282 319-325 328-334 403-407 429-433 486-529 533-538 580-581 591-592
+ℹ    outbox.ts              |  94.90 |    70.00 |   77.78 | 41-42 45-47 53-55
+ℹ    provider-image.ts      | 100.00 |    73.33 |  100.00 |
+ℹ    provider-input.ts      | 100.00 |    50.00 |  100.00 |
+ℹ    provider-webhooks.ts   |  96.76 |    46.88 |  100.00 | 93-94 179-182
+ℹ    provider-worker.ts     |  83.63 |    69.41 |   73.33 | 78-80 99-102 121-123 130-139 162-169
+ℹ    state.ts               |  73.49 |    80.00 |   75.00 | 48-49 64-83
+ℹ    sweep-recovery.ts      |  95.16 |    78.57 |   80.00 | 28 56-57
+ℹ  trigger                  |        |          |         |
+ℹ   dispatch.ts             | 100.00 |   100.00 |  100.00 |
+ℹ   materialize.ts          |  32.14 |   100.00 |    0.00 | 10-28
+ℹ   outbox.ts               | 100.00 |    52.00 |   66.67 |
+ℹ   reconcile.ts            | 100.00 |   100.00 |  100.00 |
+ℹ   sweep-recovery.ts       | 100.00 |    42.86 |   62.50 |
+ℹ ----------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ all files                 |  75.70 |    57.32 |   68.52 |
+ℹ ----------------------------------------------------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

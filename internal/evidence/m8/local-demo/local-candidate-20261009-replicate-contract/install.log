@@ -1,0 +1,49 @@
+✓ Lockfile passes supply-chain policies (verified 11d ago)
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: C:\Users\liula\AppData\Local\pnpm\store\v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 125, reused 125, downloaded 0, added 65
+Progress: resolved 167, reused 167, downloaded 0, added 108
+Progress: resolved 216, reused 215, downloaded 0, added 155
+Progress: resolved 259, reused 259, downloaded 0, added 197
+Progress: resolved 298, reused 298, downloaded 0, added 235
+Progress: resolved 343, reused 343, downloaded 0, added 277
+Progress: resolved 371, reused 371, downloaded 0, added 312
+Progress: resolved 398, reused 398, downloaded 0, added 345
+Progress: resolved 409, reused 409, downloaded 0, added 360
+Progress: resolved 418, reused 418, downloaded 0, added 377
+Progress: resolved 422, reused 422, downloaded 0, added 383
+Progress: resolved 432, reused 431, downloaded 0, added 395
+Progress: resolved 443, reused 443, downloaded 0, added 409
+Progress: resolved 453, reused 453, downloaded 0, added 421
+Progress: resolved 457, reused 457, downloaded 0, added 427
+Progress: resolved 458, reused 458, downloaded 0, added 430
+Progress: resolved 459, reused 458, downloaded 0, added 430
+Progress: resolved 459, reused 459, downloaded 0, added 432
+Packages: +459
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 459, reused 459, downloaded 0, added 459, done
+
+dependencies:
++ @trigger.dev/sdk 4.6.4
++ better-auth 1.7.6
++ drizzle-orm 0.45.3
++ fumadocs-core 16.15.14
++ fumadocs-ui 16.15.14
++ next 16.3.6
++ pg 8.23.0
++ react 19.3.0
++ react-admin 5.15.4
++ react-dom 19.3.0
++ stripe 22.6.2
+
+devDependencies:
++ @types/node 24.0.0
++ @types/react 19.0.0
++ @types/react-dom 19.0.0
++ drizzle-kit 0.31.11
++ typescript 6.0.3
+
+Done in 3m 23.4s using pnpm v12.6.0

@@ -1,0 +1,4 @@
+{
+  "status": "FAIL",
+  "reason": "Owned-domain coverage must pass without missing source.\n\n'FAIL' !== 'PASS'\n"
+}

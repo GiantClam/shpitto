@@ -1,0 +1,57 @@
+{"status":"PASS","databaseName":"m5_checkout_probe_c18b4f49baf3426788554983f66614a0","cases":["owner receives workspace-bound local Checkout session","same command key replays the same Checkout session","member cannot create Checkout","recurring Checkout slot rejects a second request","client cannot inject a customer or price","billing hold blocks Checkout","owner can open fixed-return billing portal during hold","portal response loss/replay preserves URL and provider customer identity","lost provider response retains attempt and retries same idempotency identity","database contains one unresolved recurring slot"],"count":10}
+{"disposableDatabaseRemoved":true,"databaseName":"m5_checkout_probe_c18b4f49baf3426788554983f66614a0"}
+✔ scripts\probe-billing-checkout.ts (1208.4735ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1213.7611
+ℹ start of coverage report
+ℹ -----------------------------------------------------------------------------------------------------
+ℹ file                   | line % | branch % | funcs % | uncovered lines
+ℹ -----------------------------------------------------------------------------------------------------
+ℹ src                    |        |          |         | 
+ℹ  adapters              |        |          |         | 
+ℹ   billing              |        |          |         | 
+ℹ    fake.ts             |  92.45 |    50.00 |  100.00 | 35-38
+ℹ  config                |        |          |         | 
+ℹ   env.ts               |  75.00 |    33.33 |   33.33 | 9-11 42-43 66-80 87-88
+ℹ   plans.ts             | 100.00 |    55.56 |  100.00 | 
+ℹ  contracts             |        |          |         | 
+ℹ   http.ts              |  58.49 |    70.00 |   61.54 | 17-18 21-22 25-35 39-40 46-47 73 81-87 90-106
+ℹ  db                    |        |          |         | 
+ℹ   client.ts            |  89.29 |   100.00 |   50.00 | 26-28
+ℹ   contracts.ts         |  79.59 |   100.00 |   33.33 | 14-16 21-22 25-29
+ℹ   schema               |        |          |         | 
+ℹ    access.ts           | 100.00 |   100.00 |   50.00 | 
+ℹ    affiliate-inbox.ts  | 100.00 |   100.00 |  100.00 | 
+ℹ    affiliate.ts        | 100.00 |   100.00 |   43.75 | 
+ℹ    asset.ts            | 100.00 |   100.00 |   33.33 | 
+ℹ    auth.ts             | 100.00 |   100.00 |   62.50 | 
+ℹ    billing.ts          |  96.88 |   100.00 |   52.94 | 217-223
+ℹ    commands.ts         | 100.00 |   100.00 |   33.33 | 
+ℹ    credit.ts           | 100.00 |   100.00 |   42.86 | 
+ℹ    generation.ts       | 100.00 |   100.00 |   66.67 | 
+ℹ    index.ts            | 100.00 |   100.00 |  100.00 | 
+ℹ    invitations.ts      | 100.00 |   100.00 |   33.33 | 
+ℹ    operations.ts       | 100.00 |   100.00 |   33.33 | 
+ℹ    operator.ts         | 100.00 |   100.00 |   40.00 | 
+ℹ    ownership.ts        | 100.00 |   100.00 |  100.00 | 
+ℹ    workspace.ts        | 100.00 |   100.00 |   41.18 | 
+ℹ  modules               |        |          |         | 
+ℹ   billing              |        |          |         | 
+ℹ    checkout.ts         |  94.58 |    70.59 |  100.00 | 84-92 195-196
+ℹ    contracts.ts        |  82.41 |    72.73 |   80.00 | 30-31 34-35 49-50 70-72 75-80 89-90 105-106
+ℹ    customer-history.ts |  59.14 |    81.82 |   50.00 | 25-28 58-86 89-93
+ℹ   shared               |        |          |         | 
+ℹ    commands.ts         |  86.52 |    50.00 |   66.67 | 31-32 43-44 69-70 72-73 86-89
+ℹ    transaction.ts      | 100.00 |   100.00 |  100.00 | 
+ℹ   workspaces           |        |          |         | 
+ℹ    policy.ts           |  70.92 |    57.89 |   63.64 | 37-38 42-49 107-116 119-133 136-141
+ℹ -----------------------------------------------------------------------------------------------------
+ℹ all files              |  89.67 |    72.83 |   56.57 | 
+ℹ -----------------------------------------------------------------------------------------------------
+ℹ end of coverage report

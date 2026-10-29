@@ -1,0 +1,126 @@
+- button "Open Next.js Dev Tools":
+- alert: Review and act with context
+- button "Skip to content"
+- main:
+  - menu:
+    - menuitem "Dashboard":
+      - paragraph: Dashboard
+    - menuitem "Workspaces":
+      - paragraph: Workspaces
+    - menuitem "Users":
+      - paragraph: Users
+    - menuitem "Generations":
+      - paragraph: Generations
+    - menuitem "Billings":
+      - paragraph: Billings
+    - menuitem "Audits":
+      - paragraph: Audits
+    - menuitem "Affiliate reviews":
+      - paragraph: Affiliate reviews
+    - menuitem "Affiliate holds":
+      - paragraph: Affiliate holds
+  - paragraph: Operations center
+  - heading "Review and act with context" [level=1]
+  - paragraph:
+    - text: Your current role is
+    - strong: superadmin
+    - text: . Resource views are redacted and paginated. Every request checks your current server authority.
+  - link "Return to workspace":
+    - /url: /dashboard
+  - heading "Operator second-factor verification" [level=2]
+  - paragraph: Verify a code from your authenticator for this session. Privileged commands require verification within the last ten minutes.
+  - text: Authenticator code
+  - textbox "Authenticator code"
+  - button "Verify authenticator code"
+  - status: Command verification expires at 2026/10/4 16:44:17.
+  - heading "Workspace inspection" [level=2]
+  - paragraph: Provide the support purpose before opening tenant details. Recovery retains settled outcomes and labels unknown provider cost.
+  - text: Workspace ID
+  - textbox "Workspace ID"
+  - text: Access purpose
+  - textbox "Access purpose"
+  - button "Read workspace and versions"
+  - button "Read recovery evidence"
+  - heading "Named administrative command" [level=2]
+  - paragraph: Use the current version from the relevant view. A stale version has no effect. Negative credit adjustments also require an unused grant.
+  - text: Command
+  - combobox "Command":
+    - option "Change workspace status"
+    - option "Disable account"
+    - option "Adjust credits"
+    - option "Request refund" [selected]
+    - option "Sweep expired generation tasks"
+    - option "Change global role"
+  - text: Workspace ID
+  - textbox "Workspace ID": c8258df0-c0b6-4c7e-b613-0b54ee317435
+  - text: Order ID
+  - textbox "Order ID": 10f70811-0b71-492d-a32d-3ea57071ad61
+  - text: Amount in minor units (blank for full eligible amount)
+  - textbox "Amount in minor units (blank for full eligible amount)"
+  - text: Tenant access purpose
+  - textbox "Tenant access purpose": Fresh local refund acceptance
+  - button "Preview refund eligibility and version"
+  - text: Expected refund preview version
+  - spinbutton "Expected refund preview version": "2"
+  - text: Recorded reason
+  - textbox "Recorded reason": Confirm normal local fixture refund
+  - button "Execute refund"
+  - paragraph:
+    - text: "Last refund command key:"
+    - code: 2ab4d2f6-4e3f-4916-85b9-55a1cb5c2f6c
+    - text: . Retry preserves its exact body and version.
+  - button "Retry previous refund command"
+  - heading "Resume pending refunds" [level=2]
+  - paragraph: Recover your persisted refund commands after a reload or interrupted response. Recovery uses the original reason, amount, version and command key, even when the billing version has since changed.
+  - text: Workspace ID
+  - textbox "Workspace ID": c8258df0-c0b6-4c7e-b613-0b54ee317435
+  - text: Access purpose
+  - textbox "Access purpose": Resume local crash-window acceptance refund
+  - button "Read my pending refund commands"
+  - article:
+    - paragraph:
+      - strong: unknown
+      - text: · 900 USD minor units
+    - paragraph:
+      - text: "Order:"
+      - code: 34729dce-4b26-4e2a-9e51-42f480b2f767
+      - text: "Refund request:"
+      - code: a70f1bde-2d74-4f0f-94bf-757726dd252f
+    - paragraph:
+      - text: "Original key:"
+      - code: 65f0d93e-fecf-422f-9f03-784ff5b63d9f
+      - text: · reviewed version 1
+      - text: "Reason: Verify local fixture refund and idempotent retry"
+    - button "Resume exact saved refund command"
+  - button "Previous pending page" [disabled]
+  - button "Next pending page" [disabled]
+  - heading "Refund recovery result" [level=3]
+  - generic: "{ \"requestId\": \"a70f1bde-2d74-4f0f-94bf-757726dd252f\", \"status\": \"unknown\", \"externalId\": null, \"amountMinor\": \"900\", \"orderId\": \"34729dce-4b26-4e2a-9e51-42f480b2f767\", \"replayed\": true }"
+  - heading "Affiliate review and hosted settlement" [level=2]
+  - paragraph: Review commission evidence and unresolved holds before approval. A hosted handoff records a reviewed visit; it never means funds were transferred.
+  - status: "Integration: disabled. Affiliate tracking is disabled."
+  - generic "Integration and account checkpoint status"
+  - paragraph:
+    - link "Commission reviews":
+      - /url: "#/affiliate-reviews"
+    - text: ·
+    - link "Review holds":
+      - /url: "#/affiliate-holds"
+  - text: Affiliate command
+  - combobox "Affiliate command":
+    - option "Approve commission review" [selected]
+    - option "Deny commission review"
+    - option "Release a verified legitimate abuse hold"
+    - option "Review hosted payout handoff"
+    - option "Review campaign policy"
+  - text: Workspace ID
+  - textbox "Workspace ID"
+  - text: Commission review ID
+  - textbox "Commission review ID"
+  - text: Expected review version
+  - spinbutton "Expected review version"
+  - text: Recorded review reason
+  - textbox "Recorded review reason"
+  - button "Execute affiliate approve"
+  - heading "Retry result" [level=2]
+  - generic: "{ \"requestId\": \"4f42cade-f0ef-4ccf-8e46-fe492e67f561\", \"status\": \"confirmed\", \"externalId\": \"fixture_refund_91b65b3f1c0d8c7c10e88893\", \"amountMinor\": \"900\", \"orderId\": \"10f70811-0b71-492d-a32d-3ea57071ad61\", \"replayed\": true }"

@@ -1,0 +1,37 @@
+✔ the exact existing application dependency evolution passes without rewriting historical proof (142.9618ms)
+✔ root integrity rejects an additional runtime dependency (150.6868ms)
+✔ root integrity rejects a missing runtime dependency (138.9244ms)
+✔ root integrity rejects an optional dependency (137.5378ms)
+✔ root integrity rejects implicit bundling of the whole dependency graph (149.1091ms)
+✔ root integrity rejects a new transitive override (142.3465ms)
+✔ root integrity rejects another Next patch (148.0793ms)
+✔ root integrity rejects an S3 version range (145.1384ms)
+✔ root integrity rejects a changed development dependency (138.7918ms)
+✔ root integrity rejects a changed package manager (139.8555ms)
+✔ root integrity rejects a changed application lockfile (142.3156ms)
+✔ root integrity rejects rewritten historical dependency proof (134.0652ms)
+✔ root integrity rejects rewritten historical lock proof (135.5666ms)
+✔ root integrity rejects rewritten historical provenance (134.145ms)
+✔ root integrity rejects legacy workspace discovery (133.5328ms)
+✔ root integrity rejects a changed workspace override (139.1852ms)
+✔ root integrity rejects workspace package extensions (140.5987ms)
+✔ root integrity rejects legacy TypeScript inclusion (139.2514ms)
+✔ root integrity rejects legacy Docker inclusion (146.9245ms)
+✔ historical provenance remains valid in both LF and CRLF checkouts (262.1132ms)
+✔ the reviewed workspace configuration permits only checkout line-ending differences (140.5591ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3217.2756
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report

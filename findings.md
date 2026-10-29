@@ -97,3 +97,116 @@ The template feature gate now checks that deployment matrix and the Cloudflare g
 ### Test isolation note
 
 The productized worker regression now sets `SHPITTO_OPENCODE_TIMEOUT_MS=10000` only for the test and restores the environment afterward. Production task-class defaults remain unchanged. The template lifecycle test also revealed that generated `.next` output must not live inside the source template asset; the cache was removed after independent build verification.
+
+## 2026-10-13 Railway Worker Findings
+
+- Existing scripts/local-worker.ts is explicitly Mock/local-only; reuse domain commands, not that entrypoint.
+- The acceptance profile currently exposes only mock-video; existing optional bypass in fal adapter is not safely scoped and must be removed/replaced.
+- A crash after provider POST must never resend; persist a submission-start fence before network IO and reconcile unknown results without another create.
+- Official fal JWKS is a keys array; modern headers do not require a key ID. Previous inline route parsing is incorrect.
+- Provider costs may remain UNKNOWN under M4; do not invent a hard billable-cost requirement.
+- Initial worker deployment will be paused with no admitted workspace. Health is not end-to-end M4 completion.
+
+## 2026-10-13 Live Fal Runtime Findings
+
+A trusted API-returned request ID plus official JWKS-verified callback can establish the Fal account binding without guessing a key prefix or copying a PEM. The ordinary paid-create guard remains unchanged. The output is 1280x720, 81 frames, duration 5.067 seconds; FFmpeg estimated r_frame_rate is not the requested FPS, so verification checks measured average rate and duration instead. R2 S3 API rejects the unsigned request with HTTP400/InvalidArgument; this is not an independent public-bucket-policy audit. A synthetically aged pending row drives a real scoped scheduler deletion, not a real 24-hour retention wait. Costs and local POST counters retain explicit provenance.
+
+## 2026-10-14 Remaining Validation
+
+The stale current-candidate fingerprint blocker is resolved for all development stages without changing any stage status or approval decision. The remaining root-integrity failure is a baseline-governance mismatch: the current root requires the S3 SDK and uses Next 16.3.8 while the selected-stack prototype records no S3 SDK and Next 16.3.6, and the accepted prototype lockfile digest differs from the root lockfile. This must be resolved by an explicit baseline/provenance review; it must not be hidden by changing validation output or promoting M4.
+## 2026-10-26 Acceptance Gate Continuation Findings
+
+1. The hosted Acceptance environment is usable for authenticated Stripe test Checkout and Portal verification. The bootstrap recovery path was exercised once, then disabled and its secret removed. No live Stripe key or real funds were used.
+2. M5 hosted evidence now proves owner/member login, owner Checkout/Portal creation, member authorization denial and bootstrap cleanup. It does not prove the full 6.10 subscription lifecycle, refund, dispute or webhook replay scope.
+3. The OpenSpec task file explicitly keeps M4, M5 and M6 development records `IN_PROGRESS` where whole-stage or external-provider evidence remains incomplete. Existing checked implementation rows do not automatically close the corresponding milestone gate.
+4. M6 has local operations and affiliate probes, but the real FirstPromoter account and hosted settlement evidence remain external inputs. These cannot be synthesized from local fixtures without violating the acceptance contract.
+5. M7 depends on M4, M5 and M6 gate closure and still requires exact current skill/workflow/provenance/docs evidence plus independent review.
+6. M8 tasks 9.13, 9.14 and 9.15 remain blocked by commercial inputs, exact candidate/profile proof and final RC/BETA/STABLE review. A hosted readiness deployment alone cannot close those tasks.
+7. The correct output for the remaining work is a set of automated evidence packages with explicit partial conclusions and human recommendations, not automatic checkbox promotion.
+
+### Inventory snapshot
+
+- The final queue currently has 10 records: M0-M3 are automated-ready or PASS; the current M4, M5 and M6 records are `IN_PROGRESS` with blocked criteria/scenarios; M7 and M8 have no current evidence record in the register.
+- M4 current record has 10 retained local commands passing, coverage passing, four blocked criteria and 46 unrun scenarios.
+- M5 current record has 18 retained local commands passing, coverage passing, five blocked criteria and 28 blocked scenarios; the new hosted Checkout packet covers only the authenticated hosted slice.
+- M6 current record has 19 retained local commands passing, coverage passing, five blocked criteria and 39 blocked scenarios; FirstPromoter and hosted settlement remain external.
+- The queue generator only consumes `evidenceRecordRefs` from `acceptance-status.json`, so supplemental evidence packets need explicit queue integration or a separate continuation report to be visible to reviewers.
+
+### Fresh verification attempt
+
+- TypeScript, source boundaries, format, config, database boundaries and strict OpenSpec validation passed.
+- The combined M4 provider integration invocation failed before exercising provider logic because `APP_URL` was empty and the test constructed `new URL('')`.
+- The combined M5 Stripe integration invocation failed before exercising billing logic because disposable PostgreSQL ports `55432` and `55433` were not running.
+- These failures are environment blockers. They must be repaired by loading the repository's test environment and starting the documented disposable services before interpreting provider/billing behavior.
+
+### Repaired local verification
+
+- Docker Desktop was started and the documented local services became healthy. The main disposable PostgreSQL was bound to `55432`; a second ephemeral PostgreSQL was bound to `55433` for the hard-coded refund suite.
+- M4 provider/recovery suite: 128/128 tests passed after supplying non-production dummy HTTPS S3 signing inputs. No provider network call or paid create was made.
+- M5 Stripe/billing suite: 68/68 tests passed; billing schema, Checkout and reconciliation probes added 49 + 10 + 18 passing cases.
+- M6 probes passed for operations, admin reads, workspace details, privileged commands, MFA, recovery, affiliate contracts, affiliate PostgreSQL, affiliate races, referral HTTP, cash affiliate and notifications. All used disposable local PostgreSQL; real FirstPromoter was not contacted.
+- One M6 recovery probe initially failed because it used the PostgreSQL `postgres` database without the migrated application schema. Re-running against the migrated `shpitto` database passed; no source change was required.
+
+### M7 and M8 automated continuation
+
+- M7 Skills, customization, Docs, vendor Docs, release boundaries, content boundaries, shell boundaries and local-service checks all passed.
+- The existing four-workflow M7 run is `LOCAL_WORKFLOWS_EXECUTED`: all four workflows passed, but it explicitly records no independent review, no gate promotion, and no real provider/payment execution.
+- M8 local preflight passed for export boundaries, candidate runtime, deployment/Docker/config/restore/operations preflight and vendor commerce separation.
+- The fresh local candidate check passed archive extraction, offline install, build, buyer checks, migration/seed, login/dashboard, cancellation/refund, worker success/deadline refund, private download, backup/restore, restart persistence and exactly-once credit behavior.
+- M8 remains blocked for commercial readiness, real provider/payment/affiliate inputs, managed/production deployment and RC/BETA/STABLE independent review. These are evidence blockers, not failed local code checks.
+
+### FirstPromoter account readback
+
+- The supplied account/key pair now authenticates successfully: promoter campaigns, referrals, commissions and grouped payouts all return HTTP 200.
+- Campaign `45084` (`web template Affiliate Program`) is confirmed. An accepted promoter exists; referrals and commissions are still zero.
+- No write endpoint was called; no promoter, sale, refund, settlement or payout side effect occurred.
+- M6 remains `RETURN_FOR_EVIDENCE` until a disposable test promoter/referral exists and the account's auto-payout setting is explicitly confirmed disabled.
+- The live adapter is deployed to Acceptance and the hosted health endpoint remains ready; runtime credentials are not recorded in evidence.
+- The owner updated campaign `45084` to `20% commission for first charge`; accepted promoter `15752036` and referral token `shpitto-203f34` resolve to that campaign.
+- The FirstPromoter dashboard still shows native Stripe tracking connected in test mode and the PayPal payout method enabled. A separate fail-closed flag blocks custom sale/refund tracking until duplicate tracking and payout are confirmed safe.
+- Promoter detail confirms accepted promoter `15752036` has referral token `shpitto-203f34`; the Admin API currently returns zero referrals and commissions.
+- Shpitto affiliate settings remain disabled. The audited Superadmin campaign-policy command can bind the account after provider readback passes, but current payout and native-tracking safeguards prevent enablement.
+- FirstPromoter commission history is not canonical Stripe payment history; reconciliation must consume complete local Stripe order/customer records before sale delivery.
+- Added a read-only Stripe test-mode history reader that requires every known Stripe customer PaymentIntent page to reconcile to one local canonical order and payment-intent alias; unknown, missing, duplicated or mismatched payment evidence remains held.
+- Latest Acceptance deployment serves the referral capture code and is healthy; the hosted referral endpoint returns `disabled` with no cookie until Superadmin binds/enables the provider, confirming fail-closed behavior.
+
+## 2026-10-28 Configurable security controls findings
+
+1. The admin shell already has a server-authorized `/api/admin/security` surface and a client-side security panel, but no persisted global security-settings resource or settings navigation.
+2. Better Auth currently hardcodes `requireEmailVerification: true` and the operations authorization layer hardcodes `twoFactorEnabled` plus a trusted session step-up for operator access. Both policies must become database-backed while retaining strict defaults when no setting exists.
+3. The existing mail adapter intentionally fails in production when no real transport is configured. Optional SMTP therefore requires an explicit disabled mode and truthful UI status; it must not pretend that password recovery or verification email delivery works.
+4. Turnstile is absent from the current dependency graph. It can be integrated with native `fetch` against Cloudflare Siteverify and a client-side widget script, avoiding a new package.
+5. Security secrets cannot be returned to the browser. SMTP credentials and the Turnstile secret need encrypted-at-rest storage derived from `BETTER_AUTH_SECRET`, with write-only form fields and presence/status projections.
+6. Existing admin entry currently blocks the whole admin app until MFA is complete. Optional 2FA requires the entry gate and command authorization to consult one shared security policy, otherwise the UI setting would not change behavior.
+
+## 2026-10-29 First-user Superadmin claim findings
+
+1. The OpenSpec contradicted the confirmed setup decision: operator requirements forced verified email and 2FA and prohibited all public first-user role assignment, while the security-controls delta made these controls optional.
+2. The fresh-install path needs durable database state rather than a user-count check in a callback. A one-row owner-state record and the existing advisory transaction lock serialize registration, bootstrap and claim closure across concurrent requests and process restarts.
+3. Migration 0031 opens public claiming only when the installation has no users, no operator roles and no prior bootstrap/claim audit. Existing accounts keep it closed. Existing operator roles without a prior Superadmin remain uninitialized so an authenticated server-side bootstrap can establish the first owner.
+4. A claim is accepted only from the user identity in a successful Better Auth credential response and only if the matching credential account is persisted. Failed sign-in, duplicate signup, client role input and client user IDs do not claim ownership. A successful login can complete a claim after an interrupted post-signup hook.
+5. Operator role assignment, owner-state closure and audit commit in one transaction under the shared ownership lock. Existing role mutation/disablement guards continue to protect the final active Superadmin.
+6. Shared-database HTTP probes must not temporarily close an open fresh-install claim; a forced process exit could leave a test-only state change behind. The auth/team probes now require an isolated database with claiming already closed, while the dedicated owner-claim probe creates and removes its own disposable databases.
+
+### Local evidence
+
+- The dedicated owner-claim probe passes concurrent signup, untrusted role input, failed and duplicate auth, successful-login recovery, restart, upgrade lockout, legacy operator bootstrap and audit checks.
+- The privileged and security-settings PostgreSQL probes pass; the 2FA probe passes with claim state explicitly closed.
+- Real local HTTP auth and team/invitation probes pass against an isolated Next.js instance and disposable PostgreSQL database. A separate concurrent HTTP run confirmed exactly one owner, one audit record, winner access and loser denial.
+- Typecheck, source-boundary, format, database-boundary, config, M2 foundation, shell/content boundaries, strict OpenSpec and production build pass.
+- `verify:acceptance` still rejects the historical M4-M6 development records because their exact-candidate fingerprints predate the current broad working-tree changes. No milestone status was promoted.
+
+### Decisions
+
+- Fresh installs default optional security controls off. Migration preserves existing operator 2FA enforcement when an active operator role already exists; email verification defaults off so missing SMTP cannot block signup or login.
+- Turnstile applies to signup, login and password-reset request routes when enabled; token verification is server-side and tied to the configured hostname/origin.
+- Settings changes are superadmin-only and audited through a named command or equivalent durable audit event.
+
+### Implementation status
+
+1. Added `app.security_settings` with independent SMTP, email verification, 2FA and Turnstile flags plus encrypted secret columns.
+2. Added native AES-GCM secret encryption derived from `BETTER_AUTH_SECRET`; public settings projections expose configuration status only.
+3. Added a superadmin-only `/api/admin/security-settings` route and a Security settings view in the admin shell.
+4. Added server-side Cloudflare Siteverify checks for signup, login and password-reset requests and a client widget that only renders when enabled.
+5. Changed Better Auth and operator authorization to consult the stored optional policies at request time while preserving strict behavior when enabled.
+6. Added SMTP delivery through Nodemailer when the stored SMTP URL is enabled; local Mailpit behavior remains available for local development.

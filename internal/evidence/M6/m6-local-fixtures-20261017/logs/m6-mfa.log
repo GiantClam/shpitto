@@ -1,0 +1,2 @@
+{"status":"PASS","databaseName":"m6_two_factor_probe_da9ee5a66ad24617aa59f24c829b3459","enrollment":true,"invalidCodeRejected":true,"sessionRotation":true,"sameSession":true,"wrongSessionRejected":true,"expiredStepUpRejected":true,"mfaLoginChallenge":true,"roleRevocation":true,"disableRevokesStamps":true,"externalAccountsUsed":false}
+{"disposableDatabaseRemoved":true,"databaseName":"m6_two_factor_probe_da9ee5a66ad24617aa59f24c829b3459"}

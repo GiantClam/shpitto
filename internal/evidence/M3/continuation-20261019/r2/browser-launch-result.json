@@ -1,0 +1,22 @@
+{
+  "startedAt": "2026-10-19T06:35:15.425Z",
+  "completedAt": "2026-10-19T06:37:58.335Z",
+  "sourceTreeSha256": "e5cf13a5d4af7747fcb83bc10e940e73e731570a0df4dd6361aaced0890a71be",
+  "webOrigin": "http://127.0.0.1:3199",
+  "mailOrigin": "http://127.0.0.1:53481",
+  "localMailServiceStopped": true,
+  "browserResult": {
+    "name": "browser-driver",
+    "startedAt": "2026-10-19T06:37:04.625Z",
+    "completedAt": "2026-10-19T06:37:58.325Z",
+    "exitCode": 1,
+    "signal": null,
+    "outputRef": "internal/evidence/M3/continuation-20261019/r2/browser-driver.log",
+    "outputSha256": "493180bc3cc4c2eb323ecaf7f3b9c2b1f71d6c8ff5c121178c4aa1eb128613cf"
+  },
+  "evidenceRef": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-e68965f7",
+  "temporaryRuntimeRetained": "C:\\Users\\liula\\AppData\\Local\\Temp\\shpitto-m3-browser-P0zVjy\\candidate",
+  "paidProviderCalls": false,
+  "independentReview": "NOT_RUN",
+  "integrationDecision": "NOT_RUN"
+}

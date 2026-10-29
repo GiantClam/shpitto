@@ -1,0 +1,38 @@
+✔ builds pinned T2V create request with safe schema fields and no automatic retry (2.6831ms)
+✔ builds pinned I2V request with owned image and omits unsupported aspect_ratio (0.4034ms)
+✔ uses configured server-side image resolver and rejects arbitrary image URLs (0.2693ms)
+✔ live I2V requires an explicit server-owned image resolver before any provider call (0.4953ms)
+✔ transport timeout is unknown and never retried or converted to rejection (0.2309ms)
+✔ explicit validation rejection is definitelyRejected while 5xx stays unknown (0.3146ms)
+✔ status and result use exact persisted prediction ID and normalize errors/output (0.3686ms)
+✔ mismatched ID and malformed response are rejected before attachment (0.1711ms)
+✖ status and result responses without the persisted prediction ID are rejected (0.4394ms)
+✔ live mode remains blocked while the catalog row is disabled (0.2822ms)
+✔ request builder only accepts the exact persisted Replicate contract (9.6002ms)
+✔ configuration and identity errors fail closed before provider attachment (0.3053ms)
+✔ invalid endpoint/webhook settings, missing IDs and transport errors stay bounded (0.5921ms)
+✔ adapter refuses non-Replicate persisted refs and malformed upstream status responses (0.4104ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 13
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 453.9328
+
+✖ failing tests:
+
+test at tests\contracts\replicate.test.ts:118:1
+✖ status and result responses without the persisted prediction ID are rejected (0.4394ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///D:/github/shpitto/tests/contracts/replicate.test.ts:123:3)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /identity/i,
+    operator: 'rejects',
+    diff: 'simple'
+  }

@@ -1,0 +1,22 @@
+✔ outbox heartbeat serializes renewals, skips timer backlog, and drains on stop (0.8572ms)
+✔ outbox heartbeat records lease loss and rejects later explicit renewals (1.9668ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 514.7433
+ℹ start of coverage report
+ℹ ---------------------------------------------------------------------------------------------------
+ℹ file          | line % | branch % | funcs % | uncovered lines
+ℹ ---------------------------------------------------------------------------------------------------
+ℹ src           |        |          |         | 
+ℹ  modules      |        |          |         | 
+ℹ   generation  |        |          |         | 
+ℹ    outbox.ts  |  62.42 |    70.00 |   58.82 | 83-93 97-116 119-122 125-128 132-135 139-142 146-157
+ℹ ---------------------------------------------------------------------------------------------------
+ℹ all files     |  62.42 |    70.00 |   58.82 | 
+ℹ ---------------------------------------------------------------------------------------------------
+ℹ end of coverage report

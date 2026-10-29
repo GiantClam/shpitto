@@ -1,0 +1,49 @@
+{"status":"PASS","scope":"shared-referral-http-handler-local-docker","realAccountVerified":false,"checks":["same-origin-strict-bounded-input-before-io","disabled-invalid-unavailable-retain-prior-cookie","verified-server-signed-cookie-consumed-by-workspace-reader","production-cookie-requires-https-and-secure","configuration-change-during-verification-fails-closed"]}
+✔ scripts\probe-m6-affiliate-referral.ts (1285.2399ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1292.0728
+ℹ start of coverage report
+ℹ -------------------------------------------------------------------------------------------------------------------
+ℹ file                  | line % | branch % | funcs % | uncovered lines
+ℹ -------------------------------------------------------------------------------------------------------------------
+ℹ src                   |        |          |         | 
+ℹ  config               |        |          |         | 
+ℹ   env.ts              |  75.00 |    45.45 |   33.33 | 9-11 42-43 66-80 87-88
+ℹ  contracts            |        |          |         | 
+ℹ   http.ts             |  50.94 |    61.54 |   30.00 | 17-18 32-33 38-42 45-49 52-59 63-74 77-78 81-87 95-96 99-105
+ℹ  db                   |        |          |         | 
+ℹ   client.ts           |  89.29 |   100.00 |   50.00 | 26-28
+ℹ   contracts.ts        |  79.59 |   100.00 |   33.33 | 14-16 21-22 25-29
+ℹ   schema              |        |          |         | 
+ℹ    access.ts          | 100.00 |   100.00 |   50.00 | 
+ℹ    affiliate-inbox.ts | 100.00 |   100.00 |  100.00 | 
+ℹ    affiliate.ts       | 100.00 |   100.00 |   43.75 | 
+ℹ    asset.ts           | 100.00 |   100.00 |   33.33 | 
+ℹ    auth.ts            | 100.00 |   100.00 |   62.50 | 
+ℹ    billing.ts         |  96.88 |   100.00 |   52.94 | 217-223
+ℹ    commands.ts        | 100.00 |   100.00 |   33.33 | 
+ℹ    credit.ts          | 100.00 |   100.00 |   42.86 | 
+ℹ    generation.ts      | 100.00 |   100.00 |   66.67 | 
+ℹ    index.ts           | 100.00 |   100.00 |  100.00 | 
+ℹ    invitations.ts     | 100.00 |   100.00 |   33.33 | 
+ℹ    operations.ts      | 100.00 |   100.00 |   33.33 | 
+ℹ    operator.ts        | 100.00 |   100.00 |   40.00 | 
+ℹ    ownership.ts       | 100.00 |   100.00 |  100.00 | 
+ℹ    workspace.ts       | 100.00 |   100.00 |   41.18 | 
+ℹ  modules              |        |          |         | 
+ℹ   affiliates          |        |          |         | 
+ℹ    attribution.ts     |  91.67 |    54.17 |   77.78 | 54-55 58-60
+ℹ    referral-http.ts   |  97.40 |    84.48 |   85.71 | 75-76
+ℹ    request.ts         |  88.89 |    44.44 |  100.00 | 16-17
+ℹ   shared              |        |          |         | 
+ℹ    transaction.ts     | 100.00 |   100.00 |  100.00 | 
+ℹ -------------------------------------------------------------------------------------------------------------------
+ℹ all files             |  93.06 |    80.22 |   49.65 | 
+ℹ -------------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

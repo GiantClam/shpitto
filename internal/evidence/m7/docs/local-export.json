@@ -1,0 +1,21 @@
+{
+  "status": "IN_PROGRESS",
+  "profile": "local-buyer-docs",
+  "release": "v1",
+  "publishedSource": "content/docs/v1",
+  "generatedDocuments": 27,
+  "buyerDocuments": 59,
+  "skillReferences": 12,
+  "searchPolicy": "published-only",
+  "checks": {
+    "docsContract": "PASS",
+    "buyerExport": "PASS",
+    "secretScan": "PASS",
+    "sourceBoundary": "PASS"
+  },
+  "verificationDate": "2026-10-05",
+  "docManifestPages": 27,
+  "unitTests": "13/13 PASS",
+  "deferred": ["M4 real providers", "M5 Stripe test mode", "M6 FirstPromoter", "M8 production profiles"],
+  "reason": "Local source and export contract are verified; integrated stage acceptance remains blocked by predecessor external evidence."
+}

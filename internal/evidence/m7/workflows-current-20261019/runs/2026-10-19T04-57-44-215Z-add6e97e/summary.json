@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "1.0",
+  "scope": "M7 task 8.9 local actual four-workflow execution",
+  "runId": "2026-10-19T04-57-44-215Z-add6e97e",
+  "startedAt": "2026-10-19T04:57:44.470Z",
+  "candidateCurrency": "PROVISIONAL_PENDING_ROOT_FREEZE",
+  "baselineSourceTreeSha256": "4506ab089eceaf64ec1bc57c4b5c6ef16ed3e75042292ccbc3bfdd2742a3a9f8",
+  "liveProvider": false,
+  "livePayment": false,
+  "independentReview": "NOT_RUN",
+  "gatePromotion": false,
+  "workflows": [
+    {
+      "id": "customize-brand",
+      "result": "PASS",
+      "classification": "local-mock",
+      "modifiedSourceTreeSha256": "65d5d44424985f62a8868b1450927de2a1ccbb911f52672449b85cd5d472e22a",
+      "files": [
+        "src/config/brand.ts"
+      ],
+      "protectedFilesUnchanged": 413,
+      "evidenceDirectory": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T04-57-44-215Z-add6e97e/customize-brand"
+    },
+    {
+      "id": "create-page",
+      "result": "PASS",
+      "classification": "local-mock",
+      "modifiedSourceTreeSha256": "35bc50fa92d764469cb2b341e72378bc4aa404b5aa90b86025bf8c6bb23959c0",
+      "files": [
+        "src/config/navigation.ts",
+        "src/app/(marketing)/studio-notes/page.tsx"
+      ],
+      "protectedFilesUnchanged": 413,
+      "evidenceDirectory": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T04-57-44-215Z-add6e97e/create-page"
+    },
+    {
+      "id": "modify-page",
+      "result": "PASS",
+      "classification": "local-mock",
+      "modifiedSourceTreeSha256": "bca04423ef9613684a96b390442b4c2b16c66a6aa70d0bcbfd8e7056159c53ba",
+      "files": [
+        "src/components/billing/fixture-billing-panel.tsx"
+      ],
+      "protectedFilesUnchanged": 413,
+      "evidenceDirectory": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T04-57-44-215Z-add6e97e/modify-page"
+    },
+    {
+      "id": "customize-site",
+      "result": "PASS",
+      "classification": "local-mock",
+      "modifiedSourceTreeSha256": "77f057123336dca519083f56c502dd3aee704a5e8401ef011b34f4cf6ed2b779",
+      "files": [
+        "src/components/shell/site-shell.tsx"
+      ],
+      "protectedFilesUnchanged": 413,
+      "evidenceDirectory": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T04-57-44-215Z-add6e97e/customize-site"
+    }
+  ],
+  "sourceStableDuringRun": false,
+  "endedAt": "2026-10-19T04:58:56.516Z",
+  "status": "LOCAL_WORKFLOWS_EXECUTED",
+  "limitations": [
+    "No M7 gate promotion or independent reviewer decision.",
+    "Viewport smoke uses actual static React markup and CSS, not Next route/hydration or browser checkout proof.",
+    "No real Stripe, external email or provider execution.",
+    "Without SHPITTO_M7_EXPECTED_SOURCE_SHA the baseline remains provisional pending root freeze."
+  ]
+}

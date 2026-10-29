@@ -1,0 +1,9 @@
+✔ disabled affiliate integration does not make core production config depend on affiliate credentials (1.0037ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 120.6908

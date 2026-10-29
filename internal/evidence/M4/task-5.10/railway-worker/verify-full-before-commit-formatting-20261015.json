@@ -1,0 +1,9 @@
+{
+  "startedAt": "2026-10-15T13:53:46.678Z",
+  "endedAt": "2026-10-15T13:54:20.244Z",
+  "command": "corepack pnpm run verify",
+  "exitCode": 0,
+  "status": "PASS_LOCAL_VERIFICATION",
+  "environmentPolicy": "Allowlisted OS paths, explicit nonfunctional fixture configuration, process.loadEnvFile disabled and Next dotenv stat discovery blocked. No real provider credentials.",
+  "fullM4Acceptance": false
+}

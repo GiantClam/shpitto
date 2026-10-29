@@ -1,0 +1,255 @@
+{
+  "capturedAt": "2026-10-19T04:07:13.772Z",
+  "application": "http://127.0.0.1:3100/#create",
+  "candidateRef": "internal/evidence/M3/browser-current-20261019/candidate/candidate.json",
+  "out": [
+    {
+      "viewport": {
+        "name": "desktop",
+        "width": 1440,
+        "height": 900
+      },
+      "textSnap": {
+        "mode": "text-to-video",
+        "url": "http://127.0.0.1:3100/#create",
+        "scrollWidth": 1440,
+        "viewportWidth": 1440,
+        "bodyText": "Skip to content\nShpitto\nCREATE SOMETHING\nCreate\nMy creations\nExplore\nFrom idea to first take.\n\nStart with a prompt.\nMake it your own.\n\nStart creating\nHelp & guides\nAI video generator\nLog in\nGet started\n\nAI VIDEO GENERATOR · PRIVATE BY DEFAULT\n\nCreate a video from a prompt or image.\n\nChoose how to start, describe the motion, then review your model and credits before you generate.\n\nText to video\nImage to video\nDescribe your video\nCanvas\n16:9\n9:16\n5s · 720p\nModel & credits\nContinue to studio\n\nSign in to choose a model, review credits and generate. Your prompt comes with you.\n\n0 / 10,000\n\nA LITTLE INSPIRATION\n\nFind your next starting point.\nOriginal sample artwork · not generated videos\nAll\nCinematic\nProduct\nPortrait\nSample artwork\nPortrait\nAfter hours in Tokyo\n\n9:16 · Prompt inspiration\n\nUse prompt\nSample artwork\nCinematic\nA quieter kind of escape\n\n16:9 · Prompt inspiration\n\nUse prompt\nSample artwork\nProduct\nMade for the spotlight\n\n9:16 · Prompt inspiration\n\nUse prompt\n\nA starting point, not a promise. Your chosen model and prompt shape the final result.\n\nShpitto · Give your ideas a little motion.\nHelp & documentation",
+        "buttons": [
+          "Text to video",
+          "Image to video",
+          "Continue to studio",
+          "All",
+          "Cinematic",
+          "Product",
+          "Portrait",
+          "Use prompt",
+          "Use prompt",
+          "Use prompt",
+          ""
+        ]
+      },
+      "imageSnap": {
+        "mode": "image-to-video",
+        "url": "http://127.0.0.1:3100/?mode=image-to-video",
+        "scrollWidth": 1440,
+        "viewportWidth": 1440,
+        "guestInput": 1,
+        "placeholder": "How should your image move? Describe the motion, camera and mood…",
+        "continueLabel": "Continue to image upload",
+        "bodyText": "Skip to content\nShpitto\nCREATE SOMETHING\nCreate\nMy creations\nExplore\nFrom idea to first take.\n\nStart with a prompt.\nMake it your own.\n\nStart creating\nHelp & guides\nAI video generator\nLog in\nGet started\n\nAI VIDEO GENERATOR · PRIVATE BY DEFAULT\n\nCreate a video from a prompt or image.\n\nChoose how to start, describe the motion, then review your model and credits before you generate.\n\nText to video\nImage to video\nStart with your image\n\nContinue to your studio to upload and confirm the crop. Your image is uploaded only after you choose it there.\n\nDescribe your video\nCanvas\n16:9\n9:16\n5s · 720p\nModel & credits\nContinue to image upload\n\nSign in to choose a model, review credits and generate. Your prompt comes with you.\n\n0 / 10,000\n\nA LITTLE INSPIRATION\n\nFind your next starting point.\nOriginal sample artwork · not generated videos\nAll\nCinematic\nProduct\nPortrait\nSample artwork\nPortrait\nAfter hours in Tokyo\n\n9:16 · Prompt inspiration\n\nUse prompt\nSample artwork\nCinematic\nA quieter kind of escape\n\n16:9 · Prompt inspiration\n\nUse prompt\nSample artwork\nProduct\nMade for the spotlight\n\n9:16 · Prompt inspiration\n\nUse prompt\n\nA starting point, not a promise. Your chosen model and prompt shape the final result.\n\nShpitto · Give your ideas a little motion.\nHelp & documentation"
+      },
+      "focus": [
+        {
+          "tag": "TEXTAREA",
+          "id": "creation-prompt",
+          "text": "",
+          "aria": null
+        },
+        {
+          "tag": "SELECT",
+          "id": null,
+          "text": "16:99:16",
+          "aria": "Video canvas"
+        },
+        {
+          "tag": "SUMMARY",
+          "id": null,
+          "text": "Model & credits",
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "id": null,
+          "text": "Continue to image upload",
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "id": null,
+          "text": "All",
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "id": null,
+          "text": "Cinematic",
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "id": null,
+          "text": "Product",
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "id": null,
+          "text": "Portrait",
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "id": null,
+          "text": "Use prompt",
+          "aria": "Use prompt: After hours in Tokyo"
+        },
+        {
+          "tag": "BUTTON",
+          "id": null,
+          "text": "Use prompt",
+          "aria": "Use prompt: A quieter kind of escape"
+        },
+        {
+          "tag": "BUTTON",
+          "id": null,
+          "text": "Use prompt",
+          "aria": "Use prompt: Made for the spotlight"
+        },
+        {
+          "tag": "A",
+          "id": null,
+          "text": "Help & documentation",
+          "aria": null
+        },
+        {
+          "tag": "NEXTJS-PORTAL",
+          "id": null,
+          "text": "",
+          "aria": null
+        },
+        {
+          "tag": "BODY",
+          "id": null,
+          "text": "Skip to contentShpittoCREATE SOMETHINGCreateMy creationsExploreFrom idea to first take.Sta",
+          "aria": null
+        }
+      ],
+      "errors": []
+    },
+    {
+      "viewport": {
+        "name": "mobile",
+        "width": 390,
+        "height": 844
+      },
+      "textSnap": {
+        "mode": "text-to-video",
+        "url": "http://127.0.0.1:3100/#create",
+        "scrollWidth": 390,
+        "viewportWidth": 390,
+        "bodyText": "Skip to content\nShpitto\nCreate\nMy creations\nExplore\nAI video generator\nLog in\nGet started\n\nAI VIDEO GENERATOR · PRIVATE BY DEFAULT\n\nCreate a video from a prompt or image.\n\nChoose how to start, describe the motion, then review your model and credits before you generate.\n\nText to video\nImage to video\nDescribe your video\nCanvas\n16:9\n9:16\n5s · 720p\nModel & credits\nContinue to studio\n\nSign in to choose a model, review credits and generate. Your prompt comes with you.\n\n0 / 10,000\n\nA LITTLE INSPIRATION\n\nFind your next starting point.\nOriginal sample artwork · not generated videos\nAll\nCinematic\nProduct\nPortrait\nSample artwork\nPortrait\nAfter hours in Tokyo\n\n9:16 · Prompt inspiration\n\nUse prompt\nSample artwork\nCinematic\nA quieter kind of escape\n\n16:9 · Prompt inspiration\n\nUse prompt\nSample artwork\nProduct\nMade for the spotlight\n\n9:16 · Prompt inspiration\n\nUse prompt\n\nA starting point, not a promise. Your chosen model and prompt shape the final result.\n\nShpitto · Give your ideas a little motion.\nHelp & documentation",
+        "buttons": [
+          "Text to video",
+          "Image to video",
+          "Continue to studio",
+          "All",
+          "Cinematic",
+          "Product",
+          "Portrait",
+          "Use prompt",
+          "Use prompt",
+          "Use prompt",
+          ""
+        ]
+      },
+      "imageSnap": {
+        "mode": "image-to-video",
+        "url": "http://127.0.0.1:3100/?mode=image-to-video",
+        "scrollWidth": 390,
+        "viewportWidth": 390,
+        "guestInput": 1,
+        "placeholder": "How should your image move? Describe the motion, camera and mood…",
+        "continueLabel": "Continue to image upload",
+        "bodyText": "Skip to content\nShpitto\nCreate\nMy creations\nExplore\nAI video generator\nLog in\nGet started\n\nAI VIDEO GENERATOR · PRIVATE BY DEFAULT\n\nCreate a video from a prompt or image.\n\nChoose how to start, describe the motion, then review your model and credits before you generate.\n\nText to video\nImage to video\nStart with your image\n\nContinue to your studio to upload and confirm the crop. Your image is uploaded only after you choose it there.\n\nDescribe your video\nCanvas\n16:9\n9:16\n5s · 720p\nModel & credits\nContinue to image upload\n\nSign in to choose a model, review credits and generate. Your prompt comes with you.\n\n0 / 10,000\n\nA LITTLE INSPIRATION\n\nFind your next starting point.\nOriginal sample artwork · not generated videos\nAll\nCinematic\nProduct\nPortrait\nSample artwork\nPortrait\nAfter hours in Tokyo\n\n9:16 · Prompt inspiration\n\nUse prompt\nSample artwork\nCinematic\nA quieter kind of escape\n\n16:9 · Prompt inspiration\n\nUse prompt\nSample artwork\nProduct\nMade for the spotlight\n\n9:16 · Prompt inspiration\n\nUse prompt\n\nA starting point, not a promise. Your chosen model and prompt shape the final result.\n\nShpitto · Give your ideas a little motion.\nHelp & documentation"
+      },
+      "focus": [
+        {
+          "tag": "TEXTAREA",
+          "id": "creation-prompt",
+          "text": "",
+          "aria": null
+        },
+        {
+          "tag": "SELECT",
+          "id": null,
+          "text": "16:99:16",
+          "aria": "Video canvas"
+        },
+        {
+          "tag": "SUMMARY",
+          "id": null,
+          "text": "Model & credits",
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "id": null,
+          "text": "Continue to image upload",
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "id": null,
+          "text": "All",
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "id": null,
+          "text": "Cinematic",
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "id": null,
+          "text": "Product",
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "id": null,
+          "text": "Portrait",
+          "aria": null
+        },
+        {
+          "tag": "BUTTON",
+          "id": null,
+          "text": "Use prompt",
+          "aria": "Use prompt: After hours in Tokyo"
+        },
+        {
+          "tag": "BUTTON",
+          "id": null,
+          "text": "Use prompt",
+          "aria": "Use prompt: A quieter kind of escape"
+        },
+        {
+          "tag": "BUTTON",
+          "id": null,
+          "text": "Use prompt",
+          "aria": "Use prompt: Made for the spotlight"
+        },
+        {
+          "tag": "A",
+          "id": null,
+          "text": "Help & documentation",
+          "aria": null
+        },
+        {
+          "tag": "NEXTJS-PORTAL",
+          "id": null,
+          "text": "",
+          "aria": null
+        },
+        {
+          "tag": "BODY",
+          "id": null,
+          "text": "Skip to contentShpittoCREATE SOMETHINGCreateMy creationsExploreFrom idea to first take.Sta",
+          "aria": null
+        }
+      ],
+      "errors": []
+    }
+  ]
+}

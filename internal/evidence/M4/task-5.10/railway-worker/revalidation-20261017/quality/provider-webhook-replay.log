@@ -1,0 +1,22 @@
+✔ M4 signed replay/crash race 1: 20 exact replays, ten receivers/processors/settlers (2808.4058ms)
+✔ M4 signed replay/crash race 2: 20 exact replays, ten receivers/processors/settlers (1611.1079ms)
+✔ M4 signed replay/crash race 3: 20 exact replays, ten receivers/processors/settlers (1676.7293ms)
+✔ M4 signed identity, issued nonce, account and key rejection leave inbox and credits unchanged (188.4936ms)
+✔ M4 completed/running reordering preserves materialization and terminal immutability (595.5898ms)
+✔ M4 late signed completion after refund is quarantined without another provider POST (131.9534ms)
+ℹ Error: Test "M4 signed replay/crash race 1: 20 exact replays, ten receivers/processors/settlers" at tests\integration\provider-webhook-replay.test.ts:220:54 generated asynchronous activity after the test ended. This activity created the error "error: terminating connection due to administrator command" and would have caused the test to fail, but instead triggered an uncaughtException event.
+✖ tests\integration\provider-webhook-replay.test.ts (7740.8621ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 6
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7745.2895
+
+✖ failing tests:
+
+test at tests\integration\provider-webhook-replay.test.ts:1:1
+✖ tests\integration\provider-webhook-replay.test.ts (7740.8621ms)
+  'test failed'

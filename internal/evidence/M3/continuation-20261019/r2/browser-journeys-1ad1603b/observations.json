@@ -1,0 +1,53 @@
+{
+  "application": "http://127.0.0.1:3199",
+  "runId": "1ad1603b",
+  "events": [
+    {
+      "name": "fresh-user-signup-and-email-verification",
+      "at": "2026-10-19T06:40:09.908Z"
+    },
+    {
+      "name": "personal-workspace-created",
+      "at": "2026-10-19T06:40:11.502Z",
+      "workspaceId": "26828772-eb51-4cc5-853f-147dc4b53820"
+    },
+    {
+      "name": "application-worker-restart",
+      "at": "2026-10-19T06:40:15.649Z",
+      "taskId": "c41860a0-c0c4-4477-8ff5-86ddfb9ac0a7",
+      "status": "succeeded"
+    },
+    {
+      "name": "private-download",
+      "at": "2026-10-19T06:40:15.916Z",
+      "metadata": {
+        "duration": 2,
+        "width": 320,
+        "height": 180,
+        "readyState": 4,
+        "error": null
+      },
+      "anonymousStatus": 401
+    },
+    {
+      "name": "team-creation",
+      "at": "2026-10-19T06:40:17.691Z",
+      "workspaceId": "b1b02457-0c27-4b79-84fb-1893e1fbccb6"
+    },
+    {
+      "name": "all-browser-journeys-complete",
+      "at": "2026-10-19T06:40:29.514Z",
+      "output": "internal/evidence/M3/continuation-20261019/r2/browser-journeys-1ad1603b"
+    }
+  ],
+  "errors": [
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    },
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 409 (Conflict)"
+    }
+  ]
+}

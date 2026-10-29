@@ -1,0 +1,4 @@
+{
+  "status": "FAIL",
+  "reason": "Candidate changed during verification: sourceTreeSha256\n+ actual - expected\n\n+ '89b6bbc5e0872ea0402caab2e28e876968ac7182aea2dc998879345942878809'\n- '56a3d8c156d690563aa487f89507586f8947536c57d6d7a63c04a3eaf559300e'\n"
+}

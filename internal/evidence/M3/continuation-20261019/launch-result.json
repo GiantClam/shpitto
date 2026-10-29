@@ -1,0 +1,17 @@
+{
+  "startedAt": "2026-10-19T06:15:36.169Z",
+  "freezeRef": "internal/evidence/m7/local-current-20261019/continuation/baseline/candidate.json",
+  "expectedSourceTreeSha256": "95ad817920e31e3db850155b6d321ab90c79cfeaa90d4d0d5263c9aa297a08e7",
+  "outputRef": "internal/evidence/M3/continuation-20261019/automated",
+  "selectedBrowserRef": "internal/evidence/M3/browser-journeys-20261019-c011faae/walkthrough.json",
+  "selectedBrowserPurpose": "Exercise strict exact-candidate rejection; no browser acceptance is claimed.",
+  "localDatabaseEndpoint": "127.0.0.1:55432/postgres",
+  "container": "shpitto-completion-pg-20261019",
+  "remoteIntegrationSettingsSuppressed": true,
+  "paidOrCloudProviderCallsAuthorized": false,
+  "independentReview": "NOT_RUN",
+  "integrationDecision": "NOT_RUN",
+  "endedAt": "2026-10-19T06:24:01.179Z",
+  "code": 1,
+  "signal": null
+}

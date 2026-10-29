@@ -1,0 +1,42 @@
+{
+  "verifiedAt": "2026-10-15T10:24:22.269Z",
+  "status": "PASS_LOCAL_VERIFICATION_ONLY",
+  "fullM4Acceptance": false,
+  "candidateRef": "internal/evidence/M4/task-5.10/railway-worker/m4-local-fixture-candidate-20261015.json",
+  "evidenceRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-verification-20261015",
+  "testsPassed": 191,
+  "integrationsPassed": 15,
+  "deterministicProbeGroupsPassed": 14,
+  "branchCoverage": {
+    "status": "PASS",
+    "coveredBranches": 1424,
+    "totalBranches": 1730,
+    "percent": 82.3121387283237,
+    "missingSources": [],
+    "ownedModuleManifestRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-verification-20261015/coverage.json"
+  },
+  "safety": {
+    "newPaidProviderCalls": 0,
+    "existingBusinessObjectsAccessed": false,
+    "freshDisposableDatabase": true,
+    "localContainerRemoved": true,
+    "localAssetsRemoved": true,
+    "localCredentialFileLoadingBlocked": true,
+    "environmentAllowlisted": true
+  },
+  "qualityGates": {
+    "fullVerification": "PENDING_CURRENT_CANDIDATE",
+    "evidenceRef": "internal/evidence/M4/task-5.10/railway-worker/verify-full-post-local-fixtures-20261015.log"
+  },
+  "limits": [
+    "Fake provider transport and local PostgreSQL do not establish authentic provider delivery or optional Trigger runtime evidence.",
+    "Crash subprocess assertions pass; child-process LCOV is not collected or counted as measured child coverage.",
+    "Current M3 HTTP/browser applicability remains stale; selected current M3 domain regressions are not the entire M3 gate."
+  ],
+  "remaining": [
+    "Optional Trigger execution/connectivity, scope-fenced task registration, deployment and independent heartbeat monitoring; these do not block the selected self-hosted baseline.",
+    "Replicate confirmed account binding and authentic application outcomes for Replicate T2V/I2V and Fal I2V.",
+    "Current M3 applicability and complete scenario/profile evidence.",
+    "Independent whole-stage review and integrator approval."
+  ]
+}

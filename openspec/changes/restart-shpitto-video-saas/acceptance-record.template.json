@@ -1,0 +1,110 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "UNFILLED_TEMPLATE",
+  "scope": "Copy and fill during implementation; null fields and empty arrays are not evidence or permission to pass.",
+  "changeId": "restart-shpitto-video-saas",
+  "stageId": null,
+  "checkpointId": null,
+  "gateTaskId": null,
+  "status": "NOT_STARTED",
+  "candidateId": null,
+  "createdAt": null,
+  "updatedAt": null,
+  "policy": {
+    "path": "acceptance-gates.md",
+    "sha256": null
+  },
+  "prerequisites": [],
+  "candidate": {
+    "sourceCommit": null,
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": null,
+    "artifactSha256": null,
+    "schemaSha256": null,
+    "lockfileSha256": null,
+    "configurationSha256": null,
+    "contractSha256": null,
+    "validatorSha256": null
+  },
+  "environments": [],
+  "criterionResults": [],
+  "commonStandardResults": [],
+  "scenarioResults": [],
+  "commands": [],
+  "coverage": {
+    "status": "NOT_RUN",
+    "ownedModuleManifestRef": null,
+    "denominator": null,
+    "coveredBranches": null,
+    "totalBranches": null,
+    "percent": null,
+    "exclusions": [],
+    "evidenceRef": null
+  },
+  "defects": [],
+  "externalInputs": [],
+  "commercialAuthorizationRefs": [],
+  "recovery": {
+    "rollbackPoint": null,
+    "restoreEvidenceRefs": [],
+    "compatibleSchemaVersions": [],
+    "unrelatedWorkProtection": null
+  },
+  "observation": {
+    "planRef": null,
+    "windowStart": null,
+    "windowEnd": null,
+    "windowRationale": null,
+    "behavioralBaselineDigest": null,
+    "monitoringEvidenceRefs": [],
+    "journeyEvidenceRefs": [],
+    "recoveryUpgradeEvidenceRefs": [],
+    "recurringWorkerAlertEvidenceRefs": [],
+    "findingRefs": []
+  },
+  "submission": {
+    "implementerId": null,
+    "submittedAt": null,
+    "reportRef": null
+  },
+  "independentReview": {
+    "reviewerId": null,
+    "reviewedAt": null,
+    "independentFromImplementer": null,
+    "decision": null,
+    "reason": null,
+    "evidenceRefs": []
+  },
+  "integrationDecision": {
+    "integratorId": null,
+    "decidedAt": null,
+    "decision": null,
+    "reason": null,
+    "nextEligibleTaskIds": [],
+    "blockedTaskIds": []
+  },
+  "invalidation": {
+    "supersedesRecordRef": null,
+    "changedDigestRefs": [],
+    "affectedStages": [],
+    "requiredReruns": [],
+    "carriedEvidence": []
+  },
+  "fieldGuide": {
+    "recordKind": "Set to IMPLEMENTATION_ACCEPTANCE only for a filled actual record; do not present this template as an observed result.",
+    "stageId": "M0 through M8. Checkpoint is null except M8-RC, M8-BETA or M8-STABLE.",
+    "prerequisites": "Each item: taskId or stageId, requiredProfile, observedStatus, candidate/equivalence reference and evidence record reference.",
+    "candidate": "Use SHA-256 of declared scopes and sanitized configuration manifests. Record non-applicability with reason and reviewer; never silently omit a required digest or hash raw guessable secrets.",
+    "environments": "Each item: environmentId, local/mock/sandbox/service/live profile, tool/runtime/service versions, account/program nonsecret identity, effective limits, fixture/seed, clock mode and sanitation notes.",
+    "criterionResults": "Each item: criterionId (for example M0-C01), environmentId, mandatory, PASS/FAIL/BLOCKED/NOT_RUN/STALE, expected, observed and evidenceRefs. Include every applicable criterion from acceptance-status.json.",
+    "commonStandardResults": "Each item: standard name, applicability with justification, result, assertions, evidenceRefs and optional blocking flag. Automated standards are blocking by default; deferred independent-review entries set blocking=false and are collected by the final manual-acceptance queue.",
+    "scenarioResults": "Each item: SC/T/G IDs, taskIds, profile, environmentId, mandatory, result, expected/observed assertions, iteration/seed, commandRef and evidenceRefs. Partial profile PASS does not close all of an SC/G.",
+    "commands": "Each item: commandId, sanitized invocation, environmentId, start/end time, exit code and log/assertion references; do not store secrets or signed download URLs.",
+    "defects": "Each item: defectId, severity P0-P3, mandatoryCriterionAffected, status, impact, owner, dueDate, correction and regression evidenceRefs. No open P0/P1 or failed mandatory condition can pass.",
+    "externalInputs": "Each item: required input, owner, affected tasks/checkpoints, availability, next action and nonsecret authority reference.",
+    "review": "Independent review and integration are deferred to the final manual-acceptance queue. READY_FOR_REVIEW records require complete automated evidence but may keep these fields NOT_RUN; PASS requires a separate reviewer and integrator decision at the final checkpoint. A technical agent review is not commercial authorization.",
+    "invalidation": "Preserve previous failures and superseded decisions. Each carriedEvidence item needs oldRecordRef, unchanged scopes, equivalence rationale and reviewer; changed relevant digests require reruns.",
+    "observation": "Required for M8-STABLE; plan/window recorded at RC before observation. Exercise all applicable J1-J10 and recovery/upgrade/recurring-worker/alert paths; idle elapsed time cannot pass.",
+    "passRule": "READY_FOR_REVIEW requires every automated predecessor, mandatory condition/profile and common automated standard to pass on current bytes; manual review fields may remain deferred. Final PASS requires every applicable predecessor and mandatory condition/profile to pass, evidence to be present, an independent reviewer decision and a separate integrator decision in the final manual-acceptance queue. Missing/blocked/skipped/unexplained-flaky/stale automated evidence fails this rule."
+  }
+}

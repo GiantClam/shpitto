@@ -1,0 +1,46 @@
+- banner:
+  - link "Shpitto Video SaaS home":
+    - /url: /
+    - text: Shpitto
+  - navigation "Primary navigation":
+    - link "Home":
+      - /url: /
+    - link "Docs preview":
+      - /url: /docs
+      - text: Docs
+      - generic: preview
+    - link "Dashboard planned":
+      - /url: /dashboard
+      - text: Dashboard
+      - generic: planned
+- main:
+  - paragraph: Account
+  - heading "Sign in" [level=1]
+  - generic: Email
+  - textbox "Email": <redacted>
+  - generic: Password
+  - textbox "Password": <redacted>
+  - button "Sign in"
+  - alert: Invalid email or password
+  - paragraph:
+    - link "Create an account":
+      - /url: /signup
+    - text: ·
+    - link "Reset password":
+      - /url: /reset-password
+  - complementary "Local demo access":
+    - paragraph: Local acceptance account
+    - paragraph: Use the owner account to create and manage the seeded team workspace.
+    - term: Owner email
+    - definition: demo-owner@shpitto.local
+    - term: Owner password
+    - definition: DemoOwner!2026
+    - term: Member email
+    - definition: demo-member@shpitto.local
+    - term: Member password
+    - definition: DemoMember!2026
+    - link "Open seeded invitation":
+      - /url: /invitations/accept?token=[redacted]
+- contentinfo: Shpitto Video SaaS · staged implementation preview
+- button "Open Next.js Dev Tools":
+- alert

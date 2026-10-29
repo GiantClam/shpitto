@@ -1,0 +1,2 @@
+{"status":"PASS","databaseName":"m5_reconcile_probe_bc699c74a0764e0a9fb53dd18dbaac20","cases":["verified payment persists inbox and issues one catalog grant","verified duplicate webhook is acknowledged without a second effect","invoice and PaymentIntent aliases converge on the original order and grant","forged signature has no durable financial or inbox effect","refund-before-payment holds the workspace and late payment cannot grant credits"],"count":5}
+{"disposableDatabaseRemoved":true,"databaseName":"m5_reconcile_probe_bc699c74a0764e0a9fb53dd18dbaac20"}

@@ -1,0 +1,133 @@
+$ node --experimental-strip-types --test tests/unit/root-integrity.test.ts tests/unit/candidate-digests.test.ts && node scripts/check-root-integrity.mjs && pnpm verify:acceptance && pnpm verify:openspec
+✔ changing mandatory traceability mappings invalidates contract and validator digests (1008.8215ms)
+✔ the exact existing application dependency evolution passes without rewriting historical proof (168.4326ms)
+✔ root integrity rejects an additional runtime dependency (152.4912ms)
+✔ root integrity rejects a missing runtime dependency (154.3079ms)
+✔ root integrity rejects an optional dependency (164.8777ms)
+✔ root integrity rejects implicit bundling of the whole dependency graph (138.0811ms)
+✔ root integrity rejects a new transitive override (119.6004ms)
+✔ root integrity rejects another Next patch (122.0834ms)
+✔ root integrity rejects an S3 version range (118.0668ms)
+✔ root integrity rejects a changed development dependency (130.6782ms)
+✔ root integrity rejects a changed package manager (120.3167ms)
+✔ root integrity rejects a changed application lockfile (134.9412ms)
+✔ root integrity rejects rewritten historical dependency proof (132.4507ms)
+✔ root integrity rejects rewritten historical lock proof (127.4849ms)
+✔ root integrity rejects rewritten historical provenance (129.6609ms)
+✔ root integrity rejects legacy workspace discovery (130.4278ms)
+✔ root integrity rejects a changed workspace override (134.074ms)
+✔ root integrity rejects workspace package extensions (123.6776ms)
+✔ root integrity rejects legacy TypeScript inclusion (132.5129ms)
+✔ root integrity rejects legacy Docker inclusion (127.7046ms)
+✔ historical provenance remains valid in both LF and CRLF checkouts (244.2068ms)
+✔ the reviewed workspace configuration permits only checkout line-ending differences (136.2797ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3113.6406
+{
+  "status": "PASS",
+  "packageManager": "pnpm@12.6.0",
+  "lockfileSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35",
+  "selectedDependencyBaseline": "internal/spikes/selected-stack/package.json",
+  "applicationDependencyEvolution": "tooling/root-dependency-baseline.json",
+  "excludedRoots": [
+    "node_modules",
+    "legacy",
+    "apps",
+    "builder",
+    "packages",
+    "sites",
+    "internal"
+  ]
+}
+
+> @shpitto/video-saas@0.1.0 verify:acceptance D:\github\shpitto
+> node scripts/check-stage-progression.mjs
+
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "stageId": "M0",
+      "status": "PASS",
+      "scope": "historical-approved",
+      "recordRef": "internal/evidence/acceptance/M0/working-tree-20260927/record.json"
+    },
+    {
+      "stageId": "M1",
+      "status": "PASS",
+      "scope": "historical-approved",
+      "recordRef": "internal/evidence/acceptance/M1/working-tree-20260928-m1/record.json"
+    },
+    {
+      "stageId": "M2",
+      "status": "PASS",
+      "scope": "historical-approved",
+      "recordRef": "internal/evidence/acceptance/M2/working-tree-20260929-m2-repair/record.json"
+    },
+    {
+      "stageId": "M3",
+      "status": "PASS",
+      "scope": "historical-approved",
+      "recordRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/record.json"
+    },
+    {
+      "stageId": "M4",
+      "status": "PASS",
+      "scope": "current-accepted",
+      "recordRef": "internal/evidence/acceptance/M4/m4-self-hosted-20261017/record.json"
+    },
+    {
+      "stageId": "M5",
+      "status": "IN_PROGRESS",
+      "scope": "current-development",
+      "recordRef": "internal/evidence/acceptance/M5/m5-local-fixtures-20261017/record.json"
+    },
+    {
+      "stageId": "M6",
+      "status": "IN_PROGRESS",
+      "scope": "current-development",
+      "recordRef": "internal/evidence/acceptance/M6/m6-local-fixtures-20261017/record.json"
+    }
+  ],
+  "note": "Validation of IN_PROGRESS development records is not stage approval."
+}
+
+> @shpitto/video-saas@0.1.0 verify:openspec D:\github\shpitto
+> openspec validate restart-shpitto-video-saas --strict --json --no-interactive
+
+{
+  "items": [
+    {
+      "id": "restart-shpitto-video-saas",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 15
+    }
+  ],
+  "summary": {
+    "totals": {
+      "items": 1,
+      "passed": 1,
+      "failed": 0
+    },
+    "byType": {
+      "change": {
+        "items": 1,
+        "passed": 1,
+        "failed": 0
+      }
+    }
+  },
+  "version": "1.0",
+  "root": {
+    "path": "D:\\github\\shpitto",
+    "source": "nearest"
+  }
+}

@@ -1,0 +1,36 @@
+✔ catalog contains twelve canonical Skills with required sections (1.5423ms)
+✔ protected paths require engineering classification (0.2143ms)
+✔ evidence rejects stale digests and accepts a complete independent record (0.4795ms)
+✔ release evidence requires every mandatory check to succeed with a unique identity and output (0.2339ms)
+✖ release review requires an explicit PASS from an identified reviewer distinct from the implementer (0.4015ms)
+✔ rollback blocks overlaps and permits a scoped patch (0.0926ms)
+✔ docs manifest exposes published-only versioned sections (3.6194ms)
+✔ docs manifest rejects traversal paths instead of reading outside the release source (2.633ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 7
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 157.194
+
+✖ failing tests:
+
+test at tests\unit\governed-skills.test.ts:53:1
+✖ release review requires an explicit PASS from an identified reviewer distinct from the implementer (0.4015ms)
+  AssertionError [ERR_ASSERTION]: {"reviewerId":"reviewer","independentFromImplementer":true,"decision":"PASS"}
+      at TestContext.<anonymous> (file:///D:/github/shpitto/tests/unit/governed-skills.test.ts:68:42)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [],
+    operator: 'notDeepStrictEqual',
+    diff: 'simple'
+  }

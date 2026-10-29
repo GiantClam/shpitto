@@ -1,0 +1,39 @@
+✔ catalog contains twelve canonical Skills with required sections (1.4191ms)
+✔ protected paths require engineering classification (0.2337ms)
+✔ evidence rejects stale digests and accepts a complete independent record (0.5168ms)
+✖ matching digest values must each be SHA-256 strings in both evidence and current candidate (0.4592ms)
+✔ release evidence requires every mandatory check to succeed with a unique identity and output (0.1964ms)
+✔ release review requires an explicit PASS from an identified reviewer distinct from the implementer (0.1312ms)
+✔ release evidence binds both explicit candidate identities even when all six digests match (0.0951ms)
+✔ release export and deployment share the strict evidence gate (8.2808ms)
+✔ rollback blocks overlaps and permits a scoped patch (0.1475ms)
+✔ docs manifest exposes published-only versioned sections (3.9564ms)
+✔ docs manifest rejects traversal paths instead of reading outside the release source (3.0756ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 10
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 203.6852
+
+✖ failing tests:
+
+test at tests\unit\governed-skills.test.ts:43:1
+✖ matching digest values must each be SHA-256 strings in both evidence and current candidate (0.4592ms)
+  AssertionError [ERR_ASSERTION]: sourceTreeSha256: "x"
+      at TestContext.<anonymous> (file:///D:/github/shpitto/tests/unit/governed-skills.test.ts:47:14)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [],
+    operator: 'notDeepStrictEqual',
+    diff: 'simple'
+  }

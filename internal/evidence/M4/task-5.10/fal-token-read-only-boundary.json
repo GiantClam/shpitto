@@ -1,0 +1,18 @@
+{
+  "status": "TOKEN_SUPPLIED_PAID_ACTION_NOT_RUN",
+  "profile": "fal-read-only-contract-and-auth-boundary",
+  "checkedAt": "2026-10-09T11:03:36Z",
+  "tokenPersisted": false,
+  "paidQueuePosts": 0,
+  "providerGenerationRuns": 0,
+  "schemaChecks": {
+    "textToVideo": {"endpoint": "fal-ai/wan/v2.2-a14b/text-to-video", "openapiHttpStatus": 200, "requiredFields": ["prompt"]},
+    "imageToVideo": {"endpoint": "fal-ai/wan/v2.2-a14b/image-to-video", "openapiHttpStatus": 200, "requiredFields": ["prompt", "image"]}
+  },
+  "authBoundaryChecks": [
+    {"request": "GET queue endpoint", "result": "405_METHOD_NOT_ALLOWED", "meaning": "Endpoint requires POST for queue submission; no paid request was made."},
+    {"request": "GET fal account/key management endpoints", "result": "not an authorized read-only account check", "meaning": "No safe read-only account entitlement result was available."}
+  ],
+  "gateEffect": "5.10_REMAINS_OPEN",
+  "nextAction": "Confirm a capped spend budget and authorize one controlled T2V and one controlled I2V queue POST before running real fal evidence."
+}

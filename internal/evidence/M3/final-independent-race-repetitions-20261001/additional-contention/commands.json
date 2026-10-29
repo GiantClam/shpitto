@@ -1,0 +1,212 @@
+[
+  {
+    "id": "candidate-before",
+    "command": [
+      "node",
+      "scripts/candidate-digests.mjs",
+      "D:\\github\\shpitto\\internal\\evidence\\M3\\final-independent-race-repetitions-20261001\\additional-contention\\candidate-before"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-01T02:21:33.709Z",
+    "endedAt": "2026-10-01T02:21:33.873Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/logs/candidate-before.log"
+  },
+  {
+    "id": "iteration-1-command-contract-migration",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "D:\\github\\shpitto\\scripts\\migrate.ts"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-01T02:21:34.173Z",
+    "endedAt": "2026-10-01T02:21:34.901Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/logs/iteration-1-command-contract-migration.log"
+  },
+  {
+    "id": "iteration-1-command-contract",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "D:\\github\\shpitto\\scripts\\probe-command-contract.ts"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-01T02:21:34.967Z",
+    "endedAt": "2026-10-01T02:21:35.769Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/logs/iteration-1-command-contract.log"
+  },
+  {
+    "id": "iteration-1-generation-replay-migration",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "D:\\github\\shpitto\\scripts\\migrate.ts"
+    ],
+    "cwd": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/temporary-assets-rPCe3x",
+    "startedAt": "2026-10-01T02:21:36.268Z",
+    "endedAt": "2026-10-01T02:21:37.040Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/logs/iteration-1-generation-replay-migration.log"
+  },
+  {
+    "id": "iteration-1-generation-replay",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "D:\\github\\shpitto\\scripts\\probe-generation-replay.ts"
+    ],
+    "cwd": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/temporary-assets-rPCe3x",
+    "startedAt": "2026-10-01T02:21:37.113Z",
+    "endedAt": "2026-10-01T02:21:38.299Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/logs/iteration-1-generation-replay.log"
+  },
+  {
+    "id": "iteration-2-command-contract-migration",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "D:\\github\\shpitto\\scripts\\migrate.ts"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-01T02:21:38.818Z",
+    "endedAt": "2026-10-01T02:21:39.564Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/logs/iteration-2-command-contract-migration.log"
+  },
+  {
+    "id": "iteration-2-command-contract",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "D:\\github\\shpitto\\scripts\\probe-command-contract.ts"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-01T02:21:39.633Z",
+    "endedAt": "2026-10-01T02:21:40.440Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/logs/iteration-2-command-contract.log"
+  },
+  {
+    "id": "iteration-2-generation-replay-migration",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "D:\\github\\shpitto\\scripts\\migrate.ts"
+    ],
+    "cwd": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/temporary-assets-B8qWY3",
+    "startedAt": "2026-10-01T02:21:40.974Z",
+    "endedAt": "2026-10-01T02:21:41.718Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/logs/iteration-2-generation-replay-migration.log"
+  },
+  {
+    "id": "iteration-2-generation-replay",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "D:\\github\\shpitto\\scripts\\probe-generation-replay.ts"
+    ],
+    "cwd": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/temporary-assets-B8qWY3",
+    "startedAt": "2026-10-01T02:21:41.787Z",
+    "endedAt": "2026-10-01T02:21:42.979Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/logs/iteration-2-generation-replay.log"
+  },
+  {
+    "id": "iteration-3-command-contract-migration",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "D:\\github\\shpitto\\scripts\\migrate.ts"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-01T02:21:43.480Z",
+    "endedAt": "2026-10-01T02:21:44.209Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/logs/iteration-3-command-contract-migration.log"
+  },
+  {
+    "id": "iteration-3-command-contract",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "D:\\github\\shpitto\\scripts\\probe-command-contract.ts"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-01T02:21:44.282Z",
+    "endedAt": "2026-10-01T02:21:45.081Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/logs/iteration-3-command-contract.log"
+  },
+  {
+    "id": "iteration-3-generation-replay-migration",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "D:\\github\\shpitto\\scripts\\migrate.ts"
+    ],
+    "cwd": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/temporary-assets-j2P5dH",
+    "startedAt": "2026-10-01T02:21:45.574Z",
+    "endedAt": "2026-10-01T02:21:46.309Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/logs/iteration-3-generation-replay-migration.log"
+  },
+  {
+    "id": "iteration-3-generation-replay",
+    "command": [
+      "node",
+      "--experimental-strip-types",
+      "D:\\github\\shpitto\\scripts\\probe-generation-replay.ts"
+    ],
+    "cwd": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/temporary-assets-j2P5dH",
+    "startedAt": "2026-10-01T02:21:46.373Z",
+    "endedAt": "2026-10-01T02:21:47.503Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/logs/iteration-3-generation-replay.log"
+  },
+  {
+    "id": "candidate-after",
+    "command": [
+      "node",
+      "scripts/candidate-digests.mjs",
+      "D:\\github\\shpitto\\internal\\evidence\\M3\\final-independent-race-repetitions-20261001\\additional-contention\\candidate-after"
+    ],
+    "cwd": ".",
+    "startedAt": "2026-10-01T02:21:47.744Z",
+    "endedAt": "2026-10-01T02:21:47.928Z",
+    "exitCode": 0,
+    "signal": null,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M3/final-independent-race-repetitions-20261001/additional-contention/logs/candidate-after.log"
+  }
+]

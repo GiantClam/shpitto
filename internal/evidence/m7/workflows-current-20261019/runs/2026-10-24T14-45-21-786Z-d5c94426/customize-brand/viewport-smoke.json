@@ -1,0 +1,168 @@
+{
+  "status": "PASS",
+  "capturedAt": "2026-10-24T14:45:39.016Z",
+  "observations": [
+    {
+      "viewportId": "desktop",
+      "width": 1440,
+      "height": 900,
+      "reducedMotion": "reduce",
+      "layout": {
+        "viewportWidth": 1440,
+        "documentWidth": 1440,
+        "headingCount": 1,
+        "buttonCount": 3,
+        "overflow": false
+      },
+      "keyboard": [
+        {
+          "tag": "A",
+          "text": "Skip to content",
+          "href": "#main-content",
+          "outline": "solid"
+        },
+        {
+          "tag": "A",
+          "text": "Meridian Motion",
+          "href": "/",
+          "outline": "solid"
+        },
+        {
+          "tag": "A",
+          "text": "Create",
+          "href": "/#create",
+          "outline": "solid"
+        },
+        {
+          "tag": "A",
+          "text": "My creations",
+          "href": "/dashboard#history",
+          "outline": "solid"
+        },
+        {
+          "tag": "A",
+          "text": "Explore",
+          "href": "/#explore",
+          "outline": "solid"
+        },
+        {
+          "tag": "A",
+          "text": "Start creating",
+          "href": "/#create",
+          "outline": "solid"
+        }
+      ],
+      "browserErrors": [],
+      "source": "Actual candidate React modules compiled to static markup; no hydration or routed application server",
+      "catalog": [
+        {
+          "catalogVersion": 1,
+          "productKey": "fixture-monthly",
+          "kind": "subscription",
+          "interval": "month",
+          "credits": "1000",
+          "amountMinor": "2500",
+          "currency": "usd",
+          "creditExpiry": "service_period_end",
+          "provider": "fixture",
+          "priceReference": "fixture:monthly:v1",
+          "snapshotHash": "5638284677cca126ab30deb76724f9b52b77ac58fb6c9e6841cf20432fa9c228"
+        },
+        {
+          "catalogVersion": 1,
+          "productKey": "fixture-pack",
+          "kind": "pack",
+          "interval": null,
+          "credits": "250",
+          "amountMinor": "900",
+          "currency": "usd",
+          "creditExpiry": "never",
+          "provider": "fixture",
+          "priceReference": "fixture:pack:v1",
+          "snapshotHash": "a42c3543e3ed800dd7fecdd00a2dda59992a16e44da610c3b1c34991fb36f3fd"
+        }
+      ]
+    },
+    {
+      "viewportId": "mobile",
+      "width": 390,
+      "height": 844,
+      "reducedMotion": "reduce",
+      "layout": {
+        "viewportWidth": 390,
+        "documentWidth": 390,
+        "headingCount": 1,
+        "buttonCount": 3,
+        "overflow": false
+      },
+      "keyboard": [
+        {
+          "tag": "A",
+          "text": "Skip to content",
+          "href": "#main-content",
+          "outline": "solid"
+        },
+        {
+          "tag": "A",
+          "text": "Meridian Motion",
+          "href": "/",
+          "outline": "solid"
+        },
+        {
+          "tag": "A",
+          "text": "Create",
+          "href": "/#create",
+          "outline": "solid"
+        },
+        {
+          "tag": "A",
+          "text": "My creations",
+          "href": "/dashboard#history",
+          "outline": "solid"
+        },
+        {
+          "tag": "A",
+          "text": "Explore",
+          "href": "/#explore",
+          "outline": "solid"
+        },
+        {
+          "tag": "A",
+          "text": "Log in",
+          "href": "/login",
+          "outline": "solid"
+        }
+      ],
+      "browserErrors": [],
+      "source": "Actual candidate React modules compiled to static markup; no hydration or routed application server",
+      "catalog": [
+        {
+          "catalogVersion": 1,
+          "productKey": "fixture-monthly",
+          "kind": "subscription",
+          "interval": "month",
+          "credits": "1000",
+          "amountMinor": "2500",
+          "currency": "usd",
+          "creditExpiry": "service_period_end",
+          "provider": "fixture",
+          "priceReference": "fixture:monthly:v1",
+          "snapshotHash": "5638284677cca126ab30deb76724f9b52b77ac58fb6c9e6841cf20432fa9c228"
+        },
+        {
+          "catalogVersion": 1,
+          "productKey": "fixture-pack",
+          "kind": "pack",
+          "interval": null,
+          "credits": "250",
+          "amountMinor": "900",
+          "currency": "usd",
+          "creditExpiry": "never",
+          "provider": "fixture",
+          "priceReference": "fixture:pack:v1",
+          "snapshotHash": "a42c3543e3ed800dd7fecdd00a2dda59992a16e44da610c3b1c34991fb36f3fd"
+        }
+      ]
+    }
+  ]
+}

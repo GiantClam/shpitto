@@ -1,0 +1,1 @@
+{"status":"PASS","scope":"shared-referral-http-handler-local-docker","realAccountVerified":false,"checks":["same-origin-strict-bounded-input-before-io","disabled-invalid-unavailable-retain-prior-cookie","verified-server-signed-cookie-consumed-by-workspace-reader","production-cookie-requires-https-and-secure","configuration-change-during-verification-fails-closed"]}

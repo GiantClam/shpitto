@@ -1,0 +1,99 @@
+- button "Open Next.js Dev Tools":
+- alert
+- button "Skip to content"
+- banner:
+  - button "Close menu":
+  - heading "Audit events" [level=6]:
+    - generic: Audit events
+  - button "Toggle light/dark mode":
+  - button "Refresh":
+  - button "Profile":
+    - text: superadmin
+- main:
+  - menu:
+    - menuitem "Dashboard":
+      - paragraph: Dashboard
+    - menuitem "Workspaces":
+      - paragraph: Workspaces
+    - menuitem "Users":
+      - paragraph: Users
+    - menuitem "Generations":
+      - paragraph: Generations
+    - menuitem "Billings":
+      - paragraph: Billings
+    - menuitem "Audits":
+      - paragraph: Audits
+    - menuitem "Affiliate reviews":
+      - paragraph: Affiliate reviews
+    - menuitem "Affiliate holds":
+      - paragraph: Affiliate holds
+  - table:
+    - rowgroup:
+      - row "Id Actor user Workspace Command name Command key Created at":
+        - columnheader "Id"
+        - columnheader "Actor user"
+        - columnheader "Workspace"
+        - columnheader "Command name"
+        - columnheader "Command key"
+        - columnheader "Created at"
+    - rowgroup:
+      - row "580fc16c-8a9d-45a3-97b0-b19cd7ee048f jQLtiBzIPHE62GW69PrVNBVYHs6SD8I7 c8258df0-c0b6-4c7e-b613-0b54ee317435 operator.billing.refund.confirmed 4f42cade-f0ef-4ccf-8e46-fe492e67f561 2026/10/4 16:37:55":
+        - cell "580fc16c-8a9d-45a3-97b0-b19cd7ee048f"
+        - cell "jQLtiBzIPHE62GW69PrVNBVYHs6SD8I7"
+        - cell "c8258df0-c0b6-4c7e-b613-0b54ee317435"
+        - cell "operator.billing.refund.confirmed"
+        - cell "4f42cade-f0ef-4ccf-8e46-fe492e67f561"
+        - cell "2026/10/4 16:37:55"
+      - row "3364f9bd-d2f0-44a0-a560-463d4f86afd3 jQLtiBzIPHE62GW69PrVNBVYHs6SD8I7 c8258df0-c0b6-4c7e-b613-0b54ee317435 operator.billing.refund.delivery 4f42cade-f0ef-4ccf-8e46-fe492e67f561:1 2026/10/4 16:37:55":
+        - cell "3364f9bd-d2f0-44a0-a560-463d4f86afd3"
+        - cell "jQLtiBzIPHE62GW69PrVNBVYHs6SD8I7"
+        - cell "c8258df0-c0b6-4c7e-b613-0b54ee317435"
+        - cell "operator.billing.refund.delivery"
+        - cell "4f42cade-f0ef-4ccf-8e46-fe492e67f561:1"
+        - cell "2026/10/4 16:37:55"
+      - row "977ce46a-c4a9-4776-a7a4-cf9f24e51ec7 jQLtiBzIPHE62GW69PrVNBVYHs6SD8I7 c8258df0-c0b6-4c7e-b613-0b54ee317435 operator.billing.refund 2ab4d2f6-4e3f-4916-85b9-55a1cb5c2f6c 2026/10/4 16:37:55":
+        - cell "977ce46a-c4a9-4776-a7a4-cf9f24e51ec7"
+        - cell "jQLtiBzIPHE62GW69PrVNBVYHs6SD8I7"
+        - cell "c8258df0-c0b6-4c7e-b613-0b54ee317435"
+        - cell "operator.billing.refund"
+        - cell "2ab4d2f6-4e3f-4916-85b9-55a1cb5c2f6c"
+        - cell "2026/10/4 16:37:55"
+      - row "7dce201c-6ebc-4bf1-92d6-f3f394004e6d jQLtiBzIPHE62GW69PrVNBVYHs6SD8I7 c8258df0-c0b6-4c7e-b613-0b54ee317435 operator.billing.refund.unknown a70f1bde-2d74-4f0f-94bf-757726dd252f:2 2026/10/4 16:36:12":
+        - cell "7dce201c-6ebc-4bf1-92d6-f3f394004e6d"
+        - cell "jQLtiBzIPHE62GW69PrVNBVYHs6SD8I7"
+        - cell "c8258df0-c0b6-4c7e-b613-0b54ee317435"
+        - cell "operator.billing.refund.unknown"
+        - cell "a70f1bde-2d74-4f0f-94bf-757726dd252f:2"
+        - cell "2026/10/4 16:36:12"
+      - row "fc59417a-3fcf-4069-b588-0e2728abd0e3 jQLtiBzIPHE62GW69PrVNBVYHs6SD8I7 c8258df0-c0b6-4c7e-b613-0b54ee317435 operator.billing.refund.delivery a70f1bde-2d74-4f0f-94bf-757726dd252f:2 2026/10/4 16:36:12":
+        - cell "fc59417a-3fcf-4069-b588-0e2728abd0e3"
+        - cell "jQLtiBzIPHE62GW69PrVNBVYHs6SD8I7"
+        - cell "c8258df0-c0b6-4c7e-b613-0b54ee317435"
+        - cell "operator.billing.refund.delivery"
+        - cell "a70f1bde-2d74-4f0f-94bf-757726dd252f:2"
+        - cell "2026/10/4 16:36:12"
+      - row "623c16e9-e6db-4739-8b0d-a1e59277a041 jQLtiBzIPHE62GW69PrVNBVYHs6SD8I7 c8258df0-c0b6-4c7e-b613-0b54ee317435 operator.billing.refund.delivery a70f1bde-2d74-4f0f-94bf-757726dd252f:1 2026/10/4 16:18:12":
+        - cell "623c16e9-e6db-4739-8b0d-a1e59277a041"
+        - cell "jQLtiBzIPHE62GW69PrVNBVYHs6SD8I7"
+        - cell "c8258df0-c0b6-4c7e-b613-0b54ee317435"
+        - cell "operator.billing.refund.delivery"
+        - cell "a70f1bde-2d74-4f0f-94bf-757726dd252f:1"
+        - cell "2026/10/4 16:18:12"
+      - row "02a13a61-0ff3-4d3e-a945-4c9ba6468c85 jQLtiBzIPHE62GW69PrVNBVYHs6SD8I7 c8258df0-c0b6-4c7e-b613-0b54ee317435 operator.billing.refund 65f0d93e-fecf-422f-9f03-784ff5b63d9f 2026/10/4 16:18:12":
+        - cell "02a13a61-0ff3-4d3e-a945-4c9ba6468c85"
+        - cell "jQLtiBzIPHE62GW69PrVNBVYHs6SD8I7"
+        - cell "c8258df0-c0b6-4c7e-b613-0b54ee317435"
+        - cell "operator.billing.refund"
+        - cell "65f0d93e-fecf-422f-9f03-784ff5b63d9f"
+        - cell "2026/10/4 16:18:12"
+      - row "01955487-4789-4c86-a6ab-2a5fd77e233f jQLtiBzIPHE62GW69PrVNBVYHs6SD8I7 operator.owner.bootstrap initial-owner 2026/10/4 16:06:32":
+        - cell "01955487-4789-4c86-a6ab-2a5fd77e233f"
+        - cell "jQLtiBzIPHE62GW69PrVNBVYHs6SD8I7"
+        - cell
+        - cell "operator.owner.bootstrap"
+        - cell "initial-owner"
+        - cell "2026/10/4 16:06:32"
+  - paragraph: "Rows per page:"
+  - combobox "Rows per page:": "25"
+  - textbox: "25"
+  - paragraph: 1-8 of 8

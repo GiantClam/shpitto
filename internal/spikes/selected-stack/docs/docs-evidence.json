@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0",
+  "status": "PASSED_STATIC_SOURCE_SEARCH_PROBE",
+  "command": "node docs/docs-probe.mjs",
+  "environment": "local/disposable-static-source",
+  "observed": {
+    "fumadocsVersionedSource": true,
+    "staticPageCount": 3,
+    "pageTreeBuilt": true,
+    "deterministicSearchMatch": "/docs/skills",
+    "secretsRead": false
+  },
+  "proves": [
+    "Fumadocs static source can build a deterministic versioned page tree.",
+    "The prototype can expose Template, Skills and API pages to a search projection without application secrets."
+  ],
+  "doesNotProve": [
+    "MDX compilation with the final production content toolchain.",
+    "Browser rendering or release-tagged buyer guide packaging."
+  ]
+}

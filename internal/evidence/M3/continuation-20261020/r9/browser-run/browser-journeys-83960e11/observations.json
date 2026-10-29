@@ -1,0 +1,118 @@
+{
+  "application": "http://127.0.0.1:3199",
+  "runId": "83960e11",
+  "events": [
+    {
+      "name": "fresh-user-signup-and-email-verification",
+      "at": "2026-10-20T05:21:29.172Z"
+    },
+    {
+      "name": "personal-workspace-created",
+      "at": "2026-10-20T05:21:32.474Z",
+      "workspaceId": "45035dcb-9200-49a0-85c1-d88609b48b13"
+    },
+    {
+      "name": "application-worker-restart",
+      "at": "2026-10-20T05:21:36.386Z",
+      "taskId": "2193d0ae-0646-48bd-ac26-ec023d74d891",
+      "status": "succeeded"
+    },
+    {
+      "name": "private-download",
+      "at": "2026-10-20T05:21:36.623Z",
+      "metadata": {
+        "duration": 2,
+        "width": 320,
+        "height": 180,
+        "readyState": 4,
+        "error": null
+      },
+      "anonymousStatus": 401
+    },
+    {
+      "name": "team-creation",
+      "at": "2026-10-20T05:21:38.421Z",
+      "workspaceId": "f42a36ae-4997-47ba-bf61-86a18a279660"
+    },
+    {
+      "name": "all-browser-journeys-complete",
+      "at": "2026-10-20T05:22:02.341Z",
+      "output": "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11"
+    }
+  ],
+  "errors": [
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    },
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    },
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 409 (Conflict)"
+    },
+    {
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+    },
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    }
+  ],
+  "responseObservations": [
+    {
+      "at": "2026-10-20T05:21:41.162Z",
+      "journey": "team-creation",
+      "url": "http://127.0.0.1:3199/api/invitations/accept",
+      "method": "POST",
+      "status": 403,
+      "body": {
+        "ok": false,
+        "error": {
+          "code": "FORBIDDEN",
+          "message": "Invitation is invalid or expired."
+        }
+      },
+      "expected": true,
+      "classification": "verified-invitation-replay-or-expiry-denial",
+      "acceptanceImpact": "Expected denial for the observed zero-credit or replay/expired-invitation scenario; success-path proof is unaffected."
+    },
+    {
+      "at": "2026-10-20T05:21:43.111Z",
+      "journey": "team-creation",
+      "url": "http://127.0.0.1:3199/api/invitations/accept",
+      "method": "POST",
+      "status": 403,
+      "body": {
+        "ok": false,
+        "error": {
+          "code": "FORBIDDEN",
+          "message": "Invitation is invalid or expired."
+        }
+      },
+      "expected": true,
+      "classification": "verified-invitation-replay-or-expiry-denial",
+      "acceptanceImpact": "Expected denial for the observed zero-credit or replay/expired-invitation scenario; success-path proof is unaffected."
+    },
+    {
+      "at": "2026-10-20T05:21:49.542Z",
+      "journey": "team-creation",
+      "url": "http://127.0.0.1:3199/api/workspaces/f42a36ae-4997-47ba-bf61-86a18a279660/generations",
+      "method": "POST",
+      "status": 409,
+      "body": {
+        "ok": false,
+        "error": {
+          "code": "CONFLICT",
+          "message": "The workspace does not have enough available credits."
+        }
+      },
+      "expected": true,
+      "classification": "verified-zero-credit-denial",
+      "acceptanceImpact": "Expected denial for the observed zero-credit or replay/expired-invitation scenario; success-path proof is unaffected."
+    }
+  ]
+}

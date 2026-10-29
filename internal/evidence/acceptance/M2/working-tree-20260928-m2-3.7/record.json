@@ -1,0 +1,360 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "IMPLEMENTATION_ACCEPTANCE",
+  "changeId": "restart-shpitto-video-saas",
+  "stageId": "M2",
+  "checkpointId": null,
+  "gateTaskId": "3.7",
+  "status": "PASS",
+  "candidateId": "working-tree-20260928-m2-3.7",
+  "createdAt": "2026-09-28T12:10:00Z",
+  "updatedAt": "2026-09-28T12:35:50Z",
+  "policy": {
+    "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+    "sha256": "b597a035c61da01296d71979c1c16c4136f78c3e3d523b55158f0a2ca3de4ff0"
+  },
+  "prerequisites": [
+    {
+      "taskId": "3.6",
+      "requiredProfile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260928-m2-3.6",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.6/record.json",
+        "internal/restart/m2-task-3.6-evidence.md"
+      ]
+    }
+  ],
+  "candidate": {
+    "sourceCommit": "6ad44be7b6f12fe028637f0300040bada826c47d",
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "3fbf1236ee581c93a6e8074564defbc42a7912221e65f6c96e03ffc239e4827e",
+    "schemaSha256": "98c42073440e0e57c31f0dbd2b01017c66bea457d760489e5a2263870fe1b49b",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+    "configurationSha256": "d5da9c21a87fd9ff3a831565fdfcff690a76fb4b5b5ed5da6c3957a886f09974",
+    "contractSha256": "b8ef3892ca9fffb41902009c9388dc560b2621175de1efcb5bc024f2051cd6eb",
+    "validatorSha256": "a9070ce41ee81cc595be4d5edc48ad524013953b233080491038aad69a540305",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF",
+    "digestInputs": {
+      "sourceTree": [
+        "src",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".dockerignore",
+        ".env.example",
+        "src/config/env.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile"
+      ],
+      "contract": [
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json"
+      ],
+      "validator": [
+        "scripts",
+        "internal/restart/check-acceptance-record.py"
+      ]
+    }
+  },
+  "environments": [
+    {
+      "environmentId": "local-m2-access-state-matrix",
+      "profile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "toolVersions": {
+        "node": "24.15.0",
+        "pnpm": "12.6.0",
+        "docker": "29.8.0",
+        "postgres": "15-alpine",
+        "python": "3.x",
+        "openspec": "1.0"
+      },
+      "accountOrProgram": "none",
+      "effectiveLimits": "No provider, payment, payout, publication or hosted-service calls",
+      "fixtureOrSeed": "two team members, operator with trusted step-up, disabled account, suspended workspace, billing hold and worker principal",
+      "clockMode": "controlled probe clock",
+      "sanitationNotes": "Generated IDs and local credentials omitted"
+    }
+  ],
+  "criterionResults": [
+    {
+      "criterionId": "3.7-C01",
+      "environmentId": "local-m2-access-state-matrix",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Disabling one account denies login/session actions and does not suspend other workspace members",
+      "observed": "Domain user access state changed to disabled, the target sessions were revoked, subsequent member authorization was denied and the remaining owner retained access",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.7-evidence.md",
+        "src/db/schema/access.ts",
+        "src/modules/operations/status-commands.ts",
+        "src/app/api/workspaces/_shared.ts",
+        "scripts/probe-access-states.ts"
+      ]
+    },
+    {
+      "criterionId": "3.7-C02",
+      "environmentId": "local-m2-access-state-matrix",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Suspended workspace denies member reads/downloads/actions while audited operator reads and worker settlement remain possible",
+      "observed": "Member workspace authorization was denied after suspension; the shared policy allowed an audited operator read and worker settlement",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.7-evidence.md",
+        "src/modules/workspaces/access-state.ts",
+        "src/modules/operations/status-commands.ts",
+        "scripts/probe-access-states.ts"
+      ]
+    },
+    {
+      "criterionId": "3.7-C03",
+      "environmentId": "local-m2-access-state-matrix",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Billing hold blocks only new generation and Checkout while preserving normal history/download/invitation/Portal/support access",
+      "observed": "Billing account hold persisted; generation and Checkout were denied, while history, download, invitation, Portal and support operations remained allowed",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.7-evidence.md",
+        "src/db/schema/billing.ts",
+        "src/modules/billing/hold-policy.ts",
+        "src/modules/workspaces/access-state.ts",
+        "scripts/probe-access-states.ts"
+      ]
+    },
+    {
+      "criterionId": "3.7-C04",
+      "environmentId": "local-m2-access-state-matrix",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Disabled, suspended and billing-held states do not release, consume or erase in-flight worker settlement",
+      "observed": "Worker delivery and settlement were allowed under suspended and billing-held policy states; no credit or task tables were present in this milestone to mutate",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.7-evidence.md",
+        "src/modules/workspaces/access-state.ts",
+        "scripts/probe-access-states.ts"
+      ]
+    }
+  ],
+  "commonStandardResults": [
+    {
+      "standard": "scope",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Access policy, durable status state and named operator commands only; generation, Checkout, worker and audit domain tables remain later milestones"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.7-evidence.md"
+      ]
+    },
+    {
+      "standard": "build-and-checks",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Typecheck, lint, format, full verify, migration checks and all registered PostgreSQL probes passed"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.7-evidence.md"
+      ]
+    },
+    {
+      "standard": "coverage",
+      "applicable": true,
+      "result": "NOT_APPLICABLE",
+      "reason": "M2 aggregate branch coverage is established at task 3.12; mandatory access-state transitions are covered by the disposable PostgreSQL probe",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.7-evidence.md"
+      ]
+    },
+    {
+      "standard": "defects",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "No open P0/P1 defect is recorded for task 3.7"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.7-evidence.md"
+      ]
+    },
+    {
+      "standard": "isolation-security",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Domain account state is separate from Better Auth identity storage; workspace billing state is tenant-bound; operator commands require a current operator role and trusted same-session step-up"
+      ],
+      "evidenceRefs": [
+        "src/db/schema/access.ts",
+        "src/db/schema/billing.ts",
+        "src/modules/operations/status-commands.ts"
+      ]
+    },
+    {
+      "standard": "evidence-and-recovery",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Current candidate digests, disabled-session revocation, teammate isolation, suspension policy and billing-hold matrix outcomes are recorded"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.7-evidence.md",
+        "scripts/probe-access-states.ts"
+      ]
+    }
+  ],
+  "scenarioResults": [
+    {
+      "ids": [
+        "T03",
+        "T04",
+        "T23",
+        "T59",
+        "T59.a",
+        "SC-IAM-11",
+        "SC-IAM-12"
+      ],
+      "profile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "environmentId": "local-m2-access-state-matrix",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Disabled account, suspended workspace and billing hold combine by the most restrictive member rule while worker settlement remains allowed",
+      "observed": "The controlled probe passed disabled-user denial and session revocation, teammate preservation, suspended-member denial, audited operator read, billing hold generation/Checkout denial, allowed billing operations and worker settlement",
+      "iteration": "single generated fixture run",
+      "commandRef": "m2-3.7-access-state-probe",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.7-evidence.md",
+        "scripts/probe-access-states.ts"
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "commandId": "m2-3.7-access-state-probe",
+      "invocation": "DATABASE_URL=<redacted-local-credential> corepack pnpm db:probe:access-states",
+      "environmentId": "local-m2-access-state-matrix",
+      "startAt": "2026-09-28T12:00:00Z",
+      "endAt": "2026-09-28T12:01:00Z",
+      "exitCode": 0,
+      "assertionRef": "disabledUserDenied=true, sessionsRevoked=true, teammateUnaffected=true, suspendedMemberDenied=true, operatorAuditAllowed=true, billingHoldGenerationCheckoutDenied=true, billingHoldAllowedReadsInvitesPortalSupport=true, workerSettlementPreserved=true"
+    },
+    {
+      "commandId": "m2-3.7-verify",
+      "invocation": "corepack pnpm verify",
+      "environmentId": "local-m2-access-state-matrix",
+      "startAt": "2026-09-28T12:02:00Z",
+      "endAt": "2026-09-28T12:05:00Z",
+      "exitCode": 0,
+      "assertionRef": "full root verification and Next build passed"
+    },
+    {
+      "commandId": "m2-3.7-record-check",
+      "invocation": "python -B internal/restart/check-acceptance-record.py internal/evidence/acceptance/M2/working-tree-20260928-m2-3.7/record.json",
+      "environmentId": "local-m2-access-state-matrix",
+      "startAt": "2026-09-28T12:06:00Z",
+      "endAt": "2026-09-28T12:06:01Z",
+      "exitCode": 0,
+      "assertionRef": "record schema and digest shape check"
+    }
+  ],
+  "coverage": {
+    "status": "NOT_APPLICABLE",
+    "reason": "M2 coverage denominator is established at task 3.12",
+    "ownedModuleManifestRef": null,
+    "denominator": null,
+    "coveredBranches": null,
+    "totalBranches": null,
+    "percent": null,
+    "exclusions": [],
+    "evidenceRef": "internal/restart/m2-task-3.7-evidence.md"
+  },
+  "defects": [],
+  "externalInputs": [],
+  "commercialAuthorizationRefs": [],
+  "recovery": {
+    "rollbackPoint": "6ad44be7b6f12fe028637f0300040bada826c47d plus current uncommitted M2 patch",
+    "restoreEvidenceRefs": [
+      "internal/restart/m2-task-3.7-evidence.md"
+    ],
+    "compatibleSchemaVersions": [
+      "domain=6"
+    ],
+    "unrelatedWorkProtection": "Generated fixture users, sessions, workspaces and billing rows are cleaned up in the disposable database"
+  },
+  "observation": {
+    "planRef": "internal/restart/verification-plan.md",
+    "windowStart": null,
+    "windowEnd": null,
+    "windowRationale": "Task-level access-state probe; no production time-window behavior is claimed",
+    "behavioralBaselineDigest": null,
+    "monitoringEvidenceRefs": [],
+    "journeyEvidenceRefs": [],
+    "recoveryUpgradeEvidenceRefs": [],
+    "recurringWorkerAlertEvidenceRefs": [],
+    "findingRefs": []
+  },
+  "submission": {
+    "implementerId": "root",
+    "submittedAt": "2026-09-28T12:10:00Z",
+    "reportRef": "internal/restart/m2-task-3.7-evidence.md"
+  },
+  "independentReview": {
+    "reviewerId": "m2-gpt6-sol-review-20260928-3.7",
+    "reviewedAt": "2026-09-28T12:35:00Z",
+    "independentFromImplementer": true,
+    "decision": "PASS",
+    "reason": "Independent gpt-6-sol review recomputed all six candidate digests exactly, reran the acceptance checker, access-state PostgreSQL probe and full repository verification, and confirmed the task-scoped disabled-user, suspended-workspace, billing-hold, audited-operator-read and worker-policy matrix. Audit-event persistence, semantic command idempotency, real task/worker/credit settlement mutation and settlement lineage remain explicitly deferred to later tasks.",
+    "evidenceRefs": [
+      "internal/restart/m2-task-3.7-evidence.md",
+      "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.7/record.json",
+      "src/modules/workspaces/access-state.ts",
+      "src/modules/operations/status-commands.ts",
+      "src/modules/billing/hold-policy.ts",
+      "scripts/probe-access-states.ts"
+    ]
+  },
+  "integrationDecision": {
+    "integratorId": "root",
+    "decidedAt": "2026-09-28T12:35:50Z",
+    "decision": "PASS",
+    "reason": "The exact current candidate passed independent gpt-6-sol review, all digest and record checks, the access-state PostgreSQL probe and full repository verification. Task 3.7 is accepted and task 3.8 is unlocked; the M2 gate remains open. Later audit, semantic command replay, credit ledger and real worker settlement boundaries remain explicitly deferred.",
+    "nextEligibleTaskIds": [
+      "3.8"
+    ],
+    "blockedTaskIds": []
+  },
+  "invalidation": {
+    "supersedesRecordRef": null,
+    "changedDigestRefs": [],
+    "affectedStages": [],
+    "requiredReruns": [],
+    "carriedEvidence": []
+  }
+}

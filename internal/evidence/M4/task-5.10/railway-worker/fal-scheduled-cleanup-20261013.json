@@ -1,0 +1,19 @@
+{
+  "phase": "verify-orphan",
+  "runId": "c051d17d-5515-4de9-b324-4aa01ae81bda",
+  "workspaceId": "d41b8970-0182-4e52-9412-66be74fb68ae",
+  "cleanupAssetId": "0c2f835e-8f24-437b-a693-b8bff0089de2",
+  "pendingRowRemoved": true,
+  "freshR2ObjectRemoved": true,
+  "readyOutputRetained": true,
+  "lastScheduledCleanupAt": "2026-10-13T09:49:03.790Z",
+  "schedulerErrors": 0,
+  "ageEvidence": "synthetic database age; real scheduled R2 deletion",
+  "manualCleanupCalled": false,
+  "providerCalls": 0,
+  "fixtureSeededAt": "2026-10-13T09:47:42.858000+00:00",
+  "freshScheduledObservationValidated": true,
+  "seedTimestampSource": "Persisted pre-PUT clock minus the fixed synthetic 25-hour database age; no retention dwell time is claimed.",
+  "seededAuthFixture": true,
+  "actualProviderCostStatus": "UNKNOWN"
+}

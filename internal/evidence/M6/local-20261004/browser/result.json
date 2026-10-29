@@ -1,0 +1,39 @@
+{
+  "status": "PASS",
+  "scope": "Observed local browser subset; not whole-stage or real-account approval",
+  "environment": "In-app browser, http://127.0.0.1:3101, temporary Docker database and fixture payment adapter",
+  "observed": [
+    "Password login and actual authenticator enrollment",
+    "Invalid authenticator code denied; valid code enables session step-up",
+    "Logout and subsequent password login require authenticator challenge",
+    "Redacted workspace, billing and audit rows render with correct terminal-page counts",
+    "Workspace search produces a no-match state and restores rows after clearing",
+    "Dashboard menu returns from a resource to the operational dashboard",
+    "Refund preview shows version and eligible amount",
+    "Server reconstructs original pending refund command after reload",
+    "Previously dispatched refund with missing fixture provider state stays unknown and lookup-only",
+    "Fresh fixture refund confirms once; exact retry preserves request and provider identity with replayed=true",
+    "Affiliate-disabled status and empty review/hold states render",
+    "Recovery view exposes sample-scoped model health and explicit no-success/unavailable states",
+    "Workspace memberships show the expected owner and bounded pagination controls",
+    "Workspace ledger correctly reports no records for the browser fixture without ledger entries"
+  ],
+  "evidenceRefs": [
+    "workspace-list.txt",
+    "workspace-search-empty.txt",
+    "billing-list.txt",
+    "audit-list.txt",
+    "refund-replay.txt",
+    "recovery-health.txt",
+    "workspace-members.txt",
+    "workspace-ledger-empty.txt",
+    "workspace-list.png",
+    "admin-dashboard.png"
+  ],
+  "limitations": [
+    "Affiliate approvals and hosted payout handoff were verified through Docker fixtures, not an external account in this browser.",
+    "Populated subscription/grant/ledger projections were tested by the dedicated Docker detail probe; the browser fixture only populated memberships and billing orders.",
+    "No production email, provider credentials, payments or payouts were used.",
+    "No passwords, authenticator setup secrets or recovery codes are retained in this evidence directory."
+  ]
+}

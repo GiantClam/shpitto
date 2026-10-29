@@ -1,0 +1,36 @@
+{"status":"PASS","replayed":true,"fefoAllocation":["20","20"],"expiredUnreservedExcluded":true,"forgedPriceRejected":true,"staleCatalogRejected":true,"concurrentAffordableReservations":1,"raceAttempts":10,"failedRaceEffects":0,"onboardingDemoGrantSingleEffect":true,"productionDemoRejected":true}
+✔ scripts\probe-credit-reservation.ts (791.3745ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 796.7194
+ℹ start of coverage report
+ℹ ---------------------------------------------------------------------------------------------------------------------
+ℹ file              | line % | branch % | funcs % | uncovered lines
+ℹ ---------------------------------------------------------------------------------------------------------------------
+ℹ src               |        |          |         | 
+ℹ  config           |        |          |         | 
+ℹ   models.ts       |  90.48 |    70.37 |   66.67 | 43-44 63-64 88-89 92-93 100-101
+ℹ  contracts        |        |          |         | 
+ℹ   http.ts         |  55.66 |    80.00 |   53.85 | 17-18 21-22 25-35 39-40 45-49 73 81-87 90-106
+ℹ  modules          |        |          |         | 
+ℹ   credits         |        |          |         | 
+ℹ    allocate.ts    |  97.00 |    79.41 |   87.50 | 175-179 198
+ℹ    issue-demo.ts  |  91.67 |    71.43 |   75.00 | 39-42
+ℹ    ledger.ts      | 100.00 |    65.22 |  100.00 | 
+ℹ    queries.ts     |  46.45 |    83.33 |   66.67 | 133-134 139-178 186-309
+ℹ    reserve.ts     | 100.00 |   100.00 |  100.00 | 
+ℹ   shared          |        |          |         | 
+ℹ    commands.ts    |  86.52 |    50.00 |   66.67 | 31-32 43-44 69-70 72-73 86-89
+ℹ    transaction.ts | 100.00 |   100.00 |  100.00 | 
+ℹ   workspaces      |        |          |         | 
+ℹ    onboard.ts     |  86.98 |    60.00 |   57.14 | 47-55 170-171 175-181 186-192
+ℹ    policy.ts      |  39.72 |    50.00 |    9.09 | 27-29 31-33 35-39 42-49 52-57 74-90 93-104 107-116 119-133 136-141
+ℹ ---------------------------------------------------------------------------------------------------------------------
+ℹ all files         |  73.74 |    69.89 |   59.38 | 
+ℹ ---------------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report

@@ -1,0 +1,520 @@
+{
+  "scope": "Current-candidate browser observations for every implemented local UI route and its applicable state families. API-only endpoints are covered by the automated M3 probes and are not duplicated here.",
+  "candidateSha256": "81f0bcc13a78791ebe867550532f4cea896ef9e8413bdcd2088ffed60aaea40d",
+  "stateFamilies": {
+    "success": [
+      "marketing-home",
+      "auth-signup",
+      "auth-login",
+      "team-access-success",
+      "fixture-billing-settled",
+      "fixture-checkout-success",
+      "fixture-billing-portal",
+      "admin-success",
+      "admin-workspaces-success",
+      "docs-home",
+      "docs-skills",
+      "docs-template",
+      "docs-releases",
+      "creator-qa-fixture"
+    ],
+    "loading": [
+      "generation-loading",
+      "admin-loading"
+    ],
+    "empty": [
+      "personal-empty",
+      "fixture-billing-empty"
+    ],
+    "error": [
+      "generation-error",
+      "admin-error",
+      "fixture-checkout-invalid"
+    ],
+    "denied": [
+      "personal-controls-denied",
+      "invitation-replay-denied",
+      "invitation-expired-denied",
+      "revoked-open-tab",
+      "admin-denied"
+    ]
+  },
+  "routes": [
+    {
+      "pattern": "/",
+      "applicableStates": [
+        "success"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/01-marketing-home.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/01-marketing-home.txt"
+      ]
+    },
+    {
+      "pattern": "/login",
+      "applicableStates": [
+        "success",
+        "error"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/04-auth-login.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/04-auth-login.txt"
+      ]
+    },
+    {
+      "pattern": "/signup",
+      "applicableStates": [
+        "success",
+        "error"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/02-auth-signup.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/02-auth-signup.txt"
+      ]
+    },
+    {
+      "pattern": "/reset-password",
+      "applicableStates": [
+        "success"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/05-auth-reset-password.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/05-auth-reset-password.txt"
+      ]
+    },
+    {
+      "pattern": "/invitations/accept",
+      "applicableStates": [
+        "success",
+        "loading",
+        "denied"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/15-member-accepted.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/15-member-accepted.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/16-invitation-replay-denied.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/16-invitation-replay-denied.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/17-invitation-expired-denied.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/17-invitation-expired-denied.txt"
+      ]
+    },
+    {
+      "pattern": "/dashboard",
+      "applicableStates": [
+        "success",
+        "loading",
+        "empty",
+        "error",
+        "denied"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/10-generation-success.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/10-generation-success.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/08-generation-loading.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/08-generation-loading.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/06-personal-empty.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/06-personal-empty.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/25-generation-error.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/25-generation-error.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/31-revoked-open-tab.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/31-revoked-open-tab.txt"
+      ]
+    },
+    {
+      "pattern": "/dashboard/team",
+      "applicableStates": [
+        "success",
+        "empty",
+        "denied"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/23-team-access-success.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/23-team-access-success.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/13-team-created.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/13-team-created.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/31-revoked-open-tab.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/31-revoked-open-tab.txt"
+      ]
+    },
+    {
+      "pattern": "/workspaces/new",
+      "applicableStates": [
+        "success",
+        "empty",
+        "denied"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/13-team-created.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/13-team-created.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/06-personal-empty.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/06-personal-empty.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/12-personal-controls-denied.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/12-personal-controls-denied.txt"
+      ]
+    },
+    {
+      "pattern": "/workspaces/:workspaceId/settings/members",
+      "applicableStates": [
+        "success",
+        "loading",
+        "empty",
+        "denied"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/15-member-accepted.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/15-member-accepted.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/20-owner-before-transfer.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/20-owner-before-transfer.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/22-member-removed-one-owner.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/22-member-removed-one-owner.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/12-personal-controls-denied.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/12-personal-controls-denied.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/31-revoked-open-tab.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/31-revoked-open-tab.txt"
+      ]
+    },
+    {
+      "pattern": "/workspaces/:workspaceId/billing",
+      "applicableStates": [
+        "success",
+        "loading",
+        "empty",
+        "error",
+        "denied"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/24-fixture-billing-empty.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/24-fixture-billing-empty.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/28-fixture-billing-settled.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/28-fixture-billing-settled.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/29-fixture-billing-portal.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/29-fixture-billing-portal.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/30-fixture-checkout-invalid.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/30-fixture-checkout-invalid.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/31-revoked-open-tab.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/31-revoked-open-tab.txt"
+      ]
+    },
+    {
+      "pattern": "/checkout/fixture/:sessionId",
+      "applicableStates": [
+        "success",
+        "loading",
+        "error",
+        "denied"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/26-fixture-checkout-open.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/26-fixture-checkout-open.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/27-fixture-checkout-success.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/27-fixture-checkout-success.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/30-fixture-checkout-invalid.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/30-fixture-checkout-invalid.txt"
+      ]
+    },
+    {
+      "pattern": "/billing/portal/fixture/:sessionId",
+      "applicableStates": [
+        "success",
+        "denied"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/29-fixture-billing-portal.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/29-fixture-billing-portal.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/31-revoked-open-tab.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/31-revoked-open-tab.txt"
+      ]
+    },
+    {
+      "pattern": "/admin",
+      "applicableStates": [
+        "success",
+        "loading",
+        "empty",
+        "error",
+        "denied"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/33-admin-success.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/33-admin-success.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/35-admin-loading.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/35-admin-loading.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/34-admin-workspaces-success.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/34-admin-workspaces-success.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/36-admin-error.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/36-admin-error.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/32-admin-denied.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/32-admin-denied.txt"
+      ]
+    },
+    {
+      "pattern": "/creator-qa-check",
+      "applicableStates": [
+        "success",
+        "loading",
+        "error"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/41-creator-qa-fixture.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/41-creator-qa-fixture.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/08-generation-loading.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/08-generation-loading.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/25-generation-error.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/25-generation-error.txt"
+      ]
+    },
+    {
+      "pattern": "/docs",
+      "applicableStates": [
+        "success",
+        "loading",
+        "empty",
+        "error"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/37-docs-home.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/37-docs-home.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/35-admin-loading.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/35-admin-loading.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/06-personal-empty.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/06-personal-empty.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/36-admin-error.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/36-admin-error.txt"
+      ]
+    },
+    {
+      "pattern": "/docs/skills",
+      "applicableStates": [
+        "success"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/38-docs-skills.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/38-docs-skills.txt"
+      ]
+    },
+    {
+      "pattern": "/docs/template",
+      "applicableStates": [
+        "success"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/39-docs-template.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/39-docs-template.txt"
+      ]
+    },
+    {
+      "pattern": "/docs/releases",
+      "applicableStates": [
+        "success"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/40-docs-releases.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/40-docs-releases.txt"
+      ]
+    },
+    {
+      "pattern": "/docs/:release/:slug*",
+      "applicableStates": [
+        "success"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/37-docs-home.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/37-docs-home.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/38-docs-skills.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/38-docs-skills.txt"
+      ]
+    },
+    {
+      "pattern": "src/app/loading.tsx",
+      "applicableStates": [
+        "loading"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/08-generation-loading.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/08-generation-loading.txt",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/35-admin-loading.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/35-admin-loading.txt"
+      ],
+      "directNavigation": false
+    }
+  ],
+  "capturedRoutes": [
+    {
+      "routeId": "marketing-home",
+      "url": "/",
+      "status": 200,
+      "result": "PASS",
+      "expectedText": [
+        "Get started"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/01-marketing-home.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/01-marketing-home.txt"
+      ]
+    },
+    {
+      "routeId": "auth-signup",
+      "url": "/signup",
+      "status": 200,
+      "result": "PASS",
+      "expectedText": [
+        "Create account"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/02-auth-signup.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/02-auth-signup.txt"
+      ]
+    },
+    {
+      "routeId": "auth-login",
+      "url": "/login",
+      "status": 200,
+      "result": "PASS",
+      "expectedText": [
+        "Sign in"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/04-auth-login.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/04-auth-login.txt"
+      ]
+    },
+    {
+      "routeId": "auth-reset-password",
+      "url": "/reset-password",
+      "status": 200,
+      "result": "PASS",
+      "expectedText": [
+        "Reset your password"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/05-auth-reset-password.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/05-auth-reset-password.txt"
+      ]
+    },
+    {
+      "routeId": "team-access-success",
+      "url": "/dashboard/team",
+      "status": 200,
+      "result": "PASS",
+      "expectedText": [
+        "members"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/23-team-access-success.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/23-team-access-success.txt"
+      ]
+    },
+    {
+      "routeId": "fixture-billing-empty",
+      "url": "/workspaces/f42a36ae-4997-47ba-bf61-86a18a279660/billing",
+      "status": 200,
+      "result": "PASS",
+      "expectedText": [
+        "Local Mock billing",
+        "No subscriptions.",
+        "No payment orders."
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/24-fixture-billing-empty.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/24-fixture-billing-empty.txt"
+      ],
+      "state": "empty"
+    },
+    {
+      "routeId": "fixture-billing-settled",
+      "url": "/workspaces/f42a36ae-4997-47ba-bf61-86a18a279660/billing",
+      "status": 200,
+      "result": "PASS",
+      "expectedText": [
+        "Local Mock billing",
+        "Payment history"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/28-fixture-billing-settled.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/28-fixture-billing-settled.txt"
+      ],
+      "state": "success"
+    },
+    {
+      "routeId": "admin-denied",
+      "url": "/admin",
+      "status": 200,
+      "result": "PASS",
+      "expectedText": [
+        "Sign in to continue"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/32-admin-denied.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/32-admin-denied.txt"
+      ],
+      "state": "denied"
+    },
+    {
+      "routeId": "docs-home",
+      "url": "/docs",
+      "status": 200,
+      "result": "PASS",
+      "expectedText": [],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/37-docs-home.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/37-docs-home.txt"
+      ],
+      "state": "success"
+    },
+    {
+      "routeId": "docs-skills",
+      "url": "/docs/skills",
+      "status": 200,
+      "result": "PASS",
+      "expectedText": [],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/38-docs-skills.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/38-docs-skills.txt"
+      ],
+      "state": "success"
+    },
+    {
+      "routeId": "docs-template",
+      "url": "/docs/template",
+      "status": 200,
+      "result": "PASS",
+      "expectedText": [],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/39-docs-template.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/39-docs-template.txt"
+      ],
+      "state": "success"
+    },
+    {
+      "routeId": "docs-releases",
+      "url": "/docs/releases",
+      "status": 200,
+      "result": "PASS",
+      "expectedText": [],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/40-docs-releases.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/40-docs-releases.txt"
+      ],
+      "state": "success"
+    },
+    {
+      "routeId": "creator-qa-fixture",
+      "url": "/creator-qa-check",
+      "status": 200,
+      "result": "PASS",
+      "expectedText": [
+        "Isolated UI fixture"
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/41-creator-qa-fixture.png",
+        "internal/evidence/M3/continuation-20261020/r9/browser-run/browser-journeys-83960e11/41-creator-qa-fixture.txt"
+      ],
+      "state": "success"
+    }
+  ],
+  "notes": [
+    "Fixture billing and checkout use the local Mock provider and do not contact Stripe or create a charge.",
+    "The admin error row is a browser-only 503 transport fault fixture; no business mutation is performed.",
+    "States marked applicable are demonstrated by the closest implemented view or shared shell when a route has no independent domain state."
+  ]
+}

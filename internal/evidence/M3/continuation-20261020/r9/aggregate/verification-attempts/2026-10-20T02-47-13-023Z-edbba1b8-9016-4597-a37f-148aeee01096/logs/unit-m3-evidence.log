@@ -1,0 +1,37 @@
+▶ M3 verification runner safety
+  ✔ defaults to a fresh candidate path without selecting historical browser evidence (1.3946ms)
+  ✔ retains positional output compatibility and supports explicit CLI and environment selection (0.9232ms)
+  ✔ ambiguous or malformed runner options fail before verification starts (0.4722ms)
+  ✔ reviewed, approved, and unreadable records cannot be replaced (4.8273ms)
+  ✔ malformed review and integration metadata fail closed (10.0916ms)
+  ✔ browser evidence and artifact references cannot escape through a directory junction (10.2664ms)
+  ✔ the CLI protects an approved record before creating any attempt logs (158.4285ms)
+✔ M3 verification runner safety (187.3592ms)
+▶ M3 evidence integrity
+  ✔ browser PASS labels alone cannot stand in for required journeys and UI states (0.6181ms)
+  ✔ browser checks require retained artifacts and observed assertions (0.2067ms)
+  ✔ contradictory or duplicate browser results cannot be hidden by one passing row (0.292ms)
+  ✔ an additional failed or incomplete browser check prevents approval (0.1767ms)
+  ✔ LCOV branch totals remain branch-based and normalize Windows absolute paths (0.4383ms)
+  ✔ separate verification runs union stable branch IDs without counting repeats twice (0.2871ms)
+  ✔ a missing owned source or malformed branch report fails coverage (0.1976ms)
+  ✔ zero-branch and failed suites cannot claim coverage (0.1032ms)
+  ✔ missing mandatory evidence stays in progress; a recorded failure fails the stage (0.1491ms)
+  ✔ changed candidate bytes make any result stale, never ready for review (0.0482ms)
+✔ M3 evidence integrity (2.762ms)
+ℹ tests 17
+ℹ suites 2
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 357.2112
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report

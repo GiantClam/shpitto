@@ -1,0 +1,27 @@
+✔ import is inert and CLI accepts only the four explicit phases and a UUID (2.1877ms)
+✔ stage fence forbids retrying partial prepare/seed and verification before complete seeding (0.7254ms)
+✔ scope fails closed on nonacceptance, public database, wrong project, creates and active seeding (4.1841ms)
+✔ active inspect/verify require exactly this fresh workspace and the monitor binding (0.3023ms)
+✔ fixture clocks explicitly age queued work twenty minutes and unknown work ninety-five minutes (1.2822ms)
+✔ task evidence hash locks snapshots and timestamps but tolerates legitimate terminalization (0.4506ms)
+✔ report is a closed redacted count/ID projection and never claims real upstream recovery (0.3087ms)
+✔ driver contains irreversible local fences and no provider transport or direct task/balance writes (4.1626ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 180.8682
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------------------------------------
+ℹ file        | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------------------------------------
+ℹ src         |        |          |         | 
+ℹ  contracts  |        |          |         | 
+ℹ   http.ts   |  45.28 |    88.24 |   33.33 | 17-18 21-22 25-35 38-42 45-49 52-59 73 81-87 90-106
+ℹ ------------------------------------------------------------------------------------------------
+ℹ all files   |  45.28 |    88.24 |   33.33 | 
+ℹ ------------------------------------------------------------------------------------------------
+ℹ end of coverage report

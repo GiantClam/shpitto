@@ -1,0 +1,407 @@
+[
+  {
+    "commandId": "candidate-before",
+    "invocation": "node scripts/candidate-digests.mjs D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\candidate-before",
+    "startAt": "2026-10-04T08:53:29.764Z",
+    "endAt": "2026-10-04T08:53:29.977Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/candidate-before.log"
+  },
+  {
+    "commandId": "typecheck",
+    "invocation": "node node_modules/typescript/bin/tsc --noEmit",
+    "startAt": "2026-10-04T08:53:29.977Z",
+    "endAt": "2026-10-04T08:53:33.047Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/typecheck.log"
+  },
+  {
+    "commandId": "lint",
+    "invocation": "node scripts/check-source-boundaries.mjs",
+    "startAt": "2026-10-04T08:53:33.048Z",
+    "endAt": "2026-10-04T08:53:33.225Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/lint.log"
+  },
+  {
+    "commandId": "format-check",
+    "invocation": "node scripts/format-check.mjs",
+    "startAt": "2026-10-04T08:53:33.226Z",
+    "endAt": "2026-10-04T08:53:33.386Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/format-check.log"
+  },
+  {
+    "commandId": "verify-config",
+    "invocation": "node scripts/check-config.mjs",
+    "startAt": "2026-10-04T08:53:33.387Z",
+    "endAt": "2026-10-04T08:53:33.533Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/verify-config.log"
+  },
+  {
+    "commandId": "verify-db-boundary",
+    "invocation": "node scripts/check-db-boundaries.mjs",
+    "startAt": "2026-10-04T08:53:33.534Z",
+    "endAt": "2026-10-04T08:53:33.656Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/verify-db-boundary.log"
+  },
+  {
+    "commandId": "verify-m2-foundation",
+    "invocation": "node scripts/check-m2-foundation.mjs",
+    "startAt": "2026-10-04T08:53:33.656Z",
+    "endAt": "2026-10-04T08:53:33.782Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/verify-m2-foundation.log"
+  },
+  {
+    "commandId": "verify-local-services",
+    "invocation": "node scripts/check-local-services.mjs",
+    "startAt": "2026-10-04T08:53:33.783Z",
+    "endAt": "2026-10-04T08:53:33.903Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/verify-local-services.log"
+  },
+  {
+    "commandId": "verify-shells",
+    "invocation": "node scripts/check-shell-boundaries.mjs",
+    "startAt": "2026-10-04T08:53:33.903Z",
+    "endAt": "2026-10-04T08:53:34.027Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/verify-shells.log"
+  },
+  {
+    "commandId": "verify-content-boundaries",
+    "invocation": "node scripts/check-content-boundaries.mjs",
+    "startAt": "2026-10-04T08:53:34.027Z",
+    "endAt": "2026-10-04T08:53:34.152Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/verify-content-boundaries.log"
+  },
+  {
+    "commandId": "verify-root",
+    "invocation": "node scripts/check-root-integrity.mjs",
+    "startAt": "2026-10-04T08:53:34.153Z",
+    "endAt": "2026-10-04T08:53:34.284Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/verify-root.log"
+  },
+  {
+    "commandId": "verify-openspec",
+    "invocation": "node C:/Program Files/nodejs/node_modules/@fission-ai/openspec/bin/openspec.js validate restart-shpitto-video-saas --strict --json --no-interactive",
+    "startAt": "2026-10-04T08:53:34.285Z",
+    "endAt": "2026-10-04T08:53:35.591Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/verify-openspec.log"
+  },
+  {
+    "commandId": "unit-contracts",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\unit-contracts.lcov --test-coverage-include=**/src/** tests/unit/admin-adapters.test.ts tests/unit/asset-cleanup-scheduling.test.ts tests/unit/assets-authorization.test.ts tests/unit/assets-validation.test.ts tests/unit/candidate-digests.test.ts tests/unit/generation-state.test.ts tests/unit/m2-contracts.test.ts tests/unit/m2-policy.test.ts tests/unit/m3-domain-edges.test.ts tests/unit/m3-evidence.test.ts tests/unit/optional-affiliate-env.test.ts tests/unit/outbox-heartbeat.test.ts tests/unit/refund-provider-recovery.test.ts tests/unit/stage-progression.test.ts tests/contracts/affiliate-notification.test.ts tests/contracts/affiliate-wire.test.ts tests/contracts/billing-checkout.test.ts tests/contracts/billing-contracts.test.ts tests/contracts/fal.test.ts tests/contracts/provider-inputs.test.ts tests/contracts/provider-webhooks.test.ts tests/contracts/replicate.test.ts",
+    "startAt": "2026-10-04T08:53:35.592Z",
+    "endAt": "2026-10-04T08:53:45.125Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/unit-contracts.log"
+  },
+  {
+    "commandId": "contracts-provider-inputs",
+    "invocation": "node --experimental-strip-types --test tests/contracts/provider-inputs.test.ts",
+    "startAt": "2026-10-04T08:53:45.126Z",
+    "endAt": "2026-10-04T08:53:45.805Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/contracts-provider-inputs.log"
+  },
+  {
+    "commandId": "contracts-billing-contracts",
+    "invocation": "node --experimental-strip-types --test tests/contracts/billing-contracts.test.ts",
+    "startAt": "2026-10-04T08:53:45.805Z",
+    "endAt": "2026-10-04T08:53:46.095Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/contracts-billing-contracts.log"
+  },
+  {
+    "commandId": "migration",
+    "invocation": "node --experimental-strip-types scripts/migrate.ts",
+    "startAt": "2026-10-04T08:53:46.096Z",
+    "endAt": "2026-10-04T08:53:47.329Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/migration.log"
+  },
+  {
+    "commandId": "billing-schema",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\billing-schema.lcov --test-coverage-include=**/src/** scripts/probe-billing-schema.ts",
+    "startAt": "2026-10-04T08:53:47.329Z",
+    "endAt": "2026-10-04T08:53:49.093Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/billing-schema.log"
+  },
+  {
+    "commandId": "m6-operations",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\m6-operations.lcov --test-coverage-include=**/src/** scripts/probe-m6-operations.ts",
+    "startAt": "2026-10-04T08:53:49.094Z",
+    "endAt": "2026-10-04T08:53:50.993Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/m6-operations.log"
+  },
+  {
+    "commandId": "m6-privileged",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\m6-privileged.lcov --test-coverage-include=**/src/** scripts/probe-m6-privileged.ts",
+    "startAt": "2026-10-04T08:53:50.994Z",
+    "endAt": "2026-10-04T08:53:53.489Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/m6-privileged.log"
+  },
+  {
+    "commandId": "m6-mfa",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\m6-mfa.lcov --test-coverage-include=**/src/** scripts/probe-m6-two-factor.ts",
+    "startAt": "2026-10-04T08:53:53.490Z",
+    "endAt": "2026-10-04T08:53:56.500Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/m6-mfa.log"
+  },
+  {
+    "commandId": "m6-recovery",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\m6-recovery.lcov --test-coverage-include=**/src/** scripts/probe-m6-recovery.ts",
+    "startAt": "2026-10-04T08:53:56.501Z",
+    "endAt": "2026-10-04T08:53:57.825Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/m6-recovery.log"
+  },
+  {
+    "commandId": "m6-affiliate",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\m6-affiliate.lcov --test-coverage-include=**/src/** scripts/probe-m6-affiliate.ts",
+    "startAt": "2026-10-04T08:53:57.826Z",
+    "endAt": "2026-10-04T08:53:58.150Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/m6-affiliate.log"
+  },
+  {
+    "commandId": "m6-affiliate-db",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\m6-affiliate-db.lcov --test-coverage-include=**/src/** scripts/probe-m6-affiliate-db.ts",
+    "startAt": "2026-10-04T08:53:58.151Z",
+    "endAt": "2026-10-04T08:54:01.206Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/m6-affiliate-db.log"
+  },
+  {
+    "commandId": "operator",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\operator.lcov --test-coverage-include=**/src/** scripts/probe-operator.ts",
+    "startAt": "2026-10-04T08:54:01.207Z",
+    "endAt": "2026-10-04T08:54:02.181Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/operator.log"
+  },
+  {
+    "commandId": "access-states",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\access-states.lcov --test-coverage-include=**/src/** scripts/probe-access-states.ts",
+    "startAt": "2026-10-04T08:54:02.181Z",
+    "endAt": "2026-10-04T08:54:03.923Z",
+    "exitCode": 1,
+    "status": "FAIL",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/access-states.log"
+  },
+  {
+    "commandId": "auth-lifecycle",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\auth-lifecycle.lcov --test-coverage-include=**/src/** scripts/probe-auth-lifecycle.ts",
+    "startAt": "2026-10-04T08:54:03.924Z",
+    "endAt": "2026-10-04T08:54:06.388Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/auth-lifecycle.log"
+  },
+  {
+    "commandId": "billing-reconciliation",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\billing-reconciliation.lcov --test-coverage-include=**/src/** scripts/probe-billing-reconciliation.ts",
+    "startAt": "2026-10-04T08:54:06.388Z",
+    "endAt": "2026-10-04T08:54:08.090Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/billing-reconciliation.log"
+  },
+  {
+    "commandId": "command-contract",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\command-contract.lcov --test-coverage-include=**/src/** scripts/probe-command-contract.ts",
+    "startAt": "2026-10-04T08:54:08.091Z",
+    "endAt": "2026-10-04T08:54:08.951Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/command-contract.log"
+  },
+  {
+    "commandId": "onboarding",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\onboarding.lcov --test-coverage-include=**/src/** scripts/probe-onboarding.ts",
+    "startAt": "2026-10-04T08:54:08.952Z",
+    "endAt": "2026-10-04T08:54:09.787Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/onboarding.log"
+  },
+  {
+    "commandId": "workspaces",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\workspaces.lcov --test-coverage-include=**/src/** scripts/probe-workspaces.ts",
+    "startAt": "2026-10-04T08:54:09.788Z",
+    "endAt": "2026-10-04T08:54:10.745Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/workspaces.log"
+  },
+  {
+    "commandId": "generation-create",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\generation-create.lcov --test-coverage-include=**/src/** scripts/probe-generation-create.ts",
+    "startAt": "2026-10-04T08:54:10.746Z",
+    "endAt": "2026-10-04T08:54:11.597Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/generation-create.log"
+  },
+  {
+    "commandId": "m6-cash-affiliate",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\m6-cash-affiliate.lcov --test-coverage-include=**/src/** scripts/probe-m6-cash-affiliate.ts",
+    "startAt": "2026-10-04T08:54:11.598Z",
+    "endAt": "2026-10-04T08:54:12.472Z",
+    "exitCode": 1,
+    "status": "FAIL",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/m6-cash-affiliate.log"
+  },
+  {
+    "commandId": "m6-affiliate-notifications",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\m6-affiliate-notifications.lcov --test-coverage-include=**/src/** scripts/probe-m6-affiliate-notifications.ts",
+    "startAt": "2026-10-04T08:54:12.472Z",
+    "endAt": "2026-10-04T08:54:13.966Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/m6-affiliate-notifications.log"
+  },
+  {
+    "commandId": "m6-affiliate-races",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\m6-affiliate-races.lcov --test-coverage-include=**/src/** scripts/probe-m6-affiliate-races.ts",
+    "startAt": "2026-10-04T08:54:13.966Z",
+    "endAt": "2026-10-04T08:54:22.508Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/m6-affiliate-races.log"
+  },
+  {
+    "commandId": "m6-affiliate-referral",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\m6-affiliate-referral.lcov --test-coverage-include=**/src/** scripts/probe-m6-affiliate-referral.ts",
+    "startAt": "2026-10-04T08:54:22.509Z",
+    "endAt": "2026-10-04T08:54:23.744Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/m6-affiliate-referral.log"
+  },
+  {
+    "commandId": "billing-checkout",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\billing-checkout.lcov --test-coverage-include=**/src/** scripts/probe-billing-checkout.ts",
+    "startAt": "2026-10-04T08:54:23.744Z",
+    "endAt": "2026-10-04T08:54:25.128Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/billing-checkout.log"
+  },
+  {
+    "commandId": "provider-recovery",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\provider-recovery.lcov --test-coverage-include=**/src/** scripts/probe-provider-recovery.ts",
+    "startAt": "2026-10-04T08:54:25.129Z",
+    "endAt": "2026-10-04T08:54:25.420Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/provider-recovery.log"
+  },
+  {
+    "commandId": "generation-replay",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\generation-replay.lcov --test-coverage-include=**/src/** scripts/probe-generation-replay.ts",
+    "startAt": "2026-10-04T08:54:25.421Z",
+    "endAt": "2026-10-04T08:54:26.575Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/generation-replay.log"
+  },
+  {
+    "commandId": "generation-lifecycle",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\generation-lifecycle.lcov --test-coverage-include=**/src/** scripts/probe-generation-lifecycle.ts",
+    "startAt": "2026-10-04T08:54:26.576Z",
+    "endAt": "2026-10-04T08:54:28.092Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/generation-lifecycle.log"
+  },
+  {
+    "commandId": "generation-races",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\generation-races.lcov --test-coverage-include=**/src/** scripts/probe-generation-races.ts",
+    "startAt": "2026-10-04T08:54:28.092Z",
+    "endAt": "2026-10-04T08:54:29.370Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/generation-races.log"
+  },
+  {
+    "commandId": "outbox-lease",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\outbox-lease.lcov --test-coverage-include=**/src/** scripts/probe-outbox-lease.ts",
+    "startAt": "2026-10-04T08:54:29.371Z",
+    "endAt": "2026-10-04T08:54:30.101Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/outbox-lease.log"
+  },
+  {
+    "commandId": "assets",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\assets.lcov --test-coverage-include=**/src/** scripts/probe-assets.ts",
+    "startAt": "2026-10-04T08:54:30.102Z",
+    "endAt": "2026-10-04T08:54:31.415Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/assets.log"
+  },
+  {
+    "commandId": "asset-security",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\asset-security.lcov --test-coverage-include=**/src/** scripts/probe-asset-security.ts",
+    "startAt": "2026-10-04T08:54:31.416Z",
+    "endAt": "2026-10-04T08:54:43.127Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/asset-security.log"
+  },
+  {
+    "commandId": "asset-cleanup",
+    "invocation": "node --experimental-strip-types --test --test-concurrency=1 --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\asset-cleanup.lcov --test-coverage-include=**/src/** scripts/probe-asset-cleanup.ts",
+    "startAt": "2026-10-04T08:54:43.128Z",
+    "endAt": "2026-10-04T08:54:47.273Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/asset-cleanup.log"
+  },
+  {
+    "commandId": "candidate-after",
+    "invocation": "node scripts/candidate-digests.mjs D:\\github\\shpitto\\internal\\evidence\\M6\\local-20261004\\preflight\\candidate-after",
+    "startAt": "2026-10-04T08:54:47.295Z",
+    "endAt": "2026-10-04T08:54:47.466Z",
+    "exitCode": 0,
+    "status": "PASS",
+    "outputRef": "internal/evidence/M6/local-20261004/preflight/logs/candidate-after.log"
+  }
+]

@@ -1,0 +1,37 @@
+✔ the exact existing application dependency evolution passes without rewriting historical proof (159.6103ms)
+✔ root integrity rejects an additional runtime dependency (154.2181ms)
+✔ root integrity rejects a missing runtime dependency (135.0806ms)
+✔ root integrity rejects an optional dependency (137.7964ms)
+✔ root integrity rejects implicit bundling of the whole dependency graph (136.9989ms)
+✔ root integrity rejects a new transitive override (135.2014ms)
+✔ root integrity rejects another Next patch (134.8677ms)
+✔ root integrity rejects an S3 version range (139.323ms)
+✔ root integrity rejects a changed development dependency (134.8577ms)
+✔ root integrity rejects a changed package manager (146.622ms)
+✔ root integrity rejects a changed application lockfile (145.706ms)
+✔ root integrity rejects rewritten historical dependency proof (130.2832ms)
+✔ root integrity rejects rewritten historical lock proof (138.8779ms)
+✔ root integrity rejects rewritten historical provenance (133.1299ms)
+✔ root integrity rejects legacy workspace discovery (151.4666ms)
+✔ root integrity rejects a changed workspace override (150.9815ms)
+✔ root integrity rejects workspace package extensions (147.5884ms)
+✔ root integrity rejects legacy TypeScript inclusion (176.4775ms)
+✔ root integrity rejects legacy Docker inclusion (152.8686ms)
+✔ historical provenance remains valid in both LF and CRLF checkouts (288.2264ms)
+✔ the reviewed workspace configuration permits only checkout line-ending differences (142.1723ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3306.6579
+ℹ start of coverage report
+ℹ ----------------------------------------------------------
+ℹ file      | line % | branch % | funcs % | uncovered lines
+ℹ ----------------------------------------------------------
+ℹ ----------------------------------------------------------
+ℹ all files | 100.00 |   100.00 |  100.00 | 
+ℹ ----------------------------------------------------------
+ℹ end of coverage report

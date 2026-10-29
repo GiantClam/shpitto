@@ -1,0 +1,130 @@
+{
+  "status": "IN_PROGRESS_VALIDATION_REFRESHED",
+  "verifiedAt": "2026-10-15T09:40:08.241Z",
+  "fullM4Acceptance": false,
+  "rootBaseline": {
+    "status": "PASS_INDEPENDENTLY_REVIEWED",
+    "historicalProofUnchanged": true,
+    "applicationLockUnchanged": true,
+    "noNewDependencies": true,
+    "reviewRef": "internal/evidence/M4/task-5.10/railway-worker/root-baseline-review-20261015.md",
+    "focusedTests": 22
+  },
+  "qualityGates": {
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "format": "PASS",
+    "config": "PASS",
+    "dbBoundary": "PASS",
+    "m2Foundation": "PASS",
+    "localServices": "PASS",
+    "shellBoundaries": "PASS",
+    "contentBoundaries": "PASS",
+    "strictOpenSpec": "PASS",
+    "productionBuild": "PASS",
+    "frozenLockInstall": "PASS_LOCK_BYTES_UNCHANGED",
+    "productionDependencyAudit": "PASS_ZERO_KNOWN_VULNERABILITIES",
+    "relatedContractsAndUnits": "PASS_178",
+    "disposableRailwayPostgreSQL": "PASS_13_FAKE_PROVIDER_TRANSPORT",
+    "verifyRoot": "PASS",
+    "verifyAcceptance": "PASS_CURRENT_DEVELOPMENT_NOT_STAGE_APPROVAL",
+    "fullVerification": "PASS"
+  },
+  "storageLive": {
+    "status": "PASS_LIVE_S3_ADAPTER",
+    "checks": 18,
+    "mediaFiles": 4,
+    "freshPrefixOnly": true,
+    "createdObjectsRemoved": true,
+    "recordRef": "internal/evidence/M4/task-5.10/railway-worker/r2-live-adapter-20261015.json",
+    "awsS3LiveTest": false,
+    "publicBucketPolicyAudit": false
+  },
+  "railwayDemo": {
+    "projectId": "b0abc207-4d5b-4f64-903f-ec7d929b35c4",
+    "projectName": "shpitto-m4-staging",
+    "environmentLabel": "production",
+    "isolatedDemo": true,
+    "workerDeploymentId": "2bf5deba-ac0f-42ae-ba9a-be93de1ebfc7",
+    "webDeploymentId": "fb696a0c-d924-4c6a-809a-10bcc3916032",
+    "workerHealth": "PASS_200",
+    "webHeadStatus": 200,
+    "workerState": "paused",
+    "createsEnabled": false,
+    "scope": "unassigned",
+    "newPaidPosts": 0,
+    "providerApiCallsDuringRetainedOutputRecheck": 0,
+    "temporaryAuthSessions": 0,
+    "actualProviderCost": "UNKNOWN"
+  },
+  "externalConfigurationObserved": {
+    "triggerSecretPresent": false,
+    "triggerProjectReferencePresent": false,
+    "replicateWebhookSecretPresent": true,
+    "replicateAccountBindingPresent": false,
+    "secretValuesPrinted": false
+  },
+  "remainingBlockers": [
+    {
+      "id": "REMAINING_APPLICATION_ROWS",
+      "status": "OPEN",
+      "details": "Replicate T2V/I2V and Fal I2V authentic application callback/polling and reservation outcomes are not established by retained MP4s or fake-transport fixtures."
+    },
+    {
+      "id": "HOSTED_TRIGGER",
+      "status": "OPTIONAL_NOT_RUN",
+      "details": "Future optional hosted profile only. Missing Trigger credentials/deployment does not block the selected self-hosted baseline.",
+      "implementationGap": "No trigger.config.ts; hosted dispatch/reconciliation and independent sweep task/schedule registration and deployment wiring remain unfinished. Credentials alone cannot close this profile.",
+      "requiredForSelectedRuntime": false
+    },
+    {
+      "id": "WHOLE_STAGE_APPLICABILITY",
+      "status": "OPEN",
+      "details": "Current M3 applicability, complete M4 scenario/fault coverage and M4-owned branch coverage require review/reruns. UNKNOWN provider cost is allowed."
+    },
+    {
+      "id": "M4_WHOLE_STAGE_REVIEW",
+      "status": "OPEN",
+      "details": "Independent whole-stage review and integrator approval are NOT_RUN; M4 task 5.10 remains unchecked."
+    },
+    {
+      "id": "SELECTED_SELF_HOSTED_RUNTIME",
+      "status": "OPEN",
+      "requiredForSelectedRuntime": true,
+      "details": "Current selected-runtime deployment/restart/overdue-first evidence and independently persisted recovery heartbeat/external alert delivery remain required; local loop/controller fixtures are not deployment proof."
+    }
+  ],
+  "auditRef": "internal/evidence/M4/task-5.10/railway-worker/whole-stage-audit-20261015.md",
+  "candidateRefresh": {
+    "status": "CURRENT_DIGESTS_ONLY_NO_STAGE_PROMOTION",
+    "previousCommandsNotRerunAreHistorical": true
+  },
+  "fullVerificationInvocation": "corepack pnpm run verify",
+  "finalRootEvidenceRef": "internal/evidence/M4/task-5.10/railway-worker/verify-full-20261015.log",
+  "preliminarySameDayEvidence": [
+    {
+      "ref": "internal/evidence/M4/task-5.10/railway-worker/verify-root-20261015.log",
+      "scope": "Earlier root-gate run before the final implicit-bundling hardening; superseded by finalRootEvidenceRef."
+    }
+  ],
+  "consistencyReview": {
+    "reviewerId": "01a13ec6-859b-7882-bc74-96ccca33ba3d",
+    "wholeStageApproval": false,
+    "findings": "Historical Docker overclaim, stale candidate-refresh metadata and initial audit inventory required correction.",
+    "integratorDisposition": "CORRECTED_REPORTING_ONLY",
+    "evidenceRef": "internal/evidence/M4/task-5.10/railway-worker/whole-stage-audit-20261015.md"
+  },
+  "subsequentLocalVerification": {
+    "evidenceRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json",
+    "status": "PASS_LOCAL_VERIFICATION_ONLY",
+    "fullM4Acceptance": false,
+    "resolution": "Current owned M4 branch coverage is now measured and passes. This supersedes only the earlier coverage NOT_RUN gap, not hosted/provider/current-M3/whole-stage obligations."
+  },
+  "runtimeAmendment": {
+    "date": "2026-10-15",
+    "selected": "self_hosted",
+    "optionalTrigger": "NOT_EXECUTABLE_NOT_REQUIRED_FOR_BASELINE",
+    "codeDeployment": "NOT_RUN_CURRENT_LOCAL_CANDIDATE",
+    "evidenceRef": "internal/evidence/M4/task-5.10/railway-worker/local-fixture-validation-20261015.json"
+  }
+}

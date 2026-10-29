@@ -1,0 +1,90 @@
+{
+  "createdAt": "2026-10-19T06:31:11.664Z",
+  "currentRef": "internal/evidence/M3/continuation-20261019/r2/automated/verification-attempts/2026-10-19T06-30-18-707Z-35b6b72d-fe59-4684-8921-f3d5c3aa55ce/candidate-before/candidate.json",
+  "sourceTreeSha256": "e5cf13a5d4af7747fcb83bc10e940e73e731570a0df4dd6361aaced0890a71be",
+  "currentBrowserAcceptance": "NOT_RUN",
+  "evidenceCarriedForward": false,
+  "records": [
+    {
+      "recordRef": "internal/evidence/M3/browser-walkthrough-20261001.json",
+      "candidateSha256": "73ec731c971aca355335d6c86a3ba14e8c91e84e9cf8569007cb7abf3f6bd3ab",
+      "capturedAt": "2026-10-01T02:13:56.041Z",
+      "exactSourceMatches": false,
+      "structure": {
+        "passed": true,
+        "missing": []
+      },
+      "submittedOwnerControls": [
+        {
+          "action": "remove-member",
+          "valid": true
+        },
+        {
+          "action": "transfer-owner",
+          "valid": true
+        }
+      ],
+      "cleanupRef": null,
+      "cleanup": null,
+      "applicability": "STALE_REJECTED",
+      "acceptedForCurrentCandidate": false
+    },
+    {
+      "recordRef": "internal/evidence/M3/browser-journeys-20261019-520689c0/walkthrough.json",
+      "candidateSha256": "85da0e11cd239ede8a614637d8a1395668f8bc5218ca060da9d75d73382591d6",
+      "capturedAt": "2026-10-19T04:48:16.336Z",
+      "exactSourceMatches": false,
+      "structure": {
+        "passed": true,
+        "missing": []
+      },
+      "submittedOwnerControls": [
+        {
+          "action": "remove-member",
+          "valid": true
+        },
+        {
+          "action": "transfer-owner",
+          "valid": true
+        }
+      ],
+      "cleanupRef": "internal/evidence/M3/browser-journeys-20261019-520689c0/cleanup.json",
+      "cleanup": {
+        "at": "2026-10-19T04:48:16.470Z",
+        "servicesStopped": false,
+        "databaseDropped": true
+      },
+      "applicability": "STALE_REJECTED",
+      "acceptedForCurrentCandidate": false
+    },
+    {
+      "recordRef": "internal/evidence/M3/browser-journeys-20261019-c011faae/walkthrough.json",
+      "candidateSha256": "6060202010b65f1b7ad67cf468f110c6ca32ac9a571b58ad8075a9a178c773df",
+      "capturedAt": "2026-10-19T04:51:17.721Z",
+      "exactSourceMatches": false,
+      "structure": {
+        "passed": true,
+        "missing": []
+      },
+      "submittedOwnerControls": [
+        {
+          "action": "remove-member",
+          "valid": true
+        },
+        {
+          "action": "transfer-owner",
+          "valid": true
+        }
+      ],
+      "cleanupRef": "internal/evidence/M3/browser-journeys-20261019-c011faae/cleanup.json",
+      "cleanup": {
+        "at": "2026-10-19T04:51:18.337Z",
+        "servicesStopped": false,
+        "databaseDropped": true
+      },
+      "applicability": "STALE_REJECTED",
+      "acceptedForCurrentCandidate": false
+    }
+  ],
+  "requiredNextAction": "Capture real desktop 1440x900/mobile 390x844 and keyboard evidence for all eleven journeys against the exact candidate, including actual remove-member/transfer-owner submissions and verified local cleanup. Independent product/verifier review and separate integration remain required."
+}

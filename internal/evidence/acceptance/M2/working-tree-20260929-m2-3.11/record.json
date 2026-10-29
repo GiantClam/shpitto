@@ -1,0 +1,349 @@
+{
+  "schemaVersion": "1.0",
+  "recordKind": "IMPLEMENTATION_ACCEPTANCE",
+  "changeId": "restart-shpitto-video-saas",
+  "stageId": "M2",
+  "checkpointId": null,
+  "gateTaskId": "3.11",
+  "status": "STALE",
+  "candidateId": "working-tree-20260929-m2-3.11",
+  "createdAt": "2026-09-29T03:00:00Z",
+  "updatedAt": "2026-09-29T05:51:44.8892070Z",
+  "policy": {
+    "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md"
+  },
+  "prerequisites": [
+    {
+      "taskId": "3.10",
+      "requiredProfile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "observedStatus": "PASS",
+      "candidateId": "working-tree-20260928-m2-3.10",
+      "evidenceRefs": [
+        "internal/evidence/acceptance/M2/working-tree-20260928-m2-3.10/record.json",
+        "internal/restart/m2-task-3.10-evidence.md"
+      ]
+    }
+  ],
+  "candidate": {
+    "sourceCommit": null,
+    "dirtyPatchSha256": null,
+    "sourceTreeSha256": "b1fddbd1e6bf8f02377e787408476844eb61712d23a533d12aac1737aaede00c",
+    "schemaSha256": "e14bccaf614fa5391d1006f2b9b48b0998831f14db6a9a06acc6c552634f49bc",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+    "configurationSha256": "920e9e286310eefc129ca7e5086a4935cfacb7a0d21a6860edf4f33f48b84745",
+    "contractSha256": "b8ef3892ca9fffb41902009c9388dc560b2621175de1efcb5bc024f2051cd6eb",
+    "validatorSha256": "7c6bf26679095b16e5752f1dc19c4389b36367db59508fe50cc3a324924d6b9a",
+    "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF",
+    "digestInputs": {
+      "sourceTree": [
+        "src",
+        "content",
+        "skills",
+        "deploy",
+        "scripts",
+        ".shpitto",
+        ".github",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".env.example",
+        ".dockerignore",
+        ".gitignore"
+      ],
+      "schema": [
+        "src/db"
+      ],
+      "configuration": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "next.config.ts",
+        "tsconfig.json",
+        ".dockerignore",
+        ".env.example",
+        "src/config/env.ts",
+        ".github/workflows/verify-root.yml",
+        "deploy/compose.local.yml",
+        "deploy/worker.Dockerfile"
+      ],
+      "contract": [
+        ".shpitto/contracts",
+        "skills/registry.json",
+        "content/docs/v1/manifest.json",
+        "openspec/changes/restart-shpitto-video-saas/design.md",
+        "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
+        "internal/restart/contract-register.md",
+        "internal/restart/integration-matrix.md",
+        "internal/restart/external-inputs.json"
+      ],
+      "validator": [
+        "scripts",
+        "internal/restart/check-acceptance-record.py"
+      ]
+    }
+  },
+  "environments": [
+    {
+      "environmentId": "local-m2-credit-refund",
+      "profile": "local/documentary plus disposable Docker PostgreSQL 15",
+      "toolVersions": {
+        "node": "24.15.0",
+        "pnpm": "12.6.0",
+        "docker": "29.8.0",
+        "postgres": "15-alpine"
+      },
+      "accountOrProgram": "none",
+      "effectiveLimits": "No provider, payment, payout, publication or hosted-service calls",
+      "fixtureOrSeed": "Mixed subscription, compensation and purchase grants with controlled expiry and terminal settlement",
+      "clockMode": "controlled probe clock",
+      "sanitationNotes": "Generated IDs, local credentials and database URLs omitted"
+    }
+  ],
+  "criterionResults": [
+    {
+      "criterionId": "3.11-C01",
+      "environmentId": "local-m2-credit-refund",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Failed delivery refunds each allocation under its source terms and preserves provider cost evidence separately",
+      "observed": "Mixed reservation settled after subscription expiry with distinct refund ledger entries; valid subscription, compensation and purchase allocations were returned under their own terms, and a late consume outcome was rejected",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.11-evidence.md",
+        "src/modules/credits/settle.ts",
+        "scripts/probe-credit-refund.ts"
+      ]
+    },
+    {
+      "criterionId": "3.11-C02",
+      "environmentId": "local-m2-credit-refund",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Expired subscription failure creates one seven-day compensation grant with original allocation lineage; compensation never renews",
+      "observed": "Replay produced one compensation grant with origin_allocation_id set to the expired allocation; cancellation of an expired allocation produced no compensation",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.11-evidence.md",
+        "src/db/migrations/0009_credit_compensation_lineage.sql",
+        "scripts/probe-credit-refund.ts"
+      ]
+    },
+    {
+      "criterionId": "3.11-C03",
+      "environmentId": "local-m2-credit-refund",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Balance queries expose source, expiry, immutable ledger projections and a visible reconciliation hold",
+      "observed": "Balance query returned source, expiry and allocation/reservation lineage with balanceHeld=false after settlement; a tampered projection returned held=true and blocked a new reservation",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.11-evidence.md",
+        "src/modules/credits/queries.ts"
+      ]
+    },
+    {
+      "criterionId": "3.11-C04",
+      "environmentId": "local-m2-credit-refund",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Historical allocations can be upgraded before reservation_id becomes non-null",
+      "observed": "0008 creates deterministic released legacy reservations, links every historical allocation, aborts on unresolved nulls, and then applies the constraint; the disposable upgrade probe preserved a legacy allocation amount, linked it to credits.legacy-allocation, and prevented active settlement",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.11-evidence.md",
+        "src/db/migrations/0008_credit_reservations.sql"
+      ]
+    }
+  ],
+  "commonStandardResults": [
+    {
+      "standard": "scope",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Only credit settlement, expiry, balance query and reservation upgrade compatibility were added; generation/provider/payment remain later scope"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.11-evidence.md"
+      ]
+    },
+    {
+      "standard": "build-and-checks",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Typecheck, lint, format and the focused PostgreSQL refund probe passed"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.11-evidence.md"
+      ]
+    },
+    {
+      "standard": "coverage",
+      "applicable": true,
+      "result": "NOT_APPLICABLE",
+      "reason": "M2 coverage denominator is established at task 3.12",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.11-evidence.md"
+      ]
+    },
+    {
+      "standard": "defects",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "No open P0/P1 defect is recorded for task 3.11"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.11-evidence.md"
+      ]
+    },
+    {
+      "standard": "isolation-security",
+      "applicable": true,
+      "result": "PASS",
+      "assertions": [
+        "Settlement locks the workspace credit account; all grant, allocation, ledger, audit and outbox writes remain workspace-scoped"
+      ],
+      "evidenceRefs": [
+        "src/modules/credits/settle.ts",
+        "src/db/schema/workspace.ts"
+      ]
+    },
+    {
+      "standard": "evidence-and-recovery",
+      "applicable": true,
+      "result": "READY_FOR_REVIEW",
+      "assertions": [
+        "Controlled-clock refund evidence is recorded; independent review and aggregate M2 gate remain pending"
+      ],
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.11-evidence.md"
+      ]
+    }
+  ],
+  "scenarioResults": [
+    {
+      "ids": [
+        "T07",
+        "T08",
+        "T15",
+        "T16",
+        "T17",
+        "T18",
+        "T49",
+        "SC-CRD-09",
+        "SC-CRD-11",
+        "SC-CRD-12",
+        "SC-CRD-13",
+        "SC-CRD-14",
+        "SC-CRD-15",
+        "SC-CRD-16"
+      ],
+      "profile": "local-m2-credit-refund",
+      "environmentId": "local-m2-credit-refund",
+      "mandatory": true,
+      "result": "PASS",
+      "expected": "Settlement is source-aware, compensation is single-effect and nonrenewing, and balances expose reconciliation state",
+      "observed": "Refund probe returned PASS with replayed=true, lateOutcomeRejected=true, expiredSubscriptionCompensated=true, compensationLineageRetained=true, compensationNoRenewal=true, purchaseRefunded=true, cancelledExpiredNoCompensation=true, expirySweepApplied=true, reconciliationHoldVisible=true, reservationBlockedOnHold=true, compensationCount=1 and balanceHeld=false",
+      "iteration": "single controlled-clock fixture run",
+      "commandRef": "m2-3.11-credit-refund-probe",
+      "evidenceRefs": [
+        "internal/restart/m2-task-3.11-evidence.md",
+        "scripts/probe-credit-refund.ts"
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "commandId": "m2-3.11-credit-refund-probe",
+      "invocation": "DATABASE_URL=<redacted-local-credential> corepack pnpm db:probe:credit-refund",
+      "environmentId": "local-m2-credit-refund",
+      "startAt": "2026-09-29T03:00:00Z",
+      "endAt": "2026-09-29T03:01:00Z",
+      "exitCode": 0,
+      "assertionRef": "replayed=true, lateOutcomeRejected=true, expiredSubscriptionCompensated=true, compensationLineageRetained=true, compensationNoRenewal=true, purchaseRefunded=true, cancelledExpiredNoCompensation=true, expirySweepApplied=true, reconciliationHoldVisible=true, reservationBlockedOnHold=true, compensationCount=1, balanceHeld=false"
+    },
+    {
+      "commandId": "m2-3.11-typecheck",
+      "invocation": "corepack pnpm typecheck",
+      "environmentId": "local-m2-credit-refund",
+      "startAt": "2026-09-29T03:01:00Z",
+      "endAt": "2026-09-29T03:01:10Z",
+      "exitCode": 0,
+      "assertionRef": "tsc --noEmit passed"
+    },
+    {
+      "commandId": "m2-3.11-migration-backfill-probe",
+      "invocation": "DATABASE_URL=<redacted-local-credential> corepack pnpm db:probe:credit-migration-backfill",
+      "environmentId": "local-m2-credit-refund",
+      "startAt": "2026-09-29T03:01:10Z",
+      "endAt": "2026-09-29T03:02:00Z",
+      "exitCode": 0,
+      "assertionRef": "legacyAllocationLinked=true, amountPreserved=true, syntheticReservation=true, legacySettlementDisabled=true"
+    }
+  ],
+  "coverage": {
+    "status": "NOT_APPLICABLE",
+    "reason": "M2 coverage denominator is established at task 3.12",
+    "ownedModuleManifestRef": null,
+    "denominator": null,
+    "coveredBranches": null,
+    "totalBranches": null,
+    "percent": null,
+    "exclusions": [],
+    "evidenceRef": "internal/restart/m2-task-3.11-evidence.md"
+  },
+  "defects": [],
+  "externalInputs": [],
+  "commercialAuthorizationRefs": [],
+  "recovery": {
+    "rollbackPoint": "current uncommitted M2 patch",
+    "restoreEvidenceRefs": [
+      "internal/restart/m2-task-3.11-evidence.md"
+    ],
+    "compatibleSchemaVersions": [
+      "domain=10"
+    ],
+    "unrelatedWorkProtection": "Probe fixtures are cleaned from disposable PostgreSQL; no provider or payment state is changed"
+  },
+  "observation": {
+    "planRef": "internal/restart/verification-plan.md",
+    "windowStart": null,
+    "windowEnd": null,
+    "windowRationale": "Task-level source-aware settlement and migration backfill probe; no production behavior is claimed",
+    "behavioralBaselineDigest": null,
+    "monitoringEvidenceRefs": [],
+    "journeyEvidenceRefs": [],
+    "recoveryUpgradeEvidenceRefs": [
+      "src/db/migrations/0008_credit_reservations.sql"
+    ],
+    "recurringWorkerAlertEvidenceRefs": [],
+    "findingRefs": []
+  },
+  "submission": {
+    "implementerId": "root",
+    "submittedAt": "2026-09-29T03:02:00Z",
+    "reportRef": "internal/restart/m2-task-3.11-evidence.md"
+  },
+  "independentReview": {
+    "reviewerId": null,
+    "reviewedAt": null,
+    "independentFromImplementer": false,
+    "decision": "PENDING",
+    "reason": "Independent review must rerun the current candidate with the configured review model before PASS can be granted",
+    "evidenceRefs": []
+  },
+  "integrationDecision": {
+    "integratorId": "root",
+    "decidedAt": null,
+    "decision": "PENDING",
+    "reason": "Task 3.11 is ready for independent review; M2 aggregate gate remains open",
+    "nextEligibleTaskIds": [],
+    "blockedTaskIds": []
+  },
+  "invalidation": {
+    "supersedesRecordRef": null,
+    "changedDigestRefs": [],
+    "affectedStages": [],
+    "requiredReruns": [],
+    "carriedEvidence": []
+  },
+  "supersessionNote": "Independent gpt-6-sol review rejected this candidate. Source and evidence are being repaired. Prior coverage exclusions and full auth/API scenario PASS claims are withdrawn; see internal/restart/m2-task-3.12-readiness.md. This historical record must not unlock M3."
+}

@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "1.0",
+  "status": "PASSED_BETTER_AUTH_POSTGRESQL_PERSISTENCE",
+  "command": "M0_DATABASE_URL=postgres://postgres:<disposable>@127.0.0.1:55435/shpitto_m0 node domain/better-auth-pg-probe.mjs",
+  "environment": {
+    "dockerServer": "29.8.0",
+    "dockerPlatform": "linux/amd64",
+    "postgresImage": "postgres:17-alpine",
+    "postgresImageDigest": "postgres@sha256:f02121de6f74d30d8a94cd1d9584125e2178d7e6c377d8130112d4e52d867995",
+    "databaseWasDisposable": true,
+    "existingCredentialsReused": false
+  },
+  "observed": {
+    "migrationSha256": "95d4f1981ede500bdab559e2a5a15357f7683f49b04cc4cfbd828cdd2ca356d5",
+    "adapter": "Better Auth Drizzle adapter over node-postgres",
+    "authenticated": true,
+    "sessionReloadedAfterPoolRestart": true,
+    "persistedUserRows": 1,
+    "persistedSessionRows": 2,
+    "operatorRoleGrantedByAuth": false,
+    "externalCalls": 0,
+    "containerStoppedAfterRun": true
+  },
+  "proves": [
+    "Better Auth email signup and password sign-in use the selected Drizzle PostgreSQL adapter.",
+    "The bearer session remains readable after the first pool is closed and a second pool/adapter instance is created.",
+    "User and session rows are persisted in PostgreSQL and are not memory-only state.",
+    "Better Auth authentication does not grant an operator role."
+  ],
+  "doesNotProve": [
+    "Email delivery, verification, reset or 2FA provider behavior.",
+    "Final production operator-role administration, step-up policy and migration release promotion."
+  ]
+}

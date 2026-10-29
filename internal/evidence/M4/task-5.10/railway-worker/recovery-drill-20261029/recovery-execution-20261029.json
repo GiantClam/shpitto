@@ -1,0 +1,93 @@
+{
+  "status": "PASS_SELECTED_SELF_HOSTED_RECOVERY_DRILL",
+  "verifiedAt": "2026-10-29T05:35:00Z",
+  "railway": {
+    "project": "shpitto-m4-staging",
+    "environment": "production",
+    "services": {
+      "web": "shpitto-m4-web",
+      "worker": "shpitto-m4-worker",
+      "monitor": "shpitto-m4-recovery-monitor"
+    },
+    "configuration": {
+      "projectBound": true,
+      "workerCreatesEnabled": false,
+      "workspaceScoped": true,
+      "secretValuesRecorded": false,
+      "webRecoveryAlertReceiverConfigured": true,
+      "monitorMode": "observe"
+    }
+  },
+  "run": {
+    "runId": "9b0d0a5d-2bf7-4958-832e-40fef041dfb0",
+    "workspaceId": "fc4b6bb4-eccc-431e-ac49-bc8241bd1b90",
+    "phases": [
+      {
+        "phase": "prepare",
+        "exitCode": 0,
+        "stage": "prepared"
+      },
+      {
+        "phase": "seed-overdue",
+        "exitCode": 0,
+        "stage": "seeded",
+        "taskCount": 102,
+        "paidProviderRequests": 0
+      },
+      {
+        "phase": "inspect",
+        "exitCode": 0,
+        "taskCount": 102,
+        "failedCount": 102,
+        "releasedCount": 102
+      },
+      {
+        "phase": "verify",
+        "exitCode": 0,
+        "stage": "verified",
+        "taskCount": 102,
+        "failedCount": 102,
+        "releasedCount": 102,
+        "verified": true
+      }
+    ],
+    "recoveryIncidentId": "9525d623-9d2b-4856-930c-ed43b30e62bf",
+    "recoveryAssertions": {
+      "workerPauseExceededHeartbeatStaleWindow": true,
+      "incidentDeliveredToOperatorReceipt": true,
+      "workerRestartedWithSameWorkspaceBinding": true,
+      "heartbeatRecoveredAfterRestart": true,
+      "unknownSubmissionFencePreserved": true,
+      "overdueTasksSettledBeforeFurtherDispatch": true,
+      "monitorReadyBodyReRead": true
+    },
+    "monitorHealthAfterDrill": {
+      "status": "ready",
+      "role": "recovery-monitor",
+      "mode": "observe",
+      "providerCreatesEnabled": false,
+      "lastSuccessAt": "2026-10-29T05:35:11.920Z",
+      "errors": 35,
+      "deliveryPending": false
+    },
+    "incidentTimeline": {
+      "id": "9525d623-9d2b-4856-930c-ed43b30e62bf",
+      "openedAt": "2026-10-29T05:07:01.137Z",
+      "recoveredAt": "2026-10-29T05:13:48.560Z",
+      "deliveredAt": "2026-10-29T05:30:22.109Z",
+      "ageSeconds": 180
+    }
+  },
+  "localDeterministicProviderRecovery": {
+    "status": "PASS",
+    "profile": "local deterministic provider fixtures",
+    "count": 4
+  },
+  "limitations": [
+    "Selected self-hosted staging recovery drill with a fresh isolated workspace and fake-clock fixture tasks.",
+    "No provider create request was made by the recovery drill.",
+    "Provider billed cost remains UNKNOWN.",
+    "Web recovery-alert recipient env was missing at drill start; SHPITTO_RECOVERY_* observe binding was restored mid-drill before delivery succeeded.",
+    "Does not claim production email, commercial readiness, or later milestone gates."
+  ]
+}

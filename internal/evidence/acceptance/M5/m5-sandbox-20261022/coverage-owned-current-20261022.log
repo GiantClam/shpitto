@@ -1,0 +1,118 @@
+{"status":"PASS","databaseName":"m5_checkout_probe_35db703c164648f7b109d6ebddf28a59","cases":["owner receives workspace-bound local Checkout session","same command key replays the same Checkout session","member cannot create Checkout","recurring Checkout slot rejects a second request","client cannot inject a customer or price","billing hold blocks Checkout","owner can open fixed-return billing portal during hold","portal response loss/replay preserves URL and provider customer identity","lost provider response retains attempt and retries same idempotency identity","database contains one unresolved recurring slot"],"count":10}
+{"disposableDatabaseRemoved":true,"databaseName":"m5_checkout_probe_35db703c164648f7b109d6ebddf28a59"}
+✔ scripts\probe-billing-checkout.ts (1178.1336ms)
+{"status":"PASS","databaseName":"m5_reconcile_probe_fb358979f80f460b9f5212a7b37f2a75","cases":["verified payment persists inbox and issues one catalog grant","verified duplicate webhook is acknowledged without a second effect","subscription status mirrors do not issue grants and retain the original period expiry","cancel-at-period-end retains the recurring slot until termination, then allows a new purchase","invoice and PaymentIntent aliases converge on the original order and grant","failed webhook delivery is retryable with the same event identity after the transient prerequisite is restored","stale received inbox rows are reclaimed after the lease and converge without a duplicate grant","customer replacement closes the old mapping and appends an auditable current identity","aliases are resolved as exact provider/object/id tuples and cannot cross-pair two orders","known canonical orders reject mismatched workspace and customer hints before any account lock or financial effect","forged signature has no durable financial or inbox effect","refund-before-payment holds the workspace and late payment cannot grant credits","full unused refund voids only its grant once with immutable ledger evidence","partial refund creates a hold and recovery case without negative credits","refund preview is side-effect free and lost remote response converges through a stable request id","concurrent paid observations serialize on the workspace fence into one order and one grant","reversed dispute resolves the recovery case once and releases the billing hold","owner billing view exposes subscription, cash, credit and recovery state with workspace isolation"],"count":18}
+{"disposableDatabaseRemoved":true,"databaseName":"m5_reconcile_probe_fb358979f80f460b9f5212a7b37f2a75"}
+✔ scripts\probe-billing-reconciliation.ts (1532.105ms)
+{"status":"PASS","databaseName":"m5_billing_probe_070c88df0e0c4a62b86b60ed35543de1","serverVersion":"15.19","cases":["populated cash fact upgrade derives economic loss identities without rewriting original facts","all pre-upgrade cash event kinds replay through the recovery domain without new effects","upgrade preserves existing hold and available/reserved credits","existing billing account inserts retain compatible defaults","post-upgrade dispute reversal reuses canonical loss identity, resolves only its case, and never restores unrelated credits","customer identity cannot move tenants","one current customer mapping per tenant/provider","historical customer identity cannot be deleted","historical customer interval cannot reopen","replacement predecessor must share tenant","new customer predecessor cannot cross tenants","customer replacement retains original identity","order cannot reference another tenant customer","Stripe order cannot bind fixture catalog terms","refund cannot exceed paid cash","paid cash cannot become negative","cash minor units cannot be fractional","order snapshot cannot be rewritten","invalid persisted catalog snapshot interval","invalid persisted catalog snapshot credits","invalid persisted catalog snapshot amountMinor","invalid persisted catalog snapshot currency","invalid persisted catalog snapshot provider","payment alias is globally canonical","payment alias cannot cross tenants","payment alias cannot be reassigned","three object aliases converge on one order","cash event identity deduplicates observation","cash facts cannot cross tenants","cash fact requires an economic loss identity","cash fact currency matches canonical order","confirmed cash facts cannot mutate","backfilled cash facts remain immutable","confirmed cash facts cannot disappear","confirmed refund projection cannot regress","Stripe Checkout cannot bind fixture catalog terms","unknown recurring attempt keeps live slot","non-authoritative timeout cannot release slot","authoritative terminal evidence releases recurring slot","ten concurrent recurring Checkout inserts have one live slot winner","permanent packs do not occupy the recurring slot","Stripe subscription cannot bind fixture catalog terms","nonterminal subscriptions have a unique workspace slot","period-end cancellation retains the nonterminal slot","only terminal subscriptions release their slot","terminal Checkout cannot reopen","lease metadata cannot be partial","fencing generation cannot move backward","stale reconciliation token/generation has no effect"],"count":49}
+{"disposableDatabaseRemoved":true,"databaseName":"m5_billing_probe_070c88df0e0c4a62b86b60ed35543de1"}
+✔ scripts\probe-billing-schema.ts (1167.3391ms)
+✔ only explicit local/test profiles expose fixture monthly subscriptions and permanent packs (1.1077ms)
+✔ catalog snapshots are stable, frozen, strict and separate cash from credits (0.3885ms)
+✔ domain snapshots can describe a future reviewed Stripe mapping without enabling a production product (0.254ms)
+✔ checkout input cannot smuggle customer, price, tenant, interval or redirects (0.1783ms)
+✔ money and credit quantities cross JSON as canonical bounded decimal strings (0.1281ms)
+✔ canonical aliases distinguish transport objects without accepting unknown identity fields (0.1512ms)
+✔ fixture defaults still create and replay deterministic Checkout and portal (598.4258ms)
+✔ Stripe requires explicit server catalog; fixture terms cannot be relabeled as Stripe (13.6959ms)
+✔ concurrent customer creation and command replay use a persisted stable remote key and one binding (76.0254ms)
+✔ unknown customer provisioning survives process replacement and does not invent a Stripe identity (52.2241ms)
+✔ expired unknown customer intent fails closed beyond provider retention (30.7538ms)
+✔ stale owner cannot bind a customer after the remote provisioning call (30.6693ms)
+✔ Checkout retries retain immutable catalog, customer and provider key across config and customer changes (50.5536ms)
+✔ known Stripe session replays retrieve provider URL and preserve identity on late unknown (56.4707ms)
+✔ late unknown customer response cannot erase a concurrent successful provisioning result (59.1521ms)
+✔ local timeout never releases recurring slot; only provider expiry permits replacement (89.969ms)
+✔ unknown Checkout cannot be recreated after idempotency retention and still occupies recurring slot (55.9868ms)
+✔ concurrent distinct recurring commands create only one remote Checkout (54.0134ms)
+✔ Stripe portal uses real current customer during hold and an immutable server return URL (56.0976ms)
+✔ invalid command identity, member and billing hold fail before customer provisioning (13.191ms)
+✔ portal without a current Stripe customer never creates a synthetic mapping (9.7905ms)
+✔ known Checkout retrieval unknown or conflicting identity preserves the accepted session (54.664ms)
+✔ paid session retrieval leaves recurring slot until canonical payment reconciliation (56.1275ms)
+✔ portal lost response retries stored customer and return origin after configuration changes (50.5463ms)
+✔ fixture defaults still reconcile and deduplicate without Stripe evidence or a fence (577.6714ms)
+✔ invoice, Checkout, and intent aliases converge; renewal invoice gets a distinct grant and original expiry (166.2563ms)
+✔ historical bound subscription renews and mirrors after current customer replacement (87.8957ms)
+✔ missing service period is a durable hold with no grant, never a perpetual subscription grant (26.7629ms)
+✔ a claim commits before remote work and a newer generation or expired lease rejects old apply atomically (65.8233ms)
+✔ refund-before-paid persists cash evidence and late failed/paid deliveries cannot restore entitlement (103.0492ms)
+✔ Stripe needs a fence, persisted catalog binding, verified amounts, currency, and supported paid semantics (199.0535ms)
+✔ a verified canonical paid observation resolves only matching unverified paid cases and releases holds when none remain (131.4646ms)
+✔ second external subscription produces a recovery hold instead of losing evidence to uniqueness rollback (61.0172ms)
+✔ scope rejects forged workspace/customer hints and lifecycle requires a live matching fence (37.1199ms)
+✔ equal periods cannot merge distinct invoices or extend the original grant expiry (78.7971ms)
+✔ recovery without its original period retains cash and blocks later complete paid evidence (197.4696ms)
+✔ unsupported recovery keeps its monetary evidence and blocks paid through a matching canonical alias (52.8256ms)
+✔ historical refunds preserve their original order while an unrelated replacement subscription is active (131.4237ms)
+✔ fresh recovery identities cannot exceed the non-replayed original order cash cap (123.4914ms)
+✔ Stripe packs use Checkout snapshots, verified discounted cash, and permanent catalog credit quantities (112.8787ms)
+✔ lifecycle unsupported changes commit holds, while stale fences cannot cancel a subscription (55.5089ms)
+✔ Stripe recovery must carry stable refund/dispute identities rather than delivery identities (63.2627ms)
+✔ a first dispute reversal becomes a hold without fabricating a prior loss (131.5901ms)
+✔ a terminal failed refund after a succeeded refund holds without changing confirmed cash (95.5828ms)
+✔ a terminal canceled refund after a succeeded refund holds without changing confirmed cash (138.1754ms)
+✔ pending then failed refund holding evidence never creates confirmed cash (59.7617ms)
+✔ fixture defaults still execute offline and preserve owner manual recovery (661.1314ms)
+✔ Stripe requires explicit matching provider, without recording an intent or falling back (41.3434ms)
+✔ Stripe binds durable request, historical customer and canonical payment intent and confirms exactly once (90.3794ms)
+✔ owner refund command replays the current confirmed result after the order becomes refunded (61.3783ms)
+✔ owner billing projection separates refunded cash from voided credits and rejects members (61.9433ms)
+✔ Stripe pending cannot create confirmed cash; recovery is read-only (79.1391ms)
+✔ Stripe unknown cannot create confirmed cash; recovery is read-only (77.8167ms)
+✔ Stripe failed cannot create confirmed cash; recovery is read-only (53.0376ms)
+✔ mismatched Stripe amountMinor evidence remains unresolved (49.8231ms)
+✔ mismatched Stripe currency evidence remains unresolved (46.5979ms)
+✔ mismatched Stripe customerId evidence remains unresolved (48.0397ms)
+✔ mismatched Stripe paymentIntentId evidence remains unresolved (47.3196ms)
+✔ missing or ambiguous canonical aliases fail closed before any Stripe call (98.8927ms)
+✔ adapter exceptions and unverified failed responses remain unknown, never terminal failure or cash (94.0204ms)
+✔ owner Stripe reconciliation requires authoritative readback, not a supplied external ID (90.6075ms)
+✔ auth, step-up and expected version reject before provider work or refund creation (31.1178ms)
+✔ parallel commands submit once, block other unresolved intents, and expired claims only look up (76.936ms)
+✔ Stripe port refuses fixture-shaped success and mismatched providers on recovery (56.8452ms)
+✔ bridge rejects caller money/order/key drift and never uses caller payment target (52.735ms)
+✔ lost finalization rejects stale lease and recovers successful cash by read-only lookup (88.7087ms)
+✔ owner readback rechecks ownership before applying external cash evidence (52.1459ms)
+✔ changed durable refund binding rejects late successful delivery evidence (53.5584ms)
+✔ formats currency minor units using the currency decimal exponent without losing precision (10.0959ms)
+✔ access decisions preserve the complete E02 principal and hold matrix (0.8197ms)
+✔ billing hold rejects only new financial work and preserves permitted actions (0.4121ms)
+✔ invitation mail preserves a URL-encoded token, recipient and expiry (1.5891ms)
+ℹ tests 75
+ℹ suites 0
+ℹ pass 75
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12245.1701
+ℹ start of coverage report
+ℹ --------------------------------------------------------------------------------------------------
+ℹ file                    | line % | branch % | funcs % | uncovered lines
+ℹ --------------------------------------------------------------------------------------------------
+ℹ src                     |        |          |         |
+ℹ  adapters               |        |          |         |
+ℹ   billing               |        |          |         |
+ℹ    fake.ts              |  92.31 |    45.45 |  100.00 | 43-44 60-63
+ℹ    stripe-webhooks.ts   |  83.91 |    54.55 |  100.00 | 18-19 25-26 43-44 48-49 53-54 66-67 74-75
+ℹ  config                 |        |          |         |
+ℹ   plans.ts              | 100.00 |   100.00 |  100.00 |
+ℹ  modules                |        |          |         |
+ℹ   billing               |        |          |         |
+ℹ    checkout.ts          |  99.18 |    88.28 |   95.00 | 242-243
+ℹ    contracts.ts         |  97.22 |   100.00 |   90.00 | 70-72
+ℹ    customer-history.ts  | 100.00 |    77.42 |  100.00 |
+ℹ    hold-policy.ts       | 100.00 |   100.00 |  100.00 |
+ℹ    inbox.ts             | 100.00 |    86.96 |  100.00 |
+ℹ    payment-aliases.ts   |  95.24 |    84.62 |  100.00 | 36-37
+ℹ    queries.ts           | 100.00 |    83.33 |  100.00 |
+ℹ    reconcile-payment.ts |  99.46 |    85.89 |  100.00 | 175-176
+ℹ    recovery.ts          | 100.00 |    81.71 |  100.00 |
+ℹ    refund-command.ts    | 100.00 |    73.81 |  100.00 |
+ℹ    refund-preview.ts    |  73.21 |    40.00 |   66.67 | 42-56
+ℹ    subscriptions.ts     | 100.00 |    58.33 |  100.00 |
+ℹ --------------------------------------------------------------------------------------------------
+ℹ all files               |  97.26 |    81.15 |   97.67 |
+ℹ --------------------------------------------------------------------------------------------------
+ℹ end of coverage report

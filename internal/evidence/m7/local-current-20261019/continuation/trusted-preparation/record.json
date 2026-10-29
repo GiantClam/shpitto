@@ -1,0 +1,52 @@
+{
+  "candidateId": "local-candidate-20261019-trusted-r2",
+  "stageRoot": "D:\\github\\_tmp\\shpitto-m7-staging-20261019-trusted-r2\\customerRuntime",
+  "sourceTreeSha256": "54261cba4191fd0088a24a77cac733b6bdef7b4cf8a207f38a7df11e6a2ee2ef",
+  "schemaSha256": "7560a6a5b059bb33a47e7afa878826d73cf57f05a3a6a6f5ffa1ff2eb7f08d0f",
+  "configurationSha256": "256217154779f16bf458938d4f269b30dee976d0525ec2a9cb35e3c0ba67900f",
+  "contractSha256": "8244440f7f57156af574b6f2301973c470d45452a2f00a1a14c65c81a1c52568",
+  "validatorSha256": "9cf864c519f719dc8de812cec85de6b1a87671736ff335caead13d53d844bb7a",
+  "lockfileSha256": "d0ac1bee9c86cc4ab58aa540b69148d26ca7aaf3cd8cf1e1321b6e2461fa7c35",
+  "capturedAt": "2026-10-19T06:39:14.682Z",
+  "implementerId": "release-engineering-local",
+  "policyVersion": "v1-2026-10-19-r2",
+  "baselineSha256": "a7054fa7549979f409ab6651f981eed29f0d7612715c0389f0777b2f1036c3fa",
+  "status": "READY_FOR_REVIEW",
+  "checks": [
+    {
+      "id": "typecheck",
+      "status": "PASS",
+      "exitCode": 0,
+      "outputRef": "D:\\github\\_tmp\\shpitto-m7-evidence-20261019\\8a0d8e3e-9a07-4039-88e4-7c28b83a8486\\typecheck.log",
+      "outputSha256": "adba4af9194e10e47dda75ff0fd0f8c2b756474896d0eba5612799c527ff372a"
+    },
+    {
+      "id": "lint",
+      "status": "PASS",
+      "exitCode": 0,
+      "outputRef": "D:\\github\\_tmp\\shpitto-m7-evidence-20261019\\8a0d8e3e-9a07-4039-88e4-7c28b83a8486\\lint.log",
+      "outputSha256": "abc3ddbd7ec4b97bbb0679ef5ade6b0c50311f30d46c6b3ae6ec62c8a5cc8992"
+    },
+    {
+      "id": "format-check",
+      "status": "PASS",
+      "exitCode": 0,
+      "outputRef": "D:\\github\\_tmp\\shpitto-m7-evidence-20261019\\8a0d8e3e-9a07-4039-88e4-7c28b83a8486\\format-check.log",
+      "outputSha256": "f5baac642dc8bcb27d08e1c0070117ded089754d2b77a37f570328ec72fb2bb0"
+    },
+    {
+      "id": "boundary-checks",
+      "status": "PASS",
+      "exitCode": 0,
+      "outputRef": "D:\\github\\_tmp\\shpitto-m7-evidence-20261019\\8a0d8e3e-9a07-4039-88e4-7c28b83a8486\\boundary-checks.log",
+      "outputSha256": "0f0f84feaf4914ec25de4fee3245c5bda6424f24941c6fe8842ba4d57b347e72"
+    },
+    {
+      "id": "relevant-domain-tests",
+      "status": "PASS",
+      "exitCode": 0,
+      "outputRef": "D:\\github\\_tmp\\shpitto-m7-evidence-20261019\\8a0d8e3e-9a07-4039-88e4-7c28b83a8486\\relevant-domain-tests.log",
+      "outputSha256": "bfa55a65b6959e3827ad93592b793558b75baf7719bc2a581c4a6c367ff02afc"
+    }
+  ]
+}

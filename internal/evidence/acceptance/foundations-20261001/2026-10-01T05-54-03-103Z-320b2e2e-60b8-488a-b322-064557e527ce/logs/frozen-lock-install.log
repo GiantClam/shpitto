@@ -1,0 +1,48 @@
+✓ Lockfile passes supply-chain policies (verified 3d ago)
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: C:\Users\liula\AppData\Local\pnpm\store\v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 139, reused 139, downloaded 0, added 78
+Progress: resolved 181, reused 181, downloaded 0, added 121
+Progress: resolved 207, reused 207, downloaded 0, added 146
+Progress: resolved 237, reused 237, downloaded 0, added 174
+Progress: resolved 270, reused 270, downloaded 0, added 207
+Progress: resolved 304, reused 304, downloaded 0, added 245
+Progress: resolved 330, reused 330, downloaded 0, added 273
+Progress: resolved 365, reused 365, downloaded 0, added 308
+Progress: resolved 390, reused 390, downloaded 0, added 337
+Progress: resolved 402, reused 401, downloaded 0, added 350
+Progress: resolved 420, reused 420, downloaded 0, added 372
+Progress: resolved 440, reused 440, downloaded 0, added 395
+Progress: resolved 454, reused 454, downloaded 0, added 419
+Progress: resolved 456, reused 456, downloaded 0, added 432
+Progress: resolved 457, reused 457, downloaded 0, added 439
+Progress: resolved 459, reused 459, downloaded 0, added 442
+Progress: resolved 459, reused 459, downloaded 0, added 443
+Packages: +459
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 459, reused 459, downloaded 0, added 459, done
+
+dependencies:
++ @trigger.dev/sdk 4.6.4
++ better-auth 1.7.6
++ drizzle-orm 0.45.3
++ fumadocs-core 16.15.14
++ fumadocs-ui 16.15.14
++ next 16.3.6
++ pg 8.23.0
++ react 19.3.0
++ react-admin 5.15.4
++ react-dom 19.3.0
++ stripe 22.6.2
+
+devDependencies:
++ @types/node 24.0.0
++ @types/react 19.0.0
++ @types/react-dom 19.0.0
++ drizzle-kit 0.31.11
++ typescript 6.0.3
+
+Done in 2m 59.8s using pnpm v12.6.0

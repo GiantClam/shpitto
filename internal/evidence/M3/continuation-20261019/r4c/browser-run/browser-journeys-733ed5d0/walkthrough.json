@@ -1,0 +1,341 @@
+{
+  "application": "http://127.0.0.1:3199",
+  "capturedAt": "2026-10-19T15:06:58.632Z",
+  "reviewKind": "automated-browser-functional-observation",
+  "manualVisualApproval": false,
+  "profile": "Local no-cloud Mock; compiled Next application served with a local runtime configuration; not a production configuration acceptance.",
+  "credentialsRef": "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-harness.mjs (disposable generated accounts; no retained credentials)",
+  "candidateSha256": "15cdd980d1b621f173737fae497b8402befbe1a8ca50f7f548cdd61d38ba2dda",
+  "candidateRef": "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/candidate.json",
+  "journeys": [
+    {
+      "id": "fresh-user-generation",
+      "result": "PASS",
+      "observed": [
+        "Fresh account completed signup, captured-mail verification, UI login, explicit personal setup and UI generation. Exactly one ready output and consumed reservation persisted after application/worker restart."
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/01-personal-setup-pending.png",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/01-personal-setup-pending.txt",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/02-personal-empty.png",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/02-personal-empty.txt",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/06-generation-success.png",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/06-generation-success.txt"
+      ]
+    },
+    {
+      "id": "team-creation",
+      "result": "PASS",
+      "observed": [
+        "The fresh account created a team through the UI; exactly one owner is rendered."
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/09-team-created.png",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/09-team-created.txt"
+      ]
+    },
+    {
+      "id": "invitation-creation",
+      "result": "PASS",
+      "observed": [
+        "The owner created a real invitation through the UI; local token is masked in retained captures."
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/10-invitation-created.png",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/10-invitation-created.txt"
+      ]
+    },
+    {
+      "id": "member-invitation",
+      "result": "PASS",
+      "observed": [
+        "The invited account signed in through UI and accepted; a member sees the roster without owner controls."
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/11-member-accepted.png",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/11-member-accepted.txt"
+      ]
+    },
+    {
+      "id": "invitation-replay-expiry",
+      "result": "PASS",
+      "observed": [
+        "Consumed token replay and an independently aged seven-day invitation were denied to matching accounts."
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/12-invitation-replay-denied.png",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/12-invitation-replay-denied.txt",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/13-invitation-expired-denied.png",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/13-invitation-expired-denied.txt",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/expiry-fixture.json"
+      ]
+    },
+    {
+      "id": "owner-controls",
+      "result": "PASS",
+      "observed": [
+        "Submitted ownership transfer and member removal both returned POST 200; final roster contains one owner."
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/16-owner-before-transfer.png",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/16-owner-before-transfer.txt",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/18-member-removed-one-owner.png",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/18-member-removed-one-owner.txt",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/owner-controls.json"
+      ],
+      "submittedActions": [
+        {
+          "action": "transfer-owner",
+          "result": "PASS",
+          "requestMethod": "POST",
+          "path": "/api/workspaces/5380de0e-4041-49d8-92cd-e5a363cb4367/transfer",
+          "responseStatus": 200,
+          "targetUserId": "Qjme3vFyJPUOEhf2sW8qm1Ydfey0vlAj",
+          "submittedAt": "2026-10-19T15:06:53.465Z",
+          "postcondition": "Invited member is now the sole owner; original owner became member."
+        },
+        {
+          "action": "remove-member",
+          "result": "PASS",
+          "requestMethod": "POST",
+          "path": "/api/workspaces/5380de0e-4041-49d8-92cd-e5a363cb4367/members/tEbk2tGkd7MZj5pXFtLIZaC6cIZSb6Ik/remove",
+          "responseStatus": 200,
+          "targetUserId": "tEbk2tGkd7MZj5pXFtLIZaC6cIZSb6Ik",
+          "submittedAt": "2026-10-19T15:06:54.630Z",
+          "postcondition": "Only the new owner remains in the team."
+        }
+      ]
+    },
+    {
+      "id": "workspace-switching",
+      "result": "PASS",
+      "observed": [
+        "Personal and team navigation rendered separate grants, assets and generation histories."
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/14-personal-selected.png",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/14-personal-selected.txt",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/15-team-selected.png",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/15-team-selected.txt"
+      ]
+    },
+    {
+      "id": "personal-space-denial",
+      "result": "PASS",
+      "observed": [
+        "The personal roster has no invitation, member removal or ownership transfer controls."
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/08-personal-controls-denied.png",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/08-personal-controls-denied.txt"
+      ]
+    },
+    {
+      "id": "revoked-open-tab",
+      "result": "PASS",
+      "observed": [
+        "The original owner left a member tab open; after removal, reloading that same tab shows Workspace unavailable."
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/17-original-owner-open-tab-before-removal.png",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/17-original-owner-open-tab-before-removal.txt",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/19-revoked-open-tab.png",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/19-revoked-open-tab.txt"
+      ]
+    },
+    {
+      "id": "private-download",
+      "result": "PASS",
+      "observed": [
+        "The authorized browser opened the private video; metadata loaded and an anonymous request to the same URL returned 401."
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/07-private-video.png",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/07-private-video.txt",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/private-video.json"
+      ]
+    },
+    {
+      "id": "application-worker-restart",
+      "result": "PASS",
+      "observed": [
+        "The owned worker was stopped before queuing; the owned app and worker restarted with different PIDs, then the same task completed and settled once."
+      ],
+      "evidenceRefs": [
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/05-queued-before-restart.png",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/05-queued-before-restart.txt",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/06-generation-success.png",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/06-generation-success.txt",
+        "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/restart-proof.json"
+      ]
+    }
+  ],
+  "uiReview": {
+    "result": "PASS",
+    "desktopViewport": "1440x900",
+    "mobileViewport": "390x844",
+    "checks": [
+      {
+        "id": "success",
+        "result": "PASS",
+        "observed": [
+          "Observed successful generation, team creation, invitation acceptance and owner actions."
+        ],
+        "evidenceRefs": [
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/06-generation-success.png",
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/06-generation-success.txt",
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/18-member-removed-one-owner.png",
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/18-member-removed-one-owner.txt"
+        ]
+      },
+      {
+        "id": "loading",
+        "result": "PASS",
+        "observed": [
+          "A scoped credit-account lock held a real pending generation POST; the Queueing button was disabled until lock release."
+        ],
+        "evidenceRefs": [
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/04-generation-loading.png",
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/04-generation-loading.txt"
+        ]
+      },
+      {
+        "id": "empty",
+        "result": "PASS",
+        "observed": [
+          "A newly created personal studio shows no tasks or assets."
+        ],
+        "evidenceRefs": [
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/02-personal-empty.png",
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/02-personal-empty.txt"
+        ]
+      },
+      {
+        "id": "error",
+        "result": "PASS",
+        "observed": [
+          "A real no-credit team generation POST renders the server denial as an alert."
+        ],
+        "evidenceRefs": [
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/24-generation-error.png",
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/24-generation-error.txt"
+        ]
+      },
+      {
+        "id": "denied",
+        "result": "PASS",
+        "observed": [
+          "Consumed and expired invitation tokens and revoked membership display denials."
+        ],
+        "evidenceRefs": [
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/12-invitation-replay-denied.png",
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/12-invitation-replay-denied.txt",
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/13-invitation-expired-denied.png",
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/13-invitation-expired-denied.txt",
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/19-revoked-open-tab.png",
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/19-revoked-open-tab.txt"
+        ]
+      },
+      {
+        "id": "desktop",
+        "result": "PASS",
+        "observed": [
+          "Current studio modes render at 1440x900 with no document horizontal overflow."
+        ],
+        "evidenceRefs": [
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/21-desktop-text-mode.png",
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/21-desktop-text-mode.txt",
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/20-desktop-image-mode.png",
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/20-desktop-image-mode.txt"
+        ]
+      },
+      {
+        "id": "mobile",
+        "result": "PASS",
+        "observed": [
+          "Current studio modes render at 390x844 with no document horizontal overflow."
+        ],
+        "evidenceRefs": [
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/22-mobile-text-mode.png",
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/22-mobile-text-mode.txt",
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/23-mobile-image-mode.png",
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/23-mobile-image-mode.txt"
+        ]
+      },
+      {
+        "id": "keyboard",
+        "result": "PASS",
+        "observed": [
+          "Keyboard Tab traversal retained focus order for navigation, mode controls and generation form."
+        ],
+        "evidenceRefs": [
+          "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/keyboard.json"
+        ]
+      }
+    ]
+  },
+  "environment": {
+    "database": "shpitto_browser_733ed5d0",
+    "runtimeRoot": "D:\\github\\shpitto",
+    "appRuntime": "next start + NODE_ENV=development",
+    "desktopOverflow": {
+      "width": 1440,
+      "scrollWidth": 1440
+    },
+    "mobileOverflow": {
+      "width": 390,
+      "scrollWidth": 390
+    }
+  },
+  "browserErrors": [
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    },
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    },
+    {
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 409 (Conflict)"
+    }
+  ],
+  "blockedExternalRequests": [],
+  "response403409": {
+    "ref": "internal/evidence/M3/continuation-20261019/r4c/browser-run/browser-journeys-733ed5d0/response-403-409.json",
+    "observations": [
+      {
+        "at": "2026-10-19T15:06:49.579Z",
+        "journey": "team-creation",
+        "url": "http://127.0.0.1:3199/api/invitations/accept",
+        "method": "POST",
+        "status": 403,
+        "expected": true,
+        "classification": "expected-authorization-or-conflict-path",
+        "acceptanceImpact": "Expected denial/conflict recorded separately; no success-path criterion is downgraded."
+      },
+      {
+        "at": "2026-10-19T15:06:51.512Z",
+        "journey": "team-creation",
+        "url": "http://127.0.0.1:3199/api/invitations/accept",
+        "method": "POST",
+        "status": 403,
+        "expected": true,
+        "classification": "expected-authorization-or-conflict-path",
+        "acceptanceImpact": "Expected denial/conflict recorded separately; no success-path criterion is downgraded."
+      },
+      {
+        "at": "2026-10-19T15:06:58.356Z",
+        "journey": "team-creation",
+        "url": "http://127.0.0.1:3199/api/workspaces/5380de0e-4041-49d8-92cd-e5a363cb4367/generations",
+        "method": "POST",
+        "status": 409,
+        "expected": false,
+        "classification": "unclassified-response",
+        "acceptanceImpact": "Requires reviewer classification before this response can support acceptance."
+      }
+    ],
+    "allClassified": false
+  }
+}

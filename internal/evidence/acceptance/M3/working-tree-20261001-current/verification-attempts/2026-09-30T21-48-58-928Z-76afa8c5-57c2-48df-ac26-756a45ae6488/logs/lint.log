@@ -1,0 +1,2 @@
+Source boundary check passed for src, scripts.
+$ node scripts/check-source-boundaries.mjs

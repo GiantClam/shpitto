@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "1.0",
+  "decisionRef": "internal/restart/root-dependency-evolution.md",
+  "historical": {
+    "packageCanonicalSha256": "4994cbb2da532d5728431fb2bacefbc5b631f57b9625b24434d54d099b127367",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a",
+    "provenanceCanonicalSha256": "884e3c76091bbb23f5d5b472653db07e7842256052dfd75cd1409d14b727e65f"
+  },
+  "application": {
+    "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
+    "workspaceCanonicalSha256": "2a2a38ca97322a49d331e1976712a8c3e0424b54c3bb176732bc9113bdca5364",
+    "dependencyChanges": {
+      "@aws-sdk/client-s3": {
+        "from": null,
+        "to": "3.1141.0"
+      },
+      "next": {
+        "from": "16.3.6",
+        "to": "16.3.8"
+      },
+      "react-admin": {
+        "from": "5.15.4",
+        "to": null
+      },
+      "nodemailer": {
+        "from": null,
+        "to": "10.2.1"
+      }
+    }
+  }
+}

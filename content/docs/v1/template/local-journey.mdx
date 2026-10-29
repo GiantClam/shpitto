@@ -1,0 +1,63 @@
+---
+release: v1
+title: Local acceptance journey
+description: Start and exercise the no-cloud application profile.
+section: template
+status: published
+relatedContracts: [D01, D07, D08, D18, G01, G07, G08, G18]
+---
+
+# Local acceptance journey
+
+The local profile is for product acceptance without provider credentials. It
+uses PostgreSQL, local asset storage, Mailpit and Mock generation. It does not
+charge a card or send production email.
+
+## Start a clean local profile
+
+1. Install Node.js 24, Corepack/pnpm 12.6 and Docker Compose v2.
+2. Copy `.env.example` to `.env.local`. Set a private local `BETTER_AUTH_SECRET`
+   and point `DATABASE_URL` to the PostgreSQL service.
+3. Run `pnpm services:up`, then `pnpm db:migrate` and `pnpm dev`.
+4. Open the app on the origin configured by `APP_URL`. The worker health page is
+   available at `WORKER_HEALTH_URL`.
+
+Use `pnpm demo:seed` to create the local acceptance owner, member, team and
+invitation. The seed command writes credentials and the invitation token under
+`.data/demo-credentials.json`; keep that file local and do not attach it to
+reports. The command refuses production and non-local application origins.
+
+## Exercise the integrated application
+
+Sign in as the seeded owner and open the seeded team workspace. The dashboard
+shows its credit grant and the Mock generation panel. Submit a prompt and verify
+that the persisted task advances to success and that a private video asset can
+be downloaded through the app.
+
+Open Team Settings to inspect membership. The member account must sign in with
+the invited email before accepting the invitation. Replaying the accepted token
+must be rejected.
+
+In Billing, use a local fixture product to open checkout. The fixture page can
+simulate paid, failed, refunded and disputed results; the inbox, reconciliation
+case, order, subscription and credit ledger remain local database state. See
+the [API examples](../api/overview) for the request shapes and the
+[operations guide](./operations) for recovery boundaries.
+
+## Administrative acceptance
+
+Global admin is separate from workspace ownership. On a new installation, the
+first successful password registration to win the server-side claim becomes Superadmin;
+registration concurrency, replay and restart cannot create another initial
+owner. For an upgraded installation that already contains users but has no
+global owner, use the audited `pnpm ops:owner bootstrap` command after identifying
+the account's database user ID. Review the command's dry-run output, record a
+local change reference, then use `--apply` only in the disposable local profile.
+The installed template can configure optional SMTP, email verification, operator
+2FA and Cloudflare Turnstile from the superadmin Security settings view. Read-only
+lists expose redacted data; privileged commands require a reason, current
+version, idempotency key and server-side role authorization. When 2FA enforcement
+is enabled, commands also require recent same-session step-up verification.
+
+This journey proves only the Mock/local profile. Real Replicate, fal.ai, Stripe,
+FirstPromoter, production email and hosted payout checks remain separate gates.

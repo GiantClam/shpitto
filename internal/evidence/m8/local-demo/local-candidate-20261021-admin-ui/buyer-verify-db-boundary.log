@@ -1,0 +1,2 @@
+$ node scripts/check-db-boundaries.mjs
+Database boundary check passed.

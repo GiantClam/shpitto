@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "1.0",
+  "scope": "M7 task 8.9 local actual four-workflow execution",
+  "runId": "2026-10-19T06-12-57-401Z-0995e559",
+  "startedAt": "2026-10-19T06:12:57.719Z",
+  "candidateCurrency": "EXPLICIT_ROOT_FREEZE_BOUND",
+  "baselineSourceTreeSha256": "95ad817920e31e3db850155b6d321ab90c79cfeaa90d4d0d5263c9aa297a08e7",
+  "liveProvider": false,
+  "livePayment": false,
+  "independentReview": "NOT_RUN",
+  "gatePromotion": false,
+  "workflows": [
+    {
+      "id": "customize-brand",
+      "result": "PASS",
+      "classification": "local-mock",
+      "modifiedSourceTreeSha256": "ea88927935724c438a55ecb4595f58eca32a1e1b9b2b002d1388b1b1b3f44c3e",
+      "files": [
+        "src/config/brand.ts"
+      ],
+      "protectedFilesUnchanged": 416,
+      "evidenceDirectory": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-12-57-401Z-0995e559/customize-brand"
+    },
+    {
+      "id": "create-page",
+      "result": "PASS",
+      "classification": "local-mock",
+      "modifiedSourceTreeSha256": "a7124ed19c3f541cb5cab89c038033c28f4b8835194bdd5c32626fa5d8cd4d07",
+      "files": [
+        "src/config/navigation.ts",
+        "src/app/(marketing)/studio-notes/page.tsx"
+      ],
+      "protectedFilesUnchanged": 416,
+      "evidenceDirectory": "internal/evidence/m7/workflows-current-20261019/runs/2026-10-19T06-12-57-401Z-0995e559/create-page"
+    }
+  ]
+}

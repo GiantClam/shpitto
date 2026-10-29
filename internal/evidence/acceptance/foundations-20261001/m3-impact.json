@@ -1,0 +1,412 @@
+{
+  "recordedAt": "2026-10-01T06:54:43.324Z",
+  "historicalM3RecordRef": "internal/evidence/acceptance/M3/working-tree-20261001-current/record.json",
+  "historicalM3RecordSha256": "e5e3638fd224caefaaa8ccb7752ff1e6e44e49c1f881467ec52166fb214fcf6e",
+  "historicalDecision": "PASS",
+  "currentM3Applicability": "STALE",
+  "candidate": {
+    "sourceTreeSha256": "89b6bbc5e0872ea0402caab2e28e876968ac7182aea2dc998879345942878809",
+    "schemaSha256": "ae5c2ed265b308f8a624e917b2b631038dbeaefb993f183248bee8800af87ffa",
+    "configurationSha256": "5fca500aba3c8fd69c8efe8fc7c96659387af00e1fb88269912c5c2bdb5f7426",
+    "contractSha256": "861a25ab4e70f623440a7abba054afa4460177e42cbe8a001196bc9d12a1a139",
+    "validatorSha256": "f4ce7b165966a957f87fc0e3c48ca5b5b2a6554450d4f433ce4d45ad5e047c75",
+    "lockfileSha256": "fe3def4e775fb6d0f14fa598dcc9f60853993b3f26da4a139e06d8a351ff351a"
+  },
+  "changedDigests": [
+    "sourceTreeSha256",
+    "schemaSha256",
+    "configurationSha256",
+    "contractSha256",
+    "validatorSha256"
+  ],
+  "differences": {
+    "sourceTree": [
+      {
+        "path": "package.json",
+        "beforeSha256": "4c97895e8f5a8a59c859c10d8faa2447394a456d69083c38f05734f56d488edb",
+        "afterSha256": "4d4e4ea74a97f579240056f6f0b143e0627387565cbaf20542372cb79ff64f77"
+      },
+      {
+        "path": "scripts/candidate-digests.mjs",
+        "beforeSha256": "2af4cff3e176d853cb07f6dc6b7d6efe96b7223c194d24839bc924093cc92b6e",
+        "afterSha256": "267c432126e54c1d598a73a5f98b7f085d6747b359b58e310615c4740c96428b"
+      },
+      {
+        "path": "src/adapters/contracts.ts",
+        "beforeSha256": "7d41fb61b8bc316689bcacc7099d1f019b5ba7fd3b52a3099e2ea78ab6ebeab6",
+        "afterSha256": "1f03bd9f52e9efeb59cbc631a4bfc4d80a5fbea4410a6727886f9383f1cd5e2f"
+      },
+      {
+        "path": "src/config/env.ts",
+        "beforeSha256": "edaaf0d9e465cb6ba3608e0c6b13c3befa6f9f889d25c85851ec0f223d8de364",
+        "afterSha256": "11c3c4a5708855d7f463819c25b39187ada2d346bade4d0373a3b8ae3cba1b51"
+      },
+      {
+        "path": "src/db/migrations/meta/_journal.json",
+        "beforeSha256": "28683a12c4a6fe991a050c6b338eaf5ad2e341640238163288c726f9dfb616b4",
+        "afterSha256": "27e59212e3de7f5e6148ee2ae381937ff25f51e4eadbcc7b3e546a23ddce17ae"
+      },
+      {
+        "path": "src/db/schema/billing.ts",
+        "beforeSha256": "434ad8546f565b31a5312d404c1d9f6e63dc0dd00f0fe9711ed4013047fdca59",
+        "afterSha256": "c842882843906862f88db5a040f2b42dfb9ee6add7265828925589035780df73"
+      },
+      {
+        "path": "src/db/schema/index.ts",
+        "beforeSha256": "e2384c63e61449c84d86922b43a0a565e0f0fed8175093168ae0aeb3279364b6",
+        "afterSha256": "2f64ce6d518f7ed995c450f39ac136a8259190c92c68c260772ec7c7129ecbb1"
+      },
+      {
+        "path": "tests/unit/candidate-digests.test.ts",
+        "beforeSha256": "0516b19b524aa5286995908c80d0cc89777b84c40bc6b82e5cd270e6dc671db3",
+        "afterSha256": "e4245651ffb88a60a7b93255253534204c531c0cefc5e503b99e9a724a5b4fe7"
+      },
+      {
+        "path": "internal/contracts/providers/README.md",
+        "beforeSha256": null,
+        "afterSha256": "847184a202ce574c1a83383379716ee00e72f596f16f3d7b518f27aef7edf730"
+      },
+      {
+        "path": "internal/contracts/providers/fal-wan22-i2v.schema.json",
+        "beforeSha256": null,
+        "afterSha256": "012030973ffd700e00516d016e37996b10dd1b969fd2c79da21c92c8e130cef5"
+      },
+      {
+        "path": "internal/contracts/providers/fal-wan22-t2v.schema.json",
+        "beforeSha256": null,
+        "afterSha256": "b23b17eb18956feaaa318cfb77bf8ad7c9ff7af560fe274118bbf594a8a654c7"
+      },
+      {
+        "path": "internal/contracts/providers/manifest.json",
+        "beforeSha256": null,
+        "afterSha256": "5169e6e77058428d3bca27fad521eca26fc2e1ada67581dd470fd90ef74b4237"
+      },
+      {
+        "path": "internal/contracts/providers/replicate-wan22-i2v.schema.json",
+        "beforeSha256": null,
+        "afterSha256": "c81011fdc4bf077b2a6738c84cfd51c5d40bd7200cb2c45b3dc937e0bb68b83d"
+      },
+      {
+        "path": "internal/contracts/providers/replicate-wan22-t2v.schema.json",
+        "beforeSha256": null,
+        "afterSha256": "b167bc49d8aa45e18a2fc14e95cc4b72ab052b42bcecac3c59d6194deb468cc2"
+      },
+      {
+        "path": "scripts/check-stage-progression.d.mts",
+        "beforeSha256": null,
+        "afterSha256": "195d0590d481107ad204cfa45b03ff1be0cb310767466d1af28250c298ea56b3"
+      },
+      {
+        "path": "scripts/check-stage-progression.mjs",
+        "beforeSha256": null,
+        "afterSha256": "cf9f34d90da4054640ad74354d51822f599075207bacfed1205b10b494a67dd9"
+      },
+      {
+        "path": "scripts/probe-billing-checkout.ts",
+        "beforeSha256": null,
+        "afterSha256": "220592c02765dcce76757a9f450feb0195480fa496d1acedca9837733531dd82"
+      },
+      {
+        "path": "scripts/probe-billing-reconciliation.ts",
+        "beforeSha256": null,
+        "afterSha256": "f290e33073556d8cd5346358de44e7caed64b2942c8eaa7a5afb11fb3087c20a"
+      },
+      {
+        "path": "scripts/probe-billing-schema.ts",
+        "beforeSha256": null,
+        "afterSha256": "db9cee6cf5427fbbe7d8e4ba1b839b84eddc20932e03b088f2c27f43b3e95c28"
+      },
+      {
+        "path": "scripts/verify-contract-foundations.mjs",
+        "beforeSha256": null,
+        "afterSha256": "bdc1a7578bbd909c9caad71f259177962ee01e19092f5c3372fa54b5c02f8a68"
+      },
+      {
+        "path": "src/adapters/billing/fake.ts",
+        "beforeSha256": null,
+        "afterSha256": "dc636510ebda35782f4ddf1d348cb3013fc1151ad08f472480fc7a7c32bd4182"
+      },
+      {
+        "path": "src/adapters/billing/stripe-webhooks.ts",
+        "beforeSha256": null,
+        "afterSha256": "8ecaa1515ca27a019582fbcc7df4ca25db5ea854e46e0bd2ce0b6ceb19b0460f"
+      },
+      {
+        "path": "src/adapters/providers/fal/index.ts",
+        "beforeSha256": null,
+        "afterSha256": "36a5f62712ef70a6f9df858729d2342199e8f59b53655bfd6c39e084a11ed774"
+      },
+      {
+        "path": "src/adapters/providers/input.ts",
+        "beforeSha256": null,
+        "afterSha256": "658caa175299a832d5d6cf0f1eeeb137adb0e85bb51a51912161c4d2ebee14e9"
+      },
+      {
+        "path": "src/adapters/providers/mock.ts",
+        "beforeSha256": null,
+        "afterSha256": "44fd69a3ed50c262d6e4a3c7b1f831efbb4c4c201a7032373de923689c0aa429"
+      },
+      {
+        "path": "src/adapters/providers/normalize.ts",
+        "beforeSha256": null,
+        "afterSha256": "8f5d0b1c4de5cf64c43a7f1d4e1154f6ee5582337db1341b1396d3e918f4c8f3"
+      },
+      {
+        "path": "src/adapters/providers/port.ts",
+        "beforeSha256": null,
+        "afterSha256": "82ecc772ce3396d600bf360161d9f052ff6ff5c57ee8a528d21e3d9760f4e289"
+      },
+      {
+        "path": "src/adapters/providers/replicate/index.ts",
+        "beforeSha256": null,
+        "afterSha256": "5a7f641b1629033f8dc6a395f134d07f2febc8100ea701cf9b408faec5af54da"
+      },
+      {
+        "path": "src/app/api/webhooks/stripe/route.ts",
+        "beforeSha256": null,
+        "afterSha256": "f36b77f1add2c44124506b0c6632a84e5b20c06bdf2c13c56b2bfce7c7480f79"
+      },
+      {
+        "path": "src/app/api/workspaces/[workspaceId]/billing/checkout/route.ts",
+        "beforeSha256": null,
+        "afterSha256": "72d71f7005bee3afa9aea594eeb3ed2163bf8d056f26394fab73b32b11bc5265"
+      },
+      {
+        "path": "src/app/api/workspaces/[workspaceId]/billing/portal/route.ts",
+        "beforeSha256": null,
+        "afterSha256": "df8bac262c2582b17f2142e2a26b9e619976c305284b28f8f6b8295d41af4854"
+      },
+      {
+        "path": "src/config/plans.ts",
+        "beforeSha256": null,
+        "afterSha256": "17e3fcba649b3c3ba111fd8ac13dd852a0e42ec8022ed3f715cf1562e9a47cf3"
+      },
+      {
+        "path": "src/config/provider-models.ts",
+        "beforeSha256": null,
+        "afterSha256": "95869ae8485257c49e782daa96c0eca7ffbb56de2b5c49a23f9de2e0819d5c55"
+      },
+      {
+        "path": "src/db/migrations/0016_billing_contracts.sql",
+        "beforeSha256": null,
+        "afterSha256": "626930e33996c989a63039fc45078a1a546f4393123a83efe04f22f28c51101c"
+      },
+      {
+        "path": "src/db/migrations/0017_billing_webhook_reconciliation.sql",
+        "beforeSha256": null,
+        "afterSha256": "04a0168968602712625a5850481e85da3d262b5e0aa5bef56d3251aee6b9cf89"
+      },
+      {
+        "path": "src/modules/billing/checkout.ts",
+        "beforeSha256": null,
+        "afterSha256": "ceed8f3e0e03efe6a01b83f0e49a1b0e05d0a705165927b68062715753dfc993"
+      },
+      {
+        "path": "src/modules/billing/contracts.ts",
+        "beforeSha256": null,
+        "afterSha256": "f952aec7400841037f1e6c926f39faf601910b8ad8a9b749e6f901dc16b13f66"
+      },
+      {
+        "path": "src/modules/billing/inbox.ts",
+        "beforeSha256": null,
+        "afterSha256": "8ff07a1a14cdef6b63f3e5cc3e490454308d2754efa5d08f9b47dd780a776d06"
+      },
+      {
+        "path": "src/modules/billing/payment-aliases.ts",
+        "beforeSha256": null,
+        "afterSha256": "9de0c3826673b9e242d71e98ad41071f62e6e1a51041c9ea1b63ec1e8078673a"
+      },
+      {
+        "path": "src/modules/billing/reconcile-payment.ts",
+        "beforeSha256": null,
+        "afterSha256": "cde52464eb0e26ee6399d2cd1171868c03909ecd5d986a8eb9add62c989b8787"
+      },
+      {
+        "path": "tests/contracts/billing-checkout.test.ts",
+        "beforeSha256": null,
+        "afterSha256": "551db74384d4c481b71de7fc326db43b7413b9b3721606fc54809e9863532f3d"
+      },
+      {
+        "path": "tests/contracts/billing-contracts.test.ts",
+        "beforeSha256": null,
+        "afterSha256": "b0692f1a7a5cd5f477ef8c0489d95b03bd219c40e43f66f5798767661148824f"
+      },
+      {
+        "path": "tests/contracts/fal.test.ts",
+        "beforeSha256": null,
+        "afterSha256": "1f5097db08d9a41017249ab4c086f13bd042e0567f63845362fcf947a0b7bf06"
+      },
+      {
+        "path": "tests/contracts/provider-inputs.test.ts",
+        "beforeSha256": null,
+        "afterSha256": "60ed29259bc840bbe3c794b8dd5e6ee830d3543b5e54655d4b7211570235b48f"
+      },
+      {
+        "path": "tests/contracts/replicate.test.ts",
+        "beforeSha256": null,
+        "afterSha256": "18470bb154dc1340d02a28a095bd64f3d3fbfe14b22edaeeda32c45b3a485402"
+      },
+      {
+        "path": "tests/unit/stage-progression.test.ts",
+        "beforeSha256": null,
+        "afterSha256": "9590e45e8f14d4c83367f54ba9a03e944f758152da27bc25bd62dddef7b156fe"
+      }
+    ],
+    "schema": [
+      {
+        "path": "src/db/migrations/meta/_journal.json",
+        "beforeSha256": "28683a12c4a6fe991a050c6b338eaf5ad2e341640238163288c726f9dfb616b4",
+        "afterSha256": "27e59212e3de7f5e6148ee2ae381937ff25f51e4eadbcc7b3e546a23ddce17ae"
+      },
+      {
+        "path": "src/db/schema/billing.ts",
+        "beforeSha256": "434ad8546f565b31a5312d404c1d9f6e63dc0dd00f0fe9711ed4013047fdca59",
+        "afterSha256": "c842882843906862f88db5a040f2b42dfb9ee6add7265828925589035780df73"
+      },
+      {
+        "path": "src/db/schema/index.ts",
+        "beforeSha256": "e2384c63e61449c84d86922b43a0a565e0f0fed8175093168ae0aeb3279364b6",
+        "afterSha256": "2f64ce6d518f7ed995c450f39ac136a8259190c92c68c260772ec7c7129ecbb1"
+      },
+      {
+        "path": "src/db/migrations/0016_billing_contracts.sql",
+        "beforeSha256": null,
+        "afterSha256": "626930e33996c989a63039fc45078a1a546f4393123a83efe04f22f28c51101c"
+      },
+      {
+        "path": "src/db/migrations/0017_billing_webhook_reconciliation.sql",
+        "beforeSha256": null,
+        "afterSha256": "04a0168968602712625a5850481e85da3d262b5e0aa5bef56d3251aee6b9cf89"
+      }
+    ],
+    "configuration": [
+      {
+        "path": "package.json",
+        "beforeSha256": "4c97895e8f5a8a59c859c10d8faa2447394a456d69083c38f05734f56d488edb",
+        "afterSha256": "4d4e4ea74a97f579240056f6f0b143e0627387565cbaf20542372cb79ff64f77"
+      },
+      {
+        "path": "src/config/env.ts",
+        "beforeSha256": "edaaf0d9e465cb6ba3608e0c6b13c3befa6f9f889d25c85851ec0f223d8de364",
+        "afterSha256": "11c3c4a5708855d7f463819c25b39187ada2d346bade4d0373a3b8ae3cba1b51"
+      }
+    ],
+    "contract": [
+      {
+        "path": "internal/restart/contract-register.md",
+        "beforeSha256": "86f914a719e8a4bf4b52661459e488cf693364fc4d74a90c46fb71ae21e9c36c",
+        "afterSha256": "6cba3ffccf2763ef0eaa556850f7f5ad255f8f9f56b65c0a5e68a0415e9af635"
+      },
+      {
+        "path": "internal/contracts/providers/README.md",
+        "beforeSha256": null,
+        "afterSha256": "847184a202ce574c1a83383379716ee00e72f596f16f3d7b518f27aef7edf730"
+      },
+      {
+        "path": "internal/contracts/providers/fal-wan22-i2v.schema.json",
+        "beforeSha256": null,
+        "afterSha256": "012030973ffd700e00516d016e37996b10dd1b969fd2c79da21c92c8e130cef5"
+      },
+      {
+        "path": "internal/contracts/providers/fal-wan22-t2v.schema.json",
+        "beforeSha256": null,
+        "afterSha256": "b23b17eb18956feaaa318cfb77bf8ad7c9ff7af560fe274118bbf594a8a654c7"
+      },
+      {
+        "path": "internal/contracts/providers/manifest.json",
+        "beforeSha256": null,
+        "afterSha256": "5169e6e77058428d3bca27fad521eca26fc2e1ada67581dd470fd90ef74b4237"
+      },
+      {
+        "path": "internal/contracts/providers/replicate-wan22-i2v.schema.json",
+        "beforeSha256": null,
+        "afterSha256": "c81011fdc4bf077b2a6738c84cfd51c5d40bd7200cb2c45b3dc937e0bb68b83d"
+      },
+      {
+        "path": "internal/contracts/providers/replicate-wan22-t2v.schema.json",
+        "beforeSha256": null,
+        "afterSha256": "b167bc49d8aa45e18a2fc14e95cc4b72ab052b42bcecac3c59d6194deb468cc2"
+      }
+    ],
+    "validator": [
+      {
+        "path": "scripts/candidate-digests.mjs",
+        "beforeSha256": "2af4cff3e176d853cb07f6dc6b7d6efe96b7223c194d24839bc924093cc92b6e",
+        "afterSha256": "267c432126e54c1d598a73a5f98b7f085d6747b359b58e310615c4740c96428b"
+      },
+      {
+        "path": "tests/unit/candidate-digests.test.ts",
+        "beforeSha256": "0516b19b524aa5286995908c80d0cc89777b84c40bc6b82e5cd270e6dc671db3",
+        "afterSha256": "e4245651ffb88a60a7b93255253534204c531c0cefc5e503b99e9a724a5b4fe7"
+      },
+      {
+        "path": "scripts/check-stage-progression.d.mts",
+        "beforeSha256": null,
+        "afterSha256": "195d0590d481107ad204cfa45b03ff1be0cb310767466d1af28250c298ea56b3"
+      },
+      {
+        "path": "scripts/check-stage-progression.mjs",
+        "beforeSha256": null,
+        "afterSha256": "cf9f34d90da4054640ad74354d51822f599075207bacfed1205b10b494a67dd9"
+      },
+      {
+        "path": "scripts/probe-billing-checkout.ts",
+        "beforeSha256": null,
+        "afterSha256": "220592c02765dcce76757a9f450feb0195480fa496d1acedca9837733531dd82"
+      },
+      {
+        "path": "scripts/probe-billing-reconciliation.ts",
+        "beforeSha256": null,
+        "afterSha256": "f290e33073556d8cd5346358de44e7caed64b2942c8eaa7a5afb11fb3087c20a"
+      },
+      {
+        "path": "scripts/probe-billing-schema.ts",
+        "beforeSha256": null,
+        "afterSha256": "db9cee6cf5427fbbe7d8e4ba1b839b84eddc20932e03b088f2c27f43b3e95c28"
+      },
+      {
+        "path": "scripts/verify-contract-foundations.mjs",
+        "beforeSha256": null,
+        "afterSha256": "bdc1a7578bbd909c9caad71f259177962ee01e19092f5c3372fa54b5c02f8a68"
+      },
+      {
+        "path": "tests/contracts/billing-checkout.test.ts",
+        "beforeSha256": null,
+        "afterSha256": "551db74384d4c481b71de7fc326db43b7413b9b3721606fc54809e9863532f3d"
+      },
+      {
+        "path": "tests/contracts/billing-contracts.test.ts",
+        "beforeSha256": null,
+        "afterSha256": "b0692f1a7a5cd5f477ef8c0489d95b03bd219c40e43f66f5798767661148824f"
+      },
+      {
+        "path": "tests/contracts/fal.test.ts",
+        "beforeSha256": null,
+        "afterSha256": "1f5097db08d9a41017249ab4c086f13bd042e0567f63845362fcf947a0b7bf06"
+      },
+      {
+        "path": "tests/contracts/provider-inputs.test.ts",
+        "beforeSha256": null,
+        "afterSha256": "60ed29259bc840bbe3c794b8dd5e6ee830d3543b5e54655d4b7211570235b48f"
+      },
+      {
+        "path": "tests/contracts/replicate.test.ts",
+        "beforeSha256": null,
+        "afterSha256": "18470bb154dc1340d02a28a095bd64f3d3fbfe14b22edaeeda32c45b3a485402"
+      },
+      {
+        "path": "tests/unit/stage-progression.test.ts",
+        "beforeSha256": null,
+        "afterSha256": "9590e45e8f14d4c83367f54ba9a03e944f758152da27bc25bd62dddef7b156fe"
+      }
+    ]
+  },
+  "regressionEvidenceRef": "internal/evidence/acceptance/foundations-20261001/2026-10-01T06-42-45-469Z-be0383a5-1e5e-4e4b-910d-fde3b1dcde5c/commands.json",
+  "independentReviewRef": "internal/evidence/acceptance/foundations-20261001/independent-review.json",
+  "assessment": "New provider/billing contracts, an additive billing migration and development-evidence tooling change candidate bytes. Existing Mock worker, authentication, UI, generation/credit commands and asset pipeline source remain unchanged. Fresh domain and migration regressions pass. Historical browser/whole-stage evidence retains its original candidate; this task review does not reapprove all M3 browser profiles on the new candidate.",
+  "requiredReruns": [
+    "Current-candidate M3 browser/app upgrade evidence before any later whole-stage promotion",
+    "M4 paid provider and authenticated webhook/durable output evidence",
+    "M5 Checkout/reconciliation/authorized Stripe test-mode and owner UI evidence"
+  ]
+}
