@@ -92,7 +92,7 @@
     "verify:acceptance": "node scripts/check-stage-progression.mjs",
     "prepare:manual-acceptance": "node scripts/final-acceptance-queue.mjs",
     "verify:manual-acceptance": "node scripts/final-acceptance-queue.mjs --check",
-    "verify:openspec": "openspec validate restart-shpitto-video-saas --strict --json --no-interactive",
+    "verify:openspec": "corepack pnpm dlx --package @fission-ai/openspec@1.8.0 openspec validate restart-shpitto-video-saas --strict --json --no-interactive",
     "verify": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm verify:config && pnpm verify:db-boundary && pnpm verify:m2-foundation && pnpm verify:local-services && pnpm verify:shells && pnpm verify:content-boundaries && pnpm verify:root && pnpm build",
     "worker:provider": "node --experimental-strip-types scripts/provider-worker.ts"
   },
