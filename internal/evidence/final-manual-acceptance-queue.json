@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "queueKind": "FINAL_MANUAL_ACCEPTANCE_QUEUE",
-  "generatedAt": "2026-10-29T05:41:56.464Z",
+  "generatedAt": "2026-10-29T05:48:04.373Z",
   "checkpointId": "M8-STABLE",
   "policy": "Automated evidence produces a complete explanation package and may advance as READY_FOR_REVIEW. Human reviewers choose PASS, FAIL or RETURN_FOR_EVIDENCE from that package; they do not rerun tests as a substitute for reviewing evidence. Independent review and integration decisions are accumulated here and are the only manual stage-acceptance actions required before final PASS.",
   "entries": [
@@ -7750,7 +7750,7 @@
             "result": "BLOCKED",
             "expected": null,
             "observed": null,
-            "assertions": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Point-in-time public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The 2026-10-29 hosted four-path create/settle/verify on Railway worker shpitto-m4-worker (production) is recorded in hostedFourPathCreate: one paid POST per path, stage verified, task succeeded, reservation consumed, quoted credits 10, private hash PASS, owner HTTP 200, outsider/wrong/expired token 403, authenticated account callback true, and provider cost status UNKNOWN. The fal T2V file stores task success under taskSuatus. After all four paths the worker was returned to STATE=paused and ALLOW_CREATE=false, and healthz confirmed state=paused and createsEnabled=false. Complete stage evidence stays BLOCKED. The selected self-hosted recovery drill and recovery-monitor ready body are recorded and do not close the stage. Negative callback and financial-idempotence cases, numeric deadline and probe configuration, storage-failure fault suites, owned-module coverage, current M3 equivalence, and independent review remain open.",
+            "assertions": "Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on this digest. Point-in-time public Acceptance web health and the then-active provider worker health were read with createsEnabled false. The 2026-10-29 hosted four-path create/settle/verify on Railway worker shpitto-m4-worker (production) is recorded in hostedFourPathCreate: one paid POST per path, stage verified, task succeeded, reservation consumed, quoted credits 10, private hash PASS, owner HTTP 200, outsider/wrong/expired token 403, authenticated account callback true, and provider cost status UNKNOWN. The fal T2V file stores task success under taskSuatus. After all four paths the worker was returned to STATE=paused and ALLOW_CREATE=false, and healthz confirmed state=paused and createsEnabled=false. Complete stage evidence stays BLOCKED. The selected self-hosted recovery drill and recovery-monitor ready body are recorded and do not close the stage. Negative callback and financial-idempotence cases, numeric deadline and probe configuration, storage-failure fault suites, owned-module coverage, current M3 equivalence, and independent review remain open. An aipc fixture archive at internal/evidence/acceptance/aipc-local-55432-20261029/ records probe-provider-recovery exit 0 and restates the already recorded four-path create and recovery drill. The source phrase \"already RECORDED PASS (prior)\" is not a stage approval.",
             "commandRef": null,
             "iteration": null,
             "seed": null,
@@ -7766,7 +7766,13 @@
               "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/inspect.json",
               "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/verify.json",
               "internal/evidence/M4/task-5.10/railway-worker/recovery-drill-20261029/monitor-ready.json",
-              "internal/evidence/acceptance/M4/m4-current-20261029/logs/probe-provider-recovery.log"
+              "internal/evidence/acceptance/M4/m4-current-20261029/logs/probe-provider-recovery.log",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
             ]
           }
         ],
@@ -11912,7 +11918,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
+            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -11930,7 +11936,13 @@
               "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
               "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
               "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
-              "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
             ]
           },
           {
@@ -11942,7 +11954,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
+            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -11960,7 +11972,13 @@
               "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
               "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
               "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
-              "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
             ]
           },
           {
@@ -11972,7 +11990,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
+            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -11990,7 +12008,13 @@
               "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
               "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
               "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
-              "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
             ]
           },
           {
@@ -12002,7 +12026,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
+            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -12020,7 +12044,13 @@
               "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
               "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
               "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
-              "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
             ]
           },
           {
@@ -12032,7 +12062,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
+            "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -12050,7 +12080,13 @@
               "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
               "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
               "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
-              "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
             ]
           }
         ],
@@ -12098,7 +12134,7 @@
             "result": "BLOCKED",
             "expected": null,
             "observed": null,
-            "assertions": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
+            "assertions": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
             "commandRef": null,
             "iteration": null,
             "seed": null,
@@ -12112,7 +12148,13 @@
               "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
               "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
               "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
-              "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
             ]
           }
         ],
@@ -15366,7 +15408,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+            "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. m6-recovery, m6-affiliate (local-pure-contracts-only, databaseVerified false, providerVerified false), m6-affiliate-db, m6-refund-preview, m6-admin-reads, m6-affiliate-notifications, m6-affiliate-races, m6-affiliate-referral (realAccountVerified false), m6-cash-affiliate, m6-operations, m6-privileged, m6-workspace-details, and m6-two-factor exited 0. The two-factor stdout is retained separately and records externalAccountsUsed false; the aggregate m6 list omits that probe. No real FirstPromoter write was made. This does not close M6.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -15386,7 +15428,13 @@
               "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
               "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
               "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
-              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
             ]
           },
           {
@@ -15398,7 +15446,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+            "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. m6-recovery, m6-affiliate (local-pure-contracts-only, databaseVerified false, providerVerified false), m6-affiliate-db, m6-refund-preview, m6-admin-reads, m6-affiliate-notifications, m6-affiliate-races, m6-affiliate-referral (realAccountVerified false), m6-cash-affiliate, m6-operations, m6-privileged, m6-workspace-details, and m6-two-factor exited 0. The two-factor stdout is retained separately and records externalAccountsUsed false; the aggregate m6 list omits that probe. No real FirstPromoter write was made. This does not close M6.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -15418,7 +15466,13 @@
               "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
               "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
               "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
-              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
             ]
           },
           {
@@ -15430,7 +15484,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+            "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. m6-recovery, m6-affiliate (local-pure-contracts-only, databaseVerified false, providerVerified false), m6-affiliate-db, m6-refund-preview, m6-admin-reads, m6-affiliate-notifications, m6-affiliate-races, m6-affiliate-referral (realAccountVerified false), m6-cash-affiliate, m6-operations, m6-privileged, m6-workspace-details, and m6-two-factor exited 0. The two-factor stdout is retained separately and records externalAccountsUsed false; the aggregate m6 list omits that probe. No real FirstPromoter write was made. This does not close M6.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -15450,7 +15504,13 @@
               "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
               "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
               "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
-              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
             ]
           },
           {
@@ -15462,7 +15522,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+            "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. m6-recovery, m6-affiliate (local-pure-contracts-only, databaseVerified false, providerVerified false), m6-affiliate-db, m6-refund-preview, m6-admin-reads, m6-affiliate-notifications, m6-affiliate-races, m6-affiliate-referral (realAccountVerified false), m6-cash-affiliate, m6-operations, m6-privileged, m6-workspace-details, and m6-two-factor exited 0. The two-factor stdout is retained separately and records externalAccountsUsed false; the aggregate m6 list omits that probe. No real FirstPromoter write was made. This does not close M6.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -15482,7 +15542,13 @@
               "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
               "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
               "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
-              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
             ]
           },
           {
@@ -15494,7 +15560,7 @@
             "applicable": null,
             "result": "BLOCKED",
             "expected": "All required milestone profiles and independent whole-stage review pass.",
-            "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+            "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. m6-recovery, m6-affiliate (local-pure-contracts-only, databaseVerified false, providerVerified false), m6-affiliate-db, m6-refund-preview, m6-admin-reads, m6-affiliate-notifications, m6-affiliate-races, m6-affiliate-referral (realAccountVerified false), m6-cash-affiliate, m6-operations, m6-privileged, m6-workspace-details, and m6-two-factor exited 0. The two-factor stdout is retained separately and records externalAccountsUsed false; the aggregate m6 list omits that probe. No real FirstPromoter write was made. This does not close M6.",
             "assertions": null,
             "commandRef": null,
             "iteration": null,
@@ -15514,7 +15580,13 @@
               "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
               "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
               "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
-              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
             ]
           }
         ],
@@ -15566,7 +15638,7 @@
             "result": "BLOCKED",
             "expected": null,
             "observed": null,
-            "assertions": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+            "assertions": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. m6-recovery, m6-affiliate (local-pure-contracts-only, databaseVerified false, providerVerified false), m6-affiliate-db, m6-refund-preview, m6-admin-reads, m6-affiliate-notifications, m6-affiliate-races, m6-affiliate-referral (realAccountVerified false), m6-cash-affiliate, m6-operations, m6-privileged, m6-workspace-details, and m6-two-factor exited 0. The two-factor stdout is retained separately and records externalAccountsUsed false; the aggregate m6 list omits that probe. No real FirstPromoter write was made. This does not close M6.",
             "commandRef": null,
             "iteration": null,
             "seed": null,
@@ -15582,7 +15654,13 @@
               "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
               "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
               "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
-              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
+              "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+              "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
             ]
           }
         ],

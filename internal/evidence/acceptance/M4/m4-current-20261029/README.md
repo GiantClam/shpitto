@@ -21,4 +21,6 @@ A selected self-hosted recovery drill on Railway project `shpitto-m4-staging` pr
 
 Web was missing the `SHPITTO_RECOVERY_*` observe recipient env at drill start. Mid-drill, secret, URL, workspace, key, `mode=observe`, and projectId were set on `shpitto-m4-web` so delivery could succeed. Secret values are not recorded.
 
+An aipc fixture archive at `internal/evidence/acceptance/aipc-local-55432-20261029/` records `probe-provider-recovery` exit 0 and restates this hosted evidence. Its source phrase "already RECORDED PASS (prior)" is not a stage approval.
+
 The record remains `IN_PROGRESS`. Criteria `M4-C01` through `M4-C04` remain `BLOCKED`. Current M3 applicability is `STALE`. Historical M3 prerequisite evidence is unchanged. Forged, stale, and wrong-account callback failures, duplicate or reordered financial idempotence, numeric deadline and probe configuration, storage-failure fault suites, owned-module coverage, and independent review remain open. Provider cost status is `UNKNOWN`. No live Stripe charge was performed. The recovery drill does not promote M4.

@@ -8,7 +8,7 @@
   "status": "IN_PROGRESS",
   "candidateId": "m5-current-20261029",
   "createdAt": "2026-10-29T04:05:00.000Z",
-  "updatedAt": "2026-10-29T05:40:58.702Z",
+  "updatedAt": "2026-10-29T05:47:30.330Z",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
     "sha256": "3e31e7cb16379171305c558b80dddb930b26fbfa46147cc0d5c6aa319ef64a40"
@@ -122,7 +122,7 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
+      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
@@ -136,7 +136,13 @@
         "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
         "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
         "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
-        "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
       ]
     },
     {
@@ -144,7 +150,7 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
+      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
@@ -158,7 +164,13 @@
         "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
         "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
         "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
-        "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
       ]
     },
     {
@@ -166,7 +178,7 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
+      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
@@ -180,7 +192,13 @@
         "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
         "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
         "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
-        "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
       ]
     },
     {
@@ -188,7 +206,7 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
+      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
@@ -202,7 +220,13 @@
         "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
         "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
         "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
-        "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
       ]
     },
     {
@@ -210,7 +234,7 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
+      "observed": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
         "internal/evidence/acceptance/M5/m5-current-20261029/logs/frozen-lock-install.log",
@@ -224,7 +248,13 @@
         "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
         "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
         "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
-        "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
       ]
     }
   ],
@@ -257,7 +287,7 @@
       "standard": "complete-stage-evidence",
       "applicable": true,
       "result": "BLOCKED",
-      "assertions": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made.",
+      "assertions": "On 2026-10-29T05:39Z local billing schema, Checkout and reconciliation probes passed again, as did fake-provider Stripe Checkout, reconciliation and inbox integration suites and the billing presentation unit. The Stripe refunds integration suite again failed its operator step-up case (21 pass, 1 fail) and is not a PASS command. Hosted Stripe test-mode readback, owner-command replay, authenticated billing UI and live charges were not re-run. No live Stripe charge was made. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
         "internal/evidence/acceptance/M5/m5-current-20261029/digest-delta.json",
@@ -268,7 +298,13 @@
         "internal/evidence/acceptance/local-rerun-20261029/stripe-reconciliation-integration.log",
         "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log",
         "internal/evidence/acceptance/local-rerun-20261029/billing-presentation-unit.log",
-        "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
       ]
     }
   ],
@@ -1083,7 +1119,8 @@
     "Current M3 applicability is STALE. The historical M3 PASS record was not modified.",
     "The digest-refresh worker health read at 2026-10-29T04:04:19Z predates the later M4 recovery drill. That drill re-read the recovery-monitor ready body and is M4 evidence; it does not close M5.",
     "No paid provider create, live Stripe charge, refund, payout, or FirstPromoter write was performed.",
-    "The 2026-10-29T05:39Z local Stripe refunds suite is a retained failure (21 pass, 1 fail), not a PASS command. No live Stripe charge was made."
+    "The 2026-10-29T05:39Z local Stripe refunds suite is a retained failure (21 pass, 1 fail), not a PASS command. No live Stripe charge was made.",
+    "An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5."
   ],
   "localFixtureRerun": {
     "closesStage": false,
@@ -1172,5 +1209,69 @@
         "status": "FAIL"
       }
     ]
+  },
+  "aipcLocalFixtureRerun": {
+    "closesStage": false,
+    "sourceMachine": "aipc",
+    "timezone": "Asia/Shanghai",
+    "date": "2026-10-29",
+    "database": "Disposable Docker PostgreSQL 16 on 127.0.0.1:55432",
+    "liveStripe": false,
+    "firstPromoterWrite": false,
+    "evidenceRefs": [
+      "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+      "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+      "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+      "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+      "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+      "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
+    ],
+    "sourcePhraseNotStageApproval": "already RECORDED PASS (prior)",
+    "probes": [
+      {
+        "status": "PASS",
+        "probe": "probe-billing-schema",
+        "exit": 0
+      },
+      {
+        "status": "PASS",
+        "probe": "probe-billing-reconciliation",
+        "exit": 0
+      },
+      {
+        "status": "PASS",
+        "probe": "probe-credit-ledger",
+        "exit": 0
+      },
+      {
+        "status": "PASS",
+        "probe": "probe-credit-reservation",
+        "exit": 0
+      },
+      {
+        "status": "PASS",
+        "probe": "probe-credit-refund",
+        "exit": 0
+      },
+      {
+        "status": "PASS",
+        "probe": "probe-billing-checkout",
+        "exit": 0
+      },
+      {
+        "status": "PASS",
+        "probe": "probe-credit-migration-backfill",
+        "exit": 0
+      },
+      {
+        "status": "PASS",
+        "probe": "probe-provider-recovery",
+        "exit": 0
+      }
+    ],
+    "summarySnippetRef": "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+    "billingCheckoutSuppliedCaseCount": 10,
+    "billingCheckoutCaseCountInSummarySnippet": false,
+    "openDefectPreserved": "M5-LOCAL-REFUND-STEPUP-20261029"
   }
 }

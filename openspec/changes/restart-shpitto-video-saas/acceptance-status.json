@@ -255,6 +255,7 @@
       "evidenceRecordRefs": [
         "internal/evidence/acceptance/M4/m4-current-20261029/record.json",
         "internal/evidence/acceptance/M4/m4-current-20261029/README.md",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
         "internal/evidence/acceptance/M4/m4-current-20261022/record.json",
         "internal/evidence/acceptance/M4/m4-current-20261022/README.md",
         "internal/evidence/acceptance/M4/m4-self-hosted-20261017/record.json",
@@ -270,7 +271,7 @@
         "integratorId": null,
         "decidedAt": null,
         "recordRef": "internal/evidence/acceptance/M4/m4-current-20261029/record.json",
-        "reason": "The 2026-10-29 hosted four-path create and the selected self-hosted recovery drill are recorded and do not close M4. Recovery-monitor ready output was re-read after the drill. Web SHPITTO_RECOVERY_* observe recipient env was missing at drill start and restored mid-drill before delivery. Negative callback and financial idempotence, numeric deadline and probe configuration, storage-failure fault suites, Stripe acceptance, FirstPromoter, coverage and independent review remain open. Provider cost is UNKNOWN. Current M3 applicability is STALE."
+        "reason": "The 2026-10-29 hosted four-path create and the selected self-hosted recovery drill are recorded and do not close M4. The aipc fixture archive restates them and is not a stage approval. Recovery-monitor ready output was re-read after the drill. Web SHPITTO_RECOVERY_* observe recipient env was missing at drill start and restored mid-drill before delivery. Negative callback and financial idempotence, numeric deadline and probe configuration, storage-failure fault suites, Stripe acceptance, FirstPromoter, coverage and independent review remain open. Provider cost is UNKNOWN. Current M3 applicability is STALE."
       }
     },
     {
@@ -300,6 +301,7 @@
       "evidenceRecordRefs": [
         "internal/evidence/acceptance/M5/m5-current-20261029/record.json",
         "internal/evidence/acceptance/M5/m5-current-20261029/README.md",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/record.json",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/README.md",
         "internal/evidence/acceptance/M5/m5-sandbox-20261022/commands.json",
@@ -322,7 +324,7 @@
         "integratorDecision": "NOT_RUN",
         "integratorId": null,
         "decidedAt": null,
-        "reason": "Fixture-only local billing probes were rerun at 2026-10-29T05:39Z. Schema, Checkout, reconciliation, fake-provider Stripe Checkout, reconciliation, inbox, and billing presentation passed. Stripe refunds integration remains 21 pass and 1 fail and is not PASS. Hosted Stripe acceptance, live charges, FirstPromoter and independent review remain open. Current M3 applicability is STALE. This does not close M5.",
+        "reason": "Fixture-only local billing probes were rerun at 2026-10-29T05:39Z. Schema, Checkout, reconciliation, fake-provider Stripe Checkout, reconciliation, inbox, and billing presentation passed. An aipc Docker Postgres fixture archive records additional credit and billing probe exits of 0 and does not close M5. Stripe refunds integration remains 21 pass and 1 fail and is not PASS. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. Hosted Stripe acceptance, live charges, FirstPromoter and independent review remain open. Current M3 applicability is STALE.",
         "taskReviewRef": "internal/evidence/acceptance/M5/m5-current-20261029/record.json",
         "recordRef": "internal/evidence/acceptance/M5/m5-current-20261029/record.json"
       }
@@ -359,6 +361,7 @@
       "evidenceRecordRefs": [
         "internal/evidence/acceptance/M6/m6-current-20261029/record.json",
         "internal/evidence/acceptance/M6/m6-current-20261029/README.md",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
         "internal/evidence/acceptance/M6/m6-current-20261022/record.json",
         "internal/evidence/acceptance/M6/m6-current-20261022/README.md",
         "internal/evidence/acceptance/M6/m6-current-20261022/candidate/candidate.json",
@@ -373,7 +376,7 @@
         "integratorId": null,
         "decidedAt": null,
         "recordRef": "internal/evidence/acceptance/M6/m6-current-20261029/record.json",
-        "reason": "Fixture-only local operations, privileged, MFA, recovery, affiliate, database, race, cash-affiliate, notification and referral probes passed at 2026-10-29T05:39Z. The referral probe recorded realAccountVerified false. Real FirstPromoter account, hosted settlement and independent review remain open. Current M3 applicability is STALE. This does not close M6."
+        "reason": "Fixture-only local operations, privileged, MFA, recovery, affiliate, database, race, cash-affiliate, notification and referral probes passed at 2026-10-29T05:39Z. An aipc Docker Postgres fixture archive records those probes plus refund preview, admin reads, workspace details, and two-factor stdout, with realAccountVerified false and no FirstPromoter write. Real FirstPromoter account, hosted settlement and independent review remain open. Current M3 applicability is STALE. This does not close M6."
       },
       "localImplementation": {
         "status": "COMPLETE",

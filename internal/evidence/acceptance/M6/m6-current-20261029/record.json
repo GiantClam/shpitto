@@ -8,7 +8,7 @@
   "status": "IN_PROGRESS",
   "candidateId": "m6-current-20261029",
   "createdAt": "2026-10-29T04:05:00.000Z",
-  "updatedAt": "2026-10-29T05:40:58.702Z",
+  "updatedAt": "2026-10-29T05:47:30.330Z",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
     "sha256": "3e31e7cb16379171305c558b80dddb930b26fbfa46147cc0d5c6aa319ef64a40"
@@ -142,7 +142,7 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+      "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. m6-recovery, m6-affiliate (local-pure-contracts-only, databaseVerified false, providerVerified false), m6-affiliate-db, m6-refund-preview, m6-admin-reads, m6-affiliate-notifications, m6-affiliate-races, m6-affiliate-referral (realAccountVerified false), m6-cash-affiliate, m6-operations, m6-privileged, m6-workspace-details, and m6-two-factor exited 0. The two-factor stdout is retained separately and records externalAccountsUsed false; the aggregate m6 list omits that probe. No real FirstPromoter write was made. This does not close M6.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M6/m6-current-20261029/README.md",
         "internal/evidence/acceptance/M6/m6-current-20261029/logs/frozen-lock-install.log",
@@ -158,7 +158,13 @@
         "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
         "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
         "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
-        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
       ]
     },
     {
@@ -166,7 +172,7 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+      "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. m6-recovery, m6-affiliate (local-pure-contracts-only, databaseVerified false, providerVerified false), m6-affiliate-db, m6-refund-preview, m6-admin-reads, m6-affiliate-notifications, m6-affiliate-races, m6-affiliate-referral (realAccountVerified false), m6-cash-affiliate, m6-operations, m6-privileged, m6-workspace-details, and m6-two-factor exited 0. The two-factor stdout is retained separately and records externalAccountsUsed false; the aggregate m6 list omits that probe. No real FirstPromoter write was made. This does not close M6.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M6/m6-current-20261029/README.md",
         "internal/evidence/acceptance/M6/m6-current-20261029/logs/frozen-lock-install.log",
@@ -182,7 +188,13 @@
         "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
         "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
         "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
-        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
       ]
     },
     {
@@ -190,7 +202,7 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+      "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. m6-recovery, m6-affiliate (local-pure-contracts-only, databaseVerified false, providerVerified false), m6-affiliate-db, m6-refund-preview, m6-admin-reads, m6-affiliate-notifications, m6-affiliate-races, m6-affiliate-referral (realAccountVerified false), m6-cash-affiliate, m6-operations, m6-privileged, m6-workspace-details, and m6-two-factor exited 0. The two-factor stdout is retained separately and records externalAccountsUsed false; the aggregate m6 list omits that probe. No real FirstPromoter write was made. This does not close M6.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M6/m6-current-20261029/README.md",
         "internal/evidence/acceptance/M6/m6-current-20261029/logs/frozen-lock-install.log",
@@ -206,7 +218,13 @@
         "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
         "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
         "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
-        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
       ]
     },
     {
@@ -214,7 +232,7 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+      "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. m6-recovery, m6-affiliate (local-pure-contracts-only, databaseVerified false, providerVerified false), m6-affiliate-db, m6-refund-preview, m6-admin-reads, m6-affiliate-notifications, m6-affiliate-races, m6-affiliate-referral (realAccountVerified false), m6-cash-affiliate, m6-operations, m6-privileged, m6-workspace-details, and m6-two-factor exited 0. The two-factor stdout is retained separately and records externalAccountsUsed false; the aggregate m6 list omits that probe. No real FirstPromoter write was made. This does not close M6.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M6/m6-current-20261029/README.md",
         "internal/evidence/acceptance/M6/m6-current-20261029/logs/frozen-lock-install.log",
@@ -230,7 +248,13 @@
         "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
         "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
         "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
-        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
       ]
     },
     {
@@ -238,7 +262,7 @@
       "mandatory": true,
       "result": "BLOCKED",
       "expected": "All required milestone profiles and independent whole-stage review pass.",
-      "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+      "observed": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. m6-recovery, m6-affiliate (local-pure-contracts-only, databaseVerified false, providerVerified false), m6-affiliate-db, m6-refund-preview, m6-admin-reads, m6-affiliate-notifications, m6-affiliate-races, m6-affiliate-referral (realAccountVerified false), m6-cash-affiliate, m6-operations, m6-privileged, m6-workspace-details, and m6-two-factor exited 0. The two-factor stdout is retained separately and records externalAccountsUsed false; the aggregate m6 list omits that probe. No real FirstPromoter write was made. This does not close M6.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M6/m6-current-20261029/README.md",
         "internal/evidence/acceptance/M6/m6-current-20261029/logs/frozen-lock-install.log",
@@ -254,7 +278,13 @@
         "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
         "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
         "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
-        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
       ]
     }
   ],
@@ -291,7 +321,7 @@
       "standard": "complete-stage-evidence",
       "applicable": true,
       "result": "BLOCKED",
-      "assertions": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run.",
+      "assertions": "On 2026-10-29T05:39Z local operations, privileged, MFA, recovery, affiliate fixture, affiliate database, race, cash-affiliate, notification and referral probes passed on disposable PostgreSQL. The referral probe recorded realAccountVerified false. Real FirstPromoter account, campaign, hosted settlement and independent whole-stage review were not re-run. An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. m6-recovery, m6-affiliate (local-pure-contracts-only, databaseVerified false, providerVerified false), m6-affiliate-db, m6-refund-preview, m6-admin-reads, m6-affiliate-notifications, m6-affiliate-races, m6-affiliate-referral (realAccountVerified false), m6-cash-affiliate, m6-operations, m6-privileged, m6-workspace-details, and m6-two-factor exited 0. The two-factor stdout is retained separately and records externalAccountsUsed false; the aggregate m6 list omits that probe. No real FirstPromoter write was made. This does not close M6.",
       "evidenceRefs": [
         "internal/evidence/acceptance/M6/m6-current-20261029/README.md",
         "internal/evidence/acceptance/M6/m6-current-20261029/digest-delta.json",
@@ -304,7 +334,13 @@
         "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-races.log",
         "internal/evidence/acceptance/local-rerun-20261029/m6-cash-affiliate.log",
         "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-notifications.log",
-        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
+        "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+        "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
       ]
     }
   ],
@@ -1213,7 +1249,8 @@
     "Current M3 applicability is STALE. The historical M3 PASS record was not modified.",
     "The digest-refresh worker health read at 2026-10-29T04:04:19Z predates the later M4 recovery drill. That drill re-read the recovery-monitor ready body and is M4 evidence; it does not close M6.",
     "No paid provider create, live Stripe charge, refund, payout, or FirstPromoter write was performed.",
-    "Stripe acceptance-profile and FirstPromoter account rows were not re-run."
+    "Stripe acceptance-profile and FirstPromoter account rows were not re-run.",
+    "An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. m6-recovery, m6-affiliate (local-pure-contracts-only, databaseVerified false, providerVerified false), m6-affiliate-db, m6-refund-preview, m6-admin-reads, m6-affiliate-notifications, m6-affiliate-races, m6-affiliate-referral (realAccountVerified false), m6-cash-affiliate, m6-operations, m6-privileged, m6-workspace-details, and m6-two-factor exited 0. The two-factor stdout is retained separately and records externalAccountsUsed false; the aggregate m6 list omits that probe. No real FirstPromoter write was made. This does not close M6."
   ],
   "localFixtureRerun": {
     "closesStage": false,
@@ -1330,5 +1367,99 @@
         "status": "PASS"
       }
     ]
+  },
+  "aipcLocalFixtureRerun": {
+    "closesStage": false,
+    "sourceMachine": "aipc",
+    "timezone": "Asia/Shanghai",
+    "date": "2026-10-29",
+    "database": "Disposable Docker PostgreSQL 16 on 127.0.0.1:55432",
+    "liveStripe": false,
+    "firstPromoterWrite": false,
+    "evidenceRefs": [
+      "internal/evidence/acceptance/aipc-local-55432-20261029/README.md",
+      "internal/evidence/acceptance/aipc-local-55432-20261029/local-acceptance-results-20261029.json",
+      "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
+      "internal/evidence/acceptance/aipc-local-55432-20261029/m6-summary-55432.json",
+      "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt",
+      "internal/evidence/acceptance/aipc-local-55432-20261029/UPDATE-INSTRUCTIONS.md"
+    ],
+    "sourcePhraseNotStageApproval": "already RECORDED PASS (prior)",
+    "probesListedInAggregate": [
+      {
+        "status": "PASS",
+        "probe": "probe-m6-recovery",
+        "exit": 0
+      },
+      {
+        "scope": "local-pure-contracts-only",
+        "status": "PASS",
+        "probe": "probe-m6-affiliate",
+        "exit": 0
+      },
+      {
+        "status": "PASS",
+        "probe": "probe-m6-affiliate-db",
+        "exit": 0
+      },
+      {
+        "status": "PASS",
+        "probe": "probe-m6-refund-preview",
+        "exit": 0
+      },
+      {
+        "status": "PASS",
+        "probe": "probe-m6-admin-reads",
+        "exit": 0
+      },
+      {
+        "status": "PASS",
+        "probe": "probe-m6-affiliate-notifications",
+        "exit": 0
+      },
+      {
+        "status": "PASS",
+        "probe": "probe-m6-affiliate-races",
+        "exit": 0
+      },
+      {
+        "status": "PASS",
+        "probe": "probe-m6-affiliate-referral",
+        "exit": 0
+      },
+      {
+        "status": "PASS",
+        "probe": "probe-m6-cash-affiliate",
+        "exit": 0
+      },
+      {
+        "status": "PASS",
+        "probe": "probe-m6-operations",
+        "exit": 0
+      },
+      {
+        "status": "PASS",
+        "probe": "probe-m6-privileged",
+        "exit": 0
+      },
+      {
+        "status": "PASS",
+        "probe": "probe-m6-workspace-details",
+        "exit": 0
+      }
+    ],
+    "twoFactorStdout": {
+      "probe": "probe-m6-two-factor",
+      "status": "PASS",
+      "externalAccountsUsed": false,
+      "listedInAggregateM6Array": false,
+      "evidenceRef": "internal/evidence/acceptance/aipc-local-55432-20261029/probe-m6-two-factor-55432.out.txt"
+    },
+    "affiliateScope": {
+      "scope": "local-pure-contracts-only",
+      "databaseVerified": false,
+      "providerVerified": false
+    },
+    "referralRealAccountVerified": false
   }
 }
