@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "queueKind": "FINAL_MANUAL_ACCEPTANCE_QUEUE",
-  "generatedAt": "2026-10-29T08:25:15.419Z",
+  "generatedAt": "2026-10-29T08:43:56.526Z",
   "checkpointId": "M8-STABLE",
   "policy": "Automated evidence produces a complete explanation package and may advance as READY_FOR_REVIEW. Human reviewers choose PASS, FAIL or RETURN_FOR_EVIDENCE from that package; they do not rerun tests as a substitute for reviewing evidence. Independent review and integration decisions are accumulated here and are the only manual stage-acceptance actions required before final PASS.",
   "entries": [
@@ -7493,14 +7493,14 @@
           }
         ],
         "candidate": {
-          "capturedAt": "2026-10-29T07:44:34.564Z",
-          "sourceCommit": "f59f1f094dab084374331de9ad2b7a6fb7ed081e",
+          "capturedAt": "2026-10-29T08:41:19.579Z",
+          "sourceCommit": "e9f83994a886411ddc79de8b9bb572ba77728b52",
           "dirtyPatchSha256": null,
-          "sourceTreeSha256": "bf491d2dfb3c6260e89a4db2c07220cef98fa4ac3e162d9890a085c6294532ca",
+          "sourceTreeSha256": "64ebfe09625f489037a476fabce6001a9ed85d159148c217386074217ad507ff",
           "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
           "configurationSha256": "ce96987b2cd7fb4821f36de2e05ba80455a37b566d77ca343f9320d55e56bb59",
           "contractSha256": "6acfb80fc1a8d6b4dc0f699f1c3d5280a0b44905c1eff6a0b199c19adad601ac",
-          "validatorSha256": "75f77bdd963c83e06ad2c1b8033838d3c38bd0726c06b8bd383ad462a9e47a73",
+          "validatorSha256": "fbf6fb6281615c3614920a8f410bdaeaa489c7b678889b87ded7a36d526edd09",
           "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
           "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
           "digestInputs": {
@@ -11818,14 +11818,14 @@
           }
         ],
         "candidate": {
-          "capturedAt": "2026-10-29T07:44:34.564Z",
-          "sourceCommit": "f59f1f094dab084374331de9ad2b7a6fb7ed081e",
+          "capturedAt": "2026-10-29T08:41:19.579Z",
+          "sourceCommit": "e9f83994a886411ddc79de8b9bb572ba77728b52",
           "dirtyPatchSha256": null,
-          "sourceTreeSha256": "bf491d2dfb3c6260e89a4db2c07220cef98fa4ac3e162d9890a085c6294532ca",
+          "sourceTreeSha256": "64ebfe09625f489037a476fabce6001a9ed85d159148c217386074217ad507ff",
           "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
           "configurationSha256": "ce96987b2cd7fb4821f36de2e05ba80455a37b566d77ca343f9320d55e56bb59",
           "contractSha256": "6acfb80fc1a8d6b4dc0f699f1c3d5280a0b44905c1eff6a0b199c19adad601ac",
-          "validatorSha256": "75f77bdd963c83e06ad2c1b8033838d3c38bd0726c06b8bd383ad462a9e47a73",
+          "validatorSha256": "fbf6fb6281615c3614920a8f410bdaeaa489c7b678889b87ded7a36d526edd09",
           "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
           "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
           "digestInputs": {
@@ -13067,6 +13067,16 @@
             "startedAt": null,
             "finishedAt": null,
             "outputRef": "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log"
+          },
+          {
+            "commandId": "stripe-refunds-integration",
+            "invocation": "node --experimental-strip-types --test --test-reporter spec tests/integration/stripe-refunds.test.ts",
+            "environmentId": "m5-current-local-20261029",
+            "status": "PASS",
+            "exitCode": 0,
+            "startedAt": null,
+            "finishedAt": null,
+            "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/stripe-refunds-stepup-closure.log"
           }
         ],
         "coverage": {
@@ -13081,12 +13091,15 @@
           {
             "id": "M5-LOCAL-REFUND-STEPUP-20261029",
             "severity": "P2",
-            "status": "OPEN",
+            "status": "CLOSED",
             "mandatoryCriterionAffected": false,
-            "summary": "stripe-refunds integration rerun at 2026-10-29T05:39:14Z: 21 pass and 1 fail. The operator step-up case still does not reject after operator_step_ups is deleted while optional two-factor policy is off (expected /factor|step.up/i). No live Stripe call was made, and the suite is not recorded as PASS.",
+            "summary": "The 2026-10-29T05:39:14Z stripe-refunds integration log remains 21 pass and 1 fail: the operator step-up case deleted operator_step_ups while optional two-factor enforcement was off. Closed at 2026-10-29T08:41:30Z after that case enables enforcement before the deletion. The later local fake-provider run is 22 pass and 0 fail. No live Stripe call was made. This does not close M5.",
             "evidenceRefs": [
-              "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
-            ]
+              "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log",
+              "internal/evidence/acceptance/M5/m5-current-20261029/stripe-refunds-stepup-closure.log"
+            ],
+            "closedAt": "2026-10-29T08:41:30.502Z",
+            "resolution": "The shared operator authorizer already skips a second-factor stamp only while two_factor_required is false, which REQ-SEC-04, REQ-IAM-05, and REQ-OPS-02 require. A fresh migration inserts that flag as false, so the old assertion demanded a rejection OpenSpec does not allow. requestBillingRefundAsOperator still calls authorizeOperatorCommand before provider work or refund creation. With enforcement enabled, a deleted stamp is rejected. Expected version and the live session were already rejected. The always-on step-up hypothesis was not applied."
           }
         ],
         "externalInputs": [
@@ -15481,14 +15494,14 @@
           }
         ],
         "candidate": {
-          "capturedAt": "2026-10-29T07:44:34.564Z",
-          "sourceCommit": "f59f1f094dab084374331de9ad2b7a6fb7ed081e",
+          "capturedAt": "2026-10-29T08:41:19.579Z",
+          "sourceCommit": "e9f83994a886411ddc79de8b9bb572ba77728b52",
           "dirtyPatchSha256": null,
-          "sourceTreeSha256": "bf491d2dfb3c6260e89a4db2c07220cef98fa4ac3e162d9890a085c6294532ca",
+          "sourceTreeSha256": "64ebfe09625f489037a476fabce6001a9ed85d159148c217386074217ad507ff",
           "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
           "configurationSha256": "ce96987b2cd7fb4821f36de2e05ba80455a37b566d77ca343f9320d55e56bb59",
           "contractSha256": "6acfb80fc1a8d6b4dc0f699f1c3d5280a0b44905c1eff6a0b199c19adad601ac",
-          "validatorSha256": "75f77bdd963c83e06ad2c1b8033838d3c38bd0726c06b8bd383ad462a9e47a73",
+          "validatorSha256": "fbf6fb6281615c3614920a8f410bdaeaa489c7b678889b87ded7a36d526edd09",
           "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
           "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
           "digestInputs": {

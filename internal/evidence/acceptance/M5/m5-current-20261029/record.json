@@ -8,7 +8,7 @@
   "status": "IN_PROGRESS",
   "candidateId": "m5-current-20261029",
   "createdAt": "2026-10-29T04:05:00.000Z",
-  "updatedAt": "2026-10-29T08:24:57.549Z",
+  "updatedAt": "2026-10-29T08:41:30.502Z",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
     "sha256": "3e31e7cb16379171305c558b80dddb930b26fbfa46147cc0d5c6aa319ef64a40"
@@ -26,14 +26,14 @@
     }
   ],
   "candidate": {
-    "capturedAt": "2026-10-29T07:44:34.564Z",
-    "sourceCommit": "f59f1f094dab084374331de9ad2b7a6fb7ed081e",
+    "capturedAt": "2026-10-29T08:41:19.579Z",
+    "sourceCommit": "e9f83994a886411ddc79de8b9bb572ba77728b52",
     "dirtyPatchSha256": null,
-    "sourceTreeSha256": "bf491d2dfb3c6260e89a4db2c07220cef98fa4ac3e162d9890a085c6294532ca",
+    "sourceTreeSha256": "64ebfe09625f489037a476fabce6001a9ed85d159148c217386074217ad507ff",
     "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
     "configurationSha256": "ce96987b2cd7fb4821f36de2e05ba80455a37b566d77ca343f9320d55e56bb59",
     "contractSha256": "6acfb80fc1a8d6b4dc0f699f1c3d5280a0b44905c1eff6a0b199c19adad601ac",
-    "validatorSha256": "75f77bdd963c83e06ad2c1b8033838d3c38bd0726c06b8bd383ad462a9e47a73",
+    "validatorSha256": "fbf6fb6281615c3614920a8f410bdaeaa489c7b678889b87ded7a36d526edd09",
     "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
     "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
     "digestInputs": {
@@ -1149,6 +1149,18 @@
       "signal": null,
       "status": "PASS",
       "outputRef": "internal/evidence/acceptance/local-rerun-20261029/stripe-inbox-integration.log"
+    },
+    {
+      "commandId": "stripe-refunds-integration",
+      "invocation": "node --experimental-strip-types --test --test-reporter spec tests/integration/stripe-refunds.test.ts",
+      "environmentId": "m5-current-local-20261029",
+      "startAt": "2026-10-29T08:41:29.161Z",
+      "endAt": "2026-10-29T08:41:30.502Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/stripe-refunds-stepup-closure.log",
+      "note": "Local disposable PostgreSQL on 127.0.0.1:55433 and the in-process fake refund provider. 22/22 includes owner refund-command replay with replayed true and providerCalls 0 on replay. Not a stage PASS. No live Stripe call. The unused acceptance pack must not be refunded."
     }
   ],
   "coverage": {
@@ -1163,12 +1175,15 @@
     {
       "id": "M5-LOCAL-REFUND-STEPUP-20261029",
       "severity": "P2",
-      "status": "OPEN",
+      "status": "CLOSED",
       "mandatoryCriterionAffected": false,
-      "summary": "stripe-refunds integration rerun at 2026-10-29T05:39:14Z: 21 pass and 1 fail. The operator step-up case still does not reject after operator_step_ups is deleted while optional two-factor policy is off (expected /factor|step.up/i). No live Stripe call was made, and the suite is not recorded as PASS.",
+      "summary": "The 2026-10-29T05:39:14Z stripe-refunds integration log remains 21 pass and 1 fail: the operator step-up case deleted operator_step_ups while optional two-factor enforcement was off. Closed at 2026-10-29T08:41:30Z after that case enables enforcement before the deletion. The later local fake-provider run is 22 pass and 0 fail. No live Stripe call was made. This does not close M5.",
       "evidenceRefs": [
-        "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log"
-      ]
+        "internal/evidence/acceptance/local-rerun-20261029/stripe-refunds-integration.log",
+        "internal/evidence/acceptance/M5/m5-current-20261029/stripe-refunds-stepup-closure.log"
+      ],
+      "closedAt": "2026-10-29T08:41:30.502Z",
+      "resolution": "The shared operator authorizer already skips a second-factor stamp only while two_factor_required is false, which REQ-SEC-04, REQ-IAM-05, and REQ-OPS-02 require. A fresh migration inserts that flag as false, so the old assertion demanded a rejection OpenSpec does not allow. requestBillingRefundAsOperator still calls authorizeOperatorCommand before provider work or refund creation. With enforcement enabled, a deleted stamp is rejected. Expected version and the live session were already rejected. The always-on step-up hypothesis was not applied."
     }
   ],
   "externalInputs": [
@@ -1241,19 +1256,19 @@
     "requiredReruns": [
       "Independent review of current M3 applicability before any equivalence carry.",
       "Hosted Checkout Session URLs, the $25 subscription, refunds, owner-command replay, and authenticated billing UI remain open. The 2026-10-29 acceptance-pack embedded test-mode payment is PASS_paid_and_reconciled and does not close M5. The M4 four-path rows and recovery drill do not close M5.",
-      "Repair or explicitly reclassify the local Stripe refund step-up failure before claiming that suite.",
+      "Local defect M5-LOCAL-REFUND-STEPUP-20261029 is CLOSED. The 2026-10-29T05:39Z stripe-refunds log stays a retained 21/1 failure and is not relabeled PASS. The 2026-10-29T08:41Z fake-provider rerun is 22/22 and does not close M5.",
       "Real FirstPromoter account and hosted settlement evidence.",
       "Recompute owned-module branch coverage on this digest before a coverage PASS claim."
     ],
     "carriedEvidence": []
   },
   "candidateRefresh": {
-    "capturedAt": "2026-10-29T07:44:34.564Z",
+    "capturedAt": "2026-10-29T08:41:19.579Z",
     "candidateId": "m5-current-20261029",
     "source": "node scripts/candidate-digests.mjs",
     "status": "CURRENT_BYTES_CAPTURED_IN_PROGRESS",
     "fullStageAcceptance": false,
-    "sourceCommit": "f59f1f094dab084374331de9ad2b7a6fb7ed081e"
+    "sourceCommit": "e9f83994a886411ddc79de8b9bb572ba77728b52"
   },
   "commandEvidenceApplicability": {
     "currentExecutionCommandIds": [
@@ -1272,11 +1287,10 @@
       "stripe-checkout-integration",
       "stripe-reconciliation-integration",
       "billing-presentation-unit",
-      "stripe-inbox-integration"
-    ],
-    "failedNotClaimed": [
+      "stripe-inbox-integration",
       "stripe-refunds-integration"
     ],
+    "failedNotClaimed": [],
     "notRerun": [
       "authentic-provider-matrix",
       "owner-command-replay",
@@ -1296,9 +1310,12 @@
     "The digest-refresh worker health read at 2026-10-29T04:04:19Z predates the later M4 recovery drill. That drill re-read the recovery-monitor ready body and is M4 evidence; it does not close M5.",
     "No paid provider create, live Stripe charge, refund, payout, or FirstPromoter write was performed.",
     "The 2026-10-29T05:39Z local Stripe refunds suite is a retained failure (21 pass, 1 fail), not a PASS command. No live Stripe charge was made.",
-    "An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
+    "An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. The aipc archive left defect M5-LOCAL-REFUND-STEPUP-20261029 open; that defect is CLOSED on this record and the archive is not rewritten as a suite PASS. No live Stripe charge, refund, or payout was made. This does not close M5.",
     "The server-side email auth Turnstile request gate in src/lib/auth.ts moved sourceTree and validator digests. A focused unit test covers sign-up without an HTTP request when Turnstile is disabled, and still requires a request and token when Turnstile is enabled. Retained command logs from source tree 03a98cc01995e498df99f181b887c687d1ab5e05c90c86a91819ecb9b35005aa were not re-executed for this fix. This does not close the stage, enable acceptance bootstrap, or change Stripe live/test policy. Acceptance bootstrap was turned off after the 2026-10-29 test-mode payment.",
-    "The 2026-10-29 Stripe test-mode acceptance-pack payment is PASS_paid_and_reconciled for the embedded Checkout path only. Hosted Checkout Session URLs opened an incomplete link. The billing-return screenshot is a signed-out page and does not prove the billing UI. No live charge, $25 subscription, refund, or FirstPromoter write is claimed. SHPITTO_ACCEPTANCE_BOOTSTRAP_ENABLED and RESEED were off after pay. BILLING_DRIVER stayed stripe_test. This does not close M5."
+    "The 2026-10-29 Stripe test-mode acceptance-pack payment is PASS_paid_and_reconciled for the embedded Checkout path only. Hosted Checkout Session URLs opened an incomplete link. The billing-return screenshot is a signed-out page and does not prove the billing UI. No live charge, $25 subscription, refund, or FirstPromoter write is claimed. SHPITTO_ACCEPTANCE_BOOTSTRAP_ENABLED and RESEED were off after pay. BILLING_DRIVER stayed stripe_test. This does not close M5.",
+    "Source tree and validator digests were rebound after tests/integration/stripe-refunds.test.ts enabled operator 2FA enforcement before deleting operator_step_ups. That change closes local defect M5-LOCAL-REFUND-STEPUP-20261029 only. Stage status stays IN_PROGRESS. No live Stripe call was made, and this digest rebind is not a stage PASS.",
+    "Defect M5-LOCAL-REFUND-STEPUP-20261029 is CLOSED. The 2026-10-29T05:39Z stripe-refunds log remains a retained failure (21 pass, 1 fail) and is not a PASS command. The 2026-10-29T08:41:29Z rerun used disposable PostgreSQL on 127.0.0.1:55433 and the in-process fake provider, passed 22/22, and made no live Stripe call. M5 stays IN_PROGRESS.",
+    "In-process owner refund-command replay is PASS_IN_PROCESS_ONLY for the named stripe-refunds case (replayed true, one create for the case, providerCalls 0 on replay). Evidence: internal/evidence/acceptance/stripe-test-pack-20261029/owner-command-replay.md. The unused acceptance pack must not be refunded. Hosted owner-command replay stays open. This does not close M5."
   ],
   "localFixtureRerun": {
     "closesStage": false,
@@ -1450,7 +1467,14 @@
     "summarySnippetRef": "internal/evidence/acceptance/aipc-local-55432-20261029/m5-summary-55432.json",
     "billingCheckoutSuppliedCaseCount": 10,
     "billingCheckoutCaseCountInSummarySnippet": false,
-    "openDefectPreserved": "M5-LOCAL-REFUND-STEPUP-20261029"
+    "openDefectPreserved": "M5-LOCAL-REFUND-STEPUP-20261029",
+    "defectClosure": {
+      "id": "M5-LOCAL-REFUND-STEPUP-20261029",
+      "status": "CLOSED",
+      "closesStage": false,
+      "liveStripe": false,
+      "note": "This archive did not rerun stripe-refunds. The defect was closed later by the local fake-provider suite. M5 stays IN_PROGRESS."
+    }
   },
   "hostedStripeTestPack": {
     "status": "PASS_paid_and_reconciled",
@@ -1497,12 +1521,13 @@
       "internal/evidence/acceptance/stripe-test-pack-20261029/HOSTED_CHECKOUT_URL_DEFECT.md",
       "internal/evidence/acceptance/stripe-test-pack-20261029/embedded-paid.sanitized.json",
       "internal/evidence/acceptance/stripe-test-pack-20261029/billing-readback-postpay.sanitized.json",
-      "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png"
+      "internal/evidence/acceptance/stripe-test-pack-20261029/final-billing-return.png",
+      "internal/evidence/acceptance/stripe-test-pack-20261029/owner-command-replay.md"
     ],
     "notProven": [
       "hosted Checkout Session URL",
       "authenticated billing UI",
-      "owner-command replay",
+      "hosted owner-command replay of the unused acceptance pack",
       "$25 subscription",
       "refunds",
       "live Stripe",
@@ -1510,6 +1535,16 @@
       "M5 stage approval",
       "M7",
       "M8"
-    ]
+    ],
+    "inProcessOwnerRefundReplay": {
+      "status": "PASS_IN_PROCESS_ONLY",
+      "closesStage": false,
+      "closesHostedOwnerCommandReplay": false,
+      "refundsStagingPack": false,
+      "test": "owner refund command replays the current confirmed result after the order becomes refunded",
+      "replayed": true,
+      "providerCallsOnReplay": 0,
+      "evidenceRef": "internal/evidence/acceptance/stripe-test-pack-20261029/owner-command-replay.md"
+    }
   }
 }
