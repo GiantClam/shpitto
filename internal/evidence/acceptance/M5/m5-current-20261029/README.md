@@ -2,7 +2,8 @@
 
 Date: 2026-10-29T08:41:30.502Z
 Candidate: `m5-current-20261029`
-Source commit for the refund step-up test change: `e9f83994a886411ddc79de8b9bb572ba77728b52`
+Refund step-up test change: `e9f83994a886411ddc79de8b9bb572ba77728b52`
+Current candidate commit: `0927667df20a799de4b2fefaadbf7a833f49cbce`
 
 On 2026-10-29T05:39Z the fixture-only local billing probes were rerun on disposable PostgreSQL. Billing schema, Checkout, and reconciliation probes passed. Fake-provider Stripe Checkout, reconciliation, and inbox integration suites passed, as did the billing presentation unit. Logs: `internal/evidence/acceptance/local-rerun-20261029/`.
 
@@ -15,5 +16,7 @@ The hosted Stripe test-mode acceptance-pack path is `PASS_paid_and_reconciled` a
 Hosted Checkout Session URLs on this Stripe account open an incomplete link and are not PASS. The earlier billing-return screenshot is a signed-out page (`Sign in to view billing`) and does not prove Checkout Session URL completion. Authenticated desktop billing UI evidence is now recorded: the owner sees an active account, one USD 9.00 credit-pack purchase, 250 available credits, zero subscriptions, and Recovery Clear in `BILLING_UI_OWNER_SIGNED_IN.md`; a non-owner member sees `Billing unavailable` with no cash or credit controls in `BILLING_UI_MEMBER_DENIED.md`. Screenshots are `billing-ui-owner-signed-in.png` and `billing-ui-member-denied.png`. Sign-in uses `/login`; `/sign-in` returns 404.
 
 In-process owner refund-command replay is `PASS_IN_PROCESS_ONLY` in `internal/evidence/acceptance/stripe-test-pack-20261029/owner-command-replay.md`: the integration case returns `replayed: true` and adds no provider call on replay. That note does not refund the unused acceptance pack and does not close hosted owner-command replay. Mobile billing layout, the $25 subscription, hosted refunds, live charges, FirstPromoter, and M5 remain open.
+
+The candidate digest was refreshed after integrating the Corepack CI bootstrap and reviewed Nodemailer dependency baseline. Root dependency integrity and 22 root-integrity/candidate-digest regression tests pass; this is baseline evidence only and does not rerun or promote M5.
 
 The record remains `IN_PROGRESS`. Current M3 applicability is `STALE`. Historical M3 prerequisite evidence is unchanged. M7 and M8 are not claimed.

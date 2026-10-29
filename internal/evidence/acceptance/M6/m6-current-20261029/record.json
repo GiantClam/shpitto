@@ -8,7 +8,7 @@
   "status": "IN_PROGRESS",
   "candidateId": "m6-current-20261029",
   "createdAt": "2026-10-29T04:05:00.000Z",
-  "updatedAt": "2026-10-29T08:41:30.502Z",
+  "updatedAt": "2026-10-29T10:58:42.785Z",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
     "sha256": "3e31e7cb16379171305c558b80dddb930b26fbfa46147cc0d5c6aa319ef64a40"
@@ -46,14 +46,14 @@
     }
   ],
   "candidate": {
-    "capturedAt": "2026-10-29T08:41:19.579Z",
-    "sourceCommit": "e9f83994a886411ddc79de8b9bb572ba77728b52",
+    "capturedAt": "2026-10-29T10:58:42.785Z",
+    "sourceCommit": "0927667df20a799de4b2fefaadbf7a833f49cbce",
     "dirtyPatchSha256": null,
-    "sourceTreeSha256": "64ebfe09625f489037a476fabce6001a9ed85d159148c217386074217ad507ff",
+    "sourceTreeSha256": "88e5bc247840b12a230472be3e8b8d4acb2ffbd5cfb5e844d5f5430139588b06",
     "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
-    "configurationSha256": "ce96987b2cd7fb4821f36de2e05ba80455a37b566d77ca343f9320d55e56bb59",
-    "contractSha256": "6acfb80fc1a8d6b4dc0f699f1c3d5280a0b44905c1eff6a0b199c19adad601ac",
-    "validatorSha256": "fbf6fb6281615c3614920a8f410bdaeaa489c7b678889b87ded7a36d526edd09",
+    "configurationSha256": "48f5cd656ad8d6d695353d5ebe2aa7f8eaccaefe92a0c258dcdffed845b5d806",
+    "contractSha256": "64a37e1dc089372f0177d144ea8f2f2489c4a0ba3e75abe5bd6adc215f14514b",
+    "validatorSha256": "c52b8a3405cc88f90965e254c2f150186e33c73bf54822286c6fd93c07c88462",
     "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
     "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
     "digestInputs": {
@@ -1127,6 +1127,17 @@
       "signal": null,
       "status": "PASS",
       "outputRef": "internal/evidence/acceptance/local-rerun-20261029/m6-affiliate-referral.log"
+    },
+    {
+      "commandId": "root-dependency-integrity",
+      "invocation": "corepack pnpm exec node scripts/check-root-integrity.mjs; node --experimental-strip-types --test tests/unit/root-integrity.test.ts tests/unit/candidate-digests.test.ts",
+      "environmentId": "root-dependency-baseline-20261029",
+      "startAt": "2026-10-29T10:56:49.183Z",
+      "endAt": "2026-10-29T10:56:53.929Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/root-dependency-baseline-20261029.log"
     }
   ],
   "coverage": {
@@ -1203,12 +1214,12 @@
     "carriedEvidence": []
   },
   "candidateRefresh": {
-    "capturedAt": "2026-10-29T08:41:19.579Z",
+    "capturedAt": "2026-10-29T10:58:42.785Z",
     "candidateId": "m6-current-20261029",
-    "source": "node scripts/candidate-digests.mjs",
+    "source": "git-object capture using scripts/candidate-digests.mjs canonical digest inputs",
     "status": "CURRENT_BYTES_CAPTURED_IN_PROGRESS",
     "fullStageAcceptance": false,
-    "sourceCommit": "e9f83994a886411ddc79de8b9bb572ba77728b52"
+    "sourceCommit": "0927667df20a799de4b2fefaadbf7a833f49cbce"
   },
   "commandEvidenceApplicability": {
     "currentExecutionCommandIds": [
@@ -1231,7 +1242,8 @@
       "m6-affiliate-races",
       "m6-cash-affiliate",
       "m6-affiliate-notifications",
-      "m6-affiliate-referral"
+      "m6-affiliate-referral",
+      "root-dependency-integrity"
     ],
     "failedNotClaimed": [],
     "notRerun": [
@@ -1252,7 +1264,8 @@
     "Stripe acceptance-profile and FirstPromoter account rows were not re-run.",
     "An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. m6-recovery, m6-affiliate (local-pure-contracts-only, databaseVerified false, providerVerified false), m6-affiliate-db, m6-refund-preview, m6-admin-reads, m6-affiliate-notifications, m6-affiliate-races, m6-affiliate-referral (realAccountVerified false), m6-cash-affiliate, m6-operations, m6-privileged, m6-workspace-details, and m6-two-factor exited 0. The two-factor stdout is retained separately and records externalAccountsUsed false; the aggregate m6 list omits that probe. No real FirstPromoter write was made. This does not close M6.",
     "The server-side email auth Turnstile request gate in src/lib/auth.ts moved sourceTree and validator digests. A focused unit test covers sign-up without an HTTP request when Turnstile is disabled, and still requires a request and token when Turnstile is enabled. Retained command logs from source tree 03a98cc01995e498df99f181b887c687d1ab5e05c90c86a91819ecb9b35005aa were not re-executed for this fix. This does not close the stage, enable acceptance bootstrap, or change Stripe live/test policy. Hosted bootstrap stays broken until the web service is redeployed.",
-    "Source tree and validator digests were rebound after tests/integration/stripe-refunds.test.ts enabled operator 2FA enforcement before deleting operator_step_ups. That change closes local defect M5-LOCAL-REFUND-STEPUP-20261029 only. Stage status stays IN_PROGRESS. No live Stripe call was made, and this digest rebind is not a stage PASS."
+    "Source tree and validator digests were rebound after tests/integration/stripe-refunds.test.ts enabled operator 2FA enforcement before deleting operator_step_ups. That change closes local defect M5-LOCAL-REFUND-STEPUP-20261029 only. Stage status stays IN_PROGRESS. No live Stripe call was made, and this digest rebind is not a stage PASS.",
+    "Candidate bytes were rebound after the CI Corepack bootstrap and reviewed Nodemailer dependency registry update. Root dependency integrity and 22 root-integrity/candidate-digest regressions pass on the equivalent dependency baseline. This remains DEVELOPMENT_VERIFICATION; stage stays IN_PROGRESS and hosted/independent obligations remain open."
   ],
   "localFixtureRerun": {
     "closesStage": false,

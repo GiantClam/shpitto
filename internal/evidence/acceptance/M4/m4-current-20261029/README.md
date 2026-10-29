@@ -2,7 +2,7 @@
 
 Date: 2026-10-29T05:40:58.702Z
 Candidate: `m4-current-20261029`
-Source commit: `f59f1f094dab084374331de9ad2b7a6fb7ed081e`
+Current candidate commit: `0927667df20a799de4b2fefaadbf7a833f49cbce`
 
 Local install, typecheck, lint, format, database boundary, OpenSpec, provider-input and billing-contract tests, billing schema probe and production build passed on the retained 2026-10-29T04:03:24.442Z command logs for source tree 03a98cc01995e498df99f181b887c687d1ab5e05c90c86a91819ecb9b35005aa. Those logs were not re-executed after the server-side Turnstile request-gate fix. Point-in-time public Acceptance web health and the then-active provider worker health were read with creates disabled. That health read predates the hosted four-path run and the recovery drill. A local deterministic `probe-provider-recovery` rerun passed 4 cases at 2026-10-29T05:39:06Z. That local probe includes one stale-callback fixture and does not close hosted negative-callback acceptance.
 
@@ -22,5 +22,7 @@ A selected self-hosted recovery drill on Railway project `shpitto-m4-staging` pr
 Web was missing the `SHPITTO_RECOVERY_*` observe recipient env at drill start. Mid-drill, secret, URL, workspace, key, `mode=observe`, and projectId were set on `shpitto-m4-web` so delivery could succeed. Secret values are not recorded.
 
 An aipc fixture archive at `internal/evidence/acceptance/aipc-local-55432-20261029/` records `probe-provider-recovery` exit 0 and restates this hosted evidence. Its source phrase "already RECORDED PASS (prior)" is not a stage approval.
+
+The candidate digest was refreshed after integrating the Corepack CI bootstrap and reviewed Nodemailer dependency baseline. Root dependency integrity and 22 root-integrity/candidate-digest regression tests pass; this is baseline evidence only and does not rerun or promote M4.
 
 The record remains `IN_PROGRESS`. Criteria `M4-C01` through `M4-C04` remain `BLOCKED`. Current M3 applicability is `STALE`. Historical M3 prerequisite evidence is unchanged. Forged, stale, and wrong-account callback failures, duplicate or reordered financial idempotence, numeric deadline and probe configuration, storage-failure fault suites, owned-module coverage, and independent review remain open. Provider cost status is `UNKNOWN`. No live Stripe charge was performed. The recovery drill does not promote M4.

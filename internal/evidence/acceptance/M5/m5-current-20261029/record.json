@@ -8,7 +8,7 @@
   "status": "IN_PROGRESS",
   "candidateId": "m5-current-20261029",
   "createdAt": "2026-10-29T04:05:00.000Z",
-  "updatedAt": "2026-10-29T08:41:30.502Z",
+  "updatedAt": "2026-10-29T10:58:42.785Z",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
     "sha256": "3e31e7cb16379171305c558b80dddb930b26fbfa46147cc0d5c6aa319ef64a40"
@@ -26,14 +26,14 @@
     }
   ],
   "candidate": {
-    "capturedAt": "2026-10-29T08:41:19.579Z",
-    "sourceCommit": "e9f83994a886411ddc79de8b9bb572ba77728b52",
+    "capturedAt": "2026-10-29T10:58:42.785Z",
+    "sourceCommit": "0927667df20a799de4b2fefaadbf7a833f49cbce",
     "dirtyPatchSha256": null,
-    "sourceTreeSha256": "64ebfe09625f489037a476fabce6001a9ed85d159148c217386074217ad507ff",
+    "sourceTreeSha256": "88e5bc247840b12a230472be3e8b8d4acb2ffbd5cfb5e844d5f5430139588b06",
     "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
-    "configurationSha256": "ce96987b2cd7fb4821f36de2e05ba80455a37b566d77ca343f9320d55e56bb59",
-    "contractSha256": "6acfb80fc1a8d6b4dc0f699f1c3d5280a0b44905c1eff6a0b199c19adad601ac",
-    "validatorSha256": "fbf6fb6281615c3614920a8f410bdaeaa489c7b678889b87ded7a36d526edd09",
+    "configurationSha256": "48f5cd656ad8d6d695353d5ebe2aa7f8eaccaefe92a0c258dcdffed845b5d806",
+    "contractSha256": "64a37e1dc089372f0177d144ea8f2f2489c4a0ba3e75abe5bd6adc215f14514b",
+    "validatorSha256": "c52b8a3405cc88f90965e254c2f150186e33c73bf54822286c6fd93c07c88462",
     "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
     "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
     "digestInputs": {
@@ -1309,6 +1309,17 @@
       "status": "PASS",
       "outputRef": "internal/evidence/acceptance/M5/m5-current-20261029/stripe-refunds-stepup-closure.log",
       "note": "Local disposable PostgreSQL on 127.0.0.1:55433 and the in-process fake refund provider. 22/22 includes owner refund-command replay with replayed true and providerCalls 0 on replay. Not a stage PASS. No live Stripe call. The unused acceptance pack must not be refunded."
+    },
+    {
+      "commandId": "root-dependency-integrity",
+      "invocation": "corepack pnpm exec node scripts/check-root-integrity.mjs; node --experimental-strip-types --test tests/unit/root-integrity.test.ts tests/unit/candidate-digests.test.ts",
+      "environmentId": "root-dependency-baseline-20261029",
+      "startAt": "2026-10-29T10:56:49.183Z",
+      "endAt": "2026-10-29T10:56:53.929Z",
+      "exitCode": 0,
+      "signal": null,
+      "status": "PASS",
+      "outputRef": "internal/evidence/acceptance/root-dependency-baseline-20261029.log"
     }
   ],
   "coverage": {
@@ -1406,18 +1417,17 @@
       "Hosted Checkout Session URLs, the $25 subscription, refunds, owner-command replay, and authenticated billing UI remain open. The 2026-10-29 acceptance-pack embedded test-mode payment is PASS_paid_and_reconciled and does not close M5. The M4 four-path rows and recovery drill do not close M5.",
       "Local defect M5-LOCAL-REFUND-STEPUP-20261029 is CLOSED. The 2026-10-29T05:39Z stripe-refunds log stays a retained 21/1 failure and is not relabeled PASS. The 2026-10-29T08:41Z fake-provider rerun is 22/22 and does not close M5.",
       "Real FirstPromoter account and hosted settlement evidence.",
-      "Recompute owned-module branch coverage on this digest before a coverage PASS claim.",
-      "Repair or explicitly reclassify the local Stripe refund step-up failure before claiming that suite."
+      "Recompute owned-module branch coverage on this digest before a coverage PASS claim."
     ],
     "carriedEvidence": []
   },
   "candidateRefresh": {
-    "capturedAt": "2026-10-29T08:41:19.579Z",
+    "capturedAt": "2026-10-29T10:58:42.785Z",
     "candidateId": "m5-current-20261029",
-    "source": "node scripts/candidate-digests.mjs",
+    "source": "git-object capture using scripts/candidate-digests.mjs canonical digest inputs",
     "status": "CURRENT_BYTES_CAPTURED_IN_PROGRESS",
     "fullStageAcceptance": false,
-    "sourceCommit": "e9f83994a886411ddc79de8b9bb572ba77728b52"
+    "sourceCommit": "0927667df20a799de4b2fefaadbf7a833f49cbce"
   },
   "commandEvidenceApplicability": {
     "currentExecutionCommandIds": [
@@ -1437,7 +1447,8 @@
       "stripe-reconciliation-integration",
       "billing-presentation-unit",
       "stripe-inbox-integration",
-      "stripe-refunds-integration"
+      "stripe-refunds-integration",
+      "root-dependency-integrity"
     ],
     "failedNotClaimed": [],
     "notRerun": [
@@ -1468,7 +1479,8 @@
     "In-process owner refund-command replay is PASS_IN_PROCESS_ONLY for the named stripe-refunds case (replayed true, one create for the case, providerCalls 0 on replay). Evidence: internal/evidence/acceptance/stripe-test-pack-20261029/owner-command-replay.md. The unused acceptance pack must not be refunded. Hosted owner-command replay stays open. This does not close M5.",
     "An aipc disposable Docker PostgreSQL 16 fixture rerun on 127.0.0.1:55432 is archived at internal/evidence/acceptance/aipc-local-55432-20261029/. billing-schema, billing-reconciliation, credit-ledger, credit-reservation, credit-refund, billing-checkout, and credit-migration-backfill exited 0. The billing-checkout case count of 10 is a supplied run fact; the retained summary snippet does not include that count. Defect M5-LOCAL-REFUND-STEPUP-20261029 stays OPEN. No live Stripe charge, refund, or payout was made. This does not close M5.",
     "The signed-in owner billing page for workspace 88e1b0a0-a097-4a8c-b274-f5b8f0ab80d1 is recorded. Sign-in uses /login; /sign-in returns 404. The page shows account active, one paid credit pack at USD 9.00, 250 credits available, zero subscriptions, and Recovery Clear. It does not close member-denial UI, mobile layout, refund-command replay, or M5.",
-    "The member billing denial for workspace 88e1b0a0-a097-4a8c-b274-f5b8f0ab80d1 is recorded. The member signed in via /login. The page shows Billing unavailable and that the view is restricted to the current workspace owner, with no cash or credit controls. It does not close mobile layout, refund-command replay, or M5."
+    "The member billing denial for workspace 88e1b0a0-a097-4a8c-b274-f5b8f0ab80d1 is recorded. The member signed in via /login. The page shows Billing unavailable and that the view is restricted to the current workspace owner, with no cash or credit controls. It does not close mobile layout, refund-command replay, or M5.",
+    "Candidate bytes were rebound after the CI Corepack bootstrap and reviewed Nodemailer dependency registry update. Root dependency integrity and 22 root-integrity/candidate-digest regressions pass on the equivalent dependency baseline. This remains DEVELOPMENT_VERIFICATION; stage stays IN_PROGRESS and hosted/independent obligations remain open."
   ],
   "localFixtureRerun": {
     "closesStage": false,
