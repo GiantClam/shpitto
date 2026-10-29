@@ -8,7 +8,7 @@
   "status": "IN_PROGRESS",
   "candidateId": "m4-current-20261029",
   "createdAt": "2026-10-29T04:05:00.000Z",
-  "updatedAt": "2026-10-29T07:44:34.564Z",
+  "updatedAt": "2026-10-29T11:32:13.135Z",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
     "sha256": "3e31e7cb16379171305c558b80dddb930b26fbfa46147cc0d5c6aa319ef64a40"
@@ -26,14 +26,14 @@
     }
   ],
   "candidate": {
-    "capturedAt": "2026-10-29T07:44:34.564Z",
-    "sourceCommit": "f59f1f094dab084374331de9ad2b7a6fb7ed081e",
+    "capturedAt": "2026-10-29T11:32:13.135Z",
+    "sourceCommit": "6a017f1bdeb25b5ce264e111eb94775154be8d09",
     "dirtyPatchSha256": null,
-    "sourceTreeSha256": "bf491d2dfb3c6260e89a4db2c07220cef98fa4ac3e162d9890a085c6294532ca",
+    "sourceTreeSha256": "06f5eea03f4f327e358e361b0bfb5c5bbc6b61fa45b14e806e3a5f9b7d5b0dd1",
     "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
-    "configurationSha256": "ce96987b2cd7fb4821f36de2e05ba80455a37b566d77ca343f9320d55e56bb59",
-    "contractSha256": "6acfb80fc1a8d6b4dc0f699f1c3d5280a0b44905c1eff6a0b199c19adad601ac",
-    "validatorSha256": "75f77bdd963c83e06ad2c1b8033838d3c38bd0726c06b8bd383ad462a9e47a73",
+    "configurationSha256": "4d744e359b89d8ce4ececcb94c37d111c48b9a50d2b23f1ed1f6826eb2da40ec",
+    "contractSha256": "64a37e1dc089372f0177d144ea8f2f2489c4a0ba3e75abe5bd6adc215f14514b",
+    "validatorSha256": "175cf03429d56c6f357e47a51c18ccd8a340ba92b0d3fd6229fbd347edb0dbae",
     "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
     "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
     "digestInputs": {
@@ -1279,6 +1279,7 @@
       "Hosted Stripe acceptance-profile lifecycle, refund readback and owner-command replay.",
       "Repair or explicitly reclassify the local Stripe refund step-up failure before claiming that suite.",
       "Real FirstPromoter account and hosted settlement evidence.",
+      "Recompute owned-module branch coverage on this digest before a coverage PASS claim.",
       "Recompute owned-module branch coverage on this digest before a coverage PASS claim."
     ],
     "carriedEvidence": []
@@ -1291,15 +1292,16 @@
     "Stripe acceptance-profile and FirstPromoter account rows were not re-run.",
     "Forged or stale or wrong-account callback failures, duplicate or reordered financial idempotence, and numeric deadline or probe configuration were not re-verified. Web was missing the SHPITTO_RECOVERY_* observe recipient env at drill start; secret, URL, workspace, key, mode=observe, and projectId were set on shpitto-m4-web mid-drill before delivery succeeded.",
     "An aipc fixture archive at internal/evidence/acceptance/aipc-local-55432-20261029/ records probe-provider-recovery exit 0 and restates the already recorded four-path create and recovery drill. The source phrase \"already RECORDED PASS (prior)\" is not a stage approval.",
-    "The server-side email auth Turnstile request gate in src/lib/auth.ts moved sourceTree and validator digests. A focused unit test covers sign-up without an HTTP request when Turnstile is disabled, and still requires a request and token when Turnstile is enabled. Retained command logs from source tree 03a98cc01995e498df99f181b887c687d1ab5e05c90c86a91819ecb9b35005aa were not re-executed for this fix. This does not close the stage, enable acceptance bootstrap, or change Stripe live/test policy. Hosted bootstrap stays broken until the web service is redeployed."
+    "The server-side email auth Turnstile request gate in src/lib/auth.ts moved sourceTree and validator digests. A focused unit test covers sign-up without an HTTP request when Turnstile is disabled, and still requires a request and token when Turnstile is enabled. Retained command logs from source tree 03a98cc01995e498df99f181b887c687d1ab5e05c90c86a91819ecb9b35005aa were not re-executed for this fix. This does not close the stage, enable acceptance bootstrap, or change Stripe live/test policy. Hosted bootstrap stays broken until the web service is redeployed.",
+    "Candidate digest refreshed after CI and OpenSpec verification tooling changes. This development record remains IN_PROGRESS and does not constitute stage approval."
   ],
   "candidateRefresh": {
-    "capturedAt": "2026-10-29T07:44:34.564Z",
+    "capturedAt": "2026-10-29T11:32:13.135Z",
     "candidateId": "m4-current-20261029",
-    "source": "node scripts/candidate-digests.mjs",
+    "source": "git-object capture using scripts/candidate-digests.mjs canonical digest inputs",
     "status": "CURRENT_BYTES_CAPTURED_IN_PROGRESS",
     "fullStageAcceptance": false,
-    "sourceCommit": "f59f1f094dab084374331de9ad2b7a6fb7ed081e"
+    "sourceCommit": "6a017f1bdeb25b5ce264e111eb94775154be8d09"
   },
   "commandEvidenceApplicability": {
     "currentExecutionCommandIds": [

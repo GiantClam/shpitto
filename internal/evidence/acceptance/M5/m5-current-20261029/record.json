@@ -8,7 +8,7 @@
   "status": "IN_PROGRESS",
   "candidateId": "m5-current-20261029",
   "createdAt": "2026-10-29T04:05:00.000Z",
-  "updatedAt": "2026-10-29T08:37:45.092Z",
+  "updatedAt": "2026-10-29T11:32:13.135Z",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
     "sha256": "3e31e7cb16379171305c558b80dddb930b26fbfa46147cc0d5c6aa319ef64a40"
@@ -26,14 +26,14 @@
     }
   ],
   "candidate": {
-    "capturedAt": "2026-10-29T07:44:34.564Z",
-    "sourceCommit": "f59f1f094dab084374331de9ad2b7a6fb7ed081e",
+    "capturedAt": "2026-10-29T11:32:13.135Z",
+    "sourceCommit": "6a017f1bdeb25b5ce264e111eb94775154be8d09",
     "dirtyPatchSha256": null,
-    "sourceTreeSha256": "bf491d2dfb3c6260e89a4db2c07220cef98fa4ac3e162d9890a085c6294532ca",
+    "sourceTreeSha256": "06f5eea03f4f327e358e361b0bfb5c5bbc6b61fa45b14e806e3a5f9b7d5b0dd1",
     "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
-    "configurationSha256": "ce96987b2cd7fb4821f36de2e05ba80455a37b566d77ca343f9320d55e56bb59",
-    "contractSha256": "6acfb80fc1a8d6b4dc0f699f1c3d5280a0b44905c1eff6a0b199c19adad601ac",
-    "validatorSha256": "75f77bdd963c83e06ad2c1b8033838d3c38bd0726c06b8bd383ad462a9e47a73",
+    "configurationSha256": "4d744e359b89d8ce4ececcb94c37d111c48b9a50d2b23f1ed1f6826eb2da40ec",
+    "contractSha256": "64a37e1dc089372f0177d144ea8f2f2489c4a0ba3e75abe5bd6adc215f14514b",
+    "validatorSha256": "175cf03429d56c6f357e47a51c18ccd8a340ba92b0d3fd6229fbd347edb0dbae",
     "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
     "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
     "digestInputs": {
@@ -1375,17 +1375,18 @@
       "Hosted Checkout Session URLs, the $25 subscription, refunds, owner-command replay, and authenticated billing UI remain open. The 2026-10-29 acceptance-pack embedded test-mode payment is PASS_paid_and_reconciled and does not close M5. The M4 four-path rows and recovery drill do not close M5.",
       "Repair or explicitly reclassify the local Stripe refund step-up failure before claiming that suite.",
       "Real FirstPromoter account and hosted settlement evidence.",
+      "Recompute owned-module branch coverage on this digest before a coverage PASS claim.",
       "Recompute owned-module branch coverage on this digest before a coverage PASS claim."
     ],
     "carriedEvidence": []
   },
   "candidateRefresh": {
-    "capturedAt": "2026-10-29T07:44:34.564Z",
+    "capturedAt": "2026-10-29T11:32:13.135Z",
     "candidateId": "m5-current-20261029",
-    "source": "node scripts/candidate-digests.mjs",
+    "source": "git-object capture using scripts/candidate-digests.mjs canonical digest inputs",
     "status": "CURRENT_BYTES_CAPTURED_IN_PROGRESS",
     "fullStageAcceptance": false,
-    "sourceCommit": "f59f1f094dab084374331de9ad2b7a6fb7ed081e"
+    "sourceCommit": "6a017f1bdeb25b5ce264e111eb94775154be8d09"
   },
   "commandEvidenceApplicability": {
     "currentExecutionCommandIds": [
@@ -1433,7 +1434,8 @@
     "The server-side email auth Turnstile request gate in src/lib/auth.ts moved sourceTree and validator digests. A focused unit test covers sign-up without an HTTP request when Turnstile is disabled, and still requires a request and token when Turnstile is enabled. Retained command logs from source tree 03a98cc01995e498df99f181b887c687d1ab5e05c90c86a91819ecb9b35005aa were not re-executed for this fix. This does not close the stage, enable acceptance bootstrap, or change Stripe live/test policy. Acceptance bootstrap was turned off after the 2026-10-29 test-mode payment.",
     "The 2026-10-29 Stripe test-mode acceptance-pack payment is PASS_paid_and_reconciled for the embedded Checkout path only. Hosted Checkout Session URLs opened an incomplete link. The billing-return screenshot is a signed-out page and does not prove the billing UI. No live charge, $25 subscription, refund, or FirstPromoter write is claimed. SHPITTO_ACCEPTANCE_BOOTSTRAP_ENABLED and RESEED were off after pay. BILLING_DRIVER stayed stripe_test. This does not close M5.",
     "The signed-in owner billing page for workspace 88e1b0a0-a097-4a8c-b274-f5b8f0ab80d1 is recorded. Sign-in uses /login; /sign-in returns 404. The page shows account active, one paid credit pack at USD 9.00, 250 credits available, zero subscriptions, and Recovery Clear. It does not close member-denial UI, mobile layout, refund-command replay, or M5.",
-    "The member billing denial for workspace 88e1b0a0-a097-4a8c-b274-f5b8f0ab80d1 is recorded. The member signed in via /login. The page shows Billing unavailable and that the view is restricted to the current workspace owner, with no cash or credit controls. It does not close mobile layout, refund-command replay, or M5."
+    "The member billing denial for workspace 88e1b0a0-a097-4a8c-b274-f5b8f0ab80d1 is recorded. The member signed in via /login. The page shows Billing unavailable and that the view is restricted to the current workspace owner, with no cash or credit controls. It does not close mobile layout, refund-command replay, or M5.",
+    "Candidate digest refreshed after CI and OpenSpec verification tooling changes. This development record remains IN_PROGRESS and does not constitute stage approval."
   ],
   "localFixtureRerun": {
     "closesStage": false,
