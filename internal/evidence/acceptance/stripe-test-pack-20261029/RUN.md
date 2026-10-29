@@ -12,6 +12,8 @@ paid_minor: 900
 webhookEvent: evt_1UVoXkRcvKApiJYWXUC6D3bt
 ui_mode: embedded_page (hosted_page session.url incomplete on this Stripe account)
 status: PASS_paid_and_reconciled
+staging_product_mount_20261030: MOUNT_OK (not M5 stage PASS; Pay not clicked)
+staging_product_mount_note: After PR #7 merge and redeploy, owner Open checkout on the USD 9 Permanent credit pack mounted on-page iframe embedded-checkout (TEST MODE, $9.00). Evidence: EMBEDDED_CHECKOUT_MOUNT.md and embedded-checkout-mounted-usd9.png. This does not change the earlier paid-and-reconciled pack status into an M5 PASS.
 bootstrap: SHPITTO_ACCEPTANCE_BOOTSTRAP_ENABLED=off, RESEED=off after pay
 account_status: active
 hold: none
