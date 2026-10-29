@@ -2802,8 +2802,8 @@
     },
     {
       "path": "tests/unit/auth-turnstile-request.test.ts",
-      "bytes": 3481,
-      "sha256": "6a1775ebb5d9906571f3474f058ddafc71db69db4db89e5a0088bb9ac08e0636"
+      "bytes": 3498,
+      "sha256": "adc8cb20d9fc474e3c5573c658e4152961a77d435caed9b3e8bb97bb67364ca4"
     },
     {
       "path": "tests/unit/billing-presentation.test.ts",
@@ -4410,8 +4410,8 @@
     },
     {
       "path": "tests/unit/auth-turnstile-request.test.ts",
-      "bytes": 3481,
-      "sha256": "6a1775ebb5d9906571f3474f058ddafc71db69db4db89e5a0088bb9ac08e0636"
+      "bytes": 3498,
+      "sha256": "adc8cb20d9fc474e3c5573c658e4152961a77d435caed9b3e8bb97bb67364ca4"
     },
     {
       "path": "tests/unit/billing-presentation.test.ts",

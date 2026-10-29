@@ -29,8 +29,7 @@ test('server-side email sign-up proceeds without a request when Turnstile is dis
   let fetches = 0;
   globalThis.fetch = async () => { fetches += 1; return new Response('{}'); };
   try {
-    process.env.NODE_ENV = 'production';
-    process.env.SHPTITTO_RUNTIME_PROFILE = 'production';
+    Object.assign(process.env, {NODE_ENV: 'production', SHPTITTO_RUNTIME_PROFILE: 'production'});
     delete process.env.APP_URL;
     const gate = rejectDisabledEmailSignIn(policyDatabase(false));
     const body = {name: 'Acceptance Owner', email: 'owner@shpitto.local', password: 'secret', turnstileToken: 'browser-only'};
@@ -52,8 +51,7 @@ test('enabled Turnstile still requires a browser request and token', async () =>
   let fetches = 0;
   globalThis.fetch = async () => { fetches += 1; return new Response('{}'); };
   try {
-    process.env.NODE_ENV = 'production';
-    process.env.SHPTITTO_RUNTIME_PROFILE = 'production';
+    Object.assign(process.env, {NODE_ENV: 'production', SHPTITTO_RUNTIME_PROFILE: 'production'});
     delete process.env.APP_URL;
     const gate = rejectDisabledEmailSignIn(policyDatabase(true));
     await assert.rejects(gate({path: '/sign-up/email', body: {email: 'owner@shpitto.local'}} as never), (error: unknown) => {
@@ -64,7 +62,7 @@ test('enabled Turnstile still requires a browser request and token', async () =>
     });
     assert.equal(fetches, 0);
 
-    process.env.NODE_ENV = 'test';
+    Object.assign(process.env, {NODE_ENV: 'test'});
     delete process.env.SHPTITTO_RUNTIME_PROFILE;
     process.env.APP_URL = 'https://app.example.test';
     const request = new Request('https://app.example.test/api/auth/sign-up/email', {method: 'POST'});

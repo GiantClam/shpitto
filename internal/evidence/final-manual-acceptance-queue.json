@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "queueKind": "FINAL_MANUAL_ACCEPTANCE_QUEUE",
-  "generatedAt": "2026-10-29T07:23:31.042Z",
+  "generatedAt": "2026-10-29T07:44:49.465Z",
   "checkpointId": "M8-STABLE",
   "policy": "Automated evidence produces a complete explanation package and may advance as READY_FOR_REVIEW. Human reviewers choose PASS, FAIL or RETURN_FOR_EVIDENCE from that package; they do not rerun tests as a substitute for reviewing evidence. Independent review and integration decisions are accumulated here and are the only manual stage-acceptance actions required before final PASS.",
   "entries": [
@@ -7493,14 +7493,14 @@
           }
         ],
         "candidate": {
-          "capturedAt": "2026-10-29T07:22:36.789Z",
+          "capturedAt": "2026-10-29T07:44:34.564Z",
           "sourceCommit": "f59f1f094dab084374331de9ad2b7a6fb7ed081e",
           "dirtyPatchSha256": null,
-          "sourceTreeSha256": "5b1754f8537307bcf2a3905bc7c24591a53184d9782e4beca503a191b094d39c",
+          "sourceTreeSha256": "bf491d2dfb3c6260e89a4db2c07220cef98fa4ac3e162d9890a085c6294532ca",
           "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
           "configurationSha256": "ce96987b2cd7fb4821f36de2e05ba80455a37b566d77ca343f9320d55e56bb59",
           "contractSha256": "6acfb80fc1a8d6b4dc0f699f1c3d5280a0b44905c1eff6a0b199c19adad601ac",
-          "validatorSha256": "ca4a22e778de0e93418f020fa7e5b93067afb7d6d77597e4a1b4d11971eda4ae",
+          "validatorSha256": "75f77bdd963c83e06ad2c1b8033838d3c38bd0726c06b8bd383ad462a9e47a73",
           "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
           "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
           "digestInputs": {
@@ -11818,14 +11818,14 @@
           }
         ],
         "candidate": {
-          "capturedAt": "2026-10-29T07:22:36.789Z",
+          "capturedAt": "2026-10-29T07:44:34.564Z",
           "sourceCommit": "f59f1f094dab084374331de9ad2b7a6fb7ed081e",
           "dirtyPatchSha256": null,
-          "sourceTreeSha256": "5b1754f8537307bcf2a3905bc7c24591a53184d9782e4beca503a191b094d39c",
+          "sourceTreeSha256": "bf491d2dfb3c6260e89a4db2c07220cef98fa4ac3e162d9890a085c6294532ca",
           "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
           "configurationSha256": "ce96987b2cd7fb4821f36de2e05ba80455a37b566d77ca343f9320d55e56bb59",
           "contractSha256": "6acfb80fc1a8d6b4dc0f699f1c3d5280a0b44905c1eff6a0b199c19adad601ac",
-          "validatorSha256": "ca4a22e778de0e93418f020fa7e5b93067afb7d6d77597e4a1b4d11971eda4ae",
+          "validatorSha256": "75f77bdd963c83e06ad2c1b8033838d3c38bd0726c06b8bd383ad462a9e47a73",
           "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
           "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
           "digestInputs": {
@@ -15308,14 +15308,14 @@
           }
         ],
         "candidate": {
-          "capturedAt": "2026-10-29T07:22:36.789Z",
+          "capturedAt": "2026-10-29T07:44:34.564Z",
           "sourceCommit": "f59f1f094dab084374331de9ad2b7a6fb7ed081e",
           "dirtyPatchSha256": null,
-          "sourceTreeSha256": "5b1754f8537307bcf2a3905bc7c24591a53184d9782e4beca503a191b094d39c",
+          "sourceTreeSha256": "bf491d2dfb3c6260e89a4db2c07220cef98fa4ac3e162d9890a085c6294532ca",
           "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
           "configurationSha256": "ce96987b2cd7fb4821f36de2e05ba80455a37b566d77ca343f9320d55e56bb59",
           "contractSha256": "6acfb80fc1a8d6b4dc0f699f1c3d5280a0b44905c1eff6a0b199c19adad601ac",
-          "validatorSha256": "ca4a22e778de0e93418f020fa7e5b93067afb7d6d77597e4a1b4d11971eda4ae",
+          "validatorSha256": "75f77bdd963c83e06ad2c1b8033838d3c38bd0726c06b8bd383ad462a9e47a73",
           "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
           "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
           "digestInputs": {
