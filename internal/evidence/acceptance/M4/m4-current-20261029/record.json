@@ -8,7 +8,7 @@
   "status": "IN_PROGRESS",
   "candidateId": "m4-current-20261029",
   "createdAt": "2026-10-29T04:05:00.000Z",
-  "updatedAt": "2026-10-29T14:50:17.335Z",
+  "updatedAt": "2026-10-29T15:03:09.780Z",
   "policy": {
     "path": "openspec/changes/restart-shpitto-video-saas/acceptance-gates.md",
     "sha256": "3e31e7cb16379171305c558b80dddb930b26fbfa46147cc0d5c6aa319ef64a40"
@@ -26,14 +26,14 @@
     }
   ],
   "candidate": {
-    "capturedAt": "2026-10-29T14:50:17.335Z",
-    "sourceCommit": "31c6fcfbc1207f3e20e24902b31fe3d9bbb2ae56",
+    "capturedAt": "2026-10-29T15:03:09.780Z",
+    "sourceCommit": "9c90026af539680c703bc5c91fb69258bb3042b7",
     "dirtyPatchSha256": null,
-    "sourceTreeSha256": "c89bae071e001c4677398c527da08ac6a7d2fb5bcf39800656b2309ee76207bb",
-    "schemaSha256": "14b425181c51bad20441eeeb43eb0143b50a7efd2945d354c97a046c03e881e4",
-    "configurationSha256": "f7140e2c9476a391c0fdf8b1b559dd72b57b9588807728a3b124b18c1386673b",
-    "contractSha256": "f09c2d63ad9829ea19af484db4e98556c246337c6bbe27ff27196c830104ad8c",
-    "validatorSha256": "4cbfa52ab01de7f36b48cb3fbe29b4dde62b93e8dd884d8e4d11c2d29ffde426",
+    "sourceTreeSha256": "0b0f0b6ae0c0e0ed45baaa7f3ecdedc325923edaa31c6c340817b789bfa6f045",
+    "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
+    "configurationSha256": "00880866584cbf06cfacfe0f774f35c7a36d3b8339fc3e3146e34dd007638c58",
+    "contractSha256": "64a37e1dc089372f0177d144ea8f2f2489c4a0ba3e75abe5bd6adc215f14514b",
+    "validatorSha256": "af945003119ea9722efe3093818cbe31bdc3c6a4a2f47cebc8783595fbc164b9",
     "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
     "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
     "digestInputs": {
@@ -1296,12 +1296,12 @@
     "Candidate digest refreshed after CI and OpenSpec verification tooling changes. This development record remains IN_PROGRESS and does not constitute stage approval."
   ],
   "candidateRefresh": {
-    "capturedAt": "2026-10-29T14:50:17.335Z",
+    "capturedAt": "2026-10-29T15:03:09.780Z",
     "candidateId": "m4-current-20261029",
-    "source": "merge-tree capture using scripts/candidate-digests.mjs canonical digest inputs",
+    "source": "GitHub PR merge-ref archive capture using scripts/candidate-digests.mjs canonical digest inputs",
     "status": "CURRENT_BYTES_CAPTURED_IN_PROGRESS",
     "fullStageAcceptance": false,
-    "sourceCommit": "31c6fcfbc1207f3e20e24902b31fe3d9bbb2ae56"
+    "sourceCommit": "9c90026af539680c703bc5c91fb69258bb3042b7"
   },
   "commandEvidenceApplicability": {
     "currentExecutionCommandIds": [
