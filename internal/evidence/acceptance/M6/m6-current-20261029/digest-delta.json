@@ -77,14 +77,14 @@
     }
   },
   "currentDigests": {
-    "capturedAt": "2026-10-29T15:03:09.780Z",
-    "sourceCommit": "9c90026af539680c703bc5c91fb69258bb3042b7",
+    "capturedAt": "2026-10-29T15:16:43.950Z",
+    "sourceCommit": "bac9e63dd71eddadef826e568c51f4422e7d0158",
     "dirtyPatchSha256": null,
-    "sourceTreeSha256": "0b0f0b6ae0c0e0ed45baaa7f3ecdedc325923edaa31c6c340817b789bfa6f045",
+    "sourceTreeSha256": "332afba8d79fd57bef8ba7300bda8c6bba66cfb3a66b0a69411cd39c29111a22",
     "schemaSha256": "db21b40ab33bcbac245b616474d5603aa5ee074ba82a0e41b80c93861f2d43c4",
     "configurationSha256": "00880866584cbf06cfacfe0f774f35c7a36d3b8339fc3e3146e34dd007638c58",
     "contractSha256": "64a37e1dc089372f0177d144ea8f2f2489c4a0ba3e75abe5bd6adc215f14514b",
-    "validatorSha256": "af945003119ea9722efe3093818cbe31bdc3c6a4a2f47cebc8783595fbc164b9",
+    "validatorSha256": "f674140fa40691c2996676c1501af7a72995ee2d87b10790a67bb186ab695cb2",
     "lockfileSha256": "a75db59723c866636d370d21e20eec1b86d5281810749331504ae42d3f043bee",
     "digestAlgorithm": "SHA-256 of sorted relative-path\\0byte-size\\0file-digest entries joined with LF; lockfile is raw byte SHA-256",
     "digestInputs": {
@@ -163,5 +163,5 @@
     "sourceTree:tooling/root-dependency-baseline.json",
     "validator:tooling/root-dependency-baseline.json"
   ],
-  "refreshReason": "Rebound to the exact GitHub PR merge ref before CI verification."
+  "refreshReason": "Rebound to the exact GitHub PR #5 merge ref before CI verification."
 }

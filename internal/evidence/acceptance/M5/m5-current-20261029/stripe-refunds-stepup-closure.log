@@ -1,0 +1,30 @@
+✔ fixture defaults still execute offline and preserve owner manual recovery (299.074349ms)
+✔ Stripe requires explicit matching provider, without recording an intent or falling back (21.76706ms)
+✔ Stripe binds durable request, historical customer and canonical payment intent and confirms exactly once (36.134867ms)
+✔ owner refund command replays the current confirmed result after the order becomes refunded (33.65925ms)
+✔ owner billing projection separates refunded cash from voided credits and rejects members (27.089367ms)
+✔ Stripe pending cannot create confirmed cash; recovery is read-only (39.655966ms)
+✔ Stripe unknown cannot create confirmed cash; recovery is read-only (28.648217ms)
+✔ Stripe failed cannot create confirmed cash; recovery is read-only (21.681226ms)
+✔ mismatched Stripe amountMinor evidence remains unresolved (24.273865ms)
+✔ mismatched Stripe currency evidence remains unresolved (16.67135ms)
+✔ mismatched Stripe customerId evidence remains unresolved (16.910749ms)
+✔ mismatched Stripe paymentIntentId evidence remains unresolved (19.406101ms)
+✔ missing or ambiguous canonical aliases fail closed before any Stripe call (35.30227ms)
+✔ adapter exceptions and unverified failed responses remain unknown, never terminal failure or cash (34.999242ms)
+✔ owner Stripe reconciliation requires authoritative readback, not a supplied external ID (30.866636ms)
+✔ auth, step-up and expected version reject before provider work or refund creation (14.508916ms)
+✔ parallel commands submit once, block other unresolved intents, and expired claims only look up (34.510729ms)
+✔ Stripe port refuses fixture-shaped success and mismatched providers on recovery (16.492427ms)
+✔ bridge rejects caller money/order/key drift and never uses caller payment target (21.248128ms)
+✔ lost finalization rejects stale lease and recovers successful cash by read-only lookup (33.457568ms)
+✔ owner readback rechecks ownership before applying external cash evidence (25.547446ms)
+✔ changed durable refund binding rejects late successful delivery evidence (16.040074ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1314.20888
